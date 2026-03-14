@@ -12,6 +12,7 @@ interface ChatStore {
   lines: Record<string, LogLine[]>
   addLine: (sessionKey: string, line: LogLine) => void
   clearSession: (sessionKey: string) => void
+  clearAll: () => void
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -31,5 +32,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const rest = { ...get().lines }
     delete rest[sessionKey]
     set({ lines: rest })
+  },
+
+  clearAll: (): void => {
+    set({ lines: {} })
   }
 }))

@@ -1,29 +1,56 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useChatStore, LogLine } from '../../stores/chat'
 import { useSessionsStore } from '../../stores/sessions'
 import { useGatewayStore } from '../../stores/gateway'
 
+function formatTime(ts: number): string {
+  const d = new Date(ts)
+  return d.toTimeString().slice(0, 8)
+}
+
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max) + '\u2026' : s
+}
+
+function roleLabel(line: LogLine): string {
+  if (line.toolName) return line.toolName
+  return line.role
+}
+
 function lineClass(line: LogLine): string {
-  if (line.role === 'tool') return 'feed-line--tool'
-  if (line.role === 'system') return 'feed-line--error'
-  if (line.toolName) return 'feed-line--tool'
-  if (line.content.toLowerCase().includes('error')) return 'feed-line--error'
-  if (line.content.includes('Write') || line.content.includes('write')) return 'feed-line--write'
-  return 'feed-line--text'
+  switch (line.role) {
+    case 'assistant':
+      return 'feed-line--assistant'
+    case 'user':
+      return 'feed-line--user'
+    case 'tool':
+      return 'feed-line--tool'
+    case 'system':
+      return 'feed-line--system'
+    default:
+      return 'feed-line--text'
+  }
 }
 
 export function LiveFeed(): React.JSX.Element {
   const selectedKey = useSessionsStore((s) => s.selectedSessionKey)
-  const lines = useChatStore((s) => (selectedKey ? s.lines[selectedKey] ?? [] : []))
+  const linesMap = useChatStore((s) => s.lines)
   const addLine = useChatStore((s) => s.addLine)
+  const clearSession = useChatStore((s) => s.clearSession)
+  const clearAll = useChatStore((s) => s.clearAll)
   const client = useGatewayStore((s) => s.client)
 
-  const feedRef = useRef<HTMLDivElement>(null)
-  const [hovering, setHovering] = useState(false)
+  const linesRef = useRef<HTMLDivElement>(null)
+  const [paused, setPaused] = useState(false)
 
+  const lines = useMemo(() => {
+    if (selectedKey) return linesMap[selectedKey] ?? []
+    return Object.values(linesMap).flat().sort((a, b) => a.timestamp - b.timestamp)
+  }, [linesMap, selectedKey])
+
+  // Always subscribe to all session_log messages
   useEffect(() => {
-    if (!client || !selectedKey) return
-
+    if (!client) return
     const unsub = client.onMessage((data) => {
       const msg = data as {
         type?: string
@@ -32,8 +59,8 @@ export function LiveFeed(): React.JSX.Element {
         content?: string
         toolName?: string
       }
-      if (msg.type === 'session_log' && msg.sessionKey === selectedKey) {
-        addLine(selectedKey, {
+      if (msg.type === 'session_log' && msg.sessionKey) {
+        addLine(msg.sessionKey, {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           role: (msg.role as LogLine['role']) ?? 'assistant',
           content: msg.content ?? '',
@@ -42,46 +69,70 @@ export function LiveFeed(): React.JSX.Element {
         })
       }
     })
-
     return unsub
-  }, [client, selectedKey, addLine])
+  }, [client, addLine])
 
+  // Auto-scroll unless paused
   useEffect(() => {
-    if (!hovering && feedRef.current) {
-      feedRef.current.scrollTop = feedRef.current.scrollHeight
+    if (!paused && linesRef.current) {
+      linesRef.current.scrollTop = linesRef.current.scrollHeight
     }
-  }, [lines, hovering])
+  }, [lines, paused])
 
-  if (!selectedKey) {
-    return (
-      <div className="live-feed live-feed--empty">
-        <span className="live-feed__empty-text">Select a session to watch its output</span>
-      </div>
-    )
+  const handleScroll = useCallback(() => {
+    const el = linesRef.current
+    if (!el) return
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+    setPaused(!atBottom)
+  }, [])
+
+  const handleClear = (): void => {
+    if (selectedKey) {
+      clearSession(selectedKey)
+    } else {
+      clearAll()
+    }
+  }
+
+  const handleResume = (): void => {
+    setPaused(false)
+    if (linesRef.current) {
+      linesRef.current.scrollTop = linesRef.current.scrollHeight
+    }
   }
 
   return (
-    <div
-      className="live-feed"
-      ref={feedRef}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-    >
+    <div className="live-feed">
       <div className="live-feed__header">
-        <span className="live-feed__title">Live Feed</span>
-        <span className="live-feed__session-key">{selectedKey}</span>
+        <div className="live-feed__header-left">
+          <span className="live-feed__title">Live Feed</span>
+          {selectedKey && <span className="live-feed__session-key">{selectedKey}</span>}
+        </div>
+        <button className="live-feed__btn" onClick={handleClear} title="Clear feed">
+          Clear
+        </button>
       </div>
-      <div className="live-feed__lines">
+      <div className="live-feed__lines" ref={linesRef} onScroll={handleScroll}>
         {lines.map((line) => (
           <div key={line.id} className={`feed-line ${lineClass(line)}`}>
-            {line.toolName && <span className="feed-line__tool-name">{line.toolName}</span>}
-            <span className="feed-line__content">{line.content}</span>
+            <span className="feed-line__time">{formatTime(line.timestamp)}</span>
+            <span className={`feed-line__role feed-line__role--${line.role}`}>
+              {roleLabel(line)}
+            </span>
+            <span className="feed-line__content">{truncate(line.content, 120)}</span>
           </div>
         ))}
         {lines.length === 0 && (
-          <span className="live-feed__waiting">Waiting for output…</span>
+          <span className="live-feed__waiting">
+            {selectedKey ? 'Waiting for output\u2026' : 'Waiting for gateway messages\u2026'}
+          </span>
         )}
       </div>
+      {paused && (
+        <button className="live-feed__resume" onClick={handleResume}>
+          Resume auto-scroll
+        </button>
+      )}
     </div>
   )
 }
