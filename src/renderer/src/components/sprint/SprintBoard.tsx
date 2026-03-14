@@ -5,117 +5,29 @@ import { EmptyState } from '../ui/EmptyState'
 
 // --- Types ---
 
-interface CheckedOutItem {
-  branch: string
-  agent: string
-  files: string
-  started: string
-  status: string
-}
-
-interface QueueItem {
-  text: string
-  done: boolean
-}
-
-interface DoneItem {
-  pr: string
+interface SprintTask {
+  id: string
   title: string
-  merged: string
-}
-
-interface SprintData {
-  checkedOut: CheckedOutItem[]
-  queue: QueueItem[]
-  done: DoneItem[]
+  repo: string
+  priority: number
+  status: 'queued' | 'active' | 'done'
+  started_at: string | null
+  updated_at: string
 }
 
 // --- Config ---
 
+const SUPABASE_URL = 'https://ponbudosprotfhissvzo.supabase.co'
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbmJ1ZG9zcHJvdGZoaXNzdnpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NTkyNzgsImV4cCI6MjA4ODEzNTI3OH0.KwALcQ9P404nMKyx76Jz7UA9QEQsDn2UFWw8mAb_ZNI'
+
 const REPOS = [
-  { label: 'life-os', owner: 'RyanJBirkeland', name: 'life-os', color: '#00D37F' },
-  { label: 'feast', owner: 'RyanJBirkeland', name: 'feast', color: '#FF8A00' }
+  { label: 'bde', color: '#6C8EEF' },
+  { label: 'life-os', color: '#00D37F' },
+  { label: 'feast', color: '#FF8A00' }
 ]
 
 const REFRESH_INTERVAL = 30_000
-
-// --- Parsing ---
-
-function parseSprintMd(raw: string): SprintData {
-  const lines = raw.split('\n')
-  const checkedOut: CheckedOutItem[] = []
-  const queue: QueueItem[] = []
-  const done: DoneItem[] = []
-
-  let section: 'none' | 'checked-out' | 'queue' | 'done' = 'none'
-
-  for (const line of lines) {
-    const t = line.trim()
-
-    if (t.startsWith('## ') && t.includes('Checked Out')) {
-      section = 'checked-out'
-      continue
-    }
-    if (t.startsWith('## ') && t.includes('Queue')) {
-      section = 'queue'
-      continue
-    }
-    if (t.startsWith('## ') && t.includes('Done This Sprint')) {
-      section = 'done'
-      continue
-    }
-    if (t.startsWith('## ') || t.startsWith('---')) {
-      if (section !== 'none') section = 'none'
-      continue
-    }
-
-    if (
-      section === 'checked-out' &&
-      t.startsWith('|') &&
-      !t.includes('Branch') &&
-      !t.startsWith('|--')
-    ) {
-      const cols = t
-        .split('|')
-        .map((c) => c.trim())
-        .filter(Boolean)
-      if (cols.length >= 5) {
-        checkedOut.push({
-          branch: cols[0],
-          agent: cols[1],
-          files: cols[2],
-          started: cols[3],
-          status: cols[4]
-        })
-      }
-    }
-
-    if (section === 'queue' && t.startsWith('- [')) {
-      const isDone = t.startsWith('- [x]')
-      const text = t.replace(/^- \[[ x]\]\s*/, '')
-      if (text) {
-        queue.push({ text, done: isDone })
-      }
-    }
-
-    if (
-      section === 'done' &&
-      t.startsWith('|') &&
-      !t.includes('PR') &&
-      !t.startsWith('|--')
-    ) {
-      const cols = t
-        .split('|')
-        .map((c) => c.trim())
-        .filter(Boolean)
-      if (cols.length >= 3) {
-        done.push({ pr: cols[0], title: cols[1], merged: cols[2] })
-      }
-    }
-  }
-
-  return { checkedOut, queue, done }
-}
 
 // --- Helpers ---
 
@@ -133,58 +45,40 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
-function branchUrl(repoLabel: string, branch: string): string {
-  const r = REPOS.find((r) => r.label === repoLabel)
-  if (!r) return '#'
-  return `https://github.com/${r.owner}/${r.name}/tree/${branch}`
-}
-
-function prUrl(repoLabel: string, pr: string): string {
-  const r = REPOS.find((r) => r.label === repoLabel)
-  if (!r) return '#'
-  const num = pr.replace('#', '')
-  return `https://github.com/${r.owner}/${r.name}/pull/${num}`
-}
-
 // --- Component ---
 
 export default function SprintBoard() {
-  const [repo, setRepo] = useState<string>('life-os')
-  const [repoPaths, setRepoPaths] = useState<Record<string, string> | null>(null)
-  const [data, setData] = useState<SprintData | null>(null)
+  const [repo, setRepo] = useState<string>('bde')
+  const [tasks, setTasks] = useState<SprintTask[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
-    window.api.getRepoPaths().then(setRepoPaths).catch(() => {
-      setError('Failed to load repo paths')
-    })
-  }, [])
-
   const load = useCallback(async () => {
-    if (!repoPaths) return
-    const path = repoPaths[repo]
-    if (!path) {
-      setError(`No path configured for ${repo}`)
-      setLoading(false)
-      return
-    }
     try {
-      const raw = await window.api.readSprintMd(path)
-      setData(parseSprintMd(raw))
+      setLoading(true)
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/sprint_tasks?repo=eq.${repo}&order=priority.asc`,
+        {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        }
+      )
+      const data: SprintTask[] = await res.json()
+      setTasks(data)
       setError(null)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to read SPRINT.md')
+    } catch {
+      setError('Failed to load tasks')
     } finally {
       setLoading(false)
     }
-  }, [repo, repoPaths])
+  }, [repo])
 
   useEffect(() => {
     setLoading(true)
-    setData(null)
+    setTasks([])
     load()
     if (intervalRef.current) clearInterval(intervalRef.current)
     intervalRef.current = setInterval(load, REFRESH_INTERVAL)
@@ -193,19 +87,9 @@ export default function SprintBoard() {
     }
   }, [load])
 
-  const toggleExpand = (key: string) => {
-    setExpandedCards((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
-  const inProgress = data?.checkedOut.filter((i) => i.status !== 'Done') ?? []
-  const doneCheckedOut = data?.checkedOut.filter((i) => i.status === 'Done') ?? []
-  const pendingQueue = data?.queue.filter((i) => !i.done) ?? []
-  const doneItems = data?.done ?? []
+  const active = tasks.filter((t) => t.status === 'active')
+  const queued = tasks.filter((t) => t.status === 'queued')
+  const done = tasks.filter((t) => t.status === 'done')
 
   return (
     <div className="sprint-board">
@@ -234,7 +118,7 @@ export default function SprintBoard() {
       {error && <div className="sprint-board__error">{error}</div>}
 
       <div className="sprint-board__columns">
-        {loading && !data ? (
+        {loading && tasks.length === 0 ? (
           <div className="sprint-board__loading">
             <div className="sprint-board__skeleton" />
             <div className="sprint-board__skeleton" />
@@ -246,37 +130,15 @@ export default function SprintBoard() {
             <div className="sprint-col">
               <div className="sprint-col__header">
                 <span className="sprint-col__icon sprint-col__icon--red">In Progress</span>
-                <span className="sprint-col__count">{inProgress.length}</span>
+                <span className="sprint-col__count">{active.length}</span>
               </div>
               <div className="sprint-col__cards">
-                {inProgress.length === 0 ? (
-                  <EmptyState title="Nothing checked out" />
+                {active.length === 0 ? (
+                  <EmptyState title="Nothing in progress" />
                 ) : (
-                  inProgress.map((item, i) => (
-                    <CheckedOutCard
-                      key={item.branch}
-                      item={item}
-                      repo={repo}
-                      expanded={expandedCards.has(item.branch)}
-                      onToggle={() => toggleExpand(item.branch)}
-                      staggerIndex={i}
-                    />
+                  active.map((task, i) => (
+                    <TaskCard key={task.id} task={task} index={i} />
                   ))
-                )}
-                {doneCheckedOut.length > 0 && (
-                  <div className="sprint-col__recently-done">
-                    <span className="sprint-col__sub-label">Recently completed</span>
-                    {doneCheckedOut.map((item) => (
-                      <CheckedOutCard
-                        key={item.branch}
-                        item={item}
-                        repo={repo}
-                        expanded={expandedCards.has(item.branch)}
-                        onToggle={() => toggleExpand(item.branch)}
-                        dimmed
-                      />
-                    ))}
-                  </div>
                 )}
               </div>
             </div>
@@ -285,16 +147,14 @@ export default function SprintBoard() {
             <div className="sprint-col">
               <div className="sprint-col__header">
                 <span className="sprint-col__icon sprint-col__icon--yellow">Queue</span>
-                <span className="sprint-col__count">{pendingQueue.length}</span>
+                <span className="sprint-col__count">{queued.length}</span>
               </div>
               <div className="sprint-col__cards">
-                {pendingQueue.length === 0 ? (
+                {queued.length === 0 ? (
                   <EmptyState title="Queue is empty" />
                 ) : (
-                  pendingQueue.map((item, i) => (
-                    <div key={i} className="sprint-card" style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
-                      <p className="sprint-card__text">{item.text.replace(/\*\*/g, '')}</p>
-                    </div>
+                  queued.map((task, i) => (
+                    <TaskCard key={task.id} task={task} index={i} />
                   ))
                 )}
               </div>
@@ -304,29 +164,14 @@ export default function SprintBoard() {
             <div className="sprint-col">
               <div className="sprint-col__header">
                 <span className="sprint-col__icon sprint-col__icon--green">Done This Sprint</span>
-                <span className="sprint-col__count">{doneItems.length}</span>
+                <span className="sprint-col__count">{done.length}</span>
               </div>
               <div className="sprint-col__cards">
-                {doneItems.length === 0 ? (
-                  <EmptyState title="No completed PRs yet" />
+                {done.length === 0 ? (
+                  <EmptyState title="No completed tasks yet" />
                 ) : (
-                  doneItems.map((item, i) => (
-                    <div key={item.pr} className="sprint-card" style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
-                      <div className="sprint-card__done-row">
-                        <a
-                          href={prUrl(repo, item.pr)}
-                          className="sprint-card__pr-link"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            window.api.openExternal(prUrl(repo, item.pr))
-                          }}
-                        >
-                          <span className="sprint-card__pr-num">{item.pr}</span>
-                        </a>
-                        <span className="sprint-card__date">{item.merged}</span>
-                      </div>
-                      <p className="sprint-card__text-muted">{item.title}</p>
-                    </div>
+                  done.map((task, i) => (
+                    <TaskCard key={task.id} task={task} index={i} />
                   ))
                 )}
               </div>
@@ -340,63 +185,25 @@ export default function SprintBoard() {
 
 // --- Sub-components ---
 
-function CheckedOutCard({
-  item,
-  repo,
-  expanded,
-  onToggle,
-  dimmed,
-  staggerIndex
-}: {
-  item: CheckedOutItem
-  repo: string
-  expanded: boolean
-  onToggle: () => void
-  dimmed?: boolean
-  staggerIndex?: number
-}) {
-  const files = item.files
-    .split(',')
-    .map((f) => f.trim())
-    .filter(Boolean)
-
+function TaskCard({ task, index }: { task: SprintTask; index: number }) {
   return (
     <div
-      className={`sprint-card ${dimmed ? 'sprint-card--dimmed' : ''}`}
-      style={staggerIndex != null ? { '--stagger-index': Math.min(staggerIndex, 10) } as React.CSSProperties : undefined}
+      className="sprint-card"
+      style={{ '--stagger-index': index } as React.CSSProperties}
     >
       <div className="sprint-card__top-row">
-        <a
-          href={branchUrl(repo, item.branch)}
-          className="sprint-card__branch-link"
-          onClick={(e) => {
-            e.preventDefault()
-            window.api.openExternal(branchUrl(repo, item.branch))
-          }}
-        >
-          {item.branch}
-        </a>
+        <span className="sprint-card__text">{task.title}</span>
         <Badge
-          variant={item.status === 'Active' ? 'warning' : item.status === 'Done' ? 'success' : 'default'}
+          variant={task.repo === 'bde' ? 'info' : task.repo === 'feast' ? 'warning' : 'success'}
           size="sm"
         >
-          {item.status}
+          {task.repo}
         </Badge>
       </div>
       <div className="sprint-card__meta">
-        <span>{item.agent}</span>
-        <span>{timeAgo(item.started)}</span>
+        <span>p{task.priority}</span>
+        {task.started_at && <span>{timeAgo(task.started_at)}</span>}
       </div>
-      <Button variant="ghost" size="sm" className="sprint-card__files-toggle" onClick={onToggle}>
-        {expanded ? '\u25BE' : '\u25B8'} {files.length} file{files.length !== 1 ? 's' : ''}
-      </Button>
-      {expanded && (
-        <ul className="sprint-card__files-list">
-          {files.map((f) => (
-            <li key={f}>{f}</li>
-          ))}
-        </ul>
-      )}
     </div>
   )
 }
