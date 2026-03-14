@@ -6,6 +6,7 @@ import { ActivityBar } from './components/layout/ActivityBar'
 import { TitleBar } from './components/layout/TitleBar'
 import { StatusBar } from './components/layout/StatusBar'
 import { CommandPalette } from './components/layout/CommandPalette'
+import { ToastContainer } from './components/layout/ToastContainer'
 import SprintView from './views/SprintView'
 import { SessionsView } from './views/SessionsView'
 import MemoryView from './views/MemoryView'
@@ -129,6 +130,7 @@ function App(): React.JSX.Element {
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
+      <ToastContainer />
     </div>
   )
 }
