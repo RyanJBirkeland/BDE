@@ -1,3 +1,9 @@
+/**
+ * SettingsView — application configuration panel.
+ * Manages gateway URL/token (with test-connection), displays repo paths,
+ * provides theme switching (dark/light) and accent color presets, and
+ * shows about info (version, GitHub link).
+ */
 import { useCallback, useEffect, useState } from 'react'
 import { Eye, EyeOff, ExternalLink } from 'lucide-react'
 import { useGatewayStore } from '../stores/gateway'

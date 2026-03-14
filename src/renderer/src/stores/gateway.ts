@@ -1,3 +1,8 @@
+/**
+ * Gateway store — manages the WebSocket connection to the OpenClaw gateway.
+ * Tracks connection status (connected/disconnected/connecting/error) and
+ * shows toast notifications on status transitions.
+ */
 import { create } from 'zustand'
 import { ConnectionStatus, GatewayClient } from '../lib/gateway'
 import { toast } from './toasts'

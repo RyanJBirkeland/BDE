@@ -1,3 +1,9 @@
+/**
+ * DiffView — full git client UI.
+ * Provides file staging/unstaging, diff viewer, commit message composer,
+ * and push interface. Supports multi-repo selection. Fetches git status
+ * via IPC (git:status, git:diff) and polls every 30s.
+ */
 import { useState, useEffect, useCallback } from 'react'
 import DiffViewer from '../components/diff/DiffViewer'
 import { parseDiff } from '../lib/diff-parser'

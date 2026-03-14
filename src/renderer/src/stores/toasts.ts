@@ -1,3 +1,8 @@
+/**
+ * Toast store — ephemeral notification queue.
+ * Manages up to 4 visible toasts with auto-dismiss (default 3s).
+ * Convenience helpers: toast.success(), toast.error(), toast.info().
+ */
 import { create } from 'zustand'
 
 export type ToastType = 'success' | 'error' | 'info'
