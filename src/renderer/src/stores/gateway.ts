@@ -6,6 +6,7 @@ interface GatewayStore {
   status: ConnectionStatus
   client: GatewayClient | null
   connect: () => Promise<void>
+  reconnect: () => Promise<void>
 }
 
 export const useGatewayStore = create<GatewayStore>((set, get) => ({
@@ -32,5 +33,14 @@ export const useGatewayStore = create<GatewayStore>((set, get) => ({
 
     set({ client })
     client.connect()
+  },
+
+  reconnect: async (): Promise<void> => {
+    const existing = get().client
+    if (existing) {
+      existing.dispose()
+      set({ client: null, status: 'disconnected' })
+    }
+    await get().connect()
   }
 }))

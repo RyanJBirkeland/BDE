@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { getGatewayConfig, getGitHubToken } from './config'
+import { getGatewayConfig, getGitHubToken, saveGatewayConfig } from './config'
 import { getRepoPaths, readSprintMd, getDiff, getBranch, getLog } from './git'
 import { registerFsHandlers } from './fs'
 
@@ -56,6 +56,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-gateway-config', () => gatewayConfig)
   ipcMain.handle('get-github-token', () => getGitHubToken())
+  ipcMain.handle('save-gateway-config', (_e, url: string, token: string) => {
+    saveGatewayConfig(url, token)
+    gatewayConfig = { url, token }
+  })
   ipcMain.handle('get-repo-paths', () => getRepoPaths())
   ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
   ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))

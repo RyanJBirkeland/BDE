@@ -6,6 +6,7 @@ declare global {
     api: {
       getGatewayConfig: () => Promise<{ url: string; token: string }>
       getGitHubToken: () => Promise<string | null>
+      saveGatewayConfig: (url: string, token: string) => Promise<void>
       getRepoPaths: () => Promise<Record<string, string>>
       readSprintMd: (repoPath: string) => Promise<string>
       openExternal: (url: string) => Promise<void>
