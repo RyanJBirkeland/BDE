@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSessionsStore, AgentSession } from '../../stores/sessions'
 
 function timeAgo(dateStr: string): string {
@@ -28,6 +28,22 @@ function SessionRow({
   onSelect: () => void
 }): React.JSX.Element {
   const isRunning = session.status === 'running'
+  const killSession = useSessionsStore((s) => s.killSession)
+  const [killing, setKilling] = useState(false)
+
+  const handleKill = useCallback(
+    async (e: React.MouseEvent): Promise<void> => {
+      e.stopPropagation()
+      if (killing) return
+      setKilling(true)
+      try {
+        await killSession(session.key)
+      } finally {
+        setKilling(false)
+      }
+    },
+    [killing, killSession, session.key]
+  )
 
   return (
     <button
@@ -42,6 +58,17 @@ function SessionRow({
           <span className="session-row__time">{timeAgo(session.updatedAt)}</span>
         </span>
       </div>
+      {isRunning && (
+        <span
+          className="session-row__kill"
+          role="button"
+          tabIndex={-1}
+          onClick={handleKill}
+          title="Stop session"
+        >
+          {killing ? '...' : '\u00d7'}
+        </span>
+      )}
     </button>
   )
 }
@@ -51,6 +78,8 @@ export function SessionList(): React.JSX.Element {
   const selectedKey = useSessionsStore((s) => s.selectedSessionKey)
   const selectSession = useSessionsStore((s) => s.selectSession)
   const fetchSessions = useSessionsStore((s) => s.fetchSessions)
+  const loading = useSessionsStore((s) => s.loading)
+  const fetchError = useSessionsStore((s) => s.fetchError)
 
   useEffect(() => {
     fetchSessions()
@@ -73,6 +102,18 @@ export function SessionList(): React.JSX.Element {
           ↻
         </button>
       </div>
+
+      {fetchError && (
+        <div className="session-list__error">{fetchError}</div>
+      )}
+
+      {loading && sessions.length === 0 && (
+        <div className="session-list__loading">
+          <div className="session-list__skeleton" />
+          <div className="session-list__skeleton" />
+          <div className="session-list__skeleton" />
+        </div>
+      )}
 
       {running.length > 0 && (
         <div className="session-list__group">
@@ -102,7 +143,7 @@ export function SessionList(): React.JSX.Element {
         </div>
       )}
 
-      {sessions.length === 0 && (
+      {!loading && !fetchError && sessions.length === 0 && (
         <div className="session-list__empty">No sessions</div>
       )}
     </div>
