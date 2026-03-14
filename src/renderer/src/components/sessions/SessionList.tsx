@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSessionsStore, AgentSession } from '../../stores/sessions'
+import { useUIStore } from '../../stores/ui'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { EmptyState } from '../ui/EmptyState'
@@ -26,10 +27,14 @@ function modelBadgeLabel(model: string): string {
 function SessionRow({
   session,
   isSelected,
+  isFocused,
+  dataIndex,
   onSelect
 }: {
   session: AgentSession
   isSelected: boolean
+  isFocused?: boolean
+  dataIndex?: number
   onSelect: () => void
 }): React.JSX.Element {
   const isRunning = Date.now() - session.updatedAt < FIVE_MINUTES
@@ -52,7 +57,8 @@ function SessionRow({
 
   return (
     <button
-      className={`session-row ${isSelected ? 'session-row--selected' : ''}`}
+      className={`session-row ${isSelected ? 'session-row--selected' : ''} ${isFocused ? 'session-row--focused' : ''}`}
+      data-session-index={dataIndex}
       onClick={onSelect}
     >
       <span className={`session-row__dot ${isRunning ? 'session-row__dot--running' : ''}`} />
@@ -85,6 +91,9 @@ export function SessionList(): React.JSX.Element {
   const fetchSessions = useSessionsStore((s) => s.fetchSessions)
   const loading = useSessionsStore((s) => s.loading)
   const fetchError = useSessionsStore((s) => s.fetchError)
+  const activeView = useUIStore((s) => s.activeView)
+  const [focusIndex, setFocusIndex] = useState(-1)
+  const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchSessions()
@@ -99,8 +108,56 @@ export function SessionList(): React.JSX.Element {
     return now - s.updatedAt < 48 * 60 * 60 * 1000
   })
 
+  // Flat ordered list for keyboard nav
+  const orderedSessions = [...running, ...recent]
+
+  useEffect(() => {
+    if (activeView !== 'sessions') return
+
+    const handler = (e: KeyboardEvent): void => {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        setFocusIndex((prev) => {
+          const max = orderedSessions.length - 1
+          if (max < 0) return -1
+          if (e.key === 'ArrowDown') return prev < max ? prev + 1 : 0
+          return prev > 0 ? prev - 1 : max
+        })
+      }
+
+      if (e.key === 'Enter' && focusIndex >= 0 && focusIndex < orderedSessions.length) {
+        e.preventDefault()
+        selectSession(orderedSessions[focusIndex].key)
+      }
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [activeView, focusIndex, orderedSessions, selectSession])
+
+  // Scroll focused item into view
+  useEffect(() => {
+    if (focusIndex < 0) return
+    const el = listRef.current?.querySelector(`[data-session-index="${focusIndex}"]`) as HTMLElement
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [focusIndex])
+
+  // Sync focusIndex when selectedKey changes externally
+  useEffect(() => {
+    if (selectedKey) {
+      const idx = orderedSessions.findIndex((s) => s.key === selectedKey)
+      if (idx >= 0) setFocusIndex(idx)
+    }
+  }, [selectedKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  let sessionIdx = 0
+
   return (
-    <div className="session-list">
+    <div className="session-list" ref={listRef}>
       <div className="session-list__header">
         <span className="session-list__title">Sessions</span>
         <Button variant="icon" size="sm" onClick={fetchSessions} title="Refresh">
@@ -123,28 +180,38 @@ export function SessionList(): React.JSX.Element {
       {running.length > 0 && (
         <div className="session-list__group">
           <span className="session-list__group-label">Running</span>
-          {running.map((s) => (
-            <SessionRow
-              key={s.key}
-              session={s}
-              isSelected={selectedKey === s.key}
-              onSelect={() => selectSession(s.key)}
-            />
-          ))}
+          {running.map((s) => {
+            const idx = sessionIdx++
+            return (
+              <SessionRow
+                key={s.key}
+                session={s}
+                isSelected={selectedKey === s.key}
+                isFocused={focusIndex === idx}
+                dataIndex={idx}
+                onSelect={() => selectSession(s.key)}
+              />
+            )
+          })}
         </div>
       )}
 
       {recent.length > 0 && (
         <div className="session-list__group">
           <span className="session-list__group-label">Recent</span>
-          {recent.map((s) => (
-            <SessionRow
-              key={s.key}
-              session={s}
-              isSelected={selectedKey === s.key}
-              onSelect={() => selectSession(s.key)}
-            />
-          ))}
+          {recent.map((s) => {
+            const idx = sessionIdx++
+            return (
+              <SessionRow
+                key={s.key}
+                session={s}
+                isSelected={selectedKey === s.key}
+                isFocused={focusIndex === idx}
+                dataIndex={idx}
+                onSelect={() => selectSession(s.key)}
+              />
+            )
+          })}
         </div>
       )}
 
