@@ -51,9 +51,9 @@ export function SessionLogViewer(): React.JSX.Element {
           sessionKey: selectedKey,
           limit: PAGE_SIZE,
           offset
-        })) as HistoryMessage[] | { messages?: HistoryMessage[] }
+        })) as { messages: HistoryMessage[] }
 
-        const incoming = Array.isArray(result) ? result : (result?.messages ?? [])
+        const incoming = result?.messages ?? []
         setHasMore(incoming.length >= PAGE_SIZE)
 
         if (prepend) {

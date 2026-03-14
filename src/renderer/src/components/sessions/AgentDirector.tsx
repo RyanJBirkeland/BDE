@@ -39,7 +39,9 @@ export function AgentDirector(): React.JSX.Element {
   const selectedSession = selectedKey
     ? sessions.find((s) => s.key === selectedKey)
     : null
-  const isRunning = selectedSession?.status === 'running'
+  const isRunning = selectedSession
+    ? Date.now() - selectedSession.updatedAt < 5 * 60 * 1000
+    : false
 
   const handleSpawn = useCallback(async (task: string): Promise<void> => {
     if (!task.trim() || spawning) return

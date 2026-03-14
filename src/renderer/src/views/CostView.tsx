@@ -3,13 +3,11 @@ import { invokeTool } from '../lib/rpc'
 
 interface SessionWithTokens {
   key: string
-  status: string
   model: string
-  label: string
-  startedAt: string
-  updatedAt: string
-  inputTokens: number
-  outputTokens: number
+  displayName: string
+  updatedAt: number
+  totalTokens: number
+  contextTokens: number
 }
 
 // Claude Sonnet 4.6 pricing
@@ -24,9 +22,9 @@ function formatCost(cost: number): string {
   return `$${cost.toFixed(4)}`
 }
 
-function isWithinHours(dateStr: string, hours: number): boolean {
+function isWithinHours(updatedAt: number, hours: number): boolean {
   const cutoff = Date.now() - hours * 60 * 60 * 1000
-  return new Date(dateStr).getTime() >= cutoff
+  return updatedAt >= cutoff
 }
 
 export default function CostView(): React.JSX.Element {
@@ -35,9 +33,11 @@ export default function CostView(): React.JSX.Element {
 
   const fetchSessions = useCallback(async () => {
     try {
-      const result = (await invokeTool('sessions_list')) as SessionWithTokens[]
-      const list = Array.isArray(result) ? result : []
-      setSessions(list)
+      const data = (await invokeTool('sessions_list')) as {
+        sessions: SessionWithTokens[]
+        count: number
+      }
+      setSessions(data.sessions ?? [])
     } catch {
       // silently fail — will retry
     } finally {
@@ -52,10 +52,16 @@ export default function CostView(): React.JSX.Element {
   }, [fetchSessions])
 
   const sessionsWithCost = sessions
-    .map((s) => ({
-      ...s,
-      cost: calcCost(s.inputTokens ?? 0, s.outputTokens ?? 0)
-    }))
+    .map((s) => {
+      const inputTokens = s.contextTokens ?? 0
+      const outputTokens = Math.max(0, (s.totalTokens ?? 0) - inputTokens)
+      return {
+        ...s,
+        inputTokens,
+        outputTokens,
+        cost: calcCost(inputTokens, outputTokens)
+      }
+    })
     .sort((a, b) => b.cost - a.cost)
 
   const todaySessions = sessionsWithCost.filter((s) => isWithinHours(s.updatedAt, 24))
@@ -111,11 +117,11 @@ export default function CostView(): React.JSX.Element {
               {sessionsWithCost.map((s) => (
                 <tr key={s.key}>
                   <td className="cost-table__session">
-                    <span className="cost-table__key">{s.label || s.key}</span>
+                    <span className="cost-table__key">{s.displayName || s.key}</span>
                   </td>
                   <td className="cost-table__model">{s.model}</td>
-                  <td className="cost-table__num">{(s.inputTokens ?? 0).toLocaleString()}</td>
-                  <td className="cost-table__num">{(s.outputTokens ?? 0).toLocaleString()}</td>
+                  <td className="cost-table__num">{s.inputTokens.toLocaleString()}</td>
+                  <td className="cost-table__num">{s.outputTokens.toLocaleString()}</td>
                   <td className="cost-table__num cost-table__cost">{formatCost(s.cost)}</td>
                 </tr>
               ))}

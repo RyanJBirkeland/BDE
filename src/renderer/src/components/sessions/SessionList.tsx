@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSessionsStore, AgentSession } from '../../stores/sessions'
 
-function timeAgo(dateStr: string): string {
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+function timeAgo(ts: number): string {
+  const seconds = Math.floor((Date.now() - ts) / 1000)
   if (seconds < 60) return 'just now'
   const minutes = Math.floor(seconds / 60)
   if (minutes < 60) return `${minutes}m ago`
@@ -10,6 +10,8 @@ function timeAgo(dateStr: string): string {
   if (hours < 48) return `${hours}h ago`
   return `${Math.floor(hours / 24)}d ago`
 }
+
+const FIVE_MINUTES = 5 * 60 * 1000
 
 function modelBadgeLabel(model: string): string {
   if (model.includes('opus')) return 'opus'
@@ -27,7 +29,7 @@ function SessionRow({
   isSelected: boolean
   onSelect: () => void
 }): React.JSX.Element {
-  const isRunning = session.status === 'running'
+  const isRunning = Date.now() - session.updatedAt < FIVE_MINUTES
   const killSession = useSessionsStore((s) => s.killSession)
   const [killing, setKilling] = useState(false)
 
@@ -52,7 +54,7 @@ function SessionRow({
     >
       <span className={`session-row__dot ${isRunning ? 'session-row__dot--running' : ''}`} />
       <div className="session-row__info">
-        <span className="session-row__label">{session.label || session.key}</span>
+        <span className="session-row__label">{session.displayName || session.key}</span>
         <span className="session-row__meta">
           <span className="session-row__badge">{modelBadgeLabel(session.model)}</span>
           <span className="session-row__time">{timeAgo(session.updatedAt)}</span>
@@ -87,11 +89,11 @@ export function SessionList(): React.JSX.Element {
     return () => clearInterval(interval)
   }, [fetchSessions])
 
-  const running = sessions.filter((s) => s.status === 'running')
+  const now = Date.now()
+  const running = sessions.filter((s) => now - s.updatedAt < FIVE_MINUTES)
   const recent = sessions.filter((s) => {
-    if (s.status === 'running') return false
-    const age = Date.now() - new Date(s.updatedAt).getTime()
-    return age < 48 * 60 * 60 * 1000
+    if (now - s.updatedAt < FIVE_MINUTES) return false
+    return now - s.updatedAt < 48 * 60 * 60 * 1000
   })
 
   return (

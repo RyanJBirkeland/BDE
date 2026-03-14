@@ -1,11 +1,23 @@
+import { useEffect } from 'react'
 import { Panel, Group, Separator } from 'react-resizable-panels'
 import { SessionList } from '../components/sessions/SessionList'
 import { TaskComposer } from '../components/sessions/TaskComposer'
 import { LiveFeed } from '../components/sessions/LiveFeed'
 import { AgentDirector } from '../components/sessions/AgentDirector'
 import { SessionLogViewer } from '../components/sessions/SessionLogViewer'
+import { useSessionsStore } from '../stores/sessions'
+
+const POLL_INTERVAL = 10_000
 
 export function SessionsView(): React.JSX.Element {
+  const fetchSessions = useSessionsStore((s) => s.fetchSessions)
+
+  useEffect(() => {
+    fetchSessions()
+    const id = setInterval(fetchSessions, POLL_INTERVAL)
+    return () => clearInterval(id)
+  }, [fetchSessions])
+
   return (
     <Group orientation="horizontal" className="sessions-view">
       <Panel id="session-list" defaultSize="15" minSize="12" maxSize="25" className="sessions-view__panel">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Eye, EyeOff, ExternalLink } from 'lucide-react'
 import { useGatewayStore } from '../stores/gateway'
+import { clearConfigCache } from '../lib/rpc'
 import { toast } from '../stores/toasts'
 
 const ACCENT_PRESETS = [
@@ -75,6 +76,7 @@ export default function SettingsView(): React.JSX.Element {
     setSaving(true)
     try {
       await window.api.saveGatewayConfig(url, token)
+      clearConfigCache()
       setDirty(false)
       toast.success('Gateway config saved')
       await reconnect()
@@ -89,25 +91,20 @@ export default function SettingsView(): React.JSX.Element {
     setTesting(true)
     setTestResult(null)
     try {
-      const wsUrl = new URL(url)
-      wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:'
-      const ws = new WebSocket(wsUrl.toString(), ['openclaw', token])
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          ws.close()
-          reject(new Error('timeout'))
-        }, 5000)
-        ws.onopen = (): void => {
-          clearTimeout(timeout)
-          ws.close()
-          resolve()
-        }
-        ws.onerror = (): void => {
-          clearTimeout(timeout)
-          reject(new Error('connection failed'))
-        }
+      const httpUrl = url.replace(/^wss?:\/\//, 'http://').replace(/\/$/, '')
+      const res = await fetch(`${httpUrl}/tools/invoke`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ tool: 'sessions_list', args: {} }),
+        signal: AbortSignal.timeout(5000)
       })
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = (await res.json()) as { ok: boolean }
+      if (!data.ok) throw new Error('Gateway returned ok=false')
 
       setTestResult('success')
       toast.success('Connection successful')

@@ -136,7 +136,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
 
     const sessionItems: Command[] = recentSessions.map((s) => ({
       id: `session-${s.key}`,
-      label: s.label || s.key,
+      label: s.displayName || s.key,
       category: 'session',
       action: () => {
         setView('sessions')

@@ -1,31 +1,54 @@
-import { useGatewayStore } from '../stores/gateway'
+let cachedConfig: { url: string; token: string } | null = null
 
-let rpcId = 0
+async function getConfig(): Promise<{ url: string; token: string }> {
+  if (!cachedConfig) cachedConfig = await window.api.getGatewayConfig()
+  return cachedConfig
+}
 
-export async function invokeTool(tool: string, args: Record<string, unknown> = {}): Promise<unknown> {
-  const client = useGatewayStore.getState().client
-  if (!client) throw new Error('Gateway not connected')
+export function clearConfigCache(): void {
+  cachedConfig = null
+}
 
-  const id = ++rpcId
+export async function invokeTool(
+  tool: string,
+  args: Record<string, unknown> = {}
+): Promise<unknown> {
+  const { url, token } = await getConfig()
 
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      unsub()
-      reject(new Error(`RPC timeout: ${tool}`))
-    }, 30_000)
+  // Convert ws:// to http://
+  const httpUrl = url.replace(/^wss?:\/\//, 'http://').replace(/\/$/, '')
 
-    const unsub = client.onMessage((data) => {
-      const msg = data as { id?: number; result?: unknown; error?: string }
-      if (msg.id !== id) return
-      unsub()
-      clearTimeout(timeout)
-      if (msg.error) {
-        reject(new Error(msg.error))
-      } else {
-        resolve(msg.result)
-      }
-    })
-
-    client.send({ id, tool, args })
+  const res = await fetch(`${httpUrl}/tools/invoke`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ tool, args })
   })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Gateway error ${res.status}: ${err}`)
+  }
+
+  const data = (await res.json()) as {
+    ok: boolean
+    result?: { details?: unknown; content?: { type: string; text: string }[] }
+    error?: string
+  }
+
+  if (!data.ok) throw new Error(data.error ?? 'Gateway returned ok=false')
+
+  // Prefer details (pre-parsed), fall back to parsing content[0].text
+  if (data.result?.details !== undefined) return data.result.details
+  const text = data.result?.content?.[0]?.text
+  if (text) {
+    try {
+      return JSON.parse(text)
+    } catch {
+      return text
+    }
+  }
+  return data.result
 }

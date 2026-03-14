@@ -4,11 +4,15 @@ import { toast } from './toasts'
 
 export interface AgentSession {
   key: string
-  status: 'running' | 'idle' | 'completed' | 'error'
+  sessionId: string
   model: string
-  label: string
-  startedAt: string
-  updatedAt: string
+  displayName: string
+  channel: string
+  lastChannel: string
+  updatedAt: number
+  totalTokens: number
+  contextTokens: number
+  abortedLastRun: boolean
 }
 
 interface SessionsStore {
@@ -39,11 +43,15 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
 
   fetchSessions: async (): Promise<void> => {
     try {
-      const result = (await invokeTool('sessions_list')) as AgentSession[]
-      const sessions = Array.isArray(result) ? result : []
+      const data = (await invokeTool('sessions_list')) as {
+        sessions: AgentSession[]
+        count: number
+      }
+      const sessions = data.sessions ?? []
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000
       set({
         sessions,
-        runningCount: sessions.filter((s) => s.status === 'running').length,
+        runningCount: sessions.filter((s) => s.updatedAt > fiveMinAgo).length,
         loading: false,
         fetchError: null
       })
