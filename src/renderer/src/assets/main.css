@@ -1,64 +1,405 @@
 @import './base.css';
+@import './sessions.css';
+
+/* ── App shell ─────────────────────────────────────────── */
 
 #root {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-shell__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.app-shell__content {
+  flex: 1;
+  min-width: 0;
+  background: var(--bde-bg);
+}
+
+/* ── TitleBar ──────────────────────────────────────────── */
 
 .titlebar {
   height: 32px;
   display: flex;
   align-items: center;
-  padding-left: 80px; /* macOS traffic light spacing */
+  padding-left: 80px;
+  padding-right: 12px;
   background: var(--bde-surface);
   border-bottom: 1px solid var(--bde-border);
   -webkit-app-region: drag;
   flex-shrink: 0;
 }
 
-.titlebar__name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--bde-text-muted);
-  letter-spacing: 0.5px;
-}
-
-.main-content {
+.titlebar__left {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: var(--bde-bg);
+  -webkit-app-region: no-drag;
 }
 
-.main-content__placeholder {
-  color: var(--bde-text-muted);
-  font-size: 16px;
-  font-weight: 500;
+.titlebar__center {
+  flex: 1;
+  text-align: center;
 }
+
+.titlebar__view-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bde-text-muted);
+  letter-spacing: 0.3px;
+}
+
+.titlebar__right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar__repo-select {
+  background: transparent;
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text);
+  font-size: 11px;
+  font-family: var(--bde-font-ui);
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.titlebar__repo-select:hover {
+  border-color: var(--bde-text-muted);
+}
+
+.titlebar__repo-select option {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+}
+
+.titlebar__badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bde-accent);
+  background: rgba(0, 211, 127, 0.1);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.titlebar__cost {
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  color: var(--bde-text-muted);
+}
+
+/* ── ActivityBar ───────────────────────────────────────── */
+
+.activity-bar {
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bde-surface);
+  border-right: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.activity-bar__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 8px;
+  flex: 1;
+}
+
+.activity-bar__item {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.activity-bar__item:hover {
+  color: var(--bde-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.activity-bar__item--active {
+  color: var(--bde-text);
+}
+
+.activity-bar__item--active::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--bde-accent);
+}
+
+.activity-bar__bottom {
+  padding-bottom: 12px;
+}
+
+.activity-bar__status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.activity-bar__status--connected {
+  background: var(--bde-accent);
+  box-shadow: 0 0 6px rgba(0, 211, 127, 0.4);
+}
+
+.activity-bar__status--disconnected {
+  background: var(--bde-text-muted);
+}
+
+/* ── StatusBar ─────────────────────────────────────────── */
 
 .statusbar {
   height: 24px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 12px;
   background: var(--bde-surface);
   border-top: 1px solid var(--bde-border);
   flex-shrink: 0;
 }
 
-.statusbar__indicator {
+.statusbar__left {
+  display: flex;
+  align-items: center;
+}
+
+.statusbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusbar__connection {
   font-size: 12px;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--bde-font-ui);
+  padding: 0;
 }
 
-.statusbar__indicator--connected {
+.statusbar__connection--connected {
   color: var(--bde-accent);
 }
 
-.statusbar__indicator--disconnected {
+.statusbar__connection--disconnected {
   color: var(--bde-text-muted);
+}
+
+.statusbar__connection:hover {
+  opacity: 0.8;
+}
+
+.statusbar__model {
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  color: var(--bde-text-muted);
+}
+
+.statusbar__sessions {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+}
+
+/* ── ViewRouter ────────────────────────────────────────── */
+
+.view-router {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.view-router__placeholder {
+  color: var(--bde-text-muted);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* ── Command Palette ───────────────────────────────────── */
+
+.command-palette__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 80px;
+  z-index: 100;
+}
+
+.command-palette {
+  width: 480px;
+  max-height: 360px;
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.command-palette__input {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--bde-border);
+  color: var(--bde-text);
+  font-size: 14px;
+  font-family: var(--bde-font-ui);
+  outline: none;
+}
+
+.command-palette__input::placeholder {
+  color: var(--bde-text-muted);
+}
+
+.command-palette__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.command-palette__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--bde-text);
+  font-size: 13px;
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: left;
+}
+
+.command-palette__item:hover,
+.command-palette__item--selected {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.command-palette__category {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.command-palette__empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--bde-text-muted);
+  font-size: 13px;
+}
+
+/* ── Shortcuts Overlay ─────────────────────────────────── */
+
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.shortcuts-overlay__panel {
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 300px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.shortcuts-overlay__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.shortcuts-overlay__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcuts-overlay__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.shortcuts-overlay__kbd {
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text-muted);
+}
+
+.shortcuts-overlay__close {
+  margin-top: 20px;
+  width: 100%;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text);
+  font-size: 13px;
+  font-family: var(--bde-font-ui);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.shortcuts-overlay__close:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
