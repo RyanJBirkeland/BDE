@@ -10,6 +10,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Download } from 'lucide-react'
+import { type ModelKey, resolveModel, calcCost } from '../lib/cost'
 
 interface SessionWithTokens {
   key: string
@@ -27,32 +28,12 @@ interface SessionCost extends SessionWithTokens {
   modelKey: ModelKey
 }
 
-type ModelKey = 'haiku' | 'sonnet' | 'opus'
 type SortField = 'cost' | 'inputTokens' | 'outputTokens' | 'updatedAt'
-
-// TODO(audit): pricing is stale — update for Claude 3.5/4.x tiers and add model-version awareness
-const MODEL_PRICING: Record<ModelKey, { input: number; output: number }> = {
-  haiku: { input: 1 / 1_000_000, output: 5 / 1_000_000 },
-  sonnet: { input: 3 / 1_000_000, output: 15 / 1_000_000 },
-  opus: { input: 15 / 1_000_000, output: 75 / 1_000_000 },
-}
 
 const MODEL_COLORS: Record<ModelKey, string> = {
   haiku: '#3B82F6',
   sonnet: '#00D37F',
   opus: '#F59E0B',
-}
-
-function resolveModel(model: string): ModelKey {
-  const m = model.toLowerCase()
-  if (m.includes('haiku')) return 'haiku'
-  if (m.includes('opus')) return 'opus'
-  return 'sonnet'
-}
-
-function calcCost(input: number, output: number, modelKey: ModelKey): number {
-  const p = MODEL_PRICING[modelKey]
-  return input * p.input + output * p.output
 }
 
 function formatCost(cost: number): string {
