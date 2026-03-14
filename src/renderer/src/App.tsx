@@ -10,6 +10,7 @@ import { ToastContainer } from './components/layout/ToastContainer'
 import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
 import { useTaskNotifications } from './hooks/useTaskNotifications'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import SprintView from './views/SprintView'
 import { SessionsView } from './views/SessionsView'
 import MemoryView from './views/MemoryView'
@@ -55,13 +56,16 @@ const SHORTCUTS_RIGHT: { keys: string; description: string }[] = [
 ]
 
 function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
-  if (activeView === 'sessions') return <SessionsView />
-  if (activeView === 'terminal') return <TerminalView />
-  if (activeView === 'sprint') return <SprintView />
-  if (activeView === 'memory') return <MemoryView />
-  if (activeView === 'diff') return <DiffView />
-  if (activeView === 'cost') return <CostView />
-  if (activeView === 'settings') return <SettingsView />
+  const wrap = (name: string, el: React.JSX.Element): React.JSX.Element => (
+    <ErrorBoundary name={name}>{el}</ErrorBoundary>
+  )
+  if (activeView === 'sessions') return wrap('Sessions', <SessionsView />)
+  if (activeView === 'terminal') return wrap('Terminal', <TerminalView />)
+  if (activeView === 'sprint') return wrap('Sprint', <SprintView />)
+  if (activeView === 'memory') return wrap('Memory', <MemoryView />)
+  if (activeView === 'diff') return wrap('Diff', <DiffView />)
+  if (activeView === 'cost') return wrap('Cost', <CostView />)
+  if (activeView === 'settings') return wrap('Settings', <SettingsView />)
   return (
     <div className="view-router">
       <span className="view-router__placeholder">
