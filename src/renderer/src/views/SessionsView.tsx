@@ -3,7 +3,7 @@
  * Left pane: session list with status dots + model badge.
  * Right pane: chat thread for selected session (includes message input).
  */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { SessionList } from '../components/sessions/SessionList'
 import { ChatThread } from '../components/sessions/ChatThread'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -29,14 +29,33 @@ export function SessionsView(): React.JSX.Element {
     }
   }, [sessions, selectedKey, selectSession])
 
+  const [sidebarWidth, setSidebarWidth] = useState(240)
+
   const selectedSession = sessions.find((s) => s.key === selectedKey)
 
   return (
     <div className="sessions-chat">
-      <div className="sessions-chat__sidebar">
+      <div className="sessions-chat__sidebar" style={{ width: sidebarWidth }}>
         <SessionList />
       </div>
-
+      <div
+        className="sessions-view__handle"
+        onMouseDown={(e) => {
+          e.preventDefault()
+          const startX = e.clientX
+          const startW = sidebarWidth
+          const onMove = (ev: MouseEvent): void => {
+            const delta = ev.clientX - startX
+            setSidebarWidth(Math.min(400, Math.max(180, startW + delta)))
+          }
+          const onUp = (): void => {
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onUp)
+          }
+          window.addEventListener('mousemove', onMove)
+          window.addEventListener('mouseup', onUp)
+        }}
+      />
       <div className="sessions-chat__main">
         {selectedKey && selectedSession ? (
           <>

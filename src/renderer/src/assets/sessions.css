@@ -18,8 +18,9 @@
 
 .sessions-view__handle {
   width: 1px;
+  flex-shrink: 0;
   background: var(--bde-border);
-  transition: background 0.15s;
+  transition: background 0.1s;
   cursor: col-resize;
 }
 
@@ -961,7 +962,7 @@
 
 /* ── Sessions Chat Layout ────────────────────────────── */
 .sessions-chat { display: flex; width: 100%; height: 100%; }
-.sessions-chat__sidebar { width: 240px; flex-shrink: 0; overflow: hidden; }
+.sessions-chat__sidebar { flex-shrink: 0; overflow: hidden; }
 .sessions-chat__main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bde-bg); }
 .sessions-chat__header { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--bde-border); flex-shrink: 0; }
 .sessions-chat__session-name { font-size: 13px; font-weight: 600; color: var(--bde-text); font-family: var(--bde-font-code); }
