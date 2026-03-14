@@ -978,6 +978,7 @@
 .chat-msg--user { align-self: flex-end; align-items: flex-end; }
 .chat-msg--assistant { align-self: flex-start; align-items: flex-start; }
 .chat-msg--system { align-self: center; align-items: center; max-width: 90%; }
+.chat-msg--tool { align-self: flex-start; max-width: 90%; padding: 2px 0; }
 .chat-msg__bubble { padding: 8px 12px; border-radius: 12px; font-size: 13px; font-family: var(--bde-font-ui); line-height: 1.5; word-break: break-word; }
 .chat-msg__bubble--user { background: var(--bde-accent); color: #000; }
 .chat-msg__bubble--assistant { background: var(--bde-surface); color: var(--bde-text-muted); border: 1px solid var(--bde-border); }

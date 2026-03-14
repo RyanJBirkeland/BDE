@@ -101,6 +101,7 @@ export function ChatThread({ sessionKey, refreshTrigger }: Props): React.JSX.Ele
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedMsgs, setExpandedMsgs] = useState<Set<number>>(new Set())
+  const [expandedTools, setExpandedTools] = useState<Set<number>>(new Set())
   const [streaming, setStreaming] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const userScrolledUp = useRef(false)
@@ -210,6 +211,7 @@ export function ChatThread({ sessionKey, refreshTrigger }: Props): React.JSX.Ele
     setMessages([])
     setLoading(true)
     setExpandedMsgs(new Set())
+    setExpandedTools(new Set())
     setStreaming(false)
     messagesRef.current = []
     lastCountRef.current = 0
@@ -283,8 +285,16 @@ export function ChatThread({ sessionKey, refreshTrigger }: Props): React.JSX.Ele
     })
   }, [])
 
-  // Filter out tool messages for chat display
-  const visibleMessages = messages.filter((m) => m.role !== 'tool')
+  const toggleTool = useCallback((idx: number) => {
+    setExpandedTools((prev) => {
+      const n = new Set(prev)
+      n.has(idx) ? n.delete(idx) : n.add(idx)
+      return n
+    })
+  }, [])
+
+  // Show all messages including tool calls
+  const visibleMessages = messages
   const lastAssistantVisibleIdx = streaming
     ? visibleMessages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1)
     : -1
@@ -309,6 +319,21 @@ export function ChatThread({ sessionKey, refreshTrigger }: Props): React.JSX.Ele
             return (
               <div key={idx} className="chat-msg chat-msg--system">
                 <span className="chat-msg__text">{msg.content}</span>
+              </div>
+            )
+          }
+
+          if (msg.role === 'tool') {
+            return (
+              <div key={idx} className="chat-msg chat-msg--tool">
+                <button className="log-msg__tool-toggle" onClick={() => toggleTool(idx)}>
+                  <span className="log-msg__tool-arrow">{expandedTools.has(idx) ? '▾' : '▸'}</span>
+                  <span className="log-msg__tool-name">{msg.toolName || 'tool'}</span>
+                  <span className="log-msg__tool-preview">{msg.content.slice(0, 80)}</span>
+                </button>
+                {expandedTools.has(idx) && (
+                  <pre className="log-msg__tool-args">{msg.content}</pre>
+                )}
               </div>
             )
           }
