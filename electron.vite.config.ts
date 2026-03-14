@@ -17,6 +17,9 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
+    optimizeDeps: {
+      include: ['xterm', 'xterm-addon-fit', 'xterm-addon-web-links']
+    },
     plugins: [react()]
   }
 })

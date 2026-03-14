@@ -46,7 +46,26 @@ const api = {
 
   // Gateway tool invocation — proxied through main process to avoid CORS
   invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
-    ipcRenderer.invoke('gateway:invoke', tool, args ?? {})
+    ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),
+
+  // Terminal PTY
+  terminal: {
+    create: (opts: { cols: number; rows: number }): Promise<number> =>
+      ipcRenderer.invoke('terminal:create', opts),
+    write: (id: number, data: string): void =>
+      ipcRenderer.send('terminal:write', { id, data }),
+    resize: (id: number, cols: number, rows: number): Promise<void> =>
+      ipcRenderer.invoke('terminal:resize', { id, cols, rows }),
+    kill: (id: number): Promise<void> => ipcRenderer.invoke('terminal:kill', id),
+    onData: (id: number, cb: (data: string) => void): (() => void) => {
+      const listener = (_: unknown, data: string): void => cb(data)
+      ipcRenderer.on('terminal:data:' + id, listener)
+      return () => ipcRenderer.removeListener('terminal:data:' + id, listener)
+    },
+    onExit: (id: number, cb: () => void): void => {
+      ipcRenderer.once('terminal:exit:' + id, cb)
+    }
+  }
 }
 
 if (process.contextIsolated) {

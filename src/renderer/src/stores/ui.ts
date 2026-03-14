@@ -1,11 +1,6 @@
-/**
- * UI store — global navigation state.
- * Tracks the active view (sessions/sprint/diff/memory/cost/settings) and
- * the repo filter used by sprint and diff views.
- */
 import { create } from 'zustand'
 
-export type View = 'sessions' | 'sprint' | 'diff' | 'memory' | 'cost' | 'settings'
+export type View = 'sessions' | 'terminal' | 'sprint' | 'diff' | 'memory' | 'cost' | 'settings'
 export type RepoFilter = 'all' | 'life-os' | 'feast'
 
 interface UIStore {

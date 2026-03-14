@@ -32,8 +32,18 @@ declare global {
       gitBranches: (cwd: string) => Promise<{ current: string; branches: string[] }>
       gitCheckout: (cwd: string, branch: string) => Promise<void>
 
-      // Gateway tool invocation — proxied through main to avoid CORS
+      // Gateway RPC
       invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
+
+      // Terminal PTY
+      terminal: {
+        create: (opts: { cols: number; rows: number }) => Promise<number>
+        write: (id: number, data: string) => void
+        resize: (id: number, cols: number, rows: number) => Promise<void>
+        kill: (id: number) => Promise<void>
+        onData: (id: number, cb: (data: string) => void) => () => void
+        onExit: (id: number, cb: () => void) => void
+      }
     }
   }
 }
