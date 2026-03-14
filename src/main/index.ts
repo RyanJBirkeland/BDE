@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getGatewayConfig, getGitHubToken } from './config'
 import { getRepoPaths, readSprintMd } from './git'
+import { registerFsHandlers } from './fs'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -57,7 +58,8 @@ app.whenReady().then(() => {
   ipcMain.handle('get-github-token', () => getGitHubToken())
   ipcMain.handle('get-repo-paths', () => getRepoPaths())
   ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
-  ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))
+  ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url)),
+  registerFsHandlers()
 
   createWindow()
 
