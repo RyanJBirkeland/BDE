@@ -8,10 +8,10 @@
 :root {
   /* Colors */
   --bde-bg: #0A0A0A;
-  --bde-surface: #111111;
-  --bde-surface-high: #1A1A1A;
-  --bde-border: #2A2A2A;
-  --bde-border-hover: #3A3A3A;
+  --bde-surface: #141414;
+  --bde-surface-high: #1E1E1E;
+  --bde-border: #333333;
+  --bde-border-hover: #444444;
   --bde-accent: #00D37F;
   --bde-accent-dim: rgba(0, 211, 127, 0.15);
   --bde-text: #E8E8E8;
@@ -91,4 +91,21 @@ body {
 
 code {
   font-family: var(--bde-font-code);
+}
+
+/* ── Light theme ──────────────────────────────────────── */
+
+html.theme-light {
+  --bde-bg: #F5F5F5;
+  --bde-surface: #FFFFFF;
+  --bde-surface-high: #F0F0F0;
+  --bde-border: #DDDDDD;
+  --bde-border-hover: #BBBBBB;
+  --bde-accent: #00A863;
+  --bde-accent-dim: rgba(0, 168, 99, 0.15);
+  --bde-text: #111111;
+  --bde-text-muted: #555555;
+  --bde-text-dim: #999999;
+  --bde-danger: #DC2626;
+  --bde-danger-dim: rgba(220, 38, 38, 0.1);
 }

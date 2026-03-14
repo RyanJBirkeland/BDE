@@ -1,4 +1,6 @@
+import { Sun, Moon } from 'lucide-react'
 import { useUIStore, type RepoFilter, type View } from '../../stores/ui'
+import { useThemeStore } from '../../stores/theme'
 import { Badge } from '../ui/Badge'
 
 const VIEW_LABELS: Record<View, string> = {
@@ -25,6 +27,8 @@ export function TitleBar({ sessionCount, totalCost }: TitleBarProps): React.JSX.
   const activeView = useUIStore((s) => s.activeView)
   const repoFilter = useUIStore((s) => s.repoFilter)
   const setRepoFilter = useUIStore((s) => s.setRepoFilter)
+  const theme = useThemeStore((s) => s.theme)
+  const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
   return (
     <div className="titlebar">
@@ -51,6 +55,9 @@ export function TitleBar({ sessionCount, totalCost }: TitleBarProps): React.JSX.
           <Badge variant="success" size="sm">{sessionCount} active</Badge>
         )}
         <span className="titlebar__cost">${totalCost.toFixed(2)}</span>
+        <button className="bde-btn bde-btn--icon bde-btn--sm" onClick={toggleTheme} title="Toggle theme">
+          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+        </button>
       </div>
     </div>
   )

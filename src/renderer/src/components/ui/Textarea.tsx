@@ -7,7 +7,6 @@ type TextareaProps = {
   placeholder?: string
   disabled?: boolean
   className?: string
-  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
 }
 
 export function Textarea({
@@ -17,7 +16,6 @@ export function Textarea({
   placeholder,
   disabled = false,
   className,
-  onKeyDown,
 }: TextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null)
 

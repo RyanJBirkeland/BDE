@@ -1,10 +1,10 @@
 export const tokens = {
   color: {
     bg: '#0A0A0A',
-    surface: '#111111',
-    surfaceHigh: '#1A1A1A',
-    border: '#2A2A2A',
-    borderHover: '#3A3A3A',
+    surface: '#141414',
+    surfaceHigh: '#1E1E1E',
+    border: '#333333',
+    borderHover: '#444444',
     accent: '#00D37F',
     accentDim: 'rgba(0, 211, 127, 0.15)',
     text: '#E8E8E8',
