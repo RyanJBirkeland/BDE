@@ -966,7 +966,7 @@
 .sessions-chat__header { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--bde-border); flex-shrink: 0; }
 .sessions-chat__session-name { font-size: 13px; font-weight: 600; color: var(--bde-text); font-family: var(--bde-font-code); }
 .sessions-chat__thread { flex: 1; min-height: 0; overflow: hidden; }
-.sessions-chat__input { flex-shrink: 0; border-top: 1px solid var(--bde-border); }
+.sessions-chat__input { flex-shrink: 0; }
 
 /* ── Chat Thread ─────────────────────────────────────── */
 .chat-thread { height: 100%; display: flex; flex-direction: column; position: relative; }
@@ -993,7 +993,7 @@
 @keyframes bde-pulse { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
 
 /* ── Chat Scroll-to-latest Button ────────────────────── */
-.chat-thread__scroll-btn { position: absolute; bottom: 12px; right: 16px; z-index: 2; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+.chat-thread__scroll-btn { position: absolute; bottom: 72px; right: 16px; z-index: 2; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
 
 /* ── Assistant Message: Code Blocks & Collapsible ────── */
 .chat-msg__text--rich { white-space: pre-wrap; }
@@ -1006,6 +1006,6 @@
 .chat-msg__expand-label { font-size: 11px; color: var(--bde-accent); font-weight: 500; }
 
 /* ── Message Input ───────────────────────────────────── */
-.message-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; }
+.message-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; flex-shrink: 0; border-top: 1px solid var(--bde-border); }
 .message-input__textarea { flex: 1; min-height: 36px; max-height: 120px; }
 .message-input__send { flex-shrink: 0; margin-bottom: 1px; }

@@ -4,6 +4,7 @@ import { useUIStore } from '../../stores/ui'
 import { toast } from '../../stores/toasts'
 import { EmptyState } from '../ui/EmptyState'
 import { Spinner } from '../ui/Spinner'
+import { MessageInput } from './MessageInput'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
@@ -96,11 +97,11 @@ const STREAMING_THRESHOLD = 15_000
 interface Props {
   sessionKey: string
   updatedAt?: number
-  refreshTrigger: number
 }
 
-export function ChatThread({ sessionKey, updatedAt, refreshTrigger }: Props): React.JSX.Element {
+export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedMsgs, setExpandedMsgs] = useState<Set<number>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -156,12 +157,14 @@ export function ChatThread({ sessionKey, updatedAt, refreshTrigger }: Props): Re
         messagesRef.current = [...messagesRef.current, ...newMessages]
         lastCountRef.current = incoming.length
         setMessages([...messagesRef.current])
+        setOptimisticMessages([])
         if (isNearBottom()) scrollToBottom()
       } else if (incoming.length < lastCountRef.current) {
         // Session was reset or messages were cleared
         messagesRef.current = incoming
         lastCountRef.current = incoming.length
         setMessages([...incoming])
+        setOptimisticMessages([])
       }
       setLoading(false)
     } catch {
@@ -179,6 +182,7 @@ export function ChatThread({ sessionKey, updatedAt, refreshTrigger }: Props): Re
   // Initial fetch + adaptive poll
   useEffect(() => {
     setMessages([])
+    setOptimisticMessages([])
     setLoading(true)
     setExpandedMsgs(new Set())
     messagesRef.current = []
@@ -200,12 +204,20 @@ export function ChatThread({ sessionKey, updatedAt, refreshTrigger }: Props): Re
     }
   }, [sessionKey, pollInterval]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refresh on send
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      poll()
-    }
-  }, [refreshTrigger]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Optimistic send handlers
+  const handleBeforeSend = useCallback((message: string) => {
+    const optimistic: ChatMessage = { role: 'user', content: message, timestamp: Date.now() }
+    setOptimisticMessages((prev) => [...prev, optimistic])
+    scrollToBottom()
+  }, [scrollToBottom])
+
+  const handleSent = useCallback(() => {
+    poll()
+  }, [poll])
+
+  const handleSendError = useCallback(() => {
+    setOptimisticMessages((prev) => prev.slice(0, -1))
+  }, [])
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
@@ -252,8 +264,8 @@ export function ChatThread({ sessionKey, updatedAt, refreshTrigger }: Props): Re
     })
   }, [])
 
-  // Filter out tool messages for chat display
-  const visibleMessages = messages.filter((m) => m.role !== 'tool')
+  // Filter out tool messages for chat display, append optimistic messages
+  const visibleMessages = [...messages.filter((m) => m.role !== 'tool'), ...optimisticMessages]
 
   if (loading && visibleMessages.length === 0) {
     return (
@@ -332,6 +344,13 @@ export function ChatThread({ sessionKey, updatedAt, refreshTrigger }: Props): Re
           New messages
         </button>
       )}
+
+      <MessageInput
+        sessionKey={sessionKey}
+        onSent={handleSent}
+        onBeforeSend={handleBeforeSend}
+        onSendError={handleSendError}
+      />
     </div>
   )
 }

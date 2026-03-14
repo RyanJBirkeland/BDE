@@ -1,12 +1,11 @@
 /**
  * SessionsView — two-pane chat interface for agent sessions.
  * Left pane: session list with status dots + model badge.
- * Right pane: chat thread for selected session + message input.
+ * Right pane: chat thread for selected session (includes message input).
  */
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect } from 'react'
 import { SessionList } from '../components/sessions/SessionList'
 import { ChatThread } from '../components/sessions/ChatThread'
-import { MessageInput } from '../components/sessions/MessageInput'
 import { EmptyState } from '../components/ui/EmptyState'
 import { useSessionsStore } from '../stores/sessions'
 
@@ -17,8 +16,6 @@ export function SessionsView(): React.JSX.Element {
   const selectedKey = useSessionsStore((s) => s.selectedSessionKey)
   const selectSession = useSessionsStore((s) => s.selectSession)
   const fetchSessions = useSessionsStore((s) => s.fetchSessions)
-
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
     fetchSessions()
@@ -31,10 +28,6 @@ export function SessionsView(): React.JSX.Element {
       selectSession(sessions[0].key)
     }
   }, [sessions, selectedKey, selectSession])
-
-  const handleSent = useCallback(() => {
-    setRefreshTrigger((n) => n + 1)
-  }, [])
 
   const selectedSession = sessions.find((s) => s.key === selectedKey)
 
@@ -56,11 +49,7 @@ export function SessionsView(): React.JSX.Element {
               <ChatThread
                 sessionKey={selectedKey}
                 updatedAt={selectedSession.updatedAt}
-                refreshTrigger={refreshTrigger}
               />
-            </div>
-            <div className="sessions-chat__input">
-              <MessageInput sessionKey={selectedKey} onSent={handleSent} />
             </div>
           </>
         ) : (

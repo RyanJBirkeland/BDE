@@ -8,10 +8,12 @@ import { Spinner } from '../ui/Spinner'
 interface Props {
   sessionKey: string
   onSent: () => void
+  onBeforeSend?: (message: string) => void
+  onSendError?: () => void
   disabled?: boolean
 }
 
-export function MessageInput({ sessionKey, onSent, disabled = false }: Props): React.JSX.Element {
+export function MessageInput({ sessionKey, onSent, onBeforeSend, onSendError, disabled = false }: Props): React.JSX.Element {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -20,19 +22,22 @@ export function MessageInput({ sessionKey, onSent, disabled = false }: Props): R
     if (!trimmed || sending) return
 
     setSending(true)
+    setText('')
+    onBeforeSend?.(trimmed)
+
     try {
       await invokeTool('sessions_send', {
         sessionKey,
         message: trimmed
       })
-      setText('')
       onSent()
     } catch {
       toast.error('Failed to send message')
+      onSendError?.()
     } finally {
       setSending(false)
     }
-  }, [text, sending, sessionKey, onSent])
+  }, [text, sending, sessionKey, onSent, onBeforeSend, onSendError])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
