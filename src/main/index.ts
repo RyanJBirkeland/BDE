@@ -3,6 +3,9 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getGatewayConfig, getGitHubToken, saveGatewayConfig } from './config'
+// node-pty loaded lazily to avoid crashing main process if native module fails
+let pty: typeof import('node-pty') | null = null
+try { pty = require('node-pty') } catch { /* terminal unavailable */ }
 import {
   getRepoPaths,
   readSprintMd,
@@ -65,51 +68,33 @@ app.whenReady().then(() => {
   try {
     gatewayConfig = getGatewayConfig()
   } catch {
-    return // getGatewayConfig shows error dialog and quits
+    return
   }
 
-  // Return cached gateway URL + token
   ipcMain.handle('get-gateway-config', () => gatewayConfig)
-  // Read GitHub token from openclaw.json or GITHUB_TOKEN env
   ipcMain.handle('get-github-token', () => getGitHubToken())
-  // Persist new gateway URL + token to ~/.openclaw/openclaw.json
   ipcMain.handle('save-gateway-config', (_e, url: string, token: string) => {
     saveGatewayConfig(url, token)
     gatewayConfig = { url, token }
   })
-  // Return hardcoded repo name → path map (BDE, life-os, feast)
   ipcMain.handle('get-repo-paths', () => getRepoPaths())
-  // Read SPRINT.md from a given repo root
   ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
-  // Open a URL in the system browser
   ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))
-  // Register memory file-system handlers (list, read, write)
   registerFsHandlers()
 
   // --- Git read-only IPC ---
-  // Get diff between current branch and base (defaults to origin/main)
   ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
-  // Get current branch name
   ipcMain.handle('get-branch', (_e, repoPath: string) => getBranch(repoPath))
-  // Get recent commit log (oneline format, last n commits)
   ipcMain.handle('get-log', (_e, repoPath: string, n?: number) => getLog(repoPath, n))
 
-  // --- Git client IPC (stage, commit, push) ---
-  // Parse git status --porcelain into structured file list
+  // --- Git client IPC ---
   ipcMain.handle('git:status', (_e, cwd: string) => gitStatus(cwd))
-  // Get combined staged + unstaged diff, optionally for a single file
   ipcMain.handle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(cwd, file))
-  // Stage files for commit
   ipcMain.handle('git:stage', (_e, cwd: string, files: string[]) => gitStage(cwd, files))
-  // Unstage files (git reset HEAD)
   ipcMain.handle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(cwd, files))
-  // Create a commit with the given message
   ipcMain.handle('git:commit', (_e, cwd: string, message: string) => gitCommit(cwd, message))
-  // Push current branch to remote
   ipcMain.handle('git:push', (_e, cwd: string) => gitPush(cwd))
-  // List all local branches and identify the current one
   ipcMain.handle('git:branches', (_e, cwd: string) => gitBranches(cwd))
-  // Switch to a different branch
   ipcMain.handle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(cwd, branch))
 
   // --- Gateway tool invocation (proxied through main to avoid CORS) ---
@@ -119,14 +104,58 @@ app.whenReady().then(() => {
     const res = await fetch(`${httpUrl}/tools/invoke`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ tool, args }),
+      body: JSON.stringify({ tool, args })
     })
     if (!res.ok) throw new Error(`Gateway error ${res.status}: ${await res.text()}`)
     return res.json()
   })
 
+  // --- Terminal PTY IPC ---
+  const terminals = new Map<number, ReturnType<NonNullable<typeof pty>['spawn']>>()
+  let termId = 0
+
+  ipcMain.handle(
+    'terminal:create',
+    (_e, { cols, rows }: { cols: number; rows: number }) => {
+      if (!pty) throw new Error('Terminal unavailable: node-pty failed to load')
+      const id = ++termId
+      const shellPath = process.env.SHELL || '/bin/zsh'
+      const p = pty.spawn(shellPath, [], {
+        name: 'xterm-256color',
+        cols,
+        rows,
+        cwd: process.env.HOME || '/',
+        env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>
+      })
+      terminals.set(id, p)
+      p.onData((data) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send(`terminal:data:${id}`, data)
+      })
+      p.onExit(() => {
+        terminals.delete(id)
+        BrowserWindow.getAllWindows()[0]?.webContents.send(`terminal:exit:${id}`)
+      })
+      return id
+    }
+  )
+
+  ipcMain.on('terminal:write', (_e, { id, data }: { id: number; data: string }) => {
+    terminals.get(id)?.write(data)
+  })
+
+  ipcMain.handle(
+    'terminal:resize',
+    (_e, { id, cols, rows }: { id: number; cols: number; rows: number }) => {
+      terminals.get(id)?.resize(cols, rows)
+    }
+  )
+
+  ipcMain.handle('terminal:kill', (_e, id: number) => {
+    terminals.get(id)?.kill()
+    terminals.delete(id)
+  })
+
   // --- Window management ---
-  // Set the window title bar text
   ipcMain.on('set-title', (_e, title: string) => {
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     if (win) win.setTitle(title)
