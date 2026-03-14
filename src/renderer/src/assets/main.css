@@ -1,0 +1,64 @@
+@import './base.css';
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+.titlebar {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding-left: 80px; /* macOS traffic light spacing */
+  background: var(--bde-surface);
+  border-bottom: 1px solid var(--bde-border);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+}
+
+.titlebar__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  letter-spacing: 0.5px;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bde-bg);
+}
+
+.main-content__placeholder {
+  color: var(--bde-text-muted);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.statusbar {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bde-surface);
+  border-top: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.statusbar__indicator {
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusbar__indicator--connected {
+  color: var(--bde-accent);
+}
+
+.statusbar__indicator--disconnected {
+  color: var(--bde-text-muted);
+}
