@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import { dialog, app } from 'electron'
@@ -19,6 +19,21 @@ export function getGitHubToken(): string | null {
   }
 }
 
+export function saveGatewayConfig(url: string, token: string): void {
+  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
+
+  let config: Record<string, unknown> = {}
+  try {
+    config = JSON.parse(readFileSync(configPath, 'utf-8'))
+  } catch {
+    // start fresh if file missing or corrupt
+  }
+
+  config.gatewayUrl = url
+  config.gatewayToken = token
+  writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8')
+}
+
 export function getGatewayConfig(): GatewayConfig {
   const configPath = join(homedir(), '.openclaw', 'openclaw.json')
 
@@ -26,8 +41,8 @@ export function getGatewayConfig(): GatewayConfig {
     const raw = readFileSync(configPath, 'utf-8')
     const config = JSON.parse(raw)
 
-    const token = config.gatewayToken
-    const url = config.gatewayUrl ?? 'ws://127.0.0.1:18789'
+    const token = config.gatewayToken ?? config.gateway?.auth?.token
+    const url = config.gatewayUrl ?? `ws://127.0.0.1:${config.gateway?.port ?? 18789}`
 
     if (!token) {
       dialog.showErrorBox(
