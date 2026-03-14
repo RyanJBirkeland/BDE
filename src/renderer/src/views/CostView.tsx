@@ -1,3 +1,9 @@
+/**
+ * CostView — token cost analytics dashboard.
+ * Fetches session data via gateway RPC (sessions_list) and computes costs
+ * using hardcoded Claude model pricing. Displays: 7-day spend bar chart,
+ * model breakdown donut, sortable per-session table, and CSV export. Polls every 30s.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { invokeTool } from '../lib/rpc'
 import { Spinner } from '../components/ui/Spinner'

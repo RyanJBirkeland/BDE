@@ -1,3 +1,8 @@
+/**
+ * Chat store — session-scoped message history.
+ * Stores LogLine arrays keyed by session key, used by LiveFeed to display
+ * real-time agent output per session.
+ */
 import { create } from 'zustand'
 
 export interface LogLine {

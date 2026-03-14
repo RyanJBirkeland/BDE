@@ -1,3 +1,8 @@
+/**
+ * SessionsView — multi-panel workspace for agent session management.
+ * Displays session list, task composer, live feed, agent director, and log viewer.
+ * Fetches session data from the gateway via useSessionsStore (polls every 10s).
+ */
 import { useEffect } from 'react'
 import { Panel, Group, Separator } from 'react-resizable-panels'
 import { SessionList } from '../components/sessions/SessionList'

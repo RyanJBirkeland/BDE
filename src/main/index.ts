@@ -60,7 +60,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // Load gateway config and expose via IPC
+  // --- Configuration IPC ---
   let gatewayConfig: { url: string; token: string }
   try {
     gatewayConfig = getGatewayConfig()
@@ -68,33 +68,52 @@ app.whenReady().then(() => {
     return // getGatewayConfig shows error dialog and quits
   }
 
+  // Return cached gateway URL + token
   ipcMain.handle('get-gateway-config', () => gatewayConfig)
+  // Read GitHub token from openclaw.json or GITHUB_TOKEN env
   ipcMain.handle('get-github-token', () => getGitHubToken())
+  // Persist new gateway URL + token to ~/.openclaw/openclaw.json
   ipcMain.handle('save-gateway-config', (_e, url: string, token: string) => {
     saveGatewayConfig(url, token)
     gatewayConfig = { url, token }
   })
+  // Return hardcoded repo name → path map (BDE, life-os, feast)
   ipcMain.handle('get-repo-paths', () => getRepoPaths())
+  // Read SPRINT.md from a given repo root
   ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
+  // Open a URL in the system browser
   ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))
+  // Register memory file-system handlers (list, read, write)
   registerFsHandlers()
 
-  // Git IPC handlers
+  // --- Git read-only IPC ---
+  // Get diff between current branch and base (defaults to origin/main)
   ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
+  // Get current branch name
   ipcMain.handle('get-branch', (_e, repoPath: string) => getBranch(repoPath))
+  // Get recent commit log (oneline format, last n commits)
   ipcMain.handle('get-log', (_e, repoPath: string, n?: number) => getLog(repoPath, n))
 
-  // Git client IPC handlers
+  // --- Git client IPC (stage, commit, push) ---
+  // Parse git status --porcelain into structured file list
   ipcMain.handle('git:status', (_e, cwd: string) => gitStatus(cwd))
+  // Get combined staged + unstaged diff, optionally for a single file
   ipcMain.handle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(cwd, file))
+  // Stage files for commit
   ipcMain.handle('git:stage', (_e, cwd: string, files: string[]) => gitStage(cwd, files))
+  // Unstage files (git reset HEAD)
   ipcMain.handle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(cwd, files))
+  // Create a commit with the given message
   ipcMain.handle('git:commit', (_e, cwd: string, message: string) => gitCommit(cwd, message))
+  // Push current branch to remote
   ipcMain.handle('git:push', (_e, cwd: string) => gitPush(cwd))
+  // List all local branches and identify the current one
   ipcMain.handle('git:branches', (_e, cwd: string) => gitBranches(cwd))
+  // Switch to a different branch
   ipcMain.handle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(cwd, branch))
 
-  // Window title
+  // --- Window management ---
+  // Set the window title bar text
   ipcMain.on('set-title', (_e, title: string) => {
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     if (win) win.setTitle(title)

@@ -1,3 +1,8 @@
+/**
+ * Sessions store — agent session lifecycle management.
+ * Fetches session list from the gateway via RPC (sessions_list), tracks
+ * selection state, and provides spawn/run/kill actions for agent sessions.
+ */
 import { create } from 'zustand'
 import { invokeTool } from '../lib/rpc'
 import { toast } from './toasts'
