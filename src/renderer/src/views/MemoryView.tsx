@@ -63,13 +63,19 @@ export default function MemoryView(): React.JSX.Element {
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [content, setContent] = useState('')
   const [savedContent, setSavedContent] = useState('')
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [newFilePrompt, setNewFilePrompt] = useState(false)
   const [newFileName, setNewFileName] = useState('')
   const editorRef = useRef<HTMLTextAreaElement>(null)
 
   const loadFiles = useCallback(async () => {
-    const result = await window.api.listMemoryFiles()
-    setFiles(result)
+    try {
+      const result = await window.api.listMemoryFiles()
+      setFiles(result)
+      setLoadError(null)
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Failed to load memory files')
+    }
   }, [])
 
   useEffect(() => {
@@ -77,10 +83,14 @@ export default function MemoryView(): React.JSX.Element {
   }, [loadFiles])
 
   const openFile = useCallback(async (path: string) => {
-    const text = await window.api.readMemoryFile(path)
-    setSelectedPath(path)
-    setContent(text)
-    setSavedContent(text)
+    try {
+      const text = await window.api.readMemoryFile(path)
+      setSelectedPath(path)
+      setContent(text)
+      setSavedContent(text)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to open file')
+    }
   }, [])
 
   const saveFile = useCallback(async () => {
@@ -160,6 +170,10 @@ export default function MemoryView(): React.JSX.Element {
               autoFocus
             />
           </div>
+        )}
+
+        {loadError && (
+          <div className="memory-sidebar__error">{loadError}</div>
         )}
 
         <div className="memory-sidebar__list">

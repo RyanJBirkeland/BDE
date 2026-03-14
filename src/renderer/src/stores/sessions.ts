@@ -15,6 +15,8 @@ interface SessionsStore {
   sessions: AgentSession[]
   selectedSessionKey: string | null
   runningCount: number
+  loading: boolean
+  fetchError: string | null
   fetchSessions: () => Promise<void>
   selectSession: (key: string | null) => void
   spawnSession: (params: {
@@ -30,6 +32,8 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   sessions: [],
   selectedSessionKey: null,
   runningCount: 0,
+  loading: true,
+  fetchError: null,
 
   fetchSessions: async (): Promise<void> => {
     try {
@@ -37,9 +41,12 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
       const sessions = Array.isArray(result) ? result : []
       set({
         sessions,
-        runningCount: sessions.filter((s) => s.status === 'running').length
+        runningCount: sessions.filter((s) => s.status === 'running').length,
+        loading: false,
+        fetchError: null
       })
     } catch {
+      set({ loading: false, fetchError: 'Could not reach gateway' })
       toast.error('Failed to fetch sessions')
     }
   },
