@@ -111,7 +111,7 @@ function App(): React.JSX.Element {
 
       if (e.metaKey && e.key === 'r') {
         e.preventDefault()
-        // Refresh placeholder — will be wired to real data later
+        window.dispatchEvent(new CustomEvent('bde:refresh'))
         return
       }
 
