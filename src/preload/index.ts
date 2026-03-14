@@ -15,7 +15,12 @@ const api = {
   readMemoryFile: (path: string): Promise<string> =>
     ipcRenderer.invoke('read-memory-file', path),
   writeMemoryFile: (path: string, content: string): Promise<void> =>
-    ipcRenderer.invoke('write-memory-file', path, content)
+    ipcRenderer.invoke('write-memory-file', path, content),
+  getDiff: (repoPath: string, base?: string): Promise<string> =>
+    ipcRenderer.invoke('get-diff', repoPath, base),
+  getBranch: (repoPath: string): Promise<string> => ipcRenderer.invoke('get-branch', repoPath),
+  getLog: (repoPath: string, n?: number): Promise<string> =>
+    ipcRenderer.invoke('get-log', repoPath, n)
 }
 
 if (process.contextIsolated) {

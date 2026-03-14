@@ -14,7 +14,9 @@ declare global {
       >
       readMemoryFile: (path: string) => Promise<string>
       writeMemoryFile: (path: string, content: string) => Promise<void>
-          getDiff: (repoPath: string, base?: string) => Promise<string>
+          getDiff: (repoPath: string, base?: string) => Promise<string>,
+      openExternal: (url: string) => Promise<void>
+      getDiff: (repoPath: string, base?: string) => Promise<string>
       getBranch: (repoPath: string) => Promise<string>
       getLog: (repoPath: string, n?: number) => Promise<string>
     }

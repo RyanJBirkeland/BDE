@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getGatewayConfig, getGitHubToken } from './config'
-import { getRepoPaths, readSprintMd } from './git'
+import { getRepoPaths, readSprintMd, getDiff, getBranch, getLog } from './git'
 import { registerFsHandlers } from './fs'
 
 function createWindow(): void {
@@ -60,6 +60,12 @@ app.whenReady().then(() => {
   ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
   ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url)),
   registerFsHandlers()
+
+  // Git IPC handlers
+  ipcMain.handle('get-repo-paths', () => getRepoPaths())
+  ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
+  ipcMain.handle('get-branch', (_e, repoPath: string) => getBranch(repoPath))
+  ipcMain.handle('get-log', (_e, repoPath: string, n?: number) => getLog(repoPath, n))
 
   createWindow()
 

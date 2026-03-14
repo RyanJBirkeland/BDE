@@ -9,6 +9,7 @@ import { CommandPalette } from './components/layout/CommandPalette'
 import SprintView from './views/SprintView'
 import { SessionsView } from './views/SessionsView'
 import MemoryView from './views/MemoryView'
+import DiffView from './views/DiffView'
 
 const VIEW_ORDER: View[] = ['sessions', 'sprint', 'diff', 'memory', 'settings']
 
@@ -23,6 +24,7 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
   if (activeView === 'sessions') return <SessionsView />
   if (activeView === 'sprint') return <SprintView />
   if (activeView === 'memory') return <MemoryView />
+  if (activeView === 'diff') return <DiffView />
   return (
     <div className="view-router">
       <span className="view-router__placeholder">
