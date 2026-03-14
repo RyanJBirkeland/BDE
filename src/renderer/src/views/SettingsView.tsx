@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Eye, EyeOff, ExternalLink } from 'lucide-react'
 import { useGatewayStore } from '../stores/gateway'
+import { useThemeStore } from '../stores/theme'
 import { clearConfigCache } from '../lib/rpc'
 import { toast } from '../stores/toasts'
 import { Button } from '../components/ui/Button'
@@ -52,6 +53,8 @@ export default function SettingsView(): React.JSX.Element {
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null)
   const [repos, setRepos] = useState<Record<string, string>>({})
   const [accent, setAccent] = useAccentColor()
+  const theme = useThemeStore((s) => s.theme)
+  const setTheme = useThemeStore((s) => s.setTheme)
 
   // Load initial config
   useEffect(() => {
@@ -220,6 +223,21 @@ export default function SettingsView(): React.JSX.Element {
         {/* Appearance */}
         <section className="settings-section">
           <h2 className="settings-section__title">Appearance</h2>
+          <div className="settings-field">
+            <span className="settings-field__label">Theme</span>
+            <div className="settings-theme-buttons">
+              <button
+                className={`bde-btn bde-btn--sm ${theme === 'dark' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+                onClick={() => setTheme('dark')}
+                type="button"
+              >Dark</button>
+              <button
+                className={`bde-btn bde-btn--sm ${theme === 'light' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+                onClick={() => setTheme('light')}
+                type="button"
+              >Light</button>
+            </div>
+          </div>
           <div className="settings-field">
             <span className="settings-field__label">Accent Color</span>
             <div className="settings-colors">
