@@ -132,7 +132,24 @@ export function ChatThread({ sessionKey, updatedAt, refreshTrigger }: Props): Re
         limit: 100
       })) as { messages: ChatMessage[] }
 
-      const incoming = result?.messages ?? []
+      // Normalize content — gateway may return content as array of blocks {type,text} or {type,thinking}
+      const normalizeContent = (content: unknown): string => {
+        if (typeof content === 'string') return content
+        if (Array.isArray(content)) {
+          return content.map((b: unknown) => {
+            if (typeof b === 'string') return b
+            if (b && typeof b === 'object') {
+              const block = b as Record<string, unknown>
+              if (block.type === 'thinking') return ''
+              return typeof block.text === 'string' ? block.text : ''
+            }
+            return ''
+          }).filter(Boolean).join('\n')
+        }
+        return String(content ?? '')
+      }
+
+      const incoming = (result?.messages ?? []).map((m) => ({ ...m, content: normalizeContent(m.content) }))
 
       if (incoming.length > lastCountRef.current) {
         const newMessages = incoming.slice(lastCountRef.current)
