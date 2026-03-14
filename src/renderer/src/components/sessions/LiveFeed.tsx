@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useChatStore, LogLine } from '../../stores/chat'
 import { useSessionsStore } from '../../stores/sessions'
 import { useGatewayStore } from '../../stores/gateway'
+import { useUIStore } from '../../stores/ui'
 import { Button } from '../ui/Button'
 
 function formatTime(ts: number): string {
@@ -40,6 +41,7 @@ export function LiveFeed(): React.JSX.Element {
   const clearSession = useChatStore((s) => s.clearSession)
   const clearAll = useChatStore((s) => s.clearAll)
   const client = useGatewayStore((s) => s.client)
+  const activeView = useUIStore((s) => s.activeView)
 
   const linesRef = useRef<HTMLDivElement>(null)
   const [paused, setPaused] = useState(false)
@@ -101,6 +103,35 @@ export function LiveFeed(): React.JSX.Element {
       linesRef.current.scrollTop = linesRef.current.scrollHeight
     }
   }
+
+  // Keyboard: PageUp/PageDown to scroll, End to jump to bottom
+  useEffect(() => {
+    if (activeView !== 'sessions') return
+
+    const handler = (e: KeyboardEvent): void => {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      const el = linesRef.current
+      if (!el) return
+
+      if (e.key === 'PageDown') {
+        e.preventDefault()
+        el.scrollTop += el.clientHeight * 0.8
+      } else if (e.key === 'PageUp') {
+        e.preventDefault()
+        el.scrollTop -= el.clientHeight * 0.8
+      } else if (e.key === 'End') {
+        e.preventDefault()
+        el.scrollTop = el.scrollHeight
+        setPaused(false)
+      }
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [activeView])
 
   return (
     <div className="live-feed">
