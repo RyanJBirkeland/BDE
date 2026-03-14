@@ -9,7 +9,6 @@ import DiffViewer from '../components/diff/DiffViewer'
 import { parseDiff } from '../lib/diff-parser'
 import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'
-import { Spinner } from '../components/ui/Spinner'
 
 interface GitFileEntry {
   path: string
@@ -60,6 +59,8 @@ function DiffView(): React.JSX.Element {
         const first = Object.keys(paths)[0]
         if (first) setSelectedRepo(first)
       }
+    }).catch(() => {
+      setError('Failed to load repo paths')
     })
   }, [])
 
@@ -291,7 +292,10 @@ function DiffView(): React.JSX.Element {
 
       {loading && files.length === 0 ? (
         <div className="diff-view__loading">
-          <Spinner size="md" />
+          <div style={{ display: 'flex', gap: 12, width: '100%', height: '100%', padding: 12 }}>
+            <div className="bde-skeleton" style={{ width: 260, flexShrink: 0 }} />
+            <div className="bde-skeleton" style={{ flex: 1 }} />
+          </div>
         </div>
       ) : (
         <div className="git-client">
@@ -345,7 +349,9 @@ function DiffView(): React.JSX.Element {
                   </div>
                 )
               })}
-              {files.length === 0 && <div className="git-sidebar__empty">No changes</div>}
+              {files.length === 0 && (
+                <div className="git-sidebar__empty">No changes — working tree is clean</div>
+              )}
             </div>
 
             <div className="git-commit-panel">

@@ -4,6 +4,7 @@ import { useUIStore } from '../../stores/ui'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { EmptyState } from '../ui/EmptyState'
+import { SpawnModal } from './SpawnModal'
 
 function timeAgo(ts: number): string {
   const seconds = Math.floor((Date.now() - ts) / 1000)
@@ -59,6 +60,7 @@ function SessionRow({
     <button
       className={`session-row ${isSelected ? 'session-row--selected' : ''} ${isFocused ? 'session-row--focused' : ''}`}
       data-session-index={dataIndex}
+      style={{ '--stagger-index': Math.min(dataIndex ?? 0, 10) } as React.CSSProperties}
       onClick={onSelect}
     >
       <span className={`session-row__dot ${isRunning ? 'session-row__dot--running' : ''}`} />
@@ -93,6 +95,7 @@ export function SessionList(): React.JSX.Element {
   const fetchError = useSessionsStore((s) => s.fetchError)
   const activeView = useUIStore((s) => s.activeView)
   const [focusIndex, setFocusIndex] = useState(-1)
+  const [spawnOpen, setSpawnOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -160,10 +163,17 @@ export function SessionList(): React.JSX.Element {
     <div className="session-list" ref={listRef}>
       <div className="session-list__header">
         <span className="session-list__title">Sessions</span>
-        <Button variant="icon" size="sm" onClick={fetchSessions} title="Refresh">
-          ↻
-        </Button>
+        <div className="session-list__header-actions">
+          <Button variant="primary" size="sm" onClick={() => setSpawnOpen(true)} title="Spawn new agent">
+            + Spawn
+          </Button>
+          <Button variant="icon" size="sm" onClick={fetchSessions} title="Refresh">
+            ↻
+          </Button>
+        </div>
       </div>
+
+      <SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />
 
       {fetchError && (
         <div className="session-list__error">{fetchError}</div>
@@ -216,7 +226,10 @@ export function SessionList(): React.JSX.Element {
       )}
 
       {!loading && !fetchError && sessions.length === 0 && (
-        <EmptyState title="No sessions" />
+        <EmptyState
+          title="No active sessions"
+          description="Agents will appear here when running"
+        />
       )}
     </div>
   )

@@ -98,8 +98,8 @@ export default function PRList() {
         ) : prs.length === 0 ? (
           <EmptyState title="No open PRs" />
         ) : (
-          prs.map((pr) => (
-            <div key={`${pr.repo}-${pr.number}`} className="pr-row">
+          prs.map((pr, i) => (
+            <div key={`${pr.repo}-${pr.number}`} className="pr-row" style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
               <span
                 className="pr-row__repo-dot"
                 style={{ background: repoColor(pr.repo) }}

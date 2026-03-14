@@ -9,6 +9,7 @@ import { CommandPalette } from './components/layout/CommandPalette'
 import { ToastContainer } from './components/layout/ToastContainer'
 import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
+import { useTaskNotifications } from './hooks/useTaskNotifications'
 import SprintView from './views/SprintView'
 import { SessionsView } from './views/SessionsView'
 import MemoryView from './views/MemoryView'
@@ -117,6 +118,9 @@ function App(): React.JSX.Element {
     connect()
   }, [connect])
 
+  // Poll sessions every 60s and fire native notifications on task completion
+  useTaskNotifications()
+
   useEffect(() => {
     const title = `BDE — ${VIEW_TITLES[activeView]}`
     document.title = title
@@ -183,13 +187,16 @@ function App(): React.JSX.Element {
 
   return (
     <div className="app-shell">
+      {/* TODO(audit): wire totalCost from CostView/sessions store instead of hardcoded 0 */}
       <TitleBar sessionCount={runningCount} totalCost={0} />
 
       <div className="app-shell__body">
         <ActivityBar connectionStatus={status} />
 
         <div className="app-shell__content">
-          <ViewRouter activeView={activeView} />
+          <div key={activeView} className="view-enter">
+            <ViewRouter activeView={activeView} />
+          </div>
         </div>
       </div>
 

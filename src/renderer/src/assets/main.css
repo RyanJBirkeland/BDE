@@ -247,6 +247,16 @@
 
 /* ── ViewRouter ────────────────────────────────────────── */
 
+.view-enter {
+  animation: bde-fade-in 150ms ease;
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .view-router {
   display: flex;
   align-items: center;
@@ -283,6 +293,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: bde-scale-fade-in 150ms ease;
 }
 
 .command-palette__input {
@@ -377,6 +388,7 @@
   padding: 24px;
   min-width: 520px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  animation: bde-scale-fade-in 150ms ease;
 }
 
 .shortcuts-overlay__title {
@@ -501,6 +513,65 @@
 
 .memory-sidebar__new-input:focus {
   border-color: var(--bde-accent);
+}
+
+.memory-sidebar__search {
+  position: relative;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.memory-sidebar__search-input {
+  width: 100%;
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text);
+  font-size: 12px;
+  padding: 5px 24px 5px 8px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.memory-sidebar__search-input:focus {
+  border-color: var(--bde-accent);
+}
+
+.memory-sidebar__search-input::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.memory-sidebar__search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px;
+}
+
+.memory-sidebar__search-clear:hover {
+  color: var(--bde-text);
+}
+
+.memory-sidebar__searching {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--bde-text-muted);
+}
+
+.memory-file__snippet {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
 }
 
 .memory-sidebar__list {

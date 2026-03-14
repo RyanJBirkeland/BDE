@@ -134,12 +134,14 @@ function timeAgo(dateStr: string): string {
 }
 
 function branchUrl(repoLabel: string, branch: string): string {
-  const r = REPOS.find((r) => r.label === repoLabel)!
+  const r = REPOS.find((r) => r.label === repoLabel)
+  if (!r) return '#'
   return `https://github.com/${r.owner}/${r.name}/tree/${branch}`
 }
 
 function prUrl(repoLabel: string, pr: string): string {
-  const r = REPOS.find((r) => r.label === repoLabel)!
+  const r = REPOS.find((r) => r.label === repoLabel)
+  if (!r) return '#'
   const num = pr.replace('#', '')
   return `https://github.com/${r.owner}/${r.name}/pull/${num}`
 }
@@ -156,7 +158,9 @@ export default function SprintBoard() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    window.api.getRepoPaths().then(setRepoPaths)
+    window.api.getRepoPaths().then(setRepoPaths).catch(() => {
+      setError('Failed to load repo paths')
+    })
   }, [])
 
   const load = useCallback(async () => {
@@ -248,13 +252,14 @@ export default function SprintBoard() {
                 {inProgress.length === 0 ? (
                   <EmptyState title="Nothing checked out" />
                 ) : (
-                  inProgress.map((item) => (
+                  inProgress.map((item, i) => (
                     <CheckedOutCard
                       key={item.branch}
                       item={item}
                       repo={repo}
                       expanded={expandedCards.has(item.branch)}
                       onToggle={() => toggleExpand(item.branch)}
+                      staggerIndex={i}
                     />
                   ))
                 )}
@@ -287,7 +292,7 @@ export default function SprintBoard() {
                   <EmptyState title="Queue is empty" />
                 ) : (
                   pendingQueue.map((item, i) => (
-                    <div key={i} className="sprint-card">
+                    <div key={i} className="sprint-card" style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
                       <p className="sprint-card__text">{item.text.replace(/\*\*/g, '')}</p>
                     </div>
                   ))
@@ -305,8 +310,8 @@ export default function SprintBoard() {
                 {doneItems.length === 0 ? (
                   <EmptyState title="No completed PRs yet" />
                 ) : (
-                  doneItems.map((item) => (
-                    <div key={item.pr} className="sprint-card">
+                  doneItems.map((item, i) => (
+                    <div key={item.pr} className="sprint-card" style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
                       <div className="sprint-card__done-row">
                         <a
                           href={prUrl(repo, item.pr)}
@@ -340,13 +345,15 @@ function CheckedOutCard({
   repo,
   expanded,
   onToggle,
-  dimmed
+  dimmed,
+  staggerIndex
 }: {
   item: CheckedOutItem
   repo: string
   expanded: boolean
   onToggle: () => void
   dimmed?: boolean
+  staggerIndex?: number
 }) {
   const files = item.files
     .split(',')
@@ -354,7 +361,10 @@ function CheckedOutCard({
     .filter(Boolean)
 
   return (
-    <div className={`sprint-card ${dimmed ? 'sprint-card--dimmed' : ''}`}>
+    <div
+      className={`sprint-card ${dimmed ? 'sprint-card--dimmed' : ''}`}
+      style={staggerIndex != null ? { '--stagger-index': Math.min(staggerIndex, 10) } as React.CSSProperties : undefined}
+    >
       <div className="sprint-card__top-row">
         <a
           href={branchUrl(repo, item.branch)}

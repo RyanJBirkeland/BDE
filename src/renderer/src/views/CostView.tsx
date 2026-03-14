@@ -6,7 +6,6 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { invokeTool } from '../lib/rpc'
-import { Spinner } from '../components/ui/Spinner'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -31,8 +30,9 @@ interface SessionCost extends SessionWithTokens {
 type ModelKey = 'haiku' | 'sonnet' | 'opus'
 type SortField = 'cost' | 'inputTokens' | 'outputTokens' | 'updatedAt'
 
+// TODO(audit): pricing is stale — update for Claude 3.5/4.x tiers and add model-version awareness
 const MODEL_PRICING: Record<ModelKey, { input: number; output: number }> = {
-  haiku: { input: 0.8 / 1_000_000, output: 4 / 1_000_000 },
+  haiku: { input: 1 / 1_000_000, output: 5 / 1_000_000 },
   sonnet: { input: 3 / 1_000_000, output: 15 / 1_000_000 },
   opus: { input: 15 / 1_000_000, output: 75 / 1_000_000 },
 }
@@ -363,6 +363,7 @@ export default function CostView(): React.JSX.Element {
     return sessions
       .map((s) => {
         const modelKey = resolveModel(s.model)
+        // TODO(audit): contextTokens != input tokens — gateway should expose inputTokens/outputTokens directly
         const inputTokens = s.contextTokens ?? 0
         const outputTokens = Math.max(0, (s.totalTokens ?? 0) - inputTokens)
         return {
@@ -400,8 +401,15 @@ export default function CostView(): React.JSX.Element {
   if (loading) {
     return (
       <div className="cost-view">
-        <div className="cost-view__loading">
-          <Spinner size="md" />
+        <div className="cost-view__cards">
+          <div className="bde-skeleton" style={{ height: 80 }} />
+          <div className="bde-skeleton" style={{ height: 80 }} />
+          <div className="bde-skeleton" style={{ height: 80 }} />
+          <div className="bde-skeleton" style={{ height: 80 }} />
+        </div>
+        <div className="cost-view__charts">
+          <div className="bde-skeleton" style={{ height: 200 }} />
+          <div className="bde-skeleton" style={{ height: 200 }} />
         </div>
       </div>
     )
@@ -442,7 +450,10 @@ export default function CostView(): React.JSX.Element {
       </div>
 
       {sessionsWithCost.length === 0 ? (
-        <EmptyState title="No sessions found" />
+        <EmptyState
+          title="No session data yet"
+          description="Costs will appear once agents run"
+        />
       ) : (
         <SessionTable sessions={sessionsWithCost} sortField={sortField} onSort={setSortField} />
       )}

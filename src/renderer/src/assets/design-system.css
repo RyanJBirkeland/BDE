@@ -98,6 +98,10 @@
   background: var(--bde-surface-high);
 }
 
+.bde-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 .bde-btn--loading {
   position: relative;
 }
@@ -512,4 +516,13 @@
   width: 1px;
   height: 100%;
   background: var(--bde-border);
+}
+
+/* ── Skeleton ────────────────────────────────────────── */
+
+.bde-skeleton {
+  background: linear-gradient(90deg, var(--bde-surface) 25%, var(--bde-surface-high) 50%, var(--bde-surface) 75%);
+  background-size: 200% 100%;
+  animation: bde-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--bde-radius-md);
 }
