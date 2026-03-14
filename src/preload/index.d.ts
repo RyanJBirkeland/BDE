@@ -31,6 +31,9 @@ declare global {
       gitPush: (cwd: string) => Promise<string>
       gitBranches: (cwd: string) => Promise<{ current: string; branches: string[] }>
       gitCheckout: (cwd: string, branch: string) => Promise<void>
+
+      // Gateway tool invocation — proxied through main to avoid CORS
+      invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
     }
   }
 }
