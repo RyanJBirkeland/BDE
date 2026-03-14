@@ -63,7 +63,6 @@ export default function MemoryView(): React.JSX.Element {
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [content, setContent] = useState('')
   const [savedContent, setSavedContent] = useState('')
-  const [loadError, setLoadError] = useState<string | null>(null)
   const [newFilePrompt, setNewFilePrompt] = useState(false)
   const [newFileName, setNewFileName] = useState('')
   const editorRef = useRef<HTMLTextAreaElement>(null)
@@ -72,9 +71,8 @@ export default function MemoryView(): React.JSX.Element {
     try {
       const result = await window.api.listMemoryFiles()
       setFiles(result)
-      setLoadError(null)
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : 'Failed to load memory files')
+      toast.error(e instanceof Error ? e.message : 'Failed to load memory files')
     }
   }, [])
 
@@ -170,10 +168,6 @@ export default function MemoryView(): React.JSX.Element {
               autoFocus
             />
           </div>
-        )}
-
-        {loadError && (
-          <div className="memory-sidebar__error">{loadError}</div>
         )}
 
         <div className="memory-sidebar__list">

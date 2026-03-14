@@ -12,6 +12,7 @@ import { SessionsView } from './views/SessionsView'
 import MemoryView from './views/MemoryView'
 import DiffView from './views/DiffView'
 import CostView from './views/CostView'
+import SettingsView from './views/SettingsView'
 
 const VIEW_ORDER: View[] = ['sessions', 'sprint', 'diff', 'memory', 'cost', 'settings']
 
@@ -37,10 +38,11 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
   if (activeView === 'memory') return <MemoryView />
   if (activeView === 'diff') return <DiffView />
   if (activeView === 'cost') return <CostView />
+  if (activeView === 'settings') return <SettingsView />
   return (
     <div className="view-router">
       <span className="view-router__placeholder">
-        {activeView.charAt(0).toUpperCase() + activeView.slice(1)} — coming soon
+        {String(activeView)} — coming soon
       </span>
     </div>
   )
