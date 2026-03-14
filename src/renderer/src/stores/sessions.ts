@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { invokeTool } from '../lib/rpc'
+import { toast } from './toasts'
 
 export interface AgentSession {
   key: string
@@ -39,7 +40,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         runningCount: sessions.filter((s) => s.status === 'running').length
       })
     } catch {
-      // silently fail on fetch errors — will retry
+      toast.error('Failed to fetch sessions')
     }
   },
 
@@ -59,6 +60,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
       await get().fetchSessions()
     } catch (err) {
       console.error('Failed to spawn session:', err)
+      toast.error('Failed to spawn session')
     }
   }
 }))

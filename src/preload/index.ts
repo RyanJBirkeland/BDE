@@ -20,7 +20,8 @@ const api = {
     ipcRenderer.invoke('get-diff', repoPath, base),
   getBranch: (repoPath: string): Promise<string> => ipcRenderer.invoke('get-branch', repoPath),
   getLog: (repoPath: string, n?: number): Promise<string> =>
-    ipcRenderer.invoke('get-log', repoPath, n)
+    ipcRenderer.invoke('get-log', repoPath, n),
+  setTitle: (title: string): void => ipcRenderer.send('set-title', title)
 }
 
 if (process.contextIsolated) {

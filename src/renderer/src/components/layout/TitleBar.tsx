@@ -5,6 +5,7 @@ const VIEW_LABELS: Record<View, string> = {
   sprint: 'Sprint / PRs',
   diff: 'Diff',
   memory: 'Memory',
+  cost: 'Cost Tracker',
   settings: 'Settings'
 }
 

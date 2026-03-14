@@ -9,6 +9,7 @@ function DiffView(): React.JSX.Element {
   const [branch, setBranch] = useState('')
   const [files, setFiles] = useState<DiffFile[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.getRepoPaths().then((paths) => {
@@ -29,6 +30,9 @@ function DiffView(): React.JSX.Element {
       ])
       setFiles(parseDiff(diffRaw))
       setBranch(branchName)
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load diff')
     } finally {
       setLoading(false)
     }
@@ -88,6 +92,7 @@ function DiffView(): React.JSX.Element {
           </button>
         </div>
       </div>
+      {error && <div className="diff-view__error">{error}</div>}
       {loading ? (
         <div className="diff-view__loading">Loading diff&hellip;</div>
       ) : (

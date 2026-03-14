@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from '../stores/toasts'
 
 interface MemoryFile {
   path: string
@@ -62,7 +63,6 @@ export default function MemoryView(): React.JSX.Element {
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [content, setContent] = useState('')
   const [savedContent, setSavedContent] = useState('')
-  const [toast, setToast] = useState<string | null>(null)
   const [newFilePrompt, setNewFilePrompt] = useState(false)
   const [newFileName, setNewFileName] = useState('')
   const editorRef = useRef<HTMLTextAreaElement>(null)
@@ -85,10 +85,13 @@ export default function MemoryView(): React.JSX.Element {
 
   const saveFile = useCallback(async () => {
     if (!selectedPath) return
-    await window.api.writeMemoryFile(selectedPath, content)
-    setSavedContent(content)
-    setToast('Saved \u2713')
-    setTimeout(() => setToast(null), 1500)
+    try {
+      await window.api.writeMemoryFile(selectedPath, content)
+      setSavedContent(content)
+      toast.success('File saved')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save file')
+    }
   }, [selectedPath, content])
 
   const discard = useCallback(() => {
@@ -230,7 +233,6 @@ export default function MemoryView(): React.JSX.Element {
               onChange={(e) => setContent(e.target.value)}
               spellCheck={false}
             />
-            {toast && <div className="memory-editor__toast">{toast}</div>}
           </>
         ) : (
           <div className="memory-editor__empty">Select a file to view</div>

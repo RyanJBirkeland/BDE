@@ -1,4 +1,4 @@
-import { Terminal, GitBranch, GitCompare, Brain, Settings } from 'lucide-react'
+import { Terminal, GitBranch, GitCompare, Brain, DollarSign, Settings } from 'lucide-react'
 import { useUIStore, View } from '../../stores/ui'
 
 const NAV_ITEMS: { view: View; icon: typeof Terminal; label: string; shortcut: string }[] = [
@@ -6,7 +6,8 @@ const NAV_ITEMS: { view: View; icon: typeof Terminal; label: string; shortcut: s
   { view: 'sprint', icon: GitBranch, label: 'Sprint / PRs', shortcut: '⌘2' },
   { view: 'diff', icon: GitCompare, label: 'Diff', shortcut: '⌘3' },
   { view: 'memory', icon: Brain, label: 'Memory', shortcut: '⌘4' },
-  { view: 'settings', icon: Settings, label: 'Settings', shortcut: '⌘5' }
+  { view: 'cost', icon: DollarSign, label: 'Cost Tracker', shortcut: '⌘5' },
+  { view: 'settings', icon: Settings, label: 'Settings', shortcut: '⌘6' }
 ]
 
 interface ActivityBarProps {

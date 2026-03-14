@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type View = 'sessions' | 'sprint' | 'diff' | 'memory' | 'settings'
+export type View = 'sessions' | 'sprint' | 'diff' | 'memory' | 'cost' | 'settings'
 export type RepoFilter = 'all' | 'life-os' | 'feast'
 
 interface UIStore {

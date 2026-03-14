@@ -6,15 +6,26 @@ import { ActivityBar } from './components/layout/ActivityBar'
 import { TitleBar } from './components/layout/TitleBar'
 import { StatusBar } from './components/layout/StatusBar'
 import { CommandPalette } from './components/layout/CommandPalette'
+import { ToastContainer } from './components/layout/ToastContainer'
 import SprintView from './views/SprintView'
 import { SessionsView } from './views/SessionsView'
 import MemoryView from './views/MemoryView'
 import DiffView from './views/DiffView'
+import CostView from './views/CostView'
 
-const VIEW_ORDER: View[] = ['sessions', 'sprint', 'diff', 'memory', 'settings']
+const VIEW_ORDER: View[] = ['sessions', 'sprint', 'diff', 'memory', 'cost', 'settings']
+
+const VIEW_TITLES: Record<View, string> = {
+  sessions: 'Sessions',
+  sprint: 'Sprint / PRs',
+  diff: 'Diff',
+  memory: 'Memory',
+  cost: 'Cost',
+  settings: 'Settings'
+}
 
 const SHORTCUTS: { keys: string; description: string }[] = [
-  { keys: '⌘1–5', description: 'Switch views' },
+  { keys: '⌘1–6', description: 'Switch views' },
   { keys: '⌘K', description: 'Command palette' },
   { keys: '⌘R', description: 'Refresh current view' },
   { keys: '?', description: 'Show shortcuts' }
@@ -25,6 +36,7 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
   if (activeView === 'sprint') return <SprintView />
   if (activeView === 'memory') return <MemoryView />
   if (activeView === 'diff') return <DiffView />
+  if (activeView === 'cost') return <CostView />
   return (
     <div className="view-router">
       <span className="view-router__placeholder">
@@ -69,6 +81,12 @@ function App(): React.JSX.Element {
     connect()
   }, [connect])
 
+  useEffect(() => {
+    const title = `BDE — ${VIEW_TITLES[activeView]}`
+    document.title = title
+    window.api.setTitle(title)
+  }, [activeView])
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       // Ignore if typing in an input
@@ -77,7 +95,7 @@ function App(): React.JSX.Element {
         return
       }
 
-      if (e.metaKey && e.key >= '1' && e.key <= '5') {
+      if (e.metaKey && e.key >= '1' && e.key <= '6') {
         e.preventDefault()
         setView(VIEW_ORDER[Number(e.key) - 1])
         return
@@ -129,6 +147,7 @@ function App(): React.JSX.Element {
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
+      <ToastContainer />
     </div>
   )
 }

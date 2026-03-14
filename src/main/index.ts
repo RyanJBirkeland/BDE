@@ -58,14 +58,19 @@ app.whenReady().then(() => {
   ipcMain.handle('get-github-token', () => getGitHubToken())
   ipcMain.handle('get-repo-paths', () => getRepoPaths())
   ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
-  ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url)),
+  ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))
   registerFsHandlers()
 
   // Git IPC handlers
-  ipcMain.handle('get-repo-paths', () => getRepoPaths())
   ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
   ipcMain.handle('get-branch', (_e, repoPath: string) => getBranch(repoPath))
   ipcMain.handle('get-log', (_e, repoPath: string, n?: number) => getLog(repoPath, n))
+
+  // Window title
+  ipcMain.on('set-title', (_e, title: string) => {
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    if (win) win.setTitle(title)
+  })
 
   createWindow()
 

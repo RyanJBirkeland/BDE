@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { listOpenPRs, mergePR, type PullRequest } from '../../lib/github-api'
+import { toast } from '../../stores/toasts'
 
 const REPOS = [
   { label: 'life-os', owner: 'RyanJBirkeland', name: 'life-os', color: '#00D37F' },
@@ -28,7 +29,6 @@ export default function PRList() {
   const [error, setError] = useState<string | null>(null)
   const [merging, setMerging] = useState<number | null>(null)
   const [confirmMerge, setConfirmMerge] = useState<PullRequest | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const load = useCallback(async () => {
@@ -56,12 +56,6 @@ export default function PRList() {
     }
   }, [load])
 
-  useEffect(() => {
-    if (!toast) return
-    const t = setTimeout(() => setToast(null), 3000)
-    return () => clearTimeout(t)
-  }, [toast])
-
   const handleMerge = async (pr: PullRequest) => {
     const repo = REPOS.find((r) => r.name === pr.repo)
     if (!repo) return
@@ -69,7 +63,7 @@ export default function PRList() {
     try {
       await mergePR(repo.owner, repo.name, pr.number)
       setPrs((prev) => prev.filter((p) => !(p.number === pr.number && p.repo === pr.repo)))
-      setToast(`Merged #${pr.number} successfully`)
+      toast.success(`Merged #${pr.number} successfully`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Merge failed')
     } finally {
@@ -92,8 +86,6 @@ export default function PRList() {
       </div>
 
       {error && <div className="sprint-board__error">{error}</div>}
-
-      {toast && <div className="pr-list__toast">{toast}</div>}
 
       <div className="pr-list__rows">
         {loading && prs.length === 0 ? (
