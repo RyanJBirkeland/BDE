@@ -3,6 +3,7 @@ import { useCallback, useRef, useEffect } from 'react'
 type TextareaProps = {
   value: string
   onChange: (v: string) => void
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -11,6 +12,7 @@ type TextareaProps = {
 export function Textarea({
   value,
   onChange,
+  onKeyDown,
   placeholder,
   disabled = false,
   className,
@@ -36,6 +38,7 @@ export function Textarea({
       className={classes}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onKeyDown={onKeyDown}
       placeholder={placeholder}
       disabled={disabled}
       rows={3}

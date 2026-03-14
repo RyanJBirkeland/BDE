@@ -30,36 +30,125 @@
   font-size: 13px;
 }
 
-/* ── Stat cards ────────────────────────────────────────── */
+/* ── Stat cards (4-column grid using Card) ────────────── */
 
 .cost-view__cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
-.cost-card {
+.cost-stat-card {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid var(--bde-border);
-  background: var(--bde-surface);
 }
 
-.cost-card__label {
-  font-size: 12px;
+.cost-stat-card__label {
+  font-size: 11px;
   color: var(--bde-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.cost-card__value {
+.cost-stat-card__value {
   font-size: 22px;
   font-weight: 600;
   font-family: var(--bde-font-code);
   color: var(--bde-accent);
+}
+
+/* ── Charts row ───────────────────────────────────────── */
+
+.cost-view__charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Daily bar chart ──────────────────────────────────── */
+
+.cost-chart {
+  border: 1px solid var(--bde-border);
+  border-radius: 8px;
+  background: var(--bde-surface);
+  padding: 16px;
+}
+
+.cost-section__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px;
+}
+
+.cost-chart__svg {
+  width: 100%;
+  height: auto;
+}
+
+/* ── Model donut ──────────────────────────────────────── */
+
+.cost-donut {
+  border: 1px solid var(--bde-border);
+  border-radius: 8px;
+  background: var(--bde-surface);
+  padding: 16px;
+}
+
+.cost-donut__row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.cost-donut__svg {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.cost-donut__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.cost-donut__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.cost-donut__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cost-donut__model-name {
+  color: var(--bde-text);
+  font-weight: 500;
+  text-transform: capitalize;
+  min-width: 52px;
+}
+
+.cost-donut__model-cost {
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  color: var(--bde-text);
+  min-width: 64px;
+}
+
+.cost-donut__model-pct {
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  color: var(--bde-text-muted);
 }
 
 /* ── Session table ─────────────────────────────────────── */
@@ -89,6 +178,15 @@
   border-bottom: 1px solid var(--bde-border);
   text-transform: uppercase;
   letter-spacing: 0.3px;
+  user-select: none;
+}
+
+.cost-table__sortable {
+  cursor: pointer;
+}
+
+.cost-table__sortable:hover {
+  color: var(--bde-text);
 }
 
 .cost-table td {
@@ -127,7 +225,23 @@
   font-size: 12px;
 }
 
+.cost-table__model-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
 .cost-table__cost {
   color: var(--bde-accent);
   font-weight: 500;
+}
+
+.cost-table__date {
+  color: var(--bde-text-muted);
+  font-size: 11px;
+  white-space: nowrap;
 }
