@@ -41,7 +41,7 @@ export function Textarea({
       onKeyDown={onKeyDown}
       placeholder={placeholder}
       disabled={disabled}
-      rows={3}
+      rows={1}
     />
   )
 }

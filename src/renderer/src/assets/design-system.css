@@ -342,7 +342,7 @@
 
 .bde-textarea {
   width: 100%;
-  min-height: 72px;
+  min-height: 36px;
   padding: var(--bde-space-2) var(--bde-space-3);
   background: var(--bde-bg);
   border: 1px solid var(--bde-border);
