@@ -39,6 +39,7 @@ function SessionRow({
   onSelect: () => void
 }): React.JSX.Element {
   const isRunning = Date.now() - session.updatedAt < FIVE_MINUTES
+  const isBlocked = session.abortedLastRun && !isRunning
   const killSession = useSessionsStore((s) => s.killSession)
   const [killing, setKilling] = useState(false)
 
@@ -63,7 +64,10 @@ function SessionRow({
       style={{ '--stagger-index': Math.min(dataIndex ?? 0, 10) } as React.CSSProperties}
       onClick={onSelect}
     >
-      <span className={`session-row__dot ${isRunning ? 'session-row__dot--running' : ''}`} />
+      <span
+        className={`session-row__dot ${isRunning ? 'session-row__dot--running' : ''} ${isBlocked ? 'session-row__dot--blocked' : ''}`}
+        title={isBlocked ? 'Session aborted — may need attention' : undefined}
+      />
       <div className="session-row__info">
         <span className="session-row__label">{session.displayName || session.key}</span>
         <span className="session-row__meta">

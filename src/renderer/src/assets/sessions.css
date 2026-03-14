@@ -145,6 +145,11 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
+.session-row__dot--blocked {
+  background: #F59E0B;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
