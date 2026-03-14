@@ -42,7 +42,11 @@ const api = {
   gitBranches: (cwd: string): Promise<{ current: string; branches: string[] }> =>
     ipcRenderer.invoke('git:branches', cwd),
   gitCheckout: (cwd: string, branch: string): Promise<void> =>
-    ipcRenderer.invoke('git:checkout', cwd, branch)
+    ipcRenderer.invoke('git:checkout', cwd, branch),
+
+  // Gateway tool invocation — proxied through main process to avoid CORS
+  invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
+    ipcRenderer.invoke('gateway:invoke', tool, args ?? {})
 }
 
 if (process.contextIsolated) {

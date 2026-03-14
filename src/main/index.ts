@@ -112,6 +112,19 @@ app.whenReady().then(() => {
   // Switch to a different branch
   ipcMain.handle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(cwd, branch))
 
+  // --- Gateway tool invocation (proxied through main to avoid CORS) ---
+  ipcMain.handle('gateway:invoke', async (_e, tool: string, args: Record<string, unknown>) => {
+    const { url, token } = getGatewayConfig()
+    const httpUrl = url.replace(/^wss?:\/\//, 'http://').replace(/\/$/, '')
+    const res = await fetch(`${httpUrl}/tools/invoke`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ tool, args }),
+    })
+    if (!res.ok) throw new Error(`Gateway error ${res.status}: ${await res.text()}`)
+    return res.json()
+  })
+
   // --- Window management ---
   // Set the window title bar text
   ipcMain.on('set-title', (_e, title: string) => {
