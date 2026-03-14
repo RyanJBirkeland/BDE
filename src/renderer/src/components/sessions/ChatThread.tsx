@@ -4,7 +4,6 @@ import { useUIStore } from '../../stores/ui'
 import { toast } from '../../stores/toasts'
 import { EmptyState } from '../ui/EmptyState'
 import { Spinner } from '../ui/Spinner'
-import { MessageInput } from './MessageInput'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
@@ -89,26 +88,28 @@ function renderInline(text: string): React.JSX.Element {
   return <>{parts}</>
 }
 
-const POLL_FAST = 1_500
-const POLL_SLOW = 8_000
-const ACTIVE_THRESHOLD = 30_000
-const STREAMING_THRESHOLD = 15_000
+const POLL_STREAMING = 1_000
+const POLL_IDLE = 5_000
 
 interface Props {
   sessionKey: string
   updatedAt?: number
+  refreshTrigger: number
 }
 
-export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element {
+export function ChatThread({ sessionKey, refreshTrigger }: Props): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedMsgs, setExpandedMsgs] = useState<Set<number>>(new Set())
+  const [streaming, setStreaming] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const userScrolledUp = useRef(false)
   const messagesRef = useRef<ChatMessage[]>([])
   const lastCountRef = useRef(0)
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const prevLastAssistantContentRef = useRef('')
+  const hasPolledRef = useRef(false)
+  const pollIntervalRef = useRef(POLL_IDLE)
 
   const isNearBottom = useCallback((): boolean => {
     const el = scrollRef.current
@@ -157,15 +158,37 @@ export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element 
         messagesRef.current = [...messagesRef.current, ...newMessages]
         lastCountRef.current = incoming.length
         setMessages([...messagesRef.current])
-        setOptimisticMessages([])
         if (isNearBottom()) scrollToBottom()
       } else if (incoming.length < lastCountRef.current) {
         // Session was reset or messages were cleared
         messagesRef.current = incoming
         lastCountRef.current = incoming.length
         setMessages([...incoming])
-        setOptimisticMessages([])
+      } else if (incoming.length > 0) {
+        // Same count — update if last message content changed (streaming)
+        const lastIn = incoming[incoming.length - 1]
+        const lastCur = messagesRef.current[messagesRef.current.length - 1]
+        if (lastIn && lastCur && lastIn.content !== lastCur.content) {
+          messagesRef.current = incoming
+          setMessages([...incoming])
+          if (isNearBottom()) scrollToBottom()
+        }
       }
+
+      // Detect streaming: last message is assistant and content is still growing
+      const lastMsg = incoming[incoming.length - 1]
+      if (lastMsg?.role === 'assistant') {
+        const grew =
+          hasPolledRef.current &&
+          lastMsg.content.length > prevLastAssistantContentRef.current.length
+        prevLastAssistantContentRef.current = lastMsg.content
+        setStreaming(grew)
+      } else {
+        prevLastAssistantContentRef.current = ''
+        setStreaming(false)
+      }
+      hasPolledRef.current = true
+
       setLoading(false)
     } catch {
       if (loading) {
@@ -175,49 +198,46 @@ export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element 
     }
   }, [sessionKey, loading, isNearBottom, scrollToBottom])
 
-  // Adaptive polling interval
-  const isAgentActive = updatedAt ? Date.now() - updatedAt < ACTIVE_THRESHOLD : false
-  const pollInterval = isAgentActive ? POLL_FAST : POLL_SLOW
+  // Update polling interval ref on every render so the recursive timer picks it up
+  pollIntervalRef.current = streaming ? POLL_STREAMING : POLL_IDLE
+
+  // Stable ref so recursive setTimeout always calls latest poll
+  const pollRef = useRef(poll)
+  pollRef.current = poll
 
   // Initial fetch + adaptive poll
   useEffect(() => {
     setMessages([])
-    setOptimisticMessages([])
     setLoading(true)
     setExpandedMsgs(new Set())
+    setStreaming(false)
     messagesRef.current = []
     lastCountRef.current = 0
     userScrolledUp.current = false
+    prevLastAssistantContentRef.current = ''
+    hasPolledRef.current = false
 
-    poll()
+    pollRef.current()
 
     const schedulePoll = (): void => {
       pollTimerRef.current = setTimeout(async () => {
-        await poll()
+        await pollRef.current()
         schedulePoll()
-      }, pollInterval)
+      }, pollIntervalRef.current)
     }
     schedulePoll()
 
     return () => {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
     }
-  }, [sessionKey, pollInterval]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessionKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Optimistic send handlers
-  const handleBeforeSend = useCallback((message: string) => {
-    const optimistic: ChatMessage = { role: 'user', content: message, timestamp: Date.now() }
-    setOptimisticMessages((prev) => [...prev, optimistic])
-    scrollToBottom()
-  }, [scrollToBottom])
-
-  const handleSent = useCallback(() => {
-    poll()
-  }, [poll])
-
-  const handleSendError = useCallback(() => {
-    setOptimisticMessages((prev) => prev.slice(0, -1))
-  }, [])
+  // Refresh on send
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      poll()
+    }
+  }, [refreshTrigger]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
@@ -252,7 +272,6 @@ export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element 
     return () => window.removeEventListener('keydown', handler)
   }, [activeView])
 
-  const isStreaming = updatedAt ? Date.now() - updatedAt < STREAMING_THRESHOLD : false
   const showScrollButton = userScrolledUp.current && messages.length > 0
 
   const toggleExpand = useCallback((idx: number) => {
@@ -264,8 +283,11 @@ export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element 
     })
   }, [])
 
-  // Filter out tool messages for chat display, append optimistic messages
-  const visibleMessages = [...messages.filter((m) => m.role !== 'tool'), ...optimisticMessages]
+  // Filter out tool messages for chat display
+  const visibleMessages = messages.filter((m) => m.role !== 'tool')
+  const lastAssistantVisibleIdx = streaming
+    ? visibleMessages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1)
+    : -1
 
   if (loading && visibleMessages.length === 0) {
     return (
@@ -316,6 +338,13 @@ export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element 
               >
                 <span className="chat-msg__text chat-msg__text--rich">
                   {renderContent(msg.content)}
+                  {idx === lastAssistantVisibleIdx && (
+                    <span className="streaming-indicator--inline">
+                      <span className="streaming-indicator__dot" />
+                      <span className="streaming-indicator__dot" />
+                      <span className="streaming-indicator__dot" />
+                    </span>
+                  )}
                 </span>
                 {isLong && !isExpanded && (
                   <div className="chat-msg__expand-fade">
@@ -329,14 +358,6 @@ export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element 
             </div>
           )
         })}
-
-        {isStreaming && (
-          <div className="streaming-indicator">
-            <span className="streaming-indicator__dot" />
-            <span className="streaming-indicator__dot" />
-            <span className="streaming-indicator__dot" />
-          </div>
-        )}
       </div>
 
       {showScrollButton && (
@@ -344,13 +365,6 @@ export function ChatThread({ sessionKey, updatedAt }: Props): React.JSX.Element 
           New messages
         </button>
       )}
-
-      <MessageInput
-        sessionKey={sessionKey}
-        onSent={handleSent}
-        onBeforeSend={handleBeforeSend}
-        onSendError={handleSendError}
-      />
     </div>
   )
 }

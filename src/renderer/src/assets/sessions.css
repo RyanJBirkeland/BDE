@@ -986,7 +986,7 @@
 .chat-msg__time { font-size: 11px; color: var(--bde-text-dim); margin-top: 2px; padding: 0 4px; }
 
 /* ── Streaming Indicator ─────────────────────────────── */
-.streaming-indicator { display: flex; gap: 4px; padding: 8px 12px; align-items: center; }
+.streaming-indicator--inline { display: inline-flex; gap: 3px; padding-left: 6px; vertical-align: middle; }
 .streaming-indicator__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--bde-accent); animation: bde-pulse 1.2s ease-in-out infinite; }
 .streaming-indicator__dot:nth-child(2) { animation-delay: 0.2s; }
 .streaming-indicator__dot:nth-child(3) { animation-delay: 0.4s; }
