@@ -23,7 +23,26 @@ const api = {
   getBranch: (repoPath: string): Promise<string> => ipcRenderer.invoke('get-branch', repoPath),
   getLog: (repoPath: string, n?: number): Promise<string> =>
     ipcRenderer.invoke('get-log', repoPath, n),
-  setTitle: (title: string): void => ipcRenderer.send('set-title', title)
+  setTitle: (title: string): void => ipcRenderer.send('set-title', title),
+
+  // Git client
+  gitStatus: (
+    cwd: string
+  ): Promise<{ files: { path: string; status: string; staged: boolean }[] }> =>
+    ipcRenderer.invoke('git:status', cwd),
+  gitDiff: (cwd: string, file?: string): Promise<string> =>
+    ipcRenderer.invoke('git:diff', cwd, file),
+  gitStage: (cwd: string, files: string[]): Promise<void> =>
+    ipcRenderer.invoke('git:stage', cwd, files),
+  gitUnstage: (cwd: string, files: string[]): Promise<void> =>
+    ipcRenderer.invoke('git:unstage', cwd, files),
+  gitCommit: (cwd: string, message: string): Promise<void> =>
+    ipcRenderer.invoke('git:commit', cwd, message),
+  gitPush: (cwd: string): Promise<string> => ipcRenderer.invoke('git:push', cwd),
+  gitBranches: (cwd: string): Promise<{ current: string; branches: string[] }> =>
+    ipcRenderer.invoke('git:branches', cwd),
+  gitCheckout: (cwd: string, branch: string): Promise<void> =>
+    ipcRenderer.invoke('git:checkout', cwd, branch)
 }
 
 if (process.contextIsolated) {

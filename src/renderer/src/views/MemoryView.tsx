@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from '../stores/toasts'
+import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 
@@ -130,8 +131,53 @@ export default function MemoryView(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [saveFile])
 
-  const isDirty = content !== savedContent
+  // Build flat file list for keyboard nav
   const { pinned, groups } = groupFiles(files)
+  const flatFiles = useMemo(() => {
+    const list: MemoryFile[] = []
+    if (pinned) list.push(pinned)
+    for (const g of groups) list.push(...g.files)
+    return list
+  }, [pinned, groups])
+
+  const [focusIndex, setFocusIndex] = useState(-1)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const activeView = useUIStore((s) => s.activeView)
+
+  useEffect(() => {
+    if (activeView !== 'memory') return
+    const handler = (e: KeyboardEvent): void => {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        setFocusIndex((prev) => {
+          const max = flatFiles.length - 1
+          if (max < 0) return -1
+          if (e.key === 'ArrowDown') return prev < max ? prev + 1 : 0
+          return prev > 0 ? prev - 1 : max
+        })
+      }
+
+      if (e.key === 'Enter' && focusIndex >= 0 && focusIndex < flatFiles.length) {
+        e.preventDefault()
+        openFile(flatFiles[focusIndex].path)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [activeView, focusIndex, flatFiles, openFile])
+
+  // Scroll focused file into view
+  useEffect(() => {
+    if (focusIndex < 0) return
+    const el = sidebarRef.current?.querySelector(`[data-memory-index="${focusIndex}"]`) as HTMLElement
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [focusIndex])
+
+  const isDirty = content !== savedContent
 
   return (
     <div className="memory-view">
@@ -168,10 +214,11 @@ export default function MemoryView(): React.JSX.Element {
           </div>
         )}
 
-        <div className="memory-sidebar__list">
+        <div className="memory-sidebar__list" ref={sidebarRef}>
           {pinned && (
             <button
-              className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''}`}
+              className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''} ${focusIndex === 0 ? 'memory-file--focused' : ''}`}
+              data-memory-index={0}
               onClick={() => openFile(pinned.path)}
             >
               <span className="memory-file__name">
@@ -186,18 +233,22 @@ export default function MemoryView(): React.JSX.Element {
           {groups.map((group) => (
             <div key={group.label} className="memory-group">
               <div className="memory-group__label">{group.label}</div>
-              {group.files.map((f) => (
-                <button
-                  key={f.path}
-                  className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''}`}
-                  onClick={() => openFile(f.path)}
-                >
-                  <span className="memory-file__name">{f.name}</span>
-                  <span className="memory-file__meta">
-                    {formatRelativeTime(f.modifiedAt)} &middot; {formatSize(f.size)}
-                  </span>
-                </button>
-              ))}
+              {group.files.map((f) => {
+                const idx = flatFiles.indexOf(f)
+                return (
+                  <button
+                    key={f.path}
+                    className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''} ${focusIndex === idx ? 'memory-file--focused' : ''}`}
+                    data-memory-index={idx}
+                    onClick={() => openFile(f.path)}
+                  >
+                    <span className="memory-file__name">{f.name}</span>
+                    <span className="memory-file__meta">
+                      {formatRelativeTime(f.modifiedAt)} &middot; {formatSize(f.size)}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           ))}
 

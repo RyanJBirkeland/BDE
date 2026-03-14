@@ -19,6 +19,18 @@ declare global {
       getBranch: (repoPath: string) => Promise<string>
       getLog: (repoPath: string, n?: number) => Promise<string>
       setTitle: (title: string) => void
+
+      // Git client
+      gitStatus: (
+        cwd: string
+      ) => Promise<{ files: { path: string; status: string; staged: boolean }[] }>
+      gitDiff: (cwd: string, file?: string) => Promise<string>
+      gitStage: (cwd: string, files: string[]) => Promise<void>
+      gitUnstage: (cwd: string, files: string[]) => Promise<void>
+      gitCommit: (cwd: string, message: string) => Promise<void>
+      gitPush: (cwd: string) => Promise<string>
+      gitBranches: (cwd: string) => Promise<{ current: string; branches: string[] }>
+      gitCheckout: (cwd: string, branch: string) => Promise<void>
     }
   }
 }

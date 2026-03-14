@@ -3,7 +3,21 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getGatewayConfig, getGitHubToken, saveGatewayConfig } from './config'
-import { getRepoPaths, readSprintMd, getDiff, getBranch, getLog } from './git'
+import {
+  getRepoPaths,
+  readSprintMd,
+  getDiff,
+  getBranch,
+  getLog,
+  gitStatus,
+  gitDiffFile,
+  gitStage,
+  gitUnstage,
+  gitCommit,
+  gitPush,
+  gitBranches,
+  gitCheckout
+} from './git'
 import { registerFsHandlers } from './fs'
 
 function createWindow(): void {
@@ -69,6 +83,16 @@ app.whenReady().then(() => {
   ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
   ipcMain.handle('get-branch', (_e, repoPath: string) => getBranch(repoPath))
   ipcMain.handle('get-log', (_e, repoPath: string, n?: number) => getLog(repoPath, n))
+
+  // Git client IPC handlers
+  ipcMain.handle('git:status', (_e, cwd: string) => gitStatus(cwd))
+  ipcMain.handle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(cwd, file))
+  ipcMain.handle('git:stage', (_e, cwd: string, files: string[]) => gitStage(cwd, files))
+  ipcMain.handle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(cwd, files))
+  ipcMain.handle('git:commit', (_e, cwd: string, message: string) => gitCommit(cwd, message))
+  ipcMain.handle('git:push', (_e, cwd: string) => gitPush(cwd))
+  ipcMain.handle('git:branches', (_e, cwd: string) => gitBranches(cwd))
+  ipcMain.handle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(cwd, branch))
 
   // Window title
   ipcMain.on('set-title', (_e, title: string) => {

@@ -100,6 +100,11 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+.session-row--focused {
+  outline: 1px solid var(--bde-accent);
+  outline-offset: -1px;
+}
+
 .session-row__dot {
   width: 8px;
   height: 8px;
