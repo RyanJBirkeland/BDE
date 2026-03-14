@@ -57,20 +57,6 @@
   -webkit-app-region: no-drag;
 }
 
-.titlebar__center {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-  text-align: center;
-}
-
-.titlebar__view-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--bde-text-muted);
-  letter-spacing: 0.3px;
-}
-
 .titlebar__right {
   flex: 1;
   display: flex;

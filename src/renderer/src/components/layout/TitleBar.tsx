@@ -1,17 +1,7 @@
 import { Sun, Moon } from 'lucide-react'
-import { useUIStore, type RepoFilter, type View } from '../../stores/ui'
+import { useUIStore, type RepoFilter } from '../../stores/ui'
 import { useThemeStore } from '../../stores/theme'
 import { Badge } from '../ui/Badge'
-
-const VIEW_LABELS: Record<View, string> = {
-  sessions: 'Sessions',
-  terminal: 'Terminal',
-  sprint: 'Sprint / PRs',
-  diff: 'Diff',
-  memory: 'Memory',
-  cost: 'Cost Tracker',
-  settings: 'Settings'
-}
 
 const REPO_OPTIONS: { value: RepoFilter; label: string }[] = [
   { value: 'all', label: 'all repos' },
@@ -25,7 +15,6 @@ interface TitleBarProps {
 }
 
 export function TitleBar({ sessionCount, totalCost }: TitleBarProps): React.JSX.Element {
-  const activeView = useUIStore((s) => s.activeView)
   const repoFilter = useUIStore((s) => s.repoFilter)
   const setRepoFilter = useUIStore((s) => s.setRepoFilter)
   const theme = useThemeStore((s) => s.theme)
@@ -45,10 +34,6 @@ export function TitleBar({ sessionCount, totalCost }: TitleBarProps): React.JSX.
             </option>
           ))}
         </select>
-      </div>
-
-      <div className="titlebar__center">
-        <span className="titlebar__view-name">{VIEW_LABELS[activeView]}</span>
       </div>
 
       <div className="titlebar__right">
