@@ -35,7 +35,7 @@ interface SessionsStore {
     description: string
     model: string
   }) => Promise<void>
-  runTask: (task: string) => Promise<string | null>
+  runTask: (task: string, opts?: { repo?: string; model?: string }) => Promise<string | null>
   killSession: (sessionKey: string) => Promise<void>
 }
 
@@ -86,12 +86,13 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     }
   },
 
-  runTask: async (task): Promise<string | null> => {
+  runTask: async (task, opts): Promise<string | null> => {
     try {
       const result = (await invokeTool('sessions_spawn', {
         task,
         mode: 'run',
-        runtime: 'subagent'
+        runtime: 'subagent',
+        ...opts
       })) as { sessionKey?: string } | undefined
       const sessionKey = result?.sessionKey ?? null
       toast.success(sessionKey ? `Task started: ${sessionKey}` : 'Task started')

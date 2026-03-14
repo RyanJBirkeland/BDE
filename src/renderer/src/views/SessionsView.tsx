@@ -1,21 +1,24 @@
 /**
- * SessionsView — multi-panel workspace for agent session management.
- * Displays session list, task composer, live feed, agent director, and log viewer.
- * Fetches session data from the gateway via useSessionsStore (polls every 10s).
+ * SessionsView — two-pane chat interface for agent sessions.
+ * Left pane: session list with status dots + model badge.
+ * Right pane: chat thread for selected session + message input.
  */
-import { useEffect } from 'react'
-import { Panel, Group, Separator } from 'react-resizable-panels'
+import { useEffect, useState, useCallback } from 'react'
 import { SessionList } from '../components/sessions/SessionList'
-import { TaskComposer } from '../components/sessions/TaskComposer'
-import { LiveFeed } from '../components/sessions/LiveFeed'
-import { AgentDirector } from '../components/sessions/AgentDirector'
-import { SessionLogViewer } from '../components/sessions/SessionLogViewer'
+import { ChatThread } from '../components/sessions/ChatThread'
+import { MessageInput } from '../components/sessions/MessageInput'
+import { EmptyState } from '../components/ui/EmptyState'
 import { useSessionsStore } from '../stores/sessions'
 
 const POLL_INTERVAL = 10_000
 
 export function SessionsView(): React.JSX.Element {
+  const sessions = useSessionsStore((s) => s.sessions)
+  const selectedKey = useSessionsStore((s) => s.selectedSessionKey)
+  const selectSession = useSessionsStore((s) => s.selectSession)
   const fetchSessions = useSessionsStore((s) => s.fetchSessions)
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
     fetchSessions()
@@ -23,41 +26,50 @@ export function SessionsView(): React.JSX.Element {
     return () => clearInterval(id)
   }, [fetchSessions])
 
+  useEffect(() => {
+    if (sessions.length > 0 && !selectedKey) {
+      selectSession(sessions[0].key)
+    }
+  }, [sessions, selectedKey, selectSession])
+
+  const handleSent = useCallback(() => {
+    setRefreshTrigger((n) => n + 1)
+  }, [])
+
+  const selectedSession = sessions.find((s) => s.key === selectedKey)
+
   return (
-    <Group orientation="horizontal" className="sessions-view">
-      <Panel id="session-list" defaultSize="15" minSize="12" maxSize="25" className="sessions-view__panel">
+    <div className="sessions-chat">
+      <div className="sessions-chat__sidebar">
         <SessionList />
-      </Panel>
+      </div>
 
-      <Separator className="sessions-view__handle" />
-
-      <Panel id="task-composer" defaultSize="25" minSize="18" className="sessions-view__panel">
-        <TaskComposer />
-      </Panel>
-
-      <Separator className="sessions-view__handle" />
-
-      <Panel id="right-pane" defaultSize="30" minSize="20" className="sessions-view__panel">
-        <div className="sessions-view__right">
-          <Group orientation="vertical">
-            <Panel id="live-feed" defaultSize="70" minSize="30" className="sessions-view__panel">
-              <LiveFeed />
-            </Panel>
-
-            <Separator className="sessions-view__handle sessions-view__handle--horizontal" />
-
-            <Panel id="agent-director" defaultSize="30" minSize="15" className="sessions-view__panel">
-              <AgentDirector />
-            </Panel>
-          </Group>
-        </div>
-      </Panel>
-
-      <Separator className="sessions-view__handle" />
-
-      <Panel id="session-log" defaultSize="30" minSize="20" className="sessions-view__panel">
-        <SessionLogViewer />
-      </Panel>
-    </Group>
+      <div className="sessions-chat__main">
+        {selectedKey && selectedSession ? (
+          <>
+            <div className="sessions-chat__header">
+              <span className="sessions-chat__session-name">
+                {selectedSession.displayName || selectedSession.key}
+              </span>
+            </div>
+            <div className="sessions-chat__thread">
+              <ChatThread
+                sessionKey={selectedKey}
+                updatedAt={selectedSession.updatedAt}
+                refreshTrigger={refreshTrigger}
+              />
+            </div>
+            <div className="sessions-chat__input">
+              <MessageInput sessionKey={selectedKey} onSent={handleSent} />
+            </div>
+          </>
+        ) : (
+          <EmptyState
+            title="Select a session"
+            description="Choose a session from the list to start chatting"
+          />
+        )}
+      </div>
+    </div>
   )
 }

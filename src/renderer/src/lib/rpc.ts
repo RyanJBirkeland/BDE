@@ -3,6 +3,11 @@
  * window.api.invokeTool → IPC → main process fetch → gateway HTTP API
  */
 
+/** @deprecated No longer needed with IPC-based RPC */
+export function clearConfigCache(): void {
+  // no-op — config is managed by the main process
+}
+
 export async function invokeTool(
   tool: string,
   args: Record<string, unknown> = {}

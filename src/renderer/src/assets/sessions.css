@@ -958,3 +958,54 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+/* ── Sessions Chat Layout ────────────────────────────── */
+.sessions-chat { display: flex; width: 100%; height: 100%; }
+.sessions-chat__sidebar { width: 240px; flex-shrink: 0; overflow: hidden; }
+.sessions-chat__main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bde-bg); }
+.sessions-chat__header { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--bde-border); flex-shrink: 0; }
+.sessions-chat__session-name { font-size: 13px; font-weight: 600; color: var(--bde-text); font-family: var(--bde-font-code); }
+.sessions-chat__thread { flex: 1; min-height: 0; overflow: hidden; }
+.sessions-chat__input { flex-shrink: 0; border-top: 1px solid var(--bde-border); }
+
+/* ── Chat Thread ─────────────────────────────────────── */
+.chat-thread { height: 100%; display: flex; flex-direction: column; position: relative; }
+.chat-thread--loading { align-items: center; justify-content: center; }
+.chat-thread__messages { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+
+/* ── Chat Messages ───────────────────────────────────── */
+.chat-msg { display: flex; flex-direction: column; max-width: 80%; }
+.chat-msg--user { align-self: flex-end; align-items: flex-end; }
+.chat-msg--assistant { align-self: flex-start; align-items: flex-start; }
+.chat-msg--system { align-self: center; align-items: center; max-width: 90%; }
+.chat-msg__bubble { padding: 8px 12px; border-radius: 12px; font-size: 13px; font-family: var(--bde-font-ui); line-height: 1.5; word-break: break-word; }
+.chat-msg__bubble--user { background: var(--bde-accent); color: #000; }
+.chat-msg__bubble--assistant { background: var(--bde-surface); color: var(--bde-text-muted); border: 1px solid var(--bde-border); }
+.chat-msg--system .chat-msg__text { font-size: 12px; font-style: italic; color: var(--bde-text-dim); text-align: center; }
+.chat-msg__text { white-space: pre-wrap; }
+.chat-msg__time { font-size: 11px; color: var(--bde-text-dim); margin-top: 2px; padding: 0 4px; }
+
+/* ── Streaming Indicator ─────────────────────────────── */
+.streaming-indicator { display: flex; gap: 4px; padding: 8px 12px; align-items: center; }
+.streaming-indicator__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--bde-accent); animation: bde-pulse 1.2s ease-in-out infinite; }
+.streaming-indicator__dot:nth-child(2) { animation-delay: 0.2s; }
+.streaming-indicator__dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bde-pulse { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+
+/* ── Chat Scroll-to-latest Button ────────────────────── */
+.chat-thread__scroll-btn { position: absolute; bottom: 12px; right: 16px; z-index: 2; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+
+/* ── Assistant Message: Code Blocks & Collapsible ────── */
+.chat-msg__text--rich { white-space: pre-wrap; }
+.chat-msg__text-plain { white-space: pre-wrap; }
+.chat-msg__inline-code { background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 3px; font-family: var(--bde-font-code); font-size: 12px; }
+.chat-msg__code-block { display: block; margin: 6px 0; padding: 8px 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--bde-border); border-radius: 6px; overflow-x: auto; font-family: var(--bde-font-code); font-size: 12px; line-height: 1.5; white-space: pre; }
+.chat-msg__code-block code { background: none; padding: 0; }
+.chat-msg__bubble--collapsed { max-height: 400px; overflow: hidden; cursor: pointer; position: relative; }
+.chat-msg__expand-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 48px; background: linear-gradient(transparent, var(--bde-surface)); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; }
+.chat-msg__expand-label { font-size: 11px; color: var(--bde-accent); font-weight: 500; }
+
+/* ── Message Input ───────────────────────────────────── */
+.message-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; }
+.message-input__textarea { flex: 1; min-height: 36px; max-height: 120px; }
+.message-input__send { flex-shrink: 0; margin-bottom: 1px; }

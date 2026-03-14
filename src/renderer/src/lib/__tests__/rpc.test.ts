@@ -1,125 +1,65 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { invokeTool, clearConfigCache } from '../rpc'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { invokeTool } from '../rpc'
 
-const mockGetGatewayConfig = vi.fn().mockResolvedValue({
-  url: 'ws://localhost:18789',
-  token: 'test-token',
-})
+const mockInvokeTool = vi.fn()
 
-// Stub window.api
 Object.defineProperty(globalThis, 'window', {
-  value: {
-    api: { getGatewayConfig: mockGetGatewayConfig },
-  },
+  value: { api: { invokeTool: mockInvokeTool } },
   writable: true,
 })
 
 describe('invokeTool', () => {
   beforeEach(() => {
-    clearConfigCache()
-    vi.stubGlobal('fetch', vi.fn())
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
+    mockInvokeTool.mockReset()
   })
 
   it('returns result.details when present', async () => {
     const details = { sessions: [], count: 0 }
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, result: { details } }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    )
-
+    mockInvokeTool.mockResolvedValue({ ok: true, result: { details } })
     const result = await invokeTool('sessions_list')
     expect(result).toEqual(details)
+    expect(mockInvokeTool).toHaveBeenCalledWith('sessions_list', {})
   })
 
   it('falls back to parsing result.content[0].text as JSON', async () => {
     const payload = { key: 'value' }
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          ok: true,
-          result: { content: [{ type: 'text', text: JSON.stringify(payload) }] },
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      ),
-    )
-
+    mockInvokeTool.mockResolvedValue({
+      ok: true,
+      result: { content: [{ type: 'text', text: JSON.stringify(payload) }] },
+    })
     const result = await invokeTool('some_tool')
     expect(result).toEqual(payload)
   })
 
   it('returns raw text when content[0].text is not valid JSON', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          ok: true,
-          result: { content: [{ type: 'text', text: 'plain string' }] },
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      ),
-    )
-
+    mockInvokeTool.mockResolvedValue({
+      ok: true,
+      result: { content: [{ type: 'text', text: 'plain string' }] },
+    })
     const result = await invokeTool('some_tool')
     expect(result).toBe('plain string')
   })
 
   it('throws on ok: false with error message', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ ok: false, error: 'Tool not found' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    )
-
+    mockInvokeTool.mockResolvedValue({ ok: false, error: 'Tool not found' })
     await expect(invokeTool('bad_tool')).rejects.toThrow('Tool not found')
   })
 
-  it('throws on non-2xx HTTP status', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response('Internal Server Error', { status: 500 }),
-    )
-
-    await expect(invokeTool('any_tool')).rejects.toThrow('Gateway error 500')
+  it('throws on ok: false with default message', async () => {
+    mockInvokeTool.mockResolvedValue({ ok: false })
+    await expect(invokeTool('bad_tool')).rejects.toThrow('Gateway returned ok=false')
   })
 
-  it('uses correct Authorization header', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, result: { details: null } }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    )
-
-    await invokeTool('test_tool')
-
-    expect(fetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: 'Bearer test-token',
-        }),
-      }),
-    )
+  it('passes args through to IPC', async () => {
+    mockInvokeTool.mockResolvedValue({ ok: true, result: { details: null } })
+    await invokeTool('test_tool', { sessionKey: 'abc', limit: 10 })
+    expect(mockInvokeTool).toHaveBeenCalledWith('test_tool', { sessionKey: 'abc', limit: 10 })
   })
 
-  it('converts ws:// URL to http://', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, result: { details: null } }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    )
-
-    await invokeTool('test_tool')
-
-    expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:18789/tools/invoke',
-      expect.any(Object),
-    )
+  it('returns result when no details or content', async () => {
+    const result = { foo: 'bar' }
+    mockInvokeTool.mockResolvedValue({ ok: true, result })
+    const out = await invokeTool('test_tool')
+    expect(out).toEqual(result)
   })
 })
