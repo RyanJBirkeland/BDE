@@ -5,6 +5,7 @@ import { Badge } from '../ui/Badge'
 
 const VIEW_LABELS: Record<View, string> = {
   sessions: 'Sessions',
+  terminal: 'Terminal',
   sprint: 'Sprint / PRs',
   diff: 'Diff',
   memory: 'Memory',

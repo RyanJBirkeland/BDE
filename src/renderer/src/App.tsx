@@ -16,11 +16,21 @@ import MemoryView from './views/MemoryView'
 import DiffView from './views/DiffView'
 import CostView from './views/CostView'
 import SettingsView from './views/SettingsView'
+import { TerminalView } from './views/TerminalView'
 
-const VIEW_ORDER: View[] = ['sessions', 'sprint', 'diff', 'memory', 'cost', 'settings']
+const VIEW_ORDER: View[] = [
+  'sessions',
+  'terminal',
+  'sprint',
+  'diff',
+  'memory',
+  'cost',
+  'settings'
+]
 
 const VIEW_TITLES: Record<View, string> = {
   sessions: 'Sessions',
+  terminal: 'Terminal',
   sprint: 'Sprint / PRs',
   diff: 'Diff',
   memory: 'Memory',
@@ -29,7 +39,7 @@ const VIEW_TITLES: Record<View, string> = {
 }
 
 const SHORTCUTS_LEFT: { keys: string; description: string }[] = [
-  { keys: '\u23181\u20136', description: 'Switch views' },
+  { keys: '\u23181\u20137', description: 'Switch views' },
   { keys: '\u2318K', description: 'Command palette' },
   { keys: '\u2318R', description: 'Refresh current view' },
   { keys: 'Escape', description: 'Close panel / blur input' },
@@ -46,6 +56,7 @@ const SHORTCUTS_RIGHT: { keys: string; description: string }[] = [
 
 function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
   if (activeView === 'sessions') return <SessionsView />
+  if (activeView === 'terminal') return <TerminalView />
   if (activeView === 'sprint') return <SprintView />
   if (activeView === 'memory') return <MemoryView />
   if (activeView === 'diff') return <DiffView />
@@ -118,11 +129,10 @@ function App(): React.JSX.Element {
     connect()
   }, [connect])
 
-  // Poll sessions every 60s and fire native notifications on task completion
   useTaskNotifications()
 
   useEffect(() => {
-    const title = `BDE — ${VIEW_TITLES[activeView]}`
+    const title = 'BDE \u2014 ' + VIEW_TITLES[activeView]
     document.title = title
     window.api.setTitle(title)
   }, [activeView])
@@ -132,29 +142,18 @@ function App(): React.JSX.Element {
       const tag = (e.target as HTMLElement).tagName
       const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
 
-      // Escape always works, even in inputs
       if (e.key === 'Escape') {
         e.preventDefault()
-        if (paletteOpen) {
-          setPaletteOpen(false)
-          return
-        }
-        if (shortcutsOpen) {
-          setShortcutsOpen(false)
-          return
-        }
-        if (inInput) {
-          ;(document.activeElement as HTMLElement)?.blur()
-          return
-        }
+        if (paletteOpen) { setPaletteOpen(false); return }
+        if (shortcutsOpen) { setShortcutsOpen(false); return }
+        if (inInput) { (document.activeElement as HTMLElement)?.blur(); return }
         window.dispatchEvent(new CustomEvent('bde:escape'))
         return
       }
 
-      // Ignore other shortcuts if typing in an input (allow Cmd shortcuts through)
       if (inInput && !e.metaKey) return
 
-      if (e.metaKey && e.key >= '1' && e.key <= '6') {
+      if (e.metaKey && e.key >= '1' && e.key <= '7') {
         e.preventDefault()
         setView(VIEW_ORDER[Number(e.key) - 1])
         return
@@ -187,26 +186,21 @@ function App(): React.JSX.Element {
 
   return (
     <div className="app-shell">
-      {/* TODO(audit): wire totalCost from CostView/sessions store instead of hardcoded 0 */}
       <TitleBar sessionCount={runningCount} totalCost={0} />
-
       <div className="app-shell__body">
         <ActivityBar connectionStatus={status} />
-
         <div className="app-shell__content">
           <div key={activeView} className="view-enter">
             <ViewRouter activeView={activeView} />
           </div>
         </div>
       </div>
-
       <StatusBar
         status={status}
         sessionCount={runningCount}
         model="claude-sonnet-4-6"
         onReconnect={() => connect()}
       />
-
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
       <ToastContainer />
