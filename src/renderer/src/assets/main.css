@@ -584,6 +584,13 @@
   font-size: 12px;
 }
 
+.memory-sidebar__error {
+  padding: 8px 12px;
+  background: rgba(220, 38, 38, 0.1);
+  color: #f87171;
+  font-size: 12px;
+}
+
 .memory-group__label {
   font-size: 11px;
   font-weight: 600;
