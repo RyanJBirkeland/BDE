@@ -152,7 +152,9 @@ export function ChatThread({ sessionKey, refreshTrigger = 0 }: Props): React.JSX
         return String(content ?? '')
       }
 
-      const incoming = (result?.messages ?? []).map((m) => ({ ...m, content: normalizeContent(m.content) }))
+      const incoming = (result?.messages ?? [])
+        .map((m) => ({ ...m, content: normalizeContent(m.content) }))
+        .filter((m) => m.role === 'tool' || m.content.trim().length > 0)
 
       if (incoming.length > lastCountRef.current) {
         const newMessages = incoming.slice(lastCountRef.current)

@@ -24,15 +24,25 @@ export const useGatewayStore = create<GatewayStore>((set, get) => ({
     const { url, token } = await window.api.getGatewayConfig()
 
     let prevStatus: ConnectionStatus = get().status
+    let disconnectTimer: ReturnType<typeof setTimeout> | null = null
+
     const client = new GatewayClient(url, token, (status) => {
       set({ status })
-      if (status === 'connected' && prevStatus !== 'connected') {
-        toast.success('Gateway connected')
+
+      if (status === 'connected') {
+        // Cancel any pending disconnect toast — reconnected in time
+        if (disconnectTimer) { clearTimeout(disconnectTimer); disconnectTimer = null }
+        if (prevStatus !== 'connected') toast.success('Gateway connected')
       } else if (status === 'disconnected' && prevStatus === 'connected') {
-        toast.error('Gateway disconnected')
+        // Only toast after 4s — avoids noise from brief reconnect cycles
+        disconnectTimer = setTimeout(() => {
+          if (get().status !== 'connected') toast.error('Gateway disconnected')
+          disconnectTimer = null
+        }, 4_000)
       } else if (status === 'error' && prevStatus !== 'error') {
         toast.error('Gateway connection error')
       }
+
       prevStatus = status
     })
 
