@@ -54,16 +54,55 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 12px 8px;
+  padding: 14px 12px 10px;
   flex-shrink: 0;
+  position: relative;
+}
+
+/* Aurora accent line under header */
+.session-list__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 211, 127, 0.4) 0%,
+    rgba(108, 142, 239, 0.2) 60%,
+    transparent 100%
+  );
 }
 
 .session-list__title {
-  font-size: var(--bde-size-sm);
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--bde-text-muted);
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, var(--accent, var(--bde-accent)) 0%, var(--color-info, var(--bde-info)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.session-list__new-btn {
+  background: rgba(0, 211, 127, 0.08);
+  border: 1px solid rgba(0, 211, 127, 0.20);
+  color: var(--accent, var(--bde-accent));
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+.session-list__new-btn:hover {
+  background: rgba(0, 211, 127, 0.15);
+  border-color: rgba(0, 211, 127, 0.40);
+  box-shadow: 0 0 12px rgba(0, 211, 127, 0.20);
 }
 
 .session-list__group {
@@ -83,20 +122,22 @@
 /* ── Search Bar ──────────────────────────────────────── */
 
 .session-list__search {
-  padding: 6px 12px;
+  padding: 8px 10px 6px;
   border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
 }
 
 .session-list__search input {
   width: 100%;
-  background: var(--bde-hover-strong);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  padding: 5px 8px;
-  font-size: var(--bde-size-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border, var(--bde-border));
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
   font-family: var(--bde-font-ui);
-  color: var(--bde-text);
+  color: var(--text-primary, var(--bde-text));
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .session-list__search input::placeholder {
@@ -104,8 +145,9 @@
 }
 
 .session-list__search input:focus {
-  outline: none;
-  border-color: var(--bde-accent);
+  border-color: rgba(0, 211, 127, 0.35);
+  box-shadow: 0 0 0 3px rgba(0, 211, 127, 0.08);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Group Header (flex row for label + follow toggle) ── */
@@ -1863,11 +1905,11 @@
 
 .agent-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   width: 100%;
-  height: 36px;
-  padding: 0 8px;
+  min-height: 44px;
+  padding: 8px 10px;
   background: none;
   border: none;
   border-radius: var(--bde-radius-md);
@@ -1882,7 +1924,15 @@
 }
 
 .agent-row--selected {
-  background: var(--bde-selected);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 211, 127, 0.08) 0%,
+    rgba(108, 142, 239, 0.05) 100%
+  );
+  border: 1px solid rgba(0, 211, 127, 0.25);
+  box-shadow:
+    0 0 16px rgba(0, 211, 127, 0.10),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* ── Agent Row: Status Dot ──────────────────────────── */
@@ -1892,6 +1942,7 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 5px;
 }
 
 .dot--active {
@@ -1920,7 +1971,7 @@
 .agent-row__info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
   min-width: 0;
   flex: 1;
 }
@@ -1936,7 +1987,9 @@
 .agent-row__meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  row-gap: 2px;
+  flex-wrap: wrap;
   font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
 }
@@ -2044,6 +2097,16 @@
   background: var(--bde-danger-hover);
 }
 
+/* ── Agent Row: Running Pulse ──────────────────────── */
+
+@keyframes pulse-glow-row {
+  0%, 100% { box-shadow: 0 0 8px rgba(0, 211, 127, 0.08); }
+  50%       { box-shadow: 0 0 20px rgba(0, 211, 127, 0.18), 0 0 0 1px rgba(0, 211, 127, 0.15); }
+}
+.agent-row.glow-pulse {
+  animation: pulse-glow-row 2.5s ease-in-out infinite;
+}
+
 /* ── Agent List (unified) ─────────────────────────────── */
 
 .agent-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1; }
@@ -2052,13 +2115,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px 4px;
-  font-size: var(--bde-size-xs);
+  padding: 12px 12px 6px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--bde-text-dim);
+  color: var(--text-muted, var(--bde-text-muted));
+  position: relative;
   user-select: none;
+}
+
+/* Gradient left-edge accent line on each group header */
+.agent-list__group-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--gradient-aurora, linear-gradient(135deg, #00d37f, #6c8eef));
+  opacity: 0.6;
 }
 .agent-list__group-header--collapsible { cursor: pointer; }
 .agent-list__group-header--collapsible:hover { color: var(--bde-text-muted); }
