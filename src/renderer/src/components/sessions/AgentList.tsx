@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AgentRow } from './AgentRow'
 import type { UnifiedAgent } from '../../stores/unifiedAgents'
 import { useUnifiedAgents, groupUnifiedAgents } from '../../stores/unifiedAgents'
 import { useSessionsStore } from '../../stores/sessions'
+import { useLocalAgentsStore } from '../../stores/localAgents'
+import { useAgentHistoryStore } from '../../stores/agentHistory'
 
 export interface AgentListProps {
   filter?: string
@@ -25,6 +27,20 @@ export function AgentList({
   const followMode = useSessionsStore((s) => s.followMode)
   const setFollowMode = useSessionsStore((s) => s.setFollowMode)
   const [historyOpen, setHistoryOpen] = useState(false)
+
+  // Poll local agent processes (ps aux) and history every 5s
+  const fetchProcesses = useLocalAgentsStore((s) => s.fetchProcesses)
+  const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
+  useEffect(() => {
+    fetchProcesses()
+    fetchAgents()
+    const processInterval = setInterval(fetchProcesses, 5_000)
+    const historyInterval = setInterval(fetchAgents, 10_000)
+    return () => {
+      clearInterval(processInterval)
+      clearInterval(historyInterval)
+    }
+  }, [fetchProcesses, fetchAgents])
 
   const toggleHistory = useCallback(() => setHistoryOpen((v) => !v), [])
   const toggleFollow = useCallback(

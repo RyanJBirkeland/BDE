@@ -81,10 +81,16 @@ export function SessionsView(): React.JSX.Element {
   const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
   const selectedSession = sessions.find((s) => s.key === selectedKey)
   const selectedSubAgent = subAgents.find((a) => a.sessionKey === selectedKey) ?? null
-  const sessionMode: 'chat' | 'steer' = selectedSubAgent ? 'steer' : 'chat'
 
   // Unified agent selection state
   const [selectedUnifiedId, setSelectedUnifiedId] = useState<string | null>(null)
+
+  // Derive send mode + localPid from unified selection
+  const localSendPid =
+    selectedUnifiedId?.startsWith('local:') ? parseInt(selectedUnifiedId.substring(6), 10) : undefined
+  const sessionMode: 'chat' | 'steer' | 'local' =
+    localSendPid != null ? 'local' :
+    selectedSubAgent ? 'steer' : 'chat'
   const [query, setQuery] = useState('')
   const [spawnOpen, setSpawnOpen] = useState(false)
 
@@ -240,9 +246,11 @@ export function SessionsView(): React.JSX.Element {
               optimisticMessages={optimisticMessages}
             />
           </div>
-          <div className="sessions-chat__input">
-            <MessageInput sessionKey={selectedKey} sessionMode={sessionMode} onSent={onSent} onBeforeSend={onBeforeSend} onSendError={onSendError} />
-          </div>
+          {selectedUnifiedId?.startsWith('history:') ? null : (
+            <div className="sessions-chat__input">
+              <MessageInput sessionKey={selectedKey} sessionMode={sessionMode} localPid={localSendPid} onSent={onSent} onBeforeSend={onBeforeSend} onSendError={onSendError} />
+            </div>
+          )}
         </>
       )
     }

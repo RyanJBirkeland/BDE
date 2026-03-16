@@ -317,3 +317,10 @@ export async function cleanupOldLogs(): Promise<void> {
     // Dir may not exist yet — that's fine
   }
 }
+
+// --- Check if a PID has an interactive stdin handle ---
+
+export function isAgentInteractive(pid: number): boolean {
+  const child = activeAgentProcesses.get(pid)
+  return !!(child && child.stdin && !child.stdin.destroyed)
+}
