@@ -1,7 +1,7 @@
-import { ipcMain } from 'electron'
 import { readdir, readFile, writeFile, stat } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'os'
+import { safeHandle } from './ipc-utils'
 
 export interface MemoryFile {
   path: string
@@ -62,18 +62,6 @@ function normalizePath(relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/').replace(/\.\./g, '')
   if (normalized.startsWith('/')) return normalized.slice(1)
   return normalized
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function safeHandle(channel: string, handler: (e: Electron.IpcMainInvokeEvent, ...args: any[]) => any): void {
-  ipcMain.handle(channel, async (e, ...args) => {
-    try {
-      return await handler(e, ...args)
-    } catch (err) {
-      console.error(`[IPC:${channel}] unhandled error:`, err)
-      throw err
-    }
-  })
 }
 
 export function registerFsHandlers(): void {
