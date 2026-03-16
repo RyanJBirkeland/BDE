@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { toast } from '../../stores/toasts'
-import { useGatewayStore } from '../../stores/gateway'
+import { useGatewayStore, getGatewayClient } from '../../stores/gateway'
 import { useSessionsStore } from '../../stores/sessions'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { Textarea } from '../ui/Textarea'
@@ -21,7 +21,7 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [localInteractive, setLocalInteractive] = useState<boolean | null>(null)
-  const client = useGatewayStore((s) => s.client)
+  const gatewayStatus = useGatewayStore((s) => s.status)
   const sendToAgent = useLocalAgentsStore((s) => s.sendToAgent)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -44,7 +44,7 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
     const trimmed = text.trim()
     if (!trimmed || sending) return
 
-    if (sessionMode === 'chat' && !client) {
+    if (sessionMode === 'chat' && gatewayStatus !== 'connected') {
       toast.error('Gateway not connected')
       return
     }
@@ -63,7 +63,9 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
         await steerSubAgent(sessionKey, trimmed)
       } else if (sessionMode === 'local') {
         await sendToAgent(localPid!, trimmed)
-      } else if (client) {
+      } else {
+        const client = getGatewayClient()
+        if (!client) throw new Error('Gateway not connected')
         await client.call('chat.send', { sessionKey, message: trimmed, idempotencyKey: crypto.randomUUID() })
       }
       onSent()
@@ -75,7 +77,7 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
     } finally {
       setSending(false)
     }
-  }, [text, sending, client, sessionKey, sessionMode, onSent, onBeforeSend, onSendError])
+  }, [text, sending, gatewayStatus, sessionKey, sessionMode, onSent, onBeforeSend, onSendError])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {

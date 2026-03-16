@@ -12,14 +12,12 @@ describe('localAgents store', () => {
       selectedLocalAgentPid: null,
       logContent: '',
       logNextByte: 0,
-      _logInterval: null,
     })
     vi.clearAllMocks()
   })
 
   afterEach(() => {
-    const { _logInterval } = useLocalAgentsStore.getState()
-    if (_logInterval) clearInterval(_logInterval)
+    useLocalAgentsStore.getState().stopLogPolling()
     vi.useRealTimers()
   })
 
@@ -140,17 +138,21 @@ describe('localAgents store', () => {
     expect(useLocalAgentsStore.getState().logNextByte).toBe(13)
   })
 
-  it('stopLogPolling clears interval', () => {
-    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: '', nextByte: 0 })
+  it('stopLogPolling stops accumulating content', async () => {
+    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: 'data', nextByte: 4 })
     useLocalAgentsStore.getState().startLogPolling('/tmp/log')
 
-    expect(useLocalAgentsStore.getState()._logInterval).not.toBeNull()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(useLocalAgentsStore.getState().logContent).toBe('data')
 
     useLocalAgentsStore.getState().stopLogPolling()
-    expect(useLocalAgentsStore.getState()._logInterval).toBeNull()
+
+    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: 'more', nextByte: 8 })
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(useLocalAgentsStore.getState().logContent).toBe('data')
   })
 
-  it('selectLocalAgent clears existing interval and resets log state', () => {
+  it('selectLocalAgent stops polling and resets log state', () => {
     vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: '', nextByte: 0 })
     useLocalAgentsStore.getState().startLogPolling('/tmp/log')
     useLocalAgentsStore.setState({ logContent: 'existing', logNextByte: 8 })
@@ -161,6 +163,5 @@ describe('localAgents store', () => {
     expect(state.selectedLocalAgentPid).toBe(555)
     expect(state.logContent).toBe('')
     expect(state.logNextByte).toBe(0)
-    expect(state._logInterval).toBeNull()
   })
 })

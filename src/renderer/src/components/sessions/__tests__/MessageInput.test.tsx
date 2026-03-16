@@ -7,8 +7,9 @@ const mockCall = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('../../../stores/gateway', () => ({
   useGatewayStore: vi.fn((selector: (s: unknown) => unknown) =>
-    selector({ client: { call: mockCall } })
+    selector({ status: 'connected' })
   ),
+  getGatewayClient: vi.fn(() => ({ call: mockCall })),
 }))
 
 vi.mock('../../../stores/toasts', () => ({

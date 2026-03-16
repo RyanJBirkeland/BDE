@@ -29,7 +29,6 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
     logNextByte: 0,
     loading: false,
     isFetching: false,
-    _logInterval: null,
 
     fetchAgents: async (): Promise<void> => {
       set({ isFetching: true })

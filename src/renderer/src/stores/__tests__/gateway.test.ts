@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useGatewayStore } from '../gateway'
+import { useGatewayStore, getGatewayClient, _resetGatewayClientForTesting } from '../gateway'
 
 vi.mock('../../lib/gateway', () => {
   const GatewayClient = vi.fn()
@@ -29,7 +29,8 @@ vi.mock('../toasts', () => ({
 
 describe('gateway store', () => {
   beforeEach(() => {
-    useGatewayStore.setState({ status: 'disconnected', client: null })
+    _resetGatewayClientForTesting()
+    useGatewayStore.setState({ status: 'disconnected' })
     vi.clearAllMocks()
 
     // Mock window.api.getGatewayConfig — assign directly to preserve window methods
@@ -47,27 +48,27 @@ describe('gateway store', () => {
   })
 
   it('initial client is null', () => {
-    expect(useGatewayStore.getState().client).toBeNull()
+    expect(getGatewayClient()).toBeNull()
   })
 
-  it('connect sets client', async () => {
+  it('connect creates a client', async () => {
     await useGatewayStore.getState().connect()
-    expect(useGatewayStore.getState().client).not.toBeNull()
+    expect(getGatewayClient()).not.toBeNull()
   })
 
   it('calling connect twice does not create duplicate clients', async () => {
     await useGatewayStore.getState().connect()
-    const firstClient = useGatewayStore.getState().client
+    const firstClient = getGatewayClient()
     await useGatewayStore.getState().connect()
-    const secondClient = useGatewayStore.getState().client
+    const secondClient = getGatewayClient()
     expect(firstClient).toBe(secondClient)
   })
 
   it('reconnect disposes existing client and creates new one', async () => {
     await useGatewayStore.getState().connect()
-    const firstClient = useGatewayStore.getState().client
+    const firstClient = getGatewayClient()
     await useGatewayStore.getState().reconnect()
-    const secondClient = useGatewayStore.getState().client
+    const secondClient = getGatewayClient()
 
     expect(firstClient).not.toBe(secondClient)
     expect(firstClient!.dispose).toHaveBeenCalled()

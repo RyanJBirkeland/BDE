@@ -10,15 +10,13 @@ describe('agentHistory store', () => {
       logContent: '',
       logNextByte: 0,
       loading: false,
-      _logInterval: null,
     })
     vi.clearAllMocks()
   })
 
   afterEach(() => {
-    // Clean up any intervals
-    const { _logInterval } = useAgentHistoryStore.getState()
-    if (_logInterval) clearInterval(_logInterval)
+    // Clean up any active polling
+    useAgentHistoryStore.getState().stopLogPolling()
     vi.useRealTimers()
   })
 
@@ -38,7 +36,7 @@ describe('agentHistory store', () => {
     expect(window.api.agents.list).toHaveBeenCalledWith({ limit: 100 })
   })
 
-  it('selectAgent sets selectedId, clears log state, and calls startLogPolling', () => {
+  it('selectAgent sets selectedId and clears log state', () => {
     vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: '', nextByte: 0 })
 
     useAgentHistoryStore.setState({
@@ -52,19 +50,23 @@ describe('agentHistory store', () => {
     expect(state.selectedId).toBe('agent-x')
     expect(state.logContent).toBe('')
     expect(state.logNextByte).toBe(0)
-    expect(state._logInterval).not.toBeNull()
     expect(window.api.agents.readLog).toHaveBeenCalledWith({ id: 'agent-x', fromByte: 0 })
   })
 
-  it('stopLogPolling clears _logInterval', () => {
-    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: '', nextByte: 0 })
+  it('stopLogPolling stops accumulating content', async () => {
+    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'data', nextByte: 4 })
     useAgentHistoryStore.getState().selectAgent('agent-x')
 
-    expect(useAgentHistoryStore.getState()._logInterval).not.toBeNull()
+    // Let initial poll complete
+    await vi.advanceTimersByTimeAsync(0)
+    expect(useAgentHistoryStore.getState().logContent).toBe('data')
 
     useAgentHistoryStore.getState().stopLogPolling()
 
-    expect(useAgentHistoryStore.getState()._logInterval).toBeNull()
+    // After stopping, advancing time should not trigger more polls
+    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'more', nextByte: 8 })
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(useAgentHistoryStore.getState().logContent).toBe('data')
   })
 
   it('log polling accumulates content and advances logNextByte', async () => {
@@ -87,17 +89,20 @@ describe('agentHistory store', () => {
     expect(useAgentHistoryStore.getState().logNextByte).toBe(11)
   })
 
-  it('startLogPolling clears existing interval before starting new one', () => {
-    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: '', nextByte: 0 })
+  it('startLogPolling clears existing polling before starting new one', async () => {
+    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'a', nextByte: 1 })
 
     useAgentHistoryStore.getState().startLogPolling('agent-1')
-    const firstInterval = useAgentHistoryStore.getState()._logInterval
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Reset content to detect new polling
+    useAgentHistoryStore.setState({ logContent: '', logNextByte: 0 })
+    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'b', nextByte: 1 })
 
     useAgentHistoryStore.getState().startLogPolling('agent-2')
-    const secondInterval = useAgentHistoryStore.getState()._logInterval
+    await vi.advanceTimersByTimeAsync(0)
 
-    expect(firstInterval).not.toBe(secondInterval)
-    expect(secondInterval).not.toBeNull()
+    expect(useAgentHistoryStore.getState().logContent).toBe('b')
   })
 
   it('fetchAgents silently handles errors', async () => {

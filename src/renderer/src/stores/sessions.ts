@@ -32,6 +32,9 @@ export interface SubAgent {
   _isActive: boolean
 }
 
+// Module scope — timer handles are mutable runtime objects, not serializable state
+const _pendingKillTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
 interface SessionsStore {
   sessions: AgentSession[]
   subAgents: SubAgent[]
@@ -41,7 +44,6 @@ interface SessionsStore {
   runningCount: number
   loading: boolean
   fetchError: string | null
-  pendingKills: Record<string, ReturnType<typeof setTimeout>>
   followMode: boolean
   fetchSessions: () => Promise<void>
   selectSession: (key: string | null) => void
@@ -69,7 +71,6 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   runningCount: 0,
   loading: true,
   fetchError: null,
-  pendingKills: {},
   followMode: false,
 
   fetchSessions: async (): Promise<void> => {
@@ -199,12 +200,9 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     // Show undo toast for 5s
     toast.undoable('Session killed', () => {
       // Undo: clear timer, re-fetch to restore list
-      const timer = get().pendingKills[sessionKey]
-      if (timer) clearTimeout(timer)
-      set((s) => {
-        const { [sessionKey]: _, ...rest } = s.pendingKills
-        return { pendingKills: rest }
-      })
+      const existing = _pendingKillTimers.get(sessionKey)
+      if (existing) clearTimeout(existing)
+      _pendingKillTimers.delete(sessionKey)
       get().fetchSessions()
       toast.info('Kill cancelled')
     }, KILL_UNDO_WINDOW)
@@ -217,13 +215,10 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         toast.error('Failed to stop session')
         get().fetchSessions()
       }
-      set((s) => {
-        const { [sessionKey]: _, ...rest } = s.pendingKills
-        return { pendingKills: rest }
-      })
+      _pendingKillTimers.delete(sessionKey)
     }, KILL_UNDO_WINDOW)
 
-    set((s) => ({ pendingKills: { ...s.pendingKills, [sessionKey]: timer } }))
+    _pendingKillTimers.set(sessionKey, timer)
   },
 
   steerSubAgent: async (sessionKey, message): Promise<void> => {

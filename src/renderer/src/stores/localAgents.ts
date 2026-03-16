@@ -59,7 +59,6 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
         selectedLocalAgentPid: null,
         logContent: '',
         logNextByte: 0,
-        _logInterval: null,
 
         fetchProcesses: async (): Promise<void> => {
           try {
