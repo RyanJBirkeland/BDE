@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useSessionsStore } from '../../stores/sessions'
+import { useState, useEffect } from 'react'
+import { useLocalAgentsStore } from '../../stores/localAgents'
+import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 
 const TEMPLATES = [
@@ -9,11 +10,9 @@ const TEMPLATES = [
   { id: 'tests', label: '✓ Tests' }
 ] as const
 
-const REPOS = ['life-os', 'feast'] as const
-
 const MODELS = [
-  { id: 'haiku', label: 'Haiku' },
   { id: 'sonnet', label: 'Sonnet' },
+  { id: 'haiku', label: 'Haiku' },
   { id: 'opus', label: 'Opus' }
 ] as const
 
@@ -27,23 +26,46 @@ function slugify(text: string): string {
 
 export function TaskComposer(): React.JSX.Element {
   const [template, setTemplate] = useState<string>('feature')
-  const [repo, setRepo] = useState<string>(REPOS[0])
+  const [repo, setRepo] = useState<string>('BDE')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [model, setModel] = useState<string>('sonnet')
   const [spawning, setSpawning] = useState(false)
+  const [justSpawned, setJustSpawned] = useState(false)
+  const [repoPaths, setRepoPaths] = useState<Record<string, string>>({})
 
-  const spawnSession = useSessionsStore((s) => s.spawnSession)
+  const spawnAgent = useLocalAgentsStore((s) => s.spawnAgent)
 
+  useEffect(() => {
+    window.api.getRepoPaths().then(setRepoPaths).catch(() => {})
+  }, [])
+
+  const repos = Object.keys(repoPaths)
   const branchName = title ? `feat/${slugify(title)}` : ''
 
   const handleRun = async (): Promise<void> => {
     if (!title.trim() || spawning) return
     setSpawning(true)
     try {
-      await spawnSession({ template, repo, title, description, model })
+      const repoPath = repoPaths[repo]
+      if (!repoPath) {
+        toast.error('Unknown repository')
+        return
+      }
+
+      const task = [
+        `[${template}] ${title}`,
+        description ? `\n${description}` : ''
+      ].join('')
+
+      const result = await spawnAgent({ task: task.trim(), repoPath, model })
+      toast.success(`Agent spawned — PID ${result.pid}`)
       setTitle('')
       setDescription('')
+      setJustSpawned(true)
+      setTimeout(() => setJustSpawned(false), 1500)
+    } catch {
+      toast.error('Failed to spawn agent')
     } finally {
       setSpawning(false)
     }
@@ -75,7 +97,7 @@ export function TaskComposer(): React.JSX.Element {
           value={repo}
           onChange={(e) => setRepo(e.target.value)}
         >
-          {REPOS.map((r) => (
+          {repos.map((r) => (
             <option key={r} value={r}>
               {r}
             </option>
@@ -107,7 +129,9 @@ export function TaskComposer(): React.JSX.Element {
       </div>
 
       <div className="task-composer__section">
-        <label className="task-composer__label">Model</label>
+        <label className="task-composer__label">
+          Model <span className="task-composer__max-badge">⬡ Max</span>
+        </label>
         <div className="task-composer__chips">
           {MODELS.map((m) => (
             <Button
@@ -130,7 +154,7 @@ export function TaskComposer(): React.JSX.Element {
         disabled={!title.trim() || spawning}
         loading={spawning}
       >
-        {spawning ? 'Spawning…' : '▶ Run Now'}
+        {justSpawned ? '✓ Spawned' : spawning ? '⟳ Spawning...' : '▶ Spawn Agent'}
       </Button>
     </div>
   )
