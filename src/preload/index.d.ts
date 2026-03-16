@@ -66,6 +66,21 @@ declare global {
         markDone: (args: { id: string; exitCode: number }) => Promise<void>
       }
 
+      // Sprint tasks — Supabase-backed Kanban
+      sprint: {
+        list: () => Promise<unknown[]>
+        create: (task: {
+          title: string
+          repo: string
+          description?: string
+          spec?: string
+          priority?: number
+          status?: string
+        }) => Promise<unknown>
+        update: (id: string, patch: Record<string, unknown>) => Promise<unknown>
+        delete: (id: string) => Promise<{ ok: boolean }>
+      }
+
       // Gateway RPC
       invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
 

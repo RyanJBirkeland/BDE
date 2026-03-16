@@ -84,6 +84,22 @@ const api = {
       ipcRenderer.invoke('agents:markDone', args)
   },
 
+  // Sprint tasks — Supabase-backed Kanban
+  sprint: {
+    list: (): Promise<unknown[]> => ipcRenderer.invoke('sprint:list'),
+    create: (task: {
+      title: string
+      repo: string
+      description?: string
+      spec?: string
+      priority?: number
+      status?: string
+    }): Promise<unknown> => ipcRenderer.invoke('sprint:create', task),
+    update: (id: string, patch: Record<string, unknown>): Promise<unknown> =>
+      ipcRenderer.invoke('sprint:update', id, patch),
+    delete: (id: string): Promise<{ ok: boolean }> => ipcRenderer.invoke('sprint:delete', id),
+  },
+
   // Gateway tool invocation — proxied through main process to avoid CORS
   invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
     ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),

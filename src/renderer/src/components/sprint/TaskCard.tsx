@@ -9,6 +9,7 @@ import type { SprintTask } from './SprintCenter'
 type TaskCardProps = {
   task: SprintTask
   index: number
+  onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
   onViewSpec: (task: SprintTask) => void
   onViewOutput: (task: SprintTask) => void
@@ -22,8 +23,14 @@ function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' | 'defau
   return 'default'
 }
 
-
-export function TaskCard({ task, index, onLaunch, onViewSpec, onViewOutput }: TaskCardProps) {
+export function TaskCard({
+  task,
+  index,
+  onPushToSprint,
+  onLaunch,
+  onViewSpec,
+  onViewOutput,
+}: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { task },
@@ -44,7 +51,11 @@ export function TaskCard({ task, index, onLaunch, onViewSpec, onViewOutput }: Ta
         <Badge variant={repoBadgeVariant(task.repo)} size="sm">
           {task.repo}
         </Badge>
-        {task.spec && <span className="task-card__spec-dot" title="Has spec">📄</span>}
+        {task.spec && (
+          <span className="task-card__spec-dot" title="Has spec">
+            📄
+          </span>
+        )}
         {task.pr_number && (
           <Badge variant={task.pr_status === 'merged' ? 'success' : 'info'} size="sm">
             #{task.pr_number}
@@ -58,6 +69,16 @@ export function TaskCard({ task, index, onLaunch, onViewSpec, onViewOutput }: Ta
 
       <div className="task-card__actions">
         {task.status === 'backlog' && (
+          <>
+            <Button variant="primary" size="sm" onClick={() => onPushToSprint(task)}>
+              → Sprint
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onViewSpec(task)}>
+              Spec
+            </Button>
+          </>
+        )}
+        {task.status === 'queued' && (
           <>
             <Button variant="primary" size="sm" onClick={() => onLaunch(task)}>
               Launch

@@ -694,12 +694,22 @@
 }
 
 .sprint-center__header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
+}
+
+.sprint-center__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
 }
 
 .sprint-center__title-row {
@@ -709,15 +719,15 @@
 }
 
 .sprint-center__title {
-  font-size: var(--bde-size-sm);
-  font-weight: 600;
-  color: var(--bde-text);
-  letter-spacing: 0.3px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
 }
 
 .sprint-center__actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 
