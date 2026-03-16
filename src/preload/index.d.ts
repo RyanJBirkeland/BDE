@@ -54,6 +54,7 @@ declare global {
         model?: string
       }) => Promise<{ pid: number; logPath: string; id: string; interactive: boolean }>
       sendToAgent: (pid: number, message: string) => Promise<{ ok: boolean; error?: string }>
+      killLocalAgent: (pid: number) => Promise<{ ok: boolean; error?: string }>
       tailAgentLog: (args: {
         logPath: string
         fromByte?: number

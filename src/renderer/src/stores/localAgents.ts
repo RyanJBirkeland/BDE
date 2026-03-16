@@ -42,6 +42,7 @@ interface LocalAgentsState {
     model?: string
   }) => Promise<{ pid: number; logPath: string; id: string }>
   sendToAgent: (pid: number, message: string) => Promise<void>
+  killLocalAgent: (pid: number) => Promise<void>
   selectLocalAgent: (pid: number | null) => void
   startLogPolling: (logPath: string) => void
   stopLogPolling: () => void
@@ -97,6 +98,11 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
     if (!result.ok) {
       console.error('sendToAgent failed:', result.error)
     }
+  },
+
+  killLocalAgent: async (pid): Promise<void> => {
+    await window.api.killLocalAgent(pid)
+    // Let ps-polling clean up the process list naturally
   },
 
   selectLocalAgent: (pid): void => {

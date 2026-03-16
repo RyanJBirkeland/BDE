@@ -6,7 +6,7 @@
  */
 import { useEffect, useState, useCallback } from 'react'
 import { Columns2, Grid2x2, Square } from 'lucide-react'
-import { SessionList } from '../components/sessions/SessionList'
+import { AgentList } from '../components/sessions/AgentList'
 import { SessionHeader } from '../components/sessions/SessionHeader'
 import { ChatThread } from '../components/sessions/ChatThread'
 import { ChatPane } from '../components/sessions/ChatPane'
@@ -18,6 +18,8 @@ import { useSessionsStore, type SplitMode } from '../stores/sessions'
 import { useLocalAgentsStore } from '../stores/localAgents'
 import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useUIStore } from '../stores/ui'
+import type { UnifiedAgent } from '../stores/unifiedAgents'
+import { toast } from '../stores/toasts'
 
 const POLL_INTERVAL = 10_000
 
@@ -70,11 +72,55 @@ export function SessionsView(): React.JSX.Element {
   }, [])
 
   const subAgents = useSessionsStore((s) => s.subAgents)
+  const killSession = useSessionsStore((s) => s.killSession)
   const selectedLocalAgentPid = useLocalAgentsStore((s) => s.selectedLocalAgentPid)
+  const selectLocalAgent = useLocalAgentsStore((s) => s.selectLocalAgent)
+  const killLocalAgent = useLocalAgentsStore((s) => s.killLocalAgent)
   const selectedHistoryId = useAgentHistoryStore((s) => s.selectedId)
+  const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
   const selectedSession = sessions.find((s) => s.key === selectedKey)
   const selectedSubAgent = subAgents.find((a) => a.sessionKey === selectedKey) ?? null
   const sessionMode: 'chat' | 'steer' = selectedSubAgent ? 'steer' : 'chat'
+
+  // Unified agent selection state
+  const [selectedUnifiedId, setSelectedUnifiedId] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+
+  // Unified selection handler
+  const handleUnifiedSelect = useCallback(
+    (id: string) => {
+      setSelectedUnifiedId(id)
+      if (id.startsWith('local:')) {
+        const pid = parseInt(id.substring(6), 10)
+        selectLocalAgent(pid)
+      } else if (id.startsWith('history:')) {
+        const historyId = id.substring(8)
+        selectAgent(historyId)
+      } else {
+        selectSession(id)
+      }
+    },
+    [selectLocalAgent, selectAgent, selectSession]
+  )
+
+  // Unified kill handler
+  const handleUnifiedKill = useCallback(
+    async (agent: UnifiedAgent) => {
+      if (agent.source === 'local' && agent.pid) {
+        await killLocalAgent(agent.pid)
+        toast.success('Agent killed')
+      } else if (agent.sessionKey) {
+        await killSession(agent.sessionKey)
+        toast.success('Session killed')
+      }
+    },
+    [killLocalAgent, killSession]
+  )
+
+  // Unified steer handler
+  const handleUnifiedSteer = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('bde:focus-message-input'))
+  }, [])
 
   // Keyboard shortcuts for split modes and pane focus
   useEffect(() => {
@@ -207,7 +253,30 @@ export function SessionsView(): React.JSX.Element {
   return (
     <div className="sessions-chat">
       <div className="sessions-chat__sidebar" style={{ width: sidebarWidth }}>
-        <SessionList />
+        <div className="session-list__header">
+          <span className="session-list__title">AGENTS</span>
+        </div>
+        <div className="session-list__search">
+          <input
+            type="text"
+            placeholder="Filter agents…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setQuery('')
+                e.currentTarget.blur()
+              }
+            }}
+          />
+        </div>
+        <AgentList
+          filter={query}
+          selectedId={selectedUnifiedId}
+          onSelect={handleUnifiedSelect}
+          onKill={handleUnifiedKill}
+          onSteer={handleUnifiedSteer}
+        />
       </div>
       <div
         className="sessions-view__handle"

@@ -80,6 +80,8 @@ const api = {
     ipcRenderer.invoke('local:spawnClaudeAgent', args),
   sendToAgent: (pid: number, message: string): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('local:sendToAgent', { pid, message }),
+  killLocalAgent: (pid: number): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('kill-local-agent', pid),
   tailAgentLog: (args: {
     logPath: string
     fromByte?: number
