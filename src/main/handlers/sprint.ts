@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs'
+import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'os'
 import { safeHandle } from '../ipc-utils'
@@ -120,6 +121,24 @@ async function ensureBacklogStatus(): Promise<void> {
   }
 }
 
+// --- BDE Agents Index ---
+
+interface BdeAgentEntry {
+  id: string
+  logPath: string
+  status: string
+}
+
+async function readBdeAgentsIndex(): Promise<BdeAgentEntry[]> {
+  const indexPath = join(homedir(), '.bde', 'agents.json')
+  try {
+    const raw = await readFile(indexPath, 'utf-8')
+    return JSON.parse(raw) as BdeAgentEntry[]
+  } catch {
+    return []
+  }
+}
+
 // --- IPC Registration ---
 
 export function registerSprintHandlers(): void {
@@ -153,5 +172,14 @@ export function registerSprintHandlers(): void {
   safeHandle('sprint:delete', async (_e, id: string) => {
     await supabaseFetch(`sprint_tasks?id=eq.${id}`, 'DELETE')
     return { ok: true }
+  })
+
+  safeHandle('sprint:readLog', async (_e, agentId: string) => {
+    const agents = await readBdeAgentsIndex()
+    const agent = agents.find((a) => a.id === agentId)
+    if (!agent?.logPath) return { content: '', status: 'unknown' }
+
+    const content = await readFile(agent.logPath, 'utf-8').catch(() => '')
+    return { content, status: agent.status }
   })
 }

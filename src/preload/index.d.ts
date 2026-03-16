@@ -79,6 +79,7 @@ declare global {
         }) => Promise<unknown>
         update: (id: string, patch: Record<string, unknown>) => Promise<unknown>
         delete: (id: string) => Promise<{ ok: boolean }>
+        readLog: (agentId: string) => Promise<{ content: string; status: string }>
       }
 
       // Gateway RPC
