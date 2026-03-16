@@ -100,12 +100,8 @@ function SubAgentRow({
   onSelect: () => void
 }): React.JSX.Element {
   const killSession = useSessionsStore((s) => s.killSession)
-  const steerSubAgent = useSessionsStore((s) => s.steerSubAgent)
+  const selectSession = useSessionsStore((s) => s.selectSession)
   const [killing, setKilling] = useState(false)
-  const [steerOpen, setSteerOpen] = useState(false)
-  const [steerText, setSteerText] = useState('')
-  const [steering, setSteering] = useState(false)
-  const steerRef = useRef<HTMLInputElement>(null)
 
   const handleKill = useCallback(
     async (e: React.MouseEvent): Promise<void> => {
@@ -123,110 +119,56 @@ function SubAgentRow({
 
   const handleSteerClick = useCallback((e: React.MouseEvent): void => {
     e.stopPropagation()
-    setSteerOpen(true)
-  }, [])
-
-  const handleSteerSubmit = useCallback(async (): Promise<void> => {
-    const msg = steerText.trim()
-    if (!msg || steering) return
-    setSteering(true)
-    try {
-      await steerSubAgent(agent.sessionKey, msg)
-      setSteerText('')
-      setSteerOpen(false)
-    } finally {
-      setSteering(false)
-    }
-  }, [steerText, steering, steerSubAgent, agent.sessionKey])
-
-  const handleSteerKeyDown = useCallback(
-    (e: React.KeyboardEvent): void => {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        handleSteerSubmit()
-      } else if (e.key === 'Escape') {
-        e.preventDefault()
-        setSteerOpen(false)
-        setSteerText('')
-      }
-    },
-    [handleSteerSubmit]
-  )
-
-  useEffect(() => {
-    if (steerOpen && steerRef.current) {
-      steerRef.current.focus()
-    }
-  }, [steerOpen])
+    selectSession(agent.sessionKey)
+    window.dispatchEvent(new CustomEvent('bde:focus-message-input'))
+  }, [agent.sessionKey, selectSession])
 
   return (
-    <div className="sub-agent-row-wrapper">
-      <button
-        className={`sub-agent-row ${isSelected ? 'sub-agent-row--selected' : ''}`}
-        onClick={onSelect}
-      >
-        <span
-          className={`session-row__dot ${agent._isActive ? 'session-row__dot--running' : ''}`}
-        />
-        <div className="session-row__info">
-          <span className="session-row__label">{agent.label}</span>
-          <span className="session-row__meta">
-            <Badge variant="muted" size="sm">{modelBadgeLabel(agent.model)}</Badge>
-            <span className="session-row__time">{timeAgo(agent.startedAt)}</span>
-            {!agent._isActive && (
-              <Badge variant={agent.status === 'failed' || agent.status === 'timeout' ? 'danger' : 'muted'} size="sm">
-                {agent.status}
-              </Badge>
-            )}
-          </span>
-          {agent.task && (
-            <span className="sub-agent-row__task">{agent.task}</span>
+    <button
+      className={`sub-agent-row ${isSelected ? 'sub-agent-row--selected' : ''}`}
+      onClick={onSelect}
+    >
+      <span
+        className={`session-row__dot ${agent._isActive ? 'session-row__dot--running' : ''}`}
+      />
+      <div className="session-row__info">
+        <span className="session-row__label">{agent.label}</span>
+        <span className="session-row__meta">
+          <Badge variant="muted" size="sm">{modelBadgeLabel(agent.model)}</Badge>
+          <span className="session-row__time">{timeAgo(agent.startedAt)}</span>
+          {!agent._isActive && (
+            <Badge variant={agent.status === 'failed' || agent.status === 'timeout' ? 'danger' : 'muted'} size="sm">
+              {agent.status}
+            </Badge>
           )}
-        </div>
-        {agent._isActive && (
-          <>
-            <span
-              className="sub-agent-row__action"
-              role="button"
-              tabIndex={-1}
-              onClick={handleSteerClick}
-              title="Steer sub-agent"
-            >
-              ✎
-            </span>
-            <span
-              className="sub-agent-row__action sub-agent-row__action--kill"
-              role="button"
-              tabIndex={-1}
-              onClick={handleKill}
-              title="Stop sub-agent"
-            >
-              {killing ? '...' : '\u00d7'}
-            </span>
-          </>
+        </span>
+        {agent.task && (
+          <span className="sub-agent-row__task">{agent.task}</span>
         )}
-      </button>
-      {steerOpen && (
-        <div className="sub-agent-row__steer-input">
-          <input
-            ref={steerRef}
-            type="text"
-            placeholder="Redirect this agent..."
-            value={steerText}
-            onChange={(e) => setSteerText(e.target.value)}
-            onKeyDown={handleSteerKeyDown}
-            disabled={steering}
-          />
-          <button
-            className="sub-agent-row__steer-send"
-            onClick={handleSteerSubmit}
-            disabled={steering || !steerText.trim()}
+      </div>
+      {agent._isActive && (
+        <>
+          <span
+            className="sub-agent-row__action"
+            role="button"
+            tabIndex={-1}
+            onClick={handleSteerClick}
+            title="Steer sub-agent"
           >
-            {steering ? '...' : 'Send'}
-          </button>
-        </div>
+            ✎
+          </span>
+          <span
+            className="sub-agent-row__action sub-agent-row__action--kill"
+            role="button"
+            tabIndex={-1}
+            onClick={handleKill}
+            title="Stop sub-agent"
+          >
+            {killing ? '...' : '\u00d7'}
+          </span>
+        </>
       )}
-    </div>
+    </button>
   )
 }
 

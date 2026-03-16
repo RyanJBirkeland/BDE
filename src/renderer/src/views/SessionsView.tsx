@@ -51,6 +51,7 @@ export function SessionsView(): React.JSX.Element {
   const subAgents = useSessionsStore((s) => s.subAgents)
   const selectedSession = sessions.find((s) => s.key === selectedKey)
   const selectedSubAgent = subAgents.find((a) => a.sessionKey === selectedKey) ?? null
+  const sessionMode: 'chat' | 'steer' = selectedSubAgent ? 'steer' : 'chat'
 
   return (
     <div className="sessions-chat">
@@ -88,7 +89,7 @@ export function SessionsView(): React.JSX.Element {
               />
             </div>
             <div className="sessions-chat__input">
-              <MessageInput sessionKey={selectedKey} onSent={onSent} onBeforeSend={onBeforeSend} onSendError={onSendError} />
+              <MessageInput sessionKey={selectedKey} sessionMode={sessionMode} onSent={onSent} onBeforeSend={onBeforeSend} onSendError={onSendError} />
             </div>
           </>
         ) : (
