@@ -3,7 +3,7 @@
  * binaries (claude, codex, opencode, pi, aider, cursor) and resolves
  * their working directories via `lsof` on macOS.
  */
-import { exec, spawn } from 'child_process'
+import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import { randomUUID } from 'crypto'
 import { readdir, stat, unlink, readFile } from 'fs/promises'
@@ -15,7 +15,7 @@ import {
   listAgents
 } from './agent-history'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 
 const LOG_DIR = '/tmp/bde-agents'
 const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -50,7 +50,7 @@ const cwdCache = new Map<number, string | null>()
 async function getProcessCwd(pid: number): Promise<string | null> {
   if (cwdCache.has(pid)) return cwdCache.get(pid)!
   try {
-    const { stdout } = await execAsync(`lsof -p ${pid} -a -d cwd -F n`)
+    const { stdout } = await execFileAsync('lsof', ['-p', String(pid), '-a', '-d', 'cwd', '-F', 'n'])
     const lines = stdout.split('\n')
     const nLine = lines.find((l) => l.startsWith('n') && l !== 'ncwd')
     const cwd = nLine ? nLine.slice(1) : null
@@ -96,7 +96,7 @@ function matchAgentBin(command: string): string | null {
 
 export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
   try {
-    const { stdout } = await execAsync('ps -eo pid,%cpu,rss,etime,args')
+    const { stdout } = await execFileAsync('ps', ['-eo', 'pid,%cpu,rss,etime,args'])
     const lines = stdout.trim().split('\n').slice(1) // skip header
 
     const candidates: {
