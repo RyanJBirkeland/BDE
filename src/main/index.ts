@@ -22,6 +22,7 @@ import {
   gitCheckout
 } from './git'
 import { registerFsHandlers } from './fs'
+import { getAgentProcesses } from './local-agents'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -81,6 +82,9 @@ app.whenReady().then(() => {
   ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
   ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))
   registerFsHandlers()
+
+  // --- Local agent process detection ---
+  ipcMain.handle('local:getAgentProcesses', () => getAgentProcesses())
 
   // --- Git read-only IPC ---
   ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))

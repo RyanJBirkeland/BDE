@@ -20,6 +20,19 @@ declare global {
       getLog: (repoPath: string, n?: number) => Promise<string>
       setTitle: (title: string) => void
 
+      // Local agent process detection
+      getAgentProcesses: () => Promise<
+        {
+          pid: number
+          bin: string
+          args: string
+          cwd: string | null
+          startedAt: number
+          cpuPct: number
+          memMb: number
+        }[]
+      >
+
       // Git client
       gitStatus: (
         cwd: string

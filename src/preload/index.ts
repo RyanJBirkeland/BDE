@@ -44,6 +44,19 @@ const api = {
   gitCheckout: (cwd: string, branch: string): Promise<void> =>
     ipcRenderer.invoke('git:checkout', cwd, branch),
 
+  // Local agent process detection
+  getAgentProcesses: (): Promise<
+    {
+      pid: number
+      bin: string
+      args: string
+      cwd: string | null
+      startedAt: number
+      cpuPct: number
+      memMb: number
+    }[]
+  > => ipcRenderer.invoke('local:getAgentProcesses'),
+
   // Gateway tool invocation — proxied through main process to avoid CORS
   invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
     ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),
