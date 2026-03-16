@@ -3,10 +3,17 @@
  * binaries (claude, codex, opencode, pi, aider, cursor) and resolves
  * their working directories via `lsof` on macOS.
  */
-import { exec } from 'child_process'
+import { exec, spawn } from 'child_process'
 import { promisify } from 'util'
+import { randomUUID } from 'crypto'
+import { mkdir, readdir, stat, unlink, readFile } from 'fs/promises'
+import { createWriteStream } from 'fs'
+import { join } from 'path'
 
 const execAsync = promisify(exec)
+
+const LOG_DIR = '/tmp/bde-agents'
+const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 const AGENT_BINS = ['claude', 'codex', 'opencode', 'pi', 'aider', 'cursor']
 
@@ -129,5 +136,93 @@ export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
     return results
   } catch {
     return []
+  }
+}
+
+// --- Spawn a Claude CLI agent on the Max plan ---
+
+export interface SpawnLocalAgentArgs {
+  task: string
+  repoPath: string
+  model?: string // 'sonnet' | 'haiku' | 'opus'
+}
+
+export interface SpawnLocalAgentResult {
+  pid: number
+  logPath: string
+  id: string
+}
+
+function modelToFlag(model?: string): string {
+  if (model === 'haiku') return 'claude-haiku-4-5'
+  if (model === 'opus') return 'claude-opus-4-5'
+  return 'claude-sonnet-4-5'
+}
+
+export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<SpawnLocalAgentResult> {
+  const id = randomUUID()
+  const logPath = join(LOG_DIR, `${id}.log`)
+
+  await mkdir(LOG_DIR, { recursive: true })
+
+  const child = spawn('claude', [
+    '--print',
+    '--model', modelToFlag(args.model),
+    '--permission-mode', 'bypassPermissions',
+    args.task
+  ], {
+    cwd: args.repoPath,
+    detached: true,
+    stdio: ['ignore', 'pipe', 'pipe']
+  })
+
+  const logStream = createWriteStream(logPath, { flags: 'a' })
+  child.stdout?.pipe(logStream)
+  child.stderr?.pipe(logStream)
+  child.unref()
+
+  return { pid: child.pid!, logPath, id }
+}
+
+// --- Tail agent log file ---
+
+export interface TailLogArgs {
+  logPath: string
+  fromByte?: number
+}
+
+export interface TailLogResult {
+  content: string
+  nextByte: number
+}
+
+export async function tailAgentLog(args: TailLogArgs): Promise<TailLogResult> {
+  const fromByte = args.fromByte ?? 0
+  try {
+    const buf = await readFile(args.logPath)
+    const slice = buf.subarray(fromByte)
+    return { content: slice.toString('utf-8'), nextByte: buf.length }
+  } catch {
+    return { content: '', nextByte: fromByte }
+  }
+}
+
+// --- Cleanup old log files on startup ---
+
+export async function cleanupOldLogs(): Promise<void> {
+  try {
+    const entries = await readdir(LOG_DIR)
+    const now = Date.now()
+    await Promise.all(
+      entries
+        .filter((f) => f.endsWith('.log'))
+        .map(async (f) => {
+          const fullPath = join(LOG_DIR, f)
+          const s = await stat(fullPath)
+          if (now - s.mtimeMs > LOG_MAX_AGE_MS) await unlink(fullPath)
+        })
+    )
+  } catch {
+    // Dir may not exist yet — that's fine
   }
 }

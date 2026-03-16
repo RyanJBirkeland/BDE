@@ -20,7 +20,7 @@ declare global {
       getLog: (repoPath: string, n?: number) => Promise<string>
       setTitle: (title: string) => void
 
-      // Local agent process detection
+      // Local agent process detection + spawning
       getAgentProcesses: () => Promise<
         {
           pid: number
@@ -32,6 +32,15 @@ declare global {
           memMb: number
         }[]
       >
+      spawnLocalAgent: (args: {
+        task: string
+        repoPath: string
+        model?: string
+      }) => Promise<{ pid: number; logPath: string; id: string }>
+      tailAgentLog: (args: {
+        logPath: string
+        fromByte?: number
+      }) => Promise<{ content: string; nextByte: number }>
 
       // Git client
       gitStatus: (

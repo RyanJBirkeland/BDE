@@ -22,7 +22,13 @@ import {
   gitCheckout
 } from './git'
 import { registerFsHandlers } from './fs'
-import { getAgentProcesses } from './local-agents'
+import {
+  getAgentProcesses,
+  spawnClaudeAgent,
+  tailAgentLog,
+  cleanupOldLogs
+} from './local-agents'
+import type { SpawnLocalAgentArgs, TailLogArgs } from './local-agents'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -83,8 +89,13 @@ app.whenReady().then(() => {
   ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))
   registerFsHandlers()
 
-  // --- Local agent process detection ---
+  // --- Local agent process detection + spawning ---
   ipcMain.handle('local:getAgentProcesses', () => getAgentProcesses())
+  ipcMain.handle('local:spawnClaudeAgent', (_e, args: SpawnLocalAgentArgs) =>
+    spawnClaudeAgent(args)
+  )
+  ipcMain.handle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
+  cleanupOldLogs()
 
   // --- Git read-only IPC ---
   ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
