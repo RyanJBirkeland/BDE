@@ -1247,6 +1247,78 @@
   margin-top: 8px;
 }
 
+.spawn-modal__textarea-wrapper {
+  position: relative;
+}
+
+.spawn-modal__history {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.spawn-modal__history-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--bde-text-muted);
+  padding: 8px 10px 4px;
+}
+
+.spawn-modal__history-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--bde-text);
+  font-size: 13px;
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spawn-modal__history-item:hover {
+  background: var(--bde-bg);
+}
+
+.spawn-modal__char-count {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  text-align: right;
+  margin-top: 4px;
+}
+
+.spawn-modal__char-count--warning {
+  color: var(--bde-warning, #f59e0b);
+}
+
+.spawn-modal__char-count--error {
+  color: var(--bde-error, #ef4444);
+  font-weight: 600;
+}
+
+.spawn-modal__plan-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--bde-text-muted);
+  margin-left: 6px;
+}
+
 /* ── Session Header ──────────────────────────────────── */
 
 .session-header {
