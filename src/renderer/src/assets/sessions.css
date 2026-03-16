@@ -2178,3 +2178,15 @@
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* ── Agent List (unified) ─────────────────────────────── */
+
+.agent-list { display: flex; flex-direction: column; overflow-y: auto; flex: 1; }
+.agent-list__section { }
+.agent-list__section-header { display: flex; align-items: center; padding: 4px 8px; gap: 6px; cursor: pointer; user-select: none; }
+.agent-list__section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; color: var(--bde-text-dim); text-transform: uppercase; flex: 1; }
+.agent-list__follow-toggle { background: none; border: none; cursor: pointer; font-size: 12px; padding: 0 2px; opacity: 0.6; transition: opacity 0.15s; }
+.agent-list__follow-toggle:hover { opacity: 1; }
+.agent-list__kill-all { font-size: 10px; color: #ef4444; background: rgba(239,68,68,0.1); border: none; border-radius: 3px; padding: 1px 6px; cursor: pointer; }
+.agent-list__empty { padding: 24px 16px; text-align: center; color: var(--bde-text-dim); font-size: 13px; }
+.agent-list__view-all { font-size: 11px; color: var(--bde-accent); padding: 4px 16px; cursor: pointer; background: none; border: none; }
