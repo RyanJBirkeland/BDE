@@ -14,6 +14,9 @@ describe('localAgents store', () => {
       logNextByte: 0,
     })
     vi.clearAllMocks()
+    // Reset queued mockResolvedValueOnce from previous tests
+    vi.mocked(window.api.tailAgentLog).mockReset()
+    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: '', nextByte: 0 })
   })
 
   afterEach(() => {
@@ -89,25 +92,22 @@ describe('localAgents store', () => {
     expect(useLocalAgentsStore.getState().spawnedAgents[0].model).toBe('sonnet')
   })
 
-  it('sendToAgent calls IPC and logs error on { ok: false }', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  it('sendToAgent throws on { ok: false }', async () => {
     vi.mocked(window.api.sendToAgent).mockResolvedValue({ ok: false, error: 'agent busy' })
 
-    await useLocalAgentsStore.getState().sendToAgent(123, 'hello')
+    await expect(
+      useLocalAgentsStore.getState().sendToAgent(123, 'hello')
+    ).rejects.toThrow('agent busy')
 
     expect(window.api.sendToAgent).toHaveBeenCalledWith(123, 'hello')
-    expect(consoleSpy).toHaveBeenCalledWith('sendToAgent failed:', 'agent busy')
-    consoleSpy.mockRestore()
   })
 
-  it('sendToAgent does not log error on { ok: true }', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  it('sendToAgent resolves on { ok: true }', async () => {
     vi.mocked(window.api.sendToAgent).mockResolvedValue({ ok: true })
 
-    await useLocalAgentsStore.getState().sendToAgent(123, 'hello')
-
-    expect(consoleSpy).not.toHaveBeenCalled()
-    consoleSpy.mockRestore()
+    await expect(
+      useLocalAgentsStore.getState().sendToAgent(123, 'hello')
+    ).resolves.toBeUndefined()
   })
 
   it('killLocalAgent calls IPC and does NOT remove process (ps-poll handles that)', async () => {
@@ -138,24 +138,31 @@ describe('localAgents store', () => {
     expect(useLocalAgentsStore.getState().logNextByte).toBe(13)
   })
 
-  it('stopLogPolling stops accumulating content', async () => {
-    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: 'data', nextByte: 4 })
+  it('stopLogPolling prevents further log accumulation', async () => {
+    vi.mocked(window.api.tailAgentLog)
+      .mockResolvedValueOnce({ content: 'first ', nextByte: 6 })
+      .mockResolvedValueOnce({ content: 'second', nextByte: 12 })
+
     useLocalAgentsStore.getState().startLogPolling('/tmp/log')
 
     await vi.advanceTimersByTimeAsync(0)
-    expect(useLocalAgentsStore.getState().logContent).toBe('data')
+    expect(useLocalAgentsStore.getState().logContent).toBe('first ')
 
     useLocalAgentsStore.getState().stopLogPolling()
 
-    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: 'more', nextByte: 8 })
+    // Content should not change after stopping
     await vi.advanceTimersByTimeAsync(2000)
-    expect(useLocalAgentsStore.getState().logContent).toBe('data')
+    expect(useLocalAgentsStore.getState().logContent).toBe('first ')
   })
 
-  it('selectLocalAgent stops polling and resets log state', () => {
-    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: '', nextByte: 0 })
+  it('selectLocalAgent resets log state and stops polling', async () => {
+    vi.mocked(window.api.tailAgentLog)
+      .mockResolvedValueOnce({ content: 'existing', nextByte: 8 })
+      .mockResolvedValueOnce({ content: 'more', nextByte: 12 })
+
     useLocalAgentsStore.getState().startLogPolling('/tmp/log')
-    useLocalAgentsStore.setState({ logContent: 'existing', logNextByte: 8 })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(useLocalAgentsStore.getState().logContent).toBe('existing')
 
     useLocalAgentsStore.getState().selectLocalAgent(555)
 
@@ -163,5 +170,9 @@ describe('localAgents store', () => {
     expect(state.selectedLocalAgentPid).toBe(555)
     expect(state.logContent).toBe('')
     expect(state.logNextByte).toBe(0)
+
+    // Verify polling stopped — content should not change
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(useLocalAgentsStore.getState().logContent).toBe('')
   })
 })

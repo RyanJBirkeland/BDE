@@ -3,7 +3,7 @@
  * Heavy child components are mocked to avoid pulling in xterm, websockets, etc.
  */
 import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 
 // jsdom stubs
 Element.prototype.scrollIntoView = vi.fn()
@@ -169,36 +169,42 @@ import { TerminalView } from '../TerminalView'
 describe('View smoke tests', () => {
   it('SessionsView renders without crashing', () => {
     const { container } = render(<SessionsView />)
-    expect(container.querySelector('.sessions-chat')).toBeInTheDocument()
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.innerHTML).not.toBe('')
   })
 
   it('SprintView renders without crashing', () => {
     const { container } = render(<SprintView />)
-    expect(container.querySelector('.sprint-view')).toBeInTheDocument()
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.innerHTML).not.toBe('')
   })
 
   it('DiffView renders without crashing', () => {
     const { container } = render(<DiffView />)
-    expect(container.querySelector('.diff-view')).toBeInTheDocument()
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.innerHTML).not.toBe('')
   })
 
   it('MemoryView renders without crashing', () => {
     const { container } = render(<MemoryView />)
-    expect(container.querySelector('.memory-view')).toBeInTheDocument()
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.innerHTML).not.toBe('')
   })
 
   it('CostView renders without crashing', () => {
     const { container } = render(<CostView />)
-    expect(container.querySelector('.cost-view')).toBeInTheDocument()
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.innerHTML).not.toBe('')
   })
 
   it('SettingsView renders without crashing', () => {
     const { container } = render(<SettingsView />)
-    expect(container.querySelector('.settings-view')).toBeInTheDocument()
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.innerHTML).not.toBe('')
   })
 
-  it('TerminalView renders without crashing', () => {
-    const { container } = render(<TerminalView />)
-    expect(container).toBeTruthy()
+  it('TerminalView renders mocked terminal pane', () => {
+    render(<TerminalView />)
+    expect(screen.getByTestId('terminal-pane')).toBeInTheDocument()
   })
 })

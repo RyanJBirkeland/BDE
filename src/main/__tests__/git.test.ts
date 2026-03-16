@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { execSync } from 'child_process'
+import { execSync, execFileSync } from 'child_process'
 import {
   gitCommit,
   gitCheckout,
@@ -12,6 +12,7 @@ import {
 
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }))
 
 vi.mock('fs/promises', async (importOriginal) => {
@@ -28,51 +29,56 @@ describe('git.ts', () => {
   })
 
   describe('gitCommit', () => {
-    it('calls execSync with commit -m and the message', () => {
+    it('calls execFileSync with commit args', () => {
       gitCommit('/tmp/repo', 'fix: something')
 
-      expect(execSync).toHaveBeenCalledWith(
-        'git commit -m "fix: something"',
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['commit', '-m', 'fix: something'],
         { cwd: '/tmp/repo', encoding: 'utf-8' }
       )
     })
 
-    it('escapes double quotes in the message', () => {
+    it('passes special characters safely via execFileSync', () => {
       gitCommit('/tmp/repo', 'fix: use "proper" quotes')
 
-      expect(execSync).toHaveBeenCalledWith(
-        'git commit -m "fix: use \\"proper\\" quotes"',
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['commit', '-m', 'fix: use "proper" quotes'],
         { cwd: '/tmp/repo', encoding: 'utf-8' }
       )
     })
   })
 
   describe('gitCheckout', () => {
-    it('calls execSync with checkout and branch name', () => {
+    it('calls execFileSync with checkout args', () => {
       gitCheckout('/tmp/repo', 'feat/new-branch')
 
-      expect(execSync).toHaveBeenCalledWith(
-        'git checkout "feat/new-branch"',
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['checkout', 'feat/new-branch'],
         { cwd: '/tmp/repo', encoding: 'utf-8' }
       )
     })
 
-    it('escapes double quotes in branch name', () => {
+    it('passes branch names with special characters safely', () => {
       gitCheckout('/tmp/repo', 'branch"name')
 
-      expect(execSync).toHaveBeenCalledWith(
-        'git checkout "branch\\"name"',
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['checkout', 'branch"name'],
         { cwd: '/tmp/repo', encoding: 'utf-8' }
       )
     })
   })
 
   describe('gitStage', () => {
-    it('calls execSync with git add and quoted file paths', () => {
+    it('calls execFileSync with git add and file paths', () => {
       gitStage('/tmp/repo', ['file1.ts', 'src/file2.ts'])
 
-      expect(execSync).toHaveBeenCalledWith(
-        'git add "file1.ts" "src/file2.ts"',
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['add', '--', 'file1.ts', 'src/file2.ts'],
         { cwd: '/tmp/repo', encoding: 'utf-8' }
       )
     })
@@ -80,29 +86,24 @@ describe('git.ts', () => {
     it('does nothing when files array is empty', () => {
       gitStage('/tmp/repo', [])
 
-      expect(execSync).not.toHaveBeenCalled()
+      expect(execFileSync).not.toHaveBeenCalled()
     })
   })
 
-  describe('shell injection — gitCommit', () => {
-    it('does NOT use execFileSync — message with $(whoami) is interpolated into shell string', () => {
-      // This test documents the current behavior: gitCommit uses string interpolation
-      // with execSync, which means shell metacharacters in the message ARE interpreted
-      // by the shell. The quote escaping only handles double quotes.
-      //
-      // A message containing $(whoami) would be passed as:
-      //   git commit -m "$(whoami)"
-      // which the shell WILL execute as a command substitution.
-      //
-      // This is a known security issue — gitCommit should use execFileSync instead.
+  describe('shell injection — gitCommit uses execFileSync (safe)', () => {
+    it('uses execFileSync — shell metacharacters are treated as literals', () => {
+      // execFileSync does not invoke a shell, so $(whoami) is passed as a
+      // literal string to git, not interpreted by the shell.
       const malicious = '$(whoami)'
       gitCommit('/tmp/repo', malicious)
 
-      // Verify it's called with string interpolation (not safe execFileSync)
-      const call = vi.mocked(execSync).mock.calls[0]
-      expect(call[0]).toBe('git commit -m "$(whoami)"')
-      // The command string contains the shell metacharacter unescaped
-      expect(call[0]).toContain('$(whoami)')
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['commit', '-m', '$(whoami)'],
+        expect.any(Object)
+      )
+      // Verify execSync was NOT used for commit
+      expect(execSync).not.toHaveBeenCalled()
     })
   })
 

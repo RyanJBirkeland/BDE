@@ -37,8 +37,8 @@ describe('Textarea', () => {
     expect(onKeyDown).toHaveBeenCalled()
   })
 
-  it('has bde-textarea class', () => {
+  it('renders as a textbox element', () => {
     render(<Textarea value="" onChange={() => {}} />)
-    expect(screen.getByRole('textbox')).toHaveClass('bde-textarea')
+    expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
 })

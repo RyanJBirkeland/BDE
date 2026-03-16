@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcCost, resolveModel, MODEL_PRICING } from '../cost'
+import { calcCost, resolveModel } from '../cost'
 
 describe('resolveModel', () => {
   it('resolves haiku model string', () => {
@@ -27,19 +27,19 @@ describe('resolveModel', () => {
 describe('calcCost', () => {
   it('calculates correct cost for sonnet', () => {
     const cost = calcCost(1_000_000, 1_000_000, 'sonnet')
-    // input: 1M * 3/1M = $3, output: 1M * 15/1M = $15
+    // input: 1M tokens × $3/1M = $3, output: 1M tokens × $15/1M = $15
     expect(cost).toBeCloseTo(18, 5)
   })
 
   it('calculates correct cost for haiku', () => {
     const cost = calcCost(1_000_000, 1_000_000, 'haiku')
-    // input: 1M * 1/1M = $1, output: 1M * 5/1M = $5
+    // input: 1M tokens × $1/1M = $1, output: 1M tokens × $5/1M = $5
     expect(cost).toBeCloseTo(6, 5)
   })
 
   it('calculates correct cost for opus', () => {
     const cost = calcCost(1_000_000, 1_000_000, 'opus')
-    // input: 1M * 15/1M = $15, output: 1M * 75/1M = $75
+    // input: 1M tokens × $15/1M = $15, output: 1M tokens × $75/1M = $75
     expect(cost).toBeCloseTo(90, 5)
   })
 
@@ -49,7 +49,7 @@ describe('calcCost', () => {
 
   it('handles small token counts', () => {
     const cost = calcCost(100, 50, 'sonnet')
-    const expected = 100 * MODEL_PRICING.sonnet.input + 50 * MODEL_PRICING.sonnet.output
-    expect(cost).toBeCloseTo(expected, 10)
+    // 100 × (3/1M) + 50 × (15/1M) = 0.0003 + 0.00075 = 0.00105
+    expect(cost).toBeCloseTo(0.00105, 10)
   })
 })

@@ -12,10 +12,13 @@ describe('agentHistory store', () => {
       loading: false,
     })
     vi.clearAllMocks()
+    // Reset queued mockResolvedValueOnce from previous tests
+    vi.mocked(window.api.agents.readLog).mockReset()
+    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: '', nextByte: 0 })
   })
 
   afterEach(() => {
-    // Clean up any active polling
+    // Stop any active polling before restoring timers
     useAgentHistoryStore.getState().stopLogPolling()
     vi.useRealTimers()
   })
@@ -36,8 +39,8 @@ describe('agentHistory store', () => {
     expect(window.api.agents.list).toHaveBeenCalledWith({ limit: 100 })
   })
 
-  it('selectAgent sets selectedId and clears log state', () => {
-    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: '', nextByte: 0 })
+  it('selectAgent sets selectedId, clears log state, and starts polling', async () => {
+    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'test output', nextByte: 11 })
 
     useAgentHistoryStore.setState({
       logContent: 'old content',
@@ -50,23 +53,29 @@ describe('agentHistory store', () => {
     expect(state.selectedId).toBe('agent-x')
     expect(state.logContent).toBe('')
     expect(state.logNextByte).toBe(0)
+
+    // Verify polling started by checking log content appears
+    await vi.advanceTimersByTimeAsync(0)
+    expect(useAgentHistoryStore.getState().logContent).toBe('test output')
     expect(window.api.agents.readLog).toHaveBeenCalledWith({ id: 'agent-x', fromByte: 0 })
   })
 
-  it('stopLogPolling stops accumulating content', async () => {
-    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'data', nextByte: 4 })
-    useAgentHistoryStore.getState().selectAgent('agent-x')
+  it('stopLogPolling prevents further log accumulation', async () => {
+    vi.mocked(window.api.agents.readLog)
+      .mockResolvedValueOnce({ content: 'first ', nextByte: 6 })
+      .mockResolvedValueOnce({ content: 'second', nextByte: 12 })
 
-    // Let initial poll complete
+    useAgentHistoryStore.getState().startLogPolling('agent-x')
+
+    // First poll fires
     await vi.advanceTimersByTimeAsync(0)
-    expect(useAgentHistoryStore.getState().logContent).toBe('data')
+    expect(useAgentHistoryStore.getState().logContent).toBe('first ')
 
     useAgentHistoryStore.getState().stopLogPolling()
 
-    // After stopping, advancing time should not trigger more polls
-    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'more', nextByte: 8 })
+    // Advance past the next polling interval — content should not change
     await vi.advanceTimersByTimeAsync(2000)
-    expect(useAgentHistoryStore.getState().logContent).toBe('data')
+    expect(useAgentHistoryStore.getState().logContent).toBe('first ')
   })
 
   it('log polling accumulates content and advances logNextByte', async () => {
@@ -89,20 +98,20 @@ describe('agentHistory store', () => {
     expect(useAgentHistoryStore.getState().logNextByte).toBe(11)
   })
 
-  it('startLogPolling clears existing polling before starting new one', async () => {
-    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'a', nextByte: 1 })
+  it('startLogPolling resets when called twice', async () => {
+    vi.mocked(window.api.agents.readLog)
+      .mockResolvedValueOnce({ content: 'from-agent-1', nextByte: 12 })
+      .mockResolvedValueOnce({ content: 'from-agent-2', nextByte: 12 })
 
     useAgentHistoryStore.getState().startLogPolling('agent-1')
     await vi.advanceTimersByTimeAsync(0)
+    expect(useAgentHistoryStore.getState().logContent).toBe('from-agent-1')
 
-    // Reset content to detect new polling
+    // Starting a new poll should work independently
     useAgentHistoryStore.setState({ logContent: '', logNextByte: 0 })
-    vi.mocked(window.api.agents.readLog).mockResolvedValue({ content: 'b', nextByte: 1 })
-
     useAgentHistoryStore.getState().startLogPolling('agent-2')
     await vi.advanceTimersByTimeAsync(0)
-
-    expect(useAgentHistoryStore.getState().logContent).toBe('b')
+    expect(useAgentHistoryStore.getState().logContent).toBe('from-agent-2')
   })
 
   it('fetchAgents silently handles errors', async () => {

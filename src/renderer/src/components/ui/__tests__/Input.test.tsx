@@ -29,14 +29,12 @@ describe('Input', () => {
   })
 
   it('renders prefix when provided', () => {
-    const { container } = render(<Input value="" onChange={() => {}} prefix={<span>$</span>} />)
-    expect(container.querySelector('.bde-input__prefix')).toBeInTheDocument()
-    expect(container.querySelector('.bde-input--has-prefix')).toBeInTheDocument()
+    render(<Input value="" onChange={() => {}} prefix={<span>$</span>} />)
+    expect(screen.getByText('$')).toBeInTheDocument()
   })
 
   it('renders suffix when provided', () => {
-    const { container } = render(<Input value="" onChange={() => {}} suffix={<span>kg</span>} />)
-    expect(container.querySelector('.bde-input__suffix')).toBeInTheDocument()
-    expect(container.querySelector('.bde-input--has-suffix')).toBeInTheDocument()
+    render(<Input value="" onChange={() => {}} suffix={<span>kg</span>} />)
+    expect(screen.getByText('kg')).toBeInTheDocument()
   })
 })

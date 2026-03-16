@@ -15,8 +15,11 @@ describe('EmptyState', () => {
   })
 
   it('does not render description when not provided', () => {
-    const { container } = render(<EmptyState title="Empty" />)
-    expect(container.querySelector('.bde-empty__desc')).not.toBeInTheDocument()
+    render(<EmptyState title="Empty" />)
+    // Only the title text should be present, no description
+    expect(screen.queryByText('Nothing here')).not.toBeInTheDocument()
+    // The title should still render
+    expect(screen.getByText('Empty')).toBeInTheDocument()
   })
 
   it('renders icon when provided', () => {

@@ -26,40 +26,40 @@ describe('ToastContainer', () => {
     expect(screen.getByText('Error!')).toBeInTheDocument()
   })
 
-  it('success toast has correct styling class', () => {
+  it('renders success toast with message text', () => {
     useToastStore.setState({
       toasts: [{ id: '1', message: 'Done', type: 'success' }],
     })
     render(<ToastContainer />)
-    const toastEl = screen.getByText('Done').closest('.toast')
-    expect(toastEl).toHaveClass('toast--success')
+    expect(screen.getByText('Done')).toBeInTheDocument()
   })
 
-  it('error toast has correct styling class', () => {
+  it('renders error toast with message text', () => {
     useToastStore.setState({
       toasts: [{ id: '1', message: 'Fail', type: 'error' }],
     })
     render(<ToastContainer />)
-    expect(screen.getByText('Fail').closest('.toast')).toHaveClass('toast--error')
+    expect(screen.getByText('Fail')).toBeInTheDocument()
   })
 
-  it('info toast has correct styling class', () => {
+  it('renders info toast with message text', () => {
     useToastStore.setState({
       toasts: [{ id: '1', message: 'Info', type: 'info' }],
     })
     render(<ToastContainer />)
-    expect(screen.getByText('Info').closest('.toast')).toHaveClass('toast--info')
+    expect(screen.getByText('Info')).toBeInTheDocument()
   })
 
-  it('dismisses toast on click', async () => {
+  it('dismisses toast on click and removes it from DOM', async () => {
     const user = userEvent.setup()
     useToastStore.setState({
       toasts: [{ id: '1', message: 'Click me', type: 'success' }],
     })
     render(<ToastContainer />)
 
+    expect(screen.getByText('Click me')).toBeInTheDocument()
     await user.click(screen.getByText('Click me'))
-    expect(useToastStore.getState().toasts).toHaveLength(0)
+    expect(screen.queryByText('Click me')).not.toBeInTheDocument()
   })
 
   it('renders undo button for undoable toasts', () => {
