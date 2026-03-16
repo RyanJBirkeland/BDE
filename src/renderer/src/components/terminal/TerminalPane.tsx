@@ -54,7 +54,8 @@ export function TerminalPane({ tabId, shell, visible }: TerminalPaneProps): Reac
     term.loadAddon(searchAddon)
     term.loadAddon(new WebLinksAddon())
     term.open(containerRef.current)
-    fitAddon.fit()
+    // Defer initial fit so the container has settled to its final layout size
+    requestAnimationFrame(() => fitAddon.fit())
 
     termRef.current = term
     fitAddonRef.current = fitAddon
