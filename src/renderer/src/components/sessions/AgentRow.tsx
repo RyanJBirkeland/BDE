@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Badge } from '../ui/Badge'
 import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
 import { getStaleLevel } from '../../hooks/useUnifiedAgents'
 import { timeAgo, modelBadgeLabel } from '../../lib/format'
+import { VARIANTS, TRANSITIONS, SPRINGS } from '../../lib/motion'
 
 export interface AgentRowProps {
   agent: UnifiedAgent
@@ -67,9 +69,19 @@ export function AgentRow({
     [agent.canSteer, onSteer]
   )
 
+  const isRunning = agent.status === 'running'
+
   return (
-    <button
-      className={`agent-row ${isSelected ? 'agent-row--selected' : ''}`}
+    <motion.button
+      variants={VARIANTS.staggerChild}
+      transition={SPRINGS.default}
+      whileHover={{ scale: 1.008, transition: TRANSITIONS.instant }}
+      whileTap={{ scale: 0.998 }}
+      className={[
+        'agent-row glass glass-highlight',
+        isSelected && 'agent-row--selected gradient-border glow-accent-sm',
+        isRunning && !isSelected && 'glow-pulse',
+      ].filter(Boolean).join(' ')}
       onClick={onSelect}
     >
       <span className={dotClass(agent)} />
@@ -113,6 +125,6 @@ export function AgentRow({
           {killing ? '...' : '\u00d7'}
         </span>
       )}
-    </button>
+    </motion.button>
   )
 }

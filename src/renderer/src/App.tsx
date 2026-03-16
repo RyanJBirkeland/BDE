@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useGatewayStore } from './stores/gateway'
 import { useUIStore, type View } from './stores/ui'
 import { useSessionsStore } from './stores/sessions'
@@ -20,6 +21,7 @@ import DiffView from './views/DiffView'
 import CostView from './views/CostView'
 import SettingsView from './views/SettingsView'
 import { TerminalView } from './views/TerminalView'
+import { VARIANTS, SPRINGS } from './lib/motion'
 
 const VIEW_ORDER: View[] = [
   'sessions',
@@ -100,8 +102,16 @@ function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Eleme
   }, [onClose])
 
   return (
-    <div className="shortcuts-overlay" onClick={onClose}>
-      <div className="shortcuts-overlay__panel" onClick={(e) => e.stopPropagation()}>
+    <div className="shortcuts-overlay elevation-3-backdrop" onClick={onClose}>
+      <motion.div
+        className="shortcuts-overlay__panel glass-modal"
+        onClick={(e) => e.stopPropagation()}
+        variants={VARIANTS.scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={SPRINGS.smooth}
+      >
         <h2 className="shortcuts-overlay__title">Keyboard Shortcuts</h2>
         <div className="shortcuts-overlay__columns">
           <div className="shortcuts-overlay__col">
@@ -126,7 +136,7 @@ function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Eleme
         <Button variant="ghost" className="shortcuts-overlay__close" onClick={onClose}>
           Close <Kbd>Esc</Kbd>
         </Button>
-      </div>
+      </motion.div>
     </div>
   )
 }
@@ -209,7 +219,7 @@ function App(): React.JSX.Element {
   }, [handleKeyDown])
 
   return (
-    <div className="app-shell">
+    <div className="app-shell elevation-0">
       <TitleBar sessionCount={runningCount} totalCost={totalCost} />
       <div className="app-shell__body">
         <ActivityBar connectionStatus={status} />
@@ -224,7 +234,9 @@ function App(): React.JSX.Element {
         onReconnect={() => connect()}
       />
       <CommandPalette open={paletteOpen} onClose={closePalette} />
-      {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
+      <AnimatePresence>
+        {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
+      </AnimatePresence>
       <ToastContainer />
     </div>
   )

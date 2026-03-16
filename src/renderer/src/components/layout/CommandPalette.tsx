@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore, type View } from '../../stores/ui'
 import { useGatewayStore } from '../../stores/gateway'
 import { useLocalAgentsStore } from '../../stores/localAgents'
@@ -6,6 +7,7 @@ import { useAgentHistoryStore, type AgentMeta } from '../../stores/agentHistory'
 import { toast } from '../../stores/toasts'
 import { Kbd } from '../ui/Kbd'
 import { timeAgo } from '../../lib/format'
+import { VARIANTS, SPRINGS } from '../../lib/motion'
 
 type CommandCategory = 'navigation' | 'action' | 'session'
 
@@ -38,7 +40,7 @@ interface CommandPaletteProps {
   onClose: () => void
 }
 
-export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JSX.Element | null {
+export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [recentAgents, setRecentAgents] = useState<AgentMeta[]>([])
@@ -208,13 +210,22 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
     [onClose, flatItems.length, runSelected]
   )
 
-  if (!open) return null
-
   let flatIndex = 0
 
   return (
-    <div className="command-palette__overlay" onClick={onClose}>
-      <div className="command-palette" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
+    <AnimatePresence>
+      {open && (
+    <div className="command-palette__overlay elevation-3-backdrop" onClick={onClose}>
+      <motion.div
+        className="command-palette glass-modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
+        variants={VARIANTS.scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={SPRINGS.smooth}
+      >
         <input
           ref={inputRef}
           className="command-palette__input"
@@ -247,7 +258,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
             <div className="command-palette__empty">No matching commands</div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
+      )}
+    </AnimatePresence>
   )
 }

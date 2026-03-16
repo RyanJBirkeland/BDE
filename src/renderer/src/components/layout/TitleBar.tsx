@@ -12,8 +12,14 @@ export function TitleBar({ sessionCount, totalCost }: TitleBarProps): React.JSX.
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
   return (
-    <div className="titlebar">
-      <div className="titlebar__left" />
+    <div className="titlebar glass">
+      <div className="titlebar__left">
+        <span className="titlebar__logotype-wrapper">
+          <span className="logotype-glow" aria-hidden>BDE</span>
+          <span className="logotype">BDE</span>
+        </span>
+        <div className="titlebar__separator" />
+      </div>
 
       <div className="titlebar__right">
         {sessionCount > 0 && (

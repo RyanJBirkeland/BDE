@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { AgentRow } from './AgentRow'
 import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
 import { useUnifiedAgents, groupUnifiedAgents } from '../../hooks/useUnifiedAgents'
 import { useSessionsStore } from '../../stores/sessions'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
+import { VARIANTS, SPRINGS } from '../../lib/motion'
 
 export interface AgentListProps {
   filter?: string
@@ -99,16 +101,23 @@ export function AgentList({
               {followMode ? '\uD83D\uDCCC Following' : '\uD83D\uDCCC Follow'}
             </button>
           </div>
-          {active.map((a) => (
-            <AgentRow
-              key={a.id}
-              agent={a}
-              isSelected={a.id === selectedId}
-              onSelect={() => onSelect(a.id)}
-              onKill={() => onKill(a)}
-              onSteer={() => onSteer(a)}
-            />
-          ))}
+          <motion.div
+            variants={VARIANTS.staggerContainer}
+            initial="initial"
+            animate="animate"
+            transition={SPRINGS.default}
+          >
+            {active.map((a) => (
+              <AgentRow
+                key={a.id}
+                agent={a}
+                isSelected={a.id === selectedId}
+                onSelect={() => onSelect(a.id)}
+                onKill={() => onKill(a)}
+                onSteer={() => onSteer(a)}
+              />
+            ))}
+          </motion.div>
         </div>
       )}
 
@@ -118,16 +127,23 @@ export function AgentList({
           <div className="agent-list__group-header">
             <span>RECENT ({recent.length})</span>
           </div>
-          {recent.map((a) => (
-            <AgentRow
-              key={a.id}
-              agent={a}
-              isSelected={a.id === selectedId}
-              onSelect={() => onSelect(a.id)}
-              onKill={() => onKill(a)}
-              onSteer={() => onSteer(a)}
-            />
-          ))}
+          <motion.div
+            variants={VARIANTS.staggerContainer}
+            initial="initial"
+            animate="animate"
+            transition={SPRINGS.default}
+          >
+            {recent.map((a) => (
+              <AgentRow
+                key={a.id}
+                agent={a}
+                isSelected={a.id === selectedId}
+                onSelect={() => onSelect(a.id)}
+                onKill={() => onKill(a)}
+                onSteer={() => onSteer(a)}
+              />
+            ))}
+          </motion.div>
         </div>
       )}
 
@@ -146,16 +162,23 @@ export function AgentList({
             {historyOpen ? '\u25BE' : '\u25B8'} HISTORY ({history.length})
           </span>
         </div>
-        {historyVisible.map((a) => (
-          <AgentRow
-            key={a.id}
-            agent={a}
-            isSelected={a.id === selectedId}
-            onSelect={() => onSelect(a.id)}
-            onKill={() => onKill(a)}
-            onSteer={() => onSteer(a)}
-          />
-        ))}
+        <motion.div
+          variants={VARIANTS.staggerContainer}
+          initial="initial"
+          animate="animate"
+          transition={SPRINGS.default}
+        >
+          {historyVisible.map((a) => (
+            <AgentRow
+              key={a.id}
+              agent={a}
+              isSelected={a.id === selectedId}
+              onSelect={() => onSelect(a.id)}
+              onKill={() => onKill(a)}
+              onSteer={() => onSteer(a)}
+            />
+          ))}
+        </motion.div>
       </div>
     </div>
   )

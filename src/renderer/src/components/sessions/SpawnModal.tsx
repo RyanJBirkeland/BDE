@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { SPAWN_TASK_MAX_CHARS_SOFT, SPAWN_TASK_MAX_CHARS_HARD, SPAWN_TASK_HISTORY_LIMIT, REPO_OPTIONS } from '../../lib/constants'
+import { VARIANTS, SPRINGS } from '../../lib/motion'
 const MODELS = [
   { id: 'haiku', label: 'Haiku', claude: 'claude-haiku-4-5-20251001' },
   { id: 'sonnet', label: 'Sonnet', claude: 'claude-sonnet-4-6' },
@@ -16,7 +18,7 @@ interface SpawnModalProps {
   onClose: () => void
 }
 
-export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Element | null {
+export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Element {
   const [task, setTask] = useState('')
   const [repo, setRepo] = useState<string>(REPO_OPTIONS[0].label)
   const [model, setModel] = useState<string>('sonnet')
@@ -130,11 +132,19 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   const overSoftLimit = charCount > SPAWN_TASK_MAX_CHARS_SOFT
   const overHardLimit = charCount > SPAWN_TASK_MAX_CHARS_HARD
 
-  if (!open) return null
-
   return (
-    <div className="spawn-modal__overlay" onClick={onClose}>
-      <div className="spawn-modal" onClick={(e) => e.stopPropagation()}>
+    <AnimatePresence>
+      {open && (
+    <div className="spawn-modal__overlay elevation-3-backdrop" onClick={onClose}>
+      <motion.div
+        className="spawn-modal glass-modal"
+        onClick={(e) => e.stopPropagation()}
+        variants={VARIANTS.scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={SPRINGS.smooth}
+      >
         <h2 className="spawn-modal__title">Spawn Agent <span className="spawn-modal__plan-badge">⬡ Max</span></h2>
 
         <form onSubmit={handleSubmit}>
@@ -230,7 +240,9 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
             </Button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
+      )}
+    </AnimatePresence>
   )
 }
