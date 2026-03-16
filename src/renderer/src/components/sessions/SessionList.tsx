@@ -236,9 +236,13 @@ export function SessionList(): React.JSX.Element {
   const fetchSessions = useSessionsStore((s) => s.fetchSessions)
   const loading = useSessionsStore((s) => s.loading)
   const fetchError = useSessionsStore((s) => s.fetchError)
+  const followMode = useSessionsStore((s) => s.followMode)
+  const setFollowMode = useSessionsStore((s) => s.setFollowMode)
   const activeView = useUIStore((s) => s.activeView)
   const [focusIndex, setFocusIndex] = useState(-1)
   const [spawnOpen, setSpawnOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const prevActiveKeysRef = useRef<Set<string>>(new Set())
@@ -293,12 +297,35 @@ export function SessionList(): React.JSX.Element {
     }
   }, [fetchSessions])
 
+  // Filter helpers
+  const filterSession = (s: AgentSession): boolean => {
+    if (!query) return true
+    const q = query.toLowerCase()
+    return (
+      (s.displayName ?? shortKey(s.key)).toLowerCase().includes(q) ||
+      s.model.toLowerCase().includes(q) ||
+      s.key.toLowerCase().includes(q)
+    )
+  }
+
+  const filterSubAgent = (a: SubAgent): boolean => {
+    if (!query) return true
+    const q = query.toLowerCase()
+    return (
+      a.label.toLowerCase().includes(q) ||
+      a.task.toLowerCase().includes(q) ||
+      a.model.toLowerCase().includes(q)
+    )
+  }
+
   const now = Date.now()
-  const running = sessions.filter((s) => now - s.updatedAt < FIVE_MINUTES)
+  const running = sessions.filter((s) => now - s.updatedAt < FIVE_MINUTES && filterSession(s))
   const recent = sessions.filter((s) => {
     if (now - s.updatedAt < FIVE_MINUTES) return false
-    return now - s.updatedAt < 48 * 60 * 60 * 1000
+    if (now - s.updatedAt >= 48 * 60 * 60 * 1000) return false
+    return filterSession(s)
   })
+  const filteredSubAgents = subAgents.filter(filterSubAgent)
 
   const activeSubAgentCount = subAgents.filter((s) => s._isActive).length
 
@@ -326,6 +353,11 @@ export function SessionList(): React.JSX.Element {
       if (e.key === 'Enter' && focusIndex >= 0 && focusIndex < orderedSessions.length) {
         e.preventDefault()
         selectSession(orderedSessions[focusIndex].key)
+      }
+
+      if (e.key === '/') {
+        e.preventDefault()
+        searchRef.current?.focus()
       }
     }
 
@@ -365,6 +397,22 @@ export function SessionList(): React.JSX.Element {
       </div>
 
       <SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />
+
+      <div className="session-list__search">
+        <input
+          ref={searchRef}
+          type="text"
+          placeholder="Filter sessions…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setQuery('')
+              searchRef.current?.blur()
+            }
+          }}
+        />
+      </div>
 
       {fetchError && (
         <div className="session-list__error">{fetchError}</div>
@@ -418,14 +466,25 @@ export function SessionList(): React.JSX.Element {
       )}
 
       <div className="session-list__group">
-        <span className="session-list__group-label">
-          Sub-agents{activeSubAgentCount > 0 ? ` (${activeSubAgentCount})` : ''}
-        </span>
+        <div className="session-list__group-header">
+          <span className="session-list__group-label">
+            Sub-agents{activeSubAgentCount > 0 ? ` (${activeSubAgentCount})` : ''}
+          </span>
+          {subAgents.some((a) => a._isActive) && (
+            <button
+              className={`follow-toggle ${followMode ? 'follow-toggle--on' : ''}`}
+              onClick={() => setFollowMode(!followMode)}
+              title={followMode ? 'Follow mode ON — click to disable' : 'Follow mode OFF — click to enable'}
+            >
+              {'\ud83d\udccd'}
+            </button>
+          )}
+        </div>
         {subAgentsError && (
           <div className="sub-agent-row__error">Could not fetch sub-agents</div>
         )}
-        {subAgents.length > 0
-          ? subAgents.map((agent) => (
+        {filteredSubAgents.length > 0
+          ? filteredSubAgents.map((agent) => (
               <div key={agent.sessionKey} className="sub-agent-row-wrapper">
                 <SubAgentRow
                   agent={agent}

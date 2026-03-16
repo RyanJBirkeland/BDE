@@ -41,8 +41,10 @@ interface SessionsStore {
   loading: boolean
   fetchError: string | null
   pendingKills: Record<string, ReturnType<typeof setTimeout>>
+  followMode: boolean
   fetchSessions: () => Promise<void>
   selectSession: (key: string | null) => void
+  setFollowMode: (on: boolean) => void
   spawnSession: (params: {
     template: string
     repo: string
@@ -67,6 +69,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   loading: true,
   fetchError: null,
   pendingKills: {},
+  followMode: false,
 
   fetchSessions: async (): Promise<void> => {
     set({ subAgentsLoading: true })
@@ -122,10 +125,32 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     } else {
       set({ subAgentsError: 'Could not fetch sub-agents', subAgentsLoading: false })
     }
+
+    // Auto-follow: switch to most recently started active sub-agent
+    if (get().followMode) {
+      const mostRecent = get()
+        .subAgents.filter((a) => a._isActive)
+        .sort((a, b) => b.startedAt - a.startedAt)[0]
+      if (mostRecent && mostRecent.sessionKey !== get().selectedSessionKey) {
+        set({ selectedSessionKey: mostRecent.sessionKey })
+      }
+    }
   },
 
   selectSession: (key): void => {
+    // Auto-disable follow if user manually selects a non-follow-target session
+    const { followMode, subAgents } = get()
+    if (followMode && key) {
+      const isFollowTarget = subAgents.some((a) => a._isActive && a.sessionKey === key)
+      if (!isFollowTarget) {
+        set({ followMode: false })
+      }
+    }
     set({ selectedSessionKey: key })
+  },
+
+  setFollowMode: (on): void => {
+    set({ followMode: on })
   },
 
   spawnSession: async (params): Promise<void> => {

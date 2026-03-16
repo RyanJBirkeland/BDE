@@ -76,6 +76,67 @@
   padding: 12px 12px 4px;
 }
 
+/* ── Search Bar ──────────────────────────────────────── */
+
+.session-list__search {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.session-list__search input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: var(--bde-font-ui);
+  color: var(--bde-text);
+}
+
+.session-list__search input::placeholder {
+  color: var(--bde-text-muted);
+}
+
+.session-list__search input:focus {
+  outline: none;
+  border-color: var(--bde-accent);
+}
+
+/* ── Group Header (flex row for label + follow toggle) ── */
+
+.session-list__group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Follow Toggle ───────────────────────────────────── */
+
+.follow-toggle {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  margin-right: 12px;
+  margin-top: 8px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.follow-toggle:hover {
+  border-color: var(--bde-text-muted);
+}
+
+.follow-toggle--on {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
 /* ── Session List Loading ─────────────────────────────── */
 
 .session-list__loading {
