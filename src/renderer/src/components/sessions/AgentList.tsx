@@ -2,9 +2,10 @@ import { useCallback, useMemo, useState } from 'react'
 import { AgentRow } from './AgentRow'
 import type { UnifiedAgent } from '../../stores/unifiedAgents'
 import { useUnifiedAgents, groupUnifiedAgents } from '../../stores/unifiedAgents'
+import { useSessionsStore } from '../../stores/sessions'
 
 export interface AgentListProps {
-  query: string
+  filter?: string
   selectedId: string | null
   onSelect: (id: string) => void
   onKill: (agent: UnifiedAgent) => void
@@ -14,108 +15,92 @@ export interface AgentListProps {
 const HISTORY_LIMIT = 20
 
 export function AgentList({
-  query,
+  filter,
   selectedId,
   onSelect,
   onKill,
   onSteer
 }: AgentListProps): React.JSX.Element {
   const agents = useUnifiedAgents()
+  const followMode = useSessionsStore((s) => s.followMode)
+  const setFollowMode = useSessionsStore((s) => s.setFollowMode)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [followMode, setFollowMode] = useState(true)
 
   const toggleHistory = useCallback(() => setHistoryOpen((v) => !v), [])
-  const toggleFollow = useCallback(() => setFollowMode((v) => !v), [])
+  const toggleFollow = useCallback(
+    () => setFollowMode(!followMode),
+    [followMode, setFollowMode]
+  )
 
-  const trimmedQuery = query.trim().toLowerCase()
+  const trimmedFilter = (filter ?? '').trim().toLowerCase()
 
   const filtered = useMemo(() => {
-    if (!trimmedQuery) return null
+    if (!trimmedFilter) return agents
     return agents.filter(
       (a) =>
-        a.label.toLowerCase().includes(trimmedQuery) ||
-        (a.task && a.task.toLowerCase().includes(trimmedQuery))
+        a.label.toLowerCase().includes(trimmedFilter) ||
+        (a.task && a.task.toLowerCase().includes(trimmedFilter))
     )
-  }, [agents, trimmedQuery])
+  }, [agents, trimmedFilter])
 
-  // Flat search results mode
-  if (filtered !== null) {
-    if (filtered.length === 0) {
-      return (
-        <div className="agent-list">
-          <div className="agent-list__empty">No agents match &ldquo;{query.trim()}&rdquo;</div>
-        </div>
-      )
-    }
+  // Filter active with no matches
+  if (trimmedFilter && filtered.length === 0) {
     return (
       <div className="agent-list">
-        {filtered.map((a) => (
-          <AgentRow
-            key={a.id}
-            agent={a}
-            isSelected={a.id === selectedId}
-            onSelect={() => onSelect(a.id)}
-            onKill={() => onKill(a)}
-            onSteer={() => onSteer(a)}
-          />
-        ))}
+        <div className="agent-list__empty">
+          No agents match &apos;{filter!.trim()}&apos;
+        </div>
       </div>
     )
   }
-
-  const { active, recent, history } = groupUnifiedAgents(agents)
 
   // No agents at all
-  if (active.length === 0 && recent.length === 0 && history.length === 0) {
+  if (agents.length === 0) {
     return (
       <div className="agent-list">
-        <div className="agent-list__empty">No agents running. Click + Spawn to start one.</div>
+        <div className="agent-list__empty">
+          No agents running. Click + Spawn to start one.
+        </div>
       </div>
     )
   }
 
-  const killableActive = active.filter((a) => a.canKill)
+  const { active, recent, history } = groupUnifiedAgents(filtered)
   const historyVisible = historyOpen ? history.slice(0, HISTORY_LIMIT) : []
 
   return (
     <div className="agent-list">
-      {/* ACTIVE */}
-      <div className="agent-list__section">
-        <div className="agent-list__section-header">
-          <span className="agent-list__section-title">ACTIVE ({active.length})</span>
-          <button
-            className="agent-list__follow-toggle"
-            onClick={toggleFollow}
-            title={followMode ? 'Auto-follow ON — click to unpin' : 'Auto-follow OFF — click to pin'}
-          >
-            {followMode ? '\uD83D\uDCCC' : '\uD83D\uDCCC'}
-          </button>
-          {killableActive.length > 1 && (
+      {/* ACTIVE — hidden when empty */}
+      {active.length > 0 && (
+        <div className="agent-list__group">
+          <div className="agent-list__group-header">
+            <span>ACTIVE ({active.length})</span>
             <button
-              className="agent-list__kill-all"
-              onClick={() => killableActive.forEach((a) => onKill(a))}
+              className={`agent-list__follow-btn ${followMode ? 'agent-list__follow-btn--on' : ''}`}
+              onClick={toggleFollow}
+              title={followMode ? 'Auto-follow ON' : 'Auto-follow OFF'}
             >
-              ⛔ Kill All
+              {followMode ? '\uD83D\uDCCC Following' : '\uD83D\uDCCC Follow'}
             </button>
-          )}
+          </div>
+          {active.map((a) => (
+            <AgentRow
+              key={a.id}
+              agent={a}
+              isSelected={a.id === selectedId}
+              onSelect={() => onSelect(a.id)}
+              onKill={() => onKill(a)}
+              onSteer={() => onSteer(a)}
+            />
+          ))}
         </div>
-        {active.map((a) => (
-          <AgentRow
-            key={a.id}
-            agent={a}
-            isSelected={a.id === selectedId}
-            onSelect={() => onSelect(a.id)}
-            onKill={() => onKill(a)}
-            onSteer={() => onSteer(a)}
-          />
-        ))}
-      </div>
+      )}
 
-      {/* RECENT */}
+      {/* RECENT — hidden when empty */}
       {recent.length > 0 && (
-        <div className="agent-list__section">
-          <div className="agent-list__section-header">
-            <span className="agent-list__section-title">RECENT ({recent.length})</span>
+        <div className="agent-list__group">
+          <div className="agent-list__group-header">
+            <span>RECENT ({recent.length})</span>
           </div>
           {recent.map((a) => (
             <AgentRow
@@ -130,35 +115,32 @@ export function AgentList({
         </div>
       )}
 
-      {/* HISTORY */}
-      {history.length > 0 && (
-        <div className="agent-list__section">
-          <div className="agent-list__section-header" onClick={toggleHistory}>
-            <span className="agent-list__section-title">
-              {historyOpen ? '▾' : '▸'} HISTORY ({history.length})
-            </span>
-          </div>
-          {historyOpen && (
-            <>
-              {historyVisible.map((a) => (
-                <AgentRow
-                  key={a.id}
-                  agent={a}
-                  isSelected={a.id === selectedId}
-                  onSelect={() => onSelect(a.id)}
-                  onKill={() => onKill(a)}
-                  onSteer={() => onSteer(a)}
-                />
-              ))}
-              {history.length > HISTORY_LIMIT && (
-                <button className="agent-list__view-all">
-                  View all →
-                </button>
-              )}
-            </>
-          )}
+      {/* HISTORY — header always shown, collapsed by default */}
+      <div className="agent-list__group">
+        <div
+          className="agent-list__group-header agent-list__group-header--collapsible"
+          onClick={toggleHistory}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') toggleHistory()
+          }}
+        >
+          <span>
+            {historyOpen ? '\u25BE' : '\u25B8'} HISTORY ({history.length})
+          </span>
         </div>
-      )}
+        {historyVisible.map((a) => (
+          <AgentRow
+            key={a.id}
+            agent={a}
+            isSelected={a.id === selectedId}
+            onSelect={() => onSelect(a.id)}
+            onKill={() => onKill(a)}
+            onSteer={() => onSteer(a)}
+          />
+        ))}
+      </div>
     </div>
   )
 }
