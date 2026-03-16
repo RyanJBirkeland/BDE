@@ -31,7 +31,10 @@ export function MessageInput({ sessionKey, sessionMode, onSent, onBeforeSend, on
     const trimmed = text.trim()
     if (!trimmed || sending) return
 
-    if (sessionMode === 'chat' && !client) return
+    if (sessionMode === 'chat' && !client) {
+      toast.error('Gateway not connected')
+      return
+    }
 
     setSending(true)
     setText('')
@@ -41,8 +44,8 @@ export function MessageInput({ sessionKey, sessionMode, onSent, onBeforeSend, on
       if (sessionMode === 'steer') {
         const steerSubAgent = useSessionsStore.getState().steerSubAgent
         await steerSubAgent(sessionKey, trimmed)
-      } else {
-        await client!.call('chat.send', { sessionKey, message: trimmed, idempotencyKey: crypto.randomUUID() })
+      } else if (client) {
+        await client.call('chat.send', { sessionKey, message: trimmed, idempotencyKey: crypto.randomUUID() })
       }
       onSent()
     } catch (err) {

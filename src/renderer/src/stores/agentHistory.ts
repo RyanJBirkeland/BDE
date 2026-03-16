@@ -31,8 +31,8 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => ({
     try {
       const agents = await window.api.agents.list({ limit: 100 })
       set({ agents })
-    } catch {
-      // Non-critical
+    } catch (err) {
+      console.warn('[agentHistory] fetchAgents failed:', err)
     }
   },
 
@@ -99,8 +99,8 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => ({
     try {
       await window.api.agents.import({ meta, content })
       await get().fetchAgents()
-    } catch {
-      // Non-critical
+    } catch (err) {
+      console.warn('[agentHistory] importExternal failed:', err)
     }
   }
 }))

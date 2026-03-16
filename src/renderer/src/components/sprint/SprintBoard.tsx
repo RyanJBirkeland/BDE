@@ -17,10 +17,6 @@ interface SprintTask {
 
 // --- Config ---
 
-const SUPABASE_URL = 'https://ponbudosprotfhissvzo.supabase.co'
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbmJ1ZG9zcHJvdGZoaXNzdnpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NTkyNzgsImV4cCI6MjA4ODEzNTI3OH0.KwALcQ9P404nMKyx76Jz7UA9QEQsDn2UFWw8mAb_ZNI'
-
 const REPOS = [
   { label: 'bde', color: '#6C8EEF' },
   { label: 'life-os', color: '#00D37F' },
@@ -53,16 +49,34 @@ export default function SprintBoard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [supabaseUrl, setSupabaseUrl] = useState<string | null>(null)
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.api.getSupabaseConfig().then((cfg) => {
+      if (cfg) {
+        setSupabaseUrl(cfg.url)
+        setSupabaseAnonKey(cfg.anonKey)
+      } else {
+        setError('Supabase not configured — set supabaseUrl and supabaseAnonKey in ~/.openclaw/openclaw.json or env vars')
+        setLoading(false)
+      }
+    }).catch(() => {
+      setError('Failed to load Supabase config')
+      setLoading(false)
+    })
+  }, [])
 
   const load = useCallback(async () => {
+    if (!supabaseUrl || !supabaseAnonKey) return
     try {
       setLoading(true)
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/sprint_tasks?repo=eq.${repo}&order=priority.asc`,
+        `${supabaseUrl}/rest/v1/sprint_tasks?repo=eq.${repo}&order=priority.asc`,
         {
           headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`
           }
         }
       )
@@ -74,9 +88,10 @@ export default function SprintBoard() {
     } finally {
       setLoading(false)
     }
-  }, [repo])
+  }, [repo, supabaseUrl, supabaseAnonKey])
 
   useEffect(() => {
+    if (!supabaseUrl || !supabaseAnonKey) return
     setLoading(true)
     setTasks([])
     load()
@@ -85,7 +100,7 @@ export default function SprintBoard() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [load])
+  }, [load, supabaseUrl, supabaseAnonKey])
 
   const active = tasks.filter((t) => t.status === 'active')
   const queued = tasks.filter((t) => t.status === 'queued')

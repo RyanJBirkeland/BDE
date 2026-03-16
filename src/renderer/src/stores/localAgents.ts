@@ -64,8 +64,8 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
     try {
       const procs = await window.api.getAgentProcesses()
       set({ processes: procs, lastUpdated: Date.now() })
-    } catch {
-      // Silently fail — local agents are non-critical
+    } catch (err) {
+      console.warn('[localAgents] fetchProcesses failed:', err)
     }
   },
 

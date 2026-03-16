@@ -86,8 +86,8 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   }, [showHistory])
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent): Promise<void> => {
-      e.preventDefault()
+    async (e?: { preventDefault(): void }): Promise<void> => {
+      e?.preventDefault()
       if (!task.trim() || spawning) return
       const repoPath = repoPaths[repo]
       if (!repoPath) {
@@ -120,7 +120,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
       if (e.key === 'Enter' && e.metaKey) {
         e.preventDefault()
         if (task.trim() && !spawning) {
-          handleSubmit(e as unknown as React.FormEvent)
+          handleSubmit()
         }
       }
     },

@@ -64,10 +64,22 @@ function normalizePath(relativePath: string): string {
   return normalized
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function safeHandle(channel: string, handler: (e: Electron.IpcMainInvokeEvent, ...args: any[]) => any): void {
+  ipcMain.handle(channel, async (e, ...args) => {
+    try {
+      return await handler(e, ...args)
+    } catch (err) {
+      console.error(`[IPC:${channel}] unhandled error:`, err)
+      throw err
+    }
+  })
+}
+
 export function registerFsHandlers(): void {
-  ipcMain.handle('list-memory-files', () => listMemoryFiles())
-  ipcMain.handle('read-memory-file', (_e, path: string) => readMemoryFile(path))
-  ipcMain.handle('write-memory-file', (_e, path: string, content: string) =>
+  safeHandle('list-memory-files', () => listMemoryFiles())
+  safeHandle('read-memory-file', (_e, path: string) => readMemoryFile(path))
+  safeHandle('write-memory-file', (_e, path: string, content: string) =>
     writeMemoryFile(path, content)
   )
 }

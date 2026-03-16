@@ -8,6 +8,29 @@ interface GatewayConfig {
   token: string
 }
 
+export interface SupabaseConfig {
+  url: string
+  anonKey: string
+}
+
+export function getSupabaseConfig(): SupabaseConfig | null {
+  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
+  let config: Record<string, unknown> = {}
+  try {
+    config = JSON.parse(readFileSync(configPath, 'utf-8'))
+  } catch {
+    // config file missing or corrupt
+  }
+
+  const url =
+    (config.supabaseUrl as string) ?? process.env['VITE_SUPABASE_URL'] ?? null
+  const anonKey =
+    (config.supabaseAnonKey as string) ?? process.env['VITE_SUPABASE_ANON_KEY'] ?? null
+
+  if (!url || !anonKey) return null
+  return { url, anonKey }
+}
+
 export function getGitHubToken(): string | null {
   const configPath = join(homedir(), '.openclaw', 'openclaw.json')
   try {

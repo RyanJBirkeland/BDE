@@ -23,6 +23,8 @@ const api = {
   getGitHubToken: (): Promise<string | null> => ipcRenderer.invoke('get-github-token'),
   saveGatewayConfig: (url: string, token: string): Promise<void> =>
     ipcRenderer.invoke('save-gateway-config', url, token),
+  getSupabaseConfig: (): Promise<{ url: string; anonKey: string } | null> =>
+    ipcRenderer.invoke('get-supabase-config'),
   getRepoPaths: (): Promise<Record<string, string>> => ipcRenderer.invoke('get-repo-paths'),
   readSprintMd: (repoPath: string): Promise<string> =>
     ipcRenderer.invoke('read-sprint-md', repoPath),
