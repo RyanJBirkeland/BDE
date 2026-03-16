@@ -133,6 +133,19 @@ export function SessionsView(): React.JSX.Element {
     window.dispatchEvent(new CustomEvent('bde:focus-message-input'))
   }, [])
 
+  // Handler that pre-populates pane 0 before switching to split mode
+  const handleSplitModeChange = useCallback((mode: SplitMode): void => {
+    if (mode === 'single') {
+      setSplitMode('single')
+      return
+    }
+    // Pre-populate pane 0 with currently selected session
+    if (selectedKey && splitPanes[0] === null) {
+      setPaneSession(0, selectedKey)
+    }
+    setSplitMode(mode)
+  }, [selectedKey, splitPanes, setSplitMode, setPaneSession])
+
   // Keyboard shortcuts for split modes and pane focus
   useEffect(() => {
     if (activeView !== 'sessions') return
@@ -145,17 +158,17 @@ export function SessionsView(): React.JSX.Element {
       if (e.metaKey && e.shiftKey && !e.altKey) {
         if (e.key === '1' || e.key === '!') {
           e.preventDefault()
-          setSplitMode('single')
+          handleSplitModeChange('single')
           return
         }
         if (e.key === '2' || e.key === '@') {
           e.preventDefault()
-          setSplitMode('2-pane')
+          handleSplitModeChange('2-pane')
           return
         }
         if (e.key === '4' || e.key === '$') {
           e.preventDefault()
-          setSplitMode('grid-4')
+          handleSplitModeChange('grid-4')
           return
         }
       }
@@ -178,7 +191,7 @@ export function SessionsView(): React.JSX.Element {
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [activeView, splitMode, focusedPaneIndex, setSplitMode, setFocusedPane])
+  }, [activeView, splitMode, focusedPaneIndex, handleSplitModeChange, setFocusedPane])
 
   // Render the main content area based on splitMode
   const renderMainContent = (): React.JSX.Element => {
@@ -317,17 +330,25 @@ export function SessionsView(): React.JSX.Element {
         }}
       />
       <div className="sessions-chat__main">
-        <div className="sessions-split-toolbar" style={{ position: 'absolute', top: 8, right: 12, zIndex: 5 }}>
-          {SPLIT_MODES.map(({ mode, icon: Icon, title }) => (
-            <button
-              key={mode}
-              className={`sessions-split-btn${splitMode === mode ? ' sessions-split-btn--active' : ''}`}
-              title={title}
-              onClick={() => setSplitMode(mode)}
-            >
-              <Icon size={14} />
-            </button>
-          ))}
+        <div className="sessions-main__topbar">
+          {splitMode === 'single' && selectedKey && (
+            <span className="sessions-main__session-label">
+              {selectedSession?.displayName || selectedSubAgent?.label || selectedKey}
+            </span>
+          )}
+          <div className="sessions-main__topbar-spacer" />
+          <div className="sessions-split-toolbar">
+            {SPLIT_MODES.map(({ mode, icon: Icon, title }) => (
+              <button
+                key={mode}
+                className={`sessions-split-btn${splitMode === mode ? ' sessions-split-btn--active' : ''}`}
+                title={title}
+                onClick={() => handleSplitModeChange(mode)}
+              >
+                <Icon size={14} />
+              </button>
+            ))}
+          </div>
         </div>
         {renderMainContent()}
       </div>
