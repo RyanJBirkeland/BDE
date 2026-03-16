@@ -74,7 +74,7 @@ export function MessageInput({ sessionKey, sessionMode, onSent, onBeforeSend, on
         value={text}
         onChange={setText}
         onKeyDown={handleKeyDown}
-        placeholder={sessionMode === 'steer' ? 'Redirect this agent\u2026' : 'Message...'}
+        placeholder={sessionMode === 'steer' ? 'Redirect this agent\u2026' : 'Message\u2026 (Shift+Enter for newline)'}
         disabled={disabled || sending}
         className="message-input__textarea"
       />

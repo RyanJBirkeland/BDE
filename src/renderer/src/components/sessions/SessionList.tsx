@@ -26,16 +26,26 @@ function modelBadgeLabel(model: string): string {
   return model.split('-')[0] ?? model
 }
 
+function shortKey(key: string): string {
+  const parts = key.split(':')
+  const last = parts[parts.length - 1] ?? key
+  const isUUID = /^[0-9a-f-]{36}$/.test(last)
+  if (isUUID) return parts[parts.length - 2] ?? last
+  return last
+}
+
 function SessionRow({
   session,
   isSelected,
   isFocused,
+  isIdle,
   dataIndex,
   onSelect
 }: {
   session: AgentSession
   isSelected: boolean
   isFocused?: boolean
+  isIdle?: boolean
   dataIndex?: number
   onSelect: () => void
 }): React.JSX.Element {
@@ -74,7 +84,7 @@ function SessionRow({
 
   return (
     <button
-      className={`session-row ${isSelected ? 'session-row--selected' : ''} ${isFocused ? 'session-row--focused' : ''}`}
+      className={`session-row ${isSelected ? 'session-row--selected' : ''} ${isFocused ? 'session-row--focused' : ''} ${isIdle && !isSelected ? 'session-row--idle' : ''}`}
       data-session-index={dataIndex}
       style={{ '--stagger-index': Math.min(dataIndex ?? 0, 10) } as React.CSSProperties}
       onClick={onSelect}
@@ -84,7 +94,7 @@ function SessionRow({
         title={isBlocked ? 'Session aborted — may need attention' : undefined}
       />
       <div className="session-row__info">
-        <span className="session-row__label">{session.displayName || session.key}</span>
+        <span className="session-row__label">{session.displayName || shortKey(session.key)}</span>
         <span className="session-row__meta">
           <Badge variant="muted" size="sm">{modelBadgeLabel(session.model)}</Badge>
           <span className="session-row__time">{timeAgo(session.updatedAt)}</span>
@@ -398,6 +408,7 @@ export function SessionList(): React.JSX.Element {
                 session={s}
                 isSelected={selectedKey === s.key}
                 isFocused={focusIndex === idx}
+                isIdle
                 dataIndex={idx}
                 onSelect={() => selectSession(s.key)}
               />
@@ -415,13 +426,14 @@ export function SessionList(): React.JSX.Element {
         )}
         {subAgents.length > 0
           ? subAgents.map((agent) => (
-              <SubAgentRow
-                key={agent.sessionKey}
-                agent={agent}
-                isSelected={selectedKey === agent.sessionKey}
-                isCompleted={completedKeys.has(agent.sessionKey)}
-                onSelect={() => selectSession(agent.sessionKey)}
-              />
+              <div key={agent.sessionKey} className="sub-agent-row-wrapper">
+                <SubAgentRow
+                  agent={agent}
+                  isSelected={selectedKey === agent.sessionKey}
+                  isCompleted={completedKeys.has(agent.sessionKey)}
+                  onSelect={() => selectSession(agent.sessionKey)}
+                />
+              </div>
             ))
           : !subAgentsError && (
               <span className="sub-agent-empty">No active sub-agents</span>
