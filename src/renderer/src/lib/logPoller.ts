@@ -1,7 +1,6 @@
 export interface LogPollerState {
   logContent: string
   logNextByte: number
-  _logInterval: ReturnType<typeof setInterval> | null
 }
 
 export function createLogPollerActions(
@@ -11,10 +10,11 @@ export function createLogPollerActions(
   startLogPolling: (readFn: (fromByte: number) => Promise<{ content: string; nextByte: number }>) => void
   stopLogPolling: () => void
 } {
+  let logInterval: ReturnType<typeof setInterval> | null = null
+
   return {
     startLogPolling: (readFn): void => {
-      const prev = get()
-      if (prev._logInterval) clearInterval(prev._logInterval)
+      if (logInterval) clearInterval(logInterval)
 
       const poll = async (): Promise<void> => {
         try {
@@ -31,15 +31,13 @@ export function createLogPollerActions(
       }
 
       poll()
-      const interval = setInterval(poll, 1000)
-      set({ _logInterval: interval })
+      logInterval = setInterval(poll, 1000)
     },
 
     stopLogPolling: (): void => {
-      const { _logInterval } = get()
-      if (_logInterval) {
-        clearInterval(_logInterval)
-        set({ _logInterval: null })
+      if (logInterval) {
+        clearInterval(logInterval)
+        logInterval = null
       }
     }
   }
