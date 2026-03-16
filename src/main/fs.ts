@@ -1,5 +1,5 @@
-import { readdir, readFile, writeFile, stat } from 'fs/promises'
-import { join } from 'path'
+import { mkdir, readdir, readFile, writeFile, stat } from 'fs/promises'
+import { dirname, join } from 'path'
 import { homedir } from 'os'
 import { safeHandle } from './ipc-utils'
 
@@ -54,7 +54,9 @@ async function readMemoryFile(relativePath: string): Promise<string> {
 
 async function writeMemoryFile(relativePath: string, content: string): Promise<void> {
   const safePath = normalizePath(relativePath)
-  await writeFile(join(MEMORY_ROOT, safePath), content, 'utf-8')
+  const resolvedPath = join(MEMORY_ROOT, safePath)
+  await mkdir(dirname(resolvedPath), { recursive: true })
+  await writeFile(resolvedPath, content, 'utf-8')
 }
 
 function normalizePath(relativePath: string): string {
