@@ -208,6 +208,132 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+/* ── Sub-agent Row ───────────────────────────────────── */
+
+.sub-agent-row-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.sub-agent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--bde-text);
+  transition: background 0.15s;
+}
+
+.sub-agent-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sub-agent-row--selected {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sub-agent-row__action {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.sub-agent-row:hover .sub-agent-row__action {
+  opacity: 1;
+}
+
+.sub-agent-row__action:hover {
+  color: var(--bde-accent);
+  background: rgba(0, 211, 127, 0.1);
+}
+
+.sub-agent-row__action--kill:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.sub-agent-row__steer-input {
+  display: flex;
+  gap: 6px;
+  padding: 4px 8px 8px;
+  overflow: hidden;
+  animation: sub-agent-steer-open 150ms ease;
+}
+
+@keyframes sub-agent-steer-open {
+  from {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    max-height: 44px;
+    opacity: 1;
+  }
+}
+
+.sub-agent-row__steer-input input {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--bde-border);
+  background: var(--bde-bg);
+  color: var(--bde-text);
+  font-size: 12px;
+  font-family: var(--bde-font-ui);
+}
+
+.sub-agent-row__steer-input input:focus {
+  outline: none;
+  border-color: var(--bde-accent);
+}
+
+.sub-agent-row__steer-send {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: none;
+  background: var(--bde-accent);
+  color: #000;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.sub-agent-row__steer-send:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.sub-agent-row__steer-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sub-agent-row__error {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #f87171;
+}
+
 /* ── Task Composer ────────────────────────────────────── */
 
 .task-composer {
