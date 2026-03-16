@@ -8,6 +8,7 @@ import { promisify } from 'util'
 import { randomUUID } from 'crypto'
 import { readdir, stat, unlink, readFile } from 'fs/promises'
 import { join, dirname, basename as pathBasename } from 'path'
+import { validateLogPath } from './fs'
 import {
   createAgentRecord,
   updateAgentMeta,
@@ -278,9 +279,10 @@ export interface TailLogResult {
 }
 
 export async function tailAgentLog(args: TailLogArgs): Promise<TailLogResult> {
+  const safePath = validateLogPath(args.logPath)
   const fromByte = args.fromByte ?? 0
   try {
-    const buf = await readFile(args.logPath)
+    const buf = await readFile(safePath)
     const slice = buf.subarray(fromByte)
     return { content: slice.toString('utf-8'), nextByte: buf.length }
   } catch {
