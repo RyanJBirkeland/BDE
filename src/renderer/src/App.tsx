@@ -63,19 +63,27 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
       <ErrorBoundary name={name}>{el}</ErrorBoundary>
     </div>
   )
-  if (activeView === 'sessions') return wrap('Sessions', <SessionsView />)
-  if (activeView === 'terminal') return wrap('Terminal', <TerminalView />)
-  if (activeView === 'sprint') return wrap('Sprint', <SprintView />)
-  if (activeView === 'memory') return wrap('Memory', <MemoryView />)
-  if (activeView === 'diff') return wrap('Diff', <DiffView />)
-  if (activeView === 'cost') return wrap('Cost', <CostView />)
-  if (activeView === 'settings') return wrap('Settings', <SettingsView />)
   return (
-    <div className="view-router">
-      <span className="view-router__placeholder">
-        {String(activeView)} — coming soon
-      </span>
-    </div>
+    <>
+      {/* Terminal and Sessions stay mounted so PTY sessions and chat state survive navigation */}
+      <div className="view-enter" style={{ display: activeView === 'terminal' ? 'flex' : 'none' }}>
+        <ErrorBoundary name="Terminal"><TerminalView /></ErrorBoundary>
+      </div>
+      <div className="view-enter" style={{ display: activeView === 'sessions' ? 'flex' : 'none' }}>
+        <ErrorBoundary name="Sessions"><SessionsView /></ErrorBoundary>
+      </div>
+      {/* Other views mount on demand */}
+      {activeView === 'sprint' && wrap('Sprint', <SprintView />)}
+      {activeView === 'memory' && wrap('Memory', <MemoryView />)}
+      {activeView === 'diff' && wrap('Diff', <DiffView />)}
+      {activeView === 'cost' && wrap('Cost', <CostView />)}
+      {activeView === 'settings' && wrap('Settings', <SettingsView />)}
+      {!['terminal','sessions','sprint','memory','diff','cost','settings'].includes(activeView) && (
+        <div className="view-router">
+          <span className="view-router__placeholder">{String(activeView)} — coming soon</span>
+        </div>
+      )}
+    </>
   )
 }
 

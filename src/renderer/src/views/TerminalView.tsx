@@ -418,7 +418,7 @@ export function TerminalView(): React.JSX.Element {
             ) : splitEnabled && tab.id === activeTabId ? (
               <Group orientation="horizontal">
                 <Panel defaultSize={50} minSize={20}>
-                  <TerminalPane tabId={tab.id} shell={tab.shell} visible={true} />
+                  <TerminalPane tabId={tab.id} shell={tab.shell} visible={activeView === 'terminal'} />
                 </Panel>
                 <Separator
                   style={{
@@ -436,11 +436,11 @@ export function TerminalView(): React.JSX.Element {
                   }}
                 />
                 <Panel defaultSize={50} minSize={20}>
-                  <TerminalPane tabId={`${tab.id}-split`} shell={tab.shell} visible={true} />
+                  <TerminalPane tabId={`${tab.id}-split`} shell={tab.shell} visible={activeView === 'terminal'} />
                 </Panel>
               </Group>
             ) : (
-              <TerminalPane tabId={tab.id} shell={tab.shell} visible={true} />
+              <TerminalPane tabId={tab.id} shell={tab.shell} visible={activeView === 'terminal'} />
             )}
           </div>
         ))}
