@@ -50,20 +50,77 @@
   color: var(--bde-text);
 }
 
-/* ── Terminal: Shell picker ───────────────────────────── */
+/* ── Terminal: Shell picker dropdown ─────────────────── */
 
-.terminal-shell-picker {
-  background: transparent;
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm, 4px);
-  color: var(--bde-text-muted);
-  font-size: 12px;
-  padding: 2px 6px;
-  cursor: pointer;
-  height: 24px;
+.shell-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  min-width: 180px;
+  background: var(--bde-surface, #111111);
+  border: 1px solid var(--bde-border, #2A2A2A);
+  border-radius: var(--bde-radius-md, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 4px 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
 }
 
-.terminal-shell-picker:focus {
+.shell-picker__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--bde-text, #E8E8E8);
+  font-size: 13px;
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  text-align: left;
+  transition: background 100ms ease;
+}
+
+.shell-picker__item:hover {
+  background: var(--bde-surface-high, #1A1A1A);
+}
+
+.shell-picker__item--header {
+  color: var(--bde-text, #E8E8E8);
+}
+
+.shell-picker__shortcut {
+  font-size: 11px;
+  color: var(--bde-text-dim, #555555);
+}
+
+.shell-picker__divider {
+  height: 1px;
+  background: var(--bde-border, #2A2A2A);
+  margin: 4px 0;
+}
+
+.shell-picker__custom-row {
+  padding: 4px 8px;
+}
+
+.shell-picker__custom-input {
+  width: 100%;
+  background: var(--bde-bg, #0A0A0A);
+  border: 1px solid var(--bde-border, #2A2A2A);
+  border-radius: var(--bde-radius-sm, 4px);
+  color: var(--bde-text, #E8E8E8);
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  padding: 4px 8px;
   outline: none;
-  border-color: var(--bde-accent);
+  box-sizing: border-box;
+}
+
+.shell-picker__custom-input:focus {
+  border-color: var(--bde-accent, #00D37F);
 }

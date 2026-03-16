@@ -106,7 +106,7 @@ const api = {
 
   // Terminal PTY
   terminal: {
-    create: (opts: { cols: number; rows: number }): Promise<number> =>
+    create: (opts: { cols: number; rows: number; shell?: string }): Promise<number> =>
       ipcRenderer.invoke('terminal:create', opts),
     write: (id: number, data: string): void =>
       ipcRenderer.send('terminal:write', { id, data }),

@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, X, SplitSquareVertical } from 'lucide-react'
+import { Plus, ChevronDown, X, SplitSquareVertical } from 'lucide-react'
 import { TerminalPane, clearTerminal } from '../components/terminal/TerminalPane'
 import { FindBar } from '../components/terminal/FindBar'
+import { ShellPicker } from '../components/terminal/ShellPicker'
 import { tokens } from '../design-system/tokens'
 import { useTerminalStore } from '../stores/terminal'
 import { useUIStore } from '../stores/ui'
 
 export function TerminalView(): React.JSX.Element {
-  const { tabs, activeTabId, addTab, closeTab, setActiveTab, selectedShell, setSelectedShell } =
-    useTerminalStore()
+  const { tabs, activeTabId, addTab, closeTab, setActiveTab } = useTerminalStore()
   const activeView = useUIStore((s) => s.activeView)
   const [hoveredTabId, setHoveredTabId] = useState<string | null>(null)
+  const [showShellPicker, setShowShellPicker] = useState(false)
 
   const handleClear = useCallback(() => {
     if (activeTabId) clearTerminal(activeTabId)
@@ -162,34 +163,72 @@ export function TerminalView(): React.JSX.Element {
             )
           })}
 
-          {/* Add tab button */}
-          <button
-            onClick={addTab}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 28,
-              height: 28,
-              border: 'none',
-              background: 'transparent',
-              color: tokens.color.textMuted,
-              cursor: 'pointer',
-              borderRadius: tokens.radius.sm,
-              flexShrink: 0,
-              transition: tokens.transition.fast
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = tokens.color.text
-              e.currentTarget.style.background = tokens.color.surfaceHigh
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = tokens.color.textMuted
-              e.currentTarget.style.background = 'transparent'
-            }}
-          >
-            <Plus size={16} />
-          </button>
+          {/* Add tab [+] and shell picker [▾] */}
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, position: 'relative' }}>
+            <button
+              onClick={() => addTab()}
+              title="New terminal (⌘T)"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 28,
+                height: 28,
+                border: 'none',
+                background: 'transparent',
+                color: tokens.color.textMuted,
+                cursor: 'pointer',
+                borderRadius: `${tokens.radius.sm} 0 0 ${tokens.radius.sm}`,
+                transition: tokens.transition.fast
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = tokens.color.text
+                e.currentTarget.style.background = tokens.color.surfaceHigh
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = tokens.color.textMuted
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <Plus size={16} />
+            </button>
+            <button
+              onClick={() => setShowShellPicker(!showShellPicker)}
+              title="Choose shell"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 20,
+                height: 28,
+                border: 'none',
+                background: 'transparent',
+                color: tokens.color.textMuted,
+                cursor: 'pointer',
+                borderRadius: `0 ${tokens.radius.sm} ${tokens.radius.sm} 0`,
+                transition: tokens.transition.fast
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = tokens.color.text
+                e.currentTarget.style.background = tokens.color.surfaceHigh
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = tokens.color.textMuted
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <ChevronDown size={12} />
+            </button>
+            {showShellPicker && (
+              <ShellPicker
+                onSelect={(shell) => {
+                  setShowShellPicker(false)
+                  addTab(shell || undefined)
+                }}
+                onClose={() => setShowShellPicker(false)}
+              />
+            )}
+          </div>
         </div>
 
         {/* Toolbar — right side */}
@@ -203,20 +242,6 @@ export function TerminalView(): React.JSX.Element {
             flexShrink: 0
           }}
         >
-          {/* Shell picker */}
-          <select
-            className="terminal-shell-picker"
-            value={selectedShell}
-            onChange={(e) => setSelectedShell(e.target.value)}
-            title="Default shell for new tabs"
-          >
-            {['/bin/bash', '/bin/zsh', '/bin/sh', 'node'].map((shell) => (
-              <option key={shell} value={shell}>
-                {shell.split('/').pop()}
-              </option>
-            ))}
-          </select>
-
           {/* Clear button */}
           <button
             onClick={handleClear}
@@ -283,7 +308,7 @@ export function TerminalView(): React.JSX.Element {
               display: tab.id === activeTabId ? 'block' : 'none'
             }}
           >
-            <TerminalPane tabId={tab.id} visible={tab.id === activeTabId} />
+            <TerminalPane tabId={tab.id} shell={tab.shell} visible={tab.id === activeTabId} />
           </div>
         ))}
       </div>

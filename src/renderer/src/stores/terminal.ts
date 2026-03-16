@@ -3,28 +3,32 @@ import { create } from 'zustand'
 export interface TerminalTab {
   id: string
   label: string
+  shell: string
   ptyId: number | null
 }
 
 let nextTabNum = 1
 
-function makeTab(): TerminalTab {
+function makeTab(shell?: string): TerminalTab {
   const num = nextTabNum++
-  return { id: crypto.randomUUID(), label: `Terminal ${num}`, ptyId: null }
+  return {
+    id: crypto.randomUUID(),
+    label: `Terminal ${num}`,
+    shell: shell || '/bin/zsh',
+    ptyId: null
+  }
 }
 
 interface TerminalStore {
   tabs: TerminalTab[]
   activeTabId: string
   showFind: boolean
-  selectedShell: string
-  addTab: () => void
+  addTab: (shell?: string) => void
   closeTab: (id: string) => void
   setActiveTab: (id: string) => void
   renameTab: (id: string, title: string) => void
   setPtyId: (tabId: string, ptyId: number) => void
   setShowFind: (show: boolean) => void
-  setSelectedShell: (shell: string) => void
 }
 
 const initialTab = makeTab()
@@ -33,10 +37,9 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   tabs: [initialTab],
   activeTabId: initialTab.id,
   showFind: false,
-  selectedShell: '/bin/zsh',
 
-  addTab: () => {
-    const tab = makeTab()
+  addTab: (shell?) => {
+    const tab = makeTab(shell)
     set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }))
   },
 
@@ -62,6 +65,5 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
       tabs: s.tabs.map((t) => (t.id === tabId ? { ...t, ptyId } : t))
     })),
 
-  setShowFind: (show) => set({ showFind: show }),
-  setSelectedShell: (shell) => set({ selectedShell: shell })
+  setShowFind: (show) => set({ showFind: show })
 }))

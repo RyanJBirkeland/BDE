@@ -168,10 +168,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle(
     'terminal:create',
-    (_e, { cols, rows }: { cols: number; rows: number }) => {
+    (_e, { cols, rows, shell }: { cols: number; rows: number; shell?: string }) => {
       if (!pty) throw new Error('Terminal unavailable: node-pty failed to load')
       const id = ++termId
-      const shellPath = process.env.SHELL || '/bin/zsh'
+      const shellPath = shell || process.env.SHELL || '/bin/zsh'
       const p = pty.spawn(shellPath, [], {
         name: 'xterm-256color',
         cols,
