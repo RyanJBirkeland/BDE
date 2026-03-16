@@ -108,6 +108,10 @@ app.whenReady().then(() => {
     const { sendToAgent } = await import('./local-agents')
     return sendToAgent(pid, message)
   })
+  ipcMain.handle('local:isInteractive', async (_e, pid: number) => {
+    const { isAgentInteractive } = await import('./local-agents')
+    return isAgentInteractive(pid)
+  })
   ipcMain.handle('kill-local-agent', async (_event, pid: number) => {
     try {
       process.kill(pid, 'SIGTERM')
