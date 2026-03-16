@@ -95,9 +95,10 @@ interface Props {
   sessionKey: string
   updatedAt?: number
   refreshTrigger?: number
+  optimisticMessages?: ChatMessage[]
 }
 
-export function ChatThread({ sessionKey, refreshTrigger = 0 }: Props): React.JSX.Element {
+export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages = [] }: Props): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedMsgs, setExpandedMsgs] = useState<Set<number>>(new Set())
@@ -296,8 +297,8 @@ export function ChatThread({ sessionKey, refreshTrigger = 0 }: Props): React.JSX
     })
   }, [])
 
-  // Show all messages including tool calls
-  const visibleMessages = messages
+  // Show all messages including tool calls; append any optimistic (not-yet-confirmed) messages
+  const visibleMessages = [...messages, ...optimisticMessages]
   const lastAssistantVisibleIdx = streaming
     ? visibleMessages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1)
     : -1

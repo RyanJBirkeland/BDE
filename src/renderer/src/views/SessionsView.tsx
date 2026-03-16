@@ -3,9 +3,10 @@
  * Left pane: session list with status dots + model badge.
  * Right pane: chat thread for selected session (includes message input).
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { SessionList } from '../components/sessions/SessionList'
 import { ChatThread } from '../components/sessions/ChatThread'
+import { MessageInput } from '../components/sessions/MessageInput'
 import { EmptyState } from '../components/ui/EmptyState'
 import { useSessionsStore } from '../stores/sessions'
 
@@ -30,6 +31,21 @@ export function SessionsView(): React.JSX.Element {
   }, [sessions, selectedKey, selectSession])
 
   const [sidebarWidth, setSidebarWidth] = useState(240)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [optimisticMessages, setOptimisticMessages] = useState<{ role: 'user'; content: string }[]>([])
+
+  const onBeforeSend = useCallback((message: string) => {
+    setOptimisticMessages([{ role: 'user', content: message }])
+  }, [])
+
+  const onSent = useCallback(() => {
+    setOptimisticMessages([])
+    setRefreshTrigger((n) => n + 1)
+  }, [])
+
+  const onSendError = useCallback(() => {
+    setOptimisticMessages([])
+  }, [])
 
   const selectedSession = sessions.find((s) => s.key === selectedKey)
 
@@ -68,7 +84,12 @@ export function SessionsView(): React.JSX.Element {
               <ChatThread
                 sessionKey={selectedKey}
                 updatedAt={selectedSession.updatedAt}
+                refreshTrigger={refreshTrigger}
+                optimisticMessages={optimisticMessages}
               />
+            </div>
+            <div className="sessions-chat__input">
+              <MessageInput sessionKey={selectedKey} onSent={onSent} onBeforeSend={onBeforeSend} onSendError={onSendError} />
             </div>
           </>
         ) : (
