@@ -68,12 +68,12 @@
 
 .session-list__group-label {
   display: block;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
   color: var(--bde-text-muted);
-  padding: 4px 4px 4px;
+  padding: 12px 12px 4px;
 }
 
 /* ── Session List Loading ─────────────────────────────── */
@@ -199,8 +199,13 @@
   transition: opacity 0.15s, color 0.15s, background 0.15s;
 }
 
-.session-row:hover .session-row__kill {
+.session-row:hover .session-row__kill,
+.session-row--selected .session-row__kill {
   opacity: 1;
+}
+
+.session-row--idle {
+  opacity: 0.6;
 }
 
 .session-row__kill:hover {
@@ -213,6 +218,9 @@
 .sub-agent-row-wrapper {
   display: flex;
   flex-direction: column;
+  padding-left: 8px;
+  border-left: 2px solid var(--color-subagent-accent, rgba(108, 99, 255, 0.4));
+  margin-left: 8px;
 }
 
 .sub-agent-row {
@@ -254,8 +262,14 @@
   transition: opacity 0.15s, color 0.15s, background 0.15s;
 }
 
-.sub-agent-row:hover .sub-agent-row__action {
+.sub-agent-row:hover .sub-agent-row__action,
+.sub-agent-row--selected .sub-agent-row__action {
   opacity: 1;
+}
+
+.sub-agent-row .session-row__dot {
+  width: 6px;
+  height: 6px;
 }
 
 .sub-agent-row__action:hover {
@@ -1202,5 +1216,5 @@
 /* ── Message Input ───────────────────────────────────── */
 .message-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px; flex-shrink: 0; border-top: 1px solid var(--bde-border); background: var(--bde-surface); }
 .message-input--steer { border-left: 3px solid var(--color-warning, #f59e0b); }
-.message-input__textarea { flex: 1; min-height: 36px; max-height: 120px; }
+.message-input__textarea { flex: 1; min-height: 36px; max-height: 100px; resize: none; overflow-y: auto; }
 .message-input__send { flex-shrink: 0; margin-bottom: 1px; }
