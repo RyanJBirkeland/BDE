@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
+import { SPAWN_TASK_MAX_CHARS_SOFT, SPAWN_TASK_MAX_CHARS_HARD, SPAWN_TASK_HISTORY_LIMIT } from '../../lib/constants'
 
 const REPOS = ['BDE', 'life-os', 'feast'] as const
 const MODELS = [
@@ -10,10 +11,7 @@ const MODELS = [
   { id: 'opus', label: 'Opus', claude: 'claude-opus-4-6' }
 ] as const
 
-const CHAR_SOFT_LIMIT = 2000
-const CHAR_HARD_LIMIT = 4000
 const HISTORY_KEY = 'bde-spawn-history'
-const MAX_HISTORY = 10
 
 interface SpawnModalProps {
   open: boolean
@@ -24,12 +22,12 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   const [task, setTask] = useState('')
   const [repo, setRepo] = useState<string>(REPOS[0])
   const [model, setModel] = useState<string>('sonnet')
-  const [spawning, setSpawning] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState<string[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const historyRef = useRef<HTMLDivElement>(null)
   const spawnAgent = useLocalAgentsStore((s) => s.spawnAgent)
+  const spawning = useLocalAgentsStore((s) => s.isSpawning)
   const [repoPaths, setRepoPaths] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -94,13 +92,12 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
         toast.error(`Repo path not found for "${repo}" — check git.ts REPO_PATHS`)
         return
       }
-      setSpawning(true)
       try {
         const taskTrimmed = task.trim()
         await spawnAgent({ task: taskTrimmed, repoPath, model })
 
         // Save to history
-        const newHistory = [taskTrimmed, ...history.filter((t) => t !== taskTrimmed)].slice(0, MAX_HISTORY)
+        const newHistory = [taskTrimmed, ...history.filter((t) => t !== taskTrimmed)].slice(0, SPAWN_TASK_HISTORY_LIMIT)
         setHistory(newHistory)
         localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory))
 
@@ -108,11 +105,9 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
         onClose()
       } catch (err) {
         toast.error(`Spawn failed: ${err instanceof Error ? err.message : String(err)}`)
-      } finally {
-        setSpawning(false)
       }
     },
-    [task, repo, model, spawning, spawnAgent, repoPaths, history, onClose]
+    [task, repo, model, spawnAgent, repoPaths, history, onClose, spawning]
   )
 
   const handleKeyDown = useCallback(
@@ -134,8 +129,8 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   }, [])
 
   const charCount = task.length
-  const overSoftLimit = charCount > CHAR_SOFT_LIMIT
-  const overHardLimit = charCount > CHAR_HARD_LIMIT
+  const overSoftLimit = charCount > SPAWN_TASK_MAX_CHARS_SOFT
+  const overHardLimit = charCount > SPAWN_TASK_MAX_CHARS_HARD
 
   if (!open) return null
 
@@ -158,14 +153,14 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
                 onFocus={() => history.length > 0 && setShowHistory(true)}
                 rows={5}
                 disabled={spawning}
-                maxLength={CHAR_HARD_LIMIT}
+                maxLength={SPAWN_TASK_MAX_CHARS_HARD}
               />
               {showHistory && history.length > 0 && (
                 <div ref={historyRef} className="spawn-modal__history">
                   <div className="spawn-modal__history-label">Recent tasks</div>
-                  {history.map((h, i) => (
+                  {history.map((h) => (
                     <button
-                      key={i}
+                      key={h}
                       type="button"
                       className="spawn-modal__history-item"
                       onClick={() => selectHistoryItem(h)}
@@ -178,8 +173,8 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
               )}
             </div>
             <div className={`spawn-modal__char-count ${overSoftLimit ? 'spawn-modal__char-count--warning' : ''} ${overHardLimit ? 'spawn-modal__char-count--error' : ''}`}>
-              {charCount} / {CHAR_SOFT_LIMIT}
-              {overSoftLimit && ` (max ${CHAR_HARD_LIMIT})`}
+              {charCount} / {SPAWN_TASK_MAX_CHARS_SOFT}
+              {overSoftLimit && ` (max ${SPAWN_TASK_MAX_CHARS_HARD})`}
             </div>
           </div>
 

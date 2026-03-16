@@ -3,6 +3,8 @@ import { useAgentHistoryStore } from '../../stores/agentHistory'
 import type { AgentMeta } from '../../stores/agentHistory'
 import { useLocalAgentsStore, LocalAgentProcess } from '../../stores/localAgents'
 import { cwdToRepoLabel } from './LocalAgentRow'
+import { Spinner } from '../ui/Spinner'
+import { POLL_AGENTS_INTERVAL, AGENT_HISTORY_LIMIT } from '../../lib/constants'
 
 function timeAgo(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime()
@@ -120,6 +122,7 @@ function HistoryAgentRow({
 export function AgentHistoryPanel({ query }: { query: string }): React.JSX.Element | null {
   const localProcesses = useLocalAgentsStore((s) => s.processes)
   const agents = useAgentHistoryStore((s) => s.agents)
+  const isFetching = useAgentHistoryStore((s) => s.isFetching)
   const selectedId = useAgentHistoryStore((s) => s.selectedId)
   const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
@@ -134,7 +137,7 @@ export function AgentHistoryPanel({ query }: { query: string }): React.JSX.Eleme
   // Poll agent history every 10s
   useEffect(() => {
     fetchAgents()
-    const interval = setInterval(fetchAgents, 10_000)
+    const interval = setInterval(fetchAgents, POLL_AGENTS_INTERVAL)
     return () => clearInterval(interval)
   }, [fetchAgents])
 
@@ -168,8 +171,8 @@ export function AgentHistoryPanel({ query }: { query: string }): React.JSX.Eleme
     )
   })
 
-  const displayedHistory = historyExpanded ? filteredHistory : filteredHistory.slice(0, 20)
-  const hasMore = filteredHistory.length > 20
+  const displayedHistory = historyExpanded ? filteredHistory : filteredHistory.slice(0, AGENT_HISTORY_LIMIT)
+  const hasMore = filteredHistory.length > AGENT_HISTORY_LIMIT
 
   const handleImport = (proc: LocalAgentProcess): void => {
     importExternal(
@@ -200,6 +203,14 @@ export function AgentHistoryPanel({ query }: { query: string }): React.JSX.Eleme
   const handleSelectHistory = (agent: AgentMeta): void => {
     selectLocalAgent(null)
     selectAgent(agent.id)
+  }
+
+  if (isFetching && agents.length === 0 && filteredLocal.length === 0) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0' }}>
+        <Spinner size="sm" />
+      </div>
+    )
   }
 
   if (filteredLocal.length === 0 && filteredHistory.length === 0) return null

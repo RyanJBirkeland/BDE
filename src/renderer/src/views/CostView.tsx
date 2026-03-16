@@ -11,6 +11,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Download } from 'lucide-react'
+import { POLL_SPRINT_INTERVAL } from '../lib/constants'
 
 interface SessionWithTokens {
   key: string
@@ -336,7 +337,7 @@ export default function CostView(): React.JSX.Element {
 
   useEffect(() => {
     fetchSessions()
-    const interval = setInterval(fetchSessions, 30_000)
+    const interval = setInterval(fetchSessions, POLL_SPRINT_INTERVAL)
     return () => clearInterval(interval)
   }, [fetchSessions])
 

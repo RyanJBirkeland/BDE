@@ -6,6 +6,7 @@
 import { create } from 'zustand'
 import { invokeTool } from '../lib/rpc'
 import { toast } from './toasts'
+import { SESSION_ACTIVE_THRESHOLD, KILL_UNDO_WINDOW } from '../lib/constants'
 
 export interface AgentSession {
   key: string
@@ -99,7 +100,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     // Handle sessions result
     if (sessionsResult.status === 'fulfilled') {
       const sessions = sessionsResult.value.sessions ?? []
-      const fiveMinAgo = Date.now() - 5 * 60 * 1000
+      const fiveMinAgo = Date.now() - SESSION_ACTIVE_THRESHOLD
       set({
         sessions,
         runningCount: sessions.filter((s) => s.updatedAt > fiveMinAgo).length,
@@ -251,9 +252,9 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
       })
       get().fetchSessions()
       toast.info('Kill cancelled')
-    }, 5000)
+    }, KILL_UNDO_WINDOW)
 
-    // Delay actual API call by 5s
+    // Delay actual API call
     const timer = setTimeout(async () => {
       try {
         await invokeTool('subagents', { action: 'kill', target: sessionKey })
@@ -265,7 +266,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         const { [sessionKey]: _, ...rest } = s.pendingKills
         return { pendingKills: rest }
       })
-    }, 5000)
+    }, KILL_UNDO_WINDOW)
 
     set((s) => ({ pendingKills: { ...s.pendingKills, [sessionKey]: timer } }))
   },

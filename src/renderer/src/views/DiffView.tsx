@@ -9,6 +9,7 @@ import DiffViewer from '../components/diff/DiffViewer'
 import { parseDiff } from '../lib/diff-parser'
 import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'
+import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
 
 interface GitFileEntry {
   path: string
@@ -98,7 +99,7 @@ function DiffView(): React.JSX.Element {
   }, [refresh])
 
   useEffect(() => {
-    const timer = setInterval(refresh, 30_000)
+    const timer = setInterval(refresh, POLL_GIT_STATUS_INTERVAL)
     return () => clearInterval(timer)
   }, [refresh])
 

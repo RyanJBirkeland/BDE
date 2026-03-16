@@ -6,6 +6,7 @@
 import { create } from 'zustand'
 import { ConnectionStatus, GatewayClient } from '../lib/gateway'
 import { toast } from './toasts'
+import { GATEWAY_DISCONNECT_TOAST_DELAY } from '../lib/constants'
 
 interface GatewayStore {
   status: ConnectionStatus
@@ -38,7 +39,7 @@ export const useGatewayStore = create<GatewayStore>((set, get) => ({
         disconnectTimer = setTimeout(() => {
           if (get().status !== 'connected') toast.error('Gateway disconnected')
           disconnectTimer = null
-        }, 4_000)
+        }, GATEWAY_DISCONNECT_TOAST_DELAY)
       } else if (status === 'error' && prevStatus !== 'error') {
         toast.error('Gateway connection error')
       }

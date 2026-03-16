@@ -21,8 +21,7 @@ import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useUIStore } from '../stores/ui'
 import type { UnifiedAgent } from '../stores/unifiedAgents'
 import { toast } from '../stores/toasts'
-
-const POLL_INTERVAL = 10_000
+import { POLL_SESSIONS_INTERVAL, SIDEBAR_WIDTH_DEFAULT, SIDEBAR_WIDTH_MIN, SIDEBAR_WIDTH_MAX } from '../lib/constants'
 
 const SPLIT_MODES: { mode: SplitMode; icon: typeof Square; title: string }[] = [
   { mode: 'single', icon: Square, title: 'Single pane (⌘⇧1)' },
@@ -45,7 +44,7 @@ export function SessionsView(): React.JSX.Element {
 
   useEffect(() => {
     fetchSessions()
-    const id = setInterval(fetchSessions, POLL_INTERVAL)
+    const id = setInterval(fetchSessions, POLL_SESSIONS_INTERVAL)
     return () => clearInterval(id)
   }, [fetchSessions])
 
@@ -55,7 +54,7 @@ export function SessionsView(): React.JSX.Element {
     }
   }, [sessions, selectedKey, selectSession])
 
-  const [sidebarWidth, setSidebarWidth] = useState(240)
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_WIDTH_DEFAULT)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [optimisticMessages, setOptimisticMessages] = useState<{ role: 'user'; content: string }[]>([])
 
@@ -306,7 +305,7 @@ export function SessionsView(): React.JSX.Element {
           const startW = sidebarWidth
           const onMove = (ev: MouseEvent): void => {
             const delta = ev.clientX - startX
-            setSidebarWidth(Math.min(400, Math.max(180, startW + delta)))
+            setSidebarWidth(Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, startW + delta)))
           }
           const onUp = (): void => {
             window.removeEventListener('mousemove', onMove)

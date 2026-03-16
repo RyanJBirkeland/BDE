@@ -8,6 +8,7 @@ import { AgentOutputTab } from '../components/terminal/AgentOutputTab'
 import { tokens } from '../design-system/tokens'
 import { useTerminalStore } from '../stores/terminal'
 import { useUIStore } from '../stores/ui'
+import { POLL_PROCESSES_INTERVAL } from '../lib/constants'
 
 /** Extract exec/bash tool outputs from session history entries */
 function extractExecResults(history: any[]): string[] {
@@ -129,7 +130,7 @@ export function TerminalView(): React.JSX.Element {
     }
 
     poll()
-    const interval = setInterval(poll, 5000)
+    const interval = setInterval(poll, POLL_PROCESSES_INTERVAL)
     return () => {
       cancelled = true
       clearInterval(interval)

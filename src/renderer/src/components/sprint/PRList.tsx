@@ -3,13 +3,13 @@ import { listOpenPRs, mergePR, type PullRequest } from '../../lib/github-api'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
+import { POLL_PR_LIST_INTERVAL } from '../../lib/constants'
 
 const REPOS = [
   { label: 'life-os', owner: 'RyanJBirkeland', name: 'life-os', color: '#00D37F' },
   { label: 'feast', owner: 'RyanJBirkeland', name: 'feast', color: '#FF8A00' }
 ]
 
-const REFRESH_INTERVAL = 60_000
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr)
@@ -52,7 +52,7 @@ export default function PRList() {
 
   useEffect(() => {
     load()
-    intervalRef.current = setInterval(load, REFRESH_INTERVAL)
+    intervalRef.current = setInterval(load, POLL_PR_LIST_INTERVAL)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }

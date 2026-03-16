@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { EmptyState } from '../ui/EmptyState'
+import { POLL_SPRINT_INTERVAL } from '../../lib/constants'
 
 // --- Types ---
 
@@ -27,7 +28,6 @@ const REPOS = [
   { label: 'feast', color: '#FF8A00' }
 ]
 
-const REFRESH_INTERVAL = 30_000
 
 // --- Helpers ---
 
@@ -81,7 +81,7 @@ export default function SprintBoard() {
     setTasks([])
     load()
     if (intervalRef.current) clearInterval(intervalRef.current)
-    intervalRef.current = setInterval(load, REFRESH_INTERVAL)
+    intervalRef.current = setInterval(load, POLL_SPRINT_INTERVAL)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }

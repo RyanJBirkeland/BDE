@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { AgentMeta } from '../../../preload/index.d'
+import { POLL_LOG_INTERVAL, AGENT_LIST_FETCH_LIMIT } from '../lib/constants'
 
 interface AgentHistoryState {
   agents: AgentMeta[]
@@ -7,6 +8,7 @@ interface AgentHistoryState {
   logContent: string
   logNextByte: number
   loading: boolean
+  isFetching: boolean
   _logInterval: ReturnType<typeof setInterval> | null
 
   fetchAgents: () => Promise<void>
@@ -25,14 +27,18 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => ({
   logContent: '',
   logNextByte: 0,
   loading: false,
+  isFetching: false,
   _logInterval: null,
 
   fetchAgents: async (): Promise<void> => {
+    set({ isFetching: true })
     try {
-      const agents = await window.api.agents.list({ limit: 100 })
+      const agents = await window.api.agents.list({ limit: AGENT_LIST_FETCH_LIMIT })
       set({ agents })
     } catch {
       // Non-critical
+    } finally {
+      set({ isFetching: false })
     }
   },
 
@@ -83,7 +89,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => ({
     }
 
     poll()
-    const interval = setInterval(poll, 1000)
+    const interval = setInterval(poll, POLL_LOG_INTERVAL)
     set({ _logInterval: interval })
   },
 
