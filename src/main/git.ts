@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises'
-import { execFileSync, spawnSync } from 'child_process'
+import { execFile, execFileSync, spawnSync } from 'child_process'
 import { homedir } from 'os'
 import { join } from 'path'
 
@@ -174,22 +174,30 @@ function parsePrUrl(url: string): { owner: string; repo: string; number: string 
   return { owner: match[1], repo: match[2], number: match[3] }
 }
 
-function fetchPrStatus(pr: PrStatusInput): PrStatusResult {
+function fetchPrStatusAsync(pr: PrStatusInput): Promise<PrStatusResult> {
   const parsed = parsePrUrl(pr.prUrl)
-  if (!parsed) return { taskId: pr.taskId, merged: false, state: 'unknown', mergedAt: null }
-  try {
-    const raw = execFileSync(
+  if (!parsed) return Promise.resolve({ taskId: pr.taskId, merged: false, state: 'unknown', mergedAt: null })
+  return new Promise((resolve) => {
+    execFile(
       'gh',
       ['pr', 'view', parsed.number, '--repo', `${parsed.owner}/${parsed.repo}`, '--json', 'state,mergedAt'],
-      { encoding: 'utf-8', timeout: 10_000 }
+      { encoding: 'utf-8', timeout: 10_000 },
+      (err, stdout) => {
+        if (err) {
+          resolve({ taskId: pr.taskId, merged: false, state: 'error', mergedAt: null })
+          return
+        }
+        try {
+          const data = JSON.parse(stdout) as { state: string; mergedAt: string | null }
+          resolve({ taskId: pr.taskId, merged: data.state === 'MERGED', state: data.state, mergedAt: data.mergedAt ?? null })
+        } catch {
+          resolve({ taskId: pr.taskId, merged: false, state: 'error', mergedAt: null })
+        }
+      }
     )
-    const data = JSON.parse(raw) as { state: string; mergedAt: string | null }
-    return { taskId: pr.taskId, merged: data.state === 'MERGED', state: data.state, mergedAt: data.mergedAt ?? null }
-  } catch {
-    return { taskId: pr.taskId, merged: false, state: 'error', mergedAt: null }
-  }
+  })
 }
 
-export function pollPrStatuses(prs: PrStatusInput[]): PrStatusResult[] {
-  return prs.map(fetchPrStatus)
+export async function pollPrStatuses(prs: PrStatusInput[]): Promise<PrStatusResult[]> {
+  return Promise.all(prs.map(fetchPrStatusAsync))
 }
