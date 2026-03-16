@@ -18,14 +18,14 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    if (!task?.agent_session_id) return
+    if (!task?.agent_run_id) return
 
     setLogContent('')
     setAgentStatus('unknown')
 
     const fetchLog = async (): Promise<void> => {
       try {
-        const result = await window.api.sprint.readLog(task.agent_session_id!)
+        const result = await window.api.sprint.readLog(task.agent_run_id!)
         setLogContent(result.content)
         setAgentStatus(result.status)
       } catch {
@@ -46,24 +46,24 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
         pollRef.current = null
       }
     }
-  }, [task?.agent_session_id, task?.status])
+  }, [task?.agent_run_id, task?.status])
 
   const { items, isStreaming } = useMemo(() => parseStreamJson(logContent), [logContent])
   const messages = useMemo(() => chatItemsToMessages(items), [items])
 
   const handleOpenInSessions = useCallback(() => {
-    if (!task?.agent_session_id) return
+    if (!task?.agent_run_id) return
     window.dispatchEvent(
       new CustomEvent('bde:navigate', {
-        detail: { view: 'sessions', sessionId: task.agent_session_id },
+        detail: { view: 'sessions', sessionId: task.agent_run_id },
       })
     )
     onClose()
-  }, [task?.agent_session_id, onClose])
+  }, [task?.agent_run_id, onClose])
 
   if (!task) return null
 
-  const shortId = task.agent_session_id?.slice(0, 8) ?? '?'
+  const shortId = task.agent_run_id?.slice(0, 8) ?? '?'
   const statusLabel =
     agentStatus === 'running'
       ? '\u25CF running'
@@ -85,7 +85,7 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
         </Button>
       </div>
       <div className="log-drawer__body">
-        {task.agent_session_id ? (
+        {task.agent_run_id ? (
           <ChatThread messages={messages} isStreaming={agentStatus === 'running' && isStreaming} />
         ) : (
           <div style={{ padding: 16, color: 'var(--bde-text-muted)', fontSize: 12 }}>

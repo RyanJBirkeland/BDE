@@ -25,7 +25,7 @@ export interface SprintTask {
   status: 'backlog' | 'queued' | 'active' | 'done'
   description: string | null
   spec: string | null
-  agent_session_id: string | null
+  agent_run_id: string | null
   pr_number: number | null
   pr_status: 'open' | 'merged' | 'closed' | 'draft' | null
   pr_url: string | null
@@ -102,7 +102,7 @@ export default function SprintCenter() {
         description: data.description || null,
         spec: data.spec || null,
         prompt: data.spec || data.title,
-        agent_session_id: null,
+        agent_run_id: null,
         pr_number: null,
         pr_status: null,
         pr_url: null,
@@ -173,7 +173,7 @@ export default function SprintCenter() {
 
         updateTask(task.id, {
           status: 'active',
-          agent_session_id: result.id,
+          agent_run_id: result.id,
           started_at: new Date().toISOString(),
         })
         toast.success('Agent launched')

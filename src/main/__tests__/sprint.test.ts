@@ -167,6 +167,45 @@ describe('sprint SQLite handlers', () => {
         .get('x', 'nonexistent')
       expect(result).toBeUndefined()
     })
+
+    it('accepts agent_run_id in the update allowlist', () => {
+      db.prepare(
+        "INSERT INTO agent_runs (id, status, started_at) VALUES ('ar1', 'running', '2026-01-01T00:00:00Z')"
+      ).run()
+      db.prepare(
+        "INSERT INTO sprint_tasks (id, title, status) VALUES ('u2', 'Link agent', 'active')"
+      ).run()
+
+      const allowed = [
+        'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
+        'pr_url', 'pr_number', 'pr_status', 'agent_run_id', 'started_at', 'completed_at',
+      ]
+      const patch: Record<string, unknown> = { agent_run_id: 'ar1' }
+      const entries = Object.entries(patch).filter(([k]) => allowed.includes(k))
+      const setClauses = entries.map(([k]) => `${k} = ?`).join(', ')
+      const values = entries.map(([, v]) => v)
+
+      const result = db
+        .prepare(`UPDATE sprint_tasks SET ${setClauses} WHERE id = ? RETURNING *`)
+        .get(...values, 'u2') as Record<string, unknown>
+
+      expect(result.agent_run_id).toBe('ar1')
+    })
+
+    it('rejects fields not in the update allowlist', () => {
+      db.prepare(
+        "INSERT INTO sprint_tasks (id, title, status) VALUES ('u3', 'No hack', 'backlog')"
+      ).run()
+
+      const allowed = [
+        'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
+        'pr_url', 'pr_number', 'pr_status', 'agent_run_id', 'started_at', 'completed_at',
+      ]
+      const patch: Record<string, unknown> = { agent_session_id: 'bad', id: 'overwrite' }
+      const entries = Object.entries(patch).filter(([k]) => allowed.includes(k))
+
+      expect(entries).toEqual([])
+    })
   })
 
   describe('sprint:delete', () => {
