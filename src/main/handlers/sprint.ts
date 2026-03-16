@@ -1,15 +1,11 @@
-import { readFileSync } from 'fs'
 import { readFile } from 'fs/promises'
+import { readFileSync } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 import { safeHandle } from '../ipc-utils'
+import { getDb } from '../db'
 
 // --- Types ---
-
-interface SupabaseEnv {
-  url: string
-  serviceKey: string
-}
 
 export interface CreateTaskInput {
   title: string
@@ -21,167 +17,159 @@ export interface CreateTaskInput {
   status?: string
 }
 
-// --- Env Resolution ---
+// --- One-time Supabase → SQLite migration ---
 
-let cachedEnv: SupabaseEnv | null = null
+function migrateFromSupabase(): void {
+  const db = getDb()
+  const count = db.prepare('SELECT COUNT(*) AS cnt FROM sprint_tasks').get() as { cnt: number }
+  if (count.cnt > 0) return // Already have data, skip migration
 
-function resolveSupabaseEnv(): SupabaseEnv {
-  if (cachedEnv) return cachedEnv
-
-  let url = process.env['VITE_SUPABASE_URL'] ?? ''
-  let serviceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? ''
-
-  if (!url || !serviceKey) {
-    // Fallback: read from life-os .env
-    try {
-      const envPath = join(homedir(), 'Documents', 'Repositories', 'life-os', '.env')
-      const raw = readFileSync(envPath, 'utf-8')
-      for (const line of raw.split('\n')) {
-        const trimmed = line.trim()
-        if (trimmed.startsWith('#') || !trimmed.includes('=')) continue
-        const eqIdx = trimmed.indexOf('=')
-        const key = trimmed.slice(0, eqIdx).trim()
-        const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '')
-        if (key === 'VITE_SUPABASE_URL' && !url) url = val
-        if (key === 'SUPABASE_SERVICE_ROLE_KEY' && !serviceKey) serviceKey = val
-      }
-    } catch {
-      // .env not found — will fail on first request
-    }
-  }
-
-  if (!url || !serviceKey) {
-    throw new Error(
-      'Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. ' +
-        'Set them in env or ~/Documents/Repositories/life-os/.env'
-    )
-  }
-
-  cachedEnv = { url, serviceKey }
-  return cachedEnv
-}
-
-// --- Supabase REST ---
-
-async function supabaseFetch(
-  path: string,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
-  body?: unknown
-): Promise<unknown> {
-  const { url, serviceKey } = resolveSupabaseEnv()
-  const endpoint = `${url}/rest/v1/${path}`
-
-  const headers: Record<string, string> = {
-    apikey: serviceKey,
-    Authorization: `Bearer ${serviceKey}`,
-    'Content-Type': 'application/json',
-    Prefer: method === 'POST' ? 'return=representation' : 'return=representation',
-  }
-
-  const res = await fetch(endpoint, {
-    method,
-    headers,
-    body: body != null ? JSON.stringify(body) : undefined,
-  })
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`Supabase ${method} ${path} failed (${res.status}): ${text}`)
-  }
-
-  const text = await res.text()
-  if (!text) return null
-  return JSON.parse(text)
-}
-
-// --- Migration: ensure 'backlog' status is allowed ---
-
-async function ensureBacklogStatus(): Promise<void> {
+  let url = ''
+  let serviceKey = ''
   try {
-    // Insert a test row with status=backlog, then clean it up.
-    // If the enum doesn't include 'backlog' yet, this will throw and we log the fix.
-    const testResult = await supabaseFetch('sprint_tasks', 'POST', {
-      title: '__backlog_status_test__',
-      repo: 'test',
-      status: 'backlog',
-      priority: 999,
-    }) as Array<{ id: string }> | { id: string } | null
-
-    // Clean up — handle both array and single-object responses
-    const inserted = Array.isArray(testResult) ? testResult[0] : testResult
-    if (inserted?.id) {
-      await supabaseFetch(`sprint_tasks?id=eq.${inserted.id}`, 'DELETE')
+    const envPath = join(homedir(), 'Documents', 'Repositories', 'life-os', '.env')
+    const raw = readFileSync(envPath, 'utf-8')
+    for (const line of raw.split('\n')) {
+      const trimmed = line.trim()
+      if (trimmed.startsWith('#') || !trimmed.includes('=')) continue
+      const eqIdx = trimmed.indexOf('=')
+      const key = trimmed.slice(0, eqIdx).trim()
+      const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '')
+      if (key === 'VITE_SUPABASE_URL') url = val
+      if (key === 'SUPABASE_SERVICE_ROLE_KEY') serviceKey = val
     }
-  } catch (err) {
-    console.warn('[sprint] backlog status validation failed — may need manual migration:', err)
-    console.warn(
-      '[sprint] Run: ALTER TABLE sprint_tasks DROP CONSTRAINT IF EXISTS sprint_tasks_status_check; ' +
-        "ALTER TABLE sprint_tasks ADD CONSTRAINT sprint_tasks_status_check " +
-        "CHECK (status IN ('backlog', 'queued', 'active', 'done', 'cancelled'));"
-    )
-  }
-}
-
-// --- BDE Agents Index ---
-
-interface BdeAgentEntry {
-  id: string
-  logPath: string
-  status: string
-}
-
-async function readBdeAgentsIndex(): Promise<BdeAgentEntry[]> {
-  const indexPath = join(homedir(), '.bde', 'agents.json')
-  try {
-    const raw = await readFile(indexPath, 'utf-8')
-    return JSON.parse(raw) as BdeAgentEntry[]
   } catch {
-    return []
+    // No .env file — nothing to migrate
+    return
   }
+
+  if (!url || !serviceKey) {
+    console.warn('[sprint] Supabase env not found — skipping one-time migration')
+    return
+  }
+
+  // Fetch in background — don't block startup
+  fetch(`${url}/rest/v1/sprint_tasks?order=priority.asc,created_at.desc&limit=500&select=*`, {
+    headers: {
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error(`Supabase fetch failed: ${res.status}`)
+      return res.json()
+    })
+    .then((rows: Record<string, unknown>[]) => {
+      if (!Array.isArray(rows) || rows.length === 0) return
+
+      // Re-check inside transaction in case another process inserted
+      const db = getDb()
+      const recheck = db.prepare('SELECT COUNT(*) AS cnt FROM sprint_tasks').get() as {
+        cnt: number
+      }
+      if (recheck.cnt > 0) return
+
+      const insert = db.prepare(`
+        INSERT OR IGNORE INTO sprint_tasks
+          (id, title, prompt, repo, status, priority, spec, notes, pr_url, pr_number, pr_status,
+           agent_run_id, started_at, completed_at, created_at, updated_at)
+        VALUES
+          (@id, @title, @prompt, @repo, @status, @priority, @spec, @notes, @pr_url, @pr_number,
+           @pr_status, @agent_run_id, @started_at, @completed_at, @created_at, @updated_at)
+      `)
+
+      const migrate = db.transaction((tasks: Record<string, unknown>[]) => {
+        for (const t of tasks) {
+          insert.run({
+            id: t['id'] ?? null,
+            title: t['title'] ?? '',
+            prompt: t['prompt'] ?? '',
+            repo: t['repo'] ?? 'bde',
+            status: t['status'] ?? 'backlog',
+            priority: t['priority'] ?? 1,
+            spec: t['spec'] ?? null,
+            notes: t['notes'] ?? null,
+            pr_url: t['pr_url'] ?? null,
+            pr_number: t['pr_number'] ?? null,
+            pr_status: t['pr_status'] ?? null,
+            agent_run_id: t['agent_run_id'] ?? t['agent_session_id'] ?? null,
+            started_at: t['started_at'] ?? null,
+            completed_at: t['completed_at'] ?? null,
+            created_at: t['created_at'] ?? new Date().toISOString(),
+            updated_at: t['updated_at'] ?? new Date().toISOString(),
+          })
+        }
+      })
+
+      migrate(rows)
+      console.log(`[sprint] Migrated ${rows.length} tasks from Supabase to SQLite`)
+    })
+    .catch((err) => {
+      console.warn('[sprint] Supabase migration failed (non-fatal):', err)
+    })
 }
 
 // --- IPC Registration ---
 
 export function registerSprintHandlers(): void {
-  // Run migration check on startup (non-blocking)
-  ensureBacklogStatus().catch((err) =>
-    console.warn('[sprint] migration check failed:', err)
-  )
+  // One-time migration from Supabase (non-blocking, graceful)
+  migrateFromSupabase()
 
-  safeHandle('sprint:list', async () => {
-    return supabaseFetch('sprint_tasks?order=priority.asc,created_at.desc&limit=200&select=*')
+  safeHandle('sprint:list', () => {
+    const db = getDb()
+    return db
+      .prepare('SELECT * FROM sprint_tasks ORDER BY priority ASC, created_at DESC')
+      .all()
   })
 
-  safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
-    const payload = {
+  safeHandle('sprint:create', (_e, task: CreateTaskInput) => {
+    const db = getDb()
+    const stmt = db.prepare(`
+      INSERT INTO sprint_tasks (title, repo, prompt, spec, priority, status)
+      VALUES (@title, @repo, @prompt, @spec, @priority, @status)
+      RETURNING *
+    `)
+    return stmt.get({
       title: task.title,
       repo: task.repo,
       prompt: task.prompt ?? task.spec ?? task.title,
-      description: task.description ?? null,
       spec: task.spec ?? null,
       priority: task.priority ?? 0,
       status: task.status ?? 'backlog',
-    }
-    const result = await supabaseFetch('sprint_tasks', 'POST', payload)
-    return Array.isArray(result) ? result[0] : result
+    })
   })
 
-  safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown>) => {
-    const result = await supabaseFetch(`sprint_tasks?id=eq.${id}`, 'PATCH', patch)
-    return Array.isArray(result) ? result[0] : result
+  safeHandle('sprint:update', (_e, id: string, patch: Record<string, unknown>) => {
+    const db = getDb()
+    const allowed = [
+      'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
+      'pr_url', 'pr_number', 'pr_status', 'agent_run_id', 'started_at', 'completed_at',
+    ]
+    const entries = Object.entries(patch).filter(([k]) => allowed.includes(k))
+    if (entries.length === 0) return null
+
+    const setClauses = entries.map(([k]) => `${k} = ?`).join(', ')
+    const values = entries.map(([, v]) => v)
+    return db
+      .prepare(`UPDATE sprint_tasks SET ${setClauses} WHERE id = ? RETURNING *`)
+      .get(...values, id)
   })
 
-  safeHandle('sprint:delete', async (_e, id: string) => {
-    await supabaseFetch(`sprint_tasks?id=eq.${id}`, 'DELETE')
+  safeHandle('sprint:delete', (_e, id: string) => {
+    const db = getDb()
+    db.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
     return { ok: true }
   })
 
   safeHandle('sprint:readLog', async (_e, agentId: string) => {
-    const agents = await readBdeAgentsIndex()
-    const agent = agents.find((a) => a.id === agentId)
-    if (!agent?.logPath) return { content: '', status: 'unknown' }
+    const db = getDb()
+    const agent = db.prepare('SELECT log_path, status FROM agent_runs WHERE id = ?').get(agentId) as
+      | { log_path: string | null; status: string }
+      | undefined
 
-    const content = await readFile(agent.logPath, 'utf-8').catch(() => '')
+    if (!agent?.log_path) return { content: '', status: agent?.status ?? 'unknown' }
+
+    const content = await readFile(agent.log_path, 'utf-8').catch(() => '')
     return { content, status: agent.status }
   })
 }
