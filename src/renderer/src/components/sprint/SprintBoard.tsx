@@ -115,7 +115,7 @@ export default function SprintBoard() {
         </Button>
       </div>
 
-      {error && <div className="sprint-board__error">{error}</div>}
+      {error && <div className="sprint-board__error bde-error-banner">{error}</div>}
 
       <div className="sprint-board__columns">
         {loading && tasks.length === 0 ? (
@@ -130,7 +130,7 @@ export default function SprintBoard() {
             <div className="sprint-col">
               <div className="sprint-col__header">
                 <span className="sprint-col__icon sprint-col__icon--red">In Progress</span>
-                <span className="sprint-col__count">{active.length}</span>
+                <span className="sprint-col__count bde-count-badge">{active.length}</span>
               </div>
               <div className="sprint-col__cards">
                 {active.length === 0 ? (
@@ -147,7 +147,7 @@ export default function SprintBoard() {
             <div className="sprint-col">
               <div className="sprint-col__header">
                 <span className="sprint-col__icon sprint-col__icon--yellow">Queue</span>
-                <span className="sprint-col__count">{queued.length}</span>
+                <span className="sprint-col__count bde-count-badge">{queued.length}</span>
               </div>
               <div className="sprint-col__cards">
                 {queued.length === 0 ? (
@@ -164,7 +164,7 @@ export default function SprintBoard() {
             <div className="sprint-col">
               <div className="sprint-col__header">
                 <span className="sprint-col__icon sprint-col__icon--green">Done This Sprint</span>
-                <span className="sprint-col__count">{done.length}</span>
+                <span className="sprint-col__count bde-count-badge">{done.length}</span>
               </div>
               <div className="sprint-col__cards">
                 {done.length === 0 ? (

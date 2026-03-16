@@ -21,12 +21,12 @@
   outline: none;
   color: var(--bde-text);
   font-family: var(--bde-font-code);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   width: 180px;
 }
 
 .terminal-find__count {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   min-width: 60px;
   text-align: right;
@@ -46,7 +46,7 @@
 }
 
 .terminal-find__btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bde-hover-strong);
   color: var(--bde-text);
 }
 
@@ -78,7 +78,7 @@
   border: none;
   background: transparent;
   color: var(--bde-text, #E8E8E8);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-family: var(--bde-font-ui);
   cursor: pointer;
   text-align: left;
@@ -94,7 +94,7 @@
 }
 
 .shell-picker__shortcut {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim, #555555);
 }
 
@@ -115,7 +115,7 @@
   border-radius: var(--bde-radius-sm, 4px);
   color: var(--bde-text, #E8E8E8);
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   padding: 4px 8px;
   outline: none;
   box-sizing: border-box;
@@ -149,8 +149,8 @@
   padding: 0 12px;
   background: var(--bde-surface, #111111);
   border-bottom: 1px solid var(--bde-border, #2A2A2A);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-family: var(--bde-font-ui);
-  color: #a78bfa;
+  color: var(--bde-subagent);
   flex-shrink: 0;
 }

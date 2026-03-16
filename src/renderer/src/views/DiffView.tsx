@@ -281,7 +281,7 @@ function DiffView(): React.JSX.Element {
         </div>
       </div>
 
-      {error && <div className="diff-view__error">{error}</div>}
+      {error && <div className="diff-view__error bde-error-banner">{error}</div>}
       {pushOutput && (
         <div className="git-push-output">
           <pre>{pushOutput}</pre>
@@ -303,7 +303,7 @@ function DiffView(): React.JSX.Element {
           <div className="git-sidebar">
             <div className="git-sidebar__header">
               <span className="git-sidebar__title">Changes</span>
-              <span className="git-sidebar__count">{files.length}</span>
+              <span className="git-sidebar__count bde-count-badge">{files.length}</span>
             </div>
 
             <div className="git-sidebar__actions">

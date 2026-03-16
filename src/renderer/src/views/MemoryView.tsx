@@ -190,7 +190,7 @@ export default function MemoryView(): React.JSX.Element {
       <div className="memory-sidebar">
         <div className="memory-sidebar__header">
           <span className="memory-sidebar__title">Memory</span>
-          <span className="memory-sidebar__count">{files.length}</span>
+          <span className="memory-sidebar__count bde-count-badge">{files.length}</span>
           <div className="memory-sidebar__actions">
             <Button variant="icon" size="sm" onClick={() => setNewFilePrompt(true)} title="New file">
               +

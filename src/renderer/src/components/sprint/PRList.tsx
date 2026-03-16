@@ -81,13 +81,13 @@ export default function PRList() {
     <div className="pr-list">
       <div className="pr-list__header">
         <span className="pr-list__title">Open Pull Requests</span>
-        <span className="pr-list__count">{prs.length}</span>
+        <span className="pr-list__count bde-count-badge">{prs.length}</span>
         <Button variant="icon" size="sm" onClick={load} disabled={loading} title="Refresh">
           &#x21bb;
         </Button>
       </div>
 
-      {error && <div className="sprint-board__error">{error}</div>}
+      {error && <div className="sprint-board__error bde-error-banner">{error}</div>}
 
       <div className="pr-list__rows">
         {loading && prs.length === 0 ? (

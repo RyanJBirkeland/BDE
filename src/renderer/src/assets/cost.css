@@ -27,7 +27,7 @@
   justify-content: center;
   flex: 1;
   color: var(--bde-text-muted);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
 }
 
 /* ── Stat cards (4-column grid using Card) ────────────── */
@@ -45,7 +45,7 @@
 }
 
 .cost-stat-card__label {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -70,13 +70,13 @@
 
 .cost-chart {
   border: 1px solid var(--bde-border);
-  border-radius: 8px;
+  border-radius: var(--bde-radius-lg);
   background: var(--bde-surface);
   padding: 16px;
 }
 
 .cost-section__title {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
   color: var(--bde-text-muted);
   text-transform: uppercase;
@@ -93,7 +93,7 @@
 
 .cost-donut {
   border: 1px solid var(--bde-border);
-  border-radius: 8px;
+  border-radius: var(--bde-radius-lg);
   background: var(--bde-surface);
   padding: 16px;
 }
@@ -121,7 +121,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
 }
 
 .cost-donut__dot {
@@ -140,14 +140,14 @@
 
 .cost-donut__model-cost {
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text);
   min-width: 64px;
 }
 
 .cost-donut__model-pct {
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
 }
 
@@ -157,13 +157,13 @@
   flex: 1;
   overflow-y: auto;
   border: 1px solid var(--bde-border);
-  border-radius: 8px;
+  border-radius: var(--bde-radius-lg);
 }
 
 .cost-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
 }
 
 .cost-table th {
@@ -173,7 +173,7 @@
   padding: 10px 12px;
   text-align: left;
   font-weight: 500;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-muted);
   border-bottom: 1px solid var(--bde-border);
   text-transform: uppercase;
@@ -206,7 +206,7 @@
 .cost-table__num {
   text-align: right !important;
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
 }
 
 .cost-table__session {
@@ -222,7 +222,7 @@
 
 .cost-table__model {
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
 }
 
 .cost-table__model-badge {
@@ -230,7 +230,7 @@
   padding: 1px 8px;
   border: 1px solid;
   border-radius: 10px;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 500;
   text-transform: capitalize;
 }
@@ -242,6 +242,6 @@
 
 .cost-table__date {
   color: var(--bde-text-muted);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   white-space: nowrap;
 }

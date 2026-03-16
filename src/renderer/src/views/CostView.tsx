@@ -94,7 +94,7 @@ function DailyChart({ sessions }: { sessions: SessionCost[] }): React.JSX.Elemen
 
   return (
     <div className="cost-chart">
-      <h3 className="cost-section__title">Daily Spend</h3>
+      <h3 className="cost-section__title bde-section-title">Daily Spend</h3>
       <svg viewBox={`0 0 ${W} ${H + 28}`} className="cost-chart__svg">
         {days.map((d, i) => {
           const x = gap + i * (barW + gap)
@@ -196,7 +196,7 @@ function ModelDonut({ sessions }: { sessions: SessionCost[] }): React.JSX.Elemen
 
   return (
     <div className="cost-donut">
-      <h3 className="cost-section__title">Model Breakdown</h3>
+      <h3 className="cost-section__title bde-section-title">Model Breakdown</h3>
       <div className="cost-donut__row">
         <svg viewBox="0 0 160 160" className="cost-donut__svg">
           {total === 0 ? (

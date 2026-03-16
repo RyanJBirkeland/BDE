@@ -526,3 +526,34 @@
   animation: bde-shimmer 1.5s ease-in-out infinite;
   border-radius: var(--bde-radius-md);
 }
+
+/* ── Section Title ───────────────────────────────────── */
+
+.bde-section-title {
+  font-size: var(--bde-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--bde-text-muted);
+}
+
+/* ── Error Banner ────────────────────────────────────── */
+
+.bde-error-banner {
+  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--bde-error-bg);
+  color: var(--bde-danger-text);
+  font-size: var(--bde-size-sm);
+  border-radius: var(--bde-radius-sm);
+}
+
+/* ── Count Badge ─────────────────────────────────────── */
+
+.bde-count-badge {
+  font-size: var(--bde-size-xs);
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  background: var(--bde-border);
+  padding: 0 var(--bde-space-2);
+  border-radius: var(--bde-radius-xl);
+}

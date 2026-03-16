@@ -266,7 +266,7 @@ export function SessionsView(): React.JSX.Element {
     <div className="sessions-chat">
       <div className="sessions-chat__sidebar" style={{ width: sidebarWidth }}>
         <div className="session-list__header">
-          <span className="session-list__title">AGENTS</span>
+          <span className="session-list__title bde-section-title">AGENTS</span>
           <button
             className="session-list__new-btn"
             onClick={() => setSpawnOpen(true)}
