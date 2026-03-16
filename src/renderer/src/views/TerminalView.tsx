@@ -30,8 +30,10 @@ export function TerminalView(): React.JSX.Element {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: tokens.space[1],
-                padding: `${tokens.space[1]} ${tokens.space[3]}`,
+                gap: tokens.space[2],
+                padding: `0 ${tokens.space[4]}`,
+                minWidth: 130,
+                height: 36,
                 fontSize: tokens.size.sm,
                 fontFamily: tokens.font.ui,
                 color: isActive ? tokens.color.text : tokens.color.textMuted,
@@ -39,10 +41,11 @@ export function TerminalView(): React.JSX.Element {
                 borderBottom: isActive ? `2px solid ${tokens.color.accent}` : '2px solid transparent',
                 cursor: 'pointer',
                 userSelect: 'none',
+                whiteSpace: 'nowrap',
                 transition: tokens.transition.fast
               }}
             >
-              <span>{tab.label}</span>
+              <span style={{ flex: 1 }}>{tab.label}</span>
               {tabs.length > 1 && (
                 <span
                   onClick={(e) => {
@@ -53,10 +56,11 @@ export function TerminalView(): React.JSX.Element {
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: 16,
-                    height: 16,
+                    width: 20,
+                    height: 20,
                     borderRadius: tokens.radius.sm,
                     color: tokens.color.textDim,
+                    flexShrink: 0,
                     transition: tokens.transition.fast
                   }}
                   onMouseEnter={(e) => {
