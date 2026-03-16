@@ -134,6 +134,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
       clearInterval(_logInterval)
       set({ _logInterval: null })
     }
+  }
   }),
   {
     name: 'bde-local-agents',
