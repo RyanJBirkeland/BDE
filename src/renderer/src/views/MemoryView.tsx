@@ -75,6 +75,7 @@ export default function MemoryView(): React.JSX.Element {
   const [savedContent, setSavedContent] = useState('')
   const [newFilePrompt, setNewFilePrompt] = useState(false)
   const [newFileName, setNewFileName] = useState('')
+  const [creating, setCreating] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
 
   const loadFiles = useCallback(async () => {
@@ -120,11 +121,18 @@ export default function MemoryView(): React.JSX.Element {
     const name = newFileName.trim()
     if (!name) return
     const path = name.endsWith('.md') ? name : `${name}.md`
-    await memoryService.writeFile(path, '')
-    setNewFilePrompt(false)
-    setNewFileName('')
-    await loadFiles()
-    await openFile(path)
+    setCreating(true)
+    try {
+      await memoryService.writeFile(path, '')
+      setNewFilePrompt(false)
+      setNewFileName('')
+      await loadFiles()
+      await openFile(path)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to create file')
+    } finally {
+      setCreating(false)
+    }
   }, [newFileName, loadFiles, openFile])
 
   useEffect(() => {
@@ -220,6 +228,7 @@ export default function MemoryView(): React.JSX.Element {
                 }
               }}
               placeholder="filename.md"
+              disabled={creating}
               autoFocus
             />
           </div>
