@@ -12,6 +12,7 @@ import { clearConfigCache } from '../lib/rpc'
 import { toast } from '../stores/toasts'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
+import * as settingsService from '../services/settings'
 
 const ACCENT_PRESETS = [
   { color: '#00D37F', label: 'Green' },
@@ -64,11 +65,11 @@ export default function SettingsView(): React.JSX.Element {
 
   // Load initial config
   useEffect(() => {
-    window.api.getGatewayConfig().then(({ url: u, token: t }) => {
+    settingsService.loadConfig().then(({ url: u, token: t }) => {
       setUrl(u)
       setToken(t)
     })
-    window.api.getRepoPaths().then(setRepos)
+    settingsService.getRepoPaths().then(setRepos)
   }, [])
 
   const handleUrlChange = useCallback((value: string) => {
@@ -86,7 +87,7 @@ export default function SettingsView(): React.JSX.Element {
   const handleSave = useCallback(async () => {
     setSaving(true)
     try {
-      await window.api.saveGatewayConfig(url, token)
+      await settingsService.saveConfig({ url, token })
       clearConfigCache()
       setDirty(false)
       toast.success('Gateway config saved')
@@ -102,21 +103,7 @@ export default function SettingsView(): React.JSX.Element {
     setTesting(true)
     setTestResult(null)
     try {
-      const httpUrl = url.replace(/^wss?:\/\//, 'http://').replace(/\/$/, '')
-      const res = await fetch(`${httpUrl}/tools/invoke`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ tool: 'sessions_list', args: {} }),
-        signal: AbortSignal.timeout(5000)
-      })
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = (await res.json()) as { ok: boolean }
-      if (!data.ok) throw new Error('Gateway returned ok=false')
-
+      await settingsService.testConnection(url, token)
       setTestResult('success')
       toast.success('Connection successful')
     } catch {

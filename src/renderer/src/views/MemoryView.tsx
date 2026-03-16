@@ -9,6 +9,7 @@ import { toast } from '../stores/toasts'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
+import * as memoryService from '../services/memory'
 
 interface MemoryFile {
   path: string
@@ -78,7 +79,7 @@ export default function MemoryView(): React.JSX.Element {
 
   const loadFiles = useCallback(async () => {
     try {
-      const result = await window.api.listMemoryFiles()
+      const result = await memoryService.listFiles()
       setFiles(result)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to load memory files')
@@ -91,7 +92,7 @@ export default function MemoryView(): React.JSX.Element {
 
   const openFile = useCallback(async (path: string) => {
     try {
-      const text = await window.api.readMemoryFile(path)
+      const text = await memoryService.readFile(path)
       setSelectedPath(path)
       setContent(text)
       setSavedContent(text)
@@ -103,7 +104,7 @@ export default function MemoryView(): React.JSX.Element {
   const saveFile = useCallback(async () => {
     if (!selectedPath) return
     try {
-      await window.api.writeMemoryFile(selectedPath, content)
+      await memoryService.writeFile(selectedPath, content)
       setSavedContent(content)
       toast.success('File saved')
     } catch (e) {
@@ -119,7 +120,7 @@ export default function MemoryView(): React.JSX.Element {
     const name = newFileName.trim()
     if (!name) return
     const path = name.endsWith('.md') ? name : `${name}.md`
-    await window.api.writeMemoryFile(path, '')
+    await memoryService.writeFile(path, '')
     setNewFilePrompt(false)
     setNewFileName('')
     await loadFiles()
