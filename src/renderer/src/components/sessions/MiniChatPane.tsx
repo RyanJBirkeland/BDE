@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { invokeTool } from '../../lib/rpc'
 import { useSessionsStore } from '../../stores/sessions'
+import { POLL_PROCESSES_INTERVAL } from '../../lib/constants'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
@@ -19,7 +20,6 @@ export interface MiniChatPaneProps {
   onSessionChange: (key: string | null) => void
 }
 
-const POLL_INTERVAL = 3_000
 
 export function MiniChatPane({ paneIndex, sessionKey, isFocused, onFocus, onSessionChange }: MiniChatPaneProps): React.JSX.Element {
   const sessions = useSessionsStore((s) => s.sessions)
@@ -99,7 +99,7 @@ export function MiniChatPane({ paneIndex, sessionKey, isFocused, onFocus, onSess
     }
 
     poll()
-    const id = setInterval(poll, POLL_INTERVAL)
+    const id = setInterval(poll, POLL_PROCESSES_INTERVAL)
 
     return () => {
       cancelled = true
@@ -146,7 +146,7 @@ export function MiniChatPane({ paneIndex, sessionKey, isFocused, onFocus, onSess
       <div className="mini-chat-pane__lines">
         {sessionKey && lastLines.length > 0 ? (
           lastLines.map((line, i) => (
-            <div key={i} className="mini-chat-pane__line">
+            <div key={`${i}-${line.slice(0, 20)}`} className="mini-chat-pane__line">
               {line}
             </div>
           ))

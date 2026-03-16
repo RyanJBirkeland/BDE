@@ -8,10 +8,10 @@ export const tokens = {
   /** Color palette — dark theme defaults */
   color: {
     bg: '#0A0A0A',              // App background
-    surface: '#111111',          // Card / panel background
-    surfaceHigh: '#1A1A1A',      // Elevated surface (modals, popovers)
-    border: '#2A2A2A',           // Default border
-    borderHover: '#3A3A3A',      // Border on hover/focus
+    surface: '#141414',          // Card / panel background
+    surfaceHigh: '#1E1E1E',      // Elevated surface (modals, popovers)
+    border: '#333333',           // Default border
+    borderHover: '#444444',      // Border on hover/focus
     accent: '#00D37F',           // Primary accent (green)
     accentDim: 'rgba(0, 211, 127, 0.15)', // Accent background tint
     text: '#E8E8E8',             // Primary text

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { POLL_LOG_INTERVAL } from '../lib/constants'
 
 export interface LocalAgentProcess {
   pid: number
@@ -28,6 +29,7 @@ interface LocalAgentsState {
   collapsed: boolean
   // Spawned agent tracking
   spawnedAgents: SpawnedAgent[]
+  isSpawning: boolean
   // Log viewer state
   selectedLocalAgentPid: number | null
   logContent: string
@@ -55,6 +57,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
   lastUpdated: 0,
   collapsed: false,
   spawnedAgents: [],
+  isSpawning: false,
   selectedLocalAgentPid: null,
   logContent: '',
   logNextByte: 0,
@@ -74,29 +77,34 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
   },
 
   spawnAgent: async (args) => {
-    const result = await window.api.spawnLocalAgent(args)
-    set((s) => ({
-      spawnedAgents: [
-        ...s.spawnedAgents,
-        {
-          id: result.id,
-          pid: result.pid,
-          logPath: result.logPath,
-          task: args.task,
-          repoPath: args.repoPath,
-          model: args.model ?? 'sonnet',
-          spawnedAt: Date.now(),
-          interactive: result.interactive ?? false
-        }
-      ]
-    }))
-    return result
+    set({ isSpawning: true })
+    try {
+      const result = await window.api.spawnLocalAgent(args)
+      set((s) => ({
+        spawnedAgents: [
+          ...s.spawnedAgents,
+          {
+            id: result.id,
+            pid: result.pid,
+            logPath: result.logPath,
+            task: args.task,
+            repoPath: args.repoPath,
+            model: args.model ?? 'sonnet',
+            spawnedAt: Date.now(),
+            interactive: result.interactive ?? false
+          }
+        ]
+      }))
+      return result
+    } finally {
+      set({ isSpawning: false })
+    }
   },
 
   sendToAgent: async (pid, message) => {
     const result = await window.api.sendToAgent(pid, message)
     if (!result.ok) {
-      console.error('sendToAgent failed:', result.error)
+      throw new Error(result.error ?? 'Cannot send to agent — stdin not available (agent may have been spawned outside this session)')
     }
   },
 
@@ -140,7 +148,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
     }
 
     poll()
-    const interval = setInterval(poll, 1000)
+    const interval = setInterval(poll, POLL_LOG_INTERVAL)
     set({ _logInterval: interval })
   },
 

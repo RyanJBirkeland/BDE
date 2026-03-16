@@ -134,7 +134,7 @@ export default function SettingsView(): React.JSX.Element {
 
         {/* Gateway */}
         <section className="settings-section">
-          <h2 className="settings-section__title">Gateway</h2>
+          <h2 className="settings-section__title bde-section-title">Gateway</h2>
 
           <label className="settings-field">
             <span className="settings-field__label">Gateway URL</span>
@@ -212,7 +212,7 @@ export default function SettingsView(): React.JSX.Element {
 
         {/* Repositories */}
         <section className="settings-section">
-          <h2 className="settings-section__title">Repositories</h2>
+          <h2 className="settings-section__title bde-section-title">Repositories</h2>
           <div className="settings-repos">
             {Object.entries(repos).map(([name, path]) => (
               <div key={name} className="settings-repo">
@@ -228,7 +228,7 @@ export default function SettingsView(): React.JSX.Element {
 
         {/* Appearance */}
         <section className="settings-section">
-          <h2 className="settings-section__title">Appearance</h2>
+          <h2 className="settings-section__title bde-section-title">Appearance</h2>
           <div className="settings-field">
             <span className="settings-field__label">Theme</span>
             <div className="settings-theme-buttons">
@@ -263,7 +263,7 @@ export default function SettingsView(): React.JSX.Element {
 
         {/* About */}
         <section className="settings-section">
-          <h2 className="settings-section__title">About</h2>
+          <h2 className="settings-section__title bde-section-title">About</h2>
           <div className="settings-about">
             <div className="settings-about__row">
               <span className="settings-about__label">Version</span>

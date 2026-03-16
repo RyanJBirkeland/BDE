@@ -23,6 +23,24 @@
   --bde-info: #3B82F6;
   --bde-success: #00D37F;
 
+  /* Interaction states */
+  --bde-hover: rgba(255, 255, 255, 0.04);
+  --bde-hover-strong: rgba(255, 255, 255, 0.06);
+  --bde-selected: rgba(255, 255, 255, 0.08);
+  --bde-hover-subtle: rgba(255, 255, 255, 0.03);
+  --bde-accent-hover: rgba(0, 211, 127, 0.10);
+  --bde-danger-hover: rgba(239, 68, 68, 0.10);
+  --bde-warning-hover: rgba(245, 158, 11, 0.12);
+  --bde-error-bg: rgba(220, 38, 38, 0.10);
+  --bde-overlay: rgba(0, 0, 0, 0.50);
+
+  /* Semantic colors */
+  --bde-danger-text: #f87171;
+  --bde-diff-add: #6ee7b7;
+  --bde-diff-del: #fca5a5;
+  --bde-diff-mod: #facc15;
+  --bde-subagent: #a78bfa;
+
   /* Typography */
   --bde-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --bde-font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;

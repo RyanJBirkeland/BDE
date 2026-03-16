@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useSessionsStore } from '../stores/sessions'
+import { SESSION_ACTIVE_THRESHOLD, POLL_SPRINT_INTERVAL } from '../lib/constants'
 
 const SUPABASE_URL = 'https://ponbudosprotfhissvzo.supabase.co'
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbmJ1ZG9zcHJvdGZoaXNzdnpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NTkyNzgsImV4cCI6MjA4ODEzNTI3OH0.KwALcQ9P404nMKyx76Jz7UA9QEQsDn2UFWw8mAb_ZNI'
-const POLL_MS = 30_000
 
 interface SprintTask {
   id: string
@@ -35,7 +35,7 @@ export function useTaskNotifications(): void {
   // Watch for blocked sessions
   useEffect(() => {
     for (const session of sessions) {
-      const fiveMinAgo = Date.now() - 5 * 60 * 1000
+      const fiveMinAgo = Date.now() - SESSION_ACTIVE_THRESHOLD
       const isRunning = session.updatedAt > fiveMinAgo
       if (session.abortedLastRun && !isRunning && !seenBlockedKeys.current.has(session.key)) {
         seenBlockedKeys.current.add(session.key)
@@ -56,7 +56,7 @@ export function useTaskNotifications(): void {
     const fetchDone = async (): Promise<void> => {
       try {
         // Only look at tasks completed in the last 5 minutes
-        const since = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+        const since = new Date(Date.now() - SESSION_ACTIVE_THRESHOLD).toISOString()
         const res = await fetch(
           `${SUPABASE_URL}/rest/v1/sprint_tasks?status=eq.done&updated_at=gt.${encodeURIComponent(since)}&order=updated_at.desc&limit=10`,
           {
@@ -90,7 +90,7 @@ export function useTaskNotifications(): void {
     }
 
     fetchDone()
-    const id = setInterval(fetchDone, POLL_MS)
+    const id = setInterval(fetchDone, POLL_SPRINT_INTERVAL)
     return () => clearInterval(id)
   }, [])
 }

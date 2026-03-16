@@ -3,13 +3,13 @@ import { listOpenPRs, mergePR, type PullRequest } from '../../lib/github-api'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
+import { POLL_PR_LIST_INTERVAL } from '../../lib/constants'
 
 const REPOS = [
   { label: 'life-os', owner: 'RyanJBirkeland', name: 'life-os', color: '#00D37F' },
   { label: 'feast', owner: 'RyanJBirkeland', name: 'feast', color: '#FF8A00' }
 ]
 
-const REFRESH_INTERVAL = 60_000
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr)
@@ -52,7 +52,7 @@ export default function PRList() {
 
   useEffect(() => {
     load()
-    intervalRef.current = setInterval(load, REFRESH_INTERVAL)
+    intervalRef.current = setInterval(load, POLL_PR_LIST_INTERVAL)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
@@ -81,13 +81,13 @@ export default function PRList() {
     <div className="pr-list">
       <div className="pr-list__header">
         <span className="pr-list__title">Open Pull Requests</span>
-        <span className="pr-list__count">{prs.length}</span>
+        <span className="pr-list__count bde-count-badge">{prs.length}</span>
         <Button variant="icon" size="sm" onClick={load} disabled={loading} title="Refresh">
           &#x21bb;
         </Button>
       </div>
 
-      {error && <div className="sprint-board__error">{error}</div>}
+      {error && <div className="sprint-board__error bde-error-banner">{error}</div>}
 
       <div className="pr-list__rows">
         {loading && prs.length === 0 ? (

@@ -9,6 +9,7 @@ import DiffViewer from '../components/diff/DiffViewer'
 import { parseDiff } from '../lib/diff-parser'
 import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'
+import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
 
 interface GitFileEntry {
   path: string
@@ -98,7 +99,7 @@ function DiffView(): React.JSX.Element {
   }, [refresh])
 
   useEffect(() => {
-    const timer = setInterval(refresh, 30_000)
+    const timer = setInterval(refresh, POLL_GIT_STATUS_INTERVAL)
     return () => clearInterval(timer)
   }, [refresh])
 
@@ -280,7 +281,7 @@ function DiffView(): React.JSX.Element {
         </div>
       </div>
 
-      {error && <div className="diff-view__error">{error}</div>}
+      {error && <div className="diff-view__error bde-error-banner">{error}</div>}
       {pushOutput && (
         <div className="git-push-output">
           <pre>{pushOutput}</pre>
@@ -302,7 +303,7 @@ function DiffView(): React.JSX.Element {
           <div className="git-sidebar">
             <div className="git-sidebar__header">
               <span className="git-sidebar__title">Changes</span>
-              <span className="git-sidebar__count">{files.length}</span>
+              <span className="git-sidebar__count bde-count-badge">{files.length}</span>
             </div>
 
             <div className="git-sidebar__actions">

@@ -4,6 +4,7 @@ import { useUIStore } from '../../stores/ui'
 import { toast } from '../../stores/toasts'
 import { EmptyState } from '../ui/EmptyState'
 import { Spinner } from '../ui/Spinner'
+import { CHAT_HISTORY_LIMIT, CHAT_SCROLL_THRESHOLD, CHAT_COLLAPSE_THRESHOLD } from '../../lib/constants'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
@@ -116,7 +117,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
   const isNearBottom = useCallback((): boolean => {
     const el = scrollRef.current
     if (!el) return true
-    return el.scrollTop + el.clientHeight >= el.scrollHeight - 80
+    return el.scrollTop + el.clientHeight >= el.scrollHeight - CHAT_SCROLL_THRESHOLD
   }, [])
 
   const scrollToBottom = useCallback((): void => {
@@ -133,7 +134,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
     try {
       const result = (await invokeTool('sessions_history', {
         sessionKey,
-        limit: 100
+        limit: CHAT_HISTORY_LIMIT
       })) as { messages: ChatMessage[] }
 
       // Normalize content — gateway may return content as array of blocks {type,text} or {type,thinking}
@@ -248,8 +249,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
-    const threshold = 80
-    userScrolledUp.current = el.scrollTop + el.clientHeight < el.scrollHeight - threshold
+    userScrolledUp.current = el.scrollTop + el.clientHeight < el.scrollHeight - CHAT_SCROLL_THRESHOLD
   }, [])
 
   // Keyboard scrolling: PageUp/Down, End
@@ -319,9 +319,10 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
         )}
 
         {visibleMessages.map((msg, idx) => {
+          const key = msg.timestamp ? `${msg.role}-${msg.timestamp}-${idx}` : `msg-${idx}`
           if (msg.role === 'system') {
             return (
-              <div key={idx} className="chat-msg chat-msg--system">
+              <div key={key} className="chat-msg chat-msg--system">
                 <span className="chat-msg__text">{msg.content}</span>
               </div>
             )
@@ -329,7 +330,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
 
           if (msg.role === 'tool') {
             return (
-              <div key={idx} className="chat-msg chat-msg--tool">
+              <div key={key} className="chat-msg chat-msg--tool">
                 <button className="log-msg__tool-toggle" onClick={() => toggleTool(idx)}>
                   <span className="log-msg__tool-arrow">{expandedTools.has(idx) ? '\u25BE' : '\u25B8'}</span>
                   <span className="log-msg__tool-name">{msg.toolName || 'tool'}</span>
@@ -344,7 +345,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
 
           if (msg.role === 'user') {
             return (
-              <div key={idx} className="chat-msg chat-msg--user">
+              <div key={key} className="chat-msg chat-msg--user">
                 <div className="chat-msg__bubble chat-msg__bubble--user">
                   <span className="chat-msg__text">{msg.content}</span>
                 </div>
@@ -356,11 +357,11 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
           }
 
           // assistant — render with markdown + collapsible long messages
-          const isLong = msg.content.length > 600
+          const isLong = msg.content.length > CHAT_COLLAPSE_THRESHOLD
           const isExpanded = expandedMsgs.has(idx)
 
           return (
-            <div key={idx} className="chat-msg chat-msg--assistant">
+            <div key={key} className="chat-msg chat-msg--assistant">
               <div
                 className={`chat-msg__bubble chat-msg__bubble--assistant${isLong && !isExpanded ? ' chat-msg__bubble--collapsed' : ''}`}
                 onClick={isLong ? () => toggleExpand(idx) : undefined}

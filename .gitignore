@@ -4,3 +4,12 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Git worktrees
+.worktrees/
+
+# IDE
+.idea/
+
+# Claude Code internal
+.claude/

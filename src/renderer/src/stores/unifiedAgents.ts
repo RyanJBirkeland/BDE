@@ -120,11 +120,14 @@ export function useUnifiedAgents(): UnifiedAgent[] {
       })
     }
 
-    // History agents (non-running only)
+    // History agents (all statuses — running ones shown with canKill)
+    const localPids = new Set(processes.map((p) => p.pid))
     for (const a of historyAgents) {
-      if (a.status === 'running') continue
       const started = safeTimestamp(a.startedAt)
       const finished = safeTimestamp(a.finishedAt)
+      const isRunning = a.status === 'running'
+      // Skip if already represented by a live ps-aux process row
+      if (isRunning && a.pid && localPids.has(a.pid)) continue
       agents.push({
         id: `history:${a.id}`,
         label: a.repo || a.bin || a.id,
@@ -134,9 +137,10 @@ export function useUnifiedAgents(): UnifiedAgent[] {
         updatedAt: finished || started,
         startedAt: started,
         canSteer: false,
-        canKill: false,
+        canKill: isRunning && !!a.pid,
         task: truncate(a.task, 80),
-        historyId: a.id
+        historyId: a.id,
+        pid: a.pid ?? undefined
       })
     }
 

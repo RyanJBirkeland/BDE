@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises'
-import { execSync } from 'child_process'
+import { execSync, execFileSync } from 'child_process'
 import { homedir } from 'os'
 import { join } from 'path'
 
@@ -91,10 +91,11 @@ export function gitStatus(cwd: string): { files: GitFileStatus[] } {
 
 export function gitDiffFile(cwd: string, file?: string): string {
   try {
-    const cmd = file ? `git diff -- ${file}` : 'git diff'
-    const stagedCmd = file ? `git diff --cached -- ${file}` : 'git diff --cached'
-    const unstaged = execSync(cmd, { cwd, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 })
-    const staged = execSync(stagedCmd, { cwd, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 })
+    const unstagedArgs = file ? ['diff', '--', file] : ['diff']
+    const stagedArgs = file ? ['diff', '--cached', '--', file] : ['diff', '--cached']
+    const opts = { cwd, encoding: 'utf-8' as const, maxBuffer: 10 * 1024 * 1024 }
+    const unstaged = execFileSync('git', unstagedArgs, opts)
+    const staged = execFileSync('git', stagedArgs, opts)
     return staged + unstaged
   } catch {
     return ''
@@ -103,18 +104,16 @@ export function gitDiffFile(cwd: string, file?: string): string {
 
 export function gitStage(cwd: string, files: string[]): void {
   if (files.length === 0) return
-  const escaped = files.map((f) => `"${f}"`).join(' ')
-  execSync(`git add ${escaped}`, { cwd, encoding: 'utf-8' })
+  execFileSync('git', ['add', '--', ...files], { cwd, encoding: 'utf-8' })
 }
 
 export function gitUnstage(cwd: string, files: string[]): void {
   if (files.length === 0) return
-  const escaped = files.map((f) => `"${f}"`).join(' ')
-  execSync(`git reset HEAD ${escaped}`, { cwd, encoding: 'utf-8' })
+  execFileSync('git', ['reset', 'HEAD', '--', ...files], { cwd, encoding: 'utf-8' })
 }
 
 export function gitCommit(cwd: string, message: string): void {
-  execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, { cwd, encoding: 'utf-8' })
+  execFileSync('git', ['commit', '-m', message], { cwd, encoding: 'utf-8' })
 }
 
 export function gitPush(cwd: string): string {
@@ -151,5 +150,5 @@ export function gitBranches(cwd: string): { current: string; branches: string[] 
 }
 
 export function gitCheckout(cwd: string, branch: string): void {
-  execSync(`git checkout "${branch.replace(/"/g, '\\"')}"`, { cwd, encoding: 'utf-8' })
+  execFileSync('git', ['checkout', branch], { cwd, encoding: 'utf-8' })
 }

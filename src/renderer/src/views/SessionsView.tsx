@@ -21,8 +21,7 @@ import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useUIStore } from '../stores/ui'
 import type { UnifiedAgent } from '../stores/unifiedAgents'
 import { toast } from '../stores/toasts'
-
-const POLL_INTERVAL = 10_000
+import { POLL_SESSIONS_INTERVAL, SIDEBAR_WIDTH_DEFAULT, SIDEBAR_WIDTH_MIN, SIDEBAR_WIDTH_MAX } from '../lib/constants'
 
 const SPLIT_MODES: { mode: SplitMode; icon: typeof Square; title: string }[] = [
   { mode: 'single', icon: Square, title: 'Single pane (⌘⇧1)' },
@@ -45,7 +44,7 @@ export function SessionsView(): React.JSX.Element {
 
   useEffect(() => {
     fetchSessions()
-    const id = setInterval(fetchSessions, POLL_INTERVAL)
+    const id = setInterval(fetchSessions, POLL_SESSIONS_INTERVAL)
     return () => clearInterval(id)
   }, [fetchSessions])
 
@@ -55,7 +54,7 @@ export function SessionsView(): React.JSX.Element {
     }
   }, [sessions, selectedKey, selectSession])
 
-  const [sidebarWidth, setSidebarWidth] = useState(240)
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_WIDTH_DEFAULT)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [optimisticMessages, setOptimisticMessages] = useState<{ role: 'user'; content: string }[]>([])
 
@@ -81,10 +80,16 @@ export function SessionsView(): React.JSX.Element {
   const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
   const selectedSession = sessions.find((s) => s.key === selectedKey)
   const selectedSubAgent = subAgents.find((a) => a.sessionKey === selectedKey) ?? null
-  const sessionMode: 'chat' | 'steer' = selectedSubAgent ? 'steer' : 'chat'
 
   // Unified agent selection state
   const [selectedUnifiedId, setSelectedUnifiedId] = useState<string | null>(null)
+
+  // Derive send mode + localPid from unified selection
+  const localSendPid =
+    selectedUnifiedId?.startsWith('local:') ? parseInt(selectedUnifiedId.substring(6), 10) : undefined
+  const sessionMode: 'chat' | 'steer' | 'local' =
+    localSendPid != null ? 'local' :
+    selectedSubAgent ? 'steer' : 'chat'
   const [query, setQuery] = useState('')
   const [spawnOpen, setSpawnOpen] = useState(false)
 
@@ -240,9 +245,11 @@ export function SessionsView(): React.JSX.Element {
               optimisticMessages={optimisticMessages}
             />
           </div>
-          <div className="sessions-chat__input">
-            <MessageInput sessionKey={selectedKey} sessionMode={sessionMode} onSent={onSent} onBeforeSend={onBeforeSend} onSendError={onSendError} />
-          </div>
+          {selectedUnifiedId?.startsWith('history:') ? null : (
+            <div className="sessions-chat__input">
+              <MessageInput sessionKey={selectedKey} sessionMode={sessionMode} localPid={localSendPid} onSent={onSent} onBeforeSend={onBeforeSend} onSendError={onSendError} />
+            </div>
+          )}
         </>
       )
     }
@@ -259,7 +266,7 @@ export function SessionsView(): React.JSX.Element {
     <div className="sessions-chat">
       <div className="sessions-chat__sidebar" style={{ width: sidebarWidth }}>
         <div className="session-list__header">
-          <span className="session-list__title">AGENTS</span>
+          <span className="session-list__title bde-section-title">AGENTS</span>
           <button
             className="session-list__new-btn"
             onClick={() => setSpawnOpen(true)}
@@ -298,7 +305,7 @@ export function SessionsView(): React.JSX.Element {
           const startW = sidebarWidth
           const onMove = (ev: MouseEvent): void => {
             const delta = ev.clientX - startX
-            setSidebarWidth(Math.min(400, Math.max(180, startW + delta)))
+            setSidebarWidth(Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, startW + delta)))
           }
           const onUp = (): void => {
             window.removeEventListener('mousemove', onMove)

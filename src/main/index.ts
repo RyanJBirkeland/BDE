@@ -121,6 +121,10 @@ app.whenReady().then(() => {
     const { sendToAgent } = await import('./local-agents')
     return sendToAgent(pid, message)
   })
+  safeHandle('local:isInteractive', async (_e, pid: number) => {
+    const { isAgentInteractive } = await import('./local-agents')
+    return isAgentInteractive(pid)
+  })
   safeHandle('kill-local-agent', async (_event, pid: number) => {
     try {
       process.kill(pid, 'SIGTERM')
