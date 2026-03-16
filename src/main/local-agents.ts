@@ -17,6 +17,15 @@ const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 const AGENT_BINS = ['claude', 'codex', 'opencode', 'pi', 'aider', 'cursor']
 
+// Electron's main process has a stripped PATH — augment it with common CLI install locations
+const ELECTRON_PATH = [
+  process.env.PATH,
+  '/usr/local/bin',
+  '/opt/homebrew/bin',
+  `${process.env.HOME}/.local/bin`,
+  `${process.env.HOME}/.nvm/versions/node/v22.22.0/bin`,
+].filter(Boolean).join(':')
+
 export interface LocalAgentProcess {
   pid: number
   bin: string
@@ -173,7 +182,8 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
   ], {
     cwd: args.repoPath,
     detached: true,
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, PATH: ELECTRON_PATH }
   })
 
   const logStream = createWriteStream(logPath, { flags: 'a' })

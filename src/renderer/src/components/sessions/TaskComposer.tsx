@@ -64,8 +64,9 @@ export function TaskComposer(): React.JSX.Element {
       setDescription('')
       setJustSpawned(true)
       setTimeout(() => setJustSpawned(false), 1500)
-    } catch {
-      toast.error('Failed to spawn agent')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      toast.error(`Spawn failed: ${msg}`)
     } finally {
       setSpawning(false)
     }
