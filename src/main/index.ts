@@ -10,6 +10,7 @@ import { registerGatewayHandlers } from './handlers/gateway-handlers'
 import { registerWindowHandlers } from './handlers/window-handlers'
 import { registerSprintHandlers } from './handlers/sprint'
 import { registerFsHandlers } from './fs'
+import { getDb, closeDb } from './db'
 
 
 function createWindow(): void {
@@ -45,8 +46,14 @@ function createWindow(): void {
   }
 }
 
+app.on('before-quit', () => {
+  closeDb()
+})
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.bde')
+
+  getDb()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
