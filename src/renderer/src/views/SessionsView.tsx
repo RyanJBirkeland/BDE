@@ -90,6 +90,9 @@ export function SessionsView(): React.JSX.Element {
   const handleUnifiedSelect = useCallback(
     (id: string) => {
       setSelectedUnifiedId(id)
+      // Always clear all three stores first, then set the right one
+      selectAgent(null)
+      selectLocalAgent(null)
       if (id.startsWith('local:')) {
         const pid = parseInt(id.substring(6), 10)
         selectLocalAgent(pid)
