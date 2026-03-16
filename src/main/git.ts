@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises'
-import { execSync, execFileSync } from 'child_process'
+import { execFileSync, spawnSync } from 'child_process'
 import { homedir } from 'os'
 import { join } from 'path'
 
@@ -21,7 +21,7 @@ export async function readSprintMd(repoPath: string): Promise<string> {
 export function getDiff(repoPath: string, base?: string): string {
   const ref = base ?? 'origin/main'
   try {
-    return execSync(`git diff ${ref}...HEAD`, {
+    return execFileSync('git', ['diff', `${ref}...HEAD`], {
       cwd: repoPath,
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024
@@ -33,7 +33,7 @@ export function getDiff(repoPath: string, base?: string): string {
 
 export function getBranch(repoPath: string): string {
   try {
-    return execSync('git branch --show-current', {
+    return execFileSync('git', ['branch', '--show-current'], {
       cwd: repoPath,
       encoding: 'utf-8'
     }).trim()
@@ -45,7 +45,7 @@ export function getBranch(repoPath: string): string {
 export function getLog(repoPath: string, n?: number): string {
   const count = n ?? 10
   try {
-    return execSync(`git log --oneline -${count}`, {
+    return execFileSync('git', ['log', '--oneline', `-${count}`], {
       cwd: repoPath,
       encoding: 'utf-8'
     }).trim()
@@ -62,7 +62,7 @@ export interface GitFileStatus {
 
 export function gitStatus(cwd: string): { files: GitFileStatus[] } {
   try {
-    const raw = execSync('git status --porcelain', {
+    const raw = execFileSync('git', ['status', '--porcelain'], {
       cwd,
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024
@@ -117,20 +117,18 @@ export function gitCommit(cwd: string, message: string): void {
 }
 
 export function gitPush(cwd: string): string {
-  try {
-    return execSync('git push 2>&1', { cwd, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 })
-  } catch (e) {
-    if (e instanceof Error && 'stdout' in e) {
-      const err = e as Error & { stdout?: string; stderr?: string }
-      return err.stdout || err.stderr || e.message
-    }
-    return e instanceof Error ? e.message : 'Push failed'
-  }
+  const result = spawnSync('git', ['push'], {
+    cwd,
+    encoding: 'utf-8',
+    maxBuffer: 10 * 1024 * 1024
+  })
+  if (result.error) return result.error.message
+  return result.stdout + result.stderr || 'Push failed'
 }
 
 export function gitBranches(cwd: string): { current: string; branches: string[] } {
   try {
-    const raw = execSync('git branch', { cwd, encoding: 'utf-8' })
+    const raw = execFileSync('git', ['branch'], { cwd, encoding: 'utf-8' })
     const branches: string[] = []
     let current = ''
     for (const line of raw.split('\n')) {
