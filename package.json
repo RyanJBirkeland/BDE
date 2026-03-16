@@ -21,6 +21,8 @@
     "package": "npm run build && electron-builder --mac --arm64",
     "package:dmg": "npm run package",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:main": "vitest run --config vitest.node.config.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -48,6 +50,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^4.1.0",
     "electron": "^39.2.6",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",
