@@ -5,26 +5,7 @@ import { useLocalAgentsStore, LocalAgentProcess } from '../../stores/localAgents
 import { cwdToRepoLabel } from '../../lib/utils'
 import { Spinner } from '../ui/Spinner'
 import { POLL_AGENTS_INTERVAL, AGENT_HISTORY_LIMIT } from '../../lib/constants'
-
-function timeAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime()
-  const seconds = Math.floor(ms / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 48) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
-}
-
-function formatElapsed(startedAt: number): string {
-  const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
-  if (seconds < 60) return `${seconds}s`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`
-  const hours = Math.floor(minutes / 60)
-  return `${hours}h ${minutes % 60}m`
-}
+import { timeAgo, formatElapsed } from '../../lib/format'
 
 function statusIcon(status: AgentMeta['status']): string {
   if (status === 'done') return '\u2713'

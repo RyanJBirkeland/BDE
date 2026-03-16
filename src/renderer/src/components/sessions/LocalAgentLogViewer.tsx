@@ -7,36 +7,7 @@ import { Button } from '../ui/Button'
 import { parseStreamJson } from '../../lib/stream-parser'
 import type { ChatItemResult } from '../../lib/stream-parser'
 import { renderContent } from '../../lib/markdown'
-
-// ── Helpers ──────────────────────────────────────────────
-
-function formatElapsed(startedAt: number): string {
-  const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
-  if (seconds < 60) return `${seconds}s`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`
-  const hours = Math.floor(minutes / 60)
-  return `${hours}h ${minutes % 60}m`
-}
-
-function formatDuration(startIso: string, endIso: string | null): string {
-  if (!endIso) return ''
-  const ms = new Date(endIso).getTime() - new Date(startIso).getTime()
-  const seconds = Math.floor(ms / 1000)
-  if (seconds < 60) return `${seconds}s`
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`
-  const hours = Math.floor(minutes / 60)
-  return `${hours}h ${minutes % 60}m`
-}
-
-function formatTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return ''
-  }
-}
+import { formatElapsed, formatDuration, formatTime } from '../../lib/format'
 
 // ── Truncate helper ─────────────────────────────────────
 

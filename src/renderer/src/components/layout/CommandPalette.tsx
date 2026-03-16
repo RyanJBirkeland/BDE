@@ -5,6 +5,7 @@ import { useLocalAgentsStore } from '../../stores/localAgents'
 import { useAgentHistoryStore, type AgentMeta } from '../../stores/agentHistory'
 import { toast } from '../../stores/toasts'
 import { Kbd } from '../ui/Kbd'
+import { timeAgo } from '../../lib/format'
 
 type CommandCategory = 'navigation' | 'action' | 'session'
 
@@ -133,19 +134,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
     ]
 
     const agentItems: Command[] = recentAgents.map((agent) => {
-      const timeAgo = (() => {
-        const ms = Date.now() - new Date(agent.startedAt).getTime()
-        const hours = Math.floor(ms / 3600000)
-        if (hours < 1) return 'just now'
-        if (hours === 1) return '1h ago'
-        return `${hours}h ago`
-      })()
-
       return {
         id: `agent-${agent.id}`,
         label: `${agent.repo || agent.task.slice(0, 30)}`,
         category: 'session',
-        hint: `${agent.model} ${timeAgo}`,
+        hint: `${agent.model} ${timeAgo(agent.startedAt)}`,
         action: () => {
           setView('sessions')
           selectAgent(agent.id)

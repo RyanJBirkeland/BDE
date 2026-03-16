@@ -3,6 +3,7 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { EmptyState } from '../ui/EmptyState'
 import { POLL_SPRINT_INTERVAL } from '../../lib/constants'
+import { timeAgo } from '../../lib/format'
 
 // --- Types ---
 
@@ -23,23 +24,6 @@ const REPOS = [
   { label: 'life-os', color: '#00D37F' },
   { label: 'feast', color: '#FF8A00' }
 ]
-
-
-// --- Helpers ---
-
-function timeAgo(dateStr: string): string {
-  const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return dateStr
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const mins = Math.floor(diffMs / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
 
 // --- Component ---
 
