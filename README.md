@@ -8,13 +8,29 @@ A desktop Electron app for managing OpenClaw AI agent sessions, git workflows, c
 - **npm** for dependency management
 - **OpenClaw gateway** running locally — BDE reads its config from `~/.openclaw/openclaw.json` to connect on port 18789
 
-## Setup
+## Installation
 
+### Development (recommended)
 ```bash
 npm install
-npm run dev      # Start dev server with hot reload
-npm run build    # Type-check + production build
-npm test         # Run unit tests (vitest)
+npm run dev
+```
+
+### Production Install (BDE.app + auto-start)
+Builds a .dmg, installs to /Applications, and registers a launchd service that auto-starts BDE on login and restarts it on crash.
+
+```bash
+chmod +x scripts/install-bde.sh
+./scripts/install-bde.sh
+```
+
+Requirements: macOS arm64, Xcode command line tools.
+
+To uninstall:
+```bash
+launchctl unload ~/Library/LaunchAgents/com.rbtechbot.bde.plist
+rm -rf /Applications/BDE.app
+rm ~/Library/LaunchAgents/com.rbtechbot.bde.plist
 ```
 
 ## Views
