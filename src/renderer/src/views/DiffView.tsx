@@ -10,6 +10,7 @@ import { parseDiff } from '../lib/diff-parser'
 import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'
 import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
+import * as git from '../services/git'
 
 interface GitFileEntry {
   path: string
@@ -53,7 +54,7 @@ function DiffView(): React.JSX.Element {
 
   // Load repos on mount
   useEffect(() => {
-    window.api.getRepoPaths().then((paths) => {
+    git.getRepoPaths().then((paths) => {
       setRepos(paths)
       if (paths['BDE']) setSelectedRepo('BDE')
       else {
@@ -74,8 +75,8 @@ function DiffView(): React.JSX.Element {
     setError(null)
     try {
       const [statusResult, branchResult] = await Promise.all([
-        window.api.gitStatus(repoPath),
-        window.api.gitBranches(repoPath)
+        git.getStatus(repoPath),
+        git.getBranches(repoPath)
       ])
       const deduped = dedupeFiles(statusResult.files)
       setFiles(deduped)
@@ -107,7 +108,7 @@ function DiffView(): React.JSX.Element {
   const loadDiff = useCallback(async () => {
     if (!repoPath) return
     try {
-      const raw = await window.api.gitDiff(repoPath, selectedFile ?? undefined)
+      const raw = await git.getDiff(repoPath, selectedFile ?? undefined)
       setDiffFiles(parseDiff(raw))
     } catch {
       setDiffFiles([])
@@ -132,9 +133,9 @@ function DiffView(): React.JSX.Element {
     const isStaged = stagedSet.has(filePath)
     try {
       if (isStaged) {
-        await window.api.gitUnstage(repoPath, [filePath])
+        await git.unstageFiles(repoPath, [filePath])
       } else {
-        await window.api.gitStage(repoPath, [filePath])
+        await git.stageFiles(repoPath, [filePath])
       }
       await refresh()
       await loadDiff()
@@ -148,7 +149,7 @@ function DiffView(): React.JSX.Element {
     const unstaged = files.filter((f) => !stagedSet.has(f.path)).map((f) => f.path)
     if (unstaged.length === 0) return
     try {
-      await window.api.gitStage(repoPath, unstaged)
+      await git.stageFiles(repoPath, unstaged)
       await refresh()
       await loadDiff()
     } catch (e) {
@@ -161,7 +162,7 @@ function DiffView(): React.JSX.Element {
     const staged = files.filter((f) => stagedSet.has(f.path)).map((f) => f.path)
     if (staged.length === 0) return
     try {
-      await window.api.gitUnstage(repoPath, staged)
+      await git.unstageFiles(repoPath, staged)
       await refresh()
       await loadDiff()
     } catch (e) {
@@ -174,7 +175,7 @@ function DiffView(): React.JSX.Element {
     setCommitting(true)
     setError(null)
     try {
-      await window.api.gitCommit(repoPath, commitMsg.trim())
+      await git.commit(repoPath, commitMsg.trim())
       setCommitMsg('')
       await refresh()
       await loadDiff()
@@ -191,7 +192,7 @@ function DiffView(): React.JSX.Element {
     setPushOutput(null)
     setError(null)
     try {
-      const output = await window.api.gitPush(repoPath)
+      const output = await git.push(repoPath)
       setPushOutput(output || 'Pushed successfully')
       await refresh()
     } catch (e) {
@@ -204,7 +205,7 @@ function DiffView(): React.JSX.Element {
   const switchBranch = async (branch: string): Promise<void> => {
     if (!repoPath || branch === currentBranch) return
     try {
-      await window.api.gitCheckout(repoPath, branch)
+      await git.checkout(repoPath, branch)
       await refresh()
       await loadDiff()
     } catch (e) {
