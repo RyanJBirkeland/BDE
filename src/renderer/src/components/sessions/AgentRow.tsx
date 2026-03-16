@@ -17,6 +17,7 @@ export interface AgentRowProps {
 const FIVE_MINUTES = 5 * 60 * 1000
 
 function dotClass(agent: UnifiedAgent): string {
+  if (agent.isBlocked) return 'agent-row__dot dot--blocked'
   if (agent.status === 'running') {
     const age = Date.now() - agent.updatedAt
     return age < FIVE_MINUTES ? 'agent-row__dot dot--active' : 'agent-row__dot dot--stale-running'
@@ -84,7 +85,7 @@ export function AgentRow({
       ].filter(Boolean).join(' ')}
       onClick={onSelect}
     >
-      <span className={dotClass(agent)} />
+      <span className={dotClass(agent)} title={agent.isBlocked ? 'Session aborted — may need attention' : undefined} />
       <div className="agent-row__info">
         <span className="agent-row__label">{agent.label}</span>
         <span className="agent-row__meta">

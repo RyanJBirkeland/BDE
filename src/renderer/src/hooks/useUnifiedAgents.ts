@@ -20,6 +20,7 @@ export interface UnifiedAgent {
   startedAt: number
   canSteer: boolean
   canKill: boolean
+  isBlocked?: boolean
   task?: string
   pid?: number
   sessionKey?: string
@@ -82,6 +83,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
         startedAt: s.updatedAt ?? 0,
         canSteer: true,
         canKill: isRunning,
+        isBlocked: s.abortedLastRun === true && !isRunning,
         sessionKey: s.key
       })
     }
@@ -98,6 +100,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
         startedAt: a.startedAt ?? 0,
         canSteer: !!a._isActive,
         canKill: !!a._isActive,
+        isBlocked: false,
         task: truncate(a.task, 80),
         sessionKey: a.sessionKey
       })
@@ -116,6 +119,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
         startedAt: p.startedAt ?? 0,
         canSteer: false,
         canKill: true,
+        isBlocked: false,
         pid: p.pid
       })
     }
@@ -138,6 +142,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
         startedAt: started,
         canSteer: false,
         canKill: isRunning && !!a.pid,
+        isBlocked: false,
         task: truncate(a.task, 80),
         historyId: a.id,
         pid: a.pid ?? undefined
