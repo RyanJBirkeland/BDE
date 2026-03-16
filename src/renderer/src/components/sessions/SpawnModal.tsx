@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSessionsStore } from '../../stores/sessions'
+import { useLocalAgentsStore } from '../../stores/localAgents'
 import { Button } from '../ui/Button'
 
 const REPOS = ['BDE', 'life-os', 'feast'] as const
@@ -19,7 +19,12 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   const [model, setModel] = useState<string>('sonnet')
   const [spawning, setSpawning] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const runTask = useSessionsStore((s) => s.runTask)
+  const spawnAgent = useLocalAgentsStore((s) => s.spawnAgent)
+  const [repoPaths, setRepoPaths] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    window.api.getRepoPaths().then(setRepoPaths).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -47,15 +52,17 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
     async (e: React.FormEvent): Promise<void> => {
       e.preventDefault()
       if (!task.trim() || spawning) return
+      const repoPath = repoPaths[repo]
+      if (!repoPath) return
       setSpawning(true)
       try {
-        await runTask(task.trim(), { repo, model })
+        await spawnAgent({ task: task.trim(), repoPath, model })
         onClose()
       } finally {
         setSpawning(false)
       }
     },
-    [task, repo, model, spawning, runTask, onClose]
+    [task, repo, model, spawning, spawnAgent, repoPaths, onClose]
   )
 
   const handleKeyDown = useCallback(
@@ -75,7 +82,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   return (
     <div className="spawn-modal__overlay" onClick={onClose}>
       <div className="spawn-modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="spawn-modal__title">Spawn Agent</h2>
+        <h2 className="spawn-modal__title">Spawn Agent <span className="spawn-modal__plan-badge">⬡ Max</span></h2>
 
         <form onSubmit={handleSubmit}>
           <div className="spawn-modal__section">
