@@ -1,7 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskCard } from './TaskCard'
-import { AddCardForm } from './AddCardForm'
 import { EmptyState } from '../ui/EmptyState'
 import type { SprintTask } from './SprintCenter'
 
@@ -9,26 +8,34 @@ type KanbanColumnProps = {
   status: SprintTask['status']
   label: string
   tasks: SprintTask[]
+  onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
   onViewSpec: (task: SprintTask) => void
   onViewOutput: (task: SprintTask) => void
-  onAddCard?: (data: { title: string; repo: string; description: string }) => void
 }
 
 const EMPTY_LABELS: Record<SprintTask['status'], string> = {
   backlog: 'Backlog is empty',
+  queued: 'Sprint queue is empty',
   active: 'Nothing in progress',
   done: 'No completed tasks yet',
+}
+
+const STATUS_CLASS: Record<SprintTask['status'], string> = {
+  backlog: 'kanban-col--backlog',
+  queued: 'kanban-col--sprint',
+  active: 'kanban-col--active',
+  done: 'kanban-col--done',
 }
 
 export function KanbanColumn({
   status,
   label,
   tasks,
+  onPushToSprint,
   onLaunch,
   onViewSpec,
   onViewOutput,
-  onAddCard,
 }: KanbanColumnProps) {
   const { isOver, setNodeRef } = useDroppable({ id: status })
   const ids = tasks.map((t) => t.id)
@@ -36,7 +43,7 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`kanban-col ${isOver ? 'kanban-col--drop-target' : ''}`}
+      className={`kanban-col ${STATUS_CLASS[status]} ${isOver ? 'kanban-col--drop-target' : ''}`}
     >
       <div className="kanban-col__header">
         {label}
@@ -52,6 +59,7 @@ export function KanbanColumn({
                 key={task.id}
                 task={task}
                 index={i}
+                onPushToSprint={onPushToSprint}
                 onLaunch={onLaunch}
                 onViewSpec={onViewSpec}
                 onViewOutput={onViewOutput}
@@ -59,7 +67,6 @@ export function KanbanColumn({
             ))
           )}
         </SortableContext>
-        {status === 'backlog' && onAddCard && <AddCardForm onSubmit={onAddCard} />}
       </div>
     </div>
   )

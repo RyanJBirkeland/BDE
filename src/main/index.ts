@@ -8,6 +8,7 @@ import { registerTerminalHandlers } from './handlers/terminal-handlers'
 import { registerConfigHandlers } from './handlers/config-handlers'
 import { registerGatewayHandlers } from './handlers/gateway-handlers'
 import { registerWindowHandlers } from './handlers/window-handlers'
+import { registerSprintHandlers } from './handlers/sprint'
 import { registerFsHandlers } from './fs'
 
 
@@ -57,6 +58,7 @@ app.whenReady().then(() => {
   registerTerminalHandlers()
   registerGatewayHandlers()
   registerWindowHandlers()
+  registerSprintHandlers()
   registerFsHandlers()
 
   createWindow()

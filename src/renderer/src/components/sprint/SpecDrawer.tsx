@@ -9,6 +9,7 @@ type SpecDrawerProps = {
   onClose: () => void
   onSave: (taskId: string, spec: string) => void
   onLaunch: (task: SprintTask) => void
+  onPushToSprint: (task: SprintTask) => void
 }
 
 function renderMarkdown(md: string): string {
@@ -25,10 +26,11 @@ function renderMarkdown(md: string): string {
     .replace(/^(?!<[huplo])(.+)$/gm, '<p>$1</p>')
 }
 
-export function SpecDrawer({ task, onClose, onSave, onLaunch }: SpecDrawerProps) {
+export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint }: SpecDrawerProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [dirty, setDirty] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch }: SpecDrawerProps)
       setDraft(task.spec ?? '')
       setEditing(false)
       setDirty(false)
+      setGenerating(false)
     }
   }, [task?.id])
 
@@ -74,6 +77,36 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch }: SpecDrawerProps)
     if (editing) editorRef.current?.focus()
   }, [editing])
 
+  const handleAskPaul = async () => {
+    if (!task) return
+    setGenerating(true)
+    try {
+      const prompt = `You are a senior engineer writing a coding agent spec for BDE (Birkeland Development Environment).
+
+Task title: "${task.title}"
+Repo: ${task.repo}
+Current notes: ${draft || '(none)'}
+
+Write a complete, spec-ready prompt for a Claude Code agent to implement this task. Follow the spec format in memory/spec-template.md. Include: Problem, Solution, Data shapes (if applicable), Files to Change, Out of Scope. Be specific and technical. Output only the spec markdown, no commentary.`
+
+      const result = (await window.api.invokeTool('sessions_send', {
+        sessionKey: 'main',
+        message: prompt,
+        timeoutSeconds: 30,
+      })) as { response?: string } | null
+
+      if (result?.response) {
+        setDraft(result.response)
+        setDirty(true)
+        setEditing(true)
+      }
+    } catch {
+      toast.error('Failed to generate spec')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const isOpen = task !== null
 
   return (
@@ -90,17 +123,15 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch }: SpecDrawerProps)
                 </span>
               </div>
               <Button variant="icon" size="sm" onClick={onClose} title="Close">
-                ✕
+                &#x2715;
               </Button>
             </div>
 
             <div className="spec-drawer__toolbar">
               {!editing ? (
-                <>
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-                    Edit
-                  </Button>
-                </>
+                <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+                  Edit
+                </Button>
               ) : (
                 <>
                   <Button variant="primary" size="sm" onClick={save}>
@@ -126,11 +157,12 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch }: SpecDrawerProps)
                 <textarea
                   ref={editorRef}
                   className="spec-drawer__editor"
-                  value={draft}
+                  value={generating ? 'Paul is writing your spec...' : draft}
                   onChange={(e) => {
                     setDraft(e.target.value)
                     setDirty(true)
                   }}
+                  disabled={generating}
                   placeholder="Write your spec in markdown..."
                 />
               ) : task.spec ? (
@@ -151,11 +183,32 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch }: SpecDrawerProps)
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => onLaunch(task)}
-                disabled={task.status === 'active'}
+                onClick={() => onPushToSprint(task)}
+                disabled={task.status !== 'backlog'}
               >
-                Launch Agent
+                {task.status === 'backlog'
+                  ? '→ Push to Sprint'
+                  : task.status === 'queued'
+                    ? 'In Sprint'
+                    : task.status}
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAskPaul}
+                disabled={generating}
+              >
+                {generating ? 'Generating...' : 'Ask Paul'}
+              </Button>
+              {task.status === 'queued' && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => onLaunch(task)}
+                >
+                  Launch Agent
+                </Button>
+              )}
             </div>
           </>
         )}

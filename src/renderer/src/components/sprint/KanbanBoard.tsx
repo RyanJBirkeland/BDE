@@ -5,23 +5,26 @@ import type { SprintTask } from './SprintCenter'
 type KanbanBoardProps = {
   tasks: SprintTask[]
   onDragEnd: (taskId: string, newStatus: SprintTask['status']) => void
+  onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
   onViewSpec: (task: SprintTask) => void
   onViewOutput: (task: SprintTask) => void
-  onAddCard: (data: { title: string; repo: string; description: string }) => void
 }
+
+const VALID_STATUSES: SprintTask['status'][] = ['backlog', 'queued', 'active', 'done']
 
 export function KanbanBoard({
   tasks,
   onDragEnd,
+  onPushToSprint,
   onLaunch,
   onViewSpec,
   onViewOutput,
-  onAddCard,
 }: KanbanBoardProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const backlog = tasks.filter((t) => t.status === 'backlog')
+  const queued = tasks.filter((t) => t.status === 'queued')
   const active = tasks.filter((t) => t.status === 'active')
   const done = tasks.filter((t) => t.status === 'done')
 
@@ -30,7 +33,7 @@ export function KanbanBoard({
     if (!over) return
     const taskId = String(active.id)
     const destinationStatus = String(over.id) as SprintTask['status']
-    if (['backlog', 'active', 'done'].includes(destinationStatus)) {
+    if (VALID_STATUSES.includes(destinationStatus)) {
       onDragEnd(taskId, destinationStatus)
     }
   }
@@ -42,15 +45,25 @@ export function KanbanBoard({
           status="backlog"
           label="Backlog"
           tasks={backlog}
+          onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
           onViewOutput={onViewOutput}
-          onAddCard={onAddCard}
+        />
+        <KanbanColumn
+          status="queued"
+          label="Sprint"
+          tasks={queued}
+          onPushToSprint={onPushToSprint}
+          onLaunch={onLaunch}
+          onViewSpec={onViewSpec}
+          onViewOutput={onViewOutput}
         />
         <KanbanColumn
           status="active"
           label="In Progress"
           tasks={active}
+          onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
           onViewOutput={onViewOutput}
@@ -59,6 +72,7 @@ export function KanbanBoard({
           status="done"
           label="Done"
           tasks={done}
+          onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
           onViewOutput={onViewOutput}
