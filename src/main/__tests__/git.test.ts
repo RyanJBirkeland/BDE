@@ -4,9 +4,12 @@ import {
   gitCommit,
   gitCheckout,
   gitStage,
+  gitUnstage,
   gitPush,
   gitStatus,
   gitBranches,
+  gitDiffFile,
+  getDiff,
   getRepoPaths,
 } from '../git'
 
@@ -165,6 +168,125 @@ describe('git.ts', () => {
       const result = gitBranches('/tmp/repo')
       expect(result.current).toBe('')
       expect(result.branches).toEqual([])
+    })
+  })
+
+  describe('gitUnstage', () => {
+    it('calls execFileSync with reset HEAD args', () => {
+      gitUnstage('/tmp/repo', ['file1.ts'])
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['reset', 'HEAD', '--', 'file1.ts'],
+        { cwd: '/tmp/repo', encoding: 'utf-8' }
+      )
+    })
+
+    it('does nothing when files array is empty', () => {
+      gitUnstage('/tmp/repo', [])
+
+      expect(execFileSync).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('gitDiffFile', () => {
+    it('calls execFileSync for both staged and unstaged diffs', () => {
+      vi.mocked(execFileSync)
+        .mockReturnValueOnce('unstaged diff\n')
+        .mockReturnValueOnce('staged diff\n')
+
+      const result = gitDiffFile('/tmp/repo', 'src/file.ts')
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['diff', '--', 'src/file.ts'],
+        expect.objectContaining({ cwd: '/tmp/repo' })
+      )
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['diff', '--cached', '--', 'src/file.ts'],
+        expect.objectContaining({ cwd: '/tmp/repo' })
+      )
+      expect(result).toContain('staged diff')
+    })
+
+    it('uses execFileSync not execSync — filenames with special chars are safe', () => {
+      vi.mocked(execFileSync).mockReturnValue('')
+
+      gitDiffFile('/tmp/repo', 'file$(whoami).ts')
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['diff', '--', 'file$(whoami).ts'],
+        expect.any(Object)
+      )
+      expect(execSync).not.toHaveBeenCalled()
+    })
+
+    it('returns empty string on error', () => {
+      vi.mocked(execFileSync).mockImplementationOnce(() => { throw new Error('fail') })
+
+      expect(gitDiffFile('/tmp/repo')).toBe('')
+    })
+  })
+
+  describe('getDiff — shell injection via ref parameter', () => {
+    it('passes ref directly into execSync template string (known risk)', () => {
+      vi.mocked(execSync).mockReturnValue('diff output')
+
+      getDiff('/tmp/repo', 'origin/main')
+
+      expect(execSync).toHaveBeenCalledWith(
+        'git diff origin/main...HEAD',
+        expect.any(Object)
+      )
+    })
+
+    it('special chars in ref are interpolated into shell command', () => {
+      // This documents the current behavior: getDiff uses execSync with string
+      // interpolation. A malicious ref like "; rm -rf /" would be passed to the shell.
+      // Since refs come from our own code (not user input), this is acceptable,
+      // but execFileSync would be safer.
+      vi.mocked(execSync).mockReturnValue('')
+
+      getDiff('/tmp/repo', 'refs/with spaces')
+
+      expect(execSync).toHaveBeenCalledWith(
+        'git diff refs/with spaces...HEAD',
+        expect.any(Object)
+      )
+    })
+
+    it('returns empty string on error', () => {
+      vi.mocked(execSync).mockImplementation(() => { throw new Error('fail') })
+
+      expect(getDiff('/tmp/repo')).toBe('')
+    })
+  })
+
+  describe('shell injection — gitStage uses execFileSync (safe)', () => {
+    it('filenames with shell metacharacters are passed as array args, not interpolated', () => {
+      gitStage('/tmp/repo', ['$(rm -rf /)', 'file;echo pwned'])
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['add', '--', '$(rm -rf /)', 'file;echo pwned'],
+        expect.any(Object)
+      )
+      expect(execSync).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('shell injection — gitCheckout uses execFileSync (safe)', () => {
+    it('branch names with semicolons do not inject', () => {
+      gitCheckout('/tmp/repo', 'branch;rm -rf /')
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        'git',
+        ['checkout', 'branch;rm -rf /'],
+        expect.any(Object)
+      )
+      expect(execSync).not.toHaveBeenCalled()
     })
   })
 

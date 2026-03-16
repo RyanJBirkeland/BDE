@@ -5,5 +5,6 @@ export default defineConfig({
     environment: 'node',
     include: ['src/main/**/*.test.ts'],
     globals: true,
+    exclude: ['node_modules', '**/.worktrees/**', '**/out/**'],
   },
 })
