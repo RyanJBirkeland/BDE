@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '../ui/Button'
 import { KanbanBoard } from './KanbanBoard'
 import { SpecDrawer } from './SpecDrawer'
+import { LogDrawer } from './LogDrawer'
 import { PRSection } from './PRSection'
 import { NewTicketModal } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
@@ -41,6 +42,7 @@ export default function SprintCenter() {
   const [tasks, setTasks] = useState<SprintTask[]>([])
   const [repoFilter, setRepoFilter] = useState<string | null>(null)
   const [selectedTask, setSelectedTask] = useState<SprintTask | null>(null)
+  const [logDrawerTask, setLogDrawerTask] = useState<SprintTask | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -190,13 +192,7 @@ export default function SprintCenter() {
   )
 
   const handleViewOutput = useCallback((task: SprintTask) => {
-    if (task.agent_session_id) {
-      window.dispatchEvent(
-        new CustomEvent('bde:navigate', {
-          detail: { view: 'sessions', sessionId: task.agent_session_id },
-        })
-      )
-    }
+    setLogDrawerTask(task)
   }, [])
 
   const filteredTasks = repoFilter
@@ -268,6 +264,8 @@ export default function SprintCenter() {
       />
 
       <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />
+
+      <LogDrawer task={logDrawerTask} onClose={() => setLogDrawerTask(null)} />
     </div>
   )
 }

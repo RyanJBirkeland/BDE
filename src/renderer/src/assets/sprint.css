@@ -688,9 +688,11 @@
 /* ── Sprint Center ────────────────────────────────────── */
 
 .sprint-center {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .sprint-center__header {
@@ -1087,4 +1089,54 @@
 .pr-section__body {
   flex: 1;
   overflow-y: auto;
+}
+
+/* ── Log Drawer ──────────────────────────────────────── */
+
+.log-drawer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50vh;
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  border-top: 1px solid var(--bde-border);
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  animation: log-drawer-up 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes log-drawer-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.log-drawer__header {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.log-drawer__title { font-size: 12px; font-weight: 600; color: var(--bde-text); }
+.log-drawer__meta  { font-size: 11px; color: var(--bde-text-muted); }
+
+.log-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.log-drawer__footer {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-top: 1px solid var(--bde-border);
+  flex-shrink: 0;
 }

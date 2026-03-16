@@ -12,6 +12,7 @@ import { CommandPalette } from './components/layout/CommandPalette'
 import { ToastContainer } from './components/layout/ToastContainer'
 import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
+import { useAgentHistoryStore } from './stores/agentHistory'
 import { useTaskNotifications } from './hooks/useTaskNotifications'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import SprintView from './views/SprintView'
@@ -170,6 +171,20 @@ function App(): React.JSX.Element {
     document.title = title
     window.api.setTitle(title)
   }, [activeView])
+
+  useEffect(() => {
+    const handler = (e: CustomEvent): void => {
+      const { view, sessionId } = e.detail
+      if (view === 'sessions') {
+        setView('sessions')
+        if (sessionId) {
+          useAgentHistoryStore.getState().selectAgent(sessionId)
+        }
+      }
+    }
+    window.addEventListener('bde:navigate', handler as EventListener)
+    return () => window.removeEventListener('bde:navigate', handler as EventListener)
+  }, [setView])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {

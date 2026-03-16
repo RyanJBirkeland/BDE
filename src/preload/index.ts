@@ -99,6 +99,8 @@ const api = {
     update: (id: string, patch: Record<string, unknown>): Promise<unknown> =>
       ipcRenderer.invoke('sprint:update', id, patch),
     delete: (id: string): Promise<{ ok: boolean }> => ipcRenderer.invoke('sprint:delete', id),
+    readLog: (agentId: string): Promise<{ content: string; status: string }> =>
+      ipcRenderer.invoke('sprint:readLog', agentId),
   },
 
   // Gateway tool invocation — proxied through main process to avoid CORS
