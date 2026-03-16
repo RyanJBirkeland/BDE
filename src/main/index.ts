@@ -8,10 +8,6 @@ let pty: typeof import('node-pty') | null = null
 try { pty = require('node-pty') } catch { /* terminal unavailable */ }
 import {
   getRepoPaths,
-  readSprintMd,
-  getDiff,
-  getBranch,
-  getLog,
   gitStatus,
   gitDiffFile,
   gitStage,
@@ -94,7 +90,6 @@ app.whenReady().then(() => {
     gatewayConfig = { url, token }
   })
   ipcMain.handle('get-repo-paths', () => getRepoPaths())
-  ipcMain.handle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
   ipcMain.handle('open-external', (_e, url: string) => shell.openExternal(url))
   registerFsHandlers()
 
@@ -141,16 +136,6 @@ app.whenReady().then(() => {
     })
   })
   pruneOldAgents()
-
-  // --- Session history (agent output tabs) ---
-  ipcMain.handle('sessions:getHistory', async (_event, _sessionKey: string) => {
-    return []
-  })
-
-  // --- Git read-only IPC ---
-  ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
-  ipcMain.handle('get-branch', (_e, repoPath: string) => getBranch(repoPath))
-  ipcMain.handle('get-log', (_e, repoPath: string, n?: number) => getLog(repoPath, n))
 
   // --- Git client IPC ---
   ipcMain.handle('git:status', (_e, cwd: string) => gitStatus(cwd))

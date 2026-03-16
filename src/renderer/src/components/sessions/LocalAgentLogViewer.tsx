@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
 import { useTerminalStore } from '../../stores/terminal'
-import { cwdToRepoLabel } from './LocalAgentRow'
+import { cwdToRepoLabel } from '../../lib/utils'
 import { Button } from '../ui/Button'
 
 // ── Helpers ──────────────────────────────────────────────

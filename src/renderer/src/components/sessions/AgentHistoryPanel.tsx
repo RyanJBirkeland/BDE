@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
 import type { AgentMeta } from '../../stores/agentHistory'
 import { useLocalAgentsStore, LocalAgentProcess } from '../../stores/localAgents'
-import { cwdToRepoLabel } from './LocalAgentRow'
+import { cwdToRepoLabel } from '../../lib/utils'
 
 function timeAgo(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime()

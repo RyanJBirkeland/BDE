@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Plus, ChevronDown, X, SplitSquareVertical } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { TerminalPane, clearTerminal } from '../components/terminal/TerminalPane'
@@ -8,18 +8,6 @@ import { AgentOutputTab } from '../components/terminal/AgentOutputTab'
 import { tokens } from '../design-system/tokens'
 import { useTerminalStore } from '../stores/terminal'
 import { useUIStore } from '../stores/ui'
-
-/** Extract exec/bash tool outputs from session history entries */
-function extractExecResults(history: any[]): string[] {
-  const results: string[] = []
-  for (const entry of history) {
-    if (entry?.tool === 'exec' || entry?.tool === 'bash' || entry?.tool === 'Bash') {
-      const output = entry.result?.output ?? entry.result?.stdout ?? entry.output ?? ''
-      if (output) results.push(String(output))
-    }
-  }
-  return results
-}
 
 export function TerminalView(): React.JSX.Element {
   const { tabs, activeTabId, addTab, closeTab, setActiveTab, splitEnabled, toggleSplit, showFind } = useTerminalStore()
@@ -99,42 +87,6 @@ export function TerminalView(): React.JSX.Element {
     window.addEventListener('keydown', handler, true)
     return () => window.removeEventListener('keydown', handler, true)
   }, [activeView])
-
-  // Poll agent session history every 5s for the active agent tab
-  const [agentOutput, setAgentOutput] = useState<string[]>([])
-  const lastSeenCountRef = useRef(0)
-
-  useEffect(() => {
-    if (!activeTab?.isAgentTab || !activeTab.agentSessionKey) {
-      setAgentOutput([])
-      lastSeenCountRef.current = 0
-      return
-    }
-
-    const sessionKey = activeTab.agentSessionKey
-    let cancelled = false
-
-    const poll = async (): Promise<void> => {
-      try {
-        const history = await window.api.getSessionHistory(sessionKey)
-        if (cancelled) return
-        const results = extractExecResults(history)
-        if (results.length > lastSeenCountRef.current) {
-          lastSeenCountRef.current = results.length
-          setAgentOutput(results)
-        }
-      } catch {
-        // Silently ignore poll errors
-      }
-    }
-
-    poll()
-    const interval = setInterval(poll, 5000)
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [activeTab?.id, activeTab?.isAgentTab, activeTab?.agentSessionKey])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: tokens.color.bg }}>
@@ -412,7 +364,7 @@ export function TerminalView(): React.JSX.Element {
                   )}
                 </div>
                 <div style={{ flex: 1, overflow: 'auto' }}>
-                  <AgentOutputTab agentId={tab.agentId} agentOutput={agentOutput} />
+                  <AgentOutputTab agentId={tab.agentId} />
                 </div>
               </div>
             ) : splitEnabled && tab.id === activeTabId ? (

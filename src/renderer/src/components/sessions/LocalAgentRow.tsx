@@ -11,15 +11,7 @@ function formatElapsed(startedAt: number): string {
   return `${hours}h ${minutes % 60}m`
 }
 
-export function cwdToRepoLabel(cwd: string | null): string {
-  if (!cwd) return 'unknown'
-  const parts = cwd.split('/')
-  const repoIdx = parts.indexOf('Repositories')
-  if (repoIdx !== -1) return parts[repoIdx + 1] ?? parts[parts.length - 1]
-  const worktreeIdx = parts.indexOf('worktrees')
-  if (worktreeIdx !== -1) return parts.slice(worktreeIdx + 1).join('/')
-  return parts[parts.length - 1]
-}
+import { cwdToRepoLabel } from '../../lib/utils'
 
 function useElapsed(startedAt: number): string {
   const [, setTick] = useState(0)
