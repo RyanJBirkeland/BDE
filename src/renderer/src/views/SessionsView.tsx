@@ -5,6 +5,7 @@
  */
 import { useEffect, useState, useCallback } from 'react'
 import { SessionList } from '../components/sessions/SessionList'
+import { SessionHeader } from '../components/sessions/SessionHeader'
 import { ChatThread } from '../components/sessions/ChatThread'
 import { MessageInput } from '../components/sessions/MessageInput'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -47,7 +48,9 @@ export function SessionsView(): React.JSX.Element {
     setOptimisticMessages([])
   }, [])
 
+  const subAgents = useSessionsStore((s) => s.subAgents)
   const selectedSession = sessions.find((s) => s.key === selectedKey)
+  const selectedSubAgent = subAgents.find((a) => a.sessionKey === selectedKey) ?? null
 
   return (
     <div className="sessions-chat">
@@ -73,17 +76,13 @@ export function SessionsView(): React.JSX.Element {
         }}
       />
       <div className="sessions-chat__main">
-        {selectedKey && selectedSession ? (
+        {selectedKey && (selectedSession || selectedSubAgent) ? (
           <>
-            <div className="sessions-chat__header">
-              <span className="sessions-chat__session-name">
-                {selectedSession.displayName || selectedSession.key}
-              </span>
-            </div>
+            <SessionHeader session={selectedSession ?? null} subAgent={selectedSubAgent} />
             <div className="sessions-chat__thread">
               <ChatThread
                 sessionKey={selectedKey}
-                updatedAt={selectedSession.updatedAt}
+                updatedAt={selectedSession?.updatedAt ?? selectedSubAgent?.startedAt ?? 0}
                 refreshTrigger={refreshTrigger}
                 optimisticMessages={optimisticMessages}
               />

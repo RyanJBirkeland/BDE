@@ -25,6 +25,7 @@ function makeSubAgent(overrides: Partial<SubAgent> = {}): SubAgent {
   return {
     sessionKey: 'sub-1',
     label: 'Sub Agent',
+    task: '',
     status: 'running',
     model: 'haiku',
     startedAt: Date.now(),

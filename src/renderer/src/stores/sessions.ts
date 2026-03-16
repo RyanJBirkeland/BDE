@@ -23,9 +23,11 @@ export interface AgentSession {
 export interface SubAgent {
   sessionKey: string
   label: string
-  status: 'running' | 'completed' | 'failed' | 'timeout' | string
+  task: string
+  status: 'running' | 'completed' | 'failed' | 'timeout' | 'done' | string
   model: string
   startedAt: number
+  endedAt?: number
   _isActive: boolean
 }
 
@@ -51,6 +53,7 @@ interface SessionsStore {
   killSession: (sessionKey: string) => Promise<void>
   steerSubAgent: (sessionKey: string, message: string) => Promise<void>
   sendToSubAgent: (sessionKey: string, message: string) => Promise<void>
+  isSubAgent: (sessionKey: string) => boolean
 }
 
 export const useSessionsStore = create<SessionsStore>((set, get) => ({
@@ -72,8 +75,8 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         count: number
       }>,
       invokeTool('subagents', { action: 'list' }) as Promise<{
-        active?: { sessionKey: string; label?: string; status: string; model: string; startedAt: number }[]
-        recent?: { sessionKey: string; label?: string; status: string; model: string; startedAt: number }[]
+        active?: { sessionKey: string; label?: string; task?: string; status: string; model: string; startedAt: number; endedAt?: number }[]
+        recent?: { sessionKey: string; label?: string; task?: string; status: string; model: string; startedAt: number; endedAt?: number }[]
       }>
     ])
 
@@ -104,11 +107,13 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
       const active = (subData.active ?? []).map((s) => ({
         ...s,
         label: deriveLabel(s),
+        task: s.task ?? '',
         _isActive: true
       }))
       const recent = (subData.recent ?? []).map((s) => ({
         ...s,
         label: deriveLabel(s),
+        task: s.task ?? '',
         _isActive: false
       }))
       set({ subAgents: [...active, ...recent], subAgentsError: null, subAgentsLoading: false })
@@ -185,5 +190,9 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
       console.error('Failed to send to sub-agent:', err)
       toast.error('Failed to send message')
     }
+  },
+
+  isSubAgent: (sessionKey): boolean => {
+    return get().subAgents.some((a) => a.sessionKey === sessionKey)
   }
 }))
