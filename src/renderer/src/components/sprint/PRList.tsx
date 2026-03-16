@@ -4,26 +4,12 @@ import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { POLL_PR_LIST_INTERVAL } from '../../lib/constants'
+import { timeAgo } from '../../lib/format'
 
 const REPOS = [
   { label: 'life-os', owner: 'RyanJBirkeland', name: 'life-os', color: '#00D37F' },
   { label: 'feast', owner: 'RyanJBirkeland', name: 'feast', color: '#FF8A00' }
 ]
-
-
-function timeAgo(dateStr: string): string {
-  const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return dateStr
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const mins = Math.floor(diffMs / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
 
 export default function PRList() {
   const [prs, setPrs] = useState<PullRequest[]>([])
