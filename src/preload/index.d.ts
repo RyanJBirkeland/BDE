@@ -66,6 +66,11 @@ declare global {
         markDone: (args: { id: string; exitCode: number }) => Promise<void>
       }
 
+      // PR status polling
+      pollPrStatuses: (
+        prs: { taskId: string; prUrl: string }[]
+      ) => Promise<{ taskId: string; merged: boolean; state: string; mergedAt: string | null }[]>
+
       // Sprint tasks — Supabase-backed Kanban
       sprint: {
         list: () => Promise<unknown[]>

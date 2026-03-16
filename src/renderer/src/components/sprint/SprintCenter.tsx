@@ -6,7 +6,12 @@ import { LogDrawer } from './LogDrawer'
 import { PRSection } from './PRSection'
 import { NewTicketModal } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
-import { POLL_SPRINT_INTERVAL, REPO_OPTIONS } from '../../lib/constants'
+import {
+  POLL_SPRINT_INTERVAL,
+  POLL_SPRINT_ACTIVE_MS,
+  POLL_PR_STATUS_MS,
+  REPO_OPTIONS,
+} from '../../lib/constants'
 
 const REPO_LABEL_TO_ENUM: Record<string, string> = {
   BDE: 'bde',
@@ -45,12 +50,19 @@ export default function SprintCenter() {
   const [logDrawerTask, setLogDrawerTask] = useState<SprintTask | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [prMergedMap, setPrMergedMap] = useState<Record<string, boolean>>({})
+  const prevTasksRef = useRef<SprintTask[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const prIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const loadData = useCallback(async () => {
     try {
       const result = (await window.api.sprint.list()) as SprintTask[]
-      setTasks(Array.isArray(result) ? result : [])
+      const next = Array.isArray(result) ? result : []
+      setTasks((prev) => {
+        prevTasksRef.current = prev
+        return next
+      })
     } catch {
       // silent — data will be empty on first load if Supabase is unreachable
     } finally {
@@ -58,13 +70,51 @@ export default function SprintCenter() {
     }
   }, [])
 
+  // Adaptive sprint polling — 5s when active tasks exist, 30s otherwise
+  const hasActiveTasks = tasks.some((t) => t.status === 'active')
+
   useEffect(() => {
     loadData()
-    intervalRef.current = setInterval(loadData, POLL_SPRINT_INTERVAL)
+    const ms = hasActiveTasks ? POLL_SPRINT_ACTIVE_MS : POLL_SPRINT_INTERVAL
+    intervalRef.current = setInterval(loadData, ms)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [loadData])
+  }, [loadData, hasActiveTasks])
+
+  // PR status polling — check merged status for tasks with a pr_url
+  const pollPrStatuses = useCallback(async (taskList: SprintTask[]) => {
+    const withPr = taskList.filter((t) => t.pr_url)
+    if (withPr.length === 0) return
+    try {
+      const results = await window.api.pollPrStatuses(
+        withPr.map((t) => ({ taskId: t.id, prUrl: t.pr_url! }))
+      )
+      const merged: Record<string, boolean> = {}
+      for (const r of results) merged[r.taskId] = r.merged
+      setPrMergedMap((prev) => ({ ...prev, ...merged }))
+    } catch {
+      // gh CLI unavailable — degrade gracefully
+    }
+  }, [])
+
+  useEffect(() => {
+    pollPrStatuses(tasks)
+    prIntervalRef.current = setInterval(() => pollPrStatuses(tasks), POLL_PR_STATUS_MS)
+    return () => {
+      if (prIntervalRef.current) clearInterval(prIntervalRef.current)
+    }
+  }, [tasks, pollPrStatuses])
+
+  // Detect active→done transitions and trigger immediate PR poll
+  useEffect(() => {
+    const prev = prevTasksRef.current
+    if (prev.length === 0) return
+    const justDone = tasks.filter(
+      (t) => t.status === 'done' && t.pr_url && prev.find((p) => p.id === t.id)?.status === 'active'
+    )
+    if (justDone.length > 0) pollPrStatuses(justDone)
+  }, [tasks, pollPrStatuses])
 
   const updateTask = useCallback(
     async (taskId: string, patch: Partial<SprintTask>) => {
@@ -245,6 +295,7 @@ export default function SprintCenter() {
       ) : (
         <KanbanBoard
           tasks={filteredTasks}
+          prMergedMap={prMergedMap}
           onDragEnd={handleDragEnd}
           onPushToSprint={handlePushToSprint}
           onLaunch={handleLaunch}

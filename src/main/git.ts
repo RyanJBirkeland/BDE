@@ -153,3 +153,43 @@ export function gitBranches(cwd: string): { current: string; branches: string[] 
 export function gitCheckout(cwd: string, branch: string): void {
   execFileSync('git', ['checkout', branch], { cwd, encoding: 'utf-8' })
 }
+
+// --- PR status polling via `gh` CLI ---
+
+export interface PrStatusInput {
+  taskId: string
+  prUrl: string
+}
+
+export interface PrStatusResult {
+  taskId: string
+  merged: boolean
+  state: string
+  mergedAt: string | null
+}
+
+function parsePrUrl(url: string): { owner: string; repo: string; number: string } | null {
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/)
+  if (!match) return null
+  return { owner: match[1], repo: match[2], number: match[3] }
+}
+
+function fetchPrStatus(pr: PrStatusInput): PrStatusResult {
+  const parsed = parsePrUrl(pr.prUrl)
+  if (!parsed) return { taskId: pr.taskId, merged: false, state: 'unknown', mergedAt: null }
+  try {
+    const raw = execFileSync(
+      'gh',
+      ['pr', 'view', parsed.number, '--repo', `${parsed.owner}/${parsed.repo}`, '--json', 'state,mergedAt'],
+      { encoding: 'utf-8', timeout: 10_000 }
+    )
+    const data = JSON.parse(raw) as { state: string; mergedAt: string | null }
+    return { taskId: pr.taskId, merged: data.state === 'MERGED', state: data.state, mergedAt: data.mergedAt ?? null }
+  } catch {
+    return { taskId: pr.taskId, merged: false, state: 'error', mergedAt: null }
+  }
+}
+
+export function pollPrStatuses(prs: PrStatusInput[]): PrStatusResult[] {
+  return prs.map(fetchPrStatus)
+}

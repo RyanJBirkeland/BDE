@@ -9,6 +9,7 @@ import type { SprintTask } from './SprintCenter'
 type TaskCardProps = {
   task: SprintTask
   index: number
+  prMerged: boolean
   onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
   onViewSpec: (task: SprintTask) => void
@@ -26,6 +27,7 @@ function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' | 'defau
 export function TaskCard({
   task,
   index,
+  prMerged,
   onPushToSprint,
   onLaunch,
   onViewSpec,
@@ -56,10 +58,18 @@ export function TaskCard({
             📄
           </span>
         )}
-        {task.pr_number && (
-          <Badge variant={task.pr_status === 'merged' ? 'success' : 'info'} size="sm">
-            #{task.pr_number}
-          </Badge>
+        {task.pr_url && (
+          <a
+            href={task.pr_url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{ textDecoration: 'none' }}
+          >
+            <Badge variant={prMerged ? 'success' : 'warning'} size="sm">
+              {prMerged ? 'Merged' : 'PR Open'}
+            </Badge>
+          </a>
         )}
       </div>
 

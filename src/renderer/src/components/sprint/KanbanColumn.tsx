@@ -8,6 +8,7 @@ type KanbanColumnProps = {
   status: SprintTask['status']
   label: string
   tasks: SprintTask[]
+  prMergedMap: Record<string, boolean>
   onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
   onViewSpec: (task: SprintTask) => void
@@ -32,6 +33,7 @@ export function KanbanColumn({
   status,
   label,
   tasks,
+  prMergedMap,
   onPushToSprint,
   onLaunch,
   onViewSpec,
@@ -59,6 +61,7 @@ export function KanbanColumn({
                 key={task.id}
                 task={task}
                 index={i}
+                prMerged={prMergedMap[task.id] ?? false}
                 onPushToSprint={onPushToSprint}
                 onLaunch={onLaunch}
                 onViewSpec={onViewSpec}

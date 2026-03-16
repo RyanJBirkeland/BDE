@@ -4,6 +4,7 @@ import type { SprintTask } from './SprintCenter'
 
 type KanbanBoardProps = {
   tasks: SprintTask[]
+  prMergedMap: Record<string, boolean>
   onDragEnd: (taskId: string, newStatus: SprintTask['status']) => void
   onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
@@ -15,6 +16,7 @@ const VALID_STATUSES: SprintTask['status'][] = ['backlog', 'queued', 'active', '
 
 export function KanbanBoard({
   tasks,
+  prMergedMap,
   onDragEnd,
   onPushToSprint,
   onLaunch,
@@ -45,6 +47,7 @@ export function KanbanBoard({
           status="backlog"
           label="Backlog"
           tasks={backlog}
+          prMergedMap={prMergedMap}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
@@ -54,6 +57,7 @@ export function KanbanBoard({
           status="queued"
           label="Sprint"
           tasks={queued}
+          prMergedMap={prMergedMap}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
@@ -63,6 +67,7 @@ export function KanbanBoard({
           status="active"
           label="In Progress"
           tasks={active}
+          prMergedMap={prMergedMap}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
@@ -72,6 +77,7 @@ export function KanbanBoard({
           status="done"
           label="Done"
           tasks={done}
+          prMergedMap={prMergedMap}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}

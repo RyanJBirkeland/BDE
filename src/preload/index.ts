@@ -84,6 +84,12 @@ const api = {
       ipcRenderer.invoke('agents:markDone', args)
   },
 
+  // PR status polling
+  pollPrStatuses: (
+    prs: { taskId: string; prUrl: string }[]
+  ): Promise<{ taskId: string; merged: boolean; state: string; mergedAt: string | null }[]> =>
+    ipcRenderer.invoke('poll-pr-statuses', prs),
+
   // Sprint tasks — Supabase-backed Kanban
   sprint: {
     list: (): Promise<unknown[]> => ipcRenderer.invoke('sprint:list'),

@@ -12,7 +12,9 @@ import {
   gitCommit,
   gitPush,
   gitBranches,
-  gitCheckout
+  gitCheckout,
+  pollPrStatuses,
+  type PrStatusInput
 } from '../git'
 
 export function registerGitHandlers(): void {
@@ -33,4 +35,7 @@ export function registerGitHandlers(): void {
   safeHandle('git:push', (_e, cwd: string) => gitPush(cwd))
   safeHandle('git:branches', (_e, cwd: string) => gitBranches(cwd))
   safeHandle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(cwd, branch))
+
+  // --- PR status polling ---
+  safeHandle('poll-pr-statuses', (_e, prs: PrStatusInput[]) => pollPrStatuses(prs))
 }
