@@ -30,6 +30,7 @@ Format: `{type}: {description}`
 1. Branch from `main`, PR back to `main`
 2. **Self-heal**: `npm run build` and `npm test` must both pass before opening a PR
 3. Keep PRs focused — one feature or fix per PR
+4. **UX PRs must include screenshots or ASCII art** of every changed UI surface in the PR body. Use ASCII art as fallback if the app can't be rendered. This is required — no exceptions.
 
 ## Conflict-Prone Files
 

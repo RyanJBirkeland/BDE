@@ -40,6 +40,7 @@ interface SessionsStore {
   runningCount: number
   loading: boolean
   fetchError: string | null
+  pendingKills: Record<string, ReturnType<typeof setTimeout>>
   fetchSessions: () => Promise<void>
   selectSession: (key: string | null) => void
   spawnSession: (params: {
@@ -65,6 +66,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   runningCount: 0,
   loading: true,
   fetchError: null,
+  pendingKills: {},
 
   fetchSessions: async (): Promise<void> => {
     set({ subAgentsLoading: true })
@@ -162,14 +164,40 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   },
 
   killSession: async (sessionKey): Promise<void> => {
-    try {
-      await invokeTool('subagents', { action: 'kill', target: sessionKey })
-      toast.success('Session stopped')
-      await get().fetchSessions()
-    } catch (err) {
-      console.error('Failed to kill session:', err)
-      toast.error('Failed to stop session')
-    }
+    // Optimistically remove from sessions/subAgents list
+    set((s) => ({
+      sessions: s.sessions.filter((sess) => sess.key !== sessionKey),
+      subAgents: s.subAgents.filter((a) => a.sessionKey !== sessionKey)
+    }))
+
+    // Show undo toast for 5s
+    toast.undoable('Session killed', () => {
+      // Undo: clear timer, re-fetch to restore list
+      const timer = get().pendingKills[sessionKey]
+      if (timer) clearTimeout(timer)
+      set((s) => {
+        const { [sessionKey]: _, ...rest } = s.pendingKills
+        return { pendingKills: rest }
+      })
+      get().fetchSessions()
+      toast.info('Kill cancelled')
+    }, 5000)
+
+    // Delay actual API call by 5s
+    const timer = setTimeout(async () => {
+      try {
+        await invokeTool('subagents', { action: 'kill', target: sessionKey })
+      } catch {
+        toast.error('Failed to stop session')
+        get().fetchSessions()
+      }
+      set((s) => {
+        const { [sessionKey]: _, ...rest } = s.pendingKills
+        return { pendingKills: rest }
+      })
+    }, 5000)
+
+    set((s) => ({ pendingKills: { ...s.pendingKills, [sessionKey]: timer } }))
   },
 
   steerSubAgent: async (sessionKey, message): Promise<void> => {

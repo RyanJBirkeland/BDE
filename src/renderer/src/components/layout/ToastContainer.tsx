@@ -8,10 +8,36 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         ? 'toast--error'
         : 'toast--info'
 
+  const hasAction = toast.onUndo || toast.onAction
+
   return (
-    <button className={`toast ${modifier}`} onClick={onDismiss}>
-      {toast.message}
-    </button>
+    <div className={`toast ${modifier} ${hasAction ? 'toast--has-action' : ''}`} onClick={onDismiss}>
+      <span className="toast__message">{toast.message}</span>
+      {toast.onUndo && (
+        <button
+          className="toast__action-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            toast.onUndo?.()
+            onDismiss()
+          }}
+        >
+          Undo
+        </button>
+      )}
+      {toast.onAction && toast.action && (
+        <button
+          className="toast__action-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            toast.onAction?.()
+            onDismiss()
+          }}
+        >
+          {toast.action}
+        </button>
+      )}
+    </div>
   )
 }
 

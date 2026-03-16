@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSessionsStore, AgentSession, SubAgent } from '../../stores/sessions'
 import { useUIStore } from '../../stores/ui'
+import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { EmptyState } from '../ui/EmptyState'
@@ -42,11 +43,21 @@ function SessionRow({
   const isBlocked = session.abortedLastRun && !isRunning
   const killSession = useSessionsStore((s) => s.killSession)
   const [killing, setKilling] = useState(false)
+  const killTargetRef = useRef(false)
 
-  const handleKill = useCallback(
+  const handleKillDown = useCallback(
+    (e: React.MouseEvent): void => {
+      e.stopPropagation()
+      killTargetRef.current = true
+    },
+    []
+  )
+
+  const handleKillUp = useCallback(
     async (e: React.MouseEvent): Promise<void> => {
       e.stopPropagation()
-      if (killing) return
+      if (!killTargetRef.current || killing) return
+      killTargetRef.current = false
       setKilling(true)
       try {
         await killSession(session.key)
@@ -56,6 +67,10 @@ function SessionRow({
     },
     [killing, killSession, session.key]
   )
+
+  const handleKillLeave = useCallback((): void => {
+    killTargetRef.current = false
+  }, [])
 
   return (
     <button
@@ -80,7 +95,9 @@ function SessionRow({
           className="session-row__kill"
           role="button"
           tabIndex={-1}
-          onClick={handleKill}
+          onMouseDown={handleKillDown}
+          onMouseUp={handleKillUp}
+          onMouseLeave={handleKillLeave}
           title="Stop session"
         >
           {killing ? '...' : '\u00d7'}
@@ -93,20 +110,32 @@ function SessionRow({
 function SubAgentRow({
   agent,
   isSelected,
+  isCompleted,
   onSelect
 }: {
   agent: SubAgent
   isSelected: boolean
+  isCompleted: boolean
   onSelect: () => void
 }): React.JSX.Element {
   const killSession = useSessionsStore((s) => s.killSession)
   const selectSession = useSessionsStore((s) => s.selectSession)
   const [killing, setKilling] = useState(false)
+  const killTargetRef = useRef(false)
 
-  const handleKill = useCallback(
+  const handleKillDown = useCallback(
+    (e: React.MouseEvent): void => {
+      e.stopPropagation()
+      killTargetRef.current = true
+    },
+    []
+  )
+
+  const handleKillUp = useCallback(
     async (e: React.MouseEvent): Promise<void> => {
       e.stopPropagation()
-      if (killing) return
+      if (!killTargetRef.current || killing) return
+      killTargetRef.current = false
       setKilling(true)
       try {
         await killSession(agent.sessionKey)
@@ -117,22 +146,36 @@ function SubAgentRow({
     [killing, killSession, agent.sessionKey]
   )
 
+  const handleKillLeave = useCallback((): void => {
+    killTargetRef.current = false
+  }, [])
+
   const handleSteerClick = useCallback((e: React.MouseEvent): void => {
     e.stopPropagation()
     selectSession(agent.sessionKey)
     window.dispatchEvent(new CustomEvent('bde:focus-message-input'))
   }, [agent.sessionKey, selectSession])
 
+  const rowClass = [
+    'sub-agent-row',
+    isSelected ? 'sub-agent-row--selected' : '',
+    isCompleted ? 'sub-agent-row--completed' : ''
+  ].filter(Boolean).join(' ')
+
   return (
-    <button
-      className={`sub-agent-row ${isSelected ? 'sub-agent-row--selected' : ''}`}
-      onClick={onSelect}
-    >
-      <span
-        className={`session-row__dot ${agent._isActive ? 'session-row__dot--running' : ''}`}
-      />
+    <button className={rowClass} onClick={onSelect}>
+      {agent._isActive ? (
+        <span className="session-row__dot session-row__dot--running" />
+      ) : (
+        <span className="sub-agent-row__check" title="Completed">✓</span>
+      )}
       <div className="session-row__info">
-        <span className="session-row__label">{agent.label}</span>
+        <span
+          className="session-row__label"
+          style={!agent._isActive ? { opacity: 0.7 } : undefined}
+        >
+          {agent.label}
+        </span>
         <span className="session-row__meta">
           <Badge variant="muted" size="sm">{modelBadgeLabel(agent.model)}</Badge>
           <span className="session-row__time">{timeAgo(agent.startedAt)}</span>
@@ -161,7 +204,9 @@ function SubAgentRow({
             className="sub-agent-row__action sub-agent-row__action--kill"
             role="button"
             tabIndex={-1}
-            onClick={handleKill}
+            onMouseDown={handleKillDown}
+            onMouseUp={handleKillUp}
+            onMouseLeave={handleKillLeave}
             title="Stop sub-agent"
           >
             {killing ? '...' : '\u00d7'}
@@ -186,6 +231,8 @@ export function SessionList(): React.JSX.Element {
   const [spawnOpen, setSpawnOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const prevActiveKeysRef = useRef<Set<string>>(new Set())
+  const [completedKeys, setCompletedKeys] = useState<Set<string>>(new Set())
 
   // Adaptive polling: 5s when active sub-agents, 10s otherwise
   useEffect(() => {
@@ -194,7 +241,36 @@ export function SessionList(): React.JSX.Element {
     const poll = async (): Promise<void> => {
       await fetchSessions()
       if (cancelled) return
-      const hasActive = useSessionsStore.getState().subAgents.some((s) => s._isActive)
+
+      // Detect sub-agent completions (active → inactive transitions)
+      const currentSubAgents = useSessionsStore.getState().subAgents
+      const nowActive = new Set(
+        currentSubAgents.filter((a) => a._isActive).map((a) => a.sessionKey)
+      )
+      for (const key of prevActiveKeysRef.current) {
+        if (!nowActive.has(key)) {
+          const agent = currentSubAgents.find((a) => a.sessionKey === key)
+          if (agent) {
+            toast.info(`${agent.label} finished`, {
+              action: 'View',
+              onAction: () => useSessionsStore.getState().selectSession(key)
+            })
+            // Mark as completed for fade-out animation
+            setCompletedKeys((prev) => new Set(prev).add(key))
+            // Remove from list after 30s fade-out
+            setTimeout(() => {
+              setCompletedKeys((prev) => {
+                const next = new Set(prev)
+                next.delete(key)
+                return next
+              })
+            }, 30_500)
+          }
+        }
+      }
+      prevActiveKeysRef.current = nowActive
+
+      const hasActive = nowActive.size > 0
       const delay = hasActive ? 5_000 : 10_000
       timeoutRef.current = setTimeout(poll, delay)
     }
@@ -343,6 +419,7 @@ export function SessionList(): React.JSX.Element {
                 key={agent.sessionKey}
                 agent={agent}
                 isSelected={selectedKey === agent.sessionKey}
+                isCompleted={completedKeys.has(agent.sessionKey)}
                 onSelect={() => selectSession(agent.sessionKey)}
               />
             ))
