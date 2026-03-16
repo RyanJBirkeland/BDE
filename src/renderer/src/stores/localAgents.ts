@@ -19,6 +19,7 @@ export interface SpawnedAgent {
   repoPath: string
   model: string
   spawnedAt: number
+  interactive: boolean
 }
 
 interface LocalAgentsState {
@@ -40,6 +41,7 @@ interface LocalAgentsState {
     repoPath: string
     model?: string
   }) => Promise<{ pid: number; logPath: string; id: string }>
+  sendToAgent: (pid: number, message: string) => Promise<void>
   selectLocalAgent: (pid: number | null) => void
   startLogPolling: (logPath: string) => void
   stopLogPolling: () => void
@@ -82,11 +84,19 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
           task: args.task,
           repoPath: args.repoPath,
           model: args.model ?? 'sonnet',
-          spawnedAt: Date.now()
+          spawnedAt: Date.now(),
+          interactive: result.interactive ?? false
         }
       ]
     }))
     return result
+  },
+
+  sendToAgent: async (pid, message) => {
+    const result = await window.api.sendToAgent(pid, message)
+    if (!result.ok) {
+      console.error('sendToAgent failed:', result.error)
+    }
   },
 
   selectLocalAgent: (pid): void => {

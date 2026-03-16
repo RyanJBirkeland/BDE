@@ -41,6 +41,9 @@ export interface LocalAgentProcess {
   memMb: number
 }
 
+// Track active child processes for interactive stdin messaging
+const activeAgentProcesses = new Map<number, import('child_process').ChildProcess>()
+
 // CWD doesn't change for a given PID — cache it
 const cwdCache = new Map<number, string | null>()
 
@@ -181,6 +184,7 @@ export interface SpawnLocalAgentResult {
   pid: number
   logPath: string
   id: string
+  interactive: boolean
 }
 
 function modelToFlag(model?: string): string {
@@ -209,19 +213,28 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
   })
 
   const child = spawn('claude', [
-    '--print',
     '--output-format', 'stream-json',
     '--include-partial-messages',
     '--verbose',
+    '--input-format', 'stream-json',
     '--model', modelToFlag(args.model),
-    '--permission-mode', 'bypassPermissions',
-    args.task
+    '--permission-mode', 'bypassPermissions'
   ], {
     cwd: args.repoPath,
     detached: true,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['pipe', 'pipe', 'pipe'],
     env: { ...process.env, PATH: ELECTRON_PATH }
   })
+
+  // Send the initial task as the first user message via stdin
+  const initialMessage = JSON.stringify({
+    type: 'user',
+    message: { role: 'user', content: args.task }
+  }) + '\n'
+  child.stdin?.write(initialMessage)
+
+  // Track active process for interactive messaging
+  if (child.pid) activeAgentProcesses.set(child.pid, child)
 
   // Update record with real PID
   await updateAgentMeta(id, { pid: child.pid ?? null })
@@ -235,6 +248,7 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
   })
 
   child.on('exit', async (code) => {
+    if (child.pid) activeAgentProcesses.delete(child.pid)
     await updateAgentMeta(id, {
       finishedAt: new Date().toISOString(),
       exitCode: code,
@@ -243,7 +257,22 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
   })
 
   child.unref()
-  return { pid: child.pid!, logPath: meta.logPath, id }
+  return { pid: child.pid!, logPath: meta.logPath, id, interactive: true }
+}
+
+// --- Send follow-up message to a running interactive agent ---
+
+export function sendToAgent(pid: number, message: string): { ok: boolean; error?: string } {
+  const child = activeAgentProcesses.get(pid)
+  if (!child || !child.stdin || child.stdin.destroyed) {
+    return { ok: false, error: 'Process not found or stdin closed' }
+  }
+  const event = JSON.stringify({
+    type: 'user',
+    message: { role: 'user', content: message }
+  }) + '\n'
+  child.stdin.write(event)
+  return { ok: true }
 }
 
 // --- Tail agent log file ---

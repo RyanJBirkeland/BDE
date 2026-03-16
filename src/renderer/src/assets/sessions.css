@@ -1703,3 +1703,14 @@
 .agent-history__view-all:hover {
   color: var(--bde-accent);
 }
+
+/* ── Agent Steer Input ──────────────────────────────── */
+
+.agent-steer-input { display: flex; align-items: center; padding: 8px 12px; border-top: 1px solid var(--bde-border); border-left: 2px solid #f59e0b; background: var(--bde-surface); gap: 8px; flex-shrink: 0; }
+.agent-steer-input__field { flex: 1; background: transparent; border: none; outline: none; color: var(--bde-text); font-family: var(--bde-font-ui); font-size: 13px; }
+.agent-steer-input__field::placeholder { color: var(--bde-text-dim); }
+.agent-steer-input__send { padding: 4px 10px; border-radius: var(--bde-radius-sm, 4px); background: var(--bde-accent); color: #000; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; }
+.agent-steer-input__send:hover:not(:disabled) { opacity: 0.9; }
+.agent-steer-input__send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.agent-steer-sent { display: flex; flex-direction: column; gap: 4px; padding: 4px 16px; align-items: flex-end; flex-shrink: 0; }

@@ -104,6 +104,10 @@ app.whenReady().then(() => {
     spawnClaudeAgent(args)
   )
   ipcMain.handle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
+  ipcMain.handle('local:sendToAgent', async (_e, { pid, message }: { pid: number; message: string }) => {
+    const { sendToAgent } = await import('./local-agents')
+    return sendToAgent(pid, message)
+  })
   cleanupOldLogs()
 
   // --- Agent history IPC ---

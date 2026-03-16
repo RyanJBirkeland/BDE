@@ -76,8 +76,10 @@ const api = {
     task: string
     repoPath: string
     model?: string
-  }): Promise<{ pid: number; logPath: string; id: string }> =>
+  }): Promise<{ pid: number; logPath: string; id: string; interactive: boolean }> =>
     ipcRenderer.invoke('local:spawnClaudeAgent', args),
+  sendToAgent: (pid: number, message: string): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('local:sendToAgent', { pid, message }),
   tailAgentLog: (args: {
     logPath: string
     fromByte?: number

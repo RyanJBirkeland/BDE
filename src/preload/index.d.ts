@@ -52,7 +52,8 @@ declare global {
         task: string
         repoPath: string
         model?: string
-      }) => Promise<{ pid: number; logPath: string; id: string }>
+      }) => Promise<{ pid: number; logPath: string; id: string; interactive: boolean }>
+      sendToAgent: (pid: number, message: string) => Promise<{ ok: boolean; error?: string }>
       tailAgentLog: (args: {
         logPath: string
         fromByte?: number

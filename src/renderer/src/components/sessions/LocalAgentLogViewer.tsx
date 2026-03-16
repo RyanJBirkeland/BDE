@@ -469,12 +469,16 @@ export function LocalAgentLogViewer({ pid }: { pid: number }): React.JSX.Element
   const selectLocalAgent = useLocalAgentsStore((s) => s.selectLocalAgent)
   const startLogPolling = useLocalAgentsStore((s) => s.startLogPolling)
   const stopLogPolling = useLocalAgentsStore((s) => s.stopLogPolling)
+  const sendToAgent = useLocalAgentsStore((s) => s.sendToAgent)
 
   const proc = processes.find((p) => p.pid === pid)
   const spawned = spawnedAgents.find((a) => a.pid === pid)
   const isAlive = !!proc
+  const isInteractive = !!spawned?.interactive && isAlive
 
   const [, setTick] = useState(0)
+  const [steerInput, setSteerInput] = useState('')
+  const [sentMessages, setSentMessages] = useState<string[]>([])
 
   // Tick for elapsed time
   useEffect(() => {
@@ -495,6 +499,24 @@ export function LocalAgentLogViewer({ pid }: { pid: number }): React.JSX.Element
     : spawned
       ? formatElapsed(spawned.spawnedAt)
       : ''
+
+  const handleSend = useCallback(() => {
+    const msg = steerInput.trim()
+    if (!msg) return
+    sendToAgent(pid, msg)
+    setSentMessages((prev) => [...prev, msg])
+    setSteerInput('')
+  }, [steerInput, pid, sendToAgent])
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        handleSend()
+      }
+    },
+    [handleSend]
+  )
 
   return (
     <div className="agent-log">
@@ -521,6 +543,38 @@ export function LocalAgentLogViewer({ pid }: { pid: number }): React.JSX.Element
         </Button>
       </div>
       <AgentChatBody logContent={logContent} isRunning={isAlive} elapsed={elapsed} />
+
+      {/* Sent message bubbles */}
+      {sentMessages.length > 0 && (
+        <div className="agent-steer-sent">
+          {sentMessages.map((msg, i) => (
+            <div key={i} className="chat-msg chat-msg--user">
+              <div className="chat-msg__bubble chat-msg__bubble--user">{msg}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Steer input bar */}
+      {isInteractive && (
+        <div className="agent-steer-input">
+          <input
+            className="agent-steer-input__field"
+            type="text"
+            placeholder="Send message to agent\u2026"
+            value={steerInput}
+            onChange={(e) => setSteerInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button
+            className="agent-steer-input__send"
+            onClick={handleSend}
+            disabled={!steerInput.trim()}
+          >
+            Send {'\u2192'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
