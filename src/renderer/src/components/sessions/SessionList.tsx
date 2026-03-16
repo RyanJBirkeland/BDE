@@ -179,6 +179,9 @@ function SubAgentRow({
               </Badge>
             )}
           </span>
+          {agent.task && (
+            <span className="sub-agent-row__task">{agent.task}</span>
+          )}
         </div>
         {agent._isActive && (
           <>
@@ -385,31 +388,26 @@ export function SessionList(): React.JSX.Element {
         </div>
       )}
 
-      {subAgents.length > 0 && (
-        <div className="session-list__group">
-          <span className="session-list__group-label">
-            Sub-agents{activeSubAgentCount > 0 ? ` (${activeSubAgentCount})` : ''}
-          </span>
-          {subAgentsError && (
-            <div className="sub-agent-row__error">Could not fetch sub-agents</div>
-          )}
-          {subAgents.map((agent) => (
-            <SubAgentRow
-              key={agent.sessionKey}
-              agent={agent}
-              isSelected={selectedKey === agent.sessionKey}
-              onSelect={() => selectSession(agent.sessionKey)}
-            />
-          ))}
-        </div>
-      )}
-
-      {subAgents.length === 0 && subAgentsError && (
-        <div className="session-list__group">
-          <span className="session-list__group-label">Sub-agents</span>
+      <div className="session-list__group">
+        <span className="session-list__group-label">
+          Sub-agents{activeSubAgentCount > 0 ? ` (${activeSubAgentCount})` : ''}
+        </span>
+        {subAgentsError && (
           <div className="sub-agent-row__error">Could not fetch sub-agents</div>
-        </div>
-      )}
+        )}
+        {subAgents.length > 0
+          ? subAgents.map((agent) => (
+              <SubAgentRow
+                key={agent.sessionKey}
+                agent={agent}
+                isSelected={selectedKey === agent.sessionKey}
+                onSelect={() => selectSession(agent.sessionKey)}
+              />
+            ))
+          : !subAgentsError && (
+              <span className="sub-agent-empty">No active sub-agents</span>
+            )}
+      </div>
 
       {!loading && !fetchError && sessions.length === 0 && (
         <EmptyState
