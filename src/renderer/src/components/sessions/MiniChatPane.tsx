@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { invokeTool } from '../../lib/rpc'
 import { useSessionsStore } from '../../stores/sessions'
 import { POLL_PROCESSES_INTERVAL } from '../../lib/constants'
+import { normalizeContent } from '../../lib/message'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
@@ -32,26 +33,6 @@ export function MiniChatPane({ paneIndex, sessionKey, isFocused, onFocus, onSess
 
   const session = sessions.find((s) => s.key === sessionKey)
   const channel = session?.channel || session?.lastChannel || ''
-
-  // Normalize content blocks from gateway
-  const normalizeContent = (content: unknown): string => {
-    if (typeof content === 'string') return content
-    if (Array.isArray(content)) {
-      return content
-        .map((b: unknown) => {
-          if (typeof b === 'string') return b
-          if (b && typeof b === 'object') {
-            const block = b as Record<string, unknown>
-            if (block.type === 'thinking') return ''
-            return typeof block.text === 'string' ? block.text : ''
-          }
-          return ''
-        })
-        .filter(Boolean)
-        .join('\n')
-    }
-    return String(content ?? '')
-  }
 
   useEffect(() => {
     if (!sessionKey) {

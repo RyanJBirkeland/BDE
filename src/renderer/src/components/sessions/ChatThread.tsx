@@ -5,6 +5,8 @@ import { toast } from '../../stores/toasts'
 import { EmptyState } from '../ui/EmptyState'
 import { Spinner } from '../ui/Spinner'
 import { CHAT_HISTORY_LIMIT, CHAT_SCROLL_THRESHOLD, CHAT_COLLAPSE_THRESHOLD } from '../../lib/constants'
+import { normalizeContent } from '../../lib/message'
+import { renderContent } from '../../lib/markdown'
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
@@ -18,75 +20,6 @@ function formatTime(ts: number | string | undefined): string {
   if (!ts) return ''
   const d = new Date(typeof ts === 'string' ? ts : ts)
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-/** Render markdown-ish content: code blocks, inline code, line breaks */
-function renderContent(text: string): React.JSX.Element {
-  const parts: React.JSX.Element[] = []
-  let key = 0
-
-  // Split on triple-backtick code blocks first
-  const codeBlockRe = /```(\w*)\n?([\s\S]*?)```/g
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-
-  while ((match = codeBlockRe.exec(text)) !== null) {
-    // Text before this code block
-    if (match.index > lastIndex) {
-      parts.push(
-        <span key={key++}>{renderInline(text.slice(lastIndex, match.index))}</span>
-      )
-    }
-    // The code block itself
-    parts.push(
-      <pre key={key++} className="chat-msg__code-block">
-        <code>{match[2]}</code>
-      </pre>
-    )
-    lastIndex = match.index + match[0].length
-  }
-
-  // Remaining text after last code block
-  if (lastIndex < text.length) {
-    parts.push(<span key={key++}>{renderInline(text.slice(lastIndex))}</span>)
-  }
-
-  return <>{parts}</>
-}
-
-/** Render inline code and line breaks */
-function renderInline(text: string): React.JSX.Element {
-  const parts: React.JSX.Element[] = []
-  let key = 0
-  const inlineRe = /`([^`]+)`/g
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-
-  while ((match = inlineRe.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(
-        <span key={key++} className="chat-msg__text-plain">
-          {text.slice(lastIndex, match.index)}
-        </span>
-      )
-    }
-    parts.push(
-      <code key={key++} className="chat-msg__inline-code">
-        {match[1]}
-      </code>
-    )
-    lastIndex = match.index + match[0].length
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(
-      <span key={key++} className="chat-msg__text-plain">
-        {text.slice(lastIndex)}
-      </span>
-    )
-  }
-
-  return <>{parts}</>
 }
 
 const POLL_STREAMING = 1_000
@@ -136,23 +69,6 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
         sessionKey,
         limit: CHAT_HISTORY_LIMIT
       })) as { messages: ChatMessage[] }
-
-      // Normalize content — gateway may return content as array of blocks {type,text} or {type,thinking}
-      const normalizeContent = (content: unknown): string => {
-        if (typeof content === 'string') return content
-        if (Array.isArray(content)) {
-          return content.map((b: unknown) => {
-            if (typeof b === 'string') return b
-            if (b && typeof b === 'object') {
-              const block = b as Record<string, unknown>
-              if (block.type === 'thinking') return ''
-              return typeof block.text === 'string' ? block.text : ''
-            }
-            return ''
-          }).filter(Boolean).join('\n')
-        }
-        return String(content ?? '')
-      }
 
       const incoming = (result?.messages ?? [])
         .map((m) => ({ ...m, content: normalizeContent(m.content) }))
