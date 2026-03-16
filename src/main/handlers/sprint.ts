@@ -96,26 +96,19 @@ async function supabaseFetch(
 
 async function ensureBacklogStatus(): Promise<void> {
   try {
-    // Try inserting and immediately deleting a backlog task to test the constraint.
-    // If backlog is already valid, this is a no-op.
-    // If not, we run the migration.
-    await supabaseFetch(
-      'sprint_tasks?id=eq.__backlog_migration_test__',
-      'DELETE'
-    )
-
-    // Attempt the migration via RPC if the table uses a check constraint
-    // PostgREST doesn't allow DDL, so we try a test insert instead.
+    // Insert a test row with status=backlog, then clean it up.
+    // If the enum doesn't include 'backlog' yet, this will throw and we log the fix.
     const testResult = await supabaseFetch('sprint_tasks', 'POST', {
       title: '__backlog_status_test__',
       repo: 'test',
       status: 'backlog',
       priority: 999,
-    }) as Array<{ id: string }> | null
+    }) as Array<{ id: string }> | { id: string } | null
 
-    // Clean up the test row
-    if (testResult && Array.isArray(testResult) && testResult.length > 0) {
-      await supabaseFetch(`sprint_tasks?id=eq.${testResult[0].id}`, 'DELETE')
+    // Clean up — handle both array and single-object responses
+    const inserted = Array.isArray(testResult) ? testResult[0] : testResult
+    if (inserted?.id) {
+      await supabaseFetch(`sprint_tasks?id=eq.${inserted.id}`, 'DELETE')
     }
   } catch (err) {
     console.warn('[sprint] backlog status validation failed — may need manual migration:', err)
