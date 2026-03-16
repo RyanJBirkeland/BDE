@@ -2,8 +2,10 @@
 @import '@fontsource/inter/500.css';
 @import '@fontsource/inter/600.css';
 @import '@fontsource/inter/700.css';
+@import '@fontsource/inter/800.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
 
 :root {
   /* Colors */
@@ -78,6 +80,138 @@
   --bde-transition-fast: 100ms ease;
   --bde-transition-base: 150ms ease;
   --bde-transition-slow: 200ms ease;
+
+  /* ── Visual Identity v2 ──────────────────────────────── */
+
+  /* Backgrounds — deeper and more layered */
+  --bg-void:      #050507;
+  --bg-base:      #0A0A0F;
+  --bg-surface:   #111118;
+  --bg-card:      #16161F;
+  --bg-hover:     #1C1C27;
+  --bg-active:    #222230;
+
+  /* Borders — cooler, hint of blue */
+  --border:       #1E1E2A;
+  --border-light: #2A2A3A;
+  --border-glow:  #3A3A52;
+
+  /* Text */
+  --text-primary:   #F5F5F7;
+  --text-secondary: #98989F;
+  --text-muted:     #5C5C63;
+  --text-ghost:     #3A3A42;
+
+  /* Accent — Feast green, expanded range */
+  --accent:         #00D37F;
+  --accent-bright:  #33EDAA;
+  --accent-dim:     #00A863;
+  --accent-subtle:  rgba(0, 211, 127, 0.08);
+  --accent-muted:   rgba(0, 211, 127, 0.15);
+  --accent-glow:    rgba(0, 211, 127, 0.25);
+  --accent-flare:   rgba(0, 211, 127, 0.40);
+
+  /* Semantic */
+  --color-running: #00D37F;
+  --color-warning: #FFAA33;
+  --color-error:   #FF453A;
+  --color-info:    #5B9EFF;
+  --color-ai:      #A78BFA;
+  --color-queued:  #6C8EEF;
+
+  /* ── Named Gradient Palette ──────────────────────────── */
+
+  /* Accent gradients */
+  --gradient-aurora:    linear-gradient(135deg, #00D37F 0%, #00B4D8 100%);
+  --gradient-electric:  linear-gradient(135deg, #6C8EEF 0%, #A78BFA 50%, #C084FC 100%);
+  --gradient-solar:     linear-gradient(135deg, #FFAA33 0%, #FF6B35 100%);
+  --gradient-ember:     linear-gradient(135deg, #FF453A 0%, #FF6B8A 100%);
+
+  /* Surface gradients */
+  --gradient-frost: linear-gradient(
+    180deg,
+    rgba(90, 120, 200, 0.06) 0%,
+    rgba(60, 60, 120, 0.02) 100%
+  );
+  --gradient-midnight: linear-gradient(
+    180deg,
+    rgba(16, 16, 28, 0.95) 0%,
+    rgba(8, 8, 16, 0.98) 100%
+  );
+  --gradient-horizon: linear-gradient(
+    160deg,
+    rgba(0, 211, 127, 0.04) 0%,
+    rgba(108, 142, 239, 0.03) 50%,
+    rgba(10, 10, 15, 0.0) 100%
+  );
+  --gradient-shimmer: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
+
+  /* ── Glass Tokens ────────────────────────────────────── */
+
+  /* Blur intensities */
+  --glass-blur-sm:    blur(8px);
+  --glass-blur-md:    blur(16px);
+  --glass-blur-lg:    blur(24px);
+  --glass-blur-xl:    blur(40px);
+
+  /* Saturation boost */
+  --glass-saturate:   saturate(180%);
+
+  /* Glass tints */
+  --glass-tint-dark:   rgba(10, 10, 18, 0.75);
+  --glass-tint-mid:    rgba(16, 16, 26, 0.70);
+  --glass-tint-light:  rgba(22, 22, 34, 0.60);
+  --glass-tint-ultra:  rgba(30, 30, 48, 0.50);
+
+  /* ── Typography ──────────────────────────────────────── */
+
+  /* Font stacks */
+  --font-ui:      'Inter', 'SF Pro Display', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+  --font-display: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+
+  /* UI type scale */
+  --text-2xs:  10px;
+  --text-xs:   11px;
+  --text-sm:   13px;
+  --text-base: 14px;
+  --text-lg:   16px;
+  --text-xl:   20px;
+  --text-2xl:  28px;
+  --text-3xl:  36px;
+
+  /* UI line-heights */
+  --leading-2xs:  14px;
+  --leading-xs:   16px;
+  --leading-sm:   20px;
+  --leading-base: 22px;
+  --leading-lg:   24px;
+  --leading-xl:   28px;
+  --leading-2xl:  36px;
+  --leading-3xl:  44px;
+
+  /* Mono type scale */
+  --mono-2xs:  9px;
+  --mono-xs:   10px;
+  --mono-sm:   12px;
+  --mono-base: 13px;
+
+  /* Mono line-heights */
+  --mono-leading-2xs: 14px;
+  --mono-leading-xs:  16px;
+  --mono-leading-sm:  18px;
+  --mono-leading-base: 20px;
+
+  /* Letter-spacing */
+  --tracking-tight:   -0.02em;
+  --tracking-normal:   0;
+  --tracking-wide:     0.06em;
+  --tracking-widest:   0.12em;
 }
 
 *,

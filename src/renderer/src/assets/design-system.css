@@ -557,3 +557,340 @@
   padding: 0 var(--bde-space-2);
   border-radius: var(--bde-radius-xl);
 }
+
+/* ════════════════════════════════════════════════════════
+   Visual Identity v2 — Glass, Elevation, Glow, Gradients
+   ════════════════════════════════════════════════════════ */
+
+/* ── 3.2 Glass Panel Classes ─────────────────────────── */
+
+.glass {
+  position: relative;
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  border: 1px solid var(--border);
+}
+
+.glass-elevated {
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
+  border: 1px solid var(--border-light);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.40),
+    0 0 0 0.5px rgba(255, 255, 255, 0.05) inset;
+}
+
+.glass-modal {
+  background: var(--glass-tint-light);
+  backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
+  border: 1px solid var(--border-glow);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.60),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
+    0 0 60px rgba(0, 211, 127, 0.03);
+}
+
+.glass-highlight {
+  box-shadow:
+    inset 0 0.5px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.04);
+}
+
+/* ── 3.3 Glass Inner Glow (visionOS-style top-edge) ──── */
+
+.glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+}
+
+/* ── 5. Elevation System ─────────────────────────────── */
+
+.elevation-0 {
+  background:
+    radial-gradient(
+      ellipse 60% 40% at 50% 0%,
+      rgba(0, 211, 127, 0.015) 0%,
+      transparent 100%
+    ),
+    var(--bg-void);
+}
+
+.elevation-1 {
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.20);
+}
+
+.elevation-2 {
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 0 0.5px rgba(255, 255, 255, 0.05) inset;
+}
+
+.elevation-3 {
+  background: var(--glass-tint-light);
+  backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
+  border: 1px solid var(--border-glow);
+  border-radius: 16px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08) inset;
+}
+
+.elevation-3-backdrop {
+  background: rgba(0, 0, 0, 0.50);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.elevation-4 {
+  background: var(--glass-tint-ultra);
+  backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  box-shadow:
+    0 32px 100px rgba(0, 0, 0, 0.60),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 0 80px rgba(0, 211, 127, 0.05);
+}
+
+/* ── 6. Glow Effects ─────────────────────────────────── */
+
+/* 6.1 Accent glows */
+.glow-accent-sm {
+  box-shadow:
+    0 0 8px rgba(0, 211, 127, 0.15),
+    0 0 0 1px rgba(0, 211, 127, 0.20);
+}
+
+.glow-accent-md {
+  box-shadow:
+    0 0 16px rgba(0, 211, 127, 0.20),
+    0 0 4px rgba(0, 211, 127, 0.30),
+    0 0 0 1px rgba(0, 211, 127, 0.40);
+}
+
+.glow-accent-lg {
+  box-shadow:
+    0 0 40px rgba(0, 211, 127, 0.15),
+    0 0 16px rgba(0, 211, 127, 0.25),
+    0 0 4px rgba(0, 211, 127, 0.35),
+    0 0 0 1px rgba(0, 211, 127, 0.50);
+}
+
+/* 6.2 Status glows */
+.glow-running { box-shadow: 0 0 12px rgba(0, 211, 127, 0.25), 0 0 0 1px rgba(0, 211, 127, 0.30); }
+.glow-error   { box-shadow: 0 0 12px rgba(255, 69, 58, 0.25), 0 0 0 1px rgba(255, 69, 58, 0.30); }
+.glow-warning { box-shadow: 0 0 12px rgba(255, 170, 51, 0.25), 0 0 0 1px rgba(255, 170, 51, 0.30); }
+.glow-info    { box-shadow: 0 0 12px rgba(91, 158, 255, 0.25), 0 0 0 1px rgba(91, 158, 255, 0.30); }
+.glow-ai      { box-shadow: 0 0 12px rgba(167, 139, 250, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.30); }
+
+/* 6.3 Pulsing glow */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(0, 211, 127, 0.15),
+      0 0 0 1px rgba(0, 211, 127, 0.20);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(0, 211, 127, 0.25),
+      0 0 4px rgba(0, 211, 127, 0.35),
+      0 0 0 1px rgba(0, 211, 127, 0.40);
+  }
+}
+
+.glow-pulse {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* 6.4 Text glows */
+.text-glow-accent {
+  text-shadow:
+    0 0 20px rgba(0, 211, 127, 0.3),
+    0 0 40px rgba(0, 211, 127, 0.1);
+}
+
+.text-glow-electric {
+  text-shadow:
+    0 0 20px rgba(108, 142, 239, 0.3),
+    0 0 40px rgba(167, 139, 250, 0.1);
+}
+
+/* ── 2.4 Gradient Text ───────────────────────────────── */
+
+.text-gradient-aurora {
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-electric {
+  background: var(--gradient-electric);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 2.3 Gradient Border ─────────────────────────────── */
+
+.gradient-border {
+  position: relative;
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  padding: 1px;
+  background: var(--gradient-aurora);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── 4.3 Heading Treatments ──────────────────────────── */
+
+.heading-section {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.heading-page {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heading-hero {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #F5F5F7 0%, #98989F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 4.4 Logotype ────────────────────────────────────── */
+
+.logotype {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logotype-glow {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent);
+  filter: blur(8px);
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── 8.4 Primary Button ──────────────────────────────── */
+
+.btn-primary {
+  background: var(--gradient-aurora);
+  color: #050507;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  box-shadow: 0 0 16px rgba(0, 211, 127, 0.20);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 0 24px rgba(0, 211, 127, 0.30),
+    0 0 8px rgba(0, 211, 127, 0.40);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  filter: brightness(0.95);
+  transform: scale(0.98);
+}
+
+/* ── 8.5 Ghost / Glass Button ────────────────────────── */
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+
+.btn-glass:active {
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(0.98);
+}
