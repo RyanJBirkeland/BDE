@@ -212,6 +212,7 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
     '--print',
     '--output-format', 'stream-json',
     '--include-partial-messages',
+    '--verbose',
     '--model', modelToFlag(args.model),
     '--permission-mode', 'bypassPermissions',
     args.task
