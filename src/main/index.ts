@@ -108,6 +108,14 @@ app.whenReady().then(() => {
     const { sendToAgent } = await import('./local-agents')
     return sendToAgent(pid, message)
   })
+  ipcMain.handle('kill-local-agent', async (_event, pid: number) => {
+    try {
+      process.kill(pid, 'SIGTERM')
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: String(err) }
+    }
+  })
   cleanupOldLogs()
 
   // --- Agent history IPC ---
