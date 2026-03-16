@@ -18,6 +18,7 @@ vi.mock('../../../stores/toasts', () => ({
 describe('MessageInput', () => {
   const defaultProps = {
     sessionKey: 'test-session',
+    sessionMode: 'chat' as const,
     onSent: vi.fn(),
   }
 
@@ -59,10 +60,10 @@ describe('MessageInput', () => {
     const textarea = screen.getByPlaceholderText('Message...')
     await user.type(textarea, 'Hello')
     await user.keyboard('{Enter}')
-    expect(mockCall).toHaveBeenCalledWith('chat.send', {
+    expect(mockCall).toHaveBeenCalledWith('chat.send', expect.objectContaining({
       sessionKey: 'test-session',
-      text: 'Hello',
-    })
+      message: 'Hello',
+    }))
   })
 
   it('Shift+Enter does NOT submit', async () => {

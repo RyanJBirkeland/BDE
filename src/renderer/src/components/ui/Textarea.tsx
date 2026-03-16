@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
 
 type TextareaProps = {
   value: string
@@ -9,18 +9,16 @@ type TextareaProps = {
   className?: string
 }
 
-export function Textarea({
-  value,
-  onChange,
-  onKeyDown,
-  placeholder,
-  disabled = false,
-  className,
-}: TextareaProps) {
-  const ref = useRef<HTMLTextAreaElement>(null)
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { value, onChange, onKeyDown, placeholder, disabled = false, className },
+  forwardedRef,
+) {
+  const innerRef = useRef<HTMLTextAreaElement>(null)
+
+  useImperativeHandle(forwardedRef, () => innerRef.current as HTMLTextAreaElement)
 
   const resize = useCallback(() => {
-    const el = ref.current
+    const el = innerRef.current
     if (!el) return
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
@@ -34,7 +32,7 @@ export function Textarea({
 
   return (
     <textarea
-      ref={ref}
+      ref={innerRef}
       className={classes}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -44,4 +42,4 @@ export function Textarea({
       rows={1}
     />
   )
-}
+})
