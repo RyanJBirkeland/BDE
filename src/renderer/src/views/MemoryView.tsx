@@ -187,10 +187,14 @@ export default function MemoryView(): React.JSX.Element {
   const isDirty = content !== savedContent
 
   return (
-    <div className="memory-view">
+    <div className="memory-view" style={{ flexDirection: 'column' }}>
+      <div className="memory-view__header">
+        <span className="memory-view__title">Memory</span>
+      </div>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       <div className="memory-sidebar">
         <div className="memory-sidebar__header">
-          <span className="memory-sidebar__title">Memory</span>
+          <span className="memory-sidebar__title">Files</span>
           <span className="memory-sidebar__count bde-count-badge">{files.length}</span>
           <div className="memory-sidebar__actions">
             <Button variant="icon" size="sm" onClick={() => setNewFilePrompt(true)} title="New file">
@@ -293,6 +297,7 @@ export default function MemoryView(): React.JSX.Element {
         ) : (
           <EmptyState title="Select a file to view" />
         )}
+      </div>
       </div>
     </div>
   )

@@ -1,0 +1,57 @@
+/* ── Settings View — Glass Treatment ───────────────────── */
+
+.settings-view__header {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bde-border);
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.settings-view__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(108, 142, 239, 0.4) 0%, rgba(167, 139, 250, 0.2) 60%, transparent 100%);
+}
+
+.settings-view__header-title {
+  background: linear-gradient(90deg, #6C8EEF 0%, #A78BFA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+/* Glass section cards */
+.settings-section {
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--bde-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.settings-section__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border-bottom: none;
+}

@@ -115,9 +115,11 @@ export default function SettingsView(): React.JSX.Element {
   }, [url, token])
 
   return (
-    <div className="settings-view">
+    <div className="settings-view" style={{ flexDirection: 'column' }}>
+      <div className="settings-view__header">
+        <span className="settings-view__header-title">Settings</span>
+      </div>
       <div className="settings-view__scroll">
-        <h1 className="settings-view__title">Settings</h1>
 
         {/* Gateway */}
         <section className="settings-section">

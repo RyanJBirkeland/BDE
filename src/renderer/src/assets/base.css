@@ -8,6 +8,29 @@
 @import '@fontsource/jetbrains-mono/700.css';
 
 :root {
+  /* ── Legacy Token Aliases ──────────────────────────────── */
+  /* Point old names to canonical --bde-* tokens.             */
+  /* Zero-risk: existing code still works, new code uses --bde-*. */
+  --bg: var(--bde-bg);
+  --bg-secondary: var(--bde-surface);
+  --bg-hover: var(--bde-surface-hover, var(--bde-hover));
+  --border: var(--bde-border);
+  --border-light: var(--bde-border-light, var(--bde-border-hover));
+  --text: var(--bde-text);
+  --text-muted: var(--bde-text-muted);
+  --text-dim: var(--bde-text-dim);
+  --accent: var(--bde-accent);
+  --accent-dim: var(--bde-accent-dim);
+  --color-error: var(--bde-error, var(--bde-danger));
+  --color-warning: var(--bde-warning);
+  --color-ai: var(--bde-subagent);
+  --radius-sm: var(--bde-radius-sm);
+  --radius-md: var(--bde-radius-md);
+  --size-sm: var(--bde-size-sm);
+  --size-xs: var(--bde-size-xs);
+  --font-ui: var(--bde-font-ui);
+  --font-mono: var(--bde-font-code);
+
   /* Colors */
   --bde-bg: #0A0A0A;
   --bde-surface: #141414;

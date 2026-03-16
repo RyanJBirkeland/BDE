@@ -382,63 +382,70 @@ export default function CostView(): React.JSX.Element {
 
   if (loading) {
     return (
-      <div className="cost-view">
-        <div className="cost-view__cards">
-          <div className="bde-skeleton" style={{ height: 80 }} />
-          <div className="bde-skeleton" style={{ height: 80 }} />
-          <div className="bde-skeleton" style={{ height: 80 }} />
-          <div className="bde-skeleton" style={{ height: 80 }} />
+      <div className="cost-view cost-view--glass">
+        <div className="cost-view__header">
+          <span className="cost-view__title">Cost Tracker</span>
         </div>
-        <div className="cost-view__charts">
-          <div className="bde-skeleton" style={{ height: 200 }} />
-          <div className="bde-skeleton" style={{ height: 200 }} />
+        <div className="cost-view__scroll">
+          <div className="cost-view__cards">
+            <div className="bde-skeleton" style={{ height: 80 }} />
+            <div className="bde-skeleton" style={{ height: 80 }} />
+            <div className="bde-skeleton" style={{ height: 80 }} />
+            <div className="bde-skeleton" style={{ height: 80 }} />
+          </div>
+          <div className="cost-view__charts">
+            <div className="bde-skeleton" style={{ height: 200 }} />
+            <div className="bde-skeleton" style={{ height: 200 }} />
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="cost-view">
+    <div className="cost-view cost-view--glass">
       <div className="cost-view__header">
-        <h2 className="cost-view__title">Cost Tracker</h2>
+        <span className="cost-view__title">Cost Tracker</span>
         <Button variant="ghost" size="sm" onClick={handleExport} title="Copy CSV to clipboard">
           <Download size={14} />
           {copied ? 'Copied!' : 'Export CSV'}
         </Button>
       </div>
 
-      <div className="cost-view__cards">
-        <Card padding="md" className="cost-stat-card">
-          <span className="cost-stat-card__label">Today</span>
-          <span className="cost-stat-card__value">{formatCost(todayCost)}</span>
-        </Card>
-        <Card padding="md" className="cost-stat-card">
-          <span className="cost-stat-card__label">This Week</span>
-          <span className="cost-stat-card__value">{formatCost(weekCost)}</span>
-        </Card>
-        <Card padding="md" className="cost-stat-card">
-          <span className="cost-stat-card__label">This Month</span>
-          <span className="cost-stat-card__value">{formatCost(monthCost)}</span>
-        </Card>
-        <Card padding="md" className="cost-stat-card">
-          <span className="cost-stat-card__label">All Time</span>
-          <span className="cost-stat-card__value">{formatCost(allTimeCost)}</span>
-        </Card>
-      </div>
+      <div className="cost-view__scroll">
+        <div className="cost-view__cards">
+          <Card padding="md" className="cost-stat-card">
+            <span className="cost-stat-card__label">Today</span>
+            <span className="cost-stat-card__value">{formatCost(todayCost)}</span>
+          </Card>
+          <Card padding="md" className="cost-stat-card">
+            <span className="cost-stat-card__label">This Week</span>
+            <span className="cost-stat-card__value">{formatCost(weekCost)}</span>
+          </Card>
+          <Card padding="md" className="cost-stat-card">
+            <span className="cost-stat-card__label">This Month</span>
+            <span className="cost-stat-card__value">{formatCost(monthCost)}</span>
+          </Card>
+          <Card padding="md" className="cost-stat-card">
+            <span className="cost-stat-card__label">All Time</span>
+            <span className="cost-stat-card__value">{formatCost(allTimeCost)}</span>
+          </Card>
+        </div>
 
-      <div className="cost-view__charts">
-        <DailyChart sessions={sessionsWithCost} />
-        <ModelDonut sessions={sessionsWithCost} />
-      </div>
+        <div className="cost-view__charts">
+          <DailyChart sessions={sessionsWithCost} />
+          <ModelDonut sessions={sessionsWithCost} />
+        </div>
 
-      {sessionsWithCost.length === 0 ? (
-        <EmptyState
-          title="No session data yet"
-          description="Costs will appear once agents run"
-        />
-      ) : (
-        <SessionTable sessions={sessionsWithCost} sortField={sortField} onSort={setSortField} />
-      )}
+        {sessionsWithCost.length === 0 ? (
+          <EmptyState
+            title="No session data yet"
+            description="Costs will appear once agents run"
+          />
+        ) : (
+          <SessionTable sessions={sessionsWithCost} sortField={sortField} onSort={setSortField} />
+        )}
+      </div>
     </div>
   )
 }

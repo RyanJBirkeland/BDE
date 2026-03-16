@@ -1,0 +1,58 @@
+/* ── Memory View — Glass Treatment ─────────────────────── */
+
+.memory-view__header {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bde-border);
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.memory-view__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+}
+
+.memory-view__title {
+  background: linear-gradient(90deg, #A78BFA 0%, #6C8EEF 60%, #00D37F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+/* Glass sidebar override */
+.memory-sidebar {
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border-right: 1px solid var(--bde-border);
+}
+
+/* File items — glass-aware hover/active */
+.memory-file {
+  border-radius: var(--bde-radius-sm);
+  transition: background 0.12s;
+}
+
+.memory-file:hover {
+  background: var(--bde-surface-hover, var(--bde-hover));
+}
+
+.memory-file--active {
+  background: var(--glass-tint-mid, var(--bde-border));
+  border-left: 2px solid var(--bde-accent);
+}

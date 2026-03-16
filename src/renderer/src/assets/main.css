@@ -3,6 +3,8 @@
 @import './sessions.css';
 @import './sprint.css';
 @import './cost.css';
+@import './memory.css';
+@import './settings.css';
 @import './terminal.css';
 
 /* ── App shell ─────────────────────────────────────────── */
