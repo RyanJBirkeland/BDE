@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { AgentStatusChip } from './AgentStatusChip'
-import { REPO_OPTIONS } from '../../lib/constants'
+
 import type { SprintTask } from './SprintCenter'
 
 type TaskCardProps = {
@@ -22,9 +22,6 @@ function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' | 'defau
   return 'default'
 }
 
-function repoColor(repo: string): string {
-  return REPO_OPTIONS.find((r) => r.label.toLowerCase() === repo.toLowerCase())?.color ?? '#6B6B6B'
-}
 
 export function TaskCard({ task, index, onLaunch, onViewSpec, onViewOutput }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({

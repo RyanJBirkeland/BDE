@@ -9,7 +9,7 @@ type AddCardFormProps = {
 export function AddCardForm({ onSubmit }: AddCardFormProps) {
   const [expanded, setExpanded] = useState(false)
   const [title, setTitle] = useState('')
-  const [repo, setRepo] = useState(REPO_OPTIONS[0].label)
+  const [repo, setRepo] = useState<string>(REPO_OPTIONS[0].label)
   const [description, setDescription] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
