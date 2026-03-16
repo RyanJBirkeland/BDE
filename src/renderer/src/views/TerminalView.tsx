@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, ChevronDown, X, SplitSquareVertical } from 'lucide-react'
+import { Plus, ChevronDown, X, SplitSquareVertical, Bot } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { TerminalPane, clearTerminal } from '../components/terminal/TerminalPane'
 import { FindBar } from '../components/terminal/FindBar'
 import { ShellPicker } from '../components/terminal/ShellPicker'
+import { AgentPicker } from '../components/terminal/AgentPicker'
 import { AgentOutputTab } from '../components/terminal/AgentOutputTab'
 import { tokens } from '../design-system/tokens'
 import { useTerminalStore } from '../stores/terminal'
 import { useUIStore } from '../stores/ui'
 
 export function TerminalView(): React.JSX.Element {
-  const { tabs, activeTabId, addTab, closeTab, setActiveTab, splitEnabled, toggleSplit, showFind } = useTerminalStore()
+  const { tabs, activeTabId, addTab, closeTab, setActiveTab, splitEnabled, toggleSplit, showFind, createAgentTab } = useTerminalStore()
   const activeView = useUIStore((s) => s.activeView)
   const [hoveredTabId, setHoveredTabId] = useState<string | null>(null)
   const [showShellPicker, setShowShellPicker] = useState(false)
+  const [showAgentPicker, setShowAgentPicker] = useState(false)
 
   const activeTab = tabs.find((t) => t.id === activeTabId)
   const isAgentTab = activeTab?.kind === 'agent'
@@ -193,70 +195,112 @@ export function TerminalView(): React.JSX.Element {
           })}
 
           {/* Add tab [+] and shell picker [▾] */}
-          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, position: 'relative' }}>
-            <button
-              onClick={() => addTab()}
-              title="New terminal (⌘T)"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 28,
-                height: 28,
-                border: 'none',
-                background: 'transparent',
-                color: tokens.color.textMuted,
-                cursor: 'pointer',
-                borderRadius: `${tokens.radius.sm} 0 0 ${tokens.radius.sm}`,
-                transition: tokens.transition.fast
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = tokens.color.text
-                e.currentTarget.style.background = tokens.color.surfaceHigh
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = tokens.color.textMuted
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              <Plus size={16} />
-            </button>
-            <button
-              onClick={() => setShowShellPicker(!showShellPicker)}
-              title="Choose shell"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 20,
-                height: 28,
-                border: 'none',
-                background: 'transparent',
-                color: tokens.color.textMuted,
-                cursor: 'pointer',
-                borderRadius: `0 ${tokens.radius.sm} ${tokens.radius.sm} 0`,
-                transition: tokens.transition.fast
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = tokens.color.text
-                e.currentTarget.style.background = tokens.color.surfaceHigh
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = tokens.color.textMuted
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              <ChevronDown size={12} />
-            </button>
-            {showShellPicker && (
-              <ShellPicker
-                onSelect={(shell) => {
-                  setShowShellPicker(false)
-                  addTab(shell || undefined)
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[1], flexShrink: 0, position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+              <button
+                onClick={() => addTab()}
+                title="New terminal (⌘T)"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  border: 'none',
+                  background: 'transparent',
+                  color: tokens.color.textMuted,
+                  cursor: 'pointer',
+                  borderRadius: `${tokens.radius.sm} 0 0 ${tokens.radius.sm}`,
+                  transition: tokens.transition.fast
                 }}
-                onClose={() => setShowShellPicker(false)}
-              />
-            )}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = tokens.color.text
+                  e.currentTarget.style.background = tokens.color.surfaceHigh
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = tokens.color.textMuted
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                onClick={() => setShowShellPicker(!showShellPicker)}
+                title="Choose shell"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 20,
+                  height: 28,
+                  border: 'none',
+                  background: 'transparent',
+                  color: tokens.color.textMuted,
+                  cursor: 'pointer',
+                  borderRadius: `0 ${tokens.radius.sm} ${tokens.radius.sm} 0`,
+                  transition: tokens.transition.fast
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = tokens.color.text
+                  e.currentTarget.style.background = tokens.color.surfaceHigh
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = tokens.color.textMuted
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <ChevronDown size={12} />
+              </button>
+              {showShellPicker && (
+                <ShellPicker
+                  onSelect={(shell) => {
+                    setShowShellPicker(false)
+                    addTab(shell || undefined)
+                  }}
+                  onClose={() => setShowShellPicker(false)}
+                />
+              )}
+            </div>
+
+            {/* Agent picker button */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowAgentPicker(!showAgentPicker)}
+                title="Watch agent output"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  border: 'none',
+                  background: 'transparent',
+                  color: tokens.color.textMuted,
+                  cursor: 'pointer',
+                  borderRadius: tokens.radius.sm,
+                  transition: tokens.transition.fast
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = tokens.color.text
+                  e.currentTarget.style.background = tokens.color.surfaceHigh
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = tokens.color.textMuted
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <Bot size={16} />
+              </button>
+              {showAgentPicker && (
+                <AgentPicker
+                  onSelect={(agentId, label) => {
+                    setShowAgentPicker(false)
+                    createAgentTab(agentId, label, agentId)
+                  }}
+                  onClose={() => setShowAgentPicker(false)}
+                />
+              )}
+            </div>
           </div>
         </div>
 

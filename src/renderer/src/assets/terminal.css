@@ -68,6 +68,112 @@
   flex-direction: column;
 }
 
+/* ── Terminal: Agent picker dropdown ─────────────────── */
+
+.agent-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  min-width: 320px;
+  max-width: 480px;
+  background: var(--bde-surface, #111111);
+  border: 1px solid var(--bde-border, #2A2A2A);
+  border-radius: var(--bde-radius-md, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 4px 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.agent-picker__header {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 32px;
+  font-size: var(--bde-size-md);
+  font-family: var(--bde-font-ui);
+  color: var(--bde-text, #E8E8E8);
+  font-weight: 500;
+}
+
+.agent-picker__divider {
+  height: 1px;
+  background: var(--bde-border, #2A2A2A);
+  margin: 4px 0;
+}
+
+.agent-picker__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--bde-text, #E8E8E8);
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  text-align: left;
+  transition: background 100ms ease;
+  gap: 8px;
+}
+
+.agent-picker__item:hover {
+  background: var(--bde-surface-high, #1A1A1A);
+}
+
+.agent-picker__item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.agent-picker__icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.agent-picker__repo {
+  font-size: var(--bde-size-md);
+  font-weight: 500;
+  color: var(--bde-text, #E8E8E8);
+  flex-shrink: 0;
+}
+
+.agent-picker__task {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-muted, #888888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-picker__time {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-dim, #555555);
+  flex-shrink: 0;
+}
+
+.agent-picker__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: var(--bde-text-dim, #555555);
+  font-size: var(--bde-size-sm);
+  font-family: var(--bde-font-ui);
+}
+
 .shell-picker__item {
   display: flex;
   align-items: center;

@@ -1,4 +1,4 @@
-import { LocalAgentLogViewer } from '../sessions/LocalAgentLogViewer'
+import { LocalAgentLogViewer, AgentLogViewer } from '../sessions/LocalAgentLogViewer'
 import { tokens } from '../../design-system/tokens'
 
 interface AgentOutputTabProps {
@@ -7,14 +7,17 @@ interface AgentOutputTabProps {
 }
 
 export function AgentOutputTab({ agentId, agentOutput }: AgentOutputTabProps): React.JSX.Element {
-  // Parse agentId format: either "local:pid" or a history ID
+  // Parse agentId format: either "local:pid" or a UUID
   const isLocalAgent = agentId.startsWith('local:')
   const pid = isLocalAgent ? Number(agentId.slice(6)) : 0
+  const isUuidAgent = !isLocalAgent && agentId.length > 10 // Simple UUID check
 
   return (
     <div className="terminal-agent-tab">
       {isLocalAgent && pid ? (
         <LocalAgentLogViewer pid={pid} />
+      ) : isUuidAgent ? (
+        <AgentLogViewer agentId={agentId} />
       ) : agentOutput && agentOutput.length > 0 ? (
         <div style={{
           padding: tokens.space[3],
