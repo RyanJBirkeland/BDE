@@ -1862,10 +1862,63 @@
 
 /* ── Split Toolbar ───────────────────────────────────── */
 
+.sessions-main__topbar {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(10, 10, 15, 0.60);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sessions-main__session-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.sessions-main__topbar-spacer {
+  flex: 1;
+}
+
 .sessions-split-toolbar { display: flex; gap: 4px; }
-.sessions-split-btn { width: 28px; height: 28px; border-radius: var(--bde-radius-sm, 4px); border: 1px solid var(--bde-border); background: transparent; color: var(--bde-text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, color 0.15s; }
-.sessions-split-btn:hover { border-color: var(--bde-text-muted); color: var(--bde-text); }
-.sessions-split-btn--active { border-color: var(--bde-accent); color: var(--bde-accent); }
+
+.sessions-split-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease-out;
+  backdrop-filter: blur(4px);
+}
+
+.sessions-split-btn:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sessions-split-btn--active {
+  border-color: rgba(0, 211, 127, 0.40);
+  color: var(--accent);
+  background: rgba(0, 211, 127, 0.08);
+  box-shadow: 0 0 8px rgba(0, 211, 127, 0.15);
+}
 
 /* ── 2-Pane Layout ──────────────────────────────────── */
 
