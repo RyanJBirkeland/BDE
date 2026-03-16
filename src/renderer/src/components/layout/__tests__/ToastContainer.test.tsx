@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ToastContainer } from '../ToastContainer'
@@ -31,7 +31,7 @@ describe('ToastContainer', () => {
       toasts: [{ id: '1', message: 'Done', type: 'success' }],
     })
     render(<ToastContainer />)
-    const toastEl = screen.getByText('Done')
+    const toastEl = screen.getByText('Done').closest('.toast')
     expect(toastEl).toHaveClass('toast--success')
   })
 
@@ -40,7 +40,7 @@ describe('ToastContainer', () => {
       toasts: [{ id: '1', message: 'Fail', type: 'error' }],
     })
     render(<ToastContainer />)
-    expect(screen.getByText('Fail')).toHaveClass('toast--error')
+    expect(screen.getByText('Fail').closest('.toast')).toHaveClass('toast--error')
   })
 
   it('info toast has correct styling class', () => {
@@ -48,7 +48,7 @@ describe('ToastContainer', () => {
       toasts: [{ id: '1', message: 'Info', type: 'info' }],
     })
     render(<ToastContainer />)
-    expect(screen.getByText('Info')).toHaveClass('toast--info')
+    expect(screen.getByText('Info').closest('.toast')).toHaveClass('toast--info')
   })
 
   it('dismisses toast on click', async () => {
@@ -60,5 +60,21 @@ describe('ToastContainer', () => {
 
     await user.click(screen.getByText('Click me'))
     expect(useToastStore.getState().toasts).toHaveLength(0)
+  })
+
+  it('renders undo button for undoable toasts', () => {
+    useToastStore.setState({
+      toasts: [{ id: '1', message: 'Session killed', type: 'info', onUndo: () => {} }],
+    })
+    render(<ToastContainer />)
+    expect(screen.getByText('Undo')).toBeInTheDocument()
+  })
+
+  it('renders action button when action and onAction are set', () => {
+    useToastStore.setState({
+      toasts: [{ id: '1', message: 'Agent done', type: 'info', action: 'View', onAction: () => {} }],
+    })
+    render(<ToastContainer />)
+    expect(screen.getByText('View')).toBeInTheDocument()
   })
 })
