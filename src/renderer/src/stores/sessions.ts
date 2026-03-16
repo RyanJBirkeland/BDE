@@ -31,6 +31,8 @@ export interface SubAgent {
   _isActive: boolean
 }
 
+export type SplitMode = 'single' | '2-pane' | 'grid-4'
+
 interface SessionsStore {
   sessions: AgentSession[]
   subAgents: SubAgent[]
@@ -42,9 +44,15 @@ interface SessionsStore {
   fetchError: string | null
   pendingKills: Record<string, ReturnType<typeof setTimeout>>
   followMode: boolean
+  splitMode: SplitMode
+  splitPanes: [string | null, string | null, string | null, string | null]
+  focusedPaneIndex: number
   fetchSessions: () => Promise<void>
   selectSession: (key: string | null) => void
   setFollowMode: (on: boolean) => void
+  setSplitMode: (mode: SplitMode) => void
+  setPaneSession: (paneIndex: number, sessionKey: string | null) => void
+  setFocusedPane: (index: number) => void
   spawnSession: (params: {
     template: string
     repo: string
@@ -70,6 +78,9 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   fetchError: null,
   pendingKills: {},
   followMode: false,
+  splitMode: 'single',
+  splitPanes: [null, null, null, null],
+  focusedPaneIndex: 0,
 
   fetchSessions: async (): Promise<void> => {
     set({ subAgentsLoading: true })
@@ -139,18 +150,52 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
 
   selectSession: (key): void => {
     // Auto-disable follow if user manually selects a non-follow-target session
-    const { followMode, subAgents } = get()
+    const { followMode, subAgents, focusedPaneIndex, splitPanes } = get()
     if (followMode && key) {
       const isFollowTarget = subAgents.some((a) => a._isActive && a.sessionKey === key)
       if (!isFollowTarget) {
         set({ followMode: false })
       }
     }
-    set({ selectedSessionKey: key })
+    // Also populate the focused split pane
+    const panes = [...splitPanes] as [string | null, string | null, string | null, string | null]
+    panes[focusedPaneIndex] = key
+    set({ selectedSessionKey: key, splitPanes: panes })
   },
 
   setFollowMode: (on): void => {
     set({ followMode: on })
+  },
+
+  setSplitMode: (mode): void => {
+    const { selectedSessionKey, splitPanes } = get()
+    if (mode === 'single') {
+      // Keep splitPanes[0] synced with the current selection
+      const panes: [string | null, string | null, string | null, string | null] = [
+        splitPanes[0] ?? selectedSessionKey,
+        null,
+        null,
+        null
+      ]
+      set({ splitMode: mode, splitPanes: panes, focusedPaneIndex: 0 })
+    } else {
+      // When switching to multi-pane, seed pane 0 from selectedSessionKey if empty
+      const panes = [...splitPanes] as [string | null, string | null, string | null, string | null]
+      if (!panes[0] && selectedSessionKey) {
+        panes[0] = selectedSessionKey
+      }
+      set({ splitMode: mode, splitPanes: panes })
+    }
+  },
+
+  setPaneSession: (paneIndex, sessionKey): void => {
+    const panes = [...get().splitPanes] as [string | null, string | null, string | null, string | null]
+    panes[paneIndex] = sessionKey
+    set({ splitPanes: panes })
+  },
+
+  setFocusedPane: (index): void => {
+    set({ focusedPaneIndex: index })
   },
 
   spawnSession: async (params): Promise<void> => {
