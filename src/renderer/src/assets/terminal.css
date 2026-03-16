@@ -1,3 +1,288 @@
+/* ── Terminal: View layout ────────────────────────────── */
+
+.terminal-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-base, var(--bde-bg));
+}
+
+/* Header title bar */
+.terminal-view__header {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border, var(--bde-border));
+  background: var(--glass-tint-dark, var(--bde-surface));
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  flex-shrink: 0;
+}
+
+.terminal-view__title {
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+/* ── Terminal: Tab bar ────────────────────────────────── */
+
+.terminal-tab-bar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  background: var(--glass-tint-dark, var(--bde-surface));
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  border-bottom: 1px solid var(--border, var(--bde-border));
+  flex-shrink: 0;
+}
+
+.terminal-tab-bar__tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+  scrollbar-width: none;
+}
+
+.terminal-tab-bar__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.terminal-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--bde-radius-sm, 4px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary, var(--bde-text-muted));
+  font-size: var(--bde-size-sm, 12px);
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.terminal-tab:hover {
+  background: var(--bg-hover, var(--bde-hover-strong));
+  color: var(--text-primary, var(--bde-text));
+}
+
+.terminal-tab--active {
+  background: var(--glass-tint-mid, var(--bde-selected));
+  border-color: var(--border-light, var(--bde-border));
+  color: var(--text-primary, var(--bde-text));
+}
+
+/* Active tab green dot indicator */
+.terminal-tab--active::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, var(--bde-accent));
+  flex-shrink: 0;
+}
+
+/* Agent tab purple dot (overrides green) */
+.terminal-tab--agent.terminal-tab--active::before {
+  background: var(--color-ai, #a78bfa);
+}
+
+.terminal-tab--agent {
+  font-style: italic;
+}
+
+.terminal-tab__title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.terminal-tab__close {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: none;
+  background: transparent;
+  color: var(--text-ghost, var(--bde-text-dim));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.1s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.terminal-tab:hover .terminal-tab__close,
+.terminal-tab--active .terminal-tab__close {
+  opacity: 1;
+}
+
+.terminal-tab__close:hover {
+  background: var(--bg-hover, var(--bde-hover-strong));
+  color: var(--text-primary, var(--bde-text));
+}
+
+/* Tab bar actions (new tab, shell picker, agent picker) */
+.terminal-tab-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-right: 4px;
+}
+
+.terminal-tab-bar__btn-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.terminal-tab-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, var(--bde-text-muted));
+  cursor: pointer;
+  transition: all 0.12s ease;
+  padding: 0;
+}
+
+.terminal-tab-bar__btn:hover {
+  color: var(--text-primary, var(--bde-text));
+  background: var(--bg-hover, var(--bde-hover-strong));
+}
+
+.terminal-tab-bar__btn--add {
+  width: 28px;
+  border-radius: var(--bde-radius-sm, 4px) 0 0 var(--bde-radius-sm, 4px);
+}
+
+.terminal-tab-bar__btn--shell {
+  width: 20px;
+  border-radius: 0 var(--bde-radius-sm, 4px) var(--bde-radius-sm, 4px) 0;
+}
+
+.terminal-tab-bar__btn--agent {
+  width: 28px;
+  border-radius: var(--bde-radius-sm, 4px);
+  position: relative;
+}
+
+/* ── Terminal: Toolbar ───────────────────────────────── */
+
+.terminal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
+  flex-shrink: 0;
+}
+
+.terminal-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, var(--bde-text-muted));
+  font-size: var(--bde-size-xs, 11px);
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  border-radius: var(--bde-radius-sm, 4px);
+  transition: all 0.12s ease;
+}
+
+.terminal-toolbar__btn:hover {
+  color: var(--text-primary, var(--bde-text));
+  background: var(--bg-hover, var(--bde-hover-strong));
+}
+
+.terminal-toolbar__btn--active {
+  background: var(--bg-hover, var(--bde-hover-strong));
+  color: var(--accent, var(--bde-accent));
+}
+
+.terminal-toolbar__btn--icon {
+  width: 26px;
+  padding: 0;
+}
+
+.terminal-toolbar__kbd {
+  user-select: none;
+}
+
+/* ── Terminal: Content area ──────────────────────────── */
+
+.terminal-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-content__pane {
+  position: absolute;
+  inset: 0;
+}
+
+.terminal-content__pane--hidden {
+  display: none;
+}
+
+.terminal-content__agent-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.terminal-content__agent-session-key {
+  color: var(--text-ghost, var(--bde-text-dim));
+  font-size: var(--bde-size-xs, 11px);
+}
+
+.terminal-content__agent-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.terminal-content__separator {
+  width: 4px;
+  background: var(--border, var(--bde-border));
+  cursor: col-resize;
+  transition: background 0.12s ease;
+  flex-shrink: 0;
+}
+
+.terminal-content__separator:hover {
+  background: var(--accent, var(--bde-accent));
+}
+
 /* ── Terminal: Find bar ────────────────────────────────── */
 
 .terminal-find {
