@@ -134,6 +134,11 @@ app.whenReady().then(() => {
   })
   pruneOldAgents()
 
+  // --- Session history (agent output tabs) ---
+  ipcMain.handle('sessions:getHistory', async (_event, _sessionKey: string) => {
+    return []
+  })
+
   // --- Git read-only IPC ---
   ipcMain.handle('get-diff', (_e, repoPath: string, base?: string) => getDiff(repoPath, base))
   ipcMain.handle('get-branch', (_e, repoPath: string) => getBranch(repoPath))

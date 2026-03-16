@@ -104,6 +104,10 @@ const api = {
   invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
     ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),
 
+  // Session history (agent output tabs)
+  getSessionHistory: (sessionKey: string): Promise<any[]> =>
+    ipcRenderer.invoke('sessions:getHistory', sessionKey),
+
   // Terminal PTY
   terminal: {
     create: (opts: { cols: number; rows: number; shell?: string }): Promise<number> =>

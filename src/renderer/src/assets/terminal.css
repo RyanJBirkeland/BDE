@@ -124,3 +124,33 @@
 .shell-picker__custom-input:focus {
   border-color: var(--bde-accent, #00D37F);
 }
+
+/* ── Terminal: Agent output tab ────────────────────────── */
+
+.terminal-agent-tab {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bde-bg, #0A0A0A);
+}
+
+.terminal-agent-tab .agent-log {
+  border-radius: 0;
+  border: none;
+}
+
+.terminal-agent-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 28px;
+  padding: 0 12px;
+  background: var(--bde-surface, #111111);
+  border-bottom: 1px solid var(--bde-border, #2A2A2A);
+  font-size: 11px;
+  font-family: var(--bde-font-ui);
+  color: #a78bfa;
+  flex-shrink: 0;
+}

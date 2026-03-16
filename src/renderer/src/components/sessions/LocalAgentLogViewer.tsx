@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
+import { useTerminalStore } from '../../stores/terminal'
 import { cwdToRepoLabel } from './LocalAgentRow'
 import { Button } from '../ui/Button'
 
@@ -500,6 +501,11 @@ export function LocalAgentLogViewer({ pid }: { pid: number }): React.JSX.Element
       ? formatElapsed(spawned.spawnedAt)
       : ''
 
+  const handleOpenInTerminal = useCallback(() => {
+    const openAgentTab = useTerminalStore.getState().openAgentTab
+    openAgentTab(`local:${pid}`, repoLabel)
+  }, [pid, repoLabel])
+
   const handleSend = useCallback(() => {
     const msg = steerInput.trim()
     if (!msg) return
@@ -533,14 +539,24 @@ export function LocalAgentLogViewer({ pid }: { pid: number }): React.JSX.Element
             <span className="agent-log__status agent-log__status--finished">{'\u25CF'} Finished</span>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => selectLocalAgent(null)}
-          title="Close log viewer"
-        >
-          {'\u2715'}
-        </Button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleOpenInTerminal}
+            title="Open in terminal view"
+          >
+            {'\u2197'} Terminal
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => selectLocalAgent(null)}
+            title="Close log viewer"
+          >
+            {'\u2715'}
+          </Button>
+        </div>
       </div>
       <AgentChatBody logContent={logContent} isRunning={isAlive} elapsed={elapsed} />
 

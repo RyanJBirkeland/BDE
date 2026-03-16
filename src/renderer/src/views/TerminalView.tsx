@@ -1,22 +1,38 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus, ChevronDown, X, SplitSquareVertical } from 'lucide-react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { TerminalPane, clearTerminal } from '../components/terminal/TerminalPane'
 import { FindBar } from '../components/terminal/FindBar'
 import { ShellPicker } from '../components/terminal/ShellPicker'
+import { AgentOutputTab } from '../components/terminal/AgentOutputTab'
 import { tokens } from '../design-system/tokens'
 import { useTerminalStore } from '../stores/terminal'
 import { useUIStore } from '../stores/ui'
 
+/** Extract exec/bash tool outputs from session history entries */
+function extractExecResults(history: any[]): string[] {
+  const results: string[] = []
+  for (const entry of history) {
+    if (entry?.tool === 'exec' || entry?.tool === 'bash' || entry?.tool === 'Bash') {
+      const output = entry.result?.output ?? entry.result?.stdout ?? entry.output ?? ''
+      if (output) results.push(String(output))
+    }
+  }
+  return results
+}
+
 export function TerminalView(): React.JSX.Element {
-  const { tabs, activeTabId, addTab, closeTab, setActiveTab, splitEnabled, toggleSplit } = useTerminalStore()
+  const { tabs, activeTabId, addTab, closeTab, setActiveTab, splitEnabled, toggleSplit, showFind } = useTerminalStore()
   const activeView = useUIStore((s) => s.activeView)
   const [hoveredTabId, setHoveredTabId] = useState<string | null>(null)
   const [showShellPicker, setShowShellPicker] = useState(false)
 
+  const activeTab = tabs.find((t) => t.id === activeTabId)
+  const isAgentTab = activeTab?.kind === 'agent'
+
   const handleClear = useCallback(() => {
-    if (activeTabId) clearTerminal(activeTabId)
-  }, [activeTabId])
+    if (activeTabId && !isAgentTab) clearTerminal(activeTabId)
+  }, [activeTabId, isAgentTab])
 
   // Keyboard shortcuts — capture phase so they fire before App.tsx global handler
   useEffect(() => {
@@ -52,7 +68,11 @@ export function TerminalView(): React.JSX.Element {
         e.preventDefault()
         e.stopPropagation()
         const store = useTerminalStore.getState()
-        store.setShowFind(!store.showFind)
+        const currentTab = store.tabs.find((t) => t.id === store.activeTabId)
+        // Only show find bar for shell tabs
+        if (currentTab?.kind === 'shell') {
+          store.setShowFind(!store.showFind)
+        }
         return
       }
 
@@ -79,6 +99,42 @@ export function TerminalView(): React.JSX.Element {
     window.addEventListener('keydown', handler, true)
     return () => window.removeEventListener('keydown', handler, true)
   }, [activeView])
+
+  // Poll agent session history every 5s for the active agent tab
+  const [agentOutput, setAgentOutput] = useState<string[]>([])
+  const lastSeenCountRef = useRef(0)
+
+  useEffect(() => {
+    if (!activeTab?.isAgentTab || !activeTab.agentSessionKey) {
+      setAgentOutput([])
+      lastSeenCountRef.current = 0
+      return
+    }
+
+    const sessionKey = activeTab.agentSessionKey
+    let cancelled = false
+
+    const poll = async (): Promise<void> => {
+      try {
+        const history = await window.api.getSessionHistory(sessionKey)
+        if (cancelled) return
+        const results = extractExecResults(history)
+        if (results.length > lastSeenCountRef.current) {
+          lastSeenCountRef.current = results.length
+          setAgentOutput(results)
+        }
+      } catch {
+        // Silently ignore poll errors
+      }
+    }
+
+    poll()
+    const interval = setInterval(poll, 5000)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [activeTab?.id, activeTab?.isAgentTab, activeTab?.agentSessionKey])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: tokens.color.bg }}>
@@ -110,6 +166,8 @@ export function TerminalView(): React.JSX.Element {
             const isActive = tab.id === activeTabId
             const isHovered = tab.id === hoveredTabId
             const showClose = tabs.length > 1 && (isActive || isHovered)
+            const isAgent = tab.isAgentTab
+            const displayTitle = isAgent ? `\u{1F916} ${tab.title}` : tab.title
             return (
               <div
                 key={tab.id}
@@ -125,10 +183,11 @@ export function TerminalView(): React.JSX.Element {
                   height: 36,
                   fontSize: tokens.size.sm,
                   fontFamily: tokens.font.ui,
+                  fontStyle: isAgent ? 'italic' : 'normal',
                   color: isActive ? tokens.color.text : tokens.color.textMuted,
                   background: isActive ? tokens.color.bg : 'transparent',
                   borderBottom: isActive
-                    ? `2px solid ${tokens.color.accent}`
+                    ? `2px solid ${isAgent ? '#a78bfa' : tokens.color.accent}`
                     : '2px solid transparent',
                   cursor: 'pointer',
                   userSelect: 'none',
@@ -137,7 +196,17 @@ export function TerminalView(): React.JSX.Element {
                   transition: tokens.transition.fast
                 }}
               >
-                <span style={{ flex: 1 }}>{tab.label}</span>
+                {/* Purple status dot for agent tabs */}
+                {isAgent && (
+                  <span style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: '#a78bfa',
+                    flexShrink: 0
+                  }} />
+                )}
+                <span style={{ flex: 1 }}>{displayTitle}</span>
                 <span
                   onClick={(e) => {
                     e.stopPropagation()
@@ -250,36 +319,38 @@ export function TerminalView(): React.JSX.Element {
             flexShrink: 0
           }}
         >
-          {/* Clear button */}
-          <button
-            onClick={handleClear}
-            title="Clear terminal"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: tokens.space[1],
-              height: 26,
-              padding: `0 ${tokens.space[2]}`,
-              border: 'none',
-              background: 'transparent',
-              color: tokens.color.textMuted,
-              fontSize: tokens.size.xs,
-              fontFamily: tokens.font.ui,
-              cursor: 'pointer',
-              borderRadius: tokens.radius.sm,
-              transition: tokens.transition.fast
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = tokens.color.text
-              e.currentTarget.style.background = tokens.color.surfaceHigh
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = tokens.color.textMuted
-              e.currentTarget.style.background = 'transparent'
-            }}
-          >
-            <span style={{ userSelect: 'none' }}>⌘K</span>
-          </button>
+          {/* Clear button — only show for shell tabs */}
+          {!isAgentTab && (
+            <button
+              onClick={handleClear}
+              title="Clear terminal"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: tokens.space[1],
+                height: 26,
+                padding: `0 ${tokens.space[2]}`,
+                border: 'none',
+                background: 'transparent',
+                color: tokens.color.textMuted,
+                fontSize: tokens.size.xs,
+                fontFamily: tokens.font.ui,
+                cursor: 'pointer',
+                borderRadius: tokens.radius.sm,
+                transition: tokens.transition.fast
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = tokens.color.text
+                e.currentTarget.style.background = tokens.color.surfaceHigh
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = tokens.color.textMuted
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <span style={{ userSelect: 'none' }}>⌘K</span>
+            </button>
+          )}
 
           {/* Split button */}
           <button
@@ -318,7 +389,8 @@ export function TerminalView(): React.JSX.Element {
 
       {/* Terminal panes — all mounted, only active is visible */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <FindBar />
+        {/* Find bar — only show for shell tabs */}
+        {!isAgentTab && showFind && <FindBar />}
         {tabs.map((tab) => (
           <div
             key={tab.id}
@@ -328,7 +400,22 @@ export function TerminalView(): React.JSX.Element {
               display: tab.id === activeTabId ? 'block' : 'none'
             }}
           >
-            {splitEnabled && tab.id === activeTabId ? (
+            {tab.kind === 'agent' && tab.agentId ? (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {/* Agent status bar */}
+                <div className="terminal-agent-status-bar">
+                  <span>{'\u{1F916}'} Agent Output</span>
+                  {tab.agentSessionKey && (
+                    <span style={{ color: tokens.color.textDim, fontSize: tokens.size.xs }}>
+                      {tab.agentSessionKey}
+                    </span>
+                  )}
+                </div>
+                <div style={{ flex: 1, overflow: 'auto' }}>
+                  <AgentOutputTab agentId={tab.agentId} agentOutput={agentOutput} />
+                </div>
+              </div>
+            ) : splitEnabled && tab.id === activeTabId ? (
               <Group orientation="horizontal">
                 <Panel defaultSize={50} minSize={20}>
                   <TerminalPane tabId={tab.id} shell={tab.shell} visible={true} />

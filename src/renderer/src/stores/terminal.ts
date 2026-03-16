@@ -1,10 +1,16 @@
 import { create } from 'zustand'
 
+export type TabKind = 'shell' | 'agent'
+
 export interface TerminalTab {
   id: string
-  label: string
-  shell: string
-  ptyId: number | null
+  title: string
+  kind: TabKind
+  shell?: string
+  ptyId?: number | null
+  agentId?: string
+  isAgentTab: boolean
+  agentSessionKey?: string
 }
 
 let nextTabNum = 1
@@ -13,9 +19,22 @@ function makeTab(shell?: string): TerminalTab {
   const num = nextTabNum++
   return {
     id: crypto.randomUUID(),
-    label: `Terminal ${num}`,
+    title: `Terminal ${num}`,
+    kind: 'shell',
     shell: shell || '/bin/zsh',
-    ptyId: null
+    ptyId: null,
+    isAgentTab: false
+  }
+}
+
+function makeAgentTab(agentId: string, label: string, sessionKey?: string): TerminalTab {
+  return {
+    id: crypto.randomUUID(),
+    title: label,
+    kind: 'agent',
+    agentId,
+    isAgentTab: true,
+    agentSessionKey: sessionKey
   }
 }
 
@@ -32,6 +51,8 @@ interface TerminalStore {
   setPtyId: (tabId: string, ptyId: number) => void
   setShowFind: (show: boolean) => void
   toggleSplit: () => void
+  openAgentTab: (agentId: string, label: string) => void
+  createAgentTab: (agentId: string, label: string, sessionKey: string) => void
 }
 
 const initialTab = makeTab()
@@ -64,7 +85,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
   renameTab: (id, title) =>
     set((s) => ({
-      tabs: s.tabs.map((t) => (t.id === id ? { ...t, label: title } : t))
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, title } : t))
     })),
 
   setPtyId: (tabId, ptyId) =>
@@ -80,5 +101,15 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
       splitEnabled: !splitEnabled,
       splitTabId: !splitEnabled ? activeTabId : null
     })
+  },
+
+  openAgentTab: (agentId, label) => {
+    const tab = makeAgentTab(agentId, label)
+    set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }))
+  },
+
+  createAgentTab: (agentId, label, sessionKey) => {
+    const tab = makeAgentTab(agentId, label, sessionKey)
+    set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }))
   }
 }))
