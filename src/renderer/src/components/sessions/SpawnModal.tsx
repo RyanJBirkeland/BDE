@@ -4,9 +4,15 @@ import { Button } from '../ui/Button'
 
 const REPOS = ['BDE', 'life-os', 'feast'] as const
 const MODELS = [
-  { id: 'haiku', label: 'Haiku' },
-  { id: 'sonnet', label: 'Sonnet' }
+  { id: 'haiku', label: 'Haiku', claude: 'claude-haiku-4-5-20251001' },
+  { id: 'sonnet', label: 'Sonnet', claude: 'claude-sonnet-4-6' },
+  { id: 'opus', label: 'Opus', claude: 'claude-opus-4-6' }
 ] as const
+
+const CHAR_SOFT_LIMIT = 2000
+const CHAR_HARD_LIMIT = 4000
+const HISTORY_KEY = 'bde-spawn-history'
+const MAX_HISTORY = 10
 
 interface SpawnModalProps {
   open: boolean
@@ -18,12 +24,25 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   const [repo, setRepo] = useState<string>(REPOS[0])
   const [model, setModel] = useState<string>('sonnet')
   const [spawning, setSpawning] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [history, setHistory] = useState<string[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const historyRef = useRef<HTMLDivElement>(null)
   const spawnAgent = useLocalAgentsStore((s) => s.spawnAgent)
   const [repoPaths, setRepoPaths] = useState<Record<string, string>>({})
 
   useEffect(() => {
     window.api.getRepoPaths().then(setRepoPaths).catch(() => {})
+    // Load task history
+    try {
+      const stored = localStorage.getItem(HISTORY_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) setHistory(parsed)
+      }
+    } catch {
+      // Ignore parse errors
+    }
   }, [])
 
   useEffect(() => {
@@ -31,6 +50,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
       setTask('')
       setRepo(REPOS[0])
       setModel('sonnet')
+      setShowHistory(false)
       requestAnimationFrame(() => textareaRef.current?.focus())
     }
   }, [open])
@@ -41,12 +61,28 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
-        onClose()
+        if (showHistory) {
+          setShowHistory(false)
+        } else {
+          onClose()
+        }
       }
     }
     window.addEventListener('keydown', handler, true)
     return () => window.removeEventListener('keydown', handler, true)
-  }, [open, onClose])
+  }, [open, showHistory, onClose])
+
+  // Close history dropdown on outside click
+  useEffect(() => {
+    if (!showHistory) return
+    const handler = (e: MouseEvent): void => {
+      if (historyRef.current && !historyRef.current.contains(e.target as Node)) {
+        setShowHistory(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showHistory])
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent): Promise<void> => {
@@ -56,13 +92,20 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
       if (!repoPath) return
       setSpawning(true)
       try {
-        await spawnAgent({ task: task.trim(), repoPath, model })
+        const taskTrimmed = task.trim()
+        await spawnAgent({ task: taskTrimmed, repoPath, model })
+
+        // Save to history
+        const newHistory = [taskTrimmed, ...history.filter((t) => t !== taskTrimmed)].slice(0, MAX_HISTORY)
+        setHistory(newHistory)
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory))
+
         onClose()
       } finally {
         setSpawning(false)
       }
     },
-    [task, repo, model, spawning, spawnAgent, repoPaths, onClose]
+    [task, repo, model, spawning, spawnAgent, repoPaths, history, onClose]
   )
 
   const handleKeyDown = useCallback(
@@ -77,6 +120,16 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
     [task, spawning, handleSubmit]
   )
 
+  const selectHistoryItem = useCallback((historyTask: string): void => {
+    setTask(historyTask)
+    setShowHistory(false)
+    textareaRef.current?.focus()
+  }, [])
+
+  const charCount = task.length
+  const overSoftLimit = charCount > CHAR_SOFT_LIMIT
+  const overHardLimit = charCount > CHAR_HARD_LIMIT
+
   if (!open) return null
 
   return (
@@ -87,16 +140,40 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
         <form onSubmit={handleSubmit}>
           <div className="spawn-modal__section">
             <label className="spawn-modal__label">Task Prompt</label>
-            <textarea
-              ref={textareaRef}
-              className="spawn-modal__textarea"
-              placeholder="Describe the task for the agent..."
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={5}
-              disabled={spawning}
-            />
+            <div className="spawn-modal__textarea-wrapper">
+              <textarea
+                ref={textareaRef}
+                className="spawn-modal__textarea"
+                placeholder="Describe the task for the agent..."
+                value={task}
+                onChange={(e) => setTask(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => history.length > 0 && setShowHistory(true)}
+                rows={5}
+                disabled={spawning}
+                maxLength={CHAR_HARD_LIMIT}
+              />
+              {showHistory && history.length > 0 && (
+                <div ref={historyRef} className="spawn-modal__history">
+                  <div className="spawn-modal__history-label">Recent tasks</div>
+                  {history.map((h, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="spawn-modal__history-item"
+                      onClick={() => selectHistoryItem(h)}
+                    >
+                      {h.slice(0, 80)}
+                      {h.length > 80 ? '...' : ''}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className={`spawn-modal__char-count ${overSoftLimit ? 'spawn-modal__char-count--warning' : ''} ${overHardLimit ? 'spawn-modal__char-count--error' : ''}`}>
+              {charCount} / {CHAR_SOFT_LIMIT}
+              {overSoftLimit && ` (max ${CHAR_HARD_LIMIT})`}
+            </div>
           </div>
 
           <div className="spawn-modal__section">
@@ -107,11 +184,15 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
               onChange={(e) => setRepo(e.target.value)}
               disabled={spawning}
             >
-              {REPOS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
+              {REPOS.map((r) => {
+                const path = repoPaths[r]
+                const shortPath = path ? path.replace(/^\/Users\/[^/]+/, '~') : r
+                return (
+                  <option key={r} value={r}>
+                    {r} ({shortPath})
+                  </option>
+                )
+              })}
             </select>
           </div>
 
