@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, ArrowRight, Eye, CheckCircle2, RefreshCw } from 'lucide-react'
 import { Badge } from '../ui/Badge'
+import { timeAgo } from '../../lib/format'
 import type { SprintTask } from '../../../../shared/types'
 
 type TaskTableProps = {
@@ -116,6 +117,7 @@ export function TaskTable({
                       <th>Title</th>
                       <th>Pri</th>
                       <th>Repo</th>
+                      <th>Created</th>
                       <th></th>
                     </tr>
                   )}
@@ -309,6 +311,7 @@ function BacklogRow({
           {task.repo}
         </Badge>
       </td>
+      <td className="bde-task-table__date">{timeAgo(task.created_at)}</td>
       <td className="bde-task-table__actions-cell">
         {onMarkDone && (
           <button

@@ -27,7 +27,7 @@ function renderMarkdown(md: string): string {
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
     .replace(/\n\n/g, '</p><p>')
     .replace(/^(?!<[huplo])(.+)$/gm, '<p>$1</p>')
 }
