@@ -9,7 +9,7 @@ import { getDb } from './db'
 const execFileAsync = promisify(execFile)
 
 const REPO_PATHS: Record<string, string> = {
-  BDE: join(homedir(), 'Documents', 'Repositories', 'BDE'),
+  bde: join(homedir(), 'Documents', 'Repositories', 'BDE'),
   'life-os': join(homedir(), 'Documents', 'Repositories', 'life-os'),
   feast: join(homedir(), 'Documents', 'Repositories', 'feast')
 }

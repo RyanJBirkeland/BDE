@@ -99,7 +99,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
     async (e?: { preventDefault(): void }): Promise<void> => {
       e?.preventDefault()
       if (!task.trim() || spawning) return
-      const repoPath = repoPaths[repo]
+      const repoPath = repoPaths[repo.toLowerCase()]
       if (!repoPath) {
         toast.error(`Repo path not found for "${repo}" — check git.ts REPO_PATHS`)
         return
@@ -208,7 +208,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
               disabled={spawning}
             >
               {REPO_OPTIONS.map((r) => {
-                const path = repoPaths[r.label]
+                const path = repoPaths[r.label.toLowerCase()]
                 const shortPath = path ? path.replace(/^\/Users\/[^/]+/, '~') : r.label
                 return (
                   <option key={r.label} value={r.label}>

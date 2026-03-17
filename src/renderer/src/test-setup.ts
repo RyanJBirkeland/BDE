@@ -8,7 +8,7 @@ afterEach(() => cleanup())
 vi.stubGlobal('api', {
   getGatewayConfig: vi.fn().mockResolvedValue({ url: 'ws://localhost:18789', token: 'test' }),
   getRepoPaths: vi.fn().mockResolvedValue({
-    BDE: '/Users/test/Documents/Repositories/BDE',
+    bde: '/Users/test/Documents/Repositories/BDE',
     'life-os': '/Users/test/Documents/Repositories/life-os',
     feast: '/Users/test/Documents/Repositories/feast',
   }),

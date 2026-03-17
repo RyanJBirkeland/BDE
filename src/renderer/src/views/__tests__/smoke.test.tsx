@@ -134,7 +134,7 @@ vi.mock('../../components/terminal/FindBar', () => ({
 Object.defineProperty(window, 'api', {
   value: {
     getGatewayConfig: vi.fn().mockResolvedValue({ url: 'http://localhost', token: 'tok' }),
-    getRepoPaths: vi.fn().mockResolvedValue({ BDE: '/path/to/BDE' }),
+    getRepoPaths: vi.fn().mockResolvedValue({ bde: '/path/to/BDE' }),
     gitStatus: vi.fn().mockResolvedValue({ files: [] }),
     gitBranches: vi.fn().mockResolvedValue({ branches: ['main'], current: 'main' }),
     gitDiff: vi.fn().mockResolvedValue(''),

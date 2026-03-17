@@ -59,7 +59,7 @@ function DiffView(): React.JSX.Element {
   useEffect(() => {
     git.getRepoPaths().then((paths) => {
       setRepos(paths)
-      if (paths['BDE']) setSelectedRepo('BDE')
+      if (paths['bde']) setSelectedRepo('bde')
       else {
         const first = Object.keys(paths)[0]
         if (first) setSelectedRepo(first)

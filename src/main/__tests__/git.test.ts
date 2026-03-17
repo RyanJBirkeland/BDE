@@ -247,7 +247,7 @@ describe('git.ts', () => {
   describe('getRepoPaths', () => {
     it('returns a copy of REPO_PATHS', () => {
       const paths = getRepoPaths()
-      expect(paths).toHaveProperty('BDE')
+      expect(paths).toHaveProperty('bde')
       expect(paths).toHaveProperty('life-os')
       expect(paths).toHaveProperty('feast')
     })
