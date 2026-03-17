@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { execSync, execFileSync, spawnSync } from 'child_process'
+
+const execFileAsyncMock = vi.fn().mockResolvedValue({ stdout: '', stderr: '' })
+
+vi.mock('child_process', () => {
+  const execFile = vi.fn() as any
+  execFile[Symbol.for('nodejs.util.promisify.custom')] = execFileAsyncMock
+  return { execFile }
+})
+
 import {
   gitCommit,
   gitCheckout,
@@ -12,210 +20,182 @@ import {
   getRepoPaths,
 } from '../git'
 
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-  execFileSync: vi.fn(),
-  spawnSync: vi.fn(),
-}))
-
 describe('git.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    execFileAsyncMock.mockResolvedValue({ stdout: '', stderr: '' })
   })
 
   describe('gitCommit', () => {
-    it('calls execFileSync with commit args', () => {
-      gitCommit('/tmp/repo', 'fix: something')
+    it('calls execFileAsync with commit args', async () => {
+      await gitCommit('/tmp/repo', 'fix: something')
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['commit', '-m', 'fix: something'],
-        { cwd: '/tmp/repo', encoding: 'utf-8' }
+        expect.objectContaining({ cwd: '/tmp/repo', encoding: 'utf-8' })
       )
     })
 
-    it('passes special characters safely via execFileSync', () => {
-      gitCommit('/tmp/repo', 'fix: use "proper" quotes')
+    it('passes special characters safely via execFileAsync', async () => {
+      await gitCommit('/tmp/repo', 'fix: use "proper" quotes')
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['commit', '-m', 'fix: use "proper" quotes'],
-        { cwd: '/tmp/repo', encoding: 'utf-8' }
+        expect.objectContaining({ cwd: '/tmp/repo', encoding: 'utf-8' })
       )
     })
   })
 
   describe('gitCheckout', () => {
-    it('calls execFileSync with checkout args', () => {
-      gitCheckout('/tmp/repo', 'feat/new-branch')
+    it('calls execFileAsync with checkout args', async () => {
+      await gitCheckout('/tmp/repo', 'feat/new-branch')
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['checkout', 'feat/new-branch'],
-        { cwd: '/tmp/repo', encoding: 'utf-8' }
+        expect.objectContaining({ cwd: '/tmp/repo', encoding: 'utf-8' })
       )
     })
 
-    it('passes branch names with special characters safely', () => {
-      gitCheckout('/tmp/repo', 'branch"name')
+    it('passes branch names with special characters safely', async () => {
+      await gitCheckout('/tmp/repo', 'branch"name')
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['checkout', 'branch"name'],
-        { cwd: '/tmp/repo', encoding: 'utf-8' }
+        expect.objectContaining({ cwd: '/tmp/repo', encoding: 'utf-8' })
       )
     })
   })
 
   describe('gitStage', () => {
-    it('calls execFileSync with git add and file paths', () => {
-      gitStage('/tmp/repo', ['file1.ts', 'src/file2.ts'])
+    it('calls execFileAsync with git add and file paths', async () => {
+      await gitStage('/tmp/repo', ['file1.ts', 'src/file2.ts'])
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['add', '--', 'file1.ts', 'src/file2.ts'],
-        { cwd: '/tmp/repo', encoding: 'utf-8' }
+        expect.objectContaining({ cwd: '/tmp/repo', encoding: 'utf-8' })
       )
     })
 
-    it('does nothing when files array is empty', () => {
-      gitStage('/tmp/repo', [])
+    it('does nothing when files array is empty', async () => {
+      await gitStage('/tmp/repo', [])
 
-      expect(execFileSync).not.toHaveBeenCalled()
+      expect(execFileAsyncMock).not.toHaveBeenCalled()
     })
   })
 
-  describe('shell injection — gitCommit uses execFileSync (safe)', () => {
-    it('uses execFileSync — shell metacharacters are treated as literals', () => {
-      // execFileSync does not invoke a shell, so $(whoami) is passed as a
-      // literal string to git, not interpreted by the shell.
+  describe('shell injection — gitCommit uses execFileAsync (safe)', () => {
+    it('shell metacharacters are treated as literals', async () => {
       const malicious = '$(whoami)'
-      gitCommit('/tmp/repo', malicious)
+      await gitCommit('/tmp/repo', malicious)
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['commit', '-m', '$(whoami)'],
         expect.any(Object)
       )
-      // Verify execSync was NOT used for commit
-      expect(execSync).not.toHaveBeenCalled()
     })
   })
 
   describe('gitPush', () => {
-    it('returns stdout on success', () => {
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 0,
-        stdout: 'Everything up-to-date',
-        stderr: '',
-        error: undefined,
-      } as any)
+    it('returns stdout on success', async () => {
+      execFileAsyncMock.mockResolvedValueOnce({ stdout: 'Everything up-to-date', stderr: '' })
 
-      const result = gitPush('/tmp/repo')
+      const result = await gitPush('/tmp/repo')
       expect(result).toBe('Everything up-to-date')
     })
 
-    it('throws on non-zero exit code', () => {
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 1,
-        stdout: '',
-        stderr: 'error: failed to push some refs',
-        error: undefined,
-      } as any)
+    it('throws on non-zero exit code', async () => {
+      execFileAsyncMock.mockRejectedValueOnce(new Error('error: failed to push some refs'))
 
-      expect(() => gitPush('/tmp/repo')).toThrow('error: failed to push some refs')
+      await expect(gitPush('/tmp/repo')).rejects.toThrow('error: failed to push some refs')
     })
 
-    it('throws on spawn error', () => {
-      vi.mocked(spawnSync).mockReturnValue({
-        status: null,
-        stdout: '',
-        stderr: '',
-        error: new Error('spawn git ENOENT'),
-      } as any)
+    it('throws on spawn error', async () => {
+      execFileAsyncMock.mockRejectedValueOnce(new Error('spawn git ENOENT'))
 
-      expect(() => gitPush('/tmp/repo')).toThrow('spawn git ENOENT')
+      await expect(gitPush('/tmp/repo')).rejects.toThrow('spawn git ENOENT')
     })
 
-    it('uses fallback message when stderr is empty on failure', () => {
-      vi.mocked(spawnSync).mockReturnValue({
-        status: 128,
-        stdout: '',
-        stderr: '',
-        error: undefined,
-      } as any)
+    it('uses fallback message when stdout and stderr are empty', async () => {
+      execFileAsyncMock.mockResolvedValueOnce({ stdout: '', stderr: '' })
 
-      expect(() => gitPush('/tmp/repo')).toThrow('git push exited with code 128')
+      const result = await gitPush('/tmp/repo')
+      expect(result).toBe('Pushed successfully')
     })
   })
 
   describe('gitStatus', () => {
-    it('parses porcelain output correctly', () => {
-      vi.mocked(execSync).mockReturnValue('M  src/file.ts\n?? untracked.ts\n')
+    it('parses porcelain output correctly', async () => {
+      execFileAsyncMock.mockResolvedValueOnce({ stdout: 'M  src/file.ts\n?? untracked.ts\n', stderr: '' })
 
-      const result = gitStatus('/tmp/repo')
+      const result = await gitStatus('/tmp/repo')
       expect(result.files).toContainEqual({ path: 'src/file.ts', status: 'M', staged: true })
       expect(result.files).toContainEqual({ path: 'untracked.ts', status: '?', staged: false })
     })
 
-    it('returns empty files on error', () => {
-      vi.mocked(execSync).mockImplementation(() => { throw new Error('not a git repo') })
+    it('returns empty files on error', async () => {
+      execFileAsyncMock.mockRejectedValueOnce(new Error('not a git repo'))
 
-      const result = gitStatus('/tmp/repo')
+      const result = await gitStatus('/tmp/repo')
       expect(result.files).toEqual([])
     })
   })
 
   describe('gitBranches', () => {
-    it('parses branch output and identifies current branch', () => {
-      vi.mocked(execSync).mockReturnValue('  feat/test\n* main\n  develop\n')
+    it('parses branch output and identifies current branch', async () => {
+      execFileAsyncMock.mockResolvedValueOnce({ stdout: '  feat/test\n* main\n  develop\n', stderr: '' })
 
-      const result = gitBranches('/tmp/repo')
+      const result = await gitBranches('/tmp/repo')
       expect(result.current).toBe('main')
       expect(result.branches).toEqual(['feat/test', 'main', 'develop'])
     })
 
-    it('returns empty on error', () => {
-      vi.mocked(execSync).mockImplementation(() => { throw new Error('fail') })
+    it('returns empty on error', async () => {
+      execFileAsyncMock.mockRejectedValueOnce(new Error('fail'))
 
-      const result = gitBranches('/tmp/repo')
+      const result = await gitBranches('/tmp/repo')
       expect(result.current).toBe('')
       expect(result.branches).toEqual([])
     })
   })
 
   describe('gitUnstage', () => {
-    it('calls execFileSync with reset HEAD args', () => {
-      gitUnstage('/tmp/repo', ['file1.ts'])
+    it('calls execFileAsync with reset HEAD args', async () => {
+      await gitUnstage('/tmp/repo', ['file1.ts'])
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['reset', 'HEAD', '--', 'file1.ts'],
-        { cwd: '/tmp/repo', encoding: 'utf-8' }
+        expect.objectContaining({ cwd: '/tmp/repo', encoding: 'utf-8' })
       )
     })
 
-    it('does nothing when files array is empty', () => {
-      gitUnstage('/tmp/repo', [])
+    it('does nothing when files array is empty', async () => {
+      await gitUnstage('/tmp/repo', [])
 
-      expect(execFileSync).not.toHaveBeenCalled()
+      expect(execFileAsyncMock).not.toHaveBeenCalled()
     })
   })
 
   describe('gitDiffFile', () => {
-    it('calls execFileSync for both staged and unstaged diffs', () => {
-      vi.mocked(execFileSync)
-        .mockReturnValueOnce('unstaged diff\n')
-        .mockReturnValueOnce('staged diff\n')
+    it('calls execFileAsync for both staged and unstaged diffs', async () => {
+      execFileAsyncMock
+        .mockResolvedValueOnce({ stdout: 'unstaged diff\n', stderr: '' })
+        .mockResolvedValueOnce({ stdout: 'staged diff\n', stderr: '' })
 
-      const result = gitDiffFile('/tmp/repo', 'src/file.ts')
+      const result = await gitDiffFile('/tmp/repo', 'src/file.ts')
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['diff', '--', 'src/file.ts'],
         expect.objectContaining({ cwd: '/tmp/repo' })
       )
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['diff', '--cached', '--', 'src/file.ts'],
         expect.objectContaining({ cwd: '/tmp/repo' })
@@ -223,49 +203,44 @@ describe('git.ts', () => {
       expect(result).toContain('staged diff')
     })
 
-    it('uses execFileSync not execSync — filenames with special chars are safe', () => {
-      vi.mocked(execFileSync).mockReturnValue('')
+    it('filenames with special chars are safe via execFileAsync', async () => {
+      await gitDiffFile('/tmp/repo', 'file$(whoami).ts')
 
-      gitDiffFile('/tmp/repo', 'file$(whoami).ts')
-
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['diff', '--', 'file$(whoami).ts'],
         expect.any(Object)
       )
-      expect(execSync).not.toHaveBeenCalled()
     })
 
-    it('returns empty string on error', () => {
-      vi.mocked(execFileSync).mockImplementationOnce(() => { throw new Error('fail') })
+    it('returns empty string on error', async () => {
+      execFileAsyncMock.mockRejectedValueOnce(new Error('fail'))
 
-      expect(gitDiffFile('/tmp/repo')).toBe('')
+      expect(await gitDiffFile('/tmp/repo')).toBe('')
     })
   })
 
-  describe('shell injection — gitStage uses execFileSync (safe)', () => {
-    it('filenames with shell metacharacters are passed as array args, not interpolated', () => {
-      gitStage('/tmp/repo', ['$(rm -rf /)', 'file;echo pwned'])
+  describe('shell injection — gitStage uses execFileAsync (safe)', () => {
+    it('filenames with shell metacharacters are passed as array args, not interpolated', async () => {
+      await gitStage('/tmp/repo', ['$(rm -rf /)', 'file;echo pwned'])
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['add', '--', '$(rm -rf /)', 'file;echo pwned'],
         expect.any(Object)
       )
-      expect(execSync).not.toHaveBeenCalled()
     })
   })
 
-  describe('shell injection — gitCheckout uses execFileSync (safe)', () => {
-    it('branch names with semicolons do not inject', () => {
-      gitCheckout('/tmp/repo', 'branch;rm -rf /')
+  describe('shell injection — gitCheckout uses execFileAsync (safe)', () => {
+    it('branch names with semicolons do not inject', async () => {
+      await gitCheckout('/tmp/repo', 'branch;rm -rf /')
 
-      expect(execFileSync).toHaveBeenCalledWith(
+      expect(execFileAsyncMock).toHaveBeenCalledWith(
         'git',
         ['checkout', 'branch;rm -rf /'],
         expect.any(Object)
       )
-      expect(execSync).not.toHaveBeenCalled()
     })
   })
 

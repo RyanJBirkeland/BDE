@@ -1,9 +1,12 @@
-import { execFileSync, spawnSync } from 'child_process'
+import { execFile } from 'child_process'
+import { promisify } from 'util'
 import { homedir } from 'os'
 import { join } from 'path'
 
 import { getGitHubToken } from './config'
 import { getDb } from './db'
+
+const execFileAsync = promisify(execFile)
 
 const REPO_PATHS: Record<string, string> = {
   BDE: join(homedir(), 'Documents', 'Repositories', 'BDE'),
@@ -21,15 +24,15 @@ export interface GitFileStatus {
   staged: boolean
 }
 
-export function gitStatus(cwd: string): { files: GitFileStatus[] } {
+export async function gitStatus(cwd: string): Promise<{ files: GitFileStatus[] }> {
   try {
-    const raw = execFileSync('git', ['status', '--porcelain'], {
+    const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
       cwd,
-      encoding: 'utf-8',
+      encoding: 'utf-8' as const,
       maxBuffer: 10 * 1024 * 1024
     })
     const files: GitFileStatus[] = []
-    for (const line of raw.split('\n')) {
+    for (const line of stdout.split('\n')) {
       if (!line.trim()) continue
       const index = line[0]
       const worktree = line[1]
@@ -50,52 +53,66 @@ export function gitStatus(cwd: string): { files: GitFileStatus[] } {
   }
 }
 
-export function gitDiffFile(cwd: string, file?: string): string {
+export async function gitDiffFile(cwd: string, file?: string): Promise<string> {
   try {
     const unstagedArgs = file ? ['diff', '--', file] : ['diff']
     const stagedArgs = file ? ['diff', '--cached', '--', file] : ['diff', '--cached']
     const opts = { cwd, encoding: 'utf-8' as const, maxBuffer: 10 * 1024 * 1024 }
-    const unstaged = execFileSync('git', unstagedArgs, opts)
-    const staged = execFileSync('git', stagedArgs, opts)
+    const { stdout: unstaged } = await execFileAsync('git', unstagedArgs, opts)
+    const { stdout: staged } = await execFileAsync('git', stagedArgs, opts)
     return staged + unstaged
   } catch {
     return ''
   }
 }
 
-export function gitStage(cwd: string, files: string[]): void {
+export async function gitStage(cwd: string, files: string[]): Promise<void> {
   if (files.length === 0) return
-  execFileSync('git', ['add', '--', ...files], { cwd, encoding: 'utf-8' })
-}
-
-export function gitUnstage(cwd: string, files: string[]): void {
-  if (files.length === 0) return
-  execFileSync('git', ['reset', 'HEAD', '--', ...files], { cwd, encoding: 'utf-8' })
-}
-
-export function gitCommit(cwd: string, message: string): void {
-  execFileSync('git', ['commit', '-m', message], { cwd, encoding: 'utf-8' })
-}
-
-export function gitPush(cwd: string): string {
-  const result = spawnSync('git', ['push'], {
+  await execFileAsync('git', ['add', '--', ...files], {
     cwd,
-    encoding: 'utf-8',
+    encoding: 'utf-8' as const,
     maxBuffer: 10 * 1024 * 1024
   })
-  if (result.error) throw new Error(result.error.message)
-  if (result.status !== 0) {
-    throw new Error(result.stderr.trim() || `git push exited with code ${result.status}`)
-  }
-  return (result.stdout + result.stderr).trim() || 'Pushed successfully'
 }
 
-export function gitBranches(cwd: string): { current: string; branches: string[] } {
+export async function gitUnstage(cwd: string, files: string[]): Promise<void> {
+  if (files.length === 0) return
+  await execFileAsync('git', ['reset', 'HEAD', '--', ...files], {
+    cwd,
+    encoding: 'utf-8' as const,
+    maxBuffer: 10 * 1024 * 1024
+  })
+}
+
+export async function gitCommit(cwd: string, message: string): Promise<void> {
+  await execFileAsync('git', ['commit', '-m', message], {
+    cwd,
+    encoding: 'utf-8' as const,
+    maxBuffer: 10 * 1024 * 1024
+  })
+}
+
+export async function gitPush(cwd: string): Promise<string> {
+  const { stdout, stderr } = await execFileAsync('git', ['push'], {
+    cwd,
+    encoding: 'utf-8' as const,
+    maxBuffer: 10 * 1024 * 1024
+  })
+  return (stdout + stderr).trim() || 'Pushed successfully'
+}
+
+export async function gitBranches(
+  cwd: string
+): Promise<{ current: string; branches: string[] }> {
   try {
-    const raw = execFileSync('git', ['branch'], { cwd, encoding: 'utf-8' })
+    const { stdout } = await execFileAsync('git', ['branch'], {
+      cwd,
+      encoding: 'utf-8' as const,
+      maxBuffer: 10 * 1024 * 1024
+    })
     const branches: string[] = []
     let current = ''
-    for (const line of raw.split('\n')) {
+    for (const line of stdout.split('\n')) {
       const trimmed = line.trim()
       if (!trimmed) continue
       if (line.startsWith('* ')) {
@@ -111,8 +128,12 @@ export function gitBranches(cwd: string): { current: string; branches: string[] 
   }
 }
 
-export function gitCheckout(cwd: string, branch: string): void {
-  execFileSync('git', ['checkout', branch], { cwd, encoding: 'utf-8' })
+export async function gitCheckout(cwd: string, branch: string): Promise<void> {
+  await execFileAsync('git', ['checkout', branch], {
+    cwd,
+    encoding: 'utf-8' as const,
+    maxBuffer: 10 * 1024 * 1024
+  })
 }
 
 // --- PR status polling via GitHub REST API ---
