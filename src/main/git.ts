@@ -3,6 +3,7 @@ import { homedir } from 'os'
 import { join } from 'path'
 
 import { getGitHubToken } from './config'
+import { getDb } from './db'
 
 const REPO_PATHS: Record<string, string> = {
   BDE: join(homedir(), 'Documents', 'Repositories', 'BDE'),
@@ -164,6 +165,27 @@ async function fetchPrStatusRest(pr: PrStatusInput): Promise<PrStatusResult> {
   }
 }
 
+function markTaskDoneOnMerge(prNumber: number): void {
+  try {
+    const completedAt = new Date().toISOString()
+    getDb()
+      .prepare(
+        "UPDATE sprint_tasks SET status='done', completed_at=? WHERE pr_number=? AND status='active'"
+      )
+      .run(completedAt, prNumber)
+  } catch (err) {
+    console.warn(`[git] failed to mark task done for PR #${prNumber}:`, err)
+  }
+}
+
 export async function pollPrStatuses(prs: PrStatusInput[]): Promise<PrStatusResult[]> {
-  return Promise.all(prs.map(fetchPrStatusRest))
+  const results = await Promise.all(prs.map(fetchPrStatusRest))
+  for (const result of results) {
+    if (result.merged) {
+      const parsed = prs.find((p) => p.taskId === result.taskId)
+      const prNumber = parsed ? parsePrUrl(parsed.prUrl)?.number : null
+      if (prNumber) markTaskDoneOnMerge(parseInt(prNumber, 10))
+    }
+  }
+  return results
 }
