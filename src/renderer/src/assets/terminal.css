@@ -15,8 +15,6 @@
   padding: 0 16px;
   border-bottom: 1px solid var(--border, var(--bde-border));
   background: var(--glass-tint-dark, var(--bde-surface));
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   flex-shrink: 0;
 }
 
@@ -38,8 +36,6 @@
   align-items: center;
   height: 36px;
   background: var(--glass-tint-dark, var(--bde-surface));
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   border-bottom: 1px solid var(--border, var(--bde-border));
   flex-shrink: 0;
 }

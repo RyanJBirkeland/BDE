@@ -159,8 +159,6 @@
   font-weight: 600;
   color: var(--bde-text-muted);
   background: var(--glass-tint-mid);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid var(--bde-border);
   padding: 1px 6px;
   border-radius: var(--bde-radius-lg);
@@ -752,8 +750,6 @@
   display: flex;
   flex-direction: column;
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md);
   overflow: hidden;
@@ -771,8 +767,6 @@
   letter-spacing: 0.06em;
   color: var(--bde-text-muted);
   background: var(--glass-tint-mid);
-  backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
 }
 
 .kanban-col__cards {
@@ -811,8 +805,6 @@
 
 .task-card {
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-sm);
   padding: 10px 12px;

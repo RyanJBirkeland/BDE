@@ -7,8 +7,6 @@
   padding: 0 16px;
   border-bottom: 1px solid var(--bde-border);
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   flex-shrink: 0;
   position: relative;
 }
@@ -37,8 +35,6 @@
 /* Glass section cards */
 .settings-section {
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid var(--bde-border);
   border-radius: 10px;
   padding: 16px;

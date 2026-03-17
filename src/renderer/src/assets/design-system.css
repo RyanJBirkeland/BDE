@@ -560,8 +560,6 @@
 
 .badge-glass {
   background: var(--glass-tint-mid);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid var(--bde-border);
 }
 
@@ -574,15 +572,11 @@
 .glass {
   position: relative;
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   border: 1px solid var(--border);
 }
 
 .glass-elevated {
   background: var(--glass-tint-mid);
-  backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
   border: 1px solid var(--border-light);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.40),
@@ -638,16 +632,12 @@
 
 .elevation-1 {
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   border: 1px solid var(--border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.20);
 }
 
 .elevation-2 {
   background: var(--glass-tint-mid);
-  backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   box-shadow:
@@ -657,8 +647,6 @@
 
 .elevation-3 {
   background: var(--glass-tint-light);
-  backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
   border: 1px solid var(--border-glow);
   border-radius: 16px;
   box-shadow:
@@ -675,8 +663,6 @@
 
 .elevation-4 {
   background: var(--glass-tint-ultra);
-  backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 16px;
   box-shadow:
@@ -887,8 +873,6 @@
   border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.15s ease-out;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .btn-glass:hover {
