@@ -62,7 +62,7 @@ BDE spawns Claude CLI agents directly from the Electron main process:
 
 1. User creates a sprint task (backlog) and pushes it to the sprint queue (queued)
 2. User clicks "Launch" — BDE spawns `claude --output-format stream-json --input-format stream-json` in the target repo directory
-3. Agent runs with `--permission-mode bypassPermissions` as a detached child process
+3. Agent runs with `--dangerously-skip-permissions` as a detached child process
 4. stdout/stderr stream to a persistent log file; the renderer polls the log via incremental byte-offset reads
 5. Users can steer running agents via stdin messaging from the Sprint LogDrawer
 6. On exit, the agent record in `agent_runs` is marked `done` (exit 0) or `failed`
