@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { LayoutGroup } from 'framer-motion'
 import {
   DndContext,
@@ -15,7 +15,9 @@ import { TaskCard } from './TaskCard'
 import type { SprintTask } from './SprintCenter'
 
 type KanbanBoardProps = {
-  tasks: SprintTask[]
+  todoTasks: SprintTask[]
+  activeTasks: SprintTask[]
+  awaitingReviewTasks: SprintTask[]
   prMergedMap: Record<string, boolean>
   generatingIds?: Set<string>
   onDragEnd: (taskId: string, newStatus: SprintTask['status']) => void
@@ -26,23 +28,28 @@ type KanbanBoardProps = {
   onViewOutput: (task: SprintTask) => void
 }
 
-const VALID_STATUSES: SprintTask['status'][] = ['backlog', 'queued', 'active', 'done']
+const VALID_STATUSES: SprintTask['status'][] = ['queued', 'active']
 
 function resolveTargetStatus(
   overId: string,
-  tasks: SprintTask[]
+  allTasks: SprintTask[]
 ): SprintTask['status'] | null {
   if (VALID_STATUSES.includes(overId as SprintTask['status'])) {
     return overId as SprintTask['status']
   }
-  const targetTask = tasks.find((t) => t.id === overId)
-  return targetTask?.status ?? null
+  const targetTask = allTasks.find((t) => t.id === overId)
+  if (!targetTask) return null
+  // Only allow drops into queued or active columns
+  if (VALID_STATUSES.includes(targetTask.status)) return targetTask.status
+  return null
 }
 
 const EMPTY_SET = new Set<string>()
 
 export function KanbanBoard({
-  tasks,
+  todoTasks,
+  activeTasks,
+  awaitingReviewTasks,
   prMergedMap,
   generatingIds = EMPTY_SET,
   onDragEnd,
@@ -55,20 +62,16 @@ export function KanbanBoard({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   const [activeTask, setActiveTask] = useState<SprintTask | null>(null)
 
-  const backlog = useMemo(() => tasks.filter((t) => t.status === 'backlog'), [tasks])
-  const queued = useMemo(() => tasks.filter((t) => t.status === 'queued'), [tasks])
-  const active = useMemo(() => tasks.filter((t) => t.status === 'active'), [tasks])
-  const done = useMemo(() => tasks.filter((t) => t.status === 'done'), [tasks])
+  // All draggable tasks (only queued + active participate in DnD)
+  const draggableTasks = [...todoTasks, ...activeTasks]
 
-  const columnsByStatus: Record<SprintTask['status'], SprintTask[]> = {
-    backlog,
-    queued,
-    active,
-    done,
+  const columnsByStatus: Partial<Record<SprintTask['status'], SprintTask[]>> = {
+    queued: todoTasks,
+    active: activeTasks,
   }
 
   const handleDragStart = (event: DragStartEvent) => {
-    const task = tasks.find((t) => t.id === String(event.active.id)) ?? null
+    const task = draggableTasks.find((t) => t.id === String(event.active.id)) ?? null
     setActiveTask(task)
   }
 
@@ -78,21 +81,23 @@ export function KanbanBoard({
     if (!over) return
 
     const taskId = String(dragActive.id)
-    const targetStatus = resolveTargetStatus(String(over.id), tasks)
+    const targetStatus = resolveTargetStatus(String(over.id), draggableTasks)
     if (!targetStatus) return
 
-    const sourceTask = tasks.find((t) => t.id === taskId)
+    const sourceTask = draggableTasks.find((t) => t.id === taskId)
     if (!sourceTask) return
 
     if (sourceTask.status === targetStatus) {
       // Within-column reorder
       if (onReorder && over.id !== targetStatus) {
         const column = columnsByStatus[targetStatus]
-        const oldIndex = column.findIndex((t) => t.id === taskId)
-        const newIndex = column.findIndex((t) => t.id === String(over.id))
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const reordered = arrayMove(column, oldIndex, newIndex)
-          onReorder(targetStatus, reordered.map((t) => t.id))
+        if (column) {
+          const oldIndex = column.findIndex((t) => t.id === taskId)
+          const newIndex = column.findIndex((t) => t.id === String(over.id))
+          if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+            const reordered = arrayMove(column, oldIndex, newIndex)
+            onReorder(targetStatus, reordered.map((t) => t.id))
+          }
         }
       }
       return
@@ -108,20 +113,9 @@ export function KanbanBoard({
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="kanban-board">
         <KanbanColumn
-          status="backlog"
-          label="Backlog"
-          tasks={backlog}
-          prMergedMap={prMergedMap}
-          generatingIds={generatingIds}
-          onPushToSprint={onPushToSprint}
-          onLaunch={onLaunch}
-          onViewSpec={onViewSpec}
-          onViewOutput={onViewOutput}
-        />
-        <KanbanColumn
           status="queued"
-          label="Sprint"
-          tasks={queued}
+          label="To Do"
+          tasks={todoTasks}
           prMergedMap={prMergedMap}
           generatingIds={generatingIds}
           onPushToSprint={onPushToSprint}
@@ -132,7 +126,7 @@ export function KanbanBoard({
         <KanbanColumn
           status="active"
           label="In Progress"
-          tasks={active}
+          tasks={activeTasks}
           prMergedMap={prMergedMap}
           generatingIds={generatingIds}
           onPushToSprint={onPushToSprint}
@@ -141,11 +135,12 @@ export function KanbanBoard({
           onViewOutput={onViewOutput}
         />
         <KanbanColumn
-          status="done"
-          label="Done"
-          tasks={done}
+          status="review"
+          label="Awaiting Review"
+          tasks={awaitingReviewTasks}
           prMergedMap={prMergedMap}
           generatingIds={generatingIds}
+          readOnly
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}

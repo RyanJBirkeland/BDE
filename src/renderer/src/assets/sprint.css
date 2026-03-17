@@ -801,6 +801,21 @@
   width: 100%;
 }
 
+/* ── Awaiting Review Column ───────────────────────────── */
+
+.kanban-col--review .kanban-col__header {
+  color: var(--bde-accent);
+}
+
+.kanban-col--review .bde-count-badge {
+  background: color-mix(in srgb, var(--bde-accent) 15%, transparent);
+  color: var(--bde-accent);
+}
+
+.kanban-col--review .task-card {
+  border-left: 2px solid var(--bde-accent);
+}
+
 /* ── Task Card ────────────────────────────────────────── */
 
 .task-card {
@@ -1480,3 +1495,153 @@
   0%, 100% { opacity: 0.7; }
   50% { opacity: 0.3; }
 }
+
+/* ── Task Section (Done / Backlog tables) ────────────── */
+
+.bde-task-section {
+  margin: 0 16px;
+  border-top: 1px solid var(--bde-border);
+  padding-top: 0;
+}
+
+.bde-task-section__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0;
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--bde-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bde-text-muted);
+}
+
+.bde-task-section__header:hover { color: var(--bde-text); }
+
+.bde-task-table { width: 100%; border-collapse: collapse; }
+
+.bde-task-table th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bde-text-dim);
+  padding: 0 8px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--bde-border);
+}
+
+.bde-task-table td {
+  padding: 9px 8px;
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text);
+  border-bottom: 1px solid color-mix(in srgb, var(--bde-border) 50%, transparent);
+}
+
+.bde-task-table tr:hover td { background: var(--glass-tint-dark); }
+
+.bde-task-table__empty {
+  padding: 16px 0;
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-muted);
+  text-align: center;
+}
+
+.bde-task-table__title-btn {
+  background: none;
+  border: none;
+  color: var(--bde-text);
+  font-size: var(--bde-size-sm);
+  font-family: var(--bde-font-ui);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+  display: block;
+}
+
+.bde-task-table__title-btn:hover { color: var(--bde-accent); }
+
+.bde-task-table__date {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  white-space: nowrap;
+}
+
+.bde-task-table__pr-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--bde-accent);
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.bde-task-table__pr-link:hover { text-decoration: underline; }
+
+.bde-task-table__muted {
+  color: var(--bde-text-dim);
+  font-size: var(--bde-size-xs);
+}
+
+.bde-task-table__action-btn {
+  background: none;
+  border: none;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--bde-size-xs);
+  font-family: var(--bde-font-ui);
+  border-radius: var(--bde-radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+
+.bde-task-table__action-btn:hover {
+  color: var(--bde-text);
+  background: var(--bde-hover);
+}
+
+.bde-task-table__action-btn--sprint {
+  color: var(--bde-accent);
+}
+
+.bde-task-table__action-btn--sprint:hover {
+  color: var(--bde-accent);
+  background: var(--bde-accent-hover);
+}
+
+.bde-task-table__priority-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.bde-task-table__priority-dot--danger { background: var(--bde-danger-text); }
+.bde-task-table__priority-dot--warning { background: var(--bde-accent); }
+.bde-task-table__priority-dot--muted { background: var(--bde-text-dim); }
+
+.bde-task-section__show-more {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  padding: 8px;
+  text-align: center;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: var(--bde-font-ui);
+}
+
+.bde-task-section__show-more:hover { color: var(--bde-accent); }

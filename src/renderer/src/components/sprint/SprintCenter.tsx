@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '../ui/Button'
 import { KanbanBoard } from './KanbanBoard'
+import { TaskTable } from './TaskTable'
 import { SpecDrawer } from './SpecDrawer'
 import { LogDrawer } from './LogDrawer'
 import { PRSection } from './PRSection'
@@ -8,6 +9,7 @@ import { NewTicketModal } from './NewTicketModal'
 import type { CreateTicketData } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
 import { detectTemplate } from '../../../../shared/template-heuristics'
+import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import {
   POLL_SPRINT_INTERVAL,
   POLL_SPRINT_ACTIVE_MS,
@@ -301,6 +303,8 @@ export default function SprintCenter() {
     ? tasks.filter((t) => t.repo.toLowerCase() === repoFilter.toLowerCase())
     : tasks
 
+  const partition = useMemo(() => partitionSprintTasks(filteredTasks), [filteredTasks])
+
   return (
     <div className="sprint-center">
       <div className="sprint-center__header">
@@ -345,16 +349,36 @@ export default function SprintCenter() {
           <div className="sprint-board__skeleton" />
         </div>
       ) : (
-        <KanbanBoard
-          tasks={filteredTasks}
-          prMergedMap={prMergedMap}
-          generatingIds={generatingIds}
-          onDragEnd={handleDragEnd}
-          onPushToSprint={handlePushToSprint}
-          onLaunch={handleLaunch}
-          onViewSpec={setSelectedTask}
-          onViewOutput={handleViewOutput}
-        />
+        <>
+          <KanbanBoard
+            todoTasks={partition.todo}
+            activeTasks={partition.inProgress}
+            awaitingReviewTasks={partition.awaitingReview}
+            prMergedMap={prMergedMap}
+            generatingIds={generatingIds}
+            onDragEnd={handleDragEnd}
+            onPushToSprint={handlePushToSprint}
+            onLaunch={handleLaunch}
+            onViewSpec={setSelectedTask}
+            onViewOutput={handleViewOutput}
+          />
+
+          <TaskTable
+            section="done"
+            tasks={partition.done}
+            onPushToSprint={handlePushToSprint}
+            onViewSpec={setSelectedTask}
+            onViewOutput={handleViewOutput}
+          />
+
+          <TaskTable
+            section="backlog"
+            tasks={partition.backlog}
+            onPushToSprint={handlePushToSprint}
+            onViewSpec={setSelectedTask}
+            onViewOutput={handleViewOutput}
+          />
+        </>
       )}
 
       <PRSection />
