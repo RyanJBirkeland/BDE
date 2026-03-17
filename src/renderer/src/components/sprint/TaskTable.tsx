@@ -48,7 +48,7 @@ function formatDate(iso: string | null): string {
 export function TaskTable({
   section,
   tasks,
-  defaultExpanded = section === 'done',
+  defaultExpanded = true,
   defaultRowLimit = section === 'done' ? 10 : undefined,
   onPushToSprint,
   onViewSpec,
@@ -60,6 +60,7 @@ export function TaskTable({
   const toggleCollapsed = () => {
     const next = !collapsed
     setCollapsed(next)
+    if (next) setShowAll(false)
     try {
       localStorage.setItem(`${STORAGE_KEY_PREFIX}${section}-collapsed`, String(next))
     } catch {
