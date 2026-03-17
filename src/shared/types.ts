@@ -27,7 +27,6 @@ export interface SprintTask {
   priority: number
   status: 'backlog' | 'queued' | 'active' | 'done' | 'cancelled'
   notes: string | null
-  description?: string | null
   spec: string | null
   agent_run_id: string | null
   pr_number: number | null
