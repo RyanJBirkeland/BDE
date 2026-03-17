@@ -856,6 +856,40 @@
   border-left: 2px solid var(--bde-accent);
 }
 
+/* ── WIP Limit ───────────────────────────────────────── */
+
+.bde-count-badge--wip-full {
+  background: color-mix(in srgb, var(--bde-danger) 18%, transparent);
+  color: var(--bde-danger);
+  font-weight: 700;
+}
+
+.kanban-col--wip-full {
+  border-color: color-mix(in srgb, var(--bde-danger) 30%, var(--bde-border));
+}
+
+.kanban-col--wip-full .kanban-col__header {
+  color: var(--bde-danger);
+}
+
+/* ── Failed / Cancelled Table ────────────────────────── */
+
+.bde-task-table--dimmed {
+  opacity: 0.55;
+}
+
+.bde-task-table--dimmed:hover {
+  opacity: 0.8;
+}
+
+.bde-task-table__row--dimmed {
+  opacity: 0.5;
+}
+
+.bde-task-table__row--dimmed:hover {
+  opacity: 0.8;
+}
+
 /* ── Task Card ────────────────────────────────────────── */
 
 .task-card {

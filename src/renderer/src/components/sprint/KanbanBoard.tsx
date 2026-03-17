@@ -14,6 +14,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskCard } from './TaskCard'
+import { WIP_LIMIT_IN_PROGRESS } from '../../lib/constants'
 import type { SprintTask } from './SprintCenter'
 
 type KanbanBoardProps = {
@@ -71,6 +72,8 @@ export function KanbanBoard({
   )
   const [activeTask, setActiveTask] = useState<SprintTask | null>(null)
 
+  const wipFull = activeTasks.length >= WIP_LIMIT_IN_PROGRESS
+
   // All draggable tasks (only queued + active participate in DnD)
   const draggableTasks = [...todoTasks, ...activeTasks]
 
@@ -95,6 +98,15 @@ export function KanbanBoard({
 
     const sourceTask = draggableTasks.find((t) => t.id === taskId)
     if (!sourceTask) return
+
+    // Block drops into In Progress when WIP limit is reached
+    if (
+      targetStatus === 'active' &&
+      sourceTask.status !== 'active' &&
+      wipFull
+    ) {
+      return
+    }
 
     if (sourceTask.status === targetStatus) {
       // Within-column reorder
@@ -148,6 +160,7 @@ export function KanbanBoard({
           tasks={activeTasks}
           prMergedMap={prMergedMap}
           generatingIds={generatingIds}
+          wipLimit={WIP_LIMIT_IN_PROGRESS}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
