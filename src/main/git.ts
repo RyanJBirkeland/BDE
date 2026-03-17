@@ -1,7 +1,7 @@
 import { execFile } from 'child_process'
+import { promisify } from 'util'
 import { homedir } from 'os'
 import { join } from 'path'
-import { promisify } from 'util'
 
 import { getGitHubToken } from './config'
 import { getDb } from './db'
@@ -26,13 +26,13 @@ export interface GitFileStatus {
 
 export async function gitStatus(cwd: string): Promise<{ files: GitFileStatus[] }> {
   try {
-    const { stdout: raw } = await execFileAsync('git', ['status', '--porcelain'], {
+    const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
       cwd,
-      encoding: 'utf-8',
+      encoding: 'utf-8' as const,
       maxBuffer: 10 * 1024 * 1024
     })
     const files: GitFileStatus[] = []
-    for (const line of raw.split('\n')) {
+    for (const line of stdout.split('\n')) {
       if (!line.trim()) continue
       const index = line[0]
       const worktree = line[1]
@@ -70,7 +70,7 @@ export async function gitStage(cwd: string, files: string[]): Promise<void> {
   if (files.length === 0) return
   await execFileAsync('git', ['add', '--', ...files], {
     cwd,
-    encoding: 'utf-8',
+    encoding: 'utf-8' as const,
     maxBuffer: 10 * 1024 * 1024
   })
 }
@@ -79,7 +79,7 @@ export async function gitUnstage(cwd: string, files: string[]): Promise<void> {
   if (files.length === 0) return
   await execFileAsync('git', ['reset', 'HEAD', '--', ...files], {
     cwd,
-    encoding: 'utf-8',
+    encoding: 'utf-8' as const,
     maxBuffer: 10 * 1024 * 1024
   })
 }
@@ -87,7 +87,7 @@ export async function gitUnstage(cwd: string, files: string[]): Promise<void> {
 export async function gitCommit(cwd: string, message: string): Promise<void> {
   await execFileAsync('git', ['commit', '-m', message], {
     cwd,
-    encoding: 'utf-8',
+    encoding: 'utf-8' as const,
     maxBuffer: 10 * 1024 * 1024
   })
 }
@@ -95,22 +95,24 @@ export async function gitCommit(cwd: string, message: string): Promise<void> {
 export async function gitPush(cwd: string): Promise<string> {
   const { stdout, stderr } = await execFileAsync('git', ['push'], {
     cwd,
-    encoding: 'utf-8',
+    encoding: 'utf-8' as const,
     maxBuffer: 10 * 1024 * 1024
   })
   return (stdout + stderr).trim() || 'Pushed successfully'
 }
 
-export async function gitBranches(cwd: string): Promise<{ current: string; branches: string[] }> {
+export async function gitBranches(
+  cwd: string
+): Promise<{ current: string; branches: string[] }> {
   try {
-    const { stdout: raw } = await execFileAsync('git', ['branch'], {
+    const { stdout } = await execFileAsync('git', ['branch'], {
       cwd,
-      encoding: 'utf-8',
+      encoding: 'utf-8' as const,
       maxBuffer: 10 * 1024 * 1024
     })
     const branches: string[] = []
     let current = ''
-    for (const line of raw.split('\n')) {
+    for (const line of stdout.split('\n')) {
       const trimmed = line.trim()
       if (!trimmed) continue
       if (line.startsWith('* ')) {
@@ -129,7 +131,7 @@ export async function gitBranches(cwd: string): Promise<{ current: string; branc
 export async function gitCheckout(cwd: string, branch: string): Promise<void> {
   await execFileAsync('git', ['checkout', branch], {
     cwd,
-    encoding: 'utf-8',
+    encoding: 'utf-8' as const,
     maxBuffer: 10 * 1024 * 1024
   })
 }

@@ -346,9 +346,7 @@ describe('IPC handler registration', () => {
     })
 
     it('error in gitStatus propagates via safeHandle', async () => {
-      vi.mocked(git.gitStatus).mockImplementationOnce(() => {
-        throw new Error('not a git repo')
-      })
+      vi.mocked(git.gitStatus).mockRejectedValueOnce(new Error('not a git repo'))
       await expect(invoke('git:status', '/bad')).rejects.toThrow('not a git repo')
     })
   })
