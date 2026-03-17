@@ -46,17 +46,32 @@ export function TaskCard({
     '--stagger-index': index,
   } as React.CSSProperties
 
-  const className = ['task-card', isDragging && 'task-card--dragging'].filter(Boolean).join(' ')
+  const isHighPriority = task.priority <= 2
+
+  const className = [
+    'task-card',
+    isDragging && 'task-card--dragging',
+    isHighPriority && 'task-card--high-priority',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div ref={setNodeRef} style={style} className={className} {...attributes} {...listeners}>
-      <div className="task-card__title">{task.title}</div>
+      <div className="task-card__title" title={task.title}>
+        {task.title}
+      </div>
       {isGenerating && (
         <span className="task-card__spec-badge task-card__spec-badge--generating">
           Writing spec...
         </span>
       )}
       <div className="task-card__badges">
+        {isHighPriority && (
+          <Badge variant={task.priority <= 1 ? 'danger' : 'warning'} size="sm">
+            P{task.priority}
+          </Badge>
+        )}
         <Badge variant={repoBadgeVariant(task.repo)} size="sm">
           {task.repo}
         </Badge>
