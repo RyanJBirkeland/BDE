@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { Users } from 'lucide-react'
 import { AgentRow } from './AgentRow'
+import { EmptyState } from '../ui/EmptyState'
 import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
 import { useUnifiedAgents, groupUnifiedAgents } from '../../hooks/useUnifiedAgents'
 import { useSessionsStore } from '../../stores/sessions'
@@ -14,6 +16,7 @@ export interface AgentListProps {
   onSelect: (id: string) => void
   onKill: (agent: UnifiedAgent) => void
   onSteer: (agent: UnifiedAgent) => void
+  onSpawn?: () => void
 }
 
 const HISTORY_LIMIT = 20
@@ -23,9 +26,11 @@ export function AgentList({
   selectedId,
   onSelect,
   onKill,
-  onSteer
+  onSteer,
+  onSpawn
 }: AgentListProps): React.JSX.Element {
   const agents = useUnifiedAgents()
+  const loading = useSessionsStore((s) => s.loading)
   const followMode = useSessionsStore((s) => s.followMode)
   const setFollowMode = useSessionsStore((s) => s.setFollowMode)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -61,6 +66,19 @@ export function AgentList({
     )
   }, [agents, trimmedFilter])
 
+  // Loading skeletons during initial fetch
+  if (loading && agents.length === 0) {
+    return (
+      <div className="agent-list">
+        <div className="session-list__loading">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bde-skeleton session-list__skeleton" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   // Filter active with no matches
   if (trimmedFilter && filtered.length === 0) {
     return (
@@ -76,9 +94,12 @@ export function AgentList({
   if (agents.length === 0) {
     return (
       <div className="agent-list">
-        <div className="agent-list__empty">
-          No agents running. Click + Spawn to start one.
-        </div>
+        <EmptyState
+          icon={<Users size={24} />}
+          title="No active sessions"
+          description="Spawn an agent to get started"
+          action={onSpawn ? { label: 'Spawn Agent', onClick: onSpawn } : undefined}
+        />
       </div>
     )
   }

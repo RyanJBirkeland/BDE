@@ -2208,6 +2208,22 @@
 .agent-list__group-header--collapsible { cursor: pointer; }
 .agent-list__group-header--collapsible:hover { color: var(--bde-text-muted); }
 .agent-list__empty { padding: 24px 16px; text-align: center; color: var(--bde-text-dim); font-size: var(--bde-size-md); }
+
+/* ── Session List Loading Skeletons ──────────────────── */
+
+.session-list__loading {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+}
+
+.session-list__skeleton {
+  height: 48px;
+  margin: 0 4px;
+  border-radius: var(--bde-radius-md);
+}
+
 .agent-list__follow-btn {
   font-size: var(--bde-size-xs);
   padding: 2px 6px;

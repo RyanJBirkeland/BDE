@@ -721,6 +721,31 @@
   animation: toast-in 0.2s ease;
 }
 
+.memory-editor__loading {
+  flex: 1;
+  display: flex;
+  padding: 12px;
+}
+
+.memory-editor__skeleton {
+  flex: 1;
+  border-radius: var(--bde-radius-md);
+}
+
+/* ── Memory Sidebar Loading ─────────────────────────────── */
+
+.memory-sidebar__loading {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+}
+
+.memory-sidebar__skeleton {
+  height: 40px;
+  border-radius: var(--bde-radius-md);
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;
@@ -906,6 +931,23 @@
   justify-content: center;
   color: var(--bde-text-muted);
   font-size: var(--bde-size-lg);
+}
+
+.diff-view__loading-grid {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+}
+
+.diff-view__loading-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.diff-view__loading-content {
+  flex: 1;
 }
 
 /* ── Diff Viewer (sidebar + content) ────────────────────── */

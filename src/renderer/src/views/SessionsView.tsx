@@ -330,6 +330,7 @@ export function SessionsView(): React.JSX.Element {
           onSelect={handleUnifiedSelect}
           onKill={handleUnifiedKill}
           onSteer={handleUnifiedSteer}
+          onSpawn={() => setSpawnOpen(true)}
         />
       </div>
       <div

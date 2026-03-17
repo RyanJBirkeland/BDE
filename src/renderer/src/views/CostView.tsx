@@ -10,7 +10,7 @@ import { type ModelKey, resolveModel, calcCost } from '../lib/cost'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { Download } from 'lucide-react'
+import { Download, BarChart } from 'lucide-react'
 import { POLL_SPRINT_INTERVAL } from '../lib/constants'
 
 interface SessionWithTokens {
@@ -439,8 +439,9 @@ export default function CostView(): React.JSX.Element {
 
         {sessionsWithCost.length === 0 ? (
           <EmptyState
-            title="No session data yet"
-            description="Costs will appear once agents run"
+            icon={<BarChart size={24} />}
+            title="No usage data"
+            description="Start a session to see cost breakdown"
           />
         ) : (
           <SessionTable sessions={sessionsWithCost} sortField={sortField} onSort={setSortField} />
