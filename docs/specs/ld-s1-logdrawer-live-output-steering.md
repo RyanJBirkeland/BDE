@@ -1,85 +1,61 @@
 # LD-S1: LogDrawer — Live Output + Agent Steering
 **Epic:** Agent Visibility  
-**Status:** Ready to implement
+**Status:** Ready to implement  
+**Investigation report:** `docs/eval-logdrawer-steering.md`
 
 ## Problem
 
-Three compounding bugs make "View Output" useless:
+Two bugs make "View Output" useless for all task-runner agents.
 
-1. **Empty log file on fresh agent** — `sprint:readLog` returns empty when `fromByte (0) >= size (0)`. LogDrawer sees no content and shows "Agent is starting up..." forever — even when the agent is actively running and the file fills up on disk.
+### Bug 1: Log file is 0 bytes for the entire agent run (the real root cause)
 
-2. **Incremental reads broken** — Preload doesn't expose `nextByte`, so LogDrawer re-reads from byte 0 on every 2s poll. It works eventually but it's wasteful and masked bug #1.
+`task-runner.js` spawns Claude with `--print` mode. `--print` **buffers all output internally and writes nothing to stdout until the agent exits** (5–20 minutes). The log file stays at 0 bytes throughout the entire run. LogDrawer polls every 2s, reads 0 bytes, shows "Agent is starting up..." forever. 23 of 57 agent log files from today are exactly 0 bytes — all task-runner spawned.
 
-3. **Steering is a no-op** — `window.api.steerAgent()` calls `local-agents.ts`'s process map. Task-runner-spawned agents aren't in that map. Also, the task runner calls `child.stdin.end()` immediately after writing the prompt — the pipe is closed before any steer message could arrive.
+The `fromByte >= size` guard in `sprint:readLog` is a secondary issue, but irrelevant until the root cause is fixed.
 
-The vision: "View Output" should feel like opening the Claude Code session directly. See live output as it streams. Send a correction mid-run. Hand it back.
+### Bug 2: Steering is a no-op (two independent failures)
+
+1. **Wrong process map**: `steerAgent()` in `local-agents.ts` looks up child processes in `activeAgentsById`. Task-runner agents are spawned in a **separate Node.js process** — they're never in that map. Lookup returns `undefined`, returns error immediately.
+2. **Stdin is closed**: Task-runner calls `child.stdin.end()` immediately after writing the prompt. Even if we got the child reference, `child.stdin.destroyed = true`.
 
 ## Solution
 
-Fix all three bugs in one PR:
+### Fix 1: Switch task-runner from `--print` to interactive stream-json mode
 
-1. **Fix the `fromByte >= size` guard** — don't early-exit on initial read when file is 0 bytes
-2. **Plumb `nextByte` properly** — preload + LogDrawer incremental reads
-3. **Task runner: interactive spawn mode** — remove `child.stdin.end()`, write prompt as JSON event, keep child ref in `activeChildren` map, add `POST /tasks/:id/steer` to HTTP server
-4. **BDE main: `sprint:steerTask` IPC** — POST to task runner's steer endpoint
-5. **LogDrawer UX** — faster poll, better empty states, steer wired up
+Remove `--print`. Add `--output-format stream-json --input-format stream-json --verbose`. Don't call `stdin.end()`. Write initial prompt as a JSON message instead of plain text.
 
-## Data / RPC Shapes
+This immediately fixes Bug 1: log file starts filling with token-by-token stream-json events as the agent thinks and acts.
 
-### Task runner: `POST /tasks/:id/steer`
+**`extractPrUrl()` still works**: PR URLs appear as text content inside JSON string values in the log file — the existing regex still matches against raw log text. No parsing change needed.
 
-**New endpoint in task-runner.js HTTP server:**
+### Fix 2: Task-runner keeps child refs + exposes `POST /agents/:id/steer`
 
-```
-POST http://127.0.0.1:18799/tasks/:id/steer
-Authorization: Bearer <SPRINT_API_KEY>
-Content-Type: application/json
+Store each running child in `activeChildren: Map<agentId, ChildProcess>`. Add one new HTTP route to the existing 18799 server. This fixes Bug 2.
 
-{ "message": "add unit tests for the extractSpec function" }
-```
+### Fix 3: `steerAgent` in BDE falls back to task-runner REST API
 
-Response (200):
-```json
-{ "ok": true }
-```
+If the local process map lookup misses, try the task-runner steer endpoint. This wires up the existing LogDrawer steer input without changing the LogDrawer at all.
 
-Response (404 — task not found or not running):
-```json
-{ "ok": false, "error": "Task not active or agent stdin not available" }
-```
+### Fix 4: Incremental reads (performance)
 
-### Updated preload: `sprint.readLog()`
-
-```typescript
-// Before (preload/index.ts line 108):
-readLog: (agentId: string): Promise<{ content: string; status: string }>
-
-// After:
-readLog: (agentId: string, fromByte?: number): Promise<{ content: string; status: string; nextByte: number }>
-```
-
-### New preload: `sprint.steerTask()`
-
-```typescript
-steerTask: (taskId: string, message: string): Promise<{ ok: boolean; error?: string }>
-```
-
-Note: This is `sprint.steerTask(taskId, ...)` — NOT `window.api.steerAgent(agentRunId, ...)`. Task ID is what LogDrawer has. The handler converts to the right format.
+Plumb `nextByte` through preload + LogDrawer so it appends instead of re-reading multi-MB files from byte 0 every 2s. Secondary but important once logs are filling up.
 
 ## Exact Changes
 
-### 1. `life-os/scripts/task-runner.js` — Interactive spawn + steer endpoint
+### 1. `life-os/scripts/task-runner.js`
 
-**Change 1: Add `activeChildren` map at module level (after the `db` initialization):**
+**Change A: Module-level `activeChildren` map**
+
+Add immediately after the existing module-level constants (after `const db = ...` or similar):
 
 ```javascript
-// Map from task_id → ChildProcess (for active agents)
+// Active agent children keyed by agent_run_id — used for steering
 const activeChildren = new Map()
 ```
 
-**Change 2: Update the spawn block — interactive mode, keep stdin open**
+**Change B: Spawn flags — switch to interactive stream-json**
 
-Find the spawn section (starts at `const child = spawn(CLAUDE_BIN, [`). Replace the spawn args and stdin handling:
+Find the `spawn(CLAUDE_BIN, [` call (currently line ~375). Replace the args array and stdin protocol:
 
 ```javascript
 // BEFORE:
@@ -101,69 +77,66 @@ child.stdin.end()
 // AFTER:
 const child = spawn(CLAUDE_BIN, [
   '--permission-mode', 'bypassPermissions',
+  '--output-format', 'stream-json',
+  '--input-format', 'stream-json',
+  '--verbose',
   '--add-dir', worktreeDir,
-  // NOTE: no --print — interactive mode keeps stdin open for steering
 ], {
   cwd: worktreeDir,
   env: { ...process.env, HOME: '/Users/RBTECHBOT' },
   stdio: ['pipe', 'pipe', 'pipe'],
 })
 
-// Register child for steering
-activeChildren.set(task.id, child)
+// Register child for steering before writing prompt
+activeChildren.set(agentId, child)   // agentId is set above at registerBdeAgent()
 
-// Write initial prompt as JSON event (interactive mode format)
-const initialEvent = JSON.stringify({
-  type: 'user',
-  message: { role: 'user', content: promptText }
-}) + '\n'
-child.stdin.write(initialEvent)
-// NOTE: do NOT call child.stdin.end() — keep open for steering
+// Write initial prompt as JSON message (interactive format)
+child.stdin.write(
+  JSON.stringify({ type: 'user', message: { role: 'user', content: promptText } }) + '\n'
+)
+// DO NOT call child.stdin.end() — keep open for steering
 ```
 
-**Change 3: Clean up child on close**
+**Important:** `agentId` is the `randomUUID()` value already generated a few lines above this in the existing code. Make sure to use that same variable.
 
-In the existing `child.on('close', ...)` handler, add at the BEGINNING of the handler (before any existing logic):
+**Change C: Clean up child ref on close**
+
+In the existing `child.on('close', (code) => { ... })` handler, add `activeChildren.delete(agentId)` as the **first line** of the handler body:
 
 ```javascript
 child.on('close', (code) => {
-  activeChildren.delete(task.id)  // ADD THIS LINE FIRST
-  // ... rest of existing close handler unchanged ...
+  activeChildren.delete(agentId)  // ← ADD THIS
+  finishBdeAgent(agentId, code)
+  // ... rest of existing handler unchanged ...
 })
 ```
 
-**Change 4: Add `POST /tasks/:id/steer` to the HTTP server**
+**Change D: Add `POST /agents/:id/steer` to the HTTP server**
 
-Find the route dispatch section (where `if (req.method === 'POST' && path === '/tasks')` is). Add a new route BEFORE the 404 fallback:
+Find the route dispatch section (where existing routes are matched by `req.method` and `path`). Add this new route BEFORE the final 404 handler, following the exact same pattern as the existing POST /tasks route:
 
 ```javascript
-// Steer a running agent — write a follow-up message to its stdin
-if (req.method === 'POST' && path.match(/^\/tasks\/[^/]+\/steer$/)) {
-  const taskId = path.split('/')[2]
-
+// Steer a running agent — writes a follow-up message to its stdin
+if (req.method === 'POST' && /^\/agents\/[^/]+\/steer$/.test(path)) {
   if (!isAuthenticated(req)) return send(res, 401, { error: 'Unauthorized' })
 
+  const agentId = path.split('/')[2]
   let body = ''
   req.on('data', (d) => { body += d.toString() })
   req.on('end', () => {
     try {
       const { message } = JSON.parse(body)
       if (!message || typeof message !== 'string') {
-        return send(res, 400, { error: 'message is required' })
+        return send(res, 400, { error: 'message required' })
       }
-
-      const child = activeChildren.get(taskId)
+      const child = activeChildren.get(agentId)
       if (!child || !child.stdin || child.stdin.destroyed) {
-        return send(res, 404, { error: 'Task not active or agent stdin not available' })
+        return send(res, 404, { error: 'Agent not active or stdin closed' })
       }
-
-      const event = JSON.stringify({
-        type: 'user',
-        message: { role: 'user', content: message }
-      }) + '\n'
-      child.stdin.write(event)
-
-      log(`Steered task ${taskId}: "${message.slice(0, 60)}..."`)
+      child.stdin.write(
+        JSON.stringify({ type: 'user', message: { role: 'user', content: message } }) + '\n'
+      )
+      log(`Steered agent ${agentId.slice(0, 8)}: "${message.slice(0, 60)}"`)
       return send(res, 200, { ok: true })
     } catch {
       return send(res, 400, { error: 'Invalid JSON body' })
@@ -173,102 +146,109 @@ if (req.method === 'POST' && path.match(/^\/tasks\/[^/]+\/steer$/)) {
 }
 ```
 
-Note: The `send()` helper and `isAuthenticated()` helper already exist in the file — use them exactly as used by the existing POST /tasks handler.
+**Note:** Check how `isAuthenticated(req)` and `send(res, ...)` are defined in the existing file. Use those exact helper functions — do not reimplement.
 
-### 2. `src/main/handlers/sprint.ts` — Add `sprint:steerTask` IPC handler
+### 2. `src/main/local-agents.ts` — steerAgent fallback to task-runner
 
-Find the `safeHandle` block at the end of the sprint handler registrations. Add:
+Find the `steerAgent` export (currently around line 307). Replace the function body:
 
 ```typescript
-safeHandle('sprint:steerTask', async (_e, taskId: string, message: string): Promise<{ ok: boolean; error?: string }> => {
-  try {
-    const { url: gatewayUrl } = await getGatewayConfig()
-    // Task runner is always local — use fixed port, not tunneled gateway URL
-    const taskRunnerUrl = 'http://127.0.0.1:18799'
-    const apiKey = process.env.SPRINT_API_KEY ?? ''
+export async function steerAgent(agentId: string, message: string): Promise<{ ok: boolean; error?: string }> {
+  // First: try local process map (BDE-spawned agents)
+  const child = activeAgentsById.get(agentId)
+  if (child && child.stdin && !child.stdin.destroyed) {
+    const event = JSON.stringify({
+      type: 'user',
+      message: { role: 'user', content: message }
+    }) + '\n'
+    child.stdin.write(event)
+    return { ok: true }
+  }
 
-    const response = await fetch(`${taskRunnerUrl}/tasks/${taskId}/steer`, {
+  // Fallback: task-runner REST API (for task-runner-spawned agents)
+  try {
+    const apiKey = process.env.SPRINT_API_KEY ?? ''
+    const response = await fetch(`http://127.0.0.1:18799/agents/${agentId}/steer`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({ message }),
     })
-
     const data = await response.json() as { ok?: boolean; error?: string }
     return { ok: data.ok ?? false, error: data.error }
-  } catch (err) {
-    return { ok: false, error: String(err) }
+  } catch {
+    return { ok: false, error: 'Agent not found — not in local map or task-runner' }
   }
-})
+}
 ```
 
-Note: `SPRINT_API_KEY` must already be set in the environment (it's used by the task runner). Verify how it's loaded in the existing sprint handler — use the same mechanism (likely `process.env.SPRINT_API_KEY` or a config read). Do NOT hardcode the key.
+**Note 1:** This function was previously synchronous. It's now `async`. Update the return type annotation in the function signature AND check if the call site in `agent-handlers.ts` awaits it (it should, since it calls `return steerAgent(...)` — add `await` if it's missing).
 
-### 3. `src/preload/index.ts` — Update `sprint.readLog` + add `sprint.steerTask`
+**Note 2:** `SPRINT_API_KEY` is the same env var the task-runner uses. It's already available in the BDE main process env. If there's a `getGatewayConfig()` pattern in the existing file for reading config, use that instead if it also provides the sprint key.
 
-Find the `sprint` object. Make these two changes:
+### 3. `src/main/handlers/agent-handlers.ts` — await the now-async steerAgent
 
-**Before:**
+Find where `steerAgent` is called. Make sure it's awaited:
+
 ```typescript
+// BEFORE (approximately):
+return steerAgent(agentId, message)
+
+// AFTER:
+return await steerAgent(agentId, message)
+```
+
+### 4. `src/preload/index.ts` — plumb nextByte through sprint.readLog
+
+Find line 108-109. Update:
+
+```typescript
+// BEFORE:
 readLog: (agentId: string): Promise<{ content: string; status: string }> =>
   ipcRenderer.invoke('sprint:readLog', agentId),
-```
 
-**After:**
-```typescript
+// AFTER:
 readLog: (agentId: string, fromByte?: number): Promise<{ content: string; status: string; nextByte: number }> =>
   ipcRenderer.invoke('sprint:readLog', agentId, fromByte),
-steerTask: (taskId: string, message: string): Promise<{ ok: boolean; error?: string }> =>
-  ipcRenderer.invoke('sprint:steerTask', taskId, message),
 ```
 
-### 4. `src/preload/index.d.ts` — Update type declarations
+### 5. `src/preload/index.d.ts` — update sprint type declaration
 
-Find the `sprint` interface. Update:
+Find the `sprint` interface. Update the `readLog` signature:
+
 ```typescript
 readLog(agentId: string, fromByte?: number): Promise<{ content: string; status: string; nextByte: number }>
-steerTask(taskId: string, message: string): Promise<{ ok: boolean; error?: string }>
 ```
 
-### 5. `src/main/handlers/sprint.ts` — Fix the `fromByte >= size` guard
+### 6. `src/renderer/src/components/sprint/LogDrawer.tsx` — incremental reads + better empty states
 
-Find this block in the `sprint:readLog` handler:
+**Change A: Add `fromByteRef`**
 
-```typescript
-if (fromByte >= size) { await fh.close(); return { content: '', status: agent.status, nextByte: fromByte } }
-```
+Add alongside the existing refs near the top of the component:
 
-Change to:
-```typescript
-// Only skip if fromByte > 0 (we've already read something before).
-// When fromByte === 0 and size === 0, the agent just started — return empty but don't bail permanently.
-if (fromByte > 0 && fromByte >= size) { await fh.close(); return { content: '', status: agent.status, nextByte: fromByte } }
-if (size === 0) { await fh.close(); return { content: '', status: agent.status, nextByte: 0 } }
-```
-
-This way: initial read on empty file returns empty (correct), AND the next poll will re-check from byte 0 (also correct — picks up content when it appears). This is a 2-line change.
-
-### 6. `src/renderer/src/components/sprint/LogDrawer.tsx` — Fix all 3 bugs in the renderer
-
-#### 6a. Track `fromByte` with a ref
-
-Add this ref at the top of the component:
 ```typescript
 const fromByteRef = useRef<number>(0)
 ```
 
-#### 6b. Fix `fetchLog` to use + update `fromByte`
+**Change B: Reset `fromByteRef` on task change**
 
-In the `useEffect`, update `fetchLog`:
+In the `useEffect` that resets state when `task?.agent_run_id` changes, add:
+
+```typescript
+fromByteRef.current = 0
+setLogContent('')  // already exists
+```
+
+**Change C: Fix `fetchLog` to use incremental reads and append**
 
 ```typescript
 const fetchLog = async (): Promise<void> => {
   try {
     const result = await window.api.sprint.readLog(task.agent_run_id!, fromByteRef.current)
     if (result.content) {
-      setLogContent((prev) => prev + result.content)  // APPEND, don't replace
+      setLogContent((prev) => prev + result.content)  // APPEND — not replace
       fromByteRef.current = result.nextByte
     }
     setAgentStatus(result.status)
@@ -278,38 +258,25 @@ const fetchLog = async (): Promise<void> => {
 }
 ```
 
-**Important:** Change `setLogContent(result.content)` → `setLogContent((prev) => prev + result.content)`. This makes it incremental — only new bytes get appended, the full parse runs on all accumulated content.
+**Change D: Faster poll when active**
 
-Also reset `fromByteRef.current = 0` and `setLogContent('')` at the top of the useEffect (already resets on task change):
+Replace `const LOG_POLL_INTERVAL = 2_000` with:
+
 ```typescript
-setLogContent('')
-fromByteRef.current = 0
+const LOG_POLL_INTERVAL = task?.status === 'active' ? 750 : 5_000
 ```
 
-#### 6c. Faster poll when active
-
-Change the poll interval:
+Or make it a constant pair:
 ```typescript
-// BEFORE:
-const LOG_POLL_INTERVAL = 2_000
-
-// AFTER:
-const LOG_POLL_INTERVAL_ACTIVE = 750   // fast when agent is running
-const LOG_POLL_INTERVAL_DONE = 5_000   // slow when done (just refreshing status)
+const LOG_POLL_INTERVAL_ACTIVE = 750
+const LOG_POLL_INTERVAL_DONE = 5_000
 ```
 
-Update the `setInterval` call:
-```typescript
-if (isActive) {
-  pollRef.current = setInterval(fetchLog, LOG_POLL_INTERVAL_ACTIVE)
-}
-```
+Use `LOG_POLL_INTERVAL_ACTIVE` in the `setInterval` call for active tasks.
 
-After the `close` handler fires (on task status change to done/cancelled), you might want to do one final `fetchLog` to get the tail — this already happens because `task?.status` is a dependency.
+**Change E: Better empty state rendering**
 
-#### 6d. Better empty states
-
-Replace the empty state rendering:
+Replace the current "Agent is starting up..." fallback:
 
 ```tsx
 // BEFORE:
@@ -321,71 +288,33 @@ Replace the empty state rendering:
 ) : (
   <div className="log-drawer__empty">
     {agentStatus === 'running' ? (
-      <>
-        <span className="log-drawer__spinner">◌</span>
-        Waiting for agent output...
-      </>
+      <span className="log-drawer__waiting">
+        <span className="log-drawer__spinner" aria-hidden="true">◌</span>
+        Agent running — waiting for output…
+      </span>
     ) : agentStatus === 'done' || agentStatus === 'failed' ? (
       <span>No output captured for this run.</span>
     ) : (
-      <span>Agent is starting up...</span>
+      <span>Agent is starting up…</span>
     )}
   </div>
 )
 ```
 
-#### 6e. Wire steering to `sprint.steerTask` (not `steerAgent`)
-
-Find `handleSteerSend`. Change:
-
-```typescript
-// BEFORE:
-const result = await window.api.steerAgent(task.agent_run_id, msg)
-
-// AFTER:
-const result = await window.api.sprint.steerTask(task.id, msg)
-if (result.ok) {
-  // Optimistically show user message in the thread
-  setSentMessages((prev) => [
-    ...prev,
-    { role: 'user', content: msg, timestamp: Date.now() }
-  ])
-}
-```
-
-Wait — `setSentMessages` is currently called BEFORE the API call (optimistic). Keep it optimistic but move the error check to remove the message on failure:
-
-```typescript
-const handleSteerSend = useCallback(async () => {
-  const msg = steerInput.trim()
-  if (!msg || !task?.id) return
-  setSteerInput('')
-
-  const result = await window.api.sprint.steerTask(task.id, msg)
-  if (result.ok) {
-    setSentMessages((prev) => [
-      ...prev,
-      { role: 'user', content: msg, timestamp: Date.now() }
-    ])
-  } else {
-    toast.error(result.error ?? 'Failed to send message to agent')
-  }
-}, [steerInput, task?.id])
-```
-
-Note: Remove the old `task?.agent_run_id` reference in `canSteer` — it can just be `task?.status === 'active'`:
-```typescript
-const canSteer = task?.status === 'active'
-```
-
-### 7. CSS — spinner animation
-
-Append to `sprint.css`:
+Add CSS in `sprint.css`:
 ```css
+.log-drawer__waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bde-text-dim);
+  font-size: 13px;
+}
+
 .log-drawer__spinner {
   display: inline-block;
-  margin-right: 6px;
-  animation: spin 1s linear infinite;
+  animation: spin 1.2s linear infinite;
+  opacity: 0.6;
 }
 
 @keyframes spin {
@@ -395,60 +324,72 @@ Append to `sprint.css`:
 
 ## Files to Change
 
-| File | What Changes |
-|------|-------------|
-| `life-os/scripts/task-runner.js` | Interactive spawn (remove `--print`, keep stdin open), `activeChildren` map, `POST /tasks/:id/steer` endpoint |
-| `src/main/handlers/sprint.ts` | Fix `fromByte >= size` guard, add `sprint:steerTask` handler |
-| `src/preload/index.ts` | Update `sprint.readLog` signature, add `sprint.steerTask` |
-| `src/preload/index.d.ts` | Update type declarations |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | `fromByteRef`, incremental append, faster poll, better empty states, steer via `steerTask` |
-| `src/renderer/src/assets/sprint.css` | Spinner animation |
+| File | Repo | What Changes |
+|------|------|-------------|
+| `scripts/task-runner.js` | life-os | `activeChildren` map, interactive spawn (remove `--print`, stream-json flags, JSON stdin), `POST /agents/:id/steer` endpoint, cleanup on close |
+| `src/main/local-agents.ts` | BDE | `steerAgent` becomes async, adds task-runner REST fallback |
+| `src/main/handlers/agent-handlers.ts` | BDE | Await the now-async `steerAgent` |
+| `src/preload/index.ts` | BDE | `sprint.readLog` signature update (fromByte + nextByte) |
+| `src/preload/index.d.ts` | BDE | Type declaration update |
+| `src/renderer/src/components/sprint/LogDrawer.tsx` | BDE | `fromByteRef`, incremental append, 750ms poll, better empty states |
+| `src/renderer/src/assets/sprint.css` | BDE | Spinner + waiting state CSS |
 
 ## Out of Scope
-- Streaming log content via SSE/WebSocket (polling is fine for v1)
-- Pause/resume agent control (separate ticket)
+- Streaming via WebSocket or SSE (polling at 750ms is sufficient for v1)
 - Killing a running agent from LogDrawer
-- Showing tool call details in ChatThread (already works via stream parser)
-- Changing ChatThread rendering to "terminal" aesthetic — the chat bubble UI is fine
+- "Pause autopilot" UI toggle — steer input already exists and is shown when `status=active`
+- Changing ChatThread to a terminal aesthetic
+- BDE-spawned agent changes (steering already works for those)
+
+## ⚠️ Critical: Task Runner Must Be Restarted After Merge
+
+Only agents spawned AFTER the restart will use interactive mode. Previously-started agents keep `--print` behavior.
+
+```bash
+# Restart task runner after merging life-os PR
+pkill -f task-runner.js && sleep 1 && \
+node ~/Documents/Repositories/life-os/scripts/task-runner.js >> /tmp/task-runner.log 2>&1 &
+```
+
+Verify it started: `grep "API+SSE server listening" /tmp/task-runner.log | tail -1`
 
 ## Test Plan
-1. Queue a new task, open LogDrawer immediately — should show "Waiting for agent output..." (spinner), NOT eternal "starting up"
-2. Wait ~5s — log content appears and updates every 750ms
-3. After agent finishes — log content shows final result, steer input disappears
-4. While agent is active: type a message in steer input, hit Send → verify message appears in the thread
-5. Verify `POST /tasks/:id/steer` in task runner is protected by Bearer auth (401 without header)
-6. Open an existing done task's LogDrawer — shows "No output captured" or full log content correctly
-
-## ⚠️ Critical: Task Runner Restart Required
-After pushing this PR and merging, the task runner MUST be restarted for the interactive spawn changes to take effect:
-```bash
-pkill -f task-runner.js && node ~/Documents/Repositories/life-os/scripts/task-runner.js >> /tmp/task-runner.log 2>&1 &
-```
-Any tasks queued before the restart will spawn with the old `--print` mode. Only tasks spawned AFTER restart will support steering.
+1. Queue a new task, immediately open LogDrawer → should show "◌ Agent running — waiting for output…"
+2. Within 5–10 seconds log content should start appearing (Claude thinking + tool calls streaming in)
+3. Content grows incrementally — no re-reading from byte 0
+4. While task is active: type a steer message, hit Send → no error toast, message appears in the thread
+5. Verify steer message actually reaches the agent: check `grep "Steered agent" /tmp/task-runner.log`
+6. For a done task: LogDrawer shows full output correctly
+7. Verify `POST /agents/:id/steer` requires Bearer auth (curl without header → 401)
 
 ## PR Command
-This is a life-os + BDE cross-repo change. Two commits, two PRs:
 
+Two separate PRs (cross-repo change):
+
+**life-os PR first:**
 ```bash
-# PR 1: life-os task-runner changes
 cd ~/Documents/Repositories/life-os
-git checkout -b feat/task-runner-interactive-steer
+git checkout -b feat/task-runner-stream-json-steering
+# ... make changes ...
 git add scripts/task-runner.js
-git commit -m "feat: interactive spawn mode + POST /tasks/:id/steer endpoint"
+git commit -m "feat: stream-json spawn mode + agent steering endpoint (POST /agents/:id/steer)"
 git push origin HEAD
 gh api repos/RyanJBirkeland/life-os/pulls --method POST \
-  -f title="feat: task runner interactive mode + agent steering endpoint" \
-  -f body="Switches Claude Code spawn from --print to interactive mode. Keeps stdin open. Adds activeChildren map. Exposes POST /tasks/:id/steer so BDE can send messages to running agents mid-execution." \
+  -f title="feat: task runner stream-json mode + POST /agents/:id/steer" \
+  -f body="Switches Claude Code spawn from --print (no streaming) to interactive stream-json mode. Log files now fill in real-time. Keeps stdin open for steering. Adds activeChildren map and POST /agents/:id/steer endpoint so BDE can send mid-run corrections. See docs/eval-logdrawer-steering.md for full investigation." \
   -f head="$(git branch --show-current)" -f base=main --jq ".html_url"
+```
 
-# PR 2: BDE UI changes (open after life-os PR is merged or can be simultaneous)
+**BDE PR (can be simultaneous):**
+```bash
 cd ~/Documents/Repositories/BDE
-git checkout -b feat/logdrawer-live-output-steering
+git checkout -b fix/logdrawer-live-output-steering
+# ... make changes ...
 git add src/
-git commit -m "fix: LogDrawer live output (fromByte, incremental reads, 750ms poll, better empty states) + agent steering via sprint:steerTask"
+git commit -m "fix: LogDrawer live output + agent steering — incremental reads, steer routes to task-runner"
 git push origin HEAD
 gh api repos/RyanJBirkeland/BDE/pulls --method POST \
-  -f title="fix: LogDrawer — live output + agent steering" \
-  -f body="Fixes 3 bugs: (1) eternal 'starting up' on empty log file, (2) incremental reads now use nextByte correctly, (3) steer now routes to task runner via sprint:steerTask instead of broken local-agents map. Also: 750ms poll interval when agent is active, better empty states." \
+  -f title="fix: LogDrawer live output + agent steering" \
+  -f body="Fixes the 'Agent is starting up...' bug that persisted for the entire run. Root cause (--print buffering) fixed in life-os. This PR: incremental log reads with nextByte, 750ms poll when active, better waiting state UI, steerAgent now falls back to task-runner REST API so mid-run corrections actually reach the agent. See docs/eval-logdrawer-steering.md." \
   -f head="$(git branch --show-current)" -f base=main --jq ".html_url"
 ```
