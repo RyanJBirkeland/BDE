@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { Copy } from 'lucide-react'
+import { Copy, RefreshCw } from 'lucide-react'
 import { parseStreamJson, stripAnsi } from '../../lib/stream-parser'
 import { chatItemsToMessages } from '../../lib/agent-messages'
 import type { ChatMessage } from '../../lib/agent-messages'
@@ -13,9 +13,10 @@ type LogDrawerProps = {
   task: SprintTask | null
   onClose: () => void
   onStop?: (task: SprintTask) => void
+  onRerun?: (task: SprintTask) => void
 }
 
-export function LogDrawer({ task, onClose, onStop }: LogDrawerProps): React.JSX.Element | null {
+export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): React.JSX.Element | null {
   const [logContent, setLogContent] = useState('')
   const [agentStatus, setAgentStatus] = useState('unknown')
   const [steerInput, setSteerInput] = useState('')
@@ -198,6 +199,11 @@ export function LogDrawer({ task, onClose, onStop }: LogDrawerProps): React.JSX.
         {task.status === 'active' && onStop && (
           <Button variant="danger" size="sm" onClick={() => onStop(task)}>
             Stop Agent
+          </Button>
+        )}
+        {onRerun && (agentStatus === 'failed' || (task.status === 'done' && !task.pr_url)) && (
+          <Button variant="ghost" size="sm" onClick={() => onRerun(task)}>
+            <RefreshCw size={14} /> Re-run
           </Button>
         )}
         <Button variant="ghost" size="sm" onClick={handleOpenInSessions}>

@@ -409,6 +409,26 @@ export default function SprintCenter() {
     setLogDrawerTaskId(task.id)
   }, [])
 
+  const handleRerun = useCallback(
+    async (task: SprintTask) => {
+      try {
+        await window.api.sprint.create({
+          title: task.title,
+          repo: task.repo,
+          prompt: task.prompt || task.title,
+          spec: task.spec || undefined,
+          priority: task.priority,
+          status: 'queued',
+        })
+        toast.success('Task re-queued as new ticket')
+        loadData()
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to re-queue task')
+      }
+    },
+    [loadData]
+  )
+
   // Keyboard shortcuts: N → new ticket, Escape → close drawers/modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -539,6 +559,7 @@ export default function SprintCenter() {
               onPushToSprint={handlePushToSprint}
               onViewSpec={setSelectedTask}
               onViewOutput={handleViewOutput}
+              onRerun={handleRerun}
             />
 
             <TaskTable
@@ -566,7 +587,7 @@ export default function SprintCenter() {
 
       <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />
 
-      <LogDrawer task={logDrawerTask} onClose={() => setLogDrawerTaskId(null)} onStop={handleStop} />
+      <LogDrawer task={logDrawerTask} onClose={() => setLogDrawerTaskId(null)} onStop={handleStop} onRerun={handleRerun} />
 
       <ConflictDrawer
         open={conflictDrawerOpen}
