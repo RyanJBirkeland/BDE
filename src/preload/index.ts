@@ -107,6 +107,8 @@ const api = {
     delete: (id: string): Promise<{ ok: boolean }> => ipcRenderer.invoke('sprint:delete', id),
     readLog: (agentId: string): Promise<{ content: string; status: string }> =>
       ipcRenderer.invoke('sprint:readLog', agentId),
+    readSpecFile: (filePath: string): Promise<string> =>
+      ipcRenderer.invoke('sprint:read-spec-file', filePath),
   },
 
   // Gateway tool invocation — proxied through main process to avoid CORS

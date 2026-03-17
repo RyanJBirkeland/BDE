@@ -1,9 +1,19 @@
 import { readFile } from 'fs/promises'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import { homedir } from 'os'
 import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
+
+const SPECS_ROOT = resolve(homedir(), 'Documents', 'Repositories', 'BDE', 'docs', 'specs')
+
+function validateSpecPath(relativePath: string): string {
+  const resolved = resolve(SPECS_ROOT, relativePath)
+  if (!resolved.startsWith(SPECS_ROOT + '/') && resolved !== SPECS_ROOT) {
+    throw new Error(`Path traversal blocked: "${relativePath}" resolves outside ${SPECS_ROOT}`)
+  }
+  return resolved
+}
 
 // --- Types ---
 
@@ -159,6 +169,11 @@ export function registerSprintHandlers(): void {
     const db = getDb()
     db.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
     return { ok: true }
+  })
+
+  safeHandle('sprint:read-spec-file', async (_e, filePath: string) => {
+    const safePath = validateSpecPath(filePath)
+    return readFile(safePath, 'utf-8')
   })
 
   safeHandle('sprint:readLog', async (_e, agentId: string) => {
