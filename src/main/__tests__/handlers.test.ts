@@ -47,14 +47,14 @@ vi.mock('../agent-history', () => ({
 
 vi.mock('../git', () => ({
   getRepoPaths: vi.fn().mockReturnValue({ bde: '/tmp/bde' }),
-  gitStatus: vi.fn().mockReturnValue({ files: [] }),
-  gitDiffFile: vi.fn().mockReturnValue('diff content'),
-  gitStage: vi.fn(),
-  gitUnstage: vi.fn(),
-  gitCommit: vi.fn(),
-  gitPush: vi.fn().mockReturnValue('push output'),
-  gitBranches: vi.fn().mockReturnValue({ current: 'main', branches: ['main'] }),
-  gitCheckout: vi.fn(),
+  gitStatus: vi.fn().mockResolvedValue({ files: [] }),
+  gitDiffFile: vi.fn().mockResolvedValue('diff content'),
+  gitStage: vi.fn().mockResolvedValue(undefined),
+  gitUnstage: vi.fn().mockResolvedValue(undefined),
+  gitCommit: vi.fn().mockResolvedValue(undefined),
+  gitPush: vi.fn().mockResolvedValue('push output'),
+  gitBranches: vi.fn().mockResolvedValue({ current: 'main', branches: ['main'] }),
+  gitCheckout: vi.fn().mockResolvedValue(undefined),
   pollPrStatuses: vi.fn().mockResolvedValue([]),
 }))
 
