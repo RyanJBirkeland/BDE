@@ -95,77 +95,96 @@ function matchAgentBin(command: string): string | null {
   return AGENT_BINS.find((b) => binName === b) ?? null
 }
 
+export interface PsCandidate {
+  pid: number
+  cpuPct: number
+  rss: number
+  elapsed: string
+  command: string
+  bin: string
+}
+
+export async function scanAgentProcesses(): Promise<PsCandidate[]> {
+  const { stdout } = await execFileAsync('ps', ['-eo', 'pid,%cpu,rss,etime,args'])
+  const lines = stdout.trim().split('\n').slice(1)
+  const candidates: PsCandidate[] = []
+  for (const line of lines) {
+    const match = line.match(/^\s*(\d+)\s+([\d.]+)\s+(\d+)\s+(\S+)\s+(.+)$/)
+    if (!match) continue
+    const bin = matchAgentBin(match[5]!)
+    if (!bin) continue
+    candidates.push({
+      pid: parseInt(match[1]!),
+      cpuPct: parseFloat(match[2]!),
+      rss: parseInt(match[3]!),
+      elapsed: match[4]!,
+      command: match[5]!,
+      bin
+    })
+  }
+  return candidates
+}
+
+export async function resolveProcessDetails(candidates: PsCandidate[]): Promise<LocalAgentProcess[]> {
+  return Promise.all(
+    candidates.map(async (c) => {
+      const cwd = await getProcessCwd(c.pid)
+      const args = c.command.split(/\s+/).slice(1).join(' ')
+      return {
+        pid: c.pid,
+        bin: c.bin,
+        args,
+        cwd,
+        startedAt: Date.now() - parseElapsedToMs(c.elapsed),
+        cpuPct: c.cpuPct,
+        memMb: Math.round(c.rss / 1024)
+      }
+    })
+  )
+}
+
+export function evictStaleCwdCache(livePids: Set<number>): void {
+  for (const pid of cwdCache.keys()) {
+    if (!livePids.has(pid)) cwdCache.delete(pid)
+  }
+}
+
+export async function reconcileStaleAgents(livePids: Set<number>): Promise<void> {
+  const running = await listAgents(500, 'running')
+  for (const agent of running) {
+    if (agent.pid && !livePids.has(agent.pid)) {
+      await updateAgentMeta(agent.id, {
+        finishedAt: new Date().toISOString(),
+        status: 'unknown',
+        exitCode: null
+      })
+    }
+  }
+}
+
+const RECONCILE_INTERVAL_MS = 30_000
+let _lastReconcileAt = 0
+
+async function maybeReconcileStaleAgents(livePids: Set<number>): Promise<void> {
+  const now = Date.now()
+  if (now - _lastReconcileAt < RECONCILE_INTERVAL_MS) return
+  _lastReconcileAt = now
+  await reconcileStaleAgents(livePids)
+}
+
+/** @internal — reset throttle state for testing only */
+export function _resetReconcileThrottle(): void {
+  _lastReconcileAt = 0
+}
+
 export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
   try {
-    const { stdout } = await execFileAsync('ps', ['-eo', 'pid,%cpu,rss,etime,args'])
-    const lines = stdout.trim().split('\n').slice(1) // skip header
-
-    const candidates: {
-      pid: number
-      cpuPct: number
-      rss: number
-      elapsed: string
-      command: string
-      bin: string
-    }[] = []
-
-    for (const line of lines) {
-      const match = line.match(/^\s*(\d+)\s+([\d.]+)\s+(\d+)\s+(\S+)\s+(.+)$/)
-      if (!match) continue
-
-      const [, pidStr, cpuStr, rssStr, elapsed, command] = match
-      const bin = matchAgentBin(command!)
-      if (!bin) continue
-
-      candidates.push({
-        pid: parseInt(pidStr!),
-        cpuPct: parseFloat(cpuStr!),
-        rss: parseInt(rssStr!),
-        elapsed: elapsed!,
-        command: command!,
-        bin
-      })
-    }
-
-    // Resolve CWDs in parallel
-    const results = await Promise.all(
-      candidates.map(async (c) => {
-        const cwd = await getProcessCwd(c.pid)
-        const cmdParts = c.command.split(/\s+/)
-        const args = cmdParts.slice(1).join(' ')
-        return {
-          pid: c.pid,
-          bin: c.bin,
-          args,
-          cwd,
-          startedAt: Date.now() - parseElapsedToMs(c.elapsed),
-          cpuPct: c.cpuPct,
-          memMb: Math.round(c.rss / 1024)
-        }
-      })
-    )
-
-    // Evict stale cache entries for dead PIDs
+    const candidates = await scanAgentProcesses()
+    const results = await resolveProcessDetails(candidates)
     const livePids = new Set(results.map((r) => r.pid))
-    for (const pid of cwdCache.keys()) {
-      if (!livePids.has(pid)) cwdCache.delete(pid)
-    }
 
-    // Reconcile agent history: mark running agents as done if their PID is gone
-    try {
-      const running = await listAgents(500, 'running')
-      for (const agent of running) {
-        if (agent.pid && !livePids.has(agent.pid)) {
-          await updateAgentMeta(agent.id, {
-            finishedAt: new Date().toISOString(),
-            status: 'unknown',
-            exitCode: null
-          })
-        }
-      }
-    } catch {
-      // Non-critical — don't break process listing
-    }
+    evictStaleCwdCache(livePids)
+    maybeReconcileStaleAgents(livePids).catch(() => {})
 
     return results
   } catch {

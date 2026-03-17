@@ -35,7 +35,13 @@ import {
   tailAgentLog,
   cleanupOldLogs,
   isAgentInteractive,
+  scanAgentProcesses,
+  resolveProcessDetails,
+  evictStaleCwdCache,
+  reconcileStaleAgents,
+  _resetReconcileThrottle,
 } from '../local-agents'
+import type { PsCandidate } from '../local-agents'
 import {
   createAgentRecord,
   updateAgentMeta,
@@ -47,7 +53,7 @@ import {
 
 const PS_HEADER = '  PID  %CPU   RSS     ELAPSED COMMAND'
 
-/** Mock sequential execFile calls (ps then lsof). Supports Error for failure cases. */
+/** Mock sequential execFile calls. Supports Error objects for failure cases. */
 function mockExecFileSequence(results: Array<{ stdout: string; stderr?: string } | Error>) {
   let callIndex = 0
   vi.mocked(execFile).mockImplementation((...rawArgs: unknown[]) => {
@@ -64,6 +70,16 @@ function mockExecFileSequence(results: Array<{ stdout: string; stderr?: string }
     }
     return {} as ReturnType<typeof execFile>
   })
+}
+
+/** Convenience wrapper: mock a single execFile result. */
+function mockExecFileResult(stdout: string) {
+  mockExecFileSequence([{ stdout }])
+}
+
+/** Convenience wrapper: mock a single execFile failure. */
+function mockExecFileFailure(err: Error) {
+  mockExecFileSequence([err])
 }
 
 /** Create a mock ChildProcess with EventEmitter stdout/stderr and writable stdin. */
@@ -84,6 +100,175 @@ function createMockChild(pid: number) {
 describe('local-agents.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetReconcileThrottle()
+  })
+
+  // ── scanAgentProcesses ─────────────────────────────────────────────
+
+  describe('scanAgentProcesses', () => {
+    it('parses ps output and returns candidates for known agent binaries', async () => {
+      mockExecFileResult(
+        [
+          PS_HEADER,
+          ' 1234  2.5  51200       05:30 /usr/local/bin/claude --model sonnet',
+          ' 5678  0.1  10240       01:00 /opt/homebrew/bin/aider --watch',
+          ' 9999  1.0  20480       00:30 /usr/bin/node server.js',
+        ].join('\n')
+      )
+
+      const candidates = await scanAgentProcesses()
+
+      expect(candidates).toHaveLength(2)
+      expect(candidates[0]).toEqual({
+        pid: 1234,
+        cpuPct: 2.5,
+        rss: 51200,
+        elapsed: '05:30',
+        command: '/usr/local/bin/claude --model sonnet',
+        bin: 'claude',
+      })
+      expect(candidates[1]!.bin).toBe('aider')
+      expect(candidates[1]!.pid).toBe(5678)
+    })
+
+    it('excludes macOS .app bundles', async () => {
+      mockExecFileResult(
+        [
+          PS_HEADER,
+          ' 1234  2.5  51200       05:30 /Applications/Cursor.app/Contents/MacOS/cursor helper',
+        ].join('\n')
+      )
+
+      const candidates = await scanAgentProcesses()
+      expect(candidates).toHaveLength(0)
+    })
+
+    it('returns empty array for empty ps output', async () => {
+      mockExecFileResult(PS_HEADER + '\n')
+      expect(await scanAgentProcesses()).toHaveLength(0)
+    })
+  })
+
+  // ── resolveProcessDetails ──────────────────────────────────────────
+
+  describe('resolveProcessDetails', () => {
+    it('resolves CWD and builds LocalAgentProcess objects', async () => {
+      mockExecFileResult('p1234\nn/Users/dev/project\n')
+
+      const candidates: PsCandidate[] = [
+        {
+          pid: 1234,
+          cpuPct: 2.5,
+          rss: 51200,
+          elapsed: '05:30',
+          command: '/usr/local/bin/claude --model sonnet',
+          bin: 'claude',
+        },
+      ]
+
+      const results = await resolveProcessDetails(candidates)
+
+      expect(results).toHaveLength(1)
+      expect(results[0]!.pid).toBe(1234)
+      expect(results[0]!.bin).toBe('claude')
+      expect(results[0]!.args).toBe('--model sonnet')
+      expect(results[0]!.cwd).toBe('/Users/dev/project')
+      expect(results[0]!.memMb).toBe(50) // 51200 / 1024 rounded
+    })
+
+    it('returns empty array for empty candidates', async () => {
+      expect(await resolveProcessDetails([])).toHaveLength(0)
+    })
+  })
+
+  // ── evictStaleCwdCache ─────────────────────────────────────────────
+
+  describe('evictStaleCwdCache', () => {
+    it('is callable without throwing (cache is module-private)', () => {
+      expect(() => evictStaleCwdCache(new Set())).not.toThrow()
+    })
+
+    it('does not throw with a populated live pids set', () => {
+      expect(() => evictStaleCwdCache(new Set([1234, 5678]))).not.toThrow()
+    })
+  })
+
+  // ── reconcileStaleAgents ───────────────────────────────────────────
+
+  describe('reconcileStaleAgents', () => {
+    it('marks running agents as unknown when their PID is gone', async () => {
+      vi.mocked(listAgents).mockResolvedValue([
+        {
+          id: 'agent-1',
+          pid: 4444,
+          bin: 'claude',
+          model: 'sonnet',
+          repo: 'test',
+          repoPath: '/tmp/test',
+          task: 'do stuff',
+          startedAt: new Date().toISOString(),
+          finishedAt: null,
+          exitCode: null,
+          status: 'running',
+          logPath: '/tmp/bde-agents/agent-1/log.txt',
+          source: 'bde',
+        },
+      ])
+
+      await reconcileStaleAgents(new Set([9999])) // PID 4444 not in set
+
+      expect(updateAgentMeta).toHaveBeenCalledWith('agent-1', {
+        finishedAt: expect.any(String),
+        status: 'unknown',
+        exitCode: null,
+      })
+    })
+
+    it('does not update agents whose PID is still alive', async () => {
+      vi.mocked(listAgents).mockResolvedValue([
+        {
+          id: 'agent-2',
+          pid: 1234,
+          bin: 'claude',
+          model: 'sonnet',
+          repo: 'test',
+          repoPath: '/tmp/test',
+          task: 'task',
+          startedAt: new Date().toISOString(),
+          finishedAt: null,
+          exitCode: null,
+          status: 'running',
+          logPath: '/tmp/bde-agents/agent-2/log.txt',
+          source: 'bde',
+        },
+      ])
+
+      await reconcileStaleAgents(new Set([1234])) // PID 1234 IS in set
+      expect(updateAgentMeta).not.toHaveBeenCalled()
+    })
+
+    it('skips agents with null pid', async () => {
+      vi.mocked(listAgents).mockResolvedValue([
+        {
+          id: 'agent-3',
+          pid: null,
+          bin: 'claude',
+          model: 'sonnet',
+          repo: 'test',
+          repoPath: '/tmp/test',
+          task: 'task',
+          startedAt: new Date().toISOString(),
+          finishedAt: null,
+          exitCode: null,
+          status: 'running',
+          logPath: '/tmp/bde-agents/agent-3/log.txt',
+          source: 'bde',
+        },
+      ])
+
+      await reconcileStaleAgents(new Set())
+      expect(updateAgentMeta).not.toHaveBeenCalled()
+    })
   })
 
   // ── getAgentProcesses ──────────────────────────────────────────────
@@ -171,7 +356,7 @@ describe('local-agents.ts', () => {
     })
 
     it('returns empty array when ps command fails', async () => {
-      mockExecFileSequence([new Error('command not found')])
+      mockExecFileFailure(new Error('command not found'))
       expect(await getAgentProcesses()).toEqual([])
     })
 
@@ -453,7 +638,7 @@ describe('local-agents.ts', () => {
     })
   })
 
-  // ── isAgentInteractive ────────────────────────────────────────────
+  // ── isAgentInteractive ─────────────────────────────────────────────
 
   describe('isAgentInteractive', () => {
     it('returns true when PID has active stdin', async () => {
@@ -479,7 +664,7 @@ describe('local-agents.ts', () => {
     })
   })
 
-  // ── tailAgentLog ──────────────────────────────────────────────────
+  // ── tailAgentLog ───────────────────────────────────────────────────
 
   describe('tailAgentLog', () => {
     it('reads full file when fromByte is 0', async () => {
@@ -512,7 +697,7 @@ describe('local-agents.ts', () => {
     })
   })
 
-  // ── cleanupOldLogs ────────────────────────────────────────────────
+  // ── cleanupOldLogs ─────────────────────────────────────────────────
 
   describe('cleanupOldLogs', () => {
     it('deletes old .log files, preserves recent ones, ignores non-.log files', async () => {
