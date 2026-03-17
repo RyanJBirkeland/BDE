@@ -83,4 +83,11 @@ function runMigrations(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_agent_runs_pid      ON agent_runs(pid);
     CREATE INDEX IF NOT EXISTS idx_agent_runs_status   ON agent_runs(status);
   `)
+
+  // Add pr_mergeable_state column (idempotent)
+  try {
+    db.exec('ALTER TABLE sprint_tasks ADD COLUMN pr_mergeable_state TEXT')
+  } catch {
+    // Column already exists — ignore
+  }
 }

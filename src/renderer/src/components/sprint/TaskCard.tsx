@@ -98,6 +98,9 @@ export const TaskCard = memo(function TaskCard({
             </Badge>
           </a>
         )}
+        {task.pr_url && task.pr_mergeable_state === 'dirty' && !prMerged && (
+          <Badge variant="danger" size="sm">Conflict</Badge>
+        )}
       </div>
 
       {task.status === 'active' && (

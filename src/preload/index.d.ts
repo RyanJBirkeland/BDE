@@ -67,7 +67,12 @@ declare global {
       // PR status polling
       pollPrStatuses: (
         prs: { taskId: string; prUrl: string }[]
-      ) => Promise<{ taskId: string; merged: boolean; state: string; mergedAt: string | null }[]>
+      ) => Promise<{ taskId: string; merged: boolean; state: string; mergedAt: string | null; mergeableState: string | null }[]>
+
+      // Conflict file detection
+      checkConflictFiles: (
+        input: { owner: string; repo: string; prNumber: number }
+      ) => Promise<{ prNumber: number; files: string[]; baseBranch: string; headBranch: string }>
 
       // Sprint tasks — Supabase-backed Kanban
       sprint: {

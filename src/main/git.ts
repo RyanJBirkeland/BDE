@@ -148,6 +148,7 @@ export interface PrStatusResult {
   merged: boolean
   state: string
   mergedAt: string | null
+  mergeableState: string | null
 }
 
 export function parsePrUrl(url: string): { owner: string; repo: string; number: string } | null {
@@ -157,9 +158,9 @@ export function parsePrUrl(url: string): { owner: string; repo: string; number: 
 }
 
 async function fetchPrStatusRest(pr: PrStatusInput): Promise<PrStatusResult> {
-  const errorResult: PrStatusResult = { taskId: pr.taskId, merged: false, state: 'error', mergedAt: null }
+  const errorResult: PrStatusResult = { taskId: pr.taskId, merged: false, state: 'error', mergedAt: null, mergeableState: null }
   const parsed = parsePrUrl(pr.prUrl)
-  if (!parsed) return { taskId: pr.taskId, merged: false, state: 'unknown', mergedAt: null }
+  if (!parsed) return { taskId: pr.taskId, merged: false, state: 'unknown', mergedAt: null, mergeableState: null }
 
   const token = getGitHubToken()
   if (!token) return errorResult
@@ -177,10 +178,15 @@ async function fetchPrStatusRest(pr: PrStatusInput): Promise<PrStatusResult> {
     )
     if (!response.ok) return errorResult
 
-    const data = (await response.json()) as { state: string; merged_at: string | null }
+    const data = (await response.json()) as {
+      state: string
+      merged_at: string | null
+      mergeable_state?: string
+    }
     const merged = data.state === 'closed' && data.merged_at !== null
     const state = data.merged_at ? 'MERGED' : data.state.toUpperCase()
-    return { taskId: pr.taskId, merged, state, mergedAt: data.merged_at ?? null }
+    const mergeableState = data.mergeable_state ?? null
+    return { taskId: pr.taskId, merged, state, mergedAt: data.merged_at ?? null, mergeableState }
   } catch {
     return errorResult
   }
@@ -211,17 +217,87 @@ function markTaskCancelled(prNumber: number): void {
   }
 }
 
+function updateMergeableState(prNumber: number, mergeableState: string | null): void {
+  if (!mergeableState) return
+  try {
+    getDb()
+      .prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?')
+      .run(mergeableState, prNumber)
+  } catch (err) {
+    console.warn(`[git] failed to update mergeable_state for PR #${prNumber}:`, err)
+  }
+}
+
 export async function pollPrStatuses(prs: PrStatusInput[]): Promise<PrStatusResult[]> {
   const results = await Promise.all(prs.map(fetchPrStatusRest))
   for (const result of results) {
     const input = prs.find((p) => p.taskId === result.taskId)
     const prNumber = input ? parsePrUrl(input.prUrl)?.number : null
     if (!prNumber) continue
+    const num = parseInt(prNumber, 10)
     if (result.merged) {
-      markTaskDoneOnMerge(parseInt(prNumber, 10))
+      markTaskDoneOnMerge(num)
     } else if (result.state === 'CLOSED') {
-      markTaskCancelled(parseInt(prNumber, 10))
+      markTaskCancelled(num)
     }
+    updateMergeableState(num, result.mergeableState)
   }
   return results
+}
+
+// --- Conflict file detection ---
+
+export interface ConflictFilesInput {
+  owner: string
+  repo: string
+  prNumber: number
+}
+
+export interface ConflictFilesResult {
+  prNumber: number
+  files: string[]
+  baseBranch: string
+  headBranch: string
+}
+
+export async function checkConflictFiles(input: ConflictFilesInput): Promise<ConflictFilesResult> {
+  const token = getGitHubToken()
+  const empty: ConflictFilesResult = { prNumber: input.prNumber, files: [], baseBranch: '', headBranch: '' }
+  if (!token) return empty
+
+  try {
+    // Fetch PR details for branch names
+    const prRes = await fetch(
+      `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}`,
+      {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+        signal: AbortSignal.timeout(10_000)
+      }
+    )
+    if (!prRes.ok) return empty
+    const prData = (await prRes.json()) as {
+      head: { ref: string }
+      base: { ref: string }
+    }
+
+    // Fetch the list of changed files in the PR
+    const filesRes = await fetch(
+      `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}/files?per_page=100`,
+      {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+        signal: AbortSignal.timeout(10_000)
+      }
+    )
+    if (!filesRes.ok) return empty
+    const filesData = (await filesRes.json()) as Array<{ filename: string }>
+
+    return {
+      prNumber: input.prNumber,
+      files: filesData.map((f) => f.filename),
+      baseBranch: prData.base.ref,
+      headBranch: prData.head.ref,
+    }
+  } catch {
+    return empty
+  }
 }

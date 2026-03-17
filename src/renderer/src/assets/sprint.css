@@ -1713,3 +1713,284 @@ tr:hover .bde-task-table__action-btn--done {
 }
 
 .bde-task-section__show-more:hover { color: var(--bde-accent); }
+
+/* ── Conflict Badge (Sprint Header) ─────────────────── */
+
+.conflict-badge-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Badge Component ────────────────────────────────── */
+
+.bde-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--bde-font-ui);
+  font-weight: 600;
+  border-radius: var(--bde-radius-full);
+  white-space: nowrap;
+}
+
+.bde-badge--sm {
+  font-size: var(--bde-size-xs);
+  padding: 2px 8px;
+}
+
+.bde-badge--md {
+  font-size: var(--bde-size-sm);
+  padding: 3px 10px;
+}
+
+.bde-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bde-badge--default { background: var(--bde-hover); color: var(--bde-text-muted); }
+.bde-badge--default .bde-badge__dot { background: var(--bde-text-dim); }
+
+.bde-badge--success { background: var(--bde-accent-hover); color: var(--bde-accent); }
+.bde-badge--success .bde-badge__dot { background: var(--bde-accent); }
+
+.bde-badge--warning { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+.bde-badge--warning .bde-badge__dot { background: #F59E0B; }
+
+.bde-badge--danger { background: var(--bde-danger-bg); color: var(--bde-danger-text); }
+.bde-badge--danger .bde-badge__dot { background: var(--bde-danger-text); animation: conflict-pulse 2s ease-in-out infinite; }
+
+.bde-badge--info { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+.bde-badge--info .bde-badge__dot { background: #3B82F6; }
+
+.bde-badge--muted { background: var(--bde-hover); color: var(--bde-text-dim); }
+.bde-badge--muted .bde-badge__dot { background: var(--bde-text-dim); }
+
+@keyframes conflict-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Conflict Drawer (right-slide, like SpecDrawer) ── */
+
+.conflict-drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 440px;
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
+  border-left: 1px solid var(--bde-border);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(440px);
+  transition: transform 200ms ease;
+}
+
+.conflict-drawer--open {
+  transform: translateX(0);
+}
+
+.conflict-drawer__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 49;
+}
+
+.conflict-drawer__header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bde-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  position: relative;
+}
+
+.conflict-drawer__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 77, 77, 0.4) 0%, rgba(255, 77, 77, 0.1) 60%, transparent 100%);
+}
+
+.conflict-drawer__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--bde-danger-text);
+}
+
+.conflict-drawer__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bde-text);
+}
+
+.bde-count-badge--danger {
+  background: var(--bde-danger-bg);
+  color: var(--bde-danger-text);
+}
+
+.conflict-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.conflict-drawer__empty {
+  padding: 32px 16px;
+  color: var(--bde-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.conflict-drawer__footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.conflict-drawer__hint {
+  font-size: 11px;
+  color: var(--bde-text-dim);
+}
+
+/* ── Conflict Row ───────────────────────────────────── */
+
+.conflict-row {
+  border-bottom: 1px solid color-mix(in srgb, var(--bde-border) 50%, transparent);
+}
+
+.conflict-row:last-child { border-bottom: none; }
+
+.conflict-row__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.conflict-row__header:hover { background: var(--glass-tint-dark); }
+
+.conflict-row__repo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.conflict-row__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conflict-row__title {
+  font-size: 13px;
+  color: var(--bde-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conflict-row__meta {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  font-family: var(--bde-font-code);
+}
+
+.conflict-row__chevron {
+  font-size: 11px;
+  color: var(--bde-text-dim);
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.conflict-row__detail {
+  padding: 0 16px 12px 34px;
+}
+
+.conflict-row__loading {
+  font-size: 11px;
+  color: var(--bde-text-dim);
+  padding: 4px 0;
+}
+
+.conflict-row__files-label {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  margin-bottom: 4px;
+}
+
+.conflict-row__files-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+}
+
+.conflict-row__files-list li {
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  color: var(--bde-text-dim);
+  line-height: 1.7;
+  padding-left: 12px;
+  position: relative;
+}
+
+.conflict-row__files-list li::before {
+  content: '\00B7';
+  position: absolute;
+  left: 2px;
+  color: var(--bde-text-dim);
+}
+
+.conflict-row__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.conflict-row__spinner {
+  animation: spin 1.2s linear infinite;
+}
+
+/* ── PR Row Conflict Indicators ─────────────────────── */
+
+.pr-row--conflicts {
+  border-left: 2px solid var(--bde-danger-text);
+}
+
+.pr-row__conflict-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bde-danger-text);
+  flex-shrink: 0;
+  animation: conflict-pulse 2s ease-in-out infinite;
+}
+
+.pr-row__conflict-label {
+  color: var(--bde-danger-text);
+  font-weight: 600;
+}

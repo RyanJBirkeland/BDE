@@ -168,7 +168,8 @@ export function registerSprintHandlers(): void {
     const db = getDb()
     const allowed = [
       'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
-      'pr_url', 'pr_number', 'pr_status', 'agent_run_id', 'started_at', 'completed_at',
+      'pr_url', 'pr_number', 'pr_status', 'pr_mergeable_state',
+      'agent_run_id', 'started_at', 'completed_at',
     ]
     const entries = Object.entries(patch).filter(([k]) => allowed.includes(k))
     if (entries.length === 0) return null

@@ -32,6 +32,7 @@ export interface SprintTask {
   agent_run_id: string | null
   pr_number: number | null
   pr_status: 'open' | 'merged' | 'closed' | 'draft' | null
+  pr_mergeable_state?: 'clean' | 'dirty' | 'blocked' | 'behind' | 'unstable' | 'unknown' | null
   pr_url: string | null
   started_at: string | null
   completed_at: string | null

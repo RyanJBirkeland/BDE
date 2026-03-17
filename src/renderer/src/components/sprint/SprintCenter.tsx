@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '../ui/Button'
+import { Badge } from '../ui/Badge'
 import { KanbanBoard } from './KanbanBoard'
 import { TaskTable } from './TaskTable'
 import { SpecDrawer } from './SpecDrawer'
 import { LogDrawer } from './LogDrawer'
+import { ConflictDrawer } from './ConflictDrawer'
 import { PRSection } from './PRSection'
 import { NewTicketModal } from './NewTicketModal'
 import type { CreateTicketData } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
+import { usePrConflictsStore } from '../../stores/prConflicts'
 import { detectTemplate } from '../../../../shared/template-heuristics'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { subscribeSSE, type TaskUpdatedEvent } from '../../lib/taskRunnerSSE'
@@ -41,6 +44,7 @@ export default function SprintCenter() {
   const [modalOpen, setModalOpen] = useState(false)
   const [prMergedMap, setPrMergedMap] = useState<Record<string, boolean>>({})
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set())
+  const [conflictDrawerOpen, setConflictDrawerOpen] = useState(false)
   const logDrawerTask = logDrawerTaskId ? (tasks.find((t) => t.id === logDrawerTaskId) ?? null) : null
 
   // Keep notification hook aware of which task's LogDrawer is open
@@ -127,6 +131,9 @@ export default function SprintCenter() {
     async () => undefined
   )
 
+  const setConflicts = usePrConflictsStore((s) => s.setConflicts)
+  const prevConflictIdsRef = useRef<Set<string>>(new Set())
+
   const pollPrStatuses = useCallback(async (taskList: SprintTask[]) => {
     const withPr = taskList.filter((t) => t.pr_url && !prMergedRef.current[t.id])
     if (withPr.length === 0) return
@@ -148,10 +155,30 @@ export default function SprintCenter() {
       for (const r of results) {
         if (r.merged) updateTaskRef.current(r.taskId, { pr_status: 'merged' })
       }
+
+      // Track merge conflicts
+      const conflicting = results.filter((r) => r.mergeableState === 'dirty' && !r.merged)
+      const conflictIds = conflicting.map((r) => r.taskId)
+      setConflicts(conflictIds)
+
+      // Toast when NEW conflicts appear
+      const prev = prevConflictIdsRef.current
+      const newConflicts = conflictIds.filter((id) => !prev.has(id))
+      if (newConflicts.length > 0) {
+        toast.error(`${newConflicts.length} PR${newConflicts.length > 1 ? 's have' : ' has'} merge conflicts`)
+      }
+      prevConflictIdsRef.current = new Set(conflictIds)
+
+      // Persist mergeable state to SQLite
+      for (const r of results) {
+        if (r.mergeableState) {
+          updateTaskRef.current(r.taskId, { pr_mergeable_state: r.mergeableState as SprintTask['pr_mergeable_state'] })
+        }
+      }
     } catch {
       // gh CLI unavailable — degrade gracefully
     }
-  }, [])
+  }, [setConflicts])
 
   useEffect(() => {
     pollPrStatuses(tasks)
@@ -211,6 +238,7 @@ export default function SprintCenter() {
         agent_run_id: null,
         pr_number: null,
         pr_status: null,
+        pr_mergeable_state: null,
         pr_url: null,
         started_at: null,
         completed_at: null,
@@ -388,6 +416,7 @@ export default function SprintCenter() {
         setSelectedTask(null)
         setLogDrawerTaskId(null)
         setModalOpen(false)
+        setConflictDrawerOpen(false)
         return
       }
 
@@ -407,6 +436,12 @@ export default function SprintCenter() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  const conflictingTaskIds = usePrConflictsStore((s) => s.conflictingTaskIds)
+  const conflictingTasks = useMemo(
+    () => tasks.filter((t) => conflictingTaskIds.has(t.id)),
+    [tasks, conflictingTaskIds]
+  )
 
   const filteredTasks = repoFilter
     ? tasks.filter((t) => t.repo.toLowerCase() === repoFilter.toLowerCase())
@@ -442,6 +477,17 @@ export default function SprintCenter() {
           </div>
         </div>
         <div className="sprint-center__actions">
+          {conflictingTasks.length > 0 && (
+            <button
+              className="conflict-badge-btn"
+              onClick={() => setConflictDrawerOpen(true)}
+              title="View merge conflicts"
+            >
+              <Badge variant="danger" size="sm">
+                {conflictingTasks.length} conflict{conflictingTasks.length > 1 ? 's' : ''}
+              </Badge>
+            </button>
+          )}
           <kbd className="sprint-center__shortcut-hint" title="Keyboard shortcuts">
             N — New ticket &nbsp; Esc — Close
           </kbd>
@@ -521,6 +567,12 @@ export default function SprintCenter() {
       <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />
 
       <LogDrawer task={logDrawerTask} onClose={() => setLogDrawerTaskId(null)} onStop={handleStop} />
+
+      <ConflictDrawer
+        open={conflictDrawerOpen}
+        tasks={conflictingTasks}
+        onClose={() => setConflictDrawerOpen(false)}
+      />
     </div>
   )
 }

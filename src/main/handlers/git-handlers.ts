@@ -10,7 +10,9 @@ import {
   gitBranches,
   gitCheckout,
   pollPrStatuses,
-  type PrStatusInput
+  checkConflictFiles,
+  type PrStatusInput,
+  type ConflictFilesInput
 } from '../git'
 
 export function registerGitHandlers(): void {
@@ -31,4 +33,7 @@ export function registerGitHandlers(): void {
   // --- PR status polling ---
   // TODO: AX-S1 — add 'poll-pr-statuses' to IpcChannelMap
   safeHandle('poll-pr-statuses', (_e, prs: PrStatusInput[]) => pollPrStatuses(prs))
+
+  // --- Conflict file detection ---
+  safeHandle('check-conflict-files', (_e, input: ConflictFilesInput) => checkConflictFiles(input))
 }

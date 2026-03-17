@@ -1,15 +1,18 @@
 import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../stores/theme'
+import { usePrConflictsStore } from '../../stores/prConflicts'
 import { Badge } from '../ui/Badge'
 
 interface TitleBarProps {
   sessionCount: number
   totalCost: number
+  onConflictClick?: () => void
 }
 
-export function TitleBar({ sessionCount, totalCost }: TitleBarProps): React.JSX.Element {
+export function TitleBar({ sessionCount, totalCost, onConflictClick }: TitleBarProps): React.JSX.Element {
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
+  const conflictCount = usePrConflictsStore((s) => s.conflictingTaskIds.size)
 
   return (
     <div className="titlebar glass">
@@ -22,6 +25,17 @@ export function TitleBar({ sessionCount, totalCost }: TitleBarProps): React.JSX.
       </div>
 
       <div className="titlebar__right">
+        {conflictCount > 0 && (
+          <button
+            className="conflict-badge-btn"
+            onClick={onConflictClick}
+            title={`${conflictCount} PR${conflictCount > 1 ? 's' : ''} with merge conflicts`}
+          >
+            <Badge variant="danger" size="sm">
+              {conflictCount} conflict{conflictCount > 1 ? 's' : ''}
+            </Badge>
+          </button>
+        )}
         {sessionCount > 0 && (
           <Badge variant="success" size="sm">{sessionCount} active</Badge>
         )}

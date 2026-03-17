@@ -255,7 +255,11 @@ function App(): React.JSX.Element {
 
   return (
     <div className="app-shell elevation-0">
-      <TitleBar sessionCount={runningCount} totalCost={totalCost} />
+      <TitleBar
+        sessionCount={runningCount}
+        totalCost={totalCost}
+        onConflictClick={() => setView('sprint')}
+      />
       <div className="app-shell__body">
         <ActivityBar connectionStatus={status} />
         <div className="app-shell__content">

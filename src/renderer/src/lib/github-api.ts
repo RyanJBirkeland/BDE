@@ -43,6 +43,43 @@ export async function listOpenPRs(owner: string, repo: string): Promise<PullRequ
   return (data as PullRequest[]).map((pr) => ({ ...pr, repo }))
 }
 
+export interface PrMergeability {
+  number: number
+  repo: string
+  mergeable: boolean | null
+  mergeable_state: string | null
+}
+
+export async function getPrMergeability(
+  owner: string,
+  repo: string,
+  prNumber: number
+): Promise<PrMergeability> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${prNumber}`)
+  if (!res.ok) return { number: prNumber, repo, mergeable: null, mergeable_state: null }
+  const data = (await res.json()) as { mergeable: boolean | null; mergeable_state: string | null }
+  return {
+    number: prNumber,
+    repo,
+    mergeable: data.mergeable ?? null,
+    mergeable_state: data.mergeable_state ?? null,
+  }
+}
+
+export async function checkOpenPrsMergeability(
+  owner: string,
+  repo: string,
+  prs: PullRequest[]
+): Promise<PrMergeability[]> {
+  return Promise.all(prs.map((pr) => getPrMergeability(owner, repo, pr.number)))
+}
+
+export function parsePrUrl(url: string): { owner: string; repo: string; number: number } | null {
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/)
+  if (!match) return null
+  return { owner: match[1], repo: match[2], number: parseInt(match[3], 10) }
+}
+
 export async function mergePR(owner: string, repo: string, number: number): Promise<void> {
   const token = await getToken()
   const res = await fetch(

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { listOpenPRs, mergePR, type PullRequest } from '../../lib/github-api'
+import { listOpenPRs, mergePR, getPrMergeability, type PullRequest, type PrMergeability } from '../../lib/github-api'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
@@ -15,7 +15,26 @@ export default function PRList() {
   const [error, setError] = useState<string | null>(null)
   const [merging, setMerging] = useState<number | null>(null)
   const [confirmMerge, setConfirmMerge] = useState<PullRequest | null>(null)
+  const [mergeability, setMergeability] = useState<Record<string, PrMergeability>>({})
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const checkMergeability = useCallback(async (prList: PullRequest[]) => {
+    const checks = prList.map(async (pr) => {
+      const repo = PR_REPOS.find((r) => r.label === pr.repo)
+      if (!repo) return null
+      try {
+        return await getPrMergeability(repo.owner, repo.label, pr.number)
+      } catch {
+        return null
+      }
+    })
+    const results = await Promise.all(checks)
+    const map: Record<string, PrMergeability> = {}
+    for (const r of results) {
+      if (r) map[`${r.repo}-${r.number}`] = r
+    }
+    setMergeability(map)
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -27,12 +46,14 @@ export default function PRList() {
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       setPrs(all)
       setError(null)
+      // Check mergeability for all PRs after loading
+      checkMergeability(all)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load PRs')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [checkMergeability])
 
   useEffect(() => {
     load()
@@ -82,18 +103,25 @@ export default function PRList() {
         ) : prs.length === 0 ? (
           <EmptyState title="No open PRs" />
         ) : (
-          prs.map((pr, i) => (
-            <div key={`${pr.repo}-${pr.number}`} className="pr-row" style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
+          prs.map((pr, i) => {
+            const m = mergeability[`${pr.repo}-${pr.number}`]
+            const hasConflicts = m?.mergeable_state === 'dirty'
+            return (
+            <div key={`${pr.repo}-${pr.number}`} className={`pr-row ${hasConflicts ? 'pr-row--conflicts' : ''}`} style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
               <span
                 className="pr-row__repo-dot"
                 style={{ background: repoColor(pr.repo) }}
                 title={pr.repo}
               />
+              {hasConflicts && (
+                <span className="pr-row__conflict-dot" title="Has merge conflicts" />
+              )}
               <div className="pr-row__info">
                 <span className="pr-row__title">{pr.title}</span>
                 <span className="pr-row__meta">
                   {pr.repo} #{pr.number} &middot; {timeAgo(pr.updated_at)}
                   {pr.additions !== undefined && ` \u00B7 +${pr.additions} -${pr.deletions}`}
+                  {hasConflicts && <span className="pr-row__conflict-label"> &middot; conflicts</span>}
                 </span>
               </div>
               <div className="pr-row__actions">
@@ -116,7 +144,8 @@ export default function PRList() {
                 </Button>
               </div>
             </div>
-          ))
+            )
+          })
         )}
       </div>
 

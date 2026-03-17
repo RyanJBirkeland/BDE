@@ -35,6 +35,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     agent_run_id: null,
     pr_number: null,
     pr_status: null,
+    pr_mergeable_state: null,
     pr_url: null,
     started_at: null,
     completed_at: null,
