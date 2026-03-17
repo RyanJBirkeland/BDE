@@ -16,7 +16,7 @@ import { useHealthCheckStore } from '../../stores/healthCheck'
 import { detectTemplate } from '../../../../shared/template-heuristics'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { subscribeSSE, type TaskUpdatedEvent } from '../../lib/taskRunnerSSE'
-import { setOpenLogDrawerTaskId } from '../../hooks/useTaskNotifications'
+import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import {
   POLL_SPRINT_INTERVAL,
   POLL_SPRINT_ACTIVE_MS,
@@ -59,6 +59,12 @@ export default function SprintCenter() {
     setOpenLogDrawerTaskId(logDrawerTaskId)
     return () => setOpenLogDrawerTaskId(null)
   }, [logDrawerTaskId])
+
+  // In-app toast notifications for agent-done and PR-opened transitions
+  const handleViewOutput = useCallback((task: SprintTask) => {
+    setLogDrawerTaskId(task.id)
+  }, [])
+  useTaskToasts(tasks, logDrawerTaskId, handleViewOutput)
 
   const prevTasksRef = useRef<SprintTask[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -438,9 +444,6 @@ export default function SprintCenter() {
     [updateTask]
   )
 
-  const handleViewOutput = useCallback((task: SprintTask) => {
-    setLogDrawerTaskId(task.id)
-  }, [])
 
   const handleRerun = useCallback(
     async (task: SprintTask) => {
