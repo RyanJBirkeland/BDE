@@ -19,11 +19,53 @@ describe('NewTicketModal', () => {
     expect(container.innerHTML).toBe('')
   })
 
-  it('renders title input, repo selector, priority selector, and spec textarea', () => {
+  it('defaults to Quick mode with title input and repo selector', () => {
     render(<NewTicketModal {...defaultProps} />)
 
-    expect(screen.getByPlaceholderText(/Add recipe search/)).toBeInTheDocument()
+    expect(screen.getByText('Quick')).toBeInTheDocument()
+    expect(screen.getByText('Template')).toBeInTheDocument()
+    expect(screen.getByText('Design with Paul')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Fix toast z-index/)).toBeInTheDocument()
     expect(screen.getByText('Repo')).toBeInTheDocument()
+  })
+
+  it('Quick mode submit button says "Save — Paul writes the spec"', () => {
+    render(<NewTicketModal {...defaultProps} />)
+    expect(
+      screen.getByRole('button', { name: /Save — Paul writes the spec/ })
+    ).toBeInTheDocument()
+  })
+
+  it('Quick mode submit is disabled when title is empty', () => {
+    render(<NewTicketModal {...defaultProps} />)
+    const submitBtn = screen.getByRole('button', { name: /Save — Paul writes the spec/ })
+    expect(submitBtn).toBeDisabled()
+  })
+
+  it('Quick mode calls onCreate with spec: null and prompt: title', async () => {
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.type(screen.getByPlaceholderText(/Fix toast z-index/), 'Fix the bug')
+    await user.click(screen.getByRole('button', { name: /Save — Paul writes the spec/ }))
+
+    expect(defaultProps.onCreate).toHaveBeenCalledWith({
+      title: 'Fix the bug',
+      repo: 'BDE',
+      description: '',
+      prompt: 'Fix the bug',
+      spec: null,
+      priority: 1,
+    })
+    expect(defaultProps.onClose).toHaveBeenCalled()
+  })
+
+  it('switching to Template mode shows full form', async () => {
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Template' }))
+
     expect(screen.getByText('Priority')).toBeInTheDocument()
     expect(screen.getByText('Spec')).toBeInTheDocument()
     expect(
@@ -31,7 +73,33 @@ describe('NewTicketModal', () => {
     ).toBeInTheDocument()
   })
 
-  it('repo selector shows all valid repo options', () => {
+  it('Template mode submit button says "Save to Backlog"', async () => {
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Template' }))
+    expect(screen.getByRole('button', { name: 'Save to Backlog' })).toBeInTheDocument()
+  })
+
+  it('Template mode calls onCreate with spec and prompt', async () => {
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Template' }))
+    await user.type(screen.getByPlaceholderText(/Add recipe search/), 'My task')
+    await user.click(screen.getByRole('button', { name: 'Save to Backlog' }))
+
+    expect(defaultProps.onCreate).toHaveBeenCalledWith({
+      title: 'My task',
+      repo: 'BDE',
+      description: '',
+      prompt: 'My task',
+      spec: null,
+      priority: 1,
+    })
+  })
+
+  it('repo selector shows all valid repo options in Quick mode', () => {
     render(<NewTicketModal {...defaultProps} />)
     const options = screen.getAllByRole('option')
     const repoOptions = options.filter((o) =>
@@ -40,48 +108,15 @@ describe('NewTicketModal', () => {
     expect(repoOptions).toHaveLength(3)
   })
 
-  it('submit button disabled when title is empty', () => {
-    render(<NewTicketModal {...defaultProps} />)
-    const submitBtn = screen.getByRole('button', { name: 'Save to Backlog' })
-    expect(submitBtn).toBeDisabled()
-  })
-
-  it('submit button enabled when title is filled', async () => {
+  it('Design mode shows placeholder', async () => {
     const user = userEvent.setup()
     render(<NewTicketModal {...defaultProps} />)
 
-    await user.type(screen.getByPlaceholderText(/Add recipe search/), 'New feature')
-    const submitBtn = screen.getByRole('button', { name: 'Save to Backlog' })
-    expect(submitBtn).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Design with Paul' }))
+    expect(screen.getByText('Design with Paul is coming soon.')).toBeInTheDocument()
   })
 
-  it('calls onCreate with correct payload on submit', async () => {
-    const user = userEvent.setup()
-    render(<NewTicketModal {...defaultProps} />)
-
-    await user.type(screen.getByPlaceholderText(/Add recipe search/), 'My task')
-    await user.click(screen.getByRole('button', { name: 'Save to Backlog' }))
-
-    expect(defaultProps.onCreate).toHaveBeenCalledWith({
-      title: 'My task',
-      repo: 'BDE',
-      description: '',
-      spec: '',
-      priority: 1,
-    })
-  })
-
-  it('closes modal after successful submit', async () => {
-    const user = userEvent.setup()
-    render(<NewTicketModal {...defaultProps} />)
-
-    await user.type(screen.getByPlaceholderText(/Add recipe search/), 'My task')
-    await user.click(screen.getByRole('button', { name: 'Save to Backlog' }))
-
-    expect(defaultProps.onClose).toHaveBeenCalled()
-  })
-
-  it('Ask Paul button triggers invokeTool call', async () => {
+  it('Template mode: Ask Paul button triggers invokeTool call', async () => {
     const mockInvoke = vi.mocked(window.api.invokeTool)
     mockInvoke.mockResolvedValue({
       ok: true,
@@ -91,6 +126,7 @@ describe('NewTicketModal', () => {
     const user = userEvent.setup()
     render(<NewTicketModal {...defaultProps} />)
 
+    await user.click(screen.getByRole('button', { name: 'Template' }))
     await user.type(screen.getByPlaceholderText(/Add recipe search/), 'Build feature X')
 
     const askPaulBtn = screen.getByRole('button', { name: 'Ask Paul' })
@@ -107,13 +143,16 @@ describe('NewTicketModal', () => {
     })
   })
 
-  it('Ask Paul button is disabled when title is empty', () => {
+  it('Template mode: Ask Paul button is disabled when title is empty', async () => {
+    const user = userEvent.setup()
     render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Template' }))
     const askPaulBtn = screen.getByRole('button', { name: 'Ask Paul' })
     expect(askPaulBtn).toBeDisabled()
   })
 
-  it('populates spec textarea with AI-generated content', async () => {
+  it('Template mode: populates spec textarea with AI-generated content', async () => {
     vi.mocked(window.api.invokeTool).mockResolvedValue({
       ok: true,
       result: { content: [{ type: 'text', text: '## AI Spec Content' }] },
@@ -122,6 +161,7 @@ describe('NewTicketModal', () => {
     const user = userEvent.setup()
     render(<NewTicketModal {...defaultProps} />)
 
+    await user.click(screen.getByRole('button', { name: 'Template' }))
     await user.type(screen.getByPlaceholderText(/Add recipe search/), 'Build feature X')
     await user.click(screen.getByRole('button', { name: 'Ask Paul' }))
 
@@ -133,10 +173,11 @@ describe('NewTicketModal', () => {
     })
   })
 
-  it('template chip populates spec with template content', async () => {
+  it('Template mode: template chip populates spec with template content', async () => {
     const user = userEvent.setup()
     render(<NewTicketModal {...defaultProps} />)
 
+    await user.click(screen.getByRole('button', { name: 'Template' }))
     await user.click(screen.getByRole('button', { name: 'Feature' }))
 
     const textarea = screen.getByPlaceholderText(
@@ -146,10 +187,11 @@ describe('NewTicketModal', () => {
     expect(textarea.value).toContain('## Solution')
   })
 
-  it('toggling same template chip clears spec', async () => {
+  it('Template mode: toggling same template chip clears spec', async () => {
     const user = userEvent.setup()
     render(<NewTicketModal {...defaultProps} />)
 
+    await user.click(screen.getByRole('button', { name: 'Template' }))
     await user.click(screen.getByRole('button', { name: 'Feature' }))
     await user.click(screen.getByRole('button', { name: 'Feature' }))
 
@@ -159,11 +201,11 @@ describe('NewTicketModal', () => {
     expect(textarea.value).toBe('')
   })
 
-  it('clears form when modal reopens', () => {
+  it('clears form and resets to Quick mode when modal reopens', () => {
     const { rerender } = render(<NewTicketModal {...defaultProps} open={false} />)
     rerender(<NewTicketModal {...defaultProps} open={true} />)
 
-    const titleInput = screen.getByPlaceholderText(/Add recipe search/) as HTMLInputElement
-    expect(titleInput.value).toBe('')
+    // Should be in Quick mode by default
+    expect(screen.getByPlaceholderText(/Fix toast z-index/)).toBeInTheDocument()
   })
 })

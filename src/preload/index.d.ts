@@ -83,6 +83,13 @@ declare global {
         update: (id: string, patch: Record<string, unknown>) => Promise<unknown>
         readLog: (agentId: string) => Promise<{ content: string; status: string }>
         readSpecFile: (filePath: string) => Promise<string>
+        generatePrompt: (args: {
+          taskId: string
+          title: string
+          repo: string
+          templateHint: string
+        }) => Promise<{ taskId: string; spec: string; prompt: string }>
+        delete: (id: string) => Promise<{ ok: boolean }>
       }
 
       // File attachments

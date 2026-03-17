@@ -4,6 +4,7 @@ import { join, resolve } from 'path'
 import { homedir } from 'os'
 import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
+import { getGatewayConfig } from '../config'
 
 const SPECS_ROOT = resolve(homedir(), 'Documents', 'Repositories', 'BDE', 'docs', 'specs')
 
@@ -16,6 +17,19 @@ function validateSpecPath(relativePath: string): string {
 }
 
 // --- Types ---
+
+interface GeneratePromptRequest {
+  taskId: string
+  title: string
+  repo: string
+  templateHint: string
+}
+
+interface GeneratePromptResponse {
+  taskId: string
+  spec: string
+  prompt: string
+}
 
 export interface CreateTaskInput {
   title: string
@@ -177,6 +191,53 @@ export function registerSprintHandlers(): void {
     return readFile(safePath, 'utf-8')
   })
 
+  safeHandle(
+    'sprint:generatePrompt',
+    async (_e, args: GeneratePromptRequest): Promise<GeneratePromptResponse> => {
+      const { taskId, title, repo, templateHint } = args
+      const fallback: GeneratePromptResponse = { taskId, spec: '', prompt: title }
+
+      try {
+        const { url: gatewayUrl, token: gatewayToken } = getGatewayConfig()
+
+        const templateScaffold = getTemplateScaffold(templateHint)
+        const message = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
+
+        const response = await fetch(`${gatewayUrl}/tools/invoke`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${gatewayToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tool: 'sessions_send',
+            args: { sessionKey: 'bde-spec-gen', message, timeoutSeconds: 45 },
+          }),
+        })
+
+        if (!response.ok) return fallback
+
+        const data = (await response.json()) as {
+          result?: { content?: Array<{ type: string; text: string }> }
+        }
+        const text = data.result?.content?.[0]?.text ?? ''
+        if (!text) return fallback
+
+        // Persist the generated spec + prompt to SQLite
+        const db = getDb()
+        db.prepare('UPDATE sprint_tasks SET spec = ?, prompt = ? WHERE id = ?').run(
+          text,
+          text,
+          taskId
+        )
+
+        return { taskId, spec: text, prompt: text }
+      } catch {
+        return fallback
+      }
+    }
+  )
+
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
     const fromByte = typeof rawFromByte === 'number' ? rawFromByte : 0
     const db = getDb()
@@ -199,4 +260,39 @@ export function registerSprintHandlers(): void {
       return { content: '', status: agent.status, nextByte: fromByte }
     }
   })
+}
+
+function buildQuickSpecPrompt(
+  title: string,
+  repo: string,
+  templateHint: string,
+  scaffold: string
+): string {
+  return `You are writing a coding agent spec. Be precise. Name exact files. No preamble.
+
+Task: "${title}"
+Repo: ${repo}
+Type: ${templateHint}
+
+${scaffold ? `Use this structure:\n${scaffold}` : 'Use sections: Problem, Solution, Files to Change, Out of Scope'}
+
+Rules:
+- Exact file paths (e.g. src/renderer/src/components/sprint/SprintCenter.tsx)
+- Exact code changes (not "update the function" but "add X to Y")
+- Out of Scope: 2-3 bullet points max
+- Output ONLY the spec markdown. No commentary.`
+}
+
+function getTemplateScaffold(templateHint: string): string {
+  const SCAFFOLDS: Record<string, string> = {
+    bugfix: `## Bug Description\n\n## Root Cause\n\n## Fix\n\n## Files to Change\n\n## How to Test`,
+    feature: `## Problem\n\n## Solution\n\n## Files to Change\n\n## Out of Scope`,
+    refactor: `## What's Being Refactored\n\n## Target State\n\n## Files to Change\n\n## Out of Scope`,
+    test: `## What to Test\n\n## Test Strategy\n\n## Files to Create\n\n## Coverage Target\n\n## Out of Scope`,
+    performance: `## What's Slow\n\n## Approach\n\n## Files to Change\n\n## How to Verify`,
+    ux: `## UX Problem\n\n## Target Design\n\n## Files to Change (CSS + TSX)\n\n## Out of Scope`,
+    audit: `## Audit Scope\n\n## Criteria\n\n## Deliverable`,
+    infra: `## What's Being Changed\n\n## Steps\n\n## Verification`,
+  }
+  return SCAFFOLDS[templateHint] ?? SCAFFOLDS.feature
 }

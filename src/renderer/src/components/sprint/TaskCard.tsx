@@ -10,6 +10,7 @@ type TaskCardProps = {
   task: SprintTask
   index: number
   prMerged: boolean
+  isGenerating?: boolean
   onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
   onViewSpec: (task: SprintTask) => void
@@ -28,6 +29,7 @@ export function TaskCard({
   task,
   index,
   prMerged,
+  isGenerating,
   onPushToSprint,
   onLaunch,
   onViewSpec,
@@ -49,6 +51,11 @@ export function TaskCard({
   return (
     <div ref={setNodeRef} style={style} className={className} {...attributes} {...listeners}>
       <div className="task-card__title">{task.title}</div>
+      {isGenerating && (
+        <span className="task-card__spec-badge task-card__spec-badge--generating">
+          Writing spec...
+        </span>
+      )}
       <div className="task-card__badges">
         <Badge variant={repoBadgeVariant(task.repo)} size="sm">
           {task.repo}

@@ -109,6 +109,15 @@ const api = {
       ipcRenderer.invoke('sprint:readLog', agentId),
     readSpecFile: (filePath: string): Promise<string> =>
       ipcRenderer.invoke('sprint:read-spec-file', filePath),
+    generatePrompt: (args: {
+      taskId: string
+      title: string
+      repo: string
+      templateHint: string
+    }): Promise<{ taskId: string; spec: string; prompt: string }> =>
+      ipcRenderer.invoke('sprint:generatePrompt', args),
+    delete: (id: string): Promise<{ ok: boolean }> =>
+      ipcRenderer.invoke('sprint:delete', id),
   },
 
   // File attachments
