@@ -20,6 +20,7 @@ import {
   POLL_SPRINT_ACTIVE_MS,
   POLL_PR_STATUS_MS,
   REPO_OPTIONS,
+  WIP_LIMIT_IN_PROGRESS,
 } from '../../lib/constants'
 
 const REPO_LABEL_TO_ENUM: Record<string, string> = {
@@ -313,6 +314,14 @@ export default function SprintCenter() {
     (taskId: string, newStatus: SprintTask['status']) => {
       const task = tasks.find((t) => t.id === taskId)
       if (!task || task.status === newStatus) return
+      // Block transitions into In Progress when WIP limit reached
+      if (newStatus === 'active' && task.status !== 'active') {
+        const activeCount = tasks.filter((t) => t.status === 'active').length
+        if (activeCount >= WIP_LIMIT_IN_PROGRESS) {
+          toast.error(`In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS})`)
+          return
+        }
+      }
       updateTask(taskId, { status: newStatus })
     },
     [tasks, updateTask]
@@ -344,6 +353,15 @@ export default function SprintCenter() {
 
   const handleLaunch = useCallback(
     async (task: SprintTask) => {
+      // Block launch when WIP limit reached (unless task is already active)
+      if (task.status !== 'active') {
+        const activeCount = tasks.filter((t) => t.status === 'active').length
+        if (activeCount >= WIP_LIMIT_IN_PROGRESS) {
+          toast.error(`In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}) — finish or stop a task first`)
+          return
+        }
+      }
+
       try {
         const repoPaths = await window.api.getRepoPaths()
         const repoPath = repoPaths[task.repo.toLowerCase()] ?? repoPaths[task.repo]
@@ -367,7 +385,7 @@ export default function SprintCenter() {
         toast.error(e instanceof Error ? e.message : 'Failed to launch agent')
       }
     },
-    [updateTask]
+    [tasks, updateTask]
   )
 
   const handleSaveSpec = useCallback(
@@ -540,6 +558,16 @@ export default function SprintCenter() {
               onViewSpec={setSelectedTask}
               onViewOutput={handleViewOutput}
             />
+
+            {partition.failed.length > 0 && (
+              <TaskTable
+                section="failed"
+                tasks={partition.failed}
+                onPushToSprint={handlePushToSprint}
+                onViewSpec={setSelectedTask}
+                onViewOutput={handleViewOutput}
+              />
+            )}
 
             <TaskTable
               section="backlog"

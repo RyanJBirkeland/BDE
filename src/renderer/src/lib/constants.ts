@@ -36,6 +36,9 @@ export const REPO_OPTIONS = [
 
 export type RepoOption = (typeof REPO_OPTIONS)[number]
 
+// WIP limits (matches task runner concurrency)
+export const WIP_LIMIT_IN_PROGRESS = 5
+
 // UI
 export const SIDEBAR_WIDTH_DEFAULT = 240
 export const SIDEBAR_WIDTH_MIN = 180

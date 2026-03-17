@@ -142,10 +142,12 @@ describe('KanbanBoard', () => {
 
     render(<KanbanBoard {...props} />)
 
-    const counts = screen.getAllByText(/^[0-3]$/)
-    const countValues = counts.map((el) => el.textContent)
-    expect(countValues).toContain('2') // todo
-    expect(countValues).toContain('1') // review
+    // Todo and Review show plain counts; In Progress shows WIP badge (0/5)
+    const badges = screen.getAllByText(/^\d+(\/\d+)?$/)
+    const badgeValues = badges.map((el) => el.textContent)
+    expect(badgeValues).toContain('2') // todo
+    expect(badgeValues).toContain('1') // review
+    expect(badgeValues).toContain('0/5') // in progress WIP badge
   })
 
   it('calls onDragEnd when task is dragged to another column', () => {
@@ -227,5 +229,59 @@ describe('KanbanBoard', () => {
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
+  })
+
+  it('blocks drops into active column when WIP limit is reached (5 active tasks)', () => {
+    const activeTasks = Array.from({ length: 5 }, (_, i) =>
+      makeTask({ id: `active-${i}`, title: `Active ${i}`, status: 'active' })
+    )
+    const todoTask = makeTask({ id: 'queued-1', title: 'Queued', status: 'queued' })
+
+    render(
+      <KanbanBoard
+        {...defaultProps}
+        todoTasks={[todoTask]}
+        activeTasks={activeTasks}
+      />
+    )
+
+    capturedOnDragEnd?.({
+      active: { id: 'queued-1' },
+      over: { id: 'active' },
+    })
+
+    expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
+  })
+
+  it('allows drops into active column when under WIP limit', () => {
+    const activeTasks = Array.from({ length: 4 }, (_, i) =>
+      makeTask({ id: `active-${i}`, title: `Active ${i}`, status: 'active' })
+    )
+    const todoTask = makeTask({ id: 'queued-1', title: 'Queued', status: 'queued' })
+
+    render(
+      <KanbanBoard
+        {...defaultProps}
+        todoTasks={[todoTask]}
+        activeTasks={activeTasks}
+      />
+    )
+
+    capturedOnDragEnd?.({
+      active: { id: 'queued-1' },
+      over: { id: 'active' },
+    })
+
+    expect(defaultProps.onDragEnd).toHaveBeenCalledWith('queued-1', 'active')
+  })
+
+  it('shows WIP count badge in In Progress column header', () => {
+    const activeTasks = Array.from({ length: 3 }, (_, i) =>
+      makeTask({ id: `active-${i}`, title: `Active ${i}`, status: 'active' })
+    )
+
+    render(<KanbanBoard {...defaultProps} activeTasks={activeTasks} />)
+
+    expect(screen.getByText('3/5')).toBeInTheDocument()
   })
 })

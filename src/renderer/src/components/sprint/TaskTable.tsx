@@ -4,7 +4,7 @@ import { Badge } from '../ui/Badge'
 import type { SprintTask } from '../../../../shared/types'
 
 type TaskTableProps = {
-  section: 'done' | 'backlog'
+  section: 'done' | 'backlog' | 'failed'
   tasks: SprintTask[]
   defaultExpanded?: boolean
   defaultRowLimit?: number
@@ -50,7 +50,7 @@ export function TaskTable({
   section,
   tasks,
   defaultExpanded = true,
-  defaultRowLimit = section === 'done' ? 10 : undefined,
+  defaultRowLimit = (section === 'done' || section === 'failed') ? 10 : undefined,
   onPushToSprint,
   onViewSpec,
   onViewOutput,
@@ -71,7 +71,7 @@ export function TaskTable({
   }
 
   const sorted =
-    section === 'done'
+    section === 'done' || section === 'failed'
       ? [...tasks].sort(
           (a, b) => new Date(b.completed_at ?? b.updated_at).getTime() - new Date(a.completed_at ?? a.updated_at).getTime()
         )
@@ -87,7 +87,7 @@ export function TaskTable({
     <div className="bde-task-section">
       <div className="bde-task-section__header" onClick={toggleCollapsed}>
         <Chevron size={14} />
-        <span>{section === 'done' ? 'Done' : 'Backlog'}</span>
+        <span>{section === 'done' ? 'Done' : section === 'failed' ? 'Failed / Cancelled' : 'Backlog'}</span>
         <span className="sprint-col__count bde-count-badge">{tasks.length}</span>
       </div>
 
@@ -95,17 +95,17 @@ export function TaskTable({
         <>
           {tasks.length === 0 ? (
             <div className="bde-task-table__empty">
-              {section === 'done' ? 'No completed tasks' : 'Backlog is empty'}
+              {section === 'done' ? 'No completed tasks' : section === 'failed' ? 'No failed tasks' : 'Backlog is empty'}
             </div>
           ) : (
             <>
-              <table className="bde-task-table">
+              <table className={`bde-task-table ${section === 'failed' ? 'bde-task-table--dimmed' : ''}`}>
                 <thead>
-                  {section === 'done' ? (
+                  {section === 'done' || section === 'failed' ? (
                     <tr>
                       <th>Title</th>
                       <th>Repo</th>
-                      <th>Completed</th>
+                      <th>{section === 'failed' ? 'Cancelled' : 'Completed'}</th>
                       <th>PR</th>
                       <th></th>
                     </tr>
@@ -120,7 +120,15 @@ export function TaskTable({
                 </thead>
                 <tbody>
                   {visible.map((task) =>
-                    section === 'done' ? (
+                    section === 'failed' ? (
+                      <FailedRow
+                        key={task.id}
+                        task={task}
+                        onViewSpec={onViewSpec}
+                        onViewOutput={onViewOutput}
+                        onPushToSprint={onPushToSprint}
+                      />
+                    ) : section === 'done' ? (
                       <DoneRow
                         key={task.id}
                         task={task}
@@ -196,6 +204,65 @@ function DoneRow({
           title="View Output"
         >
           <Eye size={13} />
+        </button>
+      </td>
+    </tr>
+  )
+}
+
+function FailedRow({
+  task,
+  onViewSpec,
+  onViewOutput,
+  onPushToSprint,
+}: {
+  task: SprintTask
+  onViewSpec: (t: SprintTask) => void
+  onViewOutput: (t: SprintTask) => void
+  onPushToSprint: (t: SprintTask) => void
+}) {
+  return (
+    <tr className="bde-task-table__row--dimmed">
+      <td>
+        <button className="bde-task-table__title-btn" onClick={() => onViewSpec(task)}>
+          {task.title}
+        </button>
+      </td>
+      <td>
+        <Badge variant={repoBadgeVariant(task.repo)} size="sm">
+          {task.repo}
+        </Badge>
+      </td>
+      <td className="bde-task-table__date">{formatDate(task.updated_at)}</td>
+      <td>
+        {task.pr_url ? (
+          <a
+            href={task.pr_url}
+            target="_blank"
+            rel="noreferrer"
+            className="bde-task-table__pr-link"
+            onClick={(e) => e.stopPropagation()}
+          >
+            #{task.pr_number} <ExternalLink size={10} />
+          </a>
+        ) : (
+          <span className="bde-task-table__muted">—</span>
+        )}
+      </td>
+      <td className="bde-task-table__actions-cell">
+        <button
+          className="bde-task-table__action-btn"
+          onClick={() => onViewOutput(task)}
+          title="View Output"
+        >
+          <Eye size={13} />
+        </button>
+        <button
+          className="bde-task-table__action-btn bde-task-table__action-btn--sprint"
+          onClick={() => onPushToSprint(task)}
+          title="Retry — move back to sprint"
+        >
+          <ArrowRight size={13} /> Retry
         </button>
       </td>
     </tr>

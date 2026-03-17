@@ -34,6 +34,7 @@ describe('partitionSprintTasks', () => {
       inProgress: [],
       awaitingReview: [],
       done: [],
+      failed: [],
     })
   })
 
@@ -45,6 +46,7 @@ describe('partitionSprintTasks', () => {
     expect(result.inProgress).toHaveLength(0)
     expect(result.awaitingReview).toHaveLength(0)
     expect(result.done).toHaveLength(0)
+    expect(result.failed).toHaveLength(0)
   })
 
   it('puts queued tasks in todo', () => {
@@ -91,6 +93,13 @@ describe('partitionSprintTasks', () => {
     expect(result.done).toEqual([t])
   })
 
+  it('puts cancelled tasks in failed', () => {
+    const t = makeTask({ status: 'cancelled' })
+    const result = partitionSprintTasks([t])
+    expect(result.failed).toEqual([t])
+    expect(result.done).toHaveLength(0)
+  })
+
   it('correctly partitions a mixed set of tasks', () => {
     const tasks = [
       makeTask({ title: 'B1', status: 'backlog' }),
@@ -102,6 +111,7 @@ describe('partitionSprintTasks', () => {
       makeTask({ title: 'D2', status: 'done', pr_status: null }),
       makeTask({ title: 'R1', status: 'done', pr_status: 'open' }),
       makeTask({ title: 'R2', status: 'done', pr_status: 'open' }),
+      makeTask({ title: 'C1', status: 'cancelled' }),
     ]
 
     const result = partitionSprintTasks(tasks)
@@ -110,6 +120,7 @@ describe('partitionSprintTasks', () => {
     expect(result.inProgress).toHaveLength(2)
     expect(result.done).toHaveLength(2)
     expect(result.awaitingReview).toHaveLength(2)
+    expect(result.failed).toHaveLength(1)
   })
 
   it('every task lands in exactly one bucket (no duplicates)', () => {
@@ -119,6 +130,7 @@ describe('partitionSprintTasks', () => {
       makeTask({ status: 'active' }),
       makeTask({ status: 'done', pr_status: 'open' }),
       makeTask({ status: 'done', pr_status: 'merged' }),
+      makeTask({ status: 'cancelled' }),
     ]
 
     const result = partitionSprintTasks(tasks)
@@ -128,6 +140,7 @@ describe('partitionSprintTasks', () => {
       ...result.inProgress,
       ...result.awaitingReview,
       ...result.done,
+      ...result.failed,
     ]
 
     expect(allPartitioned).toHaveLength(tasks.length)

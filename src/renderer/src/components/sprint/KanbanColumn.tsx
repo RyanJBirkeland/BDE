@@ -16,6 +16,7 @@ type KanbanColumnProps = {
   prMergedMap: Record<string, boolean>
   generatingIds?: Set<string>
   readOnly?: boolean
+  wipLimit?: number
   onPushToSprint: (task: SprintTask) => void
   onLaunch: (task: SprintTask) => void
   onViewSpec: (task: SprintTask) => void
@@ -49,6 +50,7 @@ export const KanbanColumn = memo(function KanbanColumn({
   prMergedMap,
   generatingIds,
   readOnly = false,
+  wipLimit,
   onPushToSprint,
   onLaunch,
   onViewSpec,
@@ -57,9 +59,10 @@ export const KanbanColumn = memo(function KanbanColumn({
   onStop,
 }: KanbanColumnProps) {
   const reduced = useReducedMotion()
-  const droppable = useDroppable({ id: status, disabled: readOnly })
-  const isOver = readOnly ? false : droppable.isOver
-  const setNodeRef = readOnly ? undefined : droppable.setNodeRef
+  const wipFull = wipLimit !== undefined && tasks.length >= wipLimit
+  const droppable = useDroppable({ id: status, disabled: readOnly || wipFull })
+  const isOver = (readOnly || wipFull) ? false : droppable.isOver
+  const setNodeRef = (readOnly || wipFull) ? undefined : droppable.setNodeRef
   const ids = tasks.map((t) => t.id)
 
   const content = (
@@ -126,11 +129,17 @@ export const KanbanColumn = memo(function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`kanban-col ${STATUS_CLASS[status]} ${isOver ? 'kanban-col--drop-target' : ''}`}
+      className={`kanban-col ${STATUS_CLASS[status]} ${isOver ? 'kanban-col--drop-target' : ''} ${wipFull ? 'kanban-col--wip-full' : ''}`}
     >
       <div className="kanban-col__header">
         {label}
-        <span className="sprint-col__count bde-count-badge">{tasks.length}</span>
+        {wipLimit !== undefined ? (
+          <span className={`sprint-col__count bde-count-badge ${wipFull ? 'bde-count-badge--wip-full' : ''}`}>
+            {tasks.length}/{wipLimit}
+          </span>
+        ) : (
+          <span className="sprint-col__count bde-count-badge">{tasks.length}</span>
+        )}
       </div>
       {content}
     </div>
