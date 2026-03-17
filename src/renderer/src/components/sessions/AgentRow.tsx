@@ -4,7 +4,7 @@ import { Badge } from '../ui/Badge'
 import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
 import { getStaleLevel } from '../../hooks/useUnifiedAgents'
 import { timeAgo, modelBadgeLabel } from '../../lib/format'
-import { VARIANTS, TRANSITIONS, SPRINGS } from '../../lib/motion'
+import { TRANSITIONS, useReducedMotion } from '../../lib/motion'
 import { useTerminalStore } from '../../stores/terminal'
 
 export interface AgentRowProps {
@@ -35,6 +35,7 @@ export function AgentRow({
   onKill,
   onSteer
 }: AgentRowProps): React.JSX.Element {
+  const reduced = useReducedMotion()
   const [killing, setKilling] = useState(false)
   const killTargetRef = useRef(false)
   const staleLevel = getStaleLevel(agent)
@@ -114,10 +115,8 @@ export function AgentRow({
 
   return (
     <motion.button
-      variants={VARIANTS.staggerChild}
-      transition={SPRINGS.default}
-      whileHover={{ scale: 1.008, transition: TRANSITIONS.instant }}
-      whileTap={{ scale: 0.998 }}
+      whileHover={reduced ? undefined : { scale: 1.008, transition: TRANSITIONS.instant }}
+      whileTap={reduced ? undefined : { scale: 0.998 }}
       className={[
         'agent-row glass glass-highlight',
         isSelected && 'agent-row--selected gradient-border glow-accent-sm',

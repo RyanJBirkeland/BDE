@@ -4,6 +4,11 @@
  * Respect `prefers-reduced-motion: reduce` at the component level.
  */
 
+export { useReducedMotion } from 'framer-motion'
+
+/** Instant transition for use when prefers-reduced-motion is active */
+export const REDUCED_TRANSITION = { duration: 0 } as const
+
 export const SPRINGS = {
   /** Snappy — buttons, toggles, micro-interactions */
   snappy: { type: 'spring' as const, stiffness: 500, damping: 30, mass: 0.8 },
@@ -56,9 +61,9 @@ export const VARIANTS = {
 
   /** Scale in — modals, command palette, dialogs */
   scaleIn: {
-    initial: { opacity: 0, scale: 0.95, filter: 'blur(4px)' },
+    initial: { opacity: 0, scale: 0.96, filter: 'blur(4px)' },
     animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
-    exit: { opacity: 0, scale: 0.95, filter: 'blur(4px)' },
+    exit: { opacity: 0, scale: 0.96, filter: 'blur(4px)' },
   },
 
   /** Drop in — notifications, toasts (from top) */

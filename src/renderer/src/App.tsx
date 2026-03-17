@@ -22,7 +22,7 @@ import DiffView from './views/DiffView'
 import CostView from './views/CostView'
 import SettingsView from './views/SettingsView'
 import { TerminalView } from './views/TerminalView'
-import { VARIANTS, SPRINGS } from './lib/motion'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 
 const VIEW_ORDER: View[] = [
   'sessions',
@@ -61,11 +61,19 @@ const SHORTCUTS_RIGHT: { keys: string; description: string }[] = [
 ]
 
 function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
-  const wrap = (name: string, el: React.JSX.Element): React.JSX.Element => (
-    <div key={name} className="view-enter">
-      <ErrorBoundary name={name}>{el}</ErrorBoundary>
-    </div>
-  )
+  const reduced = useReducedMotion()
+
+  const onDemandView = (() => {
+    switch (activeView) {
+      case 'sprint': return <ErrorBoundary name="Sprint"><SprintView /></ErrorBoundary>
+      case 'memory': return <ErrorBoundary name="Memory"><MemoryView /></ErrorBoundary>
+      case 'diff': return <ErrorBoundary name="Diff"><DiffView /></ErrorBoundary>
+      case 'cost': return <ErrorBoundary name="Cost"><CostView /></ErrorBoundary>
+      case 'settings': return <ErrorBoundary name="Settings"><SettingsView /></ErrorBoundary>
+      default: return null
+    }
+  })()
+
   return (
     <>
       {/* Terminal and Sessions stay mounted so PTY sessions and chat state survive navigation */}
@@ -75,12 +83,22 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
       <div className="view-enter" style={{ display: activeView === 'sessions' ? 'flex' : 'none' }}>
         <ErrorBoundary name="Sessions"><SessionsView /></ErrorBoundary>
       </div>
-      {/* Other views mount on demand */}
-      {activeView === 'sprint' && wrap('Sprint', <SprintView />)}
-      {activeView === 'memory' && wrap('Memory', <MemoryView />)}
-      {activeView === 'diff' && wrap('Diff', <DiffView />)}
-      {activeView === 'cost' && wrap('Cost', <CostView />)}
-      {activeView === 'settings' && wrap('Settings', <SettingsView />)}
+      {/* On-demand views animate in/out */}
+      <AnimatePresence mode="wait">
+        {onDemandView && (
+          <motion.div
+            key={activeView}
+            className="view-enter"
+            variants={VARIANTS.fadeIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={reduced ? REDUCED_TRANSITION : SPRINGS.gentle}
+          >
+            {onDemandView}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {!['terminal','sessions','sprint','memory','diff','cost','settings'].includes(activeView) && (
         <div className="view-router">
           <span className="view-router__placeholder">{String(activeView)} — coming soon</span>
@@ -91,6 +109,8 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
 }
 
 function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const reduced = useReducedMotion()
+
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
@@ -111,7 +131,7 @@ function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Eleme
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={SPRINGS.smooth}
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
       >
         <h2 className="shortcuts-overlay__title">Keyboard Shortcuts</h2>
         <div className="shortcuts-overlay__columns">

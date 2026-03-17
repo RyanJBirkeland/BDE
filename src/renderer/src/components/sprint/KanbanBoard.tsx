@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LayoutGroup } from 'framer-motion'
 import {
   DndContext,
   DragOverlay,
@@ -99,6 +100,7 @@ export function KanbanBoard({
   const noop = () => {}
 
   return (
+    <LayoutGroup>
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="kanban-board">
         <KanbanColumn
@@ -156,5 +158,6 @@ export function KanbanBoard({
         ) : null}
       </DragOverlay>
     </DndContext>
+    </LayoutGroup>
   )
 }

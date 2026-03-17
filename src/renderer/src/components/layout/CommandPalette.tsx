@@ -7,7 +7,7 @@ import { useAgentHistoryStore, type AgentMeta } from '../../stores/agentHistory'
 import { toast } from '../../stores/toasts'
 import { Kbd } from '../ui/Kbd'
 import { timeAgo } from '../../lib/format'
-import { VARIANTS, SPRINGS } from '../../lib/motion'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 
 type CommandCategory = 'navigation' | 'action' | 'session'
 
@@ -41,6 +41,7 @@ interface CommandPaletteProps {
 }
 
 export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JSX.Element {
+  const reduced = useReducedMotion()
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [recentAgents, setRecentAgents] = useState<AgentMeta[]>([])
@@ -224,7 +225,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={SPRINGS.smooth}
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
       >
         <input
           ref={inputRef}

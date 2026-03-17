@@ -4,7 +4,7 @@ import { useLocalAgentsStore } from '../../stores/localAgents'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { SPAWN_TASK_MAX_CHARS_SOFT, SPAWN_TASK_MAX_CHARS_HARD, SPAWN_TASK_HISTORY_LIMIT, REPO_OPTIONS } from '../../lib/constants'
-import { VARIANTS, SPRINGS } from '../../lib/motion'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 const MODELS = [
   { id: 'haiku', label: 'Haiku', claude: 'claude-haiku-4-5-20251001' },
   { id: 'sonnet', label: 'Sonnet', claude: 'claude-sonnet-4-6' },
@@ -26,6 +26,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   const [history, setHistory] = useState<string[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const historyRef = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
   const spawnAgent = useLocalAgentsStore((s) => s.spawnAgent)
   const fetchProcesses = useLocalAgentsStore((s) => s.fetchProcesses)
   const spawning = useLocalAgentsStore((s) => s.isSpawning)
@@ -155,7 +156,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={SPRINGS.smooth}
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
       >
         <h2 className="spawn-modal__title">Spawn Agent <span className="spawn-modal__plan-badge">⬡ Max</span></h2>
 
