@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '../ui/Button'
 import { KanbanBoard } from './KanbanBoard'
 import { SpecDrawer } from './SpecDrawer'
@@ -53,7 +53,7 @@ export default function SprintCenter() {
     }
   }, [])
 
-  // Adaptive sprint polling — 5s when active tasks exist, 30s otherwise
+  // Adaptive sprint polling — consistency backstop (SSE handles real-time)
   const hasActiveTasks = tasks.some((t) => t.status === 'active')
 
   useEffect(() => {
@@ -70,6 +70,33 @@ export default function SprintCenter() {
     window.api.onExternalSprintChange(loadData)
     return () => window.api.offExternalSprintChange(loadData)
   }, [loadData])
+
+  // SSE real-time task updates — surgical merge + debounced full reload
+  const debouncedLoadRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedLoadData = useMemo(
+    () => () => {
+      if (debouncedLoadRef.current) clearTimeout(debouncedLoadRef.current)
+      debouncedLoadRef.current = setTimeout(loadData, 300)
+    },
+    [loadData]
+  )
+
+  useEffect(() => {
+    const handler = (event: { type: string; data: unknown }): void => {
+      if (event.type === 'task:updated' && event.data && typeof event.data === 'object') {
+        const patch = event.data as Partial<SprintTask> & { id?: string }
+        if (patch.id) {
+          setTasks((prev) => prev.map((t) => (t.id === patch.id ? { ...t, ...patch } : t)))
+        }
+      }
+      debouncedLoadData()
+    }
+    window.api.onSprintSseEvent(handler)
+    return () => {
+      window.api.offSprintSseEvent()
+      if (debouncedLoadRef.current) clearTimeout(debouncedLoadRef.current)
+    }
+  }, [debouncedLoadData])
 
   // PR status polling — check merged status for tasks with a pr_url
   const prMergedRef = useRef(prMergedMap)

@@ -6,8 +6,8 @@ export const POLL_CHAT_STREAMING_MS = 1_000
 export const POLL_CHAT_IDLE_MS = 5_000
 export const POLL_SESSIONS_INTERVAL = 10_000
 export const POLL_GIT_STATUS_INTERVAL = 30_000
-export const POLL_SPRINT_INTERVAL = 30_000
-export const POLL_SPRINT_ACTIVE_MS = 5_000
+export const POLL_SPRINT_INTERVAL = 120_000
+export const POLL_SPRINT_ACTIVE_MS = 30_000
 export const POLL_PR_STATUS_MS = 60_000
 export const POLL_PR_LIST_INTERVAL = 60_000
 

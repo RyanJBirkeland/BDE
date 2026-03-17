@@ -158,6 +158,8 @@ Object.defineProperty(window, 'api', {
     },
     onExternalSprintChange: vi.fn(),
     offExternalSprintChange: vi.fn(),
+    onSprintSseEvent: vi.fn(),
+    offSprintSseEvent: vi.fn(),
   },
   writable: true,
   configurable: true,
