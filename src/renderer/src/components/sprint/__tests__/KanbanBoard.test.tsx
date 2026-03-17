@@ -73,7 +73,9 @@ import { KanbanBoard } from '../KanbanBoard'
 
 describe('KanbanBoard', () => {
   const defaultProps = {
-    tasks: [] as SprintTask[],
+    todoTasks: [] as SprintTask[],
+    activeTasks: [] as SprintTask[],
+    awaitingReviewTasks: [] as SprintTask[],
     prMergedMap: {} as Record<string, boolean>,
     onDragEnd: vi.fn(),
     onReorder: vi.fn(),
@@ -88,84 +90,104 @@ describe('KanbanBoard', () => {
     capturedOnDragEnd = null
   })
 
-  it('renders 4 columns (Backlog, Sprint, In Progress, Done)', () => {
+  it('renders 3 columns (To Do, In Progress, Awaiting Review)', () => {
     render(<KanbanBoard {...defaultProps} />)
-    expect(screen.getByText('Backlog')).toBeInTheDocument()
-    expect(screen.getByText('Sprint')).toBeInTheDocument()
+    expect(screen.getByText('To Do')).toBeInTheDocument()
     expect(screen.getByText('In Progress')).toBeInTheDocument()
-    expect(screen.getByText('Done')).toBeInTheDocument()
+    expect(screen.getByText('Awaiting Review')).toBeInTheDocument()
   })
 
-  it('distributes tasks to correct columns by status', () => {
-    const tasks = [
-      makeTask({ title: 'Backlog item', status: 'backlog' }),
-      makeTask({ title: 'Queued item', status: 'queued' }),
-      makeTask({ title: 'Active item', status: 'active' }),
-      makeTask({ title: 'Done item', status: 'done' }),
-    ]
+  it('does not render Backlog or Done columns', () => {
+    render(<KanbanBoard {...defaultProps} />)
+    expect(screen.queryByText('Backlog')).not.toBeInTheDocument()
+    expect(screen.queryByText('Done')).not.toBeInTheDocument()
+  })
 
-    render(<KanbanBoard {...defaultProps} tasks={tasks} />)
+  it('distributes tasks to correct columns', () => {
+    const props = {
+      ...defaultProps,
+      todoTasks: [makeTask({ title: 'Queued item', status: 'queued' })],
+      activeTasks: [makeTask({ title: 'Active item', status: 'active' })],
+      awaitingReviewTasks: [makeTask({ title: 'Review item', status: 'done', pr_status: 'open' })],
+    }
 
-    expect(screen.getByText('Backlog item')).toBeInTheDocument()
+    render(<KanbanBoard {...props} />)
+
     expect(screen.getByText('Queued item')).toBeInTheDocument()
     expect(screen.getByText('Active item')).toBeInTheDocument()
-    expect(screen.getByText('Done item')).toBeInTheDocument()
+    expect(screen.getByText('Review item')).toBeInTheDocument()
   })
 
   it('renders empty columns with empty-state message', () => {
     render(<KanbanBoard {...defaultProps} />)
-    expect(screen.getByText('Backlog is empty')).toBeInTheDocument()
     expect(screen.getByText('Sprint queue is empty')).toBeInTheDocument()
     expect(screen.getByText('Nothing in progress')).toBeInTheDocument()
-    expect(screen.getByText('No completed tasks yet')).toBeInTheDocument()
+    expect(screen.getByText('No PRs awaiting review')).toBeInTheDocument()
   })
 
   it('shows correct task count per column', () => {
-    const tasks = [
-      makeTask({ title: 'B1', status: 'backlog' }),
-      makeTask({ title: 'B2', status: 'backlog' }),
-      makeTask({ title: 'D1', status: 'done' }),
-    ]
+    const props = {
+      ...defaultProps,
+      todoTasks: [
+        makeTask({ title: 'T1', status: 'queued' }),
+        makeTask({ title: 'T2', status: 'queued' }),
+      ],
+      awaitingReviewTasks: [
+        makeTask({ title: 'R1', status: 'done', pr_status: 'open' }),
+      ],
+    }
 
-    render(<KanbanBoard {...defaultProps} tasks={tasks} />)
+    render(<KanbanBoard {...props} />)
 
-    const counts = screen.getAllByText(/^[0-4]$/)
+    const counts = screen.getAllByText(/^[0-3]$/)
     const countValues = counts.map((el) => el.textContent)
-    expect(countValues).toContain('2') // backlog
-    expect(countValues).toContain('1') // done
+    expect(countValues).toContain('2') // todo
+    expect(countValues).toContain('1') // review
   })
 
-  it('calls onDragEnd with correct args when task is dragged to another column', () => {
-    const task = makeTask({ id: 'task-1', title: 'Drag me', status: 'backlog' })
-    render(<KanbanBoard {...defaultProps} tasks={[task]} />)
+  it('calls onDragEnd when task is dragged to another column', () => {
+    const task = makeTask({ id: 'task-1', title: 'Drag me', status: 'queued' })
+    render(<KanbanBoard {...defaultProps} todoTasks={[task]} />)
 
     capturedOnDragEnd?.({
       active: { id: 'task-1' },
-      over: { id: 'done' },
+      over: { id: 'active' },
     })
 
-    expect(defaultProps.onDragEnd).toHaveBeenCalledWith('task-1', 'done')
+    expect(defaultProps.onDragEnd).toHaveBeenCalledWith('task-1', 'active')
   })
 
   it('does not call onDragEnd when dropped on same column status', () => {
-    const task = makeTask({ id: 'task-1', status: 'backlog' })
-    render(<KanbanBoard {...defaultProps} tasks={[task]} />)
+    const task = makeTask({ id: 'task-1', status: 'queued' })
+    render(<KanbanBoard {...defaultProps} todoTasks={[task]} />)
 
     capturedOnDragEnd?.({
       active: { id: 'task-1' },
-      over: { id: 'backlog' },
+      over: { id: 'queued' },
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
   })
 
   it('does not call onDragEnd when dropped on nothing', () => {
-    const task = makeTask({ id: 'task-1', status: 'backlog' })
-    render(<KanbanBoard {...defaultProps} tasks={[task]} />)
+    const task = makeTask({ id: 'task-1', status: 'queued' })
+    render(<KanbanBoard {...defaultProps} todoTasks={[task]} />)
 
     capturedOnDragEnd?.({
       active: { id: 'task-1' },
       over: null,
+    })
+
+    expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
+  })
+
+  it('does not allow drops into review column', () => {
+    const task = makeTask({ id: 'task-1', status: 'queued' })
+    render(<KanbanBoard {...defaultProps} todoTasks={[task]} />)
+
+    capturedOnDragEnd?.({
+      active: { id: 'task-1' },
+      over: { id: 'review' },
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
