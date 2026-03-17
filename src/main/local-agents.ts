@@ -304,34 +304,17 @@ export function sendToAgent(pid: number, message: string): { ok: boolean; error?
 
 // --- Steer a running agent by agent ID (UUID) ---
 
-export async function steerAgent(agentId: string, message: string): Promise<{ ok: boolean; error?: string }> {
-  // First: try local process map (BDE-spawned agents)
+export function steerAgent(agentId: string, message: string): { ok: boolean; error?: string } {
   const child = activeAgentsById.get(agentId)
-  if (child && child.stdin && !child.stdin.destroyed) {
-    const event = JSON.stringify({
-      type: 'user',
-      message: { role: 'user', content: message }
-    }) + '\n'
-    child.stdin.write(event)
-    return { ok: true }
+  if (!child || !child.stdin || child.stdin.destroyed) {
+    return { ok: false, error: 'Agent not found or stdin closed' }
   }
-
-  // Fallback: task-runner REST API (for task-runner-spawned agents)
-  try {
-    const apiKey = process.env.SPRINT_API_KEY ?? ''
-    const response = await fetch(`http://127.0.0.1:18799/agents/${agentId}/steer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({ message }),
-    })
-    const data = await response.json() as { ok?: boolean; error?: string }
-    return { ok: data.ok ?? false, error: data.error }
-  } catch {
-    return { ok: false, error: 'Agent not found — not in local map or task-runner' }
-  }
+  const event = JSON.stringify({
+    type: 'user',
+    message: { role: 'user', content: message }
+  }) + '\n'
+  child.stdin.write(event)
+  return { ok: true }
 }
 
 // --- Tail agent log file ---
