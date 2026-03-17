@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain, shell } from 'electron'
 import { safeHandle } from '../ipc-utils'
 
 export function registerWindowHandlers(): void {
+  // TODO: AX-S1 — add 'open-external', 'kill-local-agent' to IpcChannelMap
   safeHandle('open-external', (_e, url: string) => shell.openExternal(url))
 
   safeHandle('kill-local-agent', async (_event, pid: number) => {

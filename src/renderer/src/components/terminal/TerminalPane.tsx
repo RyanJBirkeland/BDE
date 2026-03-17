@@ -34,6 +34,7 @@ export function TerminalPane({ tabId, shell, visible }: TerminalPaneProps): Reac
     if (!containerRef.current) return
 
     const term = new Terminal({
+      /* intentional: xterm theme requires literal color strings */
       theme: {
         background: '#0A0A0A',
         foreground: '#E8E8E8',

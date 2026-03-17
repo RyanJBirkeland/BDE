@@ -713,12 +713,37 @@
   bottom: 16px;
   right: 16px;
   background: var(--bde-accent);
-  color: #000;
+  color: var(--bg-void);
   font-size: var(--bde-size-sm);
   font-weight: 600;
   padding: 6px 14px;
   border-radius: var(--bde-radius-md);
   animation: toast-in 0.2s ease;
+}
+
+.memory-editor__loading {
+  flex: 1;
+  display: flex;
+  padding: 12px;
+}
+
+.memory-editor__skeleton {
+  flex: 1;
+  border-radius: var(--bde-radius-md);
+}
+
+/* ── Memory Sidebar Loading ─────────────────────────────── */
+
+.memory-sidebar__loading {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+}
+
+.memory-sidebar__skeleton {
+  height: 40px;
+  border-radius: var(--bde-radius-md);
 }
 
 @keyframes toast-in {
@@ -766,16 +791,16 @@
 
 .toast--success {
   background: var(--bde-accent);
-  color: #000;
+  color: var(--bg-void);
 }
 
 .toast--error {
-  background: #ef4444;
-  color: #fff;
+  background: var(--color-error);
+  color: var(--text-primary);
 }
 
 .toast--info {
-  background: #2a2a2a;
+  background: var(--bg-card);
   color: var(--bde-text);
   border: 1px solid var(--bde-border);
 }
@@ -832,11 +857,37 @@
 .diff-view__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 6px 12px;
   border-bottom: 1px solid var(--bde-border);
-  background: var(--bde-surface);
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   flex-shrink: 0;
+  position: relative;
+}
+
+.diff-view__header::before {
+  content: 'DIFF';
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
+
+.diff-view__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
 }
 
 .diff-view__repos {
@@ -862,7 +913,7 @@
 
 .diff-view__chip--active {
   background: var(--bde-accent);
-  color: #000;
+  color: var(--bg-void);
   border-color: var(--bde-accent);
 }
 
@@ -870,6 +921,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-left: auto;
 }
 
 .diff-view__branch {
@@ -906,6 +958,23 @@
   justify-content: center;
   color: var(--bde-text-muted);
   font-size: var(--bde-size-lg);
+}
+
+.diff-view__loading-grid {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+}
+
+.diff-view__loading-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.diff-view__loading-content {
+  flex: 1;
 }
 
 /* ── Diff Viewer (sidebar + content) ────────────────────── */

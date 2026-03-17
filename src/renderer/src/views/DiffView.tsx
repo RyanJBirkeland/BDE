@@ -5,10 +5,12 @@
  * via IPC (git:status, git:diff) and polls every 30s.
  */
 import { useState, useEffect, useCallback } from 'react'
+import { GitBranch } from 'lucide-react'
 import DiffViewer from '../components/diff/DiffViewer'
 import { parseDiff } from '../lib/diff-parser'
 import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'
+import { EmptyState } from '../components/ui/EmptyState'
 import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
 import * as git from '../services/git'
 import { toast } from '../stores/toasts'
@@ -297,9 +299,9 @@ function DiffView(): React.JSX.Element {
 
       {loading && files.length === 0 ? (
         <div className="diff-view__loading">
-          <div style={{ display: 'flex', gap: 12, width: '100%', height: '100%', padding: 12 }}>
-            <div className="bde-skeleton" style={{ width: 260, flexShrink: 0 }} />
-            <div className="bde-skeleton" style={{ flex: 1 }} />
+          <div className="diff-view__loading-grid">
+            <div className="bde-skeleton diff-view__loading-sidebar" />
+            <div className="bde-skeleton diff-view__loading-content" />
           </div>
         </div>
       ) : (
@@ -355,7 +357,11 @@ function DiffView(): React.JSX.Element {
                 )
               })}
               {files.length === 0 && (
-                <div className="git-sidebar__empty">No changes — working tree is clean</div>
+                <EmptyState
+                  icon={<GitBranch size={24} />}
+                  title="Working tree clean"
+                  description="No uncommitted changes"
+                />
               )}
             </div>
 

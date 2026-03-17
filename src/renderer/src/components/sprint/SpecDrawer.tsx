@@ -4,6 +4,11 @@ import { EmptyState } from '../ui/EmptyState'
 import { toast } from '../../stores/toasts'
 import type { SprintTask } from './SprintCenter'
 
+function extractSpecPath(prompt: string): string | null {
+  const match = prompt.match(/docs\/specs\/[\w-]+\.md/)
+  return match ? match[0] : null
+}
+
 type SpecDrawerProps = {
   task: SprintTask | null
   onClose: () => void
@@ -32,13 +37,36 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint }: 
   const [dirty, setDirty] = useState(false)
   const [generating, setGenerating] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
+  const resolvedContentRef = useRef('')
 
   useEffect(() => {
-    if (task) {
-      setDraft(task.spec ?? task.prompt ?? '')
-      setEditing(false)
-      setDirty(false)
-      setGenerating(false)
+    if (!task) return
+    setEditing(false)
+    setDirty(false)
+    setGenerating(false)
+
+    if (task.spec) {
+      resolvedContentRef.current = task.spec
+      setDraft(task.spec)
+      return
+    }
+
+    const fallback = task.prompt ?? ''
+    const specPath = extractSpecPath(fallback)
+    if (specPath) {
+      window.api.sprint
+        .readSpecFile(specPath)
+        .then((content) => {
+          resolvedContentRef.current = content
+          setDraft(content)
+        })
+        .catch(() => {
+          resolvedContentRef.current = fallback
+          setDraft(fallback)
+        })
+    } else {
+      resolvedContentRef.current = fallback
+      setDraft(fallback)
     }
   }, [task?.id])
 
@@ -61,7 +89,7 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint }: 
         if (editing && dirty) {
           if (confirm('Discard unsaved changes?')) {
             setEditing(false)
-            setDraft(task.spec ?? task.prompt ?? '')
+            setDraft(resolvedContentRef.current)
             setDirty(false)
           }
         } else {
@@ -147,7 +175,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
                     size="sm"
                     onClick={() => {
                       setEditing(false)
-                      setDraft(task.spec ?? task.prompt ?? '')
+                      setDraft(resolvedContentRef.current)
                       setDirty(false)
                     }}
                   >
@@ -170,10 +198,10 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
                   disabled={generating}
                   placeholder="Write your spec in markdown..."
                 />
-              ) : (task.spec || task.prompt) ? (
+              ) : draft ? (
                 <div
                   className="spec-drawer__rendered"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(task.spec ?? task.prompt ?? '') }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(draft) }}
                 />
               ) : (
                 <EmptyState

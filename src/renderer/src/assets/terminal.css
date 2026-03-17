@@ -102,7 +102,7 @@
 
 /* Agent tab purple dot (overrides green) */
 .terminal-tab--agent.terminal-tab--active::before {
-  background: var(--color-ai, #a78bfa);
+  background: var(--color-ai);
 }
 
 .terminal-tab--agent {
@@ -343,8 +343,8 @@
   left: 0;
   z-index: 20;
   min-width: 180px;
-  background: var(--bde-surface, #111111);
-  border: 1px solid var(--bde-border, #2A2A2A);
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md, 6px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   padding: 4px 0;
@@ -362,8 +362,8 @@
   z-index: 20;
   min-width: 320px;
   max-width: 480px;
-  background: var(--bde-surface, #111111);
-  border: 1px solid var(--bde-border, #2A2A2A);
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md, 6px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   padding: 4px 0;
@@ -381,13 +381,13 @@
   height: 32px;
   font-size: var(--bde-size-md);
   font-family: var(--bde-font-ui);
-  color: var(--bde-text, #E8E8E8);
+  color: var(--bde-text);
   font-weight: 500;
 }
 
 .agent-picker__divider {
   height: 1px;
-  background: var(--bde-border, #2A2A2A);
+  background: var(--bde-border);
   margin: 4px 0;
 }
 
@@ -400,7 +400,7 @@
   padding: 6px 12px;
   border: none;
   background: transparent;
-  color: var(--bde-text, #E8E8E8);
+  color: var(--bde-text);
   font-family: var(--bde-font-ui);
   cursor: pointer;
   text-align: left;
@@ -409,7 +409,7 @@
 }
 
 .agent-picker__item:hover {
-  background: var(--bde-surface-high, #1A1A1A);
+  background: var(--bde-surface-high);
 }
 
 .agent-picker__item-left {
@@ -429,13 +429,13 @@
 .agent-picker__repo {
   font-size: var(--bde-size-md);
   font-weight: 500;
-  color: var(--bde-text, #E8E8E8);
+  color: var(--bde-text);
   flex-shrink: 0;
 }
 
 .agent-picker__task {
   font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted, #888888);
+  color: var(--bde-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -445,7 +445,7 @@
 
 .agent-picker__time {
   font-size: var(--bde-size-xs);
-  color: var(--bde-text-dim, #555555);
+  color: var(--bde-text-dim);
   flex-shrink: 0;
 }
 
@@ -454,7 +454,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  color: var(--bde-text-dim, #555555);
+  color: var(--bde-text-dim);
   font-size: var(--bde-size-sm);
   font-family: var(--bde-font-ui);
 }
@@ -468,7 +468,7 @@
   padding: 0 12px;
   border: none;
   background: transparent;
-  color: var(--bde-text, #E8E8E8);
+  color: var(--bde-text);
   font-size: var(--bde-size-md);
   font-family: var(--bde-font-ui);
   cursor: pointer;
@@ -477,21 +477,21 @@
 }
 
 .shell-picker__item:hover {
-  background: var(--bde-surface-high, #1A1A1A);
+  background: var(--bde-surface-high);
 }
 
 .shell-picker__item--header {
-  color: var(--bde-text, #E8E8E8);
+  color: var(--bde-text);
 }
 
 .shell-picker__shortcut {
   font-size: var(--bde-size-xs);
-  color: var(--bde-text-dim, #555555);
+  color: var(--bde-text-dim);
 }
 
 .shell-picker__divider {
   height: 1px;
-  background: var(--bde-border, #2A2A2A);
+  background: var(--bde-border);
   margin: 4px 0;
 }
 
@@ -501,10 +501,10 @@
 
 .shell-picker__custom-input {
   width: 100%;
-  background: var(--bde-bg, #0A0A0A);
-  border: 1px solid var(--bde-border, #2A2A2A);
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-sm, 4px);
-  color: var(--bde-text, #E8E8E8);
+  color: var(--bde-text);
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
   padding: 4px 8px;
@@ -513,7 +513,7 @@
 }
 
 .shell-picker__custom-input:focus {
-  border-color: var(--bde-accent, #00D37F);
+  border-color: var(--bde-accent);
 }
 
 /* ── Terminal: Agent output tab ────────────────────────── */
@@ -523,7 +523,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: var(--bde-bg, #0A0A0A);
+  background: var(--bde-bg);
 }
 
 .terminal-agent-tab .agent-log {
@@ -538,8 +538,8 @@
   gap: 8px;
   height: 28px;
   padding: 0 12px;
-  background: var(--bde-surface, #111111);
-  border-bottom: 1px solid var(--bde-border, #2A2A2A);
+  background: var(--bde-surface);
+  border-bottom: 1px solid var(--bde-border);
   font-size: var(--bde-size-xs);
   font-family: var(--bde-font-ui);
   color: var(--bde-subagent);

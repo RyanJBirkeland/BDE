@@ -59,7 +59,7 @@ export default function PRList() {
   }
 
   const repoColor = (repoName: string) =>
-    PR_REPOS.find((r) => r.label === repoName)?.color ?? '#6B6B6B'
+    PR_REPOS.find((r) => r.label === repoName)?.color ?? 'var(--bde-text-dim)'
 
   return (
     <div className="pr-list">

@@ -51,6 +51,9 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
   const { items, isStreaming } = useMemo(() => parseStreamJson(logContent), [logContent])
   const messages = useMemo(() => chatItemsToMessages(items), [items])
 
+  const hasStreamJson = items.length > 0
+  const hasPlainText = !hasStreamJson && logContent.trim().length > 0
+
   const handleOpenInSessions = useCallback(() => {
     if (!task?.agent_run_id) return
     window.dispatchEvent(
@@ -86,11 +89,15 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
       </div>
       <div className="log-drawer__body">
         {task.agent_run_id ? (
-          <ChatThread messages={messages} isStreaming={agentStatus === 'running' && isStreaming} />
+          hasStreamJson ? (
+            <ChatThread messages={messages} isStreaming={agentStatus === 'running' && isStreaming} />
+          ) : hasPlainText ? (
+            <pre className="log-drawer__plain-text">{logContent}</pre>
+          ) : (
+            <div className="log-drawer__empty">Agent is starting up...</div>
+          )
         ) : (
-          <div style={{ padding: 16, color: 'var(--bde-text-muted)', fontSize: 12 }}>
-            No agent session linked to this task.
-          </div>
+          <div className="log-drawer__no-session">No agent session linked to this task.</div>
         )}
       </div>
       <div className="log-drawer__footer">

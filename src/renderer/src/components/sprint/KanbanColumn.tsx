@@ -54,7 +54,10 @@ export function KanbanColumn({
       <div className="kanban-col__cards">
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           {tasks.length === 0 ? (
-            <EmptyState title={EMPTY_LABELS[status]} />
+            <div className="kanban-col__empty">
+              <EmptyState title={EMPTY_LABELS[status]} />
+              <span className="kanban-col__drop-hint">Drop cards here</span>
+            </div>
           ) : (
             tasks.map((task, i) => (
               <TaskCard

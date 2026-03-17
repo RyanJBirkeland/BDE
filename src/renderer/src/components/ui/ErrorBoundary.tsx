@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.error) {
       return this.props.fallback ?? (
-        <div style={{ padding: 16, color: '#f87171', fontFamily: 'monospace', fontSize: 12 }}>
+        <div style={{ padding: 16, color: 'var(--bde-danger-text)', fontFamily: 'monospace', fontSize: 12 }}>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>
             {this.props.name ? `${this.props.name} crashed` : 'Something went wrong'}
           </div>

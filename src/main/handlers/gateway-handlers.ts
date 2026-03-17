@@ -2,6 +2,7 @@ import { safeHandle } from '../ipc-utils'
 import { getGatewayConfig } from '../config'
 
 export function registerGatewayHandlers(): void {
+  // TODO: AX-S1 — add 'gateway:invoke', 'gateway:getSessionHistory' to IpcChannelMap
   safeHandle('gateway:invoke', async (_e, tool: string, args: Record<string, unknown>) => {
     const { url, token } = getGatewayConfig()
     const httpUrl = url.replace(/^wss?:\/\//, 'http://').replace(/\/$/, '')

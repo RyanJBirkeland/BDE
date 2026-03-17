@@ -13,6 +13,7 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import * as settingsService from '../services/settings'
 
+/* intentional: literal color values for accent color picker swatches */
 const ACCENT_PRESETS = [
   { color: '#00D37F', label: 'Green' },
   { color: '#3B82F6', label: 'Blue' },
@@ -27,7 +28,7 @@ const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE'
 
 function useAccentColor(): [string, (color: string) => void] {
   const [accent, setAccentState] = useState(
-    () => localStorage.getItem('bde-accent') ?? '#00D37F'
+    () => localStorage.getItem('bde-accent') ?? '#00D37F' /* intentional: default accent */
   )
 
   const setAccent = useCallback((color: string) => {

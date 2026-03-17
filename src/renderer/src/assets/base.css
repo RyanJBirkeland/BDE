@@ -142,6 +142,11 @@
   --color-ai:      #A78BFA;
   --color-queued:  #6C8EEF;
 
+  /* Model-specific colors */
+  --color-model-haiku:  var(--color-info);
+  --color-model-sonnet: var(--accent);
+  --color-model-opus:   var(--color-warning);
+
   /* ── Named Gradient Palette ──────────────────────────── */
 
   /* Accent gradients */

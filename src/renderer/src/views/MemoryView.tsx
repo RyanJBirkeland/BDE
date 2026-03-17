@@ -5,6 +5,7 @@
  * into pinned (MEMORY.md), daily logs, projects, and other. Keyboard-navigable.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FileText } from 'lucide-react'
 import { toast } from '../stores/toasts'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui/Button'
@@ -70,6 +71,8 @@ function groupFiles(files: MemoryFile[]): { pinned: MemoryFile | null; groups: F
 
 export default function MemoryView(): React.JSX.Element {
   const [files, setFiles] = useState<MemoryFile[]>([])
+  const [loadingFiles, setLoadingFiles] = useState(true)
+  const [loadingContent, setLoadingContent] = useState(false)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [content, setContent] = useState('')
   const [savedContent, setSavedContent] = useState('')
@@ -84,6 +87,8 @@ export default function MemoryView(): React.JSX.Element {
       setFiles(result)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to load memory files')
+    } finally {
+      setLoadingFiles(false)
     }
   }, [])
 
@@ -92,6 +97,7 @@ export default function MemoryView(): React.JSX.Element {
   }, [loadFiles])
 
   const openFile = useCallback(async (path: string) => {
+    setLoadingContent(true)
     try {
       const text = await memoryService.readFile(path)
       setSelectedPath(path)
@@ -99,6 +105,8 @@ export default function MemoryView(): React.JSX.Element {
       setSavedContent(text)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to open file')
+    } finally {
+      setLoadingContent(false)
     }
   }, [])
 
@@ -272,14 +280,30 @@ export default function MemoryView(): React.JSX.Element {
             </div>
           ))}
 
-          {files.length === 0 && (
-            <EmptyState title="No memory files found" />
+          {loadingFiles && files.length === 0 && (
+            <div className="memory-sidebar__loading">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bde-skeleton memory-sidebar__skeleton" />
+              ))}
+            </div>
+          )}
+          {!loadingFiles && files.length === 0 && (
+            <EmptyState
+              icon={<FileText size={24} />}
+              title="No memory files"
+              description="Create a file to start taking notes"
+              action={{ label: 'New File', onClick: () => setNewFilePrompt(true) }}
+            />
           )}
         </div>
       </div>
 
       <div className="memory-editor">
-        {selectedPath ? (
+        {loadingContent ? (
+          <div className="memory-editor__loading">
+            <div className="bde-skeleton memory-editor__skeleton" />
+          </div>
+        ) : selectedPath ? (
           <>
             <div className="memory-editor__toolbar">
               <span className="memory-editor__path">
