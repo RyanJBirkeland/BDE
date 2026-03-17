@@ -84,7 +84,7 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
         <ErrorBoundary name="Sessions"><SessionsView /></ErrorBoundary>
       </div>
       {/* On-demand views animate in/out */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {onDemandView && (
           <motion.div
             key={activeView}
