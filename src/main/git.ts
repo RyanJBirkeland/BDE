@@ -178,13 +178,28 @@ function markTaskDoneOnMerge(prNumber: number): void {
   }
 }
 
+function markTaskCancelled(prNumber: number): void {
+  try {
+    getDb()
+      .prepare(
+        "UPDATE sprint_tasks SET status='cancelled', completed_at=? WHERE pr_number=? AND status='active'"
+      )
+      .run(new Date().toISOString(), prNumber)
+  } catch (err) {
+    console.warn(`[git] failed to mark task cancelled for PR #${prNumber}:`, err)
+  }
+}
+
 export async function pollPrStatuses(prs: PrStatusInput[]): Promise<PrStatusResult[]> {
   const results = await Promise.all(prs.map(fetchPrStatusRest))
   for (const result of results) {
+    const input = prs.find((p) => p.taskId === result.taskId)
+    const prNumber = input ? parsePrUrl(input.prUrl)?.number : null
+    if (!prNumber) continue
     if (result.merged) {
-      const parsed = prs.find((p) => p.taskId === result.taskId)
-      const prNumber = parsed ? parsePrUrl(parsed.prUrl)?.number : null
-      if (prNumber) markTaskDoneOnMerge(parseInt(prNumber, 10))
+      markTaskDoneOnMerge(parseInt(prNumber, 10))
+    } else if (result.state === 'CLOSED') {
+      markTaskCancelled(parseInt(prNumber, 10))
     }
   }
   return results
