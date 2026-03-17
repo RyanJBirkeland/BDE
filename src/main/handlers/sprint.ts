@@ -205,18 +205,31 @@ export function registerSprintHandlers(): void {
         const templateScaffold = getTemplateScaffold(templateHint)
         const message = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
 
-        const response = await fetch(`${gatewayUrl}/tools/invoke`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${gatewayToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            tool: 'sessions_send',
-            // 'bde-spec-gen' session is not configured — send to main session
-            args: { sessionKey: 'main', message, timeoutSeconds: 45 },
-          }),
-        })
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 55_000)
+        let response: Response
+        try {
+          response = await fetch(`${gatewayUrl}/tools/invoke`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${gatewayToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              tool: 'sessions_send',
+              // 'bde-spec-gen' session is not configured — send to main session
+              args: { sessionKey: 'main', message, timeoutSeconds: 45 },
+            }),
+            signal: controller.signal,
+          })
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            throw new Error('Spec generation timed out — gateway unreachable')
+          }
+          throw err
+        } finally {
+          clearTimeout(timeoutId)
+        }
 
         if (!response.ok) return fallback
 
