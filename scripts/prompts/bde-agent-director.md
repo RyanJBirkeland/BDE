@@ -38,6 +38,6 @@ Wire the AgentDirector component to actually dispatch tasks to the OpenClaw gate
 ## Rules
 - Work on a branch: `git checkout -b feat/agent-director-wired`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh pr create --base main --title "feat: BDE agent director wired — spawn/steer/kill via gateway RPC" --body "Wires AgentDirector to real gateway tools"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE agent director wired — spawn/steer/kill via gateway RPC" -f body="Wires AgentDirector to real gateway tools" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh pr create ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`

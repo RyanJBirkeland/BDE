@@ -40,6 +40,6 @@ Build a Session Log Viewer panel that shows the full message history for a selec
 ## Rules
 - Work on a branch: `git checkout -b feat/session-log-viewer`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh pr create --base main --title "feat: BDE session log viewer — full message history with tool call expansion" --body "Session log viewer wired to sessions_history gateway tool"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE session log viewer — full message history with tool call expansion" -f body="Session log viewer wired to sessions_history gateway tool" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh pr create ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`

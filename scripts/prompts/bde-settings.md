@@ -39,6 +39,6 @@ Build a Settings view so users can configure the app without editing files.
 ## Rules
 - Work on a branch: `git checkout -b feat/settings-view`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh pr create --base main --title "feat: BDE settings view — gateway config, repo paths, accent color" --body "Settings screen for gateway config and appearance"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE settings view — gateway config, repo paths, accent color" -f body="Settings screen for gateway config and appearance" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh pr create ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`

@@ -39,6 +39,6 @@ Make the Command Palette actually do things.
 ## Rules
 - Work on a branch: `git checkout -b feat/command-palette-wired`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh pr create --base main --title "feat: BDE command palette wired — navigation, actions, recent sessions" --body "Wires Cmd+K palette to real navigation and gateway actions"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE command palette wired — navigation, actions, recent sessions" -f body="Wires Cmd+K palette to real navigation and gateway actions" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh pr create ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`

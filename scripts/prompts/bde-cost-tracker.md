@@ -32,6 +32,6 @@ Build a Cost Tracker view that shows API spend across sessions.
 ## Rules
 - Work on a branch: `git checkout -b feat/cost-tracker`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh pr create --base main --title "feat: BDE cost tracker — session spend dashboard" --body "Cost tracking view with per-session breakdown and daily/weekly totals"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE cost tracker — session spend dashboard" -f body="Cost tracking view with per-session breakdown and daily/weekly totals" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh pr create ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`
