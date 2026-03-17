@@ -78,6 +78,14 @@ export function parseStreamJson(raw: string): { items: ChatItem[]; isStreaming: 
         const delta = parsed.delta as Record<string, unknown> | undefined
         if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
           currentText += delta.text
+        } else if (delta?.type === 'input_json_delta' && typeof delta.partial_json === 'string') {
+          // Accumulate partial JSON into the last tool_use block
+          for (let i = items.length - 1; i >= 0; i--) {
+            if (items[i].kind === 'tool_use') {
+              items[i] = { ...items[i], input: (items[i] as ChatItemToolUse).input + delta.partial_json } as ChatItemToolUse
+              break
+            }
+          }
         }
         break
       }
