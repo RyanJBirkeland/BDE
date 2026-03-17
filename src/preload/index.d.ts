@@ -41,6 +41,7 @@ declare global {
       isAgentInteractive: (pid: number) => Promise<boolean>
       steerAgent: (agentId: string, message: string) => Promise<{ ok: boolean; error?: string }>
       killLocalAgent: (pid: number) => Promise<{ ok: boolean; error?: string }>
+      killAgent: (agentId: string) => Promise<{ ok: boolean; error?: string }>
       tailAgentLog: (args: {
         logPath: string
         fromByte?: number

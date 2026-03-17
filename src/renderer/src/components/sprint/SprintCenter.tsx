@@ -339,6 +339,22 @@ export default function SprintCenter() {
     [updateTask]
   )
 
+  const handleStop = useCallback(
+    async (task: SprintTask) => {
+      if (!task.agent_run_id) return
+      const confirmed = window.confirm('Stop this agent? The task will be marked cancelled.')
+      if (!confirmed) return
+      const result = await window.api.killAgent(task.agent_run_id)
+      if (result.ok) {
+        updateTask(task.id, { status: 'cancelled' })
+        toast.success('Agent stopped')
+      } else {
+        toast.error(result.error ?? 'Failed to stop agent')
+      }
+    },
+    [updateTask]
+  )
+
   const handleViewOutput = useCallback((task: SprintTask) => {
     setLogDrawerTaskId(task.id)
   }, [])
@@ -446,6 +462,7 @@ export default function SprintCenter() {
               onViewSpec={setSelectedTask}
               onViewOutput={handleViewOutput}
               onMarkDone={handleMarkDone}
+              onStop={handleStop}
             />
 
             <TaskTable
@@ -481,7 +498,7 @@ export default function SprintCenter() {
 
       <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />
 
-      <LogDrawer task={logDrawerTask} onClose={() => setLogDrawerTaskId(null)} />
+      <LogDrawer task={logDrawerTask} onClose={() => setLogDrawerTaskId(null)} onStop={handleStop} />
     </div>
   )
 }

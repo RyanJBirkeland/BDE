@@ -274,18 +274,34 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
     appendFile(logPath, chunk.toString(), 'utf-8').catch(() => {})
   })
 
-  child.on('exit', async (code) => {
+  child.on('exit', async (code, signal) => {
     if (child.pid) activeAgentProcesses.delete(child.pid)
     activeAgentsById.delete(id)
+    const status = signal === 'SIGTERM' ? 'cancelled' : code === 0 ? 'done' : 'failed'
     await updateAgentMeta(id, {
       finishedAt: new Date().toISOString(),
       exitCode: code,
-      status: code === 0 ? 'done' : 'failed'
+      status
     })
   })
 
   child.unref()
   return { pid: child.pid!, logPath: meta.logPath, id, interactive: true }
+}
+
+// --- Kill a running agent by ID ---
+
+export async function killAgent(agentId: string): Promise<{ ok: boolean; error?: string }> {
+  const child = activeAgentsById.get(agentId)
+  if (!child) {
+    return { ok: false, error: 'Agent not found — may have already exited' }
+  }
+  try {
+    child.kill('SIGTERM')
+  } catch {
+    return { ok: false, error: 'Failed to send SIGTERM' }
+  }
+  return { ok: true }
 }
 
 // --- Send follow-up message to a running interactive agent ---

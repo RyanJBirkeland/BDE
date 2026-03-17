@@ -37,6 +37,9 @@ export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
           done.push(task)
         }
         break
+      case 'cancelled':
+        done.push(task)
+        break
     }
   }
 

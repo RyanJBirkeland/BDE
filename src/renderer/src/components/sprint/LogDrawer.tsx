@@ -12,9 +12,10 @@ import type { SprintTask } from './SprintCenter'
 type LogDrawerProps = {
   task: SprintTask | null
   onClose: () => void
+  onStop?: (task: SprintTask) => void
 }
 
-export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element | null {
+export function LogDrawer({ task, onClose, onStop }: LogDrawerProps): React.JSX.Element | null {
   const [logContent, setLogContent] = useState('')
   const [agentStatus, setAgentStatus] = useState('unknown')
   const [steerInput, setSteerInput] = useState('')
@@ -186,6 +187,11 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
         </div>
       )}
       <div className="log-drawer__footer">
+        {task.status === 'active' && onStop && (
+          <Button variant="danger" size="sm" onClick={() => onStop(task)}>
+            Stop Agent
+          </Button>
+        )}
         <Button variant="ghost" size="sm" onClick={handleOpenInSessions}>
           Open in Sessions
         </Button>

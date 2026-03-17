@@ -35,6 +35,10 @@ export function registerAgentHandlers(): void {
     const { steerAgent } = await import('../local-agents')
     return await steerAgent(agentId, message)
   })
+  safeHandle('agent:kill', async (_e, agentId: string) => {
+    const { killAgent } = await import('../local-agents')
+    return killAgent(agentId)
+  })
   cleanupOldLogs()
 
   // --- Agent history IPC ---

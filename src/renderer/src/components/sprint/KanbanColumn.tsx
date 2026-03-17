@@ -21,6 +21,7 @@ type KanbanColumnProps = {
   onViewSpec: (task: SprintTask) => void
   onViewOutput: (task: SprintTask) => void
   onMarkDone?: (task: SprintTask) => void
+  onStop?: (task: SprintTask) => void
 }
 
 const EMPTY_LABELS: Record<ColumnStatus, string> = {
@@ -53,6 +54,7 @@ export const KanbanColumn = memo(function KanbanColumn({
   onViewSpec,
   onViewOutput,
   onMarkDone,
+  onStop,
 }: KanbanColumnProps) {
   const reduced = useReducedMotion()
   const droppable = useDroppable({ id: status, disabled: readOnly })
@@ -83,6 +85,7 @@ export const KanbanColumn = memo(function KanbanColumn({
                 onViewSpec={onViewSpec}
                 onViewOutput={onViewOutput}
                 onMarkDone={onMarkDone}
+                onStop={onStop}
               />
             </motion.div>
           ))

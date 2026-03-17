@@ -72,6 +72,8 @@ const api = {
     ipcRenderer.invoke('agent:steer', { agentId, message }),
   killLocalAgent: (pid: number): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('kill-local-agent', pid),
+  killAgent: (agentId: string): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke('agent:kill', agentId),
   tailAgentLog: (args: {
     logPath: string
     fromByte?: number

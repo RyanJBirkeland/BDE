@@ -14,7 +14,7 @@ export interface AgentMeta {
   startedAt: string
   finishedAt: string | null
   exitCode: number | null
-  status: 'running' | 'done' | 'failed' | 'unknown'
+  status: 'running' | 'done' | 'failed' | 'cancelled' | 'unknown'
   logPath: string
   source: 'bde' | 'openclaw' | 'external'
 }
@@ -27,6 +27,7 @@ export interface SprintTask {
   priority: number
   status: 'backlog' | 'queued' | 'active' | 'done' | 'cancelled'
   notes: string | null
+  description?: string | null
   spec: string | null
   agent_run_id: string | null
   pr_number: number | null
