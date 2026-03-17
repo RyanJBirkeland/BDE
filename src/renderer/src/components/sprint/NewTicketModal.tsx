@@ -139,9 +139,11 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
       } | null
 
       const text = result?.result?.content?.[0]?.text ?? ''
-      if (text) {
-        setSpec(text)
+      if (!text) {
+        toast.error('Paul returned an empty response — try again')
+        return
       }
+      setSpec(text)
     } catch {
       toast.error('Ask Paul failed — check your connection and try again')
     } finally {

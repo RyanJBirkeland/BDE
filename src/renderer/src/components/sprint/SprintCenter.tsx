@@ -41,6 +41,7 @@ export default function SprintCenter() {
   const [selectedTask, setSelectedTask] = useState<SprintTask | null>(null)
   const [logDrawerTaskId, setLogDrawerTaskId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [prMergedMap, setPrMergedMap] = useState<Record<string, boolean>>({})
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set())
@@ -58,6 +59,7 @@ export default function SprintCenter() {
   const prIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const loadData = useCallback(async () => {
+    setLoadError(null)
     setLoading(true)
     try {
       const result = (await window.api.sprint.list()) as SprintTask[]
@@ -66,8 +68,8 @@ export default function SprintCenter() {
         prevTasksRef.current = prev
         return next
       })
-    } catch {
-      // silent — data will be empty on first load if Supabase is unreachable
+    } catch (e) {
+      setLoadError('Failed to load tasks — ' + (e instanceof Error ? e.message : String(e)))
     } finally {
       setLoading(false)
     }
@@ -503,7 +505,14 @@ export default function SprintCenter() {
       </div>
 
       <div className="sprint-center__body">
-        {loading && tasks.length === 0 ? (
+        {loadError && tasks.length === 0 ? (
+          <div className="sprint-center__error">
+            <p className="sprint-center__error-message">{loadError}</p>
+            <Button variant="primary" size="sm" onClick={loadData} disabled={loading}>
+              {loading ? 'Retrying…' : 'Retry'}
+            </Button>
+          </div>
+        ) : loading && tasks.length === 0 ? (
           <div className="kanban-board">
             {['To Do', 'In Progress', 'Awaiting Review'].map((label) => (
               <div key={label} className="kanban-col">
