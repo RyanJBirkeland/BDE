@@ -103,18 +103,11 @@ export function LocalAgentLogViewer({ pid }: { pid: number }): React.JSX.Element
   const isAlive = !!proc
   const isInteractive = !!spawned?.interactive && isAlive
 
-  const [, setTick] = useState(0)
   const [steerInput, setSteerInput] = useState('')
   const [sentMessages, setSentMessages] = useState<string[]>([])
 
   const { items, isStreaming } = useMemo(() => parseStreamJson(logContent), [logContent])
   const chatMessages = useMemo(() => chatItemsToMessages(items), [items])
-
-  // Tick for elapsed time
-  useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 1000)
-    return () => clearInterval(interval)
-  }, [])
 
   // Route externally-spawned agents through history store (readLog by ID)
   useEffect(() => {

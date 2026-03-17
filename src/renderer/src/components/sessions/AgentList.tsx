@@ -8,6 +8,7 @@ import { useUnifiedAgents, groupUnifiedAgents } from '../../hooks/useUnifiedAgen
 import { useSessionsStore } from '../../stores/sessions'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
+import { useUIStore } from '../../stores/ui'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 
 export interface AgentListProps {
@@ -36,19 +37,21 @@ export function AgentList({
   const setFollowMode = useSessionsStore((s) => s.setFollowMode)
   const [historyOpen, setHistoryOpen] = useState(false)
 
-  // Poll local agent processes (ps aux) and history every 5s
+  // Poll local agent processes (ps aux) and history — only when sessions view is active
+  const activeView = useUIStore((s) => s.activeView)
   const fetchProcesses = useLocalAgentsStore((s) => s.fetchProcesses)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
   useEffect(() => {
+    if (activeView !== 'sessions') return
     fetchProcesses()
     fetchAgents()
-    const processInterval = setInterval(fetchProcesses, 5_000)
+    const processInterval = setInterval(fetchProcesses, 15_000)
     const historyInterval = setInterval(fetchAgents, 10_000)
     return () => {
       clearInterval(processInterval)
       clearInterval(historyInterval)
     }
-  }, [fetchProcesses, fetchAgents])
+  }, [fetchProcesses, fetchAgents, activeView])
 
   const toggleHistory = useCallback(() => setHistoryOpen((v) => !v), [])
   const toggleFollow = useCallback(

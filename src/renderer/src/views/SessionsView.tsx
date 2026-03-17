@@ -44,10 +44,11 @@ export function SessionsView(): React.JSX.Element {
   const activeView = useUIStore((s) => s.activeView)
 
   useEffect(() => {
+    if (activeView !== 'sessions') return
     fetchSessions()
     const id = setInterval(fetchSessions, POLL_SESSIONS_INTERVAL)
     return () => clearInterval(id)
-  }, [fetchSessions])
+  }, [fetchSessions, activeView])
 
   useEffect(() => {
     if (sessions.length > 0 && !selectedKey) {

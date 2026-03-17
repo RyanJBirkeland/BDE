@@ -1,19 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useSessionsStore } from '../stores/sessions'
-import { SESSION_ACTIVE_THRESHOLD, POLL_SPRINT_INTERVAL } from '../lib/constants'
-
-const SUPABASE_URL = 'https://ponbudosprotfhissvzo.supabase.co'
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbmJ1ZG9zcHJvdGZoaXNzdnpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NTkyNzgsImV4cCI6MjA4ODEzNTI3OH0.KwALcQ9P404nMKyx76Jz7UA9QEQsDn2UFWw8mAb_ZNI'
-
-interface SprintTask {
-  id: string
-  title: string
-  repo: string
-  status: 'queued' | 'active' | 'done'
-  updated_at: string
-  pr_url: string | null
-}
+import { SESSION_ACTIVE_THRESHOLD } from '../lib/constants'
+import type { SprintTask } from '../../../shared/types'
 
 function notify(title: string, body: string): void {
   if (!('Notification' in window)) return
@@ -40,7 +28,7 @@ export function useTaskNotifications(): void {
       if (session.abortedLastRun && !isRunning && !seenBlockedKeys.current.has(session.key)) {
         seenBlockedKeys.current.add(session.key)
         notify(
-          '⚠️ Agent needs attention',
+          '\u26A0\uFE0F Agent needs attention',
           `Session "${session.displayName || session.key}" aborted and may need input.`
         )
       }
@@ -51,37 +39,27 @@ export function useTaskNotifications(): void {
     }
   }, [sessions])
 
-  // Watch for completed sprint tasks
+  // Watch for completed sprint tasks via local SQLite change events
   useEffect(() => {
-    const fetchDone = async (): Promise<void> => {
+    const handleChange = async (): Promise<void> => {
       try {
-        // Only look at tasks completed in the last 5 minutes
-        const since = new Date(Date.now() - SESSION_ACTIVE_THRESHOLD).toISOString()
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/sprint_tasks?status=eq.done&updated_at=gt.${encodeURIComponent(since)}&order=updated_at.desc&limit=10`,
-          {
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-            }
-          }
-        )
-        const tasks: SprintTask[] = await res.json()
+        const tasks = (await window.api.sprint.list()) as SprintTask[]
+        const doneTasks = tasks.filter((t) => t.status === 'done')
 
-        // On first load, seed seenDoneIds without notifying (avoid notifying on app start)
+        // On first event, seed seenDoneIds without notifying
         if (!initialized.current) {
-          for (const t of tasks) seenDoneIds.current.add(t.id)
+          for (const t of doneTasks) seenDoneIds.current.add(t.id)
           initialized.current = true
           return
         }
 
-        for (const task of tasks) {
+        for (const task of doneTasks) {
           if (!seenDoneIds.current.has(task.id)) {
             seenDoneIds.current.add(task.id)
             const body = task.pr_url
               ? `PR ready: ${task.pr_url}`
               : `Task "${task.title}" completed in ${task.repo}.`
-            notify('✅ Agent task done', body)
+            notify('\u2705 Agent task done', body)
           }
         }
       } catch {
@@ -89,8 +67,10 @@ export function useTaskNotifications(): void {
       }
     }
 
-    fetchDone()
-    const id = setInterval(fetchDone, POLL_SPRINT_INTERVAL)
-    return () => clearInterval(id)
+    // Seed seen IDs on mount
+    handleChange()
+
+    window.api.onExternalSprintChange(handleChange)
+    return () => window.api.offExternalSprintChange(handleChange)
   }, [])
 }
