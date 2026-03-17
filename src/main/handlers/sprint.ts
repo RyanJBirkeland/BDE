@@ -242,6 +242,23 @@ export function registerSprintHandlers(): void {
     }
   )
 
+  safeHandle('sprint:health-check', () => {
+    const db = getDb()
+    return db
+      .prepare(
+        `SELECT st.*
+         FROM sprint_tasks st
+         LEFT JOIN agent_runs ar ON ar.id = st.agent_run_id
+         WHERE st.status = 'active'
+           AND (
+             st.agent_run_id IS NULL
+             OR ar.id IS NULL
+             OR ar.status NOT IN ('running')
+           )`
+      )
+      .all()
+  })
+
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
     const fromByte = typeof rawFromByte === 'number' ? rawFromByte : 0
     const db = getDb()

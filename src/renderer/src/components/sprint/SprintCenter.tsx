@@ -6,11 +6,13 @@ import { TaskTable } from './TaskTable'
 import { SpecDrawer } from './SpecDrawer'
 import { LogDrawer } from './LogDrawer'
 import { ConflictDrawer } from './ConflictDrawer'
+import { HealthCheckDrawer } from './HealthCheckDrawer'
 import { PRSection } from './PRSection'
 import { NewTicketModal } from './NewTicketModal'
 import type { CreateTicketData } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
 import { usePrConflictsStore } from '../../stores/prConflicts'
+import { useHealthCheckStore } from '../../stores/healthCheck'
 import { detectTemplate } from '../../../../shared/template-heuristics'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { subscribeSSE, type TaskUpdatedEvent } from '../../lib/taskRunnerSSE'
@@ -19,6 +21,7 @@ import {
   POLL_SPRINT_INTERVAL,
   POLL_SPRINT_ACTIVE_MS,
   POLL_PR_STATUS_MS,
+  POLL_HEALTH_CHECK_MS,
   REPO_OPTIONS,
 } from '../../lib/constants'
 
@@ -45,6 +48,7 @@ export default function SprintCenter() {
   const [prMergedMap, setPrMergedMap] = useState<Record<string, boolean>>({})
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set())
   const [conflictDrawerOpen, setConflictDrawerOpen] = useState(false)
+  const [healthDrawerOpen, setHealthDrawerOpen] = useState(false)
   const logDrawerTask = logDrawerTaskId ? (tasks.find((t) => t.id === logDrawerTaskId) ?? null) : null
 
   // Keep notification hook aware of which task's LogDrawer is open
@@ -443,6 +447,32 @@ export default function SprintCenter() {
     [tasks, conflictingTaskIds]
   )
 
+  // Health check — detect stuck active tasks
+  const setStuckTasks = useHealthCheckStore((s) => s.setStuckTasks)
+  const stuckTaskIds = useHealthCheckStore((s) => s.stuckTaskIds)
+  const dismissedIds = useHealthCheckStore((s) => s.dismissedIds)
+  const dismissTask = useHealthCheckStore((s) => s.dismiss)
+
+  const runHealthCheck = useCallback(async () => {
+    try {
+      const stuck = await window.api.sprint.healthCheck()
+      setStuckTasks(stuck.map((t) => t.id))
+    } catch {
+      // silent
+    }
+  }, [setStuckTasks])
+
+  useEffect(() => {
+    runHealthCheck()
+    const id = setInterval(runHealthCheck, POLL_HEALTH_CHECK_MS)
+    return () => clearInterval(id)
+  }, [runHealthCheck])
+
+  const visibleStuckTasks = useMemo(
+    () => tasks.filter((t) => stuckTaskIds.has(t.id) && !dismissedIds.has(t.id)),
+    [tasks, stuckTaskIds, dismissedIds]
+  )
+
   const filteredTasks = repoFilter
     ? tasks.filter((t) => t.repo.toLowerCase() === repoFilter.toLowerCase())
     : tasks
@@ -477,6 +507,17 @@ export default function SprintCenter() {
           </div>
         </div>
         <div className="sprint-center__actions">
+          {visibleStuckTasks.length > 0 && (
+            <button
+              className="conflict-badge-btn"
+              onClick={() => setHealthDrawerOpen(true)}
+              title="Stuck tasks detected"
+            >
+              <Badge variant="warning" size="sm">
+                {visibleStuckTasks.length} stuck
+              </Badge>
+            </button>
+          )}
           {conflictingTasks.length > 0 && (
             <button
               className="conflict-badge-btn"
@@ -572,6 +613,13 @@ export default function SprintCenter() {
         open={conflictDrawerOpen}
         tasks={conflictingTasks}
         onClose={() => setConflictDrawerOpen(false)}
+      />
+
+      <HealthCheckDrawer
+        open={healthDrawerOpen}
+        tasks={visibleStuckTasks}
+        onClose={() => setHealthDrawerOpen(false)}
+        onDismiss={dismissTask}
       />
     </div>
   )

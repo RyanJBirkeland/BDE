@@ -10,6 +10,7 @@ export const POLL_SPRINT_INTERVAL = 120_000
 export const POLL_SPRINT_ACTIVE_MS = 30_000
 export const POLL_PR_STATUS_MS = 60_000
 export const POLL_PR_LIST_INTERVAL = 60_000
+export const POLL_HEALTH_CHECK_MS = 600_000
 
 // Timeouts (ms)
 export const GATEWAY_DISCONNECT_TOAST_DELAY = 4_000

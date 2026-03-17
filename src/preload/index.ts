@@ -129,6 +129,8 @@ const api = {
       ipcRenderer.invoke('sprint:generatePrompt', args),
     delete: (id: string): Promise<{ ok: boolean }> =>
       ipcRenderer.invoke('sprint:delete', id),
+    healthCheck: (): Promise<SprintTask[]> =>
+      ipcRenderer.invoke('sprint:health-check'),
   },
 
   // File attachments
