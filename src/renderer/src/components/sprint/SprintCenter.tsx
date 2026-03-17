@@ -224,7 +224,7 @@ export default function SprintCenter() {
           title: data.title,
           repo: repoEnum,
           prompt: data.prompt || data.title,
-          description: data.description || undefined,
+          notes: data.notes || undefined,
           spec: data.spec || undefined,
           priority: data.priority,
           status: 'backlog',

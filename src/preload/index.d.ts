@@ -76,7 +76,7 @@ declare global {
           title: string
           repo: string
           prompt?: string
-          description?: string
+          notes?: string
           spec?: string
           priority?: number
           status?: string

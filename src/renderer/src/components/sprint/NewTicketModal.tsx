@@ -10,7 +10,7 @@ type TicketMode = 'quick' | 'template' | 'design'
 export type CreateTicketData = {
   title: string
   repo: string
-  description: string
+  notes: string
   prompt: string
   spec: string | null
   priority: number
@@ -157,7 +157,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
       onCreate({
         title: trimmed,
         repo,
-        description: '',
+        notes: '',
         prompt: trimmed,
         spec: null,
         priority: 1,
@@ -170,7 +170,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
     onCreate({
       title: trimmed,
       repo,
-      description: '',
+      notes: '',
       prompt: spec || trimmed,
       spec: spec || null,
       priority,

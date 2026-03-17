@@ -35,7 +35,7 @@ export interface CreateTaskInput {
   title: string
   repo: string
   prompt?: string
-  description?: string
+  notes?: string
   spec?: string
   priority?: number
   status?: string
@@ -150,8 +150,8 @@ export function registerSprintHandlers(): void {
   safeHandle('sprint:create', (_e, task: CreateTaskInput) => {
     const db = getDb()
     const stmt = db.prepare(`
-      INSERT INTO sprint_tasks (title, repo, prompt, spec, priority, status)
-      VALUES (@title, @repo, @prompt, @spec, @priority, @status)
+      INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status)
+      VALUES (@title, @repo, @prompt, @spec, @notes, @priority, @status)
       RETURNING *
     `)
     return stmt.get({
@@ -159,6 +159,7 @@ export function registerSprintHandlers(): void {
       repo: task.repo,
       prompt: task.prompt ?? task.spec ?? task.title,
       spec: task.spec ?? null,
+      notes: task.notes ?? null,
       priority: task.priority ?? 0,
       status: task.status ?? 'backlog',
     })

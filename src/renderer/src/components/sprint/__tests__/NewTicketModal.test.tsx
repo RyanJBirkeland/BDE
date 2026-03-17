@@ -52,7 +52,7 @@ describe('NewTicketModal', () => {
     expect(defaultProps.onCreate).toHaveBeenCalledWith({
       title: 'Fix the bug',
       repo: 'BDE',
-      description: '',
+      notes: '',
       prompt: 'Fix the bug',
       spec: null,
       priority: 1,
@@ -92,7 +92,7 @@ describe('NewTicketModal', () => {
     expect(defaultProps.onCreate).toHaveBeenCalledWith({
       title: 'My task',
       repo: 'BDE',
-      description: '',
+      notes: '',
       prompt: 'My task',
       spec: null,
       priority: 1,
