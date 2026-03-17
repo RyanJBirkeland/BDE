@@ -4,7 +4,9 @@ import { useTerminalStore } from '../../stores/terminal'
 import { getSearchAddon } from './TerminalPane'
 
 export function FindBar(): React.JSX.Element | null {
-  const { showFind, setShowFind, activeTabId } = useTerminalStore()
+  const showFind = useTerminalStore((s) => s.showFind)
+  const setShowFind = useTerminalStore((s) => s.setShowFind)
+  const activeTabId = useTerminalStore((s) => s.activeTabId)
   const [query, setQuery] = useState('')
   const [resultIndex, setResultIndex] = useState(-1)
   const [resultCount, setResultCount] = useState(0)

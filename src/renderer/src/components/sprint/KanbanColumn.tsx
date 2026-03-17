@@ -1,5 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { TaskCard } from './TaskCard'
 import { EmptyState } from '../ui/EmptyState'
@@ -31,7 +32,7 @@ const STATUS_CLASS: Record<SprintTask['status'], string> = {
   done: 'kanban-col--done',
 }
 
-export function KanbanColumn({
+export const KanbanColumn = memo(function KanbanColumn({
   status,
   label,
   tasks,
@@ -84,4 +85,4 @@ export function KanbanColumn({
       </div>
     </div>
   )
-}
+})

@@ -7,23 +7,21 @@ import { useTerminalStore } from '../stores/terminal'
 import { useUIStore } from '../stores/ui'
 
 export function TerminalView(): React.JSX.Element {
-  const {
-    tabs,
-    activeTabId,
-    addTab,
-    closeTab,
-    setActiveTab,
-    renameTab,
-    reorderTab,
-    splitEnabled,
-    toggleSplit,
-    showFind,
-    setShowFind,
-    createAgentTab,
-    zoomIn,
-    zoomOut,
-    resetZoom
-  } = useTerminalStore()
+  const tabs = useTerminalStore((s) => s.tabs)
+  const activeTabId = useTerminalStore((s) => s.activeTabId)
+  const addTab = useTerminalStore((s) => s.addTab)
+  const closeTab = useTerminalStore((s) => s.closeTab)
+  const setActiveTab = useTerminalStore((s) => s.setActiveTab)
+  const renameTab = useTerminalStore((s) => s.renameTab)
+  const reorderTab = useTerminalStore((s) => s.reorderTab)
+  const splitEnabled = useTerminalStore((s) => s.splitEnabled)
+  const toggleSplit = useTerminalStore((s) => s.toggleSplit)
+  const showFind = useTerminalStore((s) => s.showFind)
+  const setShowFind = useTerminalStore((s) => s.setShowFind)
+  const createAgentTab = useTerminalStore((s) => s.createAgentTab)
+  const zoomIn = useTerminalStore((s) => s.zoomIn)
+  const zoomOut = useTerminalStore((s) => s.zoomOut)
+  const resetZoom = useTerminalStore((s) => s.resetZoom)
   const activeView = useUIStore((s) => s.activeView)
 
   const activeTab = tabs.find((t) => t.id === activeTabId)

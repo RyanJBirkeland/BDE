@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { LayoutGroup } from 'framer-motion'
 import {
   DndContext,
@@ -51,10 +51,10 @@ export function KanbanBoard({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   const [activeTask, setActiveTask] = useState<SprintTask | null>(null)
 
-  const backlog = tasks.filter((t) => t.status === 'backlog')
-  const queued = tasks.filter((t) => t.status === 'queued')
-  const active = tasks.filter((t) => t.status === 'active')
-  const done = tasks.filter((t) => t.status === 'done')
+  const backlog = useMemo(() => tasks.filter((t) => t.status === 'backlog'), [tasks])
+  const queued = useMemo(() => tasks.filter((t) => t.status === 'queued'), [tasks])
+  const active = useMemo(() => tasks.filter((t) => t.status === 'active'), [tasks])
+  const done = useMemo(() => tasks.filter((t) => t.status === 'done'), [tasks])
 
   const columnsByStatus: Record<SprintTask['status'], SprintTask[]> = {
     backlog,
