@@ -33,6 +33,7 @@ let connected = false
 
 function connect(): void {
   if (connected) return
+  window.api.offSprintSseEvent()
   connected = true
   window.api.onSprintSseEvent((event: { type: string; data: unknown }) => {
     emit(event.type, event.data)
@@ -46,7 +47,8 @@ function emit(event: string, data: unknown): void {
 export function subscribeSSE(event: string, handler: Handler): () => void {
   connect()
   if (!listeners.has(event)) listeners.set(event, new Set())
-  listeners.get(event)!.add(handler)
+  const set = listeners.get(event)
+  if (set) set.add(handler)
   return () => {
     listeners.get(event)?.delete(handler)
   }
