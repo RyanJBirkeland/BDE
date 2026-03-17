@@ -158,7 +158,10 @@
   font-size: 10px;
   font-weight: 600;
   color: var(--bde-text-muted);
-  background: var(--bde-hover-strong);
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--bde-border);
   padding: 1px 6px;
   border-radius: var(--bde-radius-lg);
 }
@@ -748,7 +751,9 @@
 .kanban-col {
   display: flex;
   flex-direction: column;
-  background: var(--bde-surface);
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md);
   overflow: hidden;
@@ -765,6 +770,9 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--bde-text-muted);
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
 }
 
 .kanban-col__cards {
@@ -778,20 +786,23 @@
 
 .kanban-col--drop-target {
   border-color: var(--bde-accent);
-  background: color-mix(in srgb, var(--bde-accent) 6%, var(--bde-surface));
+  background: color-mix(in srgb, var(--bde-accent) 6%, var(--glass-tint-dark));
   transition: border-color 0.15s, background 0.15s;
 }
 
 /* ── Task Card ────────────────────────────────────────── */
 
 .task-card {
-  background: var(--bde-bg);
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-sm);
   padding: 10px 12px;
   cursor: grab;
   animation: bde-slide-up-fade 200ms ease backwards;
   animation-delay: calc(var(--stagger-index, 0) * 30ms);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .task-card__title {
@@ -920,7 +931,9 @@
   top: 0;
   bottom: 0;
   width: 420px;
-  background: var(--bde-surface);
+  background: var(--glass-tint-dark);
+  backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
   border-left: 1px solid var(--bde-border);
   z-index: 50;
   display: flex;
@@ -946,6 +959,20 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  position: relative;
+}
+
+.spec-drawer__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
 }
 
 .spec-drawer__header-info h3 {
@@ -1121,6 +1148,20 @@
   padding: 0 12px;
   border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
+  position: relative;
+}
+
+.log-drawer__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
 }
 
 .log-drawer__title { font-size: 12px; font-weight: 600; color: var(--bde-text); }

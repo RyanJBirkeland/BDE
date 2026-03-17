@@ -558,6 +558,13 @@
   border-radius: var(--bde-radius-xl);
 }
 
+.badge-glass {
+  background: var(--glass-tint-mid);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--bde-border);
+}
+
 /* ════════════════════════════════════════════════════════
    Visual Identity v2 — Glass, Elevation, Glow, Gradients
    ════════════════════════════════════════════════════════ */
