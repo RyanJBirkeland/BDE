@@ -10,6 +10,29 @@ import { Button } from '../ui/Button'
 import { Spinner } from '../ui/Spinner'
 import type { Attachment } from '../../../../shared/types'
 
+const MAX_PASTE_ATTACHMENTS = 5
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(',')[1])
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+function clipboardImageToAttachment(file: File, base64: string): Attachment {
+  const name = file.name || `pasted-image-${Date.now()}.png`
+  return {
+    path: `clipboard://${name}`,
+    name,
+    type: 'image',
+    data: base64,
+    mimeType: file.type,
+    preview: `data:${file.type};base64,${base64}`,
+  }
+}
+
 interface Props {
   sessionKey: string
   sessionMode: 'chat' | 'steer' | 'local'
@@ -59,6 +82,29 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
   const removeAttachment = useCallback((index: number): void => {
     setAttachments((prev) => prev.filter((_, i) => i !== index))
   }, [])
+
+  const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLDivElement>): Promise<void> => {
+    const imageFiles = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith('image/'))
+    if (imageFiles.length === 0) return
+
+    e.preventDefault()
+
+    const remaining = MAX_PASTE_ATTACHMENTS - attachments.length
+    if (remaining <= 0) {
+      toast.error(`Maximum ${MAX_PASTE_ATTACHMENTS} attachments allowed`)
+      return
+    }
+
+    try {
+      const toProcess = imageFiles.slice(0, remaining)
+      const newAttachments = await Promise.all(
+        toProcess.map(async (file) => clipboardImageToAttachment(file, await fileToBase64(file)))
+      )
+      setAttachments((prev) => [...prev, ...newAttachments])
+    } catch {
+      toast.error('Failed to read pasted image')
+    }
+  }, [attachments.length])
 
   const hasContent = text.trim().length > 0 || attachments.length > 0
 
@@ -133,7 +179,7 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
     'Message\u2026 (Shift+Enter for newline)'
 
   return (
-    <div className={wrapperClass}>
+    <div className={wrapperClass} onPaste={handlePaste}>
       {attachments.length > 0 && (
         <div className="attachment-chips">
           {attachments.map((att, i) => (
