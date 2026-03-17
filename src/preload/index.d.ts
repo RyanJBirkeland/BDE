@@ -96,6 +96,7 @@ declare global {
           templateHint: string
         }) => Promise<{ taskId: string; spec: string; prompt: string }>
         delete: (id: string) => Promise<{ ok: boolean }>
+        healthCheck: () => Promise<SprintTask[]>
       }
 
       // File attachments
