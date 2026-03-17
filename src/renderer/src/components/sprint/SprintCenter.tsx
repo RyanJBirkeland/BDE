@@ -260,6 +260,22 @@ export default function SprintCenter() {
     [tasks, updateTask]
   )
 
+  // Within-column reorder (optimistic only — no column_order column in DB yet)
+  const handleReorder = useCallback(
+    (_status: SprintTask['status'], orderedIds: string[]) => {
+      setTasks((prev) => {
+        const idOrder = new Map(orderedIds.map((id, i) => [id, i]))
+        return [...prev].sort((a, b) => {
+          const ai = idOrder.get(a.id)
+          const bi = idOrder.get(b.id)
+          if (ai !== undefined && bi !== undefined) return ai - bi
+          return 0
+        })
+      })
+    },
+    []
+  )
+
   const handlePushToSprint = useCallback(
     (task: SprintTask) => {
       updateTask(task.id, { status: 'queued' })
@@ -416,6 +432,7 @@ export default function SprintCenter() {
               prMergedMap={prMergedMap}
               generatingIds={generatingIds}
               onDragEnd={handleDragEnd}
+              onReorder={handleReorder}
               onPushToSprint={handlePushToSprint}
               onLaunch={handleLaunch}
               onViewSpec={setSelectedTask}

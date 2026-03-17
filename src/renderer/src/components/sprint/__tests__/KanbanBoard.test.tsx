@@ -20,6 +20,8 @@ vi.mock('@dnd-kit/core', () => ({
     children ? <div data-testid="drag-overlay">{children}</div> : null,
   useDroppable: () => ({ isOver: false, setNodeRef: () => {} }),
   PointerSensor: class {},
+  KeyboardSensor: class {},
+  closestCenter: vi.fn(),
   useSensor: () => ({}),
   useSensors: () => [],
 }))
@@ -43,6 +45,7 @@ vi.mock('@dnd-kit/sortable', () => ({
       return copy
     }
   ),
+  sortableKeyboardCoordinates: vi.fn(),
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -178,6 +181,39 @@ describe('KanbanBoard', () => {
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
+  })
+
+  it('shows confirm dialog when dragging active task back to queued', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const task = makeTask({ id: 'task-active', status: 'active' })
+    render(<KanbanBoard {...defaultProps} activeTasks={[task]} />)
+
+    capturedOnDragEnd?.({
+      active: { id: 'task-active' },
+      over: { id: 'queued' },
+    })
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Move back to queue')
+    )
+    // User cancelled — onDragEnd should NOT be called
+    expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
+    confirmSpy.mockRestore()
+  })
+
+  it('allows active→queued drag when user confirms', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const task = makeTask({ id: 'task-active', status: 'active' })
+    render(<KanbanBoard {...defaultProps} activeTasks={[task]} />)
+
+    capturedOnDragEnd?.({
+      active: { id: 'task-active' },
+      over: { id: 'queued' },
+    })
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(defaultProps.onDragEnd).toHaveBeenCalledWith('task-active', 'queued')
+    confirmSpy.mockRestore()
   })
 
   it('does not allow drops into review column', () => {

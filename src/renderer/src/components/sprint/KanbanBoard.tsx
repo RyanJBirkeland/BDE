@@ -6,10 +6,12 @@ import {
   type DragEndEvent,
   type DragStartEvent,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
+  closestCenter,
 } from '@dnd-kit/core'
-import { arrayMove } from '@dnd-kit/sortable'
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskCard } from './TaskCard'
 import type { SprintTask } from './SprintCenter'
@@ -61,7 +63,10 @@ export function KanbanBoard({
   onViewOutput,
   onMarkDone,
 }: KanbanBoardProps) {
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
   const [activeTask, setActiveTask] = useState<SprintTask | null>(null)
 
   // All draggable tasks (only queued + active participate in DnD)
@@ -105,6 +110,14 @@ export function KanbanBoard({
       return
     }
 
+    // Guard: active→queued requires confirmation
+    if (sourceTask.status === 'active' && targetStatus === 'queued') {
+      const ok = window.confirm(
+        'Move back to queue? This won\u2019t stop the running agent.'
+      )
+      if (!ok) return
+    }
+
     onDragEnd(taskId, targetStatus)
   }
 
@@ -112,7 +125,7 @@ export function KanbanBoard({
 
   return (
     <LayoutGroup>
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="kanban-board">
         <KanbanColumn
           status="queued"
