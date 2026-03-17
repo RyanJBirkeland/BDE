@@ -6,6 +6,7 @@
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import { randomUUID } from 'crypto'
+import { readFileSync } from 'fs'
 import { readdir, stat, unlink, appendFile, open } from 'fs/promises'
 import { join, dirname, basename as pathBasename } from 'path'
 import { validateLogPath } from './fs'
@@ -15,6 +16,7 @@ import {
   listAgents
 } from './agent-history'
 import { getTaskRunnerConfig } from './config'
+import { getDb } from './db'
 
 const execFileAsync = promisify(execFile)
 
@@ -207,6 +209,75 @@ export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
   }
 }
 
+// --- Cost extraction from agent log files ---
+
+export interface AgentCost {
+  costUsd: number
+  tokensIn: number
+  tokensOut: number
+  cacheRead: number
+  cacheCreate: number
+  durationMs: number
+  numTurns: number
+}
+
+export function extractAgentCost(logPath: string): AgentCost | null {
+  try {
+    const content = readFileSync(logPath, 'utf-8')
+    const lines = content.split('\n')
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim()
+      if (!line) continue
+
+      let parsed: Record<string, unknown>
+      try {
+        parsed = JSON.parse(line) as Record<string, unknown>
+      } catch {
+        continue
+      }
+
+      // Unwrap stream_event wrapper if present
+      if (parsed.type === 'stream_event' && parsed.event && typeof parsed.event === 'object') {
+        parsed = parsed.event as Record<string, unknown>
+      }
+
+      if (parsed.type !== 'result') continue
+
+      const usage = parsed.usage as Record<string, number> | undefined
+
+      return {
+        costUsd: typeof parsed.cost_usd === 'number' ? parsed.cost_usd : 0,
+        tokensIn: usage?.input_tokens ?? 0,
+        tokensOut: usage?.output_tokens ?? 0,
+        cacheRead: usage?.cache_read_input_tokens ?? 0,
+        cacheCreate: usage?.cache_creation_input_tokens ?? 0,
+        durationMs: typeof parsed.duration_ms === 'number' ? parsed.duration_ms : 0,
+        numTurns: typeof parsed.num_turns === 'number' ? parsed.num_turns : 0,
+      }
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function updateAgentRunCost(agentRunId: string, cost: AgentCost): void {
+  getDb().prepare(`
+    UPDATE agent_runs SET
+      cost_usd = ?, tokens_in = ?, tokens_out = ?,
+      cache_read = ?, cache_create = ?,
+      duration_ms = ?, num_turns = ?
+    WHERE id = ?
+  `).run(
+    cost.costUsd, cost.tokensIn, cost.tokensOut,
+    cost.cacheRead, cost.cacheCreate,
+    cost.durationMs, cost.numTurns,
+    agentRunId
+  )
+}
+
 // --- Spawn a Claude CLI agent on the Max plan ---
 
 export type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
@@ -283,6 +354,13 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
       exitCode: code,
       status
     })
+    // 100ms delay to ensure stdout is fully flushed to log file
+    setTimeout(() => {
+      const cost = extractAgentCost(logPath)
+      if (cost) {
+        updateAgentRunCost(id, cost)
+      }
+    }, 100)
   })
 
   child.unref()

@@ -62,6 +62,22 @@ function ensureSourceColumn(): void {
   }
 }
 
+function ensureCostColumns(): void {
+  const db = getDb()
+  const columns = db.prepare("PRAGMA table_info('agent_runs')").all() as { name: string }[]
+  if (!columns.some((c) => c.name === 'cost_usd')) {
+    db.exec(`
+      ALTER TABLE agent_runs ADD COLUMN cost_usd REAL;
+      ALTER TABLE agent_runs ADD COLUMN tokens_in INTEGER;
+      ALTER TABLE agent_runs ADD COLUMN tokens_out INTEGER;
+      ALTER TABLE agent_runs ADD COLUMN cache_read INTEGER;
+      ALTER TABLE agent_runs ADD COLUMN cache_create INTEGER;
+      ALTER TABLE agent_runs ADD COLUMN duration_ms INTEGER;
+      ALTER TABLE agent_runs ADD COLUMN num_turns INTEGER;
+    `)
+  }
+}
+
 // --- One-time migration from agents.json ---
 
 export async function migrateFromJson(): Promise<void> {
@@ -106,6 +122,7 @@ export function initAgentHistory(): void {
   if (_initialized) return
   _initialized = true
   ensureSourceColumn()
+  ensureCostColumns()
   // Fire-and-forget async migration
   migrateFromJson().catch(() => {})
 }
