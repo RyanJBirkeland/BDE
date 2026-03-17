@@ -150,7 +150,7 @@ export interface PrStatusResult {
   mergedAt: string | null
 }
 
-function parsePrUrl(url: string): { owner: string; repo: string; number: string } | null {
+export function parsePrUrl(url: string): { owner: string; repo: string; number: string } | null {
   const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/)
   if (!match) return null
   return { owner: match[1], repo: match[2], number: match[3] }

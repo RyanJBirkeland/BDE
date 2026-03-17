@@ -1,12 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-const execFileAsyncMock = vi.fn().mockResolvedValue({ stdout: '', stderr: '' })
+const { execFileAsyncMock } = vi.hoisted(() => ({
+  execFileAsyncMock: vi.fn().mockResolvedValue({ stdout: '', stderr: '' })
+}))
 
 vi.mock('child_process', () => {
   const execFile = vi.fn() as any
   execFile[Symbol.for('nodejs.util.promisify.custom')] = execFileAsyncMock
   return { execFile }
 })
+
+vi.mock('../config', () => ({
+  getGitHubToken: vi.fn()
+}))
+
+vi.mock('../db', () => ({
+  getDb: vi.fn()
+}))
 
 import {
   gitCommit,
@@ -18,7 +28,11 @@ import {
   gitBranches,
   gitDiffFile,
   getRepoPaths,
+  parsePrUrl,
+  pollPrStatuses,
 } from '../git'
+import { getGitHubToken } from '../config'
+import { getDb } from '../db'
 
 describe('git.ts', () => {
   beforeEach(() => {
@@ -250,6 +264,225 @@ describe('git.ts', () => {
       expect(paths).toHaveProperty('bde')
       expect(paths).toHaveProperty('life-os')
       expect(paths).toHaveProperty('feast')
+    })
+  })
+
+  // --- PR status polling ---
+
+  describe('parsePrUrl', () => {
+    it('extracts owner/repo/number from a standard GitHub PR URL', () => {
+      const result = parsePrUrl('https://github.com/octocat/hello-world/pull/42')
+      expect(result).toEqual({ owner: 'octocat', repo: 'hello-world', number: '42' })
+    })
+
+    it('handles RBTECHBOT fork URLs', () => {
+      const result = parsePrUrl('https://github.com/RyanJBirkeland/BDE/pull/163')
+      expect(result).toEqual({ owner: 'RyanJBirkeland', repo: 'BDE', number: '163' })
+    })
+
+    it('returns null for non-PR GitHub URLs', () => {
+      expect(parsePrUrl('https://github.com/octocat/hello-world')).toBeNull()
+      expect(parsePrUrl('https://github.com/octocat/hello-world/issues/5')).toBeNull()
+    })
+
+    it('returns null for non-GitHub URLs', () => {
+      expect(parsePrUrl('https://example.com/pull/1')).toBeNull()
+      expect(parsePrUrl('')).toBeNull()
+    })
+
+    it('extracts from URLs with trailing path segments', () => {
+      const result = parsePrUrl('https://github.com/org/repo/pull/99/files')
+      expect(result).toEqual({ owner: 'org', repo: 'repo', number: '99' })
+    })
+  })
+
+  describe('PR status polling', () => {
+    const mockFetch = vi.fn()
+    let mockRun: ReturnType<typeof vi.fn>
+    let mockPrepare: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      vi.stubGlobal('fetch', mockFetch)
+      mockRun = vi.fn()
+      mockPrepare = vi.fn(() => ({ run: mockRun }))
+      vi.mocked(getDb).mockReturnValue({ prepare: mockPrepare } as any)
+      vi.mocked(getGitHubToken).mockReturnValue('ghp_test_token')
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    describe('fetchPrStatusRest (via pollPrStatuses)', () => {
+      it('returns MERGED state when PR is merged', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ state: 'closed', merged_at: '2024-01-01T00:00:00Z' })
+        })
+
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' }
+        ])
+
+        expect(results[0].state).toBe('MERGED')
+        expect(results[0].merged).toBe(true)
+        expect(results[0].mergedAt).toBe('2024-01-01T00:00:00Z')
+      })
+
+      it('returns OPEN state when PR is open', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ state: 'open', merged_at: null })
+        })
+
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' }
+        ])
+
+        expect(results[0].state).toBe('OPEN')
+        expect(results[0].merged).toBe(false)
+      })
+
+      it('returns CLOSED state when PR is closed but not merged', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ state: 'closed', merged_at: null })
+        })
+
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' }
+        ])
+
+        expect(results[0].state).toBe('CLOSED')
+        expect(results[0].merged).toBe(false)
+      })
+
+      it('returns error state on network failure', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Network error'))
+
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' }
+        ])
+
+        expect(results[0].state).toBe('error')
+        expect(results[0].merged).toBe(false)
+      })
+
+      it('returns error state on non-OK HTTP response', async () => {
+        mockFetch.mockResolvedValueOnce({ ok: false })
+
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' }
+        ])
+
+        expect(results[0].state).toBe('error')
+      })
+
+      it('returns unknown state for invalid PR URL', async () => {
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://example.com/not-a-pr' }
+        ])
+
+        expect(results[0].state).toBe('unknown')
+        expect(mockFetch).not.toHaveBeenCalled()
+      })
+
+      it('returns error state when no GitHub token is available', async () => {
+        vi.mocked(getGitHubToken).mockReturnValue(null)
+
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' }
+        ])
+
+        expect(results[0].state).toBe('error')
+        expect(mockFetch).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('pollPrStatuses', () => {
+      it('processes multiple PRs and returns results for all', async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ state: 'open', merged_at: null })
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ state: 'closed', merged_at: '2024-06-01T00:00:00Z' })
+          })
+
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' },
+          { taskId: 't2', prUrl: 'https://github.com/octocat/repo/pull/2' }
+        ])
+
+        expect(results).toHaveLength(2)
+        expect(results[0].taskId).toBe('t1')
+        expect(results[1].taskId).toBe('t2')
+      })
+
+      it('skips DB update when PR URL is unparseable', async () => {
+        const results = await pollPrStatuses([
+          { taskId: 't1', prUrl: 'not-a-url' }
+        ])
+
+        expect(results).toHaveLength(1)
+        expect(mockPrepare).not.toHaveBeenCalled()
+      })
+
+      it('returns empty array for empty input', async () => {
+        const results = await pollPrStatuses([])
+        expect(results).toEqual([])
+      })
+    })
+
+    describe('markTaskDoneOnMerge (via pollPrStatuses)', () => {
+      it('updates sprint_tasks to done with completed_at on merge', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ state: 'closed', merged_at: '2024-01-15T12:00:00Z' })
+        })
+
+        await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/55' }
+        ])
+
+        expect(mockPrepare).toHaveBeenCalledWith(
+          "UPDATE sprint_tasks SET status='done', completed_at=? WHERE pr_number=? AND status='active'"
+        )
+        expect(mockRun).toHaveBeenCalledWith(expect.any(String), 55)
+      })
+    })
+
+    describe('markTaskCancelled (via pollPrStatuses)', () => {
+      it('updates sprint_tasks to cancelled with completed_at on close', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ state: 'closed', merged_at: null })
+        })
+
+        await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/77' }
+        ])
+
+        expect(mockPrepare).toHaveBeenCalledWith(
+          "UPDATE sprint_tasks SET status='cancelled', completed_at=? WHERE pr_number=? AND status='active'"
+        )
+        expect(mockRun).toHaveBeenCalledWith(expect.any(String), 77)
+      })
+
+      it('does not update DB when PR is still open', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ state: 'open', merged_at: null })
+        })
+
+        await pollPrStatuses([
+          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/88' }
+        ])
+
+        expect(mockPrepare).not.toHaveBeenCalled()
+      })
     })
   })
 })
