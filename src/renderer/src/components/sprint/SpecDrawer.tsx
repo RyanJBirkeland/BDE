@@ -36,6 +36,7 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint }: 
   const [draft, setDraft] = useState('')
   const [dirty, setDirty] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [showPrompt, setShowPrompt] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const resolvedContentRef = useRef('')
 
@@ -44,6 +45,7 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint }: 
     setEditing(false)
     setDirty(false)
     setGenerating(false)
+    setShowPrompt(false)
 
     if (task.spec) {
       resolvedContentRef.current = task.spec
@@ -211,6 +213,20 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
                 />
               )}
             </div>
+
+            {task.prompt && (
+              <div className="spec-drawer__prompt-section">
+                <button
+                  className="spec-drawer__prompt-toggle"
+                  onClick={() => setShowPrompt((v) => !v)}
+                >
+                  {showPrompt ? '▾ Hide Prompt' : '▸ View Full Prompt'}
+                </button>
+                {showPrompt && (
+                  <pre className="spec-drawer__prompt-body">{task.prompt}</pre>
+                )}
+              </div>
+            )}
 
             <div className="spec-drawer__footer">
               <Button
