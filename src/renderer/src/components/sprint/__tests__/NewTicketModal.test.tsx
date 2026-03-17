@@ -24,7 +24,6 @@ describe('NewTicketModal', () => {
 
     expect(screen.getByText('Quick')).toBeInTheDocument()
     expect(screen.getByText('Template')).toBeInTheDocument()
-    expect(screen.getByText('Design with Paul')).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/Fix toast z-index/)).toBeInTheDocument()
     expect(screen.getByText('Repo')).toBeInTheDocument()
   })
@@ -106,14 +105,6 @@ describe('NewTicketModal', () => {
       ['BDE', 'life-os', 'feast'].includes(o.textContent ?? '')
     )
     expect(repoOptions).toHaveLength(3)
-  })
-
-  it('Design mode shows placeholder', async () => {
-    const user = userEvent.setup()
-    render(<NewTicketModal {...defaultProps} />)
-
-    await user.click(screen.getByRole('button', { name: 'Design with Paul' }))
-    expect(screen.getByText('Design with Paul is coming soon.')).toBeInTheDocument()
   })
 
   it('Template mode: Ask Paul button triggers invokeTool call', async () => {
