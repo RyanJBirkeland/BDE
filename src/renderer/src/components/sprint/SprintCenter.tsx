@@ -278,6 +278,7 @@ export default function SprintCenter() {
                 templateHint,
               })
               .then((genResult) => {
+                const withSpec = { ...result, spec: genResult.spec || null, prompt: genResult.prompt }
                 setTasks((prev) =>
                   prev.map((t) =>
                     t.id === genResult.taskId
@@ -285,6 +286,11 @@ export default function SprintCenter() {
                       : t
                   )
                 )
+                toast.info(`Spec ready for "${data.title}"`, {
+                  action: 'View Spec',
+                  onAction: () => setSelectedTask(withSpec),
+                  durationMs: 6000,
+                })
               })
               .catch((e: unknown) => {
                 toast.error('Spec generation failed: ' + (e instanceof Error ? e.message : String(e)))

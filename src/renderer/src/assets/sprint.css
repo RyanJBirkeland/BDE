@@ -1518,17 +1518,6 @@
   margin: 0;
 }
 
-.new-ticket-modal__design-placeholder {
-  text-align: center;
-  padding: 40px 24px;
-  color: var(--bde-text-dim);
-  font-size: 14px;
-}
-
-.new-ticket-modal__design-placeholder p {
-  margin: 8px 0;
-}
-
 /* ── Spec Generating Badge ───────────────────────────── */
 
 .task-card__spec-badge--generating {

@@ -5,7 +5,7 @@ import { REPO_OPTIONS } from '../../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { toast } from '../../stores/toasts'
 
-type TicketMode = 'quick' | 'template' | 'design'
+type TicketMode = 'quick' | 'template'
 
 export type CreateTicketData = {
   title: string
@@ -214,13 +214,6 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
           >
             Template
           </button>
-          <button
-            className={`new-ticket-modal__tab ${mode === 'design' ? 'new-ticket-modal__tab--active' : ''}`}
-            onClick={() => setMode('design')}
-            type="button"
-          >
-            Design with Paul
-          </button>
         </div>
 
         <div className="new-ticket-modal__body">
@@ -343,12 +336,6 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
             </>
           )}
 
-          {mode === 'design' && (
-            <div className="new-ticket-modal__design-placeholder">
-              <p>Design with Paul is coming soon.</p>
-              <p>Use Template mode for now — switch tabs above.</p>
-            </div>
-          )}
         </div>
 
         <div className="new-ticket-modal__footer">
@@ -359,7 +346,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
             variant="primary"
             size="sm"
             onClick={handleSubmit}
-            disabled={!title.trim() || mode === 'design'}
+            disabled={!title.trim()}
           >
             {mode === 'quick' ? 'Save — Paul writes the spec' : 'Save to Backlog'}
           </Button>
