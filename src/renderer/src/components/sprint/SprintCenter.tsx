@@ -340,10 +340,16 @@ export default function SprintCenter() {
       </div>
 
       {loading && tasks.length === 0 ? (
-        <div className="sprint-board__loading" style={{ padding: 16 }}>
-          <div className="sprint-board__skeleton" />
-          <div className="sprint-board__skeleton" />
-          <div className="sprint-board__skeleton" />
+        <div className="kanban-board">
+          <div className="kanban-col">
+            <div className="sprint-board__skeleton" style={{ height: 120 }} />
+          </div>
+          <div className="kanban-col">
+            <div className="sprint-board__skeleton" style={{ height: 120 }} />
+          </div>
+          <div className="kanban-col">
+            <div className="sprint-board__skeleton" style={{ height: 120 }} />
+          </div>
         </div>
       ) : (
         <>
