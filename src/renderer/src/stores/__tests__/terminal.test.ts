@@ -4,7 +4,7 @@ import { useTerminalStore } from '../terminal'
 describe('terminal store', () => {
   beforeEach(() => {
     // Reset to a single tab state
-    const tab = { id: 'tab-1', title: 'Terminal 1', kind: 'shell' as const, shell: '/bin/zsh', ptyId: null, isAgentTab: false }
+    const tab = { id: 'tab-1', title: 'Terminal 1', kind: 'shell' as const, shell: '/bin/zsh', ptyId: null }
     useTerminalStore.setState({ tabs: [tab], activeTabId: 'tab-1' })
   })
 
@@ -89,7 +89,7 @@ describe('terminal store', () => {
     expect(state.tabs).toHaveLength(2)
     const agentTab = state.tabs[1]
     expect(agentTab.kind).toBe('agent')
-    expect(agentTab.isAgentTab).toBe(true)
+    expect(agentTab.kind).toBe('agent')
     expect(agentTab.agentId).toBe('agent-123')
     expect(agentTab.agentSessionKey).toBe('session-key-abc')
     expect(agentTab.title).toBe('My Agent')

@@ -9,7 +9,6 @@ export interface TerminalTab {
   shell?: string
   ptyId?: number | null
   agentId?: string
-  isAgentTab: boolean
   agentSessionKey?: string
 }
 
@@ -22,8 +21,7 @@ function makeTab(shell?: string): TerminalTab {
     title: `Terminal ${num}`,
     kind: 'shell',
     shell: shell || '/bin/zsh',
-    ptyId: null,
-    isAgentTab: false
+    ptyId: null
   }
 }
 
@@ -33,7 +31,6 @@ function makeAgentTab(agentId: string, label: string, sessionKey?: string): Term
     title: label,
     kind: 'agent',
     agentId,
-    isAgentTab: true,
     agentSessionKey: sessionKey
   }
 }

@@ -25,7 +25,6 @@ export interface SpawnedAgent {
 
 interface LocalAgentsState extends LogPollerState {
   processes: LocalAgentProcess[]
-  lastUpdated: number
   collapsed: boolean
   spawnedAgents: SpawnedAgent[]
   isSpawning: boolean
@@ -52,7 +51,6 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
 
       return {
         processes: [],
-        lastUpdated: 0,
         collapsed: false,
         spawnedAgents: [],
         isSpawning: false,
@@ -63,7 +61,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
         fetchProcesses: async (): Promise<void> => {
           try {
             const procs = await window.api.getAgentProcesses()
-            set({ processes: procs, lastUpdated: Date.now() })
+            set({ processes: procs })
           } catch {
             // Silently fail — local agents are non-critical
           }

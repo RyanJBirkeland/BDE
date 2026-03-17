@@ -18,7 +18,7 @@ export function SessionHeader({ session, subAgent }: SessionHeaderProps): React.
 
   // Status dot
   const isRunning = isSubAgentView
-    ? subAgent._isActive
+    ? subAgent.isActive
     : Date.now() - session!.updatedAt < FIVE_MINUTES
   const isBlocked = !isSubAgentView && session!.abortedLastRun && !isRunning
 

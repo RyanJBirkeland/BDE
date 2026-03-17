@@ -31,14 +31,14 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
     isFetching: false,
 
     fetchAgents: async (): Promise<void> => {
-      set({ isFetching: true })
+      set({ isFetching: true, loading: true })
       try {
         const agents = await window.api.agents.list({ limit: AGENT_LIST_FETCH_LIMIT })
         set({ agents })
       } catch {
         // Non-critical
       } finally {
-        set({ isFetching: false })
+        set({ isFetching: false, loading: false })
       }
     },
 

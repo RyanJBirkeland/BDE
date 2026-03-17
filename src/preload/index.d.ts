@@ -1,7 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta } from '../shared/types'
+import type { AgentMeta, SprintTask } from '../shared/types'
 
-export type { AgentMeta }
+export type { AgentMeta, SprintTask }
 
 declare global {
   interface Window {
@@ -73,7 +73,7 @@ declare global {
 
       // Sprint tasks — Supabase-backed Kanban
       sprint: {
-        list: () => Promise<unknown[]>
+        list: () => Promise<SprintTask[]>
         create: (task: {
           title: string
           repo: string

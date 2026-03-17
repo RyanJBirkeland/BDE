@@ -29,7 +29,7 @@ export function TerminalTabBar({
       <div className="terminal-tab-bar__tabs">
         {tabs.map((tab) => {
           const isActive = tab.id === activeTabId
-          const isAgent = tab.isAgentTab
+          const isAgent = tab.kind === 'agent'
           const tabClass = [
             'terminal-tab',
             isActive && 'terminal-tab--active',

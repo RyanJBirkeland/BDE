@@ -21,25 +21,8 @@ const REPO_LABEL_TO_ENUM: Record<string, string> = {
 
 // --- Types ---
 
-export interface SprintTask {
-  id: string
-  title: string
-  repo: string
-  prompt: string | null
-  priority: number
-  status: 'backlog' | 'queued' | 'active' | 'done'
-  description: string | null
-  spec: string | null
-  agent_run_id: string | null
-  pr_number: number | null
-  pr_status: 'open' | 'merged' | 'closed' | 'draft' | null
-  pr_url: string | null
-  column_order: number
-  started_at: string | null
-  completed_at: string | null
-  updated_at: string
-  created_at: string
-}
+import type { SprintTask } from '../../../../shared/types'
+export type { SprintTask }
 
 // --- Component ---
 

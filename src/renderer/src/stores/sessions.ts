@@ -21,15 +21,18 @@ export interface AgentSession {
   abortedLastRun: boolean
 }
 
+/** Closed union — normalizeStatus() in useUnifiedAgents maps unknown server values to 'unknown' */
+export type SubAgentStatus = 'running' | 'completed' | 'failed' | 'timeout' | 'done' | 'unknown'
+
 export interface SubAgent {
   sessionKey: string
   label: string
   task: string
-  status: 'running' | 'completed' | 'failed' | 'timeout' | 'done' | string
+  status: SubAgentStatus
   model: string
   startedAt: number
   endedAt?: number
-  _isActive: boolean
+  isActive: boolean
 }
 
 // Module scope — timer handles are mutable runtime objects, not serializable state
@@ -111,17 +114,31 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         const last = parts[parts.length - 1] ?? entry.sessionKey
         return `subagent-${last.slice(-8)}`
       }
+      const normalizeSubAgentStatus = (raw: string): SubAgentStatus => {
+        switch (raw) {
+          case 'running':
+          case 'completed':
+          case 'failed':
+          case 'timeout':
+          case 'done':
+            return raw
+          default:
+            return 'unknown'
+        }
+      }
       const active = (subData.active ?? []).map((s) => ({
         ...s,
         label: deriveLabel(s),
         task: s.task ?? '',
-        _isActive: true
+        status: normalizeSubAgentStatus(s.status),
+        isActive: true
       }))
       const recent = (subData.recent ?? []).map((s) => ({
         ...s,
         label: deriveLabel(s),
         task: s.task ?? '',
-        _isActive: false
+        status: normalizeSubAgentStatus(s.status),
+        isActive: false
       }))
       set({ subAgents: [...active, ...recent], subAgentsError: null, subAgentsLoading: false })
     } else {
@@ -131,7 +148,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     // Auto-follow: switch to most recently started active sub-agent
     if (get().followMode) {
       const mostRecent = get()
-        .subAgents.filter((a) => a._isActive)
+        .subAgents.filter((a) => a.isActive)
         .sort((a, b) => b.startedAt - a.startedAt)[0]
       if (mostRecent && mostRecent.sessionKey !== get().selectedSessionKey) {
         set({ selectedSessionKey: mostRecent.sessionKey })
@@ -143,7 +160,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
     // Auto-disable follow if user manually selects a non-follow-target session
     const { followMode, subAgents } = get()
     if (followMode && key) {
-      const isFollowTarget = subAgents.some((a) => a._isActive && a.sessionKey === key)
+      const isFollowTarget = subAgents.some((a) => a.isActive && a.sessionKey === key)
       if (!isFollowTarget) {
         set({ followMode: false })
       }

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta } from '../shared/types'
+import type { AgentMeta, SprintTask } from '../shared/types'
 
 const api = {
   getGatewayConfig: (): Promise<{ url: string; token: string }> =>
@@ -92,7 +92,7 @@ const api = {
 
   // Sprint tasks — Supabase-backed Kanban
   sprint: {
-    list: (): Promise<unknown[]> => ipcRenderer.invoke('sprint:list'),
+    list: (): Promise<SprintTask[]> => ipcRenderer.invoke('sprint:list'),
     create: (task: {
       title: string
       repo: string

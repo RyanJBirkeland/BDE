@@ -98,8 +98,8 @@ export function useUnifiedAgents(): UnifiedAgent[] {
         model: a.model ?? '',
         updatedAt: a.endedAt ?? a.startedAt ?? 0,
         startedAt: a.startedAt ?? 0,
-        canSteer: !!a._isActive,
-        canKill: !!a._isActive,
+        canSteer: !!a.isActive,
+        canKill: !!a.isActive,
         isBlocked: false,
         task: truncate(a.task, 80),
         sessionKey: a.sessionKey

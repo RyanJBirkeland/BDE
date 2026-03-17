@@ -6,7 +6,6 @@ describe('localAgents store', () => {
     vi.useFakeTimers()
     useLocalAgentsStore.setState({
       processes: [],
-      lastUpdated: 0,
       collapsed: false,
       spawnedAgents: [],
       selectedLocalAgentPid: null,
@@ -36,7 +35,6 @@ describe('localAgents store', () => {
     const state = useLocalAgentsStore.getState()
     expect(state.processes).toHaveLength(2)
     expect(state.processes[0].pid).toBe(100)
-    expect(state.lastUpdated).toBeGreaterThan(0)
   })
 
   it('fetchProcesses silently handles errors', async () => {
