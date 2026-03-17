@@ -62,6 +62,27 @@ let _configCache: GatewayConfig | null = null
 let _configCachedAt = 0
 const CONFIG_CACHE_TTL = 60_000
 
+export interface TaskRunnerConfig {
+  url: string
+  apiKey: string
+}
+
+export function getTaskRunnerConfig(): TaskRunnerConfig | null {
+  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
+  let config: Record<string, unknown> = {}
+  try {
+    config = JSON.parse(readFileSync(configPath, 'utf-8'))
+  } catch {
+    // config file missing or corrupt — fall through to env vars
+  }
+
+  const apiKey = (config.sprintApiKey as string) ?? process.env['SPRINT_API_KEY'] ?? null
+  const url = (config.taskRunnerUrl as string) ?? process.env['TASK_RUNNER_URL'] ?? 'http://127.0.0.1:18799'
+
+  if (!apiKey) return null
+  return { url, apiKey }
+}
+
 export function getGatewayConfig(): GatewayConfig {
   const now = Date.now()
   if (_configCache && now - _configCachedAt < CONFIG_CACHE_TTL) {

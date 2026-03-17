@@ -14,6 +14,7 @@ import {
   updateAgentMeta,
   listAgents
 } from './agent-history'
+import { getTaskRunnerConfig } from './config'
 
 const execFileAsync = promisify(execFile)
 
@@ -304,17 +305,45 @@ export function sendToAgent(pid: number, message: string): { ok: boolean; error?
 
 // --- Steer a running agent by agent ID (UUID) ---
 
-export function steerAgent(agentId: string, message: string): { ok: boolean; error?: string } {
+export async function steerAgent(agentId: string, message: string): Promise<{ ok: boolean; error?: string }> {
   const child = activeAgentsById.get(agentId)
-  if (!child || !child.stdin || child.stdin.destroyed) {
-    return { ok: false, error: 'Agent not found or stdin closed' }
+  if (child?.stdin && !child.stdin.destroyed) {
+    const event = JSON.stringify({
+      type: 'user',
+      message: { role: 'user', content: message }
+    }) + '\n'
+    child.stdin.write(event)
+    return { ok: true }
   }
-  const event = JSON.stringify({
-    type: 'user',
-    message: { role: 'user', content: message }
-  }) + '\n'
-  child.stdin.write(event)
-  return { ok: true }
+
+  return steerViaTaskRunner(agentId, message)
+}
+
+async function steerViaTaskRunner(agentId: string, message: string): Promise<{ ok: boolean; error?: string }> {
+  const config = getTaskRunnerConfig()
+  if (!config) {
+    return { ok: false, error: 'Agent not found locally and task-runner config unavailable' }
+  }
+
+  try {
+    const res = await fetch(`${config.url}/agents/${agentId}/steer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`
+      },
+      body: JSON.stringify({ message })
+    })
+
+    if (!res.ok) {
+      const body = await res.text()
+      return { ok: false, error: `Task-runner returned ${res.status}: ${body}` }
+    }
+
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: `Task-runner request failed: ${(err as Error).message}` }
+  }
 }
 
 // --- Tail agent log file ---

@@ -33,7 +33,7 @@ export function registerAgentHandlers(): void {
   })
   safeHandle('agent:steer', async (_e, { agentId, message }: { agentId: string; message: string }) => {
     const { steerAgent } = await import('../local-agents')
-    return steerAgent(agentId, message)
+    return await steerAgent(agentId, message)
   })
   cleanupOldLogs()
 
