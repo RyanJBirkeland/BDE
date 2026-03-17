@@ -239,6 +239,9 @@ export default function SprintCenter() {
                   )
                 )
               })
+              .catch((e: unknown) => {
+                toast.error('Spec generation failed: ' + (e instanceof Error ? e.message : String(e)))
+              })
               .finally(() => {
                 setGeneratingIds((prev) => {
                   if (!prev.has(result.id)) return prev
