@@ -101,6 +101,20 @@ export function SessionsView(): React.JSX.Element {
   }, [])
   const [spawnOpen, setSpawnOpen] = useState(false)
 
+  // FC-S3: Listen for bde:open-spawn-modal from CommandPalette
+  useEffect(() => {
+    const handler = (): void => setSpawnOpen(true)
+    window.addEventListener('bde:open-spawn-modal', handler)
+    return () => window.removeEventListener('bde:open-spawn-modal', handler)
+  }, [])
+
+  // FC-S7: Sync sidebar selection when agentHistoryStore.selectedId changes externally
+  useEffect(() => {
+    if (selectedHistoryId) {
+      setSelectedUnifiedId(`history:${selectedHistoryId}`)
+    }
+  }, [selectedHistoryId])
+
   // Unified selection handler
   const handleUnifiedSelect = useCallback(
     (id: string) => {
