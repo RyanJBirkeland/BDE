@@ -778,7 +778,8 @@
 
 .kanban-col--drop-target {
   border-color: var(--bde-accent);
-  transition: border-color 0.15s;
+  background: color-mix(in srgb, var(--bde-accent) 6%, var(--bde-surface));
+  transition: border-color 0.15s, background 0.15s;
 }
 
 /* ── Task Card ────────────────────────────────────────── */
