@@ -91,6 +91,7 @@ async function writeMemoryFile(relativePath: string, content: string): Promise<v
 }
 
 export function registerFsHandlers(): void {
+  // TODO: AX-S1 — add 'list-memory-files', 'read-memory-file', 'write-memory-file' to IpcChannelMap
   safeHandle('list-memory-files', () => listMemoryFiles())
   safeHandle('read-memory-file', (_e, path: string) => readMemoryFile(path))
   safeHandle('write-memory-file', (_e, path: string, content: string) =>

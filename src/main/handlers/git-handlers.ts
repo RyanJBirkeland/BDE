@@ -14,11 +14,13 @@ import {
 } from '../git'
 
 export function registerGitHandlers(): void {
+  // TODO: AX-S1 — add 'get-repo-paths' to IpcChannelMap
   safeHandle('get-repo-paths', () => getRepoPaths())
 
   // --- Git client IPC ---
   safeHandle('git:status', (_e, cwd: string) => gitStatus(cwd))
   safeHandle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(cwd, file))
+  // TODO: AX-S1 — add 'git:stage' through 'git:checkout' to IpcChannelMap
   safeHandle('git:stage', (_e, cwd: string, files: string[]) => gitStage(cwd, files))
   safeHandle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(cwd, files))
   safeHandle('git:commit', (_e, cwd: string, message: string) => gitCommit(cwd, message))
@@ -27,5 +29,6 @@ export function registerGitHandlers(): void {
   safeHandle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(cwd, branch))
 
   // --- PR status polling ---
+  // TODO: AX-S1 — add 'poll-pr-statuses' to IpcChannelMap
   safeHandle('poll-pr-statuses', (_e, prs: PrStatusInput[]) => pollPrStatuses(prs))
 }
