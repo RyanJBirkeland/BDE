@@ -93,7 +93,7 @@ export function SessionsView(): React.JSX.Element {
     selectedSubAgent ? 'steer' : 'chat'
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const handleQueryChange = useCallback((value: string) => {
     setQuery(value)
     clearTimeout(debounceRef.current)

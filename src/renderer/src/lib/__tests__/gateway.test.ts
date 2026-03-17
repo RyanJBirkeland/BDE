@@ -36,7 +36,7 @@ class MockWebSocket {
 
 ;(globalThis as unknown as Record<string, unknown>).WebSocket = MockWebSocket
 
-import { GatewayClient } from '../gateway'
+import { GatewayClient, type ConnectionStatus } from '../gateway'
 
 /**
  * The GatewayClient has a challenge/response auth flow:
@@ -67,11 +67,12 @@ function simulateFullConnect(): void {
 }
 
 describe('GatewayClient', () => {
-  let onStatus: ReturnType<typeof vi.fn>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let onStatus: ((status: ConnectionStatus) => void) & ReturnType<typeof vi.fn<any>>
 
   beforeEach(() => {
     vi.useFakeTimers()
-    onStatus = vi.fn()
+    onStatus = vi.fn() as unknown as ((status: ConnectionStatus) => void) & ReturnType<typeof vi.fn<any>>
     ;(globalThis as unknown as Record<string, unknown>).WebSocket = MockWebSocket
   })
 
