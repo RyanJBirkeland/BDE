@@ -27,6 +27,7 @@ const EMPTY_LABELS: Record<ColumnStatus, string> = {
   queued: 'Sprint queue is empty',
   active: 'Nothing in progress',
   done: 'No completed tasks yet',
+  cancelled: 'No cancelled tasks',
   review: 'No PRs awaiting review',
 }
 
@@ -35,6 +36,7 @@ const STATUS_CLASS: Record<ColumnStatus, string> = {
   queued: 'kanban-col--sprint',
   active: 'kanban-col--active',
   done: 'kanban-col--done',
+  cancelled: 'kanban-col--done',
   review: 'kanban-col--review',
 }
 

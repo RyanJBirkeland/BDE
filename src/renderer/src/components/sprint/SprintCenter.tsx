@@ -46,6 +46,7 @@ export default function SprintCenter() {
   const prIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const loadData = useCallback(async () => {
+    setLoading(true)
     try {
       const result = (await window.api.sprint.list()) as SprintTask[]
       const next = Array.isArray(result) ? result : []
@@ -170,14 +171,13 @@ export default function SprintCenter() {
         repo: repoEnum,
         priority: data.priority,
         status: 'backlog',
-        description: data.description || null,
+        notes: null,
         spec: data.spec || null,
         prompt: data.prompt || data.title,
         agent_run_id: null,
         pr_number: null,
         pr_status: null,
         pr_url: null,
-        column_order: 0,
         started_at: null,
         completed_at: null,
         updated_at: new Date().toISOString(),
