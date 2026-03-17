@@ -1,13 +1,24 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, SprintTask } from '../shared/types'
+import type { AgentMeta, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
+import type { IpcChannelMap } from '../shared/ipc-channels'
+
+/**
+ * Type-safe invoke for channels in IpcChannelMap.
+ * Channel name typos and payload mismatches are caught at compile time.
+ */
+function typedInvoke<K extends keyof IpcChannelMap>(
+  channel: K,
+  ...args: IpcChannelMap[K]['args']
+): Promise<IpcChannelMap[K]['result']> {
+  return ipcRenderer.invoke(channel, ...args)
+}
 
 const api = {
-  getGatewayConfig: (): Promise<{ url: string; token: string }> =>
-    ipcRenderer.invoke('get-gateway-config'),
+  getGatewayConfig: () => typedInvoke('get-gateway-config'),
   getGitHubToken: (): Promise<string | null> => ipcRenderer.invoke('get-github-token'),
-  saveGatewayConfig: (url: string, token: string): Promise<void> =>
-    ipcRenderer.invoke('save-gateway-config', url, token),
+  saveGatewayConfig: (url: string, token: string) =>
+    typedInvoke('save-gateway-config', url, token),
   getSupabaseConfig: (): Promise<{ url: string; anonKey: string } | null> =>
     ipcRenderer.invoke('get-supabase-config'),
   getRepoPaths: (): Promise<Record<string, string>> => ipcRenderer.invoke('get-repo-paths'),
@@ -22,12 +33,8 @@ const api = {
   setTitle: (title: string): void => ipcRenderer.send('set-title', title),
 
   // Git client
-  gitStatus: (
-    cwd: string
-  ): Promise<{ files: { path: string; status: string; staged: boolean }[] }> =>
-    ipcRenderer.invoke('git:status', cwd),
-  gitDiff: (cwd: string, file?: string): Promise<string> =>
-    ipcRenderer.invoke('git:diff', cwd, file),
+  gitStatus: (cwd: string) => typedInvoke('git:status', cwd),
+  gitDiff: (cwd: string, file?: string) => typedInvoke('git:diff', cwd, file),
   gitStage: (cwd: string, files: string[]): Promise<void> =>
     ipcRenderer.invoke('git:stage', cwd, files),
   gitUnstage: (cwd: string, files: string[]): Promise<void> =>
@@ -52,12 +59,8 @@ const api = {
       memMb: number
     }[]
   > => ipcRenderer.invoke('local:getAgentProcesses'),
-  spawnLocalAgent: (args: {
-    task: string
-    repoPath: string
-    model?: string
-  }): Promise<{ pid: number; logPath: string; id: string; interactive: boolean }> =>
-    ipcRenderer.invoke('local:spawnClaudeAgent', args),
+  spawnLocalAgent: (args: SpawnLocalAgentArgs) =>
+    typedInvoke('local:spawnClaudeAgent', args),
   sendToAgent: (pid: number, message: string): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('local:sendToAgent', { pid, message }),
   isAgentInteractive: (pid: number): Promise<boolean> =>
@@ -122,11 +125,13 @@ const api = {
   // Gateway tool invocation — proxied through main process to avoid CORS
   invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
     ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),
+  getSessionHistory: (sessionKey: string): Promise<unknown> =>
+    ipcRenderer.invoke('gateway:getSessionHistory', sessionKey),
 
   // Terminal PTY
   terminal: {
-    create: (opts: { cols: number; rows: number; shell?: string }): Promise<number> =>
-      ipcRenderer.invoke('terminal:create', opts),
+    create: (opts: { cols: number; rows: number; shell?: string }) =>
+      typedInvoke('terminal:create', opts),
     write: (id: number, data: string): void =>
       ipcRenderer.send('terminal:write', { id, data }),
     resize: (id: number, cols: number, rows: number): Promise<void> =>

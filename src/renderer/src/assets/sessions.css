@@ -2312,3 +2312,36 @@
   border-color: rgba(59, 130, 246, 0.4);
   color: var(--bde-info);
 }
+
+/* ── Agent Row Context Menu ──────────────────────────── */
+
+.agent-row-context-menu {
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  padding: 4px;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.agent-row-context-menu__item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--bde-radius-sm);
+  color: var(--bde-text);
+  font-family: var(--bde-font-ui);
+  font-size: var(--bde-size-md);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.agent-row-context-menu__item:hover {
+  background: var(--bde-accent-dim);
+  color: var(--bde-accent);
+}

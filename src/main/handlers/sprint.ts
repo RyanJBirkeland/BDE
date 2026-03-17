@@ -125,6 +125,7 @@ export function registerSprintHandlers(): void {
   // One-time migration from Supabase (non-blocking, graceful)
   migrateFromSupabase()
 
+  // TODO: AX-S1 — add 'sprint:list', 'sprint:create', 'sprint:update', 'sprint:delete', 'sprint:readLog' to IpcChannelMap
   safeHandle('sprint:list', () => {
     const db = getDb()
     return db

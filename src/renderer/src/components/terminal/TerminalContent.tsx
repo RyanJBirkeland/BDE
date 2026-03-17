@@ -41,7 +41,7 @@ export function TerminalContent({
                   )}
                 </div>
                 <div className="terminal-content__agent-body">
-                  <AgentOutputTab agentId={tab.agentId} />
+                  <AgentOutputTab agentId={tab.agentId} sessionKey={tab.agentSessionKey} />
                 </div>
               </div>
             ) : splitEnabled && tab.id === activeTabId ? (

@@ -1,15 +1,19 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, SprintTask } from '../shared/types'
+import type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
+import type { IpcChannelMap } from '../shared/ipc-channels'
 
-export type { AgentMeta, SprintTask }
+export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
+
+/** Helper — extracts the result type for a typed IPC channel. */
+type IpcResult<K extends keyof IpcChannelMap> = IpcChannelMap[K]['result']
 
 declare global {
   interface Window {
     electron: ElectronAPI
     api: {
-      getGatewayConfig: () => Promise<{ url: string; token: string }>
+      getGatewayConfig: () => Promise<IpcResult<'get-gateway-config'>>
       getGitHubToken: () => Promise<string | null>
-      saveGatewayConfig: (url: string, token: string) => Promise<void>
+      saveGatewayConfig: (...args: IpcChannelMap['save-gateway-config']['args']) => Promise<IpcResult<'save-gateway-config'>>
       getSupabaseConfig: () => Promise<{ url: string; anonKey: string } | null>
       getRepoPaths: () => Promise<Record<string, string>>
       openExternal: (url: string) => Promise<void>
@@ -32,11 +36,7 @@ declare global {
           memMb: number
         }[]
       >
-      spawnLocalAgent: (args: {
-        task: string
-        repoPath: string
-        model?: string
-      }) => Promise<{ pid: number; logPath: string; id: string; interactive: boolean }>
+      spawnLocalAgent: (...args: IpcChannelMap['local:spawnClaudeAgent']['args']) => Promise<IpcResult<'local:spawnClaudeAgent'>>
       sendToAgent: (pid: number, message: string) => Promise<{ ok: boolean; error?: string }>
       isAgentInteractive: (pid: number) => Promise<boolean>
       killLocalAgent: (pid: number) => Promise<{ ok: boolean; error?: string }>
@@ -46,10 +46,8 @@ declare global {
       }) => Promise<{ content: string; nextByte: number }>
 
       // Git client
-      gitStatus: (
-        cwd: string
-      ) => Promise<{ files: { path: string; status: string; staged: boolean }[] }>
-      gitDiff: (cwd: string, file?: string) => Promise<string>
+      gitStatus: (...args: IpcChannelMap['git:status']['args']) => Promise<IpcResult<'git:status'>>
+      gitDiff: (...args: IpcChannelMap['git:diff']['args']) => Promise<IpcResult<'git:diff'>>
       gitStage: (cwd: string, files: string[]) => Promise<void>
       gitUnstage: (cwd: string, files: string[]) => Promise<void>
       gitCommit: (cwd: string, message: string) => Promise<void>
@@ -97,10 +95,11 @@ declare global {
 
       // Gateway RPC
       invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
+      getSessionHistory: (sessionKey: string) => Promise<unknown>
 
       // Terminal PTY
       terminal: {
-        create: (opts: { cols: number; rows: number; shell?: string }) => Promise<number>
+        create: (...args: IpcChannelMap['terminal:create']['args']) => Promise<IpcResult<'terminal:create'>>
         write: (id: number, data: string) => void
         resize: (id: number, cols: number, rows: number) => Promise<void>
         kill: (id: number) => Promise<void>

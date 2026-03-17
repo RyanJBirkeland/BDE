@@ -5,6 +5,7 @@ import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
 import { getStaleLevel } from '../../hooks/useUnifiedAgents'
 import { timeAgo, modelBadgeLabel } from '../../lib/format'
 import { VARIANTS, TRANSITIONS, SPRINGS } from '../../lib/motion'
+import { useTerminalStore } from '../../stores/terminal'
 
 export interface AgentRowProps {
   agent: UnifiedAgent
@@ -70,6 +71,45 @@ export function AgentRow({
     [agent.canSteer, onSteer]
   )
 
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent): void => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      // Only show context menu for agents with sessionKey (gateway sessions/sub-agents)
+      if (!agent.sessionKey) return
+
+      const menu = document.createElement('div')
+      menu.className = 'agent-row-context-menu'
+      menu.style.position = 'fixed'
+      menu.style.left = `${e.clientX}px`
+      menu.style.top = `${e.clientY}px`
+      menu.style.zIndex = '10000'
+
+      const watchOption = document.createElement('button')
+      watchOption.className = 'agent-row-context-menu__item'
+      watchOption.textContent = '↗ Watch in Terminal'
+      watchOption.onclick = () => {
+        const createAgentTab = useTerminalStore.getState().createAgentTab
+        createAgentTab(agent.id, agent.label, agent.sessionKey!)
+        document.body.removeChild(menu)
+      }
+
+      menu.appendChild(watchOption)
+      document.body.appendChild(menu)
+
+      const closeMenu = (): void => {
+        if (document.body.contains(menu)) {
+          document.body.removeChild(menu)
+        }
+        document.removeEventListener('click', closeMenu)
+      }
+
+      setTimeout(() => document.addEventListener('click', closeMenu), 0)
+    },
+    [agent.id, agent.label, agent.sessionKey]
+  )
+
   const isRunning = agent.status === 'running'
 
   return (
@@ -84,6 +124,7 @@ export function AgentRow({
         isRunning && !isSelected && 'glow-pulse',
       ].filter(Boolean).join(' ')}
       onClick={onSelect}
+      onContextMenu={handleContextMenu}
     >
       <span className={dotClass(agent)} title={agent.isBlocked ? 'Session aborted — may need attention' : undefined} />
       <div className="agent-row__info">
