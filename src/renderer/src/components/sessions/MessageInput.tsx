@@ -1,11 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { Paperclip, X } from 'lucide-react'
 import { toast } from '../../stores/toasts'
 import { useGatewayStore, getGatewayClient } from '../../stores/gateway'
 import { useSessionsStore } from '../../stores/sessions'
 import { useLocalAgentsStore } from '../../stores/localAgents'
+import { pickAndReadFiles, buildLocalAgentMessage, buildGatewayPayload } from '../../lib/attachments'
 import { Textarea } from '../ui/Textarea'
 import { Button } from '../ui/Button'
 import { Spinner } from '../ui/Spinner'
+import type { Attachment } from '../../../../shared/types'
 
 interface Props {
   sessionKey: string
@@ -20,6 +23,7 @@ interface Props {
 export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBeforeSend, onSendError, disabled = false }: Props): React.JSX.Element {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
   const [localInteractive, setLocalInteractive] = useState<boolean | null>(null)
   const gatewayStatus = useGatewayStore((s) => s.status)
   const sendToAgent = useLocalAgentsStore((s) => s.sendToAgent)
@@ -40,9 +44,27 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
     return () => window.removeEventListener('bde:focus-message-input', handler)
   }, [])
 
+  const handleAttach = useCallback(async (): Promise<void> => {
+    try {
+      const newFiles = await pickAndReadFiles(attachments)
+      if (newFiles.length > 0) {
+        setAttachments((prev) => [...prev, ...newFiles])
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      toast.error(msg)
+    }
+  }, [attachments])
+
+  const removeAttachment = useCallback((index: number): void => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const hasContent = text.trim().length > 0 || attachments.length > 0
+
   const send = useCallback(async (): Promise<void> => {
     const trimmed = text.trim()
-    if (!trimmed || sending) return
+    if (!hasContent || sending) return
 
     if (sessionMode === 'chat' && gatewayStatus !== 'connected') {
       toast.error('Gateway not connected')
@@ -55,18 +77,27 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
 
     setSending(true)
     setText('')
+    const sentAttachments = [...attachments]
+    setAttachments([])
     onBeforeSend?.(trimmed)
 
     try {
       if (sessionMode === 'steer') {
+        const fullMessage = sentAttachments.length > 0
+          ? buildLocalAgentMessage(trimmed, sentAttachments)
+          : trimmed
         const steerSubAgent = useSessionsStore.getState().steerSubAgent
-        await steerSubAgent(sessionKey, trimmed)
+        await steerSubAgent(sessionKey, fullMessage)
       } else if (sessionMode === 'local') {
-        await sendToAgent(localPid!, trimmed)
+        const fullMessage = sentAttachments.length > 0
+          ? buildLocalAgentMessage(trimmed, sentAttachments)
+          : trimmed
+        await sendToAgent(localPid!, fullMessage)
       } else {
         const client = getGatewayClient()
         if (!client) throw new Error('Gateway not connected')
-        await client.call('chat.send', { sessionKey, message: trimmed, idempotencyKey: crypto.randomUUID() })
+        const payload = buildGatewayPayload(sessionKey, trimmed, sentAttachments)
+        await client.call('chat.send', payload)
       }
       onSent()
     } catch (err) {
@@ -77,7 +108,7 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
     } finally {
       setSending(false)
     }
-  }, [text, sending, gatewayStatus, sessionKey, sessionMode, onSent, onBeforeSend, onSendError])
+  }, [text, hasContent, sending, attachments, gatewayStatus, sessionKey, sessionMode, localPid, onSent, onBeforeSend, onSendError, sendToAgent])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -103,24 +134,56 @@ export function MessageInput({ sessionKey, sessionMode, localPid, onSent, onBefo
 
   return (
     <div className={wrapperClass}>
-      <Textarea
-        ref={textareaRef}
-        value={text}
-        onChange={setText}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={disabled || sending || localBlocked}
-        className="message-input__textarea"
-      />
-      <Button
-        variant="primary"
-        size="sm"
-        className="message-input__send"
-        onClick={send}
-        disabled={!text.trim() || sending || disabled || localBlocked}
-      >
-        {sending ? <Spinner size="sm" /> : 'Send'}
-      </Button>
+      {attachments.length > 0 && (
+        <div className="attachment-chips">
+          {attachments.map((att, i) => (
+            <div key={att.path + i} className="attachment-chip">
+              {att.type === 'image' && att.preview ? (
+                <img src={att.preview} alt={att.name} className="attachment-chip__thumb" />
+              ) : (
+                <span className="attachment-chip__icon">📄</span>
+              )}
+              <span className="attachment-chip__name">{att.name}</span>
+              <button
+                className="attachment-chip__remove"
+                onClick={() => removeAttachment(i)}
+                aria-label={`Remove ${att.name}`}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="message-input__row">
+        <button
+          className="message-input__attach"
+          onClick={handleAttach}
+          disabled={disabled || sending || localBlocked}
+          aria-label="Attach file"
+          title="Attach file"
+        >
+          <Paperclip size={16} />
+        </button>
+        <Textarea
+          ref={textareaRef}
+          value={text}
+          onChange={setText}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled || sending || localBlocked}
+          className="message-input__textarea"
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          className="message-input__send"
+          onClick={send}
+          disabled={!hasContent || sending || disabled || localBlocked}
+        >
+          {sending ? <Spinner size="sm" /> : 'Send'}
+        </Button>
+      </div>
     </div>
   )
 }

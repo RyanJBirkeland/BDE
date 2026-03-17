@@ -51,3 +51,18 @@ export interface SpawnLocalAgentResult {
   id: string
   interactive: boolean
 }
+
+/** A file attachment queued for sending with a chat message. */
+export interface Attachment {
+  path: string
+  name: string
+  type: 'image' | 'text'
+  /** base64 data URL for image thumbnails / inline rendering */
+  preview?: string
+  /** Raw base64 data (no data-url prefix) for images */
+  data?: string
+  /** MIME type for images (e.g. image/png) */
+  mimeType?: string
+  /** Text content for text files */
+  content?: string
+}

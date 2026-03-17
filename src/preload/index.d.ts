@@ -86,6 +86,15 @@ declare global {
         readSpecFile: (filePath: string) => Promise<string>
       }
 
+      // File attachments
+      openFileDialog: (
+        opts?: { filters?: { name: string; extensions: string[] }[] }
+      ) => Promise<string[] | null>
+      readFileAsBase64: (
+        path: string
+      ) => Promise<{ data: string; mimeType: string; name: string }>
+      readFileAsText: (path: string) => Promise<{ content: string; name: string }>
+
       // Gateway RPC
       invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
 

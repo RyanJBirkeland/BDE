@@ -6,7 +6,7 @@ import { EmptyState } from '../ui/EmptyState'
 import { Spinner } from '../ui/Spinner'
 import { CHAT_HISTORY_LIMIT, CHAT_SCROLL_THRESHOLD, CHAT_COLLAPSE_THRESHOLD, POLL_CHAT_STREAMING_MS, POLL_CHAT_IDLE_MS } from '../../lib/constants'
 import { normalizeContent } from '../../lib/message'
-import { renderContent } from '../../lib/markdown'
+import { renderContent, renderUserContent } from '../../lib/markdown'
 import type { ChatMessage } from '../../lib/agent-messages'
 
 function formatTime(ts: number | string | undefined): string {
@@ -265,10 +265,13 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
           }
 
           if (msg.role === 'user') {
+            const hasAttachments = msg.content.includes('![') || msg.content.includes('📄 ')
             return (
               <div key={key} className="chat-msg chat-msg--user">
                 <div className="chat-msg__bubble chat-msg__bubble--user">
-                  <span className="chat-msg__text">{msg.content}</span>
+                  <span className="chat-msg__text">
+                    {hasAttachments ? renderUserContent(msg.content) : msg.content}
+                  </span>
                 </div>
                 {msg.timestamp && (
                   <span className="chat-msg__time chat-msg__time--right">{formatTime(msg.timestamp)}</span>

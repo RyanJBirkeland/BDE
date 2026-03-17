@@ -106,6 +106,19 @@ const api = {
       ipcRenderer.invoke('sprint:read-spec-file', filePath),
   },
 
+  // File attachments
+  openFileDialog: (
+    opts?: { filters?: { name: string; extensions: string[] }[] }
+  ): Promise<string[] | null> => ipcRenderer.invoke('open-file-dialog', opts),
+  readFileAsBase64: (
+    path: string
+  ): Promise<{ data: string; mimeType: string; name: string }> =>
+    ipcRenderer.invoke('read-file-as-base64', path),
+  readFileAsText: (
+    path: string
+  ): Promise<{ content: string; name: string }> =>
+    ipcRenderer.invoke('read-file-as-text', path),
+
   // Gateway tool invocation — proxied through main process to avoid CORS
   invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
     ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),
