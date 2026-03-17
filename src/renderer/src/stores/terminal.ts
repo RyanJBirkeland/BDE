@@ -10,6 +10,9 @@ export interface TerminalTab {
   ptyId?: number | null
   agentId?: string
   agentSessionKey?: string
+  isLabelCustom: boolean       // user renamed this tab
+  status: 'running' | 'exited'
+  hasUnread: boolean           // new output while tab not focused
 }
 
 let nextTabNum = 1
@@ -21,7 +24,10 @@ function makeTab(shell?: string): TerminalTab {
     title: `Terminal ${num}`,
     kind: 'shell',
     shell: shell || '/bin/zsh',
-    ptyId: null
+    ptyId: null,
+    isLabelCustom: false,
+    status: 'running',
+    hasUnread: false
   }
 }
 
@@ -31,7 +37,10 @@ function makeAgentTab(agentId: string, label: string, sessionKey?: string): Term
     title: label,
     kind: 'agent',
     agentId,
-    agentSessionKey: sessionKey
+    agentSessionKey: sessionKey,
+    isLabelCustom: false,
+    status: 'running',
+    hasUnread: false
   }
 }
 
@@ -41,6 +50,7 @@ interface TerminalStore {
   showFind: boolean
   splitEnabled: boolean
   splitTabId: string | null
+  fontSize: number
   addTab: (shell?: string) => void
   closeTab: (id: string) => void
   setActiveTab: (id: string) => void
@@ -50,6 +60,12 @@ interface TerminalStore {
   toggleSplit: () => void
   openAgentTab: (agentId: string, label: string) => void
   createAgentTab: (agentId: string, label: string, sessionKey: string) => void
+  reorderTab: (fromIdx: number, toIdx: number) => void
+  setTabStatus: (id: string, status: 'running' | 'exited') => void
+  setUnread: (id: string, hasUnread: boolean) => void
+  zoomIn: () => void
+  zoomOut: () => void
+  resetZoom: () => void
 }
 
 const initialTab = makeTab()
@@ -60,6 +76,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   showFind: false,
   splitEnabled: false,
   splitTabId: null,
+  fontSize: 13,
 
   addTab: (shell?) => {
     const tab = makeTab(shell)
@@ -82,7 +99,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
   renameTab: (id, title) =>
     set((s) => ({
-      tabs: s.tabs.map((t) => (t.id === id ? { ...t, title } : t))
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, title, isLabelCustom: true } : t))
     })),
 
   setPtyId: (tabId, ptyId) =>
@@ -108,5 +125,35 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   createAgentTab: (agentId, label, sessionKey) => {
     const tab = makeAgentTab(agentId, label, sessionKey)
     set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }))
-  }
+  },
+
+  reorderTab: (fromIdx, toIdx) => {
+    const { tabs } = get()
+    const reordered = [...tabs]
+    const [moved] = reordered.splice(fromIdx, 1)
+    reordered.splice(toIdx, 0, moved)
+    set({ tabs: reordered })
+  },
+
+  setTabStatus: (id, status) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, status } : t))
+    })),
+
+  setUnread: (id, hasUnread) =>
+    set((s) => ({
+      tabs: s.tabs.map((t) => (t.id === id ? { ...t, hasUnread } : t))
+    })),
+
+  zoomIn: () =>
+    set((s) => ({
+      fontSize: Math.min(s.fontSize + 1, 20)
+    })),
+
+  zoomOut: () =>
+    set((s) => ({
+      fontSize: Math.max(s.fontSize - 1, 10)
+    })),
+
+  resetZoom: () => set({ fontSize: 13 })
 }))
