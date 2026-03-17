@@ -65,6 +65,12 @@ export default function SprintCenter() {
     }
   }, [loadData, hasActiveTasks])
 
+  // Instant refresh when an external process writes to bde.db
+  useEffect(() => {
+    window.api.onExternalSprintChange(loadData)
+    return () => window.api.offExternalSprintChange(loadData)
+  }, [loadData])
+
   // PR status polling — check merged status for tasks with a pr_url
   const pollPrStatuses = useCallback(async (taskList: SprintTask[]) => {
     const withPr = taskList.filter((t) => t.pr_url && !prMergedMap[t.id])

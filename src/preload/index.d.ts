@@ -97,6 +97,10 @@ declare global {
       invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
       getSessionHistory: (sessionKey: string) => Promise<unknown>
 
+      // Sprint DB file-watcher push events
+      onExternalSprintChange: (cb: () => void) => void
+      offExternalSprintChange: (cb: () => void) => void
+
       // Terminal PTY
       terminal: {
         create: (...args: IpcChannelMap['terminal:create']['args']) => Promise<IpcResult<'terminal:create'>>

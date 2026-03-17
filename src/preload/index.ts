@@ -128,6 +128,14 @@ const api = {
   getSessionHistory: (sessionKey: string): Promise<unknown> =>
     ipcRenderer.invoke('gateway:getSessionHistory', sessionKey),
 
+  // Sprint DB file-watcher push events
+  onExternalSprintChange: (cb: () => void): void => {
+    ipcRenderer.on('sprint:external-change', cb)
+  },
+  offExternalSprintChange: (cb: () => void): void => {
+    ipcRenderer.removeListener('sprint:external-change', cb)
+  },
+
   // Terminal PTY
   terminal: {
     create: (opts: { cols: number; rows: number; shell?: string }) =>

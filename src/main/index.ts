@@ -1,5 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { homedir } from 'os'
+import { watch, type FSWatcher } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerAgentHandlers } from './handlers/agent-handlers'
@@ -11,6 +13,38 @@ import { registerWindowHandlers } from './handlers/window-handlers'
 import { registerSprintHandlers } from './handlers/sprint'
 import { registerFsHandlers } from './fs'
 import { getDb, closeDb } from './db'
+
+const DEBOUNCE_MS = 500
+
+function startDbWatcher(): () => void {
+  const dbPath = join(homedir(), '.bde', 'bde.db')
+  const walPath = dbPath + '-wal'
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+  const notify = (): void => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      for (const win of BrowserWindow.getAllWindows()) {
+        win.webContents.send('sprint:external-change')
+      }
+    }, DEBOUNCE_MS)
+  }
+
+  const watchers: FSWatcher[] = []
+
+  for (const path of [dbPath, walPath]) {
+    try {
+      watchers.push(watch(path, notify))
+    } catch {
+      // File may not exist yet — task runner creates it on first write
+    }
+  }
+
+  return () => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+    for (const w of watchers) w.close()
+  }
+}
 
 
 function createWindow(): void {
@@ -55,6 +89,9 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.bde')
 
   getDb()
+
+  const stopDbWatcher = startDbWatcher()
+  app.on('will-quit', stopDbWatcher)
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
