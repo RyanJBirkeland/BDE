@@ -123,6 +123,9 @@ export default function SprintCenter() {
   // PR status polling — check merged status for tasks with a pr_url
   const prMergedRef = useRef(prMergedMap)
   prMergedRef.current = prMergedMap
+  const updateTaskRef = useRef<(taskId: string, patch: Partial<SprintTask>) => Promise<void>>(
+    async () => undefined
+  )
 
   const pollPrStatuses = useCallback(async (taskList: SprintTask[]) => {
     const withPr = taskList.filter((t) => t.pr_url && !prMergedRef.current[t.id])
@@ -141,6 +144,10 @@ export default function SprintCenter() {
         for (const r of results) next[r.taskId] = r.merged
         return next
       })
+      // Write pr_status='merged' back so tasks leave Awaiting Review
+      for (const r of results) {
+        if (r.merged) updateTaskRef.current(r.taskId, { pr_status: 'merged' })
+      }
     } catch {
       // gh CLI unavailable — degrade gracefully
     }
@@ -165,7 +172,7 @@ export default function SprintCenter() {
   }, [tasks, pollPrStatuses])
 
   const updateTask = useCallback(
-    async (taskId: string, patch: Partial<SprintTask>) => {
+    async (taskId: string, patch: Partial<SprintTask>): Promise<void> => {
       // Optimistic update
       setTasks((prev) =>
         prev.map((t) =>
@@ -185,6 +192,7 @@ export default function SprintCenter() {
     },
     [loadData]
   )
+  updateTaskRef.current = updateTask
 
   const createTask = useCallback(
     async (data: CreateTicketData) => {
