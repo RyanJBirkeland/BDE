@@ -52,6 +52,9 @@ vi.stubGlobal('api', {
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
     readLog: vi.fn().mockResolvedValue({ content: '', status: 'unknown' }),
+    readSpecFile: vi.fn().mockResolvedValue(''),
+    generatePrompt: vi.fn().mockResolvedValue({ taskId: '', spec: '', prompt: '' }),
+    delete: vi.fn().mockResolvedValue({ ok: true }),
   },
   terminal: {
     create: vi.fn().mockResolvedValue(1),

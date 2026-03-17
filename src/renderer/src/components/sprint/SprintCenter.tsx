@@ -5,7 +5,9 @@ import { SpecDrawer } from './SpecDrawer'
 import { LogDrawer } from './LogDrawer'
 import { PRSection } from './PRSection'
 import { NewTicketModal } from './NewTicketModal'
+import type { CreateTicketData } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
+import { detectTemplate } from '../../../../shared/template-heuristics'
 import {
   POLL_SPRINT_INTERVAL,
   POLL_SPRINT_ACTIVE_MS,
@@ -34,6 +36,7 @@ export default function SprintCenter() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [prMergedMap, setPrMergedMap] = useState<Record<string, boolean>>({})
+  const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set())
   const prevTasksRef = useRef<SprintTask[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const prIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -158,7 +161,7 @@ export default function SprintCenter() {
   )
 
   const createTask = useCallback(
-    async (data: { title: string; repo: string; description: string; spec: string; priority: number }) => {
+    async (data: CreateTicketData) => {
       const repoEnum = REPO_LABEL_TO_ENUM[data.repo] ?? data.repo.toLowerCase()
 
       // Optimistic insert so the card appears immediately
@@ -170,7 +173,7 @@ export default function SprintCenter() {
         status: 'backlog',
         description: data.description || null,
         spec: data.spec || null,
-        prompt: data.spec || data.title,
+        prompt: data.prompt || data.title,
         agent_run_id: null,
         pr_number: null,
         pr_status: null,
@@ -187,7 +190,7 @@ export default function SprintCenter() {
         const result = (await window.api.sprint.create({
           title: data.title,
           repo: repoEnum,
-          prompt: data.spec || data.title,
+          prompt: data.prompt || data.title,
           description: data.description || undefined,
           spec: data.spec || undefined,
           priority: data.priority,
@@ -197,6 +200,36 @@ export default function SprintCenter() {
         // Replace optimistic with server row
         if (result?.id) {
           setTasks((prev) => prev.map((t) => (t.id === optimistic.id ? result : t)))
+
+          // Trigger background spec generation for Quick Mode tasks (no spec yet)
+          if (!data.spec) {
+            const templateHint = detectTemplate(data.title)
+            setGeneratingIds((prev) => new Set(prev).add(result.id))
+
+            window.api.sprint
+              .generatePrompt({
+                taskId: result.id,
+                title: data.title,
+                repo: repoEnum,
+                templateHint,
+              })
+              .then((genResult) => {
+                setTasks((prev) =>
+                  prev.map((t) =>
+                    t.id === genResult.taskId
+                      ? { ...t, spec: genResult.spec || null, prompt: genResult.prompt }
+                      : t
+                  )
+                )
+              })
+              .finally(() => {
+                setGeneratingIds((prev) => {
+                  const next = new Set(prev)
+                  next.delete(result.id)
+                  return next
+                })
+              })
+          }
         }
         toast.success('Ticket created — saved to Backlog')
       } catch (e) {
@@ -315,6 +348,7 @@ export default function SprintCenter() {
         <KanbanBoard
           tasks={filteredTasks}
           prMergedMap={prMergedMap}
+          generatingIds={generatingIds}
           onDragEnd={handleDragEnd}
           onPushToSprint={handlePushToSprint}
           onLaunch={handleLaunch}

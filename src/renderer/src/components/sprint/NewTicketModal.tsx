@@ -5,16 +5,21 @@ import { REPO_OPTIONS } from '../../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { toast } from '../../stores/toasts'
 
+type TicketMode = 'quick' | 'template' | 'design'
+
+export type CreateTicketData = {
+  title: string
+  repo: string
+  description: string
+  prompt: string
+  spec: string | null
+  priority: number
+}
+
 type NewTicketModalProps = {
   open: boolean
   onClose: () => void
-  onCreate: (data: {
-    title: string
-    repo: string
-    description: string
-    spec: string
-    priority: number
-  }) => void
+  onCreate: (data: CreateTicketData) => void
 }
 
 const PRIORITY_OPTIONS = [
@@ -60,6 +65,7 @@ const TEMPLATES: Record<string, { label: string; spec: string }> = {
 
 export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps) {
   const reduced = useReducedMotion()
+  const [mode, setMode] = useState<TicketMode>('quick')
   const [title, setTitle] = useState('')
   const [repo, setRepo] = useState<string>(REPO_OPTIONS[0].label)
   const [priority, setPriority] = useState(1)
@@ -70,6 +76,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
 
   useEffect(() => {
     if (open) {
+      setMode('quick')
       setTitle('')
       setRepo(REPO_OPTIONS[0].label)
       setPriority(1)
@@ -145,11 +152,27 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
   const handleSubmit = () => {
     const trimmed = title.trim()
     if (!trimmed) return
+
+    if (mode === 'quick') {
+      onCreate({
+        title: trimmed,
+        repo,
+        description: '',
+        prompt: trimmed,
+        spec: null,
+        priority: 1,
+      })
+      onClose()
+      return
+    }
+
+    // Template mode (existing behavior)
     onCreate({
       title: trimmed,
       repo,
       description: '',
-      spec,
+      prompt: spec || trimmed,
+      spec: spec || null,
       priority,
     })
     onClose()
@@ -175,93 +198,170 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
           </Button>
         </div>
 
+        {/* Mode tabs */}
+        <div className="new-ticket-modal__tabs">
+          <button
+            className={`new-ticket-modal__tab ${mode === 'quick' ? 'new-ticket-modal__tab--active' : ''}`}
+            onClick={() => setMode('quick')}
+            type="button"
+          >
+            Quick
+          </button>
+          <button
+            className={`new-ticket-modal__tab ${mode === 'template' ? 'new-ticket-modal__tab--active' : ''}`}
+            onClick={() => setMode('template')}
+            type="button"
+          >
+            Template
+          </button>
+          <button
+            className={`new-ticket-modal__tab ${mode === 'design' ? 'new-ticket-modal__tab--active' : ''}`}
+            onClick={() => setMode('design')}
+            type="button"
+          >
+            Design with Paul
+          </button>
+        </div>
+
         <div className="new-ticket-modal__body">
-          <label className="new-ticket-modal__label">Title</label>
-          <input
-            ref={titleRef}
-            className="sprint-tasks__input"
-            placeholder='e.g. "Add recipe search to Feast onboarding"'
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-          />
-
-          <div className="new-ticket-modal__row">
-            <div className="new-ticket-modal__field">
-              <label className="new-ticket-modal__label">Repo</label>
-              <select
-                className="sprint-tasks__select"
-                value={repo}
-                onChange={(e) => setRepo(e.target.value)}
-              >
-                {REPO_OPTIONS.map((r) => (
-                  <option key={r.label} value={r.label}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
+          {mode === 'quick' && (
+            <div className="new-ticket-modal__quick">
+              <div className="new-ticket-modal__field">
+                <label className="new-ticket-modal__label">What needs to happen? *</label>
+                <input
+                  ref={titleRef}
+                  className="sprint-tasks__input"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSubmit()
+                  }}
+                  placeholder='e.g. "Fix toast z-index above SpecDrawer"'
+                  autoFocus
+                />
+              </div>
+              <div className="new-ticket-modal__field">
+                <label className="new-ticket-modal__label">Repo</label>
+                <select
+                  className="sprint-tasks__select"
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                >
+                  {REPO_OPTIONS.map((r) => (
+                    <option key={r.label} value={r.label}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="new-ticket-modal__quick-hint">
+                Paul will write the spec in the background. Review it in SpecDrawer before launching.
+              </p>
             </div>
-            <div className="new-ticket-modal__field">
-              <label className="new-ticket-modal__label">Priority</label>
-              <select
-                className="sprint-tasks__select"
-                value={priority}
-                onChange={(e) => setPriority(Number(e.target.value))}
-              >
-                {PRIORITY_OPTIONS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
+          )}
+
+          {mode === 'template' && (
+            <>
+              <label className="new-ticket-modal__label">Title</label>
+              <input
+                ref={titleRef}
+                className="sprint-tasks__input"
+                placeholder='e.g. "Add recipe search to Feast onboarding"'
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSubmit()
+                  }
+                }}
+              />
+
+              <div className="new-ticket-modal__row">
+                <div className="new-ticket-modal__field">
+                  <label className="new-ticket-modal__label">Repo</label>
+                  <select
+                    className="sprint-tasks__select"
+                    value={repo}
+                    onChange={(e) => setRepo(e.target.value)}
+                  >
+                    {REPO_OPTIONS.map((r) => (
+                      <option key={r.label} value={r.label}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="new-ticket-modal__field">
+                  <label className="new-ticket-modal__label">Priority</label>
+                  <select
+                    className="sprint-tasks__select"
+                    value={priority}
+                    onChange={(e) => setPriority(Number(e.target.value))}
+                  >
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <label className="new-ticket-modal__label">Template</label>
+              <div className="new-ticket-modal__templates">
+                {Object.entries(TEMPLATES).map(([key, tmpl]) => (
+                  <button
+                    key={key}
+                    className={`new-ticket-modal__chip ${selectedTemplate === key ? 'new-ticket-modal__chip--active' : ''}`}
+                    onClick={() => handleSelectTemplate(key)}
+                  >
+                    {tmpl.label}
+                  </button>
                 ))}
-              </select>
+              </div>
+
+              <div className="new-ticket-modal__spec-header">
+                <label className="new-ticket-modal__label">Spec</label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAskPaul}
+                  disabled={generating || !title.trim()}
+                >
+                  {generating ? 'Generating...' : 'Ask Paul'}
+                </Button>
+              </div>
+              <textarea
+                className="new-ticket-modal__spec-editor"
+                value={generating ? 'Paul is writing your spec...' : spec}
+                onChange={(e) => setSpec(e.target.value)}
+                disabled={generating}
+                placeholder="Write your spec in markdown or pick a template above..."
+                rows={10}
+              />
+            </>
+          )}
+
+          {mode === 'design' && (
+            <div className="new-ticket-modal__design-placeholder">
+              <p>Design with Paul is coming soon.</p>
+              <p>Use Template mode for now — switch tabs above.</p>
             </div>
-          </div>
-
-          <label className="new-ticket-modal__label">Template</label>
-          <div className="new-ticket-modal__templates">
-            {Object.entries(TEMPLATES).map(([key, tmpl]) => (
-              <button
-                key={key}
-                className={`new-ticket-modal__chip ${selectedTemplate === key ? 'new-ticket-modal__chip--active' : ''}`}
-                onClick={() => handleSelectTemplate(key)}
-              >
-                {tmpl.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="new-ticket-modal__spec-header">
-            <label className="new-ticket-modal__label">Spec</label>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAskPaul}
-              disabled={generating || !title.trim()}
-            >
-              {generating ? 'Generating...' : 'Ask Paul'}
-            </Button>
-          </div>
-          <textarea
-            className="new-ticket-modal__spec-editor"
-            value={generating ? 'Paul is writing your spec...' : spec}
-            onChange={(e) => setSpec(e.target.value)}
-            disabled={generating}
-            placeholder="Write your spec in markdown or pick a template above..."
-            rows={10}
-          />
+          )}
         </div>
 
         <div className="new-ticket-modal__footer">
           <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!title.trim()}>
-            Save to Backlog
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={!title.trim() || mode === 'design'}
+          >
+            {mode === 'quick' ? 'Save — Paul writes the spec' : 'Save to Backlog'}
           </Button>
         </div>
       </motion.div>

@@ -17,6 +17,7 @@ import type { SprintTask } from './SprintCenter'
 type KanbanBoardProps = {
   tasks: SprintTask[]
   prMergedMap: Record<string, boolean>
+  generatingIds?: Set<string>
   onDragEnd: (taskId: string, newStatus: SprintTask['status']) => void
   onReorder?: (status: SprintTask['status'], orderedIds: string[]) => void
   onPushToSprint: (task: SprintTask) => void
@@ -38,9 +39,12 @@ function resolveTargetStatus(
   return targetTask?.status ?? null
 }
 
+const EMPTY_SET = new Set<string>()
+
 export function KanbanBoard({
   tasks,
   prMergedMap,
+  generatingIds = EMPTY_SET,
   onDragEnd,
   onReorder,
   onPushToSprint,
@@ -108,6 +112,7 @@ export function KanbanBoard({
           label="Backlog"
           tasks={backlog}
           prMergedMap={prMergedMap}
+          generatingIds={generatingIds}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
@@ -118,6 +123,7 @@ export function KanbanBoard({
           label="Sprint"
           tasks={queued}
           prMergedMap={prMergedMap}
+          generatingIds={generatingIds}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
@@ -128,6 +134,7 @@ export function KanbanBoard({
           label="In Progress"
           tasks={active}
           prMergedMap={prMergedMap}
+          generatingIds={generatingIds}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
@@ -138,6 +145,7 @@ export function KanbanBoard({
           label="Done"
           tasks={done}
           prMergedMap={prMergedMap}
+          generatingIds={generatingIds}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}
