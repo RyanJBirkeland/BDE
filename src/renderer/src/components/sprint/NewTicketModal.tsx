@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui/Button'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
+import { toast } from '../../stores/toasts'
 
 type NewTicketModalProps = {
   open: boolean
@@ -47,6 +48,14 @@ const TEMPLATES: Record<string, { label: string; spec: string }> = {
     label: 'Infra',
     spec: `## Infrastructure Task\n<!-- What service/config/script is being set up or changed -->\n\n## Steps\n<!-- Ordered list -->\n\n## Verification\n<!-- How to confirm it worked -->`,
   },
+  test: {
+    label: 'Test Coverage',
+    spec: `## Test Target\n<!-- What module/function/component needs test coverage -->\n\n## Current Coverage Gaps\n<!-- What's untested or under-tested -->\n\n## Test Cases\n<!-- List of specific scenarios to cover -->\n\n## Files to Change\n\n## Notes\n<!-- Mocking strategy, fixtures needed, etc -->`,
+  },
+  performance: {
+    label: 'Performance',
+    spec: `## Performance Problem\n<!-- What's slow or resource-heavy -->\n\n## Current Metrics\n<!-- Baseline numbers if available -->\n\n## Target\n<!-- Desired performance goal -->\n\n## Proposed Fix\n<!-- Optimization strategy -->\n\n## Files to Change\n\n## How to Measure`,
+  },
 }
 
 export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps) {
@@ -89,6 +98,10 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
       setSpec('')
       return
     }
+    const hasUserContent = spec.trim() !== '' && spec !== (selectedTemplate ? TEMPLATES[selectedTemplate].spec : '')
+    if (hasUserContent && !window.confirm('Replace your current spec content with this template?')) {
+      return
+    }
     setSelectedTemplate(key)
     setSpec(TEMPLATES[key].spec)
   }
@@ -97,11 +110,15 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
     if (!title.trim()) return
     setGenerating(true)
     try {
+      const templateInstruction = selectedTemplate
+        ? `\n\nIMPORTANT: Use the following template structure. Fill in each section with specific, technical content — do not remove or rename sections:\n\n${TEMPLATES[selectedTemplate].spec}`
+        : ''
+
       const prompt = `You are a senior engineer writing a coding agent spec for BDE (Birkeland Development Environment).
 
 Task title: "${title}"
 Repo: ${repo}
-Current notes: ${spec || '(none)'}
+Current notes: ${spec || '(none)'}${templateInstruction}
 
 Write a complete, spec-ready prompt for a Claude Code agent to implement this task. Follow the spec format in memory/spec-template.md. Include: Problem, Solution, Data shapes (if applicable), Files to Change, Out of Scope. Be specific and technical. Output only the spec markdown, no commentary.`
 
@@ -119,7 +136,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
         setSpec(text)
       }
     } catch {
-      // silent — user can retry
+      toast.error('Ask Paul failed — check your connection and try again')
     } finally {
       setGenerating(false)
     }
