@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { Copy } from 'lucide-react'
 import { parseStreamJson, stripAnsi } from '../../lib/stream-parser'
 import { chatItemsToMessages } from '../../lib/agent-messages'
 import type { ChatMessage } from '../../lib/agent-messages'
@@ -17,6 +18,7 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
   const [logContent, setLogContent] = useState('')
   const [agentStatus, setAgentStatus] = useState('unknown')
   const [steerInput, setSteerInput] = useState('')
+  const [exitCode, setExitCode] = useState<number | null>(null)
   const [sentMessages, setSentMessages] = useState<ChatMessage[]>([])
   const fromByteRef = useRef(0)
 
@@ -25,6 +27,7 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
     fromByteRef.current = 0
     setLogContent('')
     setAgentStatus('unknown')
+    setExitCode(null)
     setSentMessages([])
   }, [task?.agent_run_id])
 
@@ -64,6 +67,7 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
     const unsubDone = subscribeSSE('log:done', (data: unknown) => {
       const ev = data as LogDoneEvent
       if (ev.agentId !== agentId) return
+      setExitCode(ev.exitCode)
       setAgentStatus(ev.exitCode === 0 ? 'done' : 'failed')
       catchUp() // final catch-up in case we missed chunks
     })
@@ -123,6 +127,11 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
 
   if (!task) return null
 
+  const handleCopyLog = useCallback(async () => {
+    await navigator.clipboard.writeText(logContent)
+    toast.success('Copied!')
+  }, [logContent])
+
   const shortId = task.agent_run_id?.slice(0, 8) ?? '?'
   const statusLabel =
     agentStatus === 'running'
@@ -130,7 +139,7 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
       : agentStatus === 'done'
         ? '\u2713 done'
         : agentStatus === 'failed'
-          ? '\u2717 failed'
+          ? `\u2717 failed${exitCode !== null ? ` \u00B7 exit ${exitCode}` : ''}`
           : agentStatus
 
   return (
@@ -179,6 +188,9 @@ export function LogDrawer({ task, onClose }: LogDrawerProps): React.JSX.Element 
       <div className="log-drawer__footer">
         <Button variant="ghost" size="sm" onClick={handleOpenInSessions}>
           Open in Sessions
+        </Button>
+        <Button variant="ghost" size="sm" onClick={handleCopyLog} title="Copy log to clipboard">
+          <Copy size={14} /> Copy Log
         </Button>
         <Button variant="ghost" size="sm" onClick={onClose}>
           Close
