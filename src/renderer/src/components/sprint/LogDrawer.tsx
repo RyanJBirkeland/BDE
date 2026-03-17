@@ -38,9 +38,12 @@ export function LogDrawer({ task, onClose, onStop }: LogDrawerProps): React.JSX.
     const agentId = task.agent_run_id
     const isActive = task.status === 'active'
 
+    let cancelled = false
+
     const catchUp = async (): Promise<void> => {
       try {
         const result = await window.api.sprint.readLog(agentId, fromByteRef.current)
+        if (cancelled) return
         if (result.content) {
           setLogContent((prev) => prev + stripAnsi(result.content))
           fromByteRef.current = result.nextByte
@@ -53,7 +56,7 @@ export function LogDrawer({ task, onClose, onStop }: LogDrawerProps): React.JSX.
 
     catchUp()
 
-    if (!isActive) return // completed tasks: catch-up read is enough
+    if (!isActive) return () => { cancelled = true }
 
     // Real-time SSE for active tasks
     const unsubChunk = subscribeSSE('log:chunk', (data: unknown) => {
@@ -74,6 +77,7 @@ export function LogDrawer({ task, onClose, onStop }: LogDrawerProps): React.JSX.
     })
 
     return () => {
+      cancelled = true
       unsubChunk()
       unsubDone()
     }
