@@ -11,6 +11,7 @@ import { toast } from '../../stores/toasts'
 import { detectTemplate } from '../../../../shared/template-heuristics'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { subscribeSSE, type TaskUpdatedEvent } from '../../lib/taskRunnerSSE'
+import { setOpenLogDrawerTaskId } from '../../hooks/useTaskNotifications'
 import {
   POLL_SPRINT_INTERVAL,
   POLL_SPRINT_ACTIVE_MS,
@@ -41,6 +42,13 @@ export default function SprintCenter() {
   const [prMergedMap, setPrMergedMap] = useState<Record<string, boolean>>({})
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set())
   const logDrawerTask = logDrawerTaskId ? (tasks.find((t) => t.id === logDrawerTaskId) ?? null) : null
+
+  // Keep notification hook aware of which task's LogDrawer is open
+  useEffect(() => {
+    setOpenLogDrawerTaskId(logDrawerTaskId)
+    return () => setOpenLogDrawerTaskId(null)
+  }, [logDrawerTaskId])
+
   const prevTasksRef = useRef<SprintTask[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const prIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
