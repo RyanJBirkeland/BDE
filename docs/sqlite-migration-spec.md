@@ -1,5 +1,13 @@
 # SQLite Migration Epic Spec
 
+> **Status: COMPLETED (2026-03-16)**
+> All four stories (S1-S4) have been implemented and merged. Supabase is fully retired.
+> - S1 (Foundation): `src/main/db.ts` — better-sqlite3 with WAL mode, schema migrations.
+> - S2 (Sprint IPC): `src/main/handlers/sprint.ts` — all handlers use SQLite, no Supabase.
+> - S3 (Task Runner): Task runner reads/writes `~/.bde/bde.db` directly.
+> - S4 (Agent History): `src/main/agent-history.ts` — `agent_runs` table replaces `agents.json`.
+> This document is preserved as a historical record of the migration design.
+
 **Date:** 2026-03-16
 **Vision:** Replace Supabase REST (cloud Postgres) + `agents.json` flat file with a local SQLite database (`~/.bde/bde.db`). BDE is a desktop app — local storage is faster, simpler, and more reliable.
 

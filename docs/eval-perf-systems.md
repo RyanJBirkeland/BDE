@@ -1,5 +1,13 @@
 # BDE Systems Performance Evaluation
 
+> **Status: PRE-FIX AUDIT (2026-03-16)**
+> Several issues identified here have been partially addressed:
+> - P0 #2 (backdrop-filter): Replaced with solid `rgba()` backgrounds.
+> - P0 #3 (log tail reads entire file): Fixed with positioned `fh.read()` via byte offset.
+> - P1 #4 (no polling backpressure): Sprint polling gated on `activeView`.
+> - Framer Motion stagger on large lists: Disabled for lists >10 items.
+> - Remaining items (sync git ops, SQLite pragmas, config caching) still open.
+
 **Date**: 2026-03-16
 **Scope**: Process-level bottlenecks in Electron main process, IPC, child processes, SQLite, fs watchers, memory, GPU/rendering
 **Electron version**: 39.2.6 (Chromium ~134, no known perf regressions for this major)

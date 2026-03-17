@@ -1,5 +1,11 @@
 # Real-Time Sprint Board Architecture Evaluation
 
+> **Status: PARTIALLY IMPLEMENTED (2026-03-16)**
+> Phase 0 (file watcher on `bde.db`) shipped and is the current sync mechanism (`src/main/index.ts:19-47`).
+> Supabase has been fully replaced by local SQLite (`~/.bde/bde.db`).
+> SSE (Phases 1-4) remains a future optimization option — polling + file watcher is sufficient for current scale.
+> PR status polling interval is now 60s (was proposed as 15s in this doc).
+
 **Date:** 2026-03-16
 **Author:** Architecture Review (automated)
 **Scope:** BDE Sprint Board ↔ Task Runner data synchronization

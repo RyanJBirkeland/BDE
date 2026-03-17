@@ -1,5 +1,11 @@
 # Sprint Card → Agent Log Wiring Spec
 
+> **Status: IMPLEMENTED (2026-03-16)**
+> LogDrawer component shipped. Agent logs are viewable inline from sprint task cards.
+> **Data layer note:** This spec originally referenced Supabase and `~/.bde/agents.json`.
+> The data layer is now local SQLite (`~/.bde/bde.db` — `agent_runs` table).
+> `agent_run_id` on `sprint_tasks` is a foreign key to `agent_runs.id`.
+
 **Date:** 2026-03-16
 **Branch:** feat/sprint-agent-wiring
 **Goal:** Click "View Output" on any active/done task card → see the full agent log inline in a log drawer, without leaving the Sprint tab.

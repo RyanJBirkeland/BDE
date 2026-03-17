@@ -1,5 +1,11 @@
 # BDE Sprint Center v2 — Spec
 
+> **Status: IMPLEMENTED (2026-03-16)**
+> Core features shipped: 4-column Kanban (backlog/queued/active/done), New Ticket modal,
+> glass column styling, "Push to Sprint" action, SpecDrawer with Ask Paul.
+> **Data layer note:** This spec originally referenced Supabase — the data layer is now local SQLite (`~/.bde/bde.db`).
+> All `supabaseFetch()` references below should be read as SQLite queries via `getDb()`.
+
 **Date:** 2026-03-16
 **Branch:** feat/sprint-center-v2
 **Vision:** Santa's Workshop for spec-driven agentic tasks. Create tickets, flesh out specs with AI help, then deliberately push to the queue when ready.

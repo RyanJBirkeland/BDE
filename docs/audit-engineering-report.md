@@ -1,5 +1,13 @@
 # BDE Engineering Audit Report
 
+> **Status: PARTIALLY ADDRESSED (2026-03-16)**
+> Key fixes since this audit:
+> - #1 (Shell injection in git.ts): Fixed — `execSync` string interpolation replaced with `execFileSync` argument arrays.
+> - #8 (agents.json concurrent write corruption): Fixed — SQLite migration completed. `agents.json` replaced by `agent_runs` table.
+> - Epic 3 (SQLite Migration): Completed. See `sqlite-migration-spec.md`.
+> - #5 (Hardcoded Node version): Fixed — PATH uses `process.execPath` directory.
+> - Remaining open: #2 (path validation), #3 (sandbox), #4 (handler test coverage), #6 (cost computation), #7 (TerminalView inline styles).
+
 **Date:** 2026-03-16
 **Auditor:** Senior Engineering Review (Claude Opus 4.6)
 **Scope:** Full codebase — `src/` (103 non-test TS/TSX files, ~7,760 LOC in components/views)

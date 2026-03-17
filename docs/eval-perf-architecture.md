@@ -1,5 +1,11 @@
 # BDE Performance Architecture Evaluation
 
+> **Status: PRE-FIX AUDIT (2026-03-16)**
+> This document was written before several performance fixes shipped. Key changes since:
+> - Issue #1 (polling storm): Sprint polling is now gated on `activeView`.
+> - Issue #5 (Supabase polling): Supabase removed entirely. Sprint data is local SQLite. The `sprint:external-change` file watcher push replaces remote polling.
+> - PR status polling: Now 60s via GitHub REST API (was 15s via `gh` CLI).
+
 **Date:** 2026-03-16
 **Scope:** React rendering, IPC overhead, polling, SQLite, bundle, memory leaks, Electron specifics
 

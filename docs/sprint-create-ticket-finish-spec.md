@@ -1,5 +1,11 @@
 # Sprint Create Ticket — Finish & Polish Spec
 
+> **Status: IMPLEMENTED (2026-03-16)**
+> Create ticket flow is functional end-to-end.
+> **Data layer note:** This spec originally referenced Supabase. The data layer is now local
+> SQLite (`~/.bde/bde.db`). All "Supabase enum" references should be read as SQLite CHECK constraints.
+> Repo values are stored as lowercase strings: `bde`, `feast`, `life-os`.
+
 **Date:** 2026-03-16
 **Branch:** feat/sprint-ticket-finish
 **Goal:** Finish the create ticket flow end-to-end. Fix the repo enum mismatch, wire Ask Paul properly, add validation feedback, and make the full backlog→sprint→launch flow feel complete.
