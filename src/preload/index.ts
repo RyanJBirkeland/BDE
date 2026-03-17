@@ -3,6 +3,9 @@ import { electronAPI } from '@electron-toolkit/preload'
 import type { AgentMeta, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
+// Prevent MaxListenersExceededWarning during HMR dev cycles
+ipcRenderer.setMaxListeners(25)
+
 /**
  * Type-safe invoke for channels in IpcChannelMap.
  * Channel name typos and payload mismatches are caught at compile time.
@@ -105,8 +108,8 @@ const api = {
     }): Promise<unknown> => ipcRenderer.invoke('sprint:create', task),
     update: (id: string, patch: Record<string, unknown>): Promise<unknown> =>
       ipcRenderer.invoke('sprint:update', id, patch),
-    readLog: (agentId: string): Promise<{ content: string; status: string }> =>
-      ipcRenderer.invoke('sprint:readLog', agentId),
+    readLog: (agentId: string, fromByte?: number): Promise<{ content: string; status: string; nextByte: number }> =>
+      ipcRenderer.invoke('sprint:readLog', agentId, fromByte),
     readSpecFile: (filePath: string): Promise<string> =>
       ipcRenderer.invoke('sprint:read-spec-file', filePath),
     generatePrompt: (args: {
@@ -143,8 +146,8 @@ const api = {
   onExternalSprintChange: (cb: () => void): void => {
     ipcRenderer.on('sprint:external-change', cb)
   },
-  offExternalSprintChange: (cb: () => void): void => {
-    ipcRenderer.removeListener('sprint:external-change', cb)
+  offExternalSprintChange: (_cb: () => void): void => {
+    ipcRenderer.removeAllListeners('sprint:external-change')
   },
 
   // Sprint SSE real-time events
