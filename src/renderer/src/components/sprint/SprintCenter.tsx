@@ -133,6 +133,8 @@ export default function SprintCenter() {
 
   const setConflicts = usePrConflictsStore((s) => s.setConflicts)
   const prevConflictIdsRef = useRef<Set<string>>(new Set())
+  const tasksRef = useRef(tasks)
+  tasksRef.current = tasks
 
   const pollPrStatuses = useCallback(async (taskList: SprintTask[]) => {
     const withPr = taskList.filter((t) => t.pr_url && !prMergedRef.current[t.id])
@@ -181,12 +183,12 @@ export default function SprintCenter() {
   }, [setConflicts])
 
   useEffect(() => {
-    pollPrStatuses(tasks)
-    prIntervalRef.current = setInterval(() => pollPrStatuses(tasks), POLL_PR_STATUS_MS)
+    pollPrStatuses(tasksRef.current)
+    prIntervalRef.current = setInterval(() => pollPrStatuses(tasksRef.current), POLL_PR_STATUS_MS)
     return () => {
       if (prIntervalRef.current) clearInterval(prIntervalRef.current)
     }
-  }, [tasks, pollPrStatuses])
+  }, [pollPrStatuses])
 
   // Detect active→done transitions and trigger immediate PR poll
   useEffect(() => {
