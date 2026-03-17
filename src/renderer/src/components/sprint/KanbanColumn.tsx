@@ -1,7 +1,9 @@
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { motion } from 'framer-motion'
 import { TaskCard } from './TaskCard'
 import { EmptyState } from '../ui/EmptyState'
+import { SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import type { SprintTask } from './SprintCenter'
 
 type KanbanColumnProps = {
@@ -39,6 +41,7 @@ export function KanbanColumn({
   onViewSpec,
   onViewOutput,
 }: KanbanColumnProps) {
+  const reduced = useReducedMotion()
   const { isOver, setNodeRef } = useDroppable({ id: status })
   const ids = tasks.map((t) => t.id)
 
@@ -60,16 +63,21 @@ export function KanbanColumn({
             </div>
           ) : (
             tasks.map((task, i) => (
-              <TaskCard
+              <motion.div
                 key={task.id}
-                task={task}
-                index={i}
-                prMerged={prMergedMap[task.id] ?? false}
-                onPushToSprint={onPushToSprint}
-                onLaunch={onLaunch}
-                onViewSpec={onViewSpec}
-                onViewOutput={onViewOutput}
-              />
+                layoutId={reduced ? undefined : task.id}
+                transition={reduced ? REDUCED_TRANSITION : SPRINGS.default}
+              >
+                <TaskCard
+                  task={task}
+                  index={i}
+                  prMerged={prMergedMap[task.id] ?? false}
+                  onPushToSprint={onPushToSprint}
+                  onLaunch={onLaunch}
+                  onViewSpec={onViewSpec}
+                  onViewOutput={onViewOutput}
+                />
+              </motion.div>
             ))
           )}
         </SortableContext>

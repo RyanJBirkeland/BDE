@@ -266,7 +266,6 @@
 /* ── ViewRouter ────────────────────────────────────────── */
 
 .view-enter {
-  animation: bde-slide-up-fade 120ms ease forwards;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -780,7 +779,6 @@
   cursor: pointer;
   pointer-events: auto;
   white-space: nowrap;
-  animation: toast-slide-in 0.25s ease-out;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   text-align: left;
 }

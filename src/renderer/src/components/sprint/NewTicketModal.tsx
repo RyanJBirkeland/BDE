@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui/Button'
 import { REPO_OPTIONS } from '../../lib/constants'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 
 type NewTicketModalProps = {
   open: boolean
@@ -48,6 +50,7 @@ const TEMPLATES: Record<string, { label: string; spec: string }> = {
 }
 
 export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps) {
+  const reduced = useReducedMotion()
   const [title, setTitle] = useState('')
   const [repo, setRepo] = useState<string>(REPO_OPTIONS[0].label)
   const [priority, setPriority] = useState(1)
@@ -135,12 +138,19 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
     onClose()
   }
 
-  if (!open) return null
-
   return (
+    <AnimatePresence>
+      {open && (
     <>
       <div className="new-ticket-overlay" onClick={onClose} />
-      <div className="new-ticket-modal glass-modal elevation-3">
+      <motion.div
+        className="new-ticket-modal glass-modal elevation-3"
+        variants={VARIANTS.scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+      >
         <div className="new-ticket-modal__header">
           <span className="new-ticket-modal__title text-gradient-aurora">NEW TICKET</span>
           <Button variant="icon" size="sm" onClick={onClose} title="Close">
@@ -237,7 +247,9 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
             Save to Backlog
           </Button>
         </div>
-      </div>
+      </motion.div>
     </>
+      )}
+    </AnimatePresence>
   )
 }

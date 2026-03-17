@@ -31,6 +31,10 @@ export function registerAgentHandlers(): void {
     const { isAgentInteractive } = await import('../local-agents')
     return isAgentInteractive(pid)
   })
+  safeHandle('agent:steer', async (_e, { agentId, message }: { agentId: string; message: string }) => {
+    const { steerAgent } = await import('../local-agents')
+    return steerAgent(agentId, message)
+  })
   cleanupOldLogs()
 
   // --- Agent history IPC ---

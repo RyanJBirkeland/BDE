@@ -45,6 +45,9 @@ export interface LocalAgentProcess {
 // Track active child processes for interactive stdin messaging
 const activeAgentProcesses = new Map<number, import('child_process').ChildProcess>()
 
+// Track active child processes by agent ID for steering from Sprint LogDrawer
+const activeAgentsById = new Map<string, import('child_process').ChildProcess>()
+
 // CWD doesn't change for a given PID — cache it
 const cwdCache = new Map<number, string | null>()
 
@@ -245,6 +248,7 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
 
   // Track active process for interactive messaging
   if (child.pid) activeAgentProcesses.set(child.pid, child)
+  activeAgentsById.set(id, child)
 
   // Update record with real PID
   await updateAgentMeta(id, { pid: child.pid ?? null })
@@ -259,6 +263,7 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
 
   child.on('exit', async (code) => {
     if (child.pid) activeAgentProcesses.delete(child.pid)
+    activeAgentsById.delete(id)
     await updateAgentMeta(id, {
       finishedAt: new Date().toISOString(),
       exitCode: code,
@@ -276,6 +281,21 @@ export function sendToAgent(pid: number, message: string): { ok: boolean; error?
   const child = activeAgentProcesses.get(pid)
   if (!child || !child.stdin || child.stdin.destroyed) {
     return { ok: false, error: 'Process not found or stdin closed' }
+  }
+  const event = JSON.stringify({
+    type: 'user',
+    message: { role: 'user', content: message }
+  }) + '\n'
+  child.stdin.write(event)
+  return { ok: true }
+}
+
+// --- Steer a running agent by agent ID (UUID) ---
+
+export function steerAgent(agentId: string, message: string): { ok: boolean; error?: string } {
+  const child = activeAgentsById.get(agentId)
+  if (!child || !child.stdin || child.stdin.destroyed) {
+    return { ok: false, error: 'Agent not found or stdin closed' }
   }
   const event = JSON.stringify({
     type: 'user',

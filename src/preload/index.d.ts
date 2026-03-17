@@ -39,6 +39,7 @@ declare global {
       spawnLocalAgent: (...args: IpcChannelMap['local:spawnClaudeAgent']['args']) => Promise<IpcResult<'local:spawnClaudeAgent'>>
       sendToAgent: (pid: number, message: string) => Promise<{ ok: boolean; error?: string }>
       isAgentInteractive: (pid: number) => Promise<boolean>
+      steerAgent: (agentId: string, message: string) => Promise<{ ok: boolean; error?: string }>
       killLocalAgent: (pid: number) => Promise<{ ok: boolean; error?: string }>
       tailAgentLog: (args: {
         logPath: string

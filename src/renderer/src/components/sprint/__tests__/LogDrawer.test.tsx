@@ -3,9 +3,17 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { SprintTask } from '../../../../../shared/types'
 
-vi.mock('../AgentLogViewer', () => ({
-  AgentLogViewer: ({ logContent }: { logContent: string }) => (
-    <div data-testid="agent-log-viewer">Log: {logContent.length} chars</div>
+vi.mock('../../../lib/stream-parser', () => ({
+  parseStreamJson: vi.fn().mockReturnValue({ items: [{ type: 'text', content: 'hello' }], isStreaming: false }),
+}))
+
+vi.mock('../../../lib/agent-messages', () => ({
+  chatItemsToMessages: vi.fn().mockReturnValue([]),
+}))
+
+vi.mock('../../sessions/ChatThread', () => ({
+  ChatThread: ({ messages }: { messages: unknown[] }) => (
+    <div data-testid="chat-thread">Messages: {messages.length}</div>
   ),
 }))
 
@@ -61,32 +69,11 @@ describe('LogDrawer', () => {
     expect(screen.getByText('No agent session linked to this task.')).toBeInTheDocument()
   })
 
-  it('shows AgentLogViewer when log content is fetched', async () => {
-    vi.mocked(window.api.sprint.readLog).mockResolvedValue({
-      content: '{"type":"assistant","message":{"content":[{"type":"text","text":"hello"}]}}',
-      status: 'done',
-    })
-
+  it('shows ChatThread when agent_run_id is provided', () => {
     const task = makeTask({ agent_run_id: 'run-123' })
     render(<LogDrawer task={task} onClose={onClose} />)
 
-    await waitFor(() => {
-      expect(screen.getByTestId('agent-log-viewer')).toBeInTheDocument()
-    })
-  })
-
-  it('shows starting state when log content is empty', async () => {
-    vi.mocked(window.api.sprint.readLog).mockResolvedValue({
-      content: '',
-      status: 'running',
-    })
-
-    const task = makeTask({ agent_run_id: 'run-empty' })
-    render(<LogDrawer task={task} onClose={onClose} />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Agent is starting up...')).toBeInTheDocument()
-    })
+    expect(screen.getByTestId('chat-thread')).toBeInTheDocument()
   })
 
   it('fetches log content on mount when agent_run_id exists', async () => {
