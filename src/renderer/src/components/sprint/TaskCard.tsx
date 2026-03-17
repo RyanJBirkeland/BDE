@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Badge } from '../ui/Badge'
@@ -25,7 +26,7 @@ function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' | 'defau
   return 'default'
 }
 
-export function TaskCard({
+export const TaskCard = memo(function TaskCard({
   task,
   index,
   prMerged,
@@ -129,4 +130,4 @@ export function TaskCard({
       </div>
     </div>
   )
-}
+})

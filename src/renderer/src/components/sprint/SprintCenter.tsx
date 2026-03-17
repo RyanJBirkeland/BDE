@@ -111,9 +111,16 @@ export default function SprintCenter() {
       const results = await window.api.pollPrStatuses(
         withPr.map((t) => ({ taskId: t.id, prUrl: t.pr_url! }))
       )
-      const merged: Record<string, boolean> = {}
-      for (const r of results) merged[r.taskId] = r.merged
-      setPrMergedMap((prev) => ({ ...prev, ...merged }))
+      setPrMergedMap((prev) => {
+        let changed = false
+        for (const r of results) {
+          if (prev[r.taskId] !== r.merged) { changed = true; break }
+        }
+        if (!changed) return prev
+        const next = { ...prev }
+        for (const r of results) next[r.taskId] = r.merged
+        return next
+      })
     } catch {
       // gh CLI unavailable — degrade gracefully
     }
@@ -203,7 +210,10 @@ export default function SprintCenter() {
           // Trigger background spec generation for Quick Mode tasks (no spec yet)
           if (!data.spec) {
             const templateHint = detectTemplate(data.title)
-            setGeneratingIds((prev) => new Set(prev).add(result.id))
+            setGeneratingIds((prev) => {
+              if (prev.has(result.id)) return prev
+              return new Set(prev).add(result.id)
+            })
 
             window.api.sprint
               .generatePrompt({
@@ -223,6 +233,7 @@ export default function SprintCenter() {
               })
               .finally(() => {
                 setGeneratingIds((prev) => {
+                  if (!prev.has(result.id)) return prev
                   const next = new Set(prev)
                   next.delete(result.id)
                   return next
