@@ -100,7 +100,18 @@ export default function SprintCenter() {
   useEffect(() => {
     const unsub = subscribeSSE('task:updated', (data: unknown) => {
       const update = data as TaskUpdatedEvent
-      setTasks((prev) => prev.map((t) => (t.id === update.id ? { ...t, ...update } : t)))
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== update.id) return t
+          const merged = { ...t, ...update }
+          // Optimistic: when a task becomes done with a pr_url, ensure pr_status='open'
+          // so it immediately appears in Awaiting Review (don't wait for pollPrStatuses)
+          if (merged.status === 'done' && merged.pr_url && !merged.pr_status) {
+            merged.pr_status = 'open'
+          }
+          return merged
+        })
+      )
       debouncedLoadData()
     })
     return () => {
