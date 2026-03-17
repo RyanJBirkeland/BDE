@@ -57,7 +57,17 @@ export function saveGatewayConfig(url: string, token: string): void {
   writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8')
 }
 
+// Gateway config cache — avoids readFileSync + JSON.parse on every IPC call
+let _configCache: GatewayConfig | null = null
+let _configCachedAt = 0
+const CONFIG_CACHE_TTL = 60_000
+
 export function getGatewayConfig(): GatewayConfig {
+  const now = Date.now()
+  if (_configCache && now - _configCachedAt < CONFIG_CACHE_TTL) {
+    return _configCache
+  }
+
   const configPath = join(homedir(), '.openclaw', 'openclaw.json')
 
   try {
@@ -76,7 +86,9 @@ export function getGatewayConfig(): GatewayConfig {
       throw new Error('Missing gatewayToken')
     }
 
-    return { url, token }
+    _configCache = { url, token }
+    _configCachedAt = now
+    return _configCache
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       dialog.showErrorBox(

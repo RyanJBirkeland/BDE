@@ -48,6 +48,11 @@ const activeAgentProcesses = new Map<number, import('child_process').ChildProces
 // Track active child processes by agent ID for steering from Sprint LogDrawer
 const activeAgentsById = new Map<string, import('child_process').ChildProcess>()
 
+// Full result cache — avoids repeated ps + lsof on every poll
+let _processCache: LocalAgentProcess[] = []
+let _processCachedAt = 0
+const PROCESS_CACHE_TTL = 5_000
+
 // CWD doesn't change for a given PID — cache it
 const cwdCache = new Map<number, string | null>()
 
@@ -181,6 +186,11 @@ export function _resetReconcileThrottle(): void {
 }
 
 export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
+  const now = Date.now()
+  if (now - _processCachedAt < PROCESS_CACHE_TTL) {
+    return _processCache
+  }
+
   try {
     const candidates = await scanAgentProcesses()
     const results = await resolveProcessDetails(candidates)
@@ -189,9 +199,11 @@ export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
     evictStaleCwdCache(livePids)
     maybeReconcileStaleAgents(livePids).catch(() => {})
 
+    _processCache = results
+    _processCachedAt = now
     return results
   } catch {
-    return []
+    return _processCache
   }
 }
 
