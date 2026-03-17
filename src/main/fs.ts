@@ -73,7 +73,7 @@ async function walkDir(root: string, relative: string, out: MemoryFile[]): Promi
   }
 }
 
-async function readMemoryFile(relativePath: string): Promise<string> {
+export async function readMemoryFile(relativePath: string): Promise<string> {
   const safePath = validateMemoryPath(relativePath)
   const info = await stat(safePath)
   if (info.size > MAX_READ_BYTES) {

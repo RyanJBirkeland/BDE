@@ -88,6 +88,14 @@ describe('config.ts', () => {
 
       expect(getGitHubToken()).toBe('gh_file_token')
     })
+
+    it('returns null when config exists but githubToken field is missing', () => {
+      vi.mocked(readFileSync).mockReturnValue(
+        JSON.stringify({ gatewayToken: 'gw_tok', gatewayUrl: 'ws://gw' })
+      )
+
+      expect(getGitHubToken()).toBeNull()
+    })
   })
 
   describe('getGatewayConfig', () => {
