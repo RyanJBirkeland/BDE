@@ -857,6 +857,10 @@
   margin-top: 8px;
 }
 
+.task-card--high-priority {
+  border-left: 2px solid var(--bde-danger-text);
+}
+
 .task-card--dragging {
   opacity: 0.9;
   transform: scale(1.02);

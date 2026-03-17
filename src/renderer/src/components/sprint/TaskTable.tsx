@@ -215,7 +215,7 @@ function BacklogRow({
         </button>
       </td>
       <td>
-        <span className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(task.priority)}`} />
+        <span className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(task.priority)}`} title={'P' + task.priority} />
       </td>
       <td>
         <Badge variant={repoBadgeVariant(task.repo)} size="sm">
