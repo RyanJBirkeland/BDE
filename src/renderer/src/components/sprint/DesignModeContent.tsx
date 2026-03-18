@@ -16,7 +16,7 @@ interface DesignModeContentProps {
 const OPENING_MESSAGE: DesignMessage = {
   role: 'assistant',
   content:
-    "What are you thinking about building? Describe the feature or problem in your own words — I'll help shape the spec.",
+    "What are you thinking about building? Describe the feature or problem in your own words \u2014 I'll help shape the spec.",
   timestamp: Date.now(),
 }
 
@@ -41,14 +41,14 @@ SPEC FORMAT (inside ~~~spec fence):
 Ticket Title: [concise, verb-first title]
 
 ## Problem
-[what's broken or missing — 2-3 sentences max]
+[what's broken or missing \u2014 2-3 sentences max]
 
 ## Solution
-[what will be built — be specific]
+[what will be built \u2014 be specific]
 
 ## Files to Change
-- path/to/file.tsx — [what changes]
-- path/to/other.ts — [what changes]
+- path/to/file.tsx \u2014 [what changes]
+- path/to/other.ts \u2014 [what changes]
 
 ## Out of Scope
 - [what is explicitly NOT being built]
@@ -66,11 +66,9 @@ RULES:
 function buildFullPrompt(
   systemPrompt: string,
   messages: DesignMessage[],
-  newUserMessage: string
+  newUserMessage: string,
 ): string {
-  const history = messages
-    .map((m) => `${m.role === 'user' ? 'User' : 'Paul'}: ${m.content}`)
-    .join('\n\n')
+  const history = messages.map((m) => `${m.role === 'user' ? 'User' : 'Paul'}: ${m.content}`).join('\n\n')
 
   return `${systemPrompt}
 
@@ -103,8 +101,9 @@ export function DesignModeContent({ repo, priority, onSave }: DesignModeContentP
   const chatBottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
+  // Auto-scroll chat to bottom on new messages
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    chatBottomRef.current?.scrollIntoView?.({ behavior: 'smooth' })
   }, [messages])
 
   const sendMessage = useCallback(async () => {
@@ -133,11 +132,9 @@ export function DesignModeContent({ repo, priority, onSave }: DesignModeContentP
       const responseText: string = result?.result?.content?.[0]?.text ?? ''
       if (!responseText) throw new Error('Empty response')
 
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: responseText, timestamp: Date.now() },
-      ])
+      setMessages((prev) => [...prev, { role: 'assistant', content: responseText, timestamp: Date.now() }])
 
+      // Extract spec if present
       const spec = extractSpec(responseText)
       if (spec) {
         setSpecDraft(spec)
@@ -166,7 +163,7 @@ export function DesignModeContent({ repo, priority, onSave }: DesignModeContentP
         sendMessage()
       }
     },
-    [sendMessage]
+    [sendMessage],
   )
 
   const handleSave = useCallback(() => {
@@ -186,13 +183,8 @@ export function DesignModeContent({ repo, priority, onSave }: DesignModeContentP
       <div className="design-mode__chat">
         <div className="design-mode__messages">
           {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`design-mode__message design-mode__message--${msg.role}`}
-            >
-              {msg.role === 'assistant' && (
-                <span className="design-mode__message-label">Paul</span>
-              )}
+            <div key={i} className={`design-mode__message design-mode__message--${msg.role}`}>
+              {msg.role === 'assistant' && <span className="design-mode__message-label">Paul</span>}
               <p className="design-mode__message-content">{msg.content}</p>
             </div>
           ))}
@@ -220,12 +212,8 @@ export function DesignModeContent({ repo, priority, onSave }: DesignModeContentP
             rows={3}
             disabled={sending}
           />
-          <button
-            className="design-mode__send-btn"
-            onClick={sendMessage}
-            disabled={!input.trim() || sending}
-          >
-            &rarr;
+          <button className="design-mode__send-btn" onClick={sendMessage} disabled={!input.trim() || sending}>
+            {'\u2192'}
           </button>
         </div>
       </div>
@@ -235,29 +223,21 @@ export function DesignModeContent({ repo, priority, onSave }: DesignModeContentP
         <div className="design-mode__spec-header">
           <span className="design-mode__spec-label">Spec Preview</span>
           {specDraft && (
-            <button
-              className="design-mode__copy-btn"
-              onClick={() => navigator.clipboard.writeText(specDraft)}
-            >
+            <button className="design-mode__copy-btn" onClick={() => navigator.clipboard.writeText(specDraft)}>
               Copy
             </button>
           )}
         </div>
         <div className="design-mode__spec-content">
           {specDraft ? (
-            <div
-              className="spec-drawer__rendered"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(specDraft) }}
-            />
+            <div className="spec-drawer__rendered" dangerouslySetInnerHTML={{ __html: renderMarkdown(specDraft) }} />
           ) : (
-            <p className="design-mode__spec-empty">
-              Spec will appear here as Paul drafts it.
-            </p>
+            <p className="design-mode__spec-empty">Spec will appear here as Paul drafts it.</p>
           )}
         </div>
         {specDraft && (
-          <div className="design-mode__spec-footer">
-            <button className="btn btn--primary" onClick={handleSave}>
+          <div className="design-mode__save-bar">
+            <button className="design-mode__save-btn" onClick={handleSave}>
               Save Spec to Backlog
             </button>
           </div>

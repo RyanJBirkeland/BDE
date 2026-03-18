@@ -1,3 +1,4 @@
+/** Lightweight markdown → HTML renderer for spec previews. */
 export function renderMarkdown(md: string): string {
   return md
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
