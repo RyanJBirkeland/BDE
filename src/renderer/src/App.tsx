@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGatewayStore } from './stores/gateway'
 import { useUIStore, type View } from './stores/ui'
@@ -15,14 +15,15 @@ import { Kbd } from './components/ui/Kbd'
 import { useAgentHistoryStore } from './stores/agentHistory'
 import { useTaskNotifications } from './hooks/useTaskNotifications'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
-import SprintView from './views/SprintView'
-import { SessionsView } from './views/SessionsView'
-import MemoryView from './views/MemoryView'
-import DiffView from './views/DiffView'
-import CostView from './views/CostView'
-import SettingsView from './views/SettingsView'
-import { TerminalView } from './views/TerminalView'
-import PRStationView from './views/PRStationView'
+import { SessionsView } from './views/SessionsView'   // always-mounted
+import { TerminalView } from './views/TerminalView'    // always-mounted
+
+const SprintView = lazy(() => import('./views/SprintView'))
+const MemoryView = lazy(() => import('./views/MemoryView'))
+const DiffView = lazy(() => import('./views/DiffView'))
+const CostView = lazy(() => import('./views/CostView'))
+const SettingsView = lazy(() => import('./views/SettingsView'))
+const PRStationView = lazy(() => import('./views/PRStationView'))
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 
 const VIEW_ORDER: View[] = [
@@ -63,6 +64,14 @@ const SHORTCUTS_RIGHT: { keys: string; description: string }[] = [
   { keys: '[ / ]', description: 'Prev / next diff file' }
 ]
 
+function ViewSkeleton(): React.JSX.Element {
+  return (
+    <div className="view-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+      <div className="animate-pulse" style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bde-surface-2)' }} />
+    </div>
+  )
+}
+
 function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
   const reduced = useReducedMotion()
 
@@ -99,7 +108,9 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
             exit="exit"
             transition={reduced ? REDUCED_TRANSITION : SPRINGS.gentle}
           >
-            {onDemandView}
+            <Suspense fallback={<ViewSkeleton />}>
+              {onDemandView}
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
