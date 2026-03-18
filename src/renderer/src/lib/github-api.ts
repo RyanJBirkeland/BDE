@@ -121,24 +121,40 @@ export async function getPRDiff(owner: string, repo: string, number: number): Pr
   return res.text()
 }
 
-export async function mergePR(owner: string, repo: string, number: number): Promise<void> {
-  const token = await getToken()
-  const res = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`,
-    {
-      method: 'PUT',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ merge_method: 'squash' })
-    }
-  )
+export type MergeMethod = 'squash' | 'merge' | 'rebase'
+
+export async function mergePR(
+  owner: string,
+  repo: string,
+  number: number,
+  method: MergeMethod = 'squash',
+  commitTitle?: string
+): Promise<void> {
+  const body: Record<string, string> = { merge_method: method }
+  if (commitTitle) body.commit_title = commitTitle
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}/merge`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(
       `Merge failed: ${res.status} — ${(err as { message?: string }).message ?? 'unknown'}`
+    )
+  }
+}
+
+export async function closePR(owner: string, repo: string, number: number): Promise<void> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ state: 'closed' })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(
+      `Close failed: ${res.status} — ${(err as { message?: string }).message ?? 'unknown'}`
     )
   }
 }
