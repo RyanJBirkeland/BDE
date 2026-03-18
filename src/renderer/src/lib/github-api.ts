@@ -80,6 +80,36 @@ export function parsePrUrl(url: string): { owner: string; repo: string; number: 
   return { owner: match[1], repo: match[2], number: parseInt(match[3], 10) }
 }
 
+export type CheckStatus = 'pending' | 'pass' | 'fail'
+
+export interface CheckRunSummary {
+  status: CheckStatus
+  total: number
+  passed: number
+  failed: number
+  pending: number
+}
+
+export async function getCheckRuns(owner: string, repo: string, sha: string): Promise<CheckRunSummary> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
+  if (!res.ok) return { status: 'pending', total: 0, passed: 0, failed: 0, pending: 0 }
+  const data = (await res.json()) as {
+    total_count: number
+    check_runs: { status: string; conclusion: string | null }[]
+  }
+  let passed = 0
+  let failed = 0
+  let pending = 0
+  for (const run of data.check_runs) {
+    if (run.status !== 'completed') pending++
+    else if (run.conclusion === 'success' || run.conclusion === 'skipped') passed++
+    else failed++
+  }
+  const total = data.total_count
+  const status: CheckStatus = failed > 0 ? 'fail' : pending > 0 ? 'pending' : 'pass'
+  return { status, total, passed, failed, pending }
+}
+
 export async function mergePR(owner: string, repo: string, number: number): Promise<void> {
   const token = await getToken()
   const res = await fetch(

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type View = 'sessions' | 'terminal' | 'sprint' | 'diff' | 'memory' | 'cost' | 'settings'
+export type View = 'sessions' | 'terminal' | 'sprint' | 'diff' | 'pr-station' | 'memory' | 'cost' | 'settings'
 
 interface UIStore {
   activeView: View

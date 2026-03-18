@@ -22,6 +22,7 @@ import DiffView from './views/DiffView'
 import CostView from './views/CostView'
 import SettingsView from './views/SettingsView'
 import { TerminalView } from './views/TerminalView'
+import PRStationView from './views/PRStationView'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 
 const VIEW_ORDER: View[] = [
@@ -29,6 +30,7 @@ const VIEW_ORDER: View[] = [
   'terminal',
   'sprint',
   'diff',
+  'pr-station',
   'memory',
   'cost',
   'settings'
@@ -39,13 +41,14 @@ const VIEW_TITLES: Record<View, string> = {
   terminal: 'Terminal',
   sprint: 'Planning',
   diff: 'Diff',
+  'pr-station': 'PR Station',
   memory: 'Memory',
   cost: 'Cost',
   settings: 'Settings'
 }
 
 const SHORTCUTS_LEFT: { keys: string; description: string }[] = [
-  { keys: '\u23181\u20137', description: 'Switch views' },
+  { keys: '\u23181\u20138', description: 'Switch views' },
   { keys: '\u2318P', description: 'Command palette' },
   { keys: '\u2318R', description: 'Refresh current view' },
   { keys: 'Escape', description: 'Close panel / blur input' },
@@ -66,6 +69,7 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
   const onDemandView = (() => {
     switch (activeView) {
       case 'sprint': return <ErrorBoundary name="Sprint"><SprintView /></ErrorBoundary>
+      case 'pr-station': return <ErrorBoundary name="PR Station"><PRStationView /></ErrorBoundary>
       case 'memory': return <ErrorBoundary name="Memory"><MemoryView /></ErrorBoundary>
       case 'diff': return <ErrorBoundary name="Diff"><DiffView /></ErrorBoundary>
       case 'cost': return <ErrorBoundary name="Cost"><CostView /></ErrorBoundary>
@@ -99,7 +103,7 @@ function ViewRouter({ activeView }: { activeView: View }): React.JSX.Element {
           </motion.div>
         )}
       </AnimatePresence>
-      {!['terminal','sessions','sprint','memory','diff','cost','settings'].includes(activeView) && (
+      {!['terminal','sessions','sprint','pr-station','memory','diff','cost','settings'].includes(activeView) && (
         <div className="view-router">
           <span className="view-router__placeholder">{String(activeView)} — coming soon</span>
         </div>
@@ -222,7 +226,7 @@ function App(): React.JSX.Element {
 
       if (inInput && !e.metaKey) return
 
-      if (e.metaKey && e.key >= '1' && e.key <= '7') {
+      if (e.metaKey && e.key >= '1' && e.key <= '8') {
         e.preventDefault()
         setView(VIEW_ORDER[Number(e.key) - 1])
         return
