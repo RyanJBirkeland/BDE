@@ -117,6 +117,7 @@ export const KanbanColumn = memo(function KanbanColumn({
                   onViewSpec={onViewSpec}
                   onViewOutput={onViewOutput}
                   onMarkDone={onMarkDone}
+                  onStop={onStop}
                 />
               </motion.div>
             ))

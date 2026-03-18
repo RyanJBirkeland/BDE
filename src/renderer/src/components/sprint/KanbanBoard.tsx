@@ -15,6 +15,7 @@ import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskCard } from './TaskCard'
 import { WIP_LIMIT_IN_PROGRESS } from '../../lib/constants'
+import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from './SprintCenter'
 
 type KanbanBoardProps = {
@@ -33,7 +34,7 @@ type KanbanBoardProps = {
   onStop?: (task: SprintTask) => void
 }
 
-const VALID_STATUSES: SprintTask['status'][] = ['queued', 'active']
+const VALID_STATUSES: SprintTask['status'][] = [TASK_STATUS.QUEUED, TASK_STATUS.ACTIVE]
 
 function resolveTargetStatus(
   overId: string,
@@ -101,8 +102,8 @@ export function KanbanBoard({
 
     // Block drops into In Progress when WIP limit is reached
     if (
-      targetStatus === 'active' &&
-      sourceTask.status !== 'active' &&
+      targetStatus === TASK_STATUS.ACTIVE &&
+      sourceTask.status !== TASK_STATUS.ACTIVE &&
       wipFull
     ) {
       return
@@ -125,7 +126,7 @@ export function KanbanBoard({
     }
 
     // Guard: active→queued requires confirmation
-    if (sourceTask.status === 'active' && targetStatus === 'queued') {
+    if (sourceTask.status === TASK_STATUS.ACTIVE && targetStatus === TASK_STATUS.QUEUED) {
       const ok = window.confirm(
         'Move back to queue? This won\u2019t stop the running agent.'
       )

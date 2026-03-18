@@ -1,4 +1,5 @@
 import type { SprintTask } from '../../../shared/types'
+import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 
 export interface SprintPartition {
   backlog: SprintTask[]
@@ -31,23 +32,23 @@ export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
 
   for (const task of tasks) {
     switch (task.status) {
-      case 'backlog':
+      case TASK_STATUS.BACKLOG:
         backlog.push(task)
         break
-      case 'queued':
+      case TASK_STATUS.QUEUED:
         todo.push(task)
         break
-      case 'active':
+      case TASK_STATUS.ACTIVE:
         inProgress.push(task)
         break
-      case 'done':
-        if (task.pr_status === 'open') {
+      case TASK_STATUS.DONE:
+        if (task.pr_status === PR_STATUS.OPEN) {
           awaitingReview.push(task)
         } else {
           done.push(task)
         }
         break
-      case 'cancelled':
+      case TASK_STATUS.CANCELLED:
         failed.push(task)
         break
     }

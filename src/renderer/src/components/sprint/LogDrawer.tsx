@@ -7,6 +7,7 @@ import { ChatThread } from '../sessions/ChatThread'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
 import { subscribeSSE, type LogChunkEvent, type LogDoneEvent } from '../../lib/taskRunnerSSE'
+import { TASK_STATUS, AGENT_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from './SprintCenter'
 
 type LogDrawerProps = {
@@ -28,7 +29,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
   useEffect(() => {
     fromByteRef.current = 0
     setLogContent('')
-    setAgentStatus('unknown')
+    setAgentStatus(AGENT_STATUS.UNKNOWN)
     setExitCode(null)
     setSentMessages([])
   }, [task?.agent_run_id])
@@ -37,7 +38,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
   useEffect(() => {
     if (!task?.agent_run_id) return
     const agentId = task.agent_run_id
-    const isActive = task.status === 'active'
+    const isActive = task.status === TASK_STATUS.ACTIVE
 
     let cancelled = false
 
@@ -73,7 +74,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
       const ev = data as LogDoneEvent
       if (ev.agentId !== agentId) return
       setExitCode(ev.exitCode)
-      setAgentStatus(ev.exitCode === 0 ? 'done' : 'failed')
+      setAgentStatus(ev.exitCode === 0 ? AGENT_STATUS.DONE : AGENT_STATUS.FAILED)
       catchUp() // final catch-up in case we missed chunks
     })
 
@@ -95,7 +96,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
   const hasStreamJson = items.length > 0
   const hasPlainText = !hasStreamJson && logContent.trim().length > 0
 
-  const canSteer = task?.status === 'active' && !!task?.agent_run_id
+  const canSteer = task?.status === TASK_STATUS.ACTIVE && !!task?.agent_run_id
 
   const handleSteerSend = useCallback(async () => {
     const msg = steerInput.trim()
@@ -144,11 +145,11 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
 
   const shortId = task.agent_run_id?.slice(0, 8) ?? '?'
   const statusLabel =
-    agentStatus === 'running'
+    agentStatus === AGENT_STATUS.RUNNING
       ? '\u25CF running'
-      : agentStatus === 'done'
+      : agentStatus === AGENT_STATUS.DONE
         ? '\u2713 done'
-        : agentStatus === 'failed'
+        : agentStatus === AGENT_STATUS.FAILED
           ? `\u2717 failed${exitCode !== null ? ` \u00B7 exit ${exitCode}` : ''}`
           : agentStatus
 
@@ -166,7 +167,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
       <div className="log-drawer__body">
         {task.agent_run_id ? (
           hasStreamJson ? (
-            <ChatThread messages={allMessages} isStreaming={agentStatus === 'running' && isStreaming} />
+            <ChatThread messages={allMessages} isStreaming={agentStatus === AGENT_STATUS.RUNNING && isStreaming} />
           ) : hasPlainText ? (
             <pre className="log-drawer__plain-text">{logContent}</pre>
           ) : (
@@ -196,12 +197,12 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
         </div>
       )}
       <div className="log-drawer__footer">
-        {task.status === 'active' && onStop && (
+        {task.status === TASK_STATUS.ACTIVE && onStop && (
           <Button variant="danger" size="sm" onClick={() => onStop(task)}>
             Stop Agent
           </Button>
         )}
-        {onRerun && (agentStatus === 'failed' || (task.status === 'done' && !task.pr_url)) && (
+        {onRerun && (agentStatus === AGENT_STATUS.FAILED || (task.status === TASK_STATUS.DONE && !task.pr_url)) && (
           <Button variant="ghost" size="sm" onClick={() => onRerun(task)}>
             <RefreshCw size={14} /> Re-run
           </Button>

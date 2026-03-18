@@ -4,6 +4,7 @@ import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { toast } from '../../stores/toasts'
 import { renderMarkdown } from '../../lib/render-markdown'
+import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from './SprintCenter'
 
 function extractSpecPath(prompt: string): string | null {
@@ -34,6 +35,8 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
 
   useEffect(() => {
     if (!task) return
+    let cancelled = false
+
     setEditing(false)
     setDirty(false)
     setGenerating(false)
@@ -52,10 +55,12 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
       window.api.sprint
         .readSpecFile(specPath)
         .then((content) => {
+          if (cancelled) return
           resolvedContentRef.current = content
           setDraft(content)
         })
         .catch(() => {
+          if (cancelled) return
           resolvedContentRef.current = fallback
           setDraft(fallback)
         })
@@ -63,6 +68,8 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
       resolvedContentRef.current = fallback
       setDraft(fallback)
     }
+
+    return () => { cancelled = true }
   }, [task?.id])
 
   const save = useCallback(() => {
@@ -254,7 +261,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
             )}
 
             <div className="spec-drawer__footer">
-              {task.status === 'backlog' && task.spec ? (
+              {task.status === TASK_STATUS.BACKLOG && task.spec ? (
                 <Button
                   variant="primary"
                   size="sm"
@@ -265,7 +272,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
                 >
                   Launch
                 </Button>
-              ) : task.status === 'backlog' ? (
+              ) : task.status === TASK_STATUS.BACKLOG ? (
                 <Button
                   variant="primary"
                   size="sm"
@@ -273,7 +280,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
                 >
                   → Push to Sprint
                 </Button>
-              ) : task.status === 'queued' ? (
+              ) : task.status === TASK_STATUS.QUEUED ? (
                 <Button
                   variant="primary"
                   size="sm"
@@ -290,7 +297,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
               >
                 {generating ? 'Generating...' : 'Ask Paul'}
               </Button>
-              {onMarkDone && task.status !== 'done' && (
+              {onMarkDone && task.status !== TASK_STATUS.DONE && (
                 <Button variant="ghost" size="sm" onClick={() => onMarkDone(task)}>
                   ✓ Mark Done
                 </Button>

@@ -3,6 +3,7 @@ import { HeartPulse, RotateCcw, X } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { toast } from '../../stores/toasts'
+import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from '../../../../shared/types'
 
 type HealthCheckDrawerProps = {
@@ -23,7 +24,7 @@ export function HealthCheckDrawer({ open, tasks, onClose, onDismiss }: HealthChe
   const handleRescue = useCallback(async (task: SprintTask) => {
     setRescuing(task.id)
     try {
-      await window.api.sprint.update(task.id, { status: 'queued', agent_run_id: null })
+      await window.api.sprint.update(task.id, { status: TASK_STATUS.QUEUED, agent_run_id: null })
       toast.success(`"${task.title}" reset to queued`)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to rescue task')
