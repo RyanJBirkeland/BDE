@@ -21,6 +21,10 @@ export const SESSION_ACTIVE_THRESHOLD = 5 * 60 * 1000
 // Log limits
 export const MAX_LOG_LINES = 2_000
 
+// Diff limits
+export const DIFF_SIZE_WARN_BYTES = 5 * 1024 * 1024 // 5 MB
+export const DIFF_VIRTUALIZE_THRESHOLD = 500 // lines — virtualize above this
+
 // Pagination
 export const CHAT_HISTORY_LIMIT = 100
 export const AGENT_HISTORY_LIMIT = 20

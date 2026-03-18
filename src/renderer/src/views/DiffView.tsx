@@ -4,14 +4,15 @@
  * and push interface. Supports multi-repo selection. Fetches git status
  * via IPC (git:status, git:diff) and polls every 30s.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { GitBranch } from 'lucide-react'
 import DiffViewer from '../components/diff/DiffViewer'
-import { parseDiff } from '../lib/diff-parser'
+import { parseDiffChunked } from '../lib/diff-parser'
 import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
-import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
+import { DiffSizeWarning } from '../components/diff/DiffSizeWarning'
+import { POLL_GIT_STATUS_INTERVAL, DIFF_SIZE_WARN_BYTES } from '../lib/constants'
 import * as git from '../services/git'
 import { toast } from '../stores/toasts'
 
@@ -54,6 +55,9 @@ function DiffView(): React.JSX.Element {
   const [committing, setCommitting] = useState(false)
   const [pushOutput, setPushOutput] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [diffSizeWarning, setDiffSizeWarning] = useState<number | null>(null)
+  const rawDiffRef = useRef<string | null>(null)
+  const diffAbortRef = useRef<AbortController | null>(null)
 
   // Load repos on mount
   useEffect(() => {
@@ -107,16 +111,33 @@ function DiffView(): React.JSX.Element {
     return () => clearInterval(timer)
   }, [refresh])
 
+  const applyRawDiff = useCallback((raw: string) => {
+    diffAbortRef.current?.abort()
+    const controller = new AbortController()
+    diffAbortRef.current = controller
+    parseDiffChunked(raw, setDiffFiles, controller.signal).catch(() => {
+      // AbortError is expected on re-navigation; silently ignore
+    })
+  }, [])
+
   // Load diff when selected file changes
   const loadDiff = useCallback(async () => {
     if (!repoPath) return
+    setDiffSizeWarning(null)
+    rawDiffRef.current = null
     try {
       const raw = await git.getDiff(repoPath, selectedFile ?? undefined)
-      setDiffFiles(parseDiff(raw))
+      rawDiffRef.current = raw
+      if (raw.length > DIFF_SIZE_WARN_BYTES) {
+        setDiffSizeWarning(raw.length)
+        setDiffFiles([])
+        return
+      }
+      applyRawDiff(raw)
     } catch {
       setDiffFiles([])
     }
-  }, [repoPath, selectedFile])
+  }, [repoPath, selectedFile, applyRawDiff])
 
   useEffect(() => {
     loadDiff()
@@ -408,7 +429,17 @@ function DiffView(): React.JSX.Element {
                 <span className="git-diff-pane__file-path">{selectedFile}</span>
               </div>
             )}
-            <DiffViewer files={diffFiles} />
+            {diffSizeWarning ? (
+              <DiffSizeWarning
+                sizeBytes={diffSizeWarning}
+                onLoadAnyway={() => {
+                  setDiffSizeWarning(null)
+                  if (rawDiffRef.current) applyRawDiff(rawDiffRef.current)
+                }}
+              />
+            ) : (
+              <DiffViewer files={diffFiles} />
+            )}
           </div>
         </div>
       )}

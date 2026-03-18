@@ -548,6 +548,19 @@
   border-radius: var(--bde-radius-sm);
 }
 
+/* ── Warning Banner ──────────────────────────────────── */
+
+.bde-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--bde-warning-dim);
+  color: var(--bde-warning);
+  font-size: var(--bde-size-sm);
+  border-radius: var(--bde-radius-sm);
+}
+
 /* ── Count Badge ─────────────────────────────────────── */
 
 .bde-count-badge {
