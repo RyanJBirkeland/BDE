@@ -3,6 +3,7 @@ import { getPRDiff } from '../../lib/github-api'
 import type { OpenPr } from '../../../../shared/types'
 import { parseDiffChunked, type DiffFile } from '../../lib/diff-parser'
 import { REPO_OPTIONS, DIFF_SIZE_WARN_BYTES } from '../../lib/constants'
+import { ErrorBanner } from '../ui/ErrorBanner'
 import DiffViewer from '../diff/DiffViewer'
 import { DiffSizeWarning } from '../diff/DiffSizeWarning'
 
@@ -77,7 +78,7 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
     )
   }
 
-  if (error) return <div className="bde-error-banner">{error}</div>
+  if (error) return <ErrorBanner message={error} />
 
   if (sizeWarning) {
     return <DiffSizeWarning sizeBytes={sizeWarning} onLoadAnyway={handleLoadAnyway} />

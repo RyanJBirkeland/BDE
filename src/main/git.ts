@@ -1,6 +1,7 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 
+import { parsePrUrl } from '../shared/github'
 import { getGitHubToken } from './config'
 import { getDb } from './db'
 import { DEFAULT_REPO_PATHS } from './paths'
@@ -144,12 +145,6 @@ export interface PrStatusResult {
   mergeableState: string | null
 }
 
-export function parsePrUrl(url: string): { owner: string; repo: string; number: string } | null {
-  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/)
-  if (!match) return null
-  return { owner: match[1], repo: match[2], number: match[3] }
-}
-
 async function fetchPrStatusRest(pr: PrStatusInput): Promise<PrStatusResult> {
   const errorResult: PrStatusResult = { taskId: pr.taskId, merged: false, state: 'error', mergedAt: null, mergeableState: null }
   const parsed = parsePrUrl(pr.prUrl)
@@ -225,15 +220,14 @@ export async function pollPrStatuses(prs: PrStatusInput[]): Promise<PrStatusResu
   const results = await Promise.all(prs.map(fetchPrStatusRest))
   for (const result of results) {
     const input = prs.find((p) => p.taskId === result.taskId)
-    const prNumber = input ? parsePrUrl(input.prUrl)?.number : null
+    const prNumber = input ? parsePrUrl(input.prUrl)?.number : undefined
     if (!prNumber) continue
-    const num = parseInt(prNumber, 10)
     if (result.merged) {
-      markTaskDoneOnMerge(num)
+      markTaskDoneOnMerge(prNumber)
     } else if (result.state === 'CLOSED') {
-      markTaskCancelled(num)
+      markTaskCancelled(prNumber)
     }
-    updateMergeableState(num, result.mergeableState)
+    updateMergeableState(prNumber, result.mergeableState)
   }
   return results
 }

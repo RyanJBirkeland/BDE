@@ -12,6 +12,7 @@ import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { DiffSizeWarning } from '../components/diff/DiffSizeWarning'
+import { ErrorBanner } from '../components/ui/ErrorBanner'
 import { POLL_GIT_STATUS_INTERVAL, DIFF_SIZE_WARN_BYTES } from '../lib/constants'
 import * as git from '../services/git'
 import { toast } from '../stores/toasts'
@@ -308,7 +309,7 @@ function DiffView(): React.JSX.Element {
         </div>
       </div>
 
-      {error && <div className="diff-view__error bde-error-banner">{error}</div>}
+      <ErrorBanner message={error} className="diff-view__error" />
       {pushOutput && (
         <div className="git-push-output">
           <pre>{pushOutput}</pre>

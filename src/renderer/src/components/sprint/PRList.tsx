@@ -4,6 +4,7 @@ import type { OpenPr, PrListPayload } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
+import { ErrorBanner } from '../ui/ErrorBanner'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { timeAgo } from '../../lib/format'
 import { PRStationDiff } from '../pr-station/PRStationDiff'
@@ -80,7 +81,7 @@ export default function PRList() {
         </Button>
       </div>
 
-      {error && <div className="sprint-board__error bde-error-banner">{error}</div>}
+      <ErrorBanner message={error} className="sprint-board__error" />
 
       <div className="pr-list__rows">
         {loading && prs.length === 0 ? (
