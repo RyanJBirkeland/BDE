@@ -83,29 +83,20 @@ function rowHeight(row: FlatRow): number {
 function VirtualizedDiffContent({
   rows,
   totalHeight,
+  offsets,
   activeFileIndex,
   activeHunk,
   containerRef
 }: {
   rows: FlatRow[]
   totalHeight: number
+  offsets: number[]
   activeFileIndex: number
   activeHunk: HunkAddress | null
   containerRef: React.RefObject<HTMLDivElement | null>
 }): React.JSX.Element {
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(800)
-
-  // Pre-compute cumulative offsets
-  const offsets = useMemo(() => {
-    const arr = new Array<number>(rows.length)
-    let cumulative = 0
-    for (let i = 0; i < rows.length; i++) {
-      arr[i] = cumulative
-      cumulative += rowHeight(rows[i])
-    }
-    return arr
-  }, [rows])
 
   useEffect(() => {
     const el = containerRef.current
@@ -122,21 +113,21 @@ function VirtualizedDiffContent({
       el.removeEventListener('scroll', onScroll)
       observer.disconnect()
     }
-  }, [containerRef])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- containerRef identity is stable
 
-  // Binary search for start index
+  // Binary search for first visible row
   const startIdx = useMemo(() => {
     let lo = 0
     let hi = offsets.length - 1
     while (lo < hi) {
       const mid = (lo + hi) >>> 1
-      if (offsets[mid] + rowHeight(rows[mid]) < scrollTop - OVERSCAN * ROW_HEIGHT) {
+      if (offsets[mid] + rowHeight(rows[mid]) <= scrollTop) {
         lo = mid + 1
       } else {
         hi = mid
       }
     }
-    return Math.max(0, lo)
+    return Math.max(0, lo - OVERSCAN)
   }, [offsets, rows, scrollTop])
 
   const endIdx = useMemo(() => {
@@ -443,6 +434,7 @@ function DiffViewer({ files }: { files: DiffFile[] }): React.JSX.Element {
           <VirtualizedDiffContent
             rows={flatRows}
             totalHeight={totalHeight}
+            offsets={flatOffsets}
             activeFileIndex={activeFileIndex}
             activeHunk={activeHunk}
             containerRef={containerRef}

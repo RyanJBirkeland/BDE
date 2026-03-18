@@ -115,7 +115,9 @@ function DiffView(): React.JSX.Element {
     diffAbortRef.current?.abort()
     const controller = new AbortController()
     diffAbortRef.current = controller
-    parseDiffChunked(raw, setDiffFiles, controller.signal)
+    parseDiffChunked(raw, setDiffFiles, controller.signal).catch(() => {
+      // AbortError is expected on re-navigation; silently ignore
+    })
   }, [])
 
   // Load diff when selected file changes

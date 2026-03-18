@@ -18,9 +18,9 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
-    parseDiffChunked(raw, setFiles, controller.signal).then(() => {
-      setLoading(false)
-    })
+    parseDiffChunked(raw, setFiles, controller.signal)
+      .then(() => { setLoading(false) })
+      .catch((e) => { if (e?.name !== 'AbortError') setLoading(false) })
   }
 
   useEffect(() => {
@@ -51,10 +51,10 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
         loadDiff(raw)
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load diff')
-      })
-      .finally(() => {
-        if (!cancelled && !rawRef.current) setLoading(false)
+        if (!cancelled && !(e instanceof DOMException && e.name === 'AbortError')) {
+          setError(e instanceof Error ? e.message : 'Failed to load diff')
+          setLoading(false)
+        }
       })
     return () => {
       cancelled = true

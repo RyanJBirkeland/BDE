@@ -140,7 +140,7 @@ export function parseDiffChunked(
   onProgress: (files: DiffFile[]) => void,
   signal?: AbortSignal
 ): Promise<DiffFile[]> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     if (!raw.trim()) {
       onProgress([])
       resolve([])
@@ -153,7 +153,7 @@ export function parseDiffChunked(
 
     function processNext(): void {
       if (signal?.aborted) {
-        resolve(files)
+        reject(new DOMException('Diff parsing aborted', 'AbortError'))
         return
       }
 
