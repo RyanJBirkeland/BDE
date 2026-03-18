@@ -14,6 +14,17 @@ export function setOpenLogDrawerTaskId(id: string | null): void {
   _openLogDrawerTaskId = id
 }
 
+// --- Shared dedup — single source of truth across all notification sources ---
+
+const notifiedTaskIds = new Set<string>()
+
+function notifyOnce(taskId: string, title: string, body: string): boolean {
+  if (notifiedTaskIds.has(taskId)) return false
+  notifiedTaskIds.add(taskId)
+  notify(title, body)
+  return true
+}
+
 // --- Helpers ---
 
 function notify(title: string, body: string): void {
@@ -86,7 +97,7 @@ export function useTaskNotifications(): void {
             const body = task.pr_url
               ? `PR ready: ${task.pr_url}`
               : `Task "${task.title}" completed in ${task.repo}.`
-            notify('\u2705 Agent task done', body)
+            notifyOnce(task.id, '\u2705 Agent task done', body)
           }
         }
       } catch {
@@ -111,10 +122,11 @@ export function useTaskNotifications(): void {
       // Skip notification if user is watching this task's LogDrawer
       if (_openLogDrawerTaskId === event.taskId) return
 
+      // Use shared dedup — if Source 1 already fired, this is a no-op
       if (event.exitCode === 0) {
-        notify('Agent finished', `Task completed successfully.`)
+        notifyOnce(event.taskId, 'Agent finished', 'Task completed successfully.')
       } else {
-        notify('Agent failed', `Exit code ${event.exitCode}`)
+        notifyOnce(event.taskId, 'Agent failed', `Exit code ${event.exitCode}`)
       }
     })
     return unsub
@@ -182,6 +194,7 @@ export function useTaskToasts(
 
       // 1. Agent finished: non-done → done
       if (prev.status !== 'done' && task.status === 'done') {
+        if (notifiedTaskIds.has(task.id)) continue // OS notification already fired
         const captured = task
         toast.info(`Agent finished: ${task.title}`, {
           action: 'View Output',
