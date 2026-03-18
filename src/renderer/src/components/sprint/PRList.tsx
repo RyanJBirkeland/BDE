@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { POLL_PR_LIST_INTERVAL, REPO_OPTIONS } from '../../lib/constants'
 import { timeAgo } from '../../lib/format'
-import PRStationDiff from '../pr-station/PRStationDiff'
+import { PRStationDiff } from '../pr-station/PRStationDiff'
 
 // PRList excludes BDE (this app) — only show external repos
 const PR_REPOS = REPO_OPTIONS.filter((r) => r.label !== 'BDE')
@@ -109,7 +109,6 @@ export default function PRList() {
             const m = mergeability[`${pr.repo}-${pr.number}`]
             const hasConflicts = m?.mergeable_state === 'dirty'
             const prKey = `${pr.repo}-${pr.number}`
-            const diffRepo = PR_REPOS.find((r) => r.label === pr.repo)
             return (
             <div key={prKey}>
               <div className={`pr-row ${hasConflicts ? 'pr-row--conflicts' : ''}`} style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
@@ -157,8 +156,8 @@ export default function PRList() {
                   </Button>
                 </div>
               </div>
-              {diffPrKey === prKey && diffRepo && (
-                <PRStationDiff owner={diffRepo.owner} repo={diffRepo.label} prNumber={pr.number} />
+              {diffPrKey === prKey && (
+                <PRStationDiff pr={pr} />
               )}
             </div>
             )
