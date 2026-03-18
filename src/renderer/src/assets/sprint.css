@@ -1915,52 +1915,11 @@ tr:hover .bde-task-table__action-btn--done {
   align-items: center;
 }
 
-/* ── Badge Component ────────────────────────────────── */
+/* ── Sprint-specific badge override ─────────────────── */
 
-.bde-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-family: var(--bde-font-ui);
-  font-weight: 600;
-  border-radius: var(--bde-radius-full);
-  white-space: nowrap;
+.bde-badge--danger .bde-badge__dot {
+  animation: conflict-pulse 2s ease-in-out infinite;
 }
-
-.bde-badge--sm {
-  font-size: var(--bde-size-xs);
-  padding: 2px 8px;
-}
-
-.bde-badge--md {
-  font-size: var(--bde-size-sm);
-  padding: 3px 10px;
-}
-
-.bde-badge__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.bde-badge--default { background: var(--bde-hover); color: var(--bde-text-muted); }
-.bde-badge--default .bde-badge__dot { background: var(--bde-text-dim); }
-
-.bde-badge--success { background: var(--bde-accent-hover); color: var(--bde-accent); }
-.bde-badge--success .bde-badge__dot { background: var(--bde-accent); }
-
-.bde-badge--warning { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
-.bde-badge--warning .bde-badge__dot { background: #F59E0B; }
-
-.bde-badge--danger { background: var(--bde-danger-bg); color: var(--bde-danger-text); }
-.bde-badge--danger .bde-badge__dot { background: var(--bde-danger-text); animation: conflict-pulse 2s ease-in-out infinite; }
-
-.bde-badge--info { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
-.bde-badge--info .bde-badge__dot { background: #3B82F6; }
-
-.bde-badge--muted { background: var(--bde-hover); color: var(--bde-text-dim); }
-.bde-badge--muted .bde-badge__dot { background: var(--bde-text-dim); }
 
 @keyframes conflict-pulse {
   0%, 100% { opacity: 1; }
@@ -2033,8 +1992,8 @@ tr:hover .bde-task-table__action-btn--done {
 }
 
 .bde-count-badge--danger {
-  background: var(--bde-danger-bg);
-  color: var(--bde-danger-text);
+  background: var(--bde-danger-dim);
+  color: var(--bde-danger);
 }
 
 .conflict-drawer__body {
