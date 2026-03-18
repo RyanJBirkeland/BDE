@@ -276,6 +276,7 @@ code {
 /* ── Light theme ──────────────────────────────────────── */
 
 html.theme-light {
+  /* ── Core palette ───────────────────────────────────── */
   --bde-bg: #F5F5F5;
   --bde-surface: #FFFFFF;
   --bde-surface-high: #F0F0F0;
@@ -288,6 +289,104 @@ html.theme-light {
   --bde-text-dim: #999999;
   --bde-danger: #DC2626;
   --bde-danger-dim: rgba(220, 38, 38, 0.1);
+
+  /* ── Interaction states ─────────────────────────────── */
+  --bde-hover: rgba(0, 0, 0, 0.04);
+  --bde-hover-strong: rgba(0, 0, 0, 0.06);
+  --bde-selected: rgba(0, 0, 0, 0.08);
+  --bde-hover-subtle: rgba(0, 0, 0, 0.03);
+  --bde-accent-hover: rgba(0, 168, 99, 0.10);
+  --bde-danger-hover: rgba(220, 38, 38, 0.10);
+  --bde-warning-hover: rgba(217, 119, 6, 0.12);
+  --bde-error-bg: rgba(220, 38, 38, 0.08);
+  --bde-overlay: rgba(0, 0, 0, 0.30);
+
+  /* ── Semantic colors ────────────────────────────────── */
+  --bde-danger-text: #DC2626;
+  --bde-warning: #D97706;
+  --bde-info: #2563EB;
+  --bde-success: #00A863;
+  --bde-subagent: #7C3AED;
+
+  /* ── Diff colors ────────────────────────────────────── */
+  --bde-diff-add: #16A34A;
+  --bde-diff-del: #DC2626;
+  --bde-diff-mod: #CA8A04;
+
+  /* ── Shadows ────────────────────────────────────────── */
+  --bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --bde-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --bde-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.16);
+
+  /* ── Visual Identity v2 — Backgrounds ───────────────── */
+  --bg-void:    #F8F8FA;
+  --bg-base:    #F5F5F7;
+  --bg-surface: #FFFFFF;
+  --bg-card:    #FFFFFF;
+  --bg-hover:   #EBEBEF;
+  --bg-active:  #E0E0E6;
+
+  /* ── v2 — Borders ───────────────────────────────────── */
+  --border:       #DCDCE0;
+  --border-light: #C8C8CE;
+  --border-glow:  #B0B0BA;
+
+  /* ── v2 — Text ─────────────────────────────────────── */
+  --text-primary:   #111111;
+  --text-secondary: #555555;
+  --text-muted:     #888888;
+  --text-ghost:     #BBBBBB;
+
+  /* ── v2 — Accent ────────────────────────────────────── */
+  --accent:         #00A863;
+  --accent-bright:  #00C574;
+  --accent-dim:     #007A48;
+  --accent-subtle:  rgba(0, 168, 99, 0.06);
+  --accent-muted:   rgba(0, 168, 99, 0.12);
+  --accent-glow:    rgba(0, 168, 99, 0.20);
+  --accent-flare:   rgba(0, 168, 99, 0.35);
+
+  /* ── v2 — Semantic ──────────────────────────────────── */
+  --color-running: #00A863;
+  --color-warning: #D97706;
+  --color-error:   #DC2626;
+  --color-info:    #2563EB;
+  --color-ai:      #7C3AED;
+  --color-queued:  #4F6CD6;
+
+  /* ── v2 — Gradients ─────────────────────────────────── */
+  --gradient-aurora:    linear-gradient(135deg, #00A863 0%, #0891B2 100%);
+  --gradient-electric:  linear-gradient(135deg, #4F6CD6 0%, #7C3AED 50%, #A855F6 100%);
+  --gradient-solar:     linear-gradient(135deg, #D97706 0%, #EA580C 100%);
+  --gradient-ember:     linear-gradient(135deg, #DC2626 0%, #E11D48 100%);
+  --gradient-frost: linear-gradient(
+    180deg,
+    rgba(80, 100, 180, 0.06) 0%,
+    rgba(60, 60, 120, 0.02) 100%
+  );
+  --gradient-midnight: linear-gradient(
+    180deg,
+    rgba(240, 240, 248, 0.95) 0%,
+    rgba(248, 248, 252, 0.98) 100%
+  );
+  --gradient-horizon: linear-gradient(
+    160deg,
+    rgba(0, 168, 99, 0.04) 0%,
+    rgba(79, 108, 214, 0.03) 50%,
+    rgba(245, 245, 247, 0.0) 100%
+  );
+  --gradient-shimmer: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.0) 0%,
+    rgba(0, 0, 0, 0.02) 50%,
+    rgba(0, 0, 0, 0.0) 100%
+  );
+
+  /* ── v2 — Glass tints ───────────────────────────────── */
+  --glass-tint-dark:   rgba(255, 255, 255, 0.75);
+  --glass-tint-mid:    rgba(255, 255, 255, 0.70);
+  --glass-tint-light:  rgba(255, 255, 255, 0.60);
+  --glass-tint-ultra:  rgba(255, 255, 255, 0.50);
 }
 
 /* ── Scrollbars ──────────────────────────────────────── */
