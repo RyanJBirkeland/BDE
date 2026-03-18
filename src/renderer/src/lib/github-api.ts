@@ -8,9 +8,13 @@ async function getToken(): Promise<string> {
   return token
 }
 
+export function clearCachedToken(): void {
+  cachedToken = null
+}
+
 async function githubFetch(path: string, init?: RequestInit): Promise<Response> {
   const token = await getToken()
-  return fetch(`https://api.github.com${path}`, {
+  const res = await fetch(`https://api.github.com${path}`, {
     ...init,
     headers: {
       Accept: 'application/vnd.github+json',
@@ -18,6 +22,21 @@ async function githubFetch(path: string, init?: RequestInit): Promise<Response> 
       ...init?.headers
     }
   })
+
+  if (res.status === 401 && cachedToken !== null) {
+    clearCachedToken()
+    const freshToken = await getToken()
+    return fetch(`https://api.github.com${path}`, {
+      ...init,
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${freshToken}`,
+        ...init?.headers
+      }
+    })
+  }
+
+  return res
 }
 
 export interface PullRequest {
@@ -111,12 +130,8 @@ export async function getCheckRuns(owner: string, repo: string, sha: string): Pr
 }
 
 export async function getPRDiff(owner: string, repo: string, number: number): Promise<string> {
-  const token = await getToken()
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}`, {
-    headers: {
-      Accept: 'application/vnd.github.diff',
-      Authorization: `Bearer ${token}`
-    }
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`, {
+    headers: { Accept: 'application/vnd.github.diff' }
   })
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
   return res.text()
