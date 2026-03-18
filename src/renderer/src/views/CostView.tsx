@@ -9,6 +9,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Button } from '../components/ui/Button'
 import { Download, RefreshCw, BarChart, ExternalLink } from 'lucide-react'
 import { POLL_SPRINT_INTERVAL } from '../lib/constants'
+import { useCostDataStore } from '../stores/costData'
 
 // ── Formatting helpers ──────────────────────────────────
 
@@ -236,6 +237,7 @@ export default function CostView(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState<SortField>('started_at')
   const [copied, setCopied] = useState(false)
+  const refreshStore = useCostDataStore((s) => s.fetchLocalAgents)
 
   const fetchData = useCallback(async () => {
     try {
@@ -245,12 +247,14 @@ export default function CostView(): React.JSX.Element {
       ])
       setSummary(s)
       setRuns(r)
+      // Keep the shared cost store in sync so TitleBar totalCost updates
+      refreshStore()
     } catch {
       // Silently fail — will retry on next poll
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [refreshStore])
 
   useEffect(() => {
     fetchData()

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGatewayStore } from './stores/gateway'
 import { useUIStore, type View } from './stores/ui'
 import { useSessionsStore } from './stores/sessions'
 import { useCommandPaletteStore } from './stores/commandPalette'
-import { calcCost, resolveModel } from './lib/cost'
+import { useCostDataStore } from './stores/costData'
 import { ActivityBar } from './components/layout/ActivityBar'
 import { TitleBar } from './components/layout/TitleBar'
 import { StatusBar } from './components/layout/StatusBar'
@@ -172,12 +172,8 @@ function App(): React.JSX.Element {
   const activeView = useUIStore((s) => s.activeView)
   const setView = useUIStore((s) => s.setView)
   const runningCount = useSessionsStore((s) => s.runningCount)
-  const sessions = useSessionsStore((s) => s.sessions)
-  const totalCost = useMemo(() => sessions.reduce((sum, s) => {
-    const input = s.inputTokens ?? 0
-    const output = s.outputTokens ?? 0
-    return sum + calcCost(input, output, resolveModel(s.model))
-  }, 0), [sessions])
+  const totalCost = useCostDataStore((s) => s.totalCost)
+  const fetchLocalAgents = useCostDataStore((s) => s.fetchLocalAgents)
 
   const paletteOpen = useCommandPaletteStore((s) => s.isOpen)
   const togglePalette = useCommandPaletteStore((s) => s.toggle)
@@ -187,6 +183,10 @@ function App(): React.JSX.Element {
   useEffect(() => {
     connect()
   }, [connect])
+
+  useEffect(() => {
+    fetchLocalAgents()
+  }, [fetchLocalAgents])
 
   useTaskNotifications()
 
