@@ -1,14 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getPRDiff } from '../../lib/github-api'
 import type { OpenPr } from '../../../../shared/types'
-import { parseDiff, type DiffFile } from '../../lib/diff-parser'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { parseDiffChunked, type DiffFile } from '../../lib/diff-parser'
+import { REPO_OPTIONS, DIFF_SIZE_WARN_BYTES } from '../../lib/constants'
 import DiffViewer from '../diff/DiffViewer'
+import { DiffSizeWarning } from '../diff/DiffSizeWarning'
 
 export function PRStationDiff({ pr }: { pr: OpenPr }) {
   const [files, setFiles] = useState<DiffFile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sizeWarning, setSizeWarning] = useState<number | null>(null)
+  const rawRef = useRef<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+
+  const loadDiff = (raw: string): void => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    parseDiffChunked(raw, setFiles, controller.signal).then(() => {
+      setLoading(false)
+    })
+  }
 
   useEffect(() => {
     const repoOption = REPO_OPTIONS.find((r) => r.label === pr.repo)
@@ -18,20 +31,42 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
       return
     }
     let cancelled = false
+    abortRef.current?.abort()
     setLoading(true)
     setError(null)
+    setSizeWarning(null)
+    rawRef.current = null
+
     getPRDiff(repoOption.owner, repoOption.label, pr.number)
       .then((raw) => {
-        if (!cancelled) setFiles(parseDiff(raw))
+        if (cancelled) return
+        rawRef.current = raw
+
+        if (raw.length > DIFF_SIZE_WARN_BYTES) {
+          setSizeWarning(raw.length)
+          setLoading(false)
+          return
+        }
+
+        loadDiff(raw)
       })
       .catch((e) => {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load diff')
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!cancelled && !rawRef.current) setLoading(false)
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      abortRef.current?.abort()
+    }
   }, [pr.repo, pr.number])
+
+  const handleLoadAnyway = (): void => {
+    setSizeWarning(null)
+    setLoading(true)
+    if (rawRef.current) loadDiff(rawRef.current)
+  }
 
   if (loading) {
     return (
@@ -43,6 +78,10 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
   }
 
   if (error) return <div className="bde-error-banner">{error}</div>
+
+  if (sizeWarning) {
+    return <DiffSizeWarning sizeBytes={sizeWarning} onLoadAnyway={handleLoadAnyway} />
+  }
 
   const totalAdded = files.reduce((s, f) => s + f.additions, 0)
   const totalDeleted = files.reduce((s, f) => s + f.deletions, 0)
