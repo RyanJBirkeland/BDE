@@ -92,7 +92,10 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
 
     // Handle sessions result
     if (sessionsResult.status === 'fulfilled') {
-      const sessions = sessionsResult.value.sessions ?? []
+      // Filter out sessions with a pending kill (optimistic removal still in undo window)
+      const sessions = (sessionsResult.value.sessions ?? []).filter(
+        (s) => !_pendingKillTimers.has(s.key)
+      )
       const fiveMinAgo = Date.now() - SESSION_ACTIVE_THRESHOLD
       set({
         sessions,
@@ -126,20 +129,24 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
             return 'unknown'
         }
       }
-      const active = (subData.active ?? []).map((s) => ({
-        ...s,
-        label: deriveLabel(s),
-        task: s.task ?? '',
-        status: normalizeSubAgentStatus(s.status),
-        isActive: true
-      }))
-      const recent = (subData.recent ?? []).map((s) => ({
-        ...s,
-        label: deriveLabel(s),
-        task: s.task ?? '',
-        status: normalizeSubAgentStatus(s.status),
-        isActive: false
-      }))
+      const active = (subData.active ?? [])
+        .filter((s) => !_pendingKillTimers.has(s.sessionKey))
+        .map((s) => ({
+          ...s,
+          label: deriveLabel(s),
+          task: s.task ?? '',
+          status: normalizeSubAgentStatus(s.status),
+          isActive: true
+        }))
+      const recent = (subData.recent ?? [])
+        .filter((s) => !_pendingKillTimers.has(s.sessionKey))
+        .map((s) => ({
+          ...s,
+          label: deriveLabel(s),
+          task: s.task ?? '',
+          status: normalizeSubAgentStatus(s.status),
+          isActive: false
+        }))
       set({ subAgents: [...active, ...recent], subAgentsError: null, subAgentsLoading: false })
     } else {
       set({ subAgentsError: 'Could not fetch sub-agents', subAgentsLoading: false })

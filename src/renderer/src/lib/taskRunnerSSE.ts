@@ -30,12 +30,14 @@ type Handler = (data: unknown) => void
 
 const listeners = new Map<string, Set<Handler>>()
 let connected = false
+let cleanupSse: (() => void) | null = null
 
 function connect(): void {
   if (connected) return
-  window.api.offSprintSseEvent()
+  // Clean up previous listener if any
+  cleanupSse?.()
   connected = true
-  window.api.onSprintSseEvent((event: { type: string; data: unknown }) => {
+  cleanupSse = window.api.onSprintSseEvent((event: { type: string; data: unknown }) => {
     if (event.type === '__sse-disconnected') {
       // Main process signalled that the SSE connection dropped.
       // Reset so the next subscribeSSE (or reconnect) re-registers.
@@ -55,7 +57,8 @@ function emit(event: string, data: unknown): void {
  * `subscribeSSE` call will re-establish the bridge.
  */
 export function disconnect(): void {
-  window.api.offSprintSseEvent()
+  cleanupSse?.()
+  cleanupSse = null
   connected = false
 }
 

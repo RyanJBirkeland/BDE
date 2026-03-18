@@ -26,6 +26,7 @@ import {
 } from '../../lib/constants'
 import { TASK_STATUS, PR_STATUS } from '../../../../shared/constants'
 
+import { ErrorBoundary } from '../ui/ErrorBoundary'
 import type { SprintTask } from '../../../../shared/types'
 export type { SprintTask }
 
@@ -516,6 +517,7 @@ export default function SprintCenter() {
           </div>
         ) : (
           <>
+            <ErrorBoundary name="KanbanBoard">
             <KanbanBoard
               todoTasks={partition.todo}
               activeTasks={partition.inProgress}
@@ -531,7 +533,9 @@ export default function SprintCenter() {
               onMarkDone={handleMarkDone}
               onStop={handleStop}
             />
+            </ErrorBoundary>
 
+            <ErrorBoundary name="Done Tasks">
             <TaskTable
               section="done"
               tasks={partition.done}
@@ -540,8 +544,10 @@ export default function SprintCenter() {
               onViewOutput={handleViewOutput}
               onRerun={handleRerun}
             />
+            </ErrorBoundary>
 
             {partition.failed.length > 0 && (
+              <ErrorBoundary name="Failed Tasks">
               <TaskTable
                 section="failed"
                 tasks={partition.failed}
@@ -549,6 +555,7 @@ export default function SprintCenter() {
                 onViewSpec={handleViewSpec}
                 onViewOutput={handleViewOutput}
               />
+              </ErrorBoundary>
             )}
             <div className="bde-backlog-search">
               <input
@@ -569,6 +576,7 @@ export default function SprintCenter() {
               )}
             </div>
 
+            <ErrorBoundary name="Backlog">
             <TaskTable
               section="backlog"
               tasks={filteredBacklog}
@@ -578,11 +586,14 @@ export default function SprintCenter() {
               onMarkDone={handleMarkDone}
               onUpdate={handleUpdatePriority}
             />
+            </ErrorBoundary>
           </>
         )}
       </div>
 
+      <ErrorBoundary name="PR Section">
       <PRSection />
+      </ErrorBoundary>
 
       <SpecDrawer
         task={selectedTask}

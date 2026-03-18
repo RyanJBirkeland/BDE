@@ -168,16 +168,15 @@ const api = {
   onExternalSprintChange: (cb: () => void): void => {
     ipcRenderer.on('sprint:external-change', cb)
   },
-  offExternalSprintChange: (_cb: () => void): void => {
-    ipcRenderer.removeAllListeners('sprint:external-change')
+  offExternalSprintChange: (cb: () => void): void => {
+    ipcRenderer.removeListener('sprint:external-change', cb)
   },
 
   // Sprint SSE real-time events
-  onSprintSseEvent: (cb: (event: { type: string; data: unknown }) => void): void => {
-    ipcRenderer.on('sprint:sse-event', (_e, ev) => cb(ev))
-  },
-  offSprintSseEvent: (): void => {
-    ipcRenderer.removeAllListeners('sprint:sse-event')
+  onSprintSseEvent: (cb: (event: { type: string; data: unknown }) => void): (() => void) => {
+    const listener = (_e: unknown, ev: { type: string; data: unknown }): void => cb(ev)
+    ipcRenderer.on('sprint:sse-event', listener)
+    return () => ipcRenderer.removeListener('sprint:sse-event', listener)
   },
 
   // Terminal PTY

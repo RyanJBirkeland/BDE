@@ -24,9 +24,11 @@ type NewTicketModalProps = {
 }
 
 const PRIORITY_OPTIONS = [
-  { label: 'Low', value: 2 },
-  { label: 'Medium', value: 1 },
-  { label: 'High', value: 0 },
+  { label: 'P1 Critical', value: 1 },
+  { label: 'P2 High', value: 2 },
+  { label: 'P3 Medium', value: 3 },
+  { label: 'P4 Low', value: 4 },
+  { label: 'P5 Backlog', value: 5 },
 ] as const
 
 const TEMPLATES: Record<string, { label: string; spec: string }> = {
@@ -69,7 +71,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
   const [mode, setMode] = useState<TicketMode>('quick')
   const [title, setTitle] = useState('')
   const [repo, setRepo] = useState<string>(REPO_OPTIONS[0].label)
-  const [priority, setPriority] = useState(1)
+  const [priority, setPriority] = useState(3)
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
   const [spec, setSpec] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -80,7 +82,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
       setMode('quick')
       setTitle('')
       setRepo(REPO_OPTIONS[0].label)
-      setPriority(1)
+      setPriority(3)
       setSelectedTemplate(null)
       setSpec('')
       setGenerating(false)
@@ -171,7 +173,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
         notes: '',
         prompt: trimmed,
         spec: null,
-        priority: 1,
+        priority: 3,
       })
       onClose()
       return

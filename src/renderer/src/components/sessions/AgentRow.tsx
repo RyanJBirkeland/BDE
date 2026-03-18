@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { Badge } from '../ui/Badge'
 import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
@@ -28,6 +29,11 @@ function dotClass(agent: UnifiedAgent): string {
   return 'agent-row__dot dot--unknown'
 }
 
+interface ContextMenuState {
+  x: number
+  y: number
+}
+
 export function AgentRow({
   agent,
   isSelected,
@@ -41,6 +47,21 @@ export function AgentRow({
   const staleLevel = getStaleLevel(agent)
   const showStale = staleLevel === 'stale' || staleLevel === 'dead'
   const taskPreview = agent.task ? (agent.task.length > 60 ? agent.task.slice(0, 60) + '\u2026' : agent.task) : undefined
+
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close context menu on outside click or scroll
+  useEffect(() => {
+    if (!contextMenu) return
+    const close = () => setContextMenu(null)
+    document.addEventListener('click', close)
+    document.addEventListener('scroll', close, true)
+    return () => {
+      document.removeEventListener('click', close)
+      document.removeEventListener('scroll', close, true)
+    }
+  }, [contextMenu])
 
   const handleKillDown = useCallback((e: React.MouseEvent): void => {
     e.stopPropagation()
@@ -76,96 +97,96 @@ export function AgentRow({
     (e: React.MouseEvent): void => {
       e.preventDefault()
       e.stopPropagation()
-
-      // Only show context menu for agents with sessionKey (gateway sessions/sub-agents)
       if (!agent.sessionKey) return
-
-      const menu = document.createElement('div')
-      menu.className = 'agent-row-context-menu'
-      menu.style.position = 'fixed'
-      menu.style.left = `${e.clientX}px`
-      menu.style.top = `${e.clientY}px`
-      menu.style.zIndex = '10000'
-
-      const watchOption = document.createElement('button')
-      watchOption.className = 'agent-row-context-menu__item'
-      watchOption.textContent = '↗ Watch in Terminal'
-      watchOption.onclick = () => {
-        const createAgentTab = useTerminalStore.getState().createAgentTab
-        createAgentTab(agent.id, agent.label, agent.sessionKey!)
-        document.body.removeChild(menu)
-      }
-
-      menu.appendChild(watchOption)
-      document.body.appendChild(menu)
-
-      const closeMenu = (): void => {
-        if (document.body.contains(menu)) {
-          document.body.removeChild(menu)
-        }
-        document.removeEventListener('click', closeMenu)
-      }
-
-      setTimeout(() => document.addEventListener('click', closeMenu), 0)
+      setContextMenu({ x: e.clientX, y: e.clientY })
     },
-    [agent.id, agent.label, agent.sessionKey]
+    [agent.sessionKey]
   )
+
+  const handleWatchInTerminal = useCallback(() => {
+    const createAgentTab = useTerminalStore.getState().createAgentTab
+    createAgentTab(agent.id, agent.label, agent.sessionKey!)
+    setContextMenu(null)
+  }, [agent.id, agent.label, agent.sessionKey])
 
   const isRunning = agent.status === 'running'
 
   return (
-    <motion.button
-      whileHover={reduced ? undefined : { scale: 1.008, transition: TRANSITIONS.instant }}
-      whileTap={reduced ? undefined : { scale: 0.998 }}
-      className={[
-        'agent-row glass glass-highlight',
-        isSelected && 'agent-row--selected gradient-border glow-accent-sm',
-        isRunning && !isSelected && 'glow-pulse',
-      ].filter(Boolean).join(' ')}
-      onClick={onSelect}
-      onContextMenu={handleContextMenu}
-    >
-      <span className={dotClass(agent)} title={agent.isBlocked ? 'Session aborted — may need attention' : undefined} />
-      <div className="agent-row__info">
-        <span className="agent-row__label">{agent.label}</span>
-        <span className="agent-row__meta">
-          {agent.model && (
-            <Badge variant="muted" size="sm">{modelBadgeLabel(agent.model)}</Badge>
-          )}
-          <span className={`source-badge source-badge--${agent.source}`}>
-            {agent.source}
-          </span>
-          {showStale && (
-            <span className="agent-row__stale-badge">STALE</span>
-          )}
-          <span className="agent-row__time">{timeAgo(agent.updatedAt)}</span>
-        </span>
-        {taskPreview && (
-          <span className="agent-row__task">{taskPreview}</span>
-        )}
-      </div>
-      <span
-        className={`agent-row__action agent-row__action--steer ${!agent.canSteer ? 'agent-row__action--disabled' : ''}`}
-        role="button"
-        tabIndex={-1}
-        onClick={handleSteerClick}
-        title={agent.canSteer ? 'Steer agent' : 'Read-only \u2014 cannot steer this agent'}
+    <>
+      <motion.button
+        whileHover={reduced ? undefined : { scale: 1.008, transition: TRANSITIONS.instant }}
+        whileTap={reduced ? undefined : { scale: 0.998 }}
+        className={[
+          'agent-row glass glass-highlight',
+          isSelected && 'agent-row--selected gradient-border glow-accent-sm',
+          isRunning && !isSelected && 'glow-pulse',
+        ].filter(Boolean).join(' ')}
+        onClick={onSelect}
+        onContextMenu={handleContextMenu}
       >
-        {'\u270E'}
-      </span>
-      {agent.canKill && (
+        <span className={dotClass(agent)} title={agent.isBlocked ? 'Session aborted — may need attention' : undefined} />
+        <div className="agent-row__info">
+          <span className="agent-row__label">{agent.label}</span>
+          <span className="agent-row__meta">
+            {agent.model && (
+              <Badge variant="muted" size="sm">{modelBadgeLabel(agent.model)}</Badge>
+            )}
+            <span className={`source-badge source-badge--${agent.source}`}>
+              {agent.source}
+            </span>
+            {showStale && (
+              <span className="agent-row__stale-badge">STALE</span>
+            )}
+            <span className="agent-row__time">{timeAgo(agent.updatedAt)}</span>
+          </span>
+          {taskPreview && (
+            <span className="agent-row__task">{taskPreview}</span>
+          )}
+        </div>
         <span
-          className="agent-row__action agent-row__action--kill"
+          className={`agent-row__action agent-row__action--steer ${!agent.canSteer ? 'agent-row__action--disabled' : ''}`}
           role="button"
           tabIndex={-1}
-          onMouseDown={handleKillDown}
-          onMouseUp={handleKillUp}
-          onMouseLeave={handleKillLeave}
-          title="Stop agent"
+          onClick={handleSteerClick}
+          title={agent.canSteer ? 'Steer agent' : 'Read-only \u2014 cannot steer this agent'}
         >
-          {killing ? '...' : '\u00d7'}
+          {'\u270E'}
         </span>
+        {agent.canKill && (
+          <span
+            className="agent-row__action agent-row__action--kill"
+            role="button"
+            tabIndex={-1}
+            onMouseDown={handleKillDown}
+            onMouseUp={handleKillUp}
+            onMouseLeave={handleKillLeave}
+            title="Stop agent"
+          >
+            {killing ? '...' : '\u00d7'}
+          </span>
+        )}
+      </motion.button>
+
+      {contextMenu && createPortal(
+        <div
+          ref={menuRef}
+          className="agent-row-context-menu"
+          style={{
+            position: 'fixed',
+            left: contextMenu.x,
+            top: contextMenu.y,
+            zIndex: 10000,
+          }}
+        >
+          <button
+            className="agent-row-context-menu__item"
+            onClick={handleWatchInTerminal}
+          >
+            ↗ Watch in Terminal
+          </button>
+        </div>,
+        document.body
       )}
-    </motion.button>
+    </>
   )
 }

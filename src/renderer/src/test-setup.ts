@@ -63,8 +63,7 @@ vi.stubGlobal('api', {
     }),
     agentRuns: vi.fn().mockResolvedValue([]),
   },
-  onSprintSseEvent: vi.fn(),
-  offSprintSseEvent: vi.fn(),
+  onSprintSseEvent: vi.fn().mockReturnValue(() => {}),
   terminal: {
     create: vi.fn().mockResolvedValue(1),
     write: vi.fn(),

@@ -54,7 +54,7 @@ describe('NewTicketModal', () => {
       notes: '',
       prompt: 'Fix the bug',
       spec: null,
-      priority: 1,
+      priority: 3,
     })
     expect(defaultProps.onClose).toHaveBeenCalled()
   })
@@ -94,7 +94,7 @@ describe('NewTicketModal', () => {
       notes: '',
       prompt: 'My task',
       spec: null,
-      priority: 1,
+      priority: 3,
     })
   })
 

@@ -124,8 +124,7 @@ declare global {
       offExternalSprintChange: (cb: () => void) => void
 
       // Sprint SSE real-time events
-      onSprintSseEvent: (cb: (event: { type: string; data: unknown }) => void) => void
-      offSprintSseEvent: () => void
+      onSprintSseEvent: (cb: (event: { type: string; data: unknown }) => void) => (() => void)
 
       // Terminal PTY
       terminal: {
