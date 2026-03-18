@@ -31,6 +31,8 @@ export interface PullRequest {
   head: { ref: string; sha: string }
   base: { ref: string }
   user: { login: string }
+  merged: boolean
+  merged_at: string | null
   additions: number
   deletions: number
   repo: string

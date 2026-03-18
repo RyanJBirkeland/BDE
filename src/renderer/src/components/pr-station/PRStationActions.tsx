@@ -32,7 +32,7 @@ export function PRStationActions({ pr, mergeability, onRemovePr }: PRStationActi
   const [loading, setLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const isMerged = pr.state === 'closed' && mergeability?.mergeable === false
+  const isMerged = pr.merged === true
   const isMergeable = mergeability?.mergeable === true
   const mergeBlocked = mergeability !== null && !isMergeable
 
