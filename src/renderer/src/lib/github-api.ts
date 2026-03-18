@@ -46,22 +46,28 @@ function parseNextLink(linkHeader: string | null): string | null {
 }
 
 async function fetchAllPages<T>(path: string): Promise<T[]> {
-  const token = await getToken()
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    Authorization: `Bearer ${token}`
-  }
-
-  let url: string = `https://api.github.com${path}`
   const items: T[] = []
 
-  while (url) {
-    const res = await fetch(url, { headers })
+  // First page goes through githubFetch so 401 retry logic applies
+  let res = await githubFetch(path)
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
+  const firstPage = (await res.json()) as T[]
+  items.push(...firstPage)
+
+  // Subsequent pages use the Link header URL directly with a fresh token
+  let nextUrl = parseNextLink(res.headers.get('Link'))
+  while (nextUrl) {
+    const token = await getToken()
+    res = await fetch(nextUrl, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`
+      }
+    })
     if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
     const page = (await res.json()) as T[]
     items.push(...page)
-    const next = parseNextLink(res.headers.get('Link'))
-    url = next ?? ''
+    nextUrl = parseNextLink(res.headers.get('Link'))
   }
 
   return items

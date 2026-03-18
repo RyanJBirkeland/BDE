@@ -82,6 +82,7 @@ function runMigrations(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_sprint_tasks_status ON sprint_tasks(status, priority, created_at);
     CREATE INDEX IF NOT EXISTS idx_agent_runs_pid      ON agent_runs(pid);
     CREATE INDEX IF NOT EXISTS idx_agent_runs_status   ON agent_runs(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_runs_finished ON agent_runs(finished_at, started_at DESC);
   `)
 
   // Add pr_mergeable_state column (idempotent)
