@@ -18,7 +18,12 @@ export function setOpenLogDrawerTaskId(id: string | null): void {
 
 const notifiedTaskIds = new Set<string>()
 
-function notifyOnce(taskId: string, title: string, body: string): boolean {
+/** @internal — exported for testing only */
+export function _resetNotifiedTaskIds(): void {
+  notifiedTaskIds.clear()
+}
+
+export function notifyOnce(taskId: string, title: string, body: string): boolean {
   if (notifiedTaskIds.has(taskId)) return false
   notifiedTaskIds.add(taskId)
   notify(title, body)
