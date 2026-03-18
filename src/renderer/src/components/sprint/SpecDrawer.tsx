@@ -230,18 +230,34 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
             )}
 
             <div className="spec-drawer__footer">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => onPushToSprint(task)}
-                disabled={task.status !== 'backlog'}
-              >
-                {task.status === 'backlog'
-                  ? '→ Push to Sprint'
-                  : task.status === 'queued'
-                    ? 'In Sprint'
-                    : task.status}
-              </Button>
+              {task.status === 'backlog' && task.spec ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    onPushToSprint(task)
+                    onLaunch(task)
+                  }}
+                >
+                  Launch
+                </Button>
+              ) : task.status === 'backlog' ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => onPushToSprint(task)}
+                >
+                  → Push to Sprint
+                </Button>
+              ) : task.status === 'queued' ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => onLaunch(task)}
+                >
+                  Launch Agent
+                </Button>
+              ) : null}
               <Button
                 variant="ghost"
                 size="sm"
@@ -250,15 +266,6 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
               >
                 {generating ? 'Generating...' : 'Ask Paul'}
               </Button>
-              {task.status === 'queued' && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => onLaunch(task)}
-                >
-                  Launch Agent
-                </Button>
-              )}
               {onMarkDone && task.status !== 'done' && (
                 <Button variant="ghost" size="sm" onClick={() => onMarkDone(task)}>
                   ✓ Mark Done
