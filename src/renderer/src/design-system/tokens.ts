@@ -20,7 +20,9 @@ export const tokens = {
     danger: '#FF4D4D',           // Error / destructive actions
     dangerDim: 'rgba(255, 77, 77, 0.15)', // Danger background tint
     warning: '#F59E0B',          // Warning indicators
+    warningDim: 'rgba(245, 158, 11, 0.15)', // Warning background tint
     info: '#3B82F6',             // Informational highlights
+    infoDim: 'rgba(59, 130, 246, 0.15)', // Info background tint
     success: '#00D37F',          // Success indicators (same as accent)
   },
   /** Font stacks */

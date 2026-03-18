@@ -45,7 +45,9 @@
   --bde-danger: #FF4D4D;
   --bde-danger-dim: rgba(255, 77, 77, 0.15);
   --bde-warning: #F59E0B;
+  --bde-warning-dim: rgba(245, 158, 11, 0.15);
   --bde-info: #3B82F6;
+  --bde-info-dim: rgba(59, 130, 246, 0.15);
   --bde-success: #00D37F;
 
   /* Interaction states */

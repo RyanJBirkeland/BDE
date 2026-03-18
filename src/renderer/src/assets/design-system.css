@@ -121,19 +121,20 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  font-family: var(--bde-font-ui);
+  font-weight: 600;
   border-radius: var(--bde-radius-full);
-  font-weight: 500;
   white-space: nowrap;
 }
 
 .bde-badge--sm {
-  padding: 1px 8px;
   font-size: var(--bde-size-xs);
+  padding: 2px 8px;
 }
 
 .bde-badge--md {
-  padding: 2px 10px;
   font-size: var(--bde-size-sm);
+  padding: 3px 10px;
 }
 
 .bde-badge__dot {
@@ -153,7 +154,7 @@
 }
 
 .bde-badge--success {
-  background: rgba(0, 211, 127, 0.15);
+  background: var(--bde-accent-dim);
   color: var(--bde-success);
 }
 
@@ -162,7 +163,7 @@
 }
 
 .bde-badge--warning {
-  background: rgba(245, 158, 11, 0.15);
+  background: var(--bde-warning-dim);
   color: var(--bde-warning);
 }
 
@@ -180,7 +181,7 @@
 }
 
 .bde-badge--info {
-  background: rgba(59, 130, 246, 0.15);
+  background: var(--bde-info-dim);
   color: var(--bde-info);
 }
 
