@@ -146,10 +146,6 @@ export function PRStationList({ selectedPr, onSelectPr, removedKeys }: PRStation
                 </div>
                 <div className="pr-station-list__title-text">{pr.title}</div>
                 <div className="pr-station-list__meta">
-                  <span className="pr-station-list__diff">
-                    <span className="pr-station-list__additions">+{pr.additions}</span>
-                    <span className="pr-station-list__deletions">-{pr.deletions}</span>
-                  </span>
                   <span className="pr-station-list__time">{timeAgo(pr.updated_at)}</span>
                 </div>
               </button>

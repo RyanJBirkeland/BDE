@@ -124,7 +124,6 @@ export default function PRList() {
                   <span className="pr-row__title">{pr.title}</span>
                   <span className="pr-row__meta">
                     {pr.repo} #{pr.number} &middot; {timeAgo(pr.updated_at)}
-                    {pr.additions !== undefined && ` \u00B7 +${pr.additions} -${pr.deletions}`}
                     {hasConflicts && <span className="pr-row__conflict-label"> &middot; conflicts</span>}
                   </span>
                 </div>

@@ -80,8 +80,6 @@ export interface PullRequest {
   user: { login: string }
   merged: boolean
   merged_at: string | null
-  additions: number
-  deletions: number
   repo: string
 }
 
