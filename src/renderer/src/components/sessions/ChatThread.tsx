@@ -37,7 +37,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
   const [expandedTools, setExpandedTools] = useState<Set<number>>(new Set())
   const [streaming, setStreaming] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const userScrolledUp = useRef(false)
+  const [userScrolledUp, setUserScrolledUp] = useState(false)
   const messagesRef = useRef<ChatMessage[]>([])
   const lastCountRef = useRef(0)
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -57,7 +57,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
       requestAnimationFrame(() => {
         el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
       })
-      userScrolledUp.current = false
+      setUserScrolledUp(false)
     }
   }, [])
 
@@ -136,7 +136,7 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
     setStreaming(false)
     messagesRef.current = []
     lastCountRef.current = 0
-    userScrolledUp.current = false
+    setUserScrolledUp(false)
     prevLastAssistantContentRef.current = ''
     hasPolledRef.current = false
 
@@ -170,7 +170,8 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
-    userScrolledUp.current = el.scrollTop + el.clientHeight < el.scrollHeight - CHAT_SCROLL_THRESHOLD
+    const scrolledUp = el.scrollTop + el.clientHeight < el.scrollHeight - CHAT_SCROLL_THRESHOLD
+    setUserScrolledUp((prev) => (prev !== scrolledUp ? scrolledUp : prev))
   }, [])
 
   // Keyboard scrolling: PageUp/Down, End
@@ -192,14 +193,14 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
       } else if (e.key === 'End' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-        userScrolledUp.current = false
+        setUserScrolledUp(false)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [activeView])
 
-  const showScrollButton = userScrolledUp.current && messages.length > 0
+  const showScrollButton = userScrolledUp && messages.length > 0
 
   const toggleExpand = useCallback((idx: number) => {
     setExpandedMsgs((prev) => {
