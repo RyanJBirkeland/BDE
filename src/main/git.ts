@@ -1,21 +1,14 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import { homedir } from 'os'
-import { join } from 'path'
 
 import { getGitHubToken } from './config'
 import { getDb } from './db'
+import { DEFAULT_REPO_PATHS } from './paths'
 
 const execFileAsync = promisify(execFile)
 
-const REPO_PATHS: Record<string, string> = {
-  bde: join(homedir(), 'Documents', 'Repositories', 'BDE'),
-  'life-os': join(homedir(), 'Documents', 'Repositories', 'life-os'),
-  feast: join(homedir(), 'Documents', 'Repositories', 'feast')
-}
-
 export function getRepoPaths(): Record<string, string> {
-  return { ...REPO_PATHS }
+  return { ...DEFAULT_REPO_PATHS }
 }
 
 export interface GitFileStatus {

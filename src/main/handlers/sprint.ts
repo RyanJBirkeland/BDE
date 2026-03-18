@@ -1,12 +1,10 @@
 import { readFile, open } from 'fs/promises'
 import { readFileSync } from 'fs'
-import { join, resolve } from 'path'
-import { homedir } from 'os'
+import { resolve } from 'path'
 import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
 import { getGatewayConfig } from '../config'
-
-const SPECS_ROOT = resolve(homedir(), 'Documents', 'Repositories', 'BDE', 'docs', 'specs')
+import { SPECS_ROOT, LIFE_OS_ENV_PATH } from '../paths'
 
 function validateSpecPath(relativePath: string): string {
   const resolved = resolve(SPECS_ROOT, relativePath)
@@ -51,7 +49,7 @@ function migrateFromSupabase(): void {
   let url = ''
   let serviceKey = ''
   try {
-    const envPath = join(homedir(), 'Documents', 'Repositories', 'life-os', '.env')
+    const envPath = LIFE_OS_ENV_PATH
     const raw = readFileSync(envPath, 'utf-8')
     for (const line of raw.split('\n')) {
       const trimmed = line.trim()

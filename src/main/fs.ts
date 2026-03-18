@@ -1,8 +1,9 @@
 import { mkdir, readdir, readFile, writeFile, stat } from 'fs/promises'
 import { basename, dirname, extname, join, resolve } from 'path'
-import { homedir } from 'os'
+import { tmpdir } from 'os'
 import { dialog } from 'electron'
 import { safeHandle } from './ipc-utils'
+import { OPENCLAW_MEMORY_DIR as MEMORY_ROOT, BDE_AGENT_LOGS_DIR as AGENT_LOGS_ROOT } from './paths'
 
 export interface MemoryFile {
   path: string
@@ -10,10 +11,7 @@ export interface MemoryFile {
   size: number
   modifiedAt: number
 }
-
-const MEMORY_ROOT = resolve(homedir(), '.openclaw/workspace/memory')
-const AGENT_LOGS_ROOT = resolve(homedir(), '.bde/agent-logs')
-const TMP_ROOT = resolve('/tmp')
+const TMP_ROOT = resolve(tmpdir())
 const MAX_READ_BYTES = 10 * 1024 * 1024 // 10 MB
 
 export function validateMemoryPath(p: string): string {

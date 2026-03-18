@@ -5,16 +5,12 @@
 import { mkdir, writeFile, appendFile, open, rm, readdir, rename, stat } from 'fs/promises'
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
-import { homedir } from 'os'
 import { randomUUID } from 'crypto'
 import { getDb } from './db'
+import { BDE_AGENTS_INDEX as AGENTS_INDEX, BDE_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
 import type { AgentMeta } from '../shared/types'
 
 export type { AgentMeta }
-
-const BDE_DIR = join(homedir(), '.bde')
-const AGENTS_INDEX = join(BDE_DIR, 'agents.json')
-const LOGS_DIR = join(BDE_DIR, 'agent-logs')
 
 // --- Column mapping between snake_case DB rows and camelCase AgentMeta ---
 
