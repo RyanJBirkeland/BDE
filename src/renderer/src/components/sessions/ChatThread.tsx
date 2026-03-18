@@ -8,12 +8,7 @@ import { CHAT_HISTORY_LIMIT, CHAT_SCROLL_THRESHOLD, CHAT_COLLAPSE_THRESHOLD, POL
 import { normalizeContent } from '../../lib/message'
 import { renderContent, renderUserContent } from '../../lib/markdown'
 import type { ChatMessage } from '../../lib/agent-messages'
-
-function formatTime(ts: number | string | undefined): string {
-  if (!ts) return ''
-  const d = new Date(typeof ts === 'string' ? ts : ts)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+import { formatTime } from '../../lib/format'
 
 const POLL_STREAMING = POLL_CHAT_STREAMING_MS
 const POLL_IDLE = POLL_CHAT_IDLE_MS

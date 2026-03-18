@@ -6,7 +6,7 @@ import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { ErrorBanner } from '../ui/ErrorBanner'
 import { REPO_OPTIONS } from '../../lib/constants'
-import { timeAgo } from '../../lib/format'
+import { timeAgo, repoColor } from '../../lib/format'
 import { PRStationDiff } from '../pr-station/PRStationDiff'
 
 // PRList excludes BDE (this app) — only show external repos
@@ -67,9 +67,6 @@ export default function PRList() {
       setConfirmMerge(null)
     }
   }
-
-  const repoColor = (repoName: string) =>
-    REPO_OPTIONS.find((r) => r.label === repoName)?.color ?? 'var(--bde-text-dim)'
 
   return (
     <div className="pr-list">
