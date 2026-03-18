@@ -122,7 +122,6 @@ export async function getPRDiff(owner: string, repo: string, number: number): Pr
   return res.text()
 }
 
-/* ── PR detail, files, and individual check runs ── */
 
 export interface PRDetail {
   number: number
