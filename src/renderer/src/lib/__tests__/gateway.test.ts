@@ -37,6 +37,7 @@ class MockWebSocket {
 ;(globalThis as unknown as Record<string, unknown>).WebSocket = MockWebSocket
 
 import { GatewayClient, type ConnectionStatus } from '../gateway'
+import { CONNECT_CHALLENGE_TIMEOUT_MS } from '../constants'
 
 /**
  * The GatewayClient has a challenge/response auth flow:
@@ -196,6 +197,39 @@ describe('GatewayClient', () => {
 
     client.dispose()
     expect(onStatus).toHaveBeenCalledWith('disconnected')
+  })
+
+  it('connect challenge times out and triggers reconnection', async () => {
+    const client = new GatewayClient('http://localhost:18789', 'tok', onStatus)
+    client.connect()
+    lastWs._triggerOpen()
+
+    // Gateway sends challenge, client responds — but server never replies
+    lastWs._triggerMessage({ type: 'event', event: 'connect.challenge' })
+    expect(lastWs.send).toHaveBeenCalledTimes(1)
+
+    // Advance past the connect challenge timeout
+    vi.advanceTimersByTime(CONNECT_CHALLENGE_TIMEOUT_MS)
+    await vi.advanceTimersByTimeAsync(0) // flush .catch microtask
+
+    expect(onStatus).toHaveBeenCalledWith('error')
+    expect(lastWs.close).toHaveBeenCalled()
+  })
+
+  it('connect challenge timeout is cleared on successful auth', async () => {
+    const client = new GatewayClient('http://localhost:18789', 'tok', onStatus)
+    client.connect()
+
+    simulateFullConnect()
+    await vi.advanceTimersByTimeAsync(0)
+
+    // Advance well past timeout — should not trigger error
+    vi.advanceTimersByTime(CONNECT_CHALLENGE_TIMEOUT_MS * 2)
+    await vi.advanceTimersByTimeAsync(0)
+
+    const statusCalls = onStatus.mock.calls.map((c: unknown[]) => c[0] as ConnectionStatus)
+    expect(statusCalls).not.toContain('error')
+    expect(statusCalls).toContain('connected')
   })
 
   it('onclose triggers disconnected status', () => {

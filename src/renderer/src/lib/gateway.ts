@@ -1,3 +1,5 @@
+import { CONNECT_CHALLENGE_TIMEOUT_MS } from './constants'
+
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
 
 type StatusListener = (status: ConnectionStatus) => void
@@ -115,7 +117,15 @@ export class GatewayClient {
     const id = crypto.randomUUID()
 
     const pending = new Promise<unknown>((resolve, reject) => {
-      this.pending.set(id, { resolve, reject })
+      const timer = setTimeout(() => {
+        this.pending.delete(id)
+        reject(new Error('Connect challenge timeout'))
+      }, CONNECT_CHALLENGE_TIMEOUT_MS)
+
+      this.pending.set(id, {
+        resolve: (v) => { clearTimeout(timer); resolve(v) },
+        reject: (e) => { clearTimeout(timer); reject(e) },
+      })
     })
 
     this.ws.send(JSON.stringify({
@@ -142,18 +152,21 @@ export class GatewayClient {
         this.authenticated = true
         console.log('[GatewayClient] authenticated ✓, flushing', this.sendQueue.length, 'queued calls')
         this.statusListener('connected')
-        // Flush queued calls
-        const queued = [...this.sendQueue]
-        this.sendQueue = []
-        for (const msg of queued) {
-          this.ws?.send(msg)
-        }
+        this.flushSendQueue()
       })
       .catch((err) => {
         console.error('[GatewayClient] connect failed:', err?.message)
         this.statusListener('error')
         this.ws?.close()
       })
+  }
+
+  private flushSendQueue(): void {
+    const queued = [...this.sendQueue]
+    this.sendQueue = []
+    for (const msg of queued) {
+      this.ws?.send(msg)
+    }
   }
 
   call<T = unknown>(method: string, params: Record<string, unknown> = {}, timeoutMs = 10_000): Promise<T> {
