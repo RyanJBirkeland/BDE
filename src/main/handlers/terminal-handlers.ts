@@ -6,12 +6,13 @@ let pty: typeof import('node-pty') | null = null
 try { pty = require('node-pty') } catch { /* terminal unavailable */ }
 
 const terminals = new Map<number, ReturnType<NonNullable<typeof pty>['spawn']>>()
+const terminalWindows = new Map<number, number>() // terminalId -> BrowserWindow.id
 let termId = 0
 
 export function registerTerminalHandlers(): void {
   safeHandle(
     'terminal:create',
-    (_e, { cols, rows, shell }: { cols: number; rows: number; shell?: string }) => {
+    (event, { cols, rows, shell }: { cols: number; rows: number; shell?: string }) => {
       if (!pty) throw new Error('Terminal unavailable: node-pty failed to load')
       const id = ++termId
       const shellPath = shell || process.env.SHELL || '/bin/zsh'
@@ -23,12 +24,19 @@ export function registerTerminalHandlers(): void {
         env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>
       })
       terminals.set(id, p)
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (win) terminalWindows.set(id, win.id)
       p.onData((data) => {
-        BrowserWindow.getAllWindows()[0]?.webContents.send(`terminal:data:${id}`, data)
+        const winId = terminalWindows.get(id)
+        const targetWin = winId ? BrowserWindow.getAllWindows().find(w => w.id === winId) : undefined
+        targetWin?.webContents.send(`terminal:data:${id}`, data)
       })
       p.onExit(() => {
+        const winId = terminalWindows.get(id)
+        const targetWin = winId ? BrowserWindow.getAllWindows().find(w => w.id === winId) : undefined
+        targetWin?.webContents.send(`terminal:exit:${id}`)
         terminals.delete(id)
-        BrowserWindow.getAllWindows()[0]?.webContents.send(`terminal:exit:${id}`)
+        terminalWindows.delete(id)
       })
       return id
     }
