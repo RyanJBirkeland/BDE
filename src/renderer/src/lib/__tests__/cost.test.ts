@@ -33,8 +33,8 @@ describe('calcCost', () => {
 
   it('calculates correct cost for haiku', () => {
     const cost = calcCost(1_000_000, 1_000_000, 'haiku')
-    // input: 1M tokens × $1/1M = $1, output: 1M tokens × $5/1M = $5
-    expect(cost).toBeCloseTo(6, 5)
+    // input: 1M tokens × $0.80/1M = $0.80, output: 1M tokens × $4.00/1M = $4.00
+    expect(cost).toBeCloseTo(4.8, 5)
   })
 
   it('calculates correct cost for opus', () => {
@@ -51,5 +51,17 @@ describe('calcCost', () => {
     const cost = calcCost(100, 50, 'sonnet')
     // 100 × (3/1M) + 50 × (15/1M) = 0.0003 + 0.00075 = 0.00105
     expect(cost).toBeCloseTo(0.00105, 10)
+  })
+
+  it('includes cache read and cache create costs', () => {
+    const cost = calcCost(0, 0, 'sonnet', 1_000_000, 1_000_000)
+    // cacheRead: 1M × $0.30/1M = $0.30, cacheWrite: 1M × $3.75/1M = $3.75
+    expect(cost).toBeCloseTo(4.05, 5)
+  })
+
+  it('defaults cache costs to 0 when omitted', () => {
+    const withCache = calcCost(1_000_000, 1_000_000, 'sonnet', 0, 0)
+    const withoutCache = calcCost(1_000_000, 1_000_000, 'sonnet')
+    expect(withCache).toBe(withoutCache)
   })
 })

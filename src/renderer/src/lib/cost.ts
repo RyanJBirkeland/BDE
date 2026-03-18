@@ -1,9 +1,16 @@
 export type ModelKey = 'haiku' | 'sonnet' | 'opus'
 
-export const MODEL_PRICING: Record<ModelKey, { input: number; output: number }> = {
-  haiku: { input: 1 / 1_000_000, output: 5 / 1_000_000 },
-  sonnet: { input: 3 / 1_000_000, output: 15 / 1_000_000 },
-  opus: { input: 15 / 1_000_000, output: 75 / 1_000_000 },
+/**
+ * Anthropic per-token pricing (USD).
+ * Source: https://docs.anthropic.com/en/docs/about-claude/models
+ * PRICING_VERSION: 2025-06-20
+ */
+export const PRICING_VERSION = '2025-06-20'
+
+export const MODEL_PRICING: Record<ModelKey, { input: number; output: number; cacheRead?: number; cacheWrite?: number }> = {
+  haiku:  { input: 0.80 / 1_000_000, output: 4.00 / 1_000_000, cacheRead: 0.08 / 1_000_000, cacheWrite: 1.00 / 1_000_000 },
+  sonnet: { input: 3.00 / 1_000_000, output: 15.00 / 1_000_000, cacheRead: 0.30 / 1_000_000, cacheWrite: 3.75 / 1_000_000 },
+  opus:   { input: 15.00 / 1_000_000, output: 75.00 / 1_000_000, cacheRead: 1.50 / 1_000_000, cacheWrite: 18.75 / 1_000_000 },
 }
 
 export function resolveModel(model: string): ModelKey {
@@ -17,18 +24,14 @@ export function calcCost(
   input: number,
   output: number,
   modelKey: ModelKey,
-  cacheReadTokens = 0,
-  cacheCreateTokens = 0
+  cacheRead = 0,
+  cacheCreate = 0,
 ): number {
   const p = MODEL_PRICING[modelKey]
-  const inputRate = p.input
-  const outputRate = p.output
-  const cacheReadRate = inputRate * 0.1
-  const cacheCreateRate = inputRate * 1.25
   return (
-    input * inputRate +
-    output * outputRate +
-    cacheReadTokens * cacheReadRate +
-    cacheCreateTokens * cacheCreateRate
+    input * p.input +
+    output * p.output +
+    cacheRead * (p.cacheRead ?? p.input) +
+    cacheCreate * (p.cacheWrite ?? p.input)
   )
 }
