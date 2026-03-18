@@ -13,7 +13,22 @@ export function resolveModel(model: string): ModelKey {
   return 'sonnet'
 }
 
-export function calcCost(input: number, output: number, modelKey: ModelKey): number {
+export function calcCost(
+  input: number,
+  output: number,
+  modelKey: ModelKey,
+  cacheReadTokens = 0,
+  cacheCreateTokens = 0
+): number {
   const p = MODEL_PRICING[modelKey]
-  return input * p.input + output * p.output
+  const inputRate = p.input
+  const outputRate = p.output
+  const cacheReadRate = inputRate * 0.1
+  const cacheCreateRate = inputRate * 1.25
+  return (
+    input * inputRate +
+    output * outputRate +
+    cacheReadTokens * cacheReadRate +
+    cacheCreateTokens * cacheCreateRate
+  )
 }

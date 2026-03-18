@@ -174,8 +174,8 @@ function App(): React.JSX.Element {
   const runningCount = useSessionsStore((s) => s.runningCount)
   const sessions = useSessionsStore((s) => s.sessions)
   const totalCost = useMemo(() => sessions.reduce((sum, s) => {
-    const input = s.contextTokens ?? 0
-    const output = Math.max(0, (s.totalTokens ?? 0) - (s.contextTokens ?? 0))
+    const input = s.inputTokens ?? 0
+    const output = s.outputTokens ?? 0
     return sum + calcCost(input, output, resolveModel(s.model))
   }, 0), [sessions])
 

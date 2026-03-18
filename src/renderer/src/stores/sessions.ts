@@ -17,7 +17,9 @@ export interface AgentSession {
   lastChannel: string
   updatedAt: number
   totalTokens: number
-  contextTokens: number
+  contextWindowSize: number
+  inputTokens: number
+  outputTokens: number
   abortedLastRun: boolean
 }
 

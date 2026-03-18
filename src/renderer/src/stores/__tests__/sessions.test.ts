@@ -25,7 +25,9 @@ function makeSession(overrides: Partial<AgentSession> = {}): AgentSession {
     lastChannel: 'cli',
     updatedAt: Date.now(),
     totalTokens: 1000,
-    contextTokens: 500,
+    contextWindowSize: 500,
+    inputTokens: 400,
+    outputTokens: 600,
     abortedLastRun: false,
     ...overrides,
   }
