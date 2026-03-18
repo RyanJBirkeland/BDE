@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, session } from 'electron'
 import { join } from 'path'
-import { homedir } from 'os'
 import { watch, type FSWatcher } from 'fs'
+import { BDE_DB_PATH } from './paths'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerAgentHandlers } from './handlers/agent-handlers'
@@ -21,7 +21,7 @@ import { startPrPoller, stopPrPoller } from './pr-poller'
 const DEBOUNCE_MS = 500
 
 function startDbWatcher(): () => void {
-  const dbPath = join(homedir(), '.bde', 'bde.db')
+  const dbPath = BDE_DB_PATH
   const walPath = dbPath + '-wal'
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 

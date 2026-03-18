@@ -1,10 +1,6 @@
 import Database from 'better-sqlite3'
-import { join } from 'path'
-import { homedir } from 'os'
 import { mkdirSync } from 'fs'
-
-const DB_DIR = join(homedir(), '.bde')
-const DB_PATH = join(DB_DIR, 'bde.db')
+import { BDE_DIR as DB_DIR, BDE_DB_PATH as DB_PATH } from './paths'
 
 let _db: Database.Database | null = null
 

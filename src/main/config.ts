@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
-import { homedir } from 'os'
 import { dialog, app } from 'electron'
+import { OPENCLAW_CONFIG_PATH } from './paths'
 
 interface GatewayConfig {
   url: string
@@ -14,10 +13,9 @@ export interface SupabaseConfig {
 }
 
 export function getSupabaseConfig(): SupabaseConfig | null {
-  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
   let config: Record<string, unknown> = {}
   try {
-    config = JSON.parse(readFileSync(configPath, 'utf-8'))
+    config = JSON.parse(readFileSync(OPENCLAW_CONFIG_PATH, 'utf-8'))
   } catch {
     // config file missing or corrupt
   }
@@ -32,9 +30,8 @@ export function getSupabaseConfig(): SupabaseConfig | null {
 }
 
 export function getGitHubToken(): string | null {
-  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
   try {
-    const raw = readFileSync(configPath, 'utf-8')
+    const raw = readFileSync(OPENCLAW_CONFIG_PATH, 'utf-8')
     const config = JSON.parse(raw)
     return config.githubToken ?? process.env['GITHUB_TOKEN'] ?? null
   } catch {
@@ -43,18 +40,16 @@ export function getGitHubToken(): string | null {
 }
 
 export function saveGatewayConfig(url: string, token: string): void {
-  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
-
   let config: Record<string, unknown> = {}
   try {
-    config = JSON.parse(readFileSync(configPath, 'utf-8'))
+    config = JSON.parse(readFileSync(OPENCLAW_CONFIG_PATH, 'utf-8'))
   } catch {
     // start fresh if file missing or corrupt
   }
 
   config.gatewayUrl = url
   config.gatewayToken = token
-  writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8')
+  writeFileSync(OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8')
   invalidateGatewayConfigCache()
 }
 
@@ -79,10 +74,9 @@ export interface TaskRunnerConfig {
 }
 
 export function getTaskRunnerConfig(): TaskRunnerConfig | null {
-  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
   let config: Record<string, unknown> = {}
   try {
-    config = JSON.parse(readFileSync(configPath, 'utf-8'))
+    config = JSON.parse(readFileSync(OPENCLAW_CONFIG_PATH, 'utf-8'))
   } catch {
     // config file missing or corrupt — fall through to env vars
   }
@@ -100,10 +94,8 @@ export function getGatewayConfig(): GatewayConfig {
     return _configCache
   }
 
-  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
-
   try {
-    const raw = readFileSync(configPath, 'utf-8')
+    const raw = readFileSync(OPENCLAW_CONFIG_PATH, 'utf-8')
     const config = JSON.parse(raw)
 
     const token = config.gatewayToken ?? config.gateway?.auth?.token

@@ -17,10 +17,10 @@ import {
 } from './agent-history'
 import { getTaskRunnerConfig } from './config'
 import { getDb } from './db'
+import { BDE_AGENT_TMP_DIR as LOG_DIR } from './paths'
 
 const execFileAsync = promisify(execFile)
 
-const LOG_DIR = '/tmp/bde-agents'
 const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 const AGENT_BINS = ['claude', 'codex', 'opencode', 'pi', 'aider', 'cursor']
