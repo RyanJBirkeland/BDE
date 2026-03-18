@@ -98,6 +98,38 @@ export interface AgentCostRecord {
   repo: string | null
 }
 
+/** Open PR returned by the main-process PR poller. */
+export interface OpenPr {
+  number: number
+  title: string
+  html_url: string
+  state: string
+  draft: boolean
+  created_at: string
+  updated_at: string
+  head: { ref: string; sha: string }
+  base: { ref: string }
+  user: { login: string }
+  additions: number
+  deletions: number
+  repo: string
+}
+
+export type CheckStatus = 'pending' | 'pass' | 'fail'
+
+export interface CheckRunSummary {
+  status: CheckStatus
+  total: number
+  passed: number
+  failed: number
+  pending: number
+}
+
+export interface PrListPayload {
+  prs: OpenPr[]
+  checks: Record<string, CheckRunSummary>
+}
+
 /** A file attachment queued for sending with a chat message. */
 export interface Attachment {
   path: string

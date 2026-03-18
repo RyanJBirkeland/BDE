@@ -14,6 +14,7 @@ import {
   type PrStatusInput,
   type ConflictFilesInput
 } from '../git'
+import { getLatestPrList, refreshPrList } from '../pr-poller'
 
 export function registerGitHandlers(): void {
   // TODO: AX-S1 — add 'get-repo-paths' to IpcChannelMap
@@ -36,4 +37,8 @@ export function registerGitHandlers(): void {
 
   // --- Conflict file detection ---
   safeHandle('check-conflict-files', (_e, input: ConflictFilesInput) => checkConflictFiles(input))
+
+  // --- Open PR list (main-process poller is the source of truth) ---
+  safeHandle('pr:get-list', () => getLatestPrList() ?? { prs: [], checks: {} })
+  safeHandle('pr:refresh-list', () => refreshPrList())
 }

@@ -149,6 +149,9 @@ Object.defineProperty(window, 'api', {
     saveGatewayConfig: vi.fn().mockResolvedValue(undefined),
     openExternal: vi.fn(),
     pollPrStatuses: vi.fn().mockResolvedValue([]),
+    getPrList: vi.fn().mockResolvedValue({ prs: [], checks: {} }),
+    refreshPrList: vi.fn().mockResolvedValue({ prs: [], checks: {} }),
+    onPrListUpdated: vi.fn().mockReturnValue(() => {}),
     sprint: {
       list: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({}),

@@ -1,19 +1,14 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { CircleCheck, CircleX, Clock, FileCode2 } from 'lucide-react'
-import {
-  listOpenPRs,
-  getCheckRuns,
-  type PullRequest,
-  type CheckRunSummary
-} from '../../lib/github-api'
-import { POLL_PR_LIST_INTERVAL, REPO_OPTIONS } from '../../lib/constants'
-import { timeAgo } from '../../lib/format'
+import type { OpenPr, CheckRunSummary, PrListPayload } from '../../../../shared/types'
 import { EmptyState } from '../ui/EmptyState'
 import { Button } from '../ui/Button'
+import { timeAgo } from '../../lib/format'
+import { REPO_OPTIONS } from '../../lib/constants'
 
 interface PRStationListProps {
-  selectedPr: PullRequest | null
-  onSelectPr: (pr: PullRequest) => void
+  selectedPr: OpenPr | null
+  onSelectPr: (pr: OpenPr) => void
   removedKeys?: Set<string>
 }
 
@@ -47,59 +42,28 @@ function CIBadge({ summary }: { summary: CheckRunSummary | undefined }) {
 }
 
 export function PRStationList({ selectedPr, onSelectPr, removedKeys }: PRStationListProps) {
-  const [prs, setPrs] = useState<PullRequest[]>([])
+  const [prs, setPrs] = useState<OpenPr[]>([])
   const [checks, setChecks] = useState<Record<string, CheckRunSummary>>({})
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const fetchChecks = useCallback(async (prList: PullRequest[]) => {
-    const results = await Promise.all(
-      prList.map(async (pr) => {
-        const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
-        if (!repo) return null
-        try {
-          const summary = await getCheckRuns(repo.owner, repo.label, pr.head.sha)
-          return { key: `${pr.repo}-${pr.number}`, summary }
-        } catch {
-          return null
-        }
-      })
-    )
-    const map: Record<string, CheckRunSummary> = {}
-    for (const r of results) {
-      if (r) map[r.key] = r.summary
-    }
-    setChecks(map)
+  const applyPayload = useCallback((payload: PrListPayload) => {
+    setPrs(payload.prs)
+    setChecks(payload.checks)
+    setLoading(false)
   }, [])
 
-  const load = useCallback(async () => {
-    try {
-      const results = await Promise.all(
-        REPO_OPTIONS.map((r) =>
-          listOpenPRs(r.owner, r.label).catch(() => [] as PullRequest[])
-        )
-      )
-      const all = results
-        .flat()
-        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      setPrs(all)
-      setError(null)
-      fetchChecks(all)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load PRs')
-    } finally {
-      setLoading(false)
-    }
-  }, [fetchChecks])
-
+  // Subscribe to main-process push events
   useEffect(() => {
-    load()
-    intervalRef.current = setInterval(load, POLL_PR_LIST_INTERVAL)
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [load])
+    // Seed with latest cached data
+    window.api.getPrList().then(applyPayload)
+    // Listen for future updates
+    return window.api.onPrListUpdated(applyPayload)
+  }, [applyPayload])
+
+  const handleRefresh = useCallback(() => {
+    setLoading(true)
+    window.api.refreshPrList().then(applyPayload)
+  }, [applyPayload])
 
   return (
     <div className="pr-station-list">
@@ -108,12 +72,10 @@ export function PRStationList({ selectedPr, onSelectPr, removedKeys }: PRStation
         <span className="pr-station-list__count bde-count-badge">
           {prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).length}
         </span>
-        <Button variant="icon" size="sm" onClick={load} disabled={loading} title="Refresh">
+        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh">
           &#x21bb;
         </Button>
       </div>
-
-      {error && <div className="bde-error-banner">{error}</div>}
 
       <div className="pr-station-list__rows">
         {loading && prs.length === 0 ? (

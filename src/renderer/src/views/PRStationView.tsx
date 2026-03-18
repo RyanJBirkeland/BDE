@@ -4,19 +4,20 @@ import { PRStationList } from '../components/pr-station/PRStationList'
 import { PRStationDetail } from '../components/pr-station/PRStationDetail'
 import { PRStationActions } from '../components/pr-station/PRStationActions'
 import { PRStationDiff } from '../components/pr-station/PRStationDiff'
-import { getPrMergeability, type PullRequest, type PrMergeability } from '../lib/github-api'
+import { getPrMergeability, type PrMergeability } from '../lib/github-api'
+import type { OpenPr } from '../../../shared/types'
 import { REPO_OPTIONS } from '../lib/constants'
 
 type DetailTab = 'info' | 'diff'
 
 export default function PRStationView() {
-  const [selectedPr, setSelectedPr] = useState<PullRequest | null>(null)
+  const [selectedPr, setSelectedPr] = useState<OpenPr | null>(null)
   const [removedKeys, setRemovedKeys] = useState<Set<string>>(new Set())
   const [mergeability, setMergeability] = useState<PrMergeability | null>(null)
   const [activeTab, setActiveTab] = useState<DetailTab>('info')
 
   const handleRemovePr = useCallback(
-    (pr: PullRequest) => {
+    (pr: OpenPr) => {
       setRemovedKeys((prev) => new Set(prev).add(`${pr.repo}-${pr.number}`))
       setSelectedPr(null)
     },

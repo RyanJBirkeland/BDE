@@ -4,17 +4,17 @@ import { Button } from '../ui/Button'
 import {
   mergePR,
   closePR,
-  type PullRequest,
   type MergeMethod,
   type PrMergeability
 } from '../../lib/github-api'
+import type { OpenPr } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
 import { REPO_OPTIONS } from '../../lib/constants'
 
 interface PRStationActionsProps {
-  pr: PullRequest
+  pr: OpenPr
   mergeability: PrMergeability | null
-  onRemovePr: (pr: PullRequest) => void
+  onRemovePr: (pr: OpenPr) => void
 }
 
 const MERGE_STRATEGIES: { value: MergeMethod; label: string }[] = [

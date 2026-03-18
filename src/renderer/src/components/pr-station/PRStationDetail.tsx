@@ -4,17 +4,17 @@ import {
   getPRDetail,
   getPRFiles,
   getCheckRunsList,
-  type PullRequest,
   type PRDetail as PRDetailData,
   type PRFile,
   type CheckRun
 } from '../../lib/github-api'
+import type { OpenPr } from '../../../../shared/types'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { renderMarkdown } from '../../lib/render-markdown'
 import { PRStationChecks } from './PRStationChecks'
 
 interface PRStationDetailProps {
-  pr: PullRequest
+  pr: OpenPr
 }
 
 function FileStatusIcon({ status }: { status: string }) {

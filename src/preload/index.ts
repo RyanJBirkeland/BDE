@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
+import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, PrListPayload, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
@@ -163,6 +163,15 @@ const api = {
     ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),
   getSessionHistory: (sessionKey: string): Promise<unknown> =>
     ipcRenderer.invoke('gateway:getSessionHistory', sessionKey),
+
+  // Open PR list — main-process poller push events
+  onPrListUpdated: (cb: (payload: PrListPayload) => void): (() => void) => {
+    const listener = (_e: unknown, data: PrListPayload): void => cb(data)
+    ipcRenderer.on('pr:list-updated', listener)
+    return () => ipcRenderer.removeListener('pr:list-updated', listener)
+  },
+  getPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:get-list'),
+  refreshPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:refresh-list'),
 
   // Sprint DB file-watcher push events
   onExternalSprintChange: (cb: () => void): void => {

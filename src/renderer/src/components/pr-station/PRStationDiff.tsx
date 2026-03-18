@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { getPRDiff, type PullRequest } from '../../lib/github-api'
+import { getPRDiff } from '../../lib/github-api'
+import type { OpenPr } from '../../../../shared/types'
 import { parseDiff, type DiffFile } from '../../lib/diff-parser'
 import { REPO_OPTIONS } from '../../lib/constants'
 import DiffViewer from '../diff/DiffViewer'
 
-export function PRStationDiff({ pr }: { pr: PullRequest }) {
+export function PRStationDiff({ pr }: { pr: OpenPr }) {
   const [files, setFiles] = useState<DiffFile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

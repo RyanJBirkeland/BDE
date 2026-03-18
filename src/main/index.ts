@@ -16,6 +16,7 @@ import { registerCostHandlers as registerCostHistoryHandlers } from './handlers/
 import { registerFsHandlers } from './fs'
 import { getDb, closeDb } from './db'
 import { startSprintSseClient, stopSprintSseClient } from './sprint-sse'
+import { startPrPoller, stopPrPoller } from './pr-poller'
 
 const DEBOUNCE_MS = 500
 
@@ -112,6 +113,9 @@ app.whenReady().then(() => {
 
   startSprintSseClient()
   app.on('will-quit', stopSprintSseClient)
+
+  startPrPoller()
+  app.on('will-quit', stopPrPoller)
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

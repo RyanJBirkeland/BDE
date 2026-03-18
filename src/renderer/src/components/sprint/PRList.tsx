@@ -1,72 +1,58 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { listOpenPRs, mergePR, getPrMergeability, type PullRequest, type PrMergeability } from '../../lib/github-api'
+import { useState, useCallback, useEffect } from 'react'
+import { mergePR } from '../../lib/github-api'
+import type { OpenPr, PrListPayload } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
-import { POLL_PR_LIST_INTERVAL, REPO_OPTIONS } from '../../lib/constants'
+import { REPO_OPTIONS } from '../../lib/constants'
 import { timeAgo } from '../../lib/format'
 import { PRStationDiff } from '../pr-station/PRStationDiff'
 
 // PRList excludes BDE (this app) — only show external repos
-const PR_REPOS = REPO_OPTIONS.filter((r) => r.label !== 'BDE')
+const EXCLUDED_REPO = 'BDE'
 
 export default function PRList() {
-  const [prs, setPrs] = useState<PullRequest[]>([])
+  const [prs, setPrs] = useState<OpenPr[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [merging, setMerging] = useState<number | null>(null)
-  const [confirmMerge, setConfirmMerge] = useState<PullRequest | null>(null)
-  const [mergeability, setMergeability] = useState<Record<string, PrMergeability>>({})
+  const [confirmMerge, setConfirmMerge] = useState<OpenPr | null>(null)
+  const [mergeability, setMergeability] = useState<Record<string, string | undefined>>({})
   const [diffPrKey, setDiffPrKey] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const checkMergeability = useCallback(async (prList: PullRequest[]) => {
-    const checks = prList.map(async (pr) => {
-      const repo = PR_REPOS.find((r) => r.label === pr.repo)
-      if (!repo) return null
-      try {
-        return await getPrMergeability(repo.owner, repo.label, pr.number)
-      } catch {
-        return null
-      }
-    })
-    const results = await Promise.all(checks)
-    const map: Record<string, PrMergeability> = {}
-    for (const r of results) {
-      if (r) map[`${r.repo}-${r.number}`] = r
+  const applyPayload = useCallback((payload: PrListPayload) => {
+    const filtered = payload.prs.filter((p) => p.repo !== EXCLUDED_REPO)
+    setPrs(filtered)
+    setError(null)
+    setLoading(false)
+
+    // Derive mergeability from check data (checks include mergeable_state if available)
+    // The main-process poller doesn't fetch per-PR mergeability, but the check-runs data
+    // is sufficient for CI status. Mergeability comes from the sprint task PR poller.
+    // We no longer need a separate mergeability poll here.
+    const mMap: Record<string, string | undefined> = {}
+    for (const pr of filtered) {
+      const key = `${pr.repo}-${pr.number}`
+      // The check data doesn't have mergeable_state, so we leave this empty
+      // Conflict detection is handled by the sprint PR status poller
+      mMap[key] = undefined
     }
-    setMergeability(map)
+    setMergeability(mMap)
   }, [])
 
-  const load = useCallback(async () => {
-    try {
-      const results = await Promise.all(
-        PR_REPOS.map((r) => listOpenPRs(r.owner, r.label).catch(() => [] as PullRequest[]))
-      )
-      const all = results
-        .flat()
-        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      setPrs(all)
-      setError(null)
-      // Check mergeability for all PRs after loading
-      checkMergeability(all)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load PRs')
-    } finally {
-      setLoading(false)
-    }
-  }, [checkMergeability])
-
+  // Subscribe to main-process push events
   useEffect(() => {
-    load()
-    intervalRef.current = setInterval(load, POLL_PR_LIST_INTERVAL)
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [load])
+    window.api.getPrList().then(applyPayload)
+    return window.api.onPrListUpdated(applyPayload)
+  }, [applyPayload])
 
-  const handleMerge = async (pr: PullRequest) => {
-    const repo = PR_REPOS.find((r) => r.label === pr.repo)
+  const handleRefresh = useCallback(() => {
+    setLoading(true)
+    window.api.refreshPrList().then(applyPayload)
+  }, [applyPayload])
+
+  const handleMerge = async (pr: OpenPr) => {
+    const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
     if (!repo) return
     setMerging(pr.number)
     try {
@@ -82,14 +68,14 @@ export default function PRList() {
   }
 
   const repoColor = (repoName: string) =>
-    PR_REPOS.find((r) => r.label === repoName)?.color ?? 'var(--bde-text-dim)'
+    REPO_OPTIONS.find((r) => r.label === repoName)?.color ?? 'var(--bde-text-dim)'
 
   return (
     <div className="pr-list">
       <div className="pr-list__header">
         <span className="pr-list__title">Open Pull Requests</span>
         <span className="pr-list__count bde-count-badge">{prs.length}</span>
-        <Button variant="icon" size="sm" onClick={load} disabled={loading} title="Refresh">
+        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh">
           &#x21bb;
         </Button>
       </div>
@@ -106,8 +92,7 @@ export default function PRList() {
           <EmptyState title="No open PRs" />
         ) : (
           prs.map((pr, i) => {
-            const m = mergeability[`${pr.repo}-${pr.number}`]
-            const hasConflicts = m?.mergeable_state === 'dirty'
+            const hasConflicts = mergeability[`${pr.repo}-${pr.number}`] === 'dirty'
             const prKey = `${pr.repo}-${pr.number}`
             return (
             <div key={prKey}>

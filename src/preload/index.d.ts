@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
+import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, PrListPayload, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
 export type { AgentCostRecord, AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
@@ -118,6 +118,11 @@ declare global {
       // Gateway RPC
       invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
       getSessionHistory: (sessionKey: string) => Promise<unknown>
+
+      // Open PR list — main-process poller push events
+      onPrListUpdated: (cb: (payload: PrListPayload) => void) => () => void
+      getPrList: () => Promise<PrListPayload>
+      refreshPrList: () => Promise<PrListPayload>
 
       // Sprint DB file-watcher push events
       onExternalSprintChange: (cb: () => void) => void
