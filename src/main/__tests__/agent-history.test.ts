@@ -32,7 +32,15 @@ vi.mock('../db', () => {
             log_path     TEXT,
             started_at   TEXT NOT NULL,
             finished_at  TEXT,
-            exit_code    INTEGER
+            exit_code    INTEGER,
+            source       TEXT DEFAULT 'external',
+            cost_usd     REAL,
+            tokens_in    INTEGER,
+            tokens_out   INTEGER,
+            cache_read   INTEGER,
+            cache_create INTEGER,
+            duration_ms  INTEGER,
+            num_turns    INTEGER
           );
           CREATE INDEX IF NOT EXISTS idx_agent_runs_pid    ON agent_runs(pid);
           CREATE INDEX IF NOT EXISTS idx_agent_runs_status ON agent_runs(status);
@@ -66,12 +74,6 @@ describe('agent-history (SQLite)', () => {
     const { getDb } = await import('../db')
     const db = getDb()
     db.exec('DELETE FROM agent_runs')
-
-    // Ensure source column exists
-    const columns = db.prepare("PRAGMA table_info('agent_runs')").all() as { name: string }[]
-    if (!columns.some((c) => c.name === 'source')) {
-      db.exec("ALTER TABLE agent_runs ADD COLUMN source TEXT DEFAULT 'external'")
-    }
 
     // Re-import with fresh state
     agentHistory = await import('../agent-history')
