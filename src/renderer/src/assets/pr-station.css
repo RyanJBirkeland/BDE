@@ -38,7 +38,7 @@
   padding: 12px 16px;
 }
 
-.pr-station__detail-placeholder,
+.pr-station__detail-placeholder {
   overflow: auto;
 }
 
