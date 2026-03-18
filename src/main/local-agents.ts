@@ -6,8 +6,7 @@
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import { randomUUID } from 'crypto'
-import { readFileSync } from 'fs'
-import { readdir, stat, unlink, appendFile, open } from 'fs/promises'
+import { readdir, stat, unlink, appendFile, open, readFile } from 'fs/promises'
 import { join, dirname, basename as pathBasename } from 'path'
 import { validateLogPath } from './fs'
 import {
@@ -227,9 +226,9 @@ export interface AgentCost {
   numTurns: number
 }
 
-export function extractAgentCost(logPath: string): AgentCost | null {
+export async function extractAgentCost(logPath: string): Promise<AgentCost | null> {
   try {
-    const content = readFileSync(logPath, 'utf-8')
+    const content = await readFile(logPath, 'utf-8')
     const lines = content.split('\n')
 
     for (let i = lines.length - 1; i >= 0; i--) {
@@ -351,8 +350,7 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
     appendFile(logPath, chunk.toString(), 'utf-8').catch(() => {})
   })
 
-  child.on('exit', async (code, signal) => {
-    if (child.pid) activeAgentProcesses.delete(child.pid)
+  child.on('close', async (code, signal) => {
     activeAgentsById.delete(id)
     const status = signal === 'SIGTERM' ? 'cancelled' : code === 0 ? 'done' : 'failed'
     await updateAgentMeta(id, {
@@ -360,13 +358,10 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
       exitCode: code,
       status
     })
-    // 100ms delay to ensure stdout is fully flushed to log file
-    setTimeout(() => {
-      const cost = extractAgentCost(logPath)
-      if (cost) {
-        updateAgentRunCost(id, cost)
-      }
-    }, 100)
+    const cost = await extractAgentCost(logPath)
+    if (cost) {
+      await updateAgentRunCost(id, cost)
+    }
   })
 
   child.unref()
