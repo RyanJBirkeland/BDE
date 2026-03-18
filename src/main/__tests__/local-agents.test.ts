@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { EventEmitter } from 'events'
 import { execFile, spawn } from 'child_process'
-import { readdir, stat, unlink, readFile } from 'fs/promises'
+import { readdir, stat, unlink, appendFile, open } from 'fs/promises'
 
 // --- Module mocks ---
 
@@ -15,6 +15,8 @@ vi.mock('fs/promises', () => ({
   stat: vi.fn(),
   unlink: vi.fn(),
   readFile: vi.fn(),
+  appendFile: vi.fn().mockResolvedValue(undefined),
+  open: vi.fn(),
 }))
 
 vi.mock('../agent-history', () => ({
@@ -40,12 +42,12 @@ import {
   evictStaleCwdCache,
   reconcileStaleAgents,
   _resetReconcileThrottle,
+  _resetProcessCache,
 } from '../local-agents'
 import type { PsCandidate } from '../local-agents'
 import {
   createAgentRecord,
   updateAgentMeta,
-  appendLog,
   listAgents,
 } from '../agent-history'
 
@@ -101,6 +103,7 @@ describe('local-agents.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     _resetReconcileThrottle()
+    _resetProcessCache()
   })
 
   // ── scanAgentProcesses ─────────────────────────────────────────────
@@ -555,7 +558,7 @@ describe('local-agents.ts', () => {
       expect(args[args.indexOf('--model') + 1]).toBe('claude-sonnet-4-5')
     })
 
-    it('pipes stdout and stderr chunks to appendAgentLog', async () => {
+    it('pipes stdout and stderr chunks to appendFile', async () => {
       const mockChild = createMockChild(5011)
       vi.mocked(spawn).mockReturnValue(mockChild as never)
 
@@ -564,8 +567,8 @@ describe('local-agents.ts', () => {
       mockChild.stdout.emit('data', Buffer.from('stdout chunk'))
       mockChild.stderr.emit('data', Buffer.from('stderr chunk'))
 
-      expect(appendLog).toHaveBeenCalledWith(expect.any(String), 'stdout chunk')
-      expect(appendLog).toHaveBeenCalledWith(expect.any(String), 'stderr chunk')
+      expect(appendFile).toHaveBeenCalledWith(expect.any(String), 'stdout chunk', 'utf-8')
+      expect(appendFile).toHaveBeenCalledWith(expect.any(String), 'stderr chunk', 'utf-8')
     })
 
     it('sets status "done" on exit code 0', async () => {
@@ -667,9 +670,23 @@ describe('local-agents.ts', () => {
   // ── tailAgentLog ───────────────────────────────────────────────────
 
   describe('tailAgentLog', () => {
+    /** Create a mock file handle that reads from `content` */
+    function mockFileHandle(content: Buffer) {
+      const mockFh = {
+        stat: vi.fn().mockResolvedValue({ size: content.length }),
+        read: vi.fn().mockImplementation((buf: Buffer, offset: number, length: number, position: number) => {
+          content.copy(buf, offset, position, position + length)
+          return Promise.resolve({ bytesRead: length })
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      }
+      vi.mocked(open).mockResolvedValue(mockFh as never)
+      return mockFh
+    }
+
     it('reads full file when fromByte is 0', async () => {
       const buf = Buffer.from('line1\nline2\n')
-      vi.mocked(readFile).mockResolvedValue(buf as never)
+      mockFileHandle(buf)
 
       const result = await tailAgentLog({ logPath: '/tmp/bde-agents/test.log' })
 
@@ -679,7 +696,7 @@ describe('local-agents.ts', () => {
 
     it('reads partial file from byte offset', async () => {
       const buf = Buffer.from('line1\nline2\n')
-      vi.mocked(readFile).mockResolvedValue(buf as never)
+      mockFileHandle(buf)
 
       const result = await tailAgentLog({ logPath: '/tmp/bde-agents/test.log', fromByte: 6 })
 
@@ -688,7 +705,7 @@ describe('local-agents.ts', () => {
     })
 
     it('returns empty content and same offset when file does not exist', async () => {
-      vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))
+      vi.mocked(open).mockRejectedValue(new Error('ENOENT'))
 
       const result = await tailAgentLog({ logPath: '/tmp/bde-agents/missing.log', fromByte: 42 })
 

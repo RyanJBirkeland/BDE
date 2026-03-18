@@ -5,6 +5,9 @@ import { safeHandle } from '../ipc-utils'
 let pty: typeof import('node-pty') | null = null
 try { pty = require('node-pty') } catch { /* terminal unavailable */ }
 
+/** @internal — inject mock pty for testing (vi.mock cannot intercept CJS require) */
+export function _setPty(mock: typeof import('node-pty') | null): void { pty = mock }
+
 const terminals = new Map<number, ReturnType<NonNullable<typeof pty>['spawn']>>()
 const terminalWindows = new Map<number, number>() // terminalId -> BrowserWindow.id
 let termId = 0

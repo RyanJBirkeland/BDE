@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { join, resolve } from 'path'
-import { homedir } from 'os'
+import { homedir, tmpdir } from 'os'
 import { validateMemoryPath, validateLogPath, readMemoryFile } from '../fs'
 
 vi.mock('fs/promises', async (importOriginal) => {
@@ -64,10 +64,10 @@ describe('validateLogPath', () => {
     expect(result).toBe(logPath)
   })
 
-  it('accepts a path under /tmp/', () => {
-    const logPath = '/tmp/bde-agents/agent-1/log.txt'
+  it('accepts a path under tmpdir()', () => {
+    const logPath = join(resolve(tmpdir()), 'bde-agents/agent-1/log.txt')
     const result = validateLogPath(logPath)
-    expect(result).toBe(resolve(logPath))
+    expect(result).toBe(logPath)
   })
 
   it('rejects path traversal escaping agent-logs', () => {

@@ -187,6 +187,12 @@ export function _resetReconcileThrottle(): void {
   _lastReconcileAt = 0
 }
 
+/** @internal — reset process cache for testing only */
+export function _resetProcessCache(): void {
+  _processCache = []
+  _processCachedAt = 0
+}
+
 export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
   const now = Date.now()
   if (now - _processCachedAt < PROCESS_CACHE_TTL) {

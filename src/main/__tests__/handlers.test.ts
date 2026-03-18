@@ -15,8 +15,9 @@ vi.mock('electron', () => ({
     on: vi.fn((channel: string, handler: Function) => onListeners.set(channel, handler)),
   },
   BrowserWindow: {
-    getAllWindows: vi.fn(() => [{ webContents: { send: mockSend } }]),
+    getAllWindows: vi.fn(() => [{ id: 1, webContents: { send: mockSend } }]),
     getFocusedWindow: vi.fn(() => ({ setTitle: mockSetTitle })),
+    fromWebContents: vi.fn(() => ({ id: 1 })),
   },
   shell: { openExternal: vi.fn().mockResolvedValue(undefined) },
   dialog: { showErrorBox: vi.fn() },
@@ -87,8 +88,8 @@ vi.mock('fs', () => ({
   readFileSync: vi.fn().mockReturnValue(''),
 }))
 
-// node-pty mock for terminal handlers — use top-level refs so
-// require('node-pty') in terminal-handlers.ts gets the SAME fn instances
+// node-pty mock for terminal handlers — vi.mock cannot intercept CJS require(),
+// so we inject the mock via _setPty after import
 const mockPtyProcess = {
   onData: vi.fn(),
   onExit: vi.fn(),
@@ -97,8 +98,6 @@ const mockPtyProcess = {
   kill: vi.fn(),
 }
 const mockPtySpawn = vi.fn().mockReturnValue(mockPtyProcess)
-
-vi.mock('node-pty', () => ({ spawn: mockPtySpawn }))
 
 // ---------------------------------------------------------------------------
 // Import the registration functions AFTER mocks are set up
@@ -113,11 +112,11 @@ import { registerGitHandlers } from '../handlers/git-handlers'
 import { registerConfigHandlers } from '../handlers/config-handlers'
 import { registerGatewayHandlers } from '../handlers/gateway-handlers'
 import { registerWindowHandlers } from '../handlers/window-handlers'
-import { registerTerminalHandlers } from '../handlers/terminal-handlers'
+import { registerTerminalHandlers, _setPty } from '../handlers/terminal-handlers'
 import { registerFsHandlers } from '../fs'
 
-// Fake IPC event object
-const fakeEvent = {} as Electron.IpcMainInvokeEvent
+// Fake IPC event object (sender needed by terminal-handlers for BrowserWindow.fromWebContents)
+const fakeEvent = { sender: {} } as Electron.IpcMainInvokeEvent
 
 // Track startup side-effects (captured before beforeEach clears mocks)
 let startupCleanupCalled = false
@@ -146,6 +145,9 @@ describe('IPC handler registration', () => {
   beforeAll(() => {
     handlers.clear()
     onListeners.clear()
+
+    // Inject mock pty before registering terminal handlers (vi.mock can't intercept CJS require)
+    _setPty({ spawn: mockPtySpawn } as never)
 
     registerAgentHandlers()
     registerGitHandlers()
@@ -382,6 +384,9 @@ describe('IPC handler registration', () => {
       await invoke('save-gateway-config', 'ws://new', 'new-token')
       expect(config.saveGatewayConfig).toHaveBeenCalledWith('ws://new', 'new-token')
 
+      // Simulate what real saveGatewayConfig does: next getGatewayConfig returns updated values
+      vi.mocked(config.getGatewayConfig).mockReturnValueOnce({ url: 'ws://new', token: 'new-token' })
+
       const cached = await invoke('get-gateway-config')
       expect(cached).toEqual({ url: 'ws://new', token: 'new-token' })
     })
@@ -392,23 +397,30 @@ describe('IPC handler registration', () => {
       expect(result).toBeNull()
     })
 
-    it('handles getGatewayConfig() throw gracefully during registration', () => {
+    it('handles getGatewayConfig() throw gracefully during registration', async () => {
       // Save all handlers so we can restore after this test
       const savedHandlers = new Map(handlers)
       const savedListeners = new Map(onListeners)
       handlers.clear()
       onListeners.clear()
 
-      vi.mocked(config.getGatewayConfig).mockImplementationOnce(() => {
-        throw new Error('no config')
-      })
+      try {
+        // Registration always succeeds — getGatewayConfig is deferred (called at invocation, not registration)
+        expect(() => registerConfigHandlers()).not.toThrow()
+        expect(handlers.has('get-gateway-config')).toBe(true)
 
-      expect(() => registerConfigHandlers()).not.toThrow()
-      expect(handlers.has('get-gateway-config')).toBe(false)
-
-      // Restore all handlers for subsequent tests
-      for (const [k, v] of savedHandlers) handlers.set(k, v)
-      for (const [k, v] of savedListeners) onListeners.set(k, v)
+        // The error surfaces when the handler is actually invoked
+        vi.mocked(config.getGatewayConfig).mockImplementationOnce(() => {
+          throw new Error('no config')
+        })
+        await expect(invoke('get-gateway-config')).rejects.toThrow('no config')
+      } finally {
+        // Always restore handlers for subsequent tests
+        handlers.clear()
+        onListeners.clear()
+        for (const [k, v] of savedHandlers) handlers.set(k, v)
+        for (const [k, v] of savedListeners) onListeners.set(k, v)
+      }
     })
   })
 

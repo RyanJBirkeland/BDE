@@ -23,7 +23,9 @@
     "test": "vitest run",
     "test:e2e": "npx playwright test --config playwright.config.ts",
     "test:coverage": "vitest run --coverage",
+    "pretest:main": "npm rebuild better-sqlite3 --build-from-source",
     "test:main": "vitest run --config src/main/vitest.main.config.ts",
+    "posttest:main": "npm rebuild better-sqlite3 --runtime=electron --target=39.8.2 --dist-url=https://electronjs.org/headers --build-from-source",
     "test:watch": "vitest"
   },
   "dependencies": {
