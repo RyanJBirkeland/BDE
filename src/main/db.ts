@@ -91,8 +91,11 @@ function runMigrations(db: Database.Database): void {
     // Column already exists — ignore
   }
 
-  // Add cost columns to agent_runs (idempotent)
-  const costColumns = [
+  // Add cost columns to agent_runs (PRAGMA-guarded, idempotent)
+  const agentRunCols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map(
+    (c) => c.name
+  )
+  const costColumns: [string, string][] = [
     ['cost_usd', 'REAL'],
     ['tokens_in', 'INTEGER'],
     ['tokens_out', 'INTEGER'],
@@ -100,12 +103,23 @@ function runMigrations(db: Database.Database): void {
     ['cache_create', 'INTEGER'],
     ['duration_ms', 'INTEGER'],
     ['num_turns', 'INTEGER']
-  ] as const
+  ]
   for (const [col, type] of costColumns) {
-    try {
+    if (!agentRunCols.includes(col)) {
       db.exec(`ALTER TABLE agent_runs ADD COLUMN ${col} ${type}`)
-    } catch {
-      // Column already exists — ignore
     }
   }
+
+  // Create cost_events table for OpenClaw token snapshots (idempotent)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cost_events (
+      id            TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      source        TEXT NOT NULL,
+      session_key   TEXT,
+      model         TEXT NOT NULL,
+      total_tokens  INTEGER NOT NULL DEFAULT 0,
+      cost_usd      REAL,
+      recorded_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    );
+  `)
 }

@@ -80,6 +80,24 @@ export interface CostSummary {
   mostExpensiveTask: { task: string; costUsd: number } | null
 }
 
+/** Camel-cased agent cost record returned by cost:getAgentHistory IPC. */
+export interface AgentCostRecord {
+  id: string
+  model: string | null
+  startedAt: string
+  finishedAt: string | null
+  costUsd: number | null
+  tokensIn: number | null
+  tokensOut: number | null
+  cacheRead: number | null
+  cacheCreate: number | null
+  durationMs: number | null
+  numTurns: number | null
+  taskTitle: string | null
+  prUrl: string | null
+  repo: string | null
+}
+
 /** A file attachment queued for sending with a chat message. */
 export interface Attachment {
   path: string

@@ -5,6 +5,7 @@ import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { POLL_PR_LIST_INTERVAL, REPO_OPTIONS } from '../../lib/constants'
 import { timeAgo } from '../../lib/format'
+import { PRStationDiff } from '../pr-station/PRStationDiff'
 
 // PRList excludes BDE (this app) — only show external repos
 const PR_REPOS = REPO_OPTIONS.filter((r) => r.label !== 'BDE')
@@ -16,6 +17,7 @@ export default function PRList() {
   const [merging, setMerging] = useState<number | null>(null)
   const [confirmMerge, setConfirmMerge] = useState<PullRequest | null>(null)
   const [mergeability, setMergeability] = useState<Record<string, PrMergeability>>({})
+  const [diffPrKey, setDiffPrKey] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const checkMergeability = useCallback(async (prList: PullRequest[]) => {
@@ -106,43 +108,57 @@ export default function PRList() {
           prs.map((pr, i) => {
             const m = mergeability[`${pr.repo}-${pr.number}`]
             const hasConflicts = m?.mergeable_state === 'dirty'
+            const prKey = `${pr.repo}-${pr.number}`
             return (
-            <div key={`${pr.repo}-${pr.number}`} className={`pr-row ${hasConflicts ? 'pr-row--conflicts' : ''}`} style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
-              <span
-                className="pr-row__repo-dot"
-                style={{ background: repoColor(pr.repo) }}
-                title={pr.repo}
-              />
-              {hasConflicts && (
-                <span className="pr-row__conflict-dot" title="Has merge conflicts" />
+            <div key={prKey}>
+              <div className={`pr-row ${hasConflicts ? 'pr-row--conflicts' : ''}`} style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
+                <span
+                  className="pr-row__repo-dot"
+                  style={{ background: repoColor(pr.repo) }}
+                  title={pr.repo}
+                />
+                {hasConflicts && (
+                  <span className="pr-row__conflict-dot" title="Has merge conflicts" />
+                )}
+                <div className="pr-row__info">
+                  <span className="pr-row__title">{pr.title}</span>
+                  <span className="pr-row__meta">
+                    {pr.repo} #{pr.number} &middot; {timeAgo(pr.updated_at)}
+                    {pr.additions !== undefined && ` \u00B7 +${pr.additions} -${pr.deletions}`}
+                    {hasConflicts && <span className="pr-row__conflict-label"> &middot; conflicts</span>}
+                  </span>
+                </div>
+                <div className="pr-row__actions">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="pr-row__btn"
+                    onClick={() => setDiffPrKey(diffPrKey === prKey ? null : prKey)}
+                  >
+                    {diffPrKey === prKey ? 'Hide Diff' : 'Diff'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="pr-row__btn pr-row__btn--open"
+                    onClick={() => window.api.openExternal(pr.html_url)}
+                  >
+                    Open
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="pr-row__btn pr-row__btn--merge"
+                    disabled={merging === pr.number}
+                    onClick={() => setConfirmMerge(pr)}
+                  >
+                    {merging === pr.number ? '...' : 'Merge'}
+                  </Button>
+                </div>
+              </div>
+              {diffPrKey === prKey && (
+                <PRStationDiff pr={pr} />
               )}
-              <div className="pr-row__info">
-                <span className="pr-row__title">{pr.title}</span>
-                <span className="pr-row__meta">
-                  {pr.repo} #{pr.number} &middot; {timeAgo(pr.updated_at)}
-                  {pr.additions !== undefined && ` \u00B7 +${pr.additions} -${pr.deletions}`}
-                  {hasConflicts && <span className="pr-row__conflict-label"> &middot; conflicts</span>}
-                </span>
-              </div>
-              <div className="pr-row__actions">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="pr-row__btn pr-row__btn--open"
-                  onClick={() => window.api.openExternal(pr.html_url)}
-                >
-                  Open
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="pr-row__btn pr-row__btn--merge"
-                  disabled={merging === pr.number}
-                  onClick={() => setConfirmMerge(pr)}
-                >
-                  {merging === pr.number ? '...' : 'Merge'}
-                </Button>
-              </div>
             </div>
             )
           })

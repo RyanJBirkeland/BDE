@@ -110,24 +110,114 @@ export async function getCheckRuns(owner: string, repo: string, sha: string): Pr
   return { status, total, passed, failed, pending }
 }
 
-export async function mergePR(owner: string, repo: string, number: number): Promise<void> {
+export async function getPRDiff(owner: string, repo: string, number: number): Promise<string> {
   const token = await getToken()
-  const res = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/merge`,
-    {
-      method: 'PUT',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ merge_method: 'squash' })
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}`, {
+    headers: {
+      Accept: 'application/vnd.github.diff',
+      Authorization: `Bearer ${token}`
     }
-  )
+  })
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
+  return res.text()
+}
+
+/* ── PR detail, files, and individual check runs ── */
+
+export interface PRDetail {
+  number: number
+  title: string
+  body: string | null
+  draft: boolean
+  mergeable: boolean | null
+  head: { ref: string; sha: string }
+  base: { ref: string }
+  user: { login: string; avatar_url: string }
+  additions: number
+  deletions: number
+  labels: { name: string; color: string }[]
+}
+
+export async function getPRDetail(
+  owner: string,
+  repo: string,
+  number: number
+): Promise<PRDetail> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`)
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
+  const data = (await res.json()) as PRDetail
+  return data
+}
+
+export interface PRFile {
+  filename: string
+  status: string
+  additions: number
+  deletions: number
+}
+
+export async function getPRFiles(
+  owner: string,
+  repo: string,
+  number: number
+): Promise<PRFile[]> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}/files?per_page=100`)
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
+  return (await res.json()) as PRFile[]
+}
+
+export interface CheckRun {
+  name: string
+  status: string
+  conclusion: string | null
+  html_url: string
+}
+
+export async function getCheckRunsList(
+  owner: string,
+  repo: string,
+  sha: string
+): Promise<CheckRun[]> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
+  if (!res.ok) return []
+  const data = (await res.json()) as { check_runs: CheckRun[] }
+  return data.check_runs
+}
+
+export type MergeMethod = 'squash' | 'merge' | 'rebase'
+
+export async function mergePR(
+  owner: string,
+  repo: string,
+  number: number,
+  method: MergeMethod = 'squash',
+  commitTitle?: string
+): Promise<void> {
+  const body: Record<string, string> = { merge_method: method }
+  if (commitTitle) body.commit_title = commitTitle
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}/merge`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(
       `Merge failed: ${res.status} — ${(err as { message?: string }).message ?? 'unknown'}`
+    )
+  }
+}
+
+export async function closePR(owner: string, repo: string, number: number): Promise<void> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ state: 'closed' })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(
+      `Close failed: ${res.status} — ${(err as { message?: string }).message ?? 'unknown'}`
     )
   }
 }

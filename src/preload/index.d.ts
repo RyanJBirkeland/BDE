@@ -1,8 +1,8 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, AgentRunCostRow, CostSummary, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
+import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
-export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
+export type { AgentCostRecord, AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
 
 /** Helper — extracts the result type for a typed IPC channel. */
 type IpcResult<K extends keyof IpcChannelMap> = IpcChannelMap[K]['result']
@@ -68,6 +68,7 @@ declare global {
       cost: {
         summary: () => Promise<CostSummary>
         agentRuns: (limit?: number) => Promise<AgentRunCostRow[]>
+        getAgentHistory: () => Promise<AgentCostRecord[]>
       }
 
       // PR status polling

@@ -14,6 +14,7 @@ import { Button } from '../ui/Button'
 interface PRStationListProps {
   selectedPr: PullRequest | null
   onSelectPr: (pr: PullRequest) => void
+  removedKeys?: Set<string>
 }
 
 const REPO_COLOR: Record<string, string> = Object.fromEntries(
@@ -45,7 +46,7 @@ function CIBadge({ summary }: { summary: CheckRunSummary | undefined }) {
   )
 }
 
-export function PRStationList({ selectedPr, onSelectPr }: PRStationListProps) {
+export function PRStationList({ selectedPr, onSelectPr, removedKeys }: PRStationListProps) {
   const [prs, setPrs] = useState<PullRequest[]>([])
   const [checks, setChecks] = useState<Record<string, CheckRunSummary>>({})
   const [loading, setLoading] = useState(true)
@@ -104,7 +105,9 @@ export function PRStationList({ selectedPr, onSelectPr }: PRStationListProps) {
     <div className="pr-station-list">
       <div className="pr-station-list__header">
         <span className="pr-station-list__title">Open PRs</span>
-        <span className="pr-station-list__count bde-count-badge">{prs.length}</span>
+        <span className="pr-station-list__count bde-count-badge">
+          {prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).length}
+        </span>
         <Button variant="icon" size="sm" onClick={load} disabled={loading} title="Refresh">
           &#x21bb;
         </Button>
@@ -119,10 +122,10 @@ export function PRStationList({ selectedPr, onSelectPr }: PRStationListProps) {
             <div className="sprint-board__skeleton" />
             <div className="sprint-board__skeleton" />
           </div>
-        ) : prs.length === 0 ? (
+        ) : prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).length === 0 ? (
           <EmptyState icon={<FileCode2 size={24} />} title="No open PRs" description="All clear across repos" />
         ) : (
-          prs.map((pr) => {
+          prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).map((pr) => {
             const isSelected = selectedPr?.number === pr.number && selectedPr?.repo === pr.repo
             return (
               <button
