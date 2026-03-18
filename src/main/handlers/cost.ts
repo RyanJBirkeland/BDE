@@ -11,7 +11,7 @@ const GET_AGENT_HISTORY_SQL = `
   LEFT JOIN sprint_tasks st ON ar.task = st.id
   WHERE ar.finished_at IS NOT NULL
   ORDER BY ar.started_at DESC
-  LIMIT 100
+  LIMIT ? OFFSET ?
 `
 
 interface AgentCostRow {
@@ -51,9 +51,11 @@ function rowToRecord(row: AgentCostRow): AgentCostRecord {
 }
 
 export function registerCostHandlers(): void {
-  safeHandle('cost:getAgentHistory', () => {
+  safeHandle('cost:getAgentHistory', (_e, args?: { limit?: number; offset?: number }) => {
+    const limit = args?.limit ?? 100
+    const offset = args?.offset ?? 0
     const db = getDb()
-    const rows = db.prepare(GET_AGENT_HISTORY_SQL).all() as AgentCostRow[]
+    const rows = db.prepare(GET_AGENT_HISTORY_SQL).all(limit, offset) as AgentCostRow[]
     return rows.map(rowToRecord)
   })
 }

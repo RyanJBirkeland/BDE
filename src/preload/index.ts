@@ -96,8 +96,8 @@ const api = {
       ipcRenderer.invoke('cost:summary'),
     agentRuns: (limit?: number): Promise<AgentRunCostRow[]> =>
       ipcRenderer.invoke('cost:agentRuns', { limit: limit ?? 20 }),
-    getAgentHistory: (): Promise<AgentCostRecord[]> =>
-      ipcRenderer.invoke('cost:getAgentHistory'),
+    getAgentHistory: (args?: { limit?: number; offset?: number }): Promise<AgentCostRecord[]> =>
+      ipcRenderer.invoke('cost:getAgentHistory', args),
   },
 
   // PR status polling
