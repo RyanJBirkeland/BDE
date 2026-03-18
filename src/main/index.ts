@@ -11,6 +11,7 @@ import { registerConfigHandlers } from './handlers/config-handlers'
 import { registerGatewayHandlers } from './handlers/gateway-handlers'
 import { registerWindowHandlers } from './handlers/window-handlers'
 import { registerSprintHandlers } from './handlers/sprint'
+import { registerCostHandlers } from './handlers/cost-handlers'
 import { registerFsHandlers } from './fs'
 import { getDb, closeDb } from './db'
 import { startSprintSseClient, stopSprintSseClient } from './sprint-sse'
@@ -108,6 +109,7 @@ app.whenReady().then(() => {
   registerGatewayHandlers()
   registerWindowHandlers()
   registerSprintHandlers()
+  registerCostHandlers()
   registerFsHandlers()
 
   createWindow()

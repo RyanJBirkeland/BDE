@@ -52,6 +52,34 @@ export interface SpawnLocalAgentResult {
   interactive: boolean
 }
 
+/** Row shape for agent runs with cost data (DB query result). */
+export interface AgentRunCostRow {
+  id: string
+  task: string
+  repo: string
+  status: string
+  cost_usd: number | null
+  tokens_in: number | null
+  tokens_out: number | null
+  cache_read: number | null
+  cache_create: number | null
+  duration_ms: number | null
+  num_turns: number | null
+  started_at: string
+  finished_at: string | null
+  pr_url: string | null
+}
+
+/** Aggregated cost summary for the Claude Code panel. */
+export interface CostSummary {
+  tasksToday: number
+  tasksThisWeek: number
+  tasksAllTime: number
+  totalTokensThisWeek: number
+  avgCostPerTask: number | null
+  mostExpensiveTask: { task: string; costUsd: number } | null
+}
+
 /** A file attachment queued for sending with a chat message. */
 export interface Attachment {
   path: string

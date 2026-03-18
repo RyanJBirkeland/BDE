@@ -56,6 +56,13 @@ vi.stubGlobal('api', {
     generatePrompt: vi.fn().mockResolvedValue({ taskId: '', spec: '', prompt: '' }),
     delete: vi.fn().mockResolvedValue({ ok: true }),
   },
+  cost: {
+    summary: vi.fn().mockResolvedValue({
+      tasksToday: 0, tasksThisWeek: 0, tasksAllTime: 0,
+      totalTokensThisWeek: 0, avgCostPerTask: null, mostExpensiveTask: null,
+    }),
+    agentRuns: vi.fn().mockResolvedValue([]),
+  },
   onSprintSseEvent: vi.fn(),
   offSprintSseEvent: vi.fn(),
   terminal: {

@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
+import type { AgentMeta, AgentRunCostRow, CostSummary, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
 export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
@@ -62,6 +62,12 @@ declare global {
         list: (args: { limit?: number; status?: string }) => Promise<AgentMeta[]>
         readLog: (args: { id: string; fromByte?: number }) => Promise<{ content: string; nextByte: number }>
         import: (args: { meta: Partial<AgentMeta>; content: string }) => Promise<AgentMeta>
+      }
+
+      // Cost analytics
+      cost: {
+        summary: () => Promise<CostSummary>
+        agentRuns: (limit?: number) => Promise<AgentRunCostRow[]>
       }
 
       // PR status polling

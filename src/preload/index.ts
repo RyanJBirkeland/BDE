@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
+import type { AgentMeta, AgentRunCostRow, CostSummary, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
@@ -88,6 +88,14 @@ const api = {
       ipcRenderer.invoke('agents:readLog', args),
     import: (args: { meta: Partial<AgentMeta>; content: string }): Promise<AgentMeta> =>
       ipcRenderer.invoke('agents:import', args),
+  },
+
+  // Cost analytics
+  cost: {
+    summary: (): Promise<CostSummary> =>
+      ipcRenderer.invoke('cost:summary'),
+    agentRuns: (limit?: number): Promise<AgentRunCostRow[]> =>
+      ipcRenderer.invoke('cost:agentRuns', { limit: limit ?? 20 }),
   },
 
   // PR status polling
