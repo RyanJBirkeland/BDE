@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui/Button'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { toast } from '../../stores/toasts'
+import { DesignModeContent } from './DesignModeContent'
 
-type TicketMode = 'quick' | 'template'
+type TicketMode = 'quick' | 'template' | 'design'
 
 export type CreateTicketData = {
   title: string
@@ -87,17 +88,25 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
     }
   }, [open])
 
+  const handleClose = useCallback(() => {
+    if (mode === 'design') {
+      if (window.confirm('Discard this design conversation?')) onClose()
+      return
+    }
+    onClose()
+  }, [mode, onClose])
+
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation()
-        onClose()
+        handleClose()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [open, onClose])
+  }, [open, handleClose])
 
   const handleSelectTemplate = (key: string) => {
     if (selectedTemplate === key) {
@@ -184,7 +193,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
     <AnimatePresence>
       {open && (
     <>
-      <div className="new-ticket-overlay" onClick={onClose} />
+      <div className="new-ticket-overlay" onClick={handleClose} />
       <motion.div
         className="new-ticket-modal glass-modal elevation-3"
         variants={VARIANTS.scaleIn}
@@ -195,7 +204,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
       >
         <div className="new-ticket-modal__header">
           <span className="new-ticket-modal__title text-gradient-aurora">NEW TICKET</span>
-          <Button variant="icon" size="sm" onClick={onClose} title="Close">
+          <Button variant="icon" size="sm" onClick={handleClose} title="Close">
             &#x2715;
           </Button>
         </div>
@@ -215,6 +224,13 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
             type="button"
           >
             Template
+          </button>
+          <button
+            className={`new-ticket-modal__tab ${mode === 'design' ? 'new-ticket-modal__tab--active' : ''}`}
+            onClick={() => setMode('design')}
+            type="button"
+          >
+            Design with Paul
           </button>
         </div>
 
@@ -338,21 +354,41 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
             </>
           )}
 
+          {mode === 'design' && (
+            <DesignModeContent
+              repo={repo}
+              priority={priority}
+              onSave={(args) => {
+                onCreate({
+                  title: args.title,
+                  repo: args.repo,
+                  notes: '',
+                  prompt: args.prompt,
+                  spec: args.spec,
+                  priority: args.priority,
+                })
+                onClose()
+              }}
+            />
+          )}
+
         </div>
 
-        <div className="new-ticket-modal__footer">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSubmit}
-            disabled={!title.trim()}
-          >
-            {mode === 'quick' ? 'Save — Paul writes the spec' : 'Save to Backlog'}
-          </Button>
-        </div>
+        {mode !== 'design' && (
+          <div className="new-ticket-modal__footer">
+            <Button variant="ghost" size="sm" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSubmit}
+              disabled={!title.trim()}
+            >
+              {mode === 'quick' ? 'Save — Paul writes the spec' : 'Save to Backlog'}
+            </Button>
+          </div>
+        )}
       </motion.div>
     </>
       )}

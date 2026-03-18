@@ -2253,3 +2253,216 @@ tr:hover .bde-task-table__action-btn--done {
   display: flex;
   gap: 6px;
 }
+
+/* ─── Design Mode ──────────────────────────────────────────────── */
+
+.design-mode {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  height: 520px;
+  overflow: hidden;
+}
+
+/* Chat panel */
+.design-mode__chat {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--bde-border);
+  overflow: hidden;
+}
+
+.design-mode__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.design-mode__message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.design-mode__message--user {
+  align-items: flex-end;
+}
+
+.design-mode__message--assistant {
+  align-items: flex-start;
+}
+
+.design-mode__message-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bde-text-dim);
+}
+
+.design-mode__message-content {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 90%;
+  white-space: pre-wrap;
+}
+
+.design-mode__message--user .design-mode__message-content {
+  background: color-mix(in srgb, var(--bde-accent) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bde-accent) 40%, transparent);
+  color: var(--bde-text);
+}
+
+.design-mode__message--assistant .design-mode__message-content {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text);
+}
+
+/* Typing indicator */
+.design-mode__typing {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.design-mode__typing span {
+  animation: typing-dot 1.2s ease-in-out infinite;
+  opacity: 0.3;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.design-mode__typing span:nth-child(2) { animation-delay: 0.2s; }
+.design-mode__typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-dot {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Input bar */
+.design-mode__input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--bde-border);
+  align-items: flex-end;
+}
+
+.design-mode__input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--bde-border);
+  border-radius: 8px;
+  color: var(--bde-text);
+  font-size: 13px;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+}
+
+.design-mode__input:focus {
+  border-color: var(--bde-accent);
+}
+
+.design-mode__input:disabled {
+  opacity: 0.5;
+}
+
+.design-mode__send-btn {
+  padding: 8px 14px;
+  background: var(--bde-accent);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.design-mode__send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Spec preview panel */
+.design-mode__spec-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.design-mode__spec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.design-mode__spec-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bde-text-dim);
+}
+
+.design-mode__copy-btn {
+  font-size: 11px;
+  background: none;
+  border: 1px solid var(--bde-border);
+  border-radius: 4px;
+  color: var(--bde-text-dim);
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.design-mode__copy-btn:hover {
+  color: var(--bde-text);
+  border-color: var(--bde-text-dim);
+}
+
+.design-mode__spec-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.design-mode__spec-empty {
+  color: var(--bde-text-dim);
+  font-size: 13px;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.design-mode__spec-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--bde-border);
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Override modal width for design mode — needs more space */
+.glass-modal:has(.design-mode) {
+  width: min(900px, 95vw);
+  max-height: 720px;
+}
+
+/* Hide body padding when in design mode — DesignModeContent manages its own layout */
+.glass-modal:has(.design-mode) .new-ticket-modal__body {
+  padding: 0;
+  overflow: hidden;
+}
