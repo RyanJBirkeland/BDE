@@ -21,11 +21,13 @@ import {
   getGitHubToken,
   getGatewayConfig,
   saveGatewayConfig,
+  clearConfigCache,
 } from '../config'
 
 describe('config.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    clearConfigCache()
     delete process.env['VITE_SUPABASE_URL']
     delete process.env['VITE_SUPABASE_ANON_KEY']
     delete process.env['GITHUB_TOKEN']

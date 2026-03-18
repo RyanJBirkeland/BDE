@@ -62,6 +62,11 @@ let _configCache: GatewayConfig | null = null
 let _configCachedAt = 0
 const CONFIG_CACHE_TTL = 60_000
 
+export function clearConfigCache(): void {
+  _configCache = null
+  _configCachedAt = 0
+}
+
 export interface TaskRunnerConfig {
   url: string
   apiKey: string
