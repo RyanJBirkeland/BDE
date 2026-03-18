@@ -13,21 +13,21 @@ import { useCostDataStore } from '../stores/costData'
 
 // ── Formatting helpers ──────────────────────────────────
 
-function formatCost(cost: number | null): string {
-  if (cost === null) return '--'
+function formatCost(cost: number | null | undefined): string {
+  if (cost == null || Number.isNaN(cost)) return '--'
   if (cost >= 1) return `$${cost.toFixed(2)}`
   return `$${cost.toFixed(4)}`
 }
 
-function formatTokens(n: number | null): string {
-  if (n === null) return '--'
+function formatTokens(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return '--'
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return n.toLocaleString()
 }
 
-function formatDuration(ms: number | null): string {
-  if (ms === null) return '--'
+function formatDuration(ms: number | null | undefined): string {
+  if (ms == null || Number.isNaN(ms)) return '--'
   const sec = Math.round(ms / 1000)
   if (sec < 60) return `${sec}s`
   const min = Math.floor(sec / 60)
@@ -44,12 +44,13 @@ function cacheHitPct(row: AgentRunCostRow): number | null {
   const cacheRead = row.cache_read ?? 0
   const tokensIn = row.tokens_in ?? 0
   const total = cacheRead + tokensIn
-  if (total === 0) return null
-  return (cacheRead / total) * 100
+  if (total === 0 || Number.isNaN(total)) return null
+  const pct = (cacheRead / total) * 100
+  return Number.isNaN(pct) ? null : pct
 }
 
-function costTier(cost: number | null): 'green' | 'yellow' | 'red' | 'gray' {
-  if (cost === null) return 'gray'
+function costTier(cost: number | null | undefined): 'green' | 'yellow' | 'red' | 'gray' {
+  if (cost == null || Number.isNaN(cost)) return 'gray'
   if (cost < 0.5) return 'green'
   if (cost <= 1.0) return 'yellow'
   return 'red'
