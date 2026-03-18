@@ -55,6 +55,12 @@ export function saveGatewayConfig(url: string, token: string): void {
   config.gatewayUrl = url
   config.gatewayToken = token
   writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8')
+  invalidateGatewayConfigCache()
+}
+
+export function invalidateGatewayConfigCache(): void {
+  _configCache = null
+  _configCachedAt = 0
 }
 
 // Gateway config cache — avoids readFileSync + JSON.parse on every IPC call
