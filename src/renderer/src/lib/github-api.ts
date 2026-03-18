@@ -111,6 +111,69 @@ export async function getCheckRuns(owner: string, repo: string, sha: string): Pr
 }
 
 export async function getPRDiff(owner: string, repo: string, number: number): Promise<string> {
+/* ── PR detail, files, and individual check runs ── */
+
+export interface PRDetail {
+  number: number
+  title: string
+  body: string | null
+  draft: boolean
+  mergeable: boolean | null
+  head: { ref: string; sha: string }
+  base: { ref: string }
+  user: { login: string; avatar_url: string }
+  additions: number
+  deletions: number
+  labels: { name: string; color: string }[]
+}
+
+export async function getPRDetail(
+  owner: string,
+  repo: string,
+  number: number
+): Promise<PRDetail> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`)
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
+  const data = (await res.json()) as PRDetail
+  return data
+}
+
+export interface PRFile {
+  filename: string
+  status: string
+  additions: number
+  deletions: number
+}
+
+export async function getPRFiles(
+  owner: string,
+  repo: string,
+  number: number
+): Promise<PRFile[]> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}/files?per_page=100`)
+  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
+  return (await res.json()) as PRFile[]
+}
+
+export interface CheckRun {
+  name: string
+  status: string
+  conclusion: string | null
+  html_url: string
+}
+
+export async function getCheckRunsList(
+  owner: string,
+  repo: string,
+  sha: string
+): Promise<CheckRun[]> {
+  const res = await githubFetch(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
+  if (!res.ok) return []
+  const data = (await res.json()) as { check_runs: CheckRun[] }
+  return data.check_runs
+}
+
+export async function mergePR(owner: string, repo: string, number: number): Promise<void> {
   const token = await getToken()
   const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${number}`, {
     headers: {

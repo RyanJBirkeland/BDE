@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { FileCode2 } from 'lucide-react'
 import { PRStationList } from '../components/pr-station/PRStationList'
+import { PRStationDetail } from '../components/pr-station/PRStationDetail'
 import { PRStationActions } from '../components/pr-station/PRStationActions'
 import { PRStationDiff } from '../components/pr-station/PRStationDiff'
 import { getPrMergeability, type PullRequest, type PrMergeability } from '../lib/github-api'
@@ -12,7 +13,7 @@ export default function PRStationView() {
   const [selectedPr, setSelectedPr] = useState<PullRequest | null>(null)
   const [removedKeys, setRemovedKeys] = useState<Set<string>>(new Set())
   const [mergeability, setMergeability] = useState<PrMergeability | null>(null)
-  const [activeTab, setActiveTab] = useState<DetailTab>('diff')
+  const [activeTab, setActiveTab] = useState<DetailTab>('info')
 
   const handleRemovePr = useCallback(
     (pr: PullRequest) => {
@@ -71,6 +72,7 @@ export default function PRStationView() {
             </div>
             {activeTab === 'info' ? (
               <div className="pr-station__detail-content">
+                <PRStationDetail key={`${selectedPr.repo}-${selectedPr.number}`} pr={selectedPr} />
                 <PRStationActions
                   pr={selectedPr}
                   mergeability={mergeability}
