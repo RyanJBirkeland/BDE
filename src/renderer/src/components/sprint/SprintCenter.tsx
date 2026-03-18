@@ -25,6 +25,7 @@ import {
   REPO_OPTIONS,
   WIP_LIMIT_IN_PROGRESS,
 } from '../../lib/constants'
+import { TASK_STATUS, PR_STATUS } from '../../../../shared/constants'
 
 const REPO_LABEL_TO_ENUM: Record<string, string> = {
   BDE: 'bde',
@@ -43,7 +44,7 @@ export default function SprintCenter() {
   const [tasks, setTasks] = useState<SprintTask[]>([])
   const [repoFilter, setRepoFilter] = useState<string | null>(null)
   const [backlogSearch, setBacklogSearch] = useState('')
-  const [selectedTask, setSelectedTask] = useState<SprintTask | null>(null)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [logDrawerTaskId, setLogDrawerTaskId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -52,6 +53,10 @@ export default function SprintCenter() {
   const [generatingIds, setGeneratingIds] = useState<Set<string>>(new Set())
   const [conflictDrawerOpen, setConflictDrawerOpen] = useState(false)
   const [healthDrawerOpen, setHealthDrawerOpen] = useState(false)
+  const selectedTask = useMemo(
+    () => (selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) ?? null : null),
+    [selectedTaskId, tasks]
+  )
   const logDrawerTask = logDrawerTaskId ? (tasks.find((t) => t.id === logDrawerTaskId) ?? null) : null
 
   // Keep notification hook aware of which task's LogDrawer is open
@@ -88,7 +93,7 @@ export default function SprintCenter() {
   }, [])
 
   // Adaptive sprint polling — consistency backstop (SSE handles real-time)
-  const hasActiveTasks = tasks.some((t) => t.status === 'active')
+  const hasActiveTasks = tasks.some((t) => t.status === TASK_STATUS.ACTIVE)
 
   useEffect(() => {
     loadData()
@@ -124,8 +129,8 @@ export default function SprintCenter() {
           const merged = { ...t, ...update }
           // Optimistic: when a task becomes done with a pr_url, ensure pr_status='open'
           // so it immediately appears in Awaiting Review (don't wait for pollPrStatuses)
-          if (merged.status === 'done' && merged.pr_url && !merged.pr_status) {
-            merged.pr_status = 'open'
+          if (merged.status === TASK_STATUS.DONE && merged.pr_url && !merged.pr_status) {
+            merged.pr_status = PR_STATUS.OPEN
           }
           return merged
         })
@@ -169,7 +174,7 @@ export default function SprintCenter() {
       })
       // Write pr_status='merged' back so tasks leave Awaiting Review
       for (const r of results) {
-        if (r.merged) updateTaskRef.current(r.taskId, { pr_status: 'merged' })
+        if (r.merged) updateTaskRef.current(r.taskId, { pr_status: PR_STATUS.MERGED })
       }
 
       // Track merge conflicts
@@ -209,21 +214,18 @@ export default function SprintCenter() {
     const prev = prevTasksRef.current
     if (prev.length === 0) return
     const justDone = tasks.filter(
-      (t) => t.status === 'done' && t.pr_url && prev.find((p) => p.id === t.id)?.status === 'active'
+      (t) => t.status === TASK_STATUS.DONE && t.pr_url && prev.find((p) => p.id === t.id)?.status === TASK_STATUS.ACTIVE
     )
     if (justDone.length > 0) pollPrStatuses(justDone)
   }, [tasks, pollPrStatuses])
 
   const updateTask = useCallback(
     async (taskId: string, patch: Partial<SprintTask>): Promise<void> => {
-      // Optimistic update
+      // Optimistic update — selectedTask derives from tasks automatically
       setTasks((prev) =>
         prev.map((t) =>
           t.id === taskId ? { ...t, ...patch, updated_at: new Date().toISOString() } : t
         )
-      )
-      setSelectedTask((prev) =>
-        prev?.id === taskId ? { ...prev, ...patch, updated_at: new Date().toISOString() } : prev
       )
 
       try {
@@ -247,7 +249,7 @@ export default function SprintCenter() {
         title: data.title,
         repo: repoEnum,
         priority: data.priority,
-        status: 'backlog',
+        status: TASK_STATUS.BACKLOG,
         notes: null,
         spec: data.spec || null,
         prompt: data.prompt || data.title,
@@ -271,7 +273,7 @@ export default function SprintCenter() {
           notes: data.notes || undefined,
           spec: data.spec || undefined,
           priority: data.priority,
-          status: 'backlog',
+          status: TASK_STATUS.BACKLOG,
         })) as SprintTask
 
         // Replace optimistic with server row
@@ -294,7 +296,6 @@ export default function SprintCenter() {
                 templateHint,
               })
               .then((genResult) => {
-                const withSpec = { ...result, spec: genResult.spec || null, prompt: genResult.prompt }
                 setTasks((prev) =>
                   prev.map((t) =>
                     t.id === genResult.taskId
@@ -304,7 +305,7 @@ export default function SprintCenter() {
                 )
                 toast.info(`Spec ready for "${data.title}"`, {
                   action: 'View Spec',
-                  onAction: () => setSelectedTask(withSpec),
+                  onAction: () => setSelectedTaskId(result.id),
                   durationMs: 6000,
                 })
               })
@@ -336,8 +337,8 @@ export default function SprintCenter() {
       const task = tasks.find((t) => t.id === taskId)
       if (!task || task.status === newStatus) return
       // Block transitions into In Progress when WIP limit reached
-      if (newStatus === 'active' && task.status !== 'active') {
-        const activeCount = tasks.filter((t) => t.status === 'active').length
+      if (newStatus === TASK_STATUS.ACTIVE && task.status !== TASK_STATUS.ACTIVE) {
+        const activeCount = tasks.filter((t) => t.status === TASK_STATUS.ACTIVE).length
         if (activeCount >= WIP_LIMIT_IN_PROGRESS) {
           toast.error(`In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS})`)
           return
@@ -366,7 +367,7 @@ export default function SprintCenter() {
 
   const handlePushToSprint = useCallback(
     (task: SprintTask) => {
-      updateTask(task.id, { status: 'queued' })
+      updateTask(task.id, { status: TASK_STATUS.QUEUED })
       toast.success('Pushed to Sprint')
     },
     [updateTask]
@@ -375,8 +376,8 @@ export default function SprintCenter() {
   const handleLaunch = useCallback(
     async (task: SprintTask) => {
       // Block launch when WIP limit reached (unless task is already active)
-      if (task.status !== 'active') {
-        const activeCount = tasks.filter((t) => t.status === 'active').length
+      if (task.status !== TASK_STATUS.ACTIVE) {
+        const activeCount = tasks.filter((t) => t.status === TASK_STATUS.ACTIVE).length
         if (activeCount >= WIP_LIMIT_IN_PROGRESS) {
           toast.error(`In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}) — finish or stop a task first`)
           return
@@ -397,7 +398,7 @@ export default function SprintCenter() {
         })
 
         updateTask(task.id, {
-          status: 'active',
+          status: TASK_STATUS.ACTIVE,
           agent_run_id: result.id,
           started_at: new Date().toISOString(),
         })
@@ -407,6 +408,11 @@ export default function SprintCenter() {
       }
     },
     [tasks, updateTask]
+  )
+
+  const handleViewSpec = useCallback(
+    (task: SprintTask) => setSelectedTaskId(task.id),
+    []
   )
 
   const handleSaveSpec = useCallback(
@@ -422,7 +428,7 @@ export default function SprintCenter() {
         ? 'Mark as done? The open PR will remain open on GitHub.'
         : 'Mark as done?'
       if (!confirm(message)) return
-      updateTask(task.id, { status: 'done', completed_at: new Date().toISOString() })
+      updateTask(task.id, { status: TASK_STATUS.DONE, completed_at: new Date().toISOString() })
       toast.success('Marked as done')
     },
     [updateTask]
@@ -435,7 +441,7 @@ export default function SprintCenter() {
       if (!confirmed) return
       const result = await window.api.killAgent(task.agent_run_id)
       if (result.ok) {
-        updateTask(task.id, { status: 'cancelled' })
+        updateTask(task.id, { status: TASK_STATUS.CANCELLED })
         toast.success('Agent stopped')
       } else {
         toast.error(result.error ?? 'Failed to stop agent')
@@ -454,7 +460,7 @@ export default function SprintCenter() {
           prompt: task.prompt || task.title,
           spec: task.spec || undefined,
           priority: task.priority,
-          status: 'queued',
+          status: TASK_STATUS.QUEUED,
         })
         toast.success('Task re-queued as new ticket')
         loadData()
@@ -477,7 +483,7 @@ export default function SprintCenter() {
       try {
         await window.api.sprint.delete(taskId)
         setTasks((prev) => prev.filter((t) => t.id !== taskId))
-        setSelectedTask(null)
+        setSelectedTaskId(null)
         toast.success('Task deleted')
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to delete task')
@@ -490,7 +496,8 @@ export default function SprintCenter() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setSelectedTask(null)
+        // If SpecDrawer is open, let it handle Escape (unsaved-changes guard)
+        if (selectedTaskId) return
         setLogDrawerTaskId(null)
         setModalOpen(false)
         setConflictDrawerOpen(false)
@@ -512,7 +519,7 @@ export default function SprintCenter() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [selectedTaskId])
 
   const conflictingTaskIds = usePrConflictsStore((s) => s.conflictingTaskIds)
   const conflictingTasks = useMemo(
@@ -661,7 +668,7 @@ export default function SprintCenter() {
               onReorder={handleReorder}
               onPushToSprint={handlePushToSprint}
               onLaunch={handleLaunch}
-              onViewSpec={setSelectedTask}
+              onViewSpec={handleViewSpec}
               onViewOutput={handleViewOutput}
               onMarkDone={handleMarkDone}
               onStop={handleStop}
@@ -671,7 +678,7 @@ export default function SprintCenter() {
               section="done"
               tasks={partition.done}
               onPushToSprint={handlePushToSprint}
-              onViewSpec={setSelectedTask}
+              onViewSpec={handleViewSpec}
               onViewOutput={handleViewOutput}
               onRerun={handleRerun}
             />
@@ -681,7 +688,7 @@ export default function SprintCenter() {
                 section="failed"
                 tasks={partition.failed}
                 onPushToSprint={handlePushToSprint}
-                onViewSpec={setSelectedTask}
+                onViewSpec={handleViewSpec}
                 onViewOutput={handleViewOutput}
               />
             )}
@@ -708,7 +715,7 @@ export default function SprintCenter() {
               section="backlog"
               tasks={filteredBacklog}
               onPushToSprint={handlePushToSprint}
-              onViewSpec={setSelectedTask}
+              onViewSpec={handleViewSpec}
               onViewOutput={handleViewOutput}
               onMarkDone={handleMarkDone}
               onUpdate={handleUpdatePriority}
@@ -721,7 +728,7 @@ export default function SprintCenter() {
 
       <SpecDrawer
         task={selectedTask}
-        onClose={() => setSelectedTask(null)}
+        onClose={() => setSelectedTaskId(null)}
         onSave={handleSaveSpec}
         onLaunch={handleLaunch}
         onPushToSprint={handlePushToSprint}

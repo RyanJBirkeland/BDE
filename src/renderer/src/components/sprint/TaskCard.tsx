@@ -5,6 +5,7 @@ import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { AgentStatusChip } from './AgentStatusChip'
 
+import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from './SprintCenter'
 
 type TaskCardProps = {
@@ -103,12 +104,12 @@ export const TaskCard = memo(function TaskCard({
         )}
       </div>
 
-      {task.status === 'active' && (
+      {task.status === TASK_STATUS.ACTIVE && (
         <AgentStatusChip status="running" startedAt={task.started_at} />
       )}
 
       <div className="task-card__actions">
-        {task.status === 'backlog' && (
+        {task.status === TASK_STATUS.BACKLOG && (
           <>
             <Button variant="primary" size="sm" onClick={() => onPushToSprint(task)}>
               → Sprint
@@ -118,7 +119,7 @@ export const TaskCard = memo(function TaskCard({
             </Button>
           </>
         )}
-        {task.status === 'queued' && (
+        {task.status === TASK_STATUS.QUEUED && (
           <>
             <Button variant="primary" size="sm" onClick={() => onLaunch(task)}>
               Launch
@@ -133,7 +134,7 @@ export const TaskCard = memo(function TaskCard({
             )}
           </>
         )}
-        {task.status === 'active' && (
+        {task.status === TASK_STATUS.ACTIVE && (
           <>
             <Button variant="ghost" size="sm" onClick={() => onViewOutput(task)}>
               View Output
@@ -150,7 +151,7 @@ export const TaskCard = memo(function TaskCard({
             )}
           </>
         )}
-        {task.status === 'done' && (
+        {task.status === TASK_STATUS.DONE && (
           <>
             {task.pr_url && (
               <Button
