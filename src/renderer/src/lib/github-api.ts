@@ -108,6 +108,7 @@ export async function getCheckRuns(owner: string, repo: string, sha: string): Pr
   const total = data.total_count
   const status: CheckStatus = failed > 0 ? 'fail' : pending > 0 ? 'pending' : 'pass'
   return { status, total, passed, failed, pending }
+}
 
 export async function getPRDiff(owner: string, repo: string, number: number): Promise<string> {
   const token = await getToken()
