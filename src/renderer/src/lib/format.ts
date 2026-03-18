@@ -1,4 +1,6 @@
-// All pure functions — no imports from stores, components, or IPC
+// Pure formatting functions — may import from lib/ but not from stores, components, or IPC
+
+import { REPO_OPTIONS } from './constants'
 
 /**
  * Human-readable relative time: "just now", "3m ago", "2h ago", "5d ago".
@@ -68,12 +70,34 @@ export function shortKey(sessionKey: string): string {
 }
 
 /**
- * Format an ISO timestamp to locale time string: "2:34 PM".
+ * Format a timestamp to locale time string: "2:34 PM".
+ * Accepts epoch-ms (number) or an ISO/date string.
  */
-export function formatTime(iso: string): string {
+export function formatTime(ts: number | string): string {
   try {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   } catch {
     return ''
   }
+}
+
+/**
+ * Badge variant for a repo name: BDE → info, feast → warning, life-os → success.
+ */
+export function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' | 'default' {
+  const lower = repo.toLowerCase()
+  if (lower === 'bde') return 'info'
+  if (lower === 'feast') return 'warning'
+  if (lower === 'life-os') return 'success'
+  return 'default'
+}
+
+/**
+ * Repo dot color from REPO_OPTIONS. Case-insensitive lookup.
+ */
+export function repoColor(repoName: string): string {
+  return (
+    REPO_OPTIONS.find((r) => r.label.toLowerCase() === repoName.toLowerCase())?.color ??
+    'var(--bde-text-dim)'
+  )
 }

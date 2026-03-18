@@ -3,7 +3,7 @@ import { GitMerge, ExternalLink, Play, Loader2 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { toast } from '../../stores/toasts'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { repoColor } from '../../lib/format'
 import { parsePrUrl } from '../../../../shared/github'
 import type { SprintTask } from '../../../../shared/types'
 
@@ -19,10 +19,6 @@ interface BranchInfo {
   files: string[]
   loading: boolean
 }
-
-const repoColor = (repoName: string) =>
-  REPO_OPTIONS.find((r) => r.label.toLowerCase() === repoName.toLowerCase())?.color ??
-  'var(--bde-text-dim)'
 
 export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
   const [resolving, setResolving] = useState<string | null>(null)

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { timeAgo, formatElapsed, formatDuration, modelBadgeLabel } from '../format'
+import { timeAgo, formatElapsed, formatDuration, modelBadgeLabel, repoBadgeVariant, repoColor, formatTime } from '../format'
 
 describe('timeAgo', () => {
   afterEach(() => {
@@ -113,5 +113,53 @@ describe('modelBadgeLabel', () => {
 
   it('returns full string when no dash is present', () => {
     expect(modelBadgeLabel('custom')).toBe('custom')
+  })
+})
+
+describe('repoBadgeVariant', () => {
+  it('returns "info" for BDE (case-insensitive)', () => {
+    expect(repoBadgeVariant('BDE')).toBe('info')
+    expect(repoBadgeVariant('bde')).toBe('info')
+  })
+
+  it('returns "warning" for feast', () => {
+    expect(repoBadgeVariant('feast')).toBe('warning')
+    expect(repoBadgeVariant('Feast')).toBe('warning')
+  })
+
+  it('returns "success" for life-os', () => {
+    expect(repoBadgeVariant('life-os')).toBe('success')
+  })
+
+  it('returns "default" for unknown repos', () => {
+    expect(repoBadgeVariant('other')).toBe('default')
+  })
+})
+
+describe('repoColor', () => {
+  it('returns the configured color for known repos', () => {
+    expect(repoColor('BDE')).toBe('#6C8EEF')
+    expect(repoColor('life-os')).toBe('#00D37F')
+    expect(repoColor('feast')).toBe('#FF8A00')
+  })
+
+  it('is case-insensitive', () => {
+    expect(repoColor('bde')).toBe('#6C8EEF')
+  })
+
+  it('returns fallback for unknown repos', () => {
+    expect(repoColor('unknown')).toBe('var(--bde-text-dim)')
+  })
+})
+
+describe('formatTime', () => {
+  it('formats an ISO string to locale time', () => {
+    const result = formatTime('2026-03-16T14:34:00Z')
+    expect(result).toBeTruthy()
+  })
+
+  it('accepts epoch-ms numbers', () => {
+    const result = formatTime(1710600840000)
+    expect(result).toBeTruthy()
   })
 })

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink, ArrowRight, Eye, CheckCircle2, RefreshCw } from 'lucide-react'
 import { Badge } from '../ui/Badge'
-import { timeAgo } from '../../lib/format'
+import { timeAgo, repoBadgeVariant } from '../../lib/format'
 import type { SprintTask } from '../../../../shared/types'
 
 const PRIORITY_OPTIONS = [
@@ -41,14 +41,6 @@ function priorityVariant(priority: number): 'danger' | 'warning' | 'muted' {
   if (priority <= 1) return 'danger'
   if (priority <= 3) return 'warning'
   return 'muted'
-}
-
-function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' | 'default' {
-  const lower = repo.toLowerCase()
-  if (lower === 'bde') return 'info'
-  if (lower === 'feast') return 'warning'
-  if (lower === 'life-os') return 'success'
-  return 'default'
 }
 
 function formatDate(iso: string | null): string {

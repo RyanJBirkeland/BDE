@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { AgentStatusChip } from './AgentStatusChip'
+import { repoBadgeVariant } from '../../lib/format'
 
 import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from './SprintCenter'
@@ -19,14 +20,6 @@ type TaskCardProps = {
   onViewOutput: (task: SprintTask) => void
   onMarkDone?: (task: SprintTask) => void
   onStop?: (task: SprintTask) => void
-}
-
-function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' | 'default' {
-  const lower = repo.toLowerCase()
-  if (lower === 'bde') return 'info'
-  if (lower === 'feast') return 'warning'
-  if (lower === 'life-os') return 'success'
-  return 'default'
 }
 
 export const TaskCard = memo(function TaskCard({

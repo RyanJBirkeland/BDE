@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { formatElapsed } from '../../lib/format'
+import { ElapsedTime } from '../ui/ElapsedTime'
 
 type AgentStatus = 'idle' | 'running' | 'done' | 'error'
 
@@ -9,27 +8,20 @@ type AgentStatusChipProps = {
 }
 
 export function AgentStatusChip({ status, startedAt }: AgentStatusChipProps) {
-  const [, tick] = useState(0)
-
-  useEffect(() => {
-    if (status !== 'running' || !startedAt) return
-    const id = setInterval(() => tick((n) => n + 1), 1000)
-    return () => clearInterval(id)
-  }, [status, startedAt])
-
-  const label =
-    status === 'running' && startedAt
-      ? formatElapsed(typeof startedAt === 'string' ? new Date(startedAt).getTime() : startedAt)
-      : status === 'done'
-        ? 'Done'
-        : status === 'error'
-          ? 'Error'
-          : 'Idle'
+  const startMs = startedAt
+    ? typeof startedAt === 'string' ? new Date(startedAt).getTime() : startedAt
+    : null
 
   return (
     <span className={`agent-chip agent-chip--${status}`}>
       <span className="agent-chip__dot" />
-      {label}
+      {status === 'running' && startMs != null
+        ? <ElapsedTime startedAtMs={startMs} />
+        : status === 'done'
+          ? 'Done'
+          : status === 'error'
+            ? 'Error'
+            : 'Idle'}
     </span>
   )
 }
