@@ -13,6 +13,7 @@ export const POLL_PR_LIST_INTERVAL = 60_000
 export const POLL_HEALTH_CHECK_MS = 600_000
 
 // Timeouts (ms)
+export const CONNECT_CHALLENGE_TIMEOUT_MS = 12_000
 export const GATEWAY_DISCONNECT_TOAST_DELAY = 4_000
 export const KILL_UNDO_WINDOW = 5_000
 export const SESSION_ACTIVE_THRESHOLD = 5 * 60 * 1000
