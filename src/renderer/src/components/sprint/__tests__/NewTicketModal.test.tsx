@@ -199,4 +199,112 @@ describe('NewTicketModal', () => {
     // Should be in Quick mode by default
     expect(screen.getByPlaceholderText(/Fix toast z-index/)).toBeInTheDocument()
   })
+
+  it('shows Design with Paul tab', () => {
+    render(<NewTicketModal {...defaultProps} />)
+    expect(screen.getByRole('button', { name: 'Design with Paul' })).toBeInTheDocument()
+  })
+
+  it('switching to Design mode shows Paul opening message and hides footer', async () => {
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Design with Paul' }))
+
+    expect(screen.getByText(/What are you thinking about building/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Type your response/)).toBeInTheDocument()
+    expect(screen.getByText('Spec Preview')).toBeInTheDocument()
+    // Footer buttons should be hidden in design mode
+    expect(screen.queryByRole('button', { name: /Save — Paul writes the spec/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save to Backlog' })).not.toBeInTheDocument()
+  })
+
+  it('Design mode: spec preview shows empty state initially', async () => {
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Design with Paul' }))
+
+    expect(screen.getByText('Spec will appear here as Paul drafts it.')).toBeInTheDocument()
+  })
+
+  it('Design mode: sends message via invokeTool with bde-design-mode session', async () => {
+    const mockInvoke = vi.mocked(window.api.invokeTool)
+    mockInvoke.mockResolvedValue({
+      ok: true,
+      result: { content: [{ type: 'text', text: 'What scope are you targeting?' }] },
+    })
+
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Design with Paul' }))
+    const textarea = screen.getByPlaceholderText(/Type your response/)
+    await user.type(textarea, 'I want to add a cost dashboard')
+    await user.click(screen.getByText('\u2192'))
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith(
+        'sessions_send',
+        expect.objectContaining({
+          sessionKey: 'bde-design-mode',
+          timeoutSeconds: 45,
+        })
+      )
+    })
+  })
+
+  it('Design mode: extracts spec from ~~~spec fence and shows in preview', async () => {
+    const specContent = 'Ticket Title: Add cost dashboard\n\n## Problem\nNo cost visibility'
+    vi.mocked(window.api.invokeTool).mockResolvedValue({
+      ok: true,
+      result: {
+        content: [{ type: 'text', text: `Here is the spec:\n\n~~~spec\n${specContent}\n~~~` }],
+      },
+    })
+
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Design with Paul' }))
+    await user.type(screen.getByPlaceholderText(/Type your response/), 'Build a cost dashboard')
+    await user.click(screen.getByText('\u2192'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Save Spec to Backlog')).toBeInTheDocument()
+    })
+  })
+
+  it('Design mode: Save Spec to Backlog calls onCreate with extracted data', async () => {
+    const specContent = 'Ticket Title: Add cost dashboard\n\n## Problem\nNo cost visibility'
+    vi.mocked(window.api.invokeTool).mockResolvedValue({
+      ok: true,
+      result: {
+        content: [{ type: 'text', text: `~~~spec\n${specContent}\n~~~` }],
+      },
+    })
+
+    const user = userEvent.setup()
+    render(<NewTicketModal {...defaultProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Design with Paul' }))
+    await user.type(screen.getByPlaceholderText(/Type your response/), 'Build a cost dashboard')
+    await user.click(screen.getByText('\u2192'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Save Spec to Backlog')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('Save Spec to Backlog'))
+
+    expect(defaultProps.onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Add cost dashboard',
+        spec: specContent,
+        prompt: specContent,
+        repo: 'BDE',
+      })
+    )
+    expect(defaultProps.onClose).toHaveBeenCalled()
+  })
 })
