@@ -465,6 +465,27 @@ export default function SprintCenter() {
     [loadData]
   )
 
+  const handleUpdateTitle = useCallback(
+    (patch: { id: string; title: string }) => {
+      updateTask(patch.id, { title: patch.title })
+    },
+    [updateTask]
+  )
+
+  const handleDeleteTask = useCallback(
+    async (taskId: string) => {
+      try {
+        await window.api.sprint.delete(taskId)
+        setTasks((prev) => prev.filter((t) => t.id !== taskId))
+        setSelectedTask(null)
+        toast.success('Task deleted')
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to delete task')
+      }
+    },
+    []
+  )
+
   // Keyboard shortcuts: N → new ticket, Escape → close drawers/modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -705,6 +726,8 @@ export default function SprintCenter() {
         onLaunch={handleLaunch}
         onPushToSprint={handlePushToSprint}
         onMarkDone={handleMarkDone}
+        onUpdate={handleUpdateTitle}
+        onDelete={handleDeleteTask}
       />
 
       <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />

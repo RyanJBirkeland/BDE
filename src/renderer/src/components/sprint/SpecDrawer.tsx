@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { toast } from '../../stores/toasts'
@@ -17,14 +18,17 @@ type SpecDrawerProps = {
   onLaunch: (task: SprintTask) => void
   onPushToSprint: (task: SprintTask) => void
   onMarkDone?: (task: SprintTask) => void
+  onUpdate?: (patch: { id: string; title: string }) => void
+  onDelete?: (taskId: string) => void
 }
 
-export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, onMarkDone }: SpecDrawerProps) {
+export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, onMarkDone, onUpdate, onDelete }: SpecDrawerProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [dirty, setDirty] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [showPrompt, setShowPrompt] = useState(false)
+  const [titleDraft, setTitleDraft] = useState('')
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const resolvedContentRef = useRef('')
 
@@ -34,6 +38,7 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
     setDirty(false)
     setGenerating(false)
     setShowPrompt(false)
+    setTitleDraft(task.title)
 
     if (task.spec) {
       resolvedContentRef.current = task.spec
@@ -67,6 +72,24 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
     setDirty(false)
     toast.success('Spec saved')
   }, [task, draft, onSave])
+
+  const commitTitle = useCallback(() => {
+    if (!task || !onUpdate) return
+    const trimmed = titleDraft.trim()
+    if (!trimmed) {
+      setTitleDraft(task.title)
+      return
+    }
+    if (trimmed !== task.title) {
+      onUpdate({ id: task.id, title: trimmed })
+    }
+  }, [task, titleDraft, onUpdate])
+
+  const handleDelete = useCallback(() => {
+    if (!task || !onDelete) return
+    if (!window.confirm('Delete this task? This cannot be undone.')) return
+    onDelete(task.id)
+  }, [task, onDelete])
 
   useEffect(() => {
     if (!task) return
@@ -140,7 +163,21 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
           <>
             <div className="spec-drawer__header">
               <div className="spec-drawer__header-info">
-                <h3>{task.title}</h3>
+                <div className="spec-drawer__title-row">
+                  <input
+                    className="spec-drawer__title-input"
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onBlur={commitTitle}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        ;(e.target as HTMLInputElement).blur()
+                      }
+                    }}
+                  />
+                  <Pencil size={14} className="spec-drawer__title-hint" />
+                </div>
                 <span className="spec-drawer__header-meta">
                   {task.repo} &middot; {task.status}
                 </span>
@@ -256,6 +293,16 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
               {onMarkDone && task.status !== 'done' && (
                 <Button variant="ghost" size="sm" onClick={() => onMarkDone(task)}>
                   ✓ Mark Done
+                </Button>
+              )}
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="spec-drawer__delete-btn"
+                >
+                  <Trash2 size={14} /> Delete
                 </Button>
               )}
             </div>
