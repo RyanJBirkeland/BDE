@@ -1,73 +1,30 @@
-let cachedToken: string | null = null
+import type { GitHubFetchInit, GitHubFetchResult } from '../../../shared/ipc-channels'
 
-async function getToken(): Promise<string> {
-  if (cachedToken) return cachedToken
-  const token = await window.api.getGitHubToken()
-  if (!token) throw new Error('GitHub token not configured')
-  cachedToken = token
-  return token
-}
+/**
+ * All GitHub REST API calls are proxied through the main process via IPC.
+ * The token never enters renderer memory — auth is handled entirely in main.
+ */
 
-export function clearCachedToken(): void {
-  cachedToken = null
-}
-
-async function githubFetch(path: string, init?: RequestInit): Promise<Response> {
-  const token = await getToken()
-  const res = await fetch(`https://api.github.com${path}`, {
-    ...init,
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${token}`,
-      ...init?.headers
-    }
-  })
-
-  if (res.status === 401 && cachedToken !== null) {
-    clearCachedToken()
-    const freshToken = await getToken()
-    return fetch(`https://api.github.com${path}`, {
-      ...init,
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${freshToken}`,
-        ...init?.headers
-      }
-    })
-  }
-
-  return res
-}
-
-function parseNextLink(linkHeader: string | null): string | null {
-  if (!linkHeader) return null
-  const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
-  return match ? match[1] : null
+async function githubFetchRaw(
+  path: string,
+  init?: GitHubFetchInit
+): Promise<GitHubFetchResult> {
+  return window.api.github.fetch(path, init)
 }
 
 async function fetchAllPages<T>(path: string): Promise<T[]> {
   const items: T[] = []
 
-  // First page goes through githubFetch so 401 retry logic applies
-  let res = await githubFetch(path)
+  let res = await githubFetchRaw(path)
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  const firstPage = (await res.json()) as T[]
-  items.push(...firstPage)
+  items.push(...(res.body as T[]))
 
-  // Subsequent pages use the Link header URL directly with a fresh token
-  let nextUrl = parseNextLink(res.headers.get('Link'))
+  let nextUrl = res.linkNext
   while (nextUrl) {
-    const token = await getToken()
-    res = await fetch(nextUrl, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`
-      }
-    })
+    res = await githubFetchRaw(nextUrl)
     if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-    const page = (await res.json()) as T[]
-    items.push(...page)
-    nextUrl = parseNextLink(res.headers.get('Link'))
+    items.push(...(res.body as T[]))
+    nextUrl = res.linkNext
   }
 
   return items
@@ -107,11 +64,11 @@ export async function getPrMergeability(
   owner: string,
   repo: string,
   prNumber: number,
-  signal?: AbortSignal
+  _signal?: AbortSignal
 ): Promise<PrMergeability> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${prNumber}`, { signal })
+  const res = await githubFetchRaw(`/repos/${owner}/${repo}/pulls/${prNumber}`)
   if (!res.ok) return { number: prNumber, repo, mergeable: null, mergeable_state: null }
-  const data = (await res.json()) as { mergeable: boolean | null; mergeable_state: string | null }
+  const data = res.body as { mergeable: boolean | null; mergeable_state: string | null }
   return {
     number: prNumber,
     repo,
@@ -145,9 +102,9 @@ export interface CheckRunSummary {
 }
 
 export async function getCheckRuns(owner: string, repo: string, sha: string): Promise<CheckRunSummary> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
+  const res = await githubFetchRaw(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
   if (!res.ok) return { status: 'pending', total: 0, passed: 0, failed: 0, pending: 0 }
-  const data = (await res.json()) as {
+  const data = res.body as {
     total_count: number
     check_runs: { status: string; conclusion: string | null }[]
   }
@@ -165,11 +122,11 @@ export async function getCheckRuns(owner: string, repo: string, sha: string): Pr
 }
 
 export async function getPRDiff(owner: string, repo: string, number: number): Promise<string> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`, {
+  const res = await githubFetchRaw(`/repos/${owner}/${repo}/pulls/${number}`, {
     headers: { Accept: 'application/vnd.github.diff' }
   })
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  return res.text()
+  return res.body as string
 }
 
 
@@ -192,10 +149,9 @@ export async function getPRDetail(
   repo: string,
   number: number
 ): Promise<PRDetail> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`)
+  const res = await githubFetchRaw(`/repos/${owner}/${repo}/pulls/${number}`)
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  const data = (await res.json()) as PRDetail
-  return data
+  return res.body as PRDetail
 }
 
 export interface PRFile {
@@ -225,9 +181,9 @@ export async function getCheckRunsList(
   repo: string,
   sha: string
 ): Promise<CheckRun[]> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
+  const res = await githubFetchRaw(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
   if (!res.ok) return []
-  const data = (await res.json()) as { check_runs: CheckRun[] }
+  const data = res.body as { check_runs: CheckRun[] }
   return data.check_runs
 }
 
@@ -242,29 +198,29 @@ export async function mergePR(
 ): Promise<void> {
   const body: Record<string, string> = { merge_method: method }
   if (commitTitle) body.commit_title = commitTitle
-  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}/merge`, {
+  const res = await githubFetchRaw(`/repos/${owner}/${repo}/pulls/${number}/merge`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+    const err = (res.body ?? {}) as { message?: string }
     throw new Error(
-      `Merge failed: ${res.status} — ${(err as { message?: string }).message ?? 'unknown'}`
+      `Merge failed: ${res.status} — ${err.message ?? 'unknown'}`
     )
   }
 }
 
 export async function closePR(owner: string, repo: string, number: number): Promise<void> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}`, {
+  const res = await githubFetchRaw(`/repos/${owner}/${repo}/pulls/${number}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ state: 'closed' })
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
+    const err = (res.body ?? {}) as { message?: string }
     throw new Error(
-      `Close failed: ${res.status} — ${(err as { message?: string }).message ?? 'unknown'}`
+      `Close failed: ${res.status} — ${err.message ?? 'unknown'}`
     )
   }
 }

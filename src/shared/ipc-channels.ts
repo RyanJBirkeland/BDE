@@ -11,6 +11,22 @@
 
 import type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from './types'
 
+/** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
+export interface GitHubFetchInit {
+  method?: string
+  headers?: Record<string, string>
+  body?: string
+}
+
+/** Shape returned by the github:fetch IPC handler. */
+export interface GitHubFetchResult {
+  ok: boolean
+  status: number
+  body: unknown
+  /** Parsed "next" URL from the GitHub Link header (for pagination). */
+  linkNext: string | null
+}
+
 export interface IpcChannelMap {
   // --- Config ---
   'get-gateway-config': {
@@ -36,6 +52,12 @@ export interface IpcChannelMap {
   'local:spawnClaudeAgent': {
     args: [args: SpawnLocalAgentArgs]
     result: SpawnLocalAgentResult
+  }
+
+  // --- GitHub API proxy ---
+  'github:fetch': {
+    args: [path: string, init?: GitHubFetchInit]
+    result: GitHubFetchResult
   }
 
   // --- Terminal ---

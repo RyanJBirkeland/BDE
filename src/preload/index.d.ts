@@ -1,6 +1,6 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, PrListPayload, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
-import type { IpcChannelMap } from '../shared/ipc-channels'
+import type { IpcChannelMap, GitHubFetchInit, GitHubFetchResult } from '../shared/ipc-channels'
 
 export type { AgentCostRecord, AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
 
@@ -23,6 +23,11 @@ declare global {
       readMemoryFile: (path: string) => Promise<string>
       writeMemoryFile: (path: string, content: string) => Promise<void>
       setTitle: (title: string) => void
+
+      // GitHub API proxy — all GitHub REST calls routed through main process
+      github: {
+        fetch: (path: string, init?: GitHubFetchInit) => Promise<GitHubFetchResult>
+      }
 
       // Local agent process detection + spawning
       getAgentProcesses: () => Promise<

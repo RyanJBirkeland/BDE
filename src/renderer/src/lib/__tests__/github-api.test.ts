@@ -1,87 +1,90 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { GitHubFetchResult } from '../../../../shared/ipc-channels'
 
-// --- Mock window.api.getGitHubToken ---
-const getGitHubToken = vi.fn<() => Promise<string | null>>()
+// --- Mock window.api.github.fetch (IPC proxy) ---
+const mockGithubFetch = vi.fn<(...args: unknown[]) => Promise<GitHubFetchResult>>()
 
 Object.defineProperty(globalThis, 'window', {
-  value: { api: { getGitHubToken } },
+  value: { api: { github: { fetch: mockGithubFetch } } },
   writable: true
 })
 
-// --- Mock global fetch ---
-const mockFetch = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
-globalThis.fetch = mockFetch as typeof globalThis.fetch
+import { listOpenPRs } from '../github-api'
 
-import { clearCachedToken, listOpenPRs } from '../github-api'
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
+function ipcResponse(body: unknown, status = 200, linkNext: string | null = null): GitHubFetchResult {
+  return { ok: status >= 200 && status < 300, status, body, linkNext }
 }
 
 beforeEach(() => {
-  clearCachedToken()
   vi.resetAllMocks()
 })
 
-describe('github-api token caching', () => {
-  it('caches the token across calls', async () => {
-    getGitHubToken.mockResolvedValue('token-a')
-    mockFetch.mockImplementation(() => Promise.resolve(jsonResponse([])))
-
-    await listOpenPRs('o', 'r')
-    await listOpenPRs('o', 'r')
-
-    expect(getGitHubToken).toHaveBeenCalledTimes(1)
-  })
-
-  it('clearCachedToken forces a fresh token on next call', async () => {
-    getGitHubToken.mockResolvedValueOnce('old').mockResolvedValueOnce('new')
-    mockFetch.mockImplementation(() => Promise.resolve(jsonResponse([])))
-
-    await listOpenPRs('o', 'r')
-    clearCachedToken()
-    await listOpenPRs('o', 'r')
-
-    expect(getGitHubToken).toHaveBeenCalledTimes(2)
-  })
-})
-
-describe('github-api 401 retry', () => {
-  it('clears token and retries once on 401', async () => {
-    getGitHubToken.mockResolvedValueOnce('stale').mockResolvedValueOnce('fresh')
-    mockFetch
-      .mockResolvedValueOnce(jsonResponse({ message: 'Bad credentials' }, 401))
-      .mockResolvedValueOnce(jsonResponse([{ number: 1, title: 'PR', html_url: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'b', sha: 'abc' }, base: { ref: 'main' }, user: { login: 'u' }, additions: 0, deletions: 0 }]))
+describe('github-api via IPC proxy', () => {
+  it('fetches open PRs through IPC', async () => {
+    mockGithubFetch.mockResolvedValue(
+      ipcResponse([
+        {
+          number: 1,
+          title: 'PR',
+          html_url: '',
+          state: 'open',
+          draft: false,
+          created_at: '',
+          updated_at: '',
+          head: { ref: 'b', sha: 'abc' },
+          base: { ref: 'main' },
+          user: { login: 'u' }
+        }
+      ])
+    )
 
     const prs = await listOpenPRs('o', 'r')
 
     expect(prs).toHaveLength(1)
-    expect(getGitHubToken).toHaveBeenCalledTimes(2)
-    expect(mockFetch).toHaveBeenCalledTimes(2)
-
-    // Second call should use fresh token
-    const secondCallHeaders = (mockFetch.mock.calls[1][1] as RequestInit).headers as Record<string, string>
-    expect(secondCallHeaders.Authorization).toBe('Bearer fresh')
+    expect(prs[0].repo).toBe('r')
+    expect(mockGithubFetch).toHaveBeenCalledWith(
+      '/repos/o/r/pulls?state=open&per_page=100',
+      undefined
+    )
   })
 
-  it('does not retry more than once on repeated 401', async () => {
-    getGitHubToken.mockResolvedValueOnce('stale').mockResolvedValueOnce('also-stale')
-    mockFetch
-      .mockResolvedValueOnce(jsonResponse({ message: 'Bad credentials' }, 401))
-      .mockResolvedValueOnce(jsonResponse({ message: 'Bad credentials' }, 401))
+  it('follows pagination via linkNext', async () => {
+    mockGithubFetch
+      .mockResolvedValueOnce(
+        ipcResponse(
+          [{ number: 1, title: 'PR1', html_url: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'a', sha: 'a1' }, base: { ref: 'main' }, user: { login: 'u' } }],
+          200,
+          'https://api.github.com/repos/o/r/pulls?state=open&per_page=100&page=2'
+        )
+      )
+      .mockResolvedValueOnce(
+        ipcResponse([{ number: 2, title: 'PR2', html_url: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'b', sha: 'b1' }, base: { ref: 'main' }, user: { login: 'u' } }])
+      )
 
-    await expect(listOpenPRs('o', 'r')).rejects.toThrow('GitHub API error: 401')
-    expect(mockFetch).toHaveBeenCalledTimes(2)
+    const prs = await listOpenPRs('o', 'r')
+
+    expect(prs).toHaveLength(2)
+    expect(mockGithubFetch).toHaveBeenCalledTimes(2)
+    // Second call should use the full URL from linkNext
+    expect(mockGithubFetch).toHaveBeenCalledWith(
+      'https://api.github.com/repos/o/r/pulls?state=open&per_page=100&page=2',
+      undefined
+    )
   })
 
-  it('does not retry on non-401 errors', async () => {
-    getGitHubToken.mockResolvedValue('token')
-    mockFetch.mockResolvedValue(jsonResponse({ message: 'Not Found' }, 404))
+  it('throws on non-ok response', async () => {
+    mockGithubFetch.mockResolvedValue(ipcResponse({ message: 'Not Found' }, 404))
 
     await expect(listOpenPRs('o', 'r')).rejects.toThrow('GitHub API error: 404')
-    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockGithubFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not use global fetch or handle tokens in renderer', async () => {
+    mockGithubFetch.mockResolvedValue(ipcResponse([]))
+
+    await listOpenPRs('o', 'r')
+
+    // Verify the call goes through window.api.github.fetch, not global fetch
+    expect(mockGithubFetch).toHaveBeenCalledTimes(1)
   })
 })

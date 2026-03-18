@@ -15,8 +15,52 @@ import {
   type ConflictFilesInput
 } from '../git'
 import { getLatestPrList, refreshPrList } from '../pr-poller'
+import { getGitHubToken } from '../config'
+import type { GitHubFetchInit } from '../../shared/ipc-channels'
+
+function parseNextLink(linkHeader: string | null): string | null {
+  if (!linkHeader) return null
+  const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+  return match ? match[1] : null
+}
 
 export function registerGitHandlers(): void {
+  // --- GitHub API proxy (renderer → main → api.github.com) ---
+  safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
+    const token = getGitHubToken()
+    if (!token) throw new Error('GitHub token not configured')
+
+    let url: string
+    if (path.startsWith('https://')) {
+      const parsed = new URL(path)
+      if (parsed.hostname !== 'api.github.com') {
+        throw new Error('github:fetch only allows api.github.com URLs')
+      }
+      url = path
+    } else {
+      url = `https://api.github.com${path}`
+    }
+
+    // Strip Authorization from caller headers — token is injected server-side only
+    const { Authorization: _, ...safeHeaders } = init?.headers ?? {}
+    const res = await fetch(url, {
+      method: init?.method,
+      headers: {
+        Accept: 'application/vnd.github+json',
+        ...safeHeaders,
+        Authorization: `Bearer ${token}`
+      },
+      body: init?.body,
+      signal: AbortSignal.timeout(30_000)
+    })
+
+    const contentType = res.headers.get('content-type') ?? ''
+    const body = contentType.includes('json') ? await res.json() : await res.text()
+    const linkNext = parseNextLink(res.headers.get('Link'))
+
+    return { ok: res.ok, status: res.status, body, linkNext }
+  })
+
   // TODO: AX-S1 — add 'get-repo-paths' to IpcChannelMap
   safeHandle('get-repo-paths', () => getRepoPaths())
 

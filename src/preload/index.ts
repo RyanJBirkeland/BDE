@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, PrListPayload, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
-import type { IpcChannelMap } from '../shared/ipc-channels'
+import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
 ipcRenderer.setMaxListeners(25)
@@ -34,6 +34,12 @@ const api = {
   writeMemoryFile: (path: string, content: string): Promise<void> =>
     ipcRenderer.invoke('write-memory-file', path, content),
   setTitle: (title: string): void => ipcRenderer.send('set-title', title),
+
+  // GitHub API proxy — all GitHub REST calls routed through main process
+  github: {
+    fetch: (path: string, init?: GitHubFetchInit) =>
+      typedInvoke('github:fetch', path, init)
+  },
 
   // Git client
   gitStatus: (cwd: string) => typedInvoke('git:status', cwd),
