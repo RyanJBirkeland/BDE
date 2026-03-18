@@ -91,7 +91,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
     // Sub-agents
     for (const a of subAgents) {
       agents.push({
-        id: a.sessionKey,
+        id: `sub:${a.sessionKey}`,
         label: a.label || a.sessionKey,
         source: 'sub-agent',
         status: normalizeStatus(a.status),
