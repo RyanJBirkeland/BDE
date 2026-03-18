@@ -110,8 +110,8 @@ export interface OpenPr {
   head: { ref: string; sha: string }
   base: { ref: string }
   user: { login: string }
-  additions: number
-  deletions: number
+  merged: boolean
+  merged_at: string | null
   repo: string
 }
 

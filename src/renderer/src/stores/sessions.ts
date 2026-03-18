@@ -24,7 +24,7 @@ export interface AgentSession {
 }
 
 /** Closed union — normalizeStatus() in useUnifiedAgents maps unknown server values to 'unknown' */
-export type SubAgentStatus = 'running' | 'completed' | 'failed' | 'timeout' | 'done' | 'unknown'
+export type SubAgentStatus = 'running' | 'done' | 'failed' | 'timeout' | 'unknown'
 
 export interface SubAgent {
   sessionKey: string
@@ -126,11 +126,14 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         const normalizeSubAgentStatus = (raw: string): SubAgentStatus => {
           switch (raw) {
             case 'running':
-            case 'completed':
-            case 'failed':
-            case 'timeout':
+              return 'running'
             case 'done':
-              return raw
+            case 'completed':
+              return 'done'
+            case 'failed':
+              return 'failed'
+            case 'timeout':
+              return 'timeout'
             default:
               return 'unknown'
           }
