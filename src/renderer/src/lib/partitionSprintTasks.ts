@@ -39,7 +39,11 @@ export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
         todo.push(task)
         break
       case TASK_STATUS.ACTIVE:
-        inProgress.push(task)
+        if (task.pr_status === PR_STATUS.OPEN) {
+          awaitingReview.push(task)
+        } else {
+          inProgress.push(task)
+        }
         break
       case TASK_STATUS.DONE:
         if (task.pr_status === PR_STATUS.OPEN) {
