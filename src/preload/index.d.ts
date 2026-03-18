@@ -1,8 +1,8 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
+import type { AgentCostRecord, AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
-export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
+export type { AgentCostRecord, AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
 
 /** Helper — extracts the result type for a typed IPC channel. */
 type IpcResult<K extends keyof IpcChannelMap> = IpcChannelMap[K]['result']
@@ -97,6 +97,11 @@ declare global {
         }) => Promise<{ taskId: string; spec: string; prompt: string }>
         delete: (id: string) => Promise<{ ok: boolean }>
         healthCheck: () => Promise<SprintTask[]>
+      }
+
+      // Cost analytics
+      cost: {
+        getAgentHistory: () => Promise<AgentCostRecord[]>
       }
 
       // File attachments

@@ -52,6 +52,23 @@ export interface SpawnLocalAgentResult {
   interactive: boolean
 }
 
+export interface AgentCostRecord {
+  id: string
+  model: string | null
+  startedAt: string
+  finishedAt: string | null
+  costUsd: number | null
+  tokensIn: number | null
+  tokensOut: number | null
+  cacheRead: number | null
+  cacheCreate: number | null
+  durationMs: number | null
+  numTurns: number | null
+  taskTitle: string | null
+  prUrl: string | null
+  repo: string | null
+}
+
 /** A file attachment queued for sending with a chat message. */
 export interface Attachment {
   path: string

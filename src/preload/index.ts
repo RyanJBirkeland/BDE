@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
+import type { AgentCostRecord, AgentMeta, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
@@ -131,6 +131,12 @@ const api = {
       ipcRenderer.invoke('sprint:delete', id),
     healthCheck: (): Promise<SprintTask[]> =>
       ipcRenderer.invoke('sprint:health-check'),
+  },
+
+  // Cost analytics
+  cost: {
+    getAgentHistory: (): Promise<AgentCostRecord[]> =>
+      ipcRenderer.invoke('cost:getAgentHistory'),
   },
 
   // File attachments
