@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { homedir } from 'os'
 import { watch, type FSWatcher } from 'fs'
@@ -63,6 +63,9 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      // TODO(security): sandbox:false is required because the preload script uses
+      // Node.js APIs (fs, child_process) via contextBridge. Migrate preload to
+      // message-port IPC to re-enable sandbox. Reviewed 2026-03-18.
       sandbox: false,
       contextIsolation: true
     }
@@ -75,6 +78,17 @@ function createWindow(): void {
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  const appUrl =
+    is.dev && process.env['ELECTRON_RENDERER_URL']
+      ? process.env['ELECTRON_RENDERER_URL']
+      : `file://${join(__dirname, '../renderer/index.html')}`
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith(appUrl)) {
+      event.preventDefault()
+    }
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
@@ -113,6 +127,17 @@ app.whenReady().then(() => {
   registerCostHandlers()
   registerCostHistoryHandlers()
   registerFsHandlers()
+
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:"
+        ]
+      }
+    })
+  })
 
   createWindow()
 
