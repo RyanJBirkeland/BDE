@@ -20,6 +20,34 @@ async function githubFetch(path: string, init?: RequestInit): Promise<Response> 
   })
 }
 
+function parseNextLink(linkHeader: string | null): string | null {
+  if (!linkHeader) return null
+  const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+  return match ? match[1] : null
+}
+
+async function fetchAllPages<T>(path: string): Promise<T[]> {
+  const token = await getToken()
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${token}`
+  }
+
+  let url: string = `https://api.github.com${path}`
+  const items: T[] = []
+
+  while (url) {
+    const res = await fetch(url, { headers })
+    if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
+    const page = (await res.json()) as T[]
+    items.push(...page)
+    const next = parseNextLink(res.headers.get('Link'))
+    url = next ?? ''
+  }
+
+  return items
+}
+
 export interface PullRequest {
   number: number
   title: string
@@ -39,10 +67,10 @@ export interface PullRequest {
 }
 
 export async function listOpenPRs(owner: string, repo: string): Promise<PullRequest[]> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/pulls?state=open&per_page=20`)
-  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  const data = await res.json()
-  return (data as PullRequest[]).map((pr) => ({ ...pr, repo }))
+  const data = await fetchAllPages<PullRequest>(
+    `/repos/${owner}/${repo}/pulls?state=open&per_page=100`
+  )
+  return data.map((pr) => ({ ...pr, repo }))
 }
 
 export interface PrMergeability {
@@ -162,9 +190,7 @@ export async function getPRFiles(
   repo: string,
   number: number
 ): Promise<PRFile[]> {
-  const res = await githubFetch(`/repos/${owner}/${repo}/pulls/${number}/files?per_page=100`)
-  if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  return (await res.json()) as PRFile[]
+  return fetchAllPages<PRFile>(`/repos/${owner}/${repo}/pulls/${number}/files?per_page=100`)
 }
 
 export interface CheckRun {
