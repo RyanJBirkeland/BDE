@@ -247,7 +247,7 @@ export function extractAgentCost(logPath: string): AgentCost | null {
       const usage = parsed.usage as Record<string, number> | undefined
 
       return {
-        costUsd: typeof parsed.cost_usd === 'number' ? parsed.cost_usd : 0,
+        costUsd: typeof parsed.total_cost_usd === 'number' ? parsed.total_cost_usd : 0,
         tokensIn: usage?.input_tokens ?? 0,
         tokensOut: usage?.output_tokens ?? 0,
         cacheRead: usage?.cache_read_input_tokens ?? 0,
