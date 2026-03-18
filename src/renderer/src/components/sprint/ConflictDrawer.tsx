@@ -4,7 +4,7 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { toast } from '../../stores/toasts'
 import { REPO_OPTIONS } from '../../lib/constants'
-import { parsePrUrl } from '../../lib/github-api'
+import { parsePrUrl } from '../../../../shared/github'
 import type { SprintTask } from '../../../../shared/types'
 
 type ConflictDrawerProps = {

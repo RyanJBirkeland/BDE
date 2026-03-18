@@ -28,9 +28,9 @@ import {
   gitBranches,
   gitDiffFile,
   getRepoPaths,
-  parsePrUrl,
   pollPrStatuses,
 } from '../git'
+import { parsePrUrl } from '../../shared/github'
 import { getGitHubToken } from '../config'
 import { getDb } from '../db'
 
@@ -272,12 +272,12 @@ describe('git.ts', () => {
   describe('parsePrUrl', () => {
     it('extracts owner/repo/number from a standard GitHub PR URL', () => {
       const result = parsePrUrl('https://github.com/octocat/hello-world/pull/42')
-      expect(result).toEqual({ owner: 'octocat', repo: 'hello-world', number: '42' })
+      expect(result).toEqual({ owner: 'octocat', repo: 'hello-world', number: 42 })
     })
 
     it('handles RBTECHBOT fork URLs', () => {
       const result = parsePrUrl('https://github.com/RyanJBirkeland/BDE/pull/163')
-      expect(result).toEqual({ owner: 'RyanJBirkeland', repo: 'BDE', number: '163' })
+      expect(result).toEqual({ owner: 'RyanJBirkeland', repo: 'BDE', number: 163 })
     })
 
     it('returns null for non-PR GitHub URLs', () => {
@@ -292,7 +292,7 @@ describe('git.ts', () => {
 
     it('extracts from URLs with trailing path segments', () => {
       const result = parsePrUrl('https://github.com/org/repo/pull/99/files')
-      expect(result).toEqual({ owner: 'org', repo: 'repo', number: '99' })
+      expect(result).toEqual({ owner: 'org', repo: 'repo', number: 99 })
     })
   })
 
