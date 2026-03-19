@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useCallback, useState, useMemo, useRef } from 'react'
+import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import { LocalAgentLogViewer, AgentLogViewer } from '../sessions/LocalAgentLogViewer'
 import { tokens } from '../../design-system/tokens'
 import { parseStreamJson, type ChatItem } from '../../lib/stream-parser'
@@ -16,34 +17,30 @@ export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutput
   const [isPolling, setIsPolling] = useState(false)
 
   // Poll gateway session history every 5s for gateway sessions
-  useEffect(() => {
+  const pollHistory = useCallback(async (): Promise<void> => {
     if (!sessionKey) return
+    try {
+      const result = await window.api.getSessionHistory(sessionKey) as { history?: Array<{ type: string; content?: unknown; tool_use?: unknown }> }
 
-    const pollHistory = async (): Promise<void> => {
-      try {
-        const result = await window.api.getSessionHistory(sessionKey) as { history?: Array<{ type: string; content?: unknown; tool_use?: unknown }> }
+      // Extract exec tool results and format as stream-json lines
+      const execResults = (result.history ?? [])
+        .filter((item) => item.type === 'tool_use' && item.tool_use && typeof item.tool_use === 'object' && 'name' in item.tool_use && item.tool_use.name === 'exec')
+        .map((item) => JSON.stringify(item))
+        .join('\n')
 
-        // Extract exec tool results and format as stream-json lines
-        const execResults = (result.history ?? [])
-          .filter((item) => item.type === 'tool_use' && item.tool_use && typeof item.tool_use === 'object' && 'name' in item.tool_use && item.tool_use.name === 'exec')
-          .map((item) => JSON.stringify(item))
-          .join('\n')
-
-        setHistoryContent(execResults)
-      } catch (err) {
-        console.error('Failed to fetch session history:', err)
-      }
-    }
-
-    setIsPolling(true)
-    pollHistory()
-    const interval = setInterval(pollHistory, 5000)
-
-    return () => {
-      clearInterval(interval)
-      setIsPolling(false)
+      setHistoryContent(execResults)
+    } catch (err) {
+      console.error('Failed to fetch session history:', err)
     }
   }, [sessionKey])
+
+  useEffect(() => {
+    if (!sessionKey) return
+    setIsPolling(true)
+    pollHistory()
+    return () => setIsPolling(false)
+  }, [sessionKey, pollHistory])
+  useVisibilityAwareInterval(pollHistory, sessionKey ? 5000 : null)
 
   const lineCountRef = useRef(0)
   const prevItemsRef = useRef<ChatItem[]>([])

@@ -4,6 +4,7 @@
  * Task table shows per-run cost, duration, and cache efficiency.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import type { AgentRunCostRow, CostSummary } from '../../../shared/types'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Button } from '../components/ui/Button'
@@ -257,11 +258,8 @@ export default function CostView(): React.JSX.Element {
     }
   }, [refreshStore])
 
-  useEffect(() => {
-    fetchData()
-    const interval = setInterval(fetchData, POLL_COST_INTERVAL)
-    return () => clearInterval(interval)
-  }, [fetchData])
+  useEffect(() => { fetchData() }, [fetchData])
+  useVisibilityAwareInterval(fetchData, POLL_COST_INTERVAL)
 
   const sortedRuns = useMemo(() => {
     return [...runs].sort((a, b) => {

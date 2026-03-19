@@ -2,7 +2,8 @@
  * MiniChatPane — compact card for the 2×2 grid-4 layout.
  * Shows last 3 lines of chat messages with a small header.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import { invokeTool } from '../../lib/rpc'
 import { useSessionsStore } from '../../stores/sessions'
 import { POLL_PROCESSES_INTERVAL } from '../../lib/constants'
@@ -34,60 +35,53 @@ export function MiniChatPane({ paneIndex, sessionKey, isFocused, onFocus, onSess
   const session = sessions.find((s) => s.key === sessionKey)
   const channel = session?.channel || session?.lastChannel || ''
 
+  const poll = useCallback(async (): Promise<void> => {
+    if (!sessionKey) return
+    try {
+      const result = (await invokeTool('sessions_history', {
+        sessionKey,
+        limit: 20
+      })) as { messages: ChatMessage[] }
+
+      const messages = (result?.messages ?? [])
+        .map((m) => ({ ...m, content: normalizeContent(m.content) }))
+        .filter((m) => m.role !== 'tool' && m.role !== 'system' && m.content.trim().length > 0)
+
+      // Extract last 3 content lines
+      const lines: string[] = []
+      for (let i = messages.length - 1; i >= 0 && lines.length < 3; i--) {
+        const text = messages[i].content.trim()
+        const contentLines = text.split('\n').filter((l) => l.trim())
+        for (let j = contentLines.length - 1; j >= 0 && lines.length < 3; j--) {
+          lines.unshift(contentLines[j].slice(0, 120))
+        }
+      }
+      setLastLines(lines)
+
+      // Detect new output → pulse border
+      if (messages.length > prevCountRef.current && prevCountRef.current > 0) {
+        setHasNew(true)
+        if (newTimerRef.current) clearTimeout(newTimerRef.current)
+        newTimerRef.current = setTimeout(() => setHasNew(false), 2000)
+      }
+      prevCountRef.current = messages.length
+    } catch {
+      // Silently ignore poll errors in mini pane
+    }
+  }, [sessionKey])
+
   useEffect(() => {
     if (!sessionKey) {
       setLastLines([])
       prevCountRef.current = 0
       return
     }
-
-    let cancelled = false
-
-    const poll = async (): Promise<void> => {
-      try {
-        const result = (await invokeTool('sessions_history', {
-          sessionKey,
-          limit: 20
-        })) as { messages: ChatMessage[] }
-
-        if (cancelled) return
-
-        const messages = (result?.messages ?? [])
-          .map((m) => ({ ...m, content: normalizeContent(m.content) }))
-          .filter((m) => m.role !== 'tool' && m.role !== 'system' && m.content.trim().length > 0)
-
-        // Extract last 3 content lines
-        const lines: string[] = []
-        for (let i = messages.length - 1; i >= 0 && lines.length < 3; i--) {
-          const text = messages[i].content.trim()
-          const contentLines = text.split('\n').filter((l) => l.trim())
-          for (let j = contentLines.length - 1; j >= 0 && lines.length < 3; j--) {
-            lines.unshift(contentLines[j].slice(0, 120))
-          }
-        }
-        setLastLines(lines)
-
-        // Detect new output → pulse border
-        if (messages.length > prevCountRef.current && prevCountRef.current > 0) {
-          setHasNew(true)
-          if (newTimerRef.current) clearTimeout(newTimerRef.current)
-          newTimerRef.current = setTimeout(() => setHasNew(false), 2000)
-        }
-        prevCountRef.current = messages.length
-      } catch {
-        // Silently ignore poll errors in mini pane
-      }
-    }
-
     poll()
-    const id = setInterval(poll, POLL_PROCESSES_INTERVAL)
-
     return () => {
-      cancelled = true
-      clearInterval(id)
       if (newTimerRef.current) clearTimeout(newTimerRef.current)
     }
-  }, [sessionKey])
+  }, [sessionKey, poll])
+  useVisibilityAwareInterval(poll, sessionKey ? POLL_PROCESSES_INTERVAL : null)
 
   const classNames = [
     'mini-chat-pane',

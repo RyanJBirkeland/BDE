@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import { motion } from 'framer-motion'
 import { Users } from 'lucide-react'
 import { AgentRow } from './AgentRow'
@@ -41,17 +42,14 @@ export function AgentList({
   const activeView = useUIStore((s) => s.activeView)
   const fetchProcesses = useLocalAgentsStore((s) => s.fetchProcesses)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
+  const isSessionsView = activeView === 'sessions'
   useEffect(() => {
-    if (activeView !== 'sessions') return
+    if (!isSessionsView) return
     fetchProcesses()
     fetchAgents()
-    const processInterval = setInterval(fetchProcesses, 15_000)
-    const historyInterval = setInterval(fetchAgents, 10_000)
-    return () => {
-      clearInterval(processInterval)
-      clearInterval(historyInterval)
-    }
-  }, [fetchProcesses, fetchAgents, activeView])
+  }, [fetchProcesses, fetchAgents, isSessionsView])
+  useVisibilityAwareInterval(fetchProcesses, isSessionsView ? 15_000 : null)
+  useVisibilityAwareInterval(fetchAgents, isSessionsView ? 10_000 : null)
 
   const toggleHistory = useCallback(() => setHistoryOpen((v) => !v), [])
   const toggleFollow = useCallback(

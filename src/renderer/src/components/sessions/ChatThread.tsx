@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import { invokeTool } from '../../lib/rpc'
 import { useUIStore } from '../../stores/ui'
 import { toast } from '../../stores/toasts'
@@ -35,10 +36,8 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
   const [userScrolledUp, setUserScrolledUp] = useState(false)
   const messagesRef = useRef<ChatMessage[]>([])
   const lastCountRef = useRef(0)
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevLastAssistantContentRef = useRef('')
   const hasPolledRef = useRef(false)
-  const pollIntervalRef = useRef(POLL_IDLE)
 
   const isNearBottom = useCallback((): boolean => {
     const el = scrollRef.current
@@ -113,14 +112,9 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
     }
   }, [sessionKey, loading, isNearBottom, scrollToBottom])
 
-  // Update polling interval ref on every render so the recursive timer picks it up
-  pollIntervalRef.current = streaming ? POLL_STREAMING : POLL_IDLE
+  const pollInterval = streaming ? POLL_STREAMING : POLL_IDLE
 
-  // Stable ref so recursive setTimeout always calls latest poll
-  const pollRef = useRef(poll)
-  pollRef.current = poll
-
-  // Initial fetch + adaptive poll (skipped in external mode)
+  // Initial fetch + state reset (skipped in external mode)
   useEffect(() => {
     if (isExternalMode) return
 
@@ -135,20 +129,11 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
     prevLastAssistantContentRef.current = ''
     hasPolledRef.current = false
 
-    pollRef.current()
-
-    const schedulePoll = (): void => {
-      pollTimerRef.current = setTimeout(async () => {
-        await pollRef.current()
-        schedulePoll()
-      }, pollIntervalRef.current)
-    }
-    schedulePoll()
-
-    return () => {
-      if (pollTimerRef.current) clearTimeout(pollTimerRef.current)
-    }
+    poll()
   }, [sessionKey, isExternalMode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Adaptive visibility-aware polling (skipped in external mode)
+  useVisibilityAwareInterval(poll, isExternalMode ? null : pollInterval)
 
   // Refresh on send (skipped in external mode)
   useEffect(() => {

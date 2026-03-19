@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { KanbanBoard } from './KanbanBoard'
@@ -77,30 +78,12 @@ export default function SprintCenter() {
   }, [setLogDrawerTaskId])
   useTaskToasts(tasks, logDrawerTaskId, handleViewOutput)
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const prIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
   // Adaptive sprint polling — consistency backstop (SSE handles real-time)
   const hasActiveTasks = tasks.some((t) => t.status === TASK_STATUS.ACTIVE)
+  const sprintPollMs = hasActiveTasks ? POLL_SPRINT_ACTIVE_MS : POLL_SPRINT_INTERVAL
 
-  useEffect(() => {
-    // Clear any existing interval first to prevent stacking when deps change
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-
-    loadData()
-    const ms = hasActiveTasks ? POLL_SPRINT_ACTIVE_MS : POLL_SPRINT_INTERVAL
-    intervalRef.current = setInterval(loadData, ms)
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-    }
-  }, [loadData, hasActiveTasks])
+  useEffect(() => { loadData() }, [loadData])
+  useVisibilityAwareInterval(loadData, sprintPollMs)
 
   // Instant refresh when an external process writes to bde.db
   useEffect(() => {
@@ -186,13 +169,9 @@ export default function SprintCenter() {
     }
   }, [setConflicts, setPrMergedMap])
 
-  useEffect(() => {
-    pollPrStatuses(tasksRef.current)
-    prIntervalRef.current = setInterval(() => pollPrStatuses(tasksRef.current), POLL_PR_STATUS_MS)
-    return () => {
-      if (prIntervalRef.current) clearInterval(prIntervalRef.current)
-    }
-  }, [pollPrStatuses])
+  const pollPrStatusesCurrent = useCallback(() => pollPrStatuses(tasksRef.current), [pollPrStatuses])
+  useEffect(() => { pollPrStatusesCurrent() }, [pollPrStatusesCurrent])
+  useVisibilityAwareInterval(pollPrStatusesCurrent, POLL_PR_STATUS_MS)
 
   // Detect active→done transitions and trigger immediate PR poll
   const prevTasksRef = useRef<SprintTask[]>([])
@@ -405,11 +384,8 @@ export default function SprintCenter() {
     }
   }, [setStuckTasks])
 
-  useEffect(() => {
-    runHealthCheck()
-    const id = setInterval(runHealthCheck, POLL_HEALTH_CHECK_MS)
-    return () => clearInterval(id)
-  }, [runHealthCheck])
+  useEffect(() => { runHealthCheck() }, [runHealthCheck])
+  useVisibilityAwareInterval(runHealthCheck, POLL_HEALTH_CHECK_MS)
 
   const visibleStuckTasks = useMemo(
     () => tasks.filter((t) => stuckTaskIds.has(t.id) && !dismissedIds.has(t.id)),

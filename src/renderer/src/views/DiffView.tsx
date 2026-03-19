@@ -5,6 +5,7 @@
  * via IPC (git:status, git:diff) and polls every 30s.
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { GitBranch } from 'lucide-react'
 import DiffViewer from '../components/diff/DiffViewer'
 import { parseDiffChunked } from '../lib/diff-parser'
@@ -107,10 +108,7 @@ function DiffView(): React.JSX.Element {
     refresh()
   }, [refresh])
 
-  useEffect(() => {
-    const timer = setInterval(refresh, POLL_GIT_STATUS_INTERVAL)
-    return () => clearInterval(timer)
-  }, [refresh])
+  useVisibilityAwareInterval(refresh, POLL_GIT_STATUS_INTERVAL)
 
   const applyRawDiff = useCallback((raw: string) => {
     diffAbortRef.current?.abort()

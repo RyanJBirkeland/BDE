@@ -5,6 +5,7 @@
  * Right pane: layout depends on splitMode.
  */
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { Columns2, Grid2x2, Square, Plus } from 'lucide-react'
 import { AgentList } from '../components/sessions/AgentList'
 import { SpawnModal } from '../components/sessions/SpawnModal'
@@ -46,9 +47,8 @@ export function SessionsView(): React.JSX.Element {
   useEffect(() => {
     if (activeView !== 'sessions') return
     fetchSessions()
-    const id = setInterval(fetchSessions, POLL_SESSIONS_INTERVAL)
-    return () => clearInterval(id)
   }, [fetchSessions, activeView])
+  useVisibilityAwareInterval(fetchSessions, activeView === 'sessions' ? POLL_SESSIONS_INTERVAL : null)
 
   useEffect(() => {
     if (sessions.length > 0 && !selectedKey) {

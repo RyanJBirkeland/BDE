@@ -52,7 +52,9 @@ export function createLogPollerActions(
       }
 
       poll()
-      logInterval = setInterval(poll, 1000)
+      logInterval = setInterval(() => {
+        if (!document.hidden) poll()
+      }, 1000)
       return stop
     },
 
