@@ -1,5 +1,7 @@
-/** Lightweight markdown → HTML renderer for spec previews. */
-export function renderMarkdown(md: string): string {
+import DOMPurify from 'dompurify'
+
+/** Convert markdown to HTML. */
+function markdownToHtml(md: string): string {
   return md
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -11,4 +13,14 @@ export function renderMarkdown(md: string): string {
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
     .replace(/\n\n/g, '</p><p>')
     .replace(/^(?!<[huplo])(.+)$/gm, '<p>$1</p>')
+}
+
+/** Sanitize HTML to prevent XSS from untrusted content. */
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html)
+}
+
+/** Render markdown as sanitized HTML safe for dangerouslySetInnerHTML. */
+export function renderMarkdown(md: string): string {
+  return sanitizeHtml(markdownToHtml(md))
 }
