@@ -148,17 +148,23 @@ app.whenReady().then(() => {
   registerFsHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const csp = is.dev
+      ? "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data:; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self' ws://127.0.0.1:* wss://127.0.0.1:* http://localhost:* ws://localhost:*"
+      : "default-src 'self'; " +
+        "script-src 'self'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data:; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self' ws://127.0.0.1:18789 wss://127.0.0.1:18789"
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self'; " +
-            "script-src 'self'; " +
-            "style-src 'self' 'unsafe-inline'; " +
-            "img-src 'self' data:; " +
-            "font-src 'self' data:; " +
-            "connect-src 'self' ws://127.0.0.1:18789 wss://127.0.0.1:18789"
-        ]
+        'Content-Security-Policy': [csp]
       }
     })
   })
