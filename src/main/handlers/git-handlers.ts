@@ -15,7 +15,7 @@ import {
   type ConflictFilesInput
 } from '../git'
 import { getLatestPrList, refreshPrList } from '../pr-poller'
-import { authenticatedGitHubFetch } from '../github-fetch'
+import { githubFetch } from '../github-fetch'
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
 
 function parseNextLink(linkHeader: string | null): string | null {
@@ -40,10 +40,11 @@ export function registerGitHandlers(): void {
 
     // Strip Authorization from caller headers — token is injected server-side only
     const { Authorization: _, ...safeHeaders } = init?.headers ?? {}
-    const res = await authenticatedGitHubFetch(url, {
+    const res = await githubFetch(url, {
       method: init?.method,
       headers: safeHeaders,
       body: init?.body,
+      timeoutMs: 30_000
     })
 
     const contentType = res.headers.get('content-type') ?? ''

@@ -14,6 +14,7 @@ import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
 import { useAgentHistoryStore } from './stores/agentHistory'
 import { useTaskNotifications } from './hooks/useTaskNotifications'
+import { useGitHubRateLimitWarning } from './hooks/useGitHubRateLimitWarning'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { SessionsView } from './views/SessionsView'   // always-mounted
 import { TerminalView } from './views/TerminalView'    // always-mounted
@@ -200,6 +201,7 @@ function App(): React.JSX.Element {
   }, [fetchLocalAgents])
 
   useTaskNotifications()
+  useGitHubRateLimitWarning()
 
   useEffect(() => {
     const title = 'BDE \u2014 ' + VIEW_TITLES[activeView]

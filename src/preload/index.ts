@@ -170,6 +170,15 @@ const api = {
   getSessionHistory: (sessionKey: string): Promise<unknown> =>
     ipcRenderer.invoke('gateway:getSessionHistory', sessionKey),
 
+  // GitHub rate-limit warning push events
+  onGitHubRateLimitWarning: (
+    cb: (data: { remaining: number; limit: number; resetEpoch: number }) => void
+  ): (() => void) => {
+    const listener = (_e: unknown, data: { remaining: number; limit: number; resetEpoch: number }): void => cb(data)
+    ipcRenderer.on('github:rate-limit-warning', listener)
+    return () => ipcRenderer.removeListener('github:rate-limit-warning', listener)
+  },
+
   // Open PR list — main-process poller push events
   onPrListUpdated: (cb: (payload: PrListPayload) => void): (() => void) => {
     const listener = (_e: unknown, data: PrListPayload): void => cb(data)

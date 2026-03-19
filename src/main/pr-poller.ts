@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron'
 import { getGitHubToken } from './config'
-import { authenticatedGitHubFetch } from './github-fetch'
+import { githubFetch } from './github-fetch'
 import type { OpenPr, CheckRunSummary, PrListPayload } from '../shared/types'
 
 const POLL_INTERVAL_MS = 60_000
@@ -18,11 +18,18 @@ let latestPayload: PrListPayload | null = null
 async function fetchOpenPrs(
   owner: string,
   repo: string,
+  token: string
 ): Promise<OpenPr[]> {
   try {
-    const res = await authenticatedGitHubFetch(
+    const res = await githubFetch(
       `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=20`,
-      { timeoutMs: REQUEST_TIMEOUT_MS }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+        },
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      }
     )
     if (!res.ok) return []
     const data = (await res.json()) as OpenPr[]
@@ -36,12 +43,19 @@ async function fetchCheckRuns(
   owner: string,
   repo: string,
   sha: string,
+  token: string
 ): Promise<CheckRunSummary> {
   const empty: CheckRunSummary = { status: 'pending', total: 0, passed: 0, failed: 0, pending: 0 }
   try {
-    const res = await authenticatedGitHubFetch(
+    const res = await githubFetch(
       `https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs`,
-      { timeoutMs: REQUEST_TIMEOUT_MS }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+        },
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      }
     )
     if (!res.ok) return empty
     const data = (await res.json()) as {
@@ -64,10 +78,11 @@ async function fetchCheckRuns(
 }
 
 async function poll(): Promise<void> {
-  if (!getGitHubToken()) return
+  const token = getGitHubToken()
+  if (!token) return
 
   const results = await Promise.all(
-    REPOS.map((r) => fetchOpenPrs(r.owner, r.repo))
+    REPOS.map((r) => fetchOpenPrs(r.owner, r.repo, token))
   )
   const prs = results
     .flat()
@@ -77,7 +92,7 @@ async function poll(): Promise<void> {
   const checkPromises = prs.map(async (pr) => {
     const repoConfig = REPOS.find((r) => r.repo === pr.repo)
     if (!repoConfig) return
-    const summary = await fetchCheckRuns(repoConfig.owner, repoConfig.repo, pr.head.sha)
+    const summary = await fetchCheckRuns(repoConfig.owner, repoConfig.repo, pr.head.sha, token)
     checks[`${pr.repo}-${pr.number}`] = summary
   })
   await Promise.all(checkPromises)

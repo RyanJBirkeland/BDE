@@ -302,6 +302,7 @@ describe('git.ts', () => {
     let mockPrepare: ReturnType<typeof vi.fn>
 
     beforeEach(() => {
+      mockFetch.mockReset()
       vi.stubGlobal('fetch', mockFetch)
       mockRun = vi.fn()
       mockPrepare = vi.fn(() => ({ run: mockRun }))
@@ -369,7 +370,7 @@ describe('git.ts', () => {
       })
 
       it('returns error state on non-OK HTTP response', async () => {
-        mockFetch.mockResolvedValueOnce({ ok: false })
+        mockFetch.mockResolvedValueOnce({ ok: false, headers: { get: (): null => null } })
 
         const results = await pollPrStatuses([
           { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/1' }

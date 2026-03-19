@@ -1,149 +1,314 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('../config', () => ({
-  getGitHubToken: vi.fn(),
+// ---------------------------------------------------------------------------
+// Electron mock
+// ---------------------------------------------------------------------------
+const mockSend = vi.fn()
+
+vi.mock('electron', () => ({
+  BrowserWindow: {
+    getAllWindows: vi.fn(() => [{ id: 1, webContents: { send: mockSend } }]),
+  },
 }))
 
-import { authenticatedGitHubFetch } from '../github-fetch'
-import { getGitHubToken } from '../config'
+// ---------------------------------------------------------------------------
+// Import after mocks
+// ---------------------------------------------------------------------------
+import {
+  githubFetch,
+  parseRateLimitHeaders,
+  computeBackoffMs,
+  _resetRateLimitState,
+} from '../github-fetch'
 
-function mockResponse(status: number, body: unknown = {}): Response {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    headers: new Headers({ 'content-type': 'application/json' }),
-    json: () => Promise.resolve(body),
-    text: () => Promise.resolve(JSON.stringify(body)),
-  } as unknown as Response
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function headersFrom(map: Record<string, string>): Headers {
+  return new Headers(map)
 }
 
+/** Build a minimal mock Response with the given status and headers. */
+function mockResponse(
+  status: number,
+  headerMap: Record<string, string> = {},
+  body = '{}'
+): Response {
+  return new Response(body, {
+    status,
+    headers: new Headers(headerMap),
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 beforeEach(() => {
-  vi.clearAllMocks()
-  vi.stubGlobal('fetch', vi.fn())
+  vi.useFakeTimers()
+  vi.restoreAllMocks()
+  mockSend.mockReset()
+  _resetRateLimitState()
 })
 
-describe('authenticatedGitHubFetch', () => {
-  it('makes authenticated request with token from config', async () => {
-    vi.mocked(getGitHubToken).mockReturnValue('token-A')
-    vi.mocked(fetch).mockResolvedValue(mockResponse(200, { data: 'ok' }))
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+})
 
-    const res = await authenticatedGitHubFetch('https://api.github.com/repos/o/r/pulls')
+describe('parseRateLimitHeaders', () => {
+  it('extracts all rate-limit headers', () => {
+    const h = headersFrom({
+      'x-ratelimit-remaining': '42',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+      'retry-after': '60',
+    })
+    const rl = parseRateLimitHeaders(h)
+    expect(rl.remaining).toBe(42)
+    expect(rl.limit).toBe(5000)
+    expect(rl.resetEpoch).toBe(1700000000)
+    expect(rl.retryAfterMs).toBe(60_000)
+  })
+
+  it('returns null for missing headers', () => {
+    const rl = parseRateLimitHeaders(headersFrom({}))
+    expect(rl.remaining).toBeNull()
+    expect(rl.limit).toBeNull()
+    expect(rl.resetEpoch).toBeNull()
+    expect(rl.retryAfterMs).toBeNull()
+  })
+})
+
+describe('computeBackoffMs', () => {
+  it('increases exponentially with attempt number', () => {
+    // attempt 0: base * 2^0 = 1000, plus 0-1000 jitter → [1000, 2000]
+    // attempt 2: base * 2^2 = 4000, plus jitter → [4000, 5000]
+    const a0 = computeBackoffMs(0)
+    const a2 = computeBackoffMs(2)
+    expect(a0).toBeGreaterThanOrEqual(1_000)
+    expect(a0).toBeLessThanOrEqual(2_000)
+    expect(a2).toBeGreaterThanOrEqual(4_000)
+    expect(a2).toBeLessThanOrEqual(5_000)
+  })
+
+  it('caps at MAX_BACKOFF_MS (30s)', () => {
+    const val = computeBackoffMs(20) // 2^20 is huge
+    expect(val).toBeLessThanOrEqual(30_000)
+  })
+})
+
+describe('githubFetch', () => {
+  it('returns a successful response on first try', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        mockResponse(200, {
+          'x-ratelimit-remaining': '4999',
+          'x-ratelimit-limit': '5000',
+          'x-ratelimit-reset': '1700000000',
+        })
+      )
+    )
+
+    const res = await githubFetch('https://api.github.com/repos/o/r', {
+      headers: { Authorization: 'Bearer tok' },
+    })
 
     expect(res.status).toBe(200)
     expect(fetch).toHaveBeenCalledTimes(1)
-    expect(fetch).toHaveBeenCalledWith(
-      'https://api.github.com/repos/o/r/pulls',
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: 'Bearer token-A',
-          Accept: 'application/vnd.github+json',
-        }),
-      })
+  })
+
+  it('retries on 403 with x-ratelimit-remaining: 0 and respects Retry-After', async () => {
+    const rateLimitedResponse = mockResponse(403, {
+      'x-ratelimit-remaining': '0',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+      'retry-after': '1',
+    }, '{"message":"API rate limit exceeded"}')
+
+    const okResponse = mockResponse(200, {
+      'x-ratelimit-remaining': '4999',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    })
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn()
+        .mockResolvedValueOnce(rateLimitedResponse)
+        .mockResolvedValueOnce(okResponse)
     )
-  })
 
-  it('throws when no token is configured', async () => {
-    vi.mocked(getGitHubToken).mockReturnValue(null)
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    await expect(
-      authenticatedGitHubFetch('https://api.github.com/repos/o/r/pulls')
-    ).rejects.toThrow('GitHub token not configured')
-
-    expect(fetch).not.toHaveBeenCalled()
-  })
-
-  it('retries once with fresh token on 401 when token changed', async () => {
-    vi.mocked(getGitHubToken)
-      .mockReturnValueOnce('stale-token')
-      .mockReturnValueOnce('fresh-token')
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(mockResponse(401))
-      .mockResolvedValueOnce(mockResponse(200, { retried: true }))
-
-    const res = await authenticatedGitHubFetch('https://api.github.com/repos/o/r/pulls')
+    const res = await githubFetch('https://api.github.com/test', {
+      headers: { Authorization: 'Bearer tok' },
+      timeoutMs: 10_000,
+    })
 
     expect(res.status).toBe(200)
     expect(fetch).toHaveBeenCalledTimes(2)
-    // First call with stale token
-    expect(fetch).toHaveBeenNthCalledWith(
-      1,
-      'https://api.github.com/repos/o/r/pulls',
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: 'Bearer stale-token' }),
-      })
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Rate limited')
     )
-    // Retry with fresh token
-    expect(fetch).toHaveBeenNthCalledWith(
-      2,
-      'https://api.github.com/repos/o/r/pulls',
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: 'Bearer fresh-token' }),
-      })
+    warnSpy.mockRestore()
+  })
+
+  it('retries on 5xx server errors with exponential backoff', async () => {
+    const serverError = mockResponse(502, {
+      'x-ratelimit-remaining': '4000',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    })
+
+    const okResponse = mockResponse(200, {
+      'x-ratelimit-remaining': '3999',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    })
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn()
+        .mockResolvedValueOnce(serverError)
+        .mockResolvedValueOnce(okResponse)
     )
+
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const res = await githubFetch('https://api.github.com/test', {
+      headers: { Authorization: 'Bearer tok' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 
-  it('does not retry on 401 when token is unchanged', async () => {
-    vi.mocked(getGitHubToken).mockReturnValue('same-token')
-    vi.mocked(fetch).mockResolvedValue(mockResponse(401))
+  it('returns last response after exhausting retries', async () => {
+    const serverError = mockResponse(503, {
+      'x-ratelimit-remaining': '4000',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    })
 
-    const res = await authenticatedGitHubFetch('https://api.github.com/repos/o/r/pulls')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(serverError))
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    expect(res.status).toBe(401)
-    expect(fetch).toHaveBeenCalledTimes(1)
+    const res = await githubFetch('https://api.github.com/test', {
+      headers: { Authorization: 'Bearer tok' },
+    })
+
+    expect(res.status).toBe(503)
+    // MAX_RETRIES = 3 → 4 total attempts (0, 1, 2, 3)
+    expect(fetch).toHaveBeenCalledTimes(4)
   })
 
-  it('does not retry on 401 when fresh token is null', async () => {
-    vi.mocked(getGitHubToken)
-      .mockReturnValueOnce('old-token')
-      .mockReturnValueOnce(null)
-    vi.mocked(fetch).mockResolvedValue(mockResponse(401))
+  it('does not retry 403 when x-ratelimit-remaining is > 0 (not a rate limit)', async () => {
+    const forbidden = mockResponse(403, {
+      'x-ratelimit-remaining': '4999',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    }, '{"message":"Resource not accessible by integration"}')
 
-    const res = await authenticatedGitHubFetch('https://api.github.com/repos/o/r/pulls')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(forbidden))
 
-    expect(res.status).toBe(401)
-    expect(fetch).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not retry on non-401 errors', async () => {
-    vi.mocked(getGitHubToken).mockReturnValue('token')
-    vi.mocked(fetch).mockResolvedValue(mockResponse(403))
-
-    const res = await authenticatedGitHubFetch('https://api.github.com/repos/o/r/pulls')
+    const res = await githubFetch('https://api.github.com/test', {
+      headers: { Authorization: 'Bearer tok' },
+    })
 
     expect(res.status).toBe(403)
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('passes custom method, headers, and body', async () => {
-    vi.mocked(getGitHubToken).mockReturnValue('token')
-    vi.mocked(fetch).mockResolvedValue(mockResponse(200))
-
-    await authenticatedGitHubFetch('https://api.github.com/repos/o/r/pulls/1/merge', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ merge_method: 'squash' }),
+  it('does not retry 4xx errors other than rate-limit 403', async () => {
+    const notFound = mockResponse(404, {
+      'x-ratelimit-remaining': '4000',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
     })
 
-    expect(fetch).toHaveBeenCalledWith(
-      'https://api.github.com/repos/o/r/pulls/1/merge',
-      expect.objectContaining({
-        method: 'PUT',
-        body: '{"merge_method":"squash"}',
-        headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer token',
-        }),
-      })
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(notFound))
+
+    const res = await githubFetch('https://api.github.com/test', {
+      headers: { Authorization: 'Bearer tok' },
+    })
+
+    expect(res.status).toBe(404)
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('uses custom timeout when provided', async () => {
-    vi.mocked(getGitHubToken).mockReturnValue('token')
-    vi.mocked(fetch).mockResolvedValue(mockResponse(200))
+  it('broadcasts rate-limit warning when remaining drops below threshold', async () => {
+    const lowLimitResponse = mockResponse(200, {
+      'x-ratelimit-remaining': '50',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    })
 
-    await authenticatedGitHubFetch('https://api.github.com/test', { timeoutMs: 5_000 })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(lowLimitResponse))
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const callArgs = vi.mocked(fetch).mock.calls[0][1] as RequestInit
-    expect(callArgs.signal).toBeDefined()
+    await githubFetch('https://api.github.com/test', {
+      headers: { Authorization: 'Bearer tok' },
+    })
+
+    expect(mockSend).toHaveBeenCalledWith('github:rate-limit-warning', {
+      remaining: 50,
+      limit: 5000,
+      resetEpoch: 1700000000,
+    })
+  })
+
+  it('does not broadcast warning when remaining is above threshold', async () => {
+    const healthyResponse = mockResponse(200, {
+      'x-ratelimit-remaining': '4500',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    })
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(healthyResponse))
+
+    await githubFetch('https://api.github.com/test', {
+      headers: { Authorization: 'Bearer tok' },
+    })
+
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('only emits the warning once per rate-limit window', async () => {
+    const lowLimit = mockResponse(200, {
+      'x-ratelimit-remaining': '50',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-reset': '1700000000',
+    })
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(lowLimit))
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    await githubFetch('https://api.github.com/test1')
+    await githubFetch('https://api.github.com/test2')
+
+    // Should only emit once despite two calls
+    expect(mockSend).toHaveBeenCalledTimes(1)
+  })
+
+  it('passes timeoutMs as AbortSignal.timeout to fetch', async () => {
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        mockResponse(200, {
+          'x-ratelimit-remaining': '5000',
+          'x-ratelimit-limit': '5000',
+          'x-ratelimit-reset': '1700000000',
+        })
+      )
+    )
+
+    await githubFetch('https://api.github.com/test', { timeoutMs: 15_000 })
+
+    expect(timeoutSpy).toHaveBeenCalledWith(15_000)
+    timeoutSpy.mockRestore()
   })
 })
