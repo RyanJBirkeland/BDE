@@ -1,128 +1,94 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, PrListPayload, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
-import type { IpcChannelMap, GitHubFetchInit, GitHubFetchResult } from '../shared/ipc-channels'
+import type { AgentMeta, PrListPayload, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
+import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 
-export type { AgentCostRecord, AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
+export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
 
 /** Helper — extracts the result type for a typed IPC channel. */
 type IpcResult<K extends keyof IpcChannelMap> = IpcChannelMap[K]['result']
+/** Helper — extracts the args tuple for a typed IPC channel. */
+type IpcArgs<K extends keyof IpcChannelMap> = IpcChannelMap[K]['args']
 
 declare global {
   interface Window {
     electron: ElectronAPI
     api: {
       getGatewayUrl: () => Promise<IpcResult<'config:getGatewayUrl'>>
-      saveGatewayConfig: (...args: IpcChannelMap['config:saveGateway']['args']) => Promise<IpcResult<'config:saveGateway'>>
-      testGatewayConnection: (...args: IpcChannelMap['gateway:test-connection']['args']) => Promise<IpcResult<'gateway:test-connection'>>
+      saveGatewayConfig: (...args: IpcArgs<'config:saveGateway'>) => Promise<IpcResult<'config:saveGateway'>>
+      testGatewayConnection: (...args: IpcArgs<'gateway:test-connection'>) => Promise<IpcResult<'gateway:test-connection'>>
       signGatewayChallenge: () => Promise<IpcResult<'gateway:sign-challenge'>>
-      getRepoPaths: () => Promise<Record<string, string>>
-      openExternal: (url: string) => Promise<void>
-      listMemoryFiles: () => Promise<
-        { path: string; name: string; size: number; modifiedAt: number }[]
-      >
-      readMemoryFile: (path: string) => Promise<string>
-      writeMemoryFile: (path: string, content: string) => Promise<void>
+      getRepoPaths: () => Promise<IpcResult<'git:getRepoPaths'>>
+      openExternal: (...args: IpcArgs<'window:openExternal'>) => Promise<IpcResult<'window:openExternal'>>
+      listMemoryFiles: () => Promise<IpcResult<'memory:listFiles'>>
+      readMemoryFile: (...args: IpcArgs<'memory:readFile'>) => Promise<IpcResult<'memory:readFile'>>
+      writeMemoryFile: (...args: IpcArgs<'memory:writeFile'>) => Promise<IpcResult<'memory:writeFile'>>
       setTitle: (title: string) => void
 
       // GitHub API proxy — all GitHub REST calls routed through main process
       github: {
-        fetch: (path: string, init?: GitHubFetchInit) => Promise<GitHubFetchResult>
+        fetch: (path: string, init?: GitHubFetchInit) => Promise<IpcResult<'github:fetch'>>
       }
 
       // Local agent process detection + spawning
-      getAgentProcesses: () => Promise<
-        {
-          pid: number
-          bin: string
-          args: string
-          cwd: string | null
-          startedAt: number
-          cpuPct: number
-          memMb: number
-        }[]
-      >
-      spawnLocalAgent: (...args: IpcChannelMap['local:spawnClaudeAgent']['args']) => Promise<IpcResult<'local:spawnClaudeAgent'>>
-      sendToAgent: (pid: number, message: string) => Promise<{ ok: boolean; error?: string }>
-      isAgentInteractive: (pid: number) => Promise<boolean>
-      steerAgent: (agentId: string, message: string) => Promise<{ ok: boolean; error?: string }>
-      killLocalAgent: (pid: number) => Promise<{ ok: boolean; error?: string }>
-      killAgent: (agentId: string) => Promise<{ ok: boolean; error?: string }>
-      tailAgentLog: (args: {
-        logPath: string
-        fromByte?: number
-      }) => Promise<{ content: string; nextByte: number }>
+      getAgentProcesses: () => Promise<IpcResult<'local:getAgentProcesses'>>
+      spawnLocalAgent: (...args: IpcArgs<'local:spawnClaudeAgent'>) => Promise<IpcResult<'local:spawnClaudeAgent'>>
+      sendToAgent: (pid: number, message: string) => Promise<IpcResult<'local:sendToAgent'>>
+      isAgentInteractive: (...args: IpcArgs<'local:isInteractive'>) => Promise<IpcResult<'local:isInteractive'>>
+      steerAgent: (agentId: string, message: string) => Promise<IpcResult<'agent:steer'>>
+      killLocalAgent: (...args: IpcArgs<'agent:killLocal'>) => Promise<IpcResult<'agent:killLocal'>>
+      killAgent: (...args: IpcArgs<'agent:kill'>) => Promise<IpcResult<'agent:kill'>>
+      tailAgentLog: (...args: IpcArgs<'local:tailAgentLog'>) => Promise<IpcResult<'local:tailAgentLog'>>
 
       // Git client
-      gitStatus: (...args: IpcChannelMap['git:status']['args']) => Promise<IpcResult<'git:status'>>
-      gitDiff: (...args: IpcChannelMap['git:diff']['args']) => Promise<IpcResult<'git:diff'>>
-      gitStage: (cwd: string, files: string[]) => Promise<void>
-      gitUnstage: (cwd: string, files: string[]) => Promise<void>
-      gitCommit: (cwd: string, message: string) => Promise<void>
-      gitPush: (cwd: string) => Promise<string>
-      gitBranches: (cwd: string) => Promise<{ current: string; branches: string[] }>
-      gitCheckout: (cwd: string, branch: string) => Promise<void>
+      gitStatus: (...args: IpcArgs<'git:status'>) => Promise<IpcResult<'git:status'>>
+      gitDiff: (...args: IpcArgs<'git:diff'>) => Promise<IpcResult<'git:diff'>>
+      gitStage: (...args: IpcArgs<'git:stage'>) => Promise<IpcResult<'git:stage'>>
+      gitUnstage: (...args: IpcArgs<'git:unstage'>) => Promise<IpcResult<'git:unstage'>>
+      gitCommit: (...args: IpcArgs<'git:commit'>) => Promise<IpcResult<'git:commit'>>
+      gitPush: (...args: IpcArgs<'git:push'>) => Promise<IpcResult<'git:push'>>
+      gitBranches: (...args: IpcArgs<'git:branches'>) => Promise<IpcResult<'git:branches'>>
+      gitCheckout: (...args: IpcArgs<'git:checkout'>) => Promise<IpcResult<'git:checkout'>>
 
       // Agent history — persistent audit trail
       agents: {
-        list: (args: { limit?: number; status?: string }) => Promise<AgentMeta[]>
-        readLog: (args: { id: string; fromByte?: number }) => Promise<{ content: string; nextByte: number }>
-        import: (args: { meta: Partial<AgentMeta>; content: string }) => Promise<AgentMeta>
+        list: (...args: IpcArgs<'agents:list'>) => Promise<IpcResult<'agents:list'>>
+        readLog: (...args: IpcArgs<'agents:readLog'>) => Promise<IpcResult<'agents:readLog'>>
+        import: (...args: IpcArgs<'agents:import'>) => Promise<IpcResult<'agents:import'>>
       }
 
       // Cost analytics
       cost: {
-        summary: () => Promise<CostSummary>
-        agentRuns: (limit?: number) => Promise<AgentRunCostRow[]>
-        getAgentHistory: () => Promise<AgentCostRecord[]>
+        summary: () => Promise<IpcResult<'cost:summary'>>
+        agentRuns: (limit?: number) => Promise<IpcResult<'cost:agentRuns'>>
+        getAgentHistory: (args?: { limit?: number; offset?: number }) => Promise<IpcResult<'cost:getAgentHistory'>>
       }
 
       // PR status polling
-      pollPrStatuses: (
-        prs: { taskId: string; prUrl: string }[]
-      ) => Promise<{ taskId: string; merged: boolean; state: string; mergedAt: string | null; mergeableState: string | null }[]>
+      pollPrStatuses: (...args: IpcArgs<'pr:pollStatuses'>) => Promise<IpcResult<'pr:pollStatuses'>>
 
       // Conflict file detection
-      checkConflictFiles: (
-        input: { owner: string; repo: string; prNumber: number }
-      ) => Promise<{ prNumber: number; files: string[]; baseBranch: string; headBranch: string }>
+      checkConflictFiles: (...args: IpcArgs<'pr:checkConflictFiles'>) => Promise<IpcResult<'pr:checkConflictFiles'>>
 
       // Sprint tasks — SQLite-backed Kanban
       sprint: {
-        list: () => Promise<SprintTask[]>
-        create: (task: {
-          title: string
-          repo: string
-          prompt?: string
-          notes?: string
-          spec?: string
-          priority?: number
-          status?: string
-        }) => Promise<unknown>
-        update: (id: string, patch: Record<string, unknown>) => Promise<unknown>
-        readLog: (agentId: string, fromByte?: number) => Promise<{ content: string; status: string; nextByte: number }>
-        readSpecFile: (filePath: string) => Promise<string>
-        generatePrompt: (args: {
-          taskId: string
-          title: string
-          repo: string
-          templateHint: string
-        }) => Promise<{ taskId: string; spec: string; prompt: string }>
-        delete: (id: string) => Promise<{ ok: boolean }>
-        healthCheck: () => Promise<SprintTask[]>
+        list: () => Promise<IpcResult<'sprint:list'>>
+        create: (...args: IpcArgs<'sprint:create'>) => Promise<IpcResult<'sprint:create'>>
+        update: (...args: IpcArgs<'sprint:update'>) => Promise<IpcResult<'sprint:update'>>
+        readLog: (...args: IpcArgs<'sprint:readLog'>) => Promise<IpcResult<'sprint:readLog'>>
+        readSpecFile: (...args: IpcArgs<'sprint:readSpecFile'>) => Promise<IpcResult<'sprint:readSpecFile'>>
+        generatePrompt: (...args: IpcArgs<'sprint:generatePrompt'>) => Promise<IpcResult<'sprint:generatePrompt'>>
+        delete: (...args: IpcArgs<'sprint:delete'>) => Promise<IpcResult<'sprint:delete'>>
+        healthCheck: () => Promise<IpcResult<'sprint:healthCheck'>>
       }
 
       // File attachments
-      openFileDialog: (
-        opts?: { filters?: { name: string; extensions: string[] }[] }
-      ) => Promise<string[] | null>
-      readFileAsBase64: (
-        path: string
-      ) => Promise<{ data: string; mimeType: string; name: string }>
-      readFileAsText: (path: string) => Promise<{ content: string; name: string }>
+      openFileDialog: (...args: IpcArgs<'fs:openFileDialog'>) => Promise<IpcResult<'fs:openFileDialog'>>
+      readFileAsBase64: (...args: IpcArgs<'fs:readFileAsBase64'>) => Promise<IpcResult<'fs:readFileAsBase64'>>
+      readFileAsText: (...args: IpcArgs<'fs:readFileAsText'>) => Promise<IpcResult<'fs:readFileAsText'>>
 
       // Gateway RPC
-      invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<unknown>
-      getSessionHistory: (sessionKey: string) => Promise<unknown>
+      invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<IpcResult<'gateway:invoke'>>
+      getSessionHistory: (...args: IpcArgs<'gateway:getSessionHistory'>) => Promise<IpcResult<'gateway:getSessionHistory'>>
 
       // GitHub rate-limit warning push events
       onGitHubRateLimitWarning: (
@@ -134,8 +100,8 @@ declare global {
 
       // Open PR list — main-process poller push events
       onPrListUpdated: (cb: (payload: PrListPayload) => void) => () => void
-      getPrList: () => Promise<PrListPayload>
-      refreshPrList: () => Promise<PrListPayload>
+      getPrList: () => Promise<IpcResult<'pr:getList'>>
+      refreshPrList: () => Promise<IpcResult<'pr:refreshList'>>
 
       // Sprint DB file-watcher push events
       onExternalSprintChange: (cb: () => void) => void
@@ -146,10 +112,10 @@ declare global {
 
       // Terminal PTY
       terminal: {
-        create: (...args: IpcChannelMap['terminal:create']['args']) => Promise<IpcResult<'terminal:create'>>
+        create: (...args: IpcArgs<'terminal:create'>) => Promise<IpcResult<'terminal:create'>>
         write: (id: number, data: string) => void
-        resize: (id: number, cols: number, rows: number) => Promise<void>
-        kill: (id: number) => Promise<void>
+        resize: (id: number, cols: number, rows: number) => Promise<IpcResult<'terminal:resize'>>
+        kill: (...args: IpcArgs<'terminal:kill'>) => Promise<IpcResult<'terminal:kill'>>
         onData: (id: number, cb: (data: string) => void) => () => void
         onExit: (id: number, cb: () => void) => void
       }

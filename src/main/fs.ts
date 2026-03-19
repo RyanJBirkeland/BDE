@@ -166,7 +166,6 @@ async function readFileAsText(
 }
 
 export function registerFsHandlers(): void {
-  // TODO: AX-S1 — add 'memory:listFiles', 'memory:readFile', 'memory:writeFile' to IpcChannelMap
   safeHandle('memory:listFiles', () => listMemoryFiles())
   safeHandle('memory:readFile', (_e, path: string) => readMemoryFile(path))
   safeHandle('memory:writeFile', (_e, path: string, content: string) =>

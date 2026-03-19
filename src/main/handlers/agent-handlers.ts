@@ -16,12 +16,10 @@ import type { AgentMeta } from '../agent-history'
 
 export function registerAgentHandlers(): void {
   // --- Local agent process detection + spawning ---
-  // TODO: AX-S1 — add 'local:getAgentProcesses' to IpcChannelMap
   safeHandle('local:getAgentProcesses', () => getAgentProcesses())
   safeHandle('local:spawnClaudeAgent', (_e, args: SpawnLocalAgentArgs) =>
     spawnClaudeAgent(args)
   )
-  // TODO: AX-S1 — add 'local:tailAgentLog', 'local:sendToAgent', 'local:isInteractive' to IpcChannelMap
   safeHandle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
   safeHandle('local:sendToAgent', async (_e, { pid, message }: { pid: number; message: string }) => {
     const { sendToAgent } = await import('../local-agents')
@@ -42,7 +40,6 @@ export function registerAgentHandlers(): void {
   cleanupOldLogs()
 
   // --- Agent history IPC ---
-  // TODO: AX-S1 — add 'agents:list', 'agents:readLog', 'agents:import' to IpcChannelMap
   safeHandle('agents:list', (_e, args: { limit?: number; status?: string }) =>
     listAgents(args.limit, args.status)
   )

@@ -71,7 +71,6 @@ export function registerTerminalHandlers(): void {
     terminals.get(id)?.write(data)
   })
 
-  // TODO: AX-S1 — add 'terminal:resize', 'terminal:kill' to IpcChannelMap
   safeHandle(
     'terminal:resize',
     (_e, { id, cols, rows }: { id: number; cols: number; rows: number }) => {

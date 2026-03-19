@@ -15,8 +15,7 @@ export const GATEWAY_TOOL_ALLOWLIST = new Set([
 ])
 
 export function registerGatewayHandlers(): void {
-  // TODO: AX-S1 — add 'gateway:invoke', 'gateway:getSessionHistory' to IpcChannelMap
-  safeHandle('gateway:invoke', async (_e, tool: string, args: Record<string, unknown>) => {
+  safeHandle('gateway:invoke', async (_e, tool, args) => {
     if (!GATEWAY_TOOL_ALLOWLIST.has(tool)) {
       throw new Error(`Tool "${tool}" is not in the renderer allowlist`)
     }
@@ -44,7 +43,7 @@ export function registerGatewayHandlers(): void {
     return res.json()
   })
 
-  // Test connection — proxied through main so renderer never sees the stored token.
+  // Test connection -- proxied through main so renderer never sees the stored token.
   // If token is provided (user-entered in settings form), use it; otherwise use stored.
   safeHandle('gateway:test-connection', async (_e, url: string, token?: string) => {
     const effectiveToken = token || getGatewayConfig().token
@@ -62,7 +61,7 @@ export function registerGatewayHandlers(): void {
     return { ok: true, latencyMs: Date.now() - start }
   })
 
-  // Sign the WebSocket connect challenge — token stays in main process.
+  // Sign the WebSocket connect challenge -- token stays in main process.
   safeHandle('gateway:sign-challenge', () => {
     const { token } = getGatewayConfig()
     return { auth: { token } }

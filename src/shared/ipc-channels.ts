@@ -4,12 +4,9 @@
  * Each entry maps a channel name to its `args` tuple and `result` type.
  * Both `safeHandle()` (main) and `typedInvoke()` (preload) derive their
  * types from this map, giving end-to-end compile-time safety.
- *
- * Channels not yet in this map still work via the untyped `safeHandle` overload.
- * Add channels here incrementally — see TODO comments in handler files.
  */
 
-import type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from './types'
+import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, PrListPayload } from './types'
 
 /** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
 export interface GitHubFetchInit {
@@ -57,11 +54,97 @@ export interface IpcChannelMap {
     args: [cwd: string, file?: string]
     result: string
   }
+  'git:getRepoPaths': {
+    args: []
+    result: Record<string, string>
+  }
+  'git:stage': {
+    args: [cwd: string, files: string[]]
+    result: void
+  }
+  'git:unstage': {
+    args: [cwd: string, files: string[]]
+    result: void
+  }
+  'git:commit': {
+    args: [cwd: string, message: string]
+    result: void
+  }
+  'git:push': {
+    args: [cwd: string]
+    result: string
+  }
+  'git:branches': {
+    args: [cwd: string]
+    result: { current: string; branches: string[] }
+  }
+  'git:checkout': {
+    args: [cwd: string, branch: string]
+    result: void
+  }
+
+  // --- PR ---
+  'pr:pollStatuses': {
+    args: [prs: { taskId: string; prUrl: string }[]]
+    result: { taskId: string; merged: boolean; state: string; mergedAt: string | null; mergeableState: string | null }[]
+  }
+  'pr:checkConflictFiles': {
+    args: [input: { owner: string; repo: string; prNumber: number }]
+    result: { prNumber: number; files: string[]; baseBranch: string; headBranch: string }
+  }
+  'pr:getList': {
+    args: []
+    result: PrListPayload
+  }
+  'pr:refreshList': {
+    args: []
+    result: PrListPayload
+  }
 
   // --- Agents ---
   'local:spawnClaudeAgent': {
     args: [args: SpawnLocalAgentArgs]
     result: SpawnLocalAgentResult
+  }
+  'local:getAgentProcesses': {
+    args: []
+    result: { pid: number; bin: string; args: string; cwd: string | null; startedAt: number; cpuPct: number; memMb: number }[]
+  }
+  'local:sendToAgent': {
+    args: [args: { pid: number; message: string }]
+    result: { ok: boolean; error?: string }
+  }
+  'local:isInteractive': {
+    args: [pid: number]
+    result: boolean
+  }
+  'local:tailAgentLog': {
+    args: [args: { logPath: string; fromByte?: number }]
+    result: { content: string; nextByte: number }
+  }
+  'agent:steer': {
+    args: [args: { agentId: string; message: string }]
+    result: { ok: boolean; error?: string }
+  }
+  'agent:kill': {
+    args: [agentId: string]
+    result: { ok: boolean; error?: string }
+  }
+  'agent:killLocal': {
+    args: [pid: number]
+    result: { ok: boolean; error?: string }
+  }
+  'agents:list': {
+    args: [args: { limit?: number; status?: string }]
+    result: AgentMeta[]
+  }
+  'agents:readLog': {
+    args: [args: { id: string; fromByte?: number }]
+    result: { content: string; nextByte: number }
+  }
+  'agents:import': {
+    args: [args: { meta: Partial<AgentMeta>; content: string }]
+    result: AgentMeta
   }
 
   // --- GitHub API proxy ---
@@ -70,9 +153,109 @@ export interface IpcChannelMap {
     result: GitHubFetchResult
   }
 
+  // --- Cost ---
+  'cost:summary': {
+    args: []
+    result: CostSummary
+  }
+  'cost:agentRuns': {
+    args: [args: { limit?: number }]
+    result: AgentRunCostRow[]
+  }
+  'cost:getAgentHistory': {
+    args: [args?: { limit?: number; offset?: number }]
+    result: AgentCostRecord[]
+  }
+
+  // --- Sprint ---
+  'sprint:list': {
+    args: []
+    result: SprintTask[]
+  }
+  'sprint:create': {
+    args: [task: { title: string; repo: string; prompt?: string; notes?: string; spec?: string; priority?: number; status?: string }]
+    result: unknown
+  }
+  'sprint:update': {
+    args: [id: string, patch: Record<string, unknown>]
+    result: unknown
+  }
+  'sprint:delete': {
+    args: [id: string]
+    result: { ok: boolean }
+  }
+  'sprint:readSpecFile': {
+    args: [filePath: string]
+    result: string
+  }
+  'sprint:generatePrompt': {
+    args: [args: { taskId: string; title: string; repo: string; templateHint: string }]
+    result: { taskId: string; spec: string; prompt: string }
+  }
+  'sprint:healthCheck': {
+    args: []
+    result: SprintTask[]
+  }
+  'sprint:readLog': {
+    args: [agentId: string, fromByte?: number]
+    result: { content: string; status: string; nextByte: number }
+  }
+
+  // --- Window ---
+  'window:openExternal': {
+    args: [url: string]
+    result: void
+  }
+
+  // --- Memory ---
+  'memory:listFiles': {
+    args: []
+    result: { path: string; name: string; size: number; modifiedAt: number }[]
+  }
+  'memory:readFile': {
+    args: [path: string]
+    result: string
+  }
+  'memory:writeFile': {
+    args: [path: string, content: string]
+    result: void
+  }
+
+  // --- File system ---
+  'fs:openFileDialog': {
+    args: [opts?: { filters?: { name: string; extensions: string[] }[] }]
+    result: string[] | null
+  }
+  'fs:readFileAsBase64': {
+    args: [path: string]
+    result: { data: string; mimeType: string; name: string }
+  }
+  'fs:readFileAsText': {
+    args: [path: string]
+    result: { content: string; name: string }
+  }
+
+  // --- Gateway RPC ---
+  'gateway:invoke': {
+    args: [tool: string, args: Record<string, unknown>]
+    result: unknown
+  }
+  'gateway:getSessionHistory': {
+    args: [sessionKey: string]
+    result: unknown
+  }
+
   // --- Terminal ---
   'terminal:create': {
     args: [opts: { cols: number; rows: number; shell?: string }]
     result: number
+  }
+  'terminal:resize': {
+    args: [args: { id: number; cols: number; rows: number }]
+    result: void
+  }
+  'terminal:kill': {
+    args: [id: number]
+    result: void
   }
 }

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AgentCostRecord, AgentMeta, AgentRunCostRow, CostSummary, PrListPayload, SpawnLocalAgentArgs, SprintTask } from '../shared/types'
+import type { AgentMeta, PrListPayload, SpawnLocalAgentArgs } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
@@ -24,15 +24,12 @@ const api = {
   testGatewayConnection: (url: string, token?: string) =>
     typedInvoke('gateway:test-connection', url, token),
   signGatewayChallenge: () => typedInvoke('gateway:sign-challenge'),
-  getRepoPaths: (): Promise<Record<string, string>> => ipcRenderer.invoke('git:getRepoPaths'),
-  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('window:openExternal', url),
-  listMemoryFiles: (): Promise<
-    { path: string; name: string; size: number; modifiedAt: number }[]
-  > => ipcRenderer.invoke('memory:listFiles'),
-  readMemoryFile: (path: string): Promise<string> =>
-    ipcRenderer.invoke('memory:readFile', path),
-  writeMemoryFile: (path: string, content: string): Promise<void> =>
-    ipcRenderer.invoke('memory:writeFile', path, content),
+  getRepoPaths: () => typedInvoke('git:getRepoPaths'),
+  openExternal: (url: string) => typedInvoke('window:openExternal', url),
+  listMemoryFiles: () => typedInvoke('memory:listFiles'),
+  readMemoryFile: (path: string) => typedInvoke('memory:readFile', path),
+  writeMemoryFile: (path: string, content: string) =>
+    typedInvoke('memory:writeFile', path, content),
   setTitle: (title: string): void => ipcRenderer.send('window:setTitle', title),
 
   // GitHub API proxy — all GitHub REST calls routed through main process
@@ -44,83 +41,57 @@ const api = {
   // Git client
   gitStatus: (cwd: string) => typedInvoke('git:status', cwd),
   gitDiff: (cwd: string, file?: string) => typedInvoke('git:diff', cwd, file),
-  gitStage: (cwd: string, files: string[]): Promise<void> =>
-    ipcRenderer.invoke('git:stage', cwd, files),
-  gitUnstage: (cwd: string, files: string[]): Promise<void> =>
-    ipcRenderer.invoke('git:unstage', cwd, files),
-  gitCommit: (cwd: string, message: string): Promise<void> =>
-    ipcRenderer.invoke('git:commit', cwd, message),
-  gitPush: (cwd: string): Promise<string> => ipcRenderer.invoke('git:push', cwd),
-  gitBranches: (cwd: string): Promise<{ current: string; branches: string[] }> =>
-    ipcRenderer.invoke('git:branches', cwd),
-  gitCheckout: (cwd: string, branch: string): Promise<void> =>
-    ipcRenderer.invoke('git:checkout', cwd, branch),
+  gitStage: (cwd: string, files: string[]) => typedInvoke('git:stage', cwd, files),
+  gitUnstage: (cwd: string, files: string[]) => typedInvoke('git:unstage', cwd, files),
+  gitCommit: (cwd: string, message: string) => typedInvoke('git:commit', cwd, message),
+  gitPush: (cwd: string) => typedInvoke('git:push', cwd),
+  gitBranches: (cwd: string) => typedInvoke('git:branches', cwd),
+  gitCheckout: (cwd: string, branch: string) => typedInvoke('git:checkout', cwd, branch),
 
   // Local agent process detection + spawning
-  getAgentProcesses: (): Promise<
-    {
-      pid: number
-      bin: string
-      args: string
-      cwd: string | null
-      startedAt: number
-      cpuPct: number
-      memMb: number
-    }[]
-  > => ipcRenderer.invoke('local:getAgentProcesses'),
+  getAgentProcesses: () => typedInvoke('local:getAgentProcesses'),
   spawnLocalAgent: (args: SpawnLocalAgentArgs) =>
     typedInvoke('local:spawnClaudeAgent', args),
-  sendToAgent: (pid: number, message: string): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('local:sendToAgent', { pid, message }),
-  isAgentInteractive: (pid: number): Promise<boolean> =>
-    ipcRenderer.invoke('local:isInteractive', pid),
-  steerAgent: (agentId: string, message: string): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('agent:steer', { agentId, message }),
-  killLocalAgent: (pid: number): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('agent:killLocal', pid),
-  killAgent: (agentId: string): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('agent:kill', agentId),
-  tailAgentLog: (args: {
-    logPath: string
-    fromByte?: number
-  }): Promise<{ content: string; nextByte: number }> =>
-    ipcRenderer.invoke('local:tailAgentLog', args),
+  sendToAgent: (pid: number, message: string) =>
+    typedInvoke('local:sendToAgent', { pid, message }),
+  isAgentInteractive: (pid: number) => typedInvoke('local:isInteractive', pid),
+  steerAgent: (agentId: string, message: string) =>
+    typedInvoke('agent:steer', { agentId, message }),
+  killLocalAgent: (pid: number) => typedInvoke('agent:killLocal', pid),
+  killAgent: (agentId: string) => typedInvoke('agent:kill', agentId),
+  tailAgentLog: (args: { logPath: string; fromByte?: number }) =>
+    typedInvoke('local:tailAgentLog', args),
 
   // Agent history — persistent audit trail
   agents: {
-    list: (args: { limit?: number; status?: string }): Promise<AgentMeta[]> =>
-      ipcRenderer.invoke('agents:list', args),
-    readLog: (args: { id: string; fromByte?: number }): Promise<{ content: string; nextByte: number }> =>
-      ipcRenderer.invoke('agents:readLog', args),
-    import: (args: { meta: Partial<AgentMeta>; content: string }): Promise<AgentMeta> =>
-      ipcRenderer.invoke('agents:import', args),
+    list: (args: { limit?: number; status?: string }) =>
+      typedInvoke('agents:list', args),
+    readLog: (args: { id: string; fromByte?: number }) =>
+      typedInvoke('agents:readLog', args),
+    import: (args: { meta: Partial<AgentMeta>; content: string }) =>
+      typedInvoke('agents:import', args),
   },
 
   // Cost analytics
   cost: {
-    summary: (): Promise<CostSummary> =>
-      ipcRenderer.invoke('cost:summary'),
-    agentRuns: (limit?: number): Promise<AgentRunCostRow[]> =>
-      ipcRenderer.invoke('cost:agentRuns', { limit: limit ?? 20 }),
-    getAgentHistory: (args?: { limit?: number; offset?: number }): Promise<AgentCostRecord[]> =>
-      ipcRenderer.invoke('cost:getAgentHistory', args),
+    summary: () => typedInvoke('cost:summary'),
+    agentRuns: (limit?: number) =>
+      typedInvoke('cost:agentRuns', { limit: limit ?? 20 }),
+    getAgentHistory: (args?: { limit?: number; offset?: number }) =>
+      typedInvoke('cost:getAgentHistory', args),
   },
 
   // PR status polling
-  pollPrStatuses: (
-    prs: { taskId: string; prUrl: string }[]
-  ): Promise<{ taskId: string; merged: boolean; state: string; mergedAt: string | null; mergeableState: string | null }[]> =>
-    ipcRenderer.invoke('pr:pollStatuses', prs),
+  pollPrStatuses: (prs: { taskId: string; prUrl: string }[]) =>
+    typedInvoke('pr:pollStatuses', prs),
 
   // Conflict file detection
-  checkConflictFiles: (
-    input: { owner: string; repo: string; prNumber: number }
-  ): Promise<{ prNumber: number; files: string[]; baseBranch: string; headBranch: string }> =>
-    ipcRenderer.invoke('pr:checkConflictFiles', input),
+  checkConflictFiles: (input: { owner: string; repo: string; prNumber: number }) =>
+    typedInvoke('pr:checkConflictFiles', input),
 
   // Sprint tasks — SQLite-backed Kanban
   sprint: {
-    list: (): Promise<SprintTask[]> => ipcRenderer.invoke('sprint:list'),
+    list: () => typedInvoke('sprint:list'),
     create: (task: {
       title: string
       repo: string
@@ -129,44 +100,33 @@ const api = {
       spec?: string
       priority?: number
       status?: string
-    }): Promise<unknown> => ipcRenderer.invoke('sprint:create', task),
-    update: (id: string, patch: Record<string, unknown>): Promise<unknown> =>
-      ipcRenderer.invoke('sprint:update', id, patch),
-    readLog: (agentId: string, fromByte?: number): Promise<{ content: string; status: string; nextByte: number }> =>
-      ipcRenderer.invoke('sprint:readLog', agentId, fromByte),
-    readSpecFile: (filePath: string): Promise<string> =>
-      ipcRenderer.invoke('sprint:readSpecFile', filePath),
+    }) => typedInvoke('sprint:create', task),
+    update: (id: string, patch: Record<string, unknown>) =>
+      typedInvoke('sprint:update', id, patch),
+    readLog: (agentId: string, fromByte?: number) =>
+      typedInvoke('sprint:readLog', agentId, fromByte),
+    readSpecFile: (filePath: string) => typedInvoke('sprint:readSpecFile', filePath),
     generatePrompt: (args: {
       taskId: string
       title: string
       repo: string
       templateHint: string
-    }): Promise<{ taskId: string; spec: string; prompt: string }> =>
-      ipcRenderer.invoke('sprint:generatePrompt', args),
-    delete: (id: string): Promise<{ ok: boolean }> =>
-      ipcRenderer.invoke('sprint:delete', id),
-    healthCheck: (): Promise<SprintTask[]> =>
-      ipcRenderer.invoke('sprint:healthCheck'),
+    }) => typedInvoke('sprint:generatePrompt', args),
+    delete: (id: string) => typedInvoke('sprint:delete', id),
+    healthCheck: () => typedInvoke('sprint:healthCheck'),
   },
 
   // File attachments
-  openFileDialog: (
-    opts?: { filters?: { name: string; extensions: string[] }[] }
-  ): Promise<string[] | null> => ipcRenderer.invoke('fs:openFileDialog', opts),
-  readFileAsBase64: (
-    path: string
-  ): Promise<{ data: string; mimeType: string; name: string }> =>
-    ipcRenderer.invoke('fs:readFileAsBase64', path),
-  readFileAsText: (
-    path: string
-  ): Promise<{ content: string; name: string }> =>
-    ipcRenderer.invoke('fs:readFileAsText', path),
+  openFileDialog: (opts?: { filters?: { name: string; extensions: string[] }[] }) =>
+    typedInvoke('fs:openFileDialog', opts),
+  readFileAsBase64: (path: string) => typedInvoke('fs:readFileAsBase64', path),
+  readFileAsText: (path: string) => typedInvoke('fs:readFileAsText', path),
 
   // Gateway tool invocation — proxied through main process to avoid CORS
-  invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
-    ipcRenderer.invoke('gateway:invoke', tool, args ?? {}),
-  getSessionHistory: (sessionKey: string): Promise<unknown> =>
-    ipcRenderer.invoke('gateway:getSessionHistory', sessionKey),
+  invokeTool: (tool: string, args?: Record<string, unknown>) =>
+    typedInvoke('gateway:invoke', tool, args ?? {}),
+  getSessionHistory: (sessionKey: string) =>
+    typedInvoke('gateway:getSessionHistory', sessionKey),
 
   // GitHub rate-limit warning push events
   onGitHubRateLimitWarning: (
@@ -190,8 +150,8 @@ const api = {
     ipcRenderer.on('pr:listUpdated', listener)
     return () => ipcRenderer.removeListener('pr:listUpdated', listener)
   },
-  getPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:getList'),
-  refreshPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:refreshList'),
+  getPrList: () => typedInvoke('pr:getList'),
+  refreshPrList: () => typedInvoke('pr:refreshList'),
 
   // Sprint DB file-watcher push events
   onExternalSprintChange: (cb: () => void): void => {
@@ -214,9 +174,9 @@ const api = {
       typedInvoke('terminal:create', opts),
     write: (id: number, data: string): void =>
       ipcRenderer.send('terminal:write', { id, data }),
-    resize: (id: number, cols: number, rows: number): Promise<void> =>
-      ipcRenderer.invoke('terminal:resize', { id, cols, rows }),
-    kill: (id: number): Promise<void> => ipcRenderer.invoke('terminal:kill', id),
+    resize: (id: number, cols: number, rows: number) =>
+      typedInvoke('terminal:resize', { id, cols, rows }),
+    kill: (id: number) => typedInvoke('terminal:kill', id),
     onData: (id: number, cb: (data: string) => void): (() => void) => {
       const listener = (_: unknown, data: string): void => cb(data)
       ipcRenderer.on('terminal:data:' + id, listener)

@@ -5,8 +5,7 @@ import { isKnownAgentPid } from '../local-agents'
 const ALLOWED_URL_SCHEMES = new Set(['https:', 'http:', 'mailto:'])
 
 export function registerWindowHandlers(): void {
-  // TODO: AX-S1 — add 'window:openExternal', 'agent:killLocal' to IpcChannelMap
-  safeHandle('window:openExternal', (_e, url: string) => {
+  safeHandle('window:openExternal', (_e, url) => {
     const parsed = new URL(url)
     if (!ALLOWED_URL_SCHEMES.has(parsed.protocol)) {
       throw new Error(`Blocked URL scheme: "${parsed.protocol}"`)

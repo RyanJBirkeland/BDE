@@ -72,7 +72,7 @@ function updateMergeableState(prNumber: number, mergeableState: string | null): 
 }
 
 export function registerGitHandlers(): void {
-  // --- GitHub API proxy (renderer → main → api.github.com) ---
+  // --- GitHub API proxy (renderer -> main -> api.github.com) ---
   safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
     const token = getGitHubToken()
     if (!token) throw new Error('GitHub token not configured')
@@ -88,7 +88,7 @@ export function registerGitHandlers(): void {
       url = `https://api.github.com${path}`
     }
 
-    // Strip caller Authorization — token is injected server-side only
+    // Strip caller Authorization -- token is injected server-side only
     const { Authorization: _, ...safeHeaders } = init?.headers ?? {}
     const res = await githubFetch(url, {
       method: init?.method,
@@ -104,13 +104,11 @@ export function registerGitHandlers(): void {
     return { ok: res.ok, status: res.status, body, linkNext }
   })
 
-  // TODO: AX-S1 — add 'git:getRepoPaths' to IpcChannelMap
   safeHandle('git:getRepoPaths', () => getRepoPaths())
 
   // --- Git client IPC (cwd validated against known repo paths) ---
   safeHandle('git:status', (_e, cwd: string) => gitStatus(validateRepoCwd(cwd)))
   safeHandle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(validateRepoCwd(cwd), file))
-  // TODO: AX-S1 — add 'git:stage' through 'git:checkout' to IpcChannelMap
   safeHandle('git:stage', (_e, cwd: string, files: string[]) => gitStage(validateRepoCwd(cwd), files))
   safeHandle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(validateRepoCwd(cwd), files))
   safeHandle('git:commit', (_e, cwd: string, message: string) => gitCommit(validateRepoCwd(cwd), message))
@@ -119,7 +117,6 @@ export function registerGitHandlers(): void {
   safeHandle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(validateRepoCwd(cwd), branch))
 
   // --- PR status polling ---
-  // TODO: AX-S1 — add 'pr:pollStatuses' to IpcChannelMap
   safeHandle('pr:pollStatuses', async (_e, prs: PrStatusInput[]) => {
     const results = await pollPrStatuses(prs)
     for (const result of results) {

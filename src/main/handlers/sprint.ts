@@ -3,6 +3,7 @@ import { getGatewayConfig, getTaskRunnerConfig } from '../config'
 import { SPECS_ROOT } from '../paths'
 import { readFile } from 'fs/promises'
 import { resolve } from 'path'
+import type { SprintTask } from '../../shared/types'
 
 function validateSpecPath(relativePath: string): string {
   const resolved = resolve(SPECS_ROOT, relativePath)
@@ -39,7 +40,7 @@ export interface CreateTaskInput {
 
 // --- Task Runner HTTP client ---
 
-async function taskRunnerFetch(method: string, path: string, body?: unknown): Promise<unknown> {
+async function taskRunnerFetch<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
   const cfg = getTaskRunnerConfig()
   if (!cfg) throw new Error('Task runner not configured — check openclaw.json for taskRunnerUrl + sprintApiKey')
   const res = await fetch(`${cfg.url}${path}`, {
@@ -54,17 +55,15 @@ async function taskRunnerFetch(method: string, path: string, body?: unknown): Pr
     const text = await res.text().catch(() => res.statusText)
     throw new Error(`Task runner ${method} ${path} → ${res.status}: ${text}`)
   }
-  if (res.status === 204) return null
-  return res.json()
+  if (res.status === 204) return null as T
+  return res.json() as Promise<T>
 }
 
 // --- Handler registration ---
 
 export function registerSprintHandlers(): void {
-  // TODO: AX-S1 — add sprint channels to IpcChannelMap
-
   safeHandle('sprint:list', () =>
-    taskRunnerFetch('GET', '/tasks')
+    taskRunnerFetch<SprintTask[]>('GET', '/tasks')
   )
 
   safeHandle('sprint:create', (_e, task: CreateTaskInput) =>
@@ -83,9 +82,10 @@ export function registerSprintHandlers(): void {
     taskRunnerFetch('PATCH', `/tasks/${id}`, patch)
   )
 
-  safeHandle('sprint:delete', (_e, id: string) =>
-    taskRunnerFetch('DELETE', `/tasks/${id}`)
-  )
+  safeHandle('sprint:delete', async (_e, id: string) => {
+    await taskRunnerFetch('DELETE', `/tasks/${id}`)
+    return { ok: true }
+  })
 
   safeHandle('sprint:readSpecFile', async (_e, filePath: string) => {
     const safePath = validateSpecPath(filePath)
@@ -149,7 +149,7 @@ export function registerSprintHandlers(): void {
   )
 
   safeHandle('sprint:healthCheck', () =>
-    taskRunnerFetch('GET', '/health')
+    taskRunnerFetch<SprintTask[]>('GET', '/health')
   )
 
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
