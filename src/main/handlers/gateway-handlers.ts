@@ -5,9 +5,22 @@ function toHttpUrl(url: string): string {
   return url.replace(/^wss:\/\//, 'https://').replace(/^ws:\/\//, 'http://').replace(/\/$/, '')
 }
 
+/** Tools the renderer is allowed to invoke via gateway:invoke. */
+export const GATEWAY_TOOL_ALLOWLIST = new Set([
+  'sessions_list',
+  'sessions_send',
+  'sessions_spawn',
+  'sessions_history',
+  'subagents',
+])
+
 export function registerGatewayHandlers(): void {
   // TODO: AX-S1 — add 'gateway:invoke', 'gateway:getSessionHistory' to IpcChannelMap
   safeHandle('gateway:invoke', async (_e, tool: string, args: Record<string, unknown>) => {
+    if (!GATEWAY_TOOL_ALLOWLIST.has(tool)) {
+      throw new Error(`Tool "${tool}" is not in the renderer allowlist`)
+    }
+
     const { url, token } = getGatewayConfig()
     const httpUrl = toHttpUrl(url)
     const res = await fetch(`${httpUrl}/tools/invoke`, {

@@ -418,7 +418,7 @@ describe('IPC handler registration', () => {
       const mockResponse = { ok: true, json: vi.fn().mockResolvedValue({ result: 'ok' }), text: vi.fn() }
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse))
 
-      const result = await invoke('gateway:invoke', 'myTool', { key: 'value' })
+      const result = await invoke('gateway:invoke', 'sessions_list', { key: 'value' })
 
       expect(fetch).toHaveBeenCalledWith(
         'http://localhost:18789/tools/invoke',
@@ -428,7 +428,7 @@ describe('IPC handler registration', () => {
             'Content-Type': 'application/json',
             Authorization: 'Bearer test-token',
           },
-          body: JSON.stringify({ tool: 'myTool', args: { key: 'value' } }),
+          body: JSON.stringify({ tool: 'sessions_list', args: { key: 'value' } }),
         })
       )
       expect(result).toEqual({ result: 'ok' })
@@ -438,7 +438,7 @@ describe('IPC handler registration', () => {
       const mockResponse = { ok: true, json: vi.fn().mockResolvedValue({}), text: vi.fn() }
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse))
 
-      await invoke('gateway:invoke', 'tool', {})
+      await invoke('gateway:invoke', 'sessions_list', {})
 
       const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string
       expect(calledUrl).toMatch(/^http:\/\//)
@@ -455,7 +455,7 @@ describe('IPC handler registration', () => {
         })
       )
 
-      await expect(invoke('gateway:invoke', 'tool', {})).rejects.toThrow(
+      await expect(invoke('gateway:invoke', 'sessions_list', {})).rejects.toThrow(
         'Gateway error 401: Unauthorized'
       )
     })
@@ -463,7 +463,29 @@ describe('IPC handler registration', () => {
     it('throws on network error', async () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('fetch failed')))
 
-      await expect(invoke('gateway:invoke', 'tool', {})).rejects.toThrow('fetch failed')
+      await expect(invoke('gateway:invoke', 'sessions_list', {})).rejects.toThrow('fetch failed')
+    })
+
+    it('rejects tools not in the allowlist', async () => {
+      await expect(invoke('gateway:invoke', 'dangerous_tool', {})).rejects.toThrow(
+        'Tool "dangerous_tool" is not in the renderer allowlist'
+      )
+    })
+
+    it('rejects empty tool name', async () => {
+      await expect(invoke('gateway:invoke', '', {})).rejects.toThrow(
+        'is not in the renderer allowlist'
+      )
+    })
+
+    it('allows all tools in the allowlist', async () => {
+      const mockResponse = { ok: true, json: vi.fn().mockResolvedValue({}), text: vi.fn() }
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse))
+
+      const allowedTools = ['sessions_list', 'sessions_send', 'sessions_spawn', 'sessions_history', 'subagents']
+      for (const tool of allowedTools) {
+        await expect(invoke('gateway:invoke', tool, {})).resolves.not.toThrow()
+      }
     })
 
     it('"gateway:getSessionHistory" sends correct request', async () => {
