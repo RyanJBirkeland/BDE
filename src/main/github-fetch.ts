@@ -11,7 +11,7 @@
  * instead of the bare `fetch`.
  */
 
-import { BrowserWindow } from 'electron'
+import { broadcast } from './broadcast'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -88,9 +88,7 @@ function updateRateLimitState(rl: RateLimitHeaders): void {
 // ---------------------------------------------------------------------------
 
 function broadcastRateLimitWarning(remaining: number, limit: number, resetEpoch: number): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('github:rateLimitWarning', { remaining, limit, resetEpoch })
-  }
+  broadcast('github:rateLimitWarning', { remaining, limit, resetEpoch })
 }
 
 let tokenExpiredEmitted = false
@@ -98,9 +96,7 @@ let tokenExpiredEmitted = false
 function broadcastTokenExpired(): void {
   if (tokenExpiredEmitted) return
   tokenExpiredEmitted = true
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('github:tokenExpired', {})
-  }
+  broadcast('github:tokenExpired', {})
 }
 
 function checkRateLimitThreshold(): void {

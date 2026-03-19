@@ -1,5 +1,4 @@
 import { readFileSync, writeFileSync } from 'fs'
-import { dialog, app } from 'electron'
 import { OPENCLAW_CONFIG_PATH } from './paths'
 
 interface GatewayConfig {
@@ -88,6 +87,16 @@ export function getTaskRunnerConfig(): TaskRunnerConfig | null {
   return { url, apiKey }
 }
 
+export class GatewayConfigError extends Error {
+  constructor(
+    message: string,
+    public readonly reason: 'missing-token' | 'missing-file'
+  ) {
+    super(message)
+    this.name = 'GatewayConfigError'
+  }
+}
+
 export function getGatewayConfig(): GatewayConfig {
   const now = Date.now()
   if (_configCache && now - _configCachedAt < CONFIG_CACHE_TTL) {
@@ -102,24 +111,22 @@ export function getGatewayConfig(): GatewayConfig {
     const url = config.gatewayUrl ?? `ws://127.0.0.1:${config.gateway?.port ?? 18789}`
 
     if (!token) {
-      dialog.showErrorBox(
-        'BDE — Missing Gateway Token',
-        'No gatewayToken found in ~/.openclaw/openclaw.json.\nPlease run `openclaw onboard` first.'
+      throw new GatewayConfigError(
+        'No gatewayToken found in ~/.openclaw/openclaw.json. Please run `openclaw onboard` first.',
+        'missing-token'
       )
-      app.quit()
-      throw new Error('Missing gatewayToken')
     }
 
     _configCache = { url, token }
     _configCachedAt = now
     return _configCache
   } catch (err) {
+    if (err instanceof GatewayConfigError) throw err
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      dialog.showErrorBox(
-        'BDE — Config Not Found',
-        'Could not find ~/.openclaw/openclaw.json.\nPlease install and configure OpenClaw first.'
+      throw new GatewayConfigError(
+        'Could not find ~/.openclaw/openclaw.json. Please install and configure OpenClaw first.',
+        'missing-file'
       )
-      app.quit()
     }
     throw err
   }

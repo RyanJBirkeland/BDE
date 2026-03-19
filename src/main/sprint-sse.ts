@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import { broadcast } from './broadcast'
 import { getTaskRunnerConfig } from './config'
 
 const RECONNECT_BASE_MS = 1000
@@ -117,9 +117,7 @@ export function parseSSE(buffer: string): {
 }
 
 function notifyRenderer(event: { type: string; data: unknown }): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('sprint:sseEvent', event)
-  }
+  broadcast('sprint:sseEvent', event)
 }
 
 /**
@@ -127,7 +125,5 @@ function notifyRenderer(event: { type: string; data: unknown }): void {
  * connected flag and re-subscribe when the connection comes back.
  */
 function notifyDisconnected(): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('sprint:sseEvent', { type: '__sse-disconnected', data: null })
-  }
+  broadcast('sprint:sseEvent', { type: '__sse-disconnected', data: null })
 }

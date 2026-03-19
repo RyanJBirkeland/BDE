@@ -10,16 +10,11 @@ vi.mock('fs', async (importOriginal) => {
   }
 })
 
-vi.mock('electron', () => ({
-  dialog: { showErrorBox: vi.fn() },
-  app: { quit: vi.fn() },
-}))
-
-import { dialog, app } from 'electron'
 import {
   getSupabaseConfig,
   getGitHubToken,
   getGatewayConfig,
+  GatewayConfigError,
   saveGatewayConfig,
   clearConfigCache,
 } from '../config'
@@ -101,27 +96,31 @@ describe('config.ts', () => {
   })
 
   describe('getGatewayConfig', () => {
-    it('throws and shows dialog when config file is missing (ENOENT)', () => {
+    it('throws GatewayConfigError with missing-file reason when config file is missing (ENOENT)', () => {
       const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
       vi.mocked(readFileSync).mockImplementation(() => { throw err })
 
-      expect(() => getGatewayConfig()).toThrow()
-      expect(dialog.showErrorBox).toHaveBeenCalledWith(
-        'BDE — Config Not Found',
-        expect.stringContaining('openclaw.json')
-      )
-      expect(app.quit).toHaveBeenCalled()
+      expect(() => getGatewayConfig()).toThrow(GatewayConfigError)
+      try {
+        getGatewayConfig()
+      } catch (e) {
+        expect(e).toBeInstanceOf(GatewayConfigError)
+        expect((e as GatewayConfigError).reason).toBe('missing-file')
+        expect((e as GatewayConfigError).message).toContain('openclaw.json')
+      }
     })
 
-    it('throws and shows dialog when gatewayToken is missing', () => {
+    it('throws GatewayConfigError with missing-token reason when gatewayToken is missing', () => {
       vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ gatewayUrl: 'ws://localhost' }))
 
-      expect(() => getGatewayConfig()).toThrow('Missing gatewayToken')
-      expect(dialog.showErrorBox).toHaveBeenCalledWith(
-        'BDE — Missing Gateway Token',
-        expect.stringContaining('gatewayToken')
-      )
-      expect(app.quit).toHaveBeenCalled()
+      expect(() => getGatewayConfig()).toThrow(GatewayConfigError)
+      try {
+        getGatewayConfig()
+      } catch (e) {
+        expect(e).toBeInstanceOf(GatewayConfigError)
+        expect((e as GatewayConfigError).reason).toBe('missing-token')
+        expect((e as GatewayConfigError).message).toContain('gatewayToken')
+      }
     })
 
     it('throws with parse error when JSON is corrupt', () => {

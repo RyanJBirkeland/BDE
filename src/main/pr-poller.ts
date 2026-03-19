@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import { broadcast as broadcastEvent } from './broadcast'
 import { getGitHubToken } from './config'
 import { githubFetch, fetchAllGitHubPages } from './github-fetch'
 import type { OpenPr, CheckRunSummary, PrListPayload } from '../shared/types'
@@ -90,13 +90,11 @@ async function poll(): Promise<void> {
   await Promise.all(checkPromises)
 
   latestPayload = { prs, checks }
-  broadcast(latestPayload)
+  broadcastPrList(latestPayload)
 }
 
-function broadcast(payload: PrListPayload): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('pr:listUpdated', payload)
-  }
+function broadcastPrList(payload: PrListPayload): void {
+  broadcastEvent('pr:listUpdated', payload)
 }
 
 export function startPrPoller(): void {

@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, session } from 'electron'
+import { app, shell, BrowserWindow, session, dialog } from 'electron'
 import { join } from 'path'
 import { watch, type FSWatcher } from 'fs'
 import { BDE_DB_PATH } from './paths'
@@ -17,6 +17,7 @@ import { registerFsHandlers } from './fs'
 import { getDb, closeDb } from './db'
 import { startSprintSseClient, stopSprintSseClient } from './sprint-sse'
 import { startPrPoller, stopPrPoller } from './pr-poller'
+import { GatewayConfigError, getGatewayConfig } from './config'
 
 const DEBOUNCE_MS = 500
 
@@ -107,6 +108,20 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.bde')
 
   getDb()
+
+  // Validate gateway config early — show dialog and quit if missing
+  try {
+    getGatewayConfig()
+  } catch (err) {
+    if (err instanceof GatewayConfigError) {
+      dialog.showErrorBox(
+        err.reason === 'missing-token' ? 'BDE — Missing Gateway Token' : 'BDE — Config Not Found',
+        err.message
+      )
+      app.quit()
+      return
+    }
+  }
 
   const stopDbWatcher = startDbWatcher()
   app.on('will-quit', stopDbWatcher)
