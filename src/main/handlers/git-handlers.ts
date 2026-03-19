@@ -15,7 +15,7 @@ import {
   type ConflictFilesInput
 } from '../git'
 import { getLatestPrList, refreshPrList } from '../pr-poller'
-import { getGitHubToken } from '../config'
+import { authenticatedGitHubFetch } from '../github-fetch'
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
 
 function parseNextLink(linkHeader: string | null): string | null {
@@ -27,9 +27,6 @@ function parseNextLink(linkHeader: string | null): string | null {
 export function registerGitHandlers(): void {
   // --- GitHub API proxy (renderer → main → api.github.com) ---
   safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
-    const token = getGitHubToken()
-    if (!token) throw new Error('GitHub token not configured')
-
     let url: string
     if (path.startsWith('https://')) {
       const parsed = new URL(path)
@@ -43,15 +40,10 @@ export function registerGitHandlers(): void {
 
     // Strip Authorization from caller headers — token is injected server-side only
     const { Authorization: _, ...safeHeaders } = init?.headers ?? {}
-    const res = await fetch(url, {
+    const res = await authenticatedGitHubFetch(url, {
       method: init?.method,
-      headers: {
-        Accept: 'application/vnd.github+json',
-        ...safeHeaders,
-        Authorization: `Bearer ${token}`
-      },
+      headers: safeHeaders,
       body: init?.body,
-      signal: AbortSignal.timeout(30_000)
     })
 
     const contentType = res.headers.get('content-type') ?? ''

@@ -4,6 +4,7 @@ import { promisify } from 'util'
 import { parsePrUrl } from '../shared/github'
 import { getGitHubToken } from './config'
 import { getDb } from './db'
+import { authenticatedGitHubFetch } from './github-fetch'
 import { DEFAULT_REPO_PATHS } from './paths'
 
 const execFileAsync = promisify(execFile)
@@ -150,19 +151,12 @@ async function fetchPrStatusRest(pr: PrStatusInput): Promise<PrStatusResult> {
   const parsed = parsePrUrl(pr.prUrl)
   if (!parsed) return { taskId: pr.taskId, merged: false, state: 'unknown', mergedAt: null, mergeableState: null }
 
-  const token = getGitHubToken()
-  if (!token) return errorResult
+  if (!getGitHubToken()) return errorResult
 
   try {
-    const response = await fetch(
+    const response = await authenticatedGitHubFetch(
       `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/pulls/${parsed.number}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json'
-        },
-        signal: AbortSignal.timeout(10_000)
-      }
+      { timeoutMs: 10_000 }
     )
     if (!response.ok) return errorResult
 
@@ -248,18 +242,14 @@ export interface ConflictFilesResult {
 }
 
 export async function checkConflictFiles(input: ConflictFilesInput): Promise<ConflictFilesResult> {
-  const token = getGitHubToken()
   const empty: ConflictFilesResult = { prNumber: input.prNumber, files: [], baseBranch: '', headBranch: '' }
-  if (!token) return empty
+  if (!getGitHubToken()) return empty
 
   try {
     // Fetch PR details for branch names
-    const prRes = await fetch(
+    const prRes = await authenticatedGitHubFetch(
       `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}`,
-      {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-        signal: AbortSignal.timeout(10_000)
-      }
+      { timeoutMs: 10_000 }
     )
     if (!prRes.ok) return empty
     const prData = (await prRes.json()) as {
@@ -268,12 +258,9 @@ export async function checkConflictFiles(input: ConflictFilesInput): Promise<Con
     }
 
     // Fetch the list of changed files in the PR
-    const filesRes = await fetch(
+    const filesRes = await authenticatedGitHubFetch(
       `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}/files?per_page=100`,
-      {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-        signal: AbortSignal.timeout(10_000)
-      }
+      { timeoutMs: 10_000 }
     )
     if (!filesRes.ok) return empty
     const filesData = (await filesRes.json()) as Array<{ filename: string }>
