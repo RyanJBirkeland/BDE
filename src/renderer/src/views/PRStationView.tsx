@@ -18,7 +18,20 @@ export default function PRStationView() {
 
   const handleRemovePr = useCallback(
     (pr: OpenPr) => {
-      setRemovedKeys((prev) => new Set(prev).add(`${pr.repo}-${pr.number}`))
+      setRemovedKeys((prev) => {
+        const next = new Set(prev)
+        next.add(`${pr.repo}-${pr.number}`)
+        // Evict oldest entries when the set grows beyond a reasonable bound
+        if (next.size > 200) {
+          let toDelete = next.size - 200
+          for (const key of next) {
+            if (toDelete <= 0) break
+            next.delete(key)
+            toDelete--
+          }
+        }
+        return next
+      })
       setSelectedPr(null)
     },
     []

@@ -29,6 +29,8 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
   useEffect(() => {
     if (!open || tasks.length === 0) return
 
+    const controller = new AbortController()
+
     for (const task of tasks) {
       if (!task.pr_url || !task.pr_number) continue
       if (branchInfo[task.id] && !branchInfo[task.id].loading) continue
@@ -48,6 +50,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
           prNumber: task.pr_number,
         })
         .then((result) => {
+          if (controller.signal.aborted) return
           setBranchInfo((prev) => ({
             ...prev,
             [task.id]: {
@@ -59,12 +62,15 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
           }))
         })
         .catch(() => {
+          if (controller.signal.aborted) return
           setBranchInfo((prev) => ({
             ...prev,
             [task.id]: { ...prev[task.id], loading: false },
           }))
         })
     }
+
+    return () => { controller.abort() }
   }, [open, tasks])
 
   // Reset when drawer closes

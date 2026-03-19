@@ -469,17 +469,19 @@ export interface TailLogResult {
 export async function tailAgentLog(args: TailLogArgs): Promise<TailLogResult> {
   const safePath = validateLogPath(args.logPath)
   const fromByte = args.fromByte ?? 0
+  let fh: import('fs/promises').FileHandle | undefined
   try {
-    const fh = await open(safePath, 'r')
+    fh = await open(safePath, 'r')
     const stats = await fh.stat()
     const size = stats.size
-    if (fromByte >= size) { await fh.close(); return { content: '', nextByte: fromByte } }
+    if (fromByte >= size) return { content: '', nextByte: fromByte }
     const buf = Buffer.alloc(size - fromByte)
     await fh.read(buf, 0, buf.length, fromByte)
-    await fh.close()
     return { content: buf.toString('utf-8'), nextByte: size }
   } catch {
     return { content: '', nextByte: fromByte }
+  } finally {
+    await fh?.close()
   }
 }
 

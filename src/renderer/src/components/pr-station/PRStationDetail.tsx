@@ -53,7 +53,7 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
   const [checksLoading, setChecksLoading] = useState(true)
 
   useEffect(() => {
-    let cancelled = false
+    const controller = new AbortController()
 
     async function fetchAll() {
       const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
@@ -67,18 +67,18 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
           getPRDetail(repo.owner, repo.label, pr.number),
           getPRFiles(repo.owner, repo.label, pr.number)
         ])
-        if (cancelled) return
+        if (controller.signal.aborted) return
         setDetail(prDetail)
         setFiles(prFiles)
         setLoading(false)
 
         const checkRuns = await getCheckRunsList(repo.owner, repo.label, prDetail.head.sha)
-        if (cancelled) return
+        if (controller.signal.aborted) return
         setChecks(checkRuns)
       } catch {
-        if (!cancelled) setDetail(null)
+        if (!controller.signal.aborted) setDetail(null)
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false)
           setChecksLoading(false)
         }
@@ -86,7 +86,7 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
     }
 
     fetchAll()
-    return () => { cancelled = true }
+    return () => { controller.abort() }
   }, [pr.repo, pr.number])
 
   if (loading) {

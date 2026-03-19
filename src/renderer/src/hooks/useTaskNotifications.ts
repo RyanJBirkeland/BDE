@@ -16,7 +16,20 @@ export function setOpenLogDrawerTaskId(id: string | null): void {
 
 // --- Shared dedup — single source of truth across all notification sources ---
 
+const MAX_SEEN_IDS = 500
+
 const notifiedTaskIds = new Set<string>()
+
+function boundSet(set: Set<string>, maxSize: number): void {
+  if (set.size <= maxSize) return
+  const excess = set.size - maxSize
+  let removed = 0
+  for (const key of set) {
+    if (removed >= excess) break
+    set.delete(key)
+    removed++
+  }
+}
 
 /** @internal — exported for testing only */
 export function _resetNotifiedTaskIds(): void {
@@ -26,6 +39,7 @@ export function _resetNotifiedTaskIds(): void {
 export function notifyOnce(taskId: string, title: string, body: string): boolean {
   if (notifiedTaskIds.has(taskId)) return false
   notifiedTaskIds.add(taskId)
+  boundSet(notifiedTaskIds, MAX_SEEN_IDS)
   notify(title, body)
   return true
 }
@@ -70,6 +84,7 @@ export function useTaskNotifications(): void {
       const isRunning = session.updatedAt > fiveMinAgo
       if (session.abortedLastRun && !isRunning && !seenBlockedKeys.current.has(session.key)) {
         seenBlockedKeys.current.add(session.key)
+        boundSet(seenBlockedKeys.current, MAX_SEEN_IDS)
         notify(
           '\u26A0\uFE0F Agent needs attention',
           `Session "${session.displayName || session.key}" aborted and may need input.`
@@ -92,6 +107,7 @@ export function useTaskNotifications(): void {
         // On first event, seed seenDoneIds without notifying
         if (!initialized.current) {
           for (const t of doneTasks) seenDoneIds.current.add(t.id)
+          boundSet(seenDoneIds.current, MAX_SEEN_IDS)
           initialized.current = true
           return
         }
@@ -99,6 +115,7 @@ export function useTaskNotifications(): void {
         for (const task of doneTasks) {
           if (!seenDoneIds.current.has(task.id)) {
             seenDoneIds.current.add(task.id)
+            boundSet(seenDoneIds.current, MAX_SEEN_IDS)
             const body = task.pr_url
               ? `PR ready: ${task.pr_url}`
               : `Task "${task.title}" completed in ${task.repo}.`
@@ -123,6 +140,7 @@ export function useTaskNotifications(): void {
       const event = data as LogDoneEvent
       if (seenLogDoneIds.current.has(event.taskId)) return
       seenLogDoneIds.current.add(event.taskId)
+      boundSet(seenLogDoneIds.current, MAX_SEEN_IDS)
 
       // Skip notification if user is watching this task's LogDrawer
       if (_openLogDrawerTaskId === event.taskId) return
@@ -144,6 +162,7 @@ export function useTaskNotifications(): void {
       const prUrl = update.pr_url as string | undefined
       if (!prUrl || seenPrTaskIds.current.has(update.id)) return
       seenPrTaskIds.current.add(update.id)
+      boundSet(seenPrTaskIds.current, MAX_SEEN_IDS)
 
       // Skip if user is watching this task
       if (_openLogDrawerTaskId === update.id) return

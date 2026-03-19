@@ -163,17 +163,19 @@ export async function readLog(
   initAgentHistory()
   const row = getDb().prepare('SELECT log_path FROM agent_runs WHERE id = ?').get(id) as { log_path: string } | undefined
   if (!row?.log_path) return { content: '', nextByte: fromByte }
+  let fh: import('fs/promises').FileHandle | undefined
   try {
-    const fh = await open(row.log_path, 'r')
+    fh = await open(row.log_path, 'r')
     const stats = await fh.stat()
     const size = stats.size
-    if (fromByte >= size) { await fh.close(); return { content: '', nextByte: fromByte } }
+    if (fromByte >= size) return { content: '', nextByte: fromByte }
     const buf = Buffer.alloc(size - fromByte)
     await fh.read(buf, 0, buf.length, fromByte)
-    await fh.close()
     return { content: buf.toString('utf-8'), nextByte: size }
   } catch {
     return { content: '', nextByte: fromByte }
+  } finally {
+    await fh?.close()
   }
 }
 

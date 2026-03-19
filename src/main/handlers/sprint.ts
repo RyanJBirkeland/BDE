@@ -280,17 +280,19 @@ export function registerSprintHandlers(): void {
 
     if (!agent?.log_path) return { content: '', status: agent?.status ?? 'unknown', nextByte: fromByte }
 
+    let fh: import('fs/promises').FileHandle | undefined
     try {
-      const fh = await open(agent.log_path, 'r')
+      fh = await open(agent.log_path, 'r')
       const stats = await fh.stat()
       const size = stats.size
-      if (fromByte >= size) { await fh.close(); return { content: '', status: agent.status, nextByte: fromByte } }
+      if (fromByte >= size) return { content: '', status: agent.status, nextByte: fromByte }
       const buf = Buffer.alloc(size - fromByte)
       await fh.read(buf, 0, buf.length, fromByte)
-      await fh.close()
       return { content: buf.toString('utf-8'), status: agent.status, nextByte: size }
     } catch {
       return { content: '', status: agent.status, nextByte: fromByte }
+    } finally {
+      await fh?.close()
     }
   })
 }
