@@ -143,10 +143,13 @@ describe('githubFetch', () => {
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const res = await githubFetch('https://api.github.com/test', {
-      headers: { Authorization: 'Bearer tok' },
-      timeoutMs: 10_000,
-    })
+    const [res] = await Promise.all([
+      githubFetch('https://api.github.com/test', {
+        headers: { Authorization: 'Bearer tok' },
+        timeoutMs: 10_000,
+      }),
+      vi.runAllTimersAsync(),
+    ])
 
     expect(res.status).toBe(200)
     expect(fetch).toHaveBeenCalledTimes(2)
@@ -178,9 +181,12 @@ describe('githubFetch', () => {
 
     vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const res = await githubFetch('https://api.github.com/test', {
-      headers: { Authorization: 'Bearer tok' },
-    })
+    const [res] = await Promise.all([
+      githubFetch('https://api.github.com/test', {
+        headers: { Authorization: 'Bearer tok' },
+      }),
+      vi.runAllTimersAsync(),
+    ])
 
     expect(res.status).toBe(200)
     expect(fetch).toHaveBeenCalledTimes(2)
@@ -196,9 +202,12 @@ describe('githubFetch', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(serverError))
     vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    const res = await githubFetch('https://api.github.com/test', {
-      headers: { Authorization: 'Bearer tok' },
-    })
+    const [res] = await Promise.all([
+      githubFetch('https://api.github.com/test', {
+        headers: { Authorization: 'Bearer tok' },
+      }),
+      vi.runAllTimersAsync(),
+    ])
 
     expect(res.status).toBe(503)
     // MAX_RETRIES = 3 → 4 total attempts (0, 1, 2, 3)
