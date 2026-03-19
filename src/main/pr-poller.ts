@@ -1,16 +1,17 @@
 import { broadcast as broadcastEvent } from './broadcast'
 import { getGitHubToken } from './config'
 import { githubFetch, fetchAllGitHubPages } from './github-fetch'
+import { getConfiguredRepos } from './paths'
 import type { OpenPr, CheckRunSummary, PrListPayload } from '../shared/types'
 
 const POLL_INTERVAL_MS = 60_000
 const REQUEST_TIMEOUT_MS = 10_000
 
-const REPOS = [
-  { owner: 'RyanJBirkeland', repo: 'BDE' },
-  { owner: 'RyanJBirkeland', repo: 'life-os' },
-  { owner: 'RyanJBirkeland', repo: 'feast' },
-] as const
+function getGitHubRepos(): { owner: string; repo: string }[] {
+  return getConfiguredRepos()
+    .filter((r) => r.githubOwner && r.githubRepo)
+    .map((r) => ({ owner: r.githubOwner!, repo: r.githubRepo! }))
+}
 
 let timer: ReturnType<typeof setInterval> | null = null
 let latestPayload: PrListPayload | null = null
@@ -73,8 +74,9 @@ async function poll(): Promise<void> {
   const token = getGitHubToken()
   if (!token) return
 
+  const repos = getGitHubRepos()
   const results = await Promise.all(
-    REPOS.map((r) => fetchOpenPrs(r.owner, r.repo, token))
+    repos.map((r) => fetchOpenPrs(r.owner, r.repo, token))
   )
   const prs = results
     .flat()
@@ -82,7 +84,7 @@ async function poll(): Promise<void> {
 
   const checks: Record<string, CheckRunSummary> = {}
   const checkPromises = prs.map(async (pr) => {
-    const repoConfig = REPOS.find((r) => r.repo === pr.repo)
+    const repoConfig = repos.find((r) => r.repo === pr.repo)
     if (!repoConfig) return
     const summary = await fetchCheckRuns(repoConfig.owner, repoConfig.repo, pr.head.sha, token)
     checks[`${pr.repo}-${pr.number}`] = summary

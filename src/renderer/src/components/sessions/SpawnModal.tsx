@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
-import { SPAWN_TASK_MAX_CHARS_SOFT, SPAWN_TASK_MAX_CHARS_HARD, SPAWN_TASK_HISTORY_LIMIT, REPO_OPTIONS } from '../../lib/constants'
+import { SPAWN_TASK_MAX_CHARS_SOFT, SPAWN_TASK_MAX_CHARS_HARD, SPAWN_TASK_HISTORY_LIMIT } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { CLAUDE_MODELS } from '../../../../shared/models'
 
@@ -15,8 +16,9 @@ interface SpawnModalProps {
 }
 
 export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Element {
+  const REPO_OPTIONS = useRepoOptions()
   const [task, setTask] = useState('')
-  const [repo, setRepo] = useState<string>(REPO_OPTIONS[0].label)
+  const [repo, setRepo] = useState<string>(REPO_OPTIONS[0]?.label ?? '')
   const [model, setModel] = useState<string>('sonnet')
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState<string[]>([])
@@ -55,7 +57,7 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
   useEffect(() => {
     if (open) {
       setTask('')
-      setRepo(REPO_OPTIONS[0].label)
+      setRepo(REPO_OPTIONS[0]?.label ?? '')
       setModel('sonnet')
       setShowHistory(false)
       requestAnimationFrame(() => textareaRef.current?.focus())

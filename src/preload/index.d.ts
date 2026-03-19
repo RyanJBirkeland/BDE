@@ -24,6 +24,15 @@ declare global {
       writeMemoryFile: (...args: IpcArgs<'memory:writeFile'>) => Promise<IpcResult<'memory:writeFile'>>
       setTitle: (title: string) => void
 
+      // Settings CRUD
+      settings: {
+        get: (...args: IpcArgs<'settings:get'>) => Promise<IpcResult<'settings:get'>>
+        set: (...args: IpcArgs<'settings:set'>) => Promise<IpcResult<'settings:set'>>
+        getJson: (...args: IpcArgs<'settings:getJson'>) => Promise<IpcResult<'settings:getJson'>>
+        setJson: (...args: IpcArgs<'settings:setJson'>) => Promise<IpcResult<'settings:setJson'>>
+        delete: (...args: IpcArgs<'settings:delete'>) => Promise<IpcResult<'settings:delete'>>
+      }
+
       // GitHub API proxy — all GitHub REST calls routed through main process
       github: {
         fetch: (path: string, init?: GitHubFetchInit) => Promise<IpcResult<'github:fetch'>>
@@ -85,6 +94,7 @@ declare global {
       openFileDialog: (...args: IpcArgs<'fs:openFileDialog'>) => Promise<IpcResult<'fs:openFileDialog'>>
       readFileAsBase64: (...args: IpcArgs<'fs:readFileAsBase64'>) => Promise<IpcResult<'fs:readFileAsBase64'>>
       readFileAsText: (...args: IpcArgs<'fs:readFileAsText'>) => Promise<IpcResult<'fs:readFileAsText'>>
+      openDirectoryDialog: () => Promise<IpcResult<'fs:openDirectoryDialog'>>
 
       // Gateway RPC
       invokeTool: (tool: string, args?: Record<string, unknown>) => Promise<IpcResult<'gateway:invoke'>>

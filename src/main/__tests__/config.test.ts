@@ -1,163 +1,126 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { readFileSync, writeFileSync } from 'fs'
 
-vi.mock('fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs')>()
-  return {
-    ...actual,
-    readFileSync: vi.fn(),
-    writeFileSync: vi.fn(),
-  }
-})
+// Mock the settings module (config.ts now delegates to settings.ts)
+vi.mock('../settings', () => ({
+  getSetting: vi.fn().mockReturnValue(null),
+}))
 
+import { getSetting } from '../settings'
 import {
   getSupabaseConfig,
   getGitHubToken,
   getGatewayConfig,
-  saveGatewayConfig,
-  clearConfigCache,
+  getTaskRunnerConfig,
 } from '../config'
 
 describe('config.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    clearConfigCache()
+    vi.mocked(getSetting).mockReturnValue(null)
     delete process.env['VITE_SUPABASE_URL']
     delete process.env['VITE_SUPABASE_ANON_KEY']
     delete process.env['GITHUB_TOKEN']
+    delete process.env['SPRINT_API_KEY']
+    delete process.env['TASK_RUNNER_URL']
   })
 
   describe('getSupabaseConfig', () => {
-    it('returns null when config file is missing', () => {
-      vi.mocked(readFileSync).mockImplementation(() => {
-        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    it('returns null when no settings or env vars exist', () => {
+      expect(getSupabaseConfig()).toBeNull()
+    })
+
+    it('returns config from settings', () => {
+      vi.mocked(getSetting).mockImplementation((key: string) => {
+        if (key === 'supabase.url') return 'https://sb.io'
+        if (key === 'supabase.anonKey') return 'key123'
+        return null
       })
 
-      expect(getSupabaseConfig()).toBeNull()
+      expect(getSupabaseConfig()).toEqual({ url: 'https://sb.io', anonKey: 'key123' })
     })
 
-    it('returns null when JSON is corrupt', () => {
-      vi.mocked(readFileSync).mockReturnValue('not json{{{')
-
-      expect(getSupabaseConfig()).toBeNull()
-    })
-
-    it('returns config from file when both fields present', () => {
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify({ supabaseUrl: 'https://sb.io', supabaseAnonKey: 'key123' })
-      )
-
-      const result = getSupabaseConfig()
-      expect(result).toEqual({ url: 'https://sb.io', anonKey: 'key123' })
-    })
-
-    it('falls back to env vars when file fields are missing', () => {
-      vi.mocked(readFileSync).mockReturnValue('{}')
+    it('falls back to env vars when settings are missing', () => {
       process.env['VITE_SUPABASE_URL'] = 'https://env.sb.io'
       process.env['VITE_SUPABASE_ANON_KEY'] = 'envkey'
 
-      const result = getSupabaseConfig()
-      expect(result).toEqual({ url: 'https://env.sb.io', anonKey: 'envkey' })
+      expect(getSupabaseConfig()).toEqual({ url: 'https://env.sb.io', anonKey: 'envkey' })
     })
   })
 
   describe('getGitHubToken', () => {
-    it('returns null when config file is missing and no env var', () => {
-      vi.mocked(readFileSync).mockImplementation(() => {
-        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
-      })
-
+    it('returns null when no setting or env var', () => {
       expect(getGitHubToken()).toBeNull()
     })
 
-    it('falls back to GITHUB_TOKEN env var when file is missing', () => {
-      vi.mocked(readFileSync).mockImplementation(() => { throw new Error('fail') })
+    it('returns token from settings', () => {
+      vi.mocked(getSetting).mockImplementation((key: string) =>
+        key === 'github.token' ? 'gh_settings_token' : null
+      )
+
+      expect(getGitHubToken()).toBe('gh_settings_token')
+    })
+
+    it('falls back to GITHUB_TOKEN env var', () => {
       process.env['GITHUB_TOKEN'] = 'gh_env_token'
 
       expect(getGitHubToken()).toBe('gh_env_token')
     })
-
-    it('returns token from config file', () => {
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify({ githubToken: 'gh_file_token' })
-      )
-
-      expect(getGitHubToken()).toBe('gh_file_token')
-    })
-
-    it('returns null when config exists but githubToken field is missing', () => {
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify({ gatewayToken: 'gw_tok', gatewayUrl: 'ws://gw' })
-      )
-
-      expect(getGitHubToken()).toBeNull()
-    })
   })
 
   describe('getGatewayConfig', () => {
-    it('returns null when config file is missing (ENOENT)', () => {
-      const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
-      vi.mocked(readFileSync).mockImplementation(() => { throw err })
-
+    it('returns null when url or token is missing', () => {
       expect(getGatewayConfig()).toBeNull()
     })
 
-    it('returns null when gatewayToken is missing', () => {
-      vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ gatewayUrl: 'ws://localhost' }))
-
-      expect(getGatewayConfig()).toBeNull()
-    })
-
-    it('returns null when JSON is corrupt', () => {
-      vi.mocked(readFileSync).mockReturnValue('{{not json}}')
-
-      expect(getGatewayConfig()).toBeNull()
-    })
-
-    it('returns url and token on success', () => {
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify({ gatewayUrl: 'ws://gw', gatewayToken: 'tok123' })
-      )
+    it('returns config when both url and token are set', () => {
+      vi.mocked(getSetting).mockImplementation((key: string) => {
+        if (key === 'gateway.url') return 'ws://gw'
+        if (key === 'gateway.token') return 'tok123'
+        return null
+      })
 
       expect(getGatewayConfig()).toEqual({ url: 'ws://gw', token: 'tok123' })
     })
 
-    it('falls back to nested gateway.auth.token format', () => {
-      vi.mocked(readFileSync).mockReturnValue(
-        JSON.stringify({ gateway: { auth: { token: 'nested_tok' }, port: 9999 } })
-      )
+    it('returns null when token is missing', () => {
+      vi.mocked(getSetting).mockImplementation((key: string) => {
+        if (key === 'gateway.url') return 'ws://gw'
+        return null
+      })
 
-      const result = getGatewayConfig()
-      expect(result!.token).toBe('nested_tok')
-      expect(result!.url).toBe('ws://127.0.0.1:9999')
+      expect(getGatewayConfig()).toBeNull()
     })
   })
 
-  describe('saveGatewayConfig', () => {
-    it('merges into existing config', () => {
-      vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ existing: true }))
-
-      saveGatewayConfig('ws://new', 'new_token')
-
-      expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-        expect.stringContaining('openclaw.json'),
-        expect.stringContaining('"gatewayToken": "new_token"'),
-        'utf-8'
-      )
-      // Verify existing keys are preserved
-      const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string)
-      expect(written.existing).toBe(true)
-      expect(written.gatewayUrl).toBe('ws://new')
+  describe('getTaskRunnerConfig', () => {
+    it('returns null when apiKey is missing', () => {
+      expect(getTaskRunnerConfig()).toBeNull()
     })
 
-    it('creates fresh config when file is missing', () => {
-      vi.mocked(readFileSync).mockImplementation(() => { throw new Error('ENOENT') })
+    it('returns config from settings', () => {
+      vi.mocked(getSetting).mockImplementation((key: string) => {
+        if (key === 'taskRunner.apiKey') return 'api_key'
+        if (key === 'taskRunner.url') return 'http://runner:9999'
+        return null
+      })
 
-      saveGatewayConfig('ws://fresh', 'fresh_token')
+      expect(getTaskRunnerConfig()).toEqual({ url: 'http://runner:9999', apiKey: 'api_key' })
+    })
 
-      const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string)
-      expect(written.gatewayUrl).toBe('ws://fresh')
-      expect(written.gatewayToken).toBe('fresh_token')
+    it('uses default URL when only apiKey is set', () => {
+      vi.mocked(getSetting).mockImplementation((key: string) => {
+        if (key === 'taskRunner.apiKey') return 'api_key'
+        return null
+      })
+
+      expect(getTaskRunnerConfig()).toEqual({ url: 'http://127.0.0.1:18799', apiKey: 'api_key' })
+    })
+
+    it('falls back to env vars', () => {
+      process.env['SPRINT_API_KEY'] = 'env_api_key'
+      process.env['TASK_RUNNER_URL'] = 'http://env-runner'
+
+      expect(getTaskRunnerConfig()).toEqual({ url: 'http://env-runner', apiKey: 'env_api_key' })
     })
   })
 })

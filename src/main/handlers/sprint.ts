@@ -1,14 +1,14 @@
 import { safeHandle } from '../ipc-utils'
 import { getGatewayConfig, getTaskRunnerConfig } from '../config'
-import { SPECS_ROOT } from '../paths'
+import { getSpecsRoot } from '../paths'
 import { readFile } from 'fs/promises'
 import { resolve } from 'path'
 import type { SprintTask } from '../../shared/types'
 
-function validateSpecPath(relativePath: string): string {
-  const resolved = resolve(SPECS_ROOT, relativePath)
-  if (!resolved.startsWith(SPECS_ROOT + '/') && resolved !== SPECS_ROOT) {
-    throw new Error(`Path traversal blocked: "${relativePath}" resolves outside ${SPECS_ROOT}`)
+function validateSpecPath(specsRoot: string, relativePath: string): string {
+  const resolved = resolve(specsRoot, relativePath)
+  if (!resolved.startsWith(specsRoot + '/') && resolved !== specsRoot) {
+    throw new Error(`Path traversal blocked: "${relativePath}" resolves outside ${specsRoot}`)
   }
   return resolved
 }
@@ -88,7 +88,9 @@ export function registerSprintHandlers(): void {
   })
 
   safeHandle('sprint:readSpecFile', async (_e, filePath: string) => {
-    const safePath = validateSpecPath(filePath)
+    const specsRoot = getSpecsRoot()
+    if (!specsRoot) throw new Error('No BDE repository configured in Settings')
+    const safePath = validateSpecPath(specsRoot, filePath)
     return readFile(safePath, 'utf-8')
   })
 
@@ -99,9 +101,9 @@ export function registerSprintHandlers(): void {
       const fallback: GeneratePromptResponse = { taskId, spec: '', prompt: title }
 
       try {
-        const gatewayConfig = getGatewayConfig()
-        if (!gatewayConfig) return fallback
-        const { url: rawGatewayUrl, token: gatewayToken } = gatewayConfig
+        const config = getGatewayConfig()
+        if (!config) return fallback
+        const { url: rawGatewayUrl, token: gatewayToken } = config
         const gatewayUrl = rawGatewayUrl.replace(/^ws:\/\//, 'http://').replace(/^wss:\/\//, 'https://')
 
         const templateScaffold = getTemplateScaffold(templateHint)
