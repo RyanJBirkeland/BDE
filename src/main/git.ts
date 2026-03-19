@@ -3,7 +3,7 @@ import { promisify } from 'util'
 
 import { parsePrUrl } from '../shared/github'
 import { getGitHubToken } from './config'
-import { githubFetch } from './github-fetch'
+import { githubFetch, fetchAllGitHubPages } from './github-fetch'
 import { getDb } from './db'
 import { DEFAULT_REPO_PATHS } from './paths'
 
@@ -268,16 +268,11 @@ export async function checkConflictFiles(input: ConflictFilesInput): Promise<Con
       base: { ref: string }
     }
 
-    // Fetch the list of changed files in the PR
-    const filesRes = await githubFetch(
+    // Fetch the list of changed files in the PR (paginated)
+    const filesData = await fetchAllGitHubPages<{ filename: string }>(
       `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}/files?per_page=100`,
-      {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-        timeoutMs: 10_000
-      }
+      { token, timeoutMs: 10_000 }
     )
-    if (!filesRes.ok) return empty
-    const filesData = (await filesRes.json()) as Array<{ filename: string }>
 
     return {
       prNumber: input.prNumber,

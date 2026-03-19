@@ -211,3 +211,56 @@ export function _resetRateLimitState(): void {
   state.resetEpoch = null
   state.warningEmitted = false
 }
+
+// ---------------------------------------------------------------------------
+// Pagination helpers
+// ---------------------------------------------------------------------------
+
+/** Extract the "next" URL from a GitHub `Link` header. */
+export function parseNextLink(linkHeader: string | null): string | null {
+  if (!linkHeader) return null
+  const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+  return match ? match[1] : null
+}
+
+interface FetchAllPagesOptions {
+  token: string
+  timeoutMs?: number
+  headers?: Record<string, string>
+  signal?: AbortSignal
+}
+
+/**
+ * Fetch every page of a GitHub REST API list endpoint.
+ * Follows `rel="next"` Link headers until exhausted.
+ * Returns [] (not throw) on any HTTP error so callers degrade gracefully.
+ */
+export async function fetchAllGitHubPages<T>(
+  url: string,
+  opts: FetchAllPagesOptions
+): Promise<T[]> {
+  const signal =
+    opts.signal ?? (opts.timeoutMs != null ? AbortSignal.timeout(opts.timeoutMs) : undefined)
+
+  const items: T[] = []
+  let nextUrl: string | null = url
+
+  while (nextUrl) {
+    const res = await fetch(nextUrl, {
+      headers: {
+        Authorization: `Bearer ${opts.token}`,
+        Accept: 'application/vnd.github+json',
+        ...opts.headers,
+      },
+      ...(signal !== undefined ? { signal } : {}),
+    })
+
+    if (!res.ok) return items
+
+    const data = (await res.json()) as T[]
+    items.push(...data)
+    nextUrl = parseNextLink(res.headers.get('Link'))
+  }
+
+  return items
+}

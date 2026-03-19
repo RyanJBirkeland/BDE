@@ -15,18 +15,16 @@ import {
   type ConflictFilesInput
 } from '../git'
 import { getLatestPrList, refreshPrList } from '../pr-poller'
-import { githubFetch } from '../github-fetch'
+import { getGitHubToken } from '../config'
+import { githubFetch, parseNextLink } from '../github-fetch'
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
-
-function parseNextLink(linkHeader: string | null): string | null {
-  if (!linkHeader) return null
-  const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
-  return match ? match[1] : null
-}
 
 export function registerGitHandlers(): void {
   // --- GitHub API proxy (renderer → main → api.github.com) ---
   safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
+    const token = getGitHubToken()
+    if (!token) throw new Error('GitHub token not configured')
+
     let url: string
     if (path.startsWith('https://')) {
       const parsed = new URL(path)
@@ -38,11 +36,11 @@ export function registerGitHandlers(): void {
       url = `https://api.github.com${path}`
     }
 
-    // Strip Authorization from caller headers — token is injected server-side only
+    // Strip caller Authorization — token is injected server-side only
     const { Authorization: _, ...safeHeaders } = init?.headers ?? {}
     const res = await githubFetch(url, {
       method: init?.method,
-      headers: safeHeaders,
+      headers: { ...safeHeaders, Authorization: `Bearer ${token}` },
       body: init?.body,
       timeoutMs: 30_000
     })
