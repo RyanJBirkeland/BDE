@@ -10,7 +10,7 @@ import { registerTerminalHandlers } from './handlers/terminal-handlers'
 import { registerConfigHandlers } from './handlers/config-handlers'
 import { registerGatewayHandlers } from './handlers/gateway-handlers'
 import { registerWindowHandlers } from './handlers/window-handlers'
-import { registerSprintHandlers } from './handlers/sprint'
+import { registerSprintLocalHandlers } from './handlers/sprint-local'
 import { registerCostHandlers } from './handlers/cost-handlers'
 import { registerFsHandlers } from './fs'
 import { getDb, closeDb } from './db'
@@ -129,7 +129,7 @@ app.whenReady().then(() => {
   registerTerminalHandlers()
   registerGatewayHandlers()
   registerWindowHandlers()
-  registerSprintHandlers()
+  registerSprintLocalHandlers()
   registerCostHandlers()
   registerFsHandlers()
 

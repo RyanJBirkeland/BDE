@@ -8,6 +8,7 @@ import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { getDb } from './db'
 import { BDE_AGENTS_INDEX as AGENTS_INDEX, BDE_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
+import { clearSprintTaskFk } from './handlers/sprint-local'
 import type { AgentMeta } from '../shared/types'
 
 export type { AgentMeta }
@@ -265,11 +266,10 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
 
   if (toRemove.length === 0) return
 
-  const clearFk = db.prepare('UPDATE sprint_tasks SET agent_run_id = NULL WHERE agent_run_id = ?')
   const deleteStmt = db.prepare('DELETE FROM agent_runs WHERE id = ?')
   const tx = db.transaction(() => {
     for (const row of toRemove) {
-      clearFk.run(row.id)
+      clearSprintTaskFk(row.id)
       deleteStmt.run(row.id)
     }
   })

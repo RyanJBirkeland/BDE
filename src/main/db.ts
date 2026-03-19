@@ -39,7 +39,7 @@ export const migrations: Migration[] = [
     version: 1,
     description: 'Create core tables (agent_runs, settings)',
     up: (db) => {
-      // NOTE: sprint_tasks intentionally excluded — owned by bde-task-runner service.
+      // NOTE: sprint_tasks created in migration v6 (local ownership).
       db.exec(`
         CREATE TABLE IF NOT EXISTS agent_runs (
           id           TEXT PRIMARY KEY,
@@ -71,10 +71,9 @@ export const migrations: Migration[] = [
   },
   {
     version: 2,
-    description: 'NOOP — pr_mergeable_state moved to bde-task-runner migrations',
+    description: 'NOOP — version number preserved for compatibility',
     up: (_db) => {
-      // sprint_tasks is now owned by bde-task-runner. Version number preserved
-      // so existing DBs (user_version=2+) are not affected.
+      // Version number preserved so existing DBs (user_version=2+) are not affected.
     }
   },
   {
@@ -124,6 +123,43 @@ export const migrations: Migration[] = [
       if (!cols.includes('source')) {
         db.exec("ALTER TABLE agent_runs ADD COLUMN source TEXT NOT NULL DEFAULT 'bde'")
       }
+    }
+  },
+  {
+    version: 6,
+    description: 'Create sprint_tasks table (local ownership)',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS sprint_tasks (
+          id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+          title           TEXT NOT NULL,
+          prompt          TEXT NOT NULL DEFAULT '',
+          repo            TEXT NOT NULL DEFAULT 'bde',
+          status          TEXT NOT NULL DEFAULT 'backlog'
+                            CHECK(status IN ('backlog','queued','active','done','cancelled','failed')),
+          priority        INTEGER NOT NULL DEFAULT 1,
+          spec            TEXT,
+          notes           TEXT,
+          pr_url          TEXT,
+          pr_number       INTEGER,
+          pr_status       TEXT CHECK(pr_status IS NULL OR pr_status IN ('open','merged','closed','draft')),
+          pr_mergeable_state TEXT,
+          agent_run_id    TEXT REFERENCES agent_runs(id),
+          started_at      TEXT,
+          completed_at    TEXT,
+          created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+          updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_sprint_tasks_status ON sprint_tasks(status);
+
+        CREATE TRIGGER IF NOT EXISTS sprint_tasks_updated_at
+          AFTER UPDATE ON sprint_tasks
+          BEGIN
+            UPDATE sprint_tasks SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+            WHERE id = NEW.id;
+          END;
+      `)
     }
   }
 ]

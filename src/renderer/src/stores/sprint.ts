@@ -89,7 +89,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
   },
 
   createTask: async (data): Promise<void> => {
-    const repoEnum = data.repo
+    const repoEnum = data.repo.toLowerCase()
     const optimistic: SprintTask = {
       id: `temp-${Date.now()}`,
       title: data.title,
