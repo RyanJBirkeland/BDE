@@ -25,7 +25,15 @@ export default defineConfig(
     },
     rules: {
       ...eslintPluginReactHooks.configs.recommended.rules,
-      ...eslintPluginReactRefresh.configs.vite.rules
+      ...eslintPluginReactRefresh.configs.vite.rules,
+      'no-restricted-exports': ['error', { restrictDefaultExports: { direct: true } }]
+    }
+  },
+  // Allow default exports in lazy-loaded views (React.lazy requires them) and config files
+  {
+    files: ['**/views/*.tsx', '**/vitest*.ts', '*.config.ts', '*.config.mjs'],
+    rules: {
+      'no-restricted-exports': 'off'
     }
   },
   eslintConfigPrettier

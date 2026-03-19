@@ -95,7 +95,7 @@ async function poll(): Promise<void> {
 
 function broadcast(payload: PrListPayload): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('pr:list-updated', payload)
+    win.webContents.send('pr:listUpdated', payload)
   }
 }
 

@@ -2,7 +2,7 @@ import { safeHandle } from '../ipc-utils'
 import { getGatewayConfig, saveGatewayConfig } from '../config'
 
 export function registerConfigHandlers(): void {
-  safeHandle('get-gateway-url', () => {
+  safeHandle('config:getGatewayUrl', () => {
     try {
       const { url, token } = getGatewayConfig()
       return { url, hasToken: !!token }
@@ -10,7 +10,7 @@ export function registerConfigHandlers(): void {
       return { url: '', hasToken: false }
     }
   })
-  safeHandle('save-gateway-config', (_e, url: string, token?: string) => {
+  safeHandle('config:saveGateway', (_e, url: string, token?: string) => {
     if (token) {
       saveGatewayConfig(url, token)
     } else {

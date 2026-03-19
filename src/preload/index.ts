@@ -18,22 +18,22 @@ function typedInvoke<K extends keyof IpcChannelMap>(
 }
 
 const api = {
-  getGatewayUrl: () => typedInvoke('get-gateway-url'),
+  getGatewayUrl: () => typedInvoke('config:getGatewayUrl'),
   saveGatewayConfig: (url: string, token?: string) =>
-    typedInvoke('save-gateway-config', url, token),
+    typedInvoke('config:saveGateway', url, token),
   testGatewayConnection: (url: string, token?: string) =>
     typedInvoke('gateway:test-connection', url, token),
   signGatewayChallenge: () => typedInvoke('gateway:sign-challenge'),
-  getRepoPaths: (): Promise<Record<string, string>> => ipcRenderer.invoke('get-repo-paths'),
-  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('open-external', url),
+  getRepoPaths: (): Promise<Record<string, string>> => ipcRenderer.invoke('git:getRepoPaths'),
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('window:openExternal', url),
   listMemoryFiles: (): Promise<
     { path: string; name: string; size: number; modifiedAt: number }[]
-  > => ipcRenderer.invoke('list-memory-files'),
+  > => ipcRenderer.invoke('memory:listFiles'),
   readMemoryFile: (path: string): Promise<string> =>
-    ipcRenderer.invoke('read-memory-file', path),
+    ipcRenderer.invoke('memory:readFile', path),
   writeMemoryFile: (path: string, content: string): Promise<void> =>
-    ipcRenderer.invoke('write-memory-file', path, content),
-  setTitle: (title: string): void => ipcRenderer.send('set-title', title),
+    ipcRenderer.invoke('memory:writeFile', path, content),
+  setTitle: (title: string): void => ipcRenderer.send('window:setTitle', title),
 
   // GitHub API proxy — all GitHub REST calls routed through main process
   github: {
@@ -77,7 +77,7 @@ const api = {
   steerAgent: (agentId: string, message: string): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('agent:steer', { agentId, message }),
   killLocalAgent: (pid: number): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke('kill-local-agent', pid),
+    ipcRenderer.invoke('agent:killLocal', pid),
   killAgent: (agentId: string): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke('agent:kill', agentId),
   tailAgentLog: (args: {
@@ -110,15 +110,15 @@ const api = {
   pollPrStatuses: (
     prs: { taskId: string; prUrl: string }[]
   ): Promise<{ taskId: string; merged: boolean; state: string; mergedAt: string | null; mergeableState: string | null }[]> =>
-    ipcRenderer.invoke('poll-pr-statuses', prs),
+    ipcRenderer.invoke('pr:pollStatuses', prs),
 
   // Conflict file detection
   checkConflictFiles: (
     input: { owner: string; repo: string; prNumber: number }
   ): Promise<{ prNumber: number; files: string[]; baseBranch: string; headBranch: string }> =>
-    ipcRenderer.invoke('check-conflict-files', input),
+    ipcRenderer.invoke('pr:checkConflictFiles', input),
 
-  // Sprint tasks — Supabase-backed Kanban
+  // Sprint tasks — SQLite-backed Kanban
   sprint: {
     list: (): Promise<SprintTask[]> => ipcRenderer.invoke('sprint:list'),
     create: (task: {
@@ -135,7 +135,7 @@ const api = {
     readLog: (agentId: string, fromByte?: number): Promise<{ content: string; status: string; nextByte: number }> =>
       ipcRenderer.invoke('sprint:readLog', agentId, fromByte),
     readSpecFile: (filePath: string): Promise<string> =>
-      ipcRenderer.invoke('sprint:read-spec-file', filePath),
+      ipcRenderer.invoke('sprint:readSpecFile', filePath),
     generatePrompt: (args: {
       taskId: string
       title: string
@@ -146,23 +146,21 @@ const api = {
     delete: (id: string): Promise<{ ok: boolean }> =>
       ipcRenderer.invoke('sprint:delete', id),
     healthCheck: (): Promise<SprintTask[]> =>
-      ipcRenderer.invoke('sprint:health-check'),
+      ipcRenderer.invoke('sprint:healthCheck'),
   },
-
-
 
   // File attachments
   openFileDialog: (
     opts?: { filters?: { name: string; extensions: string[] }[] }
-  ): Promise<string[] | null> => ipcRenderer.invoke('open-file-dialog', opts),
+  ): Promise<string[] | null> => ipcRenderer.invoke('fs:openFileDialog', opts),
   readFileAsBase64: (
     path: string
   ): Promise<{ data: string; mimeType: string; name: string }> =>
-    ipcRenderer.invoke('read-file-as-base64', path),
+    ipcRenderer.invoke('fs:readFileAsBase64', path),
   readFileAsText: (
     path: string
   ): Promise<{ content: string; name: string }> =>
-    ipcRenderer.invoke('read-file-as-text', path),
+    ipcRenderer.invoke('fs:readFileAsText', path),
 
   // Gateway tool invocation — proxied through main process to avoid CORS
   invokeTool: (tool: string, args?: Record<string, unknown>): Promise<unknown> =>
@@ -175,32 +173,39 @@ const api = {
     cb: (data: { remaining: number; limit: number; resetEpoch: number }) => void
   ): (() => void) => {
     const listener = (_e: unknown, data: { remaining: number; limit: number; resetEpoch: number }): void => cb(data)
-    ipcRenderer.on('github:rate-limit-warning', listener)
-    return () => ipcRenderer.removeListener('github:rate-limit-warning', listener)
+    ipcRenderer.on('github:rateLimitWarning', listener)
+    return () => ipcRenderer.removeListener('github:rateLimitWarning', listener)
+  },
+
+  // GitHub token expired push event
+  onGitHubTokenExpired: (cb: () => void): (() => void) => {
+    const listener = (): void => cb()
+    ipcRenderer.on('github:tokenExpired', listener)
+    return () => ipcRenderer.removeListener('github:tokenExpired', listener)
   },
 
   // Open PR list — main-process poller push events
   onPrListUpdated: (cb: (payload: PrListPayload) => void): (() => void) => {
     const listener = (_e: unknown, data: PrListPayload): void => cb(data)
-    ipcRenderer.on('pr:list-updated', listener)
-    return () => ipcRenderer.removeListener('pr:list-updated', listener)
+    ipcRenderer.on('pr:listUpdated', listener)
+    return () => ipcRenderer.removeListener('pr:listUpdated', listener)
   },
-  getPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:get-list'),
-  refreshPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:refresh-list'),
+  getPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:getList'),
+  refreshPrList: (): Promise<PrListPayload> => ipcRenderer.invoke('pr:refreshList'),
 
   // Sprint DB file-watcher push events
   onExternalSprintChange: (cb: () => void): void => {
-    ipcRenderer.on('sprint:external-change', cb)
+    ipcRenderer.on('sprint:externalChange', cb)
   },
   offExternalSprintChange: (cb: () => void): void => {
-    ipcRenderer.removeListener('sprint:external-change', cb)
+    ipcRenderer.removeListener('sprint:externalChange', cb)
   },
 
   // Sprint SSE real-time events
   onSprintSseEvent: (cb: (event: { type: string; data: unknown }) => void): (() => void) => {
     const listener = (_e: unknown, ev: { type: string; data: unknown }): void => cb(ev)
-    ipcRenderer.on('sprint:sse-event', listener)
-    return () => ipcRenderer.removeListener('sprint:sse-event', listener)
+    ipcRenderer.on('sprint:sseEvent', listener)
+    return () => ipcRenderer.removeListener('sprint:sseEvent', listener)
   },
 
   // Terminal PTY

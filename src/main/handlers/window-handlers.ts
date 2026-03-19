@@ -5,8 +5,8 @@ import { isKnownAgentPid } from '../local-agents'
 const ALLOWED_URL_SCHEMES = new Set(['https:', 'http:', 'mailto:'])
 
 export function registerWindowHandlers(): void {
-  // TODO: AX-S1 — add 'open-external', 'kill-local-agent' to IpcChannelMap
-  safeHandle('open-external', (_e, url: string) => {
+  // TODO: AX-S1 — add 'window:openExternal', 'agent:killLocal' to IpcChannelMap
+  safeHandle('window:openExternal', (_e, url: string) => {
     const parsed = new URL(url)
     if (!ALLOWED_URL_SCHEMES.has(parsed.protocol)) {
       throw new Error(`Blocked URL scheme: "${parsed.protocol}"`)
@@ -14,7 +14,7 @@ export function registerWindowHandlers(): void {
     return shell.openExternal(url)
   })
 
-  safeHandle('kill-local-agent', async (_event, pid: number) => {
+  safeHandle('agent:killLocal', async (_event, pid: number) => {
     if (!isKnownAgentPid(pid)) {
       return { ok: false, error: 'PID is not a known agent process' }
     }
@@ -26,7 +26,7 @@ export function registerWindowHandlers(): void {
     }
   })
 
-  ipcMain.on('set-title', (_e, title: string) => {
+  ipcMain.on('window:setTitle', (_e, title: string) => {
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     if (win) win.setTitle(title)
   })

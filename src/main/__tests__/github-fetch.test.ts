@@ -264,7 +264,7 @@ describe('githubFetch', () => {
       headers: { Authorization: 'Bearer tok' },
     })
 
-    expect(mockSend).toHaveBeenCalledWith('github:rate-limit-warning', {
+    expect(mockSend).toHaveBeenCalledWith('github:rateLimitWarning', {
       remaining: 50,
       limit: 5000,
       resetEpoch: 1700000000,

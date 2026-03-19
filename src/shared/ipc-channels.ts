@@ -29,11 +29,11 @@ export interface GitHubFetchResult {
 
 export interface IpcChannelMap {
   // --- Config ---
-  'get-gateway-url': {
+  'config:getGatewayUrl': {
     args: []
     result: { url: string; hasToken: boolean }
   }
-  'save-gateway-config': {
+  'config:saveGateway': {
     args: [url: string, token?: string]
     result: void
   }

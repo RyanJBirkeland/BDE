@@ -11,8 +11,8 @@ declare global {
   interface Window {
     electron: ElectronAPI
     api: {
-      getGatewayUrl: () => Promise<IpcResult<'get-gateway-url'>>
-      saveGatewayConfig: (...args: IpcChannelMap['save-gateway-config']['args']) => Promise<IpcResult<'save-gateway-config'>>
+      getGatewayUrl: () => Promise<IpcResult<'config:getGatewayUrl'>>
+      saveGatewayConfig: (...args: IpcChannelMap['config:saveGateway']['args']) => Promise<IpcResult<'config:saveGateway'>>
       testGatewayConnection: (...args: IpcChannelMap['gateway:test-connection']['args']) => Promise<IpcResult<'gateway:test-connection'>>
       signGatewayChallenge: () => Promise<IpcResult<'gateway:sign-challenge'>>
       getRepoPaths: () => Promise<Record<string, string>>
@@ -86,7 +86,7 @@ declare global {
         input: { owner: string; repo: string; prNumber: number }
       ) => Promise<{ prNumber: number; files: string[]; baseBranch: string; headBranch: string }>
 
-      // Sprint tasks — Supabase-backed Kanban
+      // Sprint tasks — SQLite-backed Kanban
       sprint: {
         list: () => Promise<SprintTask[]>
         create: (task: {
@@ -128,6 +128,9 @@ declare global {
       onGitHubRateLimitWarning: (
         cb: (data: { remaining: number; limit: number; resetEpoch: number }) => void
       ) => () => void
+
+      // GitHub token expired push event
+      onGitHubTokenExpired: (cb: () => void) => () => void
 
       // Open PR list — main-process poller push events
       onPrListUpdated: (cb: (payload: PrListPayload) => void) => () => void

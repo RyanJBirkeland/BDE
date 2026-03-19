@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import PRList from './PRList'
+import { PRList } from './PRList'
 
 const STORAGE_KEY = 'bde-sprint-pr-collapsed'
 

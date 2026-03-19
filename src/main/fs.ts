@@ -166,17 +166,17 @@ async function readFileAsText(
 }
 
 export function registerFsHandlers(): void {
-  // TODO: AX-S1 — add 'list-memory-files', 'read-memory-file', 'write-memory-file' to IpcChannelMap
-  safeHandle('list-memory-files', () => listMemoryFiles())
-  safeHandle('read-memory-file', (_e, path: string) => readMemoryFile(path))
-  safeHandle('write-memory-file', (_e, path: string, content: string) =>
+  // TODO: AX-S1 — add 'memory:listFiles', 'memory:readFile', 'memory:writeFile' to IpcChannelMap
+  safeHandle('memory:listFiles', () => listMemoryFiles())
+  safeHandle('memory:readFile', (_e, path: string) => readMemoryFile(path))
+  safeHandle('memory:writeFile', (_e, path: string, content: string) =>
     writeMemoryFile(path, content)
   )
 
   // Attachment file handlers
-  safeHandle('open-file-dialog', (_e, opts?: { filters?: Electron.FileFilter[] }) =>
+  safeHandle('fs:openFileDialog', (_e, opts?: { filters?: Electron.FileFilter[] }) =>
     openFileDialog(opts)
   )
-  safeHandle('read-file-as-base64', (_e, filePath: string) => readFileAsBase64(filePath))
-  safeHandle('read-file-as-text', (_e, filePath: string) => readFileAsText(filePath))
+  safeHandle('fs:readFileAsBase64', (_e, filePath: string) => readFileAsBase64(filePath))
+  safeHandle('fs:readFileAsText', (_e, filePath: string) => readFileAsText(filePath))
 }

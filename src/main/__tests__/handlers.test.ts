@@ -279,7 +279,7 @@ describe('IPC handler registration', () => {
   describe('git-handlers', () => {
     it('registers all expected channel names', () => {
       const expected = [
-        'get-repo-paths',
+        'git:getRepoPaths',
         'git:status',
         'git:diff',
         'git:stage',
@@ -288,15 +288,15 @@ describe('IPC handler registration', () => {
         'git:push',
         'git:branches',
         'git:checkout',
-        'poll-pr-statuses',
+        'pr:pollStatuses',
       ]
       for (const ch of expected) {
         expect(handlers.has(ch), `missing channel: ${ch}`).toBe(true)
       }
     })
 
-    it('"get-repo-paths" calls getRepoPaths', async () => {
-      const result = await invoke('get-repo-paths')
+    it('"git:getRepoPaths" calls getRepoPaths', async () => {
+      const result = await invoke('git:getRepoPaths')
       expect(git.getRepoPaths).toHaveBeenCalled()
       expect(result).toEqual({ bde: '/tmp/bde' })
     })
@@ -343,9 +343,9 @@ describe('IPC handler registration', () => {
       expect(git.gitCheckout).toHaveBeenCalledWith(resolve('/tmp/bde'), 'feat/new')
     })
 
-    it('"poll-pr-statuses" passes prs to pollPrStatuses', async () => {
+    it('"pr:pollStatuses" passes prs to pollPrStatuses', async () => {
       const prs = [{ owner: 'o', repo: 'r', prNumber: 1 }]
-      await invoke('poll-pr-statuses', prs)
+      await invoke('pr:pollStatuses', prs)
       expect(git.pollPrStatuses).toHaveBeenCalledWith(prs)
     })
 
@@ -367,40 +367,40 @@ describe('IPC handler registration', () => {
   describe('config-handlers', () => {
     it('registers all expected channel names', () => {
       const expected = [
-        'get-gateway-url',
-        'save-gateway-config',
+        'config:getGatewayUrl',
+        'config:saveGateway',
       ]
       for (const ch of expected) {
         expect(handlers.has(ch), `missing channel: ${ch}`).toBe(true)
       }
       // Token-exposing channels must NOT be registered
-      expect(handlers.has('get-gateway-config')).toBe(false)
-      expect(handlers.has('get-github-token')).toBe(false)
-      expect(handlers.has('get-supabase-config')).toBe(false)
+      expect(handlers.has('config:getGateway')).toBe(false)
+      expect(handlers.has('config:getGithubToken')).toBe(false)
+      expect(handlers.has('config:getSupabase')).toBe(false)
     })
 
-    it('"get-gateway-url" returns url and hasToken flag (no raw token)', async () => {
-      const result = await invoke('get-gateway-url')
+    it('"config:getGatewayUrl" returns url and hasToken flag (no raw token)', async () => {
+      const result = await invoke('config:getGatewayUrl')
       expect(result).toEqual({ url: 'ws://localhost:18789', hasToken: true })
     })
 
-    it('"get-gateway-url" returns hasToken:false when config throws', async () => {
+    it('"config:getGatewayUrl" returns hasToken:false when config throws', async () => {
       vi.mocked(config.getGatewayConfig).mockImplementationOnce(() => {
         throw new Error('no config')
       })
-      const result = await invoke('get-gateway-url')
+      const result = await invoke('config:getGatewayUrl')
       expect(result).toEqual({ url: '', hasToken: false })
     })
 
-    it('"save-gateway-config" calls saveGatewayConfig with token', async () => {
-      await invoke('save-gateway-config', 'ws://new', 'new-token')
+    it('"config:saveGateway" calls saveGatewayConfig with token', async () => {
+      await invoke('config:saveGateway', 'ws://new', 'new-token')
       expect(config.saveGatewayConfig).toHaveBeenCalledWith('ws://new', 'new-token')
     })
 
-    it('"save-gateway-config" preserves existing token when none provided', async () => {
-      await invoke('save-gateway-config', 'ws://new')
+    it('"config:saveGateway" preserves existing token when none provided', async () => {
+      await invoke('config:saveGateway', 'ws://new')
       expect(config.saveGatewayConfig).toHaveBeenCalledWith('ws://new', 'test-token')
-    })
+
   })
 
   // -------------------------------------------------------------------------
@@ -512,42 +512,42 @@ describe('IPC handler registration', () => {
   // -------------------------------------------------------------------------
   describe('window-handlers', () => {
     it('registers expected channel names', () => {
-      expect(handlers.has('open-external')).toBe(true)
-      expect(handlers.has('kill-local-agent')).toBe(true)
-      expect(onListeners.has('set-title')).toBe(true)
+      expect(handlers.has('window:openExternal')).toBe(true)
+      expect(handlers.has('agent:killLocal')).toBe(true)
+      expect(onListeners.has('window:setTitle')).toBe(true)
     })
 
-    it('"open-external" calls shell.openExternal with https URL', async () => {
-      await invoke('open-external', 'https://example.com')
+    it('"window:openExternal" calls shell.openExternal with https URL', async () => {
+      await invoke('window:openExternal', 'https://example.com')
       expect(shell.openExternal).toHaveBeenCalledWith('https://example.com')
     })
 
-    it('"open-external" rejects disallowed URL schemes', async () => {
-      await expect(invoke('open-external', 'file:///etc/passwd')).rejects.toThrow(
+    it('"window:openExternal" rejects disallowed URL schemes', async () => {
+      await expect(invoke('window:openExternal', 'file:///etc/passwd')).rejects.toThrow(
         'Blocked URL scheme'
       )
-      await expect(invoke('open-external', 'javascript:alert(1)')).rejects.toThrow(
+      await expect(invoke('window:openExternal', 'javascript:alert(1)')).rejects.toThrow(
         'Blocked URL scheme'
       )
     })
 
-    it('"kill-local-agent" calls process.kill for known agent PID', async () => {
+    it('"agent:killLocal" calls process.kill for known agent PID', async () => {
       vi.mocked(localAgents.isKnownAgentPid).mockReturnValue(true)
       const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
-      const result = await invoke('kill-local-agent', 12345)
+      const result = await invoke('agent:killLocal', 12345)
       expect(killSpy).toHaveBeenCalledWith(12345, 'SIGTERM')
       expect(result).toEqual({ ok: true })
       killSpy.mockRestore()
     })
 
-    it('"kill-local-agent" rejects unknown PID', async () => {
+    it('"agent:killLocal" rejects unknown PID', async () => {
       vi.mocked(localAgents.isKnownAgentPid).mockReturnValue(false)
-      const result = await invoke('kill-local-agent', 99999)
+      const result = await invoke('agent:killLocal', 99999)
       expect(result).toEqual({ ok: false, error: 'PID is not a known agent process' })
     })
 
-    it('"set-title" sets window title via ipcMain.on listener', () => {
-      emit('set-title', 'New Title')
+    it('"window:setTitle" sets window title via ipcMain.on listener', () => {
+      emit('window:setTitle', 'New Title')
       expect(mockSetTitle).toHaveBeenCalledWith('New Title')
     })
   })
@@ -606,27 +606,29 @@ describe('IPC handler registration', () => {
   // -------------------------------------------------------------------------
   describe('fs-handlers', () => {
     it('registers all expected channel names', () => {
-      const expected = ['list-memory-files', 'read-memory-file', 'write-memory-file']
+      const expected = ['memory:listFiles', 'memory:readFile', 'memory:writeFile']
       for (const ch of expected) {
         expect(handlers.has(ch), `missing channel: ${ch}`).toBe(true)
       }
     })
 
-    it('"list-memory-files" handler is registered and callable', async () => {
-      const result = await invoke('list-memory-files')
+    it('"memory:listFiles" handler is registered and callable', async () => {
+      const result = await invoke('memory:listFiles')
       expect(Array.isArray(result)).toBe(true)
     })
 
-    it('"read-memory-file" rejects path traversal', async () => {
-      await expect(invoke('read-memory-file', '../../etc/passwd')).rejects.toThrow(
+    it('"memory:readFile" rejects path traversal', async () => {
+      await expect(invoke('memory:readFile', '../../etc/passwd')).rejects.toThrow(
         'Path traversal blocked'
       )
     })
 
-    it('"write-memory-file" rejects path traversal', async () => {
+    it('"memory:writeFile" rejects path traversal', async () => {
       await expect(
-        invoke('write-memory-file', '../../../etc/evil', 'bad')
+        invoke('memory:writeFile', '../../../etc/evil', 'bad')
       ).rejects.toThrow('Path traversal blocked')
     })
   })
+})
+
 })

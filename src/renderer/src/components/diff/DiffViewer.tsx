@@ -453,4 +453,4 @@ function DiffViewer({ files }: { files: DiffFile[] }): React.JSX.Element {
   )
 }
 
-export default DiffViewer
+export { DiffViewer }

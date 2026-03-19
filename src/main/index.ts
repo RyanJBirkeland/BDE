@@ -29,7 +29,7 @@ function startDbWatcher(): () => void {
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => {
       for (const win of BrowserWindow.getAllWindows()) {
-        win.webContents.send('sprint:external-change')
+        win.webContents.send('sprint:externalChange')
       }
     }, DEBOUNCE_MS)
   }

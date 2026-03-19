@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { GitBranch } from 'lucide-react'
-import DiffViewer from '../components/diff/DiffViewer'
+import { DiffViewer } from '../components/diff/DiffViewer'
 import { parseDiffChunked } from '../lib/diff-parser'
 import type { DiffFile } from '../lib/diff-parser'
 import { Button } from '../components/ui/Button'

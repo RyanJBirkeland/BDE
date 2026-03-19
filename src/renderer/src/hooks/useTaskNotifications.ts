@@ -158,14 +158,15 @@ export function useTaskNotifications(): void {
   // Watch for PR opened via SSE task:updated events
   useEffect(() => {
     const unsub = subscribeSSE('task:updated', (data: unknown) => {
-      const update = data as TaskUpdatedEvent
+      const raw = data as Record<string, unknown>
+      const update: TaskUpdatedEvent = { ...raw, taskId: (raw.taskId ?? raw.id) as string }
       const prUrl = update.pr_url as string | undefined
-      if (!prUrl || seenPrTaskIds.current.has(update.id)) return
-      seenPrTaskIds.current.add(update.id)
+      if (!prUrl || seenPrTaskIds.current.has(update.taskId)) return
+      seenPrTaskIds.current.add(update.taskId)
       boundSet(seenPrTaskIds.current, MAX_SEEN_IDS)
 
       // Skip if user is watching this task
-      if (_openLogDrawerTaskId === update.id) return
+      if (_openLogDrawerTaskId === update.taskId) return
 
       const title = (update.title as string) || 'Sprint task'
       notify('PR opened', `${title}\n${prUrl}`)

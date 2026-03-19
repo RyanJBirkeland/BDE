@@ -89,7 +89,17 @@ function updateRateLimitState(rl: RateLimitHeaders): void {
 
 function broadcastRateLimitWarning(remaining: number, limit: number, resetEpoch: number): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('github:rate-limit-warning', { remaining, limit, resetEpoch })
+    win.webContents.send('github:rateLimitWarning', { remaining, limit, resetEpoch })
+  }
+}
+
+let tokenExpiredEmitted = false
+
+function broadcastTokenExpired(): void {
+  if (tokenExpiredEmitted) return
+  tokenExpiredEmitted = true
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('github:tokenExpired', {})
   }
 }
 
@@ -164,6 +174,13 @@ export async function githubFetch(url: string, options?: GithubFetchOptions): Pr
     updateRateLimitState(rl)
     checkRateLimitThreshold()
 
+    // --- 401 Unauthorized → token expired or invalid, fail fast (no retry) ---
+    if (lastResponse.status === 401) {
+      console.error('[github-fetch] 401 Unauthorized — GitHub token is invalid or expired')
+      broadcastTokenExpired()
+      return lastResponse
+    }
+
     // --- (b) 403 rate-limit → honour Retry-After or fall back to backoff ---
     if (isRateLimitExhausted(lastResponse.status, rl.remaining) && attempt < MAX_RETRIES) {
       const waitMs = rl.retryAfterMs ?? computeBackoffMs(attempt)
@@ -210,6 +227,7 @@ export function _resetRateLimitState(): void {
   state.limit = null
   state.resetEpoch = null
   state.warningEmitted = false
+  tokenExpiredEmitted = false
 }
 
 // ---------------------------------------------------------------------------

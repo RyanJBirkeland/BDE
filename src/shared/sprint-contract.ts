@@ -4,7 +4,7 @@ import { TASK_STATUS } from './constants'
 export type TaskUpdateEvent = {
   type: 'task:update'
   task: {
-    id: string
+    taskId: string
     status: string
     pr_url?: string
     pr_number?: number

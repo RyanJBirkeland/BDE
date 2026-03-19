@@ -1,6 +1,6 @@
 /**
  * Singleton SSE client for task-runner events.
- * Subscribes to the existing IPC bridge (sprint:sse-event) that the main
+ * Subscribes to the existing IPC bridge (sprint:sseEvent) that the main
  * process maintains, and dispatches typed events to renderer components.
  */
 
@@ -20,7 +20,7 @@ export interface LogDoneEvent {
 }
 
 export interface TaskUpdatedEvent {
-  id: string
+  taskId: string
   [key: string]: unknown
 }
 

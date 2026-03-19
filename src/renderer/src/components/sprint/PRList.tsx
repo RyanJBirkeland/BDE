@@ -12,7 +12,7 @@ import { PRStationDiff } from '../pr-station/PRStationDiff'
 // PRList excludes BDE (this app) — only show external repos
 const EXCLUDED_REPO = 'BDE'
 
-export default function PRList() {
+export function PRList() {
   const [prs, setPrs] = useState<OpenPr[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

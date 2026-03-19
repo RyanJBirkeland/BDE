@@ -66,8 +66,8 @@ export function registerGitHandlers(): void {
     return { ok: res.ok, status: res.status, body, linkNext }
   })
 
-  // TODO: AX-S1 — add 'get-repo-paths' to IpcChannelMap
-  safeHandle('get-repo-paths', () => getRepoPaths())
+  // TODO: AX-S1 — add 'git:getRepoPaths' to IpcChannelMap
+  safeHandle('git:getRepoPaths', () => getRepoPaths())
 
   // --- Git client IPC (cwd validated against known repo paths) ---
   safeHandle('git:status', (_e, cwd: string) => gitStatus(validateRepoCwd(cwd)))
@@ -81,13 +81,13 @@ export function registerGitHandlers(): void {
   safeHandle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(validateRepoCwd(cwd), branch))
 
   // --- PR status polling ---
-  // TODO: AX-S1 — add 'poll-pr-statuses' to IpcChannelMap
-  safeHandle('poll-pr-statuses', (_e, prs: PrStatusInput[]) => pollPrStatuses(prs))
+  // TODO: AX-S1 — add 'pr:pollStatuses' to IpcChannelMap
+  safeHandle('pr:pollStatuses', (_e, prs: PrStatusInput[]) => pollPrStatuses(prs))
 
   // --- Conflict file detection ---
-  safeHandle('check-conflict-files', (_e, input: ConflictFilesInput) => checkConflictFiles(input))
+  safeHandle('pr:checkConflictFiles', (_e, input: ConflictFilesInput) => checkConflictFiles(input))
 
   // --- Open PR list (main-process poller is the source of truth) ---
-  safeHandle('pr:get-list', () => getLatestPrList() ?? { prs: [], checks: {} })
-  safeHandle('pr:refresh-list', () => refreshPrList())
+  safeHandle('pr:getList', () => getLatestPrList() ?? { prs: [], checks: {} })
+  safeHandle('pr:refreshList', () => refreshPrList())
 }

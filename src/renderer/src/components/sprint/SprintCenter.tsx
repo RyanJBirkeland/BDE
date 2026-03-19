@@ -15,7 +15,7 @@ import { usePrConflictsStore } from '../../stores/prConflicts'
 import { useHealthCheckStore } from '../../stores/healthCheck'
 import { useSprintStore } from '../../stores/sprint'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
-import { subscribeSSE, type TaskUpdatedEvent } from '../../lib/taskRunnerSSE'
+import { subscribeSSE } from '../../lib/taskRunnerSSE'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import {
   POLL_SPRINT_INTERVAL,
@@ -33,7 +33,7 @@ export type { SprintTask }
 
 // --- Component ---
 
-export default function SprintCenter() {
+export function SprintCenter() {
   // --- Store state ---
   const tasks = useSprintStore((s) => s.tasks)
   const loading = useSprintStore((s) => s.loading)
@@ -103,7 +103,8 @@ export default function SprintCenter() {
 
   useEffect(() => {
     const unsub = subscribeSSE('task:updated', (data: unknown) => {
-      mergeSseUpdate(data as TaskUpdatedEvent)
+      const raw = data as Record<string, unknown>
+      mergeSseUpdate({ ...raw, taskId: (raw.taskId ?? raw.id) as string })
       debouncedLoadData()
     })
     return () => {

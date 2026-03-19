@@ -37,8 +37,9 @@ export interface SubAgent {
   isActive: boolean
 }
 
-// Module scope — timer handles are mutable runtime objects, not serializable state
+// Module scope — timer handles and fetch guard are mutable runtime objects, not serializable state
 const _pendingKillTimers = new Map<string, ReturnType<typeof setTimeout>>()
+let _fetchInProgress = false
 
 interface SessionsStore {
   sessions: AgentSession[]
@@ -48,7 +49,6 @@ interface SessionsStore {
   selectedSessionKey: string | null
   runningCount: number
   loading: boolean
-  isFetching: boolean
   fetchError: string | null
   followMode: boolean
   fetchSessions: () => Promise<void>
@@ -76,13 +76,13 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
   selectedSessionKey: null,
   runningCount: 0,
   loading: true,
-  isFetching: false,
   fetchError: null,
   followMode: false,
 
   fetchSessions: async (): Promise<void> => {
-    if (get().isFetching) return
-    set({ isFetching: true, subAgentsLoading: true })
+    if (_fetchInProgress) return
+    _fetchInProgress = true
+    set({ loading: true, subAgentsLoading: true })
 
     try {
       const [sessionsResult, subAgentsResult] = await Promise.allSettled([
@@ -171,7 +171,7 @@ export const useSessionsStore = create<SessionsStore>((set, get) => ({
         }
       }
     } finally {
-      set({ isFetching: false })
+      _fetchInProgress = false
     }
   },
 

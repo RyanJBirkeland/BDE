@@ -186,7 +186,7 @@ export function registerSprintHandlers(): void {
     return { ok: true }
   })
 
-  safeHandle('sprint:read-spec-file', async (_e, filePath: string) => {
+  safeHandle('sprint:readSpecFile', async (_e, filePath: string) => {
     const safePath = validateSpecPath(filePath)
     return readFile(safePath, 'utf-8')
   })
@@ -254,7 +254,7 @@ export function registerSprintHandlers(): void {
     }
   )
 
-  safeHandle('sprint:health-check', () => {
+  safeHandle('sprint:healthCheck', () => {
     const db = getDb()
     return db
       .prepare(

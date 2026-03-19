@@ -118,7 +118,7 @@ export function parseSSE(buffer: string): {
 
 function notifyRenderer(event: { type: string; data: unknown }): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('sprint:sse-event', event)
+    win.webContents.send('sprint:sseEvent', event)
   }
 }
 
@@ -128,6 +128,6 @@ function notifyRenderer(event: { type: string; data: unknown }): void {
  */
 function notifyDisconnected(): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('sprint:sse-event', { type: '__sse-disconnected', data: null })
+    win.webContents.send('sprint:sseEvent', { type: '__sse-disconnected', data: null })
   }
 }

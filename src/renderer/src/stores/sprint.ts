@@ -20,7 +20,7 @@ interface SprintState {
   updateTask: (taskId: string, patch: Partial<SprintTask>) => Promise<void>
   deleteTask: (taskId: string) => Promise<void>
   createTask: (data: CreateTicketInput) => Promise<void>
-  mergeSseUpdate: (update: { id: string; [key: string]: unknown }) => void
+  mergeSseUpdate: (update: { taskId: string; [key: string]: unknown }) => void
   setPrMergedMap: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void
   setGeneratingIds: (updater: (prev: Set<string>) => Set<string>) => void
   setRepoFilter: (filter: string | null) => void
@@ -185,7 +185,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
   mergeSseUpdate: (update): void => {
     set((s) => ({
       tasks: s.tasks.map((t) => {
-        if (t.id !== update.id) return t
+        if (t.id !== update.taskId) return t
         const merged = { ...t, ...update }
         if (merged.status === TASK_STATUS.DONE && merged.pr_url && !merged.pr_status) {
           merged.pr_status = PR_STATUS.OPEN

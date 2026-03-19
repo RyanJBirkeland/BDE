@@ -1,7 +1,7 @@
 /**
  * MemoryView — file browser and editor for OpenClaw agent memory.
  * Lists memory files from ~/.openclaw/workspace/memory/ via IPC
- * (list-memory-files, read-memory-file, write-memory-file). Groups files
+ * (memory:listFiles, memory:readFile, memory:writeFile). Groups files
  * into pinned (MEMORY.md), daily logs, projects, and other. Keyboard-navigable.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
