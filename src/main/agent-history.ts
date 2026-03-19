@@ -276,9 +276,11 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
 
   if (toRemove.length === 0) return
 
+  const clearFk = db.prepare('UPDATE sprint_tasks SET agent_run_id = NULL WHERE agent_run_id = ?')
   const deleteStmt = db.prepare('DELETE FROM agent_runs WHERE id = ?')
   const tx = db.transaction(() => {
     for (const row of toRemove) {
+      clearFk.run(row.id)
       deleteStmt.run(row.id)
     }
   })
