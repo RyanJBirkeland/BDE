@@ -37,8 +37,9 @@ export interface Migration {
 export const migrations: Migration[] = [
   {
     version: 1,
-    description: 'Create core tables (agent_runs, sprint_tasks, settings)',
+    description: 'Create core tables (agent_runs, settings)',
     up: (db) => {
+      // NOTE: sprint_tasks intentionally excluded — owned by bde-task-runner service.
       db.exec(`
         CREATE TABLE IF NOT EXISTS agent_runs (
           id           TEXT PRIMARY KEY,
@@ -56,40 +57,12 @@ export const migrations: Migration[] = [
           exit_code    INTEGER
         );
 
-        CREATE TABLE IF NOT EXISTS sprint_tasks (
-          id           TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-          title        TEXT NOT NULL,
-          prompt       TEXT NOT NULL DEFAULT '',
-          repo         TEXT NOT NULL DEFAULT 'bde',
-          status       TEXT NOT NULL DEFAULT 'backlog'
-                         CHECK(status IN ('backlog','queued','active','done','cancelled')),
-          priority     INTEGER NOT NULL DEFAULT 1,
-          spec         TEXT,
-          notes        TEXT,
-          pr_url       TEXT,
-          pr_number    INTEGER,
-          pr_status    TEXT,
-          agent_run_id TEXT REFERENCES agent_runs(id),
-          started_at   TEXT,
-          completed_at TEXT,
-          created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-          updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-        );
-
         CREATE TABLE IF NOT EXISTS settings (
           key          TEXT PRIMARY KEY,
           value        TEXT NOT NULL,
           updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
         );
 
-        CREATE TRIGGER IF NOT EXISTS sprint_tasks_updated_at
-          AFTER UPDATE ON sprint_tasks
-          BEGIN
-            UPDATE sprint_tasks SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-            WHERE id = NEW.id;
-          END;
-
-        CREATE INDEX IF NOT EXISTS idx_sprint_tasks_status ON sprint_tasks(status, priority, created_at);
         CREATE INDEX IF NOT EXISTS idx_agent_runs_pid      ON agent_runs(pid);
         CREATE INDEX IF NOT EXISTS idx_agent_runs_status   ON agent_runs(status);
         CREATE INDEX IF NOT EXISTS idx_agent_runs_finished ON agent_runs(finished_at, started_at DESC);
@@ -98,22 +71,16 @@ export const migrations: Migration[] = [
   },
   {
     version: 2,
-    description: 'Add pr_mergeable_state column',
-    up: (db) => {
-      // Column-existence check needed for DBs upgrading from before version tracking
-      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map(
-        (c) => c.name
-      )
-      if (!cols.includes('pr_mergeable_state')) {
-        db.exec('ALTER TABLE sprint_tasks ADD COLUMN pr_mergeable_state TEXT')
-      }
+    description: 'NOOP — pr_mergeable_state moved to bde-task-runner migrations',
+    up: (_db) => {
+      // sprint_tasks is now owned by bde-task-runner. Version number preserved
+      // so existing DBs (user_version=2+) are not affected.
     }
   },
   {
     version: 3,
     description: 'Add cost columns to agent_runs',
     up: (db) => {
-      // Column-existence checks needed for DBs upgrading from before version tracking
       const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map(
         (c) => c.name
       )

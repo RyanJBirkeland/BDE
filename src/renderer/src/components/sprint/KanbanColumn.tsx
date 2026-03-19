@@ -31,6 +31,7 @@ const EMPTY_LABELS: Record<ColumnStatus, string> = {
   active: 'Nothing in progress',
   done: 'No completed tasks yet',
   cancelled: 'No cancelled tasks',
+  failed: 'No failed tasks',
   review: 'No PRs awaiting review',
 }
 
@@ -40,6 +41,7 @@ const STATUS_CLASS: Record<ColumnStatus, string> = {
   active: 'kanban-col--active',
   done: 'kanban-col--done',
   cancelled: 'kanban-col--done',
+  failed: 'kanban-col--done',
   review: 'kanban-col--review',
 }
 

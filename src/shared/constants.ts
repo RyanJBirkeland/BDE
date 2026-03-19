@@ -9,6 +9,7 @@ export const TASK_STATUS = {
   ACTIVE: 'active',
   DONE: 'done',
   CANCELLED: 'cancelled',
+  FAILED: 'failed',
 } as const
 
 export type TaskStatusValue = (typeof TASK_STATUS)[keyof typeof TASK_STATUS]
