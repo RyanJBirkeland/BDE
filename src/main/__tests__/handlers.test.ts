@@ -85,6 +85,17 @@ vi.mock('../db', () => ({
   }),
 }))
 
+vi.mock('../settings', () => ({
+  getAgentBinary: vi.fn().mockReturnValue('claude'),
+  getAgentPermissionMode: vi.fn().mockReturnValue('bypassPermissions'),
+  getSetting: vi.fn().mockReturnValue(null),
+  setSetting: vi.fn(),
+  SETTING_AGENT_BINARY: 'agent.binary',
+  SETTING_AGENT_PERMISSION_MODE: 'agent.permissionMode',
+  DEFAULT_AGENT_BINARY: 'claude',
+  DEFAULT_PERMISSION_MODE: 'bypassPermissions',
+}))
+
 vi.mock('fs/promises', () => ({
   readFile: vi.fn().mockResolvedValue('log content'),
   readdir: vi.fn().mockResolvedValue([]),
@@ -224,6 +235,8 @@ describe('IPC handler registration', () => {
         'local:tailAgentLog',
         'local:sendToAgent',
         'local:isInteractive',
+        'config:getAgentConfig',
+        'config:saveAgentConfig',
         'agents:list',
         'agents:readLog',
         'agents:import',
@@ -239,9 +252,21 @@ describe('IPC handler registration', () => {
     })
 
     it('"local:spawnClaudeAgent" calls spawnClaudeAgent with args', async () => {
-      const args = { repoPath: '/tmp', task: 'fix bug', model: 'sonnet' }
+      const args = { repoPath: '/tmp/bde', task: 'fix bug', model: 'sonnet' }
       await invoke('local:spawnClaudeAgent', args)
       expect(localAgents.spawnClaudeAgent).toHaveBeenCalledWith(args)
+    })
+
+    it('"local:spawnClaudeAgent" rejects repoPath outside configured repos', async () => {
+      const args = { repoPath: '/etc/evil', task: 'fix bug', model: 'sonnet' }
+      await expect(invoke('local:spawnClaudeAgent', args)).rejects.toThrow(
+        'Repository path rejected'
+      )
+    })
+
+    it('"config:getAgentConfig" returns agent binary and permission mode', async () => {
+      const result = await invoke('config:getAgentConfig')
+      expect(result).toEqual({ binary: 'claude', permissionMode: 'bypassPermissions' })
     })
 
     it('"local:tailAgentLog" calls tailAgentLog with args', async () => {

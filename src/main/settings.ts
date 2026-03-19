@@ -78,3 +78,19 @@ export function migrateFromOpenClawConfig(): void {
 
   console.log('[settings] Imported configuration from OpenClaw config')
 }
+
+// Well-known setting keys
+export const SETTING_AGENT_BINARY = 'agent.binary'
+export const SETTING_AGENT_PERMISSION_MODE = 'agent.permissionMode'
+
+// Defaults
+export const DEFAULT_AGENT_BINARY = 'claude'
+export const DEFAULT_PERMISSION_MODE = 'bypassPermissions'
+
+export function getAgentBinary(): string {
+  return getSetting(SETTING_AGENT_BINARY) || DEFAULT_AGENT_BINARY
+}
+
+export function getAgentPermissionMode(): string {
+  return getSetting(SETTING_AGENT_PERMISSION_MODE) || DEFAULT_PERMISSION_MODE
+}

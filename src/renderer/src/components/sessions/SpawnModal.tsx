@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLocalAgentsStore } from '../../stores/localAgents'
+import { useUIStore } from '../../stores/ui'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { SPAWN_TASK_MAX_CHARS_SOFT, SPAWN_TASK_MAX_CHARS_HARD, SPAWN_TASK_HISTORY_LIMIT } from '../../lib/constants'
@@ -115,7 +116,23 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
         toast.success('Agent spawned')
         onClose()
       } catch (err) {
-        toast.error(`Spawn failed: ${err instanceof Error ? err.message : String(err)}`)
+        const message = err instanceof Error ? err.message : String(err)
+        if (message.includes('not found')) {
+          const setView = useUIStore.getState().setView
+          toast.info(
+            `Agent binary not found. Check Settings > Agent Runtime.`,
+            {
+              action: 'Open Settings',
+              onAction: () => {
+                setView('settings')
+                onClose()
+              },
+              durationMs: 8000
+            }
+          )
+        } else {
+          toast.error(`Spawn failed: ${message}`)
+        }
       }
     },
     [task, repo, model, spawnAgent, fetchProcesses, repoPaths, history, onClose, spawning]

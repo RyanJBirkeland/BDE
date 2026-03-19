@@ -212,6 +212,8 @@ Object.defineProperty(window, 'api', {
     readMemoryFile: vi.fn().mockResolvedValue(''),
     writeMemoryFile: vi.fn().mockResolvedValue(undefined),
     saveGatewayConfig: vi.fn().mockResolvedValue(undefined),
+    getAgentConfig: vi.fn().mockResolvedValue({ binary: 'claude', permissionMode: 'bypassPermissions' }),
+    saveAgentConfig: vi.fn().mockResolvedValue(undefined),
     openExternal: vi.fn(),
     pollPrStatuses: vi.fn().mockResolvedValue([]),
     getPrList: vi.fn().mockResolvedValue({ prs: [], checks: {} }),

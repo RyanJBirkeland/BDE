@@ -288,20 +288,44 @@ export function updateAgentRunCost(agentRunId: string, cost: AgentCost): void {
 export type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
 import type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
 import { CLAUDE_MODELS, DEFAULT_MODEL } from '../shared/models'
+import { getAgentBinary, getAgentPermissionMode } from './settings'
 
 function modelToFlag(model?: string): string {
   const entry = CLAUDE_MODELS.find((m) => m.id === model)
   return entry?.modelId ?? DEFAULT_MODEL.modelId
 }
 
+/**
+ * Verify the agent binary exists on PATH before attempting to spawn.
+ * Throws a descriptive error if the binary is not found.
+ */
+async function assertBinaryExists(binary: string): Promise<void> {
+  try {
+    await execFileAsync('which', [binary], {
+      env: { ...process.env, PATH: ELECTRON_PATH }
+    })
+  } catch {
+    throw new Error(
+      `Agent binary "${binary}" not found on PATH. ` +
+      `Install it or update the binary name in Settings > Agent Runtime.`
+    )
+  }
+}
+
 export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<SpawnLocalAgentResult> {
+  const bin = getAgentBinary()
+  const permissionMode = getAgentPermissionMode()
+
+  // Pre-flight: ensure the binary exists before creating any DB records
+  await assertBinaryExists(bin)
+
   const id = randomUUID()
 
   // Create persistent agent record
   const meta = await createAgentRecord({
     id,
     pid: null,
-    bin: 'claude',
+    bin,
     model: modelToFlag(args.model),
     repo: pathBasename(args.repoPath),
     repoPath: args.repoPath,
@@ -313,13 +337,13 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
     source: 'bde'
   })
 
-  const child = spawn('claude', [
+  const child = spawn(bin, [
     '--output-format', 'stream-json',
     '--include-partial-messages',
     '--verbose',
     '--input-format', 'stream-json',
     '--model', modelToFlag(args.model),
-    '--permission-mode', 'bypassPermissions'
+    '--permission-mode', permissionMode
   ], {
     cwd: args.repoPath,
     detached: true,

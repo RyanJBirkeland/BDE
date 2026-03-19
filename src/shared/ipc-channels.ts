@@ -123,6 +123,16 @@ export interface IpcChannelMap {
     result: PrListPayload
   }
 
+  // --- Agent config ---
+  'config:getAgentConfig': {
+    args: []
+    result: { binary: string; permissionMode: string }
+  }
+  'config:saveAgentConfig': {
+    args: [config: { binary: string; permissionMode: string }]
+    result: void
+  }
+
   // --- Agents ---
   'local:spawnClaudeAgent': {
     args: [args: SpawnLocalAgentArgs]

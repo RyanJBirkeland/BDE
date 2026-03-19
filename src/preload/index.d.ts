@@ -38,6 +38,10 @@ declare global {
         fetch: (path: string, init?: GitHubFetchInit) => Promise<IpcResult<'github:fetch'>>
       }
 
+      // Agent runtime config
+      getAgentConfig: () => Promise<IpcResult<'config:getAgentConfig'>>
+      saveAgentConfig: (...args: IpcArgs<'config:saveAgentConfig'>) => Promise<IpcResult<'config:saveAgentConfig'>>
+
       // Local agent process detection + spawning
       getAgentProcesses: () => Promise<IpcResult<'local:getAgentProcesses'>>
       spawnLocalAgent: (...args: IpcArgs<'local:spawnClaudeAgent'>) => Promise<IpcResult<'local:spawnClaudeAgent'>>

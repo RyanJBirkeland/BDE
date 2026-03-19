@@ -57,6 +57,11 @@ const api = {
   gitBranches: (cwd: string) => typedInvoke('git:branches', cwd),
   gitCheckout: (cwd: string, branch: string) => typedInvoke('git:checkout', cwd, branch),
 
+  // Agent runtime config
+  getAgentConfig: () => typedInvoke('config:getAgentConfig'),
+  saveAgentConfig: (config: { binary: string; permissionMode: string }) =>
+    typedInvoke('config:saveAgentConfig', config),
+
   // Local agent process detection + spawning
   getAgentProcesses: () => typedInvoke('local:getAgentProcesses'),
   spawnLocalAgent: (args: SpawnLocalAgentArgs) =>

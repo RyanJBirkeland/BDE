@@ -21,6 +21,8 @@ vi.stubGlobal('api', {
     import: vi.fn().mockResolvedValue({}),
     markDone: vi.fn().mockResolvedValue(undefined),
   },
+  getAgentConfig: vi.fn().mockResolvedValue({ binary: 'claude', permissionMode: 'bypassPermissions' }),
+  saveAgentConfig: vi.fn().mockResolvedValue(undefined),
   getAgentProcesses: vi.fn().mockResolvedValue([]),
   spawnLocalAgent: vi.fn().mockResolvedValue({ pid: 1234, logPath: '/tmp/log', id: 'agent-1', interactive: false }),
   sendToAgent: vi.fn().mockResolvedValue({ ok: true }),
