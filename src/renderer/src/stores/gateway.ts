@@ -1,7 +1,10 @@
 /**
  * Gateway store — manages the WebSocket connection to the OpenClaw gateway.
- * Tracks connection status (connected/disconnected/connecting/error) and
- * shows toast notifications on status transitions.
+ * Tracks connection status (connected/disconnected/connecting/error/not-configured)
+ * and shows toast notifications on status transitions.
+ *
+ * If no gateway URL or token is configured, status is set to 'not-configured'
+ * with no WebSocket attempt, no retry, and no error toast.
  *
  * The GatewayClient instance lives at module scope — not in Zustand — because
  * it's a mutable object with WebSocket handles, timers, and pending promise
@@ -11,6 +14,8 @@ import { create } from 'zustand'
 import { ConnectionStatus, GatewayClient } from '../lib/gateway'
 import { toast } from './toasts'
 import { GATEWAY_DISCONNECT_TOAST_DELAY } from '../lib/constants'
+
+export type GatewayStatus = ConnectionStatus | 'not-configured'
 
 // Module scope — outside Zustand
 let _gatewayClient: GatewayClient | null = null
@@ -28,7 +33,7 @@ export function _resetGatewayClientForTesting(): void {
 }
 
 interface GatewayStore {
-  status: ConnectionStatus
+  status: GatewayStatus
   connect: () => Promise<void>
   reconnect: () => Promise<void>
 }
@@ -39,9 +44,15 @@ export const useGatewayStore = create<GatewayStore>((set, get) => ({
   connect: async (): Promise<void> => {
     if (_gatewayClient) return
 
-    const { url } = await window.api.getGatewayUrl()
+    const { url, hasToken } = await window.api.getGatewayUrl()
 
-    let prevStatus: ConnectionStatus = get().status
+    // Graceful degradation: no URL or no token means gateway is not configured
+    if (!url || !hasToken) {
+      set({ status: 'not-configured' })
+      return
+    }
+
+    let prevStatus: GatewayStatus = get().status
     let disconnectTimer: ReturnType<typeof setTimeout> | null = null
 
     _gatewayClient = new GatewayClient(url, () => window.api.signGatewayChallenge(), (status) => {

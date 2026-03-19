@@ -130,6 +130,30 @@ export interface PrListPayload {
   checks: Record<string, CheckRunSummary>
 }
 
+/** Source of a unified agent — used by the unified agents store. */
+export type UnifiedAgentSource = 'local' | 'gateway' | 'history'
+
+/** Status of a unified agent. */
+export type UnifiedAgentStatus = 'running' | 'done' | 'failed' | 'cancelled' | 'timeout' | 'unknown'
+
+/** Normalized agent representation across all sources. */
+export interface UnifiedAgent {
+  id: string
+  label: string
+  source: UnifiedAgentSource
+  status: UnifiedAgentStatus
+  model: string
+  updatedAt: number
+  startedAt: number
+  canSteer: boolean
+  canKill: boolean
+  isBlocked?: boolean
+  task?: string
+  pid?: number
+  sessionKey?: string
+  historyId?: string
+}
+
 /** A file attachment queued for sending with a chat message. */
 export interface Attachment {
   path: string

@@ -75,4 +75,38 @@ describe('gateway store', () => {
     expect(useGatewayStore.getState().status).toBe('connected')
     expect(useGatewayStore.getState().status).toBe('connected')
   })
+
+  it('sets not-configured when url is empty', async () => {
+    _resetGatewayClientForTesting()
+    useGatewayStore.setState({ status: 'disconnected' })
+    Object.defineProperty(window, 'api', {
+      value: {
+        getGatewayUrl: vi.fn().mockResolvedValue({ url: '', hasToken: false }),
+        signGatewayChallenge: vi.fn().mockResolvedValue({ auth: { token: 'test-token' } }),
+      },
+      writable: true,
+      configurable: true,
+    })
+
+    await useGatewayStore.getState().connect()
+    expect(useGatewayStore.getState().status).toBe('not-configured')
+    expect(getGatewayClient()).toBeNull()
+  })
+
+  it('sets not-configured when hasToken is false', async () => {
+    _resetGatewayClientForTesting()
+    useGatewayStore.setState({ status: 'disconnected' })
+    Object.defineProperty(window, 'api', {
+      value: {
+        getGatewayUrl: vi.fn().mockResolvedValue({ url: 'http://localhost:18789', hasToken: false }),
+        signGatewayChallenge: vi.fn().mockResolvedValue({ auth: { token: 'test-token' } }),
+      },
+      writable: true,
+      configurable: true,
+    })
+
+    await useGatewayStore.getState().connect()
+    expect(useGatewayStore.getState().status).toBe('not-configured')
+    expect(getGatewayClient()).toBeNull()
+  })
 })

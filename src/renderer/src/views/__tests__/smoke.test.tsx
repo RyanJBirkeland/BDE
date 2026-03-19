@@ -43,6 +43,21 @@ vi.mock('../../stores/gateway', () => ({
   ),
 }))
 
+vi.mock('../../stores/unifiedAgents', () => ({
+  useUnifiedAgentsStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
+    selector({
+      agents: [],
+      selectedId: null,
+      loading: false,
+      fetchAll: vi.fn().mockResolvedValue(undefined),
+      select: vi.fn(),
+      spawn: vi.fn().mockResolvedValue(undefined),
+      steer: vi.fn().mockResolvedValue(undefined),
+      kill: vi.fn().mockResolvedValue(undefined),
+    })
+  ),
+}))
+
 vi.mock('../../stores/theme', () => ({
   useThemeStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ theme: 'dark', toggleTheme: vi.fn(), setTheme: vi.fn() })

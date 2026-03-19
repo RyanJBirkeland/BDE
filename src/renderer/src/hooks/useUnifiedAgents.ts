@@ -1,31 +1,20 @@
 /**
  * Unified agents derived hook — merges sessions, sub-agents, local processes,
  * and agent history into a single flat list of UnifiedAgent objects.
+ *
+ * Re-exports the shared UnifiedAgent type from shared/types.ts.
  */
 import { useMemo } from 'react'
 import { useSessionsStore } from '../stores/sessions'
 import { useLocalAgentsStore } from '../stores/localAgents'
 import { useAgentHistoryStore } from '../stores/agentHistory'
+import type { UnifiedAgent, UnifiedAgentSource, UnifiedAgentStatus } from '../../../shared/types'
 
-type AgentSource = 'openclaw' | 'sub-agent' | 'local'
-export type AgentStatus = 'running' | 'done' | 'failed' | 'timeout' | 'unknown'
-
-export interface UnifiedAgent {
-  id: string
-  label: string
-  source: AgentSource
-  status: AgentStatus
-  model: string
-  updatedAt: number
-  startedAt: number
-  canSteer: boolean
-  canKill: boolean
-  isBlocked?: boolean
-  task?: string
-  pid?: number
-  sessionKey?: string
-  historyId?: string
-}
+export type { UnifiedAgent, UnifiedAgentSource, UnifiedAgentStatus }
+/** @deprecated Use UnifiedAgentStatus instead */
+export type AgentStatus = UnifiedAgentStatus
+/** @deprecated Use UnifiedAgentSource instead */
+export type AgentSource = UnifiedAgentSource
 
 const FIVE_MINUTES = 5 * 60 * 1000
 const ONE_HOUR = 60 * 60 * 1000
@@ -37,7 +26,7 @@ function truncate(s: string | undefined, max: number): string | undefined {
   return s.length > max ? s.slice(0, max) : s
 }
 
-function normalizeStatus(raw: string | undefined): AgentStatus {
+function normalizeStatus(raw: string | undefined): UnifiedAgentStatus {
   switch (raw) {
     case 'running':
       return 'running'
@@ -46,10 +35,23 @@ function normalizeStatus(raw: string | undefined): AgentStatus {
       return 'done'
     case 'failed':
       return 'failed'
+    case 'cancelled':
+      return 'cancelled'
     case 'timeout':
       return 'timeout'
     default:
       return 'unknown'
+  }
+}
+
+function normalizeSource(raw: string): UnifiedAgentSource {
+  switch (raw) {
+    case 'bde':
+      return 'local'
+    case 'openclaw':
+      return 'gateway'
+    default:
+      return 'history'
   }
 }
 
@@ -70,13 +72,13 @@ export function useUnifiedAgents(): UnifiedAgent[] {
     const now = Date.now()
     const agents: UnifiedAgent[] = []
 
-    // OpenClaw sessions
+    // Gateway sessions (openclaw)
     for (const s of sessions) {
       const isRunning = (s.updatedAt ?? 0) > now - FIVE_MINUTES
       agents.push({
         id: s.key,
         label: s.displayName || s.key,
-        source: 'openclaw',
+        source: 'gateway',
         status: isRunning ? 'running' : 'done',
         model: s.model ?? '',
         updatedAt: s.updatedAt ?? 0,
@@ -88,12 +90,12 @@ export function useUnifiedAgents(): UnifiedAgent[] {
       })
     }
 
-    // Sub-agents
+    // Sub-agents (gateway)
     for (const a of subAgents) {
       agents.push({
         id: `sub:${a.sessionKey}`,
         label: a.label || a.sessionKey,
-        source: 'sub-agent',
+        source: 'gateway',
         status: normalizeStatus(a.status),
         model: a.model ?? '',
         updatedAt: a.endedAt ?? a.startedAt ?? 0,
@@ -135,7 +137,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
       agents.push({
         id: `history:${a.id}`,
         label: a.repo || a.bin || a.id,
-        source: 'local',
+        source: normalizeSource(a.source),
         status: normalizeStatus(a.status),
         model: a.model ?? '',
         updatedAt: finished || started,
