@@ -1,5 +1,7 @@
 import { resolve } from 'path'
 import { safeHandle } from '../ipc-utils'
+import { getDb } from '../db'
+import { parsePrUrl } from '../../shared/github'
 import {
   getRepoPaths,
   gitStatus,
@@ -31,6 +33,42 @@ function validateRepoCwd(cwd: string): string {
     throw new Error(`CWD rejected: not under a known repository`)
   }
   return resolved
+}
+
+function markTaskDoneOnMerge(prNumber: number): void {
+  try {
+    const completedAt = new Date().toISOString()
+    getDb()
+      .prepare(
+        "UPDATE sprint_tasks SET status='done', completed_at=? WHERE pr_number=? AND status='active'"
+      )
+      .run(completedAt, prNumber)
+  } catch (err) {
+    console.warn(`[git] failed to mark task done for PR #${prNumber}:`, err)
+  }
+}
+
+function markTaskCancelled(prNumber: number): void {
+  try {
+    getDb()
+      .prepare(
+        "UPDATE sprint_tasks SET status='cancelled', completed_at=? WHERE pr_number=? AND status='active'"
+      )
+      .run(new Date().toISOString(), prNumber)
+  } catch (err) {
+    console.warn(`[git] failed to mark task cancelled for PR #${prNumber}:`, err)
+  }
+}
+
+function updateMergeableState(prNumber: number, mergeableState: string | null): void {
+  if (!mergeableState) return
+  try {
+    getDb()
+      .prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?')
+      .run(mergeableState, prNumber)
+  } catch (err) {
+    console.warn(`[git] failed to update mergeable_state for PR #${prNumber}:`, err)
+  }
 }
 
 export function registerGitHandlers(): void {
@@ -82,7 +120,21 @@ export function registerGitHandlers(): void {
 
   // --- PR status polling ---
   // TODO: AX-S1 — add 'pr:pollStatuses' to IpcChannelMap
-  safeHandle('pr:pollStatuses', (_e, prs: PrStatusInput[]) => pollPrStatuses(prs))
+  safeHandle('pr:pollStatuses', async (_e, prs: PrStatusInput[]) => {
+    const results = await pollPrStatuses(prs)
+    for (const result of results) {
+      const input = prs.find((p) => p.taskId === result.taskId)
+      const prNumber = input ? parsePrUrl(input.prUrl)?.number : undefined
+      if (!prNumber) continue
+      if (result.merged) {
+        markTaskDoneOnMerge(prNumber)
+      } else if (result.state === 'CLOSED') {
+        markTaskCancelled(prNumber)
+      }
+      updateMergeableState(prNumber, result.mergeableState)
+    }
+    return results
+  })
 
   // --- Conflict file detection ---
   safeHandle('pr:checkConflictFiles', (_e, input: ConflictFilesInput) => checkConflictFiles(input))
