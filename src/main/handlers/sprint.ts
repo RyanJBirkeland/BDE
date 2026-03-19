@@ -1,10 +1,8 @@
-import { readFile, open } from 'fs/promises'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
 import { safeHandle } from '../ipc-utils'
-import { getDb } from '../db'
-import { getGatewayConfig } from '../config'
-import { SPECS_ROOT, LIFE_OS_ENV_PATH } from '../paths'
+import { getGatewayConfig, getTaskRunnerConfig } from '../config'
+import { SPECS_ROOT } from '../paths'
+import { readFile } from 'fs/promises'
+import { resolve } from 'path'
 
 function validateSpecPath(relativePath: string): string {
   const resolved = resolve(SPECS_ROOT, relativePath)
@@ -39,120 +37,38 @@ export interface CreateTaskInput {
   status?: string
 }
 
-// --- One-time Supabase → SQLite migration ---
+// --- Task Runner HTTP client ---
 
-function migrateFromSupabase(): void {
-  const db = getDb()
-  const count = db.prepare('SELECT COUNT(*) AS cnt FROM sprint_tasks').get() as { cnt: number }
-  if (count.cnt > 0) return // Already have data, skip migration
-
-  let url = ''
-  let serviceKey = ''
-  try {
-    const envPath = LIFE_OS_ENV_PATH
-    const raw = readFileSync(envPath, 'utf-8')
-    for (const line of raw.split('\n')) {
-      const trimmed = line.trim()
-      if (trimmed.startsWith('#') || !trimmed.includes('=')) continue
-      const eqIdx = trimmed.indexOf('=')
-      const key = trimmed.slice(0, eqIdx).trim()
-      const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '')
-      if (key === 'VITE_SUPABASE_URL') url = val
-      if (key === 'SUPABASE_SERVICE_ROLE_KEY') serviceKey = val
-    }
-  } catch {
-    // No .env file — nothing to migrate
-    return
-  }
-
-  if (!url || !serviceKey) {
-    console.warn('[sprint] Supabase env not found — skipping one-time migration')
-    return
-  }
-
-  // Fetch in background — don't block startup
-  fetch(`${url}/rest/v1/sprint_tasks?order=priority.asc,created_at.desc&limit=500&select=*`, {
+async function taskRunnerFetch(method: string, path: string, body?: unknown): Promise<unknown> {
+  const cfg = getTaskRunnerConfig()
+  if (!cfg) throw new Error('Task runner not configured — check openclaw.json for taskRunnerUrl + sprintApiKey')
+  const res = await fetch(`${cfg.url}${path}`, {
+    method,
     headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
+      'Authorization': `Bearer ${cfg.apiKey}`,
+      'Content-Type': 'application/json',
     },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   })
-    .then((res) => {
-      if (!res.ok) throw new Error(`Supabase fetch failed: ${res.status}`)
-      return res.json()
-    })
-    .then((rows: Record<string, unknown>[]) => {
-      if (!Array.isArray(rows) || rows.length === 0) return
-
-      // Re-check inside transaction in case another process inserted
-      const db = getDb()
-      const recheck = db.prepare('SELECT COUNT(*) AS cnt FROM sprint_tasks').get() as {
-        cnt: number
-      }
-      if (recheck.cnt > 0) return
-
-      const insert = db.prepare(`
-        INSERT OR IGNORE INTO sprint_tasks
-          (id, title, prompt, repo, status, priority, spec, notes, pr_url, pr_number, pr_status,
-           agent_run_id, started_at, completed_at, created_at, updated_at)
-        VALUES
-          (@id, @title, @prompt, @repo, @status, @priority, @spec, @notes, @pr_url, @pr_number,
-           @pr_status, @agent_run_id, @started_at, @completed_at, @created_at, @updated_at)
-      `)
-
-      const migrate = db.transaction((tasks: Record<string, unknown>[]) => {
-        for (const t of tasks) {
-          insert.run({
-            id: t['id'] ?? null,
-            title: t['title'] ?? '',
-            prompt: t['prompt'] ?? '',
-            repo: t['repo'] ?? 'bde',
-            status: t['status'] ?? 'backlog',
-            priority: t['priority'] ?? 1,
-            spec: t['spec'] ?? null,
-            notes: t['notes'] ?? null,
-            pr_url: t['pr_url'] ?? null,
-            pr_number: t['pr_number'] ?? null,
-            pr_status: t['pr_status'] ?? null,
-            agent_run_id: t['agent_run_id'] ?? t['agent_session_id'] ?? null,
-            started_at: t['started_at'] ?? null,
-            completed_at: t['completed_at'] ?? null,
-            created_at: t['created_at'] ?? new Date().toISOString(),
-            updated_at: t['updated_at'] ?? new Date().toISOString(),
-          })
-        }
-      })
-
-      migrate(rows)
-      console.log(`[sprint] Migrated ${rows.length} tasks from Supabase to SQLite`)
-    })
-    .catch((err) => {
-      console.warn('[sprint] Supabase migration failed (non-fatal):', err)
-    })
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText)
+    throw new Error(`Task runner ${method} ${path} → ${res.status}: ${text}`)
+  }
+  if (res.status === 204) return null
+  return res.json()
 }
 
-// --- IPC Registration ---
+// --- Handler registration ---
 
 export function registerSprintHandlers(): void {
-  // One-time migration from Supabase (non-blocking, graceful)
-  migrateFromSupabase()
+  // TODO: AX-S1 — add sprint channels to IpcChannelMap
 
-  // TODO: AX-S1 — add 'sprint:list', 'sprint:create', 'sprint:update', 'sprint:delete', 'sprint:readLog' to IpcChannelMap
-  safeHandle('sprint:list', () => {
-    const db = getDb()
-    return db
-      .prepare('SELECT * FROM sprint_tasks ORDER BY priority ASC, created_at DESC')
-      .all()
-  })
+  safeHandle('sprint:list', () =>
+    taskRunnerFetch('GET', '/tasks')
+  )
 
-  safeHandle('sprint:create', (_e, task: CreateTaskInput) => {
-    const db = getDb()
-    const stmt = db.prepare(`
-      INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status)
-      VALUES (@title, @repo, @prompt, @spec, @notes, @priority, @status)
-      RETURNING *
-    `)
-    return stmt.get({
+  safeHandle('sprint:create', (_e, task: CreateTaskInput) =>
+    taskRunnerFetch('POST', '/tasks', {
       title: task.title,
       repo: task.repo,
       prompt: task.prompt ?? task.spec ?? task.title,
@@ -161,30 +77,15 @@ export function registerSprintHandlers(): void {
       priority: task.priority ?? 0,
       status: task.status ?? 'backlog',
     })
-  })
+  )
 
-  safeHandle('sprint:update', (_e, id: string, patch: Record<string, unknown>) => {
-    const db = getDb()
-    const allowed = [
-      'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
-      'pr_url', 'pr_number', 'pr_status', 'pr_mergeable_state',
-      'agent_run_id', 'started_at', 'completed_at',
-    ]
-    const entries = Object.entries(patch).filter(([k]) => allowed.includes(k))
-    if (entries.length === 0) return null
+  safeHandle('sprint:update', (_e, id: string, patch: Record<string, unknown>) =>
+    taskRunnerFetch('PATCH', `/tasks/${id}`, patch)
+  )
 
-    const setClauses = entries.map(([k]) => `${k} = ?`).join(', ')
-    const values = entries.map(([, v]) => v)
-    return db
-      .prepare(`UPDATE sprint_tasks SET ${setClauses} WHERE id = ? RETURNING *`)
-      .get(...values, id)
-  })
-
-  safeHandle('sprint:delete', (_e, id: string) => {
-    const db = getDb()
-    db.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
-    return { ok: true }
-  })
+  safeHandle('sprint:delete', (_e, id: string) =>
+    taskRunnerFetch('DELETE', `/tasks/${id}`)
+  )
 
   safeHandle('sprint:readSpecFile', async (_e, filePath: string) => {
     const safePath = validateSpecPath(filePath)
@@ -199,7 +100,6 @@ export function registerSprintHandlers(): void {
 
       try {
         const { url: rawGatewayUrl, token: gatewayToken } = getGatewayConfig()
-        // getGatewayConfig may return a ws:// URL — normalize to http:// for REST calls
         const gatewayUrl = rawGatewayUrl.replace(/^ws:\/\//, 'http://').replace(/^wss:\/\//, 'https://')
 
         const templateScaffold = getTemplateScaffold(templateHint)
@@ -217,7 +117,6 @@ export function registerSprintHandlers(): void {
             },
             body: JSON.stringify({
               tool: 'sessions_send',
-              // 'bde-spec-gen' session is not configured — send to main session
               args: { sessionKey: 'main', message, timeoutSeconds: 45 },
             }),
             signal: controller.signal,
@@ -239,13 +138,8 @@ export function registerSprintHandlers(): void {
         const text = data.result?.content?.[0]?.text ?? ''
         if (!text) return fallback
 
-        // Persist the generated spec + prompt to SQLite
-        const db = getDb()
-        db.prepare('UPDATE sprint_tasks SET spec = ?, prompt = ? WHERE id = ?').run(
-          text,
-          text,
-          taskId
-        )
+        // Persist generated spec back to task runner via PATCH
+        await taskRunnerFetch('PATCH', `/tasks/${taskId}`, { spec: text, prompt: text })
 
         return { taskId, spec: text, prompt: text }
       } catch {
@@ -254,46 +148,25 @@ export function registerSprintHandlers(): void {
     }
   )
 
-  safeHandle('sprint:healthCheck', () => {
-    const db = getDb()
-    return db
-      .prepare(
-        `SELECT st.*
-         FROM sprint_tasks st
-         LEFT JOIN agent_runs ar ON ar.id = st.agent_run_id
-         WHERE st.status = 'active'
-           AND (
-             st.agent_run_id IS NULL
-             OR ar.id IS NULL
-             OR ar.status NOT IN ('running')
-           )`
-      )
-      .all()
-  })
+  safeHandle('sprint:healthCheck', () =>
+    taskRunnerFetch('GET', '/health')
+  )
 
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
     const fromByte = typeof rawFromByte === 'number' ? rawFromByte : 0
-    const db = getDb()
-    const agent = db.prepare('SELECT log_path, status FROM agent_runs WHERE id = ?').get(agentId) as
-      | { log_path: string | null; status: string }
-      | undefined
+    const cfg = getTaskRunnerConfig()
+    if (!cfg) return { content: '', status: 'unknown', nextByte: fromByte }
 
-    if (!agent?.log_path) return { content: '', status: agent?.status ?? 'unknown', nextByte: fromByte }
+    const res = await fetch(`${cfg.url}/agents/${agentId}/log`, {
+      headers: { 'Authorization': `Bearer ${cfg.apiKey}` },
+    })
+    if (!res.ok) return { content: '', status: 'unknown', nextByte: fromByte }
 
-    let fh: import('fs/promises').FileHandle | undefined
-    try {
-      fh = await open(agent.log_path, 'r')
-      const stats = await fh.stat()
-      const size = stats.size
-      if (fromByte >= size) return { content: '', status: agent.status, nextByte: fromByte }
-      const buf = Buffer.alloc(size - fromByte)
-      await fh.read(buf, 0, buf.length, fromByte)
-      return { content: buf.toString('utf-8'), status: agent.status, nextByte: size }
-    } catch {
-      return { content: '', status: agent.status, nextByte: fromByte }
-    } finally {
-      await fh?.close()
-    }
+    const fullContent = await res.text()
+    const bytes = Buffer.from(fullContent, 'utf-8')
+    if (fromByte >= bytes.length) return { content: '', status: 'done', nextByte: fromByte }
+    const slice = bytes.subarray(fromByte).toString('utf-8')
+    return { content: slice, status: 'done', nextByte: bytes.length }
   })
 }
 
