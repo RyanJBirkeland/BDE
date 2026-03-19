@@ -19,6 +19,8 @@ import {
   parseRateLimitHeaders,
   computeBackoffMs,
   _resetRateLimitState,
+  parseNextLink,
+  fetchAllGitHubPages,
 } from '../github-fetch'
 
 // ---------------------------------------------------------------------------
@@ -319,5 +321,146 @@ describe('githubFetch', () => {
 
     expect(timeoutSpy).toHaveBeenCalledWith(15_000)
     timeoutSpy.mockRestore()
+  })
+})
+
+describe('parseNextLink', () => {
+  it('extracts the next URL from a Link header', () => {
+    const header =
+      '<https://api.github.com/repos/o/r/pulls?page=2&per_page=100>; rel="next", ' +
+      '<https://api.github.com/repos/o/r/pulls?page=5&per_page=100>; rel="last"'
+    expect(parseNextLink(header)).toBe(
+      'https://api.github.com/repos/o/r/pulls?page=2&per_page=100'
+    )
+  })
+
+  it('returns null when there is no next link', () => {
+    const header =
+      '<https://api.github.com/repos/o/r/pulls?page=1&per_page=100>; rel="prev"'
+    expect(parseNextLink(header)).toBeNull()
+  })
+
+  it('returns null for null input', () => {
+    expect(parseNextLink(null)).toBeNull()
+  })
+
+  it('returns null for empty string', () => {
+    expect(parseNextLink('')).toBeNull()
+  })
+})
+
+describe('fetchAllGitHubPages', () => {
+  const mockFetch = vi.fn()
+
+  beforeEach(() => {
+    mockFetch.mockReset()
+    vi.stubGlobal('fetch', mockFetch)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  function jsonResponse(
+    body: unknown,
+    linkNext: string | null = null,
+    ok = true,
+    status = 200
+  ) {
+    const headers = new Map<string, string>()
+    if (linkNext) {
+      headers.set('Link', `<${linkNext}>; rel="next"`)
+    }
+    return {
+      ok,
+      status,
+      json: async () => body,
+      headers: { get: (name: string) => headers.get(name) ?? null },
+    }
+  }
+
+  it('returns all items from a single page', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse([{ id: 1 }, { id: 2 }]))
+
+    const result = await fetchAllGitHubPages<{ id: number }>(
+      'https://api.github.com/repos/o/r/pulls?per_page=100',
+      { token: 'tok' }
+    )
+
+    expect(result).toEqual([{ id: 1 }, { id: 2 }])
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('follows pagination across multiple pages', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(
+          [{ id: 1 }],
+          'https://api.github.com/repos/o/r/pulls?per_page=100&page=2'
+        )
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(
+          [{ id: 2 }],
+          'https://api.github.com/repos/o/r/pulls?per_page=100&page=3'
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse([{ id: 3 }]))
+
+    const result = await fetchAllGitHubPages<{ id: number }>(
+      'https://api.github.com/repos/o/r/pulls?per_page=100',
+      { token: 'tok' }
+    )
+
+    expect(result).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }])
+    expect(mockFetch).toHaveBeenCalledTimes(3)
+  })
+
+  it('returns partial results when a mid-page request fails', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(
+          [{ id: 1 }],
+          'https://api.github.com/repos/repos/o/r/pulls?page=2'
+        )
+      )
+      .mockResolvedValueOnce(jsonResponse(null, null, false, 500))
+
+    const result = await fetchAllGitHubPages<{ id: number }>(
+      'https://api.github.com/repos/o/r/pulls?per_page=100',
+      { token: 'tok' }
+    )
+
+    expect(result).toEqual([{ id: 1 }])
+  })
+
+  it('returns empty array when first page fails', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(null, null, false, 403))
+
+    const result = await fetchAllGitHubPages<{ id: number }>(
+      'https://api.github.com/repos/o/r/pulls?per_page=100',
+      { token: 'tok' }
+    )
+
+    expect(result).toEqual([])
+  })
+
+  it('sends Authorization header with the provided token', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse([]))
+
+    await fetchAllGitHubPages(
+      'https://api.github.com/repos/o/r/pulls?per_page=100',
+      { token: 'ghp_secret' }
+    )
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.github.com/repos/o/r/pulls?per_page=100',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer ghp_secret',
+          Accept: 'application/vnd.github+json',
+        }),
+      })
+    )
   })
 })

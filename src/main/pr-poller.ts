@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron'
 import { getGitHubToken } from './config'
-import { githubFetch } from './github-fetch'
+import { githubFetch, fetchAllGitHubPages } from './github-fetch'
 import type { OpenPr, CheckRunSummary, PrListPayload } from '../shared/types'
 
 const POLL_INTERVAL_MS = 60_000
@@ -21,18 +21,10 @@ async function fetchOpenPrs(
   token: string
 ): Promise<OpenPr[]> {
   try {
-    const res = await githubFetch(
-      `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=20`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json',
-        },
-        timeoutMs: REQUEST_TIMEOUT_MS,
-      }
+    const data = await fetchAllGitHubPages<OpenPr>(
+      `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
+      { token, timeoutMs: REQUEST_TIMEOUT_MS }
     )
-    if (!res.ok) return []
-    const data = (await res.json()) as OpenPr[]
     return data.map((pr) => ({ ...pr, repo }))
   } catch {
     return []
