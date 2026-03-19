@@ -34,7 +34,7 @@ describe('db schema migrations', () => {
       .map((r) => r.name)
       .sort()
 
-    expect(tables).toEqual(['agent_runs', 'cost_events', 'settings', 'sprint_tasks'])
+    expect(tables).toEqual(['agent_runs', 'cost_events', 'settings'])
   })
 
   it('creates expected indexes', () => {
@@ -51,26 +51,12 @@ describe('db schema migrations', () => {
     expect(indexes).toEqual([
       'idx_agent_runs_finished',
       'idx_agent_runs_pid',
-      'idx_agent_runs_status',
-      'idx_sprint_tasks_status'
+      'idx_agent_runs_status'
     ])
   })
 
-  it('creates sprint_tasks_updated_at trigger', () => {
-    runMigrations(db)
-
-    const row = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='trigger' AND name='sprint_tasks_updated_at'")
-      .get() as { name: string } | undefined
-    expect(row?.name).toBe('sprint_tasks_updated_at')
-  })
-
-  it('adds pr_mergeable_state column to sprint_tasks', () => {
-    runMigrations(db)
-
-    const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
-    expect(cols).toContain('pr_mergeable_state')
-  })
+  // sprint_tasks_updated_at trigger and pr_mergeable_state tests removed —
+  // sprint_tasks is now owned by bde-task-runner service (E0 extraction)
 
   it('adds cost columns to agent_runs', () => {
     runMigrations(db)
@@ -81,13 +67,7 @@ describe('db schema migrations', () => {
     }
   })
 
-  it('enforces sprint_tasks status CHECK constraint', () => {
-    runMigrations(db)
-
-    expect(() => {
-      db.prepare("INSERT INTO sprint_tasks (id, title, status) VALUES ('test1', 'bad status', 'invalid')").run()
-    }).toThrow()
-  })
+  // sprint_tasks CHECK constraint test removed — owned by bde-task-runner
 
   it('DB at version 2 only runs migrations 3+', () => {
     // Run migrations up to version 2
