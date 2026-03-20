@@ -1,15 +1,18 @@
 /**
  * Simple inline markdown renderer for chat messages.
  * Handles code blocks, inline code, and plain text.
+ * Detects `tickets-json` fenced blocks and renders TicketEditor inline.
  */
+import { TicketEditor } from '../components/sessions/TicketEditor'
+import type { TicketDraft } from '../components/sessions/TicketEditor'
 
 /** Render markdown-ish content: code blocks, inline code, line breaks */
 export function renderContent(text: string): React.JSX.Element {
   const parts: React.JSX.Element[] = []
   let key = 0
 
-  // Split on triple-backtick code blocks first
-  const codeBlockRe = /```(\w*)\n?([\s\S]*?)```/g
+  // Split on triple-backtick code blocks first ([\w-]* to support e.g. tickets-json)
+  const codeBlockRe = /```([\w-]*)\n?([\s\S]*?)```/g
   let lastIndex = 0
   let match: RegExpExecArray | null
 
@@ -20,12 +23,30 @@ export function renderContent(text: string): React.JSX.Element {
         <span key={key++}>{renderInline(text.slice(lastIndex, match.index))}</span>
       )
     }
-    // The code block itself
-    parts.push(
-      <pre key={key++} className="chat-msg__code-block">
-        <code>{match[2]}</code>
-      </pre>
-    )
+
+    const lang = match[1]
+    const codeContent = match[2]
+
+    if (lang === 'tickets-json') {
+      try {
+        const tickets = JSON.parse(codeContent) as TicketDraft[]
+        parts.push(<TicketEditor key={key++} initialTickets={tickets} />)
+      } catch {
+        // Malformed JSON — fall back to regular code block
+        parts.push(
+          <pre key={key++} className="chat-msg__code-block">
+            <code>{codeContent}</code>
+          </pre>
+        )
+      }
+    } else {
+      // The code block itself
+      parts.push(
+        <pre key={key++} className="chat-msg__code-block">
+          <code>{codeContent}</code>
+        </pre>
+      )
+    }
     lastIndex = match.index + match[0].length
   }
 

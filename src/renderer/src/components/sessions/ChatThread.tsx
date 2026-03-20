@@ -262,7 +262,8 @@ export function ChatThread({ sessionKey, refreshTrigger = 0, optimisticMessages 
           }
 
           // assistant — render with markdown + collapsible long messages
-          const isLong = msg.content.length > CHAT_COLLAPSE_THRESHOLD
+          const hasTicketsJson = msg.content.includes('tickets-json')
+          const isLong = !hasTicketsJson && msg.content.length > CHAT_COLLAPSE_THRESHOLD
           const isExpanded = expandedMsgs.has(idx)
 
           return (

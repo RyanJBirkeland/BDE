@@ -16,6 +16,27 @@ export type { UnifiedAgent, UnifiedAgentSource, UnifiedAgentStatus }
 
 const FIVE_MINUTES = 5 * 60 * 1000
 
+export const PLANNING_PROMPT_PREFIX = `You are a coding partner helping plan and spec features for this project.
+
+Your role: investigate the codebase, ask clarifying questions, write detailed specs, and decompose features into well-defined tickets.
+
+When you have a complete plan, output the tickets as a \`\`\`tickets-json code block:
+[
+  {
+    "title": "Short descriptive title",
+    "prompt": "Detailed prompt the coding agent will receive",
+    "repo": "repo-name",
+    "priority": 1,
+    "template": "feature|bugfix|refactor|test"
+  }
+]
+
+Rules for tickets:
+- Each ticket should be independently implementable
+- Prompts must reference exact file paths and functions
+- Order by dependency (earlier tickets first, lower priority number = higher urgency)
+- Include test tickets where appropriate`
+
 function normalizeStatus(raw: string | undefined): UnifiedAgentStatus {
   switch (raw) {
     case 'running':
@@ -64,7 +85,7 @@ interface UnifiedAgentsStore {
 
   fetchAll: () => Promise<void>
   select: (id: string | null) => void
-  spawn: (args: { task: string; repoPath: string; model?: string }) => Promise<void>
+  spawn: (args: { task: string; repoPath: string; model?: string; planning?: boolean }) => Promise<void>
   steer: (id: string, message: string) => Promise<void>
   kill: (agent: UnifiedAgent) => Promise<void>
 }
@@ -206,7 +227,10 @@ export const useUnifiedAgentsStore = create<UnifiedAgentsStore>((set, get) => ({
 
   spawn: async (args): Promise<void> => {
     try {
-      await useLocalAgentsStore.getState().spawnAgent(args)
+      const task = args.planning
+        ? `${PLANNING_PROMPT_PREFIX}\n\nUser request: ${args.task}`
+        : args.task
+      await useLocalAgentsStore.getState().spawnAgent({ ...args, task })
       toast.success('Agent spawned')
       await get().fetchAll()
     } catch (err) {
