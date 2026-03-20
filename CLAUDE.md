@@ -1,5 +1,7 @@
 # CLAUDE.md — BDE
 
+Electron desktop app (electron-vite + React + TypeScript) — the Birkeland Development Environment.
+
 ## Build & Test
 
 ```bash
@@ -65,6 +67,8 @@ These files are edited frequently across branches. Take extra care when modifyin
 ## Architecture Notes
 
 - **Data layer**: SQLite database at `~/.bde/bde.db` (WAL mode). Schema in `src/main/db.ts`. Tables: `sprint_tasks`, `agent_runs`, `settings`, `cost_events`.
+- **Queue API**: `src/main/queue-api/` exposes sprint tasks to the task runner on port 18790 (localhost). Enriches responses with `repo_path`/`gh_repo` from repo settings. Endpoints: `/queue/tasks`, `/queue/tasks/:id/claim`, `/queue/tasks/:id/release`, `/queue/tasks/:id/status`, `/queue/tasks/:id/output`.
+- **Sprint PR poller**: `src/main/sprint-pr-poller.ts` — runs every 60s in main process (not renderer-dependent), polls PR status for tasks with `pr_status='open'`.
 - **State**: Zustand stores in `src/renderer/src/stores/`
 - **IPC**: Main process handlers in `src/main/handlers/`, registered in `src/main/index.ts`, preload bridge in `src/preload/index.ts`
 - **RPC**: Renderer talks to OpenClaw gateway via WebSocket (`src/renderer/src/lib/gateway.ts`)
@@ -74,6 +78,14 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **Design tokens**: `src/renderer/src/design-system/tokens.ts` — use these instead of hardcoded values
 - **Views**: 7 views in `src/renderer/src/views/` — Sessions, Terminal, Sprint, PR Station, Memory, Cost, Settings
 - **Full architecture**: See `docs/architecture.md`
+
+## Gotchas
+
+- **FK constraints**: `sprint_tasks.agent_run_id` has NO foreign key constraint (migration v10 dropped it) — agent runs live in the task runner's own DB, not BDE's.
+- **Queue API auth**: No authentication on queue API (localhost-only security model). Task runner authenticates to its OWN API via `SPRINT_API_KEY`, not to BDE's queue API.
+- **Pre-push hook**: Husky runs `npm run typecheck && npm test` before every push. Fix failures before retrying.
+- **Native modules**: `better-sqlite3` is rebuilt for Electron in `postinstall`. If `npm install` fails, check native build tools. `test:main` has pre/post scripts to swap between Node/Electron builds.
+- **DB migrations**: Schema changes go through `src/main/db.ts` — add a new entry to the `migrations` array. Never modify existing migrations.
 
 ## Key Conventions
 
