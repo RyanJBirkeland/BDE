@@ -153,7 +153,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
         position: 'relative',
       }}
     >
-      {node.tabs.length > 1 && <PanelTabBar node={node} />}
+      <PanelTabBar node={node} />
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {node.tabs.map((tab, index) => {
           const isActive = index === node.activeTab

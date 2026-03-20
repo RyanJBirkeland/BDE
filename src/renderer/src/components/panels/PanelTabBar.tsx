@@ -15,6 +15,10 @@ export function PanelTabBar({ node }: PanelTabBarProps): React.ReactElement {
   const setActiveTab = usePanelLayoutStore((s) => s.setActiveTab)
   const closeTab = usePanelLayoutStore((s) => s.closeTab)
   const focusPanel = usePanelLayoutStore((s) => s.focusPanel)
+  const root = usePanelLayoutStore((s) => s.root)
+
+  // Hide close button when this is the only panel with a single tab (nothing to close into)
+  const isOnlyPanel = root.type === 'leaf' && node.tabs.length === 1
 
   function handleTabClick(index: number): void {
     focusPanel(node.panelId)
@@ -81,24 +85,26 @@ export function PanelTabBar({ node }: PanelTabBarProps): React.ReactElement {
             }}
           >
             <span>{tab.label}</span>
-            <button
-              onClick={(e) => handleTabClose(index, e)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'none',
-                border: 'none',
-                padding: '0',
-                cursor: 'pointer',
-                color: 'inherit',
-                opacity: 0.6,
-                lineHeight: 1,
-              }}
-              aria-label={`Close ${tab.label}`}
-            >
-              <X size={11} />
-            </button>
+            {!isOnlyPanel && (
+              <button
+                onClick={(e) => handleTabClose(index, e)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
+                  padding: '0',
+                  cursor: 'pointer',
+                  color: 'inherit',
+                  opacity: 0.6,
+                  lineHeight: 1,
+                }}
+                aria-label={`Close ${tab.label}`}
+              >
+                <X size={11} />
+              </button>
+            )}
           </div>
         )
       })}

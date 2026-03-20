@@ -34,7 +34,8 @@ describe('PanelRenderer', () => {
   it('renders a single leaf node', () => {
     const leaf = createLeaf('agents')
     render(<PanelRenderer node={leaf} />)
-    expect(screen.getByText('Agents')).toBeTruthy()
+    // "Agents" appears in both tab bar label and view content
+    expect(screen.getAllByText('Agents').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders a horizontal split with two leaves', () => {
@@ -44,8 +45,8 @@ describe('PanelRenderer', () => {
 
     render(<PanelRenderer node={splitRoot} />)
 
-    expect(screen.getByText('Agents')).toBeTruthy()
-    expect(screen.getByText('Terminal')).toBeTruthy()
+    expect(screen.getAllByText('Agents').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Terminal').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByTestId('panel-group')).toBeTruthy()
     expect(screen.getAllByTestId('panel')).toHaveLength(2)
   })
@@ -55,8 +56,6 @@ describe('PanelRenderer', () => {
     const splitRoot = splitNode(leaf, leaf.panelId, 'horizontal', 'terminal')
     if (splitRoot === null) throw new Error('splitNode returned null')
 
-    // splitRoot is now: split(agents, terminal)
-    // split the terminal leaf vertically to get: split(agents, split(terminal, sprint))
     if (splitRoot.type !== 'split') throw new Error('expected split node')
     const terminalLeaf = splitRoot.children[1]
     if (terminalLeaf.type !== 'leaf') throw new Error('expected leaf')
@@ -66,16 +65,12 @@ describe('PanelRenderer', () => {
 
     render(<PanelRenderer node={nestedRoot} />)
 
-    expect(screen.getByText('Agents')).toBeTruthy()
-    expect(screen.getByText('Terminal')).toBeTruthy()
-    // Sprint is lazy-loaded, wait for it to resolve
+    expect(screen.getAllByText('Agents').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Terminal').length).toBeGreaterThanOrEqual(1)
     expect(await screen.findByText('Sprint')).toBeTruthy()
 
-    // Two PanelGroup elements: the outer horizontal split and the inner vertical split
     expect(screen.getAllByTestId('panel-group')).toHaveLength(2)
-    // Four Panel elements total: outer (2) + inner (2)
     expect(screen.getAllByTestId('panel')).toHaveLength(4)
-    // Two resize handles
     expect(screen.getAllByTestId('resize-handle')).toHaveLength(2)
   })
 })
