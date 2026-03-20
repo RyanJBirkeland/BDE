@@ -76,7 +76,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       { view: 'sessions', label: 'Go to Sessions', hint: '\u23181' },
       { view: 'terminal', label: 'Go to Terminal', hint: '\u23182' },
       { view: 'sprint', label: 'Go to Sprint', hint: '\u23183' },
-      { view: 'diff', label: 'Go to Diff', hint: '\u23184' },
+      { view: 'pr-station', label: 'Go to PR Station', hint: '\u23184' },
       { view: 'memory', label: 'Go to Memory', hint: '\u23185' },
       { view: 'cost', label: 'Go to Cost', hint: '\u23186' },
       { view: 'settings', label: 'Go to Settings', hint: '\u23187' }

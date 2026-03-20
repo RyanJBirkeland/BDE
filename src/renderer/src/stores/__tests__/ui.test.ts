@@ -16,7 +16,7 @@ describe('ui store', () => {
   })
 
   it('setView to each valid view works', () => {
-    const views = ['sessions', 'terminal', 'sprint', 'diff', 'memory', 'cost', 'settings'] as const
+    const views = ['sessions', 'terminal', 'sprint', 'pr-station', 'memory', 'cost', 'settings'] as const
     for (const v of views) {
       useUIStore.getState().setView(v)
       expect(useUIStore.getState().activeView).toBe(v)
