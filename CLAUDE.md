@@ -64,7 +64,7 @@ These files are edited frequently across branches. Take extra care when modifyin
 
 ## Architecture Notes
 
-- **Data layer**: SQLite database at `~/.bde/bde.db` (WAL mode). Schema in `src/main/db.ts`. Tables: `sprint_tasks`, `agent_runs`, `settings`.
+- **Data layer**: SQLite database at `~/.bde/bde.db` (WAL mode). Schema in `src/main/db.ts`. Tables: `sprint_tasks`, `agent_runs`, `settings`, `cost_events`.
 - **State**: Zustand stores in `src/renderer/src/stores/`
 - **IPC**: Main process handlers in `src/main/handlers/`, registered in `src/main/index.ts`, preload bridge in `src/preload/index.ts`
 - **RPC**: Renderer talks to OpenClaw gateway via WebSocket (`src/renderer/src/lib/gateway.ts`)
@@ -72,7 +72,7 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **Agent spawning**: `src/main/local-agents.ts` — spawns Claude CLI agents with stream-json I/O
 - **DB sync**: File watcher on `bde.db` pushes `sprint:external-change` IPC events to renderer (500ms debounce)
 - **Design tokens**: `src/renderer/src/design-system/tokens.ts` — use these instead of hardcoded values
-- **Views**: 6 views in `src/renderer/src/views/` — Sessions, Sprint, Diff, Memory, Cost, Settings
+- **Views**: 7 views in `src/renderer/src/views/` — Sessions, Terminal, Sprint, PR Station, Memory, Cost, Settings
 - **Full architecture**: See `docs/architecture.md`
 
 ## Key Conventions
