@@ -275,6 +275,29 @@ function replacLeafWithSplit(
 }
 
 // ---------------------------------------------------------------------------
+// Layout validation helpers
+// ---------------------------------------------------------------------------
+
+function isValidLayout(node: unknown): boolean {
+  if (!node || typeof node !== 'object') return false
+  const n = node as Record<string, unknown>
+  if (n.type === 'leaf') return Array.isArray(n.tabs) && (n.tabs as unknown[]).length > 0
+  if (n.type === 'split')
+    return (
+      Array.isArray(n.children) &&
+      (n.children as unknown[]).length === 2 &&
+      isValidLayout((n.children as unknown[])[0]) &&
+      isValidLayout((n.children as unknown[])[1])
+    )
+  return false
+}
+
+function findFirstLeaf(node: PanelNode): PanelLeafNode | null {
+  if (node.type === 'leaf') return node
+  return findFirstLeaf(node.children[0])
+}
+
+// ---------------------------------------------------------------------------
 // Default layout
 // ---------------------------------------------------------------------------
 
@@ -295,6 +318,7 @@ interface PanelLayoutState {
   moveTab: (sourcePanelId: string, sourceTabIndex: number, targetPanelId: string, zone: DropZone) => void
   focusPanel: (panelId: string) => void
   resetLayout: () => void
+  loadSavedLayout: () => Promise<void>
   findPanelByView: (viewKey: View) => PanelLeafNode | null
   getOpenViews: () => View[]
 }
@@ -348,8 +372,26 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
   },
 
   resetLayout: (): void => {
+    _resetIdCounter()
     const fresh = createLeaf('agents')
     set({ root: fresh, focusedPanelId: fresh.panelId })
+    if (typeof window !== 'undefined' && window.api?.settings) {
+      window.api.settings.setJson('panel.layout', null).catch(() => {})
+    }
+  },
+
+  loadSavedLayout: async (): Promise<void> => {
+    try {
+      if (typeof window === 'undefined' || !window.api?.settings) return
+      const saved = await window.api.settings.getJson('panel.layout')
+      if (saved && isValidLayout(saved)) {
+        const root = saved as PanelNode
+        const firstLeaf = findFirstLeaf(root)
+        set({ root, focusedPanelId: firstLeaf?.panelId ?? '' })
+      }
+    } catch {
+      /* use default */
+    }
   },
 
   findPanelByView: (viewKey): PanelLeafNode | null => {
@@ -370,3 +412,17 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
     return getOpenViews(get().root)
   },
 }))
+
+// ---------------------------------------------------------------------------
+// Persist layout on every mutation (debounced)
+// ---------------------------------------------------------------------------
+
+let _saveTimeout: ReturnType<typeof setTimeout> | null = null
+
+usePanelLayoutStore.subscribe((state) => {
+  if (typeof window === 'undefined' || !window.api?.settings) return
+  if (_saveTimeout) clearTimeout(_saveTimeout)
+  _saveTimeout = setTimeout(() => {
+    window.api.settings.setJson('panel.layout', state.root).catch(() => {})
+  }, 500)
+})

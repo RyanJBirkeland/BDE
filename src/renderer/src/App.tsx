@@ -126,6 +126,8 @@ function App(): React.JSX.Element {
   const closePalette = useCommandPaletteStore((s) => s.close)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
+  const loadLayout = usePanelLayoutStore((s) => s.loadSavedLayout)
+
   useEffect(() => {
     connect()
   }, [connect])
@@ -133,6 +135,10 @@ function App(): React.JSX.Element {
   useEffect(() => {
     fetchLocalAgents()
   }, [fetchLocalAgents])
+
+  useEffect(() => {
+    loadLayout()
+  }, [loadLayout])
 
   useTaskNotifications()
   useGitHubRateLimitWarning()
