@@ -1,5 +1,4 @@
 import { safeHandle } from '../ipc-utils'
-import { getGatewayConfig } from '../config'
 import { getDb } from '../db'
 import { getSpecsRoot } from '../paths'
 import { readFile } from 'fs/promises'
@@ -7,6 +6,37 @@ import { resolve } from 'path'
 import type { SprintTask, TaskTemplate, ClaimedTask } from '../../shared/types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
+import { notifySprintMutation } from './sprint-listeners'
+import {
+  generatePrompt,
+  type GeneratePromptRequest,
+  type GeneratePromptResponse,
+} from './sprint-spec'
+import {
+  getTask as _getTask,
+  listTasks as _listTasks,
+  createTask as _createTask,
+  updateTask as _updateTask,
+  deleteTask as _deleteTask,
+  claimTask as _claimTask,
+  releaseTask as _releaseTask,
+  getQueueStats as _getQueueStats,
+  getDoneTodayCount as _getDoneTodayCount,
+  markTaskDoneByPrNumber as _markTaskDoneByPrNumber,
+  markTaskCancelledByPrNumber as _markTaskCancelledByPrNumber,
+  listTasksWithOpenPrs as _listTasksWithOpenPrs,
+  updateTaskMergeableState as _updateTaskMergeableState,
+  clearSprintTaskFk as _clearSprintTaskFk,
+  UPDATE_ALLOWLIST,
+} from '../data/sprint-queries'
+import type { CreateTaskInput, QueueStats } from '../data/sprint-queries'
+
+export { UPDATE_ALLOWLIST }
+export type { CreateTaskInput, QueueStats }
+
+// Re-export listener and spec APIs so existing deep imports keep working
+export { onSprintMutation } from './sprint-listeners'
+export { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
 
 function validateSpecPath(relativePath: string): string {
   const specsRoot = getSpecsRoot()
@@ -20,324 +50,72 @@ function validateSpecPath(relativePath: string): string {
   return resolved
 }
 
-// --- Types ---
-
-interface GeneratePromptRequest {
-  taskId: string
-  title: string
-  repo: string
-  templateHint: string
-}
-
-interface GeneratePromptResponse {
-  taskId: string
-  spec: string
-  prompt: string
-}
-
-export interface CreateTaskInput {
-  title: string
-  repo: string
-  prompt?: string
-  notes?: string
-  spec?: string
-  priority?: number
-  status?: string
-  template_name?: string
-}
-
-// --- Mutation listener registry ---
-
-type SprintMutationListener = (event: {
-  type: 'created' | 'updated' | 'deleted'
-  task: SprintTask
-}) => void
-const listeners: Set<SprintMutationListener> = new Set()
-
-export function onSprintMutation(cb: SprintMutationListener): () => void {
-  listeners.add(cb)
-  return () => listeners.delete(cb)
-}
-
-function notifyMutation(type: 'created' | 'updated' | 'deleted', task: SprintTask): void {
-  for (const cb of listeners) cb({ type, task })
-}
-
-// --- Field allowlist for updates ---
-
-const UPDATE_ALLOWLIST = new Set([
-  'title',
-  'prompt',
-  'repo',
-  'status',
-  'priority',
-  'spec',
-  'notes',
-  'pr_url',
-  'pr_number',
-  'pr_status',
-  'pr_mergeable_state',
-  'agent_run_id',
-  'retry_count',
-  'fast_fail_count',
-  'started_at',
-  'completed_at',
-  'template_name',
-])
-
-// --- Exported query functions (used by queue-api, git-handlers, agent-history) ---
+// --- Thin wrappers that delegate to data layer with getDb() ---
 
 export function getTask(id: string): SprintTask | null {
-  return getDb().prepare('SELECT * FROM sprint_tasks WHERE id = ?').get(id) as SprintTask | null
+  return _getTask(getDb(), id)
 }
 
 export function listTasks(status?: string): SprintTask[] {
-  if (status) {
-    return getDb()
-      .prepare('SELECT * FROM sprint_tasks WHERE status = ? ORDER BY priority ASC, created_at ASC')
-      .all(status) as SprintTask[]
-  }
-  return getDb()
-    .prepare('SELECT * FROM sprint_tasks ORDER BY priority ASC, created_at ASC')
-    .all() as SprintTask[]
+  return _listTasks(getDb(), status)
 }
 
 export function claimTask(id: string, claimedBy: string): SprintTask | null {
-  const now = new Date().toISOString()
-  const result = getDb()
-    .prepare(
-      `UPDATE sprint_tasks
-       SET status = 'active', claimed_by = ?, started_at = ?
-       WHERE id = ? AND status = 'queued'
-       RETURNING *`
-    )
-    .get(claimedBy, now, id) as SprintTask | undefined
-
-  if (result) {
-    // Re-fetch to get the correct updated_at (trigger fires after RETURNING)
-    const final = getTask(id)!
-    notifyMutation('updated', final)
-    return final
-  }
-  return null
+  const result = _claimTask(getDb(), id, claimedBy)
+  if (result) notifySprintMutation('updated', result)
+  return result
 }
 
 export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
-  const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
-  if (entries.length === 0) return null
-
-  const setClauses = entries.map(([k]) => `${k} = ?`).join(', ')
-  const values = entries.map(([, v]) => v)
-
-  const row = getDb()
-    .prepare(`UPDATE sprint_tasks SET ${setClauses} WHERE id = ? RETURNING *`)
-    .get(...values, id) as SprintTask | undefined
-
-  if (row) {
-    // Re-fetch for correct updated_at
-    const final = getTask(id)!
-    notifyMutation('updated', final)
-    return final
-  }
-  return null
-}
-
-export interface QueueStats {
-  [key: string]: number
-  backlog: number
-  queued: number
-  active: number
-  done: number
-  failed: number
-  cancelled: number
-  error: number
-}
-
-export function getQueueStats(): QueueStats {
-  const rows = getDb()
-    .prepare('SELECT status, COUNT(*) as count FROM sprint_tasks GROUP BY status')
-    .all() as { status: string; count: number }[]
-
-  const stats: QueueStats = {
-    backlog: 0,
-    queued: 0,
-    active: 0,
-    done: 0,
-    failed: 0,
-    cancelled: 0,
-    error: 0,
-  }
-  for (const row of rows) {
-    if (row.status in stats) {
-      stats[row.status as keyof QueueStats] = row.count
-    }
-  }
-  return stats
-}
-
-export function getDoneTodayCount(): number {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const row = getDb()
-    .prepare("SELECT COUNT(*) as count FROM sprint_tasks WHERE status = 'done' AND completed_at >= ?")
-    .get(today.toISOString()) as { count: number }
-  return row.count
-}
-
-// --- Exported helper functions (used by git-handlers, agent-history) ---
-
-export function markTaskDoneByPrNumber(prNumber: number): void {
-  try {
-    const completedAt = new Date().toISOString()
-    // Transition active tasks to done
-    getDb()
-      .prepare(
-        "UPDATE sprint_tasks SET status='done', completed_at=? WHERE pr_number=? AND status='active'"
-      )
-      .run(completedAt, prNumber)
-    // Also update pr_status to merged for tasks already marked done (by task runner)
-    getDb()
-      .prepare(
-        "UPDATE sprint_tasks SET pr_status='merged' WHERE pr_number=? AND status='done' AND pr_status='open'"
-      )
-      .run(prNumber)
-  } catch (err) {
-    console.warn(`[sprint-local] failed to mark task done for PR #${prNumber}:`, err)
-  }
-}
-
-export function markTaskCancelledByPrNumber(prNumber: number): void {
-  try {
-    // Transition active tasks to cancelled
-    getDb()
-      .prepare(
-        "UPDATE sprint_tasks SET status='cancelled', completed_at=? WHERE pr_number=? AND status='active'"
-      )
-      .run(new Date().toISOString(), prNumber)
-    // Also update pr_status to closed for tasks already marked done
-    getDb()
-      .prepare(
-        "UPDATE sprint_tasks SET pr_status='closed' WHERE pr_number=? AND status='done' AND pr_status='open'"
-      )
-      .run(prNumber)
-  } catch (err) {
-    console.warn(`[sprint-local] failed to mark task cancelled for PR #${prNumber}:`, err)
-  }
+  const result = _updateTask(getDb(), id, patch)
+  if (result) notifySprintMutation('updated', result)
+  return result
 }
 
 export function releaseTask(id: string): SprintTask | null {
-  const result = getDb()
-    .prepare(
-      `UPDATE sprint_tasks
-       SET status = 'queued', claimed_by = NULL, started_at = NULL, agent_run_id = NULL
-       WHERE id = ? AND status = 'active'
-       RETURNING *`
-    )
-    .get(id) as SprintTask | undefined
+  const result = _releaseTask(getDb(), id)
+  if (result) notifySprintMutation('updated', result)
+  return result
+}
 
-  if (result) {
-    const final = getTask(id)!
-    notifyMutation('updated', final)
-    return final
-  }
-  return null
+export function getQueueStats(): QueueStats {
+  return _getQueueStats(getDb())
+}
+
+export function getDoneTodayCount(): number {
+  return _getDoneTodayCount(getDb())
+}
+
+export function markTaskDoneByPrNumber(prNumber: number): void {
+  _markTaskDoneByPrNumber(getDb(), prNumber)
+}
+
+export function markTaskCancelledByPrNumber(prNumber: number): void {
+  _markTaskCancelledByPrNumber(getDb(), prNumber)
 }
 
 export function listTasksWithOpenPrs(): SprintTask[] {
-  return getDb()
-    .prepare(
-      "SELECT * FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'"
-    )
-    .all() as SprintTask[]
+  return _listTasksWithOpenPrs(getDb())
 }
 
 export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): void {
-  if (!mergeableState) return
-  try {
-    getDb()
-      .prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?')
-      .run(mergeableState, prNumber)
-  } catch (err) {
-    console.warn(`[sprint-local] failed to update mergeable_state for PR #${prNumber}:`, err)
-  }
+  _updateTaskMergeableState(getDb(), prNumber, mergeableState)
 }
 
 export function clearSprintTaskFk(agentRunId: string): void {
-  try {
-    getDb()
-      .prepare('UPDATE sprint_tasks SET agent_run_id = NULL WHERE agent_run_id = ?')
-      .run(agentRunId)
-  } catch (err) {
-    console.warn(`[sprint-local] failed to clear FK for agent_run_id=${agentRunId}:`, err)
-  }
-}
-
-// --- Pure helper functions (shared with old sprint.ts) ---
-
-export function buildQuickSpecPrompt(
-  title: string,
-  repo: string,
-  templateHint: string,
-  scaffold: string
-): string {
-  return `You are writing a coding agent spec. Be precise. Name exact files. No preamble.
-
-Task: "${title}"
-Repo: ${repo}
-Type: ${templateHint}
-
-${scaffold ? `Use this structure:\n${scaffold}` : 'Use sections: Problem, Solution, Files to Change, Out of Scope'}
-
-Rules:
-- Exact file paths (e.g. src/renderer/src/components/sprint/SprintCenter.tsx)
-- Exact code changes (not "update the function" but "add X to Y")
-- Out of Scope: 2-3 bullet points max
-- Output ONLY the spec markdown. No commentary.`
-}
-
-export function getTemplateScaffold(templateHint: string): string {
-  const SCAFFOLDS: Record<string, string> = {
-    bugfix: `## Bug Description\n\n## Root Cause\n\n## Fix\n\n## Files to Change\n\n## How to Test`,
-    feature: `## Problem\n\n## Solution\n\n## Files to Change\n\n## Out of Scope`,
-    refactor: `## What's Being Refactored\n\n## Target State\n\n## Files to Change\n\n## Out of Scope`,
-    test: `## What to Test\n\n## Test Strategy\n\n## Files to Create\n\n## Coverage Target\n\n## Out of Scope`,
-    performance: `## What's Slow\n\n## Approach\n\n## Files to Change\n\n## How to Verify`,
-    ux: `## UX Problem\n\n## Target Design\n\n## Files to Change (CSS + TSX)\n\n## Out of Scope`,
-    audit: `## Audit Scope\n\n## Criteria\n\n## Deliverable`,
-    infra: `## What's Being Changed\n\n## Steps\n\n## Verification`,
-  }
-  return SCAFFOLDS[templateHint] ?? SCAFFOLDS.feature
+  _clearSprintTaskFk(getDb(), agentRunId)
 }
 
 // --- Handler registration ---
 
 export function registerSprintLocalHandlers(): void {
   safeHandle('sprint:list', () => {
-    return getDb()
-      .prepare('SELECT * FROM sprint_tasks ORDER BY priority ASC, created_at ASC')
-      .all() as SprintTask[]
+    return _listTasks(getDb())
   })
 
   safeHandle('sprint:create', (_e, task: CreateTaskInput) => {
-    const row = getDb()
-      .prepare(
-        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name)
-         VALUES (@title, @repo, @prompt, @spec, @notes, @priority, @status, @template_name)
-         RETURNING *`
-      )
-      .get({
-        title: task.title,
-        repo: task.repo,
-        prompt: task.prompt ?? task.spec ?? task.title,
-        spec: task.spec ?? null,
-        notes: task.notes ?? null,
-        priority: task.priority ?? 0,
-        status: task.status ?? 'backlog',
-        template_name: task.template_name ?? null,
-      }) as SprintTask
-
-    notifyMutation('created', row)
-
+    const row = _createTask(getDb(), task)
+    notifySprintMutation('created', row)
     return row
   })
 
@@ -347,9 +125,9 @@ export function registerSprintLocalHandlers(): void {
 
   safeHandle('sprint:delete', (_e, id: string) => {
     const task = getTask(id)
-    getDb().prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
+    _deleteTask(getDb(), id)
     if (task) {
-      notifyMutation('deleted', task)
+      notifySprintMutation('deleted', task)
     }
     return { ok: true }
   })
@@ -362,67 +140,12 @@ export function registerSprintLocalHandlers(): void {
   safeHandle(
     'sprint:generatePrompt',
     async (_e, args: GeneratePromptRequest): Promise<GeneratePromptResponse> => {
-      const { taskId, title, repo, templateHint } = args
-      const fallback: GeneratePromptResponse = { taskId, spec: '', prompt: title }
-
-      try {
-        const gatewayConfig = getGatewayConfig()
-        if (!gatewayConfig) return fallback
-        const { url: rawGatewayUrl, token: gatewayToken } = gatewayConfig
-        const gatewayUrl = rawGatewayUrl
-          .replace(/^ws:\/\//, 'http://')
-          .replace(/^wss:\/\//, 'https://')
-
-        const templateScaffold = getTemplateScaffold(templateHint)
-        const message = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
-
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 55_000)
-        let response: Response
-        try {
-          response = await fetch(`${gatewayUrl}/tools/invoke`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${gatewayToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              tool: 'sessions_send',
-              args: { sessionKey: 'main', message, timeoutSeconds: 45 },
-            }),
-            signal: controller.signal,
-          })
-        } catch (err) {
-          if (err instanceof DOMException && err.name === 'AbortError') {
-            throw new Error('Spec generation timed out — gateway unreachable')
-          }
-          throw err
-        } finally {
-          clearTimeout(timeoutId)
-        }
-
-        if (!response.ok) return fallback
-
-        const data = (await response.json()) as {
-          result?: { content?: Array<{ type: string; text: string }> }
-        }
-        const text = data.result?.content?.[0]?.text ?? ''
-        if (!text) return fallback
-
-        // Persist generated spec — use updateTask() to notify SSE subscribers
-        updateTask(taskId, { spec: text, prompt: text })
-
-        return { taskId, spec: text, prompt: text }
-      } catch {
-        return fallback
-      }
+      return generatePrompt(args)
     }
   )
 
   safeHandle('sprint:claimTask', (_e, taskId: string): ClaimedTask | null => {
-    const task = getDb()
-      .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
-      .get(taskId) as SprintTask | undefined
+    const task = _getTask(getDb(), taskId)
     if (!task) return null
 
     let templatePromptPrefix: string | null = null

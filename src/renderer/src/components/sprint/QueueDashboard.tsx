@@ -1,5 +1,5 @@
 import { tokens } from '../../design-system/tokens'
-import type { QueueHealth } from '../../stores/sprint'
+import type { QueueHealth } from '../../stores/sprintEvents'
 
 interface QueueDashboardProps {
   health: QueueHealth | null

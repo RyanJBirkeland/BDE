@@ -30,7 +30,7 @@ export function registerGitHandlers(): void {
   // --- GitHub API proxy (renderer -> main -> api.github.com) ---
   safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
     const token = getGitHubToken()
-    if (!token) throw new Error('GitHub token not configured')
+    if (!token) throw new Error('GitHub token not configured. Set it in Settings \u2192 Connections.')
 
     let url: string
     if (path.startsWith('https://')) {
@@ -62,8 +62,22 @@ export function registerGitHandlers(): void {
   safeHandle('git:getRepoPaths', () => getRepoPaths())
 
   // --- Git client IPC (cwd validated against known repo paths) ---
-  safeHandle('git:status', (_e, cwd: string) => gitStatus(validateRepoPath(cwd)))
-  safeHandle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(validateRepoPath(cwd), file))
+  safeHandle('git:status', async (_e, cwd: string) => {
+    const result = await gitStatus(validateRepoPath(cwd))
+    if (!result.ok) {
+      console.warn('[git:status]', result.error)
+      return { files: [] }
+    }
+    return result.data
+  })
+  safeHandle('git:diff', async (_e, cwd: string, file?: string) => {
+    const result = await gitDiffFile(validateRepoPath(cwd), file)
+    if (!result.ok) {
+      console.warn('[git:diff]', result.error)
+      return ''
+    }
+    return result.data
+  })
   safeHandle('git:stage', (_e, cwd: string, files: string[]) => gitStage(validateRepoPath(cwd), files))
   safeHandle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(validateRepoPath(cwd), files))
   safeHandle('git:commit', (_e, cwd: string, message: string) => gitCommit(validateRepoPath(cwd), message))

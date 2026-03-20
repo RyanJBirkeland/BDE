@@ -16,6 +16,10 @@ vi.mock('../handlers/sprint-local', () => ({
   claimTask: vi.fn(),
   updateTask: vi.fn(),
   getQueueStats: vi.fn().mockReturnValue({}),
+}))
+
+// Mock sprint-listeners (used by event-store)
+vi.mock('../handlers/sprint-listeners', () => ({
   onSprintMutation: vi.fn().mockReturnValue(() => {}),
 }))
 

@@ -1,48 +1,9 @@
 import { create } from 'zustand'
 import type { SprintTask } from '../../../shared/types'
-import type { TaskOutputEvent } from '../../../shared/queue-api-contract'
 import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 import { toast } from './toasts'
 import { detectTemplate } from '../../../shared/template-heuristics'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
-
-export interface QueueHealth {
-  queue: Record<string, number>
-  doneToday: number
-  connectedRunners: number
-}
-
-interface SprintState {
-  // --- Data ---
-  tasks: SprintTask[]
-  loading: boolean
-  loadError: string | null
-  repoFilter: string | null
-  selectedTaskId: string | null
-  logDrawerTaskId: string | null
-  prMergedMap: Record<string, boolean>
-  generatingIds: Set<string>
-  queueHealth: QueueHealth | null
-  taskEvents: Record<string, TaskOutputEvent[]>
-  latestEvents: Record<string, TaskOutputEvent>
-
-  // --- Actions ---
-  loadData: () => Promise<void>
-  updateTask: (taskId: string, patch: Partial<SprintTask>) => Promise<void>
-  deleteTask: (taskId: string) => Promise<void>
-  createTask: (data: CreateTicketInput) => Promise<void>
-  launchTask: (task: SprintTask) => Promise<void>
-  fetchQueueHealth: () => Promise<void>
-  mergeSseUpdate: (update: { taskId: string; [key: string]: unknown }) => void
-  setPrMergedMap: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void
-  setGeneratingIds: (updater: (prev: Set<string>) => Set<string>) => void
-  setRepoFilter: (filter: string | null) => void
-  setSelectedTaskId: (id: string | null) => void
-  setLogDrawerTaskId: (id: string | null) => void
-  setTasks: (tasks: SprintTask[]) => void
-  initTaskOutputListener: () => () => void
-  clearTaskEvents: (taskId: string) => void
-}
 
 export interface CreateTicketInput {
   title: string
@@ -54,18 +15,29 @@ export interface CreateTicketInput {
   template_name?: string
 }
 
-export const useSprintStore = create<SprintState>((set, get) => ({
+interface SprintTasksState {
+  // --- Data ---
+  tasks: SprintTask[]
+  loading: boolean
+  loadError: string | null
+  prMergedMap: Record<string, boolean>
+
+  // --- Actions ---
+  loadData: () => Promise<void>
+  updateTask: (taskId: string, patch: Partial<SprintTask>) => Promise<void>
+  deleteTask: (taskId: string) => Promise<void>
+  createTask: (data: CreateTicketInput) => Promise<void>
+  launchTask: (task: SprintTask) => Promise<void>
+  mergeSseUpdate: (update: { taskId: string; [key: string]: unknown }) => void
+  setPrMergedMap: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void
+  setTasks: (tasks: SprintTask[]) => void
+}
+
+export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   tasks: [],
   loading: true,
   loadError: null,
-  repoFilter: null,
-  selectedTaskId: null,
-  logDrawerTaskId: null,
   prMergedMap: {},
-  generatingIds: new Set(),
-  queueHealth: null,
-  taskEvents: {},
-  latestEvents: {},
 
   loadData: async (): Promise<void> => {
     set({ loadError: null, loading: true })
@@ -99,8 +71,9 @@ export const useSprintStore = create<SprintState>((set, get) => ({
       await window.api.sprint.delete(taskId)
       set((s) => ({
         tasks: s.tasks.filter((t) => t.id !== taskId),
-        selectedTaskId: s.selectedTaskId === taskId ? null : s.selectedTaskId,
       }))
+      // Notify UI store to deselect if this task was selected
+      window.dispatchEvent(new CustomEvent('sprint:task-deleted', { detail: { taskId } }))
       toast.success('Task deleted')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to delete task')
@@ -154,10 +127,9 @@ export const useSprintStore = create<SprintState>((set, get) => ({
         // Background spec generation for Quick Mode tasks
         if (!data.spec) {
           const templateHint = detectTemplate(data.title)
-          set((s) => {
-            if (s.generatingIds.has(result.id)) return s
-            return { generatingIds: new Set(s.generatingIds).add(result.id) }
-          })
+          // Use a local Set to track generating state (no cross-store dependency)
+          const generatingEvent = new CustomEvent('sprint:generating', { detail: { taskId: result.id, generating: true } })
+          window.dispatchEvent(generatingEvent)
 
           window.api.sprint
             .generatePrompt({
@@ -176,7 +148,10 @@ export const useSprintStore = create<SprintState>((set, get) => ({
               }))
               toast.info(`Spec ready for "${data.title}"`, {
                 action: 'View Spec',
-                onAction: () => set({ selectedTaskId: result.id }),
+                onAction: () => {
+                  const selectEvent = new CustomEvent('sprint:select-task', { detail: { taskId: result.id } })
+                  window.dispatchEvent(selectEvent)
+                },
                 durationMs: 6000,
               })
             })
@@ -184,12 +159,8 @@ export const useSprintStore = create<SprintState>((set, get) => ({
               toast.error('Spec generation failed: ' + (e instanceof Error ? e.message : String(e)))
             })
             .finally(() => {
-              set((s) => {
-                if (!s.generatingIds.has(result.id)) return s
-                const next = new Set(s.generatingIds)
-                next.delete(result.id)
-                return { generatingIds: next }
-              })
+              const doneEvent = new CustomEvent('sprint:generating', { detail: { taskId: result.id, generating: false } })
+              window.dispatchEvent(doneEvent)
             })
         }
       }
@@ -235,15 +206,6 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     }
   },
 
-  fetchQueueHealth: async (): Promise<void> => {
-    try {
-      const health = await window.api.queue.health()
-      set({ queueHealth: health })
-    } catch {
-      set({ queueHealth: null })
-    }
-  },
-
   mergeSseUpdate: (update): void => {
     set((s) => ({
       tasks: s.tasks.map((t) => {
@@ -261,54 +223,5 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     set((s) => ({ prMergedMap: updater(s.prMergedMap) }))
   },
 
-  setGeneratingIds: (updater): void => {
-    set((s) => ({ generatingIds: updater(s.generatingIds) }))
-  },
-
-  setRepoFilter: (filter): void => set({ repoFilter: filter }),
-  setSelectedTaskId: (id): void => set({ selectedTaskId: id }),
-  setLogDrawerTaskId: (id): void => set({ logDrawerTaskId: id }),
   setTasks: (tasks): void => set({ tasks }),
-
-  initTaskOutputListener: (): (() => void) => {
-    // Legacy path: task:output events from queue API
-    const cleanupLegacy = window.api.onTaskOutput(({ taskId, events }) => {
-      set((s) => {
-        const existing = s.taskEvents[taskId] ?? []
-        const updated = [...existing, ...events]
-        const latest = events[events.length - 1]
-        return {
-          taskEvents: { ...s.taskEvents, [taskId]: updated },
-          latestEvents: { ...s.latestEvents, [taskId]: latest },
-        }
-      })
-    })
-
-    // Phase 2 dual-write: agent:event stream populates legacy fields
-    const cleanupAgent = window.api.agentEvents?.onEvent(({ agentId, event }) => {
-      set((s) => ({
-        taskEvents: {
-          ...s.taskEvents,
-          [agentId]: [...(s.taskEvents[agentId] ?? []), event as never],
-        },
-        latestEvents: {
-          ...s.latestEvents,
-          [agentId]: event as never,
-        },
-      }))
-    })
-
-    return () => {
-      cleanupLegacy()
-      cleanupAgent?.()
-    }
-  },
-
-  clearTaskEvents: (taskId): void => {
-    set((s) => {
-      const { [taskId]: _events, ...restEvents } = s.taskEvents
-      const { [taskId]: _latest, ...restLatest } = s.latestEvents
-      return { taskEvents: restEvents, latestEvents: restLatest }
-    })
-  },
 }))

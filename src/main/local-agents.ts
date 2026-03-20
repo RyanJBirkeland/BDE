@@ -13,6 +13,7 @@ import {
 } from './agent-history'
 import { getTaskRunnerConfig } from './config'
 import { getDb } from './db'
+import { updateAgentRunCost as _updateAgentRunCost } from './data/agent-queries'
 import { BDE_AGENT_TMP_DIR as LOG_DIR } from './paths'
 import { createAgentProvider, type AgentHandle } from './agents'
 import { getEventBus } from './agents/event-bus'
@@ -51,7 +52,7 @@ export interface AgentCost {
   numTurns: number
 }
 
-export async function extractAgentCost(logPath: string): Promise<AgentCost | null> {
+export async function extractAgentCost(logPath: string): Promise<Result<AgentCost | null>> {
   try {
     const content = await readFile(logPath, 'utf-8')
     const lines = content.split('\n')
@@ -76,54 +77,49 @@ export async function extractAgentCost(logPath: string): Promise<AgentCost | nul
       if (parsed.type === 'result') {
         const usage = parsed.usage as Record<string, number> | undefined
         return {
-          costUsd: typeof parsed.total_cost_usd === 'number' ? parsed.total_cost_usd : 0,
-          tokensIn: usage?.input_tokens ?? 0,
-          tokensOut: usage?.output_tokens ?? 0,
-          cacheRead: usage?.cache_read_input_tokens ?? 0,
-          cacheCreate: usage?.cache_creation_input_tokens ?? 0,
-          durationMs: typeof parsed.duration_ms === 'number' ? parsed.duration_ms : 0,
-          numTurns: typeof parsed.num_turns === 'number' ? parsed.num_turns : 0,
+          ok: true,
+          data: {
+            costUsd: typeof parsed.total_cost_usd === 'number' ? parsed.total_cost_usd : 0,
+            tokensIn: usage?.input_tokens ?? 0,
+            tokensOut: usage?.output_tokens ?? 0,
+            cacheRead: usage?.cache_read_input_tokens ?? 0,
+            cacheCreate: usage?.cache_creation_input_tokens ?? 0,
+            durationMs: typeof parsed.duration_ms === 'number' ? parsed.duration_ms : 0,
+            numTurns: typeof parsed.num_turns === 'number' ? parsed.num_turns : 0,
+          },
         }
       }
 
       if (parsed.type === 'agent:completed') {
         return {
-          costUsd: typeof parsed.costUsd === 'number' ? parsed.costUsd : 0,
-          tokensIn: typeof parsed.tokensIn === 'number' ? parsed.tokensIn : 0,
-          tokensOut: typeof parsed.tokensOut === 'number' ? parsed.tokensOut : 0,
-          cacheRead: 0,
-          cacheCreate: 0,
-          durationMs: typeof parsed.durationMs === 'number' ? parsed.durationMs : 0,
-          numTurns: 0,
+          ok: true,
+          data: {
+            costUsd: typeof parsed.costUsd === 'number' ? parsed.costUsd : 0,
+            tokensIn: typeof parsed.tokensIn === 'number' ? parsed.tokensIn : 0,
+            tokensOut: typeof parsed.tokensOut === 'number' ? parsed.tokensOut : 0,
+            cacheRead: 0,
+            cacheCreate: 0,
+            durationMs: typeof parsed.durationMs === 'number' ? parsed.durationMs : 0,
+            numTurns: 0,
+          },
         }
       }
     }
 
-    return null
-  } catch {
-    return null
+    return { ok: true, data: null }
+  } catch (err) {
+    return { ok: false, error: `Failed to extract agent cost from ${logPath}: ${(err as Error).message}` }
   }
 }
 
 export function updateAgentRunCost(agentRunId: string, cost: AgentCost): void {
-  getDb().prepare(`
-    UPDATE agent_runs SET
-      cost_usd = ?, tokens_in = ?, tokens_out = ?,
-      cache_read = ?, cache_create = ?,
-      duration_ms = ?, num_turns = ?
-    WHERE id = ?
-  `).run(
-    cost.costUsd, cost.tokensIn, cost.tokensOut,
-    cost.cacheRead, cost.cacheCreate,
-    cost.durationMs, cost.numTurns,
-    agentRunId
-  )
+  _updateAgentRunCost(getDb(), agentRunId, cost)
 }
 
 // --- Spawn an agent via the provider factory ---
 
 export type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
-import type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
+import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, Result } from '../shared/types'
 import { CLAUDE_MODELS, DEFAULT_MODEL } from '../shared/models'
 import { getAgentBinary } from './settings'
 
@@ -181,7 +177,9 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
   await updateAgentMeta(id, { pid: pid || null })
 
   // Consume event stream in background for logging and completion
-  consumeEvents(id, handle, meta.logPath).catch(() => {})
+  consumeEvents(id, handle, meta.logPath).catch((err) => {
+    console.error(`[agents] Event consumption failed for ${id}:`, err)
+  })
 
   return { pid, logPath: meta.logPath, id, interactive: true }
 }
@@ -191,7 +189,9 @@ async function consumeEvents(id: string, handle: AgentHandle, logPath: string): 
   try {
     const bus = getEventBus()
     for await (const event of handle.events) {
-      appendFile(logPath, JSON.stringify(event) + '\n', 'utf-8').catch(() => {})
+      appendFile(logPath, JSON.stringify(event) + '\n', 'utf-8').catch((err) => {
+        console.error(`[agents] Failed to write event to log ${logPath}:`, err)
+      })
       bus.emit('agent:event', id, event)
 
       if (event.type === 'agent:completed') {
@@ -215,7 +215,8 @@ async function consumeEvents(id: string, handle: AgentHandle, logPath: string): 
         break
       }
     }
-  } catch {
+  } catch (err) {
+    console.error(`[agents] Event stream error for agent ${id}:`, err)
     activeAgentsById.delete(id)
     if (handle.pid) activeAgentProcesses.delete(handle.pid)
     await updateAgentMeta(id, {
@@ -231,12 +232,12 @@ async function consumeEvents(id: string, handle: AgentHandle, logPath: string): 
 export async function killAgent(agentId: string): Promise<{ ok: boolean; error?: string }> {
   const handle = activeAgentsById.get(agentId)
   if (!handle) {
-    return { ok: false, error: 'Agent not found — may have already exited' }
+    return { ok: false, error: `Agent ${agentId} not found — may have already exited` }
   }
   try {
     await handle.stop()
-  } catch {
-    return { ok: false, error: 'Failed to stop agent' }
+  } catch (err) {
+    return { ok: false, error: `Failed to stop agent ${agentId}: ${(err as Error).message}` }
   }
   return { ok: true }
 }
@@ -246,9 +247,11 @@ export async function killAgent(agentId: string): Promise<{ ok: boolean; error?:
 export function sendToAgent(pid: number, message: string): { ok: boolean; error?: string } {
   const handle = activeAgentProcesses.get(pid)
   if (!handle) {
-    return { ok: false, error: 'Process not found or stdin closed' }
+    return { ok: false, error: `Process ${pid} not found or stdin closed` }
   }
-  handle.steer(message).catch(() => {})
+  handle.steer(message).catch((err) => {
+    console.error(`[agents] Failed to steer PID ${pid}:`, err)
+  })
   return { ok: true }
 }
 
@@ -260,8 +263,8 @@ export async function steerAgent(agentId: string, message: string): Promise<{ ok
     try {
       await handle.steer(message)
       return { ok: true }
-    } catch {
-      return { ok: false, error: 'Failed to steer agent' }
+    } catch (err) {
+      return { ok: false, error: `Failed to steer agent ${agentId}: ${(err as Error).message}` }
     }
   }
 

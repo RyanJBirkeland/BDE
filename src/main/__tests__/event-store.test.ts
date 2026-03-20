@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-// Mock the sprint-local module before importing event-store
-vi.mock('../handlers/sprint-local', () => ({
+// Mock the sprint-listeners module before importing event-store
+vi.mock('../handlers/sprint-listeners', () => ({
   onSprintMutation: vi.fn().mockReturnValue(() => {}),
 }))
 

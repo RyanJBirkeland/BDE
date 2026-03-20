@@ -7,7 +7,7 @@
  * "Dismiss" collapses back to raw JSON.
  */
 import { useState, useEffect } from 'react'
-import { useSprintStore } from '../../stores/sprint'
+import { useSprintTasks } from '../../stores/sprintTasks'
 import { useUIStore } from '../../stores/ui'
 import { toast } from '../../stores/toasts'
 import { tokens } from '../../design-system/tokens'
@@ -89,7 +89,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
     setState('creating')
     try {
       for (const { _id: _, ...ticket } of tickets) {
-        await useSprintStore.getState().createTask({
+        await useSprintTasks.getState().createTask({
           title: ticket.title,
           repo: ticket.repo,
           prompt: ticket.prompt,

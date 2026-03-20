@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useCallback } from 'react'
 import { useVisibilityAwareInterval } from './useVisibilityAwareInterval'
-import { useSprintStore } from '../stores/sprint'
+import { useSprintTasks } from '../stores/sprintTasks'
 import { usePrConflictsStore } from '../stores/prConflicts'
 import { toast } from '../stores/toasts'
 import { POLL_PR_STATUS_MS } from '../lib/constants'
@@ -13,10 +13,10 @@ import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 import type { SprintTask } from '../../../shared/types'
 
 export function usePrStatusPolling(): void {
-  const tasks = useSprintStore((s) => s.tasks)
-  const prMergedMap = useSprintStore((s) => s.prMergedMap)
-  const updateTask = useSprintStore((s) => s.updateTask)
-  const setPrMergedMap = useSprintStore((s) => s.setPrMergedMap)
+  const tasks = useSprintTasks((s) => s.tasks)
+  const prMergedMap = useSprintTasks((s) => s.prMergedMap)
+  const updateTask = useSprintTasks((s) => s.updateTask)
+  const setPrMergedMap = useSprintTasks((s) => s.setPrMergedMap)
 
   const prMergedRef = useRef(prMergedMap)
   prMergedRef.current = prMergedMap

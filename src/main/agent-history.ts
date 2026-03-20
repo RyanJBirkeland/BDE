@@ -1,6 +1,7 @@
 /**
  * Agent history — persistent storage for agent metadata and logs.
  * Metadata stored in SQLite agent_runs table; log files stay on disk at ~/.bde/agent-logs/.
+ * DB queries are delegated to data/agent-queries.ts.
  */
 import { mkdir, writeFile, appendFile, open, rm, readdir, rename, stat } from 'fs/promises'
 import { existsSync, readFileSync } from 'fs'
@@ -9,45 +10,23 @@ import { randomUUID } from 'crypto'
 import { getDb } from './db'
 import { BDE_AGENTS_INDEX as AGENTS_INDEX, BDE_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
 import { clearSprintTaskFk } from './handlers/sprint-local'
+import {
+  rowToMeta,
+  listAgents as _listAgents,
+  getAgentMeta as _getAgentMeta,
+  insertAgentRecord,
+  updateAgentMeta as _updateAgentMeta,
+  findAgentByPid as _findAgentByPid,
+  hasAgent as _hasAgent,
+  countAgents,
+  getAgentsToRemove,
+  deleteAgent,
+  getAgentLogPath,
+} from './data/agent-queries'
+import type { AgentRunRow } from './data/agent-queries'
 import type { AgentMeta } from '../shared/types'
 
 export type { AgentMeta }
-
-// --- Column mapping between snake_case DB rows and camelCase AgentMeta ---
-
-interface AgentRunRow {
-  id: string
-  pid: number | null
-  bin: string
-  task: string | null
-  repo: string | null
-  repo_path: string | null
-  model: string | null
-  status: string
-  log_path: string | null
-  started_at: string
-  finished_at: string | null
-  exit_code: number | null
-  source: string | null
-}
-
-function rowToMeta(row: AgentRunRow): AgentMeta {
-  return {
-    id: row.id,
-    pid: row.pid,
-    bin: row.bin,
-    model: row.model ?? 'unknown',
-    repo: row.repo ?? 'unknown',
-    repoPath: row.repo_path ?? '',
-    task: row.task ?? '',
-    startedAt: row.started_at,
-    finishedAt: row.finished_at,
-    exitCode: row.exit_code,
-    status: row.status as AgentMeta['status'],
-    logPath: row.log_path ?? '',
-    source: (row.source as AgentMeta['source']) ?? 'external'
-  }
-}
 
 // --- One-time migration from agents.json ---
 
@@ -104,13 +83,7 @@ function datePrefix(iso: string): string {
 
 export async function listAgents(limit = 100, status?: string): Promise<AgentMeta[]> {
   initAgentHistory()
-  const db = getDb()
-  if (status) {
-    return (db.prepare('SELECT * FROM agent_runs WHERE status = ? ORDER BY started_at DESC LIMIT ?')
-      .all(status, limit) as AgentRunRow[]).map(rowToMeta)
-  }
-  return (db.prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?')
-    .all(limit) as AgentRunRow[]).map(rowToMeta)
+  return _listAgents(getDb(), limit, status)
 }
 
 export async function createAgentRecord(
@@ -127,23 +100,16 @@ export async function createAgentRecord(
   const full: AgentMeta = { ...meta, logPath }
   await writeFile(join(logDir, 'meta.json'), JSON.stringify(full, null, 2), 'utf-8')
 
-  getDb().prepare(`
-    INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    meta.id, meta.pid, meta.bin, meta.task, meta.repo, meta.repoPath,
-    meta.model, meta.status, logPath, meta.startedAt, meta.finishedAt,
-    meta.exitCode, meta.source ?? 'external'
-  )
+  insertAgentRecord(getDb(), full)
 
   return full
 }
 
 export async function appendLog(id: string, content: string): Promise<void> {
   initAgentHistory()
-  const row = getDb().prepare('SELECT log_path FROM agent_runs WHERE id = ?').get(id) as { log_path: string } | undefined
-  if (!row?.log_path) return
-  await appendFile(row.log_path, content, 'utf-8')
+  const logPath = getAgentLogPath(getDb(), id)
+  if (!logPath) return
+  await appendFile(logPath, content, 'utf-8')
 }
 
 export async function readLog(
@@ -151,11 +117,11 @@ export async function readLog(
   fromByte = 0
 ): Promise<{ content: string; nextByte: number }> {
   initAgentHistory()
-  const row = getDb().prepare('SELECT log_path FROM agent_runs WHERE id = ?').get(id) as { log_path: string } | undefined
-  if (!row?.log_path) return { content: '', nextByte: fromByte }
+  const logPath = getAgentLogPath(getDb(), id)
+  if (!logPath) return { content: '', nextByte: fromByte }
   let fh: import('fs/promises').FileHandle | undefined
   try {
-    fh = await open(row.log_path, 'r')
+    fh = await open(logPath, 'r')
     const stats = await fh.stat()
     const size = stats.size
     if (fromByte >= size) return { content: '', nextByte: fromByte }
@@ -171,8 +137,7 @@ export async function readLog(
 
 export async function getAgentMeta(id: string): Promise<AgentMeta | null> {
   initAgentHistory()
-  const row = getDb().prepare('SELECT * FROM agent_runs WHERE id = ?').get(id) as AgentRunRow | undefined
-  return row ? rowToMeta(row) : null
+  return _getAgentMeta(getDb(), id)
 }
 
 export async function updateAgentMeta(
@@ -180,45 +145,13 @@ export async function updateAgentMeta(
   patch: Partial<AgentMeta>
 ): Promise<void> {
   initAgentHistory()
-  const db = getDb()
-
-  const columnMap: Record<string, string> = {
-    pid: 'pid',
-    bin: 'bin',
-    task: 'task',
-    repo: 'repo',
-    repoPath: 'repo_path',
-    model: 'model',
-    status: 'status',
-    logPath: 'log_path',
-    startedAt: 'started_at',
-    finishedAt: 'finished_at',
-    exitCode: 'exit_code',
-    source: 'source'
-  }
-
-  const setClauses: string[] = []
-  const values: unknown[] = []
-
-  for (const [key, value] of Object.entries(patch)) {
-    const col = columnMap[key]
-    if (col) {
-      setClauses.push(`${col} = ?`)
-      values.push(value)
-    }
-  }
-
-  if (setClauses.length === 0) return
-  values.push(id)
-
-  db.prepare(`UPDATE agent_runs SET ${setClauses.join(', ')} WHERE id = ?`).run(...values)
+  const row = _updateAgentMeta(getDb(), id, patch)
 
   // Also update per-agent meta.json on disk
-  const row = db.prepare('SELECT * FROM agent_runs WHERE id = ?').get(id) as AgentRunRow | undefined
   if (row?.log_path) {
     const metaPath = join(LOGS_DIR, datePrefix(row.started_at), row.id, 'meta.json')
     try {
-      await writeFile(metaPath, JSON.stringify(rowToMeta(row), null, 2), 'utf-8')
+      await writeFile(metaPath, JSON.stringify(rowToMeta(row as AgentRunRow), null, 2), 'utf-8')
     } catch {
       // Log dir may not exist for imported agents
     }
@@ -256,21 +189,16 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
   initAgentHistory()
   const db = getDb()
 
-  const total = db.prepare('SELECT COUNT(*) as cnt FROM agent_runs').get() as { cnt: number }
-  if (total.cnt <= maxCount) return
+  const total = countAgents(db)
+  if (total <= maxCount) return
 
-  // Get the IDs of agents to prune (oldest beyond maxCount)
-  const toRemove = db.prepare(
-    'SELECT id, started_at, log_path FROM agent_runs ORDER BY started_at DESC LIMIT -1 OFFSET ?'
-  ).all(maxCount) as { id: string; started_at: string; log_path: string | null }[]
-
+  const toRemove = getAgentsToRemove(db, maxCount)
   if (toRemove.length === 0) return
 
-  const deleteStmt = db.prepare('DELETE FROM agent_runs WHERE id = ?')
   const tx = db.transaction(() => {
     for (const row of toRemove) {
       clearSprintTaskFk(row.id)
-      deleteStmt.run(row.id)
+      deleteAgent(db, row.id)
     }
   })
   tx()
@@ -309,14 +237,10 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
 
 export async function hasAgent(id: string): Promise<boolean> {
   initAgentHistory()
-  const row = getDb().prepare('SELECT 1 FROM agent_runs WHERE id = ?').get(id)
-  return !!row
+  return _hasAgent(getDb(), id)
 }
 
 export async function findAgentByPid(pid: number): Promise<AgentMeta | null> {
   initAgentHistory()
-  const row = getDb().prepare(
-    "SELECT * FROM agent_runs WHERE pid = ? AND status = 'running' LIMIT 1"
-  ).get(pid) as AgentRunRow | undefined
-  return row ? rowToMeta(row) : null
+  return _findAgentByPid(getDb(), pid)
 }

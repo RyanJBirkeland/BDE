@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { QueueDashboard } from '../QueueDashboard'
-import type { QueueHealth } from '../../../stores/sprint'
+import type { QueueHealth } from '../../../stores/sprintEvents'
 
 function makeHealth(overrides: Partial<QueueHealth> = {}): QueueHealth {
   return {

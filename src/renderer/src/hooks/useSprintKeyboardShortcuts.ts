@@ -3,7 +3,7 @@
  * N -> new ticket, Escape -> close drawers/modal.
  */
 import { useEffect, type Dispatch, type SetStateAction } from 'react'
-import { useSprintStore } from '../stores/sprint'
+import { useSprintUI } from '../stores/sprintUI'
 
 interface UseSprintKeyboardShortcutsArgs {
   setModalOpen: Dispatch<SetStateAction<boolean>>
@@ -14,8 +14,8 @@ export function useSprintKeyboardShortcuts({
   setModalOpen,
   setConflictDrawerOpen,
 }: UseSprintKeyboardShortcutsArgs): void {
-  const selectedTaskId = useSprintStore((s) => s.selectedTaskId)
-  const setLogDrawerTaskId = useSprintStore((s) => s.setLogDrawerTaskId)
+  const selectedTaskId = useSprintUI((s) => s.selectedTaskId)
+  const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

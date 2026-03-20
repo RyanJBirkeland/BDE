@@ -3,7 +3,7 @@
  * Broadcasts task mutations to connected task runners.
  */
 import type { ServerResponse } from 'http'
-import { onSprintMutation } from '../handlers/sprint-local'
+import { onSprintMutation } from '../handlers/sprint-listeners'
 import type { SprintTask } from '../../shared/types'
 
 const HEARTBEAT_INTERVAL_MS = 30_000

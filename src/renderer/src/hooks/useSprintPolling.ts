@@ -4,7 +4,8 @@
  */
 import { useEffect, useRef, useMemo } from 'react'
 import { useVisibilityAwareInterval } from './useVisibilityAwareInterval'
-import { useSprintStore } from '../stores/sprint'
+import { useSprintTasks } from '../stores/sprintTasks'
+import { useSprintEvents } from '../stores/sprintEvents'
 import { subscribeSSE } from '../lib/taskRunnerSSE'
 import {
   POLL_SPRINT_INTERVAL,
@@ -14,10 +15,10 @@ import {
 import { TASK_STATUS } from '../../../shared/constants'
 
 export function useSprintPolling(): void {
-  const tasks = useSprintStore((s) => s.tasks)
-  const loadData = useSprintStore((s) => s.loadData)
-  const mergeSseUpdate = useSprintStore((s) => s.mergeSseUpdate)
-  const fetchQueueHealth = useSprintStore((s) => s.fetchQueueHealth)
+  const tasks = useSprintTasks((s) => s.tasks)
+  const loadData = useSprintTasks((s) => s.loadData)
+  const mergeSseUpdate = useSprintTasks((s) => s.mergeSseUpdate)
+  const fetchQueueHealth = useSprintEvents((s) => s.fetchQueueHealth)
 
   // Adaptive sprint polling — consistency backstop (SSE handles real-time)
   const hasActiveTasks = tasks.some((t) => t.status === TASK_STATUS.ACTIVE)

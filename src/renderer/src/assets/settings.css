@@ -55,3 +55,41 @@
   padding-bottom: 0;
   border-bottom: none;
 }
+
+/* Tab bar */
+.settings-view__tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--bde-border);
+  background: var(--glass-tint-dark);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bde-text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.settings-tab:hover {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+}
+
+.settings-tab--active {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+  border-color: var(--bde-border);
+}

@@ -13,7 +13,7 @@ import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { AgentList } from '../components/agents/AgentList'
 import { AgentDetail } from '../components/agents/AgentDetail'
 import { HealthBar } from '../components/agents/HealthBar'
-import { useSprintStore } from '../stores/sprint'
+import { useSprintEvents } from '../stores/sprintEvents'
 import { SpawnModal } from '../components/agents/SpawnModal'
 import { tokens } from '../design-system/tokens'
 import { POLL_SESSIONS_INTERVAL } from '../lib/constants'
@@ -147,7 +147,7 @@ export function AgentsView() {
 }
 
 function HealthBarWrapper() {
-  const queueHealth = useSprintStore((s) => s.queueHealth)
+  const queueHealth = useSprintEvents((s) => s.queueHealth)
   const connected = queueHealth !== null
   const stats = queueHealth ? {
     queued: queueHealth.queue.queued ?? 0,

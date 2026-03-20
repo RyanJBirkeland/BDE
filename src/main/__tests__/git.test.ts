@@ -148,15 +148,22 @@ describe('git.ts', () => {
       execFileAsyncMock.mockResolvedValueOnce({ stdout: 'M  src/file.ts\n?? untracked.ts\n', stderr: '' })
 
       const result = await gitStatus('/tmp/repo')
-      expect(result.files).toContainEqual({ path: 'src/file.ts', status: 'M', staged: true })
-      expect(result.files).toContainEqual({ path: 'untracked.ts', status: '?', staged: false })
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.files).toContainEqual({ path: 'src/file.ts', status: 'M', staged: true })
+        expect(result.data.files).toContainEqual({ path: 'untracked.ts', status: '?', staged: false })
+      }
     })
 
-    it('returns empty files on error', async () => {
+    it('returns error result on failure', async () => {
       execFileAsyncMock.mockRejectedValueOnce(new Error('not a git repo'))
 
       const result = await gitStatus('/tmp/repo')
-      expect(result.files).toEqual([])
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toContain('git status failed')
+        expect(result.error).toContain('/tmp/repo')
+      }
     })
   })
 
@@ -214,7 +221,10 @@ describe('git.ts', () => {
         ['diff', '--cached', '--', 'src/file.ts'],
         expect.objectContaining({ cwd: '/tmp/repo' })
       )
-      expect(result).toContain('staged diff')
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data).toContain('staged diff')
+      }
     })
 
     it('filenames with special chars are safe via execFileAsync', async () => {
@@ -227,10 +237,14 @@ describe('git.ts', () => {
       )
     })
 
-    it('returns empty string on error', async () => {
+    it('returns error result on failure', async () => {
       execFileAsyncMock.mockRejectedValueOnce(new Error('fail'))
 
-      expect(await gitDiffFile('/tmp/repo')).toBe('')
+      const result = await gitDiffFile('/tmp/repo')
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toContain('git diff failed')
+      }
     })
   })
 

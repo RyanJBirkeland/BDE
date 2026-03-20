@@ -13,7 +13,9 @@ import { NewTicketModal } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
 import { usePrConflictsStore } from '../../stores/prConflicts'
 import { useHealthCheckStore } from '../../stores/healthCheck'
-import { useSprintStore } from '../../stores/sprint'
+import { useSprintTasks } from '../../stores/sprintTasks'
+import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintEvents } from '../../stores/sprintEvents'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import { useSprintPolling } from '../../hooks/useSprintPolling'
@@ -34,25 +36,32 @@ export type { SprintTask }
 // --- Component ---
 
 export function SprintCenter() {
-  // --- Store state ---
-  const tasks = useSprintStore((s) => s.tasks)
-  const loading = useSprintStore((s) => s.loading)
-  const loadError = useSprintStore((s) => s.loadError)
-  const repoFilter = useSprintStore((s) => s.repoFilter)
-  const selectedTaskId = useSprintStore((s) => s.selectedTaskId)
-  const logDrawerTaskId = useSprintStore((s) => s.logDrawerTaskId)
-  const prMergedMap = useSprintStore((s) => s.prMergedMap)
-  const generatingIds = useSprintStore((s) => s.generatingIds)
-  const queueHealth = useSprintStore((s) => s.queueHealth)
+  // --- Task store state ---
+  const tasks = useSprintTasks((s) => s.tasks)
+  const loading = useSprintTasks((s) => s.loading)
+  const loadError = useSprintTasks((s) => s.loadError)
+  const prMergedMap = useSprintTasks((s) => s.prMergedMap)
 
-  const loadData = useSprintStore((s) => s.loadData)
-  const updateTask = useSprintStore((s) => s.updateTask)
-  const deleteTask = useSprintStore((s) => s.deleteTask)
-  const createTask = useSprintStore((s) => s.createTask)
-  const launchTask = useSprintStore((s) => s.launchTask)
-  const setRepoFilter = useSprintStore((s) => s.setRepoFilter)
-  const setSelectedTaskId = useSprintStore((s) => s.setSelectedTaskId)
-  const setLogDrawerTaskId = useSprintStore((s) => s.setLogDrawerTaskId)
+  const loadData = useSprintTasks((s) => s.loadData)
+  const updateTask = useSprintTasks((s) => s.updateTask)
+  const deleteTask = useSprintTasks((s) => s.deleteTask)
+  const createTask = useSprintTasks((s) => s.createTask)
+  const launchTask = useSprintTasks((s) => s.launchTask)
+
+  // --- UI store state ---
+  const repoFilter = useSprintUI((s) => s.repoFilter)
+  const selectedTaskId = useSprintUI((s) => s.selectedTaskId)
+  const logDrawerTaskId = useSprintUI((s) => s.logDrawerTaskId)
+  const generatingIds = useSprintUI((s) => s.generatingIds)
+
+  const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
+  const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
+  const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
+  const setGeneratingIds = useSprintUI((s) => s.setGeneratingIds)
+
+  // --- Events store state ---
+  const queueHealth = useSprintEvents((s) => s.queueHealth)
+  const initTaskOutputListener = useSprintEvents((s) => s.initTaskOutputListener)
 
   const { confirm, confirmProps } = useConfirm()
 
@@ -69,11 +78,45 @@ export function SprintCenter() {
   const logDrawerTask = logDrawerTaskId ? (tasks.find((t) => t.id === logDrawerTaskId) ?? null) : null
 
   // Subscribe to live task output events
-  const initTaskOutputListener = useSprintStore((s) => s.initTaskOutputListener)
   useEffect(() => {
     const cleanup = initTaskOutputListener()
     return cleanup
   }, [initTaskOutputListener])
+
+  // Bridge custom events from sprintTasks store to sprintUI store
+  useEffect(() => {
+    const handleGenerating = (e: Event) => {
+      const { taskId, generating } = (e as CustomEvent).detail
+      setGeneratingIds((prev) => {
+        if (generating) {
+          if (prev.has(taskId)) return prev
+          return new Set(prev).add(taskId)
+        } else {
+          if (!prev.has(taskId)) return prev
+          const next = new Set(prev)
+          next.delete(taskId)
+          return next
+        }
+      })
+    }
+    const handleSelectTask = (e: Event) => {
+      const { taskId } = (e as CustomEvent).detail
+      setSelectedTaskId(taskId)
+    }
+    const handleTaskDeleted = (e: Event) => {
+      const { taskId } = (e as CustomEvent).detail
+      const current = useSprintUI.getState().selectedTaskId
+      if (current === taskId) setSelectedTaskId(null)
+    }
+    window.addEventListener('sprint:generating', handleGenerating)
+    window.addEventListener('sprint:select-task', handleSelectTask)
+    window.addEventListener('sprint:task-deleted', handleTaskDeleted)
+    return () => {
+      window.removeEventListener('sprint:generating', handleGenerating)
+      window.removeEventListener('sprint:select-task', handleSelectTask)
+      window.removeEventListener('sprint:task-deleted', handleTaskDeleted)
+    }
+  }, [setGeneratingIds, setSelectedTaskId])
 
   // Keep notification hook aware of which task's LogDrawer is open
   useEffect(() => {
@@ -110,10 +153,10 @@ export function SprintCenter() {
   )
 
   // Within-column reorder (optimistic only — no column_order column in DB yet)
-  const setTasks = useSprintStore((s) => s.setTasks)
+  const setTasks = useSprintTasks((s) => s.setTasks)
   const handleReorder = useCallback(
     (_status: SprintTask['status'], orderedIds: string[]) => {
-      const current = useSprintStore.getState().tasks
+      const current = useSprintTasks.getState().tasks
       const idOrder = new Map(orderedIds.map((id, i) => [id, i]))
       setTasks([...current].sort((a, b) => {
         const ai = idOrder.get(a.id)

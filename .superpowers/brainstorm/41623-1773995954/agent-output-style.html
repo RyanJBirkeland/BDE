@@ -1,0 +1,114 @@
+<h2>How should agent output be rendered?</h2>
+<p class="subtitle">Today it's raw event JSON. Here are three directions for making it readable.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Chat Thread</h3>
+      <p>Render agent output like a conversation. Thinking blocks collapsed, tool calls as summary cards, text responses as markdown bubbles. Similar to how Claude Code looks in a terminal — but styled.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-header">Agent: fix-auth-bug</div>
+        <div class="mockup-body" style="font-size: 13px; line-height: 1.5;">
+          <div style="padding: 8px 12px; background: rgba(139,92,246,0.1); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #8b5cf6;">
+            <span style="color: #8b5cf6; font-size: 11px;">THINKING</span>
+            <span style="color: #666; font-size: 11px; margin-left: 8px;">1,247 tokens</span>
+            <span style="color: #888; float: right; font-size: 11px; cursor: pointer;">expand</span>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(59,130,246,0.1); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #3b82f6; font-size: 11px;">TOOL</span>
+              <span style="font-weight: 600; font-size: 13px;">Read</span>
+              <span style="color: #888; font-size: 12px;">src/auth/middleware.ts</span>
+              <span style="color: #22c55e; margin-left: auto; font-size: 11px;">OK</span>
+            </div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
+            <p style="margin: 0; color: #e2e8f0;">Found the bug — the session token comparison uses <code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">=== </code> on Buffer objects which compares references, not content. Switching to <code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">timingSafeEqual()</code>.</p>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(59,130,246,0.1); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #3b82f6;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #3b82f6; font-size: 11px;">TOOL</span>
+              <span style="font-weight: 600; font-size: 13px;">Edit</span>
+              <span style="color: #888; font-size: 12px;">src/auth/middleware.ts:42</span>
+              <span style="color: #22c55e; margin-left: auto; font-size: 11px;">OK</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Timeline / Activity Feed</h3>
+      <p>Vertical timeline with icons per event type. Compact, scannable, good for monitoring multiple agents at once. Thinking is a dot, tool calls are icons, text is inline.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-header">Agent: fix-auth-bug</div>
+        <div class="mockup-body" style="font-size: 13px; line-height: 1.6;">
+          <div style="border-left: 2px solid #333; padding-left: 16px; margin-left: 8px;">
+            <div style="position: relative; margin-bottom: 10px;">
+              <div style="position: absolute; left: -22px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #8b5cf6;"></div>
+              <span style="color: #888; font-size: 11px;">12:04:01</span>
+              <span style="color: #8b5cf6; font-size: 11px; margin-left: 6px;">Thinking</span>
+              <span style="color: #666; font-size: 11px;">(1,247 tok)</span>
+            </div>
+            <div style="position: relative; margin-bottom: 10px;">
+              <div style="position: absolute; left: -22px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #3b82f6;"></div>
+              <span style="color: #888; font-size: 11px;">12:04:03</span>
+              <span style="font-size: 12px;">Read <code style="background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 3px; font-size: 11px;">src/auth/middleware.ts</code></span>
+              <span style="color: #22c55e; font-size: 11px;">OK</span>
+            </div>
+            <div style="position: relative; margin-bottom: 10px;">
+              <div style="position: absolute; left: -22px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0;"></div>
+              <span style="color: #888; font-size: 11px;">12:04:04</span>
+              <span style="color: #e2e8f0; font-size: 12px;">Found the bug — Buffer reference comparison...</span>
+            </div>
+            <div style="position: relative; margin-bottom: 10px;">
+              <div style="position: absolute; left: -22px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #3b82f6;"></div>
+              <span style="color: #888; font-size: 11px;">12:04:05</span>
+              <span style="font-size: 12px;">Edit <code style="background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 3px; font-size: 11px;">src/auth/middleware.ts:42</code></span>
+              <span style="color: #22c55e; font-size: 11px;">OK</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid: Chat + Collapsible Detail</h3>
+      <p>Default view is the chat thread (A), but each event is expandable to show raw detail. Tool calls expand to show input/output. Thinking blocks expand to show full reasoning. Best of both worlds but more complex.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-header">Agent: fix-auth-bug</div>
+        <div class="mockup-body" style="font-size: 13px; line-height: 1.5;">
+          <div style="padding: 8px 12px; background: rgba(139,92,246,0.1); border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #8b5cf6; cursor: pointer;">
+            <div style="display: flex; align-items: center;">
+              <span style="color: #8b5cf6; font-size: 11px;">THINKING</span>
+              <span style="color: #666; font-size: 11px; margin-left: 8px;">1,247 tokens</span>
+              <span style="color: #888; margin-left: auto; font-size: 11px;">click to expand</span>
+            </div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(59,130,246,0.1); border-radius: 8px; margin-bottom: 2px; border-left: 3px solid #3b82f6; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #3b82f6; font-size: 11px;">TOOL</span>
+              <span style="font-weight: 600; font-size: 13px;">Read</span>
+              <span style="color: #888; font-size: 12px;">src/auth/middleware.ts</span>
+              <span style="color: #22c55e; margin-left: auto; font-size: 11px;">OK</span>
+            </div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(59,130,246,0.05); border-radius: 0 0 8px 8px; margin-bottom: 8px; border-left: 3px solid rgba(59,130,246,0.3); font-size: 11px; color: #888;">
+            <div style="margin-bottom: 4px; color: #999;">Input: <code style="background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 3px;">{ "path": "src/auth/middleware.ts", "lines": "1-80" }</code></div>
+            <div style="color: #999;">Result: <span style="color: #666;">143 lines read, 3.2KB</span></div>
+          </div>
+          <div style="padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
+            <p style="margin: 0; color: #e2e8f0;">Found the bug — switching to <code style="background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px;">timingSafeEqual()</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -2,6 +2,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 
 import { parsePrUrl } from '../shared/github'
+import type { Result } from '../shared/types'
 import { getGitHubToken } from './config'
 import { githubFetch, fetchAllGitHubPages } from './github-fetch'
 import { getRepoPaths as getRepoPathsFromSettings } from './paths'
@@ -18,7 +19,7 @@ export interface GitFileStatus {
   staged: boolean
 }
 
-export async function gitStatus(cwd: string): Promise<{ files: GitFileStatus[] }> {
+export async function gitStatus(cwd: string): Promise<Result<{ files: GitFileStatus[] }>> {
   try {
     const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
       cwd,
@@ -41,22 +42,22 @@ export async function gitStatus(cwd: string): Promise<{ files: GitFileStatus[] }
         files.push({ path: filePath, status: '?', staged: false })
       }
     }
-    return { files }
-  } catch {
-    return { files: [] }
+    return { ok: true, data: { files } }
+  } catch (err) {
+    return { ok: false, error: `git status failed in ${cwd}: ${(err as Error).message}` }
   }
 }
 
-export async function gitDiffFile(cwd: string, file?: string): Promise<string> {
+export async function gitDiffFile(cwd: string, file?: string): Promise<Result<string>> {
   try {
     const unstagedArgs = file ? ['diff', '--', file] : ['diff']
     const stagedArgs = file ? ['diff', '--cached', '--', file] : ['diff', '--cached']
     const opts = { cwd, encoding: 'utf-8' as const, maxBuffer: 10 * 1024 * 1024 }
     const { stdout: unstaged } = await execFileAsync('git', unstagedArgs, opts)
     const { stdout: staged } = await execFileAsync('git', stagedArgs, opts)
-    return staged + unstaged
-  } catch {
-    return ''
+    return { ok: true, data: staged + unstaged }
+  } catch (err) {
+    return { ok: false, error: `git diff failed in ${cwd}${file ? ` for ${file}` : ''}: ${(err as Error).message}` }
   }
 }
 

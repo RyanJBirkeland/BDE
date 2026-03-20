@@ -184,3 +184,6 @@ export interface Attachment {
   /** Text content for text files */
   content?: string
 }
+
+/** Lightweight result type for expected failures. */
+export type Result<T> = { ok: true; data: T } | { ok: false; error: string }

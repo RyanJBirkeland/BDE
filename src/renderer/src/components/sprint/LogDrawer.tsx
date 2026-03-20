@@ -7,7 +7,7 @@ import { EventCard } from './EventCard'
 import { Button } from '../ui/Button'
 import { tokens } from '../../design-system/tokens'
 import { toast } from '../../stores/toasts'
-import { useSprintStore } from '../../stores/sprint'
+import { useSprintEvents } from '../../stores/sprintEvents'
 import { subscribeSSE, type LogChunkEvent, type LogDoneEvent } from '../../lib/taskRunnerSSE'
 import { TASK_STATUS, AGENT_STATUS } from '../../../../shared/constants'
 import type { TaskOutputEvent } from '../../../../shared/queue-api-contract'
@@ -29,7 +29,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
   const fromByteRef = useRef(0)
 
   // Streaming events from the store
-  const storeEvents = useSprintStore((s) => (task ? s.taskEvents[task.id] : undefined))
+  const storeEvents = useSprintEvents((s) => (task ? s.taskEvents[task.id] : undefined))
 
   // AgentEvents store for ChatRenderer
   const agentEvents = useAgentEventsStore((s) =>

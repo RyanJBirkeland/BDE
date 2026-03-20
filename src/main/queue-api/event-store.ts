@@ -3,7 +3,7 @@
  * Events are transient — cleared when tasks reach terminal status.
  */
 import type { TaskOutputEvent } from '../../shared/queue-api-contract'
-import { onSprintMutation } from '../handlers/sprint-local'
+import { onSprintMutation } from '../handlers/sprint-listeners'
 
 const eventStore = new Map<string, TaskOutputEvent[]>()
 export const MAX_EVENTS_PER_TASK = 500

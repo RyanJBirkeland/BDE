@@ -3,40 +3,32 @@ import { join } from 'path'
 import { homedir } from 'os'
 import { getDb } from './db'
 import { OPENCLAW_CONFIG_PATH } from './paths'
+import {
+  getSetting as _getSetting,
+  setSetting as _setSetting,
+  deleteSetting as _deleteSetting,
+  getSettingJson as _getSettingJson,
+  setSettingJson as _setSettingJson,
+} from './data/settings-queries'
 
 export function getSetting(key: string): string | null {
-  const row = getDb()
-    .prepare('SELECT value FROM settings WHERE key = ?')
-    .get(key) as { value: string } | undefined
-  return row?.value ?? null
+  return _getSetting(getDb(), key)
 }
 
 export function setSetting(key: string, value: string): void {
-  getDb()
-    .prepare(
-      `INSERT INTO settings (key, value, updated_at)
-       VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
-    )
-    .run(key, value)
+  _setSetting(getDb(), key, value)
 }
 
 export function deleteSetting(key: string): void {
-  getDb().prepare('DELETE FROM settings WHERE key = ?').run(key)
+  _deleteSetting(getDb(), key)
 }
 
 export function getSettingJson<T>(key: string): T | null {
-  const raw = getSetting(key)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as T
-  } catch {
-    return null
-  }
+  return _getSettingJson<T>(getDb(), key)
 }
 
 export function setSettingJson<T>(key: string, value: T): void {
-  setSetting(key, JSON.stringify(value))
+  _setSettingJson<T>(getDb(), key, value)
 }
 
 /**
