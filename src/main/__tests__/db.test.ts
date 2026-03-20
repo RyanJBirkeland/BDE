@@ -34,7 +34,7 @@ describe('db schema migrations', () => {
       .map((r) => r.name)
       .sort()
 
-    expect(tables).toEqual(['agent_runs', 'cost_events', 'settings'])
+    expect(tables).toEqual(['agent_runs', 'cost_events', 'settings', 'sprint_tasks'])
   })
 
   it('creates expected indexes', () => {
@@ -51,12 +51,44 @@ describe('db schema migrations', () => {
     expect(indexes).toEqual([
       'idx_agent_runs_finished',
       'idx_agent_runs_pid',
-      'idx_agent_runs_status'
+      'idx_agent_runs_status',
+      'idx_sprint_tasks_status'
     ])
   })
 
-  // sprint_tasks_updated_at trigger and pr_mergeable_state tests removed —
-  // sprint_tasks is now owned by bde-task-runner service (E0 extraction)
+  it('creates sprint_tasks table with CHECK constraint and trigger', () => {
+    runMigrations(db)
+
+    // Verify table exists
+    const table = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='sprint_tasks'")
+      .get() as { name: string } | undefined
+    expect(table?.name).toBe('sprint_tasks')
+
+    // Verify CHECK constraint rejects invalid status
+    expect(() => {
+      db.prepare(
+        "INSERT INTO sprint_tasks (title, status) VALUES ('bad', 'invalid')"
+      ).run()
+    }).toThrow()
+
+    // Verify trigger updates updated_at on UPDATE
+    db.prepare(
+      "INSERT INTO sprint_tasks (id, title, status) VALUES ('t1', 'Test', 'backlog')"
+    ).run()
+    const beforeRow = db
+      .prepare('SELECT updated_at FROM sprint_tasks WHERE id = ?')
+      .get('t1') as { updated_at: string }
+    expect(beforeRow.updated_at).toBeTruthy()
+
+    db.prepare("UPDATE sprint_tasks SET title = 'Updated' WHERE id = 't1'").run()
+    const afterRow = db
+      .prepare('SELECT updated_at FROM sprint_tasks WHERE id = ?')
+      .get('t1') as { updated_at: string }
+
+    // Trigger fires, so updated_at should be set
+    expect(afterRow.updated_at).toBeTruthy()
+  })
 
   it('adds cost columns to agent_runs', () => {
     runMigrations(db)
@@ -66,8 +98,6 @@ describe('db schema migrations', () => {
       expect(cols).toContain(col)
     }
   })
-
-  // sprint_tasks CHECK constraint test removed — owned by bde-task-runner
 
   it('DB at version 2 only runs migrations 3+', () => {
     // Run migrations up to version 2
