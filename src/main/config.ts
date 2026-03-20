@@ -33,6 +33,14 @@ export function getTaskRunnerConfig(): TaskRunnerConfig | null {
   return { url: url ?? 'http://127.0.0.1:18799', apiKey }
 }
 
+export function getAgentProvider(): 'sdk' | 'cli' {
+  return (getSetting('agent.provider') as 'sdk' | 'cli') ?? 'sdk'
+}
+
+export function getEventRetentionDays(): number {
+  return parseInt(getSetting('agent.eventRetentionDays') ?? '30', 10)
+}
+
 export function getSupabaseConfig(): SupabaseConfig | null {
   const url = getSetting('supabase.url') ?? process.env['VITE_SUPABASE_URL'] ?? null
   const anonKey = getSetting('supabase.anonKey') ?? process.env['VITE_SUPABASE_ANON_KEY'] ?? null
