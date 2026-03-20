@@ -307,4 +307,84 @@ describe('NewTicketModal', () => {
     )
     expect(defaultProps.onClose).toHaveBeenCalled()
   })
+
+  describe('Task Template dropdown', () => {
+    it('loads template names from settings on mount', async () => {
+      vi.mocked(window.api.settings.getJson).mockResolvedValue([
+        { name: 'bugfix', promptPrefix: 'Fix bugs' },
+        { name: 'feature', promptPrefix: 'Build features' },
+        { name: 'custom', promptPrefix: 'Custom template' },
+      ])
+
+      render(<NewTicketModal {...defaultProps} />)
+
+      await waitFor(() => {
+        const select = screen.getByLabelText('Task Template') as HTMLSelectElement
+        expect(select).toBeInTheDocument()
+        const options = Array.from(select.options).map((o) => o.value)
+        expect(options).toContain('bugfix')
+        expect(options).toContain('feature')
+        expect(options).toContain('custom')
+      })
+    })
+
+    it('falls back to defaults when settings returns null', async () => {
+      vi.mocked(window.api.settings.getJson).mockResolvedValue(null)
+
+      render(<NewTicketModal {...defaultProps} />)
+
+      await waitFor(() => {
+        const select = screen.getByLabelText('Task Template') as HTMLSelectElement
+        const options = Array.from(select.options).map((o) => o.value)
+        expect(options).toContain('bugfix')
+        expect(options).toContain('feature')
+        expect(options).toContain('refactor')
+        expect(options).toContain('test')
+      })
+    })
+
+    it('includes template_name in onCreate when template is selected', async () => {
+      vi.mocked(window.api.settings.getJson).mockResolvedValue([
+        { name: 'bugfix', promptPrefix: 'Fix bugs' },
+        { name: 'feature', promptPrefix: 'Build features' },
+      ])
+
+      const user = userEvent.setup()
+      render(<NewTicketModal {...defaultProps} />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Task Template')).toBeInTheDocument()
+      })
+
+      await user.type(screen.getByPlaceholderText(/Fix toast z-index/), 'Fix the bug')
+      await user.selectOptions(screen.getByLabelText('Task Template'), 'bugfix')
+      await user.click(screen.getByRole('button', { name: /Save — Paul writes the spec/ }))
+
+      expect(defaultProps.onCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Fix the bug',
+          template_name: 'bugfix',
+        })
+      )
+    })
+
+    it('omits template_name from onCreate when no template is selected', async () => {
+      vi.mocked(window.api.settings.getJson).mockResolvedValue([
+        { name: 'bugfix', promptPrefix: 'Fix bugs' },
+      ])
+
+      const user = userEvent.setup()
+      render(<NewTicketModal {...defaultProps} />)
+
+      await user.type(screen.getByPlaceholderText(/Fix toast z-index/), 'Some task')
+      await user.click(screen.getByRole('button', { name: /Save — Paul writes the spec/ }))
+
+      expect(defaultProps.onCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Some task',
+          template_name: undefined,
+        })
+      )
+    })
+  })
 })

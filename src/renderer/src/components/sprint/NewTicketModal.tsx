@@ -6,6 +6,8 @@ import { REPO_OPTIONS } from '../../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { toast } from '../../stores/toasts'
 import { DesignModeContent } from './DesignModeContent'
+import { DEFAULT_TASK_TEMPLATES } from '../../../../shared/constants'
+import type { TaskTemplate } from '../../../../shared/types'
 
 type TicketMode = 'quick' | 'template' | 'design'
 
@@ -16,6 +18,7 @@ export type CreateTicketData = {
   prompt: string
   spec: string | null
   priority: number
+  template_name?: string
 }
 
 type NewTicketModalProps = {
@@ -78,6 +81,16 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
   const [spec, setSpec] = useState('')
   const [generating, setGenerating] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
+  const [taskTemplateNames, setTaskTemplateNames] = useState<string[]>([])
+  const [taskTemplateName, setTaskTemplateName] = useState('')
+
+  // Load task template names from settings
+  useEffect(() => {
+    window.api.settings.getJson('task.templates').then((raw) => {
+      const templates = (Array.isArray(raw) ? raw : DEFAULT_TASK_TEMPLATES) as TaskTemplate[]
+      setTaskTemplateNames(templates.map((t) => t.name))
+    })
+  }, [])
 
   useEffect(() => {
     if (open) {
@@ -88,6 +101,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
       setSelectedTemplate(null)
       setSpec('')
       setGenerating(false)
+      setTaskTemplateName('')
       setTimeout(() => titleRef.current?.focus(), 100)
     }
   }, [open])
@@ -178,6 +192,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
         prompt: trimmed,
         spec: null,
         priority: 3,
+        template_name: taskTemplateName || undefined,
       })
       onClose()
       return
@@ -191,6 +206,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
       prompt: spec || trimmed,
       spec: spec || null,
       priority,
+      template_name: taskTemplateName || undefined,
     })
     onClose()
   }
@@ -273,6 +289,22 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
                   ))}
                 </select>
               </div>
+              <div className="new-ticket-modal__field">
+                <label className="new-ticket-modal__label" htmlFor="task-template-select">Task Template</label>
+                <select
+                  id="task-template-select"
+                  className="sprint-tasks__select"
+                  value={taskTemplateName}
+                  onChange={(e) => setTaskTemplateName(e.target.value)}
+                >
+                  <option value="">None</option>
+                  {taskTemplateNames.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <p className="new-ticket-modal__quick-hint">
                 Paul will write the spec in the background. Review it in SpecDrawer before launching.
               </p>
@@ -321,6 +353,22 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
                     {PRIORITY_OPTIONS.map((p) => (
                       <option key={p.value} value={p.value}>
                         {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="new-ticket-modal__field">
+                  <label className="new-ticket-modal__label" htmlFor="task-template-select-tpl">Task Template</label>
+                  <select
+                    id="task-template-select-tpl"
+                    className="sprint-tasks__select"
+                    value={taskTemplateName}
+                    onChange={(e) => setTaskTemplateName(e.target.value)}
+                  >
+                    <option value="">None</option>
+                    {taskTemplateNames.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
                       </option>
                     ))}
                   </select>

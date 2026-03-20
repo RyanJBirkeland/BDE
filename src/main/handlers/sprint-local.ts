@@ -4,7 +4,9 @@ import { getDb } from '../db'
 import { getSpecsRoot } from '../paths'
 import { readFile } from 'fs/promises'
 import { resolve } from 'path'
-import type { SprintTask } from '../../shared/types'
+import type { SprintTask, TaskTemplate, ClaimedTask } from '../../shared/types'
+import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
+import { getSettingJson } from '../settings'
 
 function validateSpecPath(relativePath: string): string {
   const specsRoot = getSpecsRoot()
@@ -41,6 +43,7 @@ export interface CreateTaskInput {
   spec?: string
   priority?: number
   status?: string
+  template_name?: string
 }
 
 // --- Mutation listener registry ---
@@ -77,6 +80,7 @@ const UPDATE_ALLOWLIST = new Set([
   'agent_run_id',
   'started_at',
   'completed_at',
+  'template_name',
 ])
 
 // --- Exported query functions (used by queue-api, git-handlers, agent-history) ---
@@ -273,8 +277,8 @@ export function registerSprintLocalHandlers(): void {
   safeHandle('sprint:create', (_e, task: CreateTaskInput) => {
     const row = getDb()
       .prepare(
-        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status)
-         VALUES (@title, @repo, @prompt, @spec, @notes, @priority, @status)
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name)
+         VALUES (@title, @repo, @prompt, @spec, @notes, @priority, @status, @template_name)
          RETURNING *`
       )
       .get({
@@ -285,6 +289,7 @@ export function registerSprintLocalHandlers(): void {
         notes: task.notes ?? null,
         priority: task.priority ?? 0,
         status: task.status ?? 'backlog',
+        template_name: task.template_name ?? null,
       }) as SprintTask
 
     notifyMutation('created', row)
@@ -371,6 +376,22 @@ export function registerSprintLocalHandlers(): void {
       }
     }
   )
+
+  safeHandle('sprint:claimTask', (_e, taskId: string): ClaimedTask | null => {
+    const task = getDb()
+      .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
+      .get(taskId) as SprintTask | undefined
+    if (!task) return null
+
+    let templatePromptPrefix: string | null = null
+    if (task.template_name) {
+      const templates = getSettingJson<TaskTemplate[]>('task.templates') ?? DEFAULT_TASK_TEMPLATES as unknown as TaskTemplate[]
+      const match = templates.find((t) => t.name === task.template_name)
+      templatePromptPrefix = match?.promptPrefix ?? null
+    }
+
+    return { ...task, templatePromptPrefix }
+  })
 
   safeHandle('sprint:healthCheck', () => {
     // Local health check — just verify the table is accessible

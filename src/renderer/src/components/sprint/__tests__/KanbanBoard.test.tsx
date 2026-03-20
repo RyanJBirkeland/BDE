@@ -66,6 +66,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     claimed_by: null,
     started_at: null,
     completed_at: null,
+    template_name: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     ...overrides,

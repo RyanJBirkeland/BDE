@@ -47,6 +47,7 @@ function initSchema(db: Database.Database): void {
       pr_status    TEXT CHECK(pr_status IS NULL OR pr_status IN ('open','merged','closed','draft')),
       pr_mergeable_state TEXT,
       agent_run_id TEXT REFERENCES agent_runs(id),
+      template_name TEXT,
       started_at   TEXT,
       completed_at TEXT,
       created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
@@ -224,6 +225,95 @@ describe('sprint SQLite handlers', () => {
     it('is a no-op for non-existent id', () => {
       const info = db.prepare('DELETE FROM sprint_tasks WHERE id = ?').run('ghost')
       expect(info.changes).toBe(0)
+    })
+  })
+
+  describe('sprint:create with template_name', () => {
+    it('inserts a task with template_name', () => {
+      const result = db
+        .prepare(
+          `INSERT INTO sprint_tasks (title, repo, prompt, priority, status, template_name)
+           VALUES (@title, @repo, @prompt, @priority, @status, @template_name)
+           RETURNING *`
+        )
+        .get({
+          title: 'Fix the bug',
+          repo: 'bde',
+          prompt: 'Fix the bug',
+          priority: 1,
+          status: 'backlog',
+          template_name: 'bugfix',
+        }) as Record<string, unknown>
+
+      expect(result.template_name).toBe('bugfix')
+    })
+
+    it('allows null template_name', () => {
+      const result = db
+        .prepare(
+          `INSERT INTO sprint_tasks (title, repo, prompt, priority, status, template_name)
+           VALUES (@title, @repo, @prompt, @priority, @status, @template_name)
+           RETURNING *`
+        )
+        .get({
+          title: 'No template',
+          repo: 'bde',
+          prompt: 'No template',
+          priority: 1,
+          status: 'backlog',
+          template_name: null,
+        }) as Record<string, unknown>
+
+      expect(result.template_name).toBeNull()
+    })
+  })
+
+  describe('sprint:claimTask template resolution', () => {
+    it('returns templatePromptPrefix when template_name matches', () => {
+      db.prepare(
+        "INSERT INTO sprint_tasks (id, title, template_name) VALUES ('c1', 'Fix it', 'bugfix')"
+      ).run()
+
+      const task = db
+        .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
+        .get('c1') as Record<string, unknown>
+
+      expect(task.template_name).toBe('bugfix')
+
+      const templates = [
+        { name: 'bugfix', promptPrefix: 'You are fixing a bug.' },
+        { name: 'feature', promptPrefix: 'You are building a feature.' },
+      ]
+      const match = templates.find((t) => t.name === task.template_name)
+      expect(match?.promptPrefix).toBe('You are fixing a bug.')
+    })
+
+    it('returns null templatePromptPrefix when template_name does not match any template', () => {
+      db.prepare(
+        "INSERT INTO sprint_tasks (id, title, template_name) VALUES ('c2', 'Unknown', 'nonexistent')"
+      ).run()
+
+      const task = db
+        .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
+        .get('c2') as Record<string, unknown>
+
+      const templates = [
+        { name: 'bugfix', promptPrefix: 'You are fixing a bug.' },
+      ]
+      const match = templates.find((t) => t.name === task.template_name)
+      expect(match).toBeUndefined()
+    })
+
+    it('returns null templatePromptPrefix when no template_name is set', () => {
+      db.prepare(
+        "INSERT INTO sprint_tasks (id, title) VALUES ('c3', 'No template')"
+      ).run()
+
+      const task = db
+        .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
+        .get('c3') as Record<string, unknown>
+
+      expect(task.template_name).toBeNull()
     })
   })
 

@@ -36,8 +36,20 @@ export interface SprintTask {
   claimed_by: string | null
   started_at: string | null
   completed_at: string | null
+  template_name: string | null
   updated_at: string
   created_at: string
+}
+
+/** Task template — named prompt prefix resolved at claim time. */
+export interface TaskTemplate {
+  name: string
+  promptPrefix: string
+}
+
+/** A claimed task with an optional template prompt prefix. */
+export interface ClaimedTask extends SprintTask {
+  templatePromptPrefix: string | null
 }
 
 export interface SpawnLocalAgentArgs {

@@ -46,6 +46,7 @@ export interface CreateTicketInput {
   notes?: string
   spec?: string | null
   priority: number
+  template_name?: string
 }
 
 export const useSprintStore = create<SprintState>((set, get) => ({
@@ -118,6 +119,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
       claimed_by: null,
       started_at: null,
       completed_at: null,
+      template_name: data.template_name ?? null,
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }
@@ -132,6 +134,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
         spec: data.spec || undefined,
         priority: data.priority,
         status: TASK_STATUS.BACKLOG,
+        template_name: data.template_name || undefined,
       })) as SprintTask
 
       if (result?.id) {

@@ -171,6 +171,16 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN claimed_by TEXT')
       }
     }
+  },
+  {
+    version: 8,
+    description: 'Add template_name column to sprint_tasks',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map(c => c.name)
+      if (!cols.includes('template_name')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN template_name TEXT')
+      }
+    }
   }
 ]
 

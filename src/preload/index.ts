@@ -119,7 +119,9 @@ const api = {
       spec?: string
       priority?: number
       status?: string
+      template_name?: string
     }) => typedInvoke('sprint:create', task),
+    claimTask: (taskId: string) => typedInvoke('sprint:claimTask', taskId),
     update: (id: string, patch: Record<string, unknown>) =>
       typedInvoke('sprint:update', id, patch),
     readLog: (agentId: string, fromByte?: number) =>

@@ -11,6 +11,8 @@ import { useThemeStore } from '../stores/theme'
 import { toast } from '../stores/toasts'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
+import { DEFAULT_TASK_TEMPLATES } from '../../../shared/constants'
+import type { TaskTemplate } from '../../../shared/types'
 
 /* intentional: literal color values for accent color picker swatches */
 const ACCENT_PRESETS = [
@@ -230,6 +232,111 @@ function RepositoriesSection(): React.JSX.Element {
           <Plus size={14} /> Add Repository
         </Button>
       )}
+    </section>
+  )
+}
+
+// ---- Task Templates Section ----
+
+function TaskTemplatesSection(): React.JSX.Element {
+  const [templates, setTemplates] = useState<TaskTemplate[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    window.api.settings.getJson('task.templates').then((raw) => {
+      if (Array.isArray(raw)) {
+        setTemplates(raw as TaskTemplate[])
+      } else {
+        const defaults = DEFAULT_TASK_TEMPLATES.map((t) => ({ ...t }))
+        setTemplates(defaults)
+        window.api.settings.setJson('task.templates', defaults)
+      }
+      setLoaded(true)
+    })
+  }, [])
+
+  const saveTemplates = useCallback(async (updated: TaskTemplate[]) => {
+    await window.api.settings.setJson('task.templates', updated)
+    setTemplates(updated)
+  }, [])
+
+  const handleNameChange = useCallback(
+    (index: number, name: string) => {
+      const updated = templates.map((t, i) => (i === index ? { ...t, name } : t))
+      saveTemplates(updated)
+    },
+    [templates, saveTemplates]
+  )
+
+  const handlePrefixChange = useCallback(
+    (index: number, promptPrefix: string) => {
+      const updated = templates.map((t, i) => (i === index ? { ...t, promptPrefix } : t))
+      saveTemplates(updated)
+    },
+    [templates, saveTemplates]
+  )
+
+  const handleAdd = useCallback(() => {
+    const updated = [...templates, { name: '', promptPrefix: '' }]
+    saveTemplates(updated)
+  }, [templates, saveTemplates])
+
+  const handleRemove = useCallback(
+    (index: number) => {
+      const updated = templates.filter((_, i) => i !== index)
+      saveTemplates(updated)
+      toast.success('Template removed')
+    },
+    [templates, saveTemplates]
+  )
+
+  if (!loaded) return <section className="settings-section" />
+
+  return (
+    <section className="settings-section">
+      <h2 className="settings-section__title bde-section-title">Task Templates</h2>
+      <div className="settings-templates">
+        {templates.map((t, i) => (
+          <div key={i} className="settings-template-row">
+            <div className="settings-template-row__header">
+              <input
+                className="settings-field__input"
+                placeholder="Template name"
+                value={t.name}
+                onChange={(e) => handleNameChange(i, e.target.value)}
+              />
+              <Button
+                variant="icon"
+                size="sm"
+                onClick={() => handleRemove(i)}
+                title="Remove template"
+                type="button"
+              >
+                <Trash2 size={14} />
+              </Button>
+            </div>
+            <textarea
+              className="settings-field__input settings-template-row__prefix"
+              placeholder="Prompt prefix..."
+              value={t.promptPrefix}
+              onChange={(e) => handlePrefixChange(i, e.target.value)}
+              rows={3}
+            />
+          </div>
+        ))}
+        {templates.length === 0 && (
+          <span className="settings-repos__empty">No templates configured</span>
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleAdd}
+        type="button"
+        className="settings-repos__add-btn"
+      >
+        <Plus size={14} /> Add Template
+      </Button>
     </section>
   )
 }
@@ -618,6 +725,7 @@ export default function SettingsView(): React.JSX.Element {
 
         <ConnectionsSection />
         <RepositoriesSection />
+        <TaskTemplatesSection />
 
         {/* Agent Runtime */}
         <section className="settings-section">

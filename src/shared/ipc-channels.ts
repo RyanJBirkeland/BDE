@@ -6,7 +6,7 @@
  * types from this map, giving end-to-end compile-time safety.
  */
 
-import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, PrListPayload } from './types'
+import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, ClaimedTask, PrListPayload } from './types'
 
 /** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
 export interface GitHubFetchInit {
@@ -211,7 +211,7 @@ export interface IpcChannelMap {
     result: SprintTask[]
   }
   'sprint:create': {
-    args: [task: { title: string; repo: string; prompt?: string; notes?: string; spec?: string; priority?: number; status?: string }]
+    args: [task: { title: string; repo: string; prompt?: string; notes?: string; spec?: string; priority?: number; status?: string; template_name?: string }]
     result: unknown
   }
   'sprint:update': {
@@ -233,6 +233,10 @@ export interface IpcChannelMap {
   'sprint:healthCheck': {
     args: []
     result: SprintTask[]
+  }
+  'sprint:claimTask': {
+    args: [taskId: string]
+    result: ClaimedTask | null
   }
   'sprint:readLog': {
     args: [agentId: string, fromByte?: number]

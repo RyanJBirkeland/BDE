@@ -61,6 +61,7 @@ vi.stubGlobal('api', {
     list: vi.fn().mockResolvedValue([]),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
+    claimTask: vi.fn().mockResolvedValue(null),
     readLog: vi.fn().mockResolvedValue({ content: '', status: 'unknown', nextByte: 0 }),
     readSpecFile: vi.fn().mockResolvedValue(''),
     generatePrompt: vi.fn().mockResolvedValue({ taskId: '', spec: '', prompt: '' }),
