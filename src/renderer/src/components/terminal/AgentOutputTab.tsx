@@ -1,10 +1,7 @@
-import { useEffect, useCallback, useState, useMemo, useRef } from 'react'
-import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
-import { LocalAgentLogViewer, AgentLogViewer } from '../sessions/LocalAgentLogViewer'
+import { useEffect } from 'react'
+import { ChatRenderer } from '../agents/ChatRenderer'
+import { useAgentEventsStore } from '../../stores/agentEvents'
 import { tokens } from '../../design-system/tokens'
-import { parseStreamJson, type ChatItem } from '../../lib/stream-parser'
-import { chatItemsToMessages } from '../../lib/agent-messages'
-import { ChatThread } from '../sessions/ChatThread'
 
 interface AgentOutputTabProps {
   agentId: string
@@ -12,86 +9,47 @@ interface AgentOutputTabProps {
   sessionKey?: string
 }
 
-export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutputTabProps): React.JSX.Element {
-  const [historyContent, setHistoryContent] = useState<string>('')
-  const [isPolling, setIsPolling] = useState(false)
+export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutputTabProps) {
+  const events = useAgentEventsStore((s) => s.events[agentId])
+  const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 
-  // Poll gateway session history every 5s for gateway sessions
-  const pollHistory = useCallback(async (): Promise<void> => {
-    if (!sessionKey) return
-    try {
-      const result = await window.api.getSessionHistory(sessionKey) as { history?: Array<{ type: string; content?: unknown; tool_use?: unknown }> }
-
-      // Extract exec tool results and format as stream-json lines
-      const execResults = (result.history ?? [])
-        .filter((item) => item.type === 'tool_use' && item.tool_use && typeof item.tool_use === 'object' && 'name' in item.tool_use && item.tool_use.name === 'exec')
-        .map((item) => JSON.stringify(item))
-        .join('\n')
-
-      setHistoryContent(execResults)
-    } catch (err) {
-      console.error('Failed to fetch session history:', err)
+  useEffect(() => {
+    if (agentId) {
+      loadHistory(agentId)
     }
-  }, [sessionKey])
+  }, [agentId, loadHistory])
 
-  useEffect(() => {
-    if (!sessionKey) return
-    setIsPolling(true)
-    pollHistory()
-    return () => setIsPolling(false)
-  }, [sessionKey, pollHistory])
-  useVisibilityAwareInterval(pollHistory, sessionKey ? 5000 : null)
+  // Agent events available — use ChatRenderer
+  if (events && events.length > 0) {
+    return (
+      <div className="terminal-agent-tab">
+        <ChatRenderer events={events} />
+      </div>
+    )
+  }
 
-  const lineCountRef = useRef(0)
-  const prevItemsRef = useRef<ChatItem[]>([])
+  // Gateway session — plain text fallback (no AgentEvent source)
+  if (sessionKey) {
+    return (
+      <div className="terminal-agent-tab">
+        <div style={{
+          padding: tokens.space[4],
+          color: tokens.color.textDim,
+          fontFamily: tokens.font.ui,
+          fontSize: tokens.size.md,
+          textAlign: 'center',
+          marginTop: tokens.space[8]
+        }}>
+          Waiting for agent output…
+        </div>
+      </div>
+    )
+  }
 
-  useEffect(() => {
-    lineCountRef.current = 0
-    prevItemsRef.current = []
-  }, [sessionKey])
-
-  // Parse stream-json for gateway sessions
-  const { items, isStreaming } = useMemo(() => {
-    if (!sessionKey || !historyContent) return { items: [], isStreaming: false }
-    const { items: newItems, isStreaming, lineCount } = parseStreamJson(historyContent, lineCountRef.current)
-    const merged = [...prevItemsRef.current, ...newItems]
-    prevItemsRef.current = merged
-    lineCountRef.current = lineCount
-    return { items: merged, isStreaming }
-  }, [sessionKey, historyContent])
-
-  const chatMessages = useMemo(() => {
-    if (!sessionKey || items.length === 0) return []
-    return chatItemsToMessages(items)
-  }, [sessionKey, items])
-
-  // Parse agentId format: either "local:pid", a UUID, or a sessionKey
-  const isLocalAgent = agentId.startsWith('local:')
-  const pid = isLocalAgent ? Number(agentId.slice(6)) : 0
-  const isUuidAgent = !isLocalAgent && agentId.length > 10 && !sessionKey // Simple UUID check
-
-  return (
-    <div className="terminal-agent-tab">
-      {isLocalAgent && pid ? (
-        <LocalAgentLogViewer pid={pid} />
-      ) : isUuidAgent ? (
-        <AgentLogViewer agentId={agentId} />
-      ) : sessionKey ? (
-        chatMessages.length > 0 ? (
-          <ChatThread messages={chatMessages} isStreaming={isPolling && isStreaming} />
-        ) : (
-          <div style={{
-            padding: tokens.space[4],
-            color: tokens.color.textDim,
-            fontFamily: tokens.font.ui,
-            fontSize: tokens.size.md,
-            textAlign: 'center',
-            marginTop: tokens.space[8]
-          }}>
-            {isPolling ? 'Waiting for agent exec output…' : 'Loading session history…'}
-          </div>
-        )
-      ) : agentOutput && agentOutput.length > 0 ? (
+  // Legacy plaintext output
+  if (agentOutput && agentOutput.length > 0) {
+    return (
+      <div className="terminal-agent-tab">
         <div style={{
           padding: tokens.space[3],
           fontFamily: tokens.font.code,
@@ -110,18 +68,23 @@ export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutput
             </div>
           ))}
         </div>
-      ) : (
-        <div style={{
-          padding: tokens.space[4],
-          color: tokens.color.textDim,
-          fontFamily: tokens.font.ui,
-          fontSize: tokens.size.md,
-          textAlign: 'center',
-          marginTop: tokens.space[8]
-        }}>
-          Waiting for agent exec output…
-        </div>
-      )}
+      </div>
+    )
+  }
+
+  // Empty state
+  return (
+    <div className="terminal-agent-tab">
+      <div style={{
+        padding: tokens.space[4],
+        color: tokens.color.textDim,
+        fontFamily: tokens.font.ui,
+        fontSize: tokens.size.md,
+        textAlign: 'center',
+        marginTop: tokens.space[8]
+      }}>
+        Waiting for agent output…
+      </div>
     </div>
   )
 }
