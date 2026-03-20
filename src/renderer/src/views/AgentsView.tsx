@@ -12,6 +12,8 @@ import { useSidebarResize } from '../hooks/useSidebarResize'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { AgentList } from '../components/agents/AgentList'
 import { AgentDetail } from '../components/agents/AgentDetail'
+import { HealthBar } from '../components/agents/HealthBar'
+import { useSprintStore } from '../stores/sprint'
 import { SpawnModal } from '../components/sessions/SpawnModal'
 import { tokens } from '../design-system/tokens'
 import { POLL_SESSIONS_INTERVAL } from '../lib/constants'
@@ -72,7 +74,11 @@ export function AgentsView() {
   }, [selectedId])
 
   return (
-    <div style={{ display: 'flex', height: '100%', background: tokens.color.bg }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: tokens.color.bg }}>
+      {/* HealthBar */}
+      <HealthBarWrapper />
+
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
       {/* Left sidebar */}
       <div style={{ width: sidebarWidth, minWidth: 200, borderRight: `1px solid ${tokens.color.border}`, display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
@@ -135,6 +141,20 @@ export function AgentsView() {
       </div>
 
       <SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />
+      </div>
     </div>
   )
+}
+
+function HealthBarWrapper() {
+  const queueHealth = useSprintStore((s) => s.queueHealth)
+  const connected = queueHealth !== null
+  const stats = queueHealth ? {
+    queued: queueHealth.queue.queued ?? 0,
+    active: queueHealth.queue.active ?? 0,
+    doneToday: queueHealth.doneToday ?? 0,
+    failed: queueHealth.queue.failed ?? 0,
+  } : null
+
+  return <HealthBar connected={connected} stats={stats} />
 }

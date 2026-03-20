@@ -60,6 +60,14 @@ declare global {
         getHistory: (agentId: string) => Promise<AgentEvent[]>
       }
 
+      // Template CRUD (Phase 2)
+      templates: {
+        list: () => Promise<IpcResult<'templates:list'>>
+        save: (...args: IpcArgs<'templates:save'>) => Promise<IpcResult<'templates:save'>>
+        delete: (...args: IpcArgs<'templates:delete'>) => Promise<IpcResult<'templates:delete'>>
+        reset: (...args: IpcArgs<'templates:reset'>) => Promise<IpcResult<'templates:reset'>>
+      }
+
       // Git client
       gitStatus: (...args: IpcArgs<'git:status'>) => Promise<IpcResult<'git:status'>>
       gitDiff: (...args: IpcArgs<'git:diff'>) => Promise<IpcResult<'git:diff'>>

@@ -47,6 +47,7 @@ export interface SprintTask {
 export interface TaskTemplate {
   name: string
   promptPrefix: string
+  isBuiltIn?: boolean
 }
 
 /** A claimed task with an optional template prompt prefix. */

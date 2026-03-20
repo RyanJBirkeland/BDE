@@ -218,6 +218,14 @@ const api = {
     return () => ipcRenderer.removeListener('sprint:sseEvent', listener)
   },
 
+  // Template CRUD (Phase 2)
+  templates: {
+    list: () => typedInvoke('templates:list'),
+    save: (template: import('../shared/types').TaskTemplate) => typedInvoke('templates:save', template),
+    delete: (name: string) => typedInvoke('templates:delete', name),
+    reset: (name: string) => typedInvoke('templates:reset', name),
+  },
+
   // Terminal PTY
   terminal: {
     create: (opts: { cols: number; rows: number; shell?: string }) =>

@@ -14,6 +14,7 @@ import { registerSprintLocalHandlers } from './handlers/sprint-local'
 import { registerCostHandlers } from './handlers/cost-handlers'
 import { registerQueueHandlers } from './handlers/queue-handlers'
 import { registerFsHandlers } from './fs'
+import { registerTemplateHandlers } from './handlers/template-handlers'
 import { getDb, closeDb } from './db'
 import { migrateFromOpenClawConfig } from './settings'
 import { startSprintSseClient, stopSprintSseClient } from './sprint-sse'
@@ -145,6 +146,7 @@ app.whenReady().then(() => {
   registerSprintLocalHandlers()
   registerCostHandlers()
   registerQueueHandlers()
+  registerTemplateHandlers()
   registerFsHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

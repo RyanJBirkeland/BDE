@@ -6,7 +6,7 @@
  * types from this map, giving end-to-end compile-time safety.
  */
 
-import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, ClaimedTask, PrListPayload } from './types'
+import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, ClaimedTask, PrListPayload, TaskTemplate } from './types'
 import type { TaskOutputEvent } from './queue-api-contract'
 import type { AgentEvent } from '../main/agents/types'
 
@@ -307,6 +307,24 @@ export interface IpcChannelMap {
   'agent:history': {
     args: [agentId: string]
     result: AgentEvent[]
+  }
+
+  // --- Template CRUD (Phase 2) ---
+  'templates:list': {
+    args: []
+    result: TaskTemplate[]
+  }
+  'templates:save': {
+    args: [template: TaskTemplate]
+    result: void
+  }
+  'templates:delete': {
+    args: [name: string]
+    result: void
+  }
+  'templates:reset': {
+    args: [name: string]
+    result: void
   }
 
   // --- Terminal ---
