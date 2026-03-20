@@ -18,6 +18,7 @@ import { migrateFromOpenClawConfig } from './settings'
 import { startSprintSseClient, stopSprintSseClient } from './sprint-sse'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { getGatewayConfig } from './config'
+import { startQueueApi, stopQueueApi } from './queue-api/server'
 
 const DEBOUNCE_MS = 500
 
@@ -118,6 +119,9 @@ app.whenReady().then(() => {
 
   startPrPoller()
   app.on('will-quit', stopPrPoller)
+
+  startQueueApi()
+  app.on('will-quit', stopQueueApi)
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

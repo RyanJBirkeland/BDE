@@ -33,6 +33,7 @@ export interface SprintTask {
   pr_status: 'open' | 'merged' | 'closed' | 'draft' | null
   pr_mergeable_state?: 'clean' | 'dirty' | 'blocked' | 'behind' | 'unstable' | 'unknown' | null
   pr_url: string | null
+  claimed_by: string | null
   started_at: string | null
   completed_at: string | null
   updated_at: string

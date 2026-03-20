@@ -106,6 +106,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
       pr_status: null,
       pr_mergeable_state: null,
       pr_url: null,
+      claimed_by: null,
       started_at: null,
       completed_at: null,
       updated_at: new Date().toISOString(),

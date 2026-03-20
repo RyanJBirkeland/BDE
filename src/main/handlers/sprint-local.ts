@@ -2,7 +2,6 @@ import { safeHandle } from '../ipc-utils'
 import { getGatewayConfig } from '../config'
 import { getDb } from '../db'
 import { getSpecsRoot } from '../paths'
-import { syncToTaskRunner } from '../adapters/task-runner-sync'
 import { readFile } from 'fs/promises'
 import { resolve } from 'path'
 import type { SprintTask } from '../../shared/types'
@@ -44,6 +43,23 @@ export interface CreateTaskInput {
   status?: string
 }
 
+// --- Mutation listener registry ---
+
+type SprintMutationListener = (event: {
+  type: 'created' | 'updated' | 'deleted'
+  task: SprintTask
+}) => void
+const listeners: Set<SprintMutationListener> = new Set()
+
+export function onSprintMutation(cb: SprintMutationListener): () => void {
+  listeners.add(cb)
+  return () => listeners.delete(cb)
+}
+
+function notifyMutation(type: 'created' | 'updated' | 'deleted', task: SprintTask): void {
+  for (const cb of listeners) cb({ type, task })
+}
+
 // --- Field allowlist for updates ---
 
 const UPDATE_ALLOWLIST = new Set([
@@ -62,6 +78,93 @@ const UPDATE_ALLOWLIST = new Set([
   'started_at',
   'completed_at',
 ])
+
+// --- Exported query functions (used by queue-api, git-handlers, agent-history) ---
+
+export function getTask(id: string): SprintTask | null {
+  return getDb().prepare('SELECT * FROM sprint_tasks WHERE id = ?').get(id) as SprintTask | null
+}
+
+export function listTasks(status?: string): SprintTask[] {
+  if (status) {
+    return getDb()
+      .prepare('SELECT * FROM sprint_tasks WHERE status = ? ORDER BY priority ASC, created_at ASC')
+      .all(status) as SprintTask[]
+  }
+  return getDb()
+    .prepare('SELECT * FROM sprint_tasks ORDER BY priority ASC, created_at ASC')
+    .all() as SprintTask[]
+}
+
+export function claimTask(id: string, claimedBy: string): SprintTask | null {
+  const now = new Date().toISOString()
+  const result = getDb()
+    .prepare(
+      `UPDATE sprint_tasks
+       SET status = 'active', claimed_by = ?, started_at = ?
+       WHERE id = ? AND status = 'queued'
+       RETURNING *`
+    )
+    .get(claimedBy, now, id) as SprintTask | undefined
+
+  if (result) {
+    // Re-fetch to get the correct updated_at (trigger fires after RETURNING)
+    const final = getTask(id)!
+    notifyMutation('updated', final)
+    return final
+  }
+  return null
+}
+
+export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
+  const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
+  if (entries.length === 0) return null
+
+  const setClauses = entries.map(([k]) => `${k} = ?`).join(', ')
+  const values = entries.map(([, v]) => v)
+
+  const row = getDb()
+    .prepare(`UPDATE sprint_tasks SET ${setClauses} WHERE id = ? RETURNING *`)
+    .get(...values, id) as SprintTask | undefined
+
+  if (row) {
+    // Re-fetch for correct updated_at
+    const final = getTask(id)!
+    notifyMutation('updated', final)
+    return final
+  }
+  return null
+}
+
+export interface QueueStats {
+  backlog: number
+  queued: number
+  active: number
+  done: number
+  failed: number
+  cancelled: number
+}
+
+export function getQueueStats(): QueueStats {
+  const rows = getDb()
+    .prepare('SELECT status, COUNT(*) as count FROM sprint_tasks GROUP BY status')
+    .all() as { status: string; count: number }[]
+
+  const stats: QueueStats = {
+    backlog: 0,
+    queued: 0,
+    active: 0,
+    done: 0,
+    failed: 0,
+    cancelled: 0,
+  }
+  for (const row of rows) {
+    if (row.status in stats) {
+      stats[row.status as keyof QueueStats] = row.count
+    }
+  }
+  return stats
+}
 
 // --- Exported helper functions (used by git-handlers, agent-history) ---
 
@@ -174,32 +277,21 @@ export function registerSprintLocalHandlers(): void {
         status: task.status ?? 'backlog',
       }) as SprintTask
 
-    syncToTaskRunner('POST', '/tasks', row)
+    notifyMutation('created', row)
 
     return row
   })
 
   safeHandle('sprint:update', (_e, id: string, patch: Record<string, unknown>) => {
-    const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
-    if (entries.length === 0) return null
-
-    const setClauses = entries.map(([k]) => `${k} = ?`).join(', ')
-    const values = entries.map(([, v]) => v)
-
-    const row = getDb()
-      .prepare(`UPDATE sprint_tasks SET ${setClauses} WHERE id = ? RETURNING *`)
-      .get(...values, id) as SprintTask | undefined
-
-    if (row) {
-      syncToTaskRunner('PATCH', `/tasks/${id}`, patch)
-    }
-
-    return row ?? null
+    return updateTask(id, patch)
   })
 
   safeHandle('sprint:delete', (_e, id: string) => {
+    const task = getTask(id)
     getDb().prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
-    syncToTaskRunner('DELETE', `/tasks/${id}`)
+    if (task) {
+      notifyMutation('deleted', task)
+    }
     return { ok: true }
   })
 
@@ -218,7 +310,9 @@ export function registerSprintLocalHandlers(): void {
         const gatewayConfig = getGatewayConfig()
         if (!gatewayConfig) return fallback
         const { url: rawGatewayUrl, token: gatewayToken } = gatewayConfig
-        const gatewayUrl = rawGatewayUrl.replace(/^ws:\/\//, 'http://').replace(/^wss:\/\//, 'https://')
+        const gatewayUrl = rawGatewayUrl
+          .replace(/^ws:\/\//, 'http://')
+          .replace(/^wss:\/\//, 'https://')
 
         const templateScaffold = getTemplateScaffold(templateHint)
         const message = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
@@ -286,7 +380,9 @@ export function registerSprintLocalHandlers(): void {
     try {
       const fullContent = await readFile(agent.log_path, 'utf-8')
       const bytes = Buffer.from(fullContent, 'utf-8')
-      if (fromByte >= bytes.length) return { content: '', status: agent.status, nextByte: fromByte }
+      if (fromByte >= bytes.length) {
+        return { content: '', status: agent.status, nextByte: fromByte }
+      }
       const slice = bytes.subarray(fromByte).toString('utf-8')
       return { content: slice, status: agent.status, nextByte: bytes.length }
     } catch {
