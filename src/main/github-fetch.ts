@@ -241,7 +241,6 @@ interface FetchAllPagesOptions {
   token: string
   timeoutMs?: number
   headers?: Record<string, string>
-  signal?: AbortSignal
 }
 
 /**
@@ -253,20 +252,17 @@ export async function fetchAllGitHubPages<T>(
   url: string,
   opts: FetchAllPagesOptions
 ): Promise<T[]> {
-  const signal =
-    opts.signal ?? (opts.timeoutMs != null ? AbortSignal.timeout(opts.timeoutMs) : undefined)
-
   const items: T[] = []
   let nextUrl: string | null = url
 
   while (nextUrl) {
-    const res = await fetch(nextUrl, {
+    const res = await githubFetch(nextUrl, {
       headers: {
         Authorization: `Bearer ${opts.token}`,
         Accept: 'application/vnd.github+json',
         ...opts.headers,
       },
-      ...(signal !== undefined ? { signal } : {}),
+      timeoutMs: opts.timeoutMs,
     })
 
     if (!res.ok) return items

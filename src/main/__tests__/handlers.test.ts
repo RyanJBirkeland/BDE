@@ -67,14 +67,6 @@ vi.mock('../config', () => ({
   getSupabaseConfig: vi.fn().mockReturnValue(null),
 }))
 
-vi.mock('../settings', () => ({
-  getSetting: vi.fn().mockReturnValue(null),
-  setSetting: vi.fn(),
-  getSettingJson: vi.fn().mockReturnValue(null),
-  setSettingJson: vi.fn(),
-  deleteSetting: vi.fn(),
-}))
-
 vi.mock('../db', () => ({
   getDb: vi.fn().mockReturnValue({
     prepare: vi.fn().mockReturnValue({
@@ -90,6 +82,9 @@ vi.mock('../settings', () => ({
   getAgentPermissionMode: vi.fn().mockReturnValue('bypassPermissions'),
   getSetting: vi.fn().mockReturnValue(null),
   setSetting: vi.fn(),
+  getSettingJson: vi.fn().mockReturnValue(null),
+  setSettingJson: vi.fn(),
+  deleteSetting: vi.fn(),
   SETTING_AGENT_BINARY: 'agent.binary',
   SETTING_AGENT_PERMISSION_MODE: 'agent.permissionMode',
   DEFAULT_AGENT_BINARY: 'claude',
@@ -260,7 +255,7 @@ describe('IPC handler registration', () => {
     it('"local:spawnClaudeAgent" rejects repoPath outside configured repos', async () => {
       const args = { repoPath: '/etc/evil', task: 'fix bug', model: 'sonnet' }
       await expect(invoke('local:spawnClaudeAgent', args)).rejects.toThrow(
-        'Repository path rejected'
+        'Path rejected'
       )
     })
 
@@ -387,7 +382,7 @@ describe('IPC handler registration', () => {
 
     it('rejects cwd outside known repository paths', async () => {
       await expect(invoke('git:status', '/etc/evil')).rejects.toThrow(
-        'CWD rejected'
+        'Path rejected'
       )
     })
 

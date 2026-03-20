@@ -98,6 +98,7 @@ declare global {
         generatePrompt: (...args: IpcArgs<'sprint:generatePrompt'>) => Promise<IpcResult<'sprint:generatePrompt'>>
         delete: (...args: IpcArgs<'sprint:delete'>) => Promise<IpcResult<'sprint:delete'>>
         healthCheck: () => Promise<IpcResult<'sprint:healthCheck'>>
+        claimTask: (taskId: string) => Promise<IpcResult<'sprint:claimTask'>>
       }
 
       // File attachments

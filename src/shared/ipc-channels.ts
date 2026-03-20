@@ -219,11 +219,11 @@ export interface IpcChannelMap {
   }
   'sprint:create': {
     args: [task: { title: string; repo: string; prompt?: string; notes?: string; spec?: string; priority?: number; status?: string; template_name?: string }]
-    result: unknown
+    result: SprintTask
   }
   'sprint:update': {
     args: [id: string, patch: Record<string, unknown>]
-    result: unknown
+    result: SprintTask | null
   }
   'sprint:delete': {
     args: [id: string]

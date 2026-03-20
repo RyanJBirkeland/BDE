@@ -1,10 +1,14 @@
-import { resolve } from 'path'
 import { safeHandle } from '../ipc-utils'
+import { validateRepoPath } from '../validation'
 import {
   getAgentProcesses,
   spawnClaudeAgent,
   tailAgentLog,
-  cleanupOldLogs
+  cleanupOldLogs,
+  sendToAgent,
+  isAgentInteractive,
+  steerAgent,
+  killAgent
 } from '../local-agents'
 import type { SpawnLocalAgentArgs, TailLogArgs } from '../local-agents'
 import {
@@ -14,7 +18,6 @@ import {
   pruneOldAgents
 } from '../agent-history'
 import type { AgentMeta } from '../agent-history'
-import { getRepoPaths } from '../git'
 import {
   getAgentBinary,
   getAgentPermissionMode,
@@ -22,18 +25,6 @@ import {
   SETTING_AGENT_BINARY,
   SETTING_AGENT_PERMISSION_MODE
 } from '../settings'
-
-/** Validates that repoPath is under a known configured repository root. */
-function validateRepoPath(repoPath: string): void {
-  const resolved = resolve(repoPath)
-  const repoPaths = Object.values(getRepoPaths()).map(p => resolve(p))
-  const allowed = repoPaths.some(
-    root => resolved.startsWith(root + '/') || resolved === root
-  )
-  if (!allowed) {
-    throw new Error(`Repository path rejected: "${repoPath}" is not a configured repository`)
-  }
-}
 
 export function registerAgentHandlers(): void {
   // --- Local agent process detection + spawning ---
@@ -43,22 +34,18 @@ export function registerAgentHandlers(): void {
     return spawnClaudeAgent(args)
   })
   safeHandle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
-  safeHandle('local:sendToAgent', async (_e, { pid, message }: { pid: number; message: string }) => {
-    const { sendToAgent } = await import('../local-agents')
-    return sendToAgent(pid, message)
-  })
-  safeHandle('local:isInteractive', async (_e, pid: number) => {
-    const { isAgentInteractive } = await import('../local-agents')
-    return isAgentInteractive(pid)
-  })
-  safeHandle('agent:steer', async (_e, { agentId, message }: { agentId: string; message: string }) => {
-    const { steerAgent } = await import('../local-agents')
-    return await steerAgent(agentId, message)
-  })
-  safeHandle('agent:kill', async (_e, agentId: string) => {
-    const { killAgent } = await import('../local-agents')
-    return killAgent(agentId)
-  })
+  safeHandle('local:sendToAgent', (_e, { pid, message }: { pid: number; message: string }) =>
+    sendToAgent(pid, message)
+  )
+  safeHandle('local:isInteractive', (_e, pid: number) =>
+    isAgentInteractive(pid)
+  )
+  safeHandle('agent:steer', (_e, { agentId, message }: { agentId: string; message: string }) =>
+    steerAgent(agentId, message)
+  )
+  safeHandle('agent:kill', (_e, agentId: string) =>
+    killAgent(agentId)
+  )
   cleanupOldLogs()
 
   // --- Agent config IPC ---

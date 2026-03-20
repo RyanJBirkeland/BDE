@@ -81,13 +81,20 @@ describe('db schema migrations', () => {
       .get('t1') as { updated_at: string }
     expect(beforeRow.updated_at).toBeTruthy()
 
+    // Force a different created_at so the trigger's updated_at is distinguishable
+    db.prepare(
+      "UPDATE sprint_tasks SET title = 'tmp', created_at = '2000-01-01T00:00:00.000Z' WHERE id = 't1'"
+    ).run()
+    // Now update again — the trigger should set updated_at to 'now', not '2000-...'
     db.prepare("UPDATE sprint_tasks SET title = 'Updated' WHERE id = 't1'").run()
     const afterRow = db
-      .prepare('SELECT updated_at FROM sprint_tasks WHERE id = ?')
-      .get('t1') as { updated_at: string }
+      .prepare('SELECT updated_at, created_at FROM sprint_tasks WHERE id = ?')
+      .get('t1') as { updated_at: string; created_at: string }
 
-    // Trigger fires, so updated_at should be set
+    // Trigger fires: updated_at should be a current timestamp, not the old created_at
     expect(afterRow.updated_at).toBeTruthy()
+    expect(afterRow.created_at).toBe('2000-01-01T00:00:00.000Z')
+    expect(afterRow.updated_at).not.toBe('2000-01-01T00:00:00.000Z')
   })
 
   it('adds cost columns to agent_runs', () => {

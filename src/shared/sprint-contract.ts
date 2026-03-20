@@ -24,7 +24,7 @@ export type CreateTaskRequest = {
   spec?: string
 }
 export type UpdateTaskRequest = {
-  status?: keyof typeof TASK_STATUS
+  status?: (typeof TASK_STATUS)[keyof typeof TASK_STATUS]
   pr_url?: string
   pr_number?: number
 }

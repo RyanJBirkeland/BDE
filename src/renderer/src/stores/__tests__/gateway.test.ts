@@ -73,7 +73,6 @@ describe('gateway store', () => {
 
     // After reconnect, status should be connected again with a new client
     expect(useGatewayStore.getState().status).toBe('connected')
-    expect(useGatewayStore.getState().status).toBe('connected')
   })
 
   it('sets not-configured when url is empty', async () => {

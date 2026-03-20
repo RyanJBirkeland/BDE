@@ -9,7 +9,7 @@ const GET_AGENT_HISTORY_SQL = `
          ar.cache_read, ar.cache_create, ar.duration_ms, ar.num_turns,
          st.title, st.pr_url, st.repo
   FROM agent_runs ar
-  LEFT JOIN sprint_tasks st ON ar.task = st.id
+  LEFT JOIN sprint_tasks st ON st.agent_run_id = ar.id
   WHERE ar.finished_at IS NOT NULL
   ORDER BY ar.started_at DESC
   LIMIT ? OFFSET ?

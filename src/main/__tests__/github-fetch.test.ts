@@ -417,6 +417,7 @@ describe('fetchAllGitHubPages', () => {
   })
 
   it('returns partial results when a mid-page request fails', async () => {
+    // Use 404 (non-retryable) to avoid githubFetch retry delays
     mockFetch
       .mockResolvedValueOnce(
         jsonResponse(
@@ -424,7 +425,7 @@ describe('fetchAllGitHubPages', () => {
           'https://api.github.com/repos/repos/o/r/pulls?page=2'
         )
       )
-      .mockResolvedValueOnce(jsonResponse(null, null, false, 500))
+      .mockResolvedValueOnce(jsonResponse(null, null, false, 404))
 
     const result = await fetchAllGitHubPages<{ id: number }>(
       'https://api.github.com/repos/o/r/pulls?per_page=100',
@@ -435,7 +436,8 @@ describe('fetchAllGitHubPages', () => {
   })
 
   it('returns empty array when first page fails', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(null, null, false, 403))
+    // Use 404 (non-retryable) to avoid githubFetch retry delays
+    mockFetch.mockResolvedValueOnce(jsonResponse(null, null, false, 404))
 
     const result = await fetchAllGitHubPages<{ id: number }>(
       'https://api.github.com/repos/o/r/pulls?per_page=100',

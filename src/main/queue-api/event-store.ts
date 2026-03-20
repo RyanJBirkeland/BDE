@@ -8,7 +8,7 @@ import { onSprintMutation } from '../handlers/sprint-local'
 const eventStore = new Map<string, TaskOutputEvent[]>()
 export const MAX_EVENTS_PER_TASK = 500
 
-const TERMINAL_STATUSES = new Set(['done', 'failed', 'cancelled', 'error'])
+const TERMINAL_STATUSES = new Set(['done', 'failed', 'cancelled'])
 
 export function appendEvents(taskId: string, events: TaskOutputEvent[]): void {
   const existing = eventStore.get(taskId) ?? []

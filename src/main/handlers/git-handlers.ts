@@ -1,6 +1,6 @@
-import { resolve } from 'path'
 import { safeHandle } from '../ipc-utils'
 import { parsePrUrl } from '../../shared/github'
+import { validateRepoPath } from '../validation'
 import {
   getRepoPaths,
   gitStatus,
@@ -25,19 +25,6 @@ import {
   updateTaskMergeableState
 } from './sprint-local'
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
-
-/** Ensures cwd is under a known repository root. */
-function validateRepoCwd(cwd: string): string {
-  const resolved = resolve(cwd)
-  const repoPaths = Object.values(getRepoPaths()).map(p => resolve(p))
-  const allowed = repoPaths.some(
-    root => resolved.startsWith(root + '/') || resolved === root
-  )
-  if (!allowed) {
-    throw new Error(`CWD rejected: not under a known repository`)
-  }
-  return resolved
-}
 
 export function registerGitHandlers(): void {
   // --- GitHub API proxy (renderer -> main -> api.github.com) ---
@@ -75,14 +62,14 @@ export function registerGitHandlers(): void {
   safeHandle('git:getRepoPaths', () => getRepoPaths())
 
   // --- Git client IPC (cwd validated against known repo paths) ---
-  safeHandle('git:status', (_e, cwd: string) => gitStatus(validateRepoCwd(cwd)))
-  safeHandle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(validateRepoCwd(cwd), file))
-  safeHandle('git:stage', (_e, cwd: string, files: string[]) => gitStage(validateRepoCwd(cwd), files))
-  safeHandle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(validateRepoCwd(cwd), files))
-  safeHandle('git:commit', (_e, cwd: string, message: string) => gitCommit(validateRepoCwd(cwd), message))
-  safeHandle('git:push', (_e, cwd: string) => gitPush(validateRepoCwd(cwd)))
-  safeHandle('git:branches', (_e, cwd: string) => gitBranches(validateRepoCwd(cwd)))
-  safeHandle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(validateRepoCwd(cwd), branch))
+  safeHandle('git:status', (_e, cwd: string) => gitStatus(validateRepoPath(cwd)))
+  safeHandle('git:diff', (_e, cwd: string, file?: string) => gitDiffFile(validateRepoPath(cwd), file))
+  safeHandle('git:stage', (_e, cwd: string, files: string[]) => gitStage(validateRepoPath(cwd), files))
+  safeHandle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(validateRepoPath(cwd), files))
+  safeHandle('git:commit', (_e, cwd: string, message: string) => gitCommit(validateRepoPath(cwd), message))
+  safeHandle('git:push', (_e, cwd: string) => gitPush(validateRepoPath(cwd)))
+  safeHandle('git:branches', (_e, cwd: string) => gitBranches(validateRepoPath(cwd)))
+  safeHandle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(validateRepoPath(cwd), branch))
 
   // --- PR status polling ---
   safeHandle('pr:pollStatuses', async (_e, prs: PrStatusInput[]) => {
