@@ -1,8 +1,9 @@
-import React, { Suspense } from 'react'
-import { PanelLeafNode, View, usePanelLayoutStore } from '../../stores/panelLayout'
+import React, { Suspense, useState, useCallback, useRef } from 'react'
+import { PanelLeafNode, View, DropZone, usePanelLayoutStore } from '../../stores/panelLayout'
 import { ErrorBoundary } from '../ui/ErrorBoundary'
 import { tokens } from '../../design-system/tokens'
 import { PanelTabBar } from './PanelTabBar'
+import { PanelDropOverlay } from './PanelDropOverlay'
 import { AgentsView } from '../../views/AgentsView'
 import { TerminalView } from '../../views/TerminalView'
 
@@ -81,9 +82,17 @@ interface PanelLeafProps {
   node: PanelLeafNode
 }
 
+interface DragPayload {
+  viewKey: string
+  sourcePanelId?: string
+  sourceTabIndex?: number
+}
+
 export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
   const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
   const focusPanel = usePanelLayoutStore((s) => s.focusPanel)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const isFocused = focusedPanelId === node.panelId
 
@@ -91,9 +100,45 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
     focusPanel(node.panelId)
   }
 
+  function handleDragEnter(e: React.DragEvent<HTMLDivElement>): void {
+    if (e.dataTransfer.types.includes('application/bde-panel')) {
+      setIsDragOver(true)
+    }
+  }
+
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>): void {
+    const container = containerRef.current
+    if (container && !container.contains(e.relatedTarget as Node | null)) {
+      setIsDragOver(false)
+    }
+  }
+
+  const handleDrop = useCallback(
+    (panelId: string, zone: DropZone, data: DragPayload): void => {
+      if (data.sourcePanelId !== undefined && data.sourceTabIndex !== undefined) {
+        usePanelLayoutStore
+          .getState()
+          .moveTab(data.sourcePanelId, data.sourceTabIndex, panelId, zone)
+      } else if (data.viewKey) {
+        if (zone === 'center') {
+          usePanelLayoutStore.getState().addTab(panelId, data.viewKey as View)
+        } else {
+          const dir: 'horizontal' | 'vertical' =
+            zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical'
+          usePanelLayoutStore.getState().splitPanel(panelId, dir, data.viewKey as View)
+        }
+      }
+      setIsDragOver(false)
+    },
+    []
+  )
+
   return (
     <div
+      ref={containerRef}
       onClick={handlePanelClick}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -103,6 +148,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
         outline: isFocused ? `1px solid ${tokens.color.accent}` : '1px solid transparent',
         overflow: 'hidden',
         boxSizing: 'border-box',
+        position: 'relative',
       }}
     >
       {node.tabs.length > 1 && <PanelTabBar node={node} />}
@@ -126,6 +172,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
           )
         })}
       </div>
+      {isDragOver && <PanelDropOverlay panelId={node.panelId} onDrop={handleDrop} />}
     </div>
   )
 }

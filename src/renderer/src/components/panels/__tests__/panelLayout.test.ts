@@ -7,6 +7,7 @@ import {
   addTab,
   closeTab,
   setActiveTab,
+  moveTab,
   DEFAULT_LAYOUT,
   _resetIdCounter,
 } from '../../../stores/panelLayout'
@@ -272,6 +273,90 @@ describe('panelLayout pure functions', () => {
     it('returns null if panelId not found', () => {
       const leaf = createLeaf('agents')
       expect(setActiveTab(leaf, 'nonexistent', 0)).toBeNull()
+    })
+  })
+
+  // --- moveTab ---
+
+  describe('moveTab', () => {
+    it('moveTab to center adds tab to target', () => {
+      const leaf1 = createLeaf('agents')
+      const leaf2 = createLeaf('terminal')
+      // Give leaf1 a second tab so it survives removal
+      const leaf1WithTwo = addTab(leaf1, leaf1.panelId, 'sprint') as PanelLeafNode
+      const split: PanelSplitNode = {
+        type: 'split',
+        direction: 'horizontal',
+        children: [leaf1WithTwo, leaf2],
+        sizes: [50, 50],
+      }
+      // Move leaf1's 'sprint' tab (index 1) to leaf2 center
+      const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'center')
+      expect(result).not.toBeNull()
+      const updatedLeaf2 = findLeaf(result!, leaf2.panelId)
+      expect(updatedLeaf2).not.toBeNull()
+      expect(updatedLeaf2!.tabs.map((t) => t.viewKey)).toContain('sprint')
+      // Source leaf should still have 'agents' but not 'sprint'
+      const updatedLeaf1 = findLeaf(result!, leaf1WithTwo.panelId)
+      expect(updatedLeaf1).not.toBeNull()
+      expect(updatedLeaf1!.tabs.map((t) => t.viewKey)).not.toContain('sprint')
+    })
+
+    it('moveTab to right splits target horizontally with new panel as second child', () => {
+      const leaf1 = createLeaf('agents')
+      const leaf2 = createLeaf('terminal')
+      // Give leaf1 a second tab so it survives removal
+      const leaf1WithTwo = addTab(leaf1, leaf1.panelId, 'sprint') as PanelLeafNode
+      const split: PanelSplitNode = {
+        type: 'split',
+        direction: 'vertical',
+        children: [leaf1WithTwo, leaf2],
+        sizes: [50, 50],
+      }
+      // Move leaf1's 'sprint' tab (index 1) to leaf2's right zone
+      const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'right')
+      expect(result).not.toBeNull()
+      // leaf2 should now be a split containing the original leaf2 and a new leaf with 'sprint'
+      const rootSplit = result as PanelSplitNode
+      const rightChild = rootSplit.children[1]
+      expect(rightChild.type).toBe('split')
+      const innerSplit = rightChild as PanelSplitNode
+      expect(innerSplit.direction).toBe('horizontal')
+      // new leaf with 'sprint' should be second child
+      const newLeaf = innerSplit.children[1] as PanelLeafNode
+      expect(newLeaf.tabs[0].viewKey).toBe('sprint')
+    })
+
+    it('moveTab to left puts new panel as first child', () => {
+      const leaf1 = createLeaf('agents')
+      const leaf2 = createLeaf('terminal')
+      const leaf1WithTwo = addTab(leaf1, leaf1.panelId, 'sprint') as PanelLeafNode
+      const split: PanelSplitNode = {
+        type: 'split',
+        direction: 'vertical',
+        children: [leaf1WithTwo, leaf2],
+        sizes: [50, 50],
+      }
+      const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'left')
+      expect(result).not.toBeNull()
+      const rootSplit = result as PanelSplitNode
+      const rightChild = rootSplit.children[1]
+      expect(rightChild.type).toBe('split')
+      const innerSplit = rightChild as PanelSplitNode
+      expect(innerSplit.direction).toBe('horizontal')
+      // new leaf with 'sprint' should be first child
+      const newLeaf = innerSplit.children[0] as PanelLeafNode
+      expect(newLeaf.tabs[0].viewKey).toBe('sprint')
+    })
+
+    it('returns null if source panel not found', () => {
+      const leaf = createLeaf('agents')
+      expect(moveTab(leaf, 'nonexistent', 0, leaf.panelId, 'center')).toBeNull()
+    })
+
+    it('returns null if tab index out of range', () => {
+      const leaf = createLeaf('agents')
+      expect(moveTab(leaf, leaf.panelId, 5, leaf.panelId, 'center')).toBeNull()
     })
   })
 })

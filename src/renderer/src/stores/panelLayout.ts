@@ -184,6 +184,96 @@ export function setActiveTab(root: PanelNode, panelId: string, tabIndex: number)
   return null
 }
 
+/**
+ * Moves a tab from one panel to another, splitting if needed.
+ * Returns null if either panel is not found or the tab index is invalid.
+ */
+export function moveTab(
+  root: PanelNode,
+  sourcePanelId: string,
+  sourceTabIndex: number,
+  targetPanelId: string,
+  zone: DropZone
+): PanelNode | null {
+  const sourceLeaf = findLeaf(root, sourcePanelId)
+  if (!sourceLeaf) return null
+  if (sourceTabIndex < 0 || sourceTabIndex >= sourceLeaf.tabs.length) return null
+
+  const movedTab = sourceLeaf.tabs[sourceTabIndex]
+
+  // Remove tab from source; if last tab, the leaf will be removed from the tree
+  const afterClose = closeTab(root, sourcePanelId, sourceTabIndex)
+  // afterClose is null only when root itself was the only leaf with one tab
+  const treeAfterClose = afterClose ?? root
+
+  if (zone === 'center') {
+    const result = addTab(treeAfterClose, targetPanelId, movedTab.viewKey)
+    return result ?? treeAfterClose
+  }
+
+  // Edge zones: split the target panel
+  const direction: 'horizontal' | 'vertical' =
+    zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical'
+
+  // For 'left' and 'top', the new panel should be the first child.
+  // For 'right' and 'bottom', the new panel should be the second child (default splitNode behaviour).
+  if (zone === 'left' || zone === 'top') {
+    // We need to inject as first child — do a manual split
+    const targetLeaf = findLeaf(treeAfterClose, targetPanelId)
+    if (!targetLeaf) {
+      // Target was removed (source == target, only tab); fall back to addTab on any remaining leaf
+      return treeAfterClose
+    }
+    const newLeaf = createLeaf(movedTab.viewKey)
+    const splitResult = replacLeafWithSplit(treeAfterClose, targetPanelId, direction, newLeaf, 'first')
+    return splitResult ?? treeAfterClose
+  }
+
+  // 'right' or 'bottom': new panel is second child (default)
+  const targetLeaf = findLeaf(treeAfterClose, targetPanelId)
+  if (!targetLeaf) return treeAfterClose
+  const newLeaf = createLeaf(movedTab.viewKey)
+  const splitResult = replacLeafWithSplit(treeAfterClose, targetPanelId, direction, newLeaf, 'second')
+  return splitResult ?? treeAfterClose
+}
+
+/**
+ * Replaces the leaf at targetId with a split containing [newLeaf, targetLeaf]
+ * or [targetLeaf, newLeaf] depending on `newPosition`.
+ */
+function replacLeafWithSplit(
+  root: PanelNode,
+  targetId: string,
+  direction: 'horizontal' | 'vertical',
+  newLeaf: PanelLeafNode,
+  newPosition: 'first' | 'second'
+): PanelNode | null {
+  if (root.type === 'leaf') {
+    if (root.panelId !== targetId) return null
+    const children: [PanelNode, PanelNode] =
+      newPosition === 'first' ? [newLeaf, root] : [root, newLeaf]
+    const split: PanelSplitNode = {
+      type: 'split',
+      direction,
+      children,
+      sizes: [50, 50],
+    }
+    return split
+  }
+
+  const left = replacLeafWithSplit(root.children[0], targetId, direction, newLeaf, newPosition)
+  if (left !== null) {
+    return { ...root, children: [left, root.children[1]] }
+  }
+
+  const right = replacLeafWithSplit(root.children[1], targetId, direction, newLeaf, newPosition)
+  if (right !== null) {
+    return { ...root, children: [root.children[0], right] }
+  }
+
+  return null
+}
+
 // ---------------------------------------------------------------------------
 // Default layout
 // ---------------------------------------------------------------------------
@@ -202,6 +292,7 @@ interface PanelLayoutState {
   closeTab: (targetId: string, tabIndex: number) => void
   addTab: (targetId: string, viewKey: View) => void
   setActiveTab: (panelId: string, tabIndex: number) => void
+  moveTab: (sourcePanelId: string, sourceTabIndex: number, targetPanelId: string, zone: DropZone) => void
   focusPanel: (panelId: string) => void
   resetLayout: () => void
   findPanelByView: (viewKey: View) => PanelLeafNode | null
@@ -239,6 +330,14 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
   setActiveTab: (panelId, tabIndex): void => {
     set((s) => {
       const newRoot = setActiveTab(s.root, panelId, tabIndex)
+      if (newRoot === null) return s
+      return { root: newRoot }
+    })
+  },
+
+  moveTab: (sourcePanelId, sourceTabIndex, targetPanelId, zone): void => {
+    set((s) => {
+      const newRoot = moveTab(s.root, sourcePanelId, sourceTabIndex, targetPanelId, zone)
       if (newRoot === null) return s
       return { root: newRoot }
     })
