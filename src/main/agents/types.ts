@@ -37,6 +37,7 @@ export interface AgentSpawnOptions {
 
 export interface AgentHandle {
   id: string
+  pid?: number
   logPath?: string
   events: AsyncIterable<AgentEvent>
   steer(message: string): Promise<void>

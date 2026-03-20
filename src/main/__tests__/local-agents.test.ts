@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { EventEmitter } from 'events'
-import { execFile, spawn } from 'child_process'
+import { execFile } from 'child_process'
 import { readdir, stat, unlink, appendFile, open } from 'fs/promises'
+import type { AgentHandle, AgentEvent } from '../agents/types'
 
 // --- Module mocks ---
 
@@ -30,6 +30,10 @@ vi.mock('../fs', () => ({
   validateLogPath: vi.fn((p: string) => p),
 }))
 
+vi.mock('../agents', () => ({
+  createAgentProvider: vi.fn(),
+}))
+
 import {
   getAgentProcesses,
   spawnClaudeAgent,
@@ -50,6 +54,7 @@ import {
   updateAgentMeta,
   listAgents,
 } from '../agent-history'
+import { createAgentProvider } from '../agents'
 
 // --- Helpers ---
 
@@ -84,19 +89,51 @@ function mockExecFileFailure(err: Error) {
   mockExecFileSequence([err])
 }
 
-/** Create a mock ChildProcess with EventEmitter stdout/stderr and writable stdin. */
-function createMockChild(pid: number) {
-  const stdout = new EventEmitter()
-  const stderr = new EventEmitter()
-  const child = Object.assign(new EventEmitter(), {
+/** Create a mock AgentHandle with controllable event stream. */
+function createMockHandle(pid?: number): AgentHandle & {
+  _pushEvent: (event: AgentEvent) => void
+  _complete: () => void
+} {
+  const queue: AgentEvent[] = []
+  let resolve: (() => void) | null = null
+  let done = false
+
+  async function* eventGenerator() {
+    while (true) {
+      if (queue.length > 0) {
+        yield queue.shift()!
+      } else if (done) {
+        return
+      } else {
+        await new Promise<void>((r) => { resolve = r })
+      }
+    }
+  }
+
+  return {
+    id: 'mock-handle-id',
     pid,
-    stdin: { write: vi.fn(), destroyed: false },
-    stdout,
-    stderr,
-    unref: vi.fn(),
-    kill: vi.fn(),
+    events: eventGenerator(),
+    steer: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn().mockResolvedValue(undefined),
+    _pushEvent: (event: AgentEvent) => {
+      queue.push(event)
+      resolve?.()
+      resolve = null
+    },
+    _complete: () => {
+      done = true
+      resolve?.()
+      resolve = null
+    },
+  }
+}
+
+/** Set up createAgentProvider mock to return a provider with the given handle. */
+function mockProvider(handle: AgentHandle) {
+  vi.mocked(createAgentProvider).mockReturnValue({
+    spawn: vi.fn().mockResolvedValue(handle),
   })
-  return child
 }
 
 describe('local-agents.ts', () => {
@@ -438,147 +475,107 @@ describe('local-agents.ts', () => {
   // ── spawnClaudeAgent ───────────────────────────────────────────────
 
   describe('spawnClaudeAgent', () => {
-    it('spawns claude with correct flags including bypassPermissions and detached mode', async () => {
-      const mockChild = createMockChild(5001)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('creates agent record and spawns via provider factory', async () => {
+      const handle = createMockHandle(5001)
+      mockProvider(handle)
 
       await spawnClaudeAgent({ task: 'fix bug', repoPath: '/tmp/repo' })
 
-      expect(spawn).toHaveBeenCalledWith(
-        'claude',
-        [
-          '--output-format', 'stream-json',
-          '--include-partial-messages',
-          '--verbose',
-          '--input-format', 'stream-json',
-          '--model', 'claude-sonnet-4-5',
-          '--permission-mode', 'bypassPermissions',
-        ],
-        expect.objectContaining({
-          cwd: '/tmp/repo',
-          detached: true,
-          stdio: ['pipe', 'pipe', 'pipe'],
-        }),
-      )
-    })
-
-    it('augments PATH with /usr/local/bin, /opt/homebrew/bin, and ~/.local/bin', async () => {
-      const mockChild = createMockChild(5002)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-
-      const opts = vi.mocked(spawn).mock.calls[0][2] as { env: { PATH: string } }
-      expect(opts.env.PATH).toContain('/usr/local/bin')
-      expect(opts.env.PATH).toContain('/opt/homebrew/bin')
-      expect(opts.env.PATH).toContain('.local/bin')
-    })
-
-    it('sends initial task as JSON user message on stdin', async () => {
-      const mockChild = createMockChild(5003)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-
-      await spawnClaudeAgent({ task: 'hello world', repoPath: '/tmp/repo' })
-
-      const written = mockChild.stdin.write.mock.calls[0][0] as string
-      expect(JSON.parse(written.trim())).toEqual({
-        type: 'user',
-        message: { role: 'user', content: 'hello world' },
-      })
-    })
-
-    it('creates agent record and updates it with real PID', async () => {
-      const mockChild = createMockChild(5004)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-
       expect(createAgentRecord).toHaveBeenCalledWith(
-        expect.objectContaining({ bin: 'claude', task: 'test', repoPath: '/tmp/repo', pid: null }),
+        expect.objectContaining({ task: 'fix bug', repoPath: '/tmp/repo', pid: null }),
       )
-      expect(updateAgentMeta).toHaveBeenCalledWith(expect.any(String), { pid: 5004 })
+      expect(createAgentProvider).toHaveBeenCalled()
     })
 
-    it('tracks process in activeAgentProcesses (verified via isAgentInteractive)', async () => {
-      const mockChild = createMockChild(5005)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('updates record with PID from handle', async () => {
+      const handle = createMockHandle(5002)
+      mockProvider(handle)
+
+      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
+
+      expect(updateAgentMeta).toHaveBeenCalledWith(expect.any(String), { pid: 5002 })
+    })
+
+    it('returns pid, logPath, id, and interactive from spawn result', async () => {
+      const handle = createMockHandle(5003)
+      mockProvider(handle)
+
+      const result = await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
+
+      expect(result.pid).toBe(5003)
+      expect(result.logPath).toBe('/tmp/bde-agents/test/output.log')
+      expect(result.id).toBeDefined()
+      expect(result.interactive).toBe(true)
+    })
+
+    it('returns pid: 0 when handle has no pid (SDK provider)', async () => {
+      const handle = createMockHandle() // no pid
+      mockProvider(handle)
+
+      const result = await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
+
+      expect(result.pid).toBe(0)
+      expect(result.interactive).toBe(true)
+    })
+
+    it('tracks handle by PID for interactive messaging', async () => {
+      const handle = createMockHandle(5005)
+      mockProvider(handle)
 
       await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
 
       expect(isAgentInteractive(5005)).toBe(true)
     })
 
-    it('removes process from activeAgentProcesses on exit', async () => {
-      const mockChild = createMockChild(5006)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('marks agent as failed when provider.spawn() throws', async () => {
+      vi.mocked(createAgentProvider).mockReturnValue({
+        spawn: vi.fn().mockRejectedValue(new Error('Binary not found')),
+      })
 
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-      expect(isAgentInteractive(5006)).toBe(true)
+      const result = await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
 
-      mockChild.emit('close', 0)
-      await vi.waitFor(() => expect(isAgentInteractive(5006)).toBe(false))
+      expect(result.pid).toBe(0)
+      expect(result.interactive).toBe(false)
+      expect(updateAgentMeta).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ status: 'failed' }),
+      )
     })
 
-    it('calls child.unref() so parent can exit independently', async () => {
-      const mockChild = createMockChild(5007)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-
-      expect(mockChild.unref).toHaveBeenCalled()
-    })
-
-    it('maps model "haiku" to claude-haiku-4-5 flag', async () => {
-      const mockChild = createMockChild(5008)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo', model: 'haiku' })
-
-      const args = vi.mocked(spawn).mock.calls[0][1] as string[]
-      expect(args[args.indexOf('--model') + 1]).toBe('claude-haiku-4-5')
-    })
-
-    it('maps model "opus" to claude-opus-4-5 flag', async () => {
-      const mockChild = createMockChild(5009)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo', model: 'opus' })
-
-      const args = vi.mocked(spawn).mock.calls[0][1] as string[]
-      expect(args[args.indexOf('--model') + 1]).toBe('claude-opus-4-5')
-    })
-
-    it('defaults to claude-sonnet-4-5 for unspecified model', async () => {
-      const mockChild = createMockChild(5010)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('writes events to log file during background consumption', async () => {
+      const handle = createMockHandle(5006)
+      mockProvider(handle)
 
       await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
 
-      const args = vi.mocked(spawn).mock.calls[0][1] as string[]
-      expect(args[args.indexOf('--model') + 1]).toBe('claude-sonnet-4-5')
+      // Push an event through the stream
+      handle._pushEvent({ type: 'agent:text', text: 'hello', timestamp: 1 })
+      handle._pushEvent({
+        type: 'agent:completed', exitCode: 0, costUsd: 0,
+        tokensIn: 0, tokensOut: 0, durationMs: 0, timestamp: 2,
+      })
+
+      // Wait for background consumption
+      await vi.waitFor(() =>
+        expect(appendFile).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.stringContaining('agent:text'),
+          'utf-8',
+        ),
+      )
     })
 
-    it('pipes stdout and stderr chunks to appendFile', async () => {
-      const mockChild = createMockChild(5011)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('updates DB with done status on agent:completed with exitCode 0', async () => {
+      const handle = createMockHandle(5007)
+      mockProvider(handle)
 
       await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
 
-      mockChild.stdout.emit('data', Buffer.from('stdout chunk'))
-      mockChild.stderr.emit('data', Buffer.from('stderr chunk'))
+      handle._pushEvent({
+        type: 'agent:completed', exitCode: 0, costUsd: 0.05,
+        tokensIn: 1000, tokensOut: 500, durationMs: 10000, timestamp: 1,
+      })
 
-      expect(appendFile).toHaveBeenCalledWith(expect.any(String), 'stdout chunk', 'utf-8')
-      expect(appendFile).toHaveBeenCalledWith(expect.any(String), 'stderr chunk', 'utf-8')
-    })
-
-    it('sets status "done" on exit code 0', async () => {
-      const mockChild = createMockChild(5012)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-      vi.mocked(updateAgentMeta).mockClear()
-
-      mockChild.emit('close', 0)
       await vi.waitFor(() =>
         expect(updateAgentMeta).toHaveBeenCalledWith(
           expect.any(String),
@@ -587,14 +584,17 @@ describe('local-agents.ts', () => {
       )
     })
 
-    it('sets status "failed" on non-zero exit code', async () => {
-      const mockChild = createMockChild(5013)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('updates DB with failed status on non-zero exit code', async () => {
+      const handle = createMockHandle(5008)
+      mockProvider(handle)
 
       await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-      vi.mocked(updateAgentMeta).mockClear()
 
-      mockChild.emit('close', 1)
+      handle._pushEvent({
+        type: 'agent:completed', exitCode: 1, costUsd: 0,
+        tokensIn: 0, tokensOut: 0, durationMs: 0, timestamp: 1,
+      })
+
       await vi.waitFor(() =>
         expect(updateAgentMeta).toHaveBeenCalledWith(
           expect.any(String),
@@ -602,40 +602,39 @@ describe('local-agents.ts', () => {
         ),
       )
     })
+
+    it('removes handle from tracking on completion', async () => {
+      const handle = createMockHandle(5009)
+      mockProvider(handle)
+
+      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
+      expect(isAgentInteractive(5009)).toBe(true)
+
+      handle._pushEvent({
+        type: 'agent:completed', exitCode: 0, costUsd: 0,
+        tokensIn: 0, tokensOut: 0, durationMs: 0, timestamp: 1,
+      })
+
+      await vi.waitFor(() => expect(isAgentInteractive(5009)).toBe(false))
+    })
   })
 
   // ── sendToAgent ────────────────────────────────────────────────────
 
   describe('sendToAgent', () => {
-    it('writes JSON user message to stdin and returns { ok: true }', async () => {
-      const mockChild = createMockChild(6001)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('delegates to handle.steer() and returns { ok: true }', async () => {
+      const handle = createMockHandle(6001)
+      mockProvider(handle)
       await spawnClaudeAgent({ task: 'setup', repoPath: '/tmp/repo' })
 
       const result = sendToAgent(6001, 'follow up')
 
       expect(result).toEqual({ ok: true })
-      const lastWrite = mockChild.stdin.write.mock.calls.at(-1)![0] as string
-      expect(JSON.parse(lastWrite.trim())).toEqual({
-        type: 'user',
-        message: { role: 'user', content: 'follow up' },
-      })
+      expect(handle.steer).toHaveBeenCalledWith('follow up')
     })
 
     it('returns { ok: false } when PID is not found', () => {
       const result = sendToAgent(99999, 'hello')
-      expect(result.ok).toBe(false)
-      expect(result.error).toBeDefined()
-    })
-
-    it('returns { ok: false } when stdin is destroyed', async () => {
-      const mockChild = createMockChild(6002)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-
-      mockChild.stdin.destroyed = true
-
-      const result = sendToAgent(6002, 'hello')
       expect(result.ok).toBe(false)
       expect(result.error).toBeDefined()
     })
@@ -644,26 +643,16 @@ describe('local-agents.ts', () => {
   // ── isAgentInteractive ─────────────────────────────────────────────
 
   describe('isAgentInteractive', () => {
-    it('returns true when PID has active stdin', async () => {
-      const mockChild = createMockChild(7001)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
+    it('returns true when PID has an active handle', async () => {
+      const handle = createMockHandle(7001)
+      mockProvider(handle)
       await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
 
       expect(isAgentInteractive(7001)).toBe(true)
     })
 
-    it('returns false when PID is not in active processes', () => {
+    it('returns false when PID is not in active handles', () => {
       expect(isAgentInteractive(88888)).toBe(false)
-    })
-
-    it('returns false when stdin is destroyed', async () => {
-      const mockChild = createMockChild(7002)
-      vi.mocked(spawn).mockReturnValue(mockChild as never)
-      await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
-
-      mockChild.stdin.destroyed = true
-
-      expect(isAgentInteractive(7002)).toBe(false)
     })
   })
 

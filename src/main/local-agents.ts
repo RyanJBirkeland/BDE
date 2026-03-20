@@ -1,12 +1,11 @@
 /**
  * Local agent management — spawn, kill, steer, and tail agent processes.
+ * Delegates to AgentProvider (SDK or CLI) via the provider factory.
  * Process scanning logic lives in agent-scanner.ts.
  */
-import { spawn, execFile } from 'child_process'
-import { promisify } from 'util'
 import { randomUUID } from 'crypto'
 import { readdir, stat, unlink, appendFile, open, readFile } from 'fs/promises'
-import { join, dirname, basename as pathBasename } from 'path'
+import { join, basename as pathBasename } from 'path'
 import { validateLogPath } from './fs'
 import {
   createAgentRecord,
@@ -15,6 +14,7 @@ import {
 import { getTaskRunnerConfig } from './config'
 import { getDb } from './db'
 import { BDE_AGENT_TMP_DIR as LOG_DIR } from './paths'
+import { createAgentProvider, type AgentHandle } from './agents'
 
 // Re-export scanner types and functions for consumers
 export type { LocalAgentProcess, PsCandidate } from './agent-scanner'
@@ -30,24 +30,13 @@ export {
   _resetProcessCache,
 } from './agent-scanner'
 
-const execFileAsync = promisify(execFile)
-
 const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
-// Electron's main process has a stripped PATH — augment it with common CLI install locations
-const ELECTRON_PATH = [
-  process.env.PATH,
-  '/usr/local/bin',
-  '/opt/homebrew/bin',
-  `${process.env.HOME}/.local/bin`,
-  `${dirname(process.execPath)}`,
-].filter(Boolean).join(':')
+// Track active agent handles for PID-based interactive messaging
+const activeAgentProcesses = new Map<number, AgentHandle>()
 
-// Track active child processes for interactive stdin messaging
-const activeAgentProcesses = new Map<number, import('child_process').ChildProcess>()
-
-// Track active child processes by agent ID for steering from Sprint LogDrawer
-const activeAgentsById = new Map<string, import('child_process').ChildProcess>()
+// Track active agent handles by agent ID for steering from Sprint LogDrawer
+const activeAgentsById = new Map<string, AgentHandle>()
 
 // --- Cost extraction from agent log files ---
 
@@ -82,18 +71,30 @@ export async function extractAgentCost(logPath: string): Promise<AgentCost | nul
         parsed = parsed.event as Record<string, unknown>
       }
 
-      if (parsed.type !== 'result') continue
+      // Support both legacy result events and new agent:completed events
+      if (parsed.type === 'result') {
+        const usage = parsed.usage as Record<string, number> | undefined
+        return {
+          costUsd: typeof parsed.total_cost_usd === 'number' ? parsed.total_cost_usd : 0,
+          tokensIn: usage?.input_tokens ?? 0,
+          tokensOut: usage?.output_tokens ?? 0,
+          cacheRead: usage?.cache_read_input_tokens ?? 0,
+          cacheCreate: usage?.cache_creation_input_tokens ?? 0,
+          durationMs: typeof parsed.duration_ms === 'number' ? parsed.duration_ms : 0,
+          numTurns: typeof parsed.num_turns === 'number' ? parsed.num_turns : 0,
+        }
+      }
 
-      const usage = parsed.usage as Record<string, number> | undefined
-
-      return {
-        costUsd: typeof parsed.total_cost_usd === 'number' ? parsed.total_cost_usd : 0,
-        tokensIn: usage?.input_tokens ?? 0,
-        tokensOut: usage?.output_tokens ?? 0,
-        cacheRead: usage?.cache_read_input_tokens ?? 0,
-        cacheCreate: usage?.cache_creation_input_tokens ?? 0,
-        durationMs: typeof parsed.duration_ms === 'number' ? parsed.duration_ms : 0,
-        numTurns: typeof parsed.num_turns === 'number' ? parsed.num_turns : 0,
+      if (parsed.type === 'agent:completed') {
+        return {
+          costUsd: typeof parsed.costUsd === 'number' ? parsed.costUsd : 0,
+          tokensIn: typeof parsed.tokensIn === 'number' ? parsed.tokensIn : 0,
+          tokensOut: typeof parsed.tokensOut === 'number' ? parsed.tokensOut : 0,
+          cacheRead: 0,
+          cacheCreate: 0,
+          durationMs: typeof parsed.durationMs === 'number' ? parsed.durationMs : 0,
+          numTurns: 0,
+        }
       }
     }
 
@@ -118,42 +119,20 @@ export function updateAgentRunCost(agentRunId: string, cost: AgentCost): void {
   )
 }
 
-// --- Spawn a Claude CLI agent on the Max plan ---
+// --- Spawn an agent via the provider factory ---
 
 export type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
 import type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
 import { CLAUDE_MODELS, DEFAULT_MODEL } from '../shared/models'
-import { getAgentBinary, getAgentPermissionMode } from './settings'
+import { getAgentBinary } from './settings'
 
 function modelToFlag(model?: string): string {
   const entry = CLAUDE_MODELS.find((m) => m.id === model)
   return entry?.modelId ?? DEFAULT_MODEL.modelId
 }
 
-/**
- * Verify the agent binary exists on PATH before attempting to spawn.
- * Throws a descriptive error if the binary is not found.
- */
-async function assertBinaryExists(binary: string): Promise<void> {
-  try {
-    await execFileAsync('which', [binary], {
-      env: { ...process.env, PATH: ELECTRON_PATH }
-    })
-  } catch {
-    throw new Error(
-      `Agent binary "${binary}" not found on PATH. ` +
-      `Install it or update the binary name in Settings > Agent Runtime.`
-    )
-  }
-}
-
 export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<SpawnLocalAgentResult> {
   const bin = getAgentBinary()
-  const permissionMode = getAgentPermissionMode()
-
-  // Pre-flight: ensure the binary exists before creating any DB records
-  await assertBinaryExists(bin)
-
   const id = randomUUID()
 
   // Create persistent agent record
@@ -172,63 +151,17 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
     source: 'bde'
   })
 
-  const child = spawn(bin, [
-    '--output-format', 'stream-json',
-    '--include-partial-messages',
-    '--verbose',
-    '--input-format', 'stream-json',
-    '--model', modelToFlag(args.model),
-    '--permission-mode', permissionMode
-  ], {
-    cwd: args.repoPath,
-    detached: true,
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, PATH: ELECTRON_PATH }
-  })
-
-  // Send the initial task as the first user message via stdin
-  const initialMessage = JSON.stringify({
-    type: 'user',
-    message: { role: 'user', content: args.task }
-  }) + '\n'
-  child.stdin?.write(initialMessage)
-
-  // Track active process for interactive messaging
-  if (child.pid) activeAgentProcesses.set(child.pid, child)
-  activeAgentsById.set(id, child)
-
-  // Update record with real PID
-  await updateAgentMeta(id, { pid: child.pid ?? null })
-
-  // Stream output to persistent log — cache logPath to avoid a SQLite lookup per chunk
-  const logPath = meta.logPath
-  child.stdout?.on('data', (chunk: Buffer) => {
-    appendFile(logPath, chunk.toString(), 'utf-8').catch(() => {})
-  })
-  child.stderr?.on('data', (chunk: Buffer) => {
-    appendFile(logPath, chunk.toString(), 'utf-8').catch(() => {})
-  })
-
-  child.on('close', async (code, signal) => {
-    activeAgentsById.delete(id)
-    if (child.pid) activeAgentProcesses.delete(child.pid)
-    const status = signal === 'SIGTERM' ? 'cancelled' : code === 0 ? 'done' : 'failed'
-    await updateAgentMeta(id, {
-      finishedAt: new Date().toISOString(),
-      exitCode: code,
-      status
+  let handle: AgentHandle
+  try {
+    const provider = createAgentProvider()
+    handle = await provider.spawn({
+      prompt: args.task,
+      workingDirectory: args.repoPath,
+      model: args.model,
+      agentId: id,
     })
-    const cost = await extractAgentCost(logPath)
-    if (cost) {
-      await updateAgentRunCost(id, cost)
-    }
-  })
-
-  child.unref()
-
-  if (!child.pid) {
-    console.error(`[local-agents] spawn failed for agent ${id} — child.pid is undefined`)
-    activeAgentsById.delete(id)
+  } catch (err) {
+    console.error(`[local-agents] spawn failed for agent ${id}:`, err)
     await updateAgentMeta(id, {
       finishedAt: new Date().toISOString(),
       exitCode: null,
@@ -237,20 +170,70 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
     return { pid: 0, logPath: meta.logPath, id, interactive: false }
   }
 
-  return { pid: child.pid, logPath: meta.logPath, id, interactive: true }
+  const pid = handle.pid ?? 0
+
+  // Track active handle
+  if (pid) activeAgentProcesses.set(pid, handle)
+  activeAgentsById.set(id, handle)
+
+  // Update record with real PID
+  await updateAgentMeta(id, { pid: pid || null })
+
+  // Consume event stream in background for logging and completion
+  consumeEvents(id, handle, meta.logPath).catch(() => {})
+
+  return { pid, logPath: meta.logPath, id, interactive: true }
+}
+
+/** Background event consumer — writes events to log and updates DB on completion. */
+async function consumeEvents(id: string, handle: AgentHandle, logPath: string): Promise<void> {
+  try {
+    for await (const event of handle.events) {
+      appendFile(logPath, JSON.stringify(event) + '\n', 'utf-8').catch(() => {})
+
+      if (event.type === 'agent:completed') {
+        activeAgentsById.delete(id)
+        if (handle.pid) activeAgentProcesses.delete(handle.pid)
+        const status = event.exitCode === 0 ? 'done' : 'failed'
+        await updateAgentMeta(id, {
+          finishedAt: new Date().toISOString(),
+          exitCode: event.exitCode,
+          status,
+        })
+        updateAgentRunCost(id, {
+          costUsd: event.costUsd,
+          tokensIn: event.tokensIn,
+          tokensOut: event.tokensOut,
+          cacheRead: 0,
+          cacheCreate: 0,
+          durationMs: event.durationMs,
+          numTurns: 0,
+        })
+        break
+      }
+    }
+  } catch {
+    activeAgentsById.delete(id)
+    if (handle.pid) activeAgentProcesses.delete(handle.pid)
+    await updateAgentMeta(id, {
+      finishedAt: new Date().toISOString(),
+      exitCode: null,
+      status: 'failed',
+    })
+  }
 }
 
 // --- Kill a running agent by ID ---
 
 export async function killAgent(agentId: string): Promise<{ ok: boolean; error?: string }> {
-  const child = activeAgentsById.get(agentId)
-  if (!child) {
+  const handle = activeAgentsById.get(agentId)
+  if (!handle) {
     return { ok: false, error: 'Agent not found — may have already exited' }
   }
   try {
-    child.kill('SIGTERM')
+    await handle.stop()
   } catch {
-    return { ok: false, error: 'Failed to send SIGTERM' }
+    return { ok: false, error: 'Failed to stop agent' }
   }
   return { ok: true }
 }
@@ -258,29 +241,25 @@ export async function killAgent(agentId: string): Promise<{ ok: boolean; error?:
 // --- Send follow-up message to a running interactive agent ---
 
 export function sendToAgent(pid: number, message: string): { ok: boolean; error?: string } {
-  const child = activeAgentProcesses.get(pid)
-  if (!child || !child.stdin || child.stdin.destroyed) {
+  const handle = activeAgentProcesses.get(pid)
+  if (!handle) {
     return { ok: false, error: 'Process not found or stdin closed' }
   }
-  const event = JSON.stringify({
-    type: 'user',
-    message: { role: 'user', content: message }
-  }) + '\n'
-  child.stdin.write(event)
+  handle.steer(message).catch(() => {})
   return { ok: true }
 }
 
 // --- Steer a running agent by agent ID (UUID) ---
 
 export async function steerAgent(agentId: string, message: string): Promise<{ ok: boolean; error?: string }> {
-  const child = activeAgentsById.get(agentId)
-  if (child?.stdin && !child.stdin.destroyed) {
-    const event = JSON.stringify({
-      type: 'user',
-      message: { role: 'user', content: message }
-    }) + '\n'
-    child.stdin.write(event)
-    return { ok: true }
+  const handle = activeAgentsById.get(agentId)
+  if (handle) {
+    try {
+      await handle.steer(message)
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Failed to steer agent' }
+    }
   }
 
   return steerViaTaskRunner(agentId, message)
@@ -364,11 +343,10 @@ export async function cleanupOldLogs(): Promise<void> {
   }
 }
 
-// --- Check if a PID has an interactive stdin handle ---
+// --- Check if a PID has an interactive agent handle ---
 
 export function isAgentInteractive(pid: number): boolean {
-  const child = activeAgentProcesses.get(pid)
-  return !!(child && child.stdin && !child.stdin.destroyed)
+  return activeAgentProcesses.has(pid)
 }
 
 /** Returns true if the given PID belongs to a BDE-spawned agent process. */

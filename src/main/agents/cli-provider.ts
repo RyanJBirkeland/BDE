@@ -246,6 +246,7 @@ export class CliProvider implements AgentProvider {
 
     return {
       id,
+      pid: child.pid,
       events: createEventStream(child),
       steer: async (message: string) => {
         if (!child.stdin || child.stdin.destroyed) {
