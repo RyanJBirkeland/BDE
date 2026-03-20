@@ -2,7 +2,8 @@
  * Local agent management — spawn, kill, steer, and tail agent processes.
  * Process scanning logic lives in agent-scanner.ts.
  */
-import { spawn } from 'child_process'
+import { spawn, execFile } from 'child_process'
+import { promisify } from 'util'
 import { randomUUID } from 'crypto'
 import { readdir, stat, unlink, appendFile, open, readFile } from 'fs/promises'
 import { join, dirname, basename as pathBasename } from 'path'
@@ -28,6 +29,8 @@ export {
   _resetReconcileThrottle,
   _resetProcessCache,
 } from './agent-scanner'
+
+const execFileAsync = promisify(execFile)
 
 const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 

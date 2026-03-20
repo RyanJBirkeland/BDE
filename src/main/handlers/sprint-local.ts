@@ -1,16 +1,20 @@
 import { safeHandle } from '../ipc-utils'
 import { getGatewayConfig } from '../config'
 import { getDb } from '../db'
-import { SPECS_ROOT } from '../paths'
+import { getSpecsRoot } from '../paths'
 import { syncToTaskRunner } from '../adapters/task-runner-sync'
 import { readFile } from 'fs/promises'
 import { resolve } from 'path'
 import type { SprintTask } from '../../shared/types'
 
 function validateSpecPath(relativePath: string): string {
-  const resolved = resolve(SPECS_ROOT, relativePath)
-  if (!resolved.startsWith(SPECS_ROOT + '/') && resolved !== SPECS_ROOT) {
-    throw new Error(`Path traversal blocked: "${relativePath}" resolves outside ${SPECS_ROOT}`)
+  const specsRoot = getSpecsRoot()
+  if (!specsRoot) {
+    throw new Error('Cannot resolve spec path: BDE repo not configured')
+  }
+  const resolved = resolve(specsRoot, relativePath)
+  if (!resolved.startsWith(specsRoot + '/') && resolved !== specsRoot) {
+    throw new Error(`Path traversal blocked: "${relativePath}" resolves outside ${specsRoot}`)
   }
   return resolved
 }
