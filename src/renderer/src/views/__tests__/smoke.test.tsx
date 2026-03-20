@@ -64,52 +64,6 @@ vi.mock('../../stores/theme', () => ({
   ),
 }))
 
-vi.mock('../../stores/diffView', () => ({
-  useDiffViewStore: vi.fn((selector?: (s: Record<string, unknown>) => unknown) => {
-    const state = {
-      repos: {},
-      selectedRepo: null,
-      branches: [],
-      currentBranch: '',
-      files: [],
-      selectedFile: null,
-      diffFiles: [],
-      stagedSet: new Set(),
-      commitMsg: '',
-      loading: false,
-      pushing: false,
-      committing: false,
-      pushOutput: null,
-      error: null,
-      diffSizeWarning: null,
-      rawDiff: null,
-      hasStaged: false,
-      fetchRepos: vi.fn(),
-      loadRepos: vi.fn().mockResolvedValue(undefined),
-      fetchStatus: vi.fn(),
-      loadStatus: vi.fn(),
-      fetchBranches: vi.fn(),
-      selectRepo: vi.fn(),
-      selectFile: vi.fn(),
-      setSelectedFile: vi.fn(),
-      setCommitMsg: vi.fn(),
-      setPushOutput: vi.fn(),
-      refresh: vi.fn().mockResolvedValue(undefined),
-      loadDiff: vi.fn().mockResolvedValue(undefined),
-      toggleStage: vi.fn().mockResolvedValue(undefined),
-      stageAll: vi.fn().mockResolvedValue(undefined),
-      unstageAll: vi.fn().mockResolvedValue(undefined),
-      stageFile: vi.fn(),
-      unstageFile: vi.fn(),
-      commit: vi.fn().mockResolvedValue(undefined),
-      push: vi.fn().mockResolvedValue(undefined),
-      switchBranch: vi.fn().mockResolvedValue(undefined),
-      forceLoadLargeDiff: vi.fn(),
-    }
-    return selector ? selector(state) : state
-  }),
-}))
-
 vi.mock('../../stores/terminal', () => {
   const tab = { id: 'tab-1', label: 'Terminal 1', ptyId: null }
   return {
@@ -250,7 +204,6 @@ Object.defineProperty(window, 'api', {
 
 import { SessionsView } from '../SessionsView'
 import SprintView from '../SprintView'
-import DiffView from '../DiffView'
 import MemoryView from '../MemoryView'
 import CostView from '../CostView'
 import SettingsView from '../SettingsView'
@@ -267,12 +220,6 @@ describe('View smoke tests', () => {
 
   it('SprintView renders without crashing', () => {
     const { container } = render(<SprintView />)
-    expect(container.firstChild).toBeInTheDocument()
-    expect(container.innerHTML).not.toBe('')
-  })
-
-  it('DiffView renders without crashing', () => {
-    const { container } = render(<DiffView />)
     expect(container.firstChild).toBeInTheDocument()
     expect(container.innerHTML).not.toBe('')
   })

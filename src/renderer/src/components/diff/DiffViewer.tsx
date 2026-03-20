@@ -371,7 +371,7 @@ function DiffViewer({ files }: { files: DiffFile[] }): React.JSX.Element {
 
   // Keyboard navigation
   useEffect(() => {
-    if (activeView !== 'diff') return
+    if (activeView !== 'pr-station') return
     if (files.length === 0) return
 
     const handler = (e: KeyboardEvent): void => {
