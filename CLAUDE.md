@@ -66,17 +66,17 @@ These files are edited frequently across branches. Take extra care when modifyin
 
 ## Architecture Notes
 
-- **Data layer**: SQLite database at `~/.bde/bde.db` (WAL mode). Schema in `src/main/db.ts`. Tables: `sprint_tasks`, `agent_runs`, `settings`, `cost_events`.
+- **Data layer**: SQLite database at `~/.bde/bde.db` (WAL mode). Schema in `src/main/db.ts`. Tables: `sprint_tasks`, `agent_runs`, `settings`, `cost_events`, `agent_events`.
 - **Queue API**: `src/main/queue-api/` exposes sprint tasks to the task runner on port 18790 (localhost). Enriches responses with `repo_path`/`gh_repo` from repo settings. Endpoints: `/queue/tasks`, `/queue/tasks/:id/claim`, `/queue/tasks/:id/release`, `/queue/tasks/:id/status`, `/queue/tasks/:id/output`.
 - **Sprint PR poller**: `src/main/sprint-pr-poller.ts` — runs every 60s in main process (not renderer-dependent), polls PR status for tasks with `pr_status='open'`.
 - **State**: Zustand stores in `src/renderer/src/stores/`
 - **IPC**: Main process handlers in `src/main/handlers/`, registered in `src/main/index.ts`, preload bridge in `src/preload/index.ts`
 - **RPC**: Renderer talks to OpenClaw gateway via WebSocket (`src/renderer/src/lib/gateway.ts`)
 - **PR polling**: `pollPrStatuses` in `src/main/git.ts` — GitHub REST API, 60s interval, auto-marks tasks done on merge or cancelled on close
-- **Agent spawning**: `src/main/local-agents.ts` — spawns Claude CLI agents with stream-json I/O
+- **Agent spawning**: `src/main/local-agents.ts` delegates to `src/main/agents/` provider factory (SDK or CLI). Event bus persists `AgentEvent` stream to SQLite and broadcasts via IPC.
 - **DB sync**: File watcher on `bde.db` pushes `sprint:external-change` IPC events to renderer (500ms debounce)
 - **Design tokens**: `src/renderer/src/design-system/tokens.ts` — use these instead of hardcoded values
-- **Views**: 7 views in `src/renderer/src/views/` — Sessions, Terminal, Sprint, PR Station, Memory, Cost, Settings
+- **Views**: 7 views in `src/renderer/src/views/` — Agents, Terminal, Sprint, PR Station, Memory, Cost, Settings
 - **Full architecture**: See `docs/architecture.md`
 
 ## Gotchas
