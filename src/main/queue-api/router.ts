@@ -19,6 +19,23 @@ import {
 } from '../../shared/queue-api-contract'
 import type { TaskOutputEvent } from '../../shared/queue-api-contract'
 import { appendEvents } from './event-store'
+import { getConfiguredRepos } from '../paths'
+import type { SprintTask } from '../../shared/types'
+
+/** Enrich a task with repo_path and gh_repo from BDE's repo settings. */
+function enrichTask(task: SprintTask): SprintTask & { repo_path: string; gh_repo: string } {
+  const repos = getConfiguredRepos()
+  const match = repos.find((r) => r.name.toLowerCase() === task.repo.toLowerCase())
+  return {
+    ...task,
+    repo_path: match?.localPath ?? '',
+    gh_repo: match ? `${match.githubOwner}/${match.githubRepo}` : '',
+  }
+}
+
+function enrichTasks(tasks: SprintTask[]): Array<SprintTask & { repo_path: string; gh_repo: string }> {
+  return tasks.map(enrichTask)
+}
 
 const API_VERSION = '0.1.0'
 
@@ -97,7 +114,7 @@ export async function handleRequest(
     if (method === 'GET' && pathname === '/queue/tasks') {
       const status = query.get('status') ?? undefined
       const tasks = listTasks(status)
-      jsonResponse(res, 200, tasks)
+      jsonResponse(res, 200, enrichTasks(tasks))
       return
     }
 
@@ -116,7 +133,7 @@ export async function handleRequest(
         errorResponse(res, 404, 'Task not found')
         return
       }
-      jsonResponse(res, 200, task)
+      jsonResponse(res, 200, enrichTask(task))
       return
     }
 
@@ -139,7 +156,7 @@ export async function handleRequest(
 
       const claimed = claimTask(id, executorId)
       if (claimed) {
-        jsonResponse(res, 200, claimed)
+        jsonResponse(res, 200, enrichTask(claimed))
         return
       }
 
