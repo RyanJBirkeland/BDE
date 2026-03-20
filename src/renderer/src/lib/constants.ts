@@ -38,14 +38,20 @@ export const SPAWN_TASK_MAX_CHARS_SOFT = 2_000
 export const SPAWN_TASK_MAX_CHARS_HARD = 4_000
 export const SPAWN_TASK_HISTORY_LIMIT = 10
 
-// Repositories
-export const REPO_OPTIONS = [
+// Repositories — dynamic, loaded from settings via IPC.
+// Use useRepoOptions() hook in components for reactive repo list.
+// This constant serves as a synchronous fallback before settings load.
+export interface RepoOption {
+  label: string
+  owner: string
+  color: string
+}
+
+export const REPO_OPTIONS: RepoOption[] = [
   { label: 'BDE', owner: 'RyanJBirkeland', color: '#6C8EEF' },
   { label: 'life-os', owner: 'RyanJBirkeland', color: '#00D37F' },
   { label: 'feast', owner: 'RyanJBirkeland', color: '#FF8A00' }
-] as const
-
-export type RepoOption = (typeof REPO_OPTIONS)[number]
+]
 
 // WIP limits (matches task runner concurrency)
 export const WIP_LIMIT_IN_PROGRESS = 5

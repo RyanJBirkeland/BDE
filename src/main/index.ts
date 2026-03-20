@@ -14,6 +14,7 @@ import { registerSprintHandlers } from './handlers/sprint'
 import { registerCostHandlers } from './handlers/cost-handlers'
 import { registerFsHandlers } from './fs'
 import { getDb, closeDb } from './db'
+import { migrateFromOpenClawConfig } from './settings'
 import { startSprintSseClient, stopSprintSseClient } from './sprint-sse'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { getGatewayConfig } from './config'
@@ -107,9 +108,7 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.bde')
 
   getDb()
-
-  // Gateway config is optional — views degrade gracefully when unavailable.
-  // No startup gate. Config availability is checked per-feature.
+  migrateFromOpenClawConfig()
 
   const stopDbWatcher = startDbWatcher()
   app.on('will-quit', stopDbWatcher)

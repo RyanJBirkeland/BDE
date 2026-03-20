@@ -32,6 +32,15 @@ const api = {
     typedInvoke('memory:writeFile', path, content),
   setTitle: (title: string): void => ipcRenderer.send('window:setTitle', title),
 
+  // Settings CRUD
+  settings: {
+    get: (key: string) => typedInvoke('settings:get', key),
+    set: (key: string, value: string) => typedInvoke('settings:set', key, value),
+    getJson: (key: string) => typedInvoke('settings:getJson', key),
+    setJson: (key: string, value: unknown) => typedInvoke('settings:setJson', key, value),
+    delete: (key: string) => typedInvoke('settings:delete', key),
+  },
+
   // GitHub API proxy — all GitHub REST calls routed through main process
   github: {
     fetch: (path: string, init?: GitHubFetchInit) =>
@@ -121,6 +130,7 @@ const api = {
     typedInvoke('fs:openFileDialog', opts),
   readFileAsBase64: (path: string) => typedInvoke('fs:readFileAsBase64', path),
   readFileAsText: (path: string) => typedInvoke('fs:readFileAsText', path),
+  openDirectoryDialog: () => typedInvoke('fs:openDirectoryDialog'),
 
   // Gateway tool invocation — proxied through main process to avoid CORS
   invokeTool: (tool: string, args?: Record<string, unknown>) =>

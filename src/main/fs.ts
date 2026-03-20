@@ -1,9 +1,24 @@
+import { cpSync, existsSync } from 'fs'
 import { mkdir, readdir, readFile, writeFile, stat } from 'fs/promises'
 import { basename, dirname, extname, join, resolve } from 'path'
 import { homedir, tmpdir } from 'os'
 import { dialog } from 'electron'
 import { safeHandle } from './ipc-utils'
-import { OPENCLAW_MEMORY_DIR as MEMORY_ROOT, BDE_AGENT_LOGS_DIR as AGENT_LOGS_ROOT } from './paths'
+import { BDE_MEMORY_DIR, BDE_AGENT_LOGS_DIR as AGENT_LOGS_ROOT } from './paths'
+
+const OPENCLAW_MEMORY_DIR = resolve(homedir(), '.openclaw', 'workspace', 'memory')
+
+function ensureMemoryDir(): string {
+  if (!existsSync(BDE_MEMORY_DIR)) {
+    // One-time migration: copy OpenClaw memory files to BDE memory dir
+    if (existsSync(OPENCLAW_MEMORY_DIR)) {
+      cpSync(OPENCLAW_MEMORY_DIR, BDE_MEMORY_DIR, { recursive: true })
+    }
+  }
+  return BDE_MEMORY_DIR
+}
+
+const MEMORY_ROOT = ensureMemoryDir()
 
 export interface MemoryFile {
   path: string
@@ -165,6 +180,13 @@ async function readFileAsText(
   return { content, name: basename(safe) }
 }
 
+async function openDirectoryDialog(): Promise<string | null> {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+  })
+  return result.canceled ? null : (result.filePaths[0] ?? null)
+}
+
 export function registerFsHandlers(): void {
   safeHandle('memory:listFiles', () => listMemoryFiles())
   safeHandle('memory:readFile', (_e, path: string) => readMemoryFile(path))
@@ -178,4 +200,5 @@ export function registerFsHandlers(): void {
   )
   safeHandle('fs:readFileAsBase64', (_e, filePath: string) => readFileAsBase64(filePath))
   safeHandle('fs:readFileAsText', (_e, filePath: string) => readFileAsText(filePath))
+  safeHandle('fs:openDirectoryDialog', () => openDirectoryDialog())
 }

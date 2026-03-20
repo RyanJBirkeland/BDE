@@ -38,12 +38,6 @@ export interface CreateTicketInput {
   priority: number
 }
 
-const REPO_LABEL_TO_ENUM: Record<string, string> = {
-  BDE: 'bde',
-  'life-os': 'life-os',
-  feast: 'feast',
-}
-
 export const useSprintStore = create<SprintState>((set, get) => ({
   tasks: [],
   loading: true,
@@ -95,7 +89,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
   },
 
   createTask: async (data): Promise<void> => {
-    const repoEnum = REPO_LABEL_TO_ENUM[data.repo] ?? data.repo.toLowerCase()
+    const repoEnum = data.repo
     const optimistic: SprintTask = {
       id: `temp-${Date.now()}`,
       title: data.title,

@@ -56,6 +56,7 @@ vi.stubGlobal('api', {
     readSpecFile: vi.fn().mockResolvedValue(''),
     generatePrompt: vi.fn().mockResolvedValue({ taskId: '', spec: '', prompt: '' }),
     delete: vi.fn().mockResolvedValue({ ok: true }),
+    healthCheck: vi.fn().mockResolvedValue([]),
   },
   cost: {
     summary: vi.fn().mockResolvedValue({
@@ -64,6 +65,17 @@ vi.stubGlobal('api', {
     }),
     agentRuns: vi.fn().mockResolvedValue([]),
   },
+  settings: {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    getJson: vi.fn().mockResolvedValue(null),
+    setJson: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+  },
+  github: {
+    fetch: vi.fn().mockResolvedValue({ ok: true, status: 200, body: {}, linkNext: null }),
+  },
+  openDirectoryDialog: vi.fn().mockResolvedValue(null),
   onSprintSseEvent: vi.fn().mockReturnValue(() => {}),
   terminal: {
     create: vi.fn().mockResolvedValue(1),

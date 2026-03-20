@@ -5,6 +5,12 @@ function toHttpUrl(url: string): string {
   return url.replace(/^wss:\/\//, 'https://').replace(/^ws:\/\//, 'http://').replace(/\/$/, '')
 }
 
+function requireGatewayConfig(): { url: string; token: string } {
+  const config = getGatewayConfig()
+  if (!config) throw new Error('Gateway not configured — check Settings')
+  return config
+}
+
 /** Tools the renderer is allowed to invoke via gateway:invoke. */
 export const GATEWAY_TOOL_ALLOWLIST = new Set([
   'sessions_list',
@@ -20,12 +26,11 @@ export function registerGatewayHandlers(): void {
       throw new Error(`Tool "${tool}" is not in the renderer allowlist`)
     }
 
-    const config = getGatewayConfig()
-    if (!config) throw new Error('Gateway not configured — check Settings')
-    const httpUrl = toHttpUrl(config.url)
+    const { url, token } = requireGatewayConfig()
+    const httpUrl = toHttpUrl(url)
     const res = await fetch(`${httpUrl}/tools/invoke`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ tool, args })
     })
     if (!res.ok) throw new Error(`Gateway error ${res.status}: ${await res.text()}`)
@@ -33,12 +38,11 @@ export function registerGatewayHandlers(): void {
   })
 
   safeHandle('gateway:getSessionHistory', async (_e, sessionKey: string) => {
-    const config = getGatewayConfig()
-    if (!config) throw new Error('Gateway not configured — check Settings')
-    const httpUrl = toHttpUrl(config.url)
+    const { url, token } = requireGatewayConfig()
+    const httpUrl = toHttpUrl(url)
     const res = await fetch(`${httpUrl}/tools/invoke`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ tool: 'sessions_get_history', args: { sessionKey } })
     })
     if (!res.ok) throw new Error(`Gateway error ${res.status}: ${await res.text()}`)
@@ -48,9 +52,7 @@ export function registerGatewayHandlers(): void {
   // Test connection -- proxied through main so renderer never sees the stored token.
   // If token is provided (user-entered in settings form), use it; otherwise use stored.
   safeHandle('gateway:test-connection', async (_e, url: string, token?: string) => {
-    const config = getGatewayConfig()
-    const effectiveToken = token || config?.token
-    if (!effectiveToken) throw new Error('No gateway token available')
+    const effectiveToken = token || requireGatewayConfig().token
     const httpUrl = toHttpUrl(url)
     const start = Date.now()
     const res = await fetch(`${httpUrl}/tools/invoke`, {

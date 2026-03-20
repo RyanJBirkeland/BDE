@@ -35,6 +35,28 @@ export interface IpcChannelMap {
     result: void
   }
 
+  // --- Settings CRUD ---
+  'settings:get': {
+    args: [key: string]
+    result: string | null
+  }
+  'settings:set': {
+    args: [key: string, value: string]
+    result: void
+  }
+  'settings:getJson': {
+    args: [key: string]
+    result: unknown
+  }
+  'settings:setJson': {
+    args: [key: string, value: unknown]
+    result: void
+  }
+  'settings:delete': {
+    args: [key: string]
+    result: void
+  }
+
   // --- Gateway auth (tokens stay in main process) ---
   'gateway:test-connection': {
     args: [url: string, token?: string]
@@ -233,6 +255,10 @@ export interface IpcChannelMap {
   'fs:readFileAsText': {
     args: [path: string]
     result: { content: string; name: string }
+  }
+  'fs:openDirectoryDialog': {
+    args: []
+    result: string | null
   }
 
   // --- Gateway RPC ---

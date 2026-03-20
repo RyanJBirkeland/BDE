@@ -4,12 +4,12 @@ import { promisify } from 'util'
 import { parsePrUrl } from '../shared/github'
 import { getGitHubToken } from './config'
 import { githubFetch, fetchAllGitHubPages } from './github-fetch'
-import { DEFAULT_REPO_PATHS } from './paths'
+import { getRepoPaths as getRepoPathsFromSettings } from './paths'
 
 const execFileAsync = promisify(execFile)
 
 export function getRepoPaths(): Record<string, string> {
-  return { ...DEFAULT_REPO_PATHS }
+  return getRepoPathsFromSettings()
 }
 
 export interface GitFileStatus {

@@ -64,8 +64,15 @@ vi.mock('../git', () => ({
 vi.mock('../config', () => ({
   getGatewayConfig: vi.fn().mockReturnValue({ url: 'ws://localhost:18789', token: 'test-token' }),
   getGitHubToken: vi.fn().mockReturnValue('gh-token'),
-  saveGatewayConfig: vi.fn(),
   getSupabaseConfig: vi.fn().mockReturnValue(null),
+}))
+
+vi.mock('../settings', () => ({
+  getSetting: vi.fn().mockReturnValue(null),
+  setSetting: vi.fn(),
+  getSettingJson: vi.fn().mockReturnValue(null),
+  setSettingJson: vi.fn(),
+  deleteSetting: vi.fn(),
 }))
 
 vi.mock('../db', () => ({
@@ -86,9 +93,13 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('fs', () => ({
-  readFileSync: vi.fn().mockReturnValue(''),
-}))
+vi.mock('fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs')>()
+  return {
+    ...actual,
+    readFileSync: vi.fn().mockReturnValue(''),
+  }
+})
 
 // node-pty mock for terminal handlers — vi.mock cannot intercept CJS require(),
 // so we inject the mock via _setPty after import
@@ -390,15 +401,27 @@ describe('IPC handler registration', () => {
       expect(result).toEqual({ url: '', hasToken: false })
     })
 
-    it('"config:saveGateway" calls saveGatewayConfig with token', async () => {
+    it('"config:saveGateway" saves url and token via settings', async () => {
+      const settings = await import('../settings')
       await invoke('config:saveGateway', 'ws://new', 'new-token')
-      expect(config.saveGatewayConfig).toHaveBeenCalledWith('ws://new', 'new-token')
+      expect(settings.setSetting).toHaveBeenCalledWith('gateway.url', 'ws://new')
+      expect(settings.setSetting).toHaveBeenCalledWith('gateway.token', 'new-token')
     })
 
-    it('"config:saveGateway" preserves existing token when none provided', async () => {
+    it('"config:saveGateway" saves only url when no token provided', async () => {
+      const settings = await import('../settings')
       await invoke('config:saveGateway', 'ws://new')
-      expect(config.saveGatewayConfig).toHaveBeenCalledWith('ws://new', 'test-token')
+      expect(settings.setSetting).toHaveBeenCalledWith('gateway.url', 'ws://new')
+      expect(settings.setSetting).not.toHaveBeenCalledWith('gateway.token', expect.anything())
+    })
 
+    it('registers settings CRUD channels', () => {
+      expect(handlers.has('settings:get')).toBe(true)
+      expect(handlers.has('settings:set')).toBe(true)
+      expect(handlers.has('settings:getJson')).toBe(true)
+      expect(handlers.has('settings:setJson')).toBe(true)
+      expect(handlers.has('settings:delete')).toBe(true)
+    })
   })
 
   // -------------------------------------------------------------------------
@@ -627,6 +650,4 @@ describe('IPC handler registration', () => {
       ).rejects.toThrow('Path traversal blocked')
     })
   })
-})
-
 })

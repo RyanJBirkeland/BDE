@@ -7,20 +7,39 @@ export const BDE_DB_PATH = join(BDE_DIR, 'bde.db')
 export const BDE_AGENTS_INDEX = join(BDE_DIR, 'agents.json')
 export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
 export const BDE_AGENT_TMP_DIR = join(tmpdir(), 'bde-agents')
+export const BDE_MEMORY_DIR = join(BDE_DIR, 'memory')
 
-// --- OpenClaw paths ---
-export const OPENCLAW_DIR = join(homedir(), '.openclaw')
-export const OPENCLAW_CONFIG_PATH = join(OPENCLAW_DIR, 'openclaw.json')
-export const OPENCLAW_MEMORY_DIR = resolve(homedir(), '.openclaw', 'workspace', 'memory')
+// --- OpenClaw paths (used only by one-time migration in settings.ts) ---
+export const OPENCLAW_CONFIG_PATH = join(homedir(), '.openclaw', 'openclaw.json')
 
-// --- Repository paths (default — overridable via settings) ---
-const REPOS_ROOT = join(homedir(), 'Documents', 'Repositories')
+// --- Dynamic repo configuration (backed by settings table) ---
 
-export const DEFAULT_REPO_PATHS: Record<string, string> = {
-  bde: join(REPOS_ROOT, 'BDE'),
-  'life-os': join(REPOS_ROOT, 'life-os'),
-  feast: join(REPOS_ROOT, 'feast'),
+import { getSettingJson } from './settings'
+
+export interface RepoConfig {
+  name: string
+  localPath: string
+  githubOwner?: string
+  githubRepo?: string
+  color?: string
 }
 
-export const SPECS_ROOT = resolve(REPOS_ROOT, 'BDE', 'docs', 'specs')
-export const LIFE_OS_ENV_PATH = join(REPOS_ROOT, 'life-os', '.env')
+export function getConfiguredRepos(): RepoConfig[] {
+  return getSettingJson<RepoConfig[]>('repos') ?? []
+}
+
+export function getRepoPaths(): Record<string, string> {
+  const repos = getConfiguredRepos()
+  const result: Record<string, string> = {}
+  for (const r of repos) {
+    result[r.name.toLowerCase()] = r.localPath
+  }
+  return result
+}
+
+export function getSpecsRoot(): string | null {
+  const repos = getConfiguredRepos()
+  const bdeRepo = repos.find((r) => r.name.toLowerCase() === 'bde')
+  if (!bdeRepo) return null
+  return resolve(bdeRepo.localPath, 'docs', 'specs')
+}
