@@ -19,6 +19,10 @@ export interface TicketDraft {
   priority: number
 }
 
+interface TicketWithId extends TicketDraft {
+  _id: string
+}
+
 interface TicketEditorProps {
   initialTickets: TicketDraft[]
 }
@@ -26,8 +30,9 @@ interface TicketEditorProps {
 type EditorState = 'editing' | 'creating' | 'done' | 'dismissed'
 
 export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.Element {
-  const [tickets, setTickets] = useState<TicketDraft[]>(() =>
+  const [tickets, setTickets] = useState<TicketWithId[]>(() =>
     initialTickets.map(({ title, prompt, repo, priority }) => ({
+      _id: crypto.randomUUID(),
       title: title ?? '',
       prompt: prompt ?? '',
       repo: repo ?? '',
@@ -36,7 +41,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
   )
   const [state, setState] = useState<EditorState>('editing')
   const [repoPaths, setRepoPaths] = useState<Record<string, string>>({})
-  const [expandedPrompts, setExpandedPrompts] = useState<Set<number>>(new Set())
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     window.api.getRepoPaths().then((paths) => setRepoPaths(paths))
@@ -55,7 +60,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
   const addTicket = (): void => {
     setTickets((prev) => [
       ...prev,
-      { title: '', prompt: '', repo: repoKeys[0] ?? '', priority: 3 },
+      { _id: crypto.randomUUID(), title: '', prompt: '', repo: repoKeys[0] ?? '', priority: 3 },
     ])
   }
 
@@ -71,11 +76,11 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
     })
   }
 
-  const togglePrompt = (idx: number): void => {
+  const togglePrompt = (id: string): void => {
     setExpandedPrompts((prev) => {
       const next = new Set(prev)
-      if (next.has(idx)) next.delete(idx)
-      else next.add(idx)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -83,7 +88,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
   const createAll = async (): Promise<void> => {
     setState('creating')
     try {
-      for (const ticket of tickets) {
+      for (const { _id: _, ...ticket } of tickets) {
         await useSprintStore.getState().createTask({
           title: ticket.title,
           repo: ticket.repo,
@@ -151,7 +156,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
 
       <div style={styles.ticketList}>
         {tickets.map((ticket, idx) => (
-          <div key={idx} style={styles.card}>
+          <div key={ticket._id} style={styles.card}>
             <div style={styles.cardHeader}>
               <span style={styles.cardNumber}>#{idx + 1}</span>
               <div style={styles.cardActions}>
@@ -200,12 +205,12 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
               <label style={styles.label}>
                 <button
                   style={styles.promptToggle}
-                  onClick={() => togglePrompt(idx)}
+                  onClick={() => togglePrompt(ticket._id)}
                 >
-                  {expandedPrompts.has(idx) ? '\u25BE' : '\u25B8'} Prompt
+                  {expandedPrompts.has(ticket._id) ? '\u25BE' : '\u25B8'} Prompt
                 </button>
               </label>
-              {expandedPrompts.has(idx) ? (
+              {expandedPrompts.has(ticket._id) ? (
                 <textarea
                   className="bde-textarea"
                   style={styles.textarea}
@@ -218,7 +223,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
               ) : (
                 <span
                   style={styles.promptPreview}
-                  onClick={() => togglePrompt(idx)}
+                  onClick={() => togglePrompt(ticket._id)}
                 >
                   {ticket.prompt.split('\n')[0] || '(empty)'}
                 </span>
@@ -255,7 +260,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
                   max={10}
                   value={ticket.priority}
                   onChange={(e) =>
-                    updateTicket(idx, { priority: parseInt(e.target.value, 10) || 1 })
+                    updateTicket(idx, { priority: Math.max(1, Math.min(10, parseInt(e.target.value, 10) || 1)) })
                   }
                   disabled={state === 'creating'}
                 />

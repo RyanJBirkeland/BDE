@@ -29,7 +29,11 @@ export function renderContent(text: string): React.JSX.Element {
 
     if (lang === 'tickets-json') {
       try {
-        const tickets = JSON.parse(codeContent) as TicketDraft[]
+        const parsed = JSON.parse(codeContent)
+        if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every(t => typeof t.title === 'string' && typeof t.prompt === 'string')) {
+          throw new Error('Invalid ticket shape')
+        }
+        const tickets = parsed as TicketDraft[]
         parts.push(<TicketEditor key={key++} initialTickets={tickets} />)
       } catch {
         // Malformed JSON — fall back to regular code block
