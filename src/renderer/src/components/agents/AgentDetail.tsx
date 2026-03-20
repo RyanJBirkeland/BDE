@@ -1,7 +1,7 @@
 /**
  * AgentDetail — right panel showing agent header, chat renderer, and steer input.
  */
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Bot, Clock, Zap, DollarSign } from 'lucide-react'
 import type { AgentMeta } from '../../../../shared/types'
 import type { AgentEvent } from '../../../../main/agents/types'
@@ -79,15 +79,71 @@ export function AgentDetail({ agent, events, onSteer }: AgentDetailProps) {
 
       {/* Chat body */}
       <div style={{ flex: 1, minHeight: 0 }}>
-        <ChatRenderer events={events} />
+        {events.length > 0 ? (
+          <ChatRenderer events={events} />
+        ) : (
+          <LogFallback logPath={agent.logPath} />
+        )}
       </div>
 
       {/* Steer input — only when running */}
+
       {isRunning && (
         <div style={{ borderTop: `1px solid ${tokens.color.border}`, padding: tokens.space[3] }}>
           <SteerInput agentId={agent.id} onSend={onSteer} />
         </div>
       )}
     </div>
+  )
+}
+
+/** Fallback for pre-Phase-2 agents that have log files but no AgentEvent records. */
+function LogFallback({ logPath }: { logPath: string }) {
+  const [content, setContent] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    window.api.tailAgentLog({ logPath, fromByte: 0 }).then((result) => {
+      if (!cancelled) {
+        setContent(result.content)
+        setLoading(false)
+      }
+    }).catch(() => {
+      if (!cancelled) setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [logPath])
+
+  if (loading) {
+    return (
+      <div style={{ padding: tokens.space[4], color: tokens.color.textDim, textAlign: 'center' }}>
+        Loading log...
+      </div>
+    )
+  }
+
+  if (!content) {
+    return (
+      <div style={{ padding: tokens.space[4], color: tokens.color.textDim, textAlign: 'center' }}>
+        No output available for this agent.
+      </div>
+    )
+  }
+
+  return (
+    <pre style={{
+      padding: tokens.space[3],
+      margin: 0,
+      fontFamily: tokens.font.code,
+      fontSize: tokens.size.sm,
+      color: tokens.color.text,
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
+      overflow: 'auto',
+      height: '100%',
+    }}>
+      {content}
+    </pre>
   )
 }
