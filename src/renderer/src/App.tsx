@@ -33,7 +33,7 @@ const VIEW_ORDER: View[] = [
 const VIEW_TITLES: Record<View, string> = {
   agents: 'Agents',
   terminal: 'Terminal',
-  sprint: 'Planning',
+  sprint: 'Sprint Center',
   'pr-station': 'PR Station',
   memory: 'Memory',
   cost: 'Cost',

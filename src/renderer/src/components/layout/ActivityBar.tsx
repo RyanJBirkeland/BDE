@@ -15,7 +15,7 @@ import { tokens } from '../../design-system/tokens'
 const NAV_ITEMS: { view: View; icon: typeof Terminal; label: string; shortcut: string }[] = [
   { view: 'agents', icon: Terminal, label: 'Agents', shortcut: '⌘1' },
   { view: 'terminal', icon: SquareTerminal, label: 'Terminal', shortcut: '⌘2' },
-  { view: 'sprint', icon: GitBranch, label: 'Sprint / PRs', shortcut: '⌘3' },
+  { view: 'sprint', icon: GitBranch, label: 'Sprint Center', shortcut: '⌘3' },
   { view: 'pr-station', icon: GitPullRequest, label: 'PR Station', shortcut: '⌘4' },
   { view: 'memory', icon: Brain, label: 'Memory', shortcut: '⌘5' },
   { view: 'cost', icon: DollarSign, label: 'Cost Tracker', shortcut: '⌘6' },

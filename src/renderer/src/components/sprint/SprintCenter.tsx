@@ -9,7 +9,6 @@ import { LogDrawer } from './LogDrawer'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
 import { QueueDashboard } from './QueueDashboard'
-import { PRSection } from './PRSection'
 import { NewTicketModal } from './NewTicketModal'
 import { toast } from '../../stores/toasts'
 import { usePrConflictsStore } from '../../stores/prConflicts'
@@ -419,10 +418,6 @@ export function SprintCenter() {
           </>
         )}
       </div>
-
-      <ErrorBoundary name="PR Section">
-      <PRSection />
-      </ErrorBoundary>
 
       <SpecDrawer
         task={selectedTask}
