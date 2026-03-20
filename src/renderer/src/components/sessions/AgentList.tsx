@@ -1,16 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
+import { useCallback, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Users } from 'lucide-react'
 import { AgentRow } from './AgentRow'
 import { EmptyState } from '../ui/EmptyState'
-import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
+import type { UnifiedAgent } from '../../../../shared/types'
 import { useUnifiedAgents, groupUnifiedAgents } from '../../hooks/useUnifiedAgents'
 import { useSessionsStore } from '../../stores/sessions'
-import { useLocalAgentsStore } from '../../stores/localAgents'
-import { useAgentHistoryStore } from '../../stores/agentHistory'
-import { useUIStore } from '../../stores/ui'
-import { POLL_PROCESSES_INTERVAL, POLL_AGENTS_INTERVAL } from '../../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 
 export interface AgentListProps {
@@ -39,18 +34,8 @@ export function AgentList({
   const setFollowMode = useSessionsStore((s) => s.setFollowMode)
   const [historyOpen, setHistoryOpen] = useState(false)
 
-  // Poll local agent processes (ps aux) and history — only when sessions view is active
-  const activeView = useUIStore((s) => s.activeView)
-  const fetchProcesses = useLocalAgentsStore((s) => s.fetchProcesses)
-  const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
-  const isSessionsView = activeView === 'sessions'
-  useEffect(() => {
-    if (!isSessionsView) return
-    fetchProcesses()
-    fetchAgents()
-  }, [fetchProcesses, fetchAgents, isSessionsView])
-  useVisibilityAwareInterval(fetchProcesses, isSessionsView ? POLL_PROCESSES_INTERVAL : null)
-  useVisibilityAwareInterval(fetchAgents, isSessionsView ? POLL_AGENTS_INTERVAL : null)
+  // Polling is now handled by the unified agents store in SessionsView
+  // (single useVisibilityAwareInterval calling fetchAll)
 
   const toggleHistory = useCallback(() => setHistoryOpen((v) => !v), [])
   const toggleFollow = useCallback(

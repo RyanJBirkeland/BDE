@@ -2,7 +2,7 @@ import { useCallback, useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { Badge } from '../ui/Badge'
-import type { UnifiedAgent } from '../../hooks/useUnifiedAgents'
+import type { UnifiedAgent } from '../../../../shared/types'
 import { getStaleLevel } from '../../hooks/useUnifiedAgents'
 import { timeAgo, modelBadgeLabel } from '../../lib/format'
 import { TRANSITIONS, useReducedMotion } from '../../lib/motion'
@@ -132,7 +132,7 @@ export function AgentRow({
               <Badge variant="muted" size="sm">{modelBadgeLabel(agent.model)}</Badge>
             )}
             <span className={`source-badge source-badge--${agent.source}`}>
-              {agent.source}
+              {agent.source === 'gateway' ? '\u2601 gateway' : agent.source === 'local' ? '\u2B21 local' : '\u29D6 history'}
             </span>
             {showStale && (
               <span className="agent-row__stale-badge">STALE</span>
