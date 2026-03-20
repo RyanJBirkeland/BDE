@@ -144,6 +144,8 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
         flexDirection: 'column',
         width: '100%',
         height: '100%',
+        flex: 1,
+        minHeight: 0,
         background: tokens.color.surface,
         outline: isFocused ? `1px solid ${tokens.color.accent}` : '1px solid transparent',
         overflow: 'hidden',

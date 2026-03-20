@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Terminal,
   SquareTerminal,
@@ -36,9 +36,15 @@ export function ActivityBar({ connectionStatus }: ActivityBarProps): React.JSX.E
   // Keep legacy view switching for fallback compatibility
   const setView = useUIStore((s) => s.setView)
 
-  const openViews = usePanelLayoutStore((s) => s.getOpenViews())
-  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
   const root = usePanelLayoutStore((s) => s.root)
+  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
+  const openViews = useMemo(() => {
+    const collect = (node: import('../../stores/panelLayout').PanelNode): View[] => {
+      if (node.type === 'leaf') return node.tabs.map((t) => t.viewKey)
+      return [...collect(node.children[0]), ...collect(node.children[1])]
+    }
+    return collect(root)
+  }, [root])
 
   const focusedLeaf = focusedPanelId ? findLeaf(root, focusedPanelId) : null
   const focusedView = focusedLeaf?.tabs[focusedLeaf.activeTab]?.viewKey
