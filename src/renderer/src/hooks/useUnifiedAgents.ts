@@ -21,7 +21,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
   const historyAgents = useAgentHistoryStore((s) => s.agents)
 
   return useMemo(
-    () => buildUnifiedAgentList([], [], processes, historyAgents),
+    () => buildUnifiedAgentList(processes, historyAgents),
     [processes, historyAgents]
   )
 }

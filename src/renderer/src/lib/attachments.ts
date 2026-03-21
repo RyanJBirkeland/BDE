@@ -102,8 +102,7 @@ export function buildLocalAgentMessage(
 }
 
 /**
- * Build gateway message payload with multimodal content array.
- * Returns params suitable for client.call('chat.send', ...).
+ * Build agent message payload with multimodal content array.
  */
 export function buildGatewayPayload(
   sessionKey: string,

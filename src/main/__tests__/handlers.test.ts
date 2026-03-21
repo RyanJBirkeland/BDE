@@ -63,7 +63,6 @@ vi.mock('../git', () => ({
 
 vi.mock('../config', () => ({
   getGitHubToken: vi.fn().mockReturnValue('gh-token'),
-  getSupabaseConfig: vi.fn().mockReturnValue(null),
 }))
 
 vi.mock('../db', () => ({

@@ -17,17 +17,12 @@ vi.mock('../settings', async (importOriginal) => {
 
 vi.mock('../config', () => ({
   getGitHubToken: vi.fn().mockReturnValue(null),
-  getSupabaseConfig: vi.fn().mockReturnValue(null),
 }))
 
 vi.mock('../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue(null),
   BDE_DIR: '/tmp/bde-test',
   BDE_DB_PATH: '/tmp/bde-test/bde.db',
-}))
-
-vi.mock('../adapters/task-runner-sync', () => ({
-  syncToTaskRunner: vi.fn(),
 }))
 
 vi.mock('electron', () => ({

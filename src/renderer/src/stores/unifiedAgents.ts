@@ -51,7 +51,7 @@ interface UnifiedAgentsStore {
 function buildAgentList(): UnifiedAgent[] {
   const processes = useLocalAgentsStore.getState().processes
   const historyAgents = useAgentHistoryStore.getState().agents
-  return buildUnifiedAgentList([], [], processes, historyAgents)
+  return buildUnifiedAgentList(processes, historyAgents)
 }
 
 export const useUnifiedAgentsStore = create<UnifiedAgentsStore>((set, get) => ({

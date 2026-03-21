@@ -15,10 +15,11 @@ import { registerFsHandlers } from './fs'
 import { registerTemplateHandlers } from './handlers/template-handlers'
 import { registerAuthHandlers } from './handlers/auth-handlers'
 import { registerAgentManagerHandlers } from './handlers/agent-manager-handlers'
-import { AgentManager, createWorktree, handleAgentCompletion } from './agent-manager'
+import { AgentManager, createWorktree, handleAgentCompletion, type QueuedTask, type CompletionContext } from './agent-manager'
 import { SdkProvider } from './agents'
 import { ensureSubscriptionAuth } from './auth-guard'
 import { getEventBus } from './agents/event-bus'
+import type { AgentEvent } from './agents/types'
 import { getMaxConcurrent, getWorktreeBase, getMaxRuntimeMinutes, getSettingJson } from './settings'
 import { getDb, closeDb } from './db'
 import { startPrPoller, stopPrPoller } from './pr-poller'
@@ -133,7 +134,6 @@ app.whenReady().then(() => {
 
   registerConfigHandlers()
   registerAgentHandlers()
-  registerAuthHandlers()
   registerGitHandlers()
   registerTerminalHandlers()
   registerWindowHandlers()
@@ -152,7 +152,7 @@ app.whenReady().then(() => {
       const rows = db.prepare(
         "SELECT * FROM sprint_tasks WHERE status = 'queued' ORDER BY priority ASC, created_at ASC"
       ).all()
-      return rows as any[]
+      return rows as QueuedTask[]
     },
     updateTask: async (taskId: string, update: Record<string, unknown>) => {
       const db = getDb()
@@ -180,9 +180,9 @@ app.whenReady().then(() => {
           const values = keys.map(k => update[k])
           db.prepare(`UPDATE sprint_tasks SET ${sets}, updated_at = datetime('now') WHERE id = ?`).run(...values, ctx.taskId as string)
         },
-      } as any)
+      } as CompletionContext)
     },
-    emitEvent: (agentId, event) => eventBus.emit('agent:event', agentId, event as any),
+    emitEvent: (agentId, event) => eventBus.emit('agent:event', agentId, event as AgentEvent),
     getRepoInfo: (repoName) => {
       const repos = getSettingJson<Array<{ name: string; localPath: string; githubOwner: string; githubRepo: string }>>('repos') ?? []
       const repo = repos.find(r => r.name === repoName)

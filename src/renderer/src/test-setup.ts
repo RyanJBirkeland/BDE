@@ -86,9 +86,9 @@ vi.stubGlobal('api', {
   pollPrStatuses: vi.fn().mockResolvedValue([]),
   killAgent: vi.fn().mockResolvedValue({ ok: true }),
   onExternalSprintChange: vi.fn().mockReturnValue(() => {}),
-  onTaskOutput: vi.fn().mockReturnValue(() => {}),
-  task: {
-    getEvents: vi.fn().mockResolvedValue([]),
+  agentManager: {
+    status: vi.fn().mockResolvedValue({ activeCount: 0, availableSlots: 4 }),
+    kill: vi.fn().mockResolvedValue(true),
   },
   terminal: {
     create: vi.fn().mockResolvedValue(1),

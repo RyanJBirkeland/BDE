@@ -1,6 +1,6 @@
 /**
- * MemoryView — file browser and editor for OpenClaw agent memory.
- * Lists memory files from ~/.openclaw/workspace/memory/ via IPC
+ * MemoryView — file browser and editor for agent memory.
+ * Lists memory files from ~/.bde/memory/ via IPC
  * (memory:listFiles, memory:readFile, memory:writeFile). Groups files
  * into pinned (MEMORY.md), daily logs, projects, and other. Keyboard-navigable.
  */

@@ -1,7 +1,6 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { AgentMeta, PrListPayload, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
-import type { TaskOutputEvent } from '../shared/queue-api-contract'
 import type { AgentEvent } from '../main/agents/types'
 
 export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
@@ -128,16 +127,6 @@ declare global {
 
       // Sprint DB file-watcher push events
       onExternalSprintChange: (cb: () => void) => () => void
-
-      // Task output streaming events
-      onTaskOutput: (
-        callback: (data: { taskId: string; events: TaskOutputEvent[] }) => void
-      ) => () => void
-
-      // Task events — fetch current event history
-      task: {
-        getEvents: (taskId: string) => Promise<IpcResult<'task:getEvents'>>
-      }
 
       // Auth status
       authStatus: () => Promise<IpcResult<'auth:status'>>

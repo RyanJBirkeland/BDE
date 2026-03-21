@@ -16,7 +16,7 @@ export interface AgentMeta {
   exitCode: number | null
   status: 'running' | 'done' | 'failed' | 'cancelled' | 'unknown'
   logPath: string
-  source: 'bde' | 'openclaw' | 'external'
+  source: 'bde' | 'external'
 }
 
 export interface SprintTask {
@@ -147,7 +147,7 @@ export interface PrListPayload {
 }
 
 /** Source of a unified agent — used by the unified agents store. */
-export type UnifiedAgentSource = 'local' | 'gateway' | 'history'
+export type UnifiedAgentSource = 'local' | 'history'
 
 /** Status of a unified agent. */
 export type UnifiedAgentStatus = 'running' | 'done' | 'failed' | 'cancelled' | 'timeout' | 'unknown'

@@ -24,7 +24,6 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
   const [agentStatus, setAgentStatus] = useState('unknown')
   const [steerInput, setSteerInput] = useState('')
   const [exitCode, setExitCode] = useState<number | null>(null)
-  const [initialEvents, setInitialEvents] = useState<AnyTaskEvent[]>([])
   const fromByteRef = useRef(0)
 
   // Streaming events from the store
@@ -42,23 +41,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
     setLogContent('')
     setAgentStatus(AGENT_STATUS.UNKNOWN)
     setExitCode(null)
-    setInitialEvents([])
   }, [task?.agent_run_id])
-
-  // Effect: fetch initial events when opening drawer for a task
-  useEffect(() => {
-    if (!task?.id) return
-    const taskId = task.id
-    let cancelled = false
-    window.api.task.getEvents(taskId).then((events) => {
-      if (!cancelled && events.length > 0) {
-        setInitialEvents(events)
-      }
-    }).catch(() => {
-      // Silently ignore — events may not be available
-    })
-    return () => { cancelled = true }
-  }, [task?.id])
 
   // Effect 2: catch-up read for log content (polls via readLog IPC)
   useEffect(() => {
@@ -102,15 +85,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
     }
   }, [task?.agent_run_id, loadHistory])
 
-  // Merge initial events with live store events, deduplicating by timestamp+type
-  const mergedEvents = useMemo(() => {
-    const live = storeEvents ?? []
-    if (initialEvents.length === 0) return live
-    if (live.length === 0) return initialEvents
-    const seen = new Set(live.map((e) => `${e.timestamp}:${e.type}`))
-    const unique = initialEvents.filter((e) => !seen.has(`${e.timestamp}:${e.type}`))
-    return [...unique, ...live]
-  }, [initialEvents, storeEvents])
+  const mergedEvents = useMemo(() => storeEvents ?? [], [storeEvents])
 
   // Collapse consecutive thinking events (keep only the latest)
   const displayEvents = useMemo(() => {

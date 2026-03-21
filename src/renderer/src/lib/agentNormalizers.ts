@@ -31,8 +31,6 @@ export function normalizeSource(raw: string): UnifiedAgentSource {
   switch (raw) {
     case 'bde':
       return 'local'
-    case 'openclaw':
-      return 'gateway'
     default:
       return 'history'
   }
@@ -52,12 +50,8 @@ export function safeTimestamp(value: string | number | null | undefined): number
 
 /**
  * Build a unified agent list from local processes and history.
- * The sessions/subAgents parameters are kept for API compatibility but
- * are always empty now that the gateway has been removed.
  */
 export function buildUnifiedAgentList(
-  _sessions: unknown[],
-  _subAgents: unknown[],
   processes: LocalAgentProcess[],
   historyAgents: AgentMeta[]
 ): UnifiedAgent[] {

@@ -2,7 +2,6 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { AgentMeta, PrListPayload, SpawnLocalAgentArgs } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
-import type { TaskOutputEvent } from '../shared/queue-api-contract'
 import type { AgentEvent } from '../main/agents/types'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
@@ -164,21 +163,6 @@ const api = {
   onExternalSprintChange: (cb: () => void): (() => void) => {
     ipcRenderer.on('sprint:externalChange', cb)
     return () => ipcRenderer.removeListener('sprint:externalChange', cb)
-  },
-
-  // Task output streaming events
-  onTaskOutput: (
-    callback: (data: { taskId: string; events: TaskOutputEvent[] }) => void
-  ): (() => void) => {
-    const handler = (_e: IpcRendererEvent, data: { taskId: string; events: TaskOutputEvent[] }): void =>
-      callback(data)
-    ipcRenderer.on('task:output', handler)
-    return () => ipcRenderer.removeListener('task:output', handler)
-  },
-
-  // Task events — fetch current event history
-  task: {
-    getEvents: (taskId: string) => typedInvoke('task:getEvents', taskId),
   },
 
   // Agent event streaming (Phase 2)

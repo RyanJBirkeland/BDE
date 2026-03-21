@@ -1,11 +1,10 @@
 /**
- * Sprint spec I/O and gateway-based spec generation.
+ * Sprint spec I/O and local spec generation.
  * Extracted from sprint-local.ts to isolate file system
- * and RPC concerns from CRUD handler registration.
+ * concerns from CRUD handler registration.
  */
 import { readFile } from 'fs/promises'
 import { resolve } from 'path'
-import { getSetting } from '../settings'
 import { getSpecsRoot } from '../paths'
 
 // --- Types ---
@@ -81,60 +80,13 @@ export function getTemplateScaffold(templateHint: string): string {
   return SCAFFOLDS[templateHint] ?? SCAFFOLDS.feature
 }
 
-// --- Gateway RPC ---
+// --- Local prompt generation ---
 
-export async function generatePrompt(
+export function generatePrompt(
   args: GeneratePromptRequest
-): Promise<GeneratePromptResponse> {
+): GeneratePromptResponse {
   const { taskId, title, repo, templateHint } = args
-  const fallback: GeneratePromptResponse = { taskId, spec: '', prompt: title }
-
-  try {
-    const rawGatewayUrl = getSetting('gateway.url')
-    const gatewayToken = getSetting('gateway.token')
-    if (!rawGatewayUrl || !gatewayToken) return fallback
-    const gatewayUrl = rawGatewayUrl
-      .replace(/^ws:\/\//, 'http://')
-      .replace(/^wss:\/\//, 'https://')
-
-    const templateScaffold = getTemplateScaffold(templateHint)
-    const message = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
-
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 55_000)
-    let response: Response
-    try {
-      response = await fetch(`${gatewayUrl}/tools/invoke`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${gatewayToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tool: 'sessions_send',
-          args: { sessionKey: 'main', message, timeoutSeconds: 45 },
-        }),
-        signal: controller.signal,
-      })
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        throw new Error('Spec generation timed out — gateway unreachable')
-      }
-      throw err
-    } finally {
-      clearTimeout(timeoutId)
-    }
-
-    if (!response.ok) return fallback
-
-    const data = (await response.json()) as {
-      result?: { content?: Array<{ type: string; text: string }> }
-    }
-    const text = data.result?.content?.[0]?.text ?? ''
-    if (!text) return fallback
-
-    return { taskId, spec: text, prompt: text }
-  } catch {
-    return fallback
-  }
+  const templateScaffold = getTemplateScaffold(templateHint)
+  const prompt = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
+  return { taskId, spec: '', prompt }
 }

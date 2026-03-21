@@ -167,15 +167,15 @@ Object.defineProperty(window, 'api', {
     },
     openDirectoryDialog: vi.fn().mockResolvedValue(null),
     onExternalSprintChange: vi.fn().mockReturnValue(() => {}),
-    onTaskOutput: vi.fn().mockReturnValue(() => {}),
-    task: {
-      getEvents: vi.fn().mockResolvedValue([]),
-    },
     templates: {
       list: vi.fn().mockResolvedValue([]),
       save: vi.fn().mockResolvedValue(undefined),
       delete: vi.fn().mockResolvedValue(undefined),
       reset: vi.fn().mockResolvedValue(undefined),
+    },
+    agentManager: {
+      status: vi.fn().mockResolvedValue({ activeCount: 0, availableSlots: 4 }),
+      kill: vi.fn().mockResolvedValue(true),
     },
   },
   writable: true,

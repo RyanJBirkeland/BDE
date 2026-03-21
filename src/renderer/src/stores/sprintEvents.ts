@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { TaskOutputEvent } from '../../../shared/queue-api-contract'
 import type { AgentEvent } from '../../../main/agents/types'
 
-/** Union of both event sources during dual-write migration. */
+/** Union of event sources used in the sprint event pipeline. */
 export type AnyTaskEvent = TaskOutputEvent | AgentEvent
 
 interface SprintEventsState {
@@ -20,21 +20,7 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
   latestEvents: {},
 
   initTaskOutputListener: (): (() => void) => {
-    // Legacy path: task:output events from queue API
-    const cleanupLegacy = window.api.onTaskOutput(({ taskId, events }) => {
-      set((s) => {
-        const existing = s.taskEvents[taskId] ?? []
-        const updated = [...existing, ...events]
-        const latest = events[events.length - 1]
-        return {
-          taskEvents: { ...s.taskEvents, [taskId]: updated },
-          latestEvents: { ...s.latestEvents, [taskId]: latest },
-        }
-      })
-    })
-
-    // Phase 2 dual-write: agent:event stream populates legacy fields
-    const cleanupAgent = window.api.agentEvents?.onEvent(({ agentId, event }) => {
+    const cleanup = window.api.agentEvents?.onEvent(({ agentId, event }) => {
       set((s) => ({
         taskEvents: {
           ...s.taskEvents,
@@ -48,8 +34,7 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
     })
 
     return () => {
-      cleanupLegacy()
-      cleanupAgent?.()
+      cleanup?.()
     }
   },
 

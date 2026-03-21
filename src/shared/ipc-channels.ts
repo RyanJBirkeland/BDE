@@ -7,7 +7,6 @@
  */
 
 import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, ClaimedTask, PrListPayload, TaskTemplate } from './types'
-import type { TaskOutputEvent } from './queue-api-contract'
 import type { AgentEvent } from '../main/agents/types'
 
 /** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
@@ -179,12 +178,6 @@ export interface IpcChannelMap {
   'cost:getAgentHistory': {
     args: [args?: { limit?: number; offset?: number }]
     result: AgentCostRecord[]
-  }
-
-  // --- Task Events (streaming visibility) ---
-  'task:getEvents': {
-    args: [taskId: string]
-    result: TaskOutputEvent[]
   }
 
   // --- Sprint ---

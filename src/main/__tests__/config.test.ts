@@ -7,7 +7,6 @@ vi.mock('../settings', () => ({
 
 import { getSetting } from '../settings'
 import {
-  getSupabaseConfig,
   getGitHubToken,
 } from '../config'
 
@@ -15,32 +14,7 @@ describe('config.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getSetting).mockReturnValue(null)
-    delete process.env['VITE_SUPABASE_URL']
-    delete process.env['VITE_SUPABASE_ANON_KEY']
     delete process.env['GITHUB_TOKEN']
-  })
-
-  describe('getSupabaseConfig', () => {
-    it('returns null when no settings or env vars exist', () => {
-      expect(getSupabaseConfig()).toBeNull()
-    })
-
-    it('returns config from settings', () => {
-      vi.mocked(getSetting).mockImplementation((key: string) => {
-        if (key === 'supabase.url') return 'https://sb.io'
-        if (key === 'supabase.anonKey') return 'key123'
-        return null
-      })
-
-      expect(getSupabaseConfig()).toEqual({ url: 'https://sb.io', anonKey: 'key123' })
-    })
-
-    it('falls back to env vars when settings are missing', () => {
-      process.env['VITE_SUPABASE_URL'] = 'https://env.sb.io'
-      process.env['VITE_SUPABASE_ANON_KEY'] = 'envkey'
-
-      expect(getSupabaseConfig()).toEqual({ url: 'https://env.sb.io', anonKey: 'envkey' })
-    })
   })
 
   describe('getGitHubToken', () => {

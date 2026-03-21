@@ -146,5 +146,24 @@ export function AgentsView() {
 }
 
 function HealthBarWrapper() {
-  return <HealthBar connected={false} stats={null} />
+  const [status, setStatus] = useState<{ activeCount: number; availableSlots: number } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const poll = (): void => {
+      window.api.agentManager.status().then((s) => {
+        if (!cancelled) setStatus(s)
+      }).catch(() => {})
+    }
+    poll()
+    const interval = setInterval(poll, 5000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [])
+
+  const connected = status !== null
+  const stats = status
+    ? { queued: 0, active: status.activeCount, doneToday: 0, failed: 0 }
+    : null
+
+  return <HealthBar connected={connected} stats={stats} />
 }
