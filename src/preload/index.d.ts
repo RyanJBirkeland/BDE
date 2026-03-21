@@ -142,6 +142,12 @@ declare global {
       // Auth status
       authStatus: () => Promise<IpcResult<'auth:status'>>
 
+      // Agent Manager
+      agentManager: {
+        status: () => Promise<IpcResult<'agent-manager:status'>>
+        kill: (taskId: string) => Promise<IpcResult<'agent-manager:kill'>>
+      }
+
       // Terminal PTY
       terminal: {
         create: (...args: IpcArgs<'terminal:create'>) => Promise<IpcResult<'terminal:create'>>
