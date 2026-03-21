@@ -95,6 +95,8 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **DB migrations**: Schema changes go through `src/main/db.ts` — add a new entry to the `migrations` array. Never modify existing migrations.
 - **Test noise from `release/`**: If a DMG has been built, `npm test` picks up `node-pty` tests inside `release/mac-arm64/BDE.app/` — these always fail and are not project tests. Ignore them or delete `release/` before running tests.
 - **AgentManager config requires restart**: Settings for max concurrent agents, worktree base, and max runtime are read once at startup. Changes via Settings UI take effect on next app launch.
+- **Integration tests**: `src/main/__tests__/integration/` — 50 tests covering AgentManager pipeline, AuthGuard, IPC handlers, and CompletionHandler. Run with `npm run test:main`.
+- **Pre-existing test failures**: `fs.test.ts` (2) and `git.test.ts` (3) have 5 known failures unrelated to recent work. Don't chase these.
 
 ## Packaging
 
