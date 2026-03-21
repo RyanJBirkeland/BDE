@@ -28,35 +28,8 @@ export function setSettingJson<T>(key: string, value: T): void {
 }
 
 // Well-known setting keys
-export const SETTING_AGENT_BINARY = 'agent.binary'
-export const SETTING_AGENT_PERMISSION_MODE = 'agent.permissionMode'
 export const SETTING_SUPABASE_URL = 'supabase.url'
 export const SETTING_SUPABASE_KEY = 'supabase.serviceKey'
 
-// Defaults
-export const DEFAULT_AGENT_BINARY = 'claude'
-export const DEFAULT_PERMISSION_MODE = 'bypassPermissions'
-
-export function getAgentBinary(): string {
-  return getSetting(SETTING_AGENT_BINARY) || DEFAULT_AGENT_BINARY
-}
-
-export function getAgentPermissionMode(): string {
-  return getSetting(SETTING_AGENT_PERMISSION_MODE) || DEFAULT_PERMISSION_MODE
-}
-
-export const SETTING_MAX_CONCURRENT = 'agentManager.maxConcurrent'
-export const SETTING_WORKTREE_BASE = 'agentManager.worktreeBase'
-export const SETTING_MAX_RUNTIME_MINUTES = 'agentManager.maxRuntimeMinutes'
-
-export function getMaxConcurrent(): number {
-  return parseInt(getSetting(SETTING_MAX_CONCURRENT) ?? '3', 10)
-}
-
-export function getWorktreeBase(): string {
-  return getSetting(SETTING_WORKTREE_BASE) ?? '/tmp/worktrees/bde'
-}
-
-export function getMaxRuntimeMinutes(): number {
-  return parseInt(getSetting(SETTING_MAX_RUNTIME_MINUTES) ?? '60', 10)
-}
+// Runner discovery — JSON array: [{ "name": "local", "url": "http://127.0.0.1:18799", "apiKey": "..." }]
+export const SETTING_RUNNERS = 'runners'

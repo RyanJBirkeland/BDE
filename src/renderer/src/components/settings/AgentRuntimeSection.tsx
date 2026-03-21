@@ -19,8 +19,8 @@ export function AgentRuntimeSection(): React.JSX.Element {
 
   useEffect(() => {
     window.api.getAgentConfig().then((config) => {
-      setAgentBinary(config.binary)
-      setAgentPermissionMode(config.permissionMode)
+      setAgentBinary(config.binary ?? 'claude')
+      setAgentPermissionMode(config.permissionMode ?? 'bypassPermissions')
     })
   }, [])
 

@@ -91,17 +91,14 @@ const { mockGetSetting } = vi.hoisted(() => ({
   mockGetSetting: vi.fn().mockReturnValue(null),
 }))
 vi.mock('../settings', () => ({
-  getAgentBinary: vi.fn().mockReturnValue('claude'),
-  getAgentPermissionMode: vi.fn().mockReturnValue('bypassPermissions'),
   getSetting: mockGetSetting,
   setSetting: vi.fn(),
   getSettingJson: vi.fn().mockReturnValue(null),
   setSettingJson: vi.fn(),
   deleteSetting: vi.fn(),
-  SETTING_AGENT_BINARY: 'agent.binary',
-  SETTING_AGENT_PERMISSION_MODE: 'agent.permissionMode',
-  DEFAULT_AGENT_BINARY: 'claude',
-  DEFAULT_PERMISSION_MODE: 'bypassPermissions',
+  SETTING_RUNNERS: 'runners',
+  SETTING_SUPABASE_URL: 'supabase.url',
+  SETTING_SUPABASE_KEY: 'supabase.serviceKey',
 }))
 
 vi.mock('fs/promises', () => ({
@@ -260,9 +257,9 @@ describe('IPC handler registration', () => {
       )
     })
 
-    it('"config:getAgentConfig" returns agent binary and permission mode', async () => {
+    it('"config:getAgentConfig" returns null for binary and permissionMode (now managed by task-runner)', async () => {
       const result = await invoke('config:getAgentConfig')
-      expect(result).toEqual({ binary: 'claude', permissionMode: 'bypassPermissions' })
+      expect(result).toEqual({ binary: null, permissionMode: null })
     })
 
     it('"local:tailAgentLog" calls tailAgentLog with args', async () => {

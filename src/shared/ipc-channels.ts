@@ -121,7 +121,7 @@ export interface PrChannels {
 export interface AgentConfigChannels {
   'config:getAgentConfig': {
     args: []
-    result: { binary: string; permissionMode: string }
+    result: { binary: string | null; permissionMode: string | null }
   }
   'config:saveAgentConfig': {
     args: [config: { binary: string; permissionMode: string }]

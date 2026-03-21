@@ -17,13 +17,6 @@ import {
   pruneOldAgents
 } from '../agent-history'
 import type { AgentMeta } from '../agent-history'
-import {
-  getAgentBinary,
-  getAgentPermissionMode,
-  setSetting,
-  SETTING_AGENT_BINARY,
-  SETTING_AGENT_PERMISSION_MODE
-} from '../settings'
 
 export function registerAgentHandlers(): void {
   // --- Runner-proxied agent operations ---
@@ -61,13 +54,14 @@ export function registerAgentHandlers(): void {
   cleanupOldLogs()
 
   // --- Agent config IPC ---
+  // Agent binary and permission mode are now managed by the task-runner, not BDE.
+  // Return null to indicate these are no longer configurable from BDE.
   safeHandle('config:getAgentConfig', () => ({
-    binary: getAgentBinary(),
-    permissionMode: getAgentPermissionMode()
+    binary: null,
+    permissionMode: null,
   }))
-  safeHandle('config:saveAgentConfig', (_e, config: { binary: string; permissionMode: string }) => {
-    if (config.binary) setSetting(SETTING_AGENT_BINARY, config.binary.trim())
-    if (config.permissionMode) setSetting(SETTING_AGENT_PERMISSION_MODE, config.permissionMode.trim())
+  safeHandle('config:saveAgentConfig', () => {
+    // No-op: agent config now lives in task-runner's own configuration.
   })
 
   // --- Agent history IPC ---
