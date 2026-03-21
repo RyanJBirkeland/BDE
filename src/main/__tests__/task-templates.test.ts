@@ -16,8 +16,8 @@ vi.mock('../settings', async (importOriginal) => {
 })
 
 vi.mock('../config', () => ({
-  getGatewayConfig: vi.fn().mockReturnValue(null),
-  getTaskRunnerConfig: vi.fn().mockReturnValue(null),
+  getGitHubToken: vi.fn().mockReturnValue(null),
+  getSupabaseConfig: vi.fn().mockReturnValue(null),
 }))
 
 vi.mock('../paths', () => ({

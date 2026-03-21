@@ -1,6 +1,6 @@
 /**
  * Local agent management — spawn, kill, steer, and tail agent processes.
- * Delegates to AgentProvider (SDK or CLI) via the provider factory.
+ * Delegates to SdkProvider for agent spawning.
  * Process scanning logic lives in agent-scanner.ts.
  */
 import { randomUUID } from 'crypto'
@@ -11,11 +11,10 @@ import {
   createAgentRecord,
   updateAgentMeta,
 } from './agent-history'
-import { getTaskRunnerConfig } from './config'
 import { getDb } from './db'
 import { updateAgentRunCost as _updateAgentRunCost } from './data/agent-queries'
 import { BDE_AGENT_TMP_DIR as LOG_DIR } from './paths'
-import { createAgentProvider, type AgentHandle } from './agents'
+import { SdkProvider, type AgentHandle } from './agents'
 import { getEventBus } from './agents/event-bus'
 
 // Re-export scanner types and functions for consumers
@@ -116,7 +115,7 @@ export function updateAgentRunCost(agentRunId: string, cost: AgentCost): void {
   _updateAgentRunCost(getDb(), agentRunId, cost)
 }
 
-// --- Spawn an agent via the provider factory ---
+// --- Spawn an agent via SdkProvider ---
 
 export type { SpawnLocalAgentArgs, SpawnLocalAgentResult } from '../shared/types'
 import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, Result } from '../shared/types'
@@ -150,7 +149,7 @@ export async function spawnClaudeAgent(args: SpawnLocalAgentArgs): Promise<Spawn
 
   let handle: AgentHandle
   try {
-    const provider = createAgentProvider()
+    const provider = new SdkProvider()
     handle = await provider.spawn({
       prompt: args.task,
       workingDirectory: args.repoPath,
@@ -268,34 +267,7 @@ export async function steerAgent(agentId: string, message: string): Promise<{ ok
     }
   }
 
-  return steerViaTaskRunner(agentId, message)
-}
-
-async function steerViaTaskRunner(agentId: string, message: string): Promise<{ ok: boolean; error?: string }> {
-  const config = getTaskRunnerConfig()
-  if (!config) {
-    return { ok: false, error: 'Agent not found locally and task-runner config unavailable' }
-  }
-
-  try {
-    const res = await fetch(`${config.url}/agents/${agentId}/steer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`
-      },
-      body: JSON.stringify({ message })
-    })
-
-    if (!res.ok) {
-      const body = await res.text()
-      return { ok: false, error: `Task-runner returned ${res.status}: ${body}` }
-    }
-
-    return { ok: true }
-  } catch (err) {
-    return { ok: false, error: `Task-runner request failed: ${(err as Error).message}` }
-  }
+  return { ok: false, error: `Agent ${agentId} not found — may have already exited` }
 }
 
 // --- Tail agent log file ---

@@ -12,7 +12,7 @@ const {
   const fn = vi.fn()
   // Attach custom promisify so that promisify(execFile) returns { stdout, stderr }
   // just like the real child_process.execFile does.
-  ;(fn as Record<string | symbol, unknown>)[customSym] = (...args: unknown[]) => {
+  ;(fn as unknown as Record<string | symbol, unknown>)[customSym] = (...args: unknown[]) => {
     return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
       fn(...args, (err: Error | null, stdout: string, stderr: string) => {
         if (err) reject(err)

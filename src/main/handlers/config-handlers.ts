@@ -1,11 +1,11 @@
 import { safeHandle } from '../ipc-utils'
-import { getGatewayConfig } from '../config'
 import { getSetting, setSetting, getSettingJson, setSettingJson, deleteSetting } from '../settings'
 
 export function registerConfigHandlers(): void {
   safeHandle('config:getGatewayUrl', () => {
-    const config = getGatewayConfig()
-    return { url: config?.url ?? '', hasToken: !!config?.token }
+    const url = getSetting('gateway.url')
+    const token = getSetting('gateway.token')
+    return { url: url ?? '', hasToken: !!token }
   })
   safeHandle('config:saveGateway', (_e, url: string, token?: string) => {
     setSetting('gateway.url', url)

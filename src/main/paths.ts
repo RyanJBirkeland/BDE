@@ -9,9 +9,6 @@ export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
 export const BDE_AGENT_TMP_DIR = join(tmpdir(), 'bde-agents')
 export const BDE_MEMORY_DIR = join(BDE_DIR, 'memory')
 
-// --- OpenClaw paths (used only by one-time migration in settings.ts) ---
-export const OPENCLAW_CONFIG_PATH = join(homedir(), '.openclaw', 'openclaw.json')
-
 // --- Dynamic repo configuration (backed by settings table) ---
 
 import { getSettingJson } from './settings'

@@ -8,7 +8,7 @@ const {
 } = vi.hoisted(() => {
   const customSym = Symbol.for('nodejs.util.promisify.custom')
   const fn = vi.fn()
-  ;(fn as Record<string | symbol, unknown>)[customSym] = (...args: unknown[]) => {
+  ;(fn as unknown as Record<string | symbol, unknown>)[customSym] = (...args: unknown[]) => {
     return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
       fn(...args, (err: Error | null, stdout: string, stderr: string) => {
         if (err) reject(err)

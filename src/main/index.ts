@@ -8,20 +8,14 @@ import { registerAgentHandlers } from './handlers/agent-handlers'
 import { registerGitHandlers } from './handlers/git-handlers'
 import { registerTerminalHandlers } from './handlers/terminal-handlers'
 import { registerConfigHandlers } from './handlers/config-handlers'
-import { registerGatewayHandlers } from './handlers/gateway-handlers'
 import { registerWindowHandlers } from './handlers/window-handlers'
 import { registerSprintLocalHandlers } from './handlers/sprint-local'
 import { registerCostHandlers } from './handlers/cost-handlers'
-import { registerQueueHandlers } from './handlers/queue-handlers'
 import { registerFsHandlers } from './fs'
 import { registerTemplateHandlers } from './handlers/template-handlers'
 import { getDb, closeDb } from './db'
-import { migrateFromOpenClawConfig } from './settings'
-import { startSprintSseClient, stopSprintSseClient } from './sprint-sse'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
-import { getGatewayConfig } from './config'
-import { startQueueApi, stopQueueApi } from './queue-api/server'
 import { pruneOldEvents } from './agents/event-store'
 import { getEventRetentionDays } from './config'
 
@@ -114,22 +108,15 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.bde')
 
   getDb()
-  migrateFromOpenClawConfig()
 
   const stopDbWatcher = startDbWatcher()
   app.on('will-quit', stopDbWatcher)
-
-  startSprintSseClient()
-  app.on('will-quit', stopSprintSseClient)
 
   startPrPoller()
   app.on('will-quit', stopPrPoller)
 
   startSprintPrPoller()
   app.on('will-quit', stopSprintPrPoller)
-
-  startQueueApi()
-  app.on('will-quit', stopQueueApi)
 
   pruneOldEvents(getEventRetentionDays())
 
@@ -141,16 +128,13 @@ app.whenReady().then(() => {
   registerAgentHandlers()
   registerGitHandlers()
   registerTerminalHandlers()
-  registerGatewayHandlers()
   registerWindowHandlers()
   registerSprintLocalHandlers()
   registerCostHandlers()
-  registerQueueHandlers()
   registerTemplateHandlers()
   registerFsHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    // Build connect-src dynamically from gateway config
     const connectSrc = buildConnectSrc()
 
     const csp = is.dev
@@ -183,16 +167,7 @@ app.whenReady().then(() => {
 })
 
 function buildConnectSrc(): string {
-  const config = getGatewayConfig()
-  if (!config) return 'ws://127.0.0.1:* wss://127.0.0.1:*'
-  try {
-    const url = new URL(config.url.replace(/^ws/, 'http'))
-    const wsProto = url.protocol === 'https:' ? 'wss:' : 'ws:'
-    const httpProto = url.protocol === 'https:' ? 'https:' : 'http:'
-    return `${wsProto}//${url.host} ${httpProto}//${url.host}`
-  } catch {
-    return 'ws://127.0.0.1:* wss://127.0.0.1:*'
-  }
+  return 'https://api.github.com'
 }
 
 app.on('window-all-closed', () => {

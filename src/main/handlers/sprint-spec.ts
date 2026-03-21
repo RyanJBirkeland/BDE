@@ -5,7 +5,7 @@
  */
 import { readFile } from 'fs/promises'
 import { resolve } from 'path'
-import { getGatewayConfig } from '../config'
+import { getSetting } from '../settings'
 import { getSpecsRoot } from '../paths'
 
 // --- Types ---
@@ -90,9 +90,9 @@ export async function generatePrompt(
   const fallback: GeneratePromptResponse = { taskId, spec: '', prompt: title }
 
   try {
-    const gatewayConfig = getGatewayConfig()
-    if (!gatewayConfig) return fallback
-    const { url: rawGatewayUrl, token: gatewayToken } = gatewayConfig
+    const rawGatewayUrl = getSetting('gateway.url')
+    const gatewayToken = getSetting('gateway.token')
+    if (!rawGatewayUrl || !gatewayToken) return fallback
     const gatewayUrl = rawGatewayUrl
       .replace(/^ws:\/\//, 'http://')
       .replace(/^wss:\/\//, 'https://')

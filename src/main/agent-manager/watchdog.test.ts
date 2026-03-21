@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Watchdog } from './watchdog'
-import type { TimeoutReason } from './watchdog'
+// TimeoutReason type used implicitly in callback assertions
 
 describe('Watchdog', () => {
   beforeEach(() => {

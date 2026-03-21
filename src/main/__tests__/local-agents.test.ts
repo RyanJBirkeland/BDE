@@ -5,6 +5,12 @@ import type { AgentHandle, AgentEvent } from '../agents/types'
 
 // --- Module mocks ---
 
+vi.mock('electron', () => ({
+  BrowserWindow: {
+    getAllWindows: vi.fn().mockReturnValue([]),
+  },
+}))
+
 vi.mock('child_process', () => ({
   execFile: vi.fn(),
   spawn: vi.fn(),
@@ -30,9 +36,10 @@ vi.mock('../fs', () => ({
   validateLogPath: vi.fn((p: string) => p),
 }))
 
-vi.mock('../agents', () => ({
-  createAgentProvider: vi.fn(),
-}))
+vi.mock('../agents', () => {
+  const MockSdkProvider = vi.fn()
+  return { SdkProvider: MockSdkProvider }
+})
 
 import {
   getAgentProcesses,
@@ -54,7 +61,7 @@ import {
   updateAgentMeta,
   listAgents,
 } from '../agent-history'
-import { createAgentProvider } from '../agents'
+import { SdkProvider } from '../agents'
 
 // --- Helpers ---
 
@@ -129,11 +136,12 @@ function createMockHandle(pid?: number): AgentHandle & {
   }
 }
 
-/** Set up createAgentProvider mock to return a provider with the given handle. */
+/** Set up SdkProvider mock to return a provider with the given handle. */
 function mockProvider(handle: AgentHandle) {
-  vi.mocked(createAgentProvider).mockReturnValue({
-    spawn: vi.fn().mockResolvedValue(handle),
-  })
+  vi.mocked(SdkProvider).mockImplementation(function (this: Record<string, unknown>) {
+    this.spawn = vi.fn().mockResolvedValue(handle)
+    return this
+  } as never)
 }
 
 describe('local-agents.ts', () => {
@@ -484,7 +492,7 @@ describe('local-agents.ts', () => {
       expect(createAgentRecord).toHaveBeenCalledWith(
         expect.objectContaining({ task: 'fix bug', repoPath: '/tmp/repo', pid: null }),
       )
-      expect(createAgentProvider).toHaveBeenCalled()
+      expect(SdkProvider).toHaveBeenCalled()
     })
 
     it('updates record with PID from handle', async () => {
@@ -528,9 +536,10 @@ describe('local-agents.ts', () => {
     })
 
     it('marks agent as failed when provider.spawn() throws', async () => {
-      vi.mocked(createAgentProvider).mockReturnValue({
-        spawn: vi.fn().mockRejectedValue(new Error('Binary not found')),
-      })
+      vi.mocked(SdkProvider).mockImplementation(function (this: Record<string, unknown>) {
+        this.spawn = vi.fn().mockRejectedValue(new Error('Binary not found'))
+        return this
+      } as never)
 
       const result = await spawnClaudeAgent({ task: 'test', repoPath: '/tmp/repo' })
 
