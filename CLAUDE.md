@@ -68,13 +68,13 @@ These files are edited frequently across branches. Take extra care when modifyin
 ## Architecture Notes
 
 - **Data layer**: SQLite database at `~/.bde/bde.db` (WAL mode). Schema in `src/main/db.ts`. Tables: `sprint_tasks`, `agent_runs`, `settings`, `cost_events`, `agent_events`.
-- **Queue API**: `src/main/queue-api/` exposes sprint tasks to the task runner on port 18790 (localhost). Enriches responses with `repo_path`/`gh_repo` from repo settings. Endpoints: `/queue/tasks`, `/queue/tasks/:id/claim`, `/queue/tasks/:id/release`, `/queue/tasks/:id/status`, `/queue/tasks/:id/output`.
+- **AgentManager**: `src/main/agent-manager/` — in-process task orchestration (replaces external task runner). Drain loop watches for queued tasks, spawns agents in git worktrees via SDK, monitors with watchdogs, handles completion (push branch, open PR, retry logic). Fully dependency-injected.
+- **AuthGuard**: `src/main/auth-guard.ts` — validates Claude Code subscription token from macOS Keychain (`Claude Code-credentials`). Called before every agent spawn. Users must run `claude login` to authenticate.
 - **Sprint PR poller**: `src/main/sprint-pr-poller.ts` — runs every 60s in main process (not renderer-dependent), polls PR status for tasks with `pr_status='open'`.
 - **State**: Zustand stores in `src/renderer/src/stores/`
 - **IPC**: Main process handlers in `src/main/handlers/`, registered in `src/main/index.ts`, preload bridge in `src/preload/index.ts`
-- **RPC**: Renderer talks to OpenClaw gateway via WebSocket (`src/renderer/src/lib/gateway.ts`)
 - **PR polling**: `pollPrStatuses` in `src/main/git.ts` — GitHub REST API, 60s interval, auto-marks tasks done on merge or cancelled on close
-- **Agent spawning**: `src/main/local-agents.ts` delegates to `src/main/agents/` provider factory (SDK or CLI). Event bus persists `AgentEvent` stream to SQLite and broadcasts via IPC.
+- **Agent spawning**: `src/main/local-agents.ts` delegates to `SdkProvider` (`src/main/agents/sdk-provider.ts`). Event bus persists `AgentEvent` stream to SQLite and broadcasts via IPC.
 - **Agent event pipeline**: `local-agents.ts` → `consumeEvents()` → event bus (`getEventBus().emit()`) → SQLite `agent_events` table + IPC broadcast to renderer. If events don't appear in the Agents view, check that `bus.emit('agent:event', id, event)` is called in the consume loop.
 - **DB sync**: File watcher on `bde.db` pushes `sprint:external-change` IPC events to renderer (500ms debounce)
 - **Design tokens**: `src/renderer/src/design-system/tokens.ts` — use these instead of hardcoded values
@@ -85,13 +85,25 @@ These files are edited frequently across branches. Take extra care when modifyin
 ## Gotchas
 
 - **FK constraints**: `sprint_tasks.agent_run_id` has NO foreign key constraint (migration v10 dropped it) — agent runs live in the task runner's own DB, not BDE's.
-- **Queue API auth**: No authentication on queue API (localhost-only security model). Task runner authenticates to its OWN API via `SPRINT_API_KEY`, not to BDE's queue API.
+- **Keychain token format**: `claudeAiOauth.expiresAt` is a stringified epoch millisecond, NOT an ISO date. Parse with `parseInt(val, 10)`.
+- **electron-builder afterSign**: Cannot use `.sh` files as `afterSign` hooks — electron-builder `require()`s them as JavaScript. Use `.js`/`.cjs` files, or omit for unsigned builds (`identity: null`).
+- **Subagent branch safety**: When dispatching subagents, explicitly tell them which branch to commit to. Subagents may default to `main` if not told otherwise.
 - **Pre-push hook**: Husky runs `npm run typecheck && npm test` before every push. Fix failures before retrying.
 - **Native modules**: `better-sqlite3` is rebuilt for Electron in `postinstall`. If `npm install` fails, check native build tools. `test:main` has pre/post scripts to swap between Node/Electron builds.
 - **Native module rebuild**: After `npm install`, run `npm run postinstall` to rebuild `better-sqlite3` for Electron. Without this, the app crashes with `NODE_MODULE_VERSION` mismatch.
 - **Zustand selector gotcha**: Never call a function that returns a new array/object inside a Zustand selector (e.g., `useSomeStore(s => s.getList())`). This creates a new reference every render → infinite loop. Derive with `useMemo` from stable state instead.
-- **Task runner connection**: Task runner polls BDE's queue API (`GET /queue/tasks`) — does NOT hold an SSE connection. `connectedRunners` in health check falls back to pinging the task runner's `/health` endpoint directly.
 - **DB migrations**: Schema changes go through `src/main/db.ts` — add a new entry to the `migrations` array. Never modify existing migrations.
+
+## Packaging
+
+```bash
+npm run build:mac    # Build unsigned macOS arm64 DMG → release/BDE-*.dmg
+npm run package      # Alias for build:mac
+```
+
+- **Prerequisites for users**: Claude Code CLI installed + `claude login`, `git`, `gh` CLI
+- **Unsigned**: `identity: null` in electron-builder.yml — users right-click → Open to bypass Gatekeeper
+- **Onboarding**: App shows auth check screen on first launch; auto-skips for returning users with valid token
 
 ## Key Conventions
 
