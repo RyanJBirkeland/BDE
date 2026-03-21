@@ -291,6 +291,28 @@ export interface IpcChannelMap {
     result: void
   }
 
+  // --- Auth ---
+  'auth:status': {
+    args: []
+    result: { cliFound: boolean; tokenFound: boolean; tokenExpired: boolean; expiresAt?: string }
+  }
+
+  // --- Agent Manager ---
+  'agent-manager:status': {
+    args: []
+    result: { activeCount: number; availableSlots: number }
+  }
+  'agent-manager:kill': {
+    args: [taskId: string]
+    result: boolean
+  }
+
+  // --- Auth ---
+  'auth:status': {
+    args: []
+    result: { cliFound: boolean; tokenFound: boolean; tokenExpired: boolean; expiresAt?: string }
+  }
+
   // --- Terminal ---
   'terminal:create': {
     args: [opts: { cols: number; rows: number; shell?: string }]

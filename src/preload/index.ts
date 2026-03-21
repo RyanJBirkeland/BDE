@@ -194,6 +194,15 @@ const api = {
     getHistory: (agentId: string) => typedInvoke('agent:history', agentId),
   },
 
+  // Auth status
+  authStatus: () => typedInvoke('auth:status'),
+
+  // Agent Manager
+  agentManager: {
+    status: () => typedInvoke('agent-manager:status'),
+    kill: (taskId: string) => typedInvoke('agent-manager:kill', taskId),
+  },
+
   // Template CRUD (Phase 2)
   templates: {
     list: () => typedInvoke('templates:list'),

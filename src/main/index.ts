@@ -13,6 +13,13 @@ import { registerSprintLocalHandlers } from './handlers/sprint-local'
 import { registerCostHandlers } from './handlers/cost-handlers'
 import { registerFsHandlers } from './fs'
 import { registerTemplateHandlers } from './handlers/template-handlers'
+import { registerAuthHandlers } from './handlers/auth-handlers'
+import { registerAgentManagerHandlers } from './handlers/agent-manager-handlers'
+import { AgentManager, createWorktree, handleAgentCompletion } from './agent-manager'
+import { SdkProvider } from './agents'
+import { ensureSubscriptionAuth } from './auth-guard'
+import { getEventBus } from './agents/event-bus'
+import { getMaxConcurrent, getWorktreeBase, getMaxRuntimeMinutes, getSettingJson } from './settings'
 import { getDb, closeDb } from './db'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
@@ -133,6 +140,68 @@ app.whenReady().then(() => {
   registerCostHandlers()
   registerTemplateHandlers()
   registerFsHandlers()
+
+  // Agent Manager setup
+  const sdkProvider = new SdkProvider()
+  const eventBus = getEventBus()
+
+  const agentManager = new AgentManager({
+    getQueuedTasks: async () => {
+      const db = getDb()
+      const rows = db.prepare(
+        "SELECT * FROM sprint_tasks WHERE status = 'queued' ORDER BY priority ASC, created_at ASC"
+      ).all()
+      return rows as any[]
+    },
+    updateTask: async (taskId: string, update: Record<string, unknown>) => {
+      const db = getDb()
+      const keys = Object.keys(update)
+      const sets = keys.map(k => `${k} = ?`).join(', ')
+      const values = keys.map(k => update[k])
+      db.prepare(`UPDATE sprint_tasks SET ${sets}, updated_at = datetime('now') WHERE id = ?`).run(...values, taskId)
+    },
+    ensureAuth: () => ensureSubscriptionAuth(),
+    spawnAgent: async (opts) => {
+      return sdkProvider.spawn({
+        prompt: opts.prompt,
+        workingDirectory: opts.cwd,
+        model: opts.model,
+      })
+    },
+    createWorktree: (repoPath, taskId, worktreeBase) => createWorktree(repoPath, taskId, worktreeBase),
+    handleCompletion: async (ctx) => {
+      await handleAgentCompletion({
+        ...ctx,
+        updateTask: async (update) => {
+          const db = getDb()
+          const keys = Object.keys(update)
+          const sets = keys.map(k => `${k} = ?`).join(', ')
+          const values = keys.map(k => update[k])
+          db.prepare(`UPDATE sprint_tasks SET ${sets}, updated_at = datetime('now') WHERE id = ?`).run(...values, ctx.taskId as string)
+        },
+      } as any)
+    },
+    emitEvent: (agentId, event) => eventBus.emit('agent:event', agentId, event as any),
+    getRepoInfo: (repoName) => {
+      const repos = getSettingJson<Array<{ name: string; localPath: string; githubOwner: string; githubRepo: string }>>('repos') ?? []
+      const repo = repos.find(r => r.name === repoName)
+      if (!repo) return null
+      return { repoPath: repo.localPath, ghRepo: `${repo.githubOwner}/${repo.githubRepo}` }
+    },
+    config: {
+      maxConcurrent: getMaxConcurrent(),
+      worktreeBase: getWorktreeBase(),
+      maxRuntimeMs: getMaxRuntimeMinutes() * 60_000,
+      idleMs: 15 * 60_000,
+      drainIntervalMs: 5_000,
+    },
+  })
+
+  agentManager.start()
+  app.on('will-quit', () => agentManager.stop())
+
+  registerAuthHandlers()
+  registerAgentManagerHandlers(agentManager)
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const connectSrc = buildConnectSrc()

@@ -42,3 +42,19 @@ export function getAgentBinary(): string {
 export function getAgentPermissionMode(): string {
   return getSetting(SETTING_AGENT_PERMISSION_MODE) || DEFAULT_PERMISSION_MODE
 }
+
+export const SETTING_MAX_CONCURRENT = 'agentManager.maxConcurrent'
+export const SETTING_WORKTREE_BASE = 'agentManager.worktreeBase'
+export const SETTING_MAX_RUNTIME_MINUTES = 'agentManager.maxRuntimeMinutes'
+
+export function getMaxConcurrent(): number {
+  return parseInt(getSetting(SETTING_MAX_CONCURRENT) ?? '3', 10)
+}
+
+export function getWorktreeBase(): string {
+  return getSetting(SETTING_WORKTREE_BASE) ?? '/tmp/worktrees/bde'
+}
+
+export function getMaxRuntimeMinutes(): number {
+  return parseInt(getSetting(SETTING_MAX_RUNTIME_MINUTES) ?? '60', 10)
+}
