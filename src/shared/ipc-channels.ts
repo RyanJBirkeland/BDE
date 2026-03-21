@@ -7,7 +7,7 @@
  */
 
 import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, ClaimedTask, PrListPayload, TaskTemplate } from './types'
-import type { TaskOutputEvent } from './queue-api-contract'
+import type { TaskOutputEvent, RecentHealth } from './queue-api-contract'
 import type { AgentEvent } from '../main/agents/types'
 
 /** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
@@ -204,7 +204,7 @@ export interface IpcChannelMap {
   // --- Queue ---
   'queue:health': {
     args: []
-    result: { queue: Record<string, number>; doneToday: number; connectedRunners: number }
+    result: { queue: Record<string, number>; doneToday: number; connectedRunners: number; recentHealth: RecentHealth | null }
   }
 
   // --- Task Events (streaming visibility) ---
