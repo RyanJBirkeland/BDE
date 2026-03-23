@@ -121,6 +121,29 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown>) => {
+    // If transitioning to queued, check if dependencies are satisfied
+    if (patch.status === 'queued') {
+      const task = await _getTask(id)
+      if (task) {
+        const taskDeps = task.depends_on
+        if (taskDeps && taskDeps.length > 0) {
+          const { createDependencyIndex } = await import(
+            '../agent-manager/dependency-index'
+          )
+          const idx = createDependencyIndex()
+          const allTasks = await _listTasks()
+          const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+          const { satisfied } = idx.areDependenciesSatisfied(
+            id,
+            taskDeps,
+            (depId) => statusMap.get(depId),
+          )
+          if (!satisfied) {
+            patch = { ...patch, status: 'blocked' }
+          }
+        }
+      }
+    }
     return updateTask(id, patch)
   })
 
@@ -186,5 +209,51 @@ export function registerSprintLocalHandlers(): void {
     } catch {
       return { content: '', status: agent.status, nextByte: fromByte }
     }
+  })
+
+  safeHandle(
+    'sprint:validate-dependencies',
+    async (
+      _e,
+      taskId: string,
+      proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>,
+    ) => {
+      const { detectCycle } = await import(
+        '../agent-manager/dependency-index'
+      )
+
+      // Validate all dep targets exist
+      for (const dep of proposedDeps) {
+        const target = await _getTask(dep.id)
+        if (!target) return { valid: false, error: `Task ${dep.id} not found` }
+      }
+
+      // Check for cycles
+      const allTasks = await _listTasks()
+      const depsMap = new Map(
+        allTasks.map((t) => [
+          t.id,
+          t.depends_on,
+        ]),
+      )
+      const cycle = detectCycle(
+        taskId,
+        proposedDeps,
+        (id) => depsMap.get(id) ?? null,
+      )
+      if (cycle) return { valid: false, cycle }
+
+      return { valid: true }
+    },
+  )
+
+  safeHandle('sprint:unblock-task', async (_e, taskId: string) => {
+    const task = await _getTask(taskId)
+    if (!task) throw new Error(`Task ${taskId} not found`)
+    if (task.status !== 'blocked')
+      throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
+    const updated = await _updateTask(taskId, { status: 'queued' })
+    if (updated) notifySprintMutation('updated', updated)
+    return updated
   })
 }

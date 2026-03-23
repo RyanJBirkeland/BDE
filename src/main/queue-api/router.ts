@@ -184,6 +184,12 @@ export async function route(
     return handleGetTask(res, params['id'])
   }
 
+  // PATCH /queue/tasks/:id — general field update
+  params = matchRoute('/queue/tasks/:id', path)
+  if (method === 'PATCH' && params) {
+    return handleUpdateTask(req, res, params['id'])
+  }
+
   // PATCH /queue/tasks/:id/status
   params = matchRoute('/queue/tasks/:id/status', path)
   if (method === 'PATCH' && params) {
@@ -224,10 +230,12 @@ async function handleHealth(res: http.ServerResponse): Promise<void> {
     queue: {
       backlog: stats.backlog,
       queued: stats.queued,
+      blocked: stats.blocked,
       active: stats.active,
       done: stats.done,
       failed: stats.failed,
       cancelled: stats.cancelled,
+      error: stats.error,
     },
   })
 }
@@ -410,4 +418,31 @@ async function handleTaskOutput(
   }
 
   sendJson(res, 200, { ok: true })
+}
+
+async function handleUpdateTask(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  id: string,
+): Promise<void> {
+  let body: unknown
+  try {
+    body = await parseBody(req, res)
+  } catch {
+    sendJson(res, 400, { error: 'Invalid JSON body' })
+    return
+  }
+
+  if (!body || typeof body !== 'object') {
+    sendJson(res, 400, { error: 'Request body must be a JSON object' })
+    return
+  }
+
+  const snaked = toSnakeCase(body as Record<string, unknown>)
+  const updated = await updateTask(id, snaked)
+  if (!updated) {
+    sendJson(res, 404, { error: `Task ${id} not found` })
+    return
+  }
+  sendJson(res, 200, toCamelCase(updated))
 }
