@@ -5,6 +5,12 @@ import path from 'node:path'
 
 const execFileAsync = promisify(execFile)
 
+// Ensure git/gh are findable in Electron's minimal PATH
+const EXEC_ENV = {
+  ...process.env,
+  PATH: ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`, process.env.PATH].filter(Boolean).join(':'),
+}
+
 export function branchNameForTask(title: string): string {
   const slug = title
     .toLowerCase()
@@ -80,11 +86,11 @@ export async function setupWorktree(opts: SetupWorktreeOpts): Promise<SetupWorkt
   acquireLock(worktreeBase, repoPath)
 
   try {
-    await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath })
+    await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: EXEC_ENV })
   } catch (err) {
     // Clean up partial worktree on failure
     try {
-      await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath })
+      await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: EXEC_ENV })
     } catch {
       // best-effort
     }

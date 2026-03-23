@@ -10,6 +10,11 @@ export async function spawnAgent(opts: {
   const env = { ...process.env }
   delete env.ANTHROPIC_API_KEY // force subscription billing
 
+  // Ensure common tool paths are in PATH — Electron's PATH is often minimal
+  const extraPaths = ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`]
+  const currentPath = env.PATH ?? ''
+  env.PATH = [...extraPaths, ...currentPath.split(':')].filter(Boolean).join(':')
+
   // Try SDK first, fall back to CLI
   try {
     const sdk = await import('@anthropic-ai/claude-agent-sdk')

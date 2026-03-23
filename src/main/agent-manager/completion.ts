@@ -5,6 +5,11 @@ import { MAX_RETRIES } from './types'
 
 const execFile = promisify(execFileCb)
 
+const EXEC_ENV = {
+  ...process.env,
+  PATH: ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`, process.env.PATH].filter(Boolean).join(':'),
+}
+
 export interface ResolveSuccessOpts {
   taskId: string
   worktreePath: string
@@ -32,12 +37,12 @@ export async function resolveSuccess(opts: ResolveSuccessOpts): Promise<void> {
   const { stdout: branchOut } = await execFile(
     'git',
     ['rev-parse', '--abbrev-ref', 'HEAD'],
-    { cwd: worktreePath }
+    { cwd: worktreePath, env: EXEC_ENV }
   )
   const branch = branchOut.trim()
 
   // 2. Push branch to origin
-  await execFile('git', ['push', 'origin', branch], { cwd: worktreePath })
+  await execFile('git', ['push', 'origin', branch], { cwd: worktreePath, env: EXEC_ENV })
 
   // 3. Open PR via gh CLI
   let prUrl: string | null = null
@@ -46,7 +51,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts): Promise<void> {
     const { stdout: prOut } = await execFile(
       'gh',
       ['pr', 'create', '--title', title, '--body', 'Automated by BDE', '--head', branch, '--repo', ghRepo],
-      { cwd: worktreePath }
+      { cwd: worktreePath, env: EXEC_ENV }
     )
     const parsed = parsePrOutput(prOut)
     prUrl = parsed.prUrl
