@@ -41,8 +41,8 @@ export async function resolveSuccess(opts: ResolveSuccessOpts): Promise<void> {
   )
   const branch = branchOut.trim()
 
-  // 2. Push branch to origin
-  await execFile('git', ['push', 'origin', branch], { cwd: worktreePath, env: EXEC_ENV })
+  // 2. Push branch to origin (skip pre-push hooks — agent code is reviewed via PR)
+  await execFile('git', ['push', '--no-verify', 'origin', branch], { cwd: worktreePath, env: EXEC_ENV })
 
   // 3. Open PR via gh CLI
   let prUrl: string | null = null

@@ -367,8 +367,49 @@ export interface TerminalChannels {
   }
 }
 
+/** Task Workbench AI-assisted creation */
+export interface WorkbenchChannels {
+  'workbench:chat': {
+    args: [input: {
+      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+      formContext: { title: string; repo: string; spec: string }
+    }]
+    result: { content: string }
+  }
+  'workbench:generateSpec': {
+    args: [input: { title: string; repo: string; templateHint: string }]
+    result: { spec: string }
+  }
+  'workbench:checkSpec': {
+    args: [input: { title: string; repo: string; spec: string }]
+    result: {
+      clarity: { status: 'pass' | 'warn' | 'fail'; message: string }
+      scope: { status: 'pass' | 'warn' | 'fail'; message: string }
+      filesExist: { status: 'pass' | 'warn'; message: string; missingFiles?: string[] }
+    }
+  }
+  'workbench:checkOperational': {
+    args: [input: { repo: string }]
+    result: {
+      auth: { status: 'pass' | 'warn' | 'fail'; message: string }
+      repoPath: { status: 'pass' | 'fail'; message: string; path?: string }
+      gitClean: { status: 'pass' | 'warn'; message: string }
+      noConflict: { status: 'pass' | 'warn' | 'fail'; message: string }
+      slotsAvailable: { status: 'pass' | 'warn'; message: string; available: number; max: number }
+    }
+  }
+  'workbench:researchRepo': {
+    args: [input: { query: string; repo: string }]
+    result: {
+      content: string
+      filesSearched: string[]
+      totalMatches: number
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Composite channel map — intersection of all domain maps
 // ---------------------------------------------------------------------------
 
-export type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & AgentConfigChannels & AgentChannels & GitHubApiChannels & CostChannels & SprintChannels & WindowChannels & MemoryChannels & FsChannels & AgentEventChannels & TemplateChannels & AuthChannels & AgentManagerChannels & TerminalChannels
+export type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & AgentConfigChannels & AgentChannels & GitHubApiChannels & CostChannels & SprintChannels & WindowChannels & MemoryChannels & FsChannels & AgentEventChannels & TemplateChannels & AuthChannels & AgentManagerChannels & TerminalChannels & WorkbenchChannels
