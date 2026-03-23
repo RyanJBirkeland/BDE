@@ -10,8 +10,8 @@ vi.mock('node:child_process', () => {
 })
 
 import { execFile } from 'node:child_process'
+import type { ChildProcess } from 'node:child_process'
 import { branchNameForTask, setupWorktree, cleanupWorktree, pruneStaleWorktrees } from '../worktree'
-import { promisify } from 'node:util'
 
 const execFileMock = vi.mocked(execFile)
 
@@ -23,19 +23,7 @@ function mockExecFileSuccess() {
       cb(null, '', '')
     }
     const p = Promise.resolve({ stdout: '', stderr: '' })
-    return Object.assign(p, { child: null }) as ReturnType<typeof execFile>
-  })
-}
-
-// Helper to make execFile reject with an error
-function mockExecFileFailure(message = 'git error') {
-  execFileMock.mockImplementation((...args: unknown[]) => {
-    const cb = args[args.length - 1]
-    if (typeof cb === 'function') {
-      cb(new Error(message), '', '')
-    }
-    const p = Promise.reject(new Error(message))
-    return Object.assign(p, { child: null }) as ReturnType<typeof execFile>
+    return Object.assign(p, { child: null }) as unknown as ChildProcess
   })
 }
 
@@ -141,7 +129,7 @@ describe('setupWorktree', () => {
         cb(err, '', '')
       }
       const p = callCount === 1 ? Promise.reject(new Error('branch already exists')) : Promise.resolve({ stdout: '', stderr: '' })
-      return Object.assign(p, { child: null }) as ReturnType<typeof execFile>
+      return Object.assign(p, { child: null }) as unknown as ChildProcess
     })
 
     await expect(
