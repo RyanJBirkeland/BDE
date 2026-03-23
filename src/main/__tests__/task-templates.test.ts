@@ -32,6 +32,24 @@ vi.mock('electron', () => ({
   },
 }))
 
+vi.mock('../data/sprint-queries', () => ({
+  getTask: vi.fn(async (id: string) => {
+    const row = db
+      .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
+      .get(id) as Record<string, unknown> | undefined
+    return row ?? null
+  }),
+  listTasks: vi.fn(async () => {
+    return db.prepare('SELECT * FROM sprint_tasks').all()
+  }),
+  UPDATE_ALLOWLIST: new Set([
+    'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
+    'pr_url', 'pr_number', 'pr_status', 'pr_mergeable_state', 'agent_run_id',
+    'retry_count', 'fast_fail_count', 'started_at', 'completed_at',
+    'template_name', 'claimed_by', 'depends_on',
+  ]),
+}))
+
 import { getSettingJson } from '../settings'
 import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
