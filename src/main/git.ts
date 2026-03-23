@@ -87,12 +87,17 @@ export async function gitCommit(cwd: string, message: string): Promise<void> {
 }
 
 export async function gitPush(cwd: string): Promise<string> {
-  const { stdout, stderr } = await execFileAsync('git', ['push'], {
-    cwd,
-    encoding: 'utf-8' as const,
-    maxBuffer: MAX_BUFFER
-  })
-  return (stdout + stderr).trim() || 'Pushed successfully'
+  try {
+    const { stdout, stderr } = await execFileAsync('git', ['push'], {
+      cwd,
+      encoding: 'utf-8' as const,
+      maxBuffer: MAX_BUFFER
+    })
+    return (stdout + stderr).trim() || 'Pushed successfully'
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new Error(`git push failed in ${cwd}: ${msg}`)
+  }
 }
 
 export async function gitBranches(
