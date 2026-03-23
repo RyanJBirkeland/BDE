@@ -161,8 +161,7 @@ export const TaskCard = memo(function TaskCard({
           <Button
             size="sm"
             variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation()
+            onClick={() => {
               window.api?.sprint?.unblockTask?.(task.id)
             }}
           >

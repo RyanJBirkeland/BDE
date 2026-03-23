@@ -314,8 +314,8 @@ export function createAgentManager(
           const task = {
             id: raw.id as string,
             title: raw.title as string,
-            prompt: raw.prompt ?? null,
-            spec: raw.spec ?? null,
+            prompt: (raw.prompt as string) ?? null,
+            spec: (raw.spec as string) ?? null,
             repo: raw.repo as string,
             retry_count: Number(raw.retryCount) || 0,
             fast_fail_count: Number(raw.fastFailCount) || 0,

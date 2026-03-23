@@ -33,6 +33,7 @@ const EMPTY_LABELS: Record<ColumnStatus, string> = {
   cancelled: 'No cancelled tasks',
   failed: 'No failed tasks',
   error: 'No errored tasks',
+  blocked: 'No blocked tasks',
   review: 'No PRs awaiting review',
 }
 
@@ -44,6 +45,7 @@ const STATUS_CLASS: Record<ColumnStatus, string> = {
   cancelled: 'kanban-col--done',
   failed: 'kanban-col--done',
   error: 'kanban-col--done',
+  blocked: 'kanban-col--blocked',
   review: 'kanban-col--review',
 }
 

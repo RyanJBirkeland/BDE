@@ -18,6 +18,7 @@ function makeTask(id: string, title = `Task ${id}`): SprintTask {
     title,
     status: 'active',
     claimed_by: 'bde-embedded',
+    depends_on: null,
   } as SprintTask
 }
 

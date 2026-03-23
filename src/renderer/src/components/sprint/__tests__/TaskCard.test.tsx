@@ -39,6 +39,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     retry_count: 0,
     fast_fail_count: 0,
     template_name: null,
+    depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     ...overrides,
