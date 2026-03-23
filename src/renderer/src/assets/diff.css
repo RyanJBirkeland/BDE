@@ -587,3 +587,114 @@
   font-weight: 500;
 }
 
+/* -- Line selection -- */
+.diff-line--selected {
+  background: color-mix(in srgb, var(--bde-accent) 15%, transparent) !important;
+}
+
+.diff-line__gutter--selectable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.diff-line__gutter--selectable:hover {
+  background: color-mix(in srgb, var(--bde-accent) 20%, transparent);
+}
+
+.diff-selection-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--bde-accent);
+  color: #000;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  position: absolute;
+  left: 4px;
+  z-index: 3;
+  transition: transform var(--bde-transition-fast);
+}
+
+.diff-selection-trigger:hover {
+  transform: scale(1.15);
+}
+
+/* -- Inline comment widget -- */
+.diff-comment-widget {
+  margin: 0 0 0 96px;
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  background: var(--bde-bg);
+  overflow: hidden;
+}
+
+.diff-comment-widget__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  width: 100%;
+  font-size: var(--bde-size-xs);
+  font-family: inherit;
+  color: var(--bde-text-muted);
+  background: var(--bde-surface);
+  border: none;
+  cursor: pointer;
+  transition: background var(--bde-transition-fast);
+}
+
+.diff-comment-widget__toggle:hover {
+  background: var(--bde-surface-high);
+}
+
+.diff-comment-widget__thread {
+  display: flex;
+  flex-direction: column;
+}
+
+.diff-comment-widget__comment {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--bde-border);
+}
+
+.diff-comment-widget__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--bde-size-xs);
+}
+
+.diff-comment-widget__author {
+  font-weight: 600;
+  color: var(--bde-text);
+}
+
+.diff-comment-widget__time {
+  color: var(--bde-text-dim);
+  margin-left: auto;
+}
+
+.diff-comment-widget__body {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text);
+  line-height: 1.5;
+}
+
+.diff-comment-widget__body p { margin: 2px 0; }
+.diff-comment-widget__body code {
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  background: var(--bde-surface);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+

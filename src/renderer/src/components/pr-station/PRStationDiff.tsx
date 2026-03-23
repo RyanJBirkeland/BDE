@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { getPRDiff } from '../../lib/github-api'
-import type { OpenPr } from '../../../../shared/types'
+import { getPRDiff, getReviewComments } from '../../lib/github-api'
+import type { OpenPr, PrComment } from '../../../../shared/types'
 import { parseDiffChunked, type DiffFile } from '../../lib/diff-parser'
 import { REPO_OPTIONS, DIFF_SIZE_WARN_BYTES } from '../../lib/constants'
 import { ErrorBanner } from '../ui/ErrorBanner'
 import { DiffViewer } from '../diff/DiffViewer'
+import type { LineRange } from '../diff/DiffViewer'
 import { DiffSizeWarning } from '../diff/DiffSizeWarning'
 
 export function PRStationDiff({ pr }: { pr: OpenPr }) {
@@ -12,6 +13,8 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sizeWarning, setSizeWarning] = useState<number | null>(null)
+  const [comments, setComments] = useState<PrComment[]>([])
+  const [selectedRange, setSelectedRange] = useState<LineRange | null>(null)
   const rawRef = useRef<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -42,6 +45,11 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
       .then((raw) => {
         if (cancelled) return
         rawRef.current = raw
+
+        // Fetch review comments in parallel
+        getReviewComments(repoOption.owner, repoOption.label, pr.number)
+          .then((c) => { if (!cancelled) setComments(c) })
+          .catch(() => { if (!cancelled) setComments([]) })
 
         if (raw.length > DIFF_SIZE_WARN_BYTES) {
           setSizeWarning(raw.length)
@@ -94,7 +102,12 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
         <span className="pr-station-list__additions">+{totalAdded}</span>
         <span className="pr-station-list__deletions">-{totalDeleted}</span>
       </div>
-      <DiffViewer files={files} />
+      <DiffViewer
+        files={files}
+        comments={comments}
+        selectedRange={selectedRange}
+        onSelectRange={setSelectedRange}
+      />
     </div>
   )
 }
