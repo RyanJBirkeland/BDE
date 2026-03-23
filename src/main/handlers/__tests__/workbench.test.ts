@@ -48,6 +48,10 @@ vi.mock('../../data/supabase-client', () => ({
   }),
 }))
 
+vi.mock('../../ipc-utils', () => ({
+  safeHandle: vi.fn(),
+}))
+
 // Mock global agent manager
 beforeEach(() => {
   ;(global as any).__agentManager = {
@@ -62,10 +66,6 @@ beforeEach(() => {
 // Import handlers after mocks are set up
 import { registerWorkbenchHandlers } from '../workbench'
 import { safeHandle } from '../../ipc-utils'
-
-vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
-}))
 
 describe('Workbench handlers', () => {
   beforeEach(() => {
