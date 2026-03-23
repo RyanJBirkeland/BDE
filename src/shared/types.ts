@@ -152,6 +152,15 @@ export interface PrListPayload {
   checks: Record<string, CheckRunSummary>
 }
 
+export interface PrReview {
+  id: number
+  user: { login: string; avatar_url: string }
+  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
+  body: string | null
+  submitted_at: string
+  html_url: string
+}
+
 /** Source of a unified agent — used by the unified agents store. */
 export type UnifiedAgentSource = 'local' | 'history'
 

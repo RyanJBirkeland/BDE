@@ -4,15 +4,17 @@ import {
   getPRDetail,
   getPRFiles,
   getCheckRunsList,
+  getReviews,
   type PRDetail as PRDetailData,
   type PRFile,
   type CheckRun
 } from '../../lib/github-api'
-import type { OpenPr } from '../../../../shared/types'
+import type { OpenPr, PrReview } from '../../../../shared/types'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { renderMarkdown } from '../../lib/render-markdown'
 import { PRStationChecks } from './PRStationChecks'
 import { PRStationConflictBanner } from './PRStationConflictBanner'
+import { PRStationReviews } from './PRStationReviews'
 
 interface PRStationDetailProps {
   pr: OpenPr
@@ -50,8 +52,10 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
   const [detail, setDetail] = useState<PRDetailData | null>(null)
   const [files, setFiles] = useState<PRFile[]>([])
   const [checks, setChecks] = useState<CheckRun[]>([])
+  const [reviews, setReviews] = useState<PrReview[]>([])
   const [loading, setLoading] = useState(true)
   const [checksLoading, setChecksLoading] = useState(true)
+  const [reviewsLoading, setReviewsLoading] = useState(true)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -62,15 +66,19 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
 
       setLoading(true)
       setChecksLoading(true)
+      setReviewsLoading(true)
 
       try {
-        const [prDetail, prFiles] = await Promise.all([
+        const [prDetail, prFiles, prReviews] = await Promise.all([
           getPRDetail(repo.owner, repo.label, pr.number),
-          getPRFiles(repo.owner, repo.label, pr.number)
+          getPRFiles(repo.owner, repo.label, pr.number),
+          getReviews(repo.owner, repo.label, pr.number)
         ])
         if (controller.signal.aborted) return
         setDetail(prDetail)
         setFiles(prFiles)
+        setReviews(prReviews)
+        setReviewsLoading(false)
         setLoading(false)
 
         const checkRuns = await getCheckRunsList(repo.owner, repo.label, prDetail.head.sha)
@@ -174,6 +182,9 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
 
       {/* CI Checks */}
       <PRStationChecks checks={checks} loading={checksLoading} />
+
+      {/* Reviews */}
+      <PRStationReviews reviews={reviews} loading={reviewsLoading} />
 
       {/* Changed Files */}
       <div className="pr-detail__section">

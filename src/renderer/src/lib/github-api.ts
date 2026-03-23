@@ -1,4 +1,5 @@
 import type { GitHubFetchInit, GitHubFetchResult } from '../../../shared/ipc-channels'
+import type { PrReview } from '../../../shared/types'
 
 /**
  * All GitHub REST API calls are proxied through the main process via IPC.
@@ -204,6 +205,16 @@ export async function mergePR(
       `Merge failed: ${res.status} — ${err.message ?? 'unknown'}`
     )
   }
+}
+
+export async function getReviews(
+  owner: string,
+  repo: string,
+  number: number
+): Promise<PrReview[]> {
+  return fetchAllPages<PrReview>(
+    `/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100`
+  )
 }
 
 export async function closePR(owner: string, repo: string, number: number): Promise<void> {

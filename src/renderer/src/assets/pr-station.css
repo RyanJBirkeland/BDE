@@ -695,3 +695,85 @@
   background: var(--bde-surface);
   border-radius: var(--bde-radius-sm);
 }
+
+/* -- Reviews -- */
+.pr-reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pr-review {
+  background: var(--bde-surface);
+  border-radius: var(--bde-radius-md);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pr-review__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--bde-size-sm);
+}
+
+.pr-review__author {
+  font-weight: 600;
+  color: var(--bde-text);
+}
+
+.pr-review__time {
+  color: var(--bde-text-dim);
+  font-size: var(--bde-size-xs);
+  margin-left: auto;
+}
+
+.pr-review__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  line-height: 1.5;
+}
+
+.pr-review__badge--approved {
+  color: var(--bde-accent);
+  background: color-mix(in srgb, var(--bde-accent) 15%, transparent);
+}
+
+.pr-review__badge--changes {
+  color: var(--bde-danger);
+  background: color-mix(in srgb, var(--bde-danger) 15%, transparent);
+}
+
+.pr-review__badge--commented {
+  color: var(--bde-text-muted);
+  background: var(--bde-surface-high);
+}
+
+.pr-review__badge--dismissed {
+  color: var(--bde-text-dim);
+  background: var(--bde-surface-high);
+  text-decoration: line-through;
+}
+
+.pr-review__body {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text);
+  line-height: 1.5;
+}
+
+.pr-review__body p { margin: 2px 0; }
+
+.pr-review__body code {
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-xs);
+  background: var(--bde-surface-high);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
