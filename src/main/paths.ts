@@ -34,6 +34,13 @@ export function getRepoPaths(): Record<string, string> {
   return result
 }
 
+export function getGhRepo(repoSlug: string): string | null {
+  const repos = getConfiguredRepos()
+  const repo = repos.find((r) => r.name.toLowerCase() === repoSlug.toLowerCase())
+  if (!repo?.githubOwner || !repo?.githubRepo) return null
+  return `${repo.githubOwner}/${repo.githubRepo}`
+}
+
 export function getSpecsRoot(): string | null {
   const repos = getConfiguredRepos()
   const bdeRepo = repos.find((r) => r.name.toLowerCase() === 'bde')

@@ -40,6 +40,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts): Promise<void> {
     { cwd: worktreePath, env: EXEC_ENV }
   )
   const branch = branchOut.trim()
+  console.log(`[completion] Task ${taskId}: pushing branch ${branch}`)
 
   // 2. Push branch to origin (skip pre-push hooks — agent code is reviewed via PR)
   await execFile('git', ['push', '--no-verify', 'origin', branch], { cwd: worktreePath, env: EXEC_ENV })

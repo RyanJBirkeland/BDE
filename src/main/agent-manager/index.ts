@@ -19,7 +19,7 @@ import { spawnAgent } from './sdk-adapter'
 import { resolveSuccess, resolveFailure } from './completion'
 import { recoverOrphans } from './orphan-recovery'
 import { updateTask } from '../data/sprint-queries'
-import { getRepoPaths } from '../paths'
+import { getRepoPaths, getGhRepo } from '../paths'
 import { randomUUID } from 'node:crypto'
 
 // Use sprint-queries directly but with a wrapper that catches hangs.
