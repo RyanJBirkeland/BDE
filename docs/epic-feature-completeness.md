@@ -1,13 +1,15 @@
 # Epic: Feature Completeness
 
+> **Status: COMPLETE** — All 8 stories resolved as of 2026-03-23.
+
 ## Summary
 
-A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct feature-completeness issues ranging from broken IPC field mappings that silently lose data, to dead code that confuses maintenance, to missing error feedback on critical git operations. The highest-impact problems cluster around the Sprint → Sessions integration boundary (agent_run_id never persisted, sidebar desync after navigation) and silent failure modes (git push, memory file creation, spawn modal). Fixing these 8 stories would close the most visible gaps between what the UI promises and what it delivers.
+All 8 feature-completeness issues identified in the original audit have been fixed across the embedded agent manager, task dependency, and code quality remediation work sessions.
 
 ## Stories
 
 ### FC-S1: Sprint agent_run_id never persisted to database
-**Status:** broken
+**Status:** fixed
 **Area:** SprintView / LogDrawer / sprint handler
 **Problem:** The frontend sends `agent_session_id` in the update patch, but the backend allowlist only accepts `agent_run_id`. The agent run link is silently dropped — sprint task logs work in-memory but are lost after app restart.
 **Acceptance Criteria:**
@@ -17,7 +19,7 @@ A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct featu
 **Estimated size:** S
 
 ### FC-S2: Git push silently swallows failures
-**Status:** broken
+**Status:** fixed
 **Area:** DiffView / git.ts
 **Problem:** `gitPush()` uses `spawnSync` but never checks `result.status` for non-zero exit codes. Push rejections (no upstream, force-push denied, auth failure) return the error text as a success string. The UI shows failure output with no error styling.
 **Acceptance Criteria:**
@@ -27,7 +29,7 @@ A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct featu
 **Estimated size:** S
 
 ### FC-S3: CommandPalette "Spawn Agent" command is broken
-**Status:** broken
+**Status:** fixed
 **Area:** CommandPalette / SessionsView
 **Problem:** The "Spawn Agent" command dispatches a `bde:open-spawn-modal` custom event, but no component listens for it. The command navigates to Sessions but the SpawnModal never opens.
 **Acceptance Criteria:**
@@ -36,7 +38,7 @@ A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct featu
 **Estimated size:** S
 
 ### FC-S4: Sprint drag-and-drop fails when dropping onto existing cards
-**Status:** broken
+**Status:** fixed
 **Area:** SprintView / KanbanBoard
 **Problem:** `handleDragEnd` validates `over.id` against `VALID_STATUSES`, but when a card is dropped onto another card (not the column's empty space), `over.id` is the target card's UUID — not a status string. The drop is silently ignored.
 **Acceptance Criteria:**
@@ -46,7 +48,7 @@ A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct featu
 **Estimated size:** M
 
 ### FC-S5: MemoryView new file creation fails for subdirectories
-**Status:** broken
+**Status:** fixed
 **Area:** MemoryView / fs.ts
 **Problem:** `writeMemoryFile()` calls `writeFile()` without first creating the parent directory. If a user creates `projects/myfile.md` and the `projects/` folder doesn't exist, it throws ENOENT. `createFile()` in MemoryView has no try/catch, so the error is an unhandled rejection with no user feedback.
 **Acceptance Criteria:**
@@ -56,7 +58,7 @@ A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct featu
 **Estimated size:** S
 
 ### FC-S6: SpawnModal has no loading guard and spawned agent doesn't appear immediately
-**Status:** half-done
+**Status:** fixed
 **Area:** SessionsView / SpawnModal / AgentList
 **Problem:** (1) `repoPaths` is fetched async on mount but the submit button is enabled immediately — submitting before the fetch resolves produces a confusing error toast. (2) After a successful spawn, the new agent doesn't appear in AgentList until the next 5-second poll cycle — no immediate `fetchProcesses()` call.
 **Acceptance Criteria:**
@@ -66,7 +68,7 @@ A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct featu
 **Estimated size:** S
 
 ### FC-S7: bde:navigate from Sprint causes sidebar selection desync
-**Status:** half-done
+**Status:** fixed
 **Area:** App.tsx / SessionsView / AgentList
 **Problem:** When `bde:navigate` fires from LogDrawer, it sets `agentHistoryStore.selectedId` directly — but `SessionsView`'s local `selectedUnifiedId` state is not updated. The correct log viewer renders, but AgentList shows no item highlighted because it compares against `selectedUnifiedId`.
 **Acceptance Criteria:**
@@ -75,7 +77,7 @@ A deep audit of BDE's 7 views and shared infrastructure reveals 8 distinct featu
 **Estimated size:** S
 
 ### FC-S8: Dead code cleanup — AgentHistoryPanel, sessions:getHistory stub, AddCardForm
-**Status:** dead
+**Status:** fixed
 **Area:** Sessions / Sprint / agent-handlers
 **Problem:** Three pieces of dead code add maintenance confusion: (1) `AgentHistoryPanel` is a fully-implemented component with its own polling loop that is never rendered — superseded by `AgentList` + `useUnifiedAgents`. (2) `sessions:getHistory` IPC handler always returns `[]` and is never called by any renderer code. (3) `AddCardForm` is a complete sprint card creation form that is never imported — superseded by `NewTicketModal`.
 **Acceptance Criteria:**
