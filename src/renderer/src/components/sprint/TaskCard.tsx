@@ -66,18 +66,11 @@ export const TaskCard = memo(function TaskCard({
         {task.title}
       </div>
       {task.depends_on && task.depends_on.length > 0 && (
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+        <div className="task-card__deps">
           {task.depends_on.map((dep) => (
             <span
               key={dep.id}
-              style={{
-                fontSize: '11px',
-                padding: '1px 6px',
-                borderRadius: '4px',
-                background: dep.type === 'hard' ? 'var(--color-surface-raised)' : 'var(--color-surface)',
-                color: 'var(--color-text-muted)',
-                border: '1px solid var(--color-border)',
-              }}
+              className={`task-card__dep-chip ${dep.type === 'hard' ? 'task-card__dep-chip--hard' : ''}`}
             >
               {dep.type === 'hard' ? '●' : '○'} {dep.id.slice(0, 8)}
             </span>

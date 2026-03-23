@@ -539,6 +539,26 @@
   cursor: grabbing;
 }
 
+.task-card__deps {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.task-card__dep-chip {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.task-card__dep-chip--hard {
+  background: var(--color-surface-raised);
+}
+
 /* ── Agent Status Chip ────────────────────────────────── */
 
 .agent-chip {
