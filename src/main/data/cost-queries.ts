@@ -106,9 +106,8 @@ export function getRecentAgentRunsWithCost(
       ar.num_turns,
       ar.started_at,
       ar.finished_at,
-      st.pr_url
+      NULL as pr_url
     FROM agent_runs ar
-    LEFT JOIN sprint_tasks st ON st.agent_run_id = ar.id
     WHERE ar.status IN ('done', 'failed')
     ORDER BY ar.started_at DESC
     LIMIT ?
