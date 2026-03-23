@@ -191,6 +191,17 @@ export function getAgentLogPath(
   return row?.log_path ?? null
 }
 
+export function getAgentLogInfo(
+  db: Database.Database,
+  id: string
+): { logPath: string; status: string } | null {
+  const row = db
+    .prepare('SELECT log_path, status FROM agent_runs WHERE id = ?')
+    .get(id) as { log_path: string; status: string } | undefined
+  if (!row?.log_path) return null
+  return { logPath: row.log_path, status: row.status }
+}
+
 export function updateAgentRunCost(
   db: Database.Database,
   agentRunId: string,

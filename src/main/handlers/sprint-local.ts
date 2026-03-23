@@ -31,6 +31,7 @@ import {
   UPDATE_ALLOWLIST,
 } from '../data/sprint-queries'
 import type { CreateTaskInput, QueueStats } from '../data/sprint-queries'
+import { getAgentLogInfo } from '../data/agent-queries'
 
 export { UPDATE_ALLOWLIST }
 export type { CreateTaskInput, QueueStats }
@@ -192,22 +193,19 @@ export function registerSprintLocalHandlers(): void {
 
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
     const fromByte = typeof rawFromByte === 'number' ? rawFromByte : 0
-    const agent = getDb()
-      .prepare('SELECT log_path, status FROM agent_runs WHERE id = ?')
-      .get(agentId) as { log_path: string | null; status: string } | undefined
-
-    if (!agent?.log_path) return { content: '', status: 'unknown', nextByte: fromByte }
+    const info = getAgentLogInfo(getDb(), agentId)
+    if (!info) return { content: '', status: 'unknown', nextByte: fromByte }
 
     try {
-      const fullContent = await readFile(agent.log_path, 'utf-8')
+      const fullContent = await readFile(info.logPath, 'utf-8')
       const bytes = Buffer.from(fullContent, 'utf-8')
       if (fromByte >= bytes.length) {
-        return { content: '', status: agent.status, nextByte: fromByte }
+        return { content: '', status: info.status, nextByte: fromByte }
       }
       const slice = bytes.subarray(fromByte).toString('utf-8')
-      return { content: slice, status: agent.status, nextByte: bytes.length }
+      return { content: slice, status: info.status, nextByte: bytes.length }
     } catch {
-      return { content: '', status: agent.status, nextByte: fromByte }
+      return { content: '', status: info.status, nextByte: fromByte }
     }
   })
 
