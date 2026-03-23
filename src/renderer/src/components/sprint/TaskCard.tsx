@@ -162,7 +162,9 @@ export const TaskCard = memo(function TaskCard({
             size="sm"
             variant="ghost"
             onClick={() => {
-              window.api?.sprint?.unblockTask?.(task.id)
+              window.api?.sprint?.unblockTask?.(task.id).catch((err: unknown) => {
+                console.error('[TaskCard] unblockTask failed:', err)
+              })
             }}
           >
             Unblock
