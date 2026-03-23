@@ -49,7 +49,10 @@ function acquireLock(worktreeBase: string, repoPath: string): void {
   if (existsSync(lockFile)) {
     const raw = readFileSync(lockFile, 'utf-8').trim()
     const pid = parseInt(raw, 10)
-    if (!isNaN(pid)) {
+    if (isNaN(pid)) {
+      console.warn(`[worktree] Corrupted lock file for ${repoPath} — removing`)
+      rmSync(lockFile)
+    } else {
       let alive = false
       try {
         process.kill(pid, 0)
@@ -85,12 +88,24 @@ export async function setupWorktree(opts: SetupWorktreeOpts): Promise<SetupWorkt
 
   acquireLock(worktreeBase, repoPath)
 
+  // Validate repo path exists and is a git repository
+  if (!existsSync(repoPath) || !existsSync(path.join(repoPath, '.git'))) {
+    releaseLock(worktreeBase, repoPath)
+    throw new Error(`Repo path does not exist or is not a git repository: ${repoPath}`)
+  }
+
   try {
     await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: EXEC_ENV })
   } catch (err) {
     // Clean up partial worktree on failure
     try {
       await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: EXEC_ENV })
+    } catch {
+      // best-effort
+    }
+    // Ensure directory is removed even if git worktree remove failed
+    try {
+      rmSync(worktreePath, { recursive: true, force: true })
     } catch {
       // best-effort
     }

@@ -64,10 +64,14 @@ describe('branchNameForTask', () => {
 
 describe('setupWorktree', () => {
   let tmpDir: string
+  let mockRepoPath: string
 
   beforeEach(() => {
     tmpDir = path.join(os.tmpdir(), `bde-worktree-test-${Date.now()}`)
+    mockRepoPath = path.join(tmpDir, 'mock-repo')
     mkdirSync(tmpDir, { recursive: true })
+    // Create a mock git repository structure
+    mkdirSync(path.join(mockRepoPath, '.git'), { recursive: true })
     execFileMock.mockReset()
   })
 
@@ -78,9 +82,8 @@ describe('setupWorktree', () => {
   it('calls git worktree add with correct arguments', async () => {
     mockExecFileSuccess()
 
-    const repoPath = '/repos/my-project'
     const result = await setupWorktree({
-      repoPath,
+      repoPath: mockRepoPath,
       worktreeBase: tmpDir,
       taskId: 'task-123',
       title: 'Add login page',
@@ -102,9 +105,8 @@ describe('setupWorktree', () => {
   it('uses repoPath as cwd for git commands', async () => {
     mockExecFileSuccess()
 
-    const repoPath = '/repos/my-project'
     await setupWorktree({
-      repoPath,
+      repoPath: mockRepoPath,
       worktreeBase: tmpDir,
       taskId: 'task-456',
       title: 'Fix bug',
@@ -115,7 +117,35 @@ describe('setupWorktree', () => {
     )
     expect(addCall).toBeDefined()
     const opts = addCall![2] as { cwd: string }
-    expect(opts.cwd).toBe(repoPath)
+    expect(opts.cwd).toBe(mockRepoPath)
+  })
+
+  it('throws error when repoPath does not exist', async () => {
+    mockExecFileSuccess()
+
+    await expect(
+      setupWorktree({
+        repoPath: '/nonexistent/repo',
+        worktreeBase: tmpDir,
+        taskId: 'task-123',
+        title: 'Test task',
+      })
+    ).rejects.toThrow('Repo path does not exist or is not a git repository: /nonexistent/repo')
+  })
+
+  it('throws error when repoPath is not a git repository', async () => {
+    mockExecFileSuccess()
+    const nonGitDir = path.join(tmpDir, 'not-a-repo')
+    mkdirSync(nonGitDir, { recursive: true })
+
+    await expect(
+      setupWorktree({
+        repoPath: nonGitDir,
+        worktreeBase: tmpDir,
+        taskId: 'task-456',
+        title: 'Test task',
+      })
+    ).rejects.toThrow(`Repo path does not exist or is not a git repository: ${nonGitDir}`)
   })
 
   it('attempts cleanup on failure and rethrows', async () => {
@@ -134,7 +164,7 @@ describe('setupWorktree', () => {
 
     await expect(
       setupWorktree({
-        repoPath: '/repos/proj',
+        repoPath: mockRepoPath,
         worktreeBase: tmpDir,
         taskId: 'task-789',
         title: 'Bad task',
