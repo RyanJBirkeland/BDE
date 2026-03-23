@@ -6,10 +6,11 @@ import { getDb } from './db'
 import {
   getCostSummary as _getCostSummary,
   getRecentAgentRunsWithCost as _getRecentAgentRunsWithCost,
+  getAgentHistory as _getAgentHistory,
 } from './data/cost-queries'
-import type { AgentRunCostRow, CostSummary } from '../shared/types'
+import type { AgentRunCostRow, AgentCostRecord, CostSummary } from '../shared/types'
 
-export type { AgentRunCostRow, CostSummary }
+export type { AgentRunCostRow, AgentCostRecord, CostSummary }
 
 export function getCostSummary(): CostSummary {
   return _getCostSummary(getDb())
@@ -17,4 +18,8 @@ export function getCostSummary(): CostSummary {
 
 export function getRecentAgentRunsWithCost(limit = 20): AgentRunCostRow[] {
   return _getRecentAgentRunsWithCost(getDb(), limit)
+}
+
+export function getAgentHistory(limit = 100, offset = 0): AgentCostRecord[] {
+  return _getAgentHistory(getDb(), limit, offset)
 }
