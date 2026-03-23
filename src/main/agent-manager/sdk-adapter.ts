@@ -101,7 +101,6 @@ function spawnViaSdk(
       // Re-send via streamInput is not straightforward for a single query.
       // The interrupt signals the agent, then we log the steer message intention.
       // Full steer support requires streaming input mode; this is best-effort.
-      void message
     },
   }
 }
@@ -129,6 +128,9 @@ function spawnViaCli(
       stdio: ['pipe', 'pipe', 'pipe'],
     },
   )
+
+  // Drain stderr to prevent pipe buffer backpressure
+  child.stderr.resume()
 
   const sessionId = randomUUID()
 
@@ -166,6 +168,7 @@ function spawnViaCli(
       child.kill('SIGTERM')
     },
     async steer(message: string) {
+      if (!child.stdin.writable) return
       child.stdin.write(
         JSON.stringify({
           type: 'user',
