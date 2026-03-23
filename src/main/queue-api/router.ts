@@ -4,6 +4,7 @@
  */
 import type http from 'node:http'
 import { getSetting } from '../settings'
+import { createSseBroadcaster } from './sse-broadcaster'
 import {
   getQueueStats,
   listTasks,
@@ -16,6 +17,9 @@ import {
 import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-contract'
 import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
+
+const sseBroadcaster = createSseBroadcaster()
+export { sseBroadcaster }
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -141,7 +145,7 @@ export async function route(
 
   // --- GET /queue/events (SSE) ---
   if (method === 'GET' && path === '/queue/events') {
-    return handleEvents(res)
+    return handleEvents(req, res)
   }
 
   // --- Routes with :id ---
@@ -336,7 +340,6 @@ async function handleRelease(
   sendJson(res, 200, toCamelCase(released))
 }
 
-async function handleEvents(res: http.ServerResponse): Promise<void> {
-  // SSE stub — return 501 initially as per task spec
-  sendJson(res, 501, { error: 'SSE events not yet implemented' })
+async function handleEvents(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  sseBroadcaster.addClient(res)
 }

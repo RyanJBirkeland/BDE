@@ -4,6 +4,7 @@
  * and event-store cleanup from handler registration.
  */
 import type { SprintTask } from '../../shared/types'
+import { sseBroadcaster } from '../queue-api/router'
 
 export type SprintMutationEvent = {
   type: 'created' | 'updated' | 'deleted'
@@ -31,5 +32,10 @@ export function notifySprintMutation(
     } catch (err) {
       console.error('[sprint-listeners]', err)
     }
+  }
+
+  sseBroadcaster.broadcast('task:updated', { id: task.id, status: task.status })
+  if (task.status === 'queued') {
+    sseBroadcaster.broadcast('task:queued', { id: task.id, title: task.title, priority: task.priority })
   }
 }
