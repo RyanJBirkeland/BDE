@@ -12,6 +12,7 @@ import type { OpenPr } from '../../../../shared/types'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { renderMarkdown } from '../../lib/render-markdown'
 import { PRStationChecks } from './PRStationChecks'
+import { PRStationConflictBanner } from './PRStationConflictBanner'
 
 interface PRStationDetailProps {
   pr: OpenPr
@@ -117,6 +118,8 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
     )
   }
 
+  const mergeableState = detail?.mergeable_state ?? null
+
   return (
     <div className="pr-detail">
       {/* Header */}
@@ -153,6 +156,8 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
           <span className="pr-detail__stat pr-detail__stat--del">-{detail.deletions}</span>
         </div>
       </div>
+
+      <PRStationConflictBanner pr={pr} mergeableState={mergeableState} />
 
       {/* PR Body */}
       <div className="pr-detail__section">

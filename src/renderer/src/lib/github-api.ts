@@ -130,6 +130,7 @@ export interface PRDetail {
   body: string | null
   draft: boolean
   mergeable: boolean | null
+  mergeable_state: string | null
   head: { ref: string; sha: string }
   base: { ref: string }
   user: { login: string; avatar_url: string }
