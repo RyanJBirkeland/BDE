@@ -181,7 +181,7 @@ export function createAgentManager(
       ])
     } catch (err) {
       logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
-      await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}` }).catch(() => {})
+      await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}` }).catch((err) => logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${err}`))
       await onTaskTerminal(task.id, 'error')
       cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
       return
@@ -385,14 +385,14 @@ export function createAgentManager(
       if (verdict === 'max-runtime') {
         updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Max runtime exceeded' })
           .then(() => onTaskTerminal(agent.taskId, 'error'))
-          .catch(() => {})
+          .catch((err) => logger.warn(`[agent-manager] Failed to update task ${agent.taskId} after max-runtime kill: ${err}`))
       } else if (verdict === 'idle') {
         updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Idle timeout' })
           .then(() => onTaskTerminal(agent.taskId, 'error'))
-          .catch(() => {})
+          .catch((err) => logger.warn(`[agent-manager] Failed to update task ${agent.taskId} after idle kill: ${err}`))
       } else if (verdict === 'rate-limit-loop') {
         concurrency = applyBackpressure(concurrency, Date.now())
-        updateTask(agent.taskId, { status: 'queued', claimed_by: null, notes: 'Rate-limit loop — re-queued' }).catch(() => {})
+        updateTask(agent.taskId, { status: 'queued', claimed_by: null, notes: 'Rate-limit loop — re-queued' }).catch((err) => logger.warn(`[agent-manager] Failed to requeue rate-limited task ${agent.taskId}: ${err}`))
       }
     }
   }
@@ -449,15 +449,15 @@ export function createAgentManager(
     // Start periodic loops
     pollTimer = setInterval(() => {
       if (drainInFlight) return // skip if previous drain still running
-      drainInFlight = drainLoop().catch(() => {}).finally(() => { drainInFlight = null })
+      drainInFlight = drainLoop().catch((err) => logger.warn(`[agent-manager] Drain loop error: ${err}`)).finally(() => { drainInFlight = null })
     }, config.pollIntervalMs)
     watchdogTimer = setInterval(watchdogLoop, WATCHDOG_INTERVAL_MS)
-    orphanTimer = setInterval(() => { orphanLoop().catch(() => {}) }, ORPHAN_CHECK_INTERVAL_MS)
+    orphanTimer = setInterval(() => { orphanLoop().catch((err) => logger.warn(`[agent-manager] Orphan loop error: ${err}`)) }, ORPHAN_CHECK_INTERVAL_MS)
     pruneTimer = setInterval(() => { pruneLoop().catch(() => {}) }, WORKTREE_PRUNE_INTERVAL_MS)
 
     // Defer initial drain to let the event loop process (Supabase fetch needs this)
     setTimeout(() => {
-      drainInFlight = drainLoop().catch(() => {}).finally(() => { drainInFlight = null })
+      drainInFlight = drainLoop().catch((err) => logger.warn(`[agent-manager] Initial drain error: ${err}`)).finally(() => { drainInFlight = null })
     }, 5_000)
 
     logger.info('[agent-manager] Started')

@@ -33,6 +33,8 @@ vi.mock('../../auth-guard', () => ({
 
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
+  getGhRepo: vi.fn(),
+  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
 }))
 
 vi.mock('../sdk-adapter', () => ({
