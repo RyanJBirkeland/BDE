@@ -75,7 +75,14 @@ export async function checkAuthStatus(
     return { cliFound, tokenFound: false, tokenExpired: false }
   }
 
-  const expiresAt = new Date(parseInt(oauth.expiresAt!, 10))
+  if (!oauth.expiresAt) {
+    return { cliFound, tokenFound: true, tokenExpired: true }
+  }
+  const expiresMs = parseInt(oauth.expiresAt, 10)
+  if (Number.isNaN(expiresMs)) {
+    return { cliFound, tokenFound: true, tokenExpired: true }
+  }
+  const expiresAt = new Date(expiresMs)
   const tokenExpired = new Date() >= expiresAt
 
   return { cliFound, tokenFound: true, tokenExpired, expiresAt }

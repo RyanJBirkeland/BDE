@@ -12,6 +12,7 @@ vi.mock('node:fs', () => ({
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { checkAuthStatus, ensureSubscriptionAuth } from './auth-guard'
+import type { CredentialStore } from './auth-guard'
 
 // Helper: find the callback in execFile's variadic args.
 // promisify calls execFile(cmd, args, cb) or execFile(cmd, args, opts, cb).
@@ -127,6 +128,15 @@ describe('auth-guard', () => {
       const status = await checkAuthStatus()
 
       expect(status.tokenFound).toBe(false)
+    })
+
+    it('reports tokenExpired when expiresAt is missing', async () => {
+      const store: CredentialStore = {
+        readToken: async () => ({ claudeAiOauth: { accessToken: 'tok' } }),
+        detectCli: () => true,
+      }
+      const status = await checkAuthStatus(store)
+      expect(status.tokenExpired).toBe(true)
     })
   })
 
