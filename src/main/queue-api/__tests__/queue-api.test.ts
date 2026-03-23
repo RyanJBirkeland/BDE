@@ -287,9 +287,9 @@ describe('Queue API', () => {
   })
 
   describe('GET /queue/events', () => {
-    it('returns 501 (not implemented)', async () => {
+    it('returns 200 SSE stream', async () => {
       const { status } = await request('GET', '/queue/events')
-      expect(status).toBe(501)
+      expect(status).toBe(200)
     })
   })
 
