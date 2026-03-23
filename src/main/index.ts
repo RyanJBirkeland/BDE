@@ -122,7 +122,7 @@ app.whenReady().then(() => {
     app.on('will-quit', () => am.stop(10_000))
 
     // Make available to handlers
-    ;(global as any).__agentManager = am
+    globalThis.__agentManager = am
   }
 
   app.on('browser-window-created', (_, window) => {

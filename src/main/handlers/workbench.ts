@@ -91,7 +91,7 @@ export function registerWorkbenchHandlers(): void {
 
     // Agent slots available check
     let slotsAvailableResult: { status: 'pass' | 'warn'; message: string; available: number; max: number }
-    const am = (global as any).__agentManager
+    const am = globalThis.__agentManager
     if (!am) {
       slotsAvailableResult = { status: 'warn', message: 'Agent manager not available', available: 0, max: 0 }
     } else {
