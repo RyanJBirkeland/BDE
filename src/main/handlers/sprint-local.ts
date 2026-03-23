@@ -212,7 +212,7 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle(
-    'sprint:validate-dependencies',
+    'sprint:validateDependencies',
     async (
       _e,
       taskId: string,
@@ -247,7 +247,7 @@ export function registerSprintLocalHandlers(): void {
     },
   )
 
-  safeHandle('sprint:unblock-task', async (_e, taskId: string) => {
+  safeHandle('sprint:unblockTask', async (_e, taskId: string) => {
     const task = await _getTask(taskId)
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (task.status !== 'blocked')

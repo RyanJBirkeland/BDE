@@ -104,8 +104,8 @@ declare global {
         delete: (...args: IpcArgs<'sprint:delete'>) => Promise<IpcResult<'sprint:delete'>>
         healthCheck: () => Promise<IpcResult<'sprint:healthCheck'>>
         claimTask: (taskId: string) => Promise<IpcResult<'sprint:claimTask'>>
-        validateDependencies: (...args: IpcArgs<'sprint:validate-dependencies'>) => Promise<IpcResult<'sprint:validate-dependencies'>>
-        unblockTask: (...args: IpcArgs<'sprint:unblock-task'>) => Promise<IpcResult<'sprint:unblock-task'>>
+        validateDependencies: (...args: IpcArgs<'sprint:validateDependencies'>) => Promise<IpcResult<'sprint:validateDependencies'>>
+        unblockTask: (...args: IpcArgs<'sprint:unblockTask'>) => Promise<IpcResult<'sprint:unblockTask'>>
       }
 
       // File attachments

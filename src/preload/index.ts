@@ -128,8 +128,8 @@ const api = {
     validateDependencies: (
       taskId: string,
       deps: Array<{ id: string; type: 'hard' | 'soft' }>,
-    ) => typedInvoke('sprint:validate-dependencies', taskId, deps),
-    unblockTask: (taskId: string) => typedInvoke('sprint:unblock-task', taskId),
+    ) => typedInvoke('sprint:validateDependencies', taskId, deps),
+    unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId),
   },
 
   // File attachments
