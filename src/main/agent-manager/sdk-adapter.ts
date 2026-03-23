@@ -2,15 +2,41 @@ import type { AgentHandle } from './types'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 
-// Cache the OAuth token at module load time — reading from Keychain may hang later
+// Cache the OAuth token — Keychain access via execFileSync hangs Electron's
+// main process. Read from Claude Code's credentials file on disk instead,
+// with async execFile fallback.
 let cachedOAuthToken: string | null = null
 
 export function preloadOAuthToken(): void {
   try {
-    const { execFileSync } = require('node:child_process')
-    const raw = execFileSync('security', ['find-generic-password', '-s', 'Claude Code-credentials', '-w'], { encoding: 'utf8', timeout: 5000 })
-    const payload = JSON.parse(raw.trim())
-    cachedOAuthToken = payload?.claudeAiOauth?.accessToken ?? null
+    const { readFileSync, existsSync } = require('node:fs')
+    const { join } = require('node:path')
+    const { homedir } = require('node:os')
+
+    // Check for cached credentials file
+    const credPaths = [
+      join(homedir(), '.claude', 'credentials.json'),
+      join(homedir(), '.claude', '.credentials.json'),
+    ]
+
+    for (const p of credPaths) {
+      if (existsSync(p)) {
+        const raw = readFileSync(p, 'utf8')
+        const payload = JSON.parse(raw)
+        cachedOAuthToken = payload?.claudeAiOauth?.accessToken ?? null
+        if (cachedOAuthToken) return
+      }
+    }
+
+    // Fallback: read from Keychain asynchronously (non-blocking)
+    const { execFile: execFileCb } = require('node:child_process')
+    execFileCb('security', ['find-generic-password', '-s', 'Claude Code-credentials', '-w'], { timeout: 5000 }, (err: Error | null, stdout: string) => {
+      if (err || !stdout) return
+      try {
+        const payload = JSON.parse(stdout.trim())
+        cachedOAuthToken = payload?.claudeAiOauth?.accessToken ?? null
+      } catch { /* ignore */ }
+    })
   } catch {
     cachedOAuthToken = null
   }
