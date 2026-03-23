@@ -200,6 +200,31 @@ describe('createAgentManager', () => {
       vi.useRealTimers()
     })
 
+    it('persists agent_run_id to sprint task after successful spawn', async () => {
+      vi.useFakeTimers()
+      const logger = makeLogger()
+      setupDefaultMocks()
+      const task = makeTask()
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
+      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      const { handle } = makeMockHandle([{ type: 'text', content: 'hello' }])
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
+
+      const mgr = createAgentManager(baseConfig, logger)
+      mgr.start()
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({ agent_run_id: expect.any(String) }),
+      )
+
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
+
     it('marks task as error when spawnAgent rejects with auth error', async () => {
       vi.useFakeTimers()
       const logger = makeLogger()
