@@ -10,12 +10,30 @@ vi.mock('child_process', () => {
   return { execFile }
 })
 
+vi.mock('electron', () => ({
+  BrowserWindow: { getAllWindows: () => [] },
+  app: { getPath: () => '/tmp' }
+}))
+
 vi.mock('../config', () => ({
   getGitHubToken: vi.fn()
 }))
 
 vi.mock('../db', () => ({
   getDb: vi.fn()
+}))
+
+vi.mock('../settings', () => ({
+  getSettingJson: vi.fn((key: string) => {
+    if (key === 'repos') {
+      return [
+        { name: 'BDE', localPath: '/Users/ryan/projects/BDE' },
+        { name: 'life-os', localPath: '/Users/ryan/projects/life-os' },
+        { name: 'feast', localPath: '/Users/ryan/projects/feast' },
+      ]
+    }
+    return null
+  })
 }))
 
 import {
@@ -273,7 +291,7 @@ describe('git.ts', () => {
   })
 
   describe('getRepoPaths', () => {
-    it('returns a copy of REPO_PATHS', () => {
+    it('returns repo paths keyed by lowercase name from settings', () => {
       const paths = getRepoPaths()
       expect(paths).toHaveProperty('bde')
       expect(paths).toHaveProperty('life-os')
@@ -455,40 +473,41 @@ describe('git.ts', () => {
     })
 
     describe('markTaskDoneOnMerge (via pollPrStatuses)', () => {
-      it('updates sprint_tasks to done with completed_at on merge', async () => {
+      it('returns MERGED state with mergedAt when PR is merged', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: true,
           headers: { get: (): null => null },
           json: async () => ({ state: 'closed', merged_at: '2024-01-15T12:00:00Z' })
         })
 
-        await pollPrStatuses([
+        const results = await pollPrStatuses([
           { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/55' }
         ])
 
-        expect(mockPrepare).toHaveBeenCalledWith(
-          "UPDATE sprint_tasks SET status='done', completed_at=? WHERE pr_number=? AND status='active'"
-        )
-        expect(mockRun).toHaveBeenCalledWith(expect.any(String), 55)
+        expect(results[0].merged).toBe(true)
+        expect(results[0].state).toBe('MERGED')
+        expect(results[0].mergedAt).toBe('2024-01-15T12:00:00Z')
+        // pollPrStatuses no longer writes to DB — sprint_tasks live in Supabase
+        expect(mockPrepare).not.toHaveBeenCalled()
       })
     })
 
     describe('markTaskCancelled (via pollPrStatuses)', () => {
-      it('updates sprint_tasks to cancelled with completed_at on close', async () => {
+      it('returns CLOSED state when PR is closed without merge', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: true,
           headers: { get: (): null => null },
           json: async () => ({ state: 'closed', merged_at: null })
         })
 
-        await pollPrStatuses([
+        const results = await pollPrStatuses([
           { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/77' }
         ])
 
-        expect(mockPrepare).toHaveBeenCalledWith(
-          "UPDATE sprint_tasks SET status='cancelled', completed_at=? WHERE pr_number=? AND status='active'"
-        )
-        expect(mockRun).toHaveBeenCalledWith(expect.any(String), 77)
+        expect(results[0].merged).toBe(false)
+        expect(results[0].state).toBe('CLOSED')
+        // pollPrStatuses no longer writes to DB — sprint_tasks live in Supabase
+        expect(mockPrepare).not.toHaveBeenCalled()
       })
 
       it('does not update DB when PR is still open', async () => {
