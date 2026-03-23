@@ -9,10 +9,12 @@ export interface QueueHealthResponse {
   queue: {
     backlog: number
     queued: number
+    blocked: number
     active: number
     done: number
     failed: number
     cancelled: number
+    error: number
   }
 }
 

@@ -239,6 +239,14 @@ export interface SprintChannels {
     args: [agentId: string, fromByte?: number]
     result: { content: string; status: string; nextByte: number }
   }
+  'sprint:validate-dependencies': {
+    args: [taskId: string, deps: Array<{ id: string; type: 'hard' | 'soft' }>]
+    result: { valid: boolean; error?: string; cycle?: string[] }
+  }
+  'sprint:unblock-task': {
+    args: [taskId: string]
+    result: SprintTask | null
+  }
 }
 
 /** Window shell integration */

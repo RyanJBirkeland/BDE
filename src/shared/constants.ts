@@ -6,6 +6,7 @@
 export const TASK_STATUS = {
   BACKLOG: 'backlog',
   QUEUED: 'queued',
+  BLOCKED: 'blocked',
   ACTIVE: 'active',
   DONE: 'done',
   CANCELLED: 'cancelled',

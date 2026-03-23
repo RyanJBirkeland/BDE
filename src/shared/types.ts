@@ -19,13 +19,18 @@ export interface AgentMeta {
   source: 'bde' | 'external'
 }
 
+export interface TaskDependency {
+  id: string
+  type: 'hard' | 'soft'
+}
+
 export interface SprintTask {
   id: string
   title: string
   repo: string
   prompt: string | null
   priority: number
-  status: 'backlog' | 'queued' | 'active' | 'done' | 'cancelled' | 'failed' | 'error'
+  status: 'backlog' | 'queued' | 'blocked' | 'active' | 'done' | 'cancelled' | 'failed' | 'error'
   notes: string | null
   spec: string | null
   retry_count: number
@@ -39,6 +44,7 @@ export interface SprintTask {
   started_at: string | null
   completed_at: string | null
   template_name: string | null
+  depends_on: TaskDependency[] | null
   updated_at: string
   created_at: string
 }

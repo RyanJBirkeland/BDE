@@ -77,6 +77,7 @@ function makeTask(overrides: Record<string, unknown> = {}) {
     retry_count: 0, fast_fail_count: 0, agent_run_id: null,
     pr_number: null, pr_status: null, pr_url: null, claimed_by: null,
     started_at: null, completed_at: null, template_name: null,
+    depends_on: null,
     updated_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z',
     ...overrides,
   }
