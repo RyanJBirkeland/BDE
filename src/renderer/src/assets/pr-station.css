@@ -856,3 +856,124 @@
 .pr-conversation__thread .pr-conversation__comment + .pr-conversation__comment {
   border-top: 1px solid var(--bde-border);
 }
+
+/* -- Review Banner -- */
+.pr-review-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--bde-accent) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--bde-accent) 25%, transparent);
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text);
+}
+
+.pr-review-banner__count {
+  font-weight: 600;
+  color: var(--bde-accent);
+}
+
+.pr-review-banner__submit {
+  margin-left: auto;
+}
+
+/* -- Review Submit Dialog -- */
+.review-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.review-dialog {
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  padding: 20px 24px;
+  width: 480px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.review-dialog__title {
+  font-size: var(--bde-size-lg);
+  font-weight: 600;
+  color: var(--bde-text);
+  margin: 0;
+}
+
+.review-dialog__body {
+  width: 100%;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text);
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  resize: vertical;
+  outline: none;
+}
+
+.review-dialog__body:focus {
+  border-color: var(--bde-accent);
+}
+
+.review-dialog__events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.review-dialog__event {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+  transition: background var(--bde-transition-fast);
+}
+
+.review-dialog__event:hover {
+  background: var(--bde-surface);
+}
+
+.review-dialog__event input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--bde-accent);
+}
+
+.review-dialog__event-label {
+  display: block;
+  font-size: var(--bde-size-sm);
+  font-weight: 600;
+  color: var(--bde-text);
+}
+
+.review-dialog__event-desc {
+  display: block;
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+}
+
+.review-dialog__pending-count {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-muted);
+  padding: 6px 10px;
+  background: var(--bde-surface);
+  border-radius: var(--bde-radius-sm);
+}
+
+.review-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
