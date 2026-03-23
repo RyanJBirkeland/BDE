@@ -1125,7 +1125,7 @@ Expected: PASS (or at most minor issues in renderer code related to `depends_on`
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/main/agent-manager/index.ts src/main/agent-manager/completion.ts \
+git add src/main/agent-manager/index.ts \
   src/main/sprint-pr-poller.ts src/main/handlers/sprint-local.ts \
   src/main/handlers/git-handlers.ts
 git commit -m "feat(deps): wire resolveDependents into all terminal status paths"
