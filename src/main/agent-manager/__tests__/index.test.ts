@@ -248,6 +248,40 @@ describe('createAgentManager', () => {
       vi.useRealTimers()
     })
 
+    it('logs error when fetchQueuedTasks rejects', async () => {
+      vi.useFakeTimers()
+      const logger = makeLogger()
+      setupDefaultMocks()
+      vi.mocked(getQueuedTasks).mockRejectedValueOnce(new Error('Supabase down'))
+      const mgr = createAgentManager({ ...baseConfig, pollIntervalMs: 50 }, logger)
+      mgr.start()
+      // Advance past INITIAL_DRAIN_DEFER_MS (5000ms); use small steps to let promises resolve
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Drain loop error'))
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
+
+    it('logs error when spawnAgent rejects', async () => {
+      vi.useFakeTimers()
+      const logger = makeLogger()
+      setupDefaultMocks()
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([makeTask()])
+      vi.mocked(claimTask).mockResolvedValueOnce({ id: 'test-task' } as any)
+      vi.mocked(spawnAgent).mockRejectedValueOnce(new Error('SDK crash'))
+      const mgr = createAgentManager(baseConfig, logger)
+      mgr.start()
+      // Advance past INITIAL_DRAIN_DEFER_MS (5000ms); use small steps to let promises resolve
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('spawnAgent failed'))
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
+
     it('skips drain when no concurrency slots available', async () => {
       vi.useFakeTimers()
       const config = { ...baseConfig, maxConcurrent: 1 }
