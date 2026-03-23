@@ -43,7 +43,7 @@ function makeIndex(dependentsMap: Record<string, string[]>): DependencyIndex {
 }
 
 describe('resolveDependents', () => {
-  let updateTask: ReturnType<typeof vi.fn>
+  let updateTask: (id: string, patch: Record<string, unknown>) => Promise<unknown>
 
   beforeEach(() => {
     updateTask = vi.fn().mockResolvedValue(undefined)

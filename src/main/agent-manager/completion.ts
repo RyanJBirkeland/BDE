@@ -5,6 +5,10 @@ import { MAX_RETRIES } from './types'
 
 const execFile = promisify(execFileCb)
 
+const EXEC_ENV = {
+  ...process.env,
+  PATH: ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`, process.env.PATH].filter(Boolean).join(':'),
+}
 
 export interface ResolveSuccessOpts {
   taskId: string

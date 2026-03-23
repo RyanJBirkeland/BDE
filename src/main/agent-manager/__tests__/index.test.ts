@@ -10,6 +10,21 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
   getTask: vi.fn(),
   getOrphanedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+}))
+
+vi.mock('../dependency-index', () => ({
+  createDependencyIndex: vi.fn(() => ({
+    rebuild: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    getDependents: vi.fn(() => new Set()),
+    areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] })),
+  })),
+}))
+
+vi.mock('../resolve-dependents', () => ({
+  resolveDependents: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('../../auth-guard', () => ({
