@@ -5,8 +5,6 @@ const HARD_SATISFIED_STATUSES = new Set(['done'])
 
 export interface DependencyIndex {
   rebuild(tasks: Array<{ id: string; depends_on: TaskDependency[] | null }>): void
-  update(taskId: string, oldDeps: TaskDependency[] | null, newDeps: TaskDependency[] | null): void
-  remove(taskId: string): void
   getDependents(taskId: string): Set<string>
   areDependenciesSatisfied(
     taskId: string,
@@ -30,28 +28,10 @@ export function createDependencyIndex(): DependencyIndex {
     }
   }
 
-  function removeEdges(taskId: string, deps: TaskDependency[] | null): void {
-    if (!deps) return
-    for (const dep of deps) {
-      const set = reverseMap.get(dep.id)
-      if (set) {
-        set.delete(taskId)
-        if (set.size === 0) reverseMap.delete(dep.id)
-      }
-    }
-  }
-
   return {
     rebuild(tasks) {
       reverseMap.clear()
       for (const task of tasks) addEdges(task.id, task.depends_on)
-    },
-    update(taskId, oldDeps, newDeps) {
-      removeEdges(taskId, oldDeps)
-      addEdges(taskId, newDeps)
-    },
-    remove(taskId) {
-      for (const set of reverseMap.values()) set.delete(taskId)
     },
     getDependents(taskId) {
       return reverseMap.get(taskId) ?? new Set()

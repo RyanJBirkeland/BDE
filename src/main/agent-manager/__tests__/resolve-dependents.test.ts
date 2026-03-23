@@ -19,8 +19,6 @@ function makeIndex(dependentsMap: Record<string, string[]>): DependencyIndex {
   const TERMINAL = new Set(['done', 'cancelled', 'failed', 'error'])
   return {
     rebuild: () => {},
-    update: () => {},
-    remove: () => {},
     getDependents(taskId: string): Set<string> {
       return new Set(dependentsMap[taskId] ?? [])
     },

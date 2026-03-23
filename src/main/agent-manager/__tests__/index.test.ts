@@ -16,8 +16,6 @@ vi.mock('../../data/sprint-queries', () => ({
 vi.mock('../dependency-index', () => ({
   createDependencyIndex: vi.fn(() => ({
     rebuild: vi.fn(),
-    update: vi.fn(),
-    remove: vi.fn(),
     getDependents: vi.fn(() => new Set()),
     areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] })),
   })),
@@ -496,7 +494,6 @@ describe('createAgentManager', () => {
 
     it('calls handle.abort()', async () => {
       vi.useFakeTimers()
-      const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask()
       const { handle, abortFn } = makeBlockingHandle()

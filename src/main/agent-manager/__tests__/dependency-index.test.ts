@@ -32,54 +32,7 @@ describe('DependencyIndex', () => {
     })
   })
 
-  describe('update', () => {
-    test('adds new dependents when deps added', () => {
-      const idx = createDependencyIndex()
-      idx.rebuild([])
-      idx.update('A', null, [{ id: 'B', type: 'hard' }])
-      expect(idx.getDependents('B')).toEqual(new Set(['A']))
-    })
-
-    test('removes old dependents when deps removed', () => {
-      const idx = createDependencyIndex()
-      idx.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
-      idx.update('A', [{ id: 'B', type: 'hard' }], null)
-      expect(idx.getDependents('B')).toEqual(new Set())
-    })
-
-    test('handles dep change from one task to another', () => {
-      const idx = createDependencyIndex()
-      idx.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
-      idx.update('A', [{ id: 'B', type: 'hard' }], [{ id: 'C', type: 'soft' }])
-      expect(idx.getDependents('B')).toEqual(new Set())
-      expect(idx.getDependents('C')).toEqual(new Set(['A']))
-    })
-  })
-
-  describe('remove', () => {
-    test('removes task from all reverse sets', () => {
-      const idx = createDependencyIndex()
-      idx.rebuild([
-        { id: 'A', depends_on: [{ id: 'X', type: 'hard' }] },
-        { id: 'B', depends_on: [{ id: 'X', type: 'soft' }] },
-      ])
-      idx.remove('A')
-      expect(idx.getDependents('X')).toEqual(new Set(['B']))
-    })
-
-    test('keeps its entry as a dependency target for others', () => {
-      const idx = createDependencyIndex()
-      idx.rebuild([
-        { id: 'A', depends_on: [{ id: 'X', type: 'hard' }] },
-        { id: 'B', depends_on: [{ id: 'A', type: 'hard' }] },
-      ])
-      idx.remove('A')
-      // B still depends on A — A's entry as a target is preserved
-      expect(idx.getDependents('A')).toEqual(new Set(['B']))
-    })
-  })
-
-  describe('areDependenciesSatisfied', () => {
+describe('areDependenciesSatisfied', () => {
     test('empty deps = satisfied', () => {
       const idx = createDependencyIndex()
       const result = idx.areDependenciesSatisfied('T', [], () => undefined)
