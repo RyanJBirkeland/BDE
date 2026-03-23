@@ -108,17 +108,12 @@ app.whenReady().then(() => {
 
   const autoStart = getSettingJson<boolean>('agentManager.autoStart') ?? true
 
-  const fs = require('node:fs')
-  fs.appendFileSync('/tmp/bde-agent-manager.log', `[${new Date().toISOString()}] Agent manager init starting\n`)
-
   // Start agent manager immediately — auth is checked inside the drain loop
   if (autoStart) {
     preloadOAuthToken()
 
-    fs.appendFileSync('/tmp/bde-agent-manager.log', `[${new Date().toISOString()}] Creating agent manager (autoStart=true)\n`)
     const am = createAgentManager(amConfig)
     am.start()
-    fs.appendFileSync('/tmp/bde-agent-manager.log', `[${new Date().toISOString()}] Agent manager started\n`)
     app.on('will-quit', () => am.stop(10_000))
 
     // Make available to handlers

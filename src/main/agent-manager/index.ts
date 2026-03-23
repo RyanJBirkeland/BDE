@@ -58,7 +58,8 @@ interface Logger {
 }
 
 import { appendFileSync } from 'node:fs'
-const LOG_PATH = '/tmp/bde-agent-manager.log'
+import { BDE_AGENT_LOG_PATH } from '../paths'
+const LOG_PATH = BDE_AGENT_LOG_PATH
 function fileLog(level: string, m: string): void {
   try { appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [${level}] ${m}\n`) } catch {}
 }
