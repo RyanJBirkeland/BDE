@@ -4,14 +4,20 @@ import {
   getPRDetail,
   getPRFiles,
   getCheckRunsList,
+  getReviews,
+  getReviewComments,
+  getIssueComments,
   type PRDetail as PRDetailData,
   type PRFile,
   type CheckRun
 } from '../../lib/github-api'
-import type { OpenPr } from '../../../../shared/types'
+import type { OpenPr, PrReview, PrComment, PrIssueComment } from '../../../../shared/types'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { renderMarkdown } from '../../lib/render-markdown'
 import { PRStationChecks } from './PRStationChecks'
+import { PRStationConflictBanner } from './PRStationConflictBanner'
+import { PRStationReviews } from './PRStationReviews'
+import { PRStationConversation } from './PRStationConversation'
 
 interface PRStationDetailProps {
   pr: OpenPr
@@ -49,8 +55,13 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
   const [detail, setDetail] = useState<PRDetailData | null>(null)
   const [files, setFiles] = useState<PRFile[]>([])
   const [checks, setChecks] = useState<CheckRun[]>([])
+  const [reviews, setReviews] = useState<PrReview[]>([])
+  const [reviewComments, setReviewComments] = useState<PrComment[]>([])
+  const [issueComments, setIssueComments] = useState<PrIssueComment[]>([])
   const [loading, setLoading] = useState(true)
   const [checksLoading, setChecksLoading] = useState(true)
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [commentsLoading, setCommentsLoading] = useState(true)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -61,15 +72,25 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
 
       setLoading(true)
       setChecksLoading(true)
+      setReviewsLoading(true)
+      setCommentsLoading(true)
 
       try {
-        const [prDetail, prFiles] = await Promise.all([
+        const [prDetail, prFiles, prReviews, prReviewComments, prIssueComments] = await Promise.all([
           getPRDetail(repo.owner, repo.label, pr.number),
-          getPRFiles(repo.owner, repo.label, pr.number)
+          getPRFiles(repo.owner, repo.label, pr.number),
+          getReviews(repo.owner, repo.label, pr.number),
+          getReviewComments(repo.owner, repo.label, pr.number),
+          getIssueComments(repo.owner, repo.label, pr.number)
         ])
         if (controller.signal.aborted) return
         setDetail(prDetail)
         setFiles(prFiles)
+        setReviews(prReviews)
+        setReviewComments(prReviewComments)
+        setIssueComments(prIssueComments)
+        setCommentsLoading(false)
+        setReviewsLoading(false)
         setLoading(false)
 
         const checkRuns = await getCheckRunsList(repo.owner, repo.label, prDetail.head.sha)
@@ -117,6 +138,8 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
     )
   }
 
+  const mergeableState = detail?.mergeable_state ?? null
+
   return (
     <div className="pr-detail">
       {/* Header */}
@@ -154,6 +177,8 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
         </div>
       </div>
 
+      <PRStationConflictBanner pr={pr} mergeableState={mergeableState} />
+
       {/* PR Body */}
       <div className="pr-detail__section">
         <h3 className="pr-detail__section-title">Description</h3>
@@ -169,6 +194,16 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
 
       {/* CI Checks */}
       <PRStationChecks checks={checks} loading={checksLoading} />
+
+      {/* Reviews */}
+      <PRStationReviews reviews={reviews} loading={reviewsLoading} />
+
+      {/* Conversation */}
+      <PRStationConversation
+        reviewComments={reviewComments}
+        issueComments={issueComments}
+        loading={commentsLoading}
+      />
 
       {/* Changed Files */}
       <div className="pr-detail__section">

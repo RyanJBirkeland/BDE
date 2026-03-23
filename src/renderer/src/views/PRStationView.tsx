@@ -4,7 +4,10 @@ import { PRStationList } from '../components/pr-station/PRStationList'
 import { PRStationDetail } from '../components/pr-station/PRStationDetail'
 import { PRStationActions } from '../components/pr-station/PRStationActions'
 import { PRStationDiff } from '../components/pr-station/PRStationDiff'
+import { ReviewSubmitDialog } from '../components/pr-station/ReviewSubmitDialog'
+import { Button } from '../components/ui/Button'
 import { getPrMergeability, type PrMergeability } from '../lib/github-api'
+import { usePendingReviewStore } from '../stores/pendingReview'
 import type { OpenPr } from '../../../shared/types'
 import { REPO_OPTIONS } from '../lib/constants'
 
@@ -15,6 +18,11 @@ export default function PRStationView() {
   const [removedKeys, setRemovedKeys] = useState<Set<string>>(new Set())
   const [mergeability, setMergeability] = useState<PrMergeability | null>(null)
   const [activeTab, setActiveTab] = useState<DetailTab>('info')
+  const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const prKey = selectedPr ? `${selectedPr.repo}#${selectedPr.number}` : ''
+  const pendingCount = usePendingReviewStore((s) =>
+    prKey ? (s.pendingComments.get(prKey) ?? []).length : 0
+  )
 
   const handleRemovePr = useCallback(
     (pr: OpenPr) => {
@@ -36,8 +44,6 @@ export default function PRStationView() {
     },
     []
   )
-
-  const prKey = selectedPr ? `${selectedPr.repo}#${selectedPr.number}` : null
 
   useEffect(() => {
     if (!selectedPr) {
@@ -92,6 +98,20 @@ export default function PRStationView() {
                 </button>
               </div>
             </div>
+            {pendingCount > 0 && (
+              <div className="pr-review-banner">
+                <span className="pr-review-banner__count">{pendingCount}</span>
+                <span>pending comment{pendingCount > 1 ? 's' : ''}</span>
+                <Button
+                  className="pr-review-banner__submit"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowReviewDialog(true)}
+                >
+                  Submit Review
+                </Button>
+              </div>
+            )}
             {activeTab === 'info' ? (
               <div className="pr-station__detail-content">
                 <PRStationDetail key={`${selectedPr.repo}-${selectedPr.number}`} pr={selectedPr} />
@@ -112,6 +132,18 @@ export default function PRStationView() {
           </div>
         )}
       </div>
+      {showReviewDialog && selectedPr && (
+        <ReviewSubmitDialog
+          pr={selectedPr}
+          prKey={prKey}
+          onClose={() => setShowReviewDialog(false)}
+          onSubmitted={() => {
+            const pr = selectedPr
+            setSelectedPr(null)
+            setTimeout(() => setSelectedPr(pr), 0)
+          }}
+        />
+      )}
     </div>
   )
 }
