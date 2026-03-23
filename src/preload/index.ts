@@ -125,6 +125,11 @@ const api = {
     }) => typedInvoke('sprint:generatePrompt', args),
     delete: (id: string) => typedInvoke('sprint:delete', id),
     healthCheck: () => typedInvoke('sprint:healthCheck'),
+    validateDependencies: (
+      taskId: string,
+      deps: Array<{ id: string; type: 'hard' | 'soft' }>,
+    ) => typedInvoke('sprint:validate-dependencies', taskId, deps),
+    unblockTask: (taskId: string) => typedInvoke('sprint:unblock-task', taskId),
   },
 
   // File attachments

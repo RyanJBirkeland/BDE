@@ -98,6 +98,13 @@ describe('partitionSprintTasks', () => {
     expect(result.done).toEqual([t])
   })
 
+  it('puts blocked tasks into todo bucket', () => {
+    const tasks = [makeTask({ status: 'blocked' })]
+    const result = partitionSprintTasks(tasks)
+    expect(result.todo).toHaveLength(1)
+    expect(result.todo[0].status).toBe('blocked')
+  })
+
   it('puts cancelled tasks in failed', () => {
     const t = makeTask({ status: 'cancelled' })
     const result = partitionSprintTasks([t])

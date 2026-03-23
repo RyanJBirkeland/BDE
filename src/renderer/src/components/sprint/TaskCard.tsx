@@ -55,6 +55,7 @@ export const TaskCard = memo(function TaskCard({
     'task-card',
     isDragging && 'task-card--dragging',
     isHighPriority && 'task-card--high-priority',
+    task.status === 'blocked' && 'task-card--blocked',
   ]
     .filter(Boolean)
     .join(' ')
@@ -64,6 +65,25 @@ export const TaskCard = memo(function TaskCard({
       <div className="task-card__title" title={task.title}>
         {task.title}
       </div>
+      {task.depends_on && task.depends_on.length > 0 && (
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+          {task.depends_on.map((dep) => (
+            <span
+              key={dep.id}
+              style={{
+                fontSize: '11px',
+                padding: '1px 6px',
+                borderRadius: '4px',
+                background: dep.type === 'hard' ? 'var(--color-surface-raised)' : 'var(--color-surface)',
+                color: 'var(--color-text-muted)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              {dep.type === 'hard' ? '●' : '○'} {dep.id.slice(0, 8)}
+            </span>
+          ))}
+        </div>
+      )}
       {isGenerating && (
         <span className="task-card__spec-badge task-card__spec-badge--generating">
           Writing spec...
@@ -99,6 +119,9 @@ export const TaskCard = memo(function TaskCard({
         {task.pr_url && task.pr_mergeable_state === 'dirty' && !prMerged && (
           <Badge variant="danger" size="sm">Conflict</Badge>
         )}
+        {task.status === 'blocked' && (
+          <Badge variant="warning">Blocked</Badge>
+        )}
       </div>
 
       {task.status === TASK_STATUS.ACTIVE && (
@@ -133,6 +156,18 @@ export const TaskCard = memo(function TaskCard({
               </Button>
             )}
           </>
+        )}
+        {task.status === TASK_STATUS.BLOCKED && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation()
+              window.api?.sprint?.unblockTask?.(task.id)
+            }}
+          >
+            Unblock
+          </Button>
         )}
         {task.status === TASK_STATUS.ACTIVE && (
           <>
