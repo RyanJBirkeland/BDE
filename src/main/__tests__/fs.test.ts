@@ -17,7 +17,7 @@ vi.mock('fs/promises', async (importOriginal) => {
 
 import { stat, readFile } from 'fs/promises'
 
-const MEMORY_ROOT = resolve(homedir(), '.openclaw/workspace/memory')
+const MEMORY_ROOT = resolve(homedir(), '.bde/memory')
 const AGENT_LOGS_ROOT = resolve(homedir(), '.bde/agent-logs')
 
 describe('validateMemoryPath', () => {
