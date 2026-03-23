@@ -36,7 +36,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
       title: title ?? '',
       prompt: prompt ?? '',
       repo: repo ?? '',
-      priority: priority ?? 3,
+      priority: priority ?? 1,
     }))
   )
   const [state, setState] = useState<EditorState>('editing')
