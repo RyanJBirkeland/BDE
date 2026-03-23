@@ -1,0 +1,183 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { resolveDependents } from '../resolve-dependents'
+import type { DependencyIndex } from '../dependency-index'
+import type { TaskDependency } from '../../../shared/types'
+
+// Helpers to build dependency descriptors
+const hardDep = (id: string): TaskDependency => ({ id, type: 'hard' })
+const softDep = (id: string): TaskDependency => ({ id, type: 'soft' })
+
+// Minimal task shape used by resolveDependents
+type MockTask = {
+  id: string
+  status: string
+  depends_on: TaskDependency[] | null
+}
+
+function makeIndex(dependentsMap: Record<string, string[]>): DependencyIndex {
+  const TERMINAL = new Set(['done', 'cancelled', 'failed', 'error'])
+  return {
+    rebuild: () => {},
+    update: () => {},
+    remove: () => {},
+    getDependents(taskId: string): Set<string> {
+      return new Set(dependentsMap[taskId] ?? [])
+    },
+    areDependenciesSatisfied(
+      _taskId: string,
+      deps: TaskDependency[],
+      getStatus: (id: string) => string | undefined,
+    ): { satisfied: boolean; blockedBy: string[] } {
+      const blockedBy: string[] = []
+      for (const dep of deps) {
+        const status = getStatus(dep.id)
+        if (dep.type === 'hard') {
+          if (status !== 'done') blockedBy.push(dep.id)
+        } else {
+          if (!status || !TERMINAL.has(status)) blockedBy.push(dep.id)
+        }
+      }
+      return { satisfied: blockedBy.length === 0, blockedBy }
+    },
+  }
+}
+
+describe('resolveDependents', () => {
+  let updateTask: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    updateTask = vi.fn().mockResolvedValue(undefined)
+  })
+
+  it('does nothing when task has no dependents', async () => {
+    const index = makeIndex({})
+    const getTask = vi.fn()
+
+    await resolveDependents('A', 'done', index, getTask, updateTask)
+
+    expect(getTask).not.toHaveBeenCalled()
+    expect(updateTask).not.toHaveBeenCalled()
+  })
+
+  it('unblocks dependent when hard dep completes as done', async () => {
+    const index = makeIndex({ A: ['B'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'done', depends_on: null },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    await resolveDependents('A', 'done', index, getTask, updateTask)
+
+    expect(updateTask).toHaveBeenCalledWith('B', { status: 'queued' })
+  })
+
+  it('keeps dependent blocked when hard dep fails', async () => {
+    const index = makeIndex({ A: ['B'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'failed', depends_on: null },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    await resolveDependents('A', 'failed', index, getTask, updateTask)
+
+    expect(updateTask).not.toHaveBeenCalled()
+  })
+
+  it('keeps dependent blocked when hard dep is cancelled', async () => {
+    const index = makeIndex({ A: ['B'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'cancelled', depends_on: null },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    await resolveDependents('A', 'cancelled', index, getTask, updateTask)
+
+    expect(updateTask).not.toHaveBeenCalled()
+  })
+
+  it('unblocks dependent when soft dep fails', async () => {
+    const index = makeIndex({ A: ['B'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'failed', depends_on: null },
+      B: { id: 'B', status: 'blocked', depends_on: [softDep('A')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    await resolveDependents('A', 'failed', index, getTask, updateTask)
+
+    expect(updateTask).toHaveBeenCalledWith('B', { status: 'queued' })
+  })
+
+  it('skips non-blocked dependents', async () => {
+    const index = makeIndex({ A: ['B'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'done', depends_on: null },
+      B: { id: 'B', status: 'active', depends_on: [hardDep('A')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    await resolveDependents('A', 'done', index, getTask, updateTask)
+
+    expect(updateTask).not.toHaveBeenCalled()
+  })
+
+  it('fan-in: does not unblock when only some deps are satisfied', async () => {
+    // C depends on A (hard) and B (hard); A is done but B is still active
+    const index = makeIndex({ A: ['C'], B: ['C'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'done', depends_on: null },
+      B: { id: 'B', status: 'active', depends_on: null },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    await resolveDependents('A', 'done', index, getTask, updateTask)
+
+    expect(updateTask).not.toHaveBeenCalled()
+  })
+
+  it('fan-in: unblocks when last dep is satisfied', async () => {
+    // C depends on A (hard) and B (hard); A is already done, B just finished done
+    const index = makeIndex({ B: ['C'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'done', depends_on: null },
+      B: { id: 'B', status: 'done', depends_on: null },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    await resolveDependents('B', 'done', index, getTask, updateTask)
+
+    expect(updateTask).toHaveBeenCalledWith('C', { status: 'queued' })
+  })
+
+  it('mixed: hard done + soft failed = satisfied', async () => {
+    const index = makeIndex({ A: ['C'], B: ['C'] })
+    const tasks: Record<string, MockTask> = {
+      A: { id: 'A', status: 'done', depends_on: null },
+      B: { id: 'B', status: 'failed', depends_on: null },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), softDep('B')] },
+    }
+    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+
+    // Completing B (soft, failed) is the final trigger
+    await resolveDependents('B', 'failed', index, getTask, updateTask)
+
+    expect(updateTask).toHaveBeenCalledWith('C', { status: 'queued' })
+  })
+
+  it('handles getTask returning null gracefully', async () => {
+    const index = makeIndex({ A: ['B'] })
+    // getTask returns null for B (task not found)
+    const getTask = vi.fn().mockResolvedValue(null)
+
+    await expect(
+      resolveDependents('A', 'done', index, getTask, updateTask),
+    ).resolves.not.toThrow()
+
+    expect(updateTask).not.toHaveBeenCalled()
+  })
+})
