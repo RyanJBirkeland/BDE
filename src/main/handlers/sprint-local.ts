@@ -87,12 +87,12 @@ export async function getDoneTodayCount(): Promise<number> {
   return _getDoneTodayCount()
 }
 
-export async function markTaskDoneByPrNumber(prNumber: number): Promise<void> {
-  await _markTaskDoneByPrNumber(prNumber)
+export async function markTaskDoneByPrNumber(prNumber: number): Promise<string[]> {
+  return _markTaskDoneByPrNumber(prNumber)
 }
 
-export async function markTaskCancelledByPrNumber(prNumber: number): Promise<void> {
-  await _markTaskCancelledByPrNumber(prNumber)
+export async function markTaskCancelledByPrNumber(prNumber: number): Promise<string[]> {
+  return _markTaskCancelledByPrNumber(prNumber)
 }
 
 export async function listTasksWithOpenPrs(): Promise<SprintTask[]> {

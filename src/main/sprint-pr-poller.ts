@@ -12,9 +12,10 @@ const POLL_INTERVAL_MS = 60_000
 export interface SprintPrPollerDeps {
   listTasksWithOpenPrs: () => Promise<SprintTask[]>
   pollPrStatuses: (prs: PrStatusInput[]) => Promise<PrStatusResult[]>
-  markTaskDoneByPrNumber: (prNumber: number) => Promise<void>
-  markTaskCancelledByPrNumber: (prNumber: number) => Promise<void>
+  markTaskDoneByPrNumber: (prNumber: number) => Promise<string[]>
+  markTaskCancelledByPrNumber: (prNumber: number) => Promise<string[]>
   updateTaskMergeableState: (prNumber: number, state: string | null) => Promise<void>
+  onTaskTerminal?: (taskId: string, status: string) => Promise<void>
 }
 
 export interface SprintPrPollerInstance {
@@ -43,9 +44,15 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
       if (!prNumber) continue
 
       if (result.merged) {
-        await deps.markTaskDoneByPrNumber(prNumber)
+        const ids = await deps.markTaskDoneByPrNumber(prNumber)
+        if (deps.onTaskTerminal) {
+          for (const id of ids) await deps.onTaskTerminal(id, 'done')
+        }
       } else if (result.state === 'CLOSED') {
-        await deps.markTaskCancelledByPrNumber(prNumber)
+        const ids = await deps.markTaskCancelledByPrNumber(prNumber)
+        if (deps.onTaskTerminal) {
+          for (const id of ids) await deps.onTaskTerminal(id, 'cancelled')
+        }
       }
       await deps.updateTaskMergeableState(prNumber, result.mergeableState)
     }
@@ -76,6 +83,11 @@ import {
 } from './handlers/sprint-local'
 
 let _instance: SprintPrPollerInstance | null = null
+let _onTaskTerminal: ((taskId: string, status: string) => Promise<void>) | null = null
+
+export function setOnTaskTerminal(fn: (taskId: string, status: string) => Promise<void>): void {
+  _onTaskTerminal = fn
+}
 
 export function startSprintPrPoller(): void {
   _instance = createSprintPrPoller({
@@ -84,6 +96,7 @@ export function startSprintPrPoller(): void {
     markTaskDoneByPrNumber,
     markTaskCancelledByPrNumber,
     updateTaskMergeableState,
+    onTaskTerminal: _onTaskTerminal ?? undefined,
   })
   _instance.start()
 }

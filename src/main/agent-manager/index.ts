@@ -1,6 +1,7 @@
 import type { AgentManagerConfig, ActiveAgent, AgentHandle } from './types'
 import {
   EXECUTOR_ID,
+  MAX_RETRIES,
   WATCHDOG_INTERVAL_MS,
   ORPHAN_CHECK_INTERVAL_MS,
   WORKTREE_PRUNE_INTERVAL_MS,
@@ -18,7 +19,9 @@ import { setupWorktree, cleanupWorktree, pruneStaleWorktrees } from './worktree'
 import { spawnAgent } from './sdk-adapter'
 import { resolveSuccess, resolveFailure } from './completion'
 import { recoverOrphans } from './orphan-recovery'
-import { updateTask } from '../data/sprint-queries'
+import { createDependencyIndex } from './dependency-index'
+import { resolveDependents } from './resolve-dependents'
+import { updateTask, getTask, getTasksWithDependencies } from '../data/sprint-queries'
 import { getRepoPaths, getGhRepo } from '../paths'
 import { randomUUID } from 'node:crypto'
 
@@ -93,6 +96,7 @@ export interface AgentManager {
   getStatus(): AgentManagerStatus
   steerAgent(taskId: string, message: string): Promise<void>
   killAgent(taskId: string): void
+  onTaskTerminal(taskId: string, status: string): Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +119,15 @@ export function createAgentManager(
   let drainInFlight: Promise<void> | null = null
   const agentPromises = new Set<Promise<void>>()
   let orphanRecoveryRunning = false
+  const depIndex = createDependencyIndex()
+
+  async function onTaskTerminal(taskId: string, status: string): Promise<void> {
+    try {
+      await resolveDependents(taskId, status, depIndex, getTask, updateTask)
+    } catch (err) {
+      logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
+    }
+  }
 
   // ---- Helpers ----
 
@@ -150,6 +163,7 @@ export function createAgentManager(
     if (!prompt) {
       logger.error(`[agent-manager] Task ${task.id} has no prompt/spec/title — marking error`)
       await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: 'Empty prompt' })
+      await onTaskTerminal(task.id, 'error')
       cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
       return
     }
@@ -167,6 +181,7 @@ export function createAgentManager(
     } catch (err) {
       logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
       await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}` }).catch(() => {})
+      await onTaskTerminal(task.id, 'error')
       cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
       return
     }
@@ -231,6 +246,7 @@ export function createAgentManager(
 
     if (ffResult === 'fast-fail-exhausted') {
       await updateTask(task.id, { status: 'error', completed_at: now, notes: 'Fast-fail exhausted' })
+      await onTaskTerminal(task.id, 'error')
     } else if (ffResult === 'fast-fail-requeue') {
       await updateTask(task.id, {
         status: 'queued',
@@ -255,6 +271,9 @@ export function createAgentManager(
       } catch (err) {
         logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)
         await resolveFailure({ taskId: task.id, retryCount: task.retry_count ?? 0 })
+        if ((task.retry_count ?? 0) >= MAX_RETRIES) {
+          await onTaskTerminal(task.id, 'failed')
+        }
       }
     }
 
@@ -329,6 +348,7 @@ export function createAgentManager(
           } catch (err) {
             logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${err}`)
             await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString() })
+            await onTaskTerminal(task.id, 'error')
             continue
           }
 
@@ -366,9 +386,13 @@ export function createAgentManager(
       // Update task based on verdict
       const now = new Date().toISOString()
       if (verdict === 'max-runtime') {
-        updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Max runtime exceeded' }).catch(() => {})
+        updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Max runtime exceeded' })
+          .then(() => onTaskTerminal(agent.taskId, 'error'))
+          .catch(() => {})
       } else if (verdict === 'idle') {
-        updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Idle timeout' }).catch(() => {})
+        updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Idle timeout' })
+          .then(() => onTaskTerminal(agent.taskId, 'error'))
+          .catch(() => {})
       } else if (verdict === 'rate-limit-loop') {
         concurrency = applyBackpressure(concurrency, Date.now())
         updateTask(agent.taskId, { status: 'queued', claimed_by: null, notes: 'Rate-limit loop — re-queued' }).catch(() => {})
@@ -410,6 +434,14 @@ export function createAgentManager(
     // Initial orphan recovery (fire-and-forget)
     recoverOrphans(isActive, logger).catch((err) => {
       logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
+    })
+
+    // Build dependency index
+    getTasksWithDependencies().then((tasks) => {
+      depIndex.rebuild(tasks)
+      logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
+    }).catch((err) => {
+      logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
     })
 
     // Initial worktree prune (fire-and-forget)
@@ -495,5 +527,5 @@ export function createAgentManager(
     agent.handle.abort()
   }
 
-  return { start, stop, getStatus, steerAgent, killAgent }
+  return { start, stop, getStatus, steerAgent, killAgent, onTaskTerminal }
 }
