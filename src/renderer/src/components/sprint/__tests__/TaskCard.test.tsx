@@ -88,7 +88,7 @@ describe('TaskCard', () => {
     mockSelectedTaskIds = []
 
     // Set up the Zustand store mock
-    vi.mocked(useSprintTasks).mockImplementation((selector?: (state: { tasks: SprintTask[] }) => unknown) => {
+    vi.mocked(useSprintTasks).mockImplementation((selector?: (state: any) => unknown) => {
       if (typeof selector === 'function') {
         return selector({ tasks: mockTasksData })
       }

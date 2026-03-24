@@ -161,7 +161,7 @@ export function SprintCenter() {
       selectedTaskIds.forEach((taskId) => {
         const task = tasks.find((t) => t.id === taskId)
         if (task) {
-          handleUpdatePriority(task, priority)
+          handleUpdatePriority({ id: task.id, priority })
         }
       })
       clearSelection()

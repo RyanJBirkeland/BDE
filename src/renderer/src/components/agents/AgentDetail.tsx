@@ -72,7 +72,7 @@ export function AgentDetail({ agent, events, onSteer }: AgentDetailProps) {
               borderRadius: tokens.radius.md,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = tokens.color.surfaceHover
+              e.currentTarget.style.background = tokens.color.surfaceHigh
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'none'
