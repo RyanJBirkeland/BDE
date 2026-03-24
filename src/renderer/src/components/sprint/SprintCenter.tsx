@@ -10,6 +10,7 @@ import { LogDrawer } from './LogDrawer'
 import { TaskMonitorPanel } from './TaskMonitorPanel'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
+import { BulkActionBar } from './BulkActionBar'
 import { usePrConflictsStore } from '../../stores/prConflicts'
 import { useUIStore } from '../../stores/ui'
 import { useSprintTasks } from '../../stores/sprintTasks'
@@ -40,11 +41,13 @@ export function SprintCenter() {
   const logDrawerTaskId = useSprintUI((s) => s.logDrawerTaskId)
   const prMergedMap = useSprintTasks((s) => s.prMergedMap)
   const generatingIds = useSprintUI((s) => s.generatingIds)
+  const selectedTaskIds = useSprintUI((s) => s.selectedTaskIds)
 
   const loadData = useSprintTasks((s) => s.loadData)
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
+  const clearSelection = useSprintUI((s) => s.clearSelection)
 
   // --- Extracted hooks ---
   const {
@@ -104,6 +107,26 @@ export function SprintCenter() {
   usePrStatusPolling()
   useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
 
+  // Keyboard shortcuts for bulk selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to clear selection
+      if (e.key === 'Escape' && selectedTaskIds.length > 0) {
+        clearSelection()
+        e.preventDefault()
+      }
+      // Cmd+A / Ctrl+A to select all visible backlog tasks
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && filteredBacklog.length > 0) {
+        e.preventDefault()
+        const allBacklogIds = filteredBacklog.map((t) => t.id)
+        useSprintUI.getState().selectRange(allBacklogIds[0], allBacklogIds[allBacklogIds.length - 1], allBacklogIds)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedTaskIds.length, filteredBacklog, clearSelection])
+
   const conflictingTaskIds = usePrConflictsStore((s) => s.conflictingTaskIds)
   const conflictingTasks = useMemo(
     () => tasks.filter((t) => conflictingTaskIds.includes(t.id)),
@@ -121,6 +144,37 @@ export function SprintCenter() {
     const q = backlogSearch.trim().toLowerCase()
     return partition.backlog.filter((t) => t.title.toLowerCase().includes(q))
   }, [partition.backlog, backlogSearch])
+
+  // --- Bulk action handlers ---
+  const handleBulkSetPriority = useCallback(
+    (priority: number) => {
+      selectedTaskIds.forEach((taskId) => {
+        const task = tasks.find((t) => t.id === taskId)
+        if (task) {
+          handleUpdatePriority(task, priority)
+        }
+      })
+      clearSelection()
+    },
+    [selectedTaskIds, tasks, handleUpdatePriority, clearSelection]
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    selectedTaskIds.forEach((taskId) => {
+      deleteTask(taskId)
+    })
+    clearSelection()
+  }, [selectedTaskIds, deleteTask, clearSelection])
+
+  const handleBulkMarkDone = useCallback(() => {
+    selectedTaskIds.forEach((taskId) => {
+      const task = tasks.find((t) => t.id === taskId)
+      if (task) {
+        handleMarkDone(task)
+      }
+    })
+    clearSelection()
+  }, [selectedTaskIds, tasks, handleMarkDone, clearSelection])
 
   const kanbanContent = (
     <>
@@ -244,6 +298,14 @@ export function SprintCenter() {
                 </button>
               )}
             </div>
+
+            <BulkActionBar
+              selectedCount={selectedTaskIds.length}
+              onSetPriority={handleBulkSetPriority}
+              onDelete={handleBulkDelete}
+              onMarkDone={handleBulkMarkDone}
+              onClearSelection={clearSelection}
+            />
 
             <ErrorBoundary name="Backlog">
             <TaskTable
