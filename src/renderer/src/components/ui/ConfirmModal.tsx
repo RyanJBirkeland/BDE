@@ -7,6 +7,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from './Button'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface ConfirmModalProps {
   open: boolean
@@ -31,6 +32,8 @@ export function ConfirmModal({
 }: ConfirmModalProps): React.JSX.Element {
   const reduced = useReducedMotion()
   const confirmRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, open)
 
   useEffect(() => {
     if (open) {
@@ -56,6 +59,7 @@ export function ConfirmModal({
         <>
           <div className="confirm-modal__overlay" onClick={onCancel} />
           <motion.div
+            ref={dialogRef}
             className="confirm-modal glass-modal elevation-3"
             variants={VARIANTS.scaleIn}
             initial="initial"
