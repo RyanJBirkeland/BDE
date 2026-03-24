@@ -29,6 +29,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   const mode = useTaskWorkbenchStore((s) => s.mode)
   const taskId = useTaskWorkbenchStore((s) => s.taskId)
   const spec = useTaskWorkbenchStore((s) => s.spec)
+  const dependsOn = useTaskWorkbenchStore((s) => s.dependsOn)
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const resetForm = useTaskWorkbenchStore((s) => s.resetForm)
 
@@ -113,11 +114,13 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
       if (mode === 'edit' && taskId) {
         await updateTask(taskId, {
           title, repo, priority, spec,
+          depends_on: dependsOn.length > 0 ? dependsOn : null,
           status: action === 'queue' ? 'queued' : 'backlog',
         })
       } else {
         const input: CreateTicketInput = {
           title, repo, prompt: title, spec, priority,
+          depends_on: dependsOn.length > 0 ? dependsOn : undefined,
         }
         await createTask(input)
         // createTask hardcodes status=backlog. If queuing, find and update.
@@ -131,16 +134,23 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     } finally {
       setSubmitting(false)
     }
-  }, [mode, taskId, title, repo, priority, spec, createTask, updateTask, resetForm, setOperationalChecks])
+  }, [mode, taskId, title, repo, priority, spec, dependsOn, createTask, updateTask, resetForm, setOperationalChecks])
 
   const handleConfirmedQueue = useCallback(async () => {
     setShowQueueConfirm(false)
     setSubmitting(true)
     try {
       if (mode === 'edit' && taskId) {
-        await updateTask(taskId, { title, repo, priority, spec, status: 'queued' })
+        await updateTask(taskId, {
+          title, repo, priority, spec,
+          depends_on: dependsOn.length > 0 ? dependsOn : null,
+          status: 'queued',
+        })
       } else {
-        const input: CreateTicketInput = { title, repo, prompt: title, spec, priority }
+        const input: CreateTicketInput = {
+          title, repo, prompt: title, spec, priority,
+          depends_on: dependsOn.length > 0 ? dependsOn : undefined,
+        }
         await createTask(input)
         const tasks = useSprintTasks.getState().tasks
         const created = tasks.find((t) => t.title === title && t.status === 'backlog')
@@ -150,7 +160,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     } finally {
       setSubmitting(false)
     }
-  }, [mode, taskId, title, repo, priority, spec, createTask, updateTask, resetForm])
+  }, [mode, taskId, title, repo, priority, spec, dependsOn, createTask, updateTask, resetForm])
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)

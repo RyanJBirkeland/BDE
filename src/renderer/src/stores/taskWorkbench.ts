@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { SprintTask } from '../../../shared/types'
+import type { SprintTask, TaskDependency } from '../../../shared/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,6 +31,7 @@ interface TaskWorkbenchState {
   spec: string
   taskTemplateName: string
   advancedOpen: boolean
+  dependsOn: TaskDependency[]
 
   // --- Copilot ---
   copilotVisible: boolean
@@ -80,6 +81,7 @@ function defaults(): Pick<
   | 'spec'
   | 'taskTemplateName'
   | 'advancedOpen'
+  | 'dependsOn'
   | 'copilotVisible'
   | 'copilotMessages'
   | 'copilotLoading'
@@ -99,6 +101,7 @@ function defaults(): Pick<
     spec: '',
     taskTemplateName: '',
     advancedOpen: false,
+    dependsOn: [],
     copilotVisible: true,
     copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
     copilotLoading: false,
@@ -131,6 +134,7 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       priority: task.priority,
       spec: task.spec ?? '',
       taskTemplateName: task.template_name ?? '',
+      dependsOn: task.depends_on ?? [],
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
       semanticChecks: [],
       operationalChecks: [],

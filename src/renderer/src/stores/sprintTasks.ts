@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { SprintTask } from '../../../shared/types'
+import type { SprintTask, TaskDependency } from '../../../shared/types'
 import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 import { toast } from './toasts'
 import { detectTemplate } from '../../../shared/template-heuristics'
@@ -13,6 +13,7 @@ export interface CreateTicketInput {
   spec?: string | null
   priority: number
   template_name?: string
+  depends_on?: TaskDependency[]
 }
 
 /** How long (ms) to protect an optimistic update from being overwritten by poll data. */
