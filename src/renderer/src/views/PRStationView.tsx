@@ -68,7 +68,11 @@ export default function PRStationView() {
   }, [prKey])
 
   return (
-    <div className="pr-station">
+    <div className="pr-station-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="pr-station__view-header">
+        <span className="pr-station__view-title text-gradient-aurora">PR Station</span>
+      </div>
+      <div className="pr-station" style={{ flex: 1, minHeight: 0 }}>
       <div className="pr-station__list-panel">
         <PRStationList
           selectedPr={selectedPr}
@@ -144,6 +148,7 @@ export default function PRStationView() {
           }}
         />
       )}
+    </div>
     </div>
   )
 }

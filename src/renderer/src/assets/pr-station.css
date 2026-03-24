@@ -5,6 +5,35 @@
   overflow: hidden;
 }
 
+/* ── PR Station: View header ───────────────────────────── */
+
+.pr-station__view-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.pr-station__view-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+}
+
+.pr-station__view-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
 .pr-station__list-panel {
   width: 320px;
   min-width: 280px;
