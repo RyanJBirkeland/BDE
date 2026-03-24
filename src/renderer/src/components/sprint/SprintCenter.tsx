@@ -8,8 +8,8 @@ import { SpecDrawer } from './SpecDrawer'
 import { LogDrawer } from './LogDrawer'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
-import { NewTicketModal } from './NewTicketModal'
 import { usePrConflictsStore } from '../../stores/prConflicts'
+import { useUIStore } from '../../stores/ui'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
 import { useSprintEvents } from '../../stores/sprintEvents'
@@ -40,7 +40,6 @@ export function SprintCenter() {
   const generatingIds = useSprintUI((s) => s.generatingIds)
 
   const loadData = useSprintTasks((s) => s.loadData)
-  const createTask = useSprintTasks((s) => s.createTask)
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
@@ -64,9 +63,11 @@ export function SprintCenter() {
 
   const { visibleStuckTasks, dismissTask } = useHealthCheck(tasks)
 
+  const setView = useUIStore((s) => s.setView)
+  const openWorkbench = useCallback(() => setView('task-workbench'), [setView])
+
   // --- Local UI state ---
   const [backlogSearch, setBacklogSearch] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
   const [conflictDrawerOpen, setConflictDrawerOpen] = useState(false)
   const [healthDrawerOpen, setHealthDrawerOpen] = useState(false)
 
@@ -98,7 +99,7 @@ export function SprintCenter() {
   // Extracted polling hooks
   useSprintPolling()
   usePrStatusPolling()
-  useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+  useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
 
   const conflictingTaskIds = usePrConflictsStore((s) => s.conflictingTaskIds)
   const conflictingTasks = useMemo(
@@ -171,7 +172,7 @@ export function SprintCenter() {
           <kbd className="sprint-center__shortcut-hint" title="Keyboard shortcuts">
             N — New ticket &nbsp; Esc — Close
           </kbd>
-          <Button variant="primary" size="sm" onClick={() => setModalOpen(true)}>
+          <Button variant="primary" size="sm" onClick={openWorkbench}>
             + New Ticket
           </Button>
           <Button variant="icon" size="sm" onClick={loadData} disabled={loading} title="Refresh">
@@ -291,8 +292,6 @@ export function SprintCenter() {
         onUpdate={handleUpdateTitle}
         onDelete={deleteTask}
       />
-
-      <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />
 
       <LogDrawer task={logDrawerTask} onClose={() => setLogDrawerTaskId(null)} onStop={handleStop} onRerun={handleRerun} />
 

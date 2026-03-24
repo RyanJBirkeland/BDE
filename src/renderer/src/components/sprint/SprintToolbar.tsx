@@ -2,13 +2,13 @@
  * SprintToolbar — header bar for Sprint Center.
  * Contains repo filter chips, alert badges, shortcut hints, new-ticket button, and refresh.
  */
-import { useState, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, type Dispatch, type SetStateAction } from 'react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
-import { NewTicketModal } from './NewTicketModal'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
+import { useUIStore } from '../../stores/ui'
 import { REPO_OPTIONS } from '../../lib/constants'
 import type { SprintTask } from '../../../../shared/types'
 
@@ -31,12 +31,12 @@ export function SprintToolbar({
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const loading = useSprintTasks((s) => s.loading)
   const loadData = useSprintTasks((s) => s.loadData)
-  const createTask = useSprintTasks((s) => s.createTask)
 
-  const [modalOpen, setModalOpen] = useState(false)
+  const setView = useUIStore((s) => s.setView)
+  const openWorkbench = useCallback(() => setView('task-workbench'), [setView])
 
-  // Keyboard shortcuts: N -> new ticket, Esc -> close drawers
-  useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+  // Keyboard shortcuts: N -> open task workbench, Esc -> close drawers
+  useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
 
   return (
     <>
@@ -91,7 +91,7 @@ export function SprintToolbar({
           <kbd className="sprint-center__shortcut-hint" title="Keyboard shortcuts">
             N — New ticket &nbsp; Esc — Close
           </kbd>
-          <Button variant="primary" size="sm" onClick={() => setModalOpen(true)}>
+          <Button variant="primary" size="sm" onClick={openWorkbench}>
             + New Ticket
           </Button>
           <Button variant="icon" size="sm" onClick={loadData} disabled={loading} title="Refresh">
@@ -100,7 +100,6 @@ export function SprintToolbar({
         </div>
       </div>
 
-      <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />
     </>
   )
 }
