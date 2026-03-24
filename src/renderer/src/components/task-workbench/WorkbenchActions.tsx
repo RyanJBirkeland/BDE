@@ -4,19 +4,23 @@ import { tokens } from '../../design-system/tokens'
 interface WorkbenchActionsProps {
   onSaveBacklog: () => void
   onQueueNow: () => void
+  onLaunch: () => void
   submitting: boolean
 }
 
-export function WorkbenchActions({ onSaveBacklog, onQueueNow, submitting }: WorkbenchActionsProps) {
+export function WorkbenchActions({ onSaveBacklog, onQueueNow, onLaunch, submitting }: WorkbenchActionsProps) {
   const structural = useTaskWorkbenchStore((s) => s.structuralChecks)
   const operational = useTaskWorkbenchStore((s) => s.operationalChecks)
+  const semantic = useTaskWorkbenchStore((s) => s.semanticChecks)
 
   const titlePasses = structural.some((c) => c.id === 'title-present' && c.status === 'pass')
   const allTier1Pass = structural.every((c) => c.status === 'pass')
   const tier3HasFails = operational.some((c) => c.status === 'fail')
+  const semanticNoFails = semantic.length === 0 || semantic.every((c) => c.status !== 'fail')
 
   const canSave = titlePasses
   const canQueue = allTier1Pass && !tier3HasFails
+  const canLaunch = allTier1Pass && semanticNoFails && !tier3HasFails
 
   return (
     <div style={{ display: 'flex', gap: tokens.space[2], justifyContent: 'flex-end' }}>
@@ -35,6 +39,14 @@ export function WorkbenchActions({ onSaveBacklog, onQueueNow, submitting }: Work
         fontWeight: 600, cursor: canQueue && !submitting ? 'pointer' : 'not-allowed',
       }}>
         {submitting ? 'Creating...' : 'Queue Now'}
+      </button>
+      <button onClick={onLaunch} disabled={!canLaunch || submitting} style={{
+        background: canLaunch ? tokens.color.accent : tokens.color.surfaceHigh, border: 'none',
+        borderRadius: tokens.radius.md, color: canLaunch ? '#000' : tokens.color.textDim,
+        padding: `${tokens.space[2]} ${tokens.space[4]}`, fontSize: tokens.size.md,
+        fontWeight: 600, cursor: canLaunch && !submitting ? 'pointer' : 'not-allowed',
+      }}>
+        {submitting ? 'Launching...' : 'Launch'}
       </button>
     </div>
   )

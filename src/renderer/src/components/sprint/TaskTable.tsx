@@ -21,8 +21,9 @@ type TaskTableProps = {
   onViewSpec: (task: SprintTask) => void
   onViewOutput: (task: SprintTask) => void
   onMarkDone?: (task: SprintTask) => void
-onRerun?: (task: SprintTask) => void
+  onRerun?: (task: SprintTask) => void
   onUpdate?: (patch: { id: string; priority: number }) => void
+  onEditInWorkbench?: (task: SprintTask) => void
 }
 
 const STORAGE_KEY_PREFIX = 'bde-table-'
@@ -58,8 +59,9 @@ export function TaskTable({
   onViewSpec,
   onViewOutput,
   onMarkDone,
-onRerun,
+  onRerun,
   onUpdate,
+  onEditInWorkbench,
 }: TaskTableProps) {
   const [collapsed, setCollapsed] = useState(() => getInitialCollapsed(section, defaultExpanded))
   const [showAll, setShowAll] = useState(false)
@@ -150,6 +152,7 @@ onRerun,
                         onViewSpec={onViewSpec}
                         onMarkDone={onMarkDone}
                         onUpdate={onUpdate}
+                        onEditInWorkbench={onEditInWorkbench}
                       />
                     )
                   )}
@@ -294,12 +297,14 @@ function BacklogRow({
   onViewSpec,
   onMarkDone,
   onUpdate,
+  onEditInWorkbench,
 }: {
   task: SprintTask
   onPushToSprint: (t: SprintTask) => void
   onViewSpec: (t: SprintTask) => void
   onMarkDone?: (t: SprintTask) => void
   onUpdate?: (patch: { id: string; priority: number }) => void
+  onEditInWorkbench?: (t: SprintTask) => void
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
@@ -362,6 +367,15 @@ function BacklogRow({
             title="Mark Done"
           >
             <CheckCircle2 size={13} />
+          </button>
+        )}
+        {onEditInWorkbench && (
+          <button
+            className="bde-task-table__action-btn"
+            onClick={() => onEditInWorkbench(task)}
+            title="Edit in Workbench"
+          >
+            Edit
           </button>
         )}
         <button className="bde-task-table__action-btn bde-task-table__action-btn--sprint" onClick={() => onPushToSprint(task)}>

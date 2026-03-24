@@ -5,6 +5,7 @@ import { useReadinessChecks } from '../../hooks/useReadinessChecks'
 import { SpecEditor } from './SpecEditor'
 import { ReadinessChecks } from './ReadinessChecks'
 import { WorkbenchActions } from './WorkbenchActions'
+import { ConfirmModal } from '../ui/ConfirmModal'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { tokens } from '../../design-system/tokens'
 
@@ -36,6 +37,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
 
   const [submitting, setSubmitting] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [showQueueConfirm, setShowQueueConfirm] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
 
   useReadinessChecks()
@@ -74,6 +76,22 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     return () => clearTimeout(t)
   }, [])
 
+  // Keyboard shortcuts: Cmd+Enter to submit
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && e.metaKey) {
+        e.preventDefault()
+        const structural = useTaskWorkbenchStore.getState().structuralChecks
+        const titlePasses = structural.some((c) => c.id === 'title-present' && c.status === 'pass')
+        if (titlePasses && !submitting) {
+          handleSubmit('queue')
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [submitting, handleSubmit])
+
   const handleSubmit = useCallback(async (action: 'backlog' | 'queue') => {
     setSubmitting(true)
     try {
@@ -93,6 +111,15 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
         // Block if any operational check fails
         if (opChecks.some((c) => c.status === 'fail')) {
           useTaskWorkbenchStore.setState({ checksExpanded: true })
+          setSubmitting(false)
+          return
+        }
+
+        // Warn if any operational check has warnings
+        const hasWarnings = opChecks.some((c) => c.status === 'warn')
+        if (hasWarnings) {
+          useTaskWorkbenchStore.setState({ checksExpanded: true })
+          setShowQueueConfirm(true)
           setSubmitting(false)
           return
         }
@@ -121,6 +148,25 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
       setSubmitting(false)
     }
   }, [mode, taskId, title, repo, priority, spec, createTask, updateTask, resetForm, setOperationalChecks])
+
+  const handleConfirmedQueue = useCallback(async () => {
+    setShowQueueConfirm(false)
+    setSubmitting(true)
+    try {
+      if (mode === 'edit' && taskId) {
+        await updateTask(taskId, { title, repo, priority, spec, status: 'queued' })
+      } else {
+        const input: CreateTicketInput = { title, repo, prompt: title, spec, priority }
+        await createTask(input)
+        const tasks = useSprintTasks.getState().tasks
+        const created = tasks.find((t) => t.title === title && t.status === 'backlog')
+        if (created) await updateTask(created.id, { status: 'queued' })
+      }
+      resetForm()
+    } finally {
+      setSubmitting(false)
+    }
+  }, [mode, taskId, title, repo, priority, spec, createTask, updateTask, resetForm])
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)
@@ -198,7 +244,21 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
       </div>
 
       <ReadinessChecks />
-      <WorkbenchActions onSaveBacklog={() => handleSubmit('backlog')} onQueueNow={() => handleSubmit('queue')} submitting={submitting} />
+      <WorkbenchActions
+        onSaveBacklog={() => handleSubmit('backlog')}
+        onQueueNow={() => handleSubmit('queue')}
+        onLaunch={() => handleSubmit('queue')}
+        submitting={submitting}
+      />
+
+      <ConfirmModal
+        open={showQueueConfirm}
+        title="Queue with warnings?"
+        message="Some operational checks have warnings. The task may encounter issues. Queue anyway?"
+        confirmLabel="Queue Anyway"
+        onConfirm={handleConfirmedQueue}
+        onCancel={() => setShowQueueConfirm(false)}
+      />
     </div>
   )
 }

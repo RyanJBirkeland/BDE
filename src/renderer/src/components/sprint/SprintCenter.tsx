@@ -56,6 +56,7 @@ export function SprintCenter() {
     handleRerun,
     handleUpdateTitle,
     handleUpdatePriority,
+    handleEditInWorkbench,
     launchTask,
     deleteTask,
     confirmProps,
@@ -251,6 +252,7 @@ export function SprintCenter() {
               onViewOutput={handleViewOutput}
               onMarkDone={handleMarkDone}
               onUpdate={handleUpdatePriority}
+              onEditInWorkbench={handleEditInWorkbench}
             />
             </ErrorBoundary>
 

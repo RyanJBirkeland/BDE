@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useEffect } from 'react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { WorkbenchForm } from './WorkbenchForm'
@@ -8,6 +8,23 @@ import { tokens } from '../../design-system/tokens'
 export function TaskWorkbench() {
   const copilotVisible = useTaskWorkbenchStore((s) => s.copilotVisible)
   const toggleCopilot = useTaskWorkbenchStore((s) => s.toggleCopilot)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0
+      const store = useTaskWorkbenchStore.getState()
+      if (width < 600 && store.copilotVisible) {
+        store.toggleCopilot()
+      }
+    })
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
   const addMessage = useTaskWorkbenchStore((s) => s.addCopilotMessage)
   const setCopilotLoading = useTaskWorkbenchStore((s) => s.setCopilotLoading)
   const title = useTaskWorkbenchStore((s) => s.title)
@@ -55,7 +72,7 @@ export function TaskWorkbench() {
   }, [title, repo, spec, toggleCopilot, addMessage, setCopilotLoading])
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div ref={containerRef} style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Toggle copilot button when hidden */}
       {!copilotVisible && (
         <div style={{
