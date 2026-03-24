@@ -25,6 +25,7 @@ import {
   listAgentRunsByTaskId as _listAgentRunsByTaskId,
 } from './data/agent-queries'
 import type { AgentRunRow } from './data/agent-queries'
+import { pruneEventsByAgentIds } from './data/event-queries'
 import type { AgentMeta } from '../shared/types'
 
 export type { AgentMeta }
@@ -208,6 +209,9 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
   for (const row of toRemove) {
     await clearSprintTaskFk(row.id)
   }
+
+  // Prune associated events before removing agent records
+  pruneEventsByAgentIds(db, toRemove.map((r) => r.id))
 
   // Then delete agents from local SQLite in a transaction
   const tx = db.transaction(() => {

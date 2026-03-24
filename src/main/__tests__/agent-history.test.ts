@@ -52,6 +52,15 @@ vi.mock('../db', () => {
           );
           CREATE INDEX IF NOT EXISTS idx_agent_runs_pid    ON agent_runs(pid);
           CREATE INDEX IF NOT EXISTS idx_agent_runs_status ON agent_runs(status);
+
+          CREATE TABLE IF NOT EXISTS agent_events (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent_id   TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            payload    TEXT NOT NULL,
+            timestamp  INTEGER NOT NULL
+          );
+          CREATE INDEX IF NOT EXISTS idx_agent_events_agent_id ON agent_events(agent_id);
         `)
       }
       return db
@@ -78,10 +87,11 @@ describe('agent-history (SQLite)', () => {
   })
 
   beforeEach(async () => {
-    // Clear agent_runs table between tests
+    // Clear tables between tests
     const { getDb } = await import('../db')
     const db = getDb()
     db.exec('DELETE FROM agent_runs')
+    db.exec('DELETE FROM agent_events')
 
     // Re-import with fresh state
     agentHistory = await import('../agent-history')
@@ -320,6 +330,40 @@ describe('agent-history (SQLite)', () => {
     expect(remaining).toHaveLength(3)
     // Should keep the 3 newest (prune-4, prune-3, prune-2)
     expect(remaining.map(a => a.id)).toEqual(['prune-4', 'prune-3', 'prune-2'])
+  })
+
+  it('pruneOldAgents also removes agent_events for pruned agents', async () => {
+    const { getDb } = await import('../db')
+    const db = getDb()
+
+    // Create 4 agents
+    for (let i = 0; i < 4; i++) {
+      await agentHistory.createAgentRecord({
+        id: `evt-prune-${i}`, pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
+        repoPath: '', task: `task ${i}`,
+        startedAt: `2026-03-${String(10 + i).padStart(2, '0')}T10:00:00.000Z`,
+        finishedAt: null, exitCode: null, status: 'done', source: 'bde',
+        costUsd: null, tokensIn: null, tokensOut: null, sprintTaskId: null,
+      })
+    }
+
+    // Insert events for the two oldest agents (evt-prune-0 and evt-prune-1)
+    db.prepare('INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)')
+      .run('evt-prune-0', 'agent:started', '{}', 1000)
+    db.prepare('INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)')
+      .run('evt-prune-1', 'agent:completed', '{}', 2000)
+
+    // Prune down to 2 (removes evt-prune-0 and evt-prune-1)
+    await agentHistory.pruneOldAgents(2)
+
+    // Agent records should be gone
+    const remaining = await agentHistory.listAgents()
+    expect(remaining).toHaveLength(2)
+    expect(remaining.map(a => a.id)).toEqual(['evt-prune-3', 'evt-prune-2'])
+
+    // Events for pruned agents should be gone
+    const eventsLeft = db.prepare('SELECT COUNT(*) as cnt FROM agent_events').get() as { cnt: number }
+    expect(eventsLeft.cnt).toBe(0)
   })
 
   describe('readLog with maxBytes and totalBytes', () => {
