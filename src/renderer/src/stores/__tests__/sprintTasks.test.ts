@@ -11,6 +11,10 @@ vi.mock('../toasts', () => ({
   },
 }))
 
+vi.mock('../../../../shared/template-heuristics', () => ({
+  detectTemplate: vi.fn().mockReturnValue(null),
+}))
+
 import { useSprintTasks } from '../sprintTasks'
 import { toast } from '../toasts'
 
@@ -203,6 +207,349 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().deleteTask('t1')
 
       expect(toast.error).toHaveBeenCalledWith('delete failed')
+    })
+
+    it('dispatches sprint:task-deleted custom event on success', async () => {
+      useSprintTasks.setState({ tasks: [makeTask('t1')] })
+      ;(window.api.sprint.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true })
+
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+      await useSprintTasks.getState().deleteTask('t1')
+
+      const deletedEvent = dispatchSpy.mock.calls.find(
+        ([ev]) => ev instanceof CustomEvent && (ev as CustomEvent).type === 'sprint:task-deleted'
+      )
+      expect(deletedEvent).toBeDefined()
+      const evt = deletedEvent![0] as CustomEvent
+      expect(evt.detail).toEqual({ taskId: 't1' })
+      dispatchSpy.mockRestore()
+    })
+  })
+
+  describe('createTask', () => {
+    beforeEach(() => {
+      ;(window.api.sprint.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeTask('server-id-1')
+      )
+      ;(window.api.sprint.generatePrompt as ReturnType<typeof vi.fn>).mockResolvedValue({
+        taskId: 'server-id-1',
+        spec: 'generated spec',
+        prompt: 'generated prompt',
+      })
+    })
+
+    it('optimistically adds task before IPC call resolves', async () => {
+      let resolveCreate!: (v: SprintTask) => void
+      ;(window.api.sprint.create as ReturnType<typeof vi.fn>).mockReturnValue(
+        new Promise<SprintTask>((res) => { resolveCreate = res })
+      )
+
+      const createPromise = useSprintTasks.getState().createTask({
+        title: 'New task',
+        repo: 'BDE',
+        priority: 1,
+      })
+
+      // Before IPC resolves, task should already be in list
+      expect(useSprintTasks.getState().tasks).toHaveLength(1)
+      expect(useSprintTasks.getState().tasks[0].title).toBe('New task')
+      expect(useSprintTasks.getState().tasks[0].id).toMatch(/^temp-/)
+
+      resolveCreate(makeTask('server-id-1'))
+      await createPromise
+    })
+
+    it('replaces temp task with server task on success', async () => {
+      await useSprintTasks.getState().createTask({
+        title: 'My task',
+        repo: 'BDE',
+        priority: 2,
+      })
+
+      const tasks = useSprintTasks.getState().tasks
+      // temp task should be replaced
+      expect(tasks.every((t) => !t.id.startsWith('temp-'))).toBe(true)
+      expect(tasks.some((t) => t.id === 'server-id-1')).toBe(true)
+    })
+
+    it('calls toast.success after successful create', async () => {
+      await useSprintTasks.getState().createTask({
+        title: 'My task',
+        repo: 'BDE',
+        priority: 1,
+      })
+
+      expect(toast.success).toHaveBeenCalledWith('Ticket created — saved to Backlog')
+    })
+
+    it('normalises repo to lowercase', async () => {
+      await useSprintTasks.getState().createTask({
+        title: 'Repo case test',
+        repo: 'BDE',
+        priority: 1,
+      })
+
+      // The IPC was called with the lowercased repo
+      expect(window.api.sprint.create).toHaveBeenCalledWith(
+        expect.objectContaining({ repo: 'bde' })
+      )
+    })
+
+    it('rolls back optimistic task and shows error on IPC failure', async () => {
+      ;(window.api.sprint.create as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('create failed')
+      )
+
+      await useSprintTasks.getState().createTask({
+        title: 'Failed task',
+        repo: 'BDE',
+        priority: 1,
+      })
+
+      expect(useSprintTasks.getState().tasks).toHaveLength(0)
+      expect(useSprintTasks.getState().pendingCreates.size).toBe(0)
+      expect(toast.error).toHaveBeenCalledWith('create failed')
+    })
+
+    it('skips spec generation when spec is already provided', async () => {
+      await useSprintTasks.getState().createTask({
+        title: 'Task with spec',
+        repo: 'BDE',
+        priority: 1,
+        spec: 'existing spec',
+      })
+
+      expect(window.api.sprint.generatePrompt).not.toHaveBeenCalled()
+    })
+
+    it('triggers spec generation for quick-mode tasks (no spec)', async () => {
+      // generatePrompt is mocked in beforeEach — just verify it gets called
+      await useSprintTasks.getState().createTask({
+        title: 'Quick task',
+        repo: 'BDE',
+        priority: 1,
+      })
+
+      // generatePrompt is called asynchronously (fire and forget), so we need to flush
+      await vi.waitFor(() => {
+        expect(window.api.sprint.generatePrompt).toHaveBeenCalled()
+      })
+    })
+
+    it('updates task with generated spec and shows toast.info', async () => {
+      await useSprintTasks.getState().createTask({
+        title: 'Quick task',
+        repo: 'BDE',
+        priority: 1,
+      })
+
+      await vi.waitFor(() => {
+        const task = useSprintTasks.getState().tasks.find((t) => t.id === 'server-id-1')
+        expect(task?.spec).toBe('generated spec')
+      })
+      expect(toast.info).toHaveBeenCalled()
+    })
+  })
+
+  describe('launchTask', () => {
+    const task = makeTask('t1', { status: 'backlog', repo: 'bde' })
+
+    beforeEach(() => {
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      ;(window.api.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({
+        bde: '/repos/bde',
+      })
+      ;(window.api.spawnLocalAgent as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'agent-99',
+        pid: 5678,
+        logPath: '/tmp/log',
+        interactive: false,
+      })
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockResolvedValue({})
+    })
+
+    it('spawns agent and updates task status to active on success', async () => {
+      await useSprintTasks.getState().launchTask(task)
+
+      expect(window.api.spawnLocalAgent).toHaveBeenCalledWith({
+        task: task.title,
+        repoPath: '/repos/bde',
+      })
+      const updated = useSprintTasks.getState().tasks[0]
+      expect(updated.status).toBe('active')
+      expect(updated.agent_run_id).toBe('agent-99')
+      expect(toast.success).toHaveBeenCalledWith('Agent launched')
+    })
+
+    it('uses task.spec as agent task when spec is set', async () => {
+      const taskWithSpec = makeTask('t2', { status: 'backlog', repo: 'bde', spec: 'do the thing' })
+      useSprintTasks.setState({ tasks: [taskWithSpec], pendingUpdates: new Map(), pendingCreates: new Set() })
+
+      await useSprintTasks.getState().launchTask(taskWithSpec)
+
+      expect(window.api.spawnLocalAgent).toHaveBeenCalledWith(
+        expect.objectContaining({ task: 'do the thing' })
+      )
+    })
+
+    it('shows error and returns early when repo path is not configured', async () => {
+      ;(window.api.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({})
+
+      await useSprintTasks.getState().launchTask(task)
+
+      expect(window.api.spawnLocalAgent).not.toHaveBeenCalled()
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('"bde"'))
+    })
+
+    it('blocks launch and shows toast when WIP limit is reached', async () => {
+      // Fill WIP_LIMIT_IN_PROGRESS (5) active tasks
+      const activeTasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask(`active-${i}`, { status: 'active', repo: 'bde' })
+      )
+      useSprintTasks.setState({
+        tasks: [...activeTasks, task],
+        pendingUpdates: new Map(),
+        pendingCreates: new Set(),
+      })
+
+      await useSprintTasks.getState().launchTask(task)
+
+      expect(window.api.spawnLocalAgent).not.toHaveBeenCalled()
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('In Progress is full'))
+    })
+
+    it('does not apply WIP limit when task is already active', async () => {
+      const alreadyActive = makeTask('t-active', { status: 'active', repo: 'bde' })
+      const otherActiveTasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask(`active-${i}`, { status: 'active', repo: 'bde' })
+      )
+      useSprintTasks.setState({
+        tasks: [...otherActiveTasks, alreadyActive],
+        pendingUpdates: new Map(),
+        pendingCreates: new Set(),
+      })
+
+      // Should not block even though there are 5 active tasks
+      await useSprintTasks.getState().launchTask(alreadyActive)
+
+      expect(window.api.spawnLocalAgent).toHaveBeenCalled()
+    })
+
+    it('shows error toast when spawnLocalAgent throws', async () => {
+      ;(window.api.spawnLocalAgent as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('spawn failed')
+      )
+
+      await useSprintTasks.getState().launchTask(task)
+
+      expect(toast.error).toHaveBeenCalledWith('spawn failed')
+    })
+  })
+
+  describe('loadData — advanced cases', () => {
+    it('preserves optimistic version of task with pending update during poll', async () => {
+      const optimistic = makeTask('t1', { status: 'active' })
+      const pendingUpdates = new Map([['t1', Date.now()]])
+      useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: new Set() })
+
+      // Poll returns stale version
+      const stale = makeTask('t1', { status: 'backlog' })
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([stale])
+
+      await useSprintTasks.getState().loadData()
+
+      // Optimistic version should be preserved
+      expect(useSprintTasks.getState().tasks[0].status).toBe('active')
+    })
+
+    it('expires pending update TTL and accepts incoming data', async () => {
+      const optimistic = makeTask('t1', { status: 'active' })
+      // Timestamp older than PENDING_UPDATE_TTL (2000ms)
+      const oldTs = Date.now() - 3000
+      const pendingUpdates = new Map([['t1', oldTs]])
+      useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: new Set() })
+
+      const incoming = makeTask('t1', { status: 'done' })
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([incoming])
+
+      await useSprintTasks.getState().loadData()
+
+      // TTL expired — incoming data should win
+      expect(useSprintTasks.getState().tasks[0].status).toBe('done')
+    })
+
+    it('preserves pending-create temp tasks not yet in DB', async () => {
+      const tempTask = makeTask('temp-999', { title: 'Brand new task' })
+      const pendingCreates = new Set(['temp-999'])
+      useSprintTasks.setState({ tasks: [tempTask], pendingUpdates: new Map(), pendingCreates })
+
+      // DB response does not include temp task yet
+      const dbTask = makeTask('server-1')
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([dbTask])
+
+      await useSprintTasks.getState().loadData()
+
+      const ids = useSprintTasks.getState().tasks.map((t) => t.id)
+      expect(ids).toContain('temp-999')
+      expect(ids).toContain('server-1')
+    })
+  })
+
+  describe('updateTask — error path', () => {
+    it('calls loadData to revert optimistic changes on failure', async () => {
+      const task = makeTask('t1', { status: 'backlog' })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('server error')
+      )
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([task])
+
+      await useSprintTasks.getState().updateTask('t1', { status: 'active' })
+
+      // After revert, loadData should have been called (task restored to backlog)
+      expect(window.api.sprint.list).toHaveBeenCalled()
+    })
+
+    it('removes taskId from pendingUpdates on failure', async () => {
+      const task = makeTask('t1')
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('fail')
+      )
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([task])
+
+      await useSprintTasks.getState().updateTask('t1', { status: 'active' })
+
+      expect(useSprintTasks.getState().pendingUpdates.has('t1')).toBe(false)
+    })
+  })
+
+  describe('mergeSseUpdate — pr_status auto-set', () => {
+    it('does not set pr_status when task is not done', () => {
+      const task = makeTask('t1', { status: 'active', pr_url: null, pr_status: null })
+      useSprintTasks.setState({ tasks: [task] })
+
+      useSprintTasks.getState().mergeSseUpdate({
+        taskId: 't1',
+        status: 'active',
+        pr_url: 'https://github.com/pr/1',
+      })
+
+      expect(useSprintTasks.getState().tasks[0].pr_status).toBeNull()
+    })
+
+    it('does not overwrite existing pr_status when done+pr_url', () => {
+      const task = makeTask('t1', { status: 'active', pr_url: null, pr_status: 'merged' })
+      useSprintTasks.setState({ tasks: [task] })
+
+      useSprintTasks.getState().mergeSseUpdate({
+        taskId: 't1',
+        status: 'done',
+        pr_url: 'https://github.com/pr/1',
+      })
+
+      // pr_status was already 'merged' — should not be overwritten to 'open'
+      expect(useSprintTasks.getState().tasks[0].pr_status).toBe('merged')
     })
   })
 })
