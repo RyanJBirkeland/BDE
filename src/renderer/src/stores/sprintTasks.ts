@@ -16,6 +16,18 @@ export interface CreateTicketInput {
   depends_on?: TaskDependency[]
 }
 
+/** Ensure depends_on is always a parsed array (Supabase JSONB may arrive as string). */
+function sanitizeDeps(task: SprintTask): SprintTask {
+  if (typeof task.depends_on === 'string') {
+    try {
+      task = { ...task, depends_on: JSON.parse(task.depends_on) }
+    } catch {
+      task = { ...task, depends_on: null }
+    }
+  }
+  return task
+}
+
 /** How long (ms) to protect an optimistic update from being overwritten by poll data. */
 const PENDING_UPDATE_TTL = 2000
 
@@ -53,7 +65,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     set({ loadError: null, loading: true })
     try {
       const result = (await window.api.sprint.list()) as SprintTask[]
-      const incoming = Array.isArray(result) ? result : []
+      const incoming = (Array.isArray(result) ? result : []).map(sanitizeDeps)
 
       set((s) => {
         const now = Date.now()
@@ -275,7 +287,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     set((s) => ({
       tasks: s.tasks.map((t) => {
         if (t.id !== update.taskId) return t
-        const merged = { ...t, ...update }
+        const merged = sanitizeDeps({ ...t, ...update } as SprintTask)
         if (merged.status === TASK_STATUS.DONE && merged.pr_url && !merged.pr_status) {
           merged.pr_status = PR_STATUS.OPEN
         }
@@ -288,5 +300,5 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     set((s) => ({ prMergedMap: updater(s.prMergedMap) }))
   },
 
-  setTasks: (tasks): void => set({ tasks }),
+  setTasks: (tasks): void => set({ tasks: tasks.map(sanitizeDeps) }),
 }))
