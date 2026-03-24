@@ -227,3 +227,67 @@ export async function handleRelease(
   }
   sendJson(res, 200, toCamelCase(released))
 }
+
+export async function handleUpdateDependencies(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  id: string
+): Promise<void> {
+  let body: unknown
+  try {
+    body = await parseBody(req, res)
+  } catch {
+    sendJson(res, 400, { error: 'Invalid JSON body' })
+    return
+  }
+
+  if (!body || typeof body !== 'object') {
+    sendJson(res, 400, { error: 'Request body must be a JSON object' })
+    return
+  }
+
+  const { dependsOn } = body as { dependsOn?: unknown }
+
+  // Validate dependsOn structure
+  if (dependsOn !== null && dependsOn !== undefined) {
+    if (!Array.isArray(dependsOn)) {
+      sendJson(res, 400, { error: 'dependsOn must be an array or null' })
+      return
+    }
+
+    for (const dep of dependsOn) {
+      if (!dep || typeof dep !== 'object') {
+        sendJson(res, 400, { error: 'Each dependency must be an object' })
+        return
+      }
+      const { id: depId, type } = dep as Record<string, unknown>
+      if (typeof depId !== 'string' || !depId.trim()) {
+        sendJson(res, 400, { error: 'Each dependency must have a valid id' })
+        return
+      }
+      if (type !== 'hard' && type !== 'soft') {
+        sendJson(res, 400, { error: 'Each dependency type must be "hard" or "soft"' })
+        return
+      }
+    }
+  }
+
+  // TODO: Add cycle detection validation here
+  // This requires access to the dependency index, which would need to be passed in
+  // or imported from agent-manager. For now, we'll allow the update and rely on
+  // the agent-manager to handle invalid graphs gracefully.
+
+  const snaked = toSnakeCase({ dependsOn })
+  let updated: Awaited<ReturnType<typeof updateTask>>
+  try {
+    updated = await updateTask(id, snaked)
+  } catch (err) {
+    sendJson(res, 500, { error: `Failed to update task dependencies ${id}: ${err instanceof Error ? err.message : String(err)}` })
+    return
+  }
+  if (!updated) {
+    sendJson(res, 404, { error: `Task ${id} not found` })
+    return
+  }
+  sendJson(res, 200, toCamelCase(updated))
+}

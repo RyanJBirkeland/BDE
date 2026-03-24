@@ -93,6 +93,12 @@ export async function route(
     return tasks.handleUpdateStatus(req, res, params['id'])
   }
 
+  // PATCH /queue/tasks/:id/dependencies
+  params = matchRoute('/queue/tasks/:id/dependencies', path)
+  if (method === 'PATCH' && params) {
+    return tasks.handleUpdateDependencies(req, res, params['id'])
+  }
+
   // POST /queue/tasks/:id/claim
   params = matchRoute('/queue/tasks/:id/claim', path)
   if (method === 'POST' && params) {

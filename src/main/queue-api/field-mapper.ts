@@ -12,10 +12,25 @@ const SNAKE_TO_CAMEL = Object.fromEntries(
   Object.entries(CAMEL_TO_SNAKE).map(([c, s]) => [s, c])
 )
 
+// JSONB columns that need parsing if they come back as strings
+const JSONB_FIELDS = new Set(['depends_on'])
+
 export function toCamelCase<T extends object>(row: T): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(row)) {
-    result[SNAKE_TO_CAMEL[key] ?? key] = value
+    const camelKey = SNAKE_TO_CAMEL[key] ?? key
+
+    // Parse JSONB fields if they're strings (can happen with manual DB updates)
+    if (JSONB_FIELDS.has(key) && typeof value === 'string') {
+      try {
+        result[camelKey] = JSON.parse(value)
+      } catch {
+        // If parse fails, pass through as-is (likely already null or undefined)
+        result[camelKey] = value
+      }
+    } else {
+      result[camelKey] = value
+    }
   }
   return result
 }
@@ -23,7 +38,11 @@ export function toCamelCase<T extends object>(row: T): Record<string, unknown> {
 export function toSnakeCase<T extends object>(fields: T): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(fields)) {
-    result[CAMEL_TO_SNAKE[key] ?? key] = value
+    const snakeKey = CAMEL_TO_SNAKE[key] ?? key
+
+    // Ensure JSONB fields stay as objects/arrays, not stringified
+    // (Supabase client handles JSONB serialization automatically)
+    result[snakeKey] = value
   }
   return result
 }

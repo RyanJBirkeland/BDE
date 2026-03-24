@@ -23,14 +23,7 @@ export async function spawnAgent(opts: {
     env.ANTHROPIC_API_KEY = token
   }
 
-  // Try SDK first, fall back to CLI
-  try {
-    const sdk = await import('@anthropic-ai/claude-agent-sdk')
-    return spawnViaSdk(sdk, opts, env, opts.logger)
-  } catch {
-    // SDK not available — use CLI fallback
-  }
-
+  // Use CLI directly — SDK query() is unreliable in packaged Electron builds
   return spawnViaCli(opts, env, opts.logger)
 }
 
@@ -99,6 +92,7 @@ function spawnViaCli(
       'stream-json',
       '--input-format',
       'stream-json',
+      '--verbose',
       '--model',
       opts.model,
       '--permission-mode',

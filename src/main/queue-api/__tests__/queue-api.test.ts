@@ -321,6 +321,81 @@ describe('Queue API', () => {
     })
   })
 
+  describe('PATCH /queue/tasks/:id/dependencies', () => {
+    it('updates task dependencies', async () => {
+      const updated = {
+        id: 'abc',
+        depends_on: [
+          { id: 'task-1', type: 'hard' },
+          { id: 'task-2', type: 'soft' }
+        ]
+      }
+      mockUpdateTask.mockResolvedValue(updated)
+
+      const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: [
+          { id: 'task-1', type: 'hard' },
+          { id: 'task-2', type: 'soft' }
+        ]
+      })
+      expect(status).toBe(200)
+      expect(body).toEqual({
+        id: 'abc',
+        dependsOn: [
+          { id: 'task-1', type: 'hard' },
+          { id: 'task-2', type: 'soft' }
+        ]
+      })
+      expect(mockUpdateTask).toHaveBeenCalledWith('abc', {
+        depends_on: [
+          { id: 'task-1', type: 'hard' },
+          { id: 'task-2', type: 'soft' }
+        ]
+      })
+    })
+
+    it('clears dependencies with null', async () => {
+      const updated = { id: 'abc', depends_on: null }
+      mockUpdateTask.mockResolvedValue(updated)
+
+      const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: null
+      })
+      expect(status).toBe(200)
+      expect(body).toEqual({ id: 'abc', dependsOn: null })
+    })
+
+    it('rejects non-array dependsOn', async () => {
+      const { status } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: 'invalid'
+      })
+      expect(status).toBe(400)
+    })
+
+    it('rejects invalid dependency structure', async () => {
+      const { status } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: [{ id: 'task-1' }] // missing type
+      })
+      expect(status).toBe(400)
+    })
+
+    it('rejects invalid dependency type', async () => {
+      const { status } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: [{ id: 'task-1', type: 'invalid' }]
+      })
+      expect(status).toBe(400)
+    })
+
+    it('returns 404 when task not found', async () => {
+      mockUpdateTask.mockResolvedValue(null)
+
+      const { status } = await request('PATCH', '/queue/tasks/missing/dependencies', {
+        dependsOn: []
+      })
+      expect(status).toBe(404)
+    })
+  })
+
   describe('GET /queue/events', () => {
     it('returns 200 SSE stream', async () => {
       // SSE streams never end, so we check the status code from the response
