@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import { GitBranch, FilePlus2, FileEdit, FileX2, FileCode2 } from 'lucide-react'
 import {
-  getPRDetail,
-  getPRFiles,
   getCheckRunsList,
-  getReviews,
-  getReviewComments,
-  getIssueComments,
   type PRDetail as PRDetailData,
   type PRFile,
   type CheckRun
 } from '../../lib/github-api'
+import {
+  cachedGetPRDetail,
+  cachedGetPRFiles,
+  cachedGetReviews,
+  cachedGetReviewComments,
+  cachedGetIssueComments,
+} from '../../lib/github-cache'
 import type { OpenPr, PrReview, PrComment, PrIssueComment } from '../../../../shared/types'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { renderMarkdown } from '../../lib/render-markdown'
@@ -80,14 +82,22 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
       setCommentsLoading(true)
 
       try {
-        const [prDetail, prFiles, prReviews, prReviewComments, prIssueComments] = await Promise.all([
-          getPRDetail(repo.owner, repo.label, pr.number),
-          getPRFiles(repo.owner, repo.label, pr.number),
-          getReviews(repo.owner, repo.label, pr.number),
-          getReviewComments(repo.owner, repo.label, pr.number),
-          getIssueComments(repo.owner, repo.label, pr.number)
-        ])
+        const [detailResult, filesResult, reviewsResult, reviewCommentsResult, issueCommentsResult] =
+          await Promise.allSettled([
+            cachedGetPRDetail(repo.owner, repo.label, pr.number),
+            cachedGetPRFiles(repo.owner, repo.label, pr.number),
+            cachedGetReviews(repo.owner, repo.label, pr.number),
+            cachedGetReviewComments(repo.owner, repo.label, pr.number),
+            cachedGetIssueComments(repo.owner, repo.label, pr.number)
+          ])
         if (controller.signal.aborted) return
+
+        const prDetail = detailResult.status === 'fulfilled' ? detailResult.value : null
+        const prFiles = filesResult.status === 'fulfilled' ? filesResult.value : []
+        const prReviews = reviewsResult.status === 'fulfilled' ? reviewsResult.value : []
+        const prReviewComments = reviewCommentsResult.status === 'fulfilled' ? reviewCommentsResult.value : []
+        const prIssueComments = issueCommentsResult.status === 'fulfilled' ? issueCommentsResult.value : []
+
         setDetail(prDetail)
         setFiles(prFiles)
         setReviews(prReviews)
@@ -97,9 +107,11 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
         setReviewsLoading(false)
         setLoading(false)
 
-        const checkRuns = await getCheckRunsList(repo.owner, repo.label, prDetail.head.sha)
-        if (controller.signal.aborted) return
-        setChecks(checkRuns)
+        if (prDetail) {
+          const checkRuns = await getCheckRunsList(repo.owner, repo.label, prDetail.head.sha)
+          if (controller.signal.aborted) return
+          setChecks(checkRuns)
+        }
       } catch {
         if (!controller.signal.aborted) setDetail(null)
       } finally {

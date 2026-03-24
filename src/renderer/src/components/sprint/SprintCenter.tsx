@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
@@ -32,18 +33,26 @@ export type { SprintTask }
 // --- Component ---
 
 export function SprintCenter() {
-  // --- Store state ---
-  const tasks = useSprintTasks((s) => s.tasks)
-  const loading = useSprintTasks((s) => s.loading)
-  const loadError = useSprintTasks((s) => s.loadError)
-  const repoFilter = useSprintUI((s) => s.repoFilter)
-  const selectedTaskId = useSprintUI((s) => s.selectedTaskId)
-  const logDrawerTaskId = useSprintUI((s) => s.logDrawerTaskId)
-  const prMergedMap = useSprintTasks((s) => s.prMergedMap)
-  const generatingIds = useSprintUI((s) => s.generatingIds)
-  const selectedTaskIds = useSprintUI((s) => s.selectedTaskIds)
-
+  // --- Store state (aggregated selectors to reduce subscription overhead) ---
+  const { tasks, loading, loadError, prMergedMap } = useSprintTasks(
+    useShallow((s) => ({
+      tasks: s.tasks,
+      loading: s.loading,
+      loadError: s.loadError,
+      prMergedMap: s.prMergedMap,
+    }))
+  )
   const loadData = useSprintTasks((s) => s.loadData)
+
+  const { repoFilter, selectedTaskId, logDrawerTaskId, generatingIds, selectedTaskIds } = useSprintUI(
+    useShallow((s) => ({
+      repoFilter: s.repoFilter,
+      selectedTaskId: s.selectedTaskId,
+      logDrawerTaskId: s.logDrawerTaskId,
+      generatingIds: s.generatingIds,
+      selectedTaskIds: s.selectedTaskIds,
+    }))
+  )
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)

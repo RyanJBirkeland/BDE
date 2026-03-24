@@ -13,6 +13,7 @@ import {
 import { useUIStore, View } from '../../stores/ui'
 import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
 import { tokens } from '../../design-system/tokens'
+import { VIEW_LOADERS } from '../panels/PanelLeaf'
 
 const NAV_ITEMS: { view: View; icon: typeof Terminal; label: string; shortcut: string }[] = [
   { view: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', shortcut: '⌘1' },
@@ -116,6 +117,7 @@ export function ActivityBar(_props: ActivityBarProps): React.JSX.Element {
               e.stopPropagation()
               handleClick(view)
             }}
+            onMouseEnter={() => VIEW_LOADERS[view]?.()}
             onContextMenu={(e) => handleContextMenu(e, view)}
             aria-label={label}
             aria-current={focusedView === view ? 'page' : undefined}

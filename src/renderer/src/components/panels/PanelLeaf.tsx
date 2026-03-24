@@ -21,6 +21,21 @@ const TaskWorkbenchView = React.lazy(() => import('../../views/TaskWorkbenchView
 const GitTreeView = React.lazy(() => import('../../views/GitTreeView'))
 
 // ---------------------------------------------------------------------------
+// Lazy view preloading map — trigger on hover in ActivityBar
+// ---------------------------------------------------------------------------
+
+export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
+  dashboard: () => import('../../views/DashboardView'),
+  sprint: () => import('../../views/SprintView'),
+  memory: () => import('../../views/MemoryView'),
+  cost: () => import('../../views/CostView'),
+  settings: () => import('../../views/SettingsView'),
+  'pr-station': () => import('../../views/PRStationView'),
+  'task-workbench': () => import('../../views/TaskWorkbenchView'),
+  git: () => import('../../views/GitTreeView'),
+}
+
+// ---------------------------------------------------------------------------
 // View registry
 // ---------------------------------------------------------------------------
 

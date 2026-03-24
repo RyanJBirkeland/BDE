@@ -17,6 +17,15 @@ vi.mock('../../../lib/github-api', () => ({
   getIssueComments: (...args: unknown[]) => mockGetIssueComments(...args),
 }))
 
+vi.mock('../../../lib/github-cache', () => ({
+  cachedGetPRDetail: (...args: unknown[]) => mockGetPRDetail(...args),
+  cachedGetPRFiles: (...args: unknown[]) => mockGetPRFiles(...args),
+  cachedGetReviews: (...args: unknown[]) => mockGetReviews(...args),
+  cachedGetReviewComments: (...args: unknown[]) => mockGetReviewComments(...args),
+  cachedGetIssueComments: (...args: unknown[]) => mockGetIssueComments(...args),
+  invalidateCache: vi.fn(),
+}))
+
 vi.mock('../../../lib/render-markdown', () => ({ renderMarkdown: (s: string) => s ?? '' }))
 
 vi.mock('../PRStationChecks', () => ({
