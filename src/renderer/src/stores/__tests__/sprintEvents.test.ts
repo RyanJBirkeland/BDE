@@ -167,7 +167,7 @@ describe('initTaskOutputListener', () => {
   it('works with TaskOutputEvent shapes as well as AgentEvent shapes', () => {
     let captured: ((payload: { agentId: string; event: TaskOutputEvent }) => void) | null = null
     vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
-      captured = cb as typeof captured
+      captured = cb as unknown as typeof captured
       return () => {}
     })
 
