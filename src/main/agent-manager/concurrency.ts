@@ -13,8 +13,9 @@ export function makeConcurrencyState(maxSlots: number): ConcurrencyState {
   return { maxSlots, effectiveSlots: maxSlots, activeCount: 0, recoveryDueAt: null, consecutiveRateLimits: 0, atFloor: false }
 }
 
-export function availableSlots(s: ConcurrencyState): number {
-  return Math.max(0, s.effectiveSlots - s.activeCount)
+/** @param activeCount - pass activeAgents.size to avoid stale counter races */
+export function availableSlots(s: ConcurrencyState, activeCount?: number): number {
+  return Math.max(0, s.effectiveSlots - (activeCount ?? s.activeCount))
 }
 
 export function applyBackpressure(s: ConcurrencyState, now: number): ConcurrencyState {

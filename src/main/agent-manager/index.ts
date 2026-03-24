@@ -225,7 +225,7 @@ export function createAgentManager(
     }).catch((err) =>
       logger.warn(`[agent-manager] Failed to create agent record for ${agentRunId}: ${err}`)
     )
-    concurrency = { ...concurrency, activeCount: concurrency.activeCount + 1 }
+    // activeCount is derived from activeAgents.size — no manual increment needed
 
     // Consume messages
     let exitCode: number | undefined
@@ -263,7 +263,7 @@ export function createAgentManager(
     }
 
     activeAgents.delete(task.id)
-    concurrency = { ...concurrency, activeCount: Math.max(0, concurrency.activeCount - 1) }
+    // activeCount is derived from activeAgents.size — no manual decrement needed
 
     // Update agent run record with final state
     updateAgentMeta(agentRunId, {
@@ -323,7 +323,7 @@ export function createAgentManager(
   // ---- drainLoop ----
 
   async function drainLoop(): Promise<void> {
-    logger.info(`[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency)})`)
+    logger.info(`[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`)
     if (shuttingDown) return
 
     // Skip if orphan recovery is currently running to prevent race conditions
@@ -341,7 +341,7 @@ export function createAgentManager(
       logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
     }
 
-    const available = availableSlots(concurrency)
+    const available = availableSlots(concurrency, activeAgents.size)
     if (available <= 0) return
 
     try {
@@ -422,9 +422,8 @@ export function createAgentManager(
       logger.warn(`[agent-manager] Watchdog killing task ${agent.taskId}: ${verdict}`)
       agent.handle.abort()
 
-      // Delete agent and decrement concurrency immediately to prevent race with runAgent cleanup
+      // Delete agent — activeCount is derived from activeAgents.size
       activeAgents.delete(agent.taskId)
-      concurrency = { ...concurrency, activeCount: Math.max(0, concurrency.activeCount - 1) }
 
       // Update task based on verdict
       const now = new Date().toISOString()
@@ -543,7 +542,7 @@ export function createAgentManager(
     return {
       running,
       shuttingDown,
-      concurrency: { ...concurrency },
+      concurrency: { ...concurrency, activeCount: activeAgents.size },
       activeAgents: [...activeAgents.values()].map((a) => ({
         taskId: a.taskId,
         agentRunId: a.agentRunId,

@@ -18,7 +18,7 @@ import { listAgentRunsByTaskId, readLog } from '../agent-history'
 import { insertEventBatch, queryEvents } from '../data/event-queries'
 import { getDb } from '../db'
 import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-contract'
-import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES } from '../../shared/queue-api-contract'
+import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
 
 const sseBroadcaster = createSseBroadcaster()
@@ -583,7 +583,21 @@ async function handleUpdateTask(
     return
   }
 
-  const snaked = toSnakeCase(body as Record<string, unknown>)
+  // Filter to safe fields only — status, claimed_by, depends_on must use dedicated endpoints
+  const raw = body as Record<string, unknown>
+  const filtered: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(raw)) {
+    if (GENERAL_PATCH_FIELDS.has(k)) {
+      filtered[k] = v
+    }
+  }
+
+  if (Object.keys(filtered).length === 0) {
+    sendJson(res, 400, { error: 'No valid fields to update' })
+    return
+  }
+
+  const snaked = toSnakeCase(filtered)
   const updated = await updateTask(id, snaked)
   if (!updated) {
     sendJson(res, 404, { error: `Task ${id} not found` })

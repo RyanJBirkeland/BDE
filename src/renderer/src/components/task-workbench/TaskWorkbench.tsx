@@ -88,7 +88,7 @@ export function TaskWorkbench() {
         </div>
       )}
 
-      <Group direction="horizontal" style={{ flex: 1 }}>
+      <Group orientation="horizontal" style={{ flex: 1 }}>
         <Panel defaultSize={copilotVisible ? 65 : 100} minSize={40}>
           <WorkbenchForm onSendCopilotMessage={handleSendFromForm} />
         </Panel>

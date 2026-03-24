@@ -1,14 +1,13 @@
 import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
-import { getSpecsRoot } from '../paths'
 import { readFile } from 'fs/promises'
-import { resolve } from 'path'
 import type { SprintTask, TaskTemplate, ClaimedTask } from '../../shared/types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
 import { notifySprintMutation } from './sprint-listeners'
 import {
   generatePrompt,
+  validateSpecPath,
   type GeneratePromptRequest,
   type GeneratePromptResponse,
 } from './sprint-spec'
@@ -40,18 +39,6 @@ export type { CreateTaskInput, QueueStats }
 // Re-export listener and spec APIs so existing deep imports keep working
 export { onSprintMutation } from './sprint-listeners'
 export { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
-
-function validateSpecPath(relativePath: string): string {
-  const specsRoot = getSpecsRoot()
-  if (!specsRoot) {
-    throw new Error('Cannot resolve spec path: BDE repo not configured')
-  }
-  const resolved = resolve(specsRoot, relativePath)
-  if (!resolved.startsWith(specsRoot + '/') && resolved !== specsRoot) {
-    throw new Error(`Path traversal blocked: "${relativePath}" resolves outside ${specsRoot}`)
-  }
-  return resolved
-}
 
 // --- Thin async wrappers that delegate to data layer (Supabase) ---
 

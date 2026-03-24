@@ -22,16 +22,20 @@ export function buildAgentEnv(): Record<string, string | undefined> {
 }
 
 let _cachedOAuthToken: string | null = null
-let _tokenLoaded = false
+let _tokenLoadedAt = 0
+const TOKEN_TTL_MS = 30 * 60 * 1000 // 30 minutes
 
-/** Reads OAuth token from ~/.bde/oauth-token. Cached after first call. */
+/** Reads OAuth token from ~/.bde/oauth-token. Cached for 30 minutes. */
 export function getOAuthToken(): string | null {
-  if (_tokenLoaded) return _cachedOAuthToken
-  _tokenLoaded = true
+  const now = Date.now()
+  if (_tokenLoadedAt > 0 && now - _tokenLoadedAt < TOKEN_TTL_MS) return _cachedOAuthToken
+  _tokenLoadedAt = now
   const tokenPath = join(homedir(), '.bde', 'oauth-token')
   try {
     if (existsSync(tokenPath)) {
       _cachedOAuthToken = readFileSync(tokenPath, 'utf8').trim()
+    } else {
+      _cachedOAuthToken = null
     }
   } catch {
     _cachedOAuthToken = null
@@ -53,5 +57,5 @@ export function buildAgentEnvWithAuth(): Record<string, string | undefined> {
 export function _resetEnvCache(): void {
   _cachedEnv = null
   _cachedOAuthToken = null
-  _tokenLoaded = false
+  _tokenLoadedAt = 0
 }

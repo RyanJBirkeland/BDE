@@ -19,6 +19,10 @@ function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
     status: 'running',
     logPath: '/tmp/log',
     source: 'bde',
+    costUsd: null,
+    tokensIn: null,
+    tokensOut: null,
+    sprintTaskId: null,
     ...overrides,
   }
 }

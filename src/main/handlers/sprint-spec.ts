@@ -24,7 +24,7 @@ export interface GeneratePromptResponse {
 
 // --- Path validation ---
 
-function validateSpecPath(relativePath: string): string {
+export function validateSpecPath(relativePath: string): string {
   const specsRoot = getSpecsRoot()
   if (!specsRoot) {
     throw new Error('Cannot resolve spec path: BDE repo not configured')

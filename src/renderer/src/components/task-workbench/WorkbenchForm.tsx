@@ -76,22 +76,6 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     return () => clearTimeout(t)
   }, [])
 
-  // Keyboard shortcuts: Cmd+Enter to submit
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && e.metaKey) {
-        e.preventDefault()
-        const structural = useTaskWorkbenchStore.getState().structuralChecks
-        const titlePasses = structural.some((c) => c.id === 'title-present' && c.status === 'pass')
-        if (titlePasses && !submitting) {
-          handleSubmit('queue')
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [submitting, handleSubmit])
-
   const handleSubmit = useCallback(async (action: 'backlog' | 'queue') => {
     setSubmitting(true)
     try {
@@ -182,6 +166,22 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     if (!title.trim()) return
     onSendCopilotMessage(`Research the ${repo} codebase for: ${title}`)
   }, [title, repo, onSendCopilotMessage])
+
+  // Keyboard shortcuts: Cmd+Enter to submit
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && e.metaKey) {
+        e.preventDefault()
+        const structural = useTaskWorkbenchStore.getState().structuralChecks
+        const titlePasses = structural.some((c) => c.id === 'title-present' && c.status === 'pass')
+        if (titlePasses && !submitting) {
+          handleSubmit('queue')
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [submitting, handleSubmit])
 
   const inputStyle = {
     padding: tokens.space[2], background: tokens.color.surface,

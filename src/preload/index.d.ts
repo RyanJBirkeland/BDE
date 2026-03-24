@@ -139,6 +139,15 @@ declare global {
         kill: (taskId: string) => Promise<IpcResult<'agent-manager:kill'>>
       }
 
+      // Task Workbench
+      workbench: {
+        chat: (...args: IpcArgs<'workbench:chat'>) => Promise<IpcResult<'workbench:chat'>>
+        generateSpec: (...args: IpcArgs<'workbench:generateSpec'>) => Promise<IpcResult<'workbench:generateSpec'>>
+        checkSpec: (...args: IpcArgs<'workbench:checkSpec'>) => Promise<IpcResult<'workbench:checkSpec'>>
+        checkOperational: (...args: IpcArgs<'workbench:checkOperational'>) => Promise<IpcResult<'workbench:checkOperational'>>
+        researchRepo: (...args: IpcArgs<'workbench:researchRepo'>) => Promise<IpcResult<'workbench:researchRepo'>>
+      }
+
       // Terminal PTY
       terminal: {
         create: (...args: IpcArgs<'terminal:create'>) => Promise<IpcResult<'terminal:create'>>
