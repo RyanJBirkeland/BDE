@@ -147,11 +147,13 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       { cwd: worktreePath, env: buildAgentEnv() }
     )
     const trimmed = listOut.trim()
-    if (trimmed) {
+    if (trimmed && trimmed !== 'null') {
       const existing = JSON.parse(trimmed)
-      prUrl = existing.url
-      prNumber = existing.number
-      logger.info(`[completion] Task ${taskId}: PR already exists for branch ${branch}: ${prUrl}`)
+      if (existing && existing.url && existing.number) {
+        prUrl = existing.url
+        prNumber = existing.number
+        logger.info(`[completion] Task ${taskId}: PR already exists for branch ${branch}: ${prUrl}`)
+      }
     }
   } catch (err) {
     logger.warn(`[completion] Failed to check for existing PR on branch ${branch}: ${err}`)
@@ -171,7 +173,31 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       prNumber = parsed.prNumber
       logger.info(`[completion] Task ${taskId}: created new PR ${prUrl}`)
     } catch (err) {
-      logger.warn(`[completion] gh pr create failed for task ${taskId}: ${err}`)
+      const errMsg = String(err)
+      // If PR creation failed because one already exists (race condition), try to fetch it
+      if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
+        logger.info(`[completion] Task ${taskId}: PR creation failed because one already exists, fetching existing PR`)
+        try {
+          const { stdout: retryListOut } = await execFile(
+            'gh',
+            ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
+            { cwd: worktreePath, env: buildAgentEnv() }
+          )
+          const retryTrimmed = retryListOut.trim()
+          if (retryTrimmed && retryTrimmed !== 'null') {
+            const existing = JSON.parse(retryTrimmed)
+            if (existing && existing.url && existing.number) {
+              prUrl = existing.url
+              prNumber = existing.number
+              logger.info(`[completion] Task ${taskId}: found existing PR ${prUrl}`)
+            }
+          }
+        } catch (retryErr) {
+          logger.warn(`[completion] Failed to fetch existing PR after creation failure: ${retryErr}`)
+        }
+      } else {
+        logger.warn(`[completion] gh pr create failed for task ${taskId}: ${err}`)
+      }
       // User can create PR manually from the pushed branch — do not throw
     }
   }
