@@ -67,7 +67,7 @@ describe('MemoryView', () => {
 
     await waitFor(() => {
       expect(window.api.readMemoryFile).toHaveBeenCalledWith('notes.md')
-      const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+      const textarea = document.querySelector('textarea')! as HTMLTextAreaElement
       expect(textarea.value).toBe('Hello, world!')
     })
   })
@@ -88,7 +88,7 @@ describe('MemoryView', () => {
     await user.click(screen.getByText('notes.md'))
 
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(document.querySelector('textarea')!).toBeInTheDocument()
     })
 
     // Before editing, Save button is disabled
@@ -96,7 +96,7 @@ describe('MemoryView', () => {
     expect(saveButton).toBeDisabled()
 
     // Edit the textarea — triggers dirty state
-    const textarea = screen.getByRole('textbox')
+    const textarea = document.querySelector('textarea')!
     await user.clear(textarea)
     await user.type(textarea, 'Changed content')
 
@@ -197,10 +197,10 @@ describe('MemoryView', () => {
     await user.click(screen.getByText('notes.md'))
 
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(document.querySelector('textarea')!).toBeInTheDocument()
     })
 
-    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+    const textarea = document.querySelector('textarea')! as HTMLTextAreaElement
     await user.clear(textarea)
     await user.type(textarea, 'Updated content')
 
@@ -227,22 +227,22 @@ describe('MemoryView', () => {
     await user.click(screen.getByText('notes.md'))
 
     await waitFor(() => {
-      expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('Original content')
+      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe('Original content')
     })
 
-    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+    const textarea = document.querySelector('textarea')! as HTMLTextAreaElement
     await user.clear(textarea)
     await user.type(textarea, 'Edited content')
 
     await waitFor(() => {
-      expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('Edited content')
+      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe('Edited content')
     })
 
     const discardButton = screen.getByRole('button', { name: 'Discard' })
     await user.click(discardButton)
 
     await waitFor(() => {
-      expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('Original content')
+      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe('Original content')
     })
   })
 
@@ -261,10 +261,10 @@ describe('MemoryView', () => {
     await user.click(screen.getByText('notes.md'))
 
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(document.querySelector('textarea')!).toBeInTheDocument()
     })
 
-    const textarea = screen.getByRole('textbox')
+    const textarea = document.querySelector('textarea')!
     await user.clear(textarea)
     await user.type(textarea, 'Saved via shortcut')
 

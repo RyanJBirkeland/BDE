@@ -65,11 +65,11 @@ describe('MemoryView — unsaved changes guard', () => {
     // Open file-a
     await user.click(screen.getByText('file-a.md'))
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(document.querySelector('textarea')!).toBeInTheDocument()
     })
 
     // Edit the content to make it dirty
-    const textarea = screen.getByRole('textbox')
+    const textarea = document.querySelector('textarea')!
     await user.clear(textarea)
     await user.type(textarea, 'Modified content')
 
@@ -93,10 +93,10 @@ describe('MemoryView — unsaved changes guard', () => {
 
     await user.click(screen.getByText('file-a.md'))
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(document.querySelector('textarea')!).toBeInTheDocument()
     })
 
-    const textarea = screen.getByRole('textbox')
+    const textarea = document.querySelector('textarea')!
     await user.clear(textarea)
     await user.type(textarea, 'Edited')
 
@@ -128,10 +128,10 @@ describe('MemoryView — unsaved changes guard', () => {
 
     await user.click(screen.getByText('file-a.md'))
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(document.querySelector('textarea')!).toBeInTheDocument()
     })
 
-    const textarea = screen.getByRole('textbox')
+    const textarea = document.querySelector('textarea')!
     await user.clear(textarea)
     await user.type(textarea, 'Edited')
 
@@ -160,10 +160,10 @@ describe('MemoryView — unsaved changes guard', () => {
 
     await user.click(screen.getByText('file-a.md'))
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(document.querySelector('textarea')!).toBeInTheDocument()
     })
 
-    const textarea = screen.getByRole('textbox')
+    const textarea = document.querySelector('textarea')!
     await user.clear(textarea)
     await user.type(textarea, 'Dirty')
 
