@@ -2,15 +2,10 @@ import { execFile } from 'node:child_process'
 import { mkdirSync, existsSync, readdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs'
 import { promisify } from 'node:util'
 import path from 'node:path'
+import { buildAgentEnv } from '../env-utils'
 import type { Logger } from './types'
 
 const execFileAsync = promisify(execFile)
-
-// Ensure git/gh are findable in Electron's minimal PATH
-const EXEC_ENV = {
-  ...process.env,
-  PATH: ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`, process.env.PATH].filter(Boolean).join(':'),
-}
 
 export function branchNameForTask(title: string): string {
   const slug = title
@@ -96,11 +91,11 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
   }
 
   try {
-    await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: EXEC_ENV })
+    await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: buildAgentEnv() })
   } catch (err) {
     // Clean up partial worktree on failure
     try {
-      await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: EXEC_ENV })
+      await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: buildAgentEnv() })
     } catch {
       // best-effort
     }
