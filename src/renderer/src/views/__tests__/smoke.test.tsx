@@ -85,6 +85,7 @@ vi.mock('../../stores/chat', () => ({
 vi.mock('../../lib/github-api', () => ({
   listOpenPRs: vi.fn().mockResolvedValue([]),
   mergePR: vi.fn().mockResolvedValue(undefined),
+  getPrMergeability: vi.fn().mockResolvedValue(null),
 }))
 
 // Mock heavy child components
@@ -123,6 +124,32 @@ vi.mock('../../components/terminal/TerminalPane', () => ({
 
 vi.mock('../../components/terminal/FindBar', () => ({
   FindBar: () => null,
+}))
+
+vi.mock('../../components/pr-station/PRStationList', () => ({
+  PRStationList: () => <div data-testid="pr-station-list" />,
+}))
+
+vi.mock('../../components/pr-station/PRStationDetail', () => ({
+  PRStationDetail: () => <div data-testid="pr-station-detail" />,
+}))
+
+vi.mock('../../components/pr-station/PRStationActions', () => ({
+  PRStationActions: () => <div data-testid="pr-station-actions" />,
+}))
+
+vi.mock('../../components/pr-station/PRStationDiff', () => ({
+  PRStationDiff: () => <div data-testid="pr-station-diff" />,
+}))
+
+vi.mock('../../components/pr-station/ReviewSubmitDialog', () => ({
+  ReviewSubmitDialog: () => null,
+}))
+
+vi.mock('../../stores/pendingReview', () => ({
+  usePendingReviewStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ pendingComments: new Map() })
+  ),
 }))
 
 // Mock window.api for views that use it — assign directly to preserve window methods
@@ -190,6 +217,7 @@ import MemoryView from '../MemoryView'
 import CostView from '../CostView'
 import SettingsView from '../SettingsView'
 import { TerminalView } from '../TerminalView'
+import PRStationView from '../PRStationView'
 
 // ---------- Tests ----------
 
@@ -227,5 +255,11 @@ describe('View smoke tests', () => {
   it('TerminalView renders mocked terminal pane', () => {
     render(<TerminalView />)
     expect(screen.getByTestId('terminal-pane')).toBeInTheDocument()
+  })
+
+  it('PRStationView renders without crashing', () => {
+    const { container } = render(<PRStationView />)
+    expect(container.firstChild).toBeInTheDocument()
+    expect(container.innerHTML).not.toBe('')
   })
 })
