@@ -21,7 +21,7 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
   const [body, setBody] = useState('')
   const [event, setEvent] = useState<ReviewEvent>('COMMENT')
   const [submitting, setSubmitting] = useState(false)
-  const pendingComments = usePendingReviewStore((s) => s.pendingComments.get(prKey) ?? EMPTY_COMMENTS)
+  const pendingComments = usePendingReviewStore((s) => s.pendingComments[prKey] ?? EMPTY_COMMENTS)
   const clearPending = usePendingReviewStore((s) => s.clearPending)
 
   const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)

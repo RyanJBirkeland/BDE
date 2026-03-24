@@ -366,8 +366,7 @@ function PlainDiffContent({
                               <div className="diff-comment-widget__body">{pc.body}</div>
                               {onRemovePendingComment && (
                                 <button
-                                  className="diff-selection-trigger"
-                                  style={{ position: 'static', width: 'auto', height: 'auto', borderRadius: 'var(--bde-radius-sm)', fontSize: 'var(--bde-size-xs)', padding: '2px 8px', background: 'transparent', color: 'var(--bde-danger-text)', cursor: 'pointer' }}
+                                  className="diff-pending-comment__remove"
                                   onClick={() => onRemovePendingComment(pc.id)}
                                 >
                                   Remove
@@ -397,7 +396,6 @@ interface DiffViewerProps {
   pendingComments?: PendingComment[]
   selectedRange?: LineRange | null
   onSelectRange?: (range: LineRange | null) => void
-  onCommentTrigger?: (range: LineRange) => void
   onAddComment?: (range: LineRange, body: string) => void
   onRemovePendingComment?: (commentId: string) => void
 }
@@ -408,7 +406,6 @@ function DiffViewer({
   pendingComments,
   selectedRange = null,
   onSelectRange,
-  onCommentTrigger: _onCommentTrigger,
   onAddComment,
   onRemovePendingComment
 }: DiffViewerProps): React.JSX.Element {

@@ -11,7 +11,7 @@ export interface PendingComment {
 }
 
 interface PendingReviewStore {
-  pendingComments: Map<string, PendingComment[]>
+  pendingComments: Record<string, PendingComment[]>
   addComment: (prKey: string, comment: PendingComment) => void
   updateComment: (prKey: string, commentId: string, body: string) => void
   removeComment: (prKey: string, commentId: string) => void
@@ -20,40 +20,39 @@ interface PendingReviewStore {
 }
 
 export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
-  pendingComments: new Map(),
+  pendingComments: {},
 
   addComment: (prKey, comment) =>
-    set((state) => {
-      const next = new Map(state.pendingComments)
-      const list = [...(next.get(prKey) ?? []), comment]
-      next.set(prKey, list)
-      return { pendingComments: next }
-    }),
+    set((state) => ({
+      pendingComments: {
+        ...state.pendingComments,
+        [prKey]: [...(state.pendingComments[prKey] ?? []), comment],
+      },
+    })),
 
   updateComment: (prKey, commentId, body) =>
-    set((state) => {
-      const next = new Map(state.pendingComments)
-      const list = (next.get(prKey) ?? []).map((c) =>
-        c.id === commentId ? { ...c, body } : c
-      )
-      next.set(prKey, list)
-      return { pendingComments: next }
-    }),
+    set((state) => ({
+      pendingComments: {
+        ...state.pendingComments,
+        [prKey]: (state.pendingComments[prKey] ?? []).map((c) =>
+          c.id === commentId ? { ...c, body } : c
+        ),
+      },
+    })),
 
   removeComment: (prKey, commentId) =>
-    set((state) => {
-      const next = new Map(state.pendingComments)
-      const list = (next.get(prKey) ?? []).filter((c) => c.id !== commentId)
-      next.set(prKey, list)
-      return { pendingComments: next }
-    }),
+    set((state) => ({
+      pendingComments: {
+        ...state.pendingComments,
+        [prKey]: (state.pendingComments[prKey] ?? []).filter((c) => c.id !== commentId),
+      },
+    })),
 
   clearPending: (prKey) =>
     set((state) => {
-      const next = new Map(state.pendingComments)
-      next.delete(prKey)
-      return { pendingComments: next }
+      const { [prKey]: _, ...rest } = state.pendingComments
+      return { pendingComments: rest }
     }),
 
-  getPendingCount: (prKey) => (get().pendingComments.get(prKey) ?? []).length,
+  getPendingCount: (prKey) => (get().pendingComments[prKey] ?? []).length,
 }))

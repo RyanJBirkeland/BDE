@@ -309,7 +309,7 @@
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: var(--bde-header-gradient);
 }
 
 .sprint-center__title-row {
@@ -647,7 +647,7 @@
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: var(--bde-header-gradient);
 }
 
 .spec-drawer__header-info h3 {
@@ -950,7 +950,7 @@
   left: 12px;
   right: 12px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: var(--bde-header-gradient);
 }
 
 .log-drawer__title { font-size: 12px; font-weight: 600; color: var(--bde-text); }

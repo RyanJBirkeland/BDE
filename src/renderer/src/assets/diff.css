@@ -38,7 +38,7 @@
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: var(--bde-header-gradient);
 }
 
 .diff-view__repos {
@@ -735,6 +735,20 @@
 /* -- Pending comment badge -- */
 .diff-comment-widget--pending {
   border-color: var(--bde-warning);
+}
+
+.diff-pending-comment__remove {
+  border: none;
+  border-radius: var(--bde-radius-sm);
+  font-size: var(--bde-size-xs);
+  padding: 2px 8px;
+  background: transparent;
+  color: var(--bde-danger-text);
+  cursor: pointer;
+}
+
+.diff-pending-comment__remove:hover {
+  background: var(--bde-surface);
 }
 
 .diff-comment-widget__pending-badge {

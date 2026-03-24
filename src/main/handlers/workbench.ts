@@ -8,15 +8,9 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { getSupabaseClient } from '../data/supabase-client'
 import { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
+import { buildAgentEnv } from '../env-utils'
 
 const execFileAsync = promisify(execFile)
-
-function augmentedEnv(): NodeJS.ProcessEnv {
-  const env = { ...process.env }
-  const extraPaths = ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`]
-  env.PATH = [...extraPaths, ...(env.PATH ?? '').split(':')].filter(Boolean).join(':')
-  return env
-}
 
 export function buildChatPrompt(
   messages: Array<{ role: string; content: string }>,
@@ -226,7 +220,7 @@ export function registerWorkbenchHandlers(): void {
       const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
         encoding: 'utf-8',
         timeout: 60_000,
-        env: augmentedEnv(),
+        env: buildAgentEnv(),
       })
       return { content: stdout.trim() || 'No response received.' }
     } catch (err) {
@@ -241,7 +235,7 @@ export function registerWorkbenchHandlers(): void {
       const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
         encoding: 'utf-8',
         timeout: 60_000,
-        env: augmentedEnv(),
+        env: buildAgentEnv(),
       })
       return { spec: stdout.trim() || `# ${input.title}\n\n(No spec generated)` }
     } catch (err) {
@@ -270,7 +264,7 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
       const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
         encoding: 'utf-8',
         timeout: 45_000,
-        env: augmentedEnv(),
+        env: buildAgentEnv(),
       })
       const parsed = JSON.parse(stdout.trim())
       return {

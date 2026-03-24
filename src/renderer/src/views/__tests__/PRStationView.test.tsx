@@ -6,7 +6,7 @@ Element.prototype.scrollIntoView = vi.fn()
 
 vi.mock('../../stores/pendingReview', () => ({
   usePendingReviewStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ pendingComments: new Map() })
+    selector({ pendingComments: {} })
   ),
 }))
 
@@ -193,7 +193,7 @@ describe('PRStationView', () => {
   it('shows pending review banner when pendingComments exist', async () => {
     const { usePendingReviewStore } = await import('../../stores/pendingReview')
     vi.mocked(usePendingReviewStore).mockImplementation((selector) =>
-      selector({ pendingComments: new Map([['BDE#42', [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }]]]) } as any)
+      selector({ pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] } } as any)
     )
 
     render(<PRStationView />)
@@ -209,7 +209,7 @@ describe('PRStationView', () => {
   it('opens review submit dialog when Submit Review is clicked', async () => {
     const { usePendingReviewStore } = await import('../../stores/pendingReview')
     vi.mocked(usePendingReviewStore).mockImplementation((selector) =>
-      selector({ pendingComments: new Map([['BDE#42', [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }]]]) } as any)
+      selector({ pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] } } as any)
     )
 
     render(<PRStationView />)
@@ -225,7 +225,7 @@ describe('PRStationView', () => {
   it('closes review submit dialog when closed', async () => {
     const { usePendingReviewStore } = await import('../../stores/pendingReview')
     vi.mocked(usePendingReviewStore).mockImplementation((selector) =>
-      selector({ pendingComments: new Map([['BDE#42', [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }]]]) } as any)
+      selector({ pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] } } as any)
     )
 
     render(<PRStationView />)
