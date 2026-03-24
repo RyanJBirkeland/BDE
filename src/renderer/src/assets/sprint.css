@@ -207,7 +207,7 @@
 .pr-confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bde-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,7 +220,7 @@
   border-radius: var(--bde-radius-lg);
   padding: 20px;
   min-width: 360px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--bde-shadow-lg);
   animation: bde-scale-fade-in 150ms ease;
 }
 
@@ -535,7 +535,7 @@
 .task-card--dragging {
   opacity: 0.9;
   transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--bde-shadow-md);
   cursor: grabbing;
 }
 
@@ -624,7 +624,7 @@
 .spec-drawer__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--bde-overlay);
   z-index: 49;
 }
 
@@ -1006,7 +1006,7 @@
 .new-ticket-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--bde-overlay);
   z-index: 99;
 }
 
@@ -1390,7 +1390,7 @@ tr:hover .bde-task-table__action-btn--done {
   border-radius: var(--bde-radius-md, 6px);
   padding: 4px 0;
   min-width: 140px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--bde-shadow-sm);
 }
 
 .bde-priority-popover__option {
@@ -1511,7 +1511,7 @@ tr:hover .bde-task-table__action-btn--done {
 .conflict-drawer__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--bde-overlay);
   z-index: 49;
 }
 
@@ -1724,7 +1724,7 @@ tr:hover .bde-task-table__action-btn--done {
 .health-drawer__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--bde-overlay);
   z-index: 49;
 }
 

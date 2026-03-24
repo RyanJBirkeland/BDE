@@ -126,7 +126,7 @@
   /* elevation-1: glass sidebar */
   background: var(--glass-tint-dark, var(--bde-surface));
   border-right: 1px solid var(--border, var(--bde-border));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.20);
+  box-shadow: var(--bde-shadow-sm);
 }
 
 .activity-bar__nav {

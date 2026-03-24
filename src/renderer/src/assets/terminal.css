@@ -300,7 +300,7 @@
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md, 6px);
   padding: 4px 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--bde-shadow-sm);
 }
 
 .terminal-find__input {
@@ -349,7 +349,7 @@
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md, 6px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--bde-shadow-md);
   padding: 4px 0;
   margin-top: 4px;
   display: flex;
@@ -368,7 +368,7 @@
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md, 6px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--bde-shadow-md);
   padding: 4px 0;
   margin-top: 4px;
   display: flex;
