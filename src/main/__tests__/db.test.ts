@@ -52,6 +52,7 @@ describe('db schema migrations', () => {
       'idx_agent_events_agent',
       'idx_agent_runs_finished',
       'idx_agent_runs_pid',
+      'idx_agent_runs_sprint_task',
       'idx_agent_runs_status',
     ])
   })
@@ -133,5 +134,13 @@ describe('db schema migrations', () => {
   it('migration versions are unique', () => {
     const versions = migrations.map((m) => m.version)
     expect(new Set(versions).size).toBe(versions.length)
+  })
+
+  it('migration v13 adds sprint_task_id column to agent_runs', () => {
+    const db = new Database(':memory:')
+    runMigrations(db)
+    const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map(c => c.name)
+    expect(cols).toContain('sprint_task_id')
+    db.close()
   })
 })
