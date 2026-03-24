@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useTaskWorkbenchStore, type CheckResult } from '../stores/taskWorkbench'
+import { MIN_SPEC_LENGTH, MIN_HEADING_COUNT } from '../../../shared/spec-validation'
 
 // Tier 1: Structural checks (pure, synchronous, runs on every form change)
 
@@ -37,7 +38,7 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
   if (specLen === 0) {
     specStatus = 'fail'
     specMsg = 'Spec is empty'
-  } else if (specLen <= 50) {
+  } else if (specLen <= MIN_SPEC_LENGTH) {
     specStatus = 'warn'
     specMsg = 'Spec is very short — consider adding more detail'
   } else {
@@ -50,7 +51,7 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
   const headingCount = (form.spec.match(/^## /gm) ?? []).length
   let structureStatus: 'pass' | 'warn' | 'fail'
   let structureMsg: string
-  if (headingCount >= 2) {
+  if (headingCount >= MIN_HEADING_COUNT) {
     structureStatus = 'pass'
     structureMsg = `${headingCount} sections`
   } else if (headingCount === 1) {

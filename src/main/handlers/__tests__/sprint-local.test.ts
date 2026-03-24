@@ -82,6 +82,19 @@ vi.mock('../../queue-api/router', () => ({
   sseBroadcaster: { broadcast: vi.fn() },
 }))
 
+// Mock spec-semantic-check
+const mockCheckSpecSemantic = vi.fn().mockResolvedValue({
+  passed: true,
+  hasFails: false,
+  hasWarns: false,
+  results: {},
+  failMessages: [],
+  warnMessages: [],
+})
+vi.mock('../../spec-semantic-check', () => ({
+  checkSpecSemantic: (...args: unknown[]) => mockCheckSpecSemantic(...args),
+}))
+
 import { registerSprintLocalHandlers } from '../sprint-local'
 import { safeHandle } from '../../ipc-utils'
 import {
@@ -171,7 +184,8 @@ describe('sprint:create handler', () => {
   })
 
   it('creates a task and fires mutation notification', async () => {
-    const input = { title: 'New task', repo: 'BDE', status: 'queued' }
+    const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
+    const input = { title: 'New task', repo: 'BDE', status: 'queued', spec: validSpec }
     const created = { id: 'abc', ...input }
     vi.mocked(_createTask).mockResolvedValue(created as any)
 
@@ -203,6 +217,7 @@ describe('sprint:update handler', () => {
   })
 
   it('leaves status as queued when dependencies are satisfied', async () => {
+    const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const { createDependencyIndex } = await import('../../agent-manager/dependency-index')
     vi.mocked(createDependencyIndex).mockReturnValue({
       areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true }),
@@ -210,6 +225,9 @@ describe('sprint:update handler', () => {
 
     vi.mocked(_getTask).mockResolvedValue({
       id: '1',
+      title: 'Task 1',
+      repo: 'bde',
+      spec: validSpec,
       status: 'backlog',
       depends_on: [{ id: 'dep1', type: 'hard' }],
     } as any)
@@ -227,13 +245,17 @@ describe('sprint:update handler', () => {
   })
 
   it('transitions status to blocked when dependencies are unsatisfied', async () => {
+    const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const { createDependencyIndex } = await import('../../agent-manager/dependency-index')
     vi.mocked(createDependencyIndex).mockReturnValue({
-      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false }),
+      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['dep1'] }),
     } as any)
 
     vi.mocked(_getTask).mockResolvedValue({
       id: '1',
+      title: 'Task 1',
+      repo: 'bde',
+      spec: validSpec,
       status: 'backlog',
       depends_on: [{ id: 'dep1', type: 'hard' }],
     } as any)
@@ -246,7 +268,7 @@ describe('sprint:update handler', () => {
     const handler = captureHandler('sprint:update')
     await handler(mockEvent, '1', { status: 'queued' })
 
-    expect(_updateTask).toHaveBeenCalledWith('1', { status: 'blocked' })
+    expect(_updateTask).toHaveBeenCalledWith('1', expect.objectContaining({ status: 'blocked' }))
   })
 })
 
@@ -403,5 +425,110 @@ describe('sprint:readLog handler', () => {
     const result = await handler(mockEvent, 'agent-1', 0)
 
     expect(result).toEqual({ content: '', status: 'failed', nextByte: 0 })
+  })
+})
+
+// -------------------------------------------------------------------------
+// Spec quality guardrail tests
+// -------------------------------------------------------------------------
+
+describe('sprint:create spec validation', () => {
+  const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCheckSpecSemantic.mockResolvedValue({
+      passed: true, hasFails: false, hasWarns: false,
+      results: {}, failMessages: [], warnMessages: [],
+    })
+  })
+
+  it('succeeds for backlog task with empty spec', async () => {
+    vi.mocked(_createTask).mockResolvedValue({ id: 'new-1', title: 'Fix', repo: 'bde', status: 'backlog' } as any)
+
+    const handler = captureHandler('sprint:create')
+    const result = await handler(mockEvent, { title: 'Fix', repo: 'bde' })
+
+    expect(result.id).toBe('new-1')
+  })
+
+  it('succeeds for backlog task with title and repo', async () => {
+    vi.mocked(_createTask).mockResolvedValue({ id: 'new-1', title: 'Fix', repo: 'bde', status: 'backlog' } as any)
+
+    const handler = captureHandler('sprint:create')
+    const result = await handler(mockEvent, { title: 'Fix', repo: 'bde', status: 'backlog' })
+
+    expect(result.id).toBe('new-1')
+  })
+
+  it('rejects non-backlog task with no spec', async () => {
+    const handler = captureHandler('sprint:create')
+
+    await expect(handler(mockEvent, { title: 'Fix', repo: 'bde', status: 'queued' }))
+      .rejects.toThrow(/spec is required/)
+  })
+
+  it('rejects task with empty title', async () => {
+    const handler = captureHandler('sprint:create')
+
+    await expect(handler(mockEvent, { title: '', repo: 'bde', spec: validSpec }))
+      .rejects.toThrow(/title is required/)
+  })
+})
+
+describe('sprint:update spec validation on queue transition', () => {
+  const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCheckSpecSemantic.mockResolvedValue({
+      passed: true, hasFails: false, hasWarns: false,
+      results: {}, failMessages: [], warnMessages: [],
+    })
+  })
+
+  it('throws when transitioning to queued with bad spec', async () => {
+    vi.mocked(_getTask).mockResolvedValue({
+      id: 'abc', title: 'Test', repo: 'bde', spec: 'too short', status: 'backlog',
+    } as any)
+
+    const handler = captureHandler('sprint:update')
+    await expect(handler(mockEvent, 'abc', { status: 'queued' }))
+      .rejects.toThrow(/spec quality checks failed/)
+  })
+
+  it('succeeds when transitioning to queued with valid spec and semantic pass', async () => {
+    vi.mocked(_getTask).mockResolvedValue({
+      id: 'abc', title: 'Test', repo: 'bde', spec: validSpec, status: 'backlog',
+    } as any)
+    vi.mocked(_updateTask).mockResolvedValue({ id: 'abc', status: 'queued' } as any)
+
+    const handler = captureHandler('sprint:update')
+    const result = await handler(mockEvent, 'abc', { status: 'queued' })
+    expect(result).toEqual({ id: 'abc', status: 'queued' })
+  })
+
+  it('does NOT trigger validation for non-queued transitions', async () => {
+    vi.mocked(_updateTask).mockResolvedValue({ id: 'abc', status: 'done' } as any)
+
+    const handler = captureHandler('sprint:update')
+    await handler(mockEvent, 'abc', { status: 'done' })
+
+    expect(_getTask).not.toHaveBeenCalled()
+    expect(mockCheckSpecSemantic).not.toHaveBeenCalled()
+  })
+
+  it('throws when semantic check fails', async () => {
+    vi.mocked(_getTask).mockResolvedValue({
+      id: 'abc', title: 'Test', repo: 'bde', spec: validSpec, status: 'backlog',
+    } as any)
+    mockCheckSpecSemantic.mockResolvedValue({
+      passed: false, hasFails: true, hasWarns: false,
+      results: {}, failMessages: ['clarity: Too vague'], warnMessages: [],
+    })
+
+    const handler = captureHandler('sprint:update')
+    await expect(handler(mockEvent, 'abc', { status: 'queued' }))
+      .rejects.toThrow(/semantic checks failed/)
   })
 })

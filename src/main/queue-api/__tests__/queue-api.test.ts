@@ -66,6 +66,14 @@ vi.mock('../../settings', () => ({
 }))
 
 // ---------------------------------------------------------------------------
+// Mock spec-semantic-check — AI validation via Claude CLI
+// ---------------------------------------------------------------------------
+const mockCheckSpecSemantic = vi.fn()
+vi.mock('../../spec-semantic-check', () => ({
+  checkSpecSemantic: (...args: unknown[]) => mockCheckSpecSemantic(...args),
+}))
+
+// ---------------------------------------------------------------------------
 // Start server on a random port for tests
 // ---------------------------------------------------------------------------
 import { startQueueApi, stopQueueApi } from '../server'
@@ -139,6 +147,18 @@ beforeEach(() => {
   mockGetDb.mockReturnValue({}) // default db mock
   mockGetTasksWithDependencies.mockResolvedValue([]) // default empty tasks list
   mockDeleteTask.mockResolvedValue(undefined) // default delete success
+  mockCheckSpecSemantic.mockResolvedValue({
+    passed: true,
+    hasFails: false,
+    hasWarns: false,
+    results: {
+      clarity: { status: 'pass', message: 'Clear' },
+      scope: { status: 'pass', message: 'Good' },
+      filesExist: { status: 'pass', message: 'OK' },
+    },
+    failMessages: [],
+    warnMessages: [],
+  }) // default semantic pass
 })
 
 // ---------------------------------------------------------------------------
@@ -380,7 +400,7 @@ describe('Queue API', () => {
 
     it('rejects invalid status', async () => {
       const { status } = await request('PATCH', '/queue/tasks/abc/status', {
-        status: 'queued',
+        status: 'invented',
       })
       expect(status).toBe(400)
     })
@@ -949,6 +969,151 @@ describe('Queue API', () => {
       const res = await request('GET', '/queue/tasks/task-abc/events')
       const body = res.body as { hasMore: boolean }
       expect(body.hasMore).toBe(true)
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Spec quality guardrail tests
+  // -------------------------------------------------------------------------
+  describe('Spec quality guardrails', () => {
+    const validSpec = `${'x'.repeat(60)}\n## Problem\nSomething is broken\n## Solution\nFix it`
+
+    describe('POST /queue/tasks structural validation', () => {
+      it('rejects task with no spec (non-backlog)', async () => {
+        const { status, body } = await request('POST', '/queue/tasks', {
+          title: 'Test task',
+          repo: 'bde',
+          status: 'queued',
+        })
+        expect(status).toBe(400)
+        const b = body as { details: string[] }
+        expect(b.details).toContainEqual(expect.stringContaining('spec is required'))
+      })
+
+      it('rejects task with 20-char spec (non-backlog)', async () => {
+        const { status, body } = await request('POST', '/queue/tasks', {
+          title: 'Test task',
+          repo: 'bde',
+          status: 'queued',
+          spec: '## A\n## B\nshort spec',
+        })
+        expect(status).toBe(400)
+        const b = body as { details: string[] }
+        expect(b.details).toContainEqual(expect.stringContaining('minimum'))
+      })
+
+      it('creates task with valid spec (50+ chars, 2+ headings)', async () => {
+        const created = { id: 'new-1', title: 'Test task', repo: 'bde', status: 'backlog', spec: validSpec }
+        mockCreateTask.mockResolvedValue(created)
+
+        const { status } = await request('POST', '/queue/tasks', {
+          title: 'Test task',
+          repo: 'bde',
+          spec: validSpec,
+        })
+        expect(status).toBe(201)
+      })
+
+      it('allows backlog task without spec', async () => {
+        const created = { id: 'new-1', title: 'Test task', repo: 'bde', status: 'backlog' }
+        mockCreateTask.mockResolvedValue(created)
+
+        const { status } = await request('POST', '/queue/tasks', {
+          title: 'Test task',
+          repo: 'bde',
+        })
+        expect(status).toBe(201)
+      })
+    })
+
+    describe('PATCH /queue/tasks/:id/status to queued', () => {
+      it('rejects queue transition on task with bad spec', async () => {
+        mockGetTask.mockResolvedValue({
+          id: 'abc',
+          title: 'Test',
+          repo: 'bde',
+          spec: 'too short',
+          status: 'backlog',
+        })
+
+        const { status, body } = await request('PATCH', '/queue/tasks/abc/status', {
+          status: 'queued',
+        })
+        expect(status).toBe(400)
+        const b = body as { error: string }
+        expect(b.error).toContain('spec quality checks failed')
+      })
+
+      it('allows queue transition with skipValidation=true on bad spec', async () => {
+        mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'queued' })
+
+        const { status } = await request(
+          'PATCH',
+          '/queue/tasks/abc/status?skipValidation=true',
+          { status: 'queued' }
+        )
+        expect(status).toBe(200)
+      })
+
+      it('does NOT trigger semantic checks for non-queued status transitions', async () => {
+        mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'active' })
+
+        await request('PATCH', '/queue/tasks/abc/status', {
+          status: 'active',
+        })
+
+        expect(mockCheckSpecSemantic).not.toHaveBeenCalled()
+      })
+
+      it('allows queue transition when spec is valid and semantic passes', async () => {
+        mockGetTask.mockResolvedValue({
+          id: 'abc',
+          title: 'Test',
+          repo: 'bde',
+          spec: validSpec,
+          status: 'backlog',
+        })
+        mockCheckSpecSemantic.mockResolvedValue({
+          passed: true,
+          hasFails: false,
+          hasWarns: false,
+          results: {},
+          failMessages: [],
+          warnMessages: [],
+        })
+        mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'queued' })
+
+        const { status } = await request('PATCH', '/queue/tasks/abc/status', {
+          status: 'queued',
+        })
+        expect(status).toBe(200)
+      })
+
+      it('rejects queue transition when semantic check fails', async () => {
+        mockGetTask.mockResolvedValue({
+          id: 'abc',
+          title: 'Test',
+          repo: 'bde',
+          spec: validSpec,
+          status: 'backlog',
+        })
+        mockCheckSpecSemantic.mockResolvedValue({
+          passed: false,
+          hasFails: true,
+          hasWarns: false,
+          results: {},
+          failMessages: ['clarity: Too vague'],
+          warnMessages: [],
+        })
+
+        const { status, body } = await request('PATCH', '/queue/tasks/abc/status', {
+          status: 'queued',
+        })
+        expect(status).toBe(400)
+        const b = body as { error: string; details: string[] }
+        expect(b.error).toContain('semantic')
+        expect(b.details).toContainEqual(expect.stringContaining('clarity'))
+      })
     })
   })
 })

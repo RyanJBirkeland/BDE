@@ -23,7 +23,7 @@ export interface ClaimRequest {
 }
 
 export interface StatusUpdateRequest {
-  status: 'active' | 'done' | 'failed' | 'cancelled' | 'error'
+  status: 'queued' | 'active' | 'done' | 'failed' | 'cancelled' | 'error'
   prUrl?: string
   prNumber?: number
   prStatus?: 'open' | 'merged' | 'closed' | 'draft'
@@ -37,7 +37,7 @@ export interface StatusUpdateRequest {
 }
 
 /** Runner-writable status values for PATCH /queue/tasks/:id/status */
-export const RUNNER_WRITABLE_STATUSES = new Set(['active', 'done', 'failed', 'cancelled', 'error'])
+export const RUNNER_WRITABLE_STATUSES = new Set(['queued', 'active', 'done', 'failed', 'cancelled', 'error'])
 
 /** Allowed fields in a status update patch */
 export const STATUS_UPDATE_FIELDS = new Set([

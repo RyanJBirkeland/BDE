@@ -10,6 +10,7 @@ import { getSupabaseClient } from '../data/supabase-client'
 import { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
 import { buildAgentEnv } from '../env-utils'
 import type { AgentManager } from '../agent-manager'
+import { checkSpecSemantic } from '../spec-semantic-check'
 
 const execFileAsync = promisify(execFile)
 
@@ -272,35 +273,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
 
   // --- AI-powered spec checks ---
   safeHandle('workbench:checkSpec', async (_e, input: { title: string; repo: string; spec: string }) => {
-    const prompt = `You are reviewing a coding agent spec for quality. Return ONLY valid JSON (no markdown fencing).
-
-Title: "${input.title}"
-Repo: ${input.repo}
-Spec:
-${input.spec}
-
-Assess the spec on three dimensions. For each, return status ("pass", "warn", or "fail") and a brief message.
-
-1. clarity: Is the spec clear and actionable? Can an AI agent execute it without ambiguity?
-2. scope: Is this achievable by one agent in one session? Or too broad?
-3. filesExist: Are file paths specific and plausible? (You cannot verify they exist, so check if they look like real paths.)
-
-Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"...","message":"..."},"filesExist":{"status":"...","message":"..."}}`
-
-    try {
-      const result = await runClaudePrint(prompt)
-      const parsed = JSON.parse(result)
-      return {
-        clarity: parsed.clarity ?? { status: 'warn', message: 'Unable to assess clarity' },
-        scope: parsed.scope ?? { status: 'warn', message: 'Unable to assess scope' },
-        filesExist: parsed.filesExist ?? { status: 'warn', message: 'Unable to check files' },
-      }
-    } catch {
-      return {
-        clarity: { status: 'warn' as const, message: 'AI check unavailable' },
-        scope: { status: 'warn' as const, message: 'AI check unavailable' },
-        filesExist: { status: 'warn' as const, message: 'AI check unavailable' },
-      }
-    }
+    const summary = await checkSpecSemantic(input)
+    return summary.results // Returns { clarity, scope, filesExist } — same shape as before
   })
 }

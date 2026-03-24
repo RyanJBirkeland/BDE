@@ -19,6 +19,8 @@ import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS } 
 import { toCamelCase, toSnakeCase } from './field-mapper'
 import { detectCycle } from '../agent-manager/dependency-index'
 import type { TaskDependency } from '../../shared/types'
+import { validateStructural } from '../../shared/spec-validation'
+import { checkSpecSemantic } from '../spec-semantic-check'
 
 /**
  * Validates task dependencies for cycle detection and ID existence.
@@ -139,6 +141,40 @@ export async function handleCreateTask(
     return
   }
 
+  // Structural spec validation
+  const bodyObj = body as Record<string, unknown>
+  const { spec } = bodyObj
+  const structural = validateStructural({
+    title: title as string,
+    repo: repo as string,
+    spec: typeof spec === 'string' ? spec : null,
+    status: typeof bodyObj.status === 'string' ? bodyObj.status : 'backlog',
+  })
+  if (!structural.valid) {
+    sendJson(res, 400, { error: 'Spec quality checks failed', details: structural.errors })
+    return
+  }
+
+  // If creating with status=queued, also run semantic checks
+  if (bodyObj.status === 'queued' && typeof spec === 'string') {
+    const url = new URL(req.url ?? '', 'http://localhost')
+    const skipValidation = url.searchParams.get('skipValidation') === 'true'
+    if (!skipValidation) {
+      const semantic = await checkSpecSemantic({
+        title: title as string,
+        repo: repo as string,
+        spec: spec as string,
+      })
+      if (!semantic.passed) {
+        sendJson(res, 400, {
+          error: 'Cannot create task with queued status — semantic checks failed',
+          details: semantic.failMessages,
+        })
+        return
+      }
+    }
+  }
+
   // Validate depends_on if provided
   if (depends_on !== null && depends_on !== undefined) {
     if (!Array.isArray(depends_on)) {
@@ -253,6 +289,51 @@ export async function handleUpdateStatus(
   if (patch.status && !RUNNER_WRITABLE_STATUSES.has(patch.status)) {
     sendJson(res, 400, { error: `Invalid status: ${patch.status}` })
     return
+  }
+
+  // If transitioning to queued, run spec quality checks (unless skipValidation=true)
+  if (patch.status === 'queued') {
+    const url = new URL(req.url ?? '', 'http://localhost')
+    const skipValidation = url.searchParams.get('skipValidation') === 'true'
+
+    if (!skipValidation) {
+      // Fetch the task to get its spec
+      const task = await getTask(id)
+      if (!task) {
+        sendJson(res, 404, { error: `Task ${id} not found` })
+        return
+      }
+
+      // Run structural checks first (fast, synchronous)
+      const structural = validateStructural({
+        title: task.title,
+        repo: task.repo,
+        spec: task.spec,
+      })
+      if (!structural.valid) {
+        sendJson(res, 400, {
+          error: 'Cannot queue task — spec quality checks failed',
+          details: structural.errors,
+        })
+        return
+      }
+
+      // Run semantic checks (async, calls Claude CLI)
+      if (task.spec) {
+        const semantic = await checkSpecSemantic({
+          title: task.title,
+          repo: task.repo,
+          spec: task.spec,
+        })
+        if (!semantic.passed) {
+          sendJson(res, 400, {
+            error: 'Cannot queue task — semantic spec checks failed',
+            details: semantic.failMessages,
+          })
+          return
+        }
+      }
+    }
   }
 
   // Filter to allowed fields only

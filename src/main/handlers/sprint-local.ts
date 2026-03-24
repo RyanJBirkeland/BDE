@@ -2,6 +2,7 @@ import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
 import { readFile } from 'fs/promises'
 import type { SprintTask, TaskTemplate, ClaimedTask } from '../../shared/types'
+import { validateStructural } from '../../shared/spec-validation'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
 import { notifySprintMutation } from './sprint-listeners'
@@ -99,6 +100,17 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
+    // Structural validation — relaxed for backlog (only title + repo required)
+    const structural = validateStructural({
+      title: task.title,
+      repo: task.repo,
+      spec: task.spec ?? null,
+      status: task.status ?? 'backlog',
+    })
+    if (!structural.valid) {
+      throw new Error(`Spec quality checks failed: ${structural.errors.join('; ')}`)
+    }
+
     // Check if task has dependencies and should be auto-blocked
     if (task.depends_on && task.depends_on.length > 0 && (task.status === 'queued' || !task.status)) {
       const { createDependencyIndex } = await import('../agent-manager/dependency-index')
@@ -124,36 +136,61 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown>) => {
-    // If transitioning to queued, check if dependencies are satisfied
-    if (patch.status === 'queued') {
-      const task = await _getTask(id)
-      if (task) {
-        const taskDeps = task.depends_on
-        if (taskDeps && taskDeps.length > 0) {
-          const { createDependencyIndex } = await import(
-            '../agent-manager/dependency-index'
-          )
-          const idx = createDependencyIndex()
-          const allTasks = await _listTasks()
-          const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-          const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
-            id,
-            taskDeps,
-            (depId) => statusMap.get(depId),
-          )
-          if (!satisfied && blockedBy.length > 0) {
-            // Auto-block and record which dependencies are blocking, preserving user notes
-            const existingNotes = (task.notes || '').replace(/^\[auto-block\] .*\n?/, '').trim()
-            const blockNote = `[auto-block] Blocked by: ${blockedBy.join(', ')}`
-            patch = {
-              ...patch,
-              status: 'blocked',
-              notes: existingNotes ? `${blockNote}\n${existingNotes}` : blockNote
-            }
+    const task = patch.status === 'queued' ? await _getTask(id) : null
+
+    // If transitioning to queued, run quality checks
+    if (patch.status === 'queued' && task) {
+      // Structural check
+      const structural = validateStructural({
+        title: task.title,
+        repo: task.repo,
+        spec: (patch.spec as string) ?? task.spec ?? null,
+      })
+      if (!structural.valid) {
+        throw new Error(`Cannot queue task — spec quality checks failed: ${structural.errors.join('; ')}`)
+      }
+
+      // Semantic check
+      const specText = (patch.spec as string) ?? task.spec
+      if (specText) {
+        const { checkSpecSemantic } = await import('../spec-semantic-check')
+        const semantic = await checkSpecSemantic({
+          title: task.title,
+          repo: task.repo,
+          spec: specText,
+        })
+        if (!semantic.passed) {
+          throw new Error(`Cannot queue task — semantic checks failed: ${semantic.failMessages.join('; ')}`)
+        }
+      }
+
+      // Dependency check (existing logic)
+      const taskDeps = task.depends_on
+      if (taskDeps && taskDeps.length > 0) {
+        const { createDependencyIndex } = await import(
+          '../agent-manager/dependency-index'
+        )
+        const idx = createDependencyIndex()
+        const allTasks = await _listTasks()
+        const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+        const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
+          id,
+          taskDeps,
+          (depId) => statusMap.get(depId),
+        )
+        if (!satisfied && blockedBy.length > 0) {
+          // Auto-block and record which dependencies are blocking, preserving user notes
+          const existingNotes = (task.notes || '').replace(/^\[auto-block\] .*\n?/, '').trim()
+          const blockNote = `[auto-block] Blocked by: ${blockedBy.join(', ')}`
+          patch = {
+            ...patch,
+            status: 'blocked',
+            notes: existingNotes ? `${blockNote}\n${existingNotes}` : blockNote
           }
         }
       }
     }
+
     return updateTask(id, patch)
   })
 
