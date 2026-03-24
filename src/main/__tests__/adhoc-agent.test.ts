@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock dependencies before imports
-vi.mock('../agent-manager/sdk-adapter', () => ({
-  spawnAgent: vi.fn(),
+const mockQuery = vi.fn()
+vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
+  query: (...args: unknown[]) => mockQuery(...args),
 }))
 vi.mock('../agent-history', () => ({
   importAgent: vi.fn(),
@@ -17,25 +18,24 @@ vi.mock('../db', () => ({
 vi.mock('../broadcast', () => ({
   broadcast: vi.fn(),
 }))
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return { ...actual, existsSync: vi.fn(() => false), readFileSync: vi.fn() }
+})
 
 import { spawnAdhocAgent } from '../adhoc-agent'
-import { spawnAgent } from '../agent-manager/sdk-adapter'
 import { importAgent, updateAgentMeta } from '../agent-history'
 import { broadcast } from '../broadcast'
 
-function createMockHandle(messages: unknown[] = []) {
-  let aborted = false
-  return {
-    messages: (async function* () {
-      for (const msg of messages) {
-        if (aborted) return
-        yield msg
-      }
-    })(),
-    sessionId: 'test-session',
-    abort() { aborted = true },
-    async steer(_msg: string) {},
+function createMockQueryHandle(messages: unknown[] = []) {
+  const handle = {
+    [Symbol.asyncIterator]: async function* () {
+      for (const msg of messages) yield msg
+    },
+    close: vi.fn(),
+    streamInput: vi.fn(),
   }
+  return handle
 }
 
 describe('spawnAdhocAgent', () => {
@@ -55,12 +55,12 @@ describe('spawnAdhocAgent', () => {
       status: 'running',
       source: 'adhoc',
       logPath: '/tmp/logs/agent-1/log.jsonl',
-    })
+    } as any)
   })
 
-  it('spawns agent via SDK adapter and returns result', async () => {
-    const handle = createMockHandle([])
-    vi.mocked(spawnAgent).mockResolvedValue(handle)
+  it('calls sdk.query and returns result with agent ID', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
 
     const result = await spawnAdhocAgent({
       task: 'fix the bug',
@@ -68,24 +68,36 @@ describe('spawnAdhocAgent', () => {
       model: 'sonnet',
     })
 
-    expect(spawnAgent).toHaveBeenCalledWith({
-      prompt: 'fix the bug',
-      cwd: '/tmp/test-repo',
-      model: 'sonnet',
-    })
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.anything(),
+        options: expect.objectContaining({ model: 'sonnet', cwd: '/tmp/test-repo' }),
+      }),
+    )
     expect(importAgent).toHaveBeenCalled()
     expect(result.id).toBe('agent-1')
     expect(result.interactive).toBe(true)
     expect(result.logPath).toBe('/tmp/logs/agent-1/log.jsonl')
   })
 
+  it('defaults model to claude-sonnet-4-5 when not provided', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({ model: 'claude-sonnet-4-5' }),
+      }),
+    )
+  })
+
   it('broadcasts agent:started event', async () => {
-    const handle = createMockHandle([])
-    vi.mocked(spawnAgent).mockResolvedValue(handle)
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-
-    // Wait for background message loop to process
     await new Promise((r) => setTimeout(r, 50))
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
@@ -94,9 +106,39 @@ describe('spawnAdhocAgent', () => {
     })
   })
 
+  it('maps assistant text messages to agent:text events', async () => {
+    const handle = createMockQueryHandle([
+      { type: 'assistant', message: { content: [{ type: 'text', text: 'Hello' }] } },
+    ])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(broadcast).toHaveBeenCalledWith('agent:event', {
+      agentId: 'agent-1',
+      event: expect.objectContaining({ type: 'agent:text', text: 'Hello' }),
+    })
+  })
+
+  it('maps tool_use blocks to agent:tool_call events', async () => {
+    const handle = createMockQueryHandle([
+      { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { path: '/tmp' } }] } },
+    ])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(broadcast).toHaveBeenCalledWith('agent:event', {
+      agentId: 'agent-1',
+      event: expect.objectContaining({ type: 'agent:tool_call', tool: 'Read' }),
+    })
+  })
+
   it('broadcasts agent:completed when messages end', async () => {
-    const handle = createMockHandle([])
-    vi.mocked(spawnAgent).mockResolvedValue(handle)
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
     await new Promise((r) => setTimeout(r, 50))
@@ -108,55 +150,13 @@ describe('spawnAdhocAgent', () => {
     expect(updateAgentMeta).toHaveBeenCalledWith('agent-1', expect.objectContaining({ status: 'done' }))
   })
 
-  it('maps assistant text messages to agent:text events', async () => {
-    const handle = createMockHandle([
-      { type: 'assistant', message: { content: [{ type: 'text', text: 'Hello' }] } },
-    ])
-    vi.mocked(spawnAgent).mockResolvedValue(handle)
-
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-    await new Promise((r) => setTimeout(r, 50))
-
-    expect(broadcast).toHaveBeenCalledWith('agent:event', {
-      agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:text', text: 'Hello' }),
-    })
-  })
-
-  it('defaults model to claude-sonnet-4-5 when not provided', async () => {
-    const handle = createMockHandle([])
-    vi.mocked(spawnAgent).mockResolvedValue(handle)
-
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
-
-    expect(spawnAgent).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'claude-sonnet-4-5' }),
-    )
-  })
-
-  it('maps tool_use blocks to agent:tool_call events', async () => {
-    const handle = createMockHandle([
-      { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { path: '/tmp' } }] } },
-    ])
-    vi.mocked(spawnAgent).mockResolvedValue(handle)
-
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-    await new Promise((r) => setTimeout(r, 50))
-
-    expect(broadcast).toHaveBeenCalledWith('agent:event', {
-      agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:tool_call', tool: 'Read' }),
-    })
-  })
-
   it('emits agent:error on message consumption failure', async () => {
     const handle = {
-      messages: (async function* () { throw new Error('SDK crash') })(),
-      sessionId: 'test',
-      abort() {},
-      async steer() {},
+      [Symbol.asyncIterator]: async function* () { throw new Error('SDK crash') },
+      close: vi.fn(),
+      streamInput: vi.fn(),
     }
-    vi.mocked(spawnAgent).mockResolvedValue(handle)
+    mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
     await new Promise((r) => setTimeout(r, 50))
