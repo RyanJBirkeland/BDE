@@ -16,7 +16,7 @@ export async function resolveDependents(
   index: DependencyIndex,
   getTask: (
     id: string,
-  ) => Promise<(Pick<SprintTask, 'id' | 'status'> & { depends_on: TaskDependency[] | null }) | null>,
+  ) => Promise<(Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }) | null>,
   updateTask: (id: string, patch: Record<string, unknown>) => Promise<unknown>,
   logger?: Logger,
 ): Promise<void> {
@@ -51,8 +51,15 @@ export async function resolveDependents(
         // Unblock the task (keep existing notes as-is)
         await updateTask(depId, { status: 'queued' })
       } else if (blockedBy.length > 0) {
-        // Update blocking notes with current blocking dependencies
-        await updateTask(depId, { notes: `Blocked by dependencies: ${blockedBy.join(', ')}` })
+        // Update blocking notes with current blocking dependencies, preserving user notes
+        const BLOCK_PREFIX = '[auto-block] '
+        const currentTask = await getTask(depId)
+        const existingNotes = currentTask?.notes ?? ''
+        // Strip any existing auto-block line
+        const userNotes = existingNotes.replace(/^\[auto-block\] .*\n?/, '').trim()
+        const blockNote = `${BLOCK_PREFIX}Blocked by: ${blockedBy.join(', ')}`
+        const newNotes = userNotes ? `${blockNote}\n${userNotes}` : blockNote
+        await updateTask(depId, { notes: newNotes })
       }
     } catch (err) {
       ;(logger ?? console).warn(`[resolve-dependents] Error resolving dependent ${depId}: ${err}`)
