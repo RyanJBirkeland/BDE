@@ -11,13 +11,11 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-function makeEvent(overrides: Partial<AgentEvent> = {}): AgentEvent {
+function makeEvent(text = 'hello'): AgentEvent {
   return {
-    id: 'evt-1',
-    type: 'text',
-    content: 'hello',
+    type: 'agent:text',
+    text,
     timestamp: Date.now(),
-    ...overrides,
   }
 }
 
@@ -41,12 +39,12 @@ describe('init', () => {
 
     useAgentEventsStore.getState().init()
 
-    const event = makeEvent({ id: 'e1', content: 'first' })
+    const event = makeEvent('first')
     capturedCallback!({ agentId: 'agent-a', event })
 
     const { events } = useAgentEventsStore.getState()
     expect(events['agent-a']).toHaveLength(1)
-    expect(events['agent-a'][0].id).toBe('e1')
+    expect((events['agent-a'][0] as { type: string; text: string }).text).toBe('first')
   })
 
   it('accumulates multiple events for the same agent', () => {
@@ -58,8 +56,8 @@ describe('init', () => {
 
     useAgentEventsStore.getState().init()
 
-    capturedCallback!({ agentId: 'agent-b', event: makeEvent({ id: 'e1' }) })
-    capturedCallback!({ agentId: 'agent-b', event: makeEvent({ id: 'e2' }) })
+    capturedCallback!({ agentId: 'agent-b', event: makeEvent('e1') })
+    capturedCallback!({ agentId: 'agent-b', event: makeEvent('e2') })
 
     expect(useAgentEventsStore.getState().events['agent-b']).toHaveLength(2)
   })
@@ -73,8 +71,8 @@ describe('init', () => {
 
     useAgentEventsStore.getState().init()
 
-    capturedCallback!({ agentId: 'agent-x', event: makeEvent({ id: 'ex' }) })
-    capturedCallback!({ agentId: 'agent-y', event: makeEvent({ id: 'ey' }) })
+    capturedCallback!({ agentId: 'agent-x', event: makeEvent('ex') })
+    capturedCallback!({ agentId: 'agent-y', event: makeEvent('ey') })
 
     expect(useAgentEventsStore.getState().events['agent-x']).toHaveLength(1)
     expect(useAgentEventsStore.getState().events['agent-y']).toHaveLength(1)
@@ -83,34 +81,34 @@ describe('init', () => {
 
 describe('loadHistory', () => {
   it('fetches history from IPC and stores it under the agent id', async () => {
-    const history = [makeEvent({ id: 'h1' }), makeEvent({ id: 'h2' })]
+    const history = [makeEvent('h1'), makeEvent('h2')]
     vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue(history)
 
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
     expect(window.api.agentEvents.getHistory).toHaveBeenCalledWith('agent-z')
     expect(useAgentEventsStore.getState().events['agent-z']).toHaveLength(2)
-    expect(useAgentEventsStore.getState().events['agent-z'][0].id).toBe('h1')
+    expect((useAgentEventsStore.getState().events['agent-z'][0] as { type: string; text: string }).text).toBe('h1')
   })
 
   it('overwrites any previously cached events for that agent', async () => {
     useAgentEventsStore.setState({
-      events: { 'agent-z': [makeEvent({ id: 'old-1' }), makeEvent({ id: 'old-2' })] },
+      events: { 'agent-z': [makeEvent('old-1'), makeEvent('old-2')] },
     })
-    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent({ id: 'new-1' })])
+    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent('new-1')])
 
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
     const stored = useAgentEventsStore.getState().events['agent-z']
     expect(stored).toHaveLength(1)
-    expect(stored[0].id).toBe('new-1')
+    expect((stored[0] as { type: string; text: string }).text).toBe('new-1')
   })
 
   it('does not affect events for other agents', async () => {
     useAgentEventsStore.setState({
-      events: { other: [makeEvent({ id: 'o1' })] },
+      events: { other: [makeEvent('o1')] },
     })
-    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent({ id: 'n1' })])
+    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent('n1')])
 
     await useAgentEventsStore.getState().loadHistory('target')
 
@@ -122,8 +120,8 @@ describe('clear', () => {
   it('removes the event bucket for the given agent', () => {
     useAgentEventsStore.setState({
       events: {
-        'agent-a': [makeEvent({ id: 'a1' })],
-        'agent-b': [makeEvent({ id: 'b1' })],
+        'agent-a': [makeEvent('a1')],
+        'agent-b': [makeEvent('b1')],
       },
     })
 
@@ -136,8 +134,8 @@ describe('clear', () => {
   it('leaves other agent events untouched', () => {
     useAgentEventsStore.setState({
       events: {
-        'agent-a': [makeEvent({ id: 'a1' })],
-        'agent-b': [makeEvent({ id: 'b1' })],
+        'agent-a': [makeEvent('a1')],
+        'agent-b': [makeEvent('b1')],
       },
     })
 

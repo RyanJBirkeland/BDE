@@ -289,8 +289,6 @@ describe('sprintTasks store', () => {
         priority: 1,
       })
 
-      const { tasks } = useSprintTasks.getState()
-      const created = tasks.find((t) => t.id === 'server-id-1')
       // The IPC was called with the lowercased repo
       expect(window.api.sprint.create).toHaveBeenCalledWith(
         expect.objectContaining({ repo: 'bde' })

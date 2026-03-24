@@ -293,7 +293,8 @@ describe('TerminalView', () => {
 
     it('keyboard shortcuts are inactive when activeView is not terminal', async () => {
       const { useUIStore } = await import('../../stores/ui')
-      vi.mocked(useUIStore).mockImplementation((selector: (s: Record<string, unknown>) => unknown) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(useUIStore).mockImplementation((selector: any) =>
         selector({ activeView: 'agents', setView: vi.fn() })
       )
       render(<TerminalView />)
