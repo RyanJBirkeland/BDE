@@ -5,13 +5,13 @@ import { tokens } from '../../design-system/tokens'
 import { PanelTabBar } from './PanelTabBar'
 import { PanelDropOverlay } from './PanelDropOverlay'
 import { AgentsView } from '../../views/AgentsView'
-import { TerminalView } from '../../views/TerminalView'
 
 // ---------------------------------------------------------------------------
 // Lazy-loaded views
 // ---------------------------------------------------------------------------
 
 const DashboardView = React.lazy(() => import('../../views/DashboardView'))
+const IDEView = React.lazy(() => import('../../views/IDEView'))
 const SprintView = React.lazy(() => import('../../views/SprintView'))
 const MemoryView = React.lazy(() => import('../../views/MemoryView'))
 const CostView = React.lazy(() => import('../../views/CostView'))
@@ -33,6 +33,7 @@ export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
   'pr-station': () => import('../../views/PRStationView'),
   'task-workbench': () => import('../../views/TaskWorkbenchView'),
   git: () => import('../../views/GitTreeView'),
+  ide: () => import('../../views/IDEView'),
 }
 
 // ---------------------------------------------------------------------------
@@ -46,7 +47,7 @@ function resolveView(viewKey: View): React.ReactNode {
     case 'agents':
       return <AgentsView />
     case 'ide':
-      return <TerminalView />
+      return <IDEView />
     case 'sprint':
       return <SprintView />
     case 'memory':

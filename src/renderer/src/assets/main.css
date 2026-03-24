@@ -5,6 +5,7 @@
 @import './memory.css';
 @import './settings.css';
 @import './terminal.css';
+@import './ide.css';
 @import './pr-station.css';
 @import './diff.css';
 @import './command-palette.css';

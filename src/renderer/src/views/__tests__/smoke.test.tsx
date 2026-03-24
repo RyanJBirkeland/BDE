@@ -3,7 +3,7 @@
  * Heavy child components are mocked to avoid pulling in xterm, websockets, etc.
  */
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 
 // jsdom stubs
 Element.prototype.scrollIntoView = vi.fn()
@@ -216,7 +216,6 @@ import SprintView from '../SprintView'
 import MemoryView from '../MemoryView'
 import CostView from '../CostView'
 import SettingsView from '../SettingsView'
-import { TerminalView } from '../TerminalView'
 import PRStationView from '../PRStationView'
 
 // ---------- Tests ----------
@@ -250,11 +249,6 @@ describe('View smoke tests', () => {
     const { container } = render(<SettingsView />)
     expect(container.firstChild).toBeInTheDocument()
     expect(container.innerHTML).not.toBe('')
-  })
-
-  it('TerminalView renders mocked terminal pane', () => {
-    render(<TerminalView />)
-    expect(screen.getByTestId('terminal-pane')).toBeInTheDocument()
   })
 
   it('PRStationView renders without crashing', () => {
