@@ -111,6 +111,7 @@ const api = {
       priority?: number
       status?: string
       template_name?: string
+      playground_enabled?: boolean
     }) => typedInvoke('sprint:create', task),
     claimTask: (taskId: string) => typedInvoke('sprint:claimTask', taskId),
     update: (id: string, patch: Record<string, unknown>) =>

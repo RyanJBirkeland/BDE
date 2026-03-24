@@ -14,6 +14,7 @@ export interface CreateTicketInput {
   priority: number
   template_name?: string
   depends_on?: TaskDependency[]
+  playground_enabled?: boolean
 }
 
 /** Ensure depends_on is always a parsed array (Supabase JSONB may arrive as string). */
@@ -190,6 +191,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         priority: data.priority,
         status: TASK_STATUS.BACKLOG,
         template_name: data.template_name || undefined,
+        playground_enabled: data.playground_enabled || undefined,
       })) as SprintTask
 
       if (result?.id) {

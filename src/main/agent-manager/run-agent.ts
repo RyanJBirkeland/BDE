@@ -21,6 +21,7 @@ export interface RunAgentTask {
   repo: string
   retry_count: number
   fast_fail_count: number
+  playground_enabled?: boolean
 }
 
 export interface RunAgentDeps {
@@ -58,13 +59,27 @@ export async function runAgent(
 ): Promise<void> {
   const { activeAgents, defaultModel, logger, onTaskTerminal } = deps
 
-  const prompt = (task.prompt || task.spec || task.title || '').trim()
+  let prompt = (task.prompt || task.spec || task.title || '').trim()
   if (!prompt) {
     logger.error(`[agent-manager] Task ${task.id} has no prompt/spec/title — marking error`)
     await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: 'Empty prompt' })
     await onTaskTerminal(task.id, 'error')
     cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
     return
+  }
+
+  // Conditionally augment prompt with playground instructions
+  if (task.playground_enabled) {
+    prompt += `\n\n## Dev Playground
+
+You have access to a Dev Playground for previewing frontend UI natively in BDE.
+When you want to show a visual preview:
+
+1. Write a self-contained HTML file (inline all CSS and JS, no external dependencies)
+2. The preview will automatically appear inline in the BDE chat when you write .html files
+
+Keep playgrounds focused on one component or layout at a time. Do NOT run
+\`open\` or start a localhost server — BDE renders the HTML natively.`
   }
 
   let handle: AgentHandle

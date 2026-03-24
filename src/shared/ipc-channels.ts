@@ -208,7 +208,7 @@ export interface SprintChannels {
     result: SprintTask[]
   }
   'sprint:create': {
-    args: [task: { title: string; repo: string; prompt?: string; notes?: string; spec?: string; priority?: number; status?: string; template_name?: string }]
+    args: [task: { title: string; repo: string; prompt?: string; notes?: string; spec?: string; priority?: number; status?: string; template_name?: string; playground_enabled?: boolean }]
     result: SprintTask
   }
   'sprint:update': {
