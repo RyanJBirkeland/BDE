@@ -19,6 +19,7 @@ declare global {
       listMemoryFiles: () => Promise<IpcResult<'memory:listFiles'>>
       readMemoryFile: (...args: IpcArgs<'memory:readFile'>) => Promise<IpcResult<'memory:readFile'>>
       writeMemoryFile: (...args: IpcArgs<'memory:writeFile'>) => Promise<IpcResult<'memory:writeFile'>>
+      searchMemory: (...args: IpcArgs<'memory:search'>) => Promise<IpcResult<'memory:search'>>
       setTitle: (title: string) => void
 
       // Settings CRUD
