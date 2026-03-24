@@ -7,6 +7,7 @@ import { AgentStatusChip } from './AgentStatusChip'
 import { TaskEventSubtitle } from './TaskEventSubtitle'
 import { repoBadgeVariant } from '../../lib/format'
 import { useSprintEvents } from '../../stores/sprintEvents'
+import { useSprintTasks } from '../../stores/sprintTasks'
 
 import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from './SprintCenter'
@@ -37,6 +38,7 @@ export const TaskCard = memo(function TaskCard({
   onStop,
 }: TaskCardProps) {
   const latestEvent = useSprintEvents((s) => s.latestEvents[task.id] ?? null)
+  const allTasks = useSprintTasks((s) => s.tasks)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -63,11 +65,24 @@ export const TaskCard = memo(function TaskCard({
     .filter(Boolean)
     .join(' ')
 
+  // Get blocker tasks for blocked status
+  const blockerTasks =
+    task.status === 'blocked' && task.depends_on
+      ? task.depends_on
+          .map((dep) => allTasks.find((t) => t.id === dep.id))
+          .filter((t): t is SprintTask => t !== undefined)
+      : []
+
   return (
     <div ref={setNodeRef} style={style} className={className} {...sortableAttributes} {...listeners}>
       <div className="task-card__title" title={task.title}>
         {task.title}
       </div>
+      {blockerTasks.length > 0 && (
+        <div className="task-card__blocker-label">
+          Blocked by: {blockerTasks.map((t) => t.title).join(', ')}
+        </div>
+      )}
       {task.depends_on && task.depends_on.length > 0 && (
         <div className="task-card__deps">
           {task.depends_on.map((dep) => (

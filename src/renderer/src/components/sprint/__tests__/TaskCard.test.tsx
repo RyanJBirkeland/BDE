@@ -18,6 +18,10 @@ vi.mock('@dnd-kit/utilities', () => ({
   CSS: { Transform: { toString: () => undefined } },
 }))
 
+vi.mock('../../../stores/sprintTasks', () => ({
+  useSprintTasks: vi.fn(),
+}))
+
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: crypto.randomUUID(),
@@ -47,6 +51,9 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
 }
 
 import { TaskCard } from '../TaskCard'
+import { useSprintTasks } from '../../../stores/sprintTasks'
+
+let mockTasksData: SprintTask[] = []
 
 describe('TaskCard', () => {
   const defaultProps = {
@@ -60,6 +67,15 @@ describe('TaskCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockTasksData = []
+
+    // Set up the Zustand store mock
+    vi.mocked(useSprintTasks).mockImplementation((selector?: (state: { tasks: SprintTask[] }) => unknown) => {
+      if (typeof selector === 'function') {
+        return selector({ tasks: mockTasksData })
+      }
+      return { tasks: mockTasksData } as never
+    })
   })
 
   it('renders task title and repo badge', () => {
@@ -244,6 +260,56 @@ describe('TaskCard', () => {
     const task = makeTask({ status: 'blocked' })
     const { container } = render(<TaskCard {...defaultProps} task={task} />)
     expect(container.querySelector('.task-card--blocked')).toBeInTheDocument()
+  })
+
+  // Blocker labels
+  it('shows "Blocked by" label when task is blocked and has dependencies', () => {
+    const blockerId = crypto.randomUUID()
+    const blockerTask = makeTask({ id: blockerId, title: 'Setup authentication' })
+    const blockedTask = makeTask({
+      status: 'blocked',
+      depends_on: [{ id: blockerId, type: 'hard' }],
+    })
+
+    mockTasksData = [blockerTask, blockedTask]
+    render(<TaskCard {...defaultProps} task={blockedTask} />)
+    expect(screen.getByText(/Blocked by:/)).toBeInTheDocument()
+    expect(screen.getByText(/Setup authentication/)).toBeInTheDocument()
+  })
+
+  it('shows multiple blockers when task has multiple hard dependencies', () => {
+    const blocker1Id = crypto.randomUUID()
+    const blocker2Id = crypto.randomUUID()
+    const blocker1 = makeTask({ id: blocker1Id, title: 'Task A' })
+    const blocker2 = makeTask({ id: blocker2Id, title: 'Task B' })
+    const blockedTask = makeTask({
+      status: 'blocked',
+      depends_on: [
+        { id: blocker1Id, type: 'hard' },
+        { id: blocker2Id, type: 'hard' },
+      ],
+    })
+
+    mockTasksData = [blocker1, blocker2, blockedTask]
+    render(<TaskCard {...defaultProps} task={blockedTask} />)
+    expect(screen.getByText(/Task A/)).toBeInTheDocument()
+    expect(screen.getByText(/Task B/)).toBeInTheDocument()
+  })
+
+  it('does not show blocker label when task is blocked but has no dependencies', () => {
+    const task = makeTask({ status: 'blocked', depends_on: null })
+    render(<TaskCard {...defaultProps} task={task} />)
+    expect(screen.queryByText(/Blocked by:/)).not.toBeInTheDocument()
+  })
+
+  it('does not show blocker label when task is not blocked', () => {
+    const blockerId = crypto.randomUUID()
+    const task = makeTask({
+      status: 'queued',
+      depends_on: [{ id: blockerId, type: 'hard' }],
+    })
+    render(<TaskCard {...defaultProps} task={task} />)
+    expect(screen.queryByText(/Blocked by:/)).not.toBeInTheDocument()
   })
 
   // Dependency chips
