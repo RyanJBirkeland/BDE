@@ -1,25 +1,11 @@
 import type { AgentHandle, Logger } from './types'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
+import { buildAgentEnv, getOAuthToken } from '../env-utils'
 
-// Cache the OAuth token from ~/.bde/oauth-token (written by BDE startup scripts
-// or `claude login`). Keychain access (security CLI) hangs in Electron's main
-// process, so we use a file-based approach instead.
-import { readFileSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
-import { homedir } from 'node:os'
-
-let cachedOAuthToken: string | null = null
-
+/** @deprecated Use getOAuthToken() from env-utils instead. Kept for API compat. */
 export function preloadOAuthToken(): void {
-  const tokenPath = join(homedir(), '.bde', 'oauth-token')
-  try {
-    if (existsSync(tokenPath)) {
-      cachedOAuthToken = readFileSync(tokenPath, 'utf8').trim()
-    }
-  } catch {
-    cachedOAuthToken = null
-  }
+  getOAuthToken()
 }
 
 export async function spawnAgent(opts: {
@@ -28,18 +14,14 @@ export async function spawnAgent(opts: {
   model: string
   logger?: Logger
 }): Promise<AgentHandle> {
-  const env = { ...process.env }
+  const env = { ...buildAgentEnv() }
 
-  // Use the pre-loaded OAuth token as ANTHROPIC_API_KEY.
+  // Use the cached OAuth token as ANTHROPIC_API_KEY.
   // This avoids the Keychain access hang inside Electron.
-  if (cachedOAuthToken) {
-    env.ANTHROPIC_API_KEY = cachedOAuthToken
+  const token = getOAuthToken()
+  if (token) {
+    env.ANTHROPIC_API_KEY = token
   }
-
-  // Ensure common tool paths are in PATH — Electron's PATH is often minimal
-  const extraPaths = ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`]
-  const currentPath = env.PATH ?? ''
-  env.PATH = [...extraPaths, ...currentPath.split(':')].filter(Boolean).join(':')
 
   // Try SDK first, fall back to CLI
   try {

@@ -143,7 +143,10 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
   setSemanticChecks: (checks) => set({ semanticChecks: checks, semanticLoading: false }),
   setOperationalChecks: (checks) => set({ operationalChecks: checks, operationalLoading: false }),
 
-  addCopilotMessage: (msg) => set((s) => ({ copilotMessages: [...s.copilotMessages, msg] })),
+  addCopilotMessage: (msg) => set((s) => {
+    const messages = [...s.copilotMessages, msg]
+    return { copilotMessages: messages.length > 200 ? messages.slice(-200) : messages }
+  }),
 
   setCopilotLoading: (loading) => set({ copilotLoading: loading }),
 }))

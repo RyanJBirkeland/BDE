@@ -14,7 +14,7 @@ import {
   claimTask,
   releaseTask,
 } from '../data/sprint-queries'
-import { listAgentRunsByTaskId, hasAgent, readLog } from '../agent-history'
+import { listAgentRunsByTaskId, readLog } from '../agent-history'
 import { insertEventBatch, queryEvents } from '../data/event-queries'
 import { getDb } from '../db'
 import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-contract'
@@ -538,12 +538,6 @@ async function handleAgentLog(
   agentId: string,
   query: URLSearchParams
 ): Promise<void> {
-  const exists = await hasAgent(agentId)
-  if (!exists) {
-    sendJson(res, 404, { error: `Agent ${agentId} not found` })
-    return
-  }
-
   const maxBytes = Math.min(
     parseInt(query.get('maxBytes') ?? String(DEFAULT_LOG_BYTES), 10) || DEFAULT_LOG_BYTES,
     MAX_LOG_BYTES
@@ -552,11 +546,14 @@ async function handleAgentLog(
 
   let fromByte: number
   if (fromByteParam != null) {
-    // Explicit offset — read from that byte
     fromByte = Math.max(parseInt(fromByteParam, 10) || 0, 0)
   } else {
-    // Tail mode — do a zero-byte read to get totalBytes, then compute offset
+    // Tail mode — stat to get totalBytes, then compute offset
     const stat = await readLog(agentId, 0, 0)
+    if (stat.totalBytes === 0) {
+      sendJson(res, 404, { error: `Agent ${agentId} not found or has no log` })
+      return
+    }
     fromByte = Math.max(0, stat.totalBytes - maxBytes)
   }
 

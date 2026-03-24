@@ -24,7 +24,7 @@ export default function PRStationView() {
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const prKey = selectedPr ? `${selectedPr.repo}#${selectedPr.number}` : ''
   const pendingCount = usePendingReviewStore((s) =>
-    prKey ? (s.pendingComments.get(prKey) ?? []).length : 0
+    prKey ? (s.pendingComments[prKey] ?? []).length : 0
   )
 
   const handleRemovePr = useCallback(

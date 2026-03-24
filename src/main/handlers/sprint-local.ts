@@ -32,6 +32,7 @@ import {
 } from '../data/sprint-queries'
 import type { CreateTaskInput, QueueStats } from '../data/sprint-queries'
 import { getAgentLogInfo } from '../data/agent-queries'
+import { readLog } from '../agent-history'
 
 export { UPDATE_ALLOWLIST }
 export type { CreateTaskInput, QueueStats }
@@ -196,17 +197,8 @@ export function registerSprintLocalHandlers(): void {
     const info = getAgentLogInfo(getDb(), agentId)
     if (!info) return { content: '', status: 'unknown', nextByte: fromByte }
 
-    try {
-      const fullContent = await readFile(info.logPath, 'utf-8')
-      const bytes = Buffer.from(fullContent, 'utf-8')
-      if (fromByte >= bytes.length) {
-        return { content: '', status: info.status, nextByte: fromByte }
-      }
-      const slice = bytes.subarray(fromByte).toString('utf-8')
-      return { content: slice, status: info.status, nextByte: bytes.length }
-    } catch {
-      return { content: '', status: info.status, nextByte: fromByte }
-    }
+    const result = await readLog(agentId, fromByte)
+    return { content: result.content, status: info.status, nextByte: result.nextByte }
   })
 
   safeHandle(

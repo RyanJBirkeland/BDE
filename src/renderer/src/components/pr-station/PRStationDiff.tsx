@@ -8,9 +8,9 @@ import { DiffViewer } from '../diff/DiffViewer'
 import type { LineRange } from '../diff/DiffViewer'
 import { usePendingReviewStore } from '../../stores/pendingReview'
 import type { PendingComment } from '../../stores/pendingReview'
+import { DiffSizeWarning } from '../diff/DiffSizeWarning'
 
 const EMPTY_PENDING: PendingComment[] = []
-import { DiffSizeWarning } from '../diff/DiffSizeWarning'
 
 export function PRStationDiff({ pr }: { pr: OpenPr }) {
   const [files, setFiles] = useState<DiffFile[]>([])
@@ -23,7 +23,7 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
   // Pending review comments
   const prKey = `${pr.repo}#${pr.number}`
   const pendingComments = usePendingReviewStore(
-    (s) => s.pendingComments.get(prKey) ?? EMPTY_PENDING
+    (s) => s.pendingComments[prKey] ?? EMPTY_PENDING
   )
   const addComment = usePendingReviewStore((s) => s.addComment)
   const removeComment = usePendingReviewStore((s) => s.removeComment)

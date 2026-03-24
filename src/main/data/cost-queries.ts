@@ -80,7 +80,7 @@ const GET_AGENT_HISTORY_SQL = `
   SELECT ar.id, ar.model, ar.started_at, ar.finished_at,
          ar.cost_usd, ar.tokens_in, ar.tokens_out,
          ar.cache_read, ar.cache_create, ar.duration_ms, ar.num_turns,
-         NULL AS title, NULL AS pr_url, NULL AS repo
+         ar.task AS title, NULL AS pr_url, ar.repo
   FROM agent_runs ar
   WHERE ar.finished_at IS NOT NULL
   ORDER BY ar.started_at DESC
@@ -158,7 +158,7 @@ export function getRecentAgentRunsWithCost(
       ar.num_turns,
       ar.started_at,
       ar.finished_at,
-      NULL as pr_url
+      NULL AS pr_url
     FROM agent_runs ar
     WHERE ar.status IN ('done', 'failed')
     ORDER BY ar.started_at DESC

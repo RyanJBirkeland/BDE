@@ -42,7 +42,7 @@
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: var(--bde-header-gradient);
 }
 
 .cost-view__title {

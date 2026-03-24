@@ -18,12 +18,12 @@ vi.mock('../../../lib/diff-parser', () => ({
 // Mutable pending state for tests that need to control it
 const mockAddComment = vi.fn()
 const mockRemoveComment = vi.fn()
-const pendingCommentsMap = new Map<string, PendingComment[]>()
+let pendingCommentsRecord: Record<string, PendingComment[]> = {}
 
 vi.mock('../../../stores/pendingReview', () => ({
   usePendingReviewStore: (selector: (s: unknown) => unknown) =>
     selector({
-      pendingComments: pendingCommentsMap,
+      pendingComments: pendingCommentsRecord,
       addComment: mockAddComment,
       removeComment: mockRemoveComment,
     }),
@@ -71,7 +71,7 @@ const mockPr: OpenPr = {
 describe('PRStationDiff', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    pendingCommentsMap.clear()
+    pendingCommentsRecord = {}
     capturedDiffViewerProps = {}
     mockGetPRDiff.mockResolvedValue('diff --git a/foo.ts b/foo.ts\n')
     mockGetReviewComments.mockResolvedValue([])
@@ -103,7 +103,7 @@ describe('PRStationDiff', () => {
     const pending: PendingComment[] = [
       { id: 'p1', path: 'src/index.ts', line: 3, side: 'RIGHT', body: 'style issue' },
     ]
-    pendingCommentsMap.set(prKey, pending)
+    pendingCommentsRecord[prKey] = pending
 
     render(<PRStationDiff pr={mockPr} />)
     await waitFor(() => expect(screen.getByTestId('diff-viewer')).toBeInTheDocument())

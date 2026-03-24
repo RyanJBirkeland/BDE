@@ -8,12 +8,12 @@ vi.mock('../../../lib/github-api', () => ({
 }))
 
 const mockClearPending = vi.fn()
-const pendingCommentsMap = new Map<string, unknown[]>()
+let pendingCommentsRecord: Record<string, unknown[]> = {}
 
 vi.mock('../../../stores/pendingReview', () => ({
   usePendingReviewStore: (selector: (s: unknown) => unknown) =>
     selector({
-      pendingComments: pendingCommentsMap,
+      pendingComments: pendingCommentsRecord,
       clearPending: mockClearPending,
     }),
 }))
@@ -68,7 +68,7 @@ function renderDialog(overrides?: { prKey?: string; onClose?: () => void; onSubm
 describe('ReviewSubmitDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    pendingCommentsMap.clear()
+    pendingCommentsRecord = {}
     mockCreateReview.mockResolvedValue(undefined)
   })
 
@@ -97,18 +97,18 @@ describe('ReviewSubmitDialog', () => {
   })
 
   it('shows pending comment count when there are pending comments', () => {
-    pendingCommentsMap.set(prKey, [
+    pendingCommentsRecord[prKey] = [
       { id: '1', path: 'foo.ts', line: 1, side: 'RIGHT', body: 'nice' },
       { id: '2', path: 'bar.ts', line: 5, side: 'RIGHT', body: 'fix this' },
-    ])
+    ]
     renderDialog()
     expect(screen.getByText(/2 pending comments will be included/i)).toBeInTheDocument()
   })
 
   it('shows singular "comment" when exactly 1 pending comment', () => {
-    pendingCommentsMap.set(prKey, [
+    pendingCommentsRecord[prKey] = [
       { id: '1', path: 'foo.ts', line: 1, side: 'RIGHT', body: 'nice' },
-    ])
+    ]
     renderDialog()
     expect(screen.getByText(/1 pending comment will be included/i)).toBeInTheDocument()
   })
@@ -166,10 +166,10 @@ describe('ReviewSubmitDialog', () => {
   })
 
   it('passes pending comments to createReview', async () => {
-    pendingCommentsMap.set(prKey, [
+    pendingCommentsRecord[prKey] = [
       { id: 'c1', path: 'src/foo.ts', line: 10, side: 'RIGHT', body: 'nit: rename this' },
       { id: 'c2', path: 'src/bar.ts', line: 5, side: 'RIGHT', body: 'extract to helper' },
-    ])
+    ]
     renderDialog()
     await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
     await waitFor(() =>

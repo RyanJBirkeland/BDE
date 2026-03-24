@@ -6,10 +6,9 @@
  * until explicitly closed, unlike a string prompt which is single-turn.
  */
 import { randomUUID } from 'node:crypto'
-import { basename, join } from 'node:path'
-import { readFileSync, existsSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { basename } from 'node:path'
 import { importAgent, updateAgentMeta } from './agent-history'
+import { buildAgentEnvWithAuth } from './env-utils'
 import { appendEvent } from './data/event-queries'
 import { getDb } from './db'
 import { broadcast } from './broadcast'
@@ -35,18 +34,7 @@ export async function spawnAdhocAgent(args: {
 }): Promise<SpawnLocalAgentResult> {
   const model = args.model || 'claude-sonnet-4-5'
 
-  // Build env with OAuth token (same approach as sdk-adapter.ts)
-  const env: Record<string, string | undefined> = { ...process.env }
-  const tokenPath = join(homedir(), '.bde', 'oauth-token')
-  try {
-    if (existsSync(tokenPath)) {
-      env.ANTHROPIC_API_KEY = readFileSync(tokenPath, 'utf8').trim()
-    }
-  } catch { /* token read failure is non-fatal */ }
-
-  const extraPaths = ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`]
-  const currentPath = env.PATH ?? ''
-  env.PATH = [...extraPaths, ...currentPath.split(':')].filter(Boolean).join(':')
+  const env = buildAgentEnvWithAuth()
 
   // Create multi-turn query with an async iterable prompt.
   // The initial message is yielded immediately; follow-ups come via streamInput().
@@ -140,53 +128,58 @@ async function consumeStream(
   emitEvent(agentId, { type: 'agent:started', model, timestamp: Date.now() })
 
   try {
-    for await (const raw of queryHandle) {
-      const events = mapRawMessage(raw)
-      for (const event of events) {
-        emitEvent(agentId, event)
-      }
+    try {
+      for await (const raw of queryHandle) {
+        const events = mapRawMessage(raw)
+        for (const event of events) {
+          emitEvent(agentId, event)
+        }
 
-      // Track cost/token fields if present
-      if (typeof raw === 'object' && raw !== null) {
-        const r = raw as Record<string, unknown>
-        if (typeof r.cost_usd === 'number') costUsd = r.cost_usd
-        if (typeof r.total_cost_usd === 'number') costUsd = r.total_cost_usd
-        if (typeof r.tokens_in === 'number') tokensIn = r.tokens_in
-        if (typeof r.tokens_out === 'number') tokensOut = r.tokens_out
-        if (typeof r.exit_code === 'number') exitCode = r.exit_code
-        if (typeof r.usage === 'object' && r.usage !== null) {
-          const u = r.usage as Record<string, unknown>
-          if (typeof u.input_tokens === 'number') tokensIn = u.input_tokens
-          if (typeof u.output_tokens === 'number') tokensOut = u.output_tokens
+        // Track cost/token fields if present
+        if (typeof raw === 'object' && raw !== null) {
+          const r = raw as Record<string, unknown>
+          if (typeof r.cost_usd === 'number') costUsd = r.cost_usd
+          if (typeof r.total_cost_usd === 'number') costUsd = r.total_cost_usd
+          if (typeof r.tokens_in === 'number') tokensIn = r.tokens_in
+          if (typeof r.tokens_out === 'number') tokensOut = r.tokens_out
+          if (typeof r.exit_code === 'number') exitCode = r.exit_code
+          if (typeof r.usage === 'object' && r.usage !== null) {
+            const u = r.usage as Record<string, unknown>
+            if (typeof u.input_tokens === 'number') tokensIn = u.input_tokens
+            if (typeof u.output_tokens === 'number') tokensOut = u.output_tokens
+          }
         }
       }
+    } catch (err) {
+      emitEvent(agentId, {
+        type: 'agent:error',
+        message: err instanceof Error ? err.message : String(err),
+        timestamp: Date.now(),
+      })
     }
-  } catch (err) {
+
+    const durationMs = Date.now() - startedAt
     emitEvent(agentId, {
-      type: 'agent:error',
-      message: err instanceof Error ? err.message : String(err),
+      type: 'agent:completed',
+      exitCode,
+      costUsd,
+      tokensIn,
+      tokensOut,
+      durationMs,
       timestamp: Date.now(),
     })
+
+    try {
+      await updateAgentMeta(agentId, {
+        status: 'done',
+        finishedAt: new Date().toISOString(),
+        exitCode,
+      })
+    } catch { /* update failure is non-fatal */ }
+  } finally {
+    adhocSessions.delete(agentId)
+    queryHandle.close()
   }
-
-  const durationMs = Date.now() - startedAt
-  emitEvent(agentId, {
-    type: 'agent:completed',
-    exitCode,
-    costUsd,
-    tokensIn,
-    tokensOut,
-    durationMs,
-    timestamp: Date.now(),
-  })
-
-  await updateAgentMeta(agentId, {
-    status: 'done',
-    finishedAt: new Date().toISOString(),
-    exitCode,
-  }).catch(() => {})
-
-  adhocSessions.delete(agentId)
 }
 
 function emitEvent(agentId: string, event: AgentEvent): void {

@@ -60,6 +60,7 @@
   --bde-warning-hover: rgba(245, 158, 11, 0.12);
   --bde-error-bg: rgba(220, 38, 38, 0.10);
   --bde-overlay: rgba(0, 0, 0, 0.50);
+  --bde-header-gradient: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
 
   /* Semantic colors */
   --bde-danger-text: #f87171;
@@ -310,6 +311,7 @@ html.theme-light {
   --bde-warning-hover: rgba(217, 119, 6, 0.12);
   --bde-error-bg: rgba(220, 38, 38, 0.08);
   --bde-overlay: rgba(0, 0, 0, 0.30);
+  --bde-header-gradient: linear-gradient(90deg, rgba(0, 168, 99, 0.3) 0%, rgba(59, 130, 246, 0.15) 60%, transparent 100%);
 
   /* ── Semantic colors ────────────────────────────────── */
   --bde-danger-text: #DC2626;
