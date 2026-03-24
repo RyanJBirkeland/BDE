@@ -2,8 +2,65 @@
  * Sprint task query functions — Supabase edition.
  * All functions are async and use the Supabase client singleton.
  */
-import type { SprintTask } from '../../shared/types'
+import type { SprintTask, TaskDependency } from '../../shared/types'
 import { getSupabaseClient } from './supabase-client'
+
+/**
+ * Sanitize depends_on field to prevent crashes when Supabase returns JSONB as string.
+ * Ensures the field is always null or a valid TaskDependency array.
+ */
+function sanitizeDependsOn(value: unknown): TaskDependency[] | null {
+  // Handle null/undefined
+  if (value == null) return null
+
+  // If it's a string, try to parse it
+  if (typeof value === 'string') {
+    if (value.trim() === '') return null
+    try {
+      const parsed = JSON.parse(value)
+      return sanitizeDependsOn(parsed) // Recursive call
+    } catch {
+      console.warn('[sprint-queries] Failed to parse depends_on string:', value)
+      return null
+    }
+  }
+
+  // If it's an array, validate structure
+  if (Array.isArray(value)) {
+    if (value.length === 0) return null
+
+    const validated = value.filter((dep) => {
+      if (!dep || typeof dep !== 'object') return false
+      const { id, type } = dep as Record<string, unknown>
+      if (typeof id !== 'string' || !id.trim()) return false
+      if (type !== 'hard' && type !== 'soft') return false
+      return true
+    })
+
+    return validated.length > 0 ? (validated as TaskDependency[]) : null
+  }
+
+  // Invalid type
+  console.warn('[sprint-queries] Invalid depends_on type:', typeof value, value)
+  return null
+}
+
+/**
+ * Sanitize a single task object to ensure depends_on is valid.
+ */
+function sanitizeTask(task: any): SprintTask {
+  return {
+    ...task,
+    depends_on: sanitizeDependsOn(task.depends_on),
+  }
+}
+
+/**
+ * Sanitize an array of tasks to ensure all depends_on fields are valid.
+ */
+function sanitizeTasks(tasks: any[]): SprintTask[] {
+  return tasks.map(sanitizeTask)
+}
 
 // --- Field allowlist for updates ---
 
@@ -52,7 +109,7 @@ export async function getTask(id: string): Promise<SprintTask | null> {
     console.warn(`[sprint-queries] getTask failed for id=${id}:`, error)
     return null
   }
-  return data as SprintTask | null
+  return data ? sanitizeTask(data) : null
 }
 
 export async function listTasks(status?: string): Promise<SprintTask[]> {
@@ -71,7 +128,7 @@ export async function listTasks(status?: string): Promise<SprintTask[]> {
     console.warn('[sprint-queries] listTasks failed:', error)
     return []
   }
-  return (data ?? []) as SprintTask[]
+  return sanitizeTasks(data ?? [])
 }
 
 export interface CreateTaskInput {
@@ -98,7 +155,7 @@ export async function createTask(input: CreateTaskInput): Promise<SprintTask> {
       priority: input.priority ?? 0,
       status: input.status ?? 'backlog',
       template_name: input.template_name ?? null,
-      depends_on: input.depends_on ?? null,
+      depends_on: sanitizeDependsOn(input.depends_on),
     })
     .select()
     .single()
@@ -106,7 +163,7 @@ export async function createTask(input: CreateTaskInput): Promise<SprintTask> {
   if (error) {
     throw new Error(`[sprint-queries] createTask failed: ${error.message}`)
   }
-  return data as SprintTask
+  return sanitizeTask(data)
 }
 
 export async function updateTask(
@@ -118,7 +175,8 @@ export async function updateTask(
 
   const updateObj: Record<string, unknown> = {}
   for (const [k, v] of entries) {
-    updateObj[k] = v
+    // Sanitize depends_on if it's being updated
+    updateObj[k] = k === 'depends_on' ? sanitizeDependsOn(v) : v
   }
 
   const { data, error } = await getSupabaseClient()
@@ -132,7 +190,7 @@ export async function updateTask(
     console.warn(`[sprint-queries] updateTask failed for id=${id}:`, error)
     return null
   }
-  return data as SprintTask
+  return data ? sanitizeTask(data) : null
 }
 
 export async function deleteTask(id: string): Promise<void> {
@@ -163,7 +221,7 @@ export async function claimTask(
     // No matching row (not queued or doesn't exist) is not a real error
     return null
   }
-  return data as SprintTask
+  return data ? sanitizeTask(data) : null
 }
 
 export async function releaseTask(id: string): Promise<SprintTask | null> {
@@ -178,7 +236,7 @@ export async function releaseTask(id: string): Promise<SprintTask | null> {
   if (error) {
     return null
   }
-  return data as SprintTask
+  return data ? sanitizeTask(data) : null
 }
 
 export async function getQueueStats(): Promise<QueueStats> {
@@ -301,7 +359,7 @@ export async function listTasksWithOpenPrs(): Promise<SprintTask[]> {
     console.warn('[sprint-queries] listTasksWithOpenPrs failed:', error)
     return []
   }
-  return (data ?? []) as SprintTask[]
+  return sanitizeTasks(data ?? [])
 }
 
 export async function updateTaskMergeableState(
@@ -330,7 +388,7 @@ export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
     .order('created_at', { ascending: true })
     .limit(limit)
   if (error) throw error
-  return data ?? []
+  return sanitizeTasks(data ?? [])
 }
 
 export async function getOrphanedTasks(claimedBy: string): Promise<SprintTask[]> {
@@ -338,7 +396,7 @@ export async function getOrphanedTasks(claimedBy: string): Promise<SprintTask[]>
     .from('sprint_tasks').select('*')
     .eq('status', 'active').eq('claimed_by', claimedBy)
   if (error) throw error
-  return data ?? []
+  return sanitizeTasks(data ?? [])
 }
 
 export async function clearSprintTaskFk(agentRunId: string): Promise<void> {
@@ -367,16 +425,20 @@ export async function getHealthCheckTasks(): Promise<SprintTask[]> {
     console.warn('[sprint-queries] getHealthCheckTasks failed:', error)
     return []
   }
-  return (data ?? []) as SprintTask[]
+  return sanitizeTasks(data ?? [])
 }
 
 export async function getTasksWithDependencies(): Promise<
-  Array<{ id: string; depends_on: Array<{ id: string; type: 'hard' | 'soft' }> | null; status: string }>
+  Array<{ id: string; depends_on: TaskDependency[] | null; status: string }>
 > {
   const { data, error } = await getSupabaseClient()
     .from('sprint_tasks')
     .select('id, depends_on, status')
     .not('depends_on', 'is', null)
   if (error) throw error
-  return data ?? []
+  // Sanitize each partial task object
+  return (data ?? []).map((task) => ({
+    ...task,
+    depends_on: sanitizeDependsOn(task.depends_on),
+  }))
 }

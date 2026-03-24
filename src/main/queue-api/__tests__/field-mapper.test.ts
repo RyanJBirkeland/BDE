@@ -71,8 +71,58 @@ describe('field-mapper', () => {
       depends_on: 'not-valid-json'
     }
     const result = toCamelCase(rowWithBadDeps)
-    // Should pass through as-is if parse fails
-    expect(result.dependsOn).toBe('not-valid-json')
+    // Should return null for malformed data (defensive sanitization)
+    expect(result.dependsOn).toBeNull()
+  })
+
+  it('handles empty string depends_on', () => {
+    const rowWithEmptyDeps = {
+      ...snakeRow,
+      depends_on: ''
+    }
+    const result = toCamelCase(rowWithEmptyDeps)
+    expect(result.dependsOn).toBeNull()
+  })
+
+  it('handles empty array depends_on', () => {
+    const rowWithEmptyArray = {
+      ...snakeRow,
+      depends_on: []
+    }
+    const result = toCamelCase(rowWithEmptyArray)
+    expect(result.dependsOn).toBeNull()
+  })
+
+  it('filters out invalid dependencies', () => {
+    const rowWithMixedDeps = {
+      ...snakeRow,
+      depends_on: [
+        { id: 'task-1', type: 'hard' },
+        { id: '', type: 'soft' }, // Invalid: empty id
+        { type: 'hard' }, // Invalid: missing id
+        { id: 'task-2', type: 'invalid' }, // Invalid: wrong type
+        { id: 'task-3', type: 'soft' },
+      ]
+    }
+    const result = toCamelCase(rowWithMixedDeps)
+    // Should only keep valid dependencies
+    expect(result.dependsOn).toEqual([
+      { id: 'task-1', type: 'hard' },
+      { id: 'task-3', type: 'soft' }
+    ])
+  })
+
+  it('returns null if all dependencies are invalid', () => {
+    const rowWithAllInvalidDeps = {
+      ...snakeRow,
+      depends_on: [
+        { id: '', type: 'soft' },
+        { type: 'hard' },
+        { id: 'task-1', type: 'invalid' }
+      ]
+    }
+    const result = toCamelCase(rowWithAllInvalidDeps)
+    expect(result.dependsOn).toBeNull()
   })
 
   it('toSnakeCase preserves dependsOn array structure', () => {

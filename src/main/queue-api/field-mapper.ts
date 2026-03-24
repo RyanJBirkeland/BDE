@@ -15,13 +15,60 @@ const SNAKE_TO_CAMEL = Object.fromEntries(
 // JSONB columns that need parsing if they come back as strings
 const JSONB_FIELDS = new Set(['depends_on'])
 
+/**
+ * Sanitize depends_on field to ensure it's always null or a valid array.
+ * Handles cases where Supabase returns JSONB as string.
+ */
+function sanitizeDependsOn(value: unknown): Array<{ id: string; type: 'hard' | 'soft' }> | null {
+  // Handle null/undefined
+  if (value == null) return null
+
+  // If it's a string, try to parse it
+  if (typeof value === 'string') {
+    // Handle empty string
+    if (value.trim() === '') return null
+
+    try {
+      const parsed = JSON.parse(value)
+      return sanitizeDependsOn(parsed) // Recursive call with parsed value
+    } catch {
+      console.warn('[field-mapper] Failed to parse depends_on string:', value)
+      return null
+    }
+  }
+
+  // If it's an array, validate structure
+  if (Array.isArray(value)) {
+    // Empty array -> null for consistency
+    if (value.length === 0) return null
+
+    // Validate each dependency object
+    const validated = value.filter((dep) => {
+      if (!dep || typeof dep !== 'object') return false
+      const { id, type } = dep as Record<string, unknown>
+      if (typeof id !== 'string' || !id.trim()) return false
+      if (type !== 'hard' && type !== 'soft') return false
+      return true
+    })
+
+    return validated.length > 0 ? validated as Array<{ id: string; type: 'hard' | 'soft' }> : null
+  }
+
+  // Invalid type - log warning and return null
+  console.warn('[field-mapper] Invalid depends_on type:', typeof value, value)
+  return null
+}
+
 export function toCamelCase<T extends object>(row: T): Record<string, unknown> {
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(row)) {
     const camelKey = SNAKE_TO_CAMEL[key] ?? key
 
-    // Parse JSONB fields if they're strings (can happen with manual DB updates)
-    if (JSONB_FIELDS.has(key) && typeof value === 'string') {
+    // Special handling for depends_on to ensure it's always valid
+    if (key === 'depends_on') {
+      result[camelKey] = sanitizeDependsOn(value)
+    } else if (JSONB_FIELDS.has(key) && typeof value === 'string') {
+      // Generic JSONB parsing for other fields
       try {
         result[camelKey] = JSON.parse(value)
       } catch {
