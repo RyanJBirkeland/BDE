@@ -98,7 +98,7 @@ interface IDEState {
 // Store
 // ---------------------------------------------------------------------------
 
-export const useIDEStore = create<IDEState>((set, get) => ({
+export const useIDEStore = create<IDEState>((set) => ({
   rootPath: null,
   expandedDirs: {},
   openTabs: [],
