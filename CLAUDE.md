@@ -13,6 +13,8 @@ npm run build        # Type-check + production build (must pass before PR)
 npm run typecheck    # TypeScript type checking (also runs in CI)
 npm test             # Unit tests via vitest (must pass before PR)
 npm run test:main    # Main process tests (separate vitest config)
+npm run test:coverage # Unit tests + coverage threshold enforcement (used in CI)
+npm run test:e2e     # E2E tests via Playwright (requires built app)
 npm run lint         # ESLint
 npm run format       # Prettier
 ```
@@ -22,9 +24,10 @@ npm run format       # Prettier
 GitHub Actions runs on every push to `main` and every PR targeting `main`:
 
 - `npm run typecheck` — must pass
-- `npm test` — must pass
+- `npm run test:coverage` — must pass (enforces 68% coverage threshold)
+- `npm run test:main` — must pass
 
-Both checks are required before merge.
+All three checks are required before merge.
 
 ## Branch Conventions
 
@@ -88,18 +91,23 @@ These files are edited frequently across branches. Take extra care when modifyin
 
 ## Gotchas
 
+- **Worktree node_modules**: Git worktrees don't include `node_modules`. Symlink from main repo: `ln -s ~/projects/BDE/node_modules /tmp/worktrees/BDE/<branch>/node_modules`. Required for typecheck/test in worktrees.
+- **Zustand Map anti-pattern**: Never use `Map` as Zustand state — `new Map(old)` creates a new reference on every mutation, defeating shallow equality and causing all subscribers to re-render. Use `Record<string, T[]>` instead.
+- **Shared env utilities**: PATH augmentation and OAuth token loading are in `src/main/env-utils.ts`. Use `buildAgentEnv()` or `buildAgentEnvWithAuth()` — do NOT duplicate PATH logic in new files.
+- **CSS theming rule**: Never use hardcoded `rgba()` for overlays or `box-shadow`. Use `var(--bde-overlay)` for backgrounds and `var(--bde-shadow-sm/md/lg)` for shadows. Header gradients use `var(--bde-header-gradient)`. All defined in `base.css` with light theme variants.
+- **Preload type gap**: `window.api.workbench` exists at runtime (preload/index.ts) but is missing from TypeScript declarations — `tsconfig.web.json` will show errors for workbench-related code. This is a known pre-existing issue.
 - **FK constraints**: `sprint_tasks.agent_run_id` has NO foreign key constraint (migration v10 dropped it).
 - **Keychain token format**: `claudeAiOauth.expiresAt` is a stringified epoch millisecond, NOT an ISO date. Parse with `parseInt(val, 10)`.
 - **electron-builder afterSign**: Cannot use `.sh` files as `afterSign` hooks — electron-builder `require()`s them as JavaScript. Use `.js`/`.cjs` files, or omit for unsigned builds (`identity: null`).
 - **Subagent branch safety**: When dispatching subagents, explicitly tell them which branch to commit to. Subagents may default to `main` if not told otherwise.
 - **Pre-push hook**: Husky runs `npm run typecheck && npm test` before every push. Fix failures before retrying.
-- **Native modules**: `better-sqlite3` is rebuilt for Electron in `postinstall`. If `npm install` fails, check native build tools. Run `npm run postinstall` after install to avoid `NODE_MODULE_VERSION` mismatch crashes. `test:main` has pre/post scripts to swap between Node/Electron builds.
+- **Native modules**: `better-sqlite3` is rebuilt for Electron via `electron-rebuild` in `postinstall`. The main test config (`vitest.main.config.ts`) has a `globalSetup` that auto-detects and rebuilds for Node.js if needed — so `npx vitest run --config src/main/vitest.main.config.ts` works without `npm run test:main`. npm 11+ silently ignores `--runtime=electron` flags on `npm rebuild`.
 - **Zustand selector gotcha**: Never call a function that returns a new array/object inside a Zustand selector (e.g., `useSomeStore(s => s.getList())`). This creates a new reference every render → infinite loop. Derive with `useMemo` from stable state instead.
 - **DB migrations**: Schema changes go through `src/main/db.ts` — add a new entry to the `migrations` array. Never modify existing migrations.
-- **Test noise from `release/`**: If a DMG has been built, `npm test` picks up `node-pty` tests inside `release/mac-arm64/BDE.app/` — these always fail and are not project tests. Ignore them or delete `release/` before running tests.
+- **Test noise from `release/`**: `vitest.config.ts` excludes `**/release/**`, but if a new exclude pattern is needed, add it there. Delete `release/` if the directory causes other issues.
 - **AgentManager config requires restart**: Settings for max concurrent agents, worktree base, and max runtime are read once at startup. Changes via Settings UI take effect on next app launch.
-- **Integration tests**: `src/main/__tests__/integration/` — covers AgentManager pipeline, AuthGuard, IPC handlers, and CompletionHandler. Run with `npm run test:main`. All tests passing (436 main, 398 renderer).
-- **Electron PATH**: Electron's main process has a minimal PATH. Agent manager uses absolute paths (`/opt/homebrew/bin/git`, `/opt/homebrew/bin/gh`) for CLI tools. The SDK adapter adds `/usr/local/bin`, `/opt/homebrew/bin` to spawned agent env.
+- **Integration tests**: `src/main/__tests__/integration/` — covers AgentManager pipeline, AuthGuard, IPC handlers, Queue API, and CompletionHandler. Run with `npm run test:main`. All tests passing (~577 main, ~1271 renderer, 36 E2E). Coverage threshold enforced at 68%.
+- **Electron PATH**: Electron's main process has a minimal PATH. Use `buildAgentEnv()` from `src/main/env-utils.ts` which prepends `/usr/local/bin`, `/opt/homebrew/bin`, `~/.local/bin` to PATH (cached after first call).
 - **OAuth token file**: Agent manager reads `~/.bde/oauth-token` (plain text, one line). Keychain access via `security` CLI hangs in Electron — never use `execFileSync('security', ...)` in the main process.
 - **Supabase setup**: BDE needs `supabase.url` and `supabase.serviceKey` in the SQLite `settings` table. Also needs `repos` JSON setting with `name`, `localPath`, `githubOwner`, `githubRepo` per configured repo.
 - **Agent branch stale cleanup**: Before re-running a task, delete stale `agent/*` branches with `git branch -D agent/<slug>` and run `git worktree prune`. Otherwise `git worktree add` fails.
