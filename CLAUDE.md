@@ -43,6 +43,14 @@ Format: `{type}: {description}`
 - `fix:` bug fix
 - `chore:` maintenance / docs
 
+## Key File Locations
+- Sprint task dependency management: `src/main/handlers/sprint-local.ts` (auto-blocking on create/transition)
+- Dependency resolution after completion: `src/main/agent-manager/resolve-dependents.ts`
+- Shared sanitization: `src/shared/sanitize-depends-on.ts`
+- Agent auto-commit: `src/main/agent-manager/completion.ts` (uses `git add -u`, not `-A`)
+- Worktree management: `src/main/agent-manager/worktree.ts`
+- Shutdown/lifecycle: `src/main/agent-manager/index.ts`
+
 ## PR Rules
 
 1. Branch from `main`, PR back to `main` — no direct pushes to `main`
