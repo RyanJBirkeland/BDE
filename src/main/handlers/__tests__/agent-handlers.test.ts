@@ -52,18 +52,15 @@ import { safeHandle } from '../../ipc-utils'
 import {
   steerAgent as runnerSteer,
   killAgent as runnerKill,
-  listAgents as runnerListAgents,
 } from '../../runner-client'
-import { tailAgentLog, cleanupOldLogs } from '../../agent-log-manager'
+import { cleanupOldLogs } from '../../agent-log-manager'
 import {
   listAgents,
   readLog,
-  importAgent,
   pruneOldAgents,
 } from '../../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../../adhoc-agent'
 import { getEventHistory } from '../../data/event-queries'
-import { getDb } from '../../db'
 
 const mockEvent = {} as IpcMainInvokeEvent
 

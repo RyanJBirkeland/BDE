@@ -78,9 +78,6 @@ import {
   gitStatus,
   gitDiffFile,
   gitCommit,
-  gitPush,
-  gitBranches,
-  gitCheckout,
 } from '../../git'
 import { getGitHubToken } from '../../config'
 import { githubFetch, parseNextLink } from '../../github-fetch'

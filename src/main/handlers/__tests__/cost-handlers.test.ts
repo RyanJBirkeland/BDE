@@ -46,7 +46,7 @@ describe('Cost handlers', () => {
 
     it('cost:summary calls getCostSummary', () => {
       const summary = { totalCost: 1.23, agentCount: 5 }
-      vi.mocked(getCostSummary).mockReturnValue(summary)
+      vi.mocked(getCostSummary).mockReturnValue(summary as any)
       const handlers = captureHandlers()
 
       const result = handlers['cost:summary'](mockEvent)
@@ -57,7 +57,7 @@ describe('Cost handlers', () => {
 
     it('cost:agentRuns calls getRecentAgentRunsWithCost with provided limit', () => {
       const runs = [{ id: 'run-1', cost: 0.5 }]
-      vi.mocked(getRecentAgentRunsWithCost).mockReturnValue(runs)
+      vi.mocked(getRecentAgentRunsWithCost).mockReturnValue(runs as any)
       const handlers = captureHandlers()
 
       const result = handlers['cost:agentRuns'](mockEvent, { limit: 10 })
@@ -77,7 +77,7 @@ describe('Cost handlers', () => {
 
     it('cost:getAgentHistory calls getAgentHistory with provided limit and offset', () => {
       const history = [{ id: 'run-2', cost: 0.1 }]
-      vi.mocked(getAgentHistory).mockReturnValue(history)
+      vi.mocked(getAgentHistory).mockReturnValue(history as any)
       const handlers = captureHandlers()
 
       const result = handlers['cost:getAgentHistory'](mockEvent, { limit: 50, offset: 10 })
