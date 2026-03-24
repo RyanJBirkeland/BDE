@@ -25,7 +25,7 @@ function fireKeydown(key: string, extra: Partial<KeyboardEventInit> = {}): void 
 }
 
 describe('useSprintKeyboardShortcuts', () => {
-  const setModalOpen = vi.fn()
+  const openWorkbench = vi.fn()
   const setConflictDrawerOpen = vi.fn()
 
   beforeEach(() => {
@@ -37,17 +37,17 @@ describe('useSprintKeyboardShortcuts', () => {
 
   it('pressing n opens the modal when no input is focused', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     fireKeydown('n')
 
-    expect(setModalOpen).toHaveBeenCalledWith(true)
+    expect(openWorkbench).toHaveBeenCalled()
   })
 
   it('pressing n does nothing when an INPUT is focused', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     const input = document.createElement('input')
@@ -56,13 +56,13 @@ describe('useSprintKeyboardShortcuts', () => {
 
     fireKeydown('n')
 
-    expect(setModalOpen).not.toHaveBeenCalled()
+    expect(openWorkbench).not.toHaveBeenCalled()
     document.body.removeChild(input)
   })
 
   it('pressing n does nothing when a TEXTAREA is focused', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     const textarea = document.createElement('textarea')
@@ -71,13 +71,13 @@ describe('useSprintKeyboardShortcuts', () => {
 
     fireKeydown('n')
 
-    expect(setModalOpen).not.toHaveBeenCalled()
+    expect(openWorkbench).not.toHaveBeenCalled()
     document.body.removeChild(textarea)
   })
 
   it('pressing n does nothing when a SELECT is focused', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     const select = document.createElement('select')
@@ -86,49 +86,48 @@ describe('useSprintKeyboardShortcuts', () => {
 
     fireKeydown('n')
 
-    expect(setModalOpen).not.toHaveBeenCalled()
+    expect(openWorkbench).not.toHaveBeenCalled()
     document.body.removeChild(select)
   })
 
   it('pressing n with metaKey does nothing', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     fireKeydown('n', { metaKey: true })
 
-    expect(setModalOpen).not.toHaveBeenCalled()
+    expect(openWorkbench).not.toHaveBeenCalled()
   })
 
   it('pressing n with ctrlKey does nothing', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     fireKeydown('n', { ctrlKey: true })
 
-    expect(setModalOpen).not.toHaveBeenCalled()
+    expect(openWorkbench).not.toHaveBeenCalled()
   })
 
   it('pressing n with altKey does nothing', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     fireKeydown('n', { altKey: true })
 
-    expect(setModalOpen).not.toHaveBeenCalled()
+    expect(openWorkbench).not.toHaveBeenCalled()
   })
 
-  it('pressing Escape closes modal and conflict drawer when no task is selected', () => {
+  it('pressing Escape closes conflict drawer when no task is selected', () => {
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     fireKeydown('Escape')
 
     expect(mockSetLogDrawerTaskId).toHaveBeenCalledWith(null)
-    expect(setModalOpen).toHaveBeenCalledWith(false)
     expect(setConflictDrawerOpen).toHaveBeenCalledWith(false)
   })
 
@@ -136,13 +135,12 @@ describe('useSprintKeyboardShortcuts', () => {
     mockSelectedTaskId = 'task-123'
 
     renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     fireKeydown('Escape')
 
     expect(mockSetLogDrawerTaskId).not.toHaveBeenCalled()
-    expect(setModalOpen).not.toHaveBeenCalled()
     expect(setConflictDrawerOpen).not.toHaveBeenCalled()
   })
 
@@ -150,7 +148,7 @@ describe('useSprintKeyboardShortcuts', () => {
     const removeSpy = vi.spyOn(window, 'removeEventListener')
 
     const { unmount } = renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     unmount()
@@ -163,7 +161,7 @@ describe('useSprintKeyboardShortcuts', () => {
     const addSpy = vi.spyOn(window, 'addEventListener')
 
     const { rerender } = renderHook(() =>
-      useSprintKeyboardShortcuts({ setModalOpen, setConflictDrawerOpen })
+      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
     )
 
     const callsBefore = addSpy.mock.calls.length
