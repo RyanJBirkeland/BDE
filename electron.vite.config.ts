@@ -22,7 +22,16 @@ export default defineConfig({
       }
     },
     optimizeDeps: {
-      include: ['xterm', 'xterm-addon-fit', 'xterm-addon-web-links']
+      include: ['xterm', 'xterm-addon-fit', 'xterm-addon-web-links', 'monaco-editor']
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'monaco-editor': ['monaco-editor']
+          }
+        }
+      }
     },
     plugins: [react()]
   }
