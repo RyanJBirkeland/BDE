@@ -25,6 +25,7 @@ vi.mock('../../../stores/panelLayout', async () => {
       root: { type: 'split' },
     })
   )
+  ;(store as any).subscribe = vi.fn()
   ;(store as any).getState = () => ({
     get focusedPanelId() { return mockFocusedPanelId },
     focusPanel: mockFocusPanel,
@@ -40,7 +41,7 @@ vi.mock('../../../stores/panelLayout', async () => {
 
 // Mock views used in PanelLeaf
 vi.mock('../../../views/AgentsView', () => ({ AgentsView: () => <div data-testid="agents-view">Agents</div> }))
-vi.mock('../../../views/TerminalView', () => ({ TerminalView: () => <div data-testid="ide-view">IDE</div> }))
+vi.mock('../../../views/IDEView', () => ({ default: () => <div data-testid="ide-view">IDE</div>, IDEView: () => <div data-testid="ide-view">IDE</div> }))
 vi.mock('../../../views/SprintView', () => ({ default: () => <div data-testid="sprint-view">Sprint</div> }))
 vi.mock('../../../views/MemoryView', () => ({ default: () => <div data-testid="memory-view">Memory</div> }))
 vi.mock('../../../views/CostView', () => ({ default: () => <div data-testid="cost-view">Cost</div> }))

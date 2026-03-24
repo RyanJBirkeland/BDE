@@ -64,13 +64,15 @@ vi.mock('react-resizable-panels', () => ({
   Separator: () => <hr />,
 }))
 
-vi.stubGlobal('window', {
-  ...window,
-  api: {
+// Mock window.api without clobbering the DOM window object
+Object.defineProperty(window, 'api', {
+  value: {
     readDir: vi.fn().mockResolvedValue([]), readFile: vi.fn().mockResolvedValue(''),
     writeFile: vi.fn().mockResolvedValue(undefined), openDirectoryDialog: vi.fn().mockResolvedValue(null),
     watchDir: vi.fn().mockResolvedValue(undefined), onDirChanged: vi.fn().mockReturnValue(vi.fn()),
   },
+  writable: true,
+  configurable: true,
 })
 
 function setIDEState(overrides: Partial<MockIDEState>): void {

@@ -5,9 +5,11 @@ import { FileTree } from '../FileTree'
 const mockReadDir = vi.fn()
 const mockOnDirChanged = vi.fn(() => vi.fn())
 
-vi.stubGlobal('window', {
-  ...window,
-  api: { readDir: mockReadDir, onDirChanged: mockOnDirChanged },
+// Mock window.api without replacing the full window object
+Object.defineProperty(window, 'api', {
+  value: { readDir: mockReadDir, onDirChanged: mockOnDirChanged },
+  writable: true,
+  configurable: true,
 })
 
 vi.mock('../../../stores/ide', () => ({
