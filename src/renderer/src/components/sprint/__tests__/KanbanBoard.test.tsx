@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import type { SprintTask } from '../../../../../shared/types'
 
+// Mock toast store
+vi.mock('../../../stores/toasts', () => ({
+  toast: {
+    info: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+
 // Capture DndContext's onDragEnd so we can invoke it manually
 let capturedOnDragEnd: ((event: unknown) => void) | null = null
 
@@ -309,5 +318,31 @@ describe('KanbanBoard', () => {
     render(<KanbanBoard {...defaultProps} activeTasks={activeTasks} />)
 
     expect(screen.getByText('3/5')).toBeInTheDocument()
+  })
+
+  it('shows toast when WIP limit prevents a drop', async () => {
+    const { toast } = await import('../../../stores/toasts')
+    const activeTasks = Array.from({ length: 5 }, (_, i) =>
+      makeTask({ id: `active-${i}`, title: `Active ${i}`, status: 'active' })
+    )
+    const todoTask = makeTask({ id: 'queued-1', title: 'Queued', status: 'queued' })
+
+    render(
+      <KanbanBoard
+        {...defaultProps}
+        todoTasks={[todoTask]}
+        activeTasks={activeTasks}
+      />
+    )
+
+    act(() => {
+      capturedOnDragEnd?.({
+        active: { id: 'queued-1' },
+        over: { id: 'active' },
+      })
+    })
+
+    expect(toast.info).toHaveBeenCalledWith(expect.stringContaining('WIP limit reached'))
+    expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
   })
 })

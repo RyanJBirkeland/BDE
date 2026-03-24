@@ -17,6 +17,7 @@ import { TaskCard } from './TaskCard'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { WIP_LIMIT_IN_PROGRESS } from '../../lib/constants'
 import { TASK_STATUS } from '../../../../shared/constants'
+import { toast } from '../../stores/toasts'
 import type { SprintTask } from './SprintCenter'
 
 type KanbanBoardProps = {
@@ -108,6 +109,7 @@ export function KanbanBoard({
       sourceTask.status !== TASK_STATUS.ACTIVE &&
       wipFull
     ) {
+      toast.info(`WIP limit reached (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}). Complete or remove an in-progress task first.`)
       return
     }
 
