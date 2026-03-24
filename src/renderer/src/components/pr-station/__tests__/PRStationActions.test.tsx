@@ -34,7 +34,7 @@ const mockPr: OpenPr = {
   repo: 'BDE',
 }
 
-const mergeability = { mergeable: true, mergeable_state: 'clean' }
+const mergeability = { number: 42, repo: 'BDE', mergeable: true, mergeable_state: 'clean' }
 
 describe('PRStationActions', () => {
   beforeEach(() => {
@@ -100,7 +100,7 @@ describe('PRStationActions', () => {
   })
 
   it('disables merge button when mergeability blocks merge', () => {
-    const blocked = { mergeable: false, mergeable_state: 'dirty' }
+    const blocked = { number: 42, repo: 'BDE', mergeable: false, mergeable_state: 'dirty' }
     render(<PRStationActions pr={mockPr} mergeability={blocked} onRemovePr={vi.fn()} />)
     expect(screen.getByTitle(/not mergeable/i)).toBeDisabled()
   })

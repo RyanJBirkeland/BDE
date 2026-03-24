@@ -24,7 +24,7 @@ const reviewComments = [
     html_url: '',
     path: 'src/main.ts',
     line: 42,
-    side: 'RIGHT',
+    side: 'RIGHT' as const,
     in_reply_to_id: null,
   },
   {
@@ -36,7 +36,7 @@ const reviewComments = [
     html_url: '',
     path: 'src/main.ts',
     line: 42,
-    side: 'RIGHT',
+    side: 'RIGHT' as const,
     in_reply_to_id: 20,
   },
 ]

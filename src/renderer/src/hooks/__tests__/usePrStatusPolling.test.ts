@@ -22,7 +22,7 @@ vi.mock('../../stores/sprintTasks', () => {
       setPrMergedMap: mockSetPrMergedMap,
     })
   )
-  store.getState = () => ({
+  ;(store as any).getState = () => ({
     tasks: mockTasks,
     prMergedMap: mockPrMergedMap,
     updateTask: mockUpdateTask,
@@ -38,7 +38,7 @@ vi.mock('../../stores/prConflicts', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({ conflictingTaskIds: new Set(), setConflicts: mockSetConflicts })
   )
-  store.getState = () => ({ conflictingTaskIds: new Set(), setConflicts: mockSetConflicts })
+  ;(store as any).getState = () => ({ conflictingTaskIds: new Set(), setConflicts: mockSetConflicts })
   return { usePrConflictsStore: store }
 })
 

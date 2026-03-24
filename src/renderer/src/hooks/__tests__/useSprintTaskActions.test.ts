@@ -21,7 +21,7 @@ vi.mock('../../stores/sprintTasks', () => {
       setTasks: mockSetTasks,
     })
   )
-  store.getState = () => ({
+  ;(store as any).getState = () => ({
     tasks: mockTasks,
     updateTask: mockUpdateTask,
     deleteTask: mockDeleteTask,
@@ -39,7 +39,7 @@ vi.mock('../../stores/sprintUI', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({ selectedTaskId: null, setSelectedTaskId: mockSetSelectedTaskId })
   )
-  store.getState = () => ({ selectedTaskId: null, setSelectedTaskId: mockSetSelectedTaskId })
+  ;(store as any).getState = () => ({ selectedTaskId: null, setSelectedTaskId: mockSetSelectedTaskId })
   return { useSprintUI: store }
 })
 

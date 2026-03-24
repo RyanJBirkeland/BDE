@@ -14,8 +14,6 @@ const mockAuthStatus = vi.fn().mockResolvedValue({
   tokenExpired: false,
 })
 
-const mockSettingsGet = vi.fn().mockResolvedValue(null)
-
 beforeEach(() => {
   vi.mocked(window.api.settings.get).mockResolvedValue(null)
   ;(window.api as unknown as Record<string, unknown>).authStatus = mockAuthStatus

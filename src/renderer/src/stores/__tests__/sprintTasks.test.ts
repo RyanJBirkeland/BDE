@@ -54,7 +54,7 @@ describe('sprintTasks store', () => {
     useSprintTasks.setState(initialState)
     vi.clearAllMocks()
     // Reset mocks on window.api.sprint
-    const sprint = window.api.sprint as Record<string, ReturnType<typeof vi.fn>>
+    const sprint = window.api.sprint as unknown as Record<string, ReturnType<typeof vi.fn>>
     sprint.list.mockResolvedValue([])
     sprint.update.mockResolvedValue({})
     sprint.delete.mockResolvedValue({ ok: true })

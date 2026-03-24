@@ -15,7 +15,7 @@ vi.mock('../../stores/sprintTasks', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({ tasks: mockTasks, loadData: mockLoadData })
   )
-  store.getState = () => ({ tasks: mockTasks, loadData: mockLoadData })
+  ;(store as any).getState = () => ({ tasks: mockTasks, loadData: mockLoadData })
   return { useSprintTasks: store }
 })
 

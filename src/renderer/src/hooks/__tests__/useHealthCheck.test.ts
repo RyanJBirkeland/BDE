@@ -18,7 +18,7 @@ vi.mock('../../stores/healthCheck', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({ stuckTaskIds, dismissedIds, setStuckTasks, dismiss })
   )
-  store.getState = () => ({ stuckTaskIds, dismissedIds, setStuckTasks, dismiss })
+  ;(store as any).getState = () => ({ stuckTaskIds, dismissedIds, setStuckTasks, dismiss })
 
   return { useHealthCheckStore: store }
 })

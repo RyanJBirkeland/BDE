@@ -30,7 +30,7 @@ describe('costData store', () => {
     useCostDataStore.setState(initialState)
     vi.clearAllMocks()
     // Add getAgentHistory to the mock if not already present
-    const cost = window.api.cost as Record<string, ReturnType<typeof vi.fn>>
+    const cost = window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>
     if (!cost.getAgentHistory) {
       cost.getAgentHistory = vi.fn().mockResolvedValue([])
     } else {
@@ -47,7 +47,7 @@ describe('costData store', () => {
 
   it('fetchLocalAgents loads agents and computes total cost', async () => {
     const records = [makeRecord('a1', 0.5), makeRecord('a2', 1.25)]
-    ;(window.api.cost as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockResolvedValue(
+    ;(window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockResolvedValue(
       records
     )
 
@@ -61,7 +61,7 @@ describe('costData store', () => {
 
   it('totalCost treats null costUsd as 0', async () => {
     const records = [makeRecord('a1', null), makeRecord('a2', 2.0)]
-    ;(window.api.cost as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockResolvedValue(
+    ;(window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockResolvedValue(
       records
     )
 
@@ -71,7 +71,7 @@ describe('costData store', () => {
   })
 
   it('prevents concurrent fetches', async () => {
-    const getAgentHistory = (window.api.cost as Record<string, ReturnType<typeof vi.fn>>)
+    const getAgentHistory = (window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>)
       .getAgentHistory
     let resolveFirst!: (v: AgentCostRecord[]) => void
     getAgentHistory.mockReturnValueOnce(
@@ -94,7 +94,7 @@ describe('costData store', () => {
   })
 
   it('sets isFetching to false after error', async () => {
-    ;(window.api.cost as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockRejectedValue(
+    ;(window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockRejectedValue(
       new Error('fetch error')
     )
 
@@ -104,7 +104,7 @@ describe('costData store', () => {
   })
 
   it('handles errors gracefully without throwing', async () => {
-    ;(window.api.cost as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockRejectedValue(
+    ;(window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockRejectedValue(
       new Error('API down')
     )
 

@@ -38,7 +38,7 @@ describe('AppearanceSection', () => {
     const setTheme = vi.fn()
     const { useThemeStore } = await import('../../../stores/theme')
     vi.mocked(useThemeStore).mockImplementation((selector) =>
-      (selector as (s: Record<string, unknown>) => unknown)({ theme: 'dark', toggleTheme: vi.fn(), setTheme })
+      (selector as unknown as (s: Record<string, unknown>) => unknown)({ theme: 'dark', toggleTheme: vi.fn(), setTheme })
     )
     render(<AppearanceSection />)
     await user.click(screen.getByRole('button', { name: 'Light' }))

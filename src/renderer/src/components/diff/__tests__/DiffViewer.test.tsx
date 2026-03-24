@@ -22,9 +22,9 @@ function makeDiffFile(path: string, overrides: Partial<DiffFile> = {}): DiffFile
       {
         header: '@@ -1,3 +1,4 @@',
         lines: [
-          { type: 'context', content: 'context line', lineNo: { old: 1, new: 1 } },
-          { type: 'add', content: 'added line', lineNo: { old: null, new: 2 } },
-          { type: 'del', content: 'deleted line', lineNo: { old: 2, new: null } },
+          { type: 'ctx', content: 'context line', lineNo: { old: 1, new: 1 } },
+          { type: 'add', content: 'added line', lineNo: { old: undefined, new: 2 } },
+          { type: 'del', content: 'deleted line', lineNo: { old: 2, new: undefined } },
         ],
       },
     ],
