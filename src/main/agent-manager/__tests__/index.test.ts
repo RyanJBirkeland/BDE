@@ -51,12 +51,18 @@ vi.mock('../orphan-recovery', () => ({
   recoverOrphans: vi.fn(),
 }))
 
+vi.mock('../../agent-history', () => ({
+  createAgentRecord: vi.fn().mockResolvedValue({}),
+  updateAgentMeta: vi.fn().mockResolvedValue(undefined),
+}))
+
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------
 
 import { createAgentManager } from '../index'
 import type { AgentManagerConfig, AgentHandle } from '../types'
+import { createAgentRecord } from '../../agent-history'
 import { getQueuedTasks, claimTask, updateTask } from '../../data/sprint-queries'
 import { getRepoPaths } from '../../paths'
 import { spawnAgent } from '../sdk-adapter'
@@ -219,6 +225,38 @@ describe('createAgentManager', () => {
       expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
         'task-1',
         expect.objectContaining({ agent_run_id: expect.any(String) }),
+      )
+
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
+
+    it('calls createAgentRecord when spawning an agent', async () => {
+      vi.useFakeTimers()
+      const logger = makeLogger()
+      setupDefaultMocks()
+      const task = makeTask()
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
+      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      const { handle } = makeMockHandle([{ type: 'text', content: 'hello' }])
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
+      vi.mocked(createAgentRecord).mockResolvedValue({} as any)
+
+      const mgr = createAgentManager(baseConfig, logger)
+      mgr.start()
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(vi.mocked(createAgentRecord)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: expect.any(String),
+          task: expect.any(String),
+          repo: expect.any(String),
+          status: 'running',
+          sprintTaskId: 'task-1',
+          source: 'bde',
+        })
       )
 
       mgr.stop(0).catch(() => {})
