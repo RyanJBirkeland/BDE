@@ -48,19 +48,27 @@ function resetMocks() {
 const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 
 describe('resolveSuccess', () => {
+  const mockOnTaskTerminal = vi.fn()
   const opts = {
     taskId: 'task-1',
     worktreePath: '/tmp/worktrees/task-1',
     title: 'Add login page',
     ghRepo: 'owner/repo',
+    onTaskTerminal: mockOnTaskTerminal,
   }
 
-  beforeEach(resetMocks)
+  beforeEach(() => {
+    resetMocks()
+    mockOnTaskTerminal.mockReset()
+  })
 
   it('pushes the branch and creates PR, then updates task with PR info', async () => {
     mockExecFileSequence([
       { stdout: 'agent/add-login-page\n' },                    // git rev-parse
+      { stdout: '' },                                           // git status --porcelain (no uncommitted changes)
+      { stdout: '1\n' },                                        // git rev-list --count (has commits)
       { stdout: '' },                                           // git push
+      { stdout: '' },                                           // gh pr list (no existing PR)
       { stdout: 'https://github.com/owner/repo/pull/42\n' },   // gh pr create
     ])
 
@@ -84,6 +92,15 @@ describe('resolveSuccess', () => {
     expect(pushArgs).toContain('origin')
     expect(pushArgs).toContain('agent/add-login-page')
 
+    // Verify gh pr list was called to check for existing PR
+    const prListCall = calls.find(
+      (c) => c[0] === 'gh' && Array.isArray(c[1]) && c[1].includes('list')
+    )
+    expect(prListCall).toBeDefined()
+    const listArgs = prListCall![1] as string[]
+    expect(listArgs).toContain('--head')
+    expect(listArgs).toContain('agent/add-login-page')
+
     // Verify gh pr create with correct arguments
     const prCall = calls.find(
       (c) => c[0] === 'gh' && Array.isArray(c[1]) && c[1].includes('create')
@@ -105,10 +122,46 @@ describe('resolveSuccess', () => {
     })
   })
 
+  it('uses existing PR when one already exists for the branch', async () => {
+    mockExecFileSequence([
+      { stdout: 'agent/add-login-page\n' },                                       // git rev-parse
+      { stdout: '' },                                                              // git status --porcelain
+      { stdout: '1\n' },                                                           // git rev-list --count
+      { stdout: '' },                                                              // git push
+      { stdout: '{"url":"https://github.com/owner/repo/pull/99","number":99}\n' }, // gh pr list (existing PR)
+    ])
+
+    await resolveSuccess(opts, noopLogger)
+
+    const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
+
+    // Verify gh pr list was called
+    const prListCall = calls.find(
+      (c) => c[0] === 'gh' && Array.isArray(c[1]) && c[1].includes('list')
+    )
+    expect(prListCall).toBeDefined()
+
+    // Verify gh pr create was NOT called (since PR already exists)
+    const prCreateCall = calls.find(
+      (c) => c[0] === 'gh' && Array.isArray(c[1]) && c[1].includes('create')
+    )
+    expect(prCreateCall).toBeUndefined()
+
+    // Verify updateTask called with existing PR info
+    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
+      pr_status: 'open',
+      pr_url: 'https://github.com/owner/repo/pull/99',
+      pr_number: 99,
+    })
+  })
+
   it('pushes branch and records notes when gh pr create fails (does not set pr_status=open)', async () => {
     mockExecFileSequence([
       { stdout: 'agent/add-login-page\n' },             // git rev-parse
+      { stdout: '' },                                    // git status --porcelain
+      { stdout: '1\n' },                                 // git rev-list --count
       { stdout: '' },                                    // git push
+      { stdout: '' },                                    // gh pr list (no existing PR)
       { error: new Error('gh: authentication error') }, // gh pr create fails
     ])
 
@@ -124,6 +177,42 @@ describe('resolveSuccess', () => {
     // Should record branch name in notes so user can create PR manually
     expect(patch.notes).toBe('Branch agent/add-login-page pushed but PR creation failed')
   })
+
+  it('sets task to error and calls onTaskTerminal when branch detection fails', async () => {
+    mockExecFileSequence([
+      { error: new Error('fatal: not a git repository') }, // git rev-parse fails
+    ])
+
+    await resolveSuccess(opts, noopLogger)
+
+    // Should set status to error
+    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
+      status: 'error',
+      completed_at: expect.any(String),
+      notes: 'Failed to detect branch',
+    })
+
+    // Should call onTaskTerminal with 'error'
+    expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'error')
+  })
+
+  it('sets task to error and calls onTaskTerminal when branch name is empty', async () => {
+    mockExecFileSequence([
+      { stdout: '' }, // git rev-parse returns empty string
+    ])
+
+    await resolveSuccess(opts, noopLogger)
+
+    // Should set status to error
+    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
+      status: 'error',
+      completed_at: expect.any(String),
+      notes: 'Empty branch name',
+    })
+
+    // Should call onTaskTerminal with 'error'
+    expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'error')
+  })
 })
 
 describe('resolveFailure', () => {
@@ -133,31 +222,42 @@ describe('resolveFailure', () => {
   })
 
   it('re-queues task with incremented retry count when retries remain', async () => {
-    await resolveFailure({ taskId: 'task-2', retryCount: 1 })
+    const result = await resolveFailure({ taskId: 'task-2', retryCount: 1 })
 
     expect(updateTaskMock).toHaveBeenCalledWith('task-2', {
       status: 'queued',
       retry_count: 2,
       claimed_by: null,
     })
+    expect(result).toBe(false) // not terminal
   })
 
   it('marks task failed when retry count is exhausted', async () => {
-    await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES })
+    const result = await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES })
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     expect(patch.status).toBe('failed')
     expect(typeof patch.completed_at).toBe('string')
+    expect(result).toBe(true) // terminal
   })
 
   it('re-queues when retryCount is one below MAX_RETRIES', async () => {
-    await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES - 1 })
+    const result = await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES - 1 })
 
     expect(updateTaskMock).toHaveBeenCalledWith('task-4', {
       status: 'queued',
       retry_count: MAX_RETRIES,
       claimed_by: null,
     })
+    expect(result).toBe(false) // not terminal
+  })
+
+  it('returns false when updateTask throws', async () => {
+    updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
+
+    const result = await resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES })
+
+    expect(result).toBe(false) // not terminal because the update failed
   })
 })

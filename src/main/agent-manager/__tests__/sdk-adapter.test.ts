@@ -100,21 +100,12 @@ describe('spawnAgent (CLI fallback)', () => {
     )
   })
 
-  it('clears ANTHROPIC_API_KEY from env', async () => {
-    const original = process.env.ANTHROPIC_API_KEY
-    process.env.ANTHROPIC_API_KEY = 'sk-test-key'
-
+  it('sets ANTHROPIC_API_KEY from OAuth token in env', async () => {
     await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5' })
 
     const spawnEnv = (mockSpawn as unknown as MockInstance).mock.calls[0][2].env
-    expect(spawnEnv).not.toHaveProperty('ANTHROPIC_API_KEY')
-
-    // Restore
-    if (original === undefined) {
-      delete process.env.ANTHROPIC_API_KEY
-    } else {
-      process.env.ANTHROPIC_API_KEY = original
-    }
+    // OAuth token is set as ANTHROPIC_API_KEY for agent auth
+    expect(spawnEnv).toHaveProperty('ANTHROPIC_API_KEY')
   })
 
   it('abort() sends SIGTERM to the child process', async () => {

@@ -1,5 +1,5 @@
 import type { ActiveAgent, AgentHandle, Logger } from './types'
-import { SPAWN_TIMEOUT_MS, MAX_RETRIES } from './types'
+import { SPAWN_TIMEOUT_MS } from './types'
 import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'
 import { spawnAgent } from './sdk-adapter'
@@ -201,11 +201,12 @@ export async function runAgent(
         worktreePath: worktree.worktreePath,
         title: task.title,
         ghRepo,
+        onTaskTerminal,
       }, logger)
     } catch (err) {
       logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)
-      await resolveFailure({ taskId: task.id, retryCount: task.retry_count ?? 0 }, logger)
-      if ((task.retry_count ?? 0) >= MAX_RETRIES) {
+      const isTerminal = await resolveFailure({ taskId: task.id, retryCount: task.retry_count ?? 0 }, logger)
+      if (isTerminal) {
         await onTaskTerminal(task.id, 'failed')
       }
     }

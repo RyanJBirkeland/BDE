@@ -148,12 +148,13 @@ describe('setupWorktree', () => {
     ).rejects.toThrow(`Repo path does not exist or is not a git repository: ${nonGitDir}`)
   })
 
-  it('attempts cleanup on failure and rethrows', async () => {
+  it('retries on stale branch by deleting and re-creating', async () => {
     let callCount = 0
     execFileMock.mockImplementation((...args: unknown[]) => {
       const cb = args[args.length - 1]
       callCount++
-      // First call (worktree add) fails; subsequent calls (cleanup) succeed
+      // First call (worktree add) fails with "already exists"
+      // Subsequent calls (prune, branch -D, retry add) succeed
       const err = callCount === 1 ? new Error('branch already exists') : null
       if (typeof cb === 'function') {
         cb(err, '', '')
@@ -162,20 +163,21 @@ describe('setupWorktree', () => {
       return Object.assign(p, { child: null }) as unknown as ChildProcess
     })
 
-    await expect(
-      setupWorktree({
-        repoPath: mockRepoPath,
-        worktreeBase: tmpDir,
-        taskId: 'task-789',
-        title: 'Bad task',
-      })
-    ).rejects.toThrow('branch already exists')
+    const result = await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'task-789',
+      title: 'Bad task',
+    })
 
-    // Verify cleanup attempt (worktree remove) was called
-    const removeCall = execFileMock.mock.calls.find(
-      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][1] === 'remove'
+    // Should succeed after retry
+    expect(result.branch).toBe('agent/bad-task')
+
+    // Verify branch delete was called during retry
+    const branchDeleteCall = execFileMock.mock.calls.find(
+      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('-D')
     )
-    expect(removeCall).toBeDefined()
+    expect(branchDeleteCall).toBeDefined()
   })
 })
 

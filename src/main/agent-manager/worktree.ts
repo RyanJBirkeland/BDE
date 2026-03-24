@@ -93,20 +93,35 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
   try {
     await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: buildAgentEnv() })
   } catch (err) {
-    // Clean up partial worktree on failure
-    try {
-      await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: buildAgentEnv() })
-    } catch {
-      // best-effort
+    // If branch already exists (stale from previous failed run), delete and retry
+    const errMsg = err instanceof Error ? err.message : String(err)
+    if (errMsg.includes('already exists')) {
+      ;(logger ?? console).warn(`[worktree] Stale branch ${branch} — deleting and retrying`)
+      try {
+        await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env: buildAgentEnv() })
+        await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env: buildAgentEnv() })
+        await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: buildAgentEnv() })
+      } catch (retryErr) {
+        // Retry failed — clean up and throw
+        try { rmSync(worktreePath, { recursive: true, force: true }) } catch { /* best-effort */ }
+        releaseLock(worktreeBase, repoPath)
+        throw retryErr
+      }
+    } else {
+      // Non-branch-exists error — clean up and throw
+      try {
+        await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: buildAgentEnv() })
+      } catch {
+        // best-effort
+      }
+      try {
+        rmSync(worktreePath, { recursive: true, force: true })
+      } catch {
+        // best-effort
+      }
+      releaseLock(worktreeBase, repoPath)
+      throw err
     }
-    // Ensure directory is removed even if git worktree remove failed
-    try {
-      rmSync(worktreePath, { recursive: true, force: true })
-    } catch {
-      // best-effort
-    }
-    releaseLock(worktreeBase, repoPath)
-    throw err
   }
 
   releaseLock(worktreeBase, repoPath)
