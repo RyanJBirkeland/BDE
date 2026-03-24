@@ -119,7 +119,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, mergeableState: 'clean' },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' },
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -147,7 +147,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: true, mergeableState: 'clean' },
+      { taskId: 'task-1', merged: true, state: 'closed', mergedAt: '2026-01-01T00:00:00Z', mergeableState: 'clean' },
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -167,7 +167,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: true, mergeableState: 'clean' },
+      { taskId: 'task-1', merged: true, state: 'closed', mergedAt: '2026-01-01T00:00:00Z', mergeableState: 'clean' },
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -182,7 +182,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, mergeableState: 'dirty' },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'dirty' },
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -197,7 +197,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-conflict', merged: false, mergeableState: 'dirty' },
+      { taskId: 'task-conflict', merged: false, state: 'open', mergedAt: null, mergeableState: 'dirty' },
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -212,7 +212,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, mergeableState: 'clean' },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' },
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -244,7 +244,7 @@ describe('usePrStatusPolling', () => {
 
     // merged: false with prev already having false
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, mergeableState: null },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: null },
     ])
 
     renderHook(() => usePrStatusPolling())

@@ -205,7 +205,7 @@ describe('DiffViewer', () => {
         pull_request_review_id: null,
       },
     ]
-    render(<DiffViewer files={files} comments={comments} />)
+    render(<DiffViewer files={files} comments={comments as any} />)
     expect(screen.getAllByText('This is a review comment').length).toBeGreaterThan(0)
   })
 
@@ -276,7 +276,7 @@ describe('DiffViewer', () => {
         pull_request_review_id: null,
       },
     ]
-    render(<DiffViewer files={files} comments={comments} />)
+    render(<DiffViewer files={files} comments={comments as any} />)
     // In plain mode we see diff-file elements; in virt mode we see the absolute-positioned container
     expect(document.querySelector('.diff-file')).toBeInTheDocument()
   })

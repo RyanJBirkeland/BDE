@@ -155,7 +155,6 @@ describe('ConfirmModal', () => {
   })
 
   it('calls onCancel when Escape key is pressed inside modal', async () => {
-    const user = userEvent.setup()
     render(
       <ConfirmModal
         open={true}

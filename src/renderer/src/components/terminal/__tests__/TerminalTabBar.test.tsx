@@ -298,7 +298,6 @@ describe('TerminalTabBar', () => {
   })
 
   it('shows blue status dot for tab with unread messages', () => {
-    const tab = makeTab({ hasUnread: true })
     const { container } = render(<TerminalTabBar {...defaultProps} />)
     // Default tab doesn't have unread but we can verify dot exists
     expect(container.querySelector('.terminal-tab__status-dot')).toBeInTheDocument()

@@ -145,7 +145,7 @@ describe('CommandPalette', () => {
     const mockSetView = vi.fn()
     const { useUIStore } = await import('../../../stores/ui')
     vi.mocked(useUIStore).mockImplementation((selector) =>
-      selector({ setView: mockSetView })
+      selector({ setView: mockSetView, activeView: 'agents' } as any)
     )
 
     render(<CommandPalette open={true} onClose={onClose} />)
