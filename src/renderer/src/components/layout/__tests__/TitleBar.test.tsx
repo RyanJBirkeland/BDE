@@ -8,6 +8,20 @@ vi.mock('../../../stores/theme', () => ({
   ),
 }))
 
+vi.mock('../../../stores/notifications', () => ({
+  useNotificationsStore: vi.fn((selector?: (s: any) => unknown) => {
+    const state = {
+      notifications: [],
+      getUnreadCount: () => 0,
+      markAsRead: vi.fn(),
+      markAllAsRead: vi.fn(),
+      addNotification: vi.fn(),
+      clearAll: vi.fn(),
+    }
+    return selector ? selector(state) : state
+  }),
+}))
+
 describe('TitleBar', () => {
   it('shows cost display', () => {
     render(<TitleBar sessionCount={0} totalCost={1.5} />)

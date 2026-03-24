@@ -2,6 +2,7 @@ import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../stores/theme'
 import { usePrConflictsStore } from '../../stores/prConflicts'
 import { Badge } from '../ui/Badge'
+import { NotificationBell } from './NotificationBell'
 
 interface TitleBarProps {
   sessionCount: number
@@ -40,6 +41,7 @@ export function TitleBar({ sessionCount, totalCost, onConflictClick }: TitleBarP
           <Badge variant="success" size="sm">{sessionCount} active</Badge>
         )}
         <span className="titlebar__cost">${totalCost.toFixed(2)}</span>
+        <NotificationBell />
         <button className="bde-btn bde-btn--icon bde-btn--sm" onClick={toggleTheme} title="Toggle theme">
           {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
         </button>
