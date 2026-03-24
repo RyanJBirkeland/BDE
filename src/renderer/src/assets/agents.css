@@ -46,3 +46,32 @@
   color: var(--text-primary, var(--bde-text));
   border-color: var(--text-secondary, var(--bde-text-muted));
 }
+
+/* ── Playground Modal ──────────────────────────────────── */
+
+.playground-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.playground-modal__view-btn--active {
+  background: var(--bde-accent-dim) !important;
+  color: var(--bde-accent) !important;
+  border-color: var(--bde-accent) !important;
+}
+
+/* Simple CSS-based syntax highlighting for HTML source code */
+.playground-modal__source {
+  color: var(--bde-text-muted);
+}
+
+/* HTML tags */
+.playground-modal__source::before {
+  content: '';
+}
+
+/* Basic highlighting via regex-like patterns (limited, but no deps) */
+/* This is minimal - real highlighting would need a proper parser */
