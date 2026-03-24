@@ -151,7 +151,7 @@ function TaskTable({
                 className={`cost-table__row cost-table__row--${tier}`}
                 onClick={() => onRowClick(r)}
               >
-                <td className="cost-table__session">
+                <td className="cost-table__session" title={r.task || r.id}>
                   <span className="cost-table__key">{truncate(r.task || r.id.slice(0, 8), 50)}</span>
                 </td>
                 <td className="cost-table__num cost-table__cost">{formatCost(r.cost_usd)}</td>
