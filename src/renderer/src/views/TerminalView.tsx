@@ -168,7 +168,7 @@ export function TerminalView(): React.JSX.Element {
   return (
     <motion.div className="terminal-view" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <div className="terminal-view__header">
-        <span className="terminal-view__title">Terminal</span>
+        <span className="terminal-view__title text-gradient-aurora">Terminal</span>
       </div>
 
       <div className="terminal-tab-bar">
