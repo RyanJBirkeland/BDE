@@ -2,9 +2,6 @@ import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { tokens } from '../../design-system/tokens'
 
-const THINKING_ACCENT = '#A855F7'
-const THINKING_BG = 'rgba(168, 85, 247, 0.15)'
-
 interface ThinkingBlockProps {
   tokenCount: number
   text?: string
@@ -17,9 +14,9 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
   return (
     <div
       style={{
-        border: `1px solid ${THINKING_ACCENT}`,
+        border: '1px solid var(--bde-purple)',
         borderRadius: tokens.radius.md,
-        backgroundColor: THINKING_BG,
+        backgroundColor: 'var(--bde-purple-dim)',
         overflow: 'hidden',
       }}
     >
@@ -36,7 +33,7 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
           cursor: 'pointer',
           fontFamily: tokens.font.ui,
           fontSize: tokens.size.sm,
-          color: THINKING_ACCENT,
+          color: 'var(--bde-purple)',
           textAlign: 'left',
         }}
       >
@@ -68,7 +65,7 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
         <div
           style={{
             padding: `${tokens.space[2]} ${tokens.space[3]}`,
-            borderTop: `1px solid ${THINKING_ACCENT}`,
+            borderTop: '1px solid var(--bde-purple)',
             fontFamily: tokens.font.code,
             fontSize: tokens.size.sm,
             color: tokens.color.text,

@@ -16,6 +16,7 @@ const MemoryView = React.lazy(() => import('../../views/MemoryView'))
 const CostView = React.lazy(() => import('../../views/CostView'))
 const SettingsView = React.lazy(() => import('../../views/SettingsView'))
 const PRStationView = React.lazy(() => import('../../views/PRStationView'))
+const TaskWorkbenchView = React.lazy(() => import('../../views/TaskWorkbenchView'))
 
 // ---------------------------------------------------------------------------
 // View registry
@@ -37,6 +38,8 @@ function resolveView(viewKey: View): React.ReactNode {
       return <SettingsView />
     case 'pr-station':
       return <PRStationView />
+    case 'task-workbench':
+      return <TaskWorkbenchView />
   }
 }
 

@@ -67,6 +67,14 @@
   --bde-diff-del: #fca5a5;
   --bde-diff-mod: #facc15;
   --bde-subagent: #a78bfa;
+  --bde-purple: #A855F7;
+  --bde-purple-dim: rgba(168, 85, 247, 0.15);
+  --bde-diff-add-bg: rgba(6, 78, 59, 0.3);
+  --bde-diff-del-bg: rgba(127, 29, 29, 0.3);
+  --bde-btn-primary-text: #000000;
+  --bde-glass-bg: rgba(255, 255, 255, 0.04);
+  --bde-glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --bde-glass-bg-active: rgba(255, 255, 255, 0.06);
 
   /* Typography */
   --bde-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -309,16 +317,28 @@ html.theme-light {
   --bde-info: #2563EB;
   --bde-success: #00A863;
   --bde-subagent: #7C3AED;
+  --bde-warning-dim: rgba(217, 119, 6, 0.15);
+  --bde-info-dim: rgba(37, 99, 235, 0.15);
+  --bde-purple: #7C3AED;
+  --bde-purple-dim: rgba(124, 58, 237, 0.15);
 
   /* ── Diff colors ────────────────────────────────────── */
   --bde-diff-add: #16A34A;
   --bde-diff-del: #DC2626;
   --bde-diff-mod: #CA8A04;
+  --bde-diff-add-bg: rgba(6, 78, 59, 0.15);
+  --bde-diff-del-bg: rgba(220, 38, 38, 0.12);
 
   /* ── Shadows ────────────────────────────────────────── */
   --bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --bde-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
   --bde-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.16);
+
+  /* ── Button & glass ───────────────────────────────────── */
+  --bde-btn-primary-text: #000000;
+  --bde-glass-bg: rgba(0, 0, 0, 0.04);
+  --bde-glass-bg-hover: rgba(0, 0, 0, 0.08);
+  --bde-glass-bg-active: rgba(0, 0, 0, 0.06);
 
   /* ── Visual Identity v2 — Backgrounds ───────────────── */
   --bg-void:    #F8F8FA;

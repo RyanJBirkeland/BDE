@@ -279,7 +279,7 @@
   font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bde-hover-subtle);
   border-bottom: 1px solid var(--bde-border);
 }
 
@@ -292,12 +292,12 @@
 }
 
 .diff-line--add {
-  background: rgba(6, 78, 59, 0.3);
+  background: var(--bde-diff-add-bg);
   color: var(--bde-diff-add);
 }
 
 .diff-line--del {
-  background: rgba(127, 29, 29, 0.3);
+  background: var(--bde-diff-del-bg);
   color: var(--bde-diff-del);
 }
 
@@ -355,7 +355,7 @@
   align-items: flex-start;
   gap: 8px;
   padding: 6px 12px;
-  background: rgba(0, 211, 127, 0.08);
+  background: var(--bde-accent-hover);
   border-bottom: 1px solid var(--bde-border);
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
@@ -608,7 +608,7 @@
   width: 22px;
   height: 22px;
   background: var(--bde-accent);
-  color: #000;
+  color: var(--bde-btn-primary-text);
   border: none;
   border-radius: 50%;
   cursor: pointer;

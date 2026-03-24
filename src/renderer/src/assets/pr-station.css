@@ -306,9 +306,9 @@
   padding: 0 6px;
   height: 28px;
   background: var(--bde-accent);
-  color: #000;
+  color: var(--bde-btn-primary-text);
   border: none;
-  border-left: 1px solid rgba(0, 0, 0, 0.2);
+  border-left: 1px solid var(--bde-border);
   border-radius: 0 4px 4px 0;
   cursor: pointer;
   transition: opacity var(--bde-transition-fast);
@@ -364,8 +364,8 @@
   gap: 6px;
   font-size: var(--bde-size-sm);
   font-weight: 600;
-  color: #a855f7;
-  background: rgba(168, 85, 247, 0.15);
+  color: var(--bde-purple);
+  background: var(--bde-purple-dim);
   padding: 4px 10px;
   border-radius: 9999px;
 }

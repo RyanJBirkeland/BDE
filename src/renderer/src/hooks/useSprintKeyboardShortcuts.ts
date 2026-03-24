@@ -1,17 +1,17 @@
 /**
  * useSprintKeyboardShortcuts — keyboard shortcuts for the Sprint Center view.
- * N -> new ticket, Escape -> close drawers/modal.
+ * N -> open task workbench, Escape -> close drawers.
  */
 import { useEffect, type Dispatch, type SetStateAction } from 'react'
 import { useSprintUI } from '../stores/sprintUI'
 
 interface UseSprintKeyboardShortcutsArgs {
-  setModalOpen: Dispatch<SetStateAction<boolean>>
+  openWorkbench: () => void
   setConflictDrawerOpen: Dispatch<SetStateAction<boolean>>
 }
 
 export function useSprintKeyboardShortcuts({
-  setModalOpen,
+  openWorkbench,
   setConflictDrawerOpen,
 }: UseSprintKeyboardShortcutsArgs): void {
   const selectedTaskId = useSprintUI((s) => s.selectedTaskId)
@@ -23,7 +23,6 @@ export function useSprintKeyboardShortcuts({
         // If SpecDrawer is open, let it handle Escape (unsaved-changes guard)
         if (selectedTaskId) return
         setLogDrawerTaskId(null)
-        setModalOpen(false)
         setConflictDrawerOpen(false)
         return
       }
@@ -39,11 +38,11 @@ export function useSprintKeyboardShortcuts({
         !(document.activeElement as HTMLElement)?.isContentEditable
       ) {
         e.preventDefault()
-        setModalOpen(true)
+        openWorkbench()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedTaskId, setLogDrawerTaskId, setModalOpen, setConflictDrawerOpen])
+  }, [selectedTaskId, setLogDrawerTaskId, openWorkbench, setConflictDrawerOpen])
 }

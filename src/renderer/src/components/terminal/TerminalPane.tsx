@@ -4,6 +4,8 @@ import { FitAddon } from 'xterm-addon-fit'
 import { SearchAddon } from 'xterm-addon-search'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { useTerminalStore } from '../../stores/terminal'
+import { useThemeStore } from '../../stores/theme'
+import { getTerminalTheme } from '../../lib/terminal-theme'
 import { tokens } from '../../design-system/tokens'
 import 'xterm/css/xterm.css'
 
@@ -35,15 +37,7 @@ export function TerminalPane({ tabId, shell, visible }: TerminalPaneProps): Reac
     if (!containerRef.current) return
 
     const term = new Terminal({
-      /* xterm theme requires literal color strings — sourced from design tokens */
-      theme: {
-        background: tokens.color.bg,
-        foreground: tokens.color.text,
-        cursor: tokens.color.accent,
-        selectionBackground: tokens.color.accentDim,
-        black: '#1A1A1A',
-        brightBlack: tokens.color.textDim,
-      },
+      theme: getTerminalTheme(),
       fontFamily: tokens.font.code,
       fontSize: 13,
       lineHeight: 1.5,
@@ -106,6 +100,19 @@ export function TerminalPane({ tabId, shell, visible }: TerminalPaneProps): Reac
     }, 50)
     return () => clearTimeout(timer)
   }, [visible])
+
+  // React to theme changes for existing terminal instances
+  useEffect(() => {
+    const unsub = useThemeStore.subscribe(() => {
+      const term = termRef.current
+      if (term) {
+        requestAnimationFrame(() => {
+          term.options.theme = getTerminalTheme()
+        })
+      }
+    })
+    return unsub
+  }, [])
 
   return (
     <div

@@ -7,8 +7,49 @@ import { getRepoPaths } from '../git'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { getSupabaseClient } from '../data/supabase-client'
+import { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
 
 const execFileAsync = promisify(execFile)
+
+function augmentedEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env }
+  const extraPaths = ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`]
+  env.PATH = [...extraPaths, ...(env.PATH ?? '').split(':')].filter(Boolean).join(':')
+  return env
+}
+
+export function buildChatPrompt(
+  messages: Array<{ role: string; content: string }>,
+  formContext: { title: string; repo: string; spec: string }
+): string {
+  const contextBlock = [
+    `[Task Context] Title: "${formContext.title}", Repo: ${formContext.repo}`,
+    formContext.spec ? `Spec draft:\n${formContext.spec}` : '(no spec yet)',
+  ].join('\n')
+
+  const history = messages
+    .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+    .join('\n\n')
+
+  return `You are an AI assistant helping craft a coding agent task. You have context about the task being created.
+
+${contextBlock}
+
+---
+
+${history}
+
+Respond helpfully and concisely. If asked to research, reference specific file paths. If asked to draft spec sections, use markdown with ## headings.`
+}
+
+export function buildSpecGenerationPrompt(input: {
+  title: string
+  repo: string
+  templateHint: string
+}): string {
+  const scaffold = getTemplateScaffold(input.templateHint)
+  return buildQuickSpecPrompt(input.title, input.repo, input.templateHint, scaffold)
+}
 
 export function registerWorkbenchHandlers(): void {
   // --- Fully implemented: Operational readiness checks ---
@@ -175,31 +216,74 @@ export function registerWorkbenchHandlers(): void {
     }
   })
 
-  // --- Stub: AI-powered chat (implemented in task 7) ---
+  // --- AI-powered chat ---
   safeHandle('workbench:chat', async (_e, input: {
     messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
     formContext: { title: string; repo: string; spec: string }
   }) => {
-    const { formContext } = input
-    return {
-      content: `[Placeholder] AI chat not yet implemented. Context: ${formContext.title} (${formContext.repo}). This will shell out to \`claude\` CLI in task 7.`,
+    const prompt = buildChatPrompt(input.messages, input.formContext)
+    try {
+      const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
+        encoding: 'utf-8',
+        timeout: 60_000,
+        env: augmentedEnv(),
+      })
+      return { content: stdout.trim() || 'No response received.' }
+    } catch (err) {
+      return { content: `Error: ${(err as Error).message}` }
     }
   })
 
-  // --- Stub: AI-powered spec generation (implemented in task 7) ---
+  // --- AI-powered spec generation ---
   safeHandle('workbench:generateSpec', async (_e, input: { title: string; repo: string; templateHint: string }) => {
-    return {
-      spec: `# ${input.title}\n\n[Placeholder] AI spec generation not yet implemented. This will use \`buildQuickSpecPrompt()\` and shell out to \`claude\` CLI in task 7.`,
+    const prompt = buildSpecGenerationPrompt(input)
+    try {
+      const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
+        encoding: 'utf-8',
+        timeout: 60_000,
+        env: augmentedEnv(),
+      })
+      return { spec: stdout.trim() || `# ${input.title}\n\n(No spec generated)` }
+    } catch (err) {
+      return { spec: `# ${input.title}\n\nError generating spec: ${(err as Error).message}` }
     }
   })
 
-  // --- Stub: AI-powered spec checks (implemented in task 7) ---
+  // --- AI-powered spec checks ---
   safeHandle('workbench:checkSpec', async (_e, input: { title: string; repo: string; spec: string }) => {
-    const specLength = input.spec.length
-    return {
-      clarity: { status: 'warn' as const, message: `AI spec check not yet implemented (spec: ${specLength} chars)` },
-      scope: { status: 'warn' as const, message: 'AI spec check not yet implemented' },
-      filesExist: { status: 'warn' as const, message: 'AI spec check not yet implemented' },
+    const prompt = `You are reviewing a coding agent spec for quality. Return ONLY valid JSON (no markdown fencing).
+
+Title: "${input.title}"
+Repo: ${input.repo}
+Spec:
+${input.spec}
+
+Assess the spec on three dimensions. For each, return status ("pass", "warn", or "fail") and a brief message.
+
+1. clarity: Is the spec clear and actionable? Can an AI agent execute it without ambiguity?
+2. scope: Is this achievable by one agent in one session? Or too broad?
+3. filesExist: Are file paths specific and plausible? (You cannot verify they exist, so check if they look like real paths.)
+
+Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"...","message":"..."},"filesExist":{"status":"...","message":"..."}}`
+
+    try {
+      const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
+        encoding: 'utf-8',
+        timeout: 45_000,
+        env: augmentedEnv(),
+      })
+      const parsed = JSON.parse(stdout.trim())
+      return {
+        clarity: parsed.clarity ?? { status: 'warn', message: 'Unable to assess clarity' },
+        scope: parsed.scope ?? { status: 'warn', message: 'Unable to assess scope' },
+        filesExist: parsed.filesExist ?? { status: 'warn', message: 'Unable to check files' },
+      }
+    } catch {
+      return {
+        clarity: { status: 'warn' as const, message: 'AI check unavailable' },
+        scope: { status: 'warn' as const, message: 'AI check unavailable' },
+        filesExist: { status: 'warn' as const, message: 'AI check unavailable' },
+      }
     }
   })
 }

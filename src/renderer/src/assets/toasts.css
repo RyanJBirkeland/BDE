@@ -59,7 +59,7 @@
 .toast__action-btn {
   flex-shrink: 0;
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--bde-hover-strong);
   color: var(--bde-accent);
   font-size: var(--bde-size-sm);
   font-weight: 600;

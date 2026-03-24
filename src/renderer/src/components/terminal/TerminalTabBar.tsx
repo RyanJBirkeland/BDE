@@ -140,10 +140,10 @@ export function TerminalTabBar({
   }
 
   const getStatusDotColor = (tab: TerminalTab): string => {
-    if (tab.hasUnread) return '#3B82F6' // Blue for unread
-    if (tab.kind === 'agent') return '#a78bfa' // Purple for agent
-    if (tab.status === 'exited') return '#555555' // Gray for exited
-    return '#00D37F' // Green for running
+    if (tab.hasUnread) return 'var(--bde-info)'
+    if (tab.kind === 'agent') return 'var(--bde-subagent)'
+    if (tab.status === 'exited') return 'var(--bde-text-dim)'
+    return 'var(--bde-accent)'
   }
 
   return (

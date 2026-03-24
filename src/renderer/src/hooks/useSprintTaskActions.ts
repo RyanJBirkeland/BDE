@@ -6,6 +6,8 @@ import { toast } from '../stores/toasts'
 import { TASK_STATUS } from '../../../shared/constants'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
 import type { SprintTask } from '../../../shared/types'
+import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
+import { useUIStore } from '../stores/ui'
 
 /**
  * useSprintTaskActions — all task mutation callbacks for SprintCenter.
@@ -20,6 +22,9 @@ export function useSprintTaskActions() {
   const setTasks = useSprintTasks((s) => s.setTasks)
 
   const { confirm, confirmProps } = useConfirm()
+
+  const loadTask = useTaskWorkbenchStore((s) => s.loadTask)
+  const setView = useUIStore((s) => s.setView)
 
   // --- Drag-and-drop status change (needs current tasks for WIP check) ---
   const handleDragEnd = useCallback(
@@ -155,6 +160,15 @@ export function useSprintTaskActions() {
     [updateTask]
   )
 
+  // --- Edit task in workbench ---
+  const handleEditInWorkbench = useCallback(
+    (task: SprintTask) => {
+      loadTask(task)
+      setView('task-workbench')
+    },
+    [loadTask, setView]
+  )
+
   return {
     handleDragEnd,
     handleReorder,
@@ -166,6 +180,7 @@ export function useSprintTaskActions() {
     handleRerun,
     handleUpdateTitle,
     handleUpdatePriority,
+    handleEditInWorkbench,
     launchTask,
     deleteTask,
     confirmProps,

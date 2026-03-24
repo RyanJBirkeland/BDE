@@ -26,7 +26,8 @@ const VIEW_ORDER: View[] = [
   'pr-station',
   'memory',
   'cost',
-  'settings'
+  'settings',
+  'task-workbench'
 ]
 
 const VIEW_TITLES: Record<View, string> = {
@@ -36,11 +37,12 @@ const VIEW_TITLES: Record<View, string> = {
   'pr-station': 'PR Station',
   memory: 'Memory',
   cost: 'Cost',
-  settings: 'Settings'
+  settings: 'Settings',
+  'task-workbench': 'Task Workbench'
 }
 
 const SHORTCUTS_LEFT: { keys: string; description: string }[] = [
-  { keys: '\u23181\u20137', description: 'Switch views' },
+  { keys: '\u23181\u20138', description: 'Switch views' },
   { keys: '\u2318P', description: 'Command palette' },
   { keys: '\u2318R', description: 'Refresh current view' },
   { keys: 'Escape', description: 'Close panel / blur input' },
@@ -173,7 +175,7 @@ function App(): React.JSX.Element {
 
       if (inInput && !e.metaKey) return
 
-      if (e.metaKey && e.key >= '1' && e.key <= '7') {
+      if (e.metaKey && e.key >= '1' && e.key <= '8') {
         e.preventDefault()
         setView(VIEW_ORDER[Number(e.key) - 1])
         return

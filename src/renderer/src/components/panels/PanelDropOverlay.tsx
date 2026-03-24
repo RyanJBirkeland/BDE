@@ -42,7 +42,7 @@ export function getDropZone(x: number, y: number, rect: Rect): DropZone {
 // Zone highlight styles
 // ---------------------------------------------------------------------------
 
-const HIGHLIGHT_COLOR = 'rgba(59, 130, 246, 0.2)'
+const HIGHLIGHT_COLOR = 'var(--bde-info-dim)'
 
 function zoneStyle(zone: DropZone): React.CSSProperties {
   const base: React.CSSProperties = {

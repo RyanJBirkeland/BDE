@@ -103,11 +103,11 @@
 }
 
 .cost-panel--blue::before {
-  background: linear-gradient(90deg, #3B82F6, #60A5FA);
+  background: var(--bde-info);
 }
 
 .cost-panel--amber::before {
-  background: linear-gradient(90deg, #F59E0B, #FBBF24);
+  background: var(--bde-warning);
 }
 
 .cost-panel__title {
@@ -129,15 +129,15 @@
 }
 
 .cost-panel__badge--blue {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: var(--bde-info-dim);
+  color: var(--bde-info);
+  border: 1px solid var(--bde-info);
 }
 
 .cost-panel__badge--amber {
-  background: rgba(245, 158, 11, 0.15);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--bde-warning-dim);
+  color: var(--bde-warning);
+  border: 1px solid var(--bde-warning);
 }
 
 .cost-panel__stats {
@@ -248,20 +248,20 @@
 }
 
 .cost-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bde-hover-subtle);
 }
 
 /* Row cost tiers */
 .cost-table__row--green td:first-child {
-  border-left: 3px solid #00D37F;
+  border-left: 3px solid var(--bde-success);
 }
 
 .cost-table__row--yellow td:first-child {
-  border-left: 3px solid #F59E0B;
+  border-left: 3px solid var(--bde-warning);
 }
 
 .cost-table__row--red td:first-child {
-  border-left: 3px solid #FF4D4D;
+  border-left: 3px solid var(--bde-danger);
 }
 
 .cost-table__row--gray {
@@ -269,7 +269,7 @@
 }
 
 .cost-table__row--gray td:first-child {
-  border-left: 3px solid #555;
+  border-left: 3px solid var(--bde-text-dim);
 }
 
 .cost-table__num {
@@ -325,7 +325,7 @@
 }
 
 .cost-table__pr-link:hover {
-  background: rgba(0, 211, 127, 0.15);
+  background: var(--bde-accent-dim);
 }
 
 .cost-table__no-pr {

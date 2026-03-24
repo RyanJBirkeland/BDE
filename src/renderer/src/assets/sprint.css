@@ -127,7 +127,7 @@
 }
 
 .pr-row:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--bde-border-hover);
 }
 
 .pr-row__repo-dot {
@@ -190,12 +190,12 @@
 
 .pr-row__btn--open:hover {
   color: var(--color-info);
-  border-color: rgba(91, 158, 255, 0.3);
+  border-color: var(--bde-info);
 }
 
 .pr-row__btn--merge {
   color: var(--bde-accent);
-  border-color: rgba(0, 211, 127, 0.3);
+  border-color: var(--bde-accent);
 }
 
 .pr-row__btn--merge:hover {
@@ -334,8 +334,8 @@
 .sprint-center__shortcut-hint {
   font-size: 11px;
   color: var(--color-text-tertiary, #666);
-  background: var(--color-surface-raised, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  background: var(--color-surface-raised, var(--bde-glass-bg));
+  border: 1px solid var(--color-border, var(--bde-selected));
   border-radius: 4px;
   padding: 2px 8px;
   font-family: inherit;
@@ -497,7 +497,7 @@
   cursor: grab;
   animation: bde-slide-up-fade 200ms ease backwards;
   animation-delay: calc(var(--stagger-index, 0) * 30ms);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 var(--bde-hover-subtle);
 }
 
 .task-card__title {
@@ -764,7 +764,7 @@
 }
 
 .spec-drawer__delete-btn:hover {
-  background: rgba(255, 59, 48, 0.1) !important;
+  background: var(--bde-danger-hover) !important;
 }
 
 .spec-drawer__editor {
@@ -1889,7 +1889,7 @@ tr:hover .bde-task-table__action-btn--done {
 }
 
 .design-mode__message--assistant .design-mode__message-content {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bde-glass-bg);
   border: 1px solid var(--bde-border);
   color: var(--bde-text);
 }
@@ -1928,7 +1928,7 @@ tr:hover .bde-task-table__action-btn--done {
 .design-mode__input {
   flex: 1;
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bde-overlay);
   border: 1px solid var(--bde-border);
   border-radius: 8px;
   color: var(--bde-text);
