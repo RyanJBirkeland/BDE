@@ -44,7 +44,8 @@ const VIEW_TITLES: Record<View, string> = {
   memory: 'Memory',
   cost: 'Cost',
   settings: 'Settings',
-  'task-workbench': 'Task Workbench'
+  'task-workbench': 'Task Workbench',
+  git: 'Source Control',
 }
 
 const SHORTCUTS_LEFT: { keys: string; description: string }[] = [

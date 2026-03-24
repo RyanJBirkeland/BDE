@@ -27,12 +27,15 @@ vi.stubGlobal('window', { api: mockApi })
 import { useGitTreeStore } from '../gitTree'
 import { toast } from '../toasts'
 
-const GIT_STATUS_OUTPUT = `## main...origin/main
-M  src/foo.ts
- M src/bar.ts
-?? src/new.ts
-A  src/added.ts
-`
+// IPC structured response for git:status
+const GIT_STATUS_RESULT = {
+  files: [
+    { path: 'src/foo.ts', status: 'M', staged: true },
+    { path: 'src/added.ts', status: 'A', staged: true },
+    { path: 'src/bar.ts', status: 'M', staged: false },
+    { path: 'src/new.ts', status: '?', staged: false },
+  ],
+}
 
 describe('useGitTreeStore', () => {
   beforeEach(() => {
@@ -54,12 +57,11 @@ describe('useGitTreeStore', () => {
   })
 
   describe('fetchStatus', () => {
-    it('parses git status output into staged/unstaged/untracked', async () => {
-      mockApi.gitStatus.mockResolvedValue(GIT_STATUS_OUTPUT)
+    it('populates staged, unstaged, and untracked from structured IPC result', async () => {
+      mockApi.gitStatus.mockResolvedValue(GIT_STATUS_RESULT)
       await useGitTreeStore.getState().fetchStatus('/repo')
 
       const state = useGitTreeStore.getState()
-      expect(state.branch).toBe('main')
       expect(state.staged).toEqual(expect.arrayContaining([
         { path: 'src/foo.ts', status: 'M' },
         { path: 'src/added.ts', status: 'A' },
@@ -67,6 +69,16 @@ describe('useGitTreeStore', () => {
       expect(state.unstaged).toEqual([{ path: 'src/bar.ts', status: 'M' }])
       expect(state.untracked).toEqual([{ path: 'src/new.ts', status: '?' }])
       expect(state.loading).toBe(false)
+    })
+
+    it('handles empty files array', async () => {
+      mockApi.gitStatus.mockResolvedValue({ files: [] })
+      await useGitTreeStore.getState().fetchStatus('/repo')
+
+      const state = useGitTreeStore.getState()
+      expect(state.staged).toEqual([])
+      expect(state.unstaged).toEqual([])
+      expect(state.untracked).toEqual([])
     })
 
     it('shows error toast on failure', async () => {
@@ -131,7 +143,7 @@ describe('useGitTreeStore', () => {
   describe('stageFile', () => {
     it('calls gitStage and refreshes status', async () => {
       mockApi.gitStage.mockResolvedValue(undefined)
-      mockApi.gitStatus.mockResolvedValue('## main\n')
+      mockApi.gitStatus.mockResolvedValue({ files: [] })
 
       await useGitTreeStore.getState().stageFile('/repo', 'src/foo.ts')
 
@@ -150,7 +162,7 @@ describe('useGitTreeStore', () => {
   describe('unstageFile', () => {
     it('calls gitUnstage and refreshes status', async () => {
       mockApi.gitUnstage.mockResolvedValue(undefined)
-      mockApi.gitStatus.mockResolvedValue('## main\n')
+      mockApi.gitStatus.mockResolvedValue({ files: [] })
 
       await useGitTreeStore.getState().unstageFile('/repo', 'src/foo.ts')
 
@@ -172,7 +184,7 @@ describe('useGitTreeStore', () => {
         untracked: [{ path: 'b.ts', status: '?' }],
       })
       mockApi.gitStage.mockResolvedValue(undefined)
-      mockApi.gitStatus.mockResolvedValue('## main\n')
+      mockApi.gitStatus.mockResolvedValue({ files: [] })
 
       await useGitTreeStore.getState().stageAll('/repo')
 
@@ -192,7 +204,7 @@ describe('useGitTreeStore', () => {
         staged: [{ path: 'a.ts', status: 'M' }, { path: 'b.ts', status: 'A' }],
       })
       mockApi.gitUnstage.mockResolvedValue(undefined)
-      mockApi.gitStatus.mockResolvedValue('## main\n')
+      mockApi.gitStatus.mockResolvedValue({ files: [] })
 
       await useGitTreeStore.getState().unstageAll('/repo')
 
@@ -220,7 +232,7 @@ describe('useGitTreeStore', () => {
         staged: [{ path: 'foo.ts', status: 'M' }],
       })
       mockApi.gitCommit.mockResolvedValue(undefined)
-      mockApi.gitStatus.mockResolvedValue('## main\n')
+      mockApi.gitStatus.mockResolvedValue({ files: [] })
 
       await useGitTreeStore.getState().commit('/repo')
 
@@ -273,10 +285,13 @@ describe('useGitTreeStore', () => {
   })
 
   describe('fetchBranches', () => {
-    it('loads branches from api', async () => {
-      mockApi.gitBranches.mockResolvedValue(['main', 'feat/test'])
+    it('loads branches and current branch from api', async () => {
+      mockApi.gitBranches.mockResolvedValue({ current: 'main', branches: ['main', 'feat/test'] })
       await useGitTreeStore.getState().fetchBranches('/repo')
-      expect(useGitTreeStore.getState().branches).toEqual(['main', 'feat/test'])
+
+      const state = useGitTreeStore.getState()
+      expect(state.branches).toEqual(['main', 'feat/test'])
+      expect(state.branch).toBe('main')
     })
 
     it('sets empty array on failure', async () => {
@@ -294,8 +309,8 @@ describe('useGitTreeStore', () => {
   })
 
   describe('loadRepoPaths', () => {
-    it('loads repo paths and sets first as active when none selected', async () => {
-      mockApi.getRepoPaths.mockResolvedValue(['/repo/a', '/repo/b'])
+    it('loads repo paths from Record<name, path> and sets first as active when none selected', async () => {
+      mockApi.getRepoPaths.mockResolvedValue({ bde: '/repo/a', 'life-os': '/repo/b' })
       await useGitTreeStore.getState().loadRepoPaths()
 
       const state = useGitTreeStore.getState()
@@ -305,7 +320,7 @@ describe('useGitTreeStore', () => {
 
     it('does not override existing activeRepo', async () => {
       useGitTreeStore.setState({ activeRepo: '/repo/b' })
-      mockApi.getRepoPaths.mockResolvedValue(['/repo/a', '/repo/b'])
+      mockApi.getRepoPaths.mockResolvedValue({ bde: '/repo/a', 'life-os': '/repo/b' })
       await useGitTreeStore.getState().loadRepoPaths()
 
       expect(useGitTreeStore.getState().activeRepo).toBe('/repo/b')

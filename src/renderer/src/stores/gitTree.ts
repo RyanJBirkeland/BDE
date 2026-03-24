@@ -42,54 +42,6 @@ interface GitTreeState {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function parseGitStatus(raw: string): {
-  staged: GitFileEntry[]
-  unstaged: GitFileEntry[]
-  untracked: GitFileEntry[]
-  branch: string
-} {
-  const lines = raw.split('\n').filter(Boolean)
-  const staged: GitFileEntry[] = []
-  const unstaged: GitFileEntry[] = []
-  const untracked: GitFileEntry[] = []
-  let branch = ''
-
-  for (const line of lines) {
-    if (line.startsWith('## ')) {
-      // e.g. "## main...origin/main" or "## No commits yet on main"
-      const ref = line.slice(3).split('...')[0]
-      branch = ref.replace('No commits yet on ', '')
-      continue
-    }
-
-    if (line.length < 2) continue
-    const x = line[0] // index status
-    const y = line[1] // worktree status
-    const filePath = line.slice(3).trim()
-
-    if (x === '?' && y === '?') {
-      untracked.push({ path: filePath, status: '?' })
-      continue
-    }
-
-    // Staged changes: index column (X) is not space or ?
-    if (x !== ' ' && x !== '?') {
-      staged.push({ path: filePath, status: x })
-    }
-
-    // Unstaged changes: worktree column (Y) is not space or ?
-    if (y !== ' ' && y !== '?') {
-      unstaged.push({ path: filePath, status: y })
-    }
-  }
-
-  return { staged, unstaged, untracked, branch }
-}
-
-// ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
 
@@ -110,23 +62,37 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
   fetchStatus: async (cwd: string): Promise<void> => {
     set({ loading: true })
     try {
-      const raw = await window.api.gitStatus(cwd)
-      const { staged, unstaged, untracked, branch } = parseGitStatus(raw ?? '')
-      set({ staged, unstaged, untracked, branch, loading: false })
-    } catch (err) {
+      const result = await window.api.gitStatus(cwd)
+      const files = result?.files ?? []
+      const staged: GitFileEntry[] = []
+      const unstaged: GitFileEntry[] = []
+      const untracked: GitFileEntry[] = []
+
+      for (const f of files) {
+        if (f.status === '?') {
+          untracked.push({ path: f.path, status: f.status })
+        } else if (f.staged) {
+          staged.push({ path: f.path, status: f.status })
+        } else {
+          unstaged.push({ path: f.path, status: f.status })
+        }
+      }
+
+      set({ staged, unstaged, untracked, loading: false })
+    } catch {
       set({ loading: false })
       toast.error('Failed to fetch git status')
     }
   },
 
-  selectFile: async (cwd: string, path: string, staged: boolean): Promise<void> => {
-    const entry = staged
+  selectFile: async (cwd: string, path: string, isStaged: boolean): Promise<void> => {
+    const entry = isStaged
       ? get().staged.find((f) => f.path === path)
       : [...get().unstaged, ...get().untracked].find((f) => f.path === path)
 
     if (!entry) return
 
-    set({ selectedFile: entry, selectedStaged: staged, diffContent: '' })
+    set({ selectedFile: entry, selectedStaged: isStaged, diffContent: '' })
 
     try {
       const diff = await window.api.gitDiff(cwd, path)
@@ -211,8 +177,9 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
   fetchBranches: async (cwd: string): Promise<void> => {
     try {
       const result = await window.api.gitBranches(cwd)
-      const branches = Array.isArray(result) ? result : []
-      set({ branches })
+      const branches = result?.branches ?? []
+      const currentBranch = result?.current ?? ''
+      set({ branches, branch: currentBranch })
     } catch {
       set({ branches: [] })
     }
@@ -224,8 +191,8 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
 
   loadRepoPaths: async (): Promise<void> => {
     try {
-      const paths = await window.api.getRepoPaths()
-      const repoPaths = Array.isArray(paths) ? paths : []
+      const repoMap = await window.api.getRepoPaths()
+      const repoPaths = repoMap ? Object.values(repoMap) : []
       set({ repoPaths })
       if (repoPaths.length > 0 && !get().activeRepo) {
         set({ activeRepo: repoPaths[0] })
