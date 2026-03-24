@@ -36,6 +36,7 @@ describe('partitionSprintTasks', () => {
     expect(result).toEqual({
       backlog: [],
       todo: [],
+      blocked: [],
       inProgress: [],
       awaitingReview: [],
       done: [],
@@ -48,6 +49,7 @@ describe('partitionSprintTasks', () => {
     const result = partitionSprintTasks([t])
     expect(result.backlog).toEqual([t])
     expect(result.todo).toHaveLength(0)
+    expect(result.blocked).toHaveLength(0)
     expect(result.inProgress).toHaveLength(0)
     expect(result.awaitingReview).toHaveLength(0)
     expect(result.done).toHaveLength(0)
@@ -98,11 +100,12 @@ describe('partitionSprintTasks', () => {
     expect(result.done).toEqual([t])
   })
 
-  it('puts blocked tasks into todo bucket', () => {
+  it('puts blocked tasks into blocked bucket', () => {
     const tasks = [makeTask({ status: 'blocked' })]
     const result = partitionSprintTasks(tasks)
-    expect(result.todo).toHaveLength(1)
-    expect(result.todo[0].status).toBe('blocked')
+    expect(result.blocked).toHaveLength(1)
+    expect(result.blocked[0].status).toBe('blocked')
+    expect(result.todo).toHaveLength(0)
   })
 
   it('puts cancelled tasks in failed', () => {
@@ -149,6 +152,7 @@ describe('partitionSprintTasks', () => {
     const allPartitioned = [
       ...result.backlog,
       ...result.todo,
+      ...result.blocked,
       ...result.inProgress,
       ...result.awaitingReview,
       ...result.done,

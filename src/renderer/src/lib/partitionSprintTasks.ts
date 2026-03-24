@@ -4,6 +4,7 @@ import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 export interface SprintPartition {
   backlog: SprintTask[]
   todo: SprintTask[]
+  blocked: SprintTask[]
   inProgress: SprintTask[]
   awaitingReview: SprintTask[]
   done: SprintTask[]
@@ -11,12 +12,13 @@ export interface SprintPartition {
 }
 
 /**
- * Partition sprint tasks into 6 mutually exclusive buckets.
+ * Partition sprint tasks into 7 mutually exclusive buckets.
  * Every task lands in exactly one bucket — no overlap.
  *
  * Status mapping:
  *   backlog              → Backlog
  *   queued               → Todo
+ *   blocked              → Blocked
  *   active               → In Progress (max 5 enforced at UI layer)
  *   done + pr_status=open → Awaiting Review
  *   done + pr_status=merged|closed|null|draft → Done
@@ -25,6 +27,7 @@ export interface SprintPartition {
 export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
   const backlog: SprintTask[] = []
   const todo: SprintTask[] = []
+  const blocked: SprintTask[] = []
   const inProgress: SprintTask[] = []
   const awaitingReview: SprintTask[] = []
   const done: SprintTask[] = []
@@ -39,7 +42,7 @@ export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
         todo.push(task)
         break
       case TASK_STATUS.BLOCKED:
-        todo.push(task)
+        blocked.push(task)
         break
       case TASK_STATUS.ACTIVE:
         if (task.pr_status === PR_STATUS.OPEN) {
@@ -67,5 +70,5 @@ export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
     }
   }
 
-  return { backlog, todo, inProgress, awaitingReview, done, failed }
+  return { backlog, todo, blocked, inProgress, awaitingReview, done, failed }
 }

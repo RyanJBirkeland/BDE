@@ -330,6 +330,22 @@ export function SprintCenter() {
             />
             </ErrorBoundary>
 
+            {partition.blocked.length > 0 && (
+              <ErrorBoundary name="Blocked Tasks">
+              <TaskTable
+                section="blocked"
+                tasks={partition.blocked}
+                defaultExpanded={true}
+                onPushToSprint={handlePushToSprint}
+                onViewSpec={handleViewSpec}
+                onViewOutput={handleViewOutput}
+                onMarkDone={handleMarkDone}
+                onUpdate={handleUpdatePriority}
+                onEditInWorkbench={handleEditInWorkbench}
+              />
+              </ErrorBoundary>
+            )}
+
             <ErrorBoundary name="Done Tasks">
             <TaskTable
               section="done"

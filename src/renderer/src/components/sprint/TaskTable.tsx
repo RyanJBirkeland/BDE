@@ -13,7 +13,7 @@ const PRIORITY_OPTIONS = [
 ] as const
 
 type TaskTableProps = {
-  section: 'done' | 'backlog' | 'failed'
+  section: 'done' | 'backlog' | 'failed' | 'blocked'
   tasks: SprintTask[]
   defaultExpanded?: boolean
   defaultRowLimit?: number
@@ -54,7 +54,7 @@ export function TaskTable({
   section,
   tasks,
   defaultExpanded = true,
-  defaultRowLimit = (section === 'done' || section === 'failed') ? 10 : undefined,
+  defaultRowLimit = (section === 'done' || section === 'failed' || section === 'blocked') ? 10 : undefined,
   onPushToSprint,
   onViewSpec,
   onViewOutput,
@@ -78,7 +78,7 @@ export function TaskTable({
   }
 
   const sorted =
-    section === 'done' || section === 'failed'
+    section === 'done' || section === 'failed' || section === 'blocked'
       ? [...tasks].sort(
           (a, b) => new Date(b.completed_at ?? b.updated_at).getTime() - new Date(a.completed_at ?? a.updated_at).getTime()
         )
@@ -94,7 +94,7 @@ export function TaskTable({
     <div className="bde-task-section">
       <div className="bde-task-section__header" onClick={toggleCollapsed}>
         <Chevron size={14} />
-        <span>{section === 'done' ? 'Done' : section === 'failed' ? 'Failed / Cancelled' : 'Backlog'}</span>
+        <span>{section === 'done' ? 'Done' : section === 'failed' ? 'Failed / Cancelled' : section === 'blocked' ? 'Blocked' : 'Backlog'}</span>
         <span className="sprint-col__count bde-count-badge">{tasks.length}</span>
       </div>
 
@@ -102,7 +102,7 @@ export function TaskTable({
         <>
           {tasks.length === 0 ? (
             <div className="bde-task-table__empty">
-              {section === 'done' ? 'No completed tasks' : section === 'failed' ? 'No failed tasks' : 'Backlog is empty'}
+              {section === 'done' ? 'No completed tasks' : section === 'failed' ? 'No failed tasks' : section === 'blocked' ? 'No blocked tasks' : 'Backlog is empty'}
             </div>
           ) : (
             <>
@@ -143,6 +143,16 @@ export function TaskTable({
                         onViewSpec={onViewSpec}
                         onViewOutput={onViewOutput}
                         onRerun={onRerun}
+                      />
+                    ) : section === 'blocked' ? (
+                      <BlockedRow
+                        key={task.id}
+                        task={task}
+                        onPushToSprint={onPushToSprint}
+                        onViewSpec={onViewSpec}
+                        onMarkDone={onMarkDone}
+                        onUpdate={onUpdate}
+                        onEditInWorkbench={onEditInWorkbench}
                       />
                     ) : (
                       <BacklogRow
@@ -285,6 +295,102 @@ function FailedRow({
           title="Retry — move back to sprint"
         >
           <ArrowRight size={13} /> Retry
+        </button>
+      </td>
+    </tr>
+  )
+}
+
+function BlockedRow({
+  task,
+  onPushToSprint,
+  onViewSpec,
+  onMarkDone,
+  onUpdate,
+  onEditInWorkbench,
+}: {
+  task: SprintTask
+  onPushToSprint: (t: SprintTask) => void
+  onViewSpec: (t: SprintTask) => void
+  onMarkDone?: (t: SprintTask) => void
+  onUpdate?: (patch: { id: string; priority: number }) => void
+  onEditInWorkbench?: (t: SprintTask) => void
+}) {
+  const [popoverOpen, setPopoverOpen] = useState(false)
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!popoverOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setPopoverOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [popoverOpen])
+
+  return (
+    <tr>
+      <td>
+        <button className="bde-task-table__title-btn" onClick={() => onViewSpec(task)}>
+          <Badge variant="warning" size="sm" style={{ marginRight: '6px' }}>BLOCKED</Badge>
+          {task.title}
+        </button>
+      </td>
+      <td className="bde-task-table__priority-cell">
+        <button
+          className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(task.priority)}`}
+          title={'P' + task.priority}
+          onClick={() => setPopoverOpen((v) => !v)}
+        />
+        {popoverOpen && (
+          <div className="bde-priority-popover" ref={popoverRef}>
+            {PRIORITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                className={`bde-priority-popover__option${opt.value === task.priority ? ' bde-priority-popover__option--active' : ''}`}
+                onClick={() => {
+                  if (opt.value !== task.priority) {
+                    onUpdate?.({ id: task.id, priority: opt.value })
+                  }
+                  setPopoverOpen(false)
+                }}
+              >
+                <span className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(opt.value)}`} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </td>
+      <td>
+        <Badge variant={repoBadgeVariant(task.repo)} size="sm">
+          {task.repo}
+        </Badge>
+      </td>
+      <td className="bde-task-table__date">{timeAgo(task.created_at)}</td>
+      <td className="bde-task-table__actions-cell">
+        {onMarkDone && (
+          <button
+            className="bde-task-table__action-btn bde-task-table__action-btn--done"
+            onClick={() => onMarkDone(task)}
+            title="Mark Done"
+          >
+            <CheckCircle2 size={13} />
+          </button>
+        )}
+        {onEditInWorkbench && (
+          <button
+            className="bde-task-table__action-btn"
+            onClick={() => onEditInWorkbench(task)}
+            title="Edit in Workbench"
+          >
+            Edit
+          </button>
+        )}
+        <button className="bde-task-table__action-btn bde-task-table__action-btn--sprint" onClick={() => onPushToSprint(task)}>
+          <ArrowRight size={13} /> Sprint
         </button>
       </td>
     </tr>
