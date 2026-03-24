@@ -114,7 +114,7 @@ export function registerSprintLocalHandlers(): void {
         task = {
           ...task,
           status: 'blocked',
-          notes: `Blocked by dependencies: ${blockedBy.join(', ')}${task.notes ? `\n\n${task.notes}` : ''}`
+          notes: `[auto-block] Blocked by: ${blockedBy.join(', ')}${task.notes ? `\n${task.notes}` : ''}`
         }
       }
     }
@@ -142,13 +142,13 @@ export function registerSprintLocalHandlers(): void {
             (depId) => statusMap.get(depId),
           )
           if (!satisfied && blockedBy.length > 0) {
-            // Auto-block and record which dependencies are blocking
-            const existingNotes = task.notes || ''
-            const blockingMsg = `Blocked by dependencies: ${blockedBy.join(', ')}`
+            // Auto-block and record which dependencies are blocking, preserving user notes
+            const existingNotes = (task.notes || '').replace(/^\[auto-block\] .*\n?/, '').trim()
+            const blockNote = `[auto-block] Blocked by: ${blockedBy.join(', ')}`
             patch = {
               ...patch,
               status: 'blocked',
-              notes: existingNotes ? `${blockingMsg}\n\n${existingNotes}` : blockingMsg
+              notes: existingNotes ? `${blockNote}\n${existingNotes}` : blockNote
             }
           }
         }

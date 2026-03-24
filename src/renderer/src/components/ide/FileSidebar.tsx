@@ -60,6 +60,9 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
           </button>
         </div>
       </div>
+      {rootPath && (
+        <div className="ide-sidebar__folder-name">{rootPath.split('/').pop()}</div>
+      )}
       <div className="ide-sidebar__body">
         {rootPath
           ? <FileTree dirPath={rootPath} onOpenFile={onOpenFile} />

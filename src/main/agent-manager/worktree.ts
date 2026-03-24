@@ -99,6 +99,25 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
       ;(logger ?? console).warn(`[worktree] Stale branch ${branch} — deleting and retrying`)
       try {
         await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env: buildAgentEnv() })
+        // Check for unpushed work before destroying branch
+        try {
+          const { stdout: aheadCount } = await execFileAsync(
+            'git', ['rev-list', '--count', `main..${branch}`],
+            { cwd: repoPath, env: buildAgentEnv() }
+          )
+          if (parseInt(aheadCount.trim(), 10) > 0) {
+            ;(logger ?? console).warn(
+              `[worktree] Branch ${branch} has ${aheadCount.trim()} unpushed commits — pushing before delete`
+            )
+            try {
+              await execFileAsync('git', ['push', 'origin', branch], { cwd: repoPath, env: buildAgentEnv() })
+            } catch (pushErr) {
+              ;(logger ?? console).warn(`[worktree] Failed to push ${branch}: ${pushErr} — proceeding with delete`)
+            }
+          }
+        } catch {
+          // Branch may not have commits relative to main — proceed
+        }
         await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env: buildAgentEnv() })
         await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: buildAgentEnv() })
       } catch (retryErr) {

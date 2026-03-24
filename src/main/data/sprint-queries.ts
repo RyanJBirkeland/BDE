@@ -2,48 +2,9 @@
  * Sprint task query functions — Supabase edition.
  * All functions are async and use the Supabase client singleton.
  */
-import type { SprintTask, TaskDependency } from '../../shared/types'
+import type { SprintTask } from '../../shared/types'
+import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { getSupabaseClient } from './supabase-client'
-
-/**
- * Sanitize depends_on field to prevent crashes when Supabase returns JSONB as string.
- * Ensures the field is always null or a valid TaskDependency array.
- */
-function sanitizeDependsOn(value: unknown): TaskDependency[] | null {
-  // Handle null/undefined
-  if (value == null) return null
-
-  // If it's a string, try to parse it
-  if (typeof value === 'string') {
-    if (value.trim() === '') return null
-    try {
-      const parsed = JSON.parse(value)
-      return sanitizeDependsOn(parsed) // Recursive call
-    } catch {
-      console.warn('[sprint-queries] Failed to parse depends_on string:', value)
-      return null
-    }
-  }
-
-  // If it's an array, validate structure
-  if (Array.isArray(value)) {
-    if (value.length === 0) return null
-
-    const validated = value.filter((dep) => {
-      if (!dep || typeof dep !== 'object') return false
-      const { id, type } = dep as Record<string, unknown>
-      if (typeof id !== 'string' || !id.trim()) return false
-      if (type !== 'hard' && type !== 'soft') return false
-      return true
-    })
-
-    return validated.length > 0 ? (validated as TaskDependency[]) : null
-  }
-
-  // Invalid type
-  console.warn('[sprint-queries] Invalid depends_on type:', typeof value, value)
-  return null
-}
 
 /**
  * Sanitize a single task object to ensure depends_on is valid.

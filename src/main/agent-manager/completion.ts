@@ -95,7 +95,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     )
     if (statusOut.trim()) {
       logger.info(`[completion] Task ${taskId}: auto-committing uncommitted changes`)
-      await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
+      await execFile('git', ['add', '-u'], { cwd: worktreePath, env: buildAgentEnv() })
       await execFile(
         'git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`],
         { cwd: worktreePath, env: buildAgentEnv() }

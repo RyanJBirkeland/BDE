@@ -200,7 +200,7 @@ export function IDEView(): React.JSX.Element {
             <Panel defaultSize={20} minSize={10} maxSize={40}>
               <FileSidebar onOpenFile={handleOpenFile} />
             </Panel>
-            <Separator className="ide-separator" />
+            <Separator className="ide-separator ide-separator--h" />
           </>
         )}
         <Panel defaultSize={sidebarCollapsed ? 100 : 80} minSize={30}>
@@ -221,7 +221,7 @@ export function IDEView(): React.JSX.Element {
             </Panel>
             {!terminalCollapsed && (
               <>
-                <Separator className="ide-separator" />
+                <Separator className="ide-separator ide-separator--v" />
                 <Panel defaultSize={35} minSize={15}>
                   <div style={{ height: '100%' }} onClick={(e) => { e.stopPropagation(); setFocusedPanel('terminal') }}>
                     <TerminalPanel />

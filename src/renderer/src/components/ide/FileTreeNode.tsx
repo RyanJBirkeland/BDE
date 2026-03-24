@@ -54,11 +54,11 @@ export function FileTreeNode({ name, type, fullPath, depth, onOpenFile }: FileTr
         style={{ paddingLeft }} onClick={() => type === 'directory' ? toggleDir(fullPath) : onOpenFile(fullPath)}
         title={fullPath}
       >
-        <span className="ide-file-node__icon">
+        <span className="ide-file-node__chevron">
           {type === 'directory' ? (isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />) : null}
         </span>
         <span className="ide-file-node__icon">
-          {type === 'directory' ? (isExpanded ? <FolderOpen size={14} /> : <Folder size={14} />) : getFileIcon(name)}
+          {type === 'directory' ? (isExpanded ? <FolderOpen size={14} color="var(--bde-accent)" /> : <Folder size={14} color="var(--bde-accent)" />) : getFileIcon(name)}
         </span>
         <span className="ide-file-node__name">{name}</span>
       </div>

@@ -1,3 +1,5 @@
+import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
+
 const CAMEL_TO_SNAKE: Record<string, string> = {
   agentRunId: 'agent_run_id', prUrl: 'pr_url', prNumber: 'pr_number',
   prStatus: 'pr_status', prMergeableState: 'pr_mergeable_state',
@@ -14,50 +16,6 @@ const SNAKE_TO_CAMEL = Object.fromEntries(
 
 // JSONB columns that need parsing if they come back as strings
 const JSONB_FIELDS = new Set(['depends_on'])
-
-/**
- * Sanitize depends_on field to ensure it's always null or a valid array.
- * Handles cases where Supabase returns JSONB as string.
- */
-function sanitizeDependsOn(value: unknown): Array<{ id: string; type: 'hard' | 'soft' }> | null {
-  // Handle null/undefined
-  if (value == null) return null
-
-  // If it's a string, try to parse it
-  if (typeof value === 'string') {
-    // Handle empty string
-    if (value.trim() === '') return null
-
-    try {
-      const parsed = JSON.parse(value)
-      return sanitizeDependsOn(parsed) // Recursive call with parsed value
-    } catch {
-      console.warn('[field-mapper] Failed to parse depends_on string:', value)
-      return null
-    }
-  }
-
-  // If it's an array, validate structure
-  if (Array.isArray(value)) {
-    // Empty array -> null for consistency
-    if (value.length === 0) return null
-
-    // Validate each dependency object
-    const validated = value.filter((dep) => {
-      if (!dep || typeof dep !== 'object') return false
-      const { id, type } = dep as Record<string, unknown>
-      if (typeof id !== 'string' || !id.trim()) return false
-      if (type !== 'hard' && type !== 'soft') return false
-      return true
-    })
-
-    return validated.length > 0 ? validated as Array<{ id: string; type: 'hard' | 'soft' }> : null
-  }
-
-  // Invalid type - log warning and return null
-  console.warn('[field-mapper] Invalid depends_on type:', typeof value, value)
-  return null
-}
 
 export function toCamelCase<T extends object>(row: T): Record<string, unknown> {
   const result: Record<string, unknown> = {}
