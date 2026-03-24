@@ -433,8 +433,16 @@ export interface WorkbenchChannels {
   }
 }
 
+/** Dev Playground operations */
+export interface PlaygroundChannels {
+  'playground:show': {
+    args: [input: { filePath: string }]
+    result: void
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Composite channel map — intersection of all domain maps
 // ---------------------------------------------------------------------------
 
-export type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & AgentConfigChannels & AgentChannels & GitHubApiChannels & CostChannels & SprintChannels & WindowChannels & MemoryChannels & FsChannels & AgentEventChannels & TemplateChannels & AuthChannels & AgentManagerChannels & TerminalChannels & WorkbenchChannels
+export type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & AgentConfigChannels & AgentChannels & GitHubApiChannels & CostChannels & SprintChannels & WindowChannels & MemoryChannels & FsChannels & AgentEventChannels & TemplateChannels & AuthChannels & AgentManagerChannels & TerminalChannels & WorkbenchChannels & PlaygroundChannels

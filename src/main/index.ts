@@ -17,6 +17,7 @@ import { registerAgentManagerHandlers } from './handlers/agent-manager-handlers'
 import { registerWorkbenchHandlers } from './handlers/workbench'
 import { registerMemorySearchHandler } from './handlers/memory-search'
 import { registerIdeFsHandlers } from './handlers/ide-fs-handlers'
+import { registerPlaygroundHandlers } from './handlers/playground-handlers'
 import { getDb, closeDb } from './db'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
@@ -142,6 +143,7 @@ app.whenReady().then(() => {
   registerIdeFsHandlers()
   registerMemorySearchHandler()
   registerAuthHandlers()
+  registerPlaygroundHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const connectSrc = buildConnectSrc()

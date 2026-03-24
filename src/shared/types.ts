@@ -257,6 +257,7 @@ export type AgentEventType =
   | 'agent:rate_limited'
   | 'agent:error'
   | 'agent:completed'
+  | 'agent:playground'
 
 export type AgentEvent =
   | { type: 'agent:started'; model: string; timestamp: number }
@@ -268,6 +269,7 @@ export type AgentEvent =
   | { type: 'agent:rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
   | { type: 'agent:error'; message: string; timestamp: number }
   | { type: 'agent:completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
+  | { type: 'agent:playground'; filename: string; html: string; sizeBytes: number; timestamp: number }
 
 // --- Agent Provider Interface ---
 
