@@ -47,7 +47,7 @@ export function registerAgentHandlers(): void {
     // Try ad-hoc agents first
     const adhocHandle = getAdhocHandle(agentId)
     if (adhocHandle) {
-      await adhocHandle.steer(message)
+      await adhocHandle.send(message)
       return { ok: true }
     }
     // Try local AgentManager
@@ -62,7 +62,7 @@ export function registerAgentHandlers(): void {
     // Try ad-hoc agents first
     const adhocHandle = getAdhocHandle(agentId)
     if (adhocHandle) {
-      adhocHandle.abort()
+      adhocHandle.close()
       return { ok: true }
     }
     const am = (global as any).__agentManager

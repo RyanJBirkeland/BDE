@@ -61,15 +61,19 @@ All handlers use the `safeHandle()` wrapper (`src/main/ipc-utils.ts`) for centra
 
 | Module | File | Channels |
 |--------|------|----------|
-| Config | `handlers/config-handlers.ts` | `config:getGatewayUrl`, `config:saveGateway`, `settings:get`, `settings:set`, `settings:getJson`, `settings:setJson`, `settings:delete` |
+| Config | `handlers/config-handlers.ts` | `settings:get`, `settings:set`, `settings:getJson`, `settings:setJson`, `settings:delete` |
 | Agent | `handlers/agent-handlers.ts` | `local:getAgentProcesses`, `local:spawnClaudeAgent`, `local:tailAgentLog`, `local:sendToAgent`, `local:isInteractive`, `agent:steer`, `agent:kill`, `config:getAgentConfig`, `config:saveAgentConfig`, `agents:list`, `agents:readLog`, `agents:import` |
+| Agent Manager | `handlers/agent-manager-handlers.ts` | `agent-manager:status`, `agent-manager:kill` |
+| Auth | `handlers/auth-handlers.ts` | `auth:checkStatus` |
 | Git | `handlers/git-handlers.ts` | `github:fetch`, `git:getRepoPaths`, `git:status`, `git:diff`, `git:stage`, `git:unstage`, `git:commit`, `git:push`, `git:branches`, `git:checkout`, `pr:pollStatuses`, `pr:checkConflictFiles`, `pr:getList`, `pr:refreshList` |
-| Sprint | `handlers/sprint-local.ts` | `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:readSpecFile`, `sprint:generatePrompt`, `sprint:claimTask`, `sprint:healthCheck`, `sprint:readLog` |
-| Gateway | `handlers/gateway-handlers.ts` | `gateway:invoke`, `gateway:getSessionHistory`, `gateway:test-connection`, `gateway:sign-challenge` |
+| Sprint | `handlers/sprint-local.ts` | `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:claimTask`, `sprint:healthCheck`, `sprint:readLog` |
+| Sprint Listeners | `handlers/sprint-listeners.ts` | DB file watcher, mutation observer |
+| Sprint Spec | `handlers/sprint-spec.ts` | `sprint:readSpecFile`, `sprint:generatePrompt` |
+| Templates | `handlers/template-handlers.ts` | `templates:list`, `templates:save`, `templates:delete`, `templates:reset` |
 | Terminal | `handlers/terminal-handlers.ts` | `terminal:create`, `terminal:resize`, `terminal:kill`, `terminal:write` (fire-and-forget) |
 | Window | `handlers/window-handlers.ts` | `window:openExternal`, `agent:killLocal`, `window:setTitle` (fire-and-forget) |
 | Cost | `handlers/cost-handlers.ts` | `cost:summary`, `cost:agentRuns`, `cost:getAgentHistory` |
-| Queue | `handlers/queue-handlers.ts` | `queue:health`, `task:getEvents` |
+| Workbench | `handlers/workbench.ts` | `workbench:researchRepo`, `workbench:generateSpec`, `workbench:checkSpec`, `workbench:checkOperational`, `workbench:chat` |
 | Filesystem | `fs.ts` | `memory:listFiles`, `memory:readFile`, `memory:writeFile`, `fs:openFileDialog`, `fs:readFileAsBase64`, `fs:readFileAsText`, `fs:openDirectoryDialog` |
 
 ### Preload Bridge
@@ -357,10 +361,4 @@ PR list polling runs at 60s from `src/main/pr-poller.ts` (main-process poller, n
 
 ## Repository Map
 
-| Repo | Owner | Local Path | Description |
-|------|-------|-----------|-------------|
-| BDE | RyanJBirkeland | `~/Documents/Repositories/BDE` | This app |
-| life-os | RyanJBirkeland | `~/Documents/Repositories/life-os` | Personal automation |
-| feast | RyanJBirkeland | `~/Documents/Repositories/feast` | Recipe app |
-
-Paths are hardcoded in `src/main/git.ts:REPO_PATHS`.
+Repos are configured via the `repos` JSON setting in SQLite (`settings` table), not hardcoded. Each entry has `name`, `localPath`, `githubOwner`, `githubRepo`. Configure in Settings UI or via `settings:setJson`.
