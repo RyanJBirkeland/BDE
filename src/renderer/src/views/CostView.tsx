@@ -262,7 +262,7 @@ export default function CostView(): React.JSX.Element {
     return (
       <motion.div className="cost-view cost-view--glass" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
         <div className="cost-view__header">
-          <span className="cost-view__title">Cost Tracker</span>
+          <span className="cost-view__title text-gradient-aurora">Cost Tracker</span>
         </div>
         <div className="cost-view__scroll">
           <div className="cost-view__panels">
@@ -278,7 +278,7 @@ export default function CostView(): React.JSX.Element {
   return (
     <motion.div className="cost-view cost-view--glass" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <div className="cost-view__header">
-        <span className="cost-view__title">Cost Tracker</span>
+        <span className="cost-view__title text-gradient-aurora">Cost Tracker</span>
         <div className="cost-view__header-actions">
           <Button variant="ghost" size="sm" onClick={fetchData} title="Refresh data">
             <RefreshCw size={14} />

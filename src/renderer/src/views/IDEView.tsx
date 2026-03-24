@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../stores/ide'
@@ -11,8 +12,10 @@ import { TerminalPanel } from '../components/ide/TerminalPanel'
 import { IDEEmptyState } from '../components/ide/IDEEmptyState'
 import { useUnsavedDialog, UnsavedDialogModal } from '../components/ide/UnsavedDialog'
 import { clearTerminal } from '../components/terminal/TerminalPane'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 export function IDEView(): React.JSX.Element {
+  const reduced = useReducedMotion()
   useEffect(() => {
     const restore = async (): Promise<void> => {
       try {
@@ -193,7 +196,7 @@ export function IDEView(): React.JSX.Element {
   }
 
   return (
-    <div className="ide-view" onClick={() => setFocusedPanel('editor')}>
+    <motion.div className="ide-view" onClick={() => setFocusedPanel('editor')} variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <Group orientation="horizontal" style={{ flex: 1, height: '100%', minHeight: 0 }}>
         {!sidebarCollapsed && (
           <>
@@ -233,7 +236,7 @@ export function IDEView(): React.JSX.Element {
         </Panel>
       </Group>
       <UnsavedDialogModal {...confirmProps} />
-    </div>
+    </motion.div>
   )
 }
 
