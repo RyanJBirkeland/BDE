@@ -11,6 +11,7 @@ import { toast } from '../stores/toasts'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
+import { ConfirmModal, useConfirm } from '../components/ui/ConfirmModal'
 import * as memoryService from '../services/memory'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
@@ -84,6 +85,10 @@ export default function MemoryView(): React.JSX.Element {
   const [creating, setCreating] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
 
+  const { confirm, confirmProps } = useConfirm()
+
+  const isDirty = content !== savedContent
+
   const loadFiles = useCallback(async () => {
     try {
       const result = await memoryService.listFiles()
@@ -112,6 +117,22 @@ export default function MemoryView(): React.JSX.Element {
       setLoadingContent(false)
     }
   }, [])
+
+  /**
+   * Attempt to switch to a new file, showing a confirmation if there are unsaved changes.
+   */
+  const handleSelectFile = useCallback(async (path: string) => {
+    if (isDirty) {
+      const ok = await confirm({
+        title: 'Unsaved changes',
+        message: 'You have unsaved changes. Switch files and discard them?',
+        confirmLabel: 'Discard & switch',
+        variant: 'danger',
+      })
+      if (!ok) return
+    }
+    await openFile(path)
+  }, [isDirty, confirm, openFile])
 
   const saveFile = useCallback(async () => {
     if (!selectedPath) return
@@ -157,6 +178,16 @@ export default function MemoryView(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [saveFile])
 
+  // Warn browser/Electron on unload when there are unsaved changes
+  useEffect(() => {
+    if (!isDirty) return
+    function onBeforeUnload(e: BeforeUnloadEvent): void {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [isDirty])
+
   // Build flat file list for keyboard nav
   const { pinned, groups } = groupFiles(files)
   const flatFiles = useMemo(() => {
@@ -189,12 +220,12 @@ export default function MemoryView(): React.JSX.Element {
 
       if (e.key === 'Enter' && focusIndex >= 0 && focusIndex < flatFiles.length) {
         e.preventDefault()
-        openFile(flatFiles[focusIndex].path)
+        handleSelectFile(flatFiles[focusIndex].path)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [activeView, focusIndex, flatFiles, openFile])
+  }, [activeView, focusIndex, flatFiles, handleSelectFile])
 
   // Scroll focused file into view
   useEffect(() => {
@@ -202,8 +233,6 @@ export default function MemoryView(): React.JSX.Element {
     const el = sidebarRef.current?.querySelector(`[data-memory-index="${focusIndex}"]`) as HTMLElement
     el?.scrollIntoView({ block: 'nearest' })
   }, [focusIndex])
-
-  const isDirty = content !== savedContent
 
   return (
     <motion.div className="memory-view memory-view--column" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
@@ -250,7 +279,7 @@ export default function MemoryView(): React.JSX.Element {
             <button
               className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''} ${focusIndex === 0 ? 'memory-file--focused' : ''}`}
               data-memory-index={0}
-              onClick={() => openFile(pinned.path)}
+              onClick={() => handleSelectFile(pinned.path)}
             >
               <span className="memory-file__name">
                 <span className="memory-file__pin">{'\uD83D\uDCCC'}</span> {pinned.name}
@@ -271,7 +300,7 @@ export default function MemoryView(): React.JSX.Element {
                     key={f.path}
                     className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''} ${focusIndex === idx ? 'memory-file--focused' : ''}`}
                     data-memory-index={idx}
-                    onClick={() => openFile(f.path)}
+                    onClick={() => handleSelectFile(f.path)}
                   >
                     <span className="memory-file__name">{f.name}</span>
                     <span className="memory-file__meta">
@@ -335,6 +364,7 @@ export default function MemoryView(): React.JSX.Element {
         )}
       </div>
       </div>
+      <ConfirmModal {...confirmProps} />
     </motion.div>
   )
 }
