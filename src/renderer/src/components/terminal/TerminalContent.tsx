@@ -50,6 +50,7 @@ export function TerminalContent({
                   <TerminalPane
                     tabId={tab.id}
                     shell={tab.shell}
+                    cwd={tab.cwd}
                     visible={activeView === 'terminal'}
                   />
                 </Panel>
@@ -58,6 +59,7 @@ export function TerminalContent({
                   <TerminalPane
                     tabId={`${tab.id}-split`}
                     shell={tab.shell}
+                    cwd={tab.cwd}
                     visible={activeView === 'terminal'}
                   />
                 </Panel>
@@ -66,6 +68,7 @@ export function TerminalContent({
               <TerminalPane
                 tabId={tab.id}
                 shell={tab.shell}
+                cwd={tab.cwd}
                 visible={activeView === 'terminal'}
               />
             )}

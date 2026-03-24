@@ -12,14 +12,14 @@ let termId = 0
 export function registerTerminalHandlers(): void {
   safeHandle(
     'terminal:create',
-    (event, { cols, rows, shell }: { cols: number; rows: number; shell?: string }) => {
+    (event, { cols, rows, shell, cwd }: { cols: number; rows: number; shell?: string; cwd?: string }) => {
       if (!isPtyAvailable()) throw new Error('Terminal unavailable: node-pty failed to load')
       const id = ++termId
       const shellPath = shell || process.env.SHELL || '/bin/zsh'
       if (!validateShell(shellPath)) {
         throw new Error(`Shell not allowed: "${shellPath}"`)
       }
-      const handle = createPty({ shell: shellPath, cols, rows })
+      const handle = createPty({ shell: shellPath, cols, rows, cwd })
       terminals.set(id, handle)
       const win = BrowserWindow.fromWebContents(event.sender)
       if (win) terminalWindows.set(id, win.id)

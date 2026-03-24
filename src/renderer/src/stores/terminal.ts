@@ -7,6 +7,7 @@ export interface TerminalTab {
   title: string
   kind: TabKind
   shell?: string
+  cwd?: string
   ptyId?: number | null
   agentId?: string
   agentSessionKey?: string
@@ -17,13 +18,14 @@ export interface TerminalTab {
 
 let nextTabNum = 1
 
-function makeTab(shell?: string): TerminalTab {
+function makeTab(shell?: string, cwd?: string): TerminalTab {
   const num = nextTabNum++
   return {
     id: crypto.randomUUID(),
     title: `Terminal ${num}`,
     kind: 'shell',
     shell: shell || '/bin/zsh',
+    cwd,
     ptyId: null,
     isLabelCustom: false,
     status: 'running',
@@ -51,7 +53,7 @@ interface TerminalStore {
   splitEnabled: boolean
   splitTabId: string | null
   fontSize: number
-  addTab: (shell?: string) => void
+  addTab: (shell?: string, cwd?: string) => void
   closeTab: (id: string) => void
   setActiveTab: (id: string) => void
   renameTab: (id: string, title: string) => void
@@ -78,8 +80,8 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   splitTabId: null,
   fontSize: 13,
 
-  addTab: (shell?) => {
-    const tab = makeTab(shell)
+  addTab: (shell?, cwd?) => {
+    const tab = makeTab(shell, cwd)
     set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }))
   },
 

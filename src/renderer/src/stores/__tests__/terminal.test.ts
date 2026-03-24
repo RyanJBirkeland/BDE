@@ -265,4 +265,23 @@ describe('terminal store', () => {
     useTerminalStore.getState().closeTab(firstId)
     expect(useTerminalStore.getState().activeTabId).toBe(secondId)
   })
+
+  it('addTab accepts cwd parameter', () => {
+    useTerminalStore.getState().addTab(undefined, '/path/to/project')
+    const newTab = useTerminalStore.getState().tabs[1]
+    expect(newTab.cwd).toBe('/path/to/project')
+  })
+
+  it('addTab without cwd parameter leaves cwd undefined', () => {
+    useTerminalStore.getState().addTab()
+    const newTab = useTerminalStore.getState().tabs[1]
+    expect(newTab.cwd).toBeUndefined()
+  })
+
+  it('addTab accepts both shell and cwd parameters', () => {
+    useTerminalStore.getState().addTab('/bin/bash', '/home/user/project')
+    const newTab = useTerminalStore.getState().tabs[1]
+    expect(newTab.shell).toBe('/bin/bash')
+    expect(newTab.cwd).toBe('/home/user/project')
+  })
 })

@@ -369,7 +369,7 @@ export interface AgentManagerChannels {
 /** Terminal PTY management */
 export interface TerminalChannels {
   'terminal:create': {
-    args: [opts: { cols: number; rows: number; shell?: string }]
+    args: [opts: { cols: number; rows: number; shell?: string; cwd?: string }]
     result: number
   }
   'terminal:resize': {

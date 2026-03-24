@@ -24,10 +24,11 @@ export function getSearchAddon(tabId: string): SearchAddon | undefined {
 interface TerminalPaneProps {
   tabId: string
   shell?: string
+  cwd?: string
   visible: boolean
 }
 
-export function TerminalPane({ tabId, shell, visible }: TerminalPaneProps): React.JSX.Element {
+export function TerminalPane({ tabId, shell, cwd, visible }: TerminalPaneProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -58,7 +59,7 @@ export function TerminalPane({ tabId, shell, visible }: TerminalPaneProps): Reac
     terminalInstances.set(tabId, term)
     searchAddons.set(tabId, searchAddon)
 
-    window.api.terminal.create({ cols: term.cols, rows: term.rows, shell }).then((id) => {
+    window.api.terminal.create({ cols: term.cols, rows: term.rows, shell, cwd }).then((id) => {
       useTerminalStore.getState().setPtyId(tabId, id)
 
       const removeDataListener = window.api.terminal.onData(id, (data) => term.write(data))
