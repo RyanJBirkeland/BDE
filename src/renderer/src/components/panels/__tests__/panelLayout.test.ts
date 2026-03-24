@@ -33,7 +33,7 @@ describe('panelLayout pure functions', () => {
 
     it('increments panelId on successive calls', () => {
       const a = createLeaf('agents')
-      const b = createLeaf('terminal')
+      const b = createLeaf('ide')
       expect(a.panelId).toBe('p1')
       expect(b.panelId).toBe('p2')
     })
@@ -72,7 +72,7 @@ describe('panelLayout pure functions', () => {
 
     it('finds a nested leaf in a split tree', () => {
       const leaf1 = createLeaf('agents')
-      const leaf2 = createLeaf('terminal')
+      const leaf2 = createLeaf('ide')
       const split: PanelSplitNode = {
         type: 'split',
         direction: 'horizontal',
@@ -94,7 +94,7 @@ describe('panelLayout pure functions', () => {
 
     it('returns all viewKeys from a split tree', () => {
       const leaf1 = createLeaf('agents')
-      const leaf2 = createLeaf('terminal')
+      const leaf2 = createLeaf('ide')
       const split: PanelSplitNode = {
         type: 'split',
         direction: 'horizontal',
@@ -103,7 +103,7 @@ describe('panelLayout pure functions', () => {
       }
       const views = getOpenViews(split)
       expect(views).toContain('agents')
-      expect(views).toContain('terminal')
+      expect(views).toContain('ide')
       expect(views).toHaveLength(2)
     })
 
@@ -122,7 +122,7 @@ describe('panelLayout pure functions', () => {
   describe('splitNode', () => {
     it('splits a leaf node and returns a split with correct direction', () => {
       const leaf = createLeaf('agents')
-      const result = splitNode(leaf, leaf.panelId, 'horizontal', 'terminal')
+      const result = splitNode(leaf, leaf.panelId, 'horizontal', 'ide')
       expect(result).not.toBeNull()
       expect(result!.type).toBe('split')
       const split = result as PanelSplitNode
@@ -131,14 +131,14 @@ describe('panelLayout pure functions', () => {
 
     it('split contains original leaf and new leaf', () => {
       const leaf = createLeaf('agents')
-      const result = splitNode(leaf, leaf.panelId, 'horizontal', 'terminal')
+      const result = splitNode(leaf, leaf.panelId, 'horizontal', 'ide')
       const split = result as PanelSplitNode
       expect(split.children[0].type).toBe('leaf')
       expect(split.children[1].type).toBe('leaf')
       const left = split.children[0] as PanelLeafNode
       const right = split.children[1] as PanelLeafNode
       expect(left.tabs[0].viewKey).toBe('agents')
-      expect(right.tabs[0].viewKey).toBe('terminal')
+      expect(right.tabs[0].viewKey).toBe('ide')
     })
 
     it('split has sizes [50, 50]', () => {
@@ -150,7 +150,7 @@ describe('panelLayout pure functions', () => {
 
     it('splits a nested leaf in a split tree', () => {
       const leaf1 = createLeaf('agents')
-      const leaf2 = createLeaf('terminal')
+      const leaf2 = createLeaf('ide')
       const root: PanelSplitNode = {
         type: 'split',
         direction: 'horizontal',
@@ -170,7 +170,7 @@ describe('panelLayout pure functions', () => {
 
     it('returns null if target panelId is not found', () => {
       const leaf = createLeaf('agents')
-      expect(splitNode(leaf, 'nonexistent', 'horizontal', 'terminal')).toBeNull()
+      expect(splitNode(leaf, 'nonexistent', 'horizontal', 'ide')).toBeNull()
     })
   })
 
@@ -179,28 +179,28 @@ describe('panelLayout pure functions', () => {
   describe('addTab', () => {
     it('adds a tab to the target leaf', () => {
       const leaf = createLeaf('agents')
-      const result = addTab(leaf, leaf.panelId, 'terminal')
+      const result = addTab(leaf, leaf.panelId, 'ide')
       expect(result).not.toBeNull()
       const updatedLeaf = result as PanelLeafNode
       expect(updatedLeaf.tabs).toHaveLength(2)
-      expect(updatedLeaf.tabs[1].viewKey).toBe('terminal')
+      expect(updatedLeaf.tabs[1].viewKey).toBe('ide')
     })
 
     it('sets the new tab as active', () => {
       const leaf = createLeaf('agents')
-      const result = addTab(leaf, leaf.panelId, 'terminal')
+      const result = addTab(leaf, leaf.panelId, 'ide')
       const updatedLeaf = result as PanelLeafNode
       expect(updatedLeaf.activeTab).toBe(1)
     })
 
     it('returns null if target not found', () => {
       const leaf = createLeaf('agents')
-      expect(addTab(leaf, 'nonexistent', 'terminal')).toBeNull()
+      expect(addTab(leaf, 'nonexistent', 'ide')).toBeNull()
     })
 
     it('adds tab inside a split tree', () => {
       const leaf1 = createLeaf('agents')
-      const leaf2 = createLeaf('terminal')
+      const leaf2 = createLeaf('ide')
       const split: PanelSplitNode = {
         type: 'split',
         direction: 'horizontal',
@@ -222,12 +222,12 @@ describe('panelLayout pure functions', () => {
   describe('closeTab', () => {
     it('removes a tab from the target leaf', () => {
       let leaf = createLeaf('agents')
-      leaf = addTab(leaf, leaf.panelId, 'terminal') as PanelLeafNode
+      leaf = addTab(leaf, leaf.panelId, 'ide') as PanelLeafNode
       const result = closeTab(leaf, leaf.panelId, 0)
       expect(result).not.toBeNull()
       const updatedLeaf = result as PanelLeafNode
       expect(updatedLeaf.tabs).toHaveLength(1)
-      expect(updatedLeaf.tabs[0].viewKey).toBe('terminal')
+      expect(updatedLeaf.tabs[0].viewKey).toBe('ide')
     })
 
     it('returns null when removing the last tab', () => {
@@ -238,7 +238,7 @@ describe('panelLayout pure functions', () => {
 
     it('adjusts activeTab when closing tab before active', () => {
       let leaf = createLeaf('agents')
-      leaf = addTab(leaf, leaf.panelId, 'terminal') as PanelLeafNode
+      leaf = addTab(leaf, leaf.panelId, 'ide') as PanelLeafNode
       leaf = addTab(leaf, leaf.panelId, 'sprint') as PanelLeafNode
       // activeTab is now 2 (sprint). Close tab 0 (agents).
       const result = closeTab(leaf, leaf.panelId, 0)
@@ -249,7 +249,7 @@ describe('panelLayout pure functions', () => {
 
     it('clamps activeTab to last tab when closing active tab at end', () => {
       let leaf = createLeaf('agents')
-      leaf = addTab(leaf, leaf.panelId, 'terminal') as PanelLeafNode
+      leaf = addTab(leaf, leaf.panelId, 'ide') as PanelLeafNode
       // activeTab is 1. Close tab 1.
       const result = closeTab(leaf, leaf.panelId, 1)
       expect(result).not.toBeNull()
@@ -263,7 +263,7 @@ describe('panelLayout pure functions', () => {
   describe('setActiveTab', () => {
     it('sets active tab on a leaf', () => {
       let leaf = createLeaf('agents')
-      leaf = addTab(leaf, leaf.panelId, 'terminal') as PanelLeafNode
+      leaf = addTab(leaf, leaf.panelId, 'ide') as PanelLeafNode
       const result = setActiveTab(leaf, leaf.panelId, 0)
       expect(result).not.toBeNull()
       const updated = result as PanelLeafNode
@@ -281,7 +281,7 @@ describe('panelLayout pure functions', () => {
   describe('moveTab', () => {
     it('moveTab to center adds tab to target', () => {
       const leaf1 = createLeaf('agents')
-      const leaf2 = createLeaf('terminal')
+      const leaf2 = createLeaf('ide')
       // Give leaf1 a second tab so it survives removal
       const leaf1WithTwo = addTab(leaf1, leaf1.panelId, 'sprint') as PanelLeafNode
       const split: PanelSplitNode = {
@@ -304,7 +304,7 @@ describe('panelLayout pure functions', () => {
 
     it('moveTab to right splits target horizontally with new panel as second child', () => {
       const leaf1 = createLeaf('agents')
-      const leaf2 = createLeaf('terminal')
+      const leaf2 = createLeaf('ide')
       // Give leaf1 a second tab so it survives removal
       const leaf1WithTwo = addTab(leaf1, leaf1.panelId, 'sprint') as PanelLeafNode
       const split: PanelSplitNode = {
@@ -329,7 +329,7 @@ describe('panelLayout pure functions', () => {
 
     it('moveTab to left puts new panel as first child', () => {
       const leaf1 = createLeaf('agents')
-      const leaf2 = createLeaf('terminal')
+      const leaf2 = createLeaf('ide')
       const leaf1WithTwo = addTab(leaf1, leaf1.panelId, 'sprint') as PanelLeafNode
       const split: PanelSplitNode = {
         type: 'split',

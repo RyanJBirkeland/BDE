@@ -15,7 +15,7 @@ vi.mock('react-resizable-panels', () => ({
 }))
 
 vi.mock('../../../views/AgentsView', () => ({ AgentsView: () => <div>Agents</div> }))
-vi.mock('../../../views/TerminalView', () => ({ TerminalView: () => <div>Terminal</div> }))
+vi.mock('../../../views/TerminalView', () => ({ TerminalView: () => <div>IDE</div> }))
 vi.mock('../../../views/SprintView', () => ({ default: () => <div>Sprint</div> }))
 vi.mock('../../../views/MemoryView', () => ({ default: () => <div>Memory</div> }))
 vi.mock('../../../views/CostView', () => ({ default: () => <div>Cost</div> }))
@@ -40,33 +40,33 @@ describe('PanelRenderer', () => {
 
   it('renders a horizontal split with two leaves', () => {
     const leaf = createLeaf('agents')
-    const splitRoot = splitNode(leaf, leaf.panelId, 'horizontal', 'terminal')
+    const splitRoot = splitNode(leaf, leaf.panelId, 'horizontal', 'ide')
     if (splitRoot === null) throw new Error('splitNode returned null')
 
     render(<PanelRenderer node={splitRoot} />)
 
     expect(screen.getAllByText('Agents').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText('Terminal').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('IDE').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByTestId('panel-group')).toBeTruthy()
     expect(screen.getAllByTestId('panel')).toHaveLength(2)
   })
 
   it('renders a nested three-panel layout', async () => {
     const leaf = createLeaf('agents')
-    const splitRoot = splitNode(leaf, leaf.panelId, 'horizontal', 'terminal')
+    const splitRoot = splitNode(leaf, leaf.panelId, 'horizontal', 'ide')
     if (splitRoot === null) throw new Error('splitNode returned null')
 
     if (splitRoot.type !== 'split') throw new Error('expected split node')
-    const terminalLeaf = splitRoot.children[1]
-    if (terminalLeaf.type !== 'leaf') throw new Error('expected leaf')
+    const ideLeaf = splitRoot.children[1]
+    if (ideLeaf.type !== 'leaf') throw new Error('expected leaf')
 
-    const nestedRoot = splitNode(splitRoot, terminalLeaf.panelId, 'vertical', 'sprint')
+    const nestedRoot = splitNode(splitRoot, ideLeaf.panelId, 'vertical', 'sprint')
     if (nestedRoot === null) throw new Error('splitNode returned null')
 
     render(<PanelRenderer node={nestedRoot} />)
 
     expect(screen.getAllByText('Agents').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText('Terminal').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('IDE').length).toBeGreaterThanOrEqual(1)
     expect(await screen.findByText('Sprint')).toBeTruthy()
 
     expect(screen.getAllByTestId('panel-group')).toHaveLength(2)

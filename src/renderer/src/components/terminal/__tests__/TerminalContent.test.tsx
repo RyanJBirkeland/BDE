@@ -47,7 +47,7 @@ const defaultProps = {
   splitEnabled: false,
   showFind: false,
   isAgentTab: false,
-  activeView: 'terminal',
+  activeView: 'ide',
 }
 
 describe('TerminalContent', () => {

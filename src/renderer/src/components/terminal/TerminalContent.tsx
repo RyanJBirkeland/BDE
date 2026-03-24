@@ -51,7 +51,7 @@ export function TerminalContent({
                     tabId={tab.id}
                     shell={tab.shell}
                     cwd={tab.cwd}
-                    visible={activeView === 'terminal'}
+                    visible={activeView === 'ide'}
                   />
                 </Panel>
                 <Separator className="terminal-content__separator" />
@@ -60,7 +60,7 @@ export function TerminalContent({
                     tabId={`${tab.id}-split`}
                     shell={tab.shell}
                     cwd={tab.cwd}
-                    visible={activeView === 'terminal'}
+                    visible={activeView === 'ide'}
                   />
                 </Panel>
               </Group>
@@ -69,7 +69,7 @@ export function TerminalContent({
                 tabId={tab.id}
                 shell={tab.shell}
                 cwd={tab.cwd}
-                visible={activeView === 'terminal'}
+                visible={activeView === 'ide'}
               />
             )}
           </div>

@@ -75,7 +75,7 @@ const {
 
 vi.mock('../../stores/ui', () => ({
   useUIStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ activeView: 'terminal', setView: vi.fn() })
+    selector({ activeView: 'ide', setView: vi.fn() })
   ),
 }))
 

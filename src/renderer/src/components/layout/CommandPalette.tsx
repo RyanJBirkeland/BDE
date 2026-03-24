@@ -79,7 +79,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   const commands = useMemo<Command[]>(() => {
     const navCommands: { view: View; label: string; hint: string }[] = [
       { view: 'agents', label: 'Go to Agents', hint: '\u23181' },
-      { view: 'terminal', label: 'Go to Terminal', hint: '\u23182' },
+      { view: 'ide', label: 'Go to IDE', hint: '\u23182' },
       { view: 'sprint', label: 'Go to Sprint', hint: '\u23183' },
       { view: 'pr-station', label: 'Go to PR Station', hint: '\u23184' },
       { view: 'memory', label: 'Go to Memory', hint: '\u23185' },

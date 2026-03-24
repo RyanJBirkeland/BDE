@@ -4,7 +4,7 @@ import { create } from 'zustand'
 // Types
 // ---------------------------------------------------------------------------
 
-export type View = 'dashboard' | 'agents' | 'terminal' | 'sprint' | 'pr-station' | 'git' | 'memory' | 'cost' | 'settings' | 'task-workbench'
+export type View = 'dashboard' | 'agents' | 'ide' | 'sprint' | 'pr-station' | 'git' | 'memory' | 'cost' | 'settings' | 'task-workbench'
 export type DropZone = 'top' | 'bottom' | 'left' | 'right' | 'center'
 
 export interface PanelTab {
@@ -35,7 +35,7 @@ export type PanelNode = PanelLeafNode | PanelSplitNode
 export const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Dashboard',
   agents: 'Agents',
-  terminal: 'Terminal',
+  ide: 'IDE',
   sprint: 'Sprint',
   'pr-station': 'PR Station',
   memory: 'Memory',

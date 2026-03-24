@@ -40,7 +40,7 @@ vi.mock('../../../stores/panelLayout', async () => {
 
 // Mock views used in PanelLeaf
 vi.mock('../../../views/AgentsView', () => ({ AgentsView: () => <div data-testid="agents-view">Agents</div> }))
-vi.mock('../../../views/TerminalView', () => ({ TerminalView: () => <div data-testid="terminal-view">Terminal</div> }))
+vi.mock('../../../views/TerminalView', () => ({ TerminalView: () => <div data-testid="ide-view">IDE</div> }))
 vi.mock('../../../views/SprintView', () => ({ default: () => <div data-testid="sprint-view">Sprint</div> }))
 vi.mock('../../../views/MemoryView', () => ({ default: () => <div data-testid="memory-view">Memory</div> }))
 vi.mock('../../../views/CostView', () => ({ default: () => <div data-testid="cost-view">Cost</div> }))
@@ -108,7 +108,7 @@ describe('PanelLeaf', () => {
     const node = makeLeaf({
       tabs: [
         { viewKey: 'agents', label: 'Agents' },
-        { viewKey: 'terminal', label: 'Terminal' },
+        { viewKey: 'ide', label: 'IDE' },
       ],
       activeTab: 0,
     })
@@ -118,9 +118,9 @@ describe('PanelLeaf', () => {
     const agentsView = await screen.findByTestId('agents-view')
     expect(agentsView).toBeInTheDocument()
 
-    const terminalView = await screen.findByTestId('terminal-view')
-    // Terminal is rendered but hidden via display:none
-    expect(terminalView.parentElement?.style.display).toBe('none')
+    const ideView = await screen.findByTestId('ide-view')
+    // IDE is rendered but hidden via display:none
+    expect(ideView.parentElement?.style.display).toBe('none')
   })
 
   it('shows focused panel with accent outline', () => {

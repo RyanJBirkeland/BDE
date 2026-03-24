@@ -49,7 +49,7 @@ export function TerminalView(): React.JSX.Element {
 
   // Keyboard shortcuts — capture phase so they fire before App.tsx global handler
   useEffect(() => {
-    if (activeView !== 'terminal') return
+    if (activeView !== 'ide') return
 
     const handler = (e: KeyboardEvent): void => {
       // Cmd/Meta key shortcuts

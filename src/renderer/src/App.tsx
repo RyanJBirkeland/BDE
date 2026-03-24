@@ -26,7 +26,7 @@ import { DEFAULT_MODEL } from '../../shared/models'
 const VIEW_SHORTCUT_MAP: Partial<Record<string, View>> = {
   '1': 'dashboard',
   '2': 'agents',
-  '3': 'terminal',
+  '3': 'ide',
   '4': 'sprint',
   '5': 'pr-station',
   '6': 'git',
@@ -38,7 +38,7 @@ const VIEW_SHORTCUT_MAP: Partial<Record<string, View>> = {
 const VIEW_TITLES: Record<View, string> = {
   dashboard: 'Dashboard',
   agents: 'Agents',
-  terminal: 'Terminal',
+  ide: 'IDE',
   sprint: 'Sprint Center',
   'pr-station': 'PR Station',
   git: 'Source Control',

@@ -43,7 +43,7 @@ function makeLeaf(overrides: Partial<PanelLeafNode> = {}): PanelLeafNode {
     panelId: 'panel-1',
     tabs: [
       { viewKey: 'agents', label: 'Agents' },
-      { viewKey: 'terminal', label: 'Terminal' },
+      { viewKey: 'ide', label: 'IDE' },
     ],
     activeTab: 0,
     ...overrides,
@@ -63,14 +63,14 @@ describe('PanelTabBar', () => {
   it('renders all tab labels', () => {
     render(<PanelTabBar node={makeLeaf()} />)
     expect(screen.getByText('Agents')).toBeInTheDocument()
-    expect(screen.getByText('Terminal')).toBeInTheDocument()
+    expect(screen.getByText('IDE')).toBeInTheDocument()
   })
 
   it('clicking a tab calls focusPanel and setActiveTab', async () => {
     const user = userEvent.setup()
     render(<PanelTabBar node={makeLeaf()} />)
 
-    await user.click(screen.getByText('Terminal'))
+    await user.click(screen.getByText('IDE'))
 
     expect(mockFocusPanel).toHaveBeenCalledWith('panel-1')
     expect(mockSetActiveTab).toHaveBeenCalledWith('panel-1', 1)

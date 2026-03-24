@@ -45,7 +45,7 @@ function resolveView(viewKey: View): React.ReactNode {
       return <DashboardView />
     case 'agents':
       return <AgentsView />
-    case 'terminal':
+    case 'ide':
       return <TerminalView />
     case 'sprint':
       return <SprintView />

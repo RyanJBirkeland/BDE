@@ -18,7 +18,7 @@ import { VIEW_LOADERS } from '../panels/PanelLeaf'
 const NAV_ITEMS: { view: View; icon: typeof Terminal; label: string; shortcut: string }[] = [
   { view: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', shortcut: '⌘1' },
   { view: 'agents', icon: Terminal, label: 'Agents', shortcut: '⌘2' },
-  { view: 'terminal', icon: SquareTerminal, label: 'Terminal', shortcut: '⌘3' },
+  { view: 'ide', icon: SquareTerminal, label: 'IDE', shortcut: '⌘3' },
   { view: 'sprint', icon: GitBranch, label: 'Sprint Center', shortcut: '⌘4' },
   { view: 'pr-station', icon: GitPullRequest, label: 'PR Station', shortcut: '⌘5' },
   { view: 'git', icon: GitCommitHorizontal, label: 'Source Control', shortcut: '⌘6' },
