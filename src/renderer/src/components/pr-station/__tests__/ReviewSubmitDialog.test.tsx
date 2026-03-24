@@ -138,4 +138,68 @@ describe('ReviewSubmitDialog', () => {
     await userEvent.click(screen.getByRole('radio', { name: /approve/i }))
     expect(screen.getByRole('radio', { name: /approve/i })).toBeChecked()
   })
+
+  it('submits with APPROVE event when Approve radio is selected', async () => {
+    const { onSubmitted } = renderDialog()
+    await userEvent.click(screen.getByRole('radio', { name: /approve/i }))
+    await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
+    await waitFor(() =>
+      expect(mockCreateReview).toHaveBeenCalledWith(
+        'RyanJBirkeland', 'BDE', 42,
+        expect.objectContaining({ event: 'APPROVE' })
+      )
+    )
+    expect(onSubmitted).toHaveBeenCalled()
+  })
+
+  it('submits with REQUEST_CHANGES event and body when Request Changes is selected and body typed', async () => {
+    renderDialog()
+    await userEvent.click(screen.getByRole('radio', { name: /request changes/i }))
+    await userEvent.type(screen.getByPlaceholderText(/leave an overall comment/i), 'Please fix the types')
+    await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
+    await waitFor(() =>
+      expect(mockCreateReview).toHaveBeenCalledWith(
+        'RyanJBirkeland', 'BDE', 42,
+        expect.objectContaining({ event: 'REQUEST_CHANGES', body: 'Please fix the types' })
+      )
+    )
+  })
+
+  it('passes pending comments to createReview', async () => {
+    pendingCommentsMap.set(prKey, [
+      { id: 'c1', path: 'src/foo.ts', line: 10, side: 'RIGHT', body: 'nit: rename this' },
+      { id: 'c2', path: 'src/bar.ts', line: 5, side: 'RIGHT', body: 'extract to helper' },
+    ])
+    renderDialog()
+    await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
+    await waitFor(() =>
+      expect(mockCreateReview).toHaveBeenCalledWith(
+        'RyanJBirkeland', 'BDE', 42,
+        expect.objectContaining({
+          comments: [
+            expect.objectContaining({ path: 'src/foo.ts', line: 10, body: 'nit: rename this' }),
+            expect.objectContaining({ path: 'src/bar.ts', line: 5, body: 'extract to helper' }),
+          ],
+        })
+      )
+    )
+  })
+
+  it('calls clearPending and onSubmitted after successful submit', async () => {
+    const { onSubmitted } = renderDialog()
+    await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
+    await waitFor(() => expect(mockCreateReview).toHaveBeenCalled())
+    expect(mockClearPending).toHaveBeenCalledWith(prKey)
+    expect(onSubmitted).toHaveBeenCalled()
+    expect(mockToastSuccess).toHaveBeenCalledWith('Review submitted')
+  })
+
+  it('shows error toast and does not call onSubmitted when createReview fails', async () => {
+    mockCreateReview.mockRejectedValue(new Error('GitHub rate limit'))
+    const { onSubmitted } = renderDialog()
+    await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledWith('GitHub rate limit'))
+    expect(onSubmitted).not.toHaveBeenCalled()
+    expect(mockClearPending).not.toHaveBeenCalled()
+  })
 })

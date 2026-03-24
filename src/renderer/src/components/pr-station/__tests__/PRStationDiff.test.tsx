@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
+import type { LineRange } from '../../diff/DiffViewer'
+import type { PendingComment } from '../../../stores/pendingReview'
 
 const mockGetPRDiff = vi.fn()
 const mockGetReviewComments = vi.fn()
@@ -13,12 +15,17 @@ vi.mock('../../../lib/diff-parser', () => ({
   parseDiffChunked: vi.fn().mockResolvedValue(undefined),
 }))
 
+// Mutable pending state for tests that need to control it
+const mockAddComment = vi.fn()
+const mockRemoveComment = vi.fn()
+const pendingCommentsMap = new Map<string, PendingComment[]>()
+
 vi.mock('../../../stores/pendingReview', () => ({
   usePendingReviewStore: (selector: (s: unknown) => unknown) =>
     selector({
-      pendingComments: new Map(),
-      addComment: vi.fn(),
-      removeComment: vi.fn(),
+      pendingComments: pendingCommentsMap,
+      addComment: mockAddComment,
+      removeComment: mockRemoveComment,
     }),
 }))
 
@@ -27,10 +34,15 @@ vi.mock('../../../stores/ui', () => ({
     selector({ theme: 'dark' }),
 }))
 
+// Capture the props passed to DiffViewer so we can assert on them
+let capturedDiffViewerProps: Record<string, unknown> = {}
+
 vi.mock('../../diff/DiffViewer', () => ({
-  DiffViewer: ({ files }: { files: unknown[] }) => (
-    <div data-testid="diff-viewer">{files.length} files</div>
-  ),
+  DiffViewer: (props: Record<string, unknown>) => {
+    capturedDiffViewerProps = props
+    const files = props.files as unknown[]
+    return <div data-testid="diff-viewer">{files.length} files</div>
+  },
 }))
 
 vi.mock('../../diff/DiffSizeWarning', () => ({
@@ -59,6 +71,8 @@ const mockPr: OpenPr = {
 describe('PRStationDiff', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    pendingCommentsMap.clear()
+    capturedDiffViewerProps = {}
     mockGetPRDiff.mockResolvedValue('diff --git a/foo.ts b/foo.ts\n')
     mockGetReviewComments.mockResolvedValue([])
   })
@@ -82,5 +96,61 @@ describe('PRStationDiff', () => {
   it('fetches review comments in parallel with diff', async () => {
     render(<PRStationDiff pr={mockPr} />)
     await waitFor(() => expect(mockGetReviewComments).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42))
+  })
+
+  it('passes pending comments from the store to DiffViewer', async () => {
+    const prKey = 'BDE#42'
+    const pending: PendingComment[] = [
+      { id: 'p1', path: 'src/index.ts', line: 3, side: 'RIGHT', body: 'style issue' },
+    ]
+    pendingCommentsMap.set(prKey, pending)
+
+    render(<PRStationDiff pr={mockPr} />)
+    await waitFor(() => expect(screen.getByTestId('diff-viewer')).toBeInTheDocument())
+
+    expect(capturedDiffViewerProps.pendingComments).toEqual(pending)
+  })
+
+  it('calls addComment via onAddComment when DiffViewer triggers it', async () => {
+    render(<PRStationDiff pr={mockPr} />)
+    await waitFor(() => expect(screen.getByTestId('diff-viewer')).toBeInTheDocument())
+
+    const onAddComment = capturedDiffViewerProps.onAddComment as (range: LineRange, body: string) => void
+    const range: LineRange = { file: 'src/index.ts', startLine: 5, endLine: 5, side: 'RIGHT' }
+
+    act(() => {
+      onAddComment(range, 'this needs a test')
+    })
+
+    expect(mockAddComment).toHaveBeenCalledWith(
+      'BDE#42',
+      expect.objectContaining({
+        path: 'src/index.ts',
+        line: 5,
+        side: 'RIGHT',
+        body: 'this needs a test',
+      })
+    )
+  })
+
+  it('calls removeComment via onRemovePendingComment when DiffViewer triggers it', async () => {
+    render(<PRStationDiff pr={mockPr} />)
+    await waitFor(() => expect(screen.getByTestId('diff-viewer')).toBeInTheDocument())
+
+    const onRemove = capturedDiffViewerProps.onRemovePendingComment as (id: string) => void
+
+    act(() => {
+      onRemove('comment-id-123')
+    })
+
+    expect(mockRemoveComment).toHaveBeenCalledWith('BDE#42', 'comment-id-123')
+  })
+
+  it('passes empty pendingComments array to DiffViewer when none in store', async () => {
+    render(<PRStationDiff pr={mockPr} />)
+    await waitFor(() => expect(screen.getByTestId('diff-viewer')).toBeInTheDocument())
+
+    const pending = capturedDiffViewerProps.pendingComments as PendingComment[]
+    expect(pending).toEqual([])
   })
 })

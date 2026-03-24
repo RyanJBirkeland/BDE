@@ -112,4 +112,48 @@ describe('PRStationActions', () => {
     await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
     await waitFor(() => expect(mockToastError).toHaveBeenCalledWith('conflict'))
   })
+
+  it('changes merge method via dropdown and uses new method on merge', async () => {
+    const onRemovePr = vi.fn()
+    render(<PRStationActions pr={mockPr} mergeability={mergeability} onRemovePr={onRemovePr} />)
+
+    // Open dropdown and select "Merge commit"
+    await userEvent.click(screen.getByTitle(/pick merge strategy/i))
+    await userEvent.click(screen.getByRole('button', { name: /merge commit/i }))
+
+    // Now confirm merge — method should be 'merge'
+    await userEvent.click(screen.getByTitle(/merge commit merge/i))
+    await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
+    await waitFor(() => expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'merge'))
+  })
+
+  it('changes merge method to rebase and uses rebase on merge', async () => {
+    const onRemovePr = vi.fn()
+    render(<PRStationActions pr={mockPr} mergeability={mergeability} onRemovePr={onRemovePr} />)
+
+    await userEvent.click(screen.getByTitle(/pick merge strategy/i))
+    await userEvent.click(screen.getByRole('button', { name: /rebase/i }))
+
+    await userEvent.click(screen.getByTitle(/rebase merge/i))
+    await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
+    await waitFor(() => expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'rebase'))
+  })
+
+  it('shows toast error when closePR throws', async () => {
+    mockClosePR.mockRejectedValue(new Error('not found'))
+    render(<PRStationActions pr={mockPr} mergeability={mergeability} onRemovePr={vi.fn()} />)
+    await userEvent.click(screen.getByTitle(/close pr/i))
+    await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledWith('not found'))
+  })
+
+  it('does not call onRemovePr when merge fails', async () => {
+    mockMergePR.mockRejectedValue(new Error('conflict'))
+    const onRemovePr = vi.fn()
+    render(<PRStationActions pr={mockPr} mergeability={mergeability} onRemovePr={onRemovePr} />)
+    await userEvent.click(screen.getByTitle(/squash merge/i))
+    await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
+    await waitFor(() => expect(mockToastError).toHaveBeenCalled())
+    expect(onRemovePr).not.toHaveBeenCalled()
+  })
 })
