@@ -49,6 +49,7 @@ export interface SprintTask {
   completed_at: string | null
   template_name: string | null
   depends_on: TaskDependency[] | null
+  playground_enabled?: boolean
   updated_at: string
   created_at: string
 }

@@ -180,6 +180,7 @@ export function createAgentManager(
             repo: raw.repo as string,
             retry_count: Number(raw.retryCount) || 0,
             fast_fail_count: Number(raw.fastFailCount) || 0,
+            playground_enabled: Boolean(raw.playgroundEnabled),
           }
 
           const repoPath = resolveRepoPath(task.repo)

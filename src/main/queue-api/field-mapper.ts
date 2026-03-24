@@ -8,6 +8,7 @@ const CAMEL_TO_SNAKE: Record<string, string> = {
   startedAt: 'started_at', completedAt: 'completed_at',
   createdAt: 'created_at', updatedAt: 'updated_at',
   claimedBy: 'claimed_by', templateName: 'template_name',
+  playgroundEnabled: 'playground_enabled',
 }
 
 const SNAKE_TO_CAMEL = Object.fromEntries(

@@ -45,6 +45,7 @@ export const UPDATE_ALLOWLIST = new Set([
   'template_name',
   'claimed_by',
   'depends_on',
+  'playground_enabled',
 ])
 
 export interface QueueStats {
@@ -102,6 +103,7 @@ export interface CreateTaskInput {
   status?: string
   template_name?: string
   depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
+  playground_enabled?: boolean
 }
 
 export async function createTask(input: CreateTaskInput): Promise<SprintTask> {
@@ -117,6 +119,7 @@ export async function createTask(input: CreateTaskInput): Promise<SprintTask> {
       status: input.status ?? 'backlog',
       template_name: input.template_name ?? null,
       depends_on: sanitizeDependsOn(input.depends_on),
+      playground_enabled: input.playground_enabled ?? false,
     })
     .select()
     .single()
