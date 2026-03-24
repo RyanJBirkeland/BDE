@@ -27,7 +27,9 @@ export async function spawnAgent(opts: {
   return spawnViaCli(opts, env, opts.logger)
 }
 
-function spawnViaSdk(
+// @ts-ignore — kept for potential future use when SDK is stable in Electron
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _spawnViaSdk(
   sdk: typeof import('@anthropic-ai/claude-agent-sdk'),
   opts: { prompt: string; cwd: string; model: string },
   env: NodeJS.ProcessEnv,
