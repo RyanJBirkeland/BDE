@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { useUIStore, type View } from '../../stores/ui'
 import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
 import { useLocalAgentsStore } from '../../stores/localAgents'
@@ -48,6 +49,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   const [recentAgents, setRecentAgents] = useState<AgentMeta[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const paletteRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(paletteRef, open)
   const setView = useUIStore((s) => s.setView)
   const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
 
@@ -273,6 +276,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       {open && (
     <div className="command-palette__overlay elevation-3-backdrop" onClick={onClose}>
       <motion.div
+        ref={paletteRef}
         className="command-palette glass-modal"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}

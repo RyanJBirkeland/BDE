@@ -69,6 +69,7 @@ export function PanelTabBar({ node }: PanelTabBarProps): React.ReactElement {
             role="tab"
             aria-selected={isActive}
             id={`panel-tab-${tab.viewKey}-${node.panelId}`}
+            title={tab.label}
             draggable={true}
             onDragStart={(e) => handleDragStart(index, e)}
             onClick={() => handleTabClick(index)}

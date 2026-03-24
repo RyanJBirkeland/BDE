@@ -39,9 +39,9 @@ const mockSetConflicts = vi.fn()
 
 vi.mock('../../stores/prConflicts', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
-    sel({ conflictingTaskIds: new Set(), setConflicts: mockSetConflicts })
+    sel({ conflictingTaskIds: [], setConflicts: mockSetConflicts })
   )
-  ;(store as any).getState = () => ({ conflictingTaskIds: new Set(), setConflicts: mockSetConflicts })
+  ;(store as any).getState = () => ({ conflictingTaskIds: [], setConflicts: mockSetConflicts })
   return { usePrConflictsStore: store }
 })
 

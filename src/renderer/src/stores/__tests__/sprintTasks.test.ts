@@ -49,8 +49,8 @@ const initialState = {
   loading: true,
   loadError: null,
   prMergedMap: {},
-  pendingUpdates: new Map<string, number>(),
-  pendingCreates: new Set<string>(),
+  pendingUpdates: {} as Record<string, number>,
+  pendingCreates: [] as string[],
 }
 
 describe('sprintTasks store', () => {
@@ -103,7 +103,7 @@ describe('sprintTasks store', () => {
   describe('updateTask', () => {
     it('applies optimistic update immediately', async () => {
       const task = makeTask('t1', { status: 'backlog' })
-      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockResolvedValue({})
 
       const updatePromise = useSprintTasks.getState().updateTask('t1', { status: 'active' })
@@ -116,17 +116,17 @@ describe('sprintTasks store', () => {
 
     it('removes task from pendingUpdates after successful update', async () => {
       const task = makeTask('t1')
-      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockResolvedValue({})
 
       await useSprintTasks.getState().updateTask('t1', { status: 'active' })
 
-      expect(useSprintTasks.getState().pendingUpdates.has('t1')).toBe(false)
+      expect(('t1' in useSprintTasks.getState().pendingUpdates)).toBe(false)
     })
 
     it('calls toast.error and reloads on failure', async () => {
       const task = makeTask('t1')
-      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('update failed')
       )
@@ -307,7 +307,7 @@ describe('sprintTasks store', () => {
       })
 
       expect(useSprintTasks.getState().tasks).toHaveLength(0)
-      expect(useSprintTasks.getState().pendingCreates.size).toBe(0)
+      expect(useSprintTasks.getState().pendingCreates.length).toBe(0)
       expect(toast.error).toHaveBeenCalledWith('create failed')
     })
 
@@ -355,7 +355,7 @@ describe('sprintTasks store', () => {
     const task = makeTask('t1', { status: 'backlog', repo: 'bde' })
 
     beforeEach(() => {
-      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({
         bde: '/repos/bde',
       })
@@ -383,7 +383,7 @@ describe('sprintTasks store', () => {
 
     it('uses task.spec as agent task when spec is set', async () => {
       const taskWithSpec = makeTask('t2', { status: 'backlog', repo: 'bde', spec: 'do the thing' })
-      useSprintTasks.setState({ tasks: [taskWithSpec], pendingUpdates: new Map(), pendingCreates: new Set() })
+      useSprintTasks.setState({ tasks: [taskWithSpec], pendingUpdates: {}, pendingCreates: [] })
 
       await useSprintTasks.getState().launchTask(taskWithSpec)
 
@@ -408,8 +408,8 @@ describe('sprintTasks store', () => {
       )
       useSprintTasks.setState({
         tasks: [...activeTasks, task],
-        pendingUpdates: new Map(),
-        pendingCreates: new Set(),
+        pendingUpdates: {},
+        pendingCreates: [],
       })
 
       await useSprintTasks.getState().launchTask(task)
@@ -425,8 +425,8 @@ describe('sprintTasks store', () => {
       )
       useSprintTasks.setState({
         tasks: [...otherActiveTasks, alreadyActive],
-        pendingUpdates: new Map(),
-        pendingCreates: new Set(),
+        pendingUpdates: {},
+        pendingCreates: [],
       })
 
       // Should not block even though there are 5 active tasks
@@ -449,8 +449,8 @@ describe('sprintTasks store', () => {
   describe('loadData — advanced cases', () => {
     it('preserves optimistic version of task with pending update during poll', async () => {
       const optimistic = makeTask('t1', { status: 'active' })
-      const pendingUpdates = new Map([['t1', Date.now()]])
-      useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: new Set() })
+      const pendingUpdates: Record<string, number> = { 't1': Date.now() }
+      useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: [] })
 
       // Poll returns stale version
       const stale = makeTask('t1', { status: 'backlog' })
@@ -466,8 +466,8 @@ describe('sprintTasks store', () => {
       const optimistic = makeTask('t1', { status: 'active' })
       // Timestamp older than PENDING_UPDATE_TTL (2000ms)
       const oldTs = Date.now() - 3000
-      const pendingUpdates = new Map([['t1', oldTs]])
-      useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: new Set() })
+      const pendingUpdates: Record<string, number> = { 't1': oldTs }
+      useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: [] })
 
       const incoming = makeTask('t1', { status: 'done' })
       ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([incoming])
@@ -480,8 +480,8 @@ describe('sprintTasks store', () => {
 
     it('preserves pending-create temp tasks not yet in DB', async () => {
       const tempTask = makeTask('temp-999', { title: 'Brand new task' })
-      const pendingCreates = new Set(['temp-999'])
-      useSprintTasks.setState({ tasks: [tempTask], pendingUpdates: new Map(), pendingCreates })
+      const pendingCreates: string[] = ['temp-999']
+      useSprintTasks.setState({ tasks: [tempTask], pendingUpdates: {}, pendingCreates })
 
       // DB response does not include temp task yet
       const dbTask = makeTask('server-1')
@@ -498,7 +498,7 @@ describe('sprintTasks store', () => {
   describe('updateTask — error path', () => {
     it('calls loadData to revert optimistic changes on failure', async () => {
       const task = makeTask('t1', { status: 'backlog' })
-      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('server error')
       )
@@ -512,7 +512,7 @@ describe('sprintTasks store', () => {
 
     it('removes taskId from pendingUpdates on failure', async () => {
       const task = makeTask('t1')
-      useSprintTasks.setState({ tasks: [task], pendingUpdates: new Map(), pendingCreates: new Set() })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('fail')
       )
@@ -520,7 +520,7 @@ describe('sprintTasks store', () => {
 
       await useSprintTasks.getState().updateTask('t1', { status: 'active' })
 
-      expect(useSprintTasks.getState().pendingUpdates.has('t1')).toBe(false)
+      expect(('t1' in useSprintTasks.getState().pendingUpdates)).toBe(false)
     })
   })
 

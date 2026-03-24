@@ -17,6 +17,7 @@ import { TaskCard } from './TaskCard'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { WIP_LIMIT_IN_PROGRESS } from '../../lib/constants'
 import { TASK_STATUS } from '../../../../shared/constants'
+import { toast } from '../../stores/toasts'
 import type { SprintTask } from './SprintCenter'
 
 type KanbanBoardProps = {
@@ -24,7 +25,7 @@ type KanbanBoardProps = {
   activeTasks: SprintTask[]
   awaitingReviewTasks: SprintTask[]
   prMergedMap: Record<string, boolean>
-  generatingIds?: Set<string>
+  generatingIds?: string[]
   onDragEnd: (taskId: string, newStatus: SprintTask['status']) => void
   onReorder?: (status: SprintTask['status'], orderedIds: string[]) => void
   onPushToSprint: (task: SprintTask) => void
@@ -51,14 +52,14 @@ function resolveTargetStatus(
   return null
 }
 
-const EMPTY_SET = new Set<string>()
+const EMPTY_ARRAY: string[] = []
 
 export function KanbanBoard({
   todoTasks,
   activeTasks,
   awaitingReviewTasks,
   prMergedMap,
-  generatingIds = EMPTY_SET,
+  generatingIds = EMPTY_ARRAY,
   onDragEnd,
   onReorder,
   onPushToSprint,
@@ -108,6 +109,7 @@ export function KanbanBoard({
       sourceTask.status !== TASK_STATUS.ACTIVE &&
       wipFull
     ) {
+      toast.info(`WIP limit reached (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}). Complete or remove an in-progress task first.`)
       return
     }
 

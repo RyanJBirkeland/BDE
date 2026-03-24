@@ -10,6 +10,8 @@ export interface PendingComment {
   body: string
 }
 
+const STORAGE_KEY = 'bde:pendingReviewComments'
+
 interface PendingReviewStore {
   pendingComments: Record<string, PendingComment[]>
   addComment: (prKey: string, comment: PendingComment) => void
@@ -17,6 +19,7 @@ interface PendingReviewStore {
   removeComment: (prKey: string, commentId: string) => void
   clearPending: (prKey: string) => void
   getPendingCount: (prKey: string) => number
+  restoreFromStorage: () => void
 }
 
 export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
@@ -55,4 +58,26 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
     }),
 
   getPendingCount: (prKey) => (get().pendingComments[prKey] ?? []).length,
+
+  restoreFromStorage: () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as Record<string, PendingComment[]>
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        set({ pendingComments: parsed })
+      }
+    } catch {
+      // Corrupt localStorage — ignore and start fresh
+    }
+  },
 }))
+
+// Auto-persist to localStorage whenever pendingComments changes
+usePendingReviewStore.subscribe((state) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.pendingComments))
+  } catch {
+    // Storage quota exceeded or unavailable — ignore
+  }
+})

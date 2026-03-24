@@ -14,6 +14,7 @@ interface AgentListProps {
   selectedId: string | null
   onSelect: (id: string) => void
   filter?: string
+  loading?: boolean
 }
 
 export interface AgentGroups {
@@ -72,7 +73,7 @@ function GroupHeader({ label, count, open, onToggle }: { label: string; count: n
   )
 }
 
-export function AgentList({ agents, selectedId, onSelect, filter }: AgentListProps) {
+export function AgentList({ agents, selectedId, onSelect, filter, loading }: AgentListProps) {
   const [searchText, setSearchText] = useState(filter ?? '')
   const [historyOpen, setHistoryOpen] = useState(false)
 
@@ -121,6 +122,15 @@ export function AgentList({ agents, selectedId, onSelect, filter }: AgentListPro
 
       {/* Agent groups */}
       <div style={{ flex: 1, overflow: 'auto' }}>
+        {loading && agents.length === 0 && (
+          <div style={{ padding: tokens.space[2], display: 'flex', flexDirection: 'column', gap: tokens.space[2] }}>
+            <div className="bde-skeleton" style={{ height: 56 }} />
+            <div className="bde-skeleton" style={{ height: 56 }} />
+            <div className="bde-skeleton" style={{ height: 56 }} />
+            <div className="bde-skeleton" style={{ height: 56 }} />
+          </div>
+        )}
+
         {groups.running.length > 0 && (
           <div>
             <GroupHeader label="Running" count={groups.running.length} open onToggle={() => {}} />

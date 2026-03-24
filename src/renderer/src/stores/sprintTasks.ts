@@ -26,8 +26,8 @@ interface SprintTasksState {
   prMergedMap: Record<string, boolean>
 
   // --- Optimistic update protection ---
-  pendingUpdates: Map<string, number> // taskId → timestamp
-  pendingCreates: Set<string> // temp IDs of optimistically created tasks
+  pendingUpdates: Record<string, number> // taskId → timestamp
+  pendingCreates: string[] // temp IDs of optimistically created tasks
 
   // --- Actions ---
   loadData: () => Promise<void>
@@ -45,8 +45,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   loading: true,
   loadError: null,
   prMergedMap: {},
-  pendingUpdates: new Map<string, number>(),
-  pendingCreates: new Set<string>(),
+  pendingUpdates: {},
+  pendingCreates: [],
 
   loadData: async (): Promise<void> => {
     set({ loadError: null, loading: true })
@@ -57,11 +57,12 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       set((s) => {
         const now = Date.now()
 
-        // Expire old pending updates
-        const nextPending = new Map(s.pendingUpdates)
-        for (const [id, ts] of nextPending) {
-          if (now - ts > PENDING_UPDATE_TTL) nextPending.delete(id)
+        // Expire old pending updates (using a local Map for O(1) mutation)
+        const nextPendingMap = new Map(Object.entries(s.pendingUpdates))
+        for (const [id, ts] of nextPendingMap) {
+          if (now - ts > PENDING_UPDATE_TTL) nextPendingMap.delete(id)
         }
+        const nextPending: Record<string, number> = Object.fromEntries(nextPendingMap)
 
         // Build a map of current optimistic tasks by ID for quick lookup
         const currentTaskMap = new Map(s.tasks.map((t) => [t.id, t]))
@@ -69,7 +70,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         // Merge incoming data, preserving optimistic versions for pending updates
         const mergedById = new Map<string, SprintTask>()
         for (const task of incoming) {
-          if (nextPending.has(task.id)) {
+          if (task.id in nextPending) {
             // Keep optimistic version — DB hasn't caught up yet
             const optimistic = currentTaskMap.get(task.id)
             mergedById.set(task.id, optimistic ?? task)
@@ -97,30 +98,24 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
   updateTask: async (taskId, patch): Promise<void> => {
     // Record pending update before optimistic patch
-    set((s) => {
-      const nextPending = new Map(s.pendingUpdates)
-      nextPending.set(taskId, Date.now())
-      return {
-        pendingUpdates: nextPending,
-        tasks: s.tasks.map((t) =>
-          t.id === taskId ? { ...t, ...patch, updated_at: new Date().toISOString() } : t
-        ),
-      }
-    })
+    set((s) => ({
+      pendingUpdates: { ...s.pendingUpdates, [taskId]: Date.now() },
+      tasks: s.tasks.map((t) =>
+        t.id === taskId ? { ...t, ...patch, updated_at: new Date().toISOString() } : t
+      ),
+    }))
     try {
       await window.api.sprint.update(taskId, patch)
       // DB write committed — remove from pending
       set((s) => {
-        const nextPending = new Map(s.pendingUpdates)
-        nextPending.delete(taskId)
-        return { pendingUpdates: nextPending }
+        const { [taskId]: _, ...rest } = s.pendingUpdates
+        return { pendingUpdates: rest }
       })
     } catch (e) {
       // Remove from pending on failure too
       set((s) => {
-        const nextPending = new Map(s.pendingUpdates)
-        nextPending.delete(taskId)
-        return { pendingUpdates: nextPending }
+        const { [taskId]: _, ...rest } = s.pendingUpdates
+        return { pendingUpdates: rest }
       })
       toast.error(e instanceof Error ? e.message : 'Failed to update task')
       get().loadData() // revert optimistic on failure
@@ -167,11 +162,10 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }
-    set((s) => {
-      const nextCreates = new Set(s.pendingCreates)
-      nextCreates.add(optimistic.id)
-      return { tasks: [optimistic, ...s.tasks], pendingCreates: nextCreates }
-    })
+    set((s) => ({
+      tasks: [optimistic, ...s.tasks],
+      pendingCreates: [...s.pendingCreates, optimistic.id],
+    }))
 
     try {
       const result = (await window.api.sprint.create({
@@ -186,14 +180,10 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       })) as SprintTask
 
       if (result?.id) {
-        set((s) => {
-          const nextCreates = new Set(s.pendingCreates)
-          nextCreates.delete(optimistic.id)
-          return {
-            tasks: s.tasks.map((t) => (t.id === optimistic.id ? result : t)),
-            pendingCreates: nextCreates,
-          }
-        })
+        set((s) => ({
+          tasks: s.tasks.map((t) => (t.id === optimistic.id ? result : t)),
+          pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id),
+        }))
 
         // Background spec generation for Quick Mode tasks
         if (!data.spec) {
@@ -237,11 +227,10 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       }
       toast.success('Ticket created — saved to Backlog')
     } catch (e) {
-      set((s) => {
-        const nextCreates = new Set(s.pendingCreates)
-        nextCreates.delete(optimistic.id)
-        return { tasks: s.tasks.filter((t) => t.id !== optimistic.id), pendingCreates: nextCreates }
-      })
+      set((s) => ({
+        tasks: s.tasks.filter((t) => t.id !== optimistic.id),
+        pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id),
+      }))
       toast.error(e instanceof Error ? e.message : 'Failed to create task')
     }
   },

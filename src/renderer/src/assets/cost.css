@@ -232,6 +232,10 @@
   color: var(--bde-text);
 }
 
+.cost-table th.cost-table__num:not(.cost-table__sortable) {
+  cursor: default;
+}
+
 .cost-table td {
   padding: 8px 12px;
   border-bottom: 1px solid var(--bde-border);

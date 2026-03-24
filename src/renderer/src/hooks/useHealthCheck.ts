@@ -29,7 +29,7 @@ export function useHealthCheck(tasks: SprintTask[]) {
   useVisibilityAwareInterval(runHealthCheck, POLL_HEALTH_CHECK_MS)
 
   const visibleStuckTasks = useMemo(
-    () => tasks.filter((t) => stuckTaskIds.has(t.id) && !dismissedIds.has(t.id)),
+    () => tasks.filter((t) => stuckTaskIds.includes(t.id) && !dismissedIds.includes(t.id)),
     [tasks, stuckTaskIds, dismissedIds]
   )
 

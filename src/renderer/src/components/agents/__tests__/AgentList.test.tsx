@@ -193,4 +193,23 @@ describe('AgentList', () => {
     render(<AgentList {...defaultProps} agents={agents} />)
     expect(screen.getByText('(2)')).toBeInTheDocument()
   })
+
+  it('renders 4 skeleton divs when loading and agents is empty', () => {
+    const { container } = render(<AgentList {...defaultProps} loading={true} agents={[]} />)
+    const skeletons = container.querySelectorAll('.bde-skeleton')
+    expect(skeletons).toHaveLength(4)
+  })
+
+  it('does not render skeletons when loading is false', () => {
+    const { container } = render(<AgentList {...defaultProps} loading={false} agents={[]} />)
+    const skeletons = container.querySelectorAll('.bde-skeleton')
+    expect(skeletons).toHaveLength(0)
+  })
+
+  it('does not render skeletons when loading but agents already exist', () => {
+    const agents = [makeAgent({ status: 'done', finishedAt: new Date(Date.now() - 3600_000).toISOString() })]
+    const { container } = render(<AgentList {...defaultProps} loading={true} agents={agents} />)
+    const skeletons = container.querySelectorAll('.bde-skeleton')
+    expect(skeletons).toHaveLength(0)
+  })
 })

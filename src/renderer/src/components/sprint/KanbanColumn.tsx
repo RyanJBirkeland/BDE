@@ -14,7 +14,7 @@ type KanbanColumnProps = {
   label: string
   tasks: SprintTask[]
   prMergedMap: Record<string, boolean>
-  generatingIds?: Set<string>
+  generatingIds?: string[]
   readOnly?: boolean
   wipLimit?: number
   onPushToSprint: (task: SprintTask) => void
@@ -90,7 +90,7 @@ export const KanbanColumn = memo(function KanbanColumn({
           task={task}
           index={i}
           prMerged={prMergedMap[task.id] ?? false}
-          isGenerating={!readOnly ? (generatingIds?.has(task.id) ?? false) : undefined}
+          isGenerating={!readOnly ? (generatingIds?.includes(task.id) ?? false) : undefined}
           onPushToSprint={onPushToSprint}
           onLaunch={onLaunch}
           onViewSpec={onViewSpec}

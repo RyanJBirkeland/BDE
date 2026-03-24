@@ -24,6 +24,7 @@ export function AgentsView() {
   const reduced = useReducedMotion()
   const activeView = useUIStore((s) => s.activeView)
   const agents = useAgentHistoryStore((s) => s.agents)
+  const agentsLoading = useAgentHistoryStore((s) => s.loading)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
   const events = useAgentEventsStore((s) => s.events)
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
@@ -102,6 +103,7 @@ export function AgentsView() {
           agents={agents}
           selectedId={selectedId}
           onSelect={setSelectedId}
+          loading={agentsLoading}
         />
       </div>
 

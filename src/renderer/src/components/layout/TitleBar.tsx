@@ -12,7 +12,7 @@ interface TitleBarProps {
 export function TitleBar({ sessionCount, totalCost, onConflictClick }: TitleBarProps): React.JSX.Element {
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
-  const conflictCount = usePrConflictsStore((s) => s.conflictingTaskIds.size)
+  const conflictCount = usePrConflictsStore((s) => s.conflictingTaskIds.length)
 
   return (
     <div className="titlebar glass">

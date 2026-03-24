@@ -1,12 +1,14 @@
 import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FileCode2 } from 'lucide-react'
+import { EmptyState } from '../components/ui/EmptyState'
 import { PRStationList } from '../components/pr-station/PRStationList'
 import { PRStationDetail } from '../components/pr-station/PRStationDetail'
 import { PRStationActions } from '../components/pr-station/PRStationActions'
 import { PRStationDiff } from '../components/pr-station/PRStationDiff'
 import { ReviewSubmitDialog } from '../components/pr-station/ReviewSubmitDialog'
 import { Button } from '../components/ui/Button'
+import { ConfirmModal, useConfirm } from '../components/ui/ConfirmModal'
 import { getPrMergeability, type PrMergeability } from '../lib/github-api'
 import { usePendingReviewStore } from '../stores/pendingReview'
 import type { OpenPr } from '../../../shared/types'
@@ -26,6 +28,8 @@ export default function PRStationView() {
   const pendingCount = usePendingReviewStore((s) =>
     prKey ? (s.pendingComments[prKey] ?? []).length : 0
   )
+
+  const { confirm, confirmProps } = useConfirm()
 
   const handleRemovePr = useCallback(
     (pr: OpenPr) => {
@@ -47,6 +51,24 @@ export default function PRStationView() {
     },
     []
   )
+
+  /**
+   * Attempt to select a PR, showing a confirmation if there are pending comments
+   * on the current PR (informational — comments are persisted to localStorage).
+   */
+  const handleSelectPr = useCallback(async (pr: OpenPr) => {
+    if (pendingCount > 0 && selectedPr && pr.number !== selectedPr.number) {
+      const ok = await confirm({
+        title: 'Pending review comments',
+        message: `You have ${pendingCount} pending comment${pendingCount > 1 ? 's' : ''} on this PR. Your comments are saved and will be here when you return. Switch PRs anyway?`,
+        confirmLabel: 'Switch PR',
+        variant: 'default',
+      })
+      if (!ok) return
+    }
+
+    setSelectedPr(pr)
+  }, [pendingCount, selectedPr, confirm])
 
   useEffect(() => {
     if (!selectedPr) {
@@ -79,7 +101,7 @@ export default function PRStationView() {
       <div className="pr-station__list-panel">
         <PRStationList
           selectedPr={selectedPr}
-          onSelectPr={setSelectedPr}
+          onSelectPr={handleSelectPr}
           removedKeys={removedKeys}
         />
       </div>
@@ -133,10 +155,10 @@ export default function PRStationView() {
             )}
           </>
         ) : (
-          <div className="pr-station__empty-detail">
-            <FileCode2 size={32} strokeWidth={1} />
-            <span>Select a PR to view details</span>
-          </div>
+          <EmptyState
+            icon={<FileCode2 size={32} strokeWidth={1} />}
+            title="Select a PR to view details"
+          />
         )}
       </div>
       {showReviewDialog && selectedPr && (
@@ -152,6 +174,7 @@ export default function PRStationView() {
         />
       )}
     </div>
+    <ConfirmModal {...confirmProps} />
     </motion.div>
   )
 }

@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { toast } from '../../stores/toasts'
 
 export interface CredentialField {
   key: string
@@ -56,13 +57,25 @@ export function CredentialForm({
     setVisible((prev) => ({ ...prev, [key]: !prev[key] }))
   }, [])
 
+  const handleSave = useCallback(async () => {
+    try {
+      await onSave()
+      toast.success('Settings saved')
+    } catch {
+      toast.error('Failed to save settings')
+    }
+  }, [onSave])
+
   return (
     <div className="settings-connection">
       <span className="settings-connection__label">{title}</span>
 
       {fields.map((field) => (
         <label key={field.key} className="settings-field">
-          <span className="settings-field__label">{field.label}</span>
+          <span className="settings-field__label">
+            {field.label}
+            {!hasExisting[field.key] && <span style={{ color: 'var(--bde-color-danger, #ef4444)', marginLeft: 2 }} aria-hidden="true">*</span>}
+          </span>
           {field.type === 'token' ? (
             <div className="settings-field__password">
               <input
@@ -129,7 +142,7 @@ export function CredentialForm({
           <Button
             variant="primary"
             size="sm"
-            onClick={onSave}
+            onClick={handleSave}
             disabled={saveDisabled ?? (!dirty || saving)}
             loading={saving}
             type="button"

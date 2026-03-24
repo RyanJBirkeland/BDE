@@ -12,6 +12,7 @@ import { Onboarding } from './components/Onboarding'
 import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
 import { useAgentHistoryStore } from './stores/agentHistory'
+import { usePendingReviewStore } from './stores/pendingReview'
 import { useTaskNotifications } from './hooks/useTaskNotifications'
 import { useGitHubRateLimitWarning } from './hooks/useGitHubRateLimitWarning'
 import { PanelRenderer } from './components/panels/PanelRenderer'
@@ -127,6 +128,7 @@ function App(): React.JSX.Element {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   const loadLayout = usePanelLayoutStore((s) => s.loadSavedLayout)
+  const restorePendingReview = usePendingReviewStore((s) => s.restoreFromStorage)
 
   useEffect(() => {
     fetchLocalAgents()
@@ -135,6 +137,10 @@ function App(): React.JSX.Element {
   useEffect(() => {
     loadLayout()
   }, [loadLayout])
+
+  useEffect(() => {
+    restorePendingReview()
+  }, [restorePendingReview])
 
   useTaskNotifications()
   useGitHubRateLimitWarning()

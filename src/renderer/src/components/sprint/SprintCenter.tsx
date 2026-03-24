@@ -104,7 +104,7 @@ export function SprintCenter() {
 
   const conflictingTaskIds = usePrConflictsStore((s) => s.conflictingTaskIds)
   const conflictingTasks = useMemo(
-    () => tasks.filter((t) => conflictingTaskIds.has(t.id)),
+    () => tasks.filter((t) => conflictingTaskIds.includes(t.id)),
     [tasks, conflictingTaskIds]
   )
 

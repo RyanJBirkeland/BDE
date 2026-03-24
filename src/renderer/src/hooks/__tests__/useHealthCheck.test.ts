@@ -10,9 +10,9 @@ vi.mock('../useVisibilityAwareInterval', () => ({
 
 // Mock the healthCheck store
 vi.mock('../../stores/healthCheck', () => {
-  const stuckTaskIds = new Set<string>()
-  const dismissedIds = new Set<string>()
-  const setStuckTasks = vi.fn((ids: string[]) => { stuckTaskIds.clear(); ids.forEach(id => stuckTaskIds.add(id)) })
+  let stuckTaskIds: string[] = []
+  let dismissedIds: string[] = []
+  const setStuckTasks = vi.fn((ids: string[]) => { stuckTaskIds = [...ids] })
   const dismiss = vi.fn()
 
   const store = vi.fn((sel: (s: unknown) => unknown) =>

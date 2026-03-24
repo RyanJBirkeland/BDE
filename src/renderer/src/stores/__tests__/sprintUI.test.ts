@@ -5,7 +5,7 @@ const initialState = {
   selectedTaskId: null,
   logDrawerTaskId: null,
   repoFilter: null,
-  generatingIds: new Set<string>(),
+  generatingIds: [] as string[],
 }
 
 describe('sprintUI store', () => {
@@ -18,7 +18,8 @@ describe('sprintUI store', () => {
     expect(state.selectedTaskId).toBeNull()
     expect(state.logDrawerTaskId).toBeNull()
     expect(state.repoFilter).toBeNull()
-    expect(state.generatingIds.size).toBe(0)
+    expect(state.generatingIds.length).toBe(0)
+    expect(Array.isArray(state.generatingIds)).toBe(true)
   })
 
   it('setSelectedTaskId updates selectedTaskId', () => {
@@ -55,19 +56,15 @@ describe('sprintUI store', () => {
   })
 
   it('setGeneratingIds adds an id', () => {
-    useSprintUI.getState().setGeneratingIds((prev) => new Set([...prev, 'task-1']))
-    expect(useSprintUI.getState().generatingIds.has('task-1')).toBe(true)
+    useSprintUI.getState().setGeneratingIds((prev) => [...prev, 'task-1'])
+    expect(useSprintUI.getState().generatingIds.includes('task-1')).toBe(true)
   })
 
   it('setGeneratingIds removes an id', () => {
-    useSprintUI.getState().setGeneratingIds(() => new Set(['task-1', 'task-2']))
-    useSprintUI.getState().setGeneratingIds((prev) => {
-      const next = new Set(prev)
-      next.delete('task-1')
-      return next
-    })
+    useSprintUI.getState().setGeneratingIds(() => ['task-1', 'task-2'])
+    useSprintUI.getState().setGeneratingIds((prev) => prev.filter((id) => id !== 'task-1'))
     const ids = useSprintUI.getState().generatingIds
-    expect(ids.has('task-1')).toBe(false)
-    expect(ids.has('task-2')).toBe(true)
+    expect(ids.includes('task-1')).toBe(false)
+    expect(ids.includes('task-2')).toBe(true)
   })
 })

@@ -1,31 +1,30 @@
 import { create } from 'zustand'
 
 interface HealthCheckStore {
-  stuckTaskIds: Set<string>
-  dismissedIds: Set<string>
+  stuckTaskIds: string[]
+  dismissedIds: string[]
   setStuckTasks: (taskIds: string[]) => void
   dismiss: (taskId: string) => void
   clearDismissed: () => void
 }
 
 export const useHealthCheckStore = create<HealthCheckStore>((set) => ({
-  stuckTaskIds: new Set(),
-  dismissedIds: new Set(),
+  stuckTaskIds: [],
+  dismissedIds: [],
   setStuckTasks: (taskIds) =>
     set((state) => {
       if (
-        state.stuckTaskIds.size === taskIds.length &&
-        taskIds.every((id) => state.stuckTaskIds.has(id))
+        state.stuckTaskIds.length === taskIds.length &&
+        taskIds.every((id) => state.stuckTaskIds.includes(id))
       ) {
         return state
       }
-      return { stuckTaskIds: new Set(taskIds) }
+      return { stuckTaskIds: [...taskIds] }
     }),
   dismiss: (taskId) =>
     set((state) => {
-      const next = new Set(state.dismissedIds)
-      next.add(taskId)
-      return { dismissedIds: next }
+      if (state.dismissedIds.includes(taskId)) return state
+      return { dismissedIds: [...state.dismissedIds, taskId] }
     }),
-  clearDismissed: () => set({ dismissedIds: new Set() }),
+  clearDismissed: () => set({ dismissedIds: [] }),
 }))

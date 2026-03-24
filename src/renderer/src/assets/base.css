@@ -297,7 +297,7 @@ html.theme-light {
   --bde-accent-dim: rgba(0, 168, 99, 0.15);
   --bde-text: #111111;
   --bde-text-muted: #555555;
-  --bde-text-dim: #999999;
+  --bde-text-dim: #767676;
   --bde-danger: #DC2626;
   --bde-danger-dim: rgba(220, 38, 38, 0.1);
 
@@ -315,7 +315,7 @@ html.theme-light {
 
   /* ── Semantic colors ────────────────────────────────── */
   --bde-danger-text: #DC2626;
-  --bde-warning: #D97706;
+  --bde-warning: #B45309;
   --bde-info: #2563EB;
   --bde-success: #00A863;
   --bde-subagent: #7C3AED;
