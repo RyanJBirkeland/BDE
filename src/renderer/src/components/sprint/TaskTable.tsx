@@ -334,7 +334,7 @@ function BlockedRow({
     <tr>
       <td>
         <button className="bde-task-table__title-btn" onClick={() => onViewSpec(task)}>
-          <Badge variant="warning" size="sm" style={{ marginRight: '6px' }}>BLOCKED</Badge>
+          <span style={{ marginRight: '6px', display: 'inline-flex' }}><Badge variant="warning" size="sm">BLOCKED</Badge></span>
           {task.title}
         </button>
       </td>
