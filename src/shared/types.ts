@@ -16,7 +16,7 @@ export interface AgentMeta {
   exitCode: number | null
   status: 'running' | 'done' | 'failed' | 'cancelled' | 'unknown'
   logPath: string
-  source: 'bde' | 'external'
+  source: 'bde' | 'external' | 'adhoc'
 }
 
 export interface TaskDependency {

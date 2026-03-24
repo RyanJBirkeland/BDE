@@ -49,6 +49,11 @@ vi.mock('../agent-history', () => ({
   pruneOldAgents: vi.fn(),
 }))
 
+vi.mock('../adhoc-agent', () => ({
+  spawnAdhocAgent: vi.fn().mockResolvedValue({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true }),
+  getAdhocHandle: vi.fn(),
+}))
+
 vi.mock('../data/event-queries', () => ({
   getEventHistory: vi.fn().mockReturnValue([]),
 }))
@@ -207,17 +212,16 @@ describe('IPC handler registration', () => {
     })
 
     it('re-throws errors to the renderer (does not swallow)', async () => {
-      // local:spawnClaudeAgent always throws — use it to test safeHandle error propagation
-      await expect(invoke('local:spawnClaudeAgent', { repoPath: '/tmp/r', task: 'x' })).rejects.toThrow(
-        'Sprint board'
-      )
+      vi.mocked(agentHistory.readLog).mockRejectedValueOnce(new Error('not found'))
+      await expect(invoke('agents:readLog', { id: 'nonexistent' })).rejects.toThrow('not found')
     })
 
     it('logs errors to console on handler throw', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      await expect(invoke('local:spawnClaudeAgent', { repoPath: '/tmp/r', task: 'x' })).rejects.toThrow()
+      vi.mocked(agentHistory.readLog).mockRejectedValueOnce(new Error('test error'))
+      await expect(invoke('agents:readLog', { id: 'bad' })).rejects.toThrow()
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[IPC:local:spawnClaudeAgent]'),
+        expect.stringContaining('[IPC:agents:readLog]'),
         expect.any(Error)
       )
       consoleSpy.mockRestore()
@@ -251,10 +255,9 @@ describe('IPC handler registration', () => {
       expect(agentHistory.listAgents).toHaveBeenCalledWith(10, 'running')
     })
 
-    it('"local:spawnClaudeAgent" rejects (spawning removed from BDE)', async () => {
-      await expect(invoke('local:spawnClaudeAgent', { repoPath: '/tmp/bde', task: 'fix bug' })).rejects.toThrow(
-        'Sprint board'
-      )
+    it('"local:spawnClaudeAgent" calls spawnAdhocAgent and returns result', async () => {
+      const result = await invoke('local:spawnClaudeAgent', { repoPath: '/tmp/bde', task: 'fix bug' })
+      expect(result).toEqual({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true })
     })
 
     it('"config:getAgentConfig" returns null for binary and permissionMode (now managed by task-runner)', async () => {

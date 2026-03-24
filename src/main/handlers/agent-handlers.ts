@@ -17,6 +17,8 @@ import {
   pruneOldAgents
 } from '../agent-history'
 import type { AgentMeta } from '../agent-history'
+import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
+import type { SpawnLocalAgentArgs } from '../../shared/types'
 
 export function registerAgentHandlers(): void {
   // --- Runner-proxied agent operations ---
@@ -29,10 +31,12 @@ export function registerAgentHandlers(): void {
       return []
     }
   })
-  safeHandle('local:spawnClaudeAgent', async () => {
-    // Agent spawning is handled by the AgentManager drain loop.
-    // Manual spawn is not supported — queue the task instead.
-    throw new Error('Use the Sprint board to queue tasks. The Agent Manager will pick them up automatically.')
+  safeHandle('local:spawnClaudeAgent', async (_e, args: SpawnLocalAgentArgs) => {
+    return spawnAdhocAgent({
+      task: args.task,
+      repoPath: args.repoPath,
+      model: args.model,
+    })
   })
   safeHandle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
   safeHandle('local:sendToAgent', async (_e, { pid: _pid, message: _message }: { pid: number; message: string }) => {
@@ -40,7 +44,13 @@ export function registerAgentHandlers(): void {
   })
   safeHandle('local:isInteractive', () => false)
   safeHandle('agent:steer', async (_e, { agentId, message }: { agentId: string; message: string }) => {
-    // Try local AgentManager first
+    // Try ad-hoc agents first
+    const adhocHandle = getAdhocHandle(agentId)
+    if (adhocHandle) {
+      await adhocHandle.steer(message)
+      return { ok: true }
+    }
+    // Try local AgentManager
     const am = (global as any).__agentManager
     if (am) {
       try { await am.steerAgent(agentId, message); return { ok: true } } catch { /* fall through */ }
@@ -49,6 +59,12 @@ export function registerAgentHandlers(): void {
     return steerAgent(agentId, message)
   })
   safeHandle('agent:kill', async (_e, agentId: string) => {
+    // Try ad-hoc agents first
+    const adhocHandle = getAdhocHandle(agentId)
+    if (adhocHandle) {
+      adhocHandle.abort()
+      return { ok: true }
+    }
     const am = (global as any).__agentManager
     if (am) {
       try { am.killAgent(agentId); return { ok: true } } catch { /* fall through */ }
