@@ -207,7 +207,7 @@ export function createAgentManager(
     // Persist agent run to local SQLite for log access and history
     createAgentRecord({
       id: agentRunId,
-      pid: handle.pid ?? null,
+      pid: null,
       bin: 'claude',
       model: config.defaultModel,
       repo: task.repo,

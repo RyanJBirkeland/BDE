@@ -22,6 +22,7 @@ import {
   getAgentsToRemove,
   deleteAgent,
   getAgentLogPath,
+  listAgentRunsByTaskId as _listAgentRunsByTaskId,
 } from './data/agent-queries'
 import type { AgentRunRow } from './data/agent-queries'
 import type { AgentMeta } from '../shared/types'
@@ -252,4 +253,12 @@ export async function hasAgent(id: string): Promise<boolean> {
 export async function findAgentByPid(pid: number): Promise<AgentMeta | null> {
   initAgentHistory()
   return _findAgentByPid(getDb(), pid)
+}
+
+export async function listAgentRunsByTaskId(
+  sprintTaskId?: string,
+  limit?: number
+): Promise<import('../shared/types').AgentMeta[]> {
+  initAgentHistory()
+  return _listAgentRunsByTaskId(getDb(), sprintTaskId, limit)
 }

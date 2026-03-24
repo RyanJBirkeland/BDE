@@ -248,3 +248,24 @@ export function updateAgentRunCost(
     agentRunId
   )
 }
+
+export function listAgentRunsByTaskId(
+  db: Database.Database,
+  sprintTaskId?: string,
+  limit = 10
+): AgentMeta[] {
+  if (sprintTaskId) {
+    return (
+      db
+        .prepare(
+          'SELECT * FROM agent_runs WHERE sprint_task_id = ? ORDER BY started_at DESC LIMIT ?'
+        )
+        .all(sprintTaskId, limit) as AgentRunRow[]
+    ).map(rowToMeta)
+  }
+  return (
+    db
+      .prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?')
+      .all(limit) as AgentRunRow[]
+  ).map(rowToMeta)
+}

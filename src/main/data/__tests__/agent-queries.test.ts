@@ -13,6 +13,7 @@ import {
   getAgentLogPath,
   getAgentsToRemove,
   updateAgentRunCost,
+  listAgentRunsByTaskId,
 } from '../agent-queries'
 
 let db: Database.Database
@@ -238,5 +239,40 @@ describe('rowToMeta includes cost fields and sprintTaskId', () => {
     expect(result!.tokensIn).toBeNull()
     expect(result!.tokensOut).toBeNull()
     expect(result!.sprintTaskId).toBeNull()
+  })
+})
+
+describe('listAgentRunsByTaskId', () => {
+  it('returns runs filtered by sprint_task_id', () => {
+    insertAgentRecord(db, makeAgent({ id: 'run-1', sprintTaskId: 'task-A', startedAt: '2025-01-01T00:00:00Z' }))
+    insertAgentRecord(db, makeAgent({ id: 'run-2', sprintTaskId: 'task-A', startedAt: '2025-01-02T00:00:00Z' }))
+    insertAgentRecord(db, makeAgent({ id: 'run-3', sprintTaskId: 'task-B', startedAt: '2025-01-03T00:00:00Z' }))
+
+    const runs = listAgentRunsByTaskId(db, 'task-A')
+    expect(runs).toHaveLength(2)
+    expect(runs[0].id).toBe('run-2') // most recent first
+    expect(runs[1].id).toBe('run-1')
+  })
+
+  it('returns all runs when no taskId filter', () => {
+    insertAgentRecord(db, makeAgent({ id: 'run-1', sprintTaskId: 'task-A' }))
+    insertAgentRecord(db, makeAgent({ id: 'run-2', sprintTaskId: null }))
+
+    const runs = listAgentRunsByTaskId(db)
+    expect(runs).toHaveLength(2)
+  })
+
+  it('respects limit parameter', () => {
+    insertAgentRecord(db, makeAgent({ id: 'run-1', sprintTaskId: 'task-A', startedAt: '2025-01-01T00:00:00Z' }))
+    insertAgentRecord(db, makeAgent({ id: 'run-2', sprintTaskId: 'task-A', startedAt: '2025-01-02T00:00:00Z' }))
+    insertAgentRecord(db, makeAgent({ id: 'run-3', sprintTaskId: 'task-A', startedAt: '2025-01-03T00:00:00Z' }))
+
+    const runs = listAgentRunsByTaskId(db, 'task-A', 2)
+    expect(runs).toHaveLength(2)
+  })
+
+  it('returns empty array when no matching runs', () => {
+    const runs = listAgentRunsByTaskId(db, 'nonexistent')
+    expect(runs).toEqual([])
   })
 })
