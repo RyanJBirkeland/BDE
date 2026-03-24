@@ -116,6 +116,21 @@ export interface AgentCompletedEvent extends TaskOutputEvent {
   durationMs: number
 }
 
+// --- Task Events Response Types ---
+
+export interface TaskEventItem {
+  id: number
+  agentId: string
+  eventType: string
+  payload: string
+  timestamp: number
+}
+
+export interface TaskEventsResponse {
+  events: TaskEventItem[]
+  hasMore: boolean
+}
+
 // --- Health Monitoring Types ---
 
 export type HealthCondition = 'healthy' | 'degraded' | 'unhealthy'

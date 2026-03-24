@@ -140,17 +140,17 @@ describe('agents:readLog handler', () => {
   })
 
   it('returns log content from agent history', async () => {
-    vi.mocked(readLog).mockResolvedValue({ content: 'log output', nextByte: 10 })
+    vi.mocked(readLog).mockResolvedValue({ content: 'log output', nextByte: 10, totalBytes: 10 })
 
     const handler = captureHandler('agents:readLog')
     const result = await handler(mockEvent, { id: 'agent-1', fromByte: 0 })
 
     expect(readLog).toHaveBeenCalledWith('agent-1', 0)
-    expect(result).toEqual({ content: 'log output', nextByte: 10 })
+    expect(result).toEqual({ content: 'log output', nextByte: 10, totalBytes: 10 })
   })
 
   it('reads from offset when fromByte is provided', async () => {
-    vi.mocked(readLog).mockResolvedValue({ content: 'new content', nextByte: 100 })
+    vi.mocked(readLog).mockResolvedValue({ content: 'new content', nextByte: 100, totalBytes: 100 })
 
     const handler = captureHandler('agents:readLog')
     await handler(mockEvent, { id: 'agent-1', fromByte: 50 })

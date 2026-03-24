@@ -26,6 +26,7 @@ import { createDependencyIndex } from './dependency-index'
 import { resolveDependents } from './resolve-dependents'
 import { updateTask, getTask, getTasksWithDependencies } from '../data/sprint-queries'
 import { getRepoPaths, getGhRepo } from '../paths'
+import { createAgentRecord, updateAgentMeta } from '../agent-history'
 import { randomUUID } from 'node:crypto'
 
 // Use sprint-queries directly but with a wrapper that catches hangs.
@@ -203,6 +204,27 @@ export function createAgentManager(
     await updateTask(task.id, { agent_run_id: agentRunId }).catch((err) =>
       logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
     )
+    // Persist agent run to local SQLite for log access and history
+    createAgentRecord({
+      id: agentRunId,
+      pid: null,
+      bin: 'claude',
+      model: config.defaultModel,
+      repo: task.repo,
+      repoPath: worktree.worktreePath,
+      task: prompt,
+      startedAt: new Date(agent.startedAt).toISOString(),
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
+      costUsd: null,
+      tokensIn: null,
+      tokensOut: null,
+      sprintTaskId: task.id,
+    }).catch((err) =>
+      logger.warn(`[agent-manager] Failed to create agent record for ${agentRunId}: ${err}`)
+    )
     concurrency = { ...concurrency, activeCount: concurrency.activeCount + 1 }
 
     // Consume messages
@@ -242,6 +264,18 @@ export function createAgentManager(
 
     activeAgents.delete(task.id)
     concurrency = { ...concurrency, activeCount: Math.max(0, concurrency.activeCount - 1) }
+
+    // Update agent run record with final state
+    updateAgentMeta(agentRunId, {
+      status: exitCode === 0 ? 'done' : 'failed',
+      finishedAt: new Date(exitedAt).toISOString(),
+      exitCode: exitCode ?? null,
+      costUsd: agent.costUsd,
+      tokensIn: agent.tokensIn,
+      tokensOut: agent.tokensOut,
+    }).catch((err) =>
+      logger.warn(`[agent-manager] Failed to update agent record for ${agentRunId}: ${err}`)
+    )
 
     // Classify exit (default to exit code 1 if not available, assuming failure)
     const ffResult = classifyExit(agent.startedAt, exitedAt, exitCode ?? 1, task.fast_fail_count ?? 0)

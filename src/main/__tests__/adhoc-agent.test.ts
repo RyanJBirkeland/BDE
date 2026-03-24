@@ -55,6 +55,10 @@ describe('spawnAdhocAgent', () => {
       status: 'running',
       source: 'adhoc',
       logPath: '/tmp/logs/agent-1/log.jsonl',
+      costUsd: null,
+      tokensIn: null,
+      tokensOut: null,
+      sprintTaskId: null,
     } as any)
   })
 

@@ -22,6 +22,39 @@ vi.mock('../../data/sprint-queries', () => ({
   releaseTask: (...args: unknown[]) => mockReleaseTask(...args),
 }))
 
+// ---------------------------------------------------------------------------
+// Mock agent-history — agent run queries and log reads
+// ---------------------------------------------------------------------------
+const mockListAgentRunsByTaskId = vi.fn()
+const mockHasAgent = vi.fn()
+const mockReadLog = vi.fn()
+
+vi.mock('../../agent-history', () => ({
+  listAgentRunsByTaskId: (...args: unknown[]) => mockListAgentRunsByTaskId(...args),
+  hasAgent: (...args: unknown[]) => mockHasAgent(...args),
+  readLog: (...args: unknown[]) => mockReadLog(...args),
+}))
+
+// ---------------------------------------------------------------------------
+// Mock event-queries — SQLite event persistence
+// ---------------------------------------------------------------------------
+const mockInsertEventBatch = vi.fn()
+const mockQueryEvents = vi.fn()
+
+vi.mock('../../data/event-queries', () => ({
+  insertEventBatch: (...args: unknown[]) => mockInsertEventBatch(...args),
+  queryEvents: (...args: unknown[]) => mockQueryEvents(...args),
+}))
+
+// ---------------------------------------------------------------------------
+// Mock db — SQLite database handle
+// ---------------------------------------------------------------------------
+const mockGetDb = vi.fn().mockReturnValue({})
+
+vi.mock('../../db', () => ({
+  getDb: (...args: unknown[]) => mockGetDb(...args),
+}))
+
 // Mock settings — no API key by default (auth disabled)
 const mockGetSetting = vi.fn().mockReturnValue(null)
 vi.mock('../../settings', () => ({
@@ -99,6 +132,7 @@ afterAll(async () => {
 beforeEach(() => {
   vi.clearAllMocks()
   mockGetSetting.mockReturnValue(null) // no auth by default
+  mockGetDb.mockReturnValue({}) // default db mock
 })
 
 // ---------------------------------------------------------------------------
@@ -364,6 +398,93 @@ describe('Queue API', () => {
     })
   })
 
+  describe('GET /queue/agents', () => {
+    it('returns agent runs list', async () => {
+      mockListAgentRunsByTaskId.mockResolvedValue([
+        {
+          id: 'run-1',
+          status: 'done',
+          model: 'claude-sonnet-4-5',
+          task: 'fix bug',
+          repo: 'bde',
+          startedAt: '2025-01-01T00:00:00Z',
+          finishedAt: '2025-01-01T01:00:00Z',
+          exitCode: 0,
+          costUsd: 0.45,
+          tokensIn: 12000,
+          tokensOut: 3400,
+          source: 'bde',
+        },
+      ])
+      const res = await request('GET', '/queue/agents')
+      expect(res.status).toBe(200)
+      expect(Array.isArray(res.body)).toBe(true)
+      const agents = res.body as unknown[]
+      expect(agents).toHaveLength(1)
+      expect((agents[0] as Record<string, unknown>).id).toBe('run-1')
+    })
+
+    it('passes taskId filter to query', async () => {
+      mockListAgentRunsByTaskId.mockResolvedValue([])
+      await request('GET', '/queue/agents?taskId=task-abc&limit=5')
+      expect(mockListAgentRunsByTaskId).toHaveBeenCalledWith('task-abc', 5)
+    })
+
+    it('uses default limit of 10', async () => {
+      mockListAgentRunsByTaskId.mockResolvedValue([])
+      await request('GET', '/queue/agents')
+      expect(mockListAgentRunsByTaskId).toHaveBeenCalledWith(undefined, 10)
+    })
+  })
+
+  describe('GET /queue/agents/:id/log', () => {
+    it('returns 404 when agent does not exist', async () => {
+      mockHasAgent.mockResolvedValue(false)
+      const res = await request('GET', '/queue/agents/nonexistent/log')
+      expect(res.status).toBe(404)
+    })
+
+    it('returns log content in tail mode (no fromByte)', async () => {
+      mockHasAgent.mockResolvedValue(true)
+      // First call: stat read (maxBytes=0) to get totalBytes
+      mockReadLog.mockResolvedValueOnce({
+        content: '',
+        nextByte: 0,
+        totalBytes: 5000,
+      })
+      // Second call: actual read from tail offset
+      mockReadLog.mockResolvedValueOnce({
+        content: 'last 100 bytes of log...',
+        nextByte: 5000,
+        totalBytes: 5000,
+      })
+      const res = await request('GET', '/queue/agents/run-1/log')
+      expect(res.status).toBe(200)
+      const body = res.body as Record<string, unknown>
+      expect(body.content).toBe('last 100 bytes of log...')
+      expect(body.totalBytes).toBe(5000)
+    })
+
+    it('returns log content from specific byte offset', async () => {
+      mockHasAgent.mockResolvedValue(true)
+      mockReadLog.mockResolvedValue({
+        content: 'more log data',
+        nextByte: 200,
+        totalBytes: 200,
+      })
+      const res = await request('GET', '/queue/agents/run-1/log?fromByte=100')
+      expect(res.status).toBe(200)
+      expect(mockReadLog).toHaveBeenCalledWith('run-1', 100, 50000)
+    })
+
+    it('caps maxBytes at 200KB', async () => {
+      mockHasAgent.mockResolvedValue(true)
+      mockReadLog.mockResolvedValue({ content: '', nextByte: 0, totalBytes: 0 })
+      await request('GET', '/queue/agents/run-1/log?fromByte=0&maxBytes=999999')
+      expect(mockReadLog).toHaveBeenCalledWith('run-1', 0, 204800)
+    })
+  })
+
   describe('Error handling — sprint-queries throws', () => {
     it('returns 500 when getQueueStats throws', async () => {
       mockGetQueueStats.mockRejectedValue(new Error('Supabase connection failed'))
@@ -416,6 +537,138 @@ describe('Queue API', () => {
       const { status, body } = await request('POST', '/queue/tasks/abc/release')
       expect(status).toBe(500)
       expect((body as { error: string }).error).toMatch(/internal server error/i)
+    })
+  })
+
+  describe('POST /queue/tasks/:id/output — event persistence', () => {
+    it('persists curated event types via insertEventBatch', async () => {
+      const events = [
+        { type: 'agent:started', timestamp: '2026-01-01T00:00:00Z', model: 'claude-sonnet' },
+        { type: 'agent:thinking', timestamp: '2026-01-01T00:00:01Z', tokenCount: 100 },
+        { type: 'agent:tool_call', timestamp: '2026-01-01T00:00:02Z', tool: 'Bash', summary: 'run cmd' },
+        { type: 'agent:completed', timestamp: '2026-01-01T00:01:00Z', exitCode: 0, costUsd: 0.1, tokensIn: 500, tokensOut: 200, durationMs: 60000 },
+      ]
+
+      const res = await request('POST', '/queue/tasks/task-123/output', { events })
+      expect(res.status).toBe(200)
+
+      // insertEventBatch should be called with curated types only (not agent:thinking)
+      expect(mockInsertEventBatch).toHaveBeenCalledTimes(1)
+      const [, batch] = mockInsertEventBatch.mock.calls[0] as [unknown, Array<{ eventType: string }>]
+      const eventTypes = batch.map((e) => e.eventType)
+      expect(eventTypes).toContain('agent:started')
+      expect(eventTypes).toContain('agent:tool_call')
+      expect(eventTypes).toContain('agent:completed')
+      expect(eventTypes).not.toContain('agent:thinking')
+    })
+
+    it('uses agentId from body when provided', async () => {
+      const events = [
+        { type: 'agent:started', timestamp: '2026-01-01T00:00:00Z', model: 'claude-sonnet' },
+      ]
+
+      await request('POST', '/queue/tasks/task-123/output', { events, agentId: 'agent-abc' })
+
+      expect(mockInsertEventBatch).toHaveBeenCalledTimes(1)
+      const [, batch] = mockInsertEventBatch.mock.calls[0] as [unknown, Array<{ agentId: string }>]
+      expect(batch[0].agentId).toBe('agent-abc')
+    })
+
+    it('falls back to taskId when agentId is not provided', async () => {
+      const events = [
+        { type: 'agent:error', timestamp: '2026-01-01T00:00:00Z', message: 'oops' },
+      ]
+
+      await request('POST', '/queue/tasks/task-xyz/output', { events })
+
+      expect(mockInsertEventBatch).toHaveBeenCalledTimes(1)
+      const [, batch] = mockInsertEventBatch.mock.calls[0] as [unknown, Array<{ agentId: string }>]
+      expect(batch[0].agentId).toBe('task-xyz')
+    })
+
+    it('does not fail the request when insertEventBatch throws', async () => {
+      mockInsertEventBatch.mockImplementation(() => { throw new Error('DB error') })
+      const events = [{ type: 'agent:started', timestamp: '2026-01-01T00:00:00Z', model: 'claude' }]
+      const res = await request('POST', '/queue/tasks/task-123/output', { events })
+      expect(res.status).toBe(200)
+    })
+
+    it('skips insertEventBatch when no curated events present', async () => {
+      const events = [
+        { type: 'agent:thinking', timestamp: '2026-01-01T00:00:00Z', tokenCount: 50 },
+      ]
+      await request('POST', '/queue/tasks/task-123/output', { events })
+      expect(mockInsertEventBatch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('GET /queue/tasks/:id/events', () => {
+    it('returns events for a task', async () => {
+      mockQueryEvents.mockReturnValue({
+        events: [
+          { id: 1, agent_id: 'task-abc', event_type: 'agent:started', payload: '{}', timestamp: 1000 },
+          { id: 2, agent_id: 'task-abc', event_type: 'agent:completed', payload: '{}', timestamp: 2000 },
+        ],
+        hasMore: false,
+      })
+
+      const res = await request('GET', '/queue/tasks/task-abc/events')
+      expect(res.status).toBe(200)
+
+      const body = res.body as { events: unknown[]; hasMore: boolean }
+      expect(body.hasMore).toBe(false)
+      expect(body.events).toHaveLength(2)
+
+      const first = body.events[0] as Record<string, unknown>
+      expect(first.agentId).toBe('task-abc')
+      expect(first.eventType).toBe('agent:started')
+      expect(first.timestamp).toBe(1000)
+    })
+
+    it('passes eventType filter to queryEvents', async () => {
+      mockQueryEvents.mockReturnValue({ events: [], hasMore: false })
+      await request('GET', '/queue/tasks/task-abc/events?eventType=agent:tool_call')
+      expect(mockQueryEvents).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ eventType: 'agent:tool_call' })
+      )
+    })
+
+    it('passes afterTimestamp filter to queryEvents', async () => {
+      mockQueryEvents.mockReturnValue({ events: [], hasMore: false })
+      await request('GET', '/queue/tasks/task-abc/events?afterTimestamp=1234567890')
+      expect(mockQueryEvents).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ afterTimestamp: 1234567890 })
+      )
+    })
+
+    it('passes limit to queryEvents', async () => {
+      mockQueryEvents.mockReturnValue({ events: [], hasMore: false })
+      await request('GET', '/queue/tasks/task-abc/events?limit=50')
+      expect(mockQueryEvents).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ limit: 50 })
+      )
+    })
+
+    it('caps limit at 1000', async () => {
+      mockQueryEvents.mockReturnValue({ events: [], hasMore: false })
+      await request('GET', '/queue/tasks/task-abc/events?limit=99999')
+      expect(mockQueryEvents).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ limit: 1000 })
+      )
+    })
+
+    it('returns hasMore=true when more events available', async () => {
+      mockQueryEvents.mockReturnValue({
+        events: [{ id: 1, agent_id: 'task-abc', event_type: 'agent:started', payload: '{}', timestamp: 1000 }],
+        hasMore: true,
+      })
+      const res = await request('GET', '/queue/tasks/task-abc/events')
+      const body = res.body as { hasMore: boolean }
+      expect(body.hasMore).toBe(true)
     })
   })
 })

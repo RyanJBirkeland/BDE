@@ -22,6 +22,10 @@ export interface AgentRunRow {
   finished_at: string | null
   exit_code: number | null
   source: string | null
+  cost_usd: number | null
+  tokens_in: number | null
+  tokens_out: number | null
+  sprint_task_id: string | null
 }
 
 export function rowToMeta(row: AgentRunRow): AgentMeta {
@@ -39,6 +43,10 @@ export function rowToMeta(row: AgentRunRow): AgentMeta {
     status: row.status as AgentMeta['status'],
     logPath: row.log_path ?? '',
     source: (row.source as AgentMeta['source']) ?? 'external',
+    costUsd: row.cost_usd ?? null,
+    tokensIn: row.tokens_in ?? null,
+    tokensOut: row.tokens_out ?? null,
+    sprintTaskId: row.sprint_task_id ?? null,
   }
 }
 
@@ -78,8 +86,8 @@ export function insertAgentRecord(
   meta: Omit<AgentMeta, 'logPath'> & { logPath: string }
 ): void {
   db.prepare(
-    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source, sprint_task_id, cost_usd, tokens_in, tokens_out)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     meta.id,
     meta.pid,
@@ -93,7 +101,11 @@ export function insertAgentRecord(
     meta.startedAt,
     meta.finishedAt,
     meta.exitCode,
-    meta.source ?? 'external'
+    meta.source ?? 'external',
+    meta.sprintTaskId ?? null,
+    meta.costUsd ?? null,
+    meta.tokensIn ?? null,
+    meta.tokensOut ?? null
   )
 }
 
@@ -110,6 +122,10 @@ const AGENT_COLUMN_MAP: Record<string, string> = {
   finishedAt: 'finished_at',
   exitCode: 'exit_code',
   source: 'source',
+  costUsd: 'cost_usd',
+  tokensIn: 'tokens_in',
+  tokensOut: 'tokens_out',
+  sprintTaskId: 'sprint_task_id',
 }
 
 export function updateAgentMeta(
@@ -231,4 +247,25 @@ export function updateAgentRunCost(
     cost.numTurns,
     agentRunId
   )
+}
+
+export function listAgentRunsByTaskId(
+  db: Database.Database,
+  sprintTaskId?: string,
+  limit = 10
+): AgentMeta[] {
+  if (sprintTaskId) {
+    return (
+      db
+        .prepare(
+          'SELECT * FROM agent_runs WHERE sprint_task_id = ? ORDER BY started_at DESC LIMIT ?'
+        )
+        .all(sprintTaskId, limit) as AgentRunRow[]
+    ).map(rowToMeta)
+  }
+  return (
+    db
+      .prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?')
+      .all(limit) as AgentRunRow[]
+  ).map(rowToMeta)
 }

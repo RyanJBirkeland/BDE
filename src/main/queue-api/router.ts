@@ -14,6 +14,9 @@ import {
   claimTask,
   releaseTask,
 } from '../data/sprint-queries'
+import { listAgentRunsByTaskId, hasAgent, readLog } from '../agent-history'
+import { insertEventBatch, queryEvents } from '../data/event-queries'
+import { getDb } from '../db'
 import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-contract'
 import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
@@ -175,8 +178,25 @@ export async function route(
     return handleEvents(req, res)
   }
 
+  // --- GET /queue/agents ---
+  if (method === 'GET' && path === '/queue/agents') {
+    return handleListAgents(res, query)
+  }
+
   // --- Routes with :id ---
   let params: Record<string, string> | null
+
+  // GET /queue/agents/:id/log (must come before /queue/agents to avoid false match)
+  params = matchRoute('/queue/agents/:id/log', path)
+  if (method === 'GET' && params) {
+    return handleAgentLog(res, params['id'], query)
+  }
+
+  // GET /queue/tasks/:id/events (must come before /queue/tasks/:id)
+  params = matchRoute('/queue/tasks/:id/events', path)
+  if (method === 'GET' && params) {
+    return handleTaskEvents(res, params['id'], query)
+  }
 
   // GET /queue/tasks/:id
   params = matchRoute('/queue/tasks/:id', path)
@@ -406,7 +426,7 @@ async function handleTaskOutput(
     return
   }
 
-  const { events } = body as { events?: unknown[] }
+  const { events, agentId } = body as { events?: unknown[]; agentId?: unknown }
   if (!Array.isArray(events)) {
     sendJson(res, 400, { error: 'events must be an array' })
     return
@@ -417,7 +437,135 @@ async function handleTaskOutput(
     sseBroadcaster.broadcast('task:output', { taskId, ...event as Record<string, unknown> })
   }
 
+  // Persist curated event types to SQLite (best-effort)
+  try {
+    const resolvedAgentId = typeof agentId === 'string' && agentId ? agentId : taskId
+    const now = Date.now()
+    const batch = events
+      .filter((e): e is Record<string, unknown> => {
+        return (
+          typeof e === 'object' &&
+          e !== null &&
+          CURATED_EVENT_TYPES.has((e as Record<string, unknown>)['type'] as string)
+        )
+      })
+      .map((e) => ({
+        agentId: resolvedAgentId,
+        eventType: e['type'] as string,
+        payload: JSON.stringify(e),
+        timestamp:
+          typeof e['timestamp'] === 'string'
+            ? new Date(e['timestamp'] as string).getTime() || now
+            : now,
+      }))
+    if (batch.length > 0) {
+      insertEventBatch(getDb(), batch)
+    }
+  } catch {
+    // Best-effort — do not fail the request
+  }
+
   sendJson(res, 200, { ok: true })
+}
+
+// Curated event types to persist to SQLite
+const CURATED_EVENT_TYPES = new Set([
+  'agent:started',
+  'agent:tool_call',
+  'agent:tool_result',
+  'agent:rate_limited',
+  'agent:error',
+  'agent:completed',
+])
+
+async function handleTaskEvents(
+  res: http.ServerResponse,
+  taskId: string,
+  query: URLSearchParams
+): Promise<void> {
+  const eventType = query.get('eventType') ?? undefined
+  const afterTimestampRaw = query.get('afterTimestamp')
+  const afterTimestamp =
+    afterTimestampRaw != null ? parseInt(afterTimestampRaw, 10) || undefined : undefined
+  const limitRaw = query.get('limit')
+  const limit =
+    limitRaw != null
+      ? Math.max(1, Math.min(parseInt(limitRaw, 10) || 200, 1000))
+      : undefined
+
+  const result = queryEvents(getDb(), { agentId: taskId, eventType, afterTimestamp, limit })
+
+  sendJson(res, 200, {
+    events: result.events.map((e) => ({
+      id: e.id,
+      agentId: e.agent_id,
+      eventType: e.event_type,
+      payload: e.payload,
+      timestamp: e.timestamp,
+    })),
+    hasMore: result.hasMore,
+  })
+}
+
+const MAX_LOG_BYTES = 204800 // 200KB
+const DEFAULT_LOG_BYTES = 50000
+
+async function handleListAgents(
+  res: http.ServerResponse,
+  query: URLSearchParams
+): Promise<void> {
+  const taskId = query.get('taskId') ?? undefined
+  const limit = Math.min(Math.max(parseInt(query.get('limit') ?? '10', 10) || 10, 1), 100)
+  const agents = await listAgentRunsByTaskId(taskId, limit)
+  sendJson(res, 200, agents.map((a) => ({
+    id: a.id,
+    status: a.status,
+    model: a.model,
+    task: a.task,
+    repo: a.repo,
+    startedAt: a.startedAt,
+    finishedAt: a.finishedAt,
+    exitCode: a.exitCode,
+    costUsd: a.costUsd,
+    tokensIn: a.tokensIn,
+    tokensOut: a.tokensOut,
+    source: a.source,
+  })))
+}
+
+async function handleAgentLog(
+  res: http.ServerResponse,
+  agentId: string,
+  query: URLSearchParams
+): Promise<void> {
+  const exists = await hasAgent(agentId)
+  if (!exists) {
+    sendJson(res, 404, { error: `Agent ${agentId} not found` })
+    return
+  }
+
+  const maxBytes = Math.min(
+    parseInt(query.get('maxBytes') ?? String(DEFAULT_LOG_BYTES), 10) || DEFAULT_LOG_BYTES,
+    MAX_LOG_BYTES
+  )
+  const fromByteParam = query.get('fromByte')
+
+  let fromByte: number
+  if (fromByteParam != null) {
+    // Explicit offset — read from that byte
+    fromByte = Math.max(parseInt(fromByteParam, 10) || 0, 0)
+  } else {
+    // Tail mode — do a zero-byte read to get totalBytes, then compute offset
+    const stat = await readLog(agentId, 0, 0)
+    fromByte = Math.max(0, stat.totalBytes - maxBytes)
+  }
+
+  const result = await readLog(agentId, fromByte, maxBytes)
+  sendJson(res, 200, {
+    content: result.content,
+    nextByte: result.nextByte,
+    totalBytes: result.totalBytes,
+  })
 }
 
 async function handleUpdateTask(
