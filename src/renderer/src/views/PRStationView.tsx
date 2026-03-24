@@ -174,7 +174,12 @@ export default function PRStationView() {
             )}
             {activeTab === 'info' ? (
               <div className="pr-station__detail-content">
-                <PRStationDetail key={`${selectedPr.repo}-${selectedPr.number}`} pr={selectedPr} />
+                <PRStationDetail
+                  key={`${selectedPr.repo}-${selectedPr.number}`}
+                  pr={selectedPr}
+                  mergeability={mergeability}
+                  onMerged={handleRemovePr}
+                />
                 <PRStationActions
                   pr={selectedPr}
                   mergeability={mergeability}

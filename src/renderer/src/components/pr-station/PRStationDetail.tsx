@@ -18,9 +18,13 @@ import { PRStationChecks } from './PRStationChecks'
 import { PRStationConflictBanner } from './PRStationConflictBanner'
 import { PRStationReviews } from './PRStationReviews'
 import { PRStationConversation } from './PRStationConversation'
+import { MergeButton } from './MergeButton'
+import type { PrMergeability } from '../../lib/github-api'
 
 interface PRStationDetailProps {
   pr: OpenPr
+  mergeability?: PrMergeability | null
+  onMerged?: (pr: OpenPr) => void
 }
 
 function FileStatusIcon({ status }: { status: string }) {
@@ -51,7 +55,7 @@ function fileStatusBadgeClass(status: string): string {
   }
 }
 
-export function PRStationDetail({ pr }: PRStationDetailProps) {
+export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailProps) {
   const [detail, setDetail] = useState<PRDetailData | null>(null)
   const [files, setFiles] = useState<PRFile[]>([])
   const [checks, setChecks] = useState<CheckRun[]>([])
@@ -175,6 +179,11 @@ export function PRStationDetail({ pr }: PRStationDetailProps) {
           <span className="pr-detail__stat pr-detail__stat--add">+{detail.additions}</span>
           <span className="pr-detail__stat pr-detail__stat--del">-{detail.deletions}</span>
         </div>
+        {mergeability !== undefined && mergeability !== null && (
+          <div className="pr-detail__actions">
+            <MergeButton pr={pr} mergeability={mergeability} onMerged={onMerged} />
+          </div>
+        )}
       </div>
 
       <PRStationConflictBanner pr={pr} mergeableState={mergeableState} />
