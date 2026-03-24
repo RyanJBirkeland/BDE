@@ -49,6 +49,8 @@ export function PanelTabBar({ node }: PanelTabBarProps): React.ReactElement {
 
   return (
     <div
+      role="tablist"
+      aria-label="Panel tabs"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -64,6 +66,9 @@ export function PanelTabBar({ node }: PanelTabBarProps): React.ReactElement {
         return (
           <div
             key={`${tab.viewKey}-${index}`}
+            role="tab"
+            aria-selected={isActive}
+            id={`panel-tab-${tab.viewKey}-${node.panelId}`}
             draggable={true}
             onDragStart={(e) => handleDragStart(index, e)}
             onClick={() => handleTabClick(index)}

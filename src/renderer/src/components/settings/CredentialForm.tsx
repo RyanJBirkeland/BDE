@@ -82,6 +82,7 @@ export function CredentialForm({
                 className="settings-field__toggle"
                 onClick={() => toggleVisibility(field.key)}
                 title={visible[field.key] ? 'Hide' : 'Show'}
+                aria-label={visible[field.key] ? 'Hide' : 'Show'}
                 type="button"
               >
                 {visible[field.key] ? <EyeOff size={14} /> : <Eye size={14} />}

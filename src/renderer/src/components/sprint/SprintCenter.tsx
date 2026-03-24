@@ -176,7 +176,7 @@ export function SprintCenter() {
           <Button variant="primary" size="sm" onClick={openWorkbench}>
             + New Ticket
           </Button>
-          <Button variant="icon" size="sm" onClick={loadData} disabled={loading} title="Refresh">
+          <Button variant="icon" size="sm" onClick={loadData} disabled={loading} title="Refresh" aria-label="Refresh">
             &#x21bb;
           </Button>
         </div>

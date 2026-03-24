@@ -135,7 +135,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
             <span className="conflict-drawer__title">Merge Conflicts</span>
             <Badge variant="danger" size="sm">{tasks.length}</Badge>
           </div>
-          <Button variant="icon" size="sm" onClick={onClose} title="Close">
+          <Button variant="icon" size="sm" onClick={onClose} title="Close" aria-label="Close">
             &#x2715;
           </Button>
         </div>

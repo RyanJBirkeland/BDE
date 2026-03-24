@@ -10,6 +10,10 @@ type ButtonProps = {
   title?: string
   className?: string
   type?: 'button' | 'submit' | 'reset'
+  'aria-label'?: string
+  'aria-pressed'?: boolean | 'true' | 'false' | 'mixed'
+  'aria-expanded'?: boolean | 'true' | 'false'
+  'aria-controls'?: string
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -23,8 +27,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     title,
     className,
     type,
+    'aria-label': ariaLabel,
+    'aria-pressed': ariaPressed,
+    'aria-expanded': ariaExpanded,
+    'aria-controls': ariaControls,
   },
-  ref
+  ref,
 ) {
   const classes = [
     'bde-btn',
@@ -46,8 +54,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled || loading}
       title={title}
       type={type}
+      aria-label={ariaLabel}
+      aria-pressed={ariaPressed}
+      aria-expanded={ariaExpanded}
+      aria-controls={ariaControls}
+      aria-busy={loading || undefined}
     >
-      {loading && <span className="bde-btn__spinner" />}
+      {loading && <span className="bde-btn__spinner" aria-hidden="true" />}
       {children}
     </button>
   )

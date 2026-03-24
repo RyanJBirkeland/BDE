@@ -163,6 +163,8 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
           return (
             <div
               key={`${tab.viewKey}-${index}`}
+              role="tabpanel"
+              aria-labelledby={`panel-tab-${tab.viewKey}-${node.panelId}`}
               style={{
                 position: 'absolute',
                 inset: 0,

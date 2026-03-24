@@ -173,7 +173,7 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
                   {task.repo} &middot; {task.status}
                 </span>
               </div>
-              <Button variant="icon" size="sm" onClick={onClose} title="Close">
+              <Button variant="icon" size="sm" onClick={onClose} title="Close" aria-label="Close">
                 &#x2715;
               </Button>
             </div>

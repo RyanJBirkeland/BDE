@@ -94,7 +94,7 @@ export function ActivityBar(_props: ActivityBarProps): React.JSX.Element {
   }
 
   return (
-    <div className="activity-bar" onClick={contextMenu ? closeContextMenu : undefined}>
+    <nav className="activity-bar" aria-label="Views" onClick={contextMenu ? closeContextMenu : undefined}>
       <div className="activity-bar__nav">
         {NAV_ITEMS.map(({ view, icon: Icon, label, shortcut }) => (
           <button
@@ -113,6 +113,8 @@ export function ActivityBar(_props: ActivityBarProps): React.JSX.Element {
               handleClick(view)
             }}
             onContextMenu={(e) => handleContextMenu(e, view)}
+            aria-label={label}
+            aria-current={focusedView === view ? 'page' : undefined}
             title={label + ' (' + shortcut + ')'}
             style={{ position: 'relative' }}
           >
@@ -152,6 +154,8 @@ export function ActivityBar(_props: ActivityBarProps): React.JSX.Element {
             }}
           />
           <div
+            role="menu"
+            aria-label="View options"
             style={{
               position: 'fixed',
               top: contextMenu.y,
@@ -200,6 +204,7 @@ export function ActivityBar(_props: ActivityBarProps): React.JSX.Element {
             ].map(({ label, action }) => (
               <button
                 key={label}
+                role="menuitem"
                 onClick={(e) => {
                   e.stopPropagation()
                   action()
@@ -230,6 +235,6 @@ export function ActivityBar(_props: ActivityBarProps): React.JSX.Element {
           </div>
         </>
       )}
-    </div>
+    </nav>
   )
 }

@@ -97,6 +97,7 @@ export function RepositoriesSection(): React.JSX.Element {
               size="sm"
               onClick={() => handleRemove(r.name)}
               title="Remove repository"
+              aria-label="Remove repository"
               type="button"
             >
               <Trash2 size={14} />

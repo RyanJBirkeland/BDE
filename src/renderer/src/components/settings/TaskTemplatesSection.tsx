@@ -86,6 +86,7 @@ export function TaskTemplatesSection(): React.JSX.Element {
                 size="sm"
                 onClick={() => handleRemove(i)}
                 title={t.isBuiltIn ? 'Reset to default' : 'Remove template'}
+                aria-label={t.isBuiltIn ? 'Reset to default' : 'Remove template'}
                 type="button"
               >
                 {t.isBuiltIn ? <RotateCcw size={14} /> : <Trash2 size={14} />}

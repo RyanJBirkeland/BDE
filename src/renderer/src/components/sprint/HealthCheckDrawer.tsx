@@ -43,7 +43,7 @@ export function HealthCheckDrawer({ open, tasks, onClose, onDismiss }: HealthChe
             <span className="health-drawer__title">Stuck Tasks</span>
             <Badge variant="warning" size="sm">{tasks.length}</Badge>
           </div>
-          <Button variant="icon" size="sm" onClick={onClose} title="Close">
+          <Button variant="icon" size="sm" onClick={onClose} title="Close" aria-label="Close">
             &#x2715;
           </Button>
         </div>

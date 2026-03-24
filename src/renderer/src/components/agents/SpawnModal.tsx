@@ -172,8 +172,11 @@ export function SpawnModal({ open, onClose }: SpawnModalProps): React.JSX.Elemen
         animate="animate"
         exit="exit"
         transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="spawn-modal-title"
       >
-        <h2 className="spawn-modal__title">Spawn Agent <span className="spawn-modal__plan-badge">⬡ Max</span></h2>
+        <h2 className="spawn-modal__title" id="spawn-modal-title">Spawn Agent <span className="spawn-modal__plan-badge">⬡ Max</span></h2>
 
         <form onSubmit={handleSubmit}>
           <div className="spawn-modal__section">

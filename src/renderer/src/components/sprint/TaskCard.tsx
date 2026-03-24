@@ -43,6 +43,9 @@ export const TaskCard = memo(function TaskCard({
     data: { task },
   })
 
+  // Override dnd-kit's default aria-roledescription with a more descriptive label
+  const sortableAttributes = { ...attributes, 'aria-roledescription': 'sortable task' }
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -61,7 +64,7 @@ export const TaskCard = memo(function TaskCard({
     .join(' ')
 
   return (
-    <div ref={setNodeRef} style={style} className={className} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} className={className} {...sortableAttributes} {...listeners}>
       <div className="task-card__title" title={task.title}>
         {task.title}
       </div>

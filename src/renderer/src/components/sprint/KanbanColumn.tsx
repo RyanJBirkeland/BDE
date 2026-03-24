@@ -117,6 +117,8 @@ export const KanbanColumn = memo(function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
+      role="region"
+      aria-label={`${label}, ${tasks.length} ${tasks.length === 1 ? 'item' : 'items'}`}
       className={`kanban-col ${STATUS_CLASS[status]} ${isOver ? 'kanban-col--drop-target' : ''} ${wipFull ? 'kanban-col--wip-full' : ''}`}
     >
       <div className="kanban-col__header">

@@ -72,7 +72,7 @@ export function PRStationList({ selectedPr, onSelectPr, removedKeys }: PRStation
         <span className="pr-station-list__count bde-count-badge">
           {prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).length}
         </span>
-        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh">
+        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh" aria-label="Refresh">
           &#x21bb;
         </Button>
       </div>

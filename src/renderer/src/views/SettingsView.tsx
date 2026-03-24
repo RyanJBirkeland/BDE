@@ -46,10 +46,12 @@ export default function SettingsView(): React.JSX.Element {
       <div className="settings-view__header">
         <span className="settings-view__header-title">Settings</span>
       </div>
-      <div className="settings-view__tabs">
+      <div className="settings-view__tabs" role="tablist" aria-label="Settings sections">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
+            role="tab"
+            aria-selected={activeTab === id}
             className={`settings-tab ${activeTab === id ? 'settings-tab--active' : ''}`}
             onClick={() => setActiveTab(id)}
             type="button"
@@ -59,7 +61,7 @@ export default function SettingsView(): React.JSX.Element {
           </button>
         ))}
       </div>
-      <div className="settings-view__scroll">
+      <div className="settings-view__scroll" role="tabpanel" aria-label={`${TABS.find(t => t.id === activeTab)?.label} settings`}>
         <ActiveSection />
       </div>
     </motion.div>

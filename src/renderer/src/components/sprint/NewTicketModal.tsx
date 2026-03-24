@@ -178,10 +178,13 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
         animate="animate"
         exit="exit"
         transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="new-ticket-modal-title"
       >
         <div className="new-ticket-modal__header">
-          <span className="new-ticket-modal__title text-gradient-aurora">NEW TICKET</span>
-          <Button variant="icon" size="sm" onClick={handleClose} title="Close">
+          <span className="new-ticket-modal__title text-gradient-aurora" id="new-ticket-modal-title">NEW TICKET</span>
+          <Button variant="icon" size="sm" onClick={handleClose} title="Close" aria-label="Close">
             &#x2715;
           </Button>
         </div>

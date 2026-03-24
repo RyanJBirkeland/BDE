@@ -73,7 +73,7 @@ export function PRList() {
       <div className="pr-list__header">
         <span className="pr-list__title">Open Pull Requests</span>
         <span className="pr-list__count bde-count-badge">{prs.length}</span>
-        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh">
+        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh" aria-label="Refresh">
           &#x21bb;
         </Button>
       </div>
@@ -149,8 +149,8 @@ export function PRList() {
 
       {confirmMerge && (
         <div className="pr-confirm-overlay" onClick={() => setConfirmMerge(null)}>
-          <div className="pr-confirm" onClick={(e) => e.stopPropagation()}>
-            <p className="pr-confirm__title">Squash merge this PR?</p>
+          <div className="pr-confirm" role="alertdialog" aria-modal="true" aria-labelledby="pr-confirm-title" onClick={(e) => e.stopPropagation()}>
+            <p className="pr-confirm__title" id="pr-confirm-title">Squash merge this PR?</p>
             <p className="pr-confirm__detail">
               #{confirmMerge.number} &mdash; {confirmMerge.title}
             </p>
