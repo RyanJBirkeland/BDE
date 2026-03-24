@@ -72,16 +72,13 @@ vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn(),
 }))
 
-// Mock global agent manager
-beforeEach(() => {
-  ;(global as any).__agentManager = {
-    getStatus: vi.fn().mockReturnValue({
-      running: true,
-      concurrency: { maxSlots: 2, activeCount: 0 },
-      activeAgents: [],
-    }),
-  }
-})
+const mockAgentManager = {
+  getStatus: vi.fn().mockReturnValue({
+    running: true,
+    concurrency: { maxSlots: 2, activeCount: 0 },
+    activeAgents: [],
+  }),
+} as any
 
 // Import handlers after mocks are set up
 import { registerWorkbenchHandlers } from '../workbench'
@@ -93,7 +90,7 @@ describe('Workbench handlers', () => {
   })
 
   it('registers all 5 workbench handlers', () => {
-    registerWorkbenchHandlers()
+    registerWorkbenchHandlers(mockAgentManager)
 
     expect(safeHandle).toHaveBeenCalledTimes(5)
     expect(safeHandle).toHaveBeenCalledWith('workbench:checkOperational', expect.any(Function))
@@ -112,7 +109,7 @@ describe('Workbench handlers', () => {
       }
     })
 
-    registerWorkbenchHandlers()
+    registerWorkbenchHandlers(mockAgentManager)
 
     expect(checkOperationalHandler).toBeDefined()
 
@@ -139,7 +136,7 @@ describe('Workbench handlers', () => {
       }
     })
 
-    registerWorkbenchHandlers()
+    registerWorkbenchHandlers(mockAgentManager)
 
     expect(researchRepoHandler).toBeDefined()
 
@@ -161,7 +158,7 @@ describe('Workbench handlers', () => {
       }
     })
 
-    registerWorkbenchHandlers()
+    registerWorkbenchHandlers(mockAgentManager)
 
     const mockEvent = {} as IpcMainInvokeEvent
     const result = await chatHandler(mockEvent, {
@@ -182,7 +179,7 @@ describe('Workbench handlers', () => {
       }
     })
 
-    registerWorkbenchHandlers()
+    registerWorkbenchHandlers(mockAgentManager)
 
     const mockEvent = {} as IpcMainInvokeEvent
     const result = await generateSpecHandler(mockEvent, {
@@ -204,7 +201,7 @@ describe('Workbench handlers', () => {
       }
     })
 
-    registerWorkbenchHandlers()
+    registerWorkbenchHandlers(mockAgentManager)
 
     const mockEvent = {} as IpcMainInvokeEvent
     const result = await checkSpecHandler(mockEvent, {

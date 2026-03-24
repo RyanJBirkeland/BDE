@@ -146,26 +146,25 @@ describe('IPC handlers integration', () => {
   // ── Agent manager handlers ─────────────────────────────────────────
 
   describe('agent-manager handlers', () => {
-    beforeAll(() => {
-      handlers.clear()
-      registerAgentManagerHandlers()
-    })
-
     beforeEach(() => {
       vi.clearAllMocks()
-      ;(global as any).__agentManager = undefined
     })
 
     it('registers agent-manager:status channel', () => {
+      handlers.clear()
+      registerAgentManagerHandlers(undefined)
       expect(handlers.has('agent-manager:status')).toBe(true)
     })
 
     it('registers agent-manager:kill channel', () => {
+      handlers.clear()
+      registerAgentManagerHandlers(undefined)
       expect(handlers.has('agent-manager:kill')).toBe(true)
     })
 
-    it('agent-manager:status returns not-running when AgentManager is not set', async () => {
-      ;(global as any).__agentManager = undefined
+    it('agent-manager:status returns not-running when AgentManager is undefined', async () => {
+      handlers.clear()
+      registerAgentManagerHandlers(undefined)
 
       const result = (await invoke('agent-manager:status')) as {
         running: boolean
@@ -180,22 +179,24 @@ describe('IPC handlers integration', () => {
       })
     })
 
-    it('agent-manager:status delegates to AgentManager when available', async () => {
+    it('agent-manager:status delegates to AgentManager when provided', async () => {
       const mockStatus = {
         running: true,
         shuttingDown: false,
         concurrency: { maxSlots: 2, activeCount: 1, cooldownUntil: 0 },
         activeAgents: [{ taskId: 't1', agentRunId: 'r1', model: 'claude-sonnet-4-5', startedAt: 0, lastOutputAt: 0, rateLimitCount: 0, costUsd: 0, tokensIn: 0, tokensOut: 0 }],
       }
-      ;(global as any).__agentManager = { getStatus: () => mockStatus }
+      handlers.clear()
+      registerAgentManagerHandlers({ getStatus: () => mockStatus } as any)
 
       const result = await invoke('agent-manager:status')
       expect(result).toEqual(mockStatus)
     })
 
-    it('agent-manager:kill delegates to AgentManager when available', async () => {
+    it('agent-manager:kill delegates to AgentManager when provided', async () => {
       const mockKillAgentFn = vi.fn()
-      ;(global as any).__agentManager = { killAgent: mockKillAgentFn }
+      handlers.clear()
+      registerAgentManagerHandlers({ killAgent: mockKillAgentFn } as any)
 
       const result = await invoke('agent-manager:kill', 'task-123')
 
@@ -203,8 +204,9 @@ describe('IPC handlers integration', () => {
       expect(result).toEqual({ ok: true })
     })
 
-    it('agent-manager:kill throws when AgentManager is not available', async () => {
-      ;(global as any).__agentManager = undefined
+    it('agent-manager:kill throws when AgentManager is undefined', async () => {
+      handlers.clear()
+      registerAgentManagerHandlers(undefined)
 
       await expect(invoke('agent-manager:kill', 'task-123')).rejects.toThrow(
         'Agent manager not available'

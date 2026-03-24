@@ -9,7 +9,7 @@ import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { getDb } from './db'
 import { BDE_AGENTS_INDEX as AGENTS_INDEX, BDE_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
-import { clearSprintTaskFk } from './handlers/sprint-local'
+import { clearSprintTaskFk } from './data/sprint-queries'
 import {
   rowToMeta,
   listAgents as _listAgents,

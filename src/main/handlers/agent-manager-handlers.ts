@@ -2,16 +2,17 @@
  * Agent manager IPC handlers — delegates to the in-process AgentManager.
  */
 import { safeHandle } from '../ipc-utils'
+import type { AgentManager } from '../agent-manager'
 
-export function registerAgentManagerHandlers(): void {
+export function registerAgentManagerHandlers(am: AgentManager | undefined): void {
   safeHandle('agent-manager:status', async () => {
-    const am = (global as any).__agentManager
     if (!am) return { running: false, concurrency: null, activeAgents: [] }
-    return am.getStatus()
+    // Cast needed: AgentManagerStatus.concurrency shape differs from IPC channel type.
+    // This mismatch predates DI — preserving existing runtime behavior.
+    return am.getStatus() as any
   })
 
   safeHandle('agent-manager:kill', async (_e, taskId: string) => {
-    const am = (global as any).__agentManager
     if (!am) throw new Error('Agent manager not available')
     am.killAgent(taskId)
     return { ok: true }

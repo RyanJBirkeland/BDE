@@ -9,6 +9,7 @@ import { promisify } from 'util'
 import { getSupabaseClient } from '../data/supabase-client'
 import { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
 import { buildAgentEnv } from '../env-utils'
+import type { AgentManager } from '../agent-manager'
 
 const execFileAsync = promisify(execFile)
 
@@ -45,7 +46,7 @@ export function buildSpecGenerationPrompt(input: {
   return buildQuickSpecPrompt(input.title, input.repo, input.templateHint, scaffold)
 }
 
-export function registerWorkbenchHandlers(): void {
+export function registerWorkbenchHandlers(am?: AgentManager): void {
   // --- Fully implemented: Operational readiness checks ---
   safeHandle('workbench:checkOperational', async (_e, input: { repo: string }) => {
     const { repo } = input
@@ -126,7 +127,6 @@ export function registerWorkbenchHandlers(): void {
 
     // Agent slots available check
     let slotsAvailableResult: { status: 'pass' | 'warn'; message: string; available: number; max: number }
-    const am = globalThis.__agentManager
     if (!am) {
       slotsAvailableResult = { status: 'warn', message: 'Agent manager not available', available: 0, max: 0 }
     } else {

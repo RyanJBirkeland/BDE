@@ -16,11 +16,10 @@ describe('Agent manager handlers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    delete (global as any).__agentManager
   })
 
   it('registers all 2 agent-manager channels', () => {
-    registerAgentManagerHandlers()
+    registerAgentManagerHandlers(undefined)
 
     expect(safeHandle).toHaveBeenCalledTimes(2)
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:status', expect.any(Function))
@@ -33,12 +32,21 @@ describe('Agent manager handlers', () => {
       vi.mocked(safeHandle).mockImplementation((channel, handler) => {
         handlers[channel] = handler
       })
-      registerAgentManagerHandlers()
+      registerAgentManagerHandlers(undefined)
+      return handlers
+    }
+
+    function captureHandlersWithAm(am: any): Record<string, any> {
+      const handlers: Record<string, any> = {}
+      vi.mocked(safeHandle).mockImplementation((channel, handler) => {
+        handlers[channel] = handler
+      })
+      registerAgentManagerHandlers(am)
       return handlers
     }
 
     describe('agent-manager:status', () => {
-      it('returns running=false when __agentManager is not set', async () => {
+      it('returns running=false when am is undefined', async () => {
         const handlers = captureHandlers()
 
         const result = await handlers['agent-manager:status'](mockEvent)
@@ -46,26 +54,26 @@ describe('Agent manager handlers', () => {
         expect(result).toEqual({ running: false, concurrency: null, activeAgents: [] })
       })
 
-      it('returns status from __agentManager when available', async () => {
+      it('returns status from AgentManager when provided', async () => {
         const mockStatus = {
           running: true,
           concurrency: { maxSlots: 3, activeCount: 1 },
           activeAgents: [{ id: 'agent-1' }],
         }
-        ;(global as any).__agentManager = {
+        const mockAm = {
           getStatus: vi.fn().mockReturnValue(mockStatus),
         }
-        const handlers = captureHandlers()
+        const handlers = captureHandlersWithAm(mockAm as any)
 
         const result = await handlers['agent-manager:status'](mockEvent)
 
-        expect((global as any).__agentManager.getStatus).toHaveBeenCalledTimes(1)
+        expect(mockAm.getStatus).toHaveBeenCalledTimes(1)
         expect(result).toBe(mockStatus)
       })
     })
 
     describe('agent-manager:kill', () => {
-      it('throws when __agentManager is not set', async () => {
+      it('throws when am is undefined', async () => {
         const handlers = captureHandlers()
 
         await expect(handlers['agent-manager:kill'](mockEvent, 'task-123')).rejects.toThrow(
@@ -73,12 +81,10 @@ describe('Agent manager handlers', () => {
         )
       })
 
-      it('calls killAgent and returns ok:true when agent manager is available', async () => {
+      it('calls killAgent and returns ok:true when agent manager is provided', async () => {
         const mockKillAgent = vi.fn()
-        ;(global as any).__agentManager = {
-          killAgent: mockKillAgent,
-        }
-        const handlers = captureHandlers()
+        const mockAm = { killAgent: mockKillAgent }
+        const handlers = captureHandlersWithAm(mockAm as any)
 
         const result = await handlers['agent-manager:kill'](mockEvent, 'task-123')
 

@@ -19,8 +19,9 @@ import {
 import type { AgentMeta } from '../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import type { SpawnLocalAgentArgs } from '../../shared/types'
+import type { AgentManager } from '../agent-manager'
 
-export function registerAgentHandlers(): void {
+export function registerAgentHandlers(am?: AgentManager): void {
   // --- Runner-proxied agent operations ---
   safeHandle('local:getAgentProcesses', async () => {
     // Process scanning removed — return runner agents instead
@@ -51,7 +52,6 @@ export function registerAgentHandlers(): void {
       return { ok: true }
     }
     // Try local AgentManager
-    const am = (global as any).__agentManager
     if (am) {
       try { await am.steerAgent(agentId, message); return { ok: true } } catch { /* fall through */ }
     }
@@ -65,7 +65,6 @@ export function registerAgentHandlers(): void {
       adhocHandle.close()
       return { ok: true }
     }
-    const am = (global as any).__agentManager
     if (am) {
       try { am.killAgent(agentId); return { ok: true } } catch { /* fall through */ }
     }

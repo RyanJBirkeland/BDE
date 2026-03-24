@@ -1,15 +1,11 @@
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
 import { updateTask } from '../data/sprint-queries'
+import { buildAgentEnv } from '../env-utils'
 import { MAX_RETRIES } from './types'
 import type { Logger } from './types'
 
 const execFile = promisify(execFileCb)
-
-const EXEC_ENV = {
-  ...process.env,
-  PATH: ['/usr/local/bin', '/opt/homebrew/bin', `${process.env.HOME}/.local/bin`, process.env.PATH].filter(Boolean).join(':'),
-}
 
 export interface ResolveSuccessOpts {
   taskId: string
@@ -38,13 +34,13 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   const { stdout: branchOut } = await execFile(
     'git',
     ['rev-parse', '--abbrev-ref', 'HEAD'],
-    { cwd: worktreePath, env: EXEC_ENV }
+    { cwd: worktreePath, env: buildAgentEnv() }
   )
   const branch = branchOut.trim()
   logger.info(`[completion] Task ${taskId}: pushing branch ${branch}`)
 
   // 2. Push branch to origin (skip pre-push hooks — agent code is reviewed via PR)
-  await execFile('git', ['push', '--no-verify', 'origin', branch], { cwd: worktreePath, env: EXEC_ENV })
+  await execFile('git', ['push', '--no-verify', 'origin', branch], { cwd: worktreePath, env: buildAgentEnv() })
 
   // 3. Open PR via gh CLI
   let prUrl: string | null = null
@@ -53,7 +49,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     const { stdout: prOut } = await execFile(
       'gh',
       ['pr', 'create', '--title', title, '--body', 'Automated by BDE', '--head', branch, '--repo', ghRepo],
-      { cwd: worktreePath, env: EXEC_ENV }
+      { cwd: worktreePath, env: buildAgentEnv() }
     )
     const parsed = parsePrOutput(prOut)
     prUrl = parsed.prUrl

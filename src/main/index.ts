@@ -116,8 +116,13 @@ app.whenReady().then(() => {
     am.start()
     app.on('will-quit', () => am.stop(10_000))
 
-    // Make available to handlers
-    globalThis.__agentManager = am
+    registerAgentHandlers(am)
+    registerAgentManagerHandlers(am)
+    registerWorkbenchHandlers(am)
+  } else {
+    registerAgentHandlers()
+    registerAgentManagerHandlers(undefined)
+    registerWorkbenchHandlers()
   }
 
   app.on('browser-window-created', (_, window) => {
@@ -125,7 +130,6 @@ app.whenReady().then(() => {
   })
 
   registerConfigHandlers()
-  registerAgentHandlers()
   registerGitHandlers()
   registerTerminalHandlers()
   registerWindowHandlers()
@@ -134,8 +138,6 @@ app.whenReady().then(() => {
   registerTemplateHandlers()
   registerFsHandlers()
   registerAuthHandlers()
-  registerAgentManagerHandlers()
-  registerWorkbenchHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const connectSrc = buildConnectSrc()

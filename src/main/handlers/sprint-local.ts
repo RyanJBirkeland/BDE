@@ -25,7 +25,6 @@ import {
   markTaskCancelledByPrNumber as _markTaskCancelledByPrNumber,
   listTasksWithOpenPrs as _listTasksWithOpenPrs,
   updateTaskMergeableState as _updateTaskMergeableState,
-  clearSprintTaskFk as _clearSprintTaskFk,
   getHealthCheckTasks as _getHealthCheckTasks,
   UPDATE_ALLOWLIST,
 } from '../data/sprint-queries'
@@ -90,10 +89,6 @@ export async function listTasksWithOpenPrs(): Promise<SprintTask[]> {
 
 export async function updateTaskMergeableState(prNumber: number, mergeableState: string | null): Promise<void> {
   await _updateTaskMergeableState(prNumber, mergeableState)
-}
-
-export async function clearSprintTaskFk(agentRunId: string): Promise<void> {
-  await _clearSprintTaskFk(agentRunId)
 }
 
 // --- Handler registration ---
