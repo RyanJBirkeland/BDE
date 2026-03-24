@@ -30,6 +30,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   const taskId = useTaskWorkbenchStore((s) => s.taskId)
   const spec = useTaskWorkbenchStore((s) => s.spec)
   const dependsOn = useTaskWorkbenchStore((s) => s.dependsOn)
+  const playgroundEnabled = useTaskWorkbenchStore((s) => s.playgroundEnabled)
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const resetForm = useTaskWorkbenchStore((s) => s.resetForm)
 
@@ -115,12 +116,14 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
         await updateTask(taskId, {
           title, repo, priority, spec,
           depends_on: dependsOn.length > 0 ? dependsOn : null,
+          playground_enabled: playgroundEnabled || undefined,
           status: action === 'queue' ? 'queued' : 'backlog',
         })
       } else {
         const input: CreateTicketInput = {
           title, repo, prompt: title, spec, priority,
           depends_on: dependsOn.length > 0 ? dependsOn : undefined,
+          playground_enabled: playgroundEnabled || undefined,
         }
         await createTask(input)
         // createTask hardcodes status=backlog. If queuing, find and update.
@@ -134,7 +137,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     } finally {
       setSubmitting(false)
     }
-  }, [mode, taskId, title, repo, priority, spec, dependsOn, createTask, updateTask, resetForm, setOperationalChecks])
+  }, [mode, taskId, title, repo, priority, spec, dependsOn, playgroundEnabled, createTask, updateTask, resetForm, setOperationalChecks])
 
   const handleConfirmedQueue = useCallback(async () => {
     setShowQueueConfirm(false)
@@ -144,12 +147,14 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
         await updateTask(taskId, {
           title, repo, priority, spec,
           depends_on: dependsOn.length > 0 ? dependsOn : null,
+          playground_enabled: playgroundEnabled || undefined,
           status: 'queued',
         })
       } else {
         const input: CreateTicketInput = {
           title, repo, prompt: title, spec, priority,
           depends_on: dependsOn.length > 0 ? dependsOn : undefined,
+          playground_enabled: playgroundEnabled || undefined,
         }
         await createTask(input)
         const tasks = useSprintTasks.getState().tasks
@@ -160,7 +165,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     } finally {
       setSubmitting(false)
     }
-  }, [mode, taskId, title, repo, priority, spec, dependsOn, createTask, updateTask, resetForm])
+  }, [mode, taskId, title, repo, priority, spec, dependsOn, playgroundEnabled, createTask, updateTask, resetForm])
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)
@@ -237,12 +242,30 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
           {advancedOpen ? '\u25be' : '\u25b8'} More options
         </button>
         {advancedOpen && (
-          <div style={{ marginTop: tokens.space[2], display: 'flex', gap: tokens.space[3] }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1], flex: 1 }}>
-              <label style={labelStyle}>Priority</label>
-              <select value={priority} onChange={(e) => setField('priority', Number(e.target.value))} style={inputStyle}>
-                {PRIORITY_OPTIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-              </select>
+          <div style={{ marginTop: tokens.space[2], display: 'flex', flexDirection: 'column', gap: tokens.space[3] }}>
+            <div style={{ display: 'flex', gap: tokens.space[3] }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1], flex: 1 }}>
+                <label style={labelStyle}>Priority</label>
+                <select value={priority} onChange={(e) => setField('priority', Number(e.target.value))} style={inputStyle}>
+                  {PRIORITY_OPTIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
+              <input
+                type="checkbox"
+                id="playground-enabled-workbench"
+                checked={playgroundEnabled}
+                onChange={(e) => setField('playgroundEnabled', e.target.checked)}
+                style={{ cursor: 'pointer' }}
+              />
+              <label
+                htmlFor="playground-enabled-workbench"
+                style={{ margin: 0, cursor: 'pointer', fontSize: tokens.size.sm, color: tokens.color.text }}
+                title="Enable native HTML preview rendering for frontend work"
+              >
+                Dev Playground
+              </label>
             </div>
           </div>
         )}

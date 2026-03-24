@@ -14,6 +14,7 @@ export interface CreateTicketInput {
   priority: number
   template_name?: string
   depends_on?: TaskDependency[]
+  playground_enabled?: boolean
 }
 
 /** Ensure depends_on is always a parsed array (Supabase JSONB may arrive as string). */

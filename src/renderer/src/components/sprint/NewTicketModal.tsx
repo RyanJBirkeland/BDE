@@ -17,6 +17,7 @@ export type CreateTicketData = {
   spec: string | null
   priority: number
   template_name?: string
+  playground_enabled?: boolean
 }
 
 type NewTicketModalProps = {
@@ -80,6 +81,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
   const titleRef = useRef<HTMLInputElement>(null)
   const [taskTemplateNames, setTaskTemplateNames] = useState<string[]>([])
   const [taskTemplateName, setTaskTemplateName] = useState('')
+  const [playgroundEnabled, setPlaygroundEnabled] = useState(false)
 
   // Load task template names from settings
   useEffect(() => {
@@ -98,6 +100,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
       setSelectedTemplate(null)
       setSpec('')
       setTaskTemplateName('')
+      setPlaygroundEnabled(false)
       setTimeout(() => titleRef.current?.focus(), 100)
     }
   }, [open])
@@ -146,6 +149,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
         spec: null,
         priority: 3,
         template_name: taskTemplateName || undefined,
+        playground_enabled: playgroundEnabled || undefined,
       })
       onClose()
       return
@@ -160,6 +164,7 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
       spec: spec || null,
       priority,
       template_name: taskTemplateName || undefined,
+      playground_enabled: playgroundEnabled || undefined,
     })
     onClose()
   }
@@ -254,6 +259,23 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
                   ))}
                 </select>
               </div>
+              <div className="new-ticket-modal__field" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="playground-enabled-quick"
+                  checked={playgroundEnabled}
+                  onChange={(e) => setPlaygroundEnabled(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <label
+                  htmlFor="playground-enabled-quick"
+                  className="new-ticket-modal__label"
+                  style={{ margin: 0, cursor: 'pointer' }}
+                  title="Enable native HTML preview rendering for frontend work"
+                >
+                  Dev Playground
+                </label>
+              </div>
               <p className="new-ticket-modal__quick-hint">
                 Paul will write the spec in the background. Review it in SpecDrawer before launching.
               </p>
@@ -322,6 +344,24 @@ export function NewTicketModal({ open, onClose, onCreate }: NewTicketModalProps)
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="new-ticket-modal__field" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="playground-enabled-tpl"
+                  checked={playgroundEnabled}
+                  onChange={(e) => setPlaygroundEnabled(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <label
+                  htmlFor="playground-enabled-tpl"
+                  className="new-ticket-modal__label"
+                  style={{ margin: 0, cursor: 'pointer' }}
+                  title="Enable native HTML preview rendering for frontend work"
+                >
+                  Dev Playground
+                </label>
               </div>
 
               <label className="new-ticket-modal__label">Template</label>

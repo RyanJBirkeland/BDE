@@ -32,6 +32,7 @@ interface TaskWorkbenchState {
   taskTemplateName: string
   advancedOpen: boolean
   dependsOn: TaskDependency[]
+  playgroundEnabled: boolean
 
   // --- Copilot ---
   copilotVisible: boolean
@@ -82,6 +83,7 @@ function defaults(): Pick<
   | 'taskTemplateName'
   | 'advancedOpen'
   | 'dependsOn'
+  | 'playgroundEnabled'
   | 'copilotVisible'
   | 'copilotMessages'
   | 'copilotLoading'
@@ -102,6 +104,7 @@ function defaults(): Pick<
     taskTemplateName: '',
     advancedOpen: false,
     dependsOn: [],
+    playgroundEnabled: false,
     copilotVisible: true,
     copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
     copilotLoading: false,
@@ -135,6 +138,7 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       spec: task.spec ?? '',
       taskTemplateName: task.template_name ?? '',
       dependsOn: task.depends_on ?? [],
+      playgroundEnabled: task.playground_enabled ?? false,
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
       semanticChecks: [],
       operationalChecks: [],
