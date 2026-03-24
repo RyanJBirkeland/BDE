@@ -81,7 +81,6 @@ describe('pendingReview store — localStorage persistence', () => {
   })
 
   it('survives localStorage.setItem throwing (e.g. quota exceeded)', () => {
-    const original = localStorage.setItem.bind(localStorage)
     vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
       throw new Error('QuotaExceededError')
     })
