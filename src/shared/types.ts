@@ -17,6 +17,10 @@ export interface AgentMeta {
   status: 'running' | 'done' | 'failed' | 'cancelled' | 'unknown'
   logPath: string
   source: 'bde' | 'external' | 'adhoc'
+  costUsd: number | null
+  tokensIn: number | null
+  tokensOut: number | null
+  sprintTaskId: string | null
 }
 
 export interface TaskDependency {

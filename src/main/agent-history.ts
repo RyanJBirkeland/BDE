@@ -176,7 +176,11 @@ export async function importAgent(
     finishedAt: meta.finishedAt ?? null,
     exitCode: meta.exitCode ?? null,
     status: meta.status ?? 'unknown',
-    source: meta.source ?? 'external'
+    source: meta.source ?? 'external',
+    costUsd: meta.costUsd ?? null,
+    tokensIn: meta.tokensIn ?? null,
+    tokensOut: meta.tokensOut ?? null,
+    sprintTaskId: meta.sprintTaskId ?? null,
   }
   const record = await createAgentRecord(full)
   if (content) {

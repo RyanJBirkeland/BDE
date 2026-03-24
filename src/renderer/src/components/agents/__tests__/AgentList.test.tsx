@@ -11,7 +11,7 @@ const base: Omit<AgentMeta, 'id' | 'status' | 'startedAt' | 'finishedAt'> = {
   task: 'do stuff',
   exitCode: null,
   logPath: '/tmp/log',
-  source: 'bde',
+  source: 'bde', costUsd: null, tokensIn: null, tokensOut: null, sprintTaskId: null,
 }
 
 describe('groupAgents', () => {

@@ -41,6 +41,10 @@ function makeAgent(overrides: Record<string, unknown> = {}) {
     status: 'running' as const,
     logPath: '/tmp/log.txt',
     source: 'bde' as const,
+    costUsd: null,
+    tokensIn: null,
+    tokensOut: null,
+    sprintTaskId: null,
     ...overrides,
   }
 }
@@ -207,5 +211,32 @@ describe('updateAgentRunCost', () => {
     expect(row.tokens_in).toBe(1000)
     expect(row.tokens_out).toBe(500)
     expect(row.num_turns).toBe(5)
+  })
+})
+
+describe('rowToMeta includes cost fields and sprintTaskId', () => {
+  it('maps cost columns and sprint_task_id to camelCase', () => {
+    insertAgentRecord(db, makeAgent({
+      costUsd: 0.45,
+      tokensIn: 12000,
+      tokensOut: 3400,
+      sprintTaskId: 'task-abc',
+    }))
+    const result = getAgentMeta(db, 'agent-1')
+    expect(result).not.toBeNull()
+    expect(result!.costUsd).toBe(0.45)
+    expect(result!.tokensIn).toBe(12000)
+    expect(result!.tokensOut).toBe(3400)
+    expect(result!.sprintTaskId).toBe('task-abc')
+  })
+
+  it('returns null cost fields when not set', () => {
+    insertAgentRecord(db, makeAgent())
+    const result = getAgentMeta(db, 'agent-1')
+    expect(result).not.toBeNull()
+    expect(result!.costUsd).toBeNull()
+    expect(result!.tokensIn).toBeNull()
+    expect(result!.tokensOut).toBeNull()
+    expect(result!.sprintTaskId).toBeNull()
   })
 })

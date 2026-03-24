@@ -25,8 +25,8 @@ describe('agentHistory store', () => {
 
   it('fetchAgents calls window.api.agents.list and sets state', async () => {
     const mockAgents = [
-      { id: 'a1', pid: null, bin: 'claude', model: 'sonnet', repo: 'BDE', repoPath: '/tmp', task: 'fix bug', startedAt: '2026-01-01', finishedAt: null, exitCode: null, status: 'running' as const, logPath: '/tmp/log', source: 'bde' as const },
-      { id: 'a2', pid: null, bin: 'claude', model: 'opus', repo: 'BDE', repoPath: '/tmp', task: 'write tests', startedAt: '2026-01-02', finishedAt: '2026-01-02', exitCode: 0, status: 'done' as const, logPath: '/tmp/log2', source: 'bde' as const },
+      { id: 'a1', pid: null, bin: 'claude', model: 'sonnet', repo: 'BDE', repoPath: '/tmp', task: 'fix bug', startedAt: '2026-01-01', finishedAt: null, exitCode: null, status: 'running' as const, logPath: '/tmp/log', source: 'bde' as const, costUsd: null, tokensIn: null, tokensOut: null, sprintTaskId: null },
+      { id: 'a2', pid: null, bin: 'claude', model: 'opus', repo: 'BDE', repoPath: '/tmp', task: 'write tests', startedAt: '2026-01-02', finishedAt: '2026-01-02', exitCode: 0, status: 'done' as const, logPath: '/tmp/log2', source: 'bde' as const, costUsd: null, tokensIn: null, tokensOut: null, sprintTaskId: null },
     ]
     vi.mocked(window.api.agents.list).mockResolvedValue(mockAgents)
 
@@ -123,7 +123,7 @@ describe('agentHistory store', () => {
   })
 
   it('importExternal calls api and refetches agents', async () => {
-    const imported = { id: 'ext-1', pid: null, bin: 'ext', model: 'sonnet', repo: '', repoPath: '', task: '', startedAt: '', finishedAt: null, exitCode: null, status: 'done' as const, logPath: '', source: 'external' as const }
+    const imported = { id: 'ext-1', pid: null, bin: 'ext', model: 'sonnet', repo: '', repoPath: '', task: '', startedAt: '', finishedAt: null, exitCode: null, status: 'done' as const, logPath: '', source: 'external' as const, costUsd: null, tokensIn: null, tokensOut: null, sprintTaskId: null }
     vi.mocked(window.api.agents.import).mockResolvedValue(imported)
     vi.mocked(window.api.agents.list).mockResolvedValue([imported])
 
