@@ -22,6 +22,23 @@ vi.mock('../../../stores/sprintTasks', () => ({
   useSprintTasks: vi.fn(),
 }))
 
+const mockToggleTaskSelection = vi.fn()
+const mockSelectRange = vi.fn()
+const mockClearSelection = vi.fn()
+let mockSelectedTaskIds: string[] = []
+
+vi.mock('../../../stores/sprintUI', () => ({
+  useSprintUI: (selector?: (state: any) => any) => {
+    const state = {
+      selectedTaskIds: mockSelectedTaskIds,
+      toggleTaskSelection: mockToggleTaskSelection,
+      selectRange: mockSelectRange,
+      clearSelection: mockClearSelection,
+    }
+    return selector ? selector(state) : state
+  },
+}))
+
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: crypto.randomUUID(),
@@ -68,6 +85,7 @@ describe('TaskCard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockTasksData = []
+    mockSelectedTaskIds = []
 
     // Set up the Zustand store mock
     vi.mocked(useSprintTasks).mockImplementation((selector?: (state: { tasks: SprintTask[] }) => unknown) => {
@@ -388,5 +406,28 @@ describe('TaskCard', () => {
     const task = makeTask({ priority: 5 })
     const { container } = render(<TaskCard {...defaultProps} task={task} />)
     expect(container.querySelector('.task-card--high-priority')).not.toBeInTheDocument()
+  })
+
+  describe('bulk selection', () => {
+    it('shows checkbox when any task is selected', () => {
+      mockSelectedTaskIds = ['other-task']
+      render(<TaskCard {...defaultProps} task={makeTask()} />)
+      expect(screen.getByRole('checkbox')).toBeInTheDocument()
+    })
+
+    it('hides checkbox when no tasks selected', () => {
+      mockSelectedTaskIds = []
+      render(<TaskCard {...defaultProps} task={makeTask()} />)
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    })
+
+    it('calls toggleTaskSelection on checkbox click', async () => {
+      mockSelectedTaskIds = ['other-task']
+      const user = userEvent.setup()
+      const task = makeTask()
+      render(<TaskCard {...defaultProps} task={task} />)
+      await user.click(screen.getByRole('checkbox'))
+      expect(mockToggleTaskSelection).toHaveBeenCalledWith(task.id)
+    })
   })
 })
