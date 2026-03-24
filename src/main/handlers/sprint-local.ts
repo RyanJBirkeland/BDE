@@ -99,6 +99,25 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
+    // Check if task has dependencies and should be auto-blocked
+    if (task.depends_on && task.depends_on.length > 0 && (task.status === 'queued' || !task.status)) {
+      const { createDependencyIndex } = await import('../agent-manager/dependency-index')
+      const idx = createDependencyIndex()
+      const allTasks = await _listTasks()
+      const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+      const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
+        'new-task',
+        task.depends_on,
+        (depId) => statusMap.get(depId),
+      )
+      if (!satisfied && blockedBy.length > 0) {
+        task = {
+          ...task,
+          status: 'blocked',
+          notes: `Blocked by dependencies: ${blockedBy.join(', ')}${task.notes ? `\n\n${task.notes}` : ''}`
+        }
+      }
+    }
     const row = await _createTask(task)
     notifySprintMutation('created', row)
     return row
@@ -117,13 +136,20 @@ export function registerSprintLocalHandlers(): void {
           const idx = createDependencyIndex()
           const allTasks = await _listTasks()
           const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-          const { satisfied } = idx.areDependenciesSatisfied(
+          const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
             id,
             taskDeps,
             (depId) => statusMap.get(depId),
           )
-          if (!satisfied) {
-            patch = { ...patch, status: 'blocked' }
+          if (!satisfied && blockedBy.length > 0) {
+            // Auto-block and record which dependencies are blocking
+            const existingNotes = task.notes || ''
+            const blockingMsg = `Blocked by dependencies: ${blockedBy.join(', ')}`
+            patch = {
+              ...patch,
+              status: 'blocked',
+              notes: existingNotes ? `${blockingMsg}\n\n${existingNotes}` : blockingMsg
+            }
           }
         }
       }

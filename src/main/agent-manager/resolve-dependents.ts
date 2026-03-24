@@ -41,14 +41,18 @@ export async function resolveDependents(
         }
       }
 
-      const { satisfied } = index.areDependenciesSatisfied(
+      const { satisfied, blockedBy } = index.areDependenciesSatisfied(
         depId,
         task.depends_on,
         (id) => statusCache.get(id),
       )
 
       if (satisfied) {
+        // Unblock the task (keep existing notes as-is)
         await updateTask(depId, { status: 'queued' })
+      } else if (blockedBy.length > 0) {
+        // Update blocking notes with current blocking dependencies
+        await updateTask(depId, { notes: `Blocked by dependencies: ${blockedBy.join(', ')}` })
       }
     } catch (err) {
       ;(logger ?? console).warn(`[resolve-dependents] Error resolving dependent ${depId}: ${err}`)
