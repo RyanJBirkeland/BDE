@@ -28,6 +28,35 @@ function parsePrOutput(stdout: string): { prUrl: string | null; prNumber: number
   return { prUrl: urlMatch[0], prNumber: parseInt(urlMatch[1], 10) }
 }
 
+async function generatePrBody(worktreePath: string, branch: string): Promise<string> {
+  const env = buildAgentEnv()
+  const sections: string[] = []
+
+  try {
+    const { stdout: log } = await execFile(
+      'git', ['log', '--oneline', `origin/main..${branch}`],
+      { cwd: worktreePath, env }
+    )
+    if (log.trim()) {
+      sections.push('## Commits\n' + log.trim().split('\n').map((l) => `- ${l}`).join('\n'))
+    }
+  } catch { /* non-fatal */ }
+
+  try {
+    const { stdout: stat } = await execFile(
+      'git', ['diff', '--stat', `origin/main..${branch}`],
+      { cwd: worktreePath, env }
+    )
+    if (stat.trim()) {
+      sections.push('## Changes\n```\n' + stat.trim() + '\n```')
+    }
+  } catch { /* non-fatal */ }
+
+  sections.push('🤖 Automated by BDE Agent Manager')
+
+  return sections.join('\n\n')
+}
+
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
   const { taskId, worktreePath, title, ghRepo, onTaskTerminal } = opts
 
@@ -131,9 +160,10 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   // Open PR via gh CLI if one doesn't exist
   if (!prUrl) {
     try {
+      const body = await generatePrBody(worktreePath, branch)
       const { stdout: prOut } = await execFile(
         'gh',
-        ['pr', 'create', '--title', title, '--body', 'Automated by BDE', '--head', branch, '--repo', ghRepo],
+        ['pr', 'create', '--title', title, '--body', body, '--head', branch, '--repo', ghRepo],
         { cwd: worktreePath, env: buildAgentEnv() }
       )
       const parsed = parsePrOutput(prOut)
