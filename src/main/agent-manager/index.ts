@@ -110,8 +110,8 @@ export function createAgentManager(
   let orphanTimer: ReturnType<typeof setInterval> | null = null
   let pruneTimer: ReturnType<typeof setInterval> | null = null
   let drainInFlight: Promise<void> | null = null
+  let drainRunning = false
   const agentPromises = new Set<Promise<void>>()
-  let orphanRecoveryRunning = false
   const depIndex = createDependencyIndex()
 
   async function onTaskTerminal(taskId: string, status: string): Promise<void> {
@@ -138,100 +138,103 @@ export function createAgentManager(
   // ---- drainLoop ----
 
   async function drainLoop(): Promise<void> {
-    logger.info(`[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`)
-    if (shuttingDown) return
-
-    // Skip if orphan recovery is currently running to prevent race conditions
-    if (orphanRecoveryRunning) {
-      logger.info('[agent-manager] Skipping drain loop - orphan recovery in progress')
+    if (drainRunning) {
+      logger.info('[agent-manager] Drain loop already running — skipping')
       return
     }
-
-    // Refresh dependency index each drain cycle to pick up tasks created
-    // since startup or since the last drain. Rebuild is O(n) and cheap.
+    drainRunning = true
     try {
-      const allTasks = await getTasksWithDependencies()
-      depIndex.rebuild(allTasks)
-    } catch (err) {
-      logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
-    }
+      logger.info(`[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`)
+      if (shuttingDown) return
 
-    const available = availableSlots(concurrency, activeAgents.size)
-    if (available <= 0) return
-
-    try {
-      // Auth is validated by the SDK at spawn time — no explicit check here.
-      // checkAuthStatus() hangs in Electron due to Keychain access blocking.
-
-      logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
-      const queued = await fetchQueuedTasks(available)
-      logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
-      for (const raw of queued) {
-        if (shuttingDown) break
-
-        try {
-          // Map Queue API camelCase response to local task shape
-          // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
-          const task = {
-            id: raw.id as string,
-            title: raw.title as string,
-            prompt: (raw.prompt as string) ?? null,
-            spec: (raw.spec as string) ?? null,
-            repo: raw.repo as string,
-            retry_count: Number(raw.retryCount) || 0,
-            fast_fail_count: Number(raw.fastFailCount) || 0,
-            playground_enabled: Boolean(raw.playgroundEnabled),
-          }
-
-          const repoPath = resolveRepoPath(task.repo)
-          if (!repoPath) {
-            logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
-            continue
-          }
-
-          const claimed = await claimTaskViaApi(task.id)
-          if (!claimed) {
-            logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
-            continue
-          }
-
-          let wt: { worktreePath: string; branch: string }
-          try {
-            wt = await setupWorktree({
-              repoPath,
-              worktreeBase: config.worktreeBase,
-              taskId: task.id,
-              title: task.title,
-              logger,
-            })
-          } catch (err) {
-            const errMsg = err instanceof Error ? err.message : String(err)
-            logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
-            await updateTask(task.id, {
-              status: 'error',
-              completed_at: new Date().toISOString(),
-              notes: `Worktree setup failed: ${errMsg}`.slice(0, 500),
-              claimed_by: null,
-            })
-            await onTaskTerminal(task.id, 'error')
-            continue
-          }
-
-          // Fire-and-forget — errors logged inside runAgent
-          const p = _runAgent(task, wt, repoPath, runAgentDeps).catch((err) => {
-            logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
-          }).finally(() => { agentPromises.delete(p) })
-          agentPromises.add(p)
-        } catch (err) {
-          logger.error(`[agent-manager] Failed to process task ${raw.id}: ${err}`)
-          continue
-        }
+      // Refresh dependency index each drain cycle to pick up tasks created
+      // since startup or since the last drain. Rebuild is O(n) and cheap.
+      try {
+        const allTasks = await getTasksWithDependencies()
+        depIndex.rebuild(allTasks)
+      } catch (err) {
+        logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
       }
-    } catch (err) {
-      logger.error(`[agent-manager] Drain loop error: ${err}`)
-    }
 
-    concurrency = tryRecover(concurrency, Date.now())
+      const available = availableSlots(concurrency, activeAgents.size)
+      if (available <= 0) return
+
+      try {
+        // Auth is validated by the SDK at spawn time — no explicit check here.
+        // checkAuthStatus() hangs in Electron due to Keychain access blocking.
+
+        logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
+        const queued = await fetchQueuedTasks(available)
+        logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
+        for (const raw of queued) {
+          if (shuttingDown) break
+
+          try {
+            // Map Queue API camelCase response to local task shape
+            // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
+            const task = {
+              id: raw.id as string,
+              title: raw.title as string,
+              prompt: (raw.prompt as string) ?? null,
+              spec: (raw.spec as string) ?? null,
+              repo: raw.repo as string,
+              retry_count: Number(raw.retryCount) || 0,
+              fast_fail_count: Number(raw.fastFailCount) || 0,
+              playground_enabled: Boolean(raw.playgroundEnabled),
+            }
+
+            const repoPath = resolveRepoPath(task.repo)
+            if (!repoPath) {
+              logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
+              continue
+            }
+
+            const claimed = await claimTaskViaApi(task.id)
+            if (!claimed) {
+              logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
+              continue
+            }
+
+            let wt: { worktreePath: string; branch: string }
+            try {
+              wt = await setupWorktree({
+                repoPath,
+                worktreeBase: config.worktreeBase,
+                taskId: task.id,
+                title: task.title,
+                logger,
+              })
+            } catch (err) {
+              const errMsg = err instanceof Error ? err.message : String(err)
+              logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
+              await updateTask(task.id, {
+                status: 'error',
+                completed_at: new Date().toISOString(),
+                notes: `Worktree setup failed: ${errMsg}`.slice(0, 500),
+                claimed_by: null,
+              })
+              await onTaskTerminal(task.id, 'error')
+              continue
+            }
+
+            // Fire-and-forget — errors logged inside runAgent
+            const p = _runAgent(task, wt, repoPath, runAgentDeps).catch((err) => {
+              logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
+            }).finally(() => { agentPromises.delete(p) })
+            agentPromises.add(p)
+          } catch (err) {
+            logger.error(`[agent-manager] Failed to process task ${raw.id}: ${err}`)
+            continue
+          }
+        }
+      } catch (err) {
+        logger.error(`[agent-manager] Drain loop error: ${err}`)
+      }
+
+      concurrency = tryRecover(concurrency, Date.now())
+    } finally {
+      drainRunning = false
+    }
   }
 
   // ---- watchdogLoop ----
@@ -269,13 +272,10 @@ export function createAgentManager(
   // ---- orphanLoop ----
 
   async function orphanLoop(): Promise<void> {
-    orphanRecoveryRunning = true
     try {
       await recoverOrphans(isActive, logger)
     } catch (err) {
       logger.error(`[agent-manager] Orphan recovery error: ${err}`)
-    } finally {
-      orphanRecoveryRunning = false
     }
   }
 
