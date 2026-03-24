@@ -5,12 +5,14 @@
  * into pinned (MEMORY.md), daily logs, projects, and other. Keyboard-navigable.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { FileText } from 'lucide-react'
 import { toast } from '../stores/toasts'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import * as memoryService from '../services/memory'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 interface MemoryFile {
   path: string
@@ -70,6 +72,7 @@ function groupFiles(files: MemoryFile[]): { pinned: MemoryFile | null; groups: F
 }
 
 export default function MemoryView(): React.JSX.Element {
+  const reduced = useReducedMotion()
   const [files, setFiles] = useState<MemoryFile[]>([])
   const [loadingFiles, setLoadingFiles] = useState(true)
   const [loadingContent, setLoadingContent] = useState(false)
@@ -203,7 +206,7 @@ export default function MemoryView(): React.JSX.Element {
   const isDirty = content !== savedContent
 
   return (
-    <div className="memory-view memory-view--column">
+    <motion.div className="memory-view memory-view--column" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <div className="memory-view__header">
         <span className="memory-view__title">Memory</span>
       </div>
@@ -332,6 +335,6 @@ export default function MemoryView(): React.JSX.Element {
         )}
       </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

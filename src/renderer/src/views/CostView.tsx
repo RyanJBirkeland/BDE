@@ -4,6 +4,7 @@
  * Task table shows per-run cost, duration, and cache efficiency.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import type { AgentRunCostRow, CostSummary } from '../../../shared/types'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -11,6 +12,7 @@ import { Button } from '../components/ui/Button'
 import { Download, RefreshCw, BarChart, ExternalLink } from 'lucide-react'
 import { POLL_COST_INTERVAL, AGENT_HISTORY_LIMIT, FLASH_DURATION_MS } from '../lib/constants'
 import { useCostDataStore } from '../stores/costData'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 // ── Formatting helpers ──────────────────────────────────
 
@@ -203,6 +205,7 @@ function exportCsv(runs: AgentRunCostRow[]): void {
 // ── Main View ───────────────────────────────────────────
 
 export default function CostView(): React.JSX.Element {
+  const reduced = useReducedMotion()
   const [summary, setSummary] = useState<CostSummary | null>(null)
   const [runs, setRuns] = useState<AgentRunCostRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -257,7 +260,7 @@ export default function CostView(): React.JSX.Element {
 
   if (loading) {
     return (
-      <div className="cost-view cost-view--glass">
+      <motion.div className="cost-view cost-view--glass" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
         <div className="cost-view__header">
           <span className="cost-view__title">Cost Tracker</span>
         </div>
@@ -268,12 +271,12 @@ export default function CostView(): React.JSX.Element {
           </div>
           <div className="bde-skeleton" style={{ height: 300 }} />
         </div>
-      </div>
+      </motion.div>
     )
   }
 
   return (
-    <div className="cost-view cost-view--glass">
+    <motion.div className="cost-view cost-view--glass" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <div className="cost-view__header">
         <span className="cost-view__title">Cost Tracker</span>
         <div className="cost-view__header-actions">
@@ -310,6 +313,6 @@ export default function CostView(): React.JSX.Element {
           </>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }

@@ -4,6 +4,7 @@
  * Right panel: agent detail with chat renderer and steering.
  */
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import '../assets/agents.css'
 import { useUIStore } from '../stores/ui'
@@ -17,8 +18,10 @@ import { HealthBar } from '../components/agents/HealthBar'
 import { SpawnModal } from '../components/agents/SpawnModal'
 import { tokens } from '../design-system/tokens'
 import { POLL_SESSIONS_INTERVAL } from '../lib/constants'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 export function AgentsView() {
+  const reduced = useReducedMotion()
   const activeView = useUIStore((s) => s.activeView)
   const agents = useAgentHistoryStore((s) => s.agents)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
@@ -74,7 +77,7 @@ export function AgentsView() {
   }, [selectedId])
 
   return (
-    <div className="agents-view" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <motion.div className="agents-view" style={{ display: 'flex', flexDirection: 'column', height: '100%' }} variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       {/* HealthBar */}
       <HealthBarWrapper />
 
@@ -125,7 +128,7 @@ export function AgentsView() {
 
       <SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />
       </div>
-    </div>
+    </motion.div>
   )
 }
 

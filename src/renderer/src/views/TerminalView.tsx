@@ -1,12 +1,15 @@
 import { useCallback, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { TerminalTabBar } from '../components/terminal/TerminalTabBar'
 import { TerminalToolbar } from '../components/terminal/TerminalToolbar'
 import { TerminalContent } from '../components/terminal/TerminalContent'
 import { clearTerminal } from '../components/terminal/TerminalPane'
 import { useTerminalStore } from '../stores/terminal'
 import { useUIStore } from '../stores/ui'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 export function TerminalView(): React.JSX.Element {
+  const reduced = useReducedMotion()
   const tabs = useTerminalStore((s) => s.tabs)
   const activeTabId = useTerminalStore((s) => s.activeTabId)
   const addTab = useTerminalStore((s) => s.addTab)
@@ -163,7 +166,7 @@ export function TerminalView(): React.JSX.Element {
   }, [activeView, tabs, activeTabId, addTab, closeTab, setActiveTab, toggleSplit, setShowFind, zoomIn, zoomOut, resetZoom])
 
   return (
-    <div className="terminal-view">
+    <motion.div className="terminal-view" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <div className="terminal-view__header">
         <span className="terminal-view__title">Terminal</span>
       </div>
@@ -197,6 +200,6 @@ export function TerminalView(): React.JSX.Element {
         isAgentTab={!!isAgentTab}
         activeView={activeView}
       />
-    </div>
+    </motion.div>
   )
 }
