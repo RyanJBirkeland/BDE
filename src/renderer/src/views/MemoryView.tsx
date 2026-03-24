@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { FileText } from 'lucide-react'
+import { FileText, Search, X } from 'lucide-react'
 import { toast } from '../stores/toasts'
 import { useUIStore } from '../stores/ui'
 import { Button } from '../components/ui/Button'
@@ -83,6 +83,9 @@ export default function MemoryView(): React.JSX.Element {
   const [newFilePrompt, setNewFilePrompt] = useState(false)
   const [newFileName, setNewFileName] = useState('')
   const [creating, setCreating] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<memoryService.MemorySearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
 
   const { confirm, confirmProps } = useConfirm()
@@ -166,6 +169,31 @@ export default function MemoryView(): React.JSX.Element {
       setCreating(false)
     }
   }, [newFileName, loadFiles, openFile])
+
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query)
+
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const results = await memoryService.search(query)
+      setSearchResults(results)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to search memory files')
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }, [])
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery('')
+    setSearchResults([])
+  }, [])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent): void {
@@ -274,58 +302,121 @@ export default function MemoryView(): React.JSX.Element {
           </div>
         )}
 
-        <div className="memory-sidebar__list" ref={sidebarRef}>
-          {pinned && (
-            <button
-              className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''} ${focusIndex === 0 ? 'memory-file--focused' : ''}`}
-              data-memory-index={0}
-              onClick={() => handleSelectFile(pinned.path)}
-            >
-              <span className="memory-file__name">
-                <span className="memory-file__pin">{'\uD83D\uDCCC'}</span> {pinned.name}
-              </span>
-              <span className="memory-file__meta">
-                {formatRelativeTime(pinned.modifiedAt)} &middot; {formatSize(pinned.size)}
-              </span>
-            </button>
-          )}
-
-          {groups.map((group) => (
-            <div key={group.label} className="memory-group">
-              <div className="memory-group__label">{group.label}</div>
-              {group.files.map((f) => {
-                const idx = flatFiles.indexOf(f)
-                return (
-                  <button
-                    key={f.path}
-                    className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''} ${focusIndex === idx ? 'memory-file--focused' : ''}`}
-                    data-memory-index={idx}
-                    onClick={() => handleSelectFile(f.path)}
-                  >
-                    <span className="memory-file__name">{f.name}</span>
-                    <span className="memory-file__meta">
-                      {formatRelativeTime(f.modifiedAt)} &middot; {formatSize(f.size)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          ))}
-
-          {loadingFiles && files.length === 0 && (
-            <div className="memory-sidebar__loading">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bde-skeleton memory-sidebar__skeleton" />
-              ))}
-            </div>
-          )}
-          {!loadingFiles && files.length === 0 && (
-            <EmptyState
-              icon={<FileText size={24} />}
-              title="No memory files"
-              description="Create a file to start taking notes"
-              action={{ label: 'New File', onClick: () => setNewFilePrompt(true) }}
+        <div className="memory-sidebar__search">
+          <div className="memory-sidebar__search-input-wrapper">
+            <Search size={16} className="memory-sidebar__search-icon" />
+            <input
+              className="memory-sidebar__search-input"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Search memory files..."
             />
+            {searchQuery && (
+              <button
+                className="memory-sidebar__search-clear"
+                onClick={clearSearch}
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="memory-sidebar__list" ref={sidebarRef}>
+          {searchQuery ? (
+            <>
+              {isSearching ? (
+                <div className="memory-sidebar__loading">
+                  <div className="bde-skeleton memory-sidebar__skeleton" />
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="memory-search-results">
+                  {searchResults.map((result) => (
+                    <button
+                      key={result.path}
+                      className={`memory-search-result ${selectedPath === result.path ? 'memory-search-result--active' : ''}`}
+                      onClick={() => handleSelectFile(result.path)}
+                    >
+                      <div className="memory-search-result__header">
+                        <span className="memory-search-result__path">{result.path}</span>
+                        <span className="memory-search-result__count">{result.matches.length} match{result.matches.length !== 1 ? 'es' : ''}</span>
+                      </div>
+                      <div className="memory-search-result__matches">
+                        {result.matches.slice(0, 2).map((match, idx) => (
+                          <div key={idx} className="memory-search-result__match">
+                            <span className="memory-search-result__line">{match.line}:</span>
+                            <span className="memory-search-result__content">{match.content}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={<Search size={24} />}
+                  title="No matches found"
+                  description={`No files match "${searchQuery}"`}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              {pinned && (
+                <button
+                  className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''} ${focusIndex === 0 ? 'memory-file--focused' : ''}`}
+                  data-memory-index={0}
+                  onClick={() => handleSelectFile(pinned.path)}
+                >
+                  <span className="memory-file__name">
+                    <span className="memory-file__pin">{'\uD83D\uDCCC'}</span> {pinned.name}
+                  </span>
+                  <span className="memory-file__meta">
+                    {formatRelativeTime(pinned.modifiedAt)} &middot; {formatSize(pinned.size)}
+                  </span>
+                </button>
+              )}
+
+              {groups.map((group) => (
+                <div key={group.label} className="memory-group">
+                  <div className="memory-group__label">{group.label}</div>
+                  {group.files.map((f) => {
+                    const idx = flatFiles.indexOf(f)
+                    return (
+                      <button
+                        key={f.path}
+                        className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''} ${focusIndex === idx ? 'memory-file--focused' : ''}`}
+                        data-memory-index={idx}
+                        onClick={() => handleSelectFile(f.path)}
+                      >
+                        <span className="memory-file__name">{f.name}</span>
+                        <span className="memory-file__meta">
+                          {formatRelativeTime(f.modifiedAt)} &middot; {formatSize(f.size)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+
+              {loadingFiles && files.length === 0 && (
+                <div className="memory-sidebar__loading">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bde-skeleton memory-sidebar__skeleton" />
+                  ))}
+                </div>
+              )}
+              {!loadingFiles && files.length === 0 && (
+                <EmptyState
+                  icon={<FileText size={24} />}
+                  title="No memory files"
+                  description="Create a file to start taking notes"
+                  action={{ label: 'New File', onClick: () => setNewFilePrompt(true) }}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

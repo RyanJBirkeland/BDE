@@ -62,3 +62,140 @@
   background: var(--glass-tint-mid, var(--bde-border));
   border-left: 2px solid var(--bde-accent);
 }
+
+/* Search UI */
+.memory-sidebar__search {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bde-border);
+}
+
+.memory-sidebar__search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.memory-sidebar__search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.memory-sidebar__search-input {
+  width: 100%;
+  padding: 6px 32px 6px 32px;
+  font-size: 13px;
+  background: var(--glass-tint-mid, var(--bde-surface));
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  color: var(--text-primary);
+  transition: border-color 0.15s;
+}
+
+.memory-sidebar__search-input:focus {
+  outline: none;
+  border-color: var(--bde-accent);
+}
+
+.memory-sidebar__search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.memory-sidebar__search-clear {
+  position: absolute;
+  right: 8px;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--bde-radius-sm);
+  transition: background 0.12s;
+}
+
+.memory-sidebar__search-clear:hover {
+  background: var(--bde-hover);
+  color: var(--text-primary);
+}
+
+/* Search Results */
+.memory-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memory-search-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: var(--bde-radius-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.memory-search-result:hover {
+  background: var(--bde-surface-hover, var(--bde-hover));
+}
+
+.memory-search-result--active {
+  background: var(--glass-tint-mid, var(--bde-border));
+  border-left: 2px solid var(--bde-accent);
+}
+
+.memory-search-result__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.memory-search-result__path {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memory-search-result__count {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.memory-search-result__matches {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.memory-search-result__match {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+}
+
+.memory-search-result__line {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.memory-search-result__content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
