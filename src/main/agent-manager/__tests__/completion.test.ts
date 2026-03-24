@@ -69,6 +69,8 @@ describe('resolveSuccess', () => {
       { stdout: '1\n' },                                        // git rev-list --count (has commits)
       { stdout: '' },                                           // git push
       { stdout: '' },                                           // gh pr list (no existing PR)
+      { stdout: 'abc123 first commit\n' },                      // git log (generatePrBody)
+      { stdout: ' file.ts | 10 ++++\n' },                      // git diff --stat (generatePrBody)
       { stdout: 'https://github.com/owner/repo/pull/42\n' },   // gh pr create
     ])
 
@@ -155,6 +157,40 @@ describe('resolveSuccess', () => {
     })
   })
 
+  it('recovers PR info from "already exists" error in gh pr create catch block', async () => {
+    // Use implementation-based mock to track calls by command
+    let callIndex = 0
+    const responses = [
+      { stdout: 'agent/add-login-page\n' },                                        // 0: git rev-parse
+      { stdout: '' },                                                               // 1: git status --porcelain
+      { stdout: '1\n' },                                                            // 2: git rev-list --count
+      { stdout: '' },                                                               // 3: git push
+      { stdout: '' },                                                               // 4: gh pr list (no existing PR — race condition)
+      { stdout: '' },                                                               // 5: git log (generatePrBody)
+      { stdout: '' },                                                               // 6: git diff --stat (generatePrBody)
+      { error: new Error('a pull request already exists for branch agent/add-login-page') }, // 7: gh pr create fails
+      { stdout: '{"url":"https://github.com/owner/repo/pull/77","number":77}\n' }, // 8: gh pr list retry
+    ] as Array<{ stdout?: string; error?: Error }>
+    getCustomMock().mockImplementation((..._args: unknown[]) => {
+      const resp = responses[callIndex] ?? { stdout: '' }
+      callIndex++
+      if (resp.error) return Promise.reject(resp.error)
+      return Promise.resolve({ stdout: resp.stdout ?? '', stderr: '' })
+    })
+
+    await resolveSuccess(opts, noopLogger)
+
+    // Verify total call count matches our expectations
+    expect(callIndex).toBe(9)
+
+    // Should recover and set PR info from the retry fetch
+    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
+      pr_status: 'open',
+      pr_url: 'https://github.com/owner/repo/pull/77',
+      pr_number: 77,
+    })
+  })
+
   it('pushes branch and records notes when gh pr create fails (does not set pr_status=open)', async () => {
     mockExecFileSequence([
       { stdout: 'agent/add-login-page\n' },             // git rev-parse
@@ -162,6 +198,8 @@ describe('resolveSuccess', () => {
       { stdout: '1\n' },                                 // git rev-list --count
       { stdout: '' },                                    // git push
       { stdout: '' },                                    // gh pr list (no existing PR)
+      { stdout: '' },                                    // git log (generatePrBody)
+      { stdout: '' },                                    // git diff --stat (generatePrBody)
       { error: new Error('gh: authentication error') }, // gh pr create fails
     ])
 
