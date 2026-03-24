@@ -9,6 +9,7 @@
 
 /* Header title bar */
 .terminal-view__header {
+  position: relative;
   height: 36px;
   display: flex;
   align-items: center;
@@ -16,6 +17,16 @@
   border-bottom: 1px solid var(--border, var(--bde-border));
   background: var(--glass-tint-dark, var(--bde-surface));
   flex-shrink: 0;
+}
+
+.terminal-view__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
 }
 
 .terminal-view__title {
