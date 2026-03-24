@@ -7,10 +7,11 @@ type TextareaProps = {
   placeholder?: string
   disabled?: boolean
   className?: string
+  'aria-label'?: string
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { value, onChange, onKeyDown, placeholder, disabled = false, className },
+  { value, onChange, onKeyDown, placeholder, disabled = false, className, 'aria-label': ariaLabel },
   forwardedRef,
 ) {
   const innerRef = useRef<HTMLTextAreaElement>(null)
@@ -40,6 +41,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       placeholder={placeholder}
       disabled={disabled}
       rows={1}
+      aria-label={ariaLabel}
     />
   )
 })

@@ -281,6 +281,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         animate="animate"
         exit="exit"
         transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
       >
         <input
           ref={inputRef}
@@ -289,8 +292,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
           placeholder="Type a command\u2026"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search commands"
         />
-        <div className="command-palette__list" ref={listRef}>
+        <div className="command-palette__list" ref={listRef} role="listbox">
           {groups.map((group) => (
             <div key={group.category} className="command-palette__group">
               <div className="command-palette__group-header">{group.label}</div>
@@ -300,6 +304,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
                   <button
                     key={cmd.id}
                     className={`command-palette__item ${idx === selectedIndex ? 'command-palette__item--selected' : ''}`}
+                    role="option"
+                    aria-selected={idx === selectedIndex}
                     onClick={() => cmd.action()}
                     onMouseEnter={() => setSelectedIndex(idx)}
                   >

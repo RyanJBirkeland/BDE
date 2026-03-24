@@ -8,6 +8,7 @@ type InputProps = {
   suffix?: ReactNode
   disabled?: boolean
   className?: string
+  'aria-label'?: string
 }
 
 export function Input({
@@ -18,6 +19,7 @@ export function Input({
   suffix,
   disabled = false,
   className,
+  'aria-label': ariaLabel,
 }: InputProps) {
   const classes = [
     'bde-input',
@@ -38,6 +40,7 @@ export function Input({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        aria-label={ariaLabel}
       />
       {suffix && <span className="bde-input__suffix">{suffix}</span>}
     </div>
