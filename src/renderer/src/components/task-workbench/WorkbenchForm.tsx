@@ -40,6 +40,35 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
 
   useReadinessChecks()
 
+  const setSemanticChecks = useTaskWorkbenchStore((s) => s.setSemanticChecks)
+  const setOperationalChecks = useTaskWorkbenchStore((s) => s.setOperationalChecks)
+
+  // Debounced semantic checks (Tier 2) — runs 2s after spec stops changing
+  useEffect(() => {
+    if (!spec.trim() || spec.length < 50) return
+
+    useTaskWorkbenchStore.setState({ semanticLoading: true })
+
+    const timer = setTimeout(async () => {
+      try {
+        const result = await window.api.workbench.checkSpec({ title, repo, spec })
+        setSemanticChecks([
+          { id: 'clarity', label: 'Clarity', tier: 2, status: result.clarity.status, message: result.clarity.message },
+          { id: 'scope', label: 'Scope', tier: 2, status: result.scope.status, message: result.scope.message },
+          { id: 'files-exist', label: 'Files', tier: 2, status: result.filesExist.status, message: result.filesExist.message },
+        ])
+      } catch {
+        setSemanticChecks([
+          { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Unable to check' },
+          { id: 'scope', label: 'Scope', tier: 2, status: 'warn', message: 'Unable to check' },
+          { id: 'files-exist', label: 'Files', tier: 2, status: 'warn', message: 'Unable to check' },
+        ])
+      }
+    }, 2000)
+
+    return () => clearTimeout(timer)
+  }, [spec, title, repo, setSemanticChecks])
+
   useEffect(() => {
     const t = setTimeout(() => titleRef.current?.focus(), 100)
     return () => clearTimeout(t)
@@ -48,6 +77,28 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   const handleSubmit = useCallback(async (action: 'backlog' | 'queue') => {
     setSubmitting(true)
     try {
+      // Run operational checks for queue
+      if (action === 'queue') {
+        useTaskWorkbenchStore.setState({ operationalLoading: true })
+        const opResult = await window.api.workbench.checkOperational({ repo })
+        const opChecks = [
+          { id: 'auth', label: 'Auth', tier: 3 as const, status: opResult.auth.status, message: opResult.auth.message },
+          { id: 'repo-path', label: 'Repo Path', tier: 3 as const, status: opResult.repoPath.status, message: opResult.repoPath.message },
+          { id: 'git-clean', label: 'Git Clean', tier: 3 as const, status: opResult.gitClean.status, message: opResult.gitClean.message },
+          { id: 'no-conflict', label: 'No Conflict', tier: 3 as const, status: opResult.noConflict.status, message: opResult.noConflict.message },
+          { id: 'slots', label: 'Agent Slots', tier: 3 as const, status: opResult.slotsAvailable.status, message: opResult.slotsAvailable.message },
+        ]
+        setOperationalChecks(opChecks)
+
+        // Block if any operational check fails
+        if (opChecks.some((c) => c.status === 'fail')) {
+          useTaskWorkbenchStore.setState({ checksExpanded: true })
+          setSubmitting(false)
+          return
+        }
+      }
+
+      // Proceed with create/update
       if (mode === 'edit' && taskId) {
         await updateTask(taskId, {
           title, repo, priority, spec,
@@ -69,7 +120,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     } finally {
       setSubmitting(false)
     }
-  }, [mode, taskId, title, repo, priority, spec, createTask, updateTask, resetForm])
+  }, [mode, taskId, title, repo, priority, spec, createTask, updateTask, resetForm, setOperationalChecks])
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)
