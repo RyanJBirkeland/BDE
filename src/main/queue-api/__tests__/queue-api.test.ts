@@ -11,6 +11,8 @@ const mockCreateTask = vi.fn()
 const mockUpdateTask = vi.fn()
 const mockClaimTask = vi.fn()
 const mockReleaseTask = vi.fn()
+const mockGetTasksWithDependencies = vi.fn()
+const mockDeleteTask = vi.fn()
 
 vi.mock('../../data/sprint-queries', () => ({
   getQueueStats: (...args: unknown[]) => mockGetQueueStats(...args),
@@ -20,6 +22,8 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: (...args: unknown[]) => mockUpdateTask(...args),
   claimTask: (...args: unknown[]) => mockClaimTask(...args),
   releaseTask: (...args: unknown[]) => mockReleaseTask(...args),
+  getTasksWithDependencies: (...args: unknown[]) => mockGetTasksWithDependencies(...args),
+  deleteTask: (...args: unknown[]) => mockDeleteTask(...args),
 }))
 
 // ---------------------------------------------------------------------------
@@ -133,6 +137,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockGetSetting.mockReturnValue(null) // no auth by default
   mockGetDb.mockReturnValue({}) // default db mock
+  mockGetTasksWithDependencies.mockResolvedValue([]) // default empty tasks list
+  mockDeleteTask.mockResolvedValue(undefined) // default delete success
 })
 
 // ---------------------------------------------------------------------------
@@ -229,6 +235,133 @@ describe('Queue API', () => {
       const { status, body } = await request('POST', '/queue/tasks', { title: 't' })
       expect(status).toBe(400)
       expect((body as { error: string }).error).toMatch(/repo/)
+    })
+
+    it('rejects invalid depends_on structure', async () => {
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with bad deps',
+        repo: 'my-repo',
+        depends_on: 'invalid'
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/depends_on must be an array/)
+    })
+
+    it('rejects dependency with missing id', async () => {
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with bad deps',
+        repo: 'my-repo',
+        depends_on: [{ type: 'hard' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/dependency must have a valid id/)
+    })
+
+    it('rejects dependency with invalid type', async () => {
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with bad deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'task-1', type: 'invalid' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/dependency type must be/)
+    })
+
+    it('rejects dependencies with non-existent task IDs', async () => {
+      const created = {
+        id: 'new-1',
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'missing-task', type: 'hard' }]
+      }
+      mockCreateTask.mockResolvedValue(created)
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'existing-1', depends_on: null, status: 'done' },
+        { id: 'existing-2', depends_on: null, status: 'queued' }
+      ])
+      mockDeleteTask.mockResolvedValue(undefined)
+
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'missing-task', type: 'hard' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/task IDs do not exist/)
+      expect((body as { error: string }).error).toMatch(/missing-task/)
+      expect(mockDeleteTask).toHaveBeenCalledWith('new-1')
+    })
+
+    it('rejects dependencies that would create a cycle', async () => {
+      const created = {
+        id: 'new-1',
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'task-a', type: 'hard' }]
+      }
+      mockCreateTask.mockResolvedValue(created)
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'task-a', depends_on: [{ id: 'task-b', type: 'hard' }], status: 'queued' },
+        { id: 'task-b', depends_on: [{ id: 'new-1', type: 'hard' }], status: 'queued' }
+      ])
+      mockDeleteTask.mockResolvedValue(undefined)
+
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'task-a', type: 'hard' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/cycle detected/)
+      expect(mockDeleteTask).toHaveBeenCalledWith('new-1')
+    })
+
+    it('rejects self-referencing dependencies', async () => {
+      const created = {
+        id: 'new-1',
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'new-1', type: 'hard' }]
+      }
+      mockCreateTask.mockResolvedValue(created)
+      mockGetTasksWithDependencies.mockResolvedValue([])
+      mockDeleteTask.mockResolvedValue(undefined)
+
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'new-1', type: 'hard' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/cycle detected/)
+      expect(mockDeleteTask).toHaveBeenCalledWith('new-1')
+    })
+
+    it('creates task with valid dependencies', async () => {
+      const created = {
+        id: 'new-1',
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'task-a', type: 'hard' }]
+      }
+      mockCreateTask.mockResolvedValue(created)
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'task-a', depends_on: null, status: 'done' }
+      ])
+
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'task-a', type: 'hard' }]
+      })
+      expect(status).toBe(201)
+      expect(body).toEqual({
+        id: 'new-1',
+        title: 'Task with deps',
+        repo: 'my-repo',
+        dependsOn: [{ id: 'task-a', type: 'hard' }]
+      })
+      expect(mockDeleteTask).not.toHaveBeenCalled()
     })
   })
 
@@ -330,6 +463,11 @@ describe('Queue API', () => {
           { id: 'task-2', type: 'soft' }
         ]
       }
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'abc', depends_on: null, status: 'queued' },
+        { id: 'task-1', depends_on: null, status: 'done' },
+        { id: 'task-2', depends_on: null, status: 'done' }
+      ])
       mockUpdateTask.mockResolvedValue(updated)
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
@@ -393,6 +531,73 @@ describe('Queue API', () => {
         dependsOn: []
       })
       expect(status).toBe(404)
+    })
+
+    it('rejects dependencies with non-existent task IDs', async () => {
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'abc', depends_on: null, status: 'queued' },
+        { id: 'existing-1', depends_on: null, status: 'done' }
+      ])
+
+      const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: [{ id: 'missing-task', type: 'hard' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/task IDs do not exist/)
+      expect((body as { error: string }).error).toMatch(/missing-task/)
+      expect(mockUpdateTask).not.toHaveBeenCalled()
+    })
+
+    it('rejects dependencies that would create a cycle', async () => {
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'abc', depends_on: null, status: 'queued' },
+        { id: 'task-a', depends_on: [{ id: 'task-b', type: 'hard' }], status: 'queued' },
+        { id: 'task-b', depends_on: [{ id: 'abc', type: 'hard' }], status: 'queued' }
+      ])
+
+      const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: [{ id: 'task-a', type: 'hard' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/cycle detected/)
+      expect(mockUpdateTask).not.toHaveBeenCalled()
+    })
+
+    it('rejects self-referencing dependencies', async () => {
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'abc', depends_on: null, status: 'queued' }
+      ])
+
+      const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: [{ id: 'abc', type: 'hard' }]
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/cycle detected/)
+      expect(mockUpdateTask).not.toHaveBeenCalled()
+    })
+
+    it('updates dependencies when validation passes', async () => {
+      const updated = {
+        id: 'abc',
+        depends_on: [{ id: 'task-a', type: 'hard' }]
+      }
+      mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'abc', depends_on: null, status: 'queued' },
+        { id: 'task-a', depends_on: null, status: 'done' }
+      ])
+      mockUpdateTask.mockResolvedValue(updated)
+
+      const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
+        dependsOn: [{ id: 'task-a', type: 'hard' }]
+      })
+      expect(status).toBe(200)
+      expect(body).toEqual({
+        id: 'abc',
+        dependsOn: [{ id: 'task-a', type: 'hard' }]
+      })
+      expect(mockUpdateTask).toHaveBeenCalledWith('abc', {
+        depends_on: [{ id: 'task-a', type: 'hard' }]
+      })
     })
   })
 

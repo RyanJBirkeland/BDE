@@ -11,10 +11,67 @@ import {
   updateTask,
   claimTask,
   releaseTask,
+  getTasksWithDependencies,
+  deleteTask,
 } from '../data/sprint-queries'
 import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-contract'
 import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
+import { detectCycle } from '../agent-manager/dependency-index'
+import type { TaskDependency } from '../../shared/types'
+
+/**
+ * Validates task dependencies for cycle detection and ID existence.
+ * Returns error message if validation fails, null if valid.
+ */
+async function validateDependencies(
+  taskId: string,
+  dependsOn: TaskDependency[]
+): Promise<string | null> {
+  // Check for empty dependencies
+  if (dependsOn.length === 0) {
+    return null
+  }
+
+  // Fetch all existing tasks for validation
+  const allTasks = await getTasksWithDependencies()
+  const existingTaskIds = new Set(allTasks.map(t => t.id))
+
+  // Add the current task ID to the set for self-reference detection
+  existingTaskIds.add(taskId)
+
+  // Validate that all referenced task IDs exist
+  const missingIds: string[] = []
+  for (const dep of dependsOn) {
+    if (!existingTaskIds.has(dep.id)) {
+      missingIds.push(dep.id)
+    }
+  }
+
+  if (missingIds.length > 0) {
+    return `Referenced task IDs do not exist: ${missingIds.join(', ')}`
+  }
+
+  // Build dependency lookup for cycle detection
+  const depsMap = new Map<string, TaskDependency[]>()
+  for (const task of allTasks) {
+    if (task.depends_on) {
+      depsMap.set(task.id, task.depends_on)
+    }
+  }
+
+  const getDepsForTask = (id: string): TaskDependency[] | null => {
+    return depsMap.get(id) ?? null
+  }
+
+  // Detect cycles (including self-reference)
+  const cycle = detectCycle(taskId, dependsOn, getDepsForTask)
+  if (cycle) {
+    return `Dependency cycle detected: ${cycle.join(' → ')}`
+  }
+
+  return null
+}
 
 export async function handleHealth(res: http.ServerResponse): Promise<void> {
   const stats = await getQueueStats()
@@ -72,7 +129,7 @@ export async function handleCreateTask(
     return
   }
 
-  const { title, repo } = body as Record<string, unknown>
+  const { title, repo, depends_on } = body as Record<string, unknown>
   if (typeof title !== 'string' || !title.trim()) {
     sendJson(res, 400, { error: 'title is required' })
     return
@@ -82,7 +139,48 @@ export async function handleCreateTask(
     return
   }
 
+  // Validate depends_on if provided
+  if (depends_on !== null && depends_on !== undefined) {
+    if (!Array.isArray(depends_on)) {
+      sendJson(res, 400, { error: 'depends_on must be an array or null' })
+      return
+    }
+
+    for (const dep of depends_on) {
+      if (!dep || typeof dep !== 'object') {
+        sendJson(res, 400, { error: 'Each dependency must be an object' })
+        return
+      }
+      const { id: depId, type } = dep as Record<string, unknown>
+      if (typeof depId !== 'string' || !depId.trim()) {
+        sendJson(res, 400, { error: 'Each dependency must have a valid id' })
+        return
+      }
+      if (type !== 'hard' && type !== 'soft') {
+        sendJson(res, 400, { error: 'Each dependency type must be "hard" or "soft"' })
+        return
+      }
+    }
+  }
+
+  // Create the task first to get its ID, then validate dependencies
   const task = await createTask(body as Parameters<typeof createTask>[0])
+
+  // If dependencies were provided, validate them (cycle detection + ID existence)
+  if (task.depends_on && task.depends_on.length > 0) {
+    const validationError = await validateDependencies(task.id, task.depends_on)
+    if (validationError) {
+      // Rollback: delete the task we just created
+      try {
+        await deleteTask(task.id)
+      } catch (err) {
+        console.error(`Failed to rollback task ${task.id} after validation failure:`, err)
+      }
+      sendJson(res, 400, { error: validationError })
+      return
+    }
+  }
+
   sendJson(res, 201, toCamelCase(task))
 }
 
@@ -270,12 +368,14 @@ export async function handleUpdateDependencies(
         return
       }
     }
-  }
 
-  // TODO: Add cycle detection validation here
-  // This requires access to the dependency index, which would need to be passed in
-  // or imported from agent-manager. For now, we'll allow the update and rely on
-  // the agent-manager to handle invalid graphs gracefully.
+    // Validate dependencies (cycle detection + ID existence)
+    const validationError = await validateDependencies(id, dependsOn as TaskDependency[])
+    if (validationError) {
+      sendJson(res, 400, { error: validationError })
+      return
+    }
+  }
 
   const snaked = toSnakeCase({ dependsOn })
   let updated: Awaited<ReturnType<typeof updateTask>>
