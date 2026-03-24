@@ -8,6 +8,10 @@ import { updateTask } from '../data/sprint-queries'
 import { getGhRepo } from '../paths'
 import { createAgentRecord, updateAgentMeta } from '../agent-history'
 import { randomUUID } from 'node:crypto'
+import { readFile, stat } from 'node:fs/promises'
+import { extname, basename, join } from 'node:path'
+import { broadcast } from '../broadcast'
+import type { AgentEvent } from '../../shared/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,6 +39,8 @@ export interface RunAgentDeps {
 // Pure helpers
 // ---------------------------------------------------------------------------
 
+const MAX_PLAYGROUND_SIZE = 5 * 1024 * 1024 // 5MB
+
 export function isRateLimitMessage(msg: unknown): boolean {
   if (typeof msg !== 'object' || msg === null) return false
   const m = msg as Record<string, unknown>
@@ -45,6 +51,73 @@ export function getNumericField(msg: unknown, field: string): number | undefined
   if (typeof msg !== 'object' || msg === null) return undefined
   const val = (msg as Record<string, unknown>)[field]
   return typeof val === 'number' ? val : undefined
+}
+
+/**
+ * Detects if a message is a tool_result for a Write tool that created an .html file.
+ * Returns the file path if detected, null otherwise.
+ */
+export function detectHtmlWrite(msg: unknown): string | null {
+  if (typeof msg !== 'object' || msg === null) return null
+  const m = msg as Record<string, unknown>
+
+  // Check if this is a tool_result or result message
+  if (m.type !== 'tool_result' && m.type !== 'result') return null
+
+  // Check if the tool is Write (case-insensitive)
+  const toolName = (m.tool_name as string) ?? (m.name as string) ?? ''
+  if (toolName.toLowerCase() !== 'write') return null
+
+  // Extract file path from the tool input or output
+  // The Write tool typically has input with { file_path: "..." }
+  const input = m.input as Record<string, unknown> | undefined
+  const filePath = input?.file_path as string | undefined
+
+  if (!filePath || extname(filePath).toLowerCase() !== '.html') return null
+
+  return filePath
+}
+
+/**
+ * Attempts to read an HTML file and emit a playground event.
+ * Silently fails if the file doesn't exist or is too large.
+ */
+export async function tryEmitPlaygroundEvent(
+  taskId: string,
+  filePath: string,
+  worktreePath: string,
+  logger: Logger,
+): Promise<void> {
+  try {
+    // Resolve absolute path
+    const absolutePath = filePath.startsWith('/') ? filePath : join(worktreePath, filePath)
+
+    // Check file size
+    const stats = await stat(absolutePath)
+    if (stats.size > MAX_PLAYGROUND_SIZE) {
+      logger.warn(`[playground] File too large (${stats.size} bytes), skipping: ${filePath}`)
+      return
+    }
+
+    // Read file content
+    const html = await readFile(absolutePath, 'utf-8')
+    const filename = basename(absolutePath)
+
+    // Emit playground event
+    const event: AgentEvent = {
+      type: 'agent:playground',
+      filename,
+      html,
+      sizeBytes: stats.size,
+      timestamp: Date.now(),
+    }
+
+    broadcast('agent:event', { agentId: taskId, event })
+    logger.info(`[playground] Emitted playground event for ${filename} (${stats.size} bytes)`)
+  } catch (err) {
+    logger.debug(`[playground] Failed to read HTML file ${filePath}: ${err}`)
+    // Silently ignore — file may not exist yet or may be inaccessible
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -158,6 +231,17 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
       agent.tokensOut = getNumericField(msg, 'tokens_out') ?? agent.tokensOut
       // Track exit code if present (typically in last message)
       exitCode = getNumericField(msg, 'exit_code') ?? exitCode
+
+      // Detect playground HTML writes (when enabled)
+      if (task.playground_enabled) {
+        const htmlPath = detectHtmlWrite(msg)
+        if (htmlPath) {
+          // Fire-and-forget — don't block message loop
+          tryEmitPlaygroundEvent(task.id, htmlPath, worktree.worktreePath, logger).catch(() => {
+            // Already logged inside tryEmitPlaygroundEvent
+          })
+        }
+      }
     }
   } catch (err) {
     logger.error(`[agent-manager] Error consuming messages for task ${task.id}: ${err}`)

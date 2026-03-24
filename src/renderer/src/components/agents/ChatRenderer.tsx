@@ -10,6 +10,7 @@ import { tokens } from '../../design-system/tokens'
 import { ChatBubble } from './ChatBubble'
 import { ThinkingBlock } from './ThinkingBlock'
 import { ToolCallBlock } from './ToolCallBlock'
+import { PlaygroundCard } from './PlaygroundCard'
 
 // --- Chat Block Types (discriminated union) ---
 
@@ -23,6 +24,7 @@ export type ChatBlock =
   | { type: 'error'; message: string; timestamp: number }
   | { type: 'rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
   | { type: 'completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
+  | { type: 'playground'; filename: string; html: string; sizeBytes: number; timestamp: number }
 
 // --- Event Pairing Logic ---
 
@@ -97,6 +99,16 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
           timestamp: ev.timestamp,
         })
         break
+
+      case 'agent:playground':
+        blocks.push({
+          type: 'playground',
+          filename: ev.filename,
+          html: ev.html,
+          sizeBytes: ev.sizeBytes,
+          timestamp: ev.timestamp,
+        })
+        break
     }
   }
 
@@ -164,6 +176,8 @@ function renderBlock(block: ChatBlock) {
       return <RateLimitedBlock attempt={block.attempt} retryDelayMs={block.retryDelayMs} />
     case 'completed':
       return <CompletedBlock exitCode={block.exitCode} costUsd={block.costUsd} durationMs={block.durationMs} />
+    case 'playground':
+      return <PlaygroundCard filename={block.filename} html={block.html} sizeBytes={block.sizeBytes} timestamp={block.timestamp} />
   }
 }
 

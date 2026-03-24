@@ -22,6 +22,12 @@ vi.mock('../ToolCallBlock', () => ({
   ),
 }))
 
+vi.mock('../PlaygroundCard', () => ({
+  PlaygroundCard: ({ filename, sizeBytes }: { filename: string; sizeBytes: number }) => (
+    <div data-testid="playground-card">{filename} ({sizeBytes} bytes)</div>
+  ),
+}))
+
 // Stub virtualizer — jsdom has no layout engine, measurements are all 0
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({ count }: { count: number }) => ({
@@ -163,6 +169,26 @@ describe('pairEvents', () => {
     expect(blocks).toHaveLength(1)
     expect(blocks[0].type).toBe('tool_call')
   })
+
+  it('maps playground events to playground blocks', () => {
+    const events: AgentEvent[] = [
+      {
+        type: 'agent:playground',
+        filename: 'demo.html',
+        html: '<h1>Test</h1>',
+        sizeBytes: 12,
+        timestamp: 100,
+      },
+    ]
+    const blocks = pairEvents(events)
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0].type).toBe('playground')
+    if (blocks[0].type === 'playground') {
+      expect(blocks[0].filename).toBe('demo.html')
+      expect(blocks[0].html).toBe('<h1>Test</h1>')
+      expect(blocks[0].sizeBytes).toBe(12)
+    }
+  })
 })
 
 describe('ChatRenderer component', () => {
@@ -283,5 +309,20 @@ describe('ChatRenderer component', () => {
     render(<ChatRenderer events={events} />)
     expect(screen.getByText('Message one')).toBeInTheDocument()
     expect(screen.getByText('Message two')).toBeInTheDocument()
+  })
+
+  it('renders playground event as playground card', () => {
+    const events: AgentEvent[] = [
+      {
+        type: 'agent:playground',
+        filename: 'preview.html',
+        html: '<html><body>Preview</body></html>',
+        sizeBytes: 30,
+        timestamp: 1000,
+      },
+    ]
+    render(<ChatRenderer events={events} />)
+    expect(screen.getByTestId('playground-card')).toBeInTheDocument()
+    expect(screen.getByText(/preview.html/)).toBeInTheDocument()
   })
 })
