@@ -4,12 +4,20 @@
 import { useEffect, useState } from 'react'
 import { Terminal, StopCircle, Copy } from 'lucide-react'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
-import { NeonBadge } from '../neon/NeonBadge'
+import { NeonBadge, type NeonAccent } from '../neon'
 import { useTerminalStore } from '../../stores/terminal'
 
 interface ConsoleHeaderProps {
   agent: AgentMeta
   events: AgentEvent[]
+}
+
+function getModelAccent(model: string): NeonAccent {
+  const lower = model.toLowerCase()
+  if (lower.includes('opus')) return 'purple'
+  if (lower.includes('sonnet')) return 'cyan'
+  if (lower.includes('haiku')) return 'pink'
+  return 'blue'
 }
 
 function formatDuration(startedAt: string, finishedAt: string | null): string {
@@ -92,7 +100,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps) {
       </div>
 
       {/* Model badge */}
-      <NeonBadge accent="blue" label={agent.model} pulse={isRunning} />
+      <NeonBadge accent={getModelAccent(agent.model)} label={agent.model} pulse={isRunning} />
 
       {/* Meta info */}
       <div className="console-header__meta">
