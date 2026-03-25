@@ -226,9 +226,7 @@ describe('PlaygroundModal — integration', () => {
 // ---------------------------------------------------------------------------
 
 describe('pairEvents — playground event handling', () => {
-  it.todo('skips agent:playground events (not rendered as ChatBlocks) — pairEvents does not yet handle playground events', () => {
-    // The current ChatRenderer pairEvents does not have a case for agent:playground.
-    // Verify it gracefully skips playground events without errors.
+  it('maps playground events to playground blocks', () => {
     const events: AgentEvent[] = [
       { type: 'agent:started', model: 'claude-3', timestamp: 1000 },
       {
@@ -250,13 +248,13 @@ describe('pairEvents — playground event handling', () => {
     ]
 
     const blocks = pairEvents(events)
-    // Should have started + completed (playground is skipped/not handled)
-    expect(blocks.length).toBe(2)
+    expect(blocks.length).toBe(3)
     expect(blocks[0].type).toBe('started')
-    expect(blocks[1].type).toBe('completed')
+    expect(blocks[1].type).toBe('playground')
+    expect(blocks[2].type).toBe('completed')
   })
 
-  it.todo('handles multiple playground events in a stream — pairEvents does not yet handle playground events', () => {
+  it('handles multiple playground events in a stream', () => {
     const events: AgentEvent[] = [
       { type: 'agent:started', model: 'claude-3', timestamp: 1000 },
       { type: 'agent:text', text: 'Building UI...', timestamp: 1500 },
@@ -287,11 +285,13 @@ describe('pairEvents — playground event handling', () => {
     ]
 
     const blocks = pairEvents(events)
-    // started + text + text + completed (2 playground events skipped)
-    expect(blocks.length).toBe(4)
+    // started + text + playground + text + playground + completed
+    expect(blocks.length).toBe(6)
     expect(blocks[0].type).toBe('started')
     expect(blocks[1].type).toBe('text')
-    expect(blocks[2].type).toBe('text')
-    expect(blocks[3].type).toBe('completed')
+    expect(blocks[2].type).toBe('playground')
+    expect(blocks[3].type).toBe('text')
+    expect(blocks[4].type).toBe('playground')
+    expect(blocks[5].type).toBe('completed')
   })
 })
