@@ -115,7 +115,7 @@ export async function tryEmitPlaygroundEvent(
     broadcast('agent:event', { agentId: taskId, event })
     logger.info(`[playground] Emitted playground event for ${filename} (${stats.size} bytes)`)
   } catch (err) {
-    logger.debug(`[playground] Failed to read HTML file ${filePath}: ${err}`)
+    logger.warn(`[playground] Failed to read HTML file ${filePath}: ${err}`)
     // Silently ignore — file may not exist yet or may be inaccessible
   }
 }
