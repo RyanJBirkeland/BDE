@@ -98,7 +98,7 @@ export function CommitBox({
             gap: tokens.space[1],
             padding: `${tokens.space[1]} ${tokens.space[2]}`,
             backgroundColor: canCommit ? tokens.color.accent : tokens.color.surfaceHigh,
-            color: canCommit ? '#000' : tokens.color.textDim,
+            color: canCommit ? 'var(--bde-btn-primary-text)' : tokens.color.textDim,
             border: 'none',
             borderRadius: tokens.radius.sm,
             fontSize: tokens.size.sm,

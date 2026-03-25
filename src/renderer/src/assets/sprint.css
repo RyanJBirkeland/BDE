@@ -1952,7 +1952,7 @@ tr:hover .bde-task-table__action-btn--done {
   background: var(--bde-accent);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--bde-btn-primary-text);
   font-size: 16px;
   cursor: pointer;
   flex-shrink: 0;
@@ -2028,7 +2028,7 @@ tr:hover .bde-task-table__action-btn--done {
   background: var(--bde-accent);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: var(--bde-btn-primary-text);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

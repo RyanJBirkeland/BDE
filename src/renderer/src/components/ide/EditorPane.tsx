@@ -1,10 +1,15 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import MonacoEditor, { loader } from '@monaco-editor/react'
 import type * as Monaco from 'monaco-editor'
 import { useThemeStore } from '../../stores/theme'
 import { getMonacoTheme, getLightMonacoTheme } from '../../lib/monaco-theme'
 
-loader.config({ paths: { vs: undefined as unknown as string } })
+// Pre-load Monaco via dynamic ESM import so it works in Electron without CDN.
+// Vite pre-bundles monaco-editor (see optimizeDeps.include in electron.vite.config.ts).
+const monacoPromise = import('monaco-editor')
+monacoPromise.then((monaco) => {
+  loader.config({ monaco })
+})
 
 export interface EditorPaneProps {
   filePath: string | null

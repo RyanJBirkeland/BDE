@@ -34,7 +34,7 @@ export function WorkbenchActions({ onSaveBacklog, onQueueNow, onLaunch, submitti
       </button>
       <button onClick={onQueueNow} disabled={!canQueue || submitting} style={{
         background: canQueue ? tokens.color.accent : tokens.color.surfaceHigh, border: 'none',
-        borderRadius: tokens.radius.md, color: canQueue ? '#000' : tokens.color.textDim,
+        borderRadius: tokens.radius.md, color: canQueue ? 'var(--bde-btn-primary-text)' : tokens.color.textDim,
         padding: `${tokens.space[2]} ${tokens.space[4]}`, fontSize: tokens.size.md,
         fontWeight: 600, cursor: canQueue && !submitting ? 'pointer' : 'not-allowed',
       }}>
@@ -42,7 +42,7 @@ export function WorkbenchActions({ onSaveBacklog, onQueueNow, onLaunch, submitti
       </button>
       <button onClick={onLaunch} disabled={!canLaunch || submitting} style={{
         background: canLaunch ? tokens.color.accent : tokens.color.surfaceHigh, border: 'none',
-        borderRadius: tokens.radius.md, color: canLaunch ? '#000' : tokens.color.textDim,
+        borderRadius: tokens.radius.md, color: canLaunch ? 'var(--bde-btn-primary-text)' : tokens.color.textDim,
         padding: `${tokens.space[2]} ${tokens.space[4]}`, fontSize: tokens.size.md,
         fontWeight: 600, cursor: canLaunch && !submitting ? 'pointer' : 'not-allowed',
       }}>

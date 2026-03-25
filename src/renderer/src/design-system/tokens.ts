@@ -5,25 +5,30 @@
  * via CSS variables toggled by the theme store.
  */
 export const tokens = {
-  /** Color palette — dark theme defaults */
+  /**
+   * Color palette — resolved via CSS custom properties so they
+   * automatically adapt to the active theme (dark / light).
+   * Use these values in React inline `style` props; CSS-class-based
+   * styling should reference `var(--bde-*)` directly.
+   */
   color: {
-    bg: '#0A0A0A',              // App background
-    surface: '#141414',          // Card / panel background
-    surfaceHigh: '#1E1E1E',      // Elevated surface (modals, popovers)
-    border: '#333333',           // Default border
-    borderHover: '#444444',      // Border on hover/focus
-    accent: '#00D37F',           // Primary accent (green)
-    accentDim: 'rgba(0, 211, 127, 0.15)', // Accent background tint
-    text: '#E8E8E8',             // Primary text
-    textMuted: '#888888',        // Secondary text
-    textDim: '#555555',          // Tertiary / disabled text
-    danger: '#FF4D4D',           // Error / destructive actions
-    dangerDim: 'rgba(255, 77, 77, 0.15)', // Danger background tint
-    warning: '#F59E0B',          // Warning indicators
-    warningDim: 'rgba(245, 158, 11, 0.15)', // Warning background tint
-    info: '#3B82F6',             // Informational highlights
-    infoDim: 'rgba(59, 130, 246, 0.15)', // Info background tint
-    success: '#00D37F',          // Success indicators (same as accent)
+    bg: 'var(--bde-bg)',
+    surface: 'var(--bde-surface)',
+    surfaceHigh: 'var(--bde-surface-high)',
+    border: 'var(--bde-border)',
+    borderHover: 'var(--bde-border-hover)',
+    accent: 'var(--bde-accent)',
+    accentDim: 'var(--bde-accent-dim)',
+    text: 'var(--bde-text)',
+    textMuted: 'var(--bde-text-muted)',
+    textDim: 'var(--bde-text-dim)',
+    danger: 'var(--bde-danger)',
+    dangerDim: 'var(--bde-danger-dim)',
+    warning: 'var(--bde-warning)',
+    warningDim: 'var(--bde-warning-dim)',
+    info: 'var(--bde-info)',
+    infoDim: 'var(--bde-info-dim)',
+    success: 'var(--bde-success)',
   },
   /** Font stacks */
   font: {
@@ -57,11 +62,11 @@ export const tokens = {
     xl: '12px',   // Modals
     full: '9999px', // Pills, avatars
   },
-  /** Box shadows — increasing elevation */
+  /** Box shadows — increasing elevation (theme-aware via CSS variables) */
   shadow: {
-    sm: '0 1px 3px rgba(0,0,0,0.4)',
-    md: '0 4px 12px rgba(0,0,0,0.5)',
-    lg: '0 16px 48px rgba(0,0,0,0.6)',
+    sm: 'var(--bde-shadow-sm)',
+    md: 'var(--bde-shadow-md)',
+    lg: 'var(--bde-shadow-lg)',
   },
   /** Transition durations */
   transition: {

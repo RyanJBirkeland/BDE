@@ -52,7 +52,7 @@
 .playground-modal__overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--bde-overlay);
   z-index: 9999;
   backdrop-filter: blur(4px);
 }

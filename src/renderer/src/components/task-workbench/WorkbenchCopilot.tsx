@@ -202,7 +202,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
             alignSelf: 'flex-end',
             padding: `${tokens.space[2]} ${tokens.space[3]}`,
             background: !input.trim() || loading ? tokens.color.surface : tokens.color.accent,
-            color: !input.trim() || loading ? tokens.color.textMuted : '#000',
+            color: !input.trim() || loading ? tokens.color.textMuted : 'var(--bde-btn-primary-text)',
             border: 'none', borderRadius: tokens.radius.md,
             cursor: !input.trim() || loading ? 'not-allowed' : 'pointer',
             fontSize: tokens.size.sm, fontWeight: 600,

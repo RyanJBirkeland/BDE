@@ -26,6 +26,8 @@ export function IDEView(): React.JSX.Element {
           terminalCollapsed?: boolean
           recentFolders?: string[]
         }
+        // Set watchDir FIRST so ideRootPath is ready before any readFile calls
+        if (state.rootPath) await window.api.watchDir(state.rootPath)
         useIDEStore.setState({
           rootPath: state.rootPath ?? null,
           sidebarCollapsed: state.sidebarCollapsed ?? false,
@@ -43,7 +45,6 @@ export function IDEView(): React.JSX.Element {
             if (match) useIDEStore.getState().setActiveTab(match.id)
           }
         }
-        if (state.rootPath) await window.api.watchDir(state.rootPath)
       } catch (err) {
         console.error('Failed to restore IDE state:', err)
       }
@@ -197,7 +198,7 @@ export function IDEView(): React.JSX.Element {
       <Group orientation="horizontal" style={{ flex: 1, height: '100%', minHeight: 0 }}>
         {!sidebarCollapsed && (
           <>
-            <Panel defaultSize={20} minSize={10} maxSize={40}>
+            <Panel defaultSize={20} minSize={10}>
               <FileSidebar onOpenFile={handleOpenFile} />
             </Panel>
             <Separator className="ide-separator ide-separator--h" />
