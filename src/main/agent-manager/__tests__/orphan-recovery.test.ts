@@ -5,6 +5,10 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
 }))
 
+vi.mock('../../agent-history', () => ({
+  finalizeStaleAgentRuns: vi.fn().mockReturnValue(2),
+}))
+
 import { getOrphanedTasks, updateTask } from '../../data/sprint-queries'
 import { recoverOrphans } from '../orphan-recovery'
 import type { SprintTask } from '../../../shared/types'
@@ -76,5 +80,27 @@ describe('recoverOrphans', () => {
 
     expect(updateTaskMock).not.toHaveBeenCalled()
     expect(recovered).toBe(0)
+  })
+
+  it('clears claimed_by but does not re-queue a task with pr_url', async () => {
+    const task = { ...makeTask('task-pr'), pr_url: 'https://github.com/org/repo/pull/42' }
+    getOrphanedTasksMock.mockResolvedValue([task])
+
+    const recovered = await recoverOrphans(() => false, logger)
+
+    expect(updateTaskMock).toHaveBeenCalledOnce()
+    expect(updateTaskMock).toHaveBeenCalledWith('task-pr', { claimed_by: null })
+    expect(recovered).toBe(0)
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('has PR'))
+  })
+
+  it('calls finalizeStaleAgentRuns and logs stale count', async () => {
+    getOrphanedTasksMock.mockResolvedValue([])
+
+    await recoverOrphans(() => false, logger)
+
+    const { finalizeStaleAgentRuns } = await import('../../agent-history')
+    expect(finalizeStaleAgentRuns).toHaveBeenCalled()
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Finalized 2 stale'))
   })
 })
