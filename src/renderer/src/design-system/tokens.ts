@@ -74,4 +74,16 @@ export const tokens = {
     base: '150ms ease',   // General interactions
     slow: '200ms ease',   // Panel slides, fades
   },
+  neon: {
+    cyan: 'var(--neon-cyan)',
+    pink: 'var(--neon-pink)',
+    blue: 'var(--neon-blue)',
+    purple: 'var(--neon-purple)',
+    orange: 'var(--neon-orange)',
+    red: 'var(--neon-red)',
+    bg: 'var(--neon-bg)',
+    glassBg: 'var(--neon-glass-blur)',
+    glassEdge: 'var(--neon-glass-edge)',
+    glassShadow: 'var(--neon-glass-shadow)',
+  },
 }

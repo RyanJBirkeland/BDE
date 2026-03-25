@@ -84,3 +84,12 @@ export const VARIANTS = {
     animate: { opacity: 1, y: 0 },
   },
 } as const
+
+/** Neon animation timing configs for use with CSS animation-duration */
+export const NEON_TIMING = {
+  pulse: '3s',
+  breathe: '2s',
+  scanline: '30s',
+  gradientRotate: '8s',
+  particleDrift: { min: 20, max: 40 }, // seconds, randomized per particle
+} as const
