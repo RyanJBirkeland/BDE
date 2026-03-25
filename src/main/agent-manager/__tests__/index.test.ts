@@ -162,6 +162,28 @@ describe('createAgentManager', () => {
       await flush()
     })
 
+    it('is idempotent — calling start() twice does not create duplicate loops', async () => {
+      const logger = makeLogger()
+      const mgr = createAgentManager(baseConfig, logger)
+
+      mgr.start()
+
+      // Record call counts after first start
+      const orphanCalls = vi.mocked(recoverOrphans).mock.calls.length
+      const pruneCalls = vi.mocked(pruneStaleWorktrees).mock.calls.length
+
+      mgr.start() // second call should be a no-op
+
+      expect(mgr.getStatus().running).toBe(true)
+
+      // No additional calls should have been made
+      expect(vi.mocked(recoverOrphans)).toHaveBeenCalledTimes(orphanCalls)
+      expect(vi.mocked(pruneStaleWorktrees)).toHaveBeenCalledTimes(pruneCalls)
+
+      await mgr.stop(100)
+      await flush()
+    })
+
     it('runs initial drain after defer period', async () => {
       vi.useFakeTimers()
       const logger = makeLogger()
@@ -513,6 +535,103 @@ describe('createAgentManager', () => {
   })
 
   describe('watchdog', () => {
+    it('aborts agent and marks task error when maxRuntimeMs exceeded', async () => {
+      vi.useFakeTimers()
+
+      const config: AgentManagerConfig = { ...baseConfig, maxRuntimeMs: 100, pollIntervalMs: 999_999 }
+      const task = makeTask()
+      const { handle, abortFn } = makeBlockingHandle()
+
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
+      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
+
+      const logger = makeLogger()
+      const mgr = createAgentManager(config, logger)
+      mgr.start()
+
+      // Advance past INITIAL_DRAIN_DEFER_MS (5000ms) to spawn agent
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(mgr.getStatus().activeAgents.length).toBe(1)
+
+      // Advance past watchdog check interval (10_000ms) — maxRuntimeMs (100ms) is well exceeded
+      await vi.advanceTimersByTimeAsync(10_100)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(abortFn).toHaveBeenCalled()
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Watchdog killing task task-1: max-runtime'),
+      )
+      expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({ status: 'error', notes: 'Max runtime exceeded' }),
+      )
+
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
+
+    it('aborts agent and re-queues task on rate-limit-loop', async () => {
+      vi.useFakeTimers()
+
+      const config: AgentManagerConfig = { ...baseConfig, pollIntervalMs: 999_999 }
+      const task = makeTask()
+
+      // Create a handle that emits 15 rate-limit messages then blocks forever
+      let resolveBlock: (() => void) | undefined
+      const blockPromise = new Promise<void>((r) => { resolveBlock = r })
+      const abortFn = vi.fn(() => { resolveBlock?.() })
+      async function* genRateLimited(): AsyncIterable<unknown> {
+        for (let i = 0; i < 15; i++) {
+          yield { type: 'system', subtype: 'rate_limit' }
+        }
+        await blockPromise
+      }
+      const handle = {
+        messages: genRateLimited(),
+        sessionId: 'rate-limit-session',
+        abort: abortFn,
+        steer: vi.fn().mockResolvedValue(undefined),
+      } as AgentHandle
+
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
+      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
+
+      const logger = makeLogger()
+      const mgr = createAgentManager(config, logger)
+      mgr.start()
+
+      // Advance past INITIAL_DRAIN_DEFER_MS (5000ms) to spawn agent
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      // Let runAgent process the rate-limit messages (async generator yields)
+      for (let i = 0; i < 30; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(mgr.getStatus().activeAgents.length).toBe(1)
+
+      // Advance past watchdog check interval (10_000ms)
+      await vi.advanceTimersByTimeAsync(10_100)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(abortFn).toHaveBeenCalled()
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Watchdog killing task task-1: rate-limit-loop'),
+      )
+      expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({ status: 'queued', claimed_by: null }),
+      )
+
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
+
     it('kills idle agent after timeout', async () => {
       vi.useFakeTimers()
 
