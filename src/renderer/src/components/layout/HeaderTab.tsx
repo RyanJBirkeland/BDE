@@ -37,13 +37,14 @@ export function HeaderTab({
     <div
       className={className}
       onClick={onClick}
+      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       draggable={draggable}
       onDragStart={onDragStart}
       role="tab"
       aria-selected={isActive}
       title={label}
     >
-      {isActive && showDot && <div className="header-tab__dot" />}
+      {showDot && <div className="header-tab__dot" />}
       <span>{label}</span>
       {showClose && (
         <button

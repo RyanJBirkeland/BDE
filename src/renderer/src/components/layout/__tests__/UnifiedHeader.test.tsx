@@ -18,7 +18,7 @@ vi.mock('../../../stores/panelLayout', () => ({
     closeTab: vi.fn(),
     setActiveTab: vi.fn(),
   })),
-  findLeaf: vi.fn((root: any, panelId: string) => panelId === 'p1' ? mockLeaf : null),
+  findLeaf: vi.fn((_root: any, panelId: string) => panelId === 'p1' ? mockLeaf : null),
 }));
 
 vi.mock('../../../stores/ui', () => ({

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react'
 import {
   LayoutDashboard,
   Terminal,
@@ -10,13 +10,13 @@ import {
   Settings,
   GitCommitHorizontal,
   MoreHorizontal,
-  type LucideIcon,
-} from 'lucide-react';
-import { SidebarItem } from './SidebarItem';
-import { OverflowMenu } from './OverflowMenu';
-import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar';
-import { usePanelLayoutStore, getOpenViews } from '../../stores/panelLayout';
-import { useUIStore, type View } from '../../stores/ui';
+  type LucideIcon
+} from 'lucide-react'
+import { SidebarItem } from './SidebarItem'
+import { OverflowMenu } from './OverflowMenu'
+import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar'
+import { usePanelLayoutStore, getOpenViews } from '../../stores/panelLayout'
+import { useUIStore, type View } from '../../stores/ui'
 
 // Icon mapping from ActivityBar NAV_ITEMS
 const VIEW_ICONS: Record<View, LucideIcon> = {
@@ -29,8 +29,8 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   memory: Brain,
   cost: DollarSign,
   settings: Settings,
-  'task-workbench': GitBranch, // Using GitBranch as fallback for task-workbench
-};
+  'task-workbench': GitBranch // Using GitBranch as fallback for task-workbench
+}
 
 const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Dashboard',
@@ -42,8 +42,8 @@ const VIEW_LABELS: Record<View, string> = {
   memory: 'Memory',
   cost: 'Cost Tracker',
   settings: 'Settings',
-  'task-workbench': 'Task Workbench',
-};
+  'task-workbench': 'Task Workbench'
+}
 
 const VIEW_SHORTCUTS: Record<View, string> = {
   dashboard: '⌘1',
@@ -55,77 +55,90 @@ const VIEW_SHORTCUTS: Record<View, string> = {
   memory: '⌘7',
   cost: '⌘8',
   settings: '⌘9',
-  'task-workbench': '⌘0',
-};
-
-interface NeonSidebarProps {
-  model?: string;
+  'task-workbench': '⌘0'
 }
 
-export function NeonSidebar({ model }: NeonSidebarProps) {
-  const [overflowOpen, setOverflowOpen] = useState(false);
-  const moreButtonRef = useRef<HTMLButtonElement>(null);
+interface NeonSidebarProps {
+  model?: string
+}
 
-  const pinnedViews = useSidebarStore((s) => s.pinnedViews);
-  const { pinView, unpinView } = useSidebarStore();
+export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
+  const [overflowOpen, setOverflowOpen] = useState(false)
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
+  const moreButtonRef = useRef<HTMLButtonElement>(null)
 
-  const root = usePanelLayoutStore((s) => s.root);
-  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId);
-  const { splitPanel, addTab } = usePanelLayoutStore();
+  const pinnedViews = useSidebarStore((s) => s.pinnedViews)
+  const { pinView, unpinView } = useSidebarStore()
 
-  const activeView = useUIStore((s) => s.activeView);
-  const setView = useUIStore((s) => s.setView);
+  const root = usePanelLayoutStore((s) => s.root)
+  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
+  const { splitPanel, addTab, closeTab, findPanelByView } = usePanelLayoutStore()
 
-  const openViews = getOpenViews(root);
-  const unpinnedViews = getUnpinnedViews(pinnedViews);
+  const activeView = useUIStore((s) => s.activeView)
+  const setView = useUIStore((s) => s.setView)
 
-  const handleActivate = (view: View) => {
-    setView(view);
-  };
+  const openViews = getOpenViews(root)
+  const unpinnedViews = getUnpinnedViews(pinnedViews)
 
-  const handleContextAction = (action: string, view: View) => {
+  const handleActivate = (view: View): void => {
+    setView(view)
+  }
+
+  const handleContextAction = (action: string, view: View): void => {
     switch (action) {
       case 'unpin':
-        unpinView(view);
-        break;
+        unpinView(view)
+        break
       case 'open-right':
         if (focusedPanelId) {
-          splitPanel(focusedPanelId, 'horizontal', view);
+          splitPanel(focusedPanelId, 'horizontal', view)
         }
-        break;
+        break
       case 'open-below':
         if (focusedPanelId) {
-          splitPanel(focusedPanelId, 'vertical', view);
+          splitPanel(focusedPanelId, 'vertical', view)
         }
-        break;
+        break
       case 'open-tab':
         if (focusedPanelId) {
-          addTab(focusedPanelId, view);
+          addTab(focusedPanelId, view)
         }
-        break;
-      case 'close-all':
-        // TODO: Implement close all functionality
-        break;
+        break
+      case 'close-all': {
+        // Repeatedly close any panel containing this view until none remain
+        let leaf = findPanelByView(view)
+        while (leaf) {
+          const tabIdx = leaf.tabs.findIndex((t) => t.viewKey === view)
+          if (tabIdx >= 0) {
+            closeTab(leaf.panelId, tabIdx)
+          }
+          leaf = usePanelLayoutStore.getState().findPanelByView(view)
+        }
+        break
+      }
     }
-  };
+  }
 
-  const handlePin = (view: View) => {
-    pinView(view);
-  };
+  const handlePin = (view: View): void => {
+    pinView(view)
+  }
 
-  const toggleOverflow = () => {
-    setOverflowOpen(!overflowOpen);
-  };
+  const toggleOverflow = (): void => {
+    if (!overflowOpen && moreButtonRef.current) {
+      setAnchorRect(moreButtonRef.current.getBoundingClientRect())
+    }
+    setOverflowOpen(!overflowOpen)
+  }
 
   return (
     <div className="neon-sidebar">
       <nav className="neon-sidebar__nav">
         {pinnedViews.map((view) => {
-          const Icon = VIEW_ICONS[view];
-          const label = VIEW_LABELS[view];
-          const shortcut = VIEW_SHORTCUTS[view];
-          const isActive = activeView === view;
-          const isOpen = openViews.includes(view) && !isActive;
+          const Icon = VIEW_ICONS[view]
+          const label = VIEW_LABELS[view]
+          const shortcut = VIEW_SHORTCUTS[view]
+          const isActive = activeView === view
+          const isOpen = openViews.includes(view) && !isActive
 
           return (
             <SidebarItem
@@ -139,7 +152,7 @@ export function NeonSidebar({ model }: NeonSidebarProps) {
               onActivate={handleActivate}
               onContextAction={handleContextAction}
             />
-          );
+          )
         })}
 
         {/* More button */}
@@ -157,26 +170,22 @@ export function NeonSidebar({ model }: NeonSidebarProps) {
       </nav>
 
       <div className="neon-sidebar__footer">
-        {model && (
-          <div className="sidebar-model-badge">
-            {model}
-          </div>
-        )}
+        {model && <div className="sidebar-model-badge">{model}</div>}
       </div>
 
       {/* Overflow menu */}
-      {overflowOpen && moreButtonRef.current && (
+      {overflowOpen && anchorRect && (
         <OverflowMenu
           unpinnedViews={unpinnedViews}
-          anchorRect={moreButtonRef.current.getBoundingClientRect()}
+          anchorRect={anchorRect}
           onPin={handlePin}
-          onActivate={(view) => {
-            handleActivate(view);
-            setOverflowOpen(false);
+          onActivate={(view): void => {
+            handleActivate(view)
+            setOverflowOpen(false)
           }}
-          onClose={() => setOverflowOpen(false)}
+          onClose={(): void => setOverflowOpen(false)}
         />
       )}
     </div>
-  );
+  )
 }
