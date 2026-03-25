@@ -270,3 +270,15 @@ export async function listAgentRunsByTaskId(
   initAgentHistory()
   return _listAgentRunsByTaskId(getDb(), sprintTaskId, limit)
 }
+
+/** Mark all agent_runs stuck in 'running' older than maxAgeMs as 'failed'. */
+export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000): number {
+  const db = getDb()
+  const cutoff = new Date(Date.now() - maxAgeMs).toISOString()
+  const stmt = db.prepare(
+    `UPDATE agent_runs SET status = 'failed', finished_at = datetime('now')
+     WHERE status = 'running' AND started_at < ?`
+  )
+  const result = stmt.run(cutoff)
+  return result.changes
+}

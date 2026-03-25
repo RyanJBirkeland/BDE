@@ -21,5 +21,12 @@ export async function recoverOrphans(
     recovered++
   }
 
+  // Also clean up stale agent_runs records (SDK agents have pid=null)
+  try {
+    const { finalizeStaleAgentRuns } = await import('../agent-history')
+    const cleaned = finalizeStaleAgentRuns()
+    if (cleaned > 0) logger.info(`[agent-manager] Finalized ${cleaned} stale agent_runs records`)
+  } catch { /* best-effort */ }
+
   return recovered
 }
