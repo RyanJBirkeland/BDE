@@ -108,6 +108,7 @@ vi.stubGlobal('api', {
   },
   openDirectoryDialog: vi.fn().mockResolvedValue(null),
   pollPrStatuses: vi.fn().mockResolvedValue([]),
+  getPrList: vi.fn().mockResolvedValue({ prs: [], checks: {} }),
   killAgent: vi.fn().mockResolvedValue({ ok: true }),
   onExternalSprintChange: vi.fn().mockReturnValue(() => {}),
   agentManager: {
@@ -121,5 +122,9 @@ vi.stubGlobal('api', {
     kill: vi.fn().mockResolvedValue(undefined),
     onData: vi.fn().mockReturnValue(() => {}),
     onExit: vi.fn(),
+  },
+  dashboard: {
+    completionsPerHour: vi.fn().mockResolvedValue([]),
+    recentEvents: vi.fn().mockResolvedValue([]),
   },
 })
