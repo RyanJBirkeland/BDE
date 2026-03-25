@@ -88,10 +88,35 @@ describe('PanelLeaf', () => {
     expect(await screen.findByTestId('agents-view')).toBeInTheDocument()
   })
 
-  it('renders the tab bar with tab labels', async () => {
-    const node = makeLeaf()
+  it('does not render tab bar when panel is focused', async () => {
+    mockFocusedPanelId = 'panel-1'
+    const node = makeLeaf({ panelId: 'panel-1' })
     render(<PanelLeaf node={node} />)
-    expect(screen.getAllByText('Agents').length).toBeGreaterThanOrEqual(1)
+    // Should not have slim label when focused
+    expect(screen.queryByText('Agents', { selector: '.panel-label-slim *' })).not.toBeInTheDocument()
+  })
+
+  it('renders slim label when panel is not focused', async () => {
+    mockFocusedPanelId = 'panel-other'
+    const node = makeLeaf({ panelId: 'panel-1', tabs: [{ viewKey: 'agents', label: 'Agents' }] })
+    const { container } = render(<PanelLeaf node={node} />)
+    // Should have slim label with tab name
+    const slimLabel = container.querySelector('.panel-label-slim')
+    expect(slimLabel).toBeInTheDocument()
+    expect(slimLabel).toHaveTextContent('Agents')
+  })
+
+  it('slim label focuses panel when clicked', async () => {
+    const user = userEvent.setup()
+    mockFocusedPanelId = 'panel-other'
+    const node = makeLeaf({ panelId: 'panel-1' })
+    const { container } = render(<PanelLeaf node={node} />)
+
+    const slimLabel = container.querySelector('.panel-label-slim')
+    expect(slimLabel).toBeInTheDocument()
+
+    await user.click(slimLabel as HTMLElement)
+    expect(mockFocusPanel).toHaveBeenCalledWith('panel-1')
   })
 
   it('clicking the panel container calls focusPanel', async () => {

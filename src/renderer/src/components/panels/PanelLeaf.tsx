@@ -2,7 +2,6 @@ import React, { Suspense, useState, useCallback, useRef } from 'react'
 import { PanelLeafNode, View, DropZone, usePanelLayoutStore } from '../../stores/panelLayout'
 import { ErrorBoundary } from '../ui/ErrorBoundary'
 import { tokens } from '../../design-system/tokens'
-import { PanelTabBar } from './PanelTabBar'
 import { PanelDropOverlay } from './PanelDropOverlay'
 import { AgentsView } from '../../views/AgentsView'
 
@@ -178,7 +177,14 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
         position: 'relative',
       }}
     >
-      <PanelTabBar node={node} />
+      {isFocused ? null : (
+        <div
+          className="panel-label-slim"
+          onClick={() => focusPanel(node.panelId)}
+        >
+          {node.tabs[node.activeTab]?.label ?? 'Untitled'}
+        </div>
+      )}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {node.tabs.map((tab, index) => {
           const isActive = index === node.activeTab
