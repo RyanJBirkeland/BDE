@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import path from 'node:path'
 import os from 'node:os'
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
 
 // Mock node:child_process before importing module under test
 vi.mock('node:child_process', () => {
@@ -199,6 +199,184 @@ describe('setupWorktree', () => {
       (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('-D')
     )
     expect(branchDeleteCall).toBeDefined()
+  })
+
+  it('force-removes stale worktree when git worktree add fails with "already exists"', async () => {
+    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
+    const branch = 'agent/stale-test-task-sta'
+
+    // Porcelain worktree list output with a stale entry matching the branch
+    const porcelainList = [
+      `worktree /some/stale/path`,
+      `branch refs/heads/${branch}`,
+      '',
+      `worktree ${mockRepoPath}`,
+      `branch refs/heads/main`,
+      '',
+    ].join('\n')
+
+    let worktreeAddCount = 0
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+
+      // First worktree add fails, second succeeds
+      if (gitArgs[0] === 'worktree' && gitArgs[1] === 'add') {
+        worktreeAddCount++
+        if (worktreeAddCount === 1) {
+          const err = new Error('fatal: branch already exists')
+          if (typeof cb === 'function') cb(err, '', '')
+          return Object.assign(Promise.reject(err), { child: null }) as unknown as ChildProcess
+        }
+      }
+
+      // worktree list returns porcelain output with stale entry
+      if (gitArgs[0] === 'worktree' && gitArgs[1] === 'list') {
+        if (typeof cb === 'function') cb(null, { stdout: porcelainList, stderr: '' })
+        return Object.assign(Promise.resolve({ stdout: porcelainList, stderr: '' }), { child: null }) as unknown as ChildProcess
+      }
+
+      // rev-list returns 0 (no unpushed commits)
+      if (gitArgs[0] === 'rev-list') {
+        if (typeof cb === 'function') cb(null, { stdout: '0', stderr: '' })
+        return Object.assign(Promise.resolve({ stdout: '0', stderr: '' }), { child: null }) as unknown as ChildProcess
+      }
+
+      // Everything else succeeds
+      if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
+    })
+
+    const result = await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'task-stale',
+      title: 'Stale test',
+      logger: logger as unknown as import('../types').Logger,
+    })
+
+    expect(result.branch).toBe(branch)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Force-removing stale worktree')
+    )
+    // Verify force-remove was called on the stale path
+    const forceRemoveCall = execFileMock.mock.calls.find(
+      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'worktree' && c[1][1] === 'remove' && c[1].includes('/some/stale/path')
+    )
+    expect(forceRemoveCall).toBeDefined()
+  })
+
+  it('pushes unpushed commits before deleting stale branch', async () => {
+    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
+    const branch = 'agent/push-test-task-pus'
+
+    let worktreeAddCount = 0
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+
+      // First worktree add fails
+      if (gitArgs[0] === 'worktree' && gitArgs[1] === 'add') {
+        worktreeAddCount++
+        if (worktreeAddCount === 1) {
+          const err = new Error('fatal: branch already exists')
+          if (typeof cb === 'function') cb(err, '', '')
+          return Object.assign(Promise.reject(err), { child: null }) as unknown as ChildProcess
+        }
+      }
+
+      // rev-list returns 3 unpushed commits
+      if (gitArgs[0] === 'rev-list' && gitArgs[1] === '--count') {
+        if (typeof cb === 'function') cb(null, { stdout: '3', stderr: '' })
+        return Object.assign(Promise.resolve({ stdout: '3', stderr: '' }), { child: null }) as unknown as ChildProcess
+      }
+
+      // Everything else succeeds
+      if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
+    })
+
+    const result = await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'task-push',
+      title: 'Push test',
+      logger: logger as unknown as import('../types').Logger,
+    })
+
+    expect(result.branch).toBe(branch)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('unpushed commits')
+    )
+    // Verify push was called
+    const pushCall = execFileMock.mock.calls.find(
+      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'push'
+    )
+    expect(pushCall).toBeDefined()
+  })
+
+  it('throws original error for non-branch-exists failures', async () => {
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+
+      // worktree add fails with a non-"already exists" error
+      if (gitArgs[0] === 'worktree' && gitArgs[1] === 'add') {
+        const err = new Error('fatal: unable to create worktree')
+        if (typeof cb === 'function') cb(err, '', '')
+        return Object.assign(Promise.reject(err), { child: null }) as unknown as ChildProcess
+      }
+
+      // Everything else succeeds (cleanup calls)
+      if (typeof cb === 'function') cb(null, '', '')
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
+    })
+
+    await expect(
+      setupWorktree({
+        repoPath: mockRepoPath,
+        worktreeBase: tmpDir,
+        taskId: 'task-fail',
+        title: 'Fail test',
+      })
+    ).rejects.toThrow('fatal: unable to create worktree')
+
+    // Lock should have been released (lock file should not exist)
+    const repoSlugVal = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
+    const lockFile = path.join(tmpDir, '.locks', `${repoSlugVal}.lock`)
+    expect(existsSync(lockFile)).toBe(false)
+  })
+
+  it('cleans up and throws when retry also fails', async () => {
+    // All worktree add calls fail with "already exists"
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+
+      if (gitArgs[0] === 'worktree' && gitArgs[1] === 'add') {
+        const err = new Error('fatal: branch already exists')
+        if (typeof cb === 'function') cb(err, '', '')
+        return Object.assign(Promise.reject(err), { child: null }) as unknown as ChildProcess
+      }
+
+      // Everything else succeeds
+      if (typeof cb === 'function') cb(null, '', '')
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
+    })
+
+    await expect(
+      setupWorktree({
+        repoPath: mockRepoPath,
+        worktreeBase: tmpDir,
+        taskId: 'task-retry',
+        title: 'Retry test',
+      })
+    ).rejects.toThrow('already exists')
+
+    // Lock should have been released
+    const repoSlugVal = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
+    const lockFile = path.join(tmpDir, '.locks', `${repoSlugVal}.lock`)
+    expect(existsSync(lockFile)).toBe(false)
   })
 
   it('removes corrupted lock file and proceeds', async () => {
