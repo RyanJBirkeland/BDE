@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react'
 import { Bot, Cpu, Clock } from 'lucide-react'
 import type { AgentMeta } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
+import { NeonCard } from '../neon/NeonCard'
+import { type NeonAccent, neonVar } from '../neon/types'
 
 interface AgentCardProps {
   agent: AgentMeta
@@ -13,12 +15,12 @@ interface AgentCardProps {
   onClick: () => void
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  running: tokens.color.success,
-  done: tokens.color.textMuted,
-  failed: tokens.color.danger,
-  cancelled: tokens.color.warning,
-  unknown: tokens.color.textDim,
+const STATUS_ACCENTS: Record<string, NeonAccent> = {
+  running: 'cyan',
+  done: 'purple',
+  failed: 'red',
+  cancelled: 'orange',
+  unknown: 'purple',
 }
 
 function formatDuration(startedAt: string, finishedAt: string | null): string {
@@ -31,7 +33,7 @@ function formatDuration(startedAt: string, finishedAt: string | null): string {
 }
 
 export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
-  const statusColor = STATUS_COLORS[agent.status] ?? tokens.color.textDim
+  const accent = STATUS_ACCENTS[agent.status] ?? 'purple'
   const isRunning = agent.status === 'running'
   const SourceIcon = agent.source === 'bde' ? Bot : Cpu
 
@@ -47,60 +49,70 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
     <button
       onClick={onClick}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: tokens.space[1],
+        all: 'unset',
+        display: 'block',
         width: '100%',
         padding: `${tokens.space[2]} ${tokens.space[3]}`,
-        background: selected ? tokens.color.surfaceHigh : 'transparent',
-        border: 'none',
-        borderLeft: `2px solid ${selected ? tokens.color.accent : 'transparent'}`,
         cursor: 'pointer',
-        textAlign: 'left',
-        transition: tokens.transition.fast,
+        boxSizing: 'border-box',
       }}
     >
-      {/* Top row: status dot + task title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
-        <span
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: tokens.radius.full,
-            background: statusColor,
-            flexShrink: 0,
-            animation: isRunning ? 'pulse 2s infinite' : undefined,
-          }}
-        />
-        <span
-          style={{
-            fontSize: tokens.size.md,
-            color: tokens.color.text,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            flex: 1,
-          }}
-        >
-          {agent.task.slice(0, 80)}
-        </span>
-      </div>
-      {/* Bottom row: meta info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], paddingLeft: 14 }}>
-        <SourceIcon size={10} color={tokens.color.textDim} />
-        <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
-          {agent.model}
-        </span>
-        <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
-        <Clock size={10} color={tokens.color.textDim} />
-        <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
-          {formatDuration(agent.startedAt, agent.finishedAt)}
-        </span>
-        <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
-        <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
-          {agent.repo}
-        </span>
-      </div>
+      <NeonCard
+        accent={accent}
+        style={{
+          padding: tokens.space[2],
+          boxShadow: selected
+            ? `0 0 16px ${neonVar(accent, 'glow')}, var(--neon-glass-shadow), var(--neon-glass-edge)`
+            : undefined,
+          border: selected ? `1px solid ${neonVar(accent, 'color')}` : undefined,
+          transform: selected ? 'scale(1.02)' : undefined,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
+          {/* Top row: status dot + task title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: tokens.radius.full,
+                background: neonVar(accent, 'color'),
+                boxShadow: `0 0 8px ${neonVar(accent, 'glow')}`,
+                flexShrink: 0,
+                animation: isRunning ? 'pulse 2s infinite' : undefined,
+              }}
+            />
+            <span
+              style={{
+                fontSize: tokens.size.md,
+                color: tokens.color.text,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }}
+            >
+              {agent.task.slice(0, 80)}
+            </span>
+          </div>
+          {/* Bottom row: meta info */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], paddingLeft: 14 }}>
+            <SourceIcon size={10} color={tokens.color.textDim} />
+            <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
+              {agent.model}
+            </span>
+            <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
+            <Clock size={10} color={neonVar(accent, 'color')} />
+            <span style={{ fontSize: tokens.size.xs, color: neonVar(accent, 'color') }}>
+              {formatDuration(agent.startedAt, agent.finishedAt)}
+            </span>
+            <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
+            <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
+              {agent.repo}
+            </span>
+          </div>
+        </div>
+      </NeonCard>
     </button>
   )
 }

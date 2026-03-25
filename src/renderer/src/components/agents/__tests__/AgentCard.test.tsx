@@ -67,17 +67,21 @@ describe('AgentCard', () => {
   it('applies selected style when selected=true', () => {
     const agent = makeAgent()
     const { container } = render(<AgentCard {...defaultProps} agent={agent} selected={true} />)
-    const button = container.querySelector('button')
-    expect(button).toBeInTheDocument()
-    // Selected button has a non-transparent background
-    expect(button?.style.background).not.toBe('transparent')
+    const neonCard = container.querySelector('.neon-card')
+    expect(neonCard).toBeInTheDocument()
+    // Selected card has enhanced glow and border
+    const cardStyle = (neonCard as HTMLElement)?.style
+    expect(cardStyle.boxShadow).toContain('glow')
   })
 
-  it('applies transparent background when not selected', () => {
+  it('applies default style when not selected', () => {
     const agent = makeAgent()
     const { container } = render(<AgentCard {...defaultProps} agent={agent} selected={false} />)
-    const button = container.querySelector('button')
-    expect(button?.style.background).toBe('transparent')
+    const neonCard = container.querySelector('.neon-card')
+    expect(neonCard).toBeInTheDocument()
+    // Non-selected card doesn't have enhanced styling
+    const cardStyle = (neonCard as HTMLElement)?.style
+    expect(cardStyle.transform).not.toBe('scale(1.02)')
   })
 
   it('shows status dot for running agent', () => {
