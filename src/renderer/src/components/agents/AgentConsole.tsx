@@ -12,6 +12,8 @@ import { ConsoleHeader } from './ConsoleHeader'
 import { ConsoleLine } from './ConsoleLine'
 import { CommandBar } from './CommandBar'
 
+const EMPTY_EVENTS: never[] = []
+
 interface AgentConsoleProps {
   agentId: string
   onSteer: (message: string) => void
@@ -26,7 +28,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
   // Load agent meta and events
   const agents = useAgentHistoryStore((s) => s.agents)
   const agent = agents.find((a) => a.id === agentId)
-  const events = useAgentEventsStore((s) => s.events[agentId] ?? [])
+  const events = useAgentEventsStore((s) => s.events[agentId] ?? EMPTY_EVENTS)
 
   const blocks = useMemo(() => pairEvents(events), [events])
 
