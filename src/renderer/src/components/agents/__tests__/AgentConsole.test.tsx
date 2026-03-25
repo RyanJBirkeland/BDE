@@ -78,13 +78,11 @@ describe('AgentConsole', () => {
   const mockEvents: AgentEvent[] = [
     {
       type: 'agent:started',
-      agentId: 'test-agent-1',
       model: 'opus-4',
       timestamp: Date.now() - 60000,
     },
     {
       type: 'agent:text',
-      agentId: 'test-agent-1',
       text: 'Starting task...',
       timestamp: Date.now() - 50000,
     },

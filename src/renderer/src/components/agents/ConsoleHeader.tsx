@@ -62,7 +62,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps) {
 
   const handleStop = async () => {
     try {
-      await window.api.agents.stop({ id: agent.id })
+      await window.api.killAgent(agent.id)
     } catch (err) {
       console.error('Failed to stop agent:', err)
     }
