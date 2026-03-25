@@ -71,7 +71,7 @@ describe('resolveDependents', () => {
     expect(updateTask).toHaveBeenCalledWith('B', { status: 'queued' })
   })
 
-  it('keeps dependent blocked when hard dep fails', async () => {
+  it('keeps dependent blocked when hard dep fails (updates blocking notes)', async () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'failed', depends_on: null },
@@ -81,10 +81,11 @@ describe('resolveDependents', () => {
 
     await resolveDependents('A', 'failed', index, getTask, updateTask)
 
-    expect(updateTask).not.toHaveBeenCalled()
+    // Task stays blocked but auto-block notes are updated
+    expect(updateTask).toHaveBeenCalledWith('B', { notes: '[auto-block] Blocked by: A' })
   })
 
-  it('keeps dependent blocked when hard dep is cancelled', async () => {
+  it('keeps dependent blocked when hard dep is cancelled (updates blocking notes)', async () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'cancelled', depends_on: null },
@@ -94,7 +95,8 @@ describe('resolveDependents', () => {
 
     await resolveDependents('A', 'cancelled', index, getTask, updateTask)
 
-    expect(updateTask).not.toHaveBeenCalled()
+    // Task stays blocked but auto-block notes are updated
+    expect(updateTask).toHaveBeenCalledWith('B', { notes: '[auto-block] Blocked by: A' })
   })
 
   it('unblocks dependent when soft dep fails', async () => {
@@ -123,7 +125,7 @@ describe('resolveDependents', () => {
     expect(updateTask).not.toHaveBeenCalled()
   })
 
-  it('fan-in: does not unblock when only some deps are satisfied', async () => {
+  it('fan-in: does not unblock when only some deps are satisfied (updates blocking notes)', async () => {
     // C depends on A (hard) and B (hard); A is done but B is still active
     const index = makeIndex({ A: ['C'], B: ['C'] })
     const tasks: Record<string, MockTask> = {
@@ -135,7 +137,8 @@ describe('resolveDependents', () => {
 
     await resolveDependents('A', 'done', index, getTask, updateTask)
 
-    expect(updateTask).not.toHaveBeenCalled()
+    // C stays blocked but auto-block notes are updated with remaining blocker
+    expect(updateTask).toHaveBeenCalledWith('C', { notes: '[auto-block] Blocked by: B' })
   })
 
   it('fan-in: unblocks when last dep is satisfied', async () => {
