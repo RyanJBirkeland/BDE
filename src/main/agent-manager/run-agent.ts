@@ -188,6 +188,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     tokensOut: 0,
   }
   activeAgents.set(task.id, agent)
+  let lastAgentOutput = ''
   // Persist agent_run_id so LogDrawer can find logs after restart
   await updateTask(task.id, { agent_run_id: agentRunId }).catch((err) =>
     logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
@@ -240,6 +241,13 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
           tryEmitPlaygroundEvent(task.id, htmlPath, worktree.worktreePath, logger).catch(() => {
             // Already logged inside tryEmitPlaygroundEvent
           })
+        }
+      }
+      // Capture last assistant text for diagnostics
+      if (typeof msg === 'object' && msg !== null) {
+        const m = msg as Record<string, unknown>
+        if (m.type === 'assistant' && typeof m.text === 'string') {
+          lastAgentOutput = (m.text as string).slice(-500)
         }
       }
     }
@@ -308,6 +316,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
         title: task.title,
         ghRepo,
         onTaskTerminal,
+        agentSummary: lastAgentOutput || null,
       }, logger)
     } catch (err) {
       logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)

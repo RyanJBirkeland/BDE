@@ -13,6 +13,7 @@ export interface ResolveSuccessOpts {
   title: string
   ghRepo: string
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
+  agentSummary?: string | null
 }
 
 export interface ResolveFailureOpts {
@@ -58,7 +59,7 @@ async function generatePrBody(worktreePath: string, branch: string): Promise<str
 }
 
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, ghRepo, onTaskTerminal } = opts
+  const { taskId, worktreePath, title, ghRepo, onTaskTerminal, agentSummary } = opts
 
   // 1. Detect current branch
   let branch: string
@@ -114,7 +115,10 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
       logger.warn(`[completion] Task ${taskId}: no commits to push on branch ${branch} — marking error`)
-      await updateTask(taskId, { status: 'error', completed_at: new Date().toISOString(), notes: 'Agent produced no commits', claimed_by: null }).catch((e) =>
+      const summaryNote = agentSummary
+        ? `Agent produced no commits. Last output: ${agentSummary.slice(0, 300)}`
+        : 'Agent produced no commits (no output captured)'
+      await updateTask(taskId, { status: 'error', completed_at: new Date().toISOString(), notes: summaryNote, claimed_by: null }).catch((e) =>
         logger.warn(`[completion] Failed to update task ${taskId} after empty branch: ${e}`)
       )
       await onTaskTerminal(taskId, 'error')
