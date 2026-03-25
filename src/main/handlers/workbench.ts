@@ -14,6 +14,60 @@ import { checkSpecSemantic } from '../spec-semantic-check'
 
 const execFileAsync = promisify(execFile)
 
+/** Active streaming processes, keyed by streamId. */
+const activeStreams = new Map<string, import('child_process').ChildProcess>()
+
+/**
+ * Run `claude -p` with streaming — pushes stdout chunks to the
+ * provided callback as they arrive. Returns the full output on completion.
+ */
+function runClaudeStreaming(
+  prompt: string,
+  onChunk: (chunk: string) => void,
+  streamId: string,
+  timeoutMs = 180_000
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('claude', ['-p', '--output-format', 'text'], {
+      env: buildAgentEnv(),
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    activeStreams.set(streamId, child)
+
+    let stdout = ''
+    let stderr = ''
+    const timer = setTimeout(() => {
+      child.kill()
+      activeStreams.delete(streamId)
+      reject(new Error('Claude CLI timed out'))
+    }, timeoutMs)
+
+    child.stdout.on('data', (d: Buffer) => {
+      const chunk = d.toString()
+      stdout += chunk
+      onChunk(chunk)
+    })
+    child.stderr.on('data', (d: Buffer) => { stderr += d.toString() })
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      activeStreams.delete(streamId)
+      if (code === 0) {
+        resolve(stdout.trim())
+      } else {
+        reject(new Error(stderr.trim() || `claude exited with code ${code}`))
+      }
+    })
+    child.on('error', (err) => {
+      clearTimeout(timer)
+      activeStreams.delete(streamId)
+      reject(err)
+    })
+
+    child.stdin.write(prompt)
+    child.stdin.end()
+  })
+}
+
 /** Run `claude -p` with prompt piped via stdin (execFileAsync doesn't support `input`). */
 function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -62,7 +116,14 @@ export function buildChatPrompt(
     .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
     .join('\n\n')
 
-  return `You are an AI assistant helping craft a coding agent task. You have context about the task being created.
+  return `You are a text-only assistant helping craft a coding agent task. You have context about the task being created.
+
+CONSTRAINTS:
+- You are a text-only assistant. You cannot open URLs, render previews, generate images, or use tools.
+- Keep responses focused and under 500 words. Use markdown for structure.
+- When asked to research, reference specific file paths from the codebase.
+- When asked to draft spec sections, use markdown with ## headings.
+- Do not promise capabilities you do not have (opening browsers, visual mockups, etc.).
 
 ${contextBlock}
 
@@ -70,7 +131,7 @@ ${contextBlock}
 
 ${history}
 
-Respond helpfully and concisely. If asked to research, reference specific file paths. If asked to draft spec sections, use markdown with ## headings.`
+Respond helpfully and concisely.`
 }
 
 export function buildSpecGenerationPrompt(input: {
@@ -258,6 +319,49 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     } catch (err) {
       return { content: `Error: ${(err as Error).message}` }
     }
+  })
+
+  // --- AI-powered streaming chat ---
+  safeHandle('workbench:chatStream', async (e, input) => {
+    const prompt = buildChatPrompt(input.messages, input.formContext)
+    const streamId = `copilot-${Date.now()}`
+
+    // Fire-and-forget: stream runs in background, pushes chunks to renderer
+    runClaudeStreaming(
+      prompt,
+      (chunk) => {
+        try {
+          e.sender.send('workbench:chatChunk', { streamId, chunk, done: false })
+        } catch { /* window may have closed */ }
+      },
+      streamId
+    ).then((fullText) => {
+      try {
+        e.sender.send('workbench:chatChunk', { streamId, chunk: '', done: true, fullText })
+      } catch { /* window may have closed */ }
+    }).catch((err) => {
+      try {
+        e.sender.send('workbench:chatChunk', {
+          streamId,
+          chunk: '',
+          done: true,
+          error: (err as Error).message,
+        })
+      } catch { /* window may have closed */ }
+    })
+
+    return { streamId }
+  })
+
+  // --- Cancel active stream ---
+  safeHandle('workbench:cancelStream', async (_e, streamId) => {
+    const child = activeStreams.get(streamId)
+    if (child) {
+      child.kill()
+      activeStreams.delete(streamId)
+      return { ok: true }
+    }
+    return { ok: false }
   })
 
   // --- AI-powered spec generation ---

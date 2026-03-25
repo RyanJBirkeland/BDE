@@ -124,13 +124,15 @@ describe('Workbench handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers all 5 workbench handlers', () => {
+  it('registers all 7 workbench handlers', () => {
     registerWorkbenchHandlers(mockAgentManager)
 
-    expect(safeHandle).toHaveBeenCalledTimes(5)
+    expect(safeHandle).toHaveBeenCalledTimes(7)
     expect(safeHandle).toHaveBeenCalledWith('workbench:checkOperational', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:researchRepo', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:chat', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('workbench:chatStream', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('workbench:cancelStream', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:generateSpec', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:checkSpec', expect.any(Function))
   })

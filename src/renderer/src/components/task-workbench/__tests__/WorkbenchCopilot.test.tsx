@@ -6,13 +6,21 @@ import { useTaskWorkbenchStore, type CopilotMessage } from '../../../stores/task
 
 describe('WorkbenchCopilot', () => {
   const mockOnClose = vi.fn()
+  let chunkCallback: ((data: any) => void) | null = null
 
   beforeEach(() => {
     vi.clearAllMocks()
+    chunkCallback = null
     useTaskWorkbenchStore.getState().resetForm()
 
     ;(window.api as any).workbench = {
       chat: vi.fn().mockResolvedValue({ content: 'AI response here' }),
+      chatStream: vi.fn().mockResolvedValue({ streamId: 'test-stream-1' }),
+      cancelStream: vi.fn().mockResolvedValue({ ok: true }),
+      onChatChunk: vi.fn().mockImplementation((cb: any) => {
+        chunkCallback = cb
+        return () => { chunkCallback = null }
+      }),
       checkSpec: vi.fn().mockResolvedValue({}),
       checkOperational: vi.fn().mockResolvedValue({}),
       generateSpec: vi.fn().mockResolvedValue({ spec: '' }),
@@ -55,22 +63,24 @@ describe('WorkbenchCopilot', () => {
     expect(screen.getByText('Send')).not.toBeDisabled()
   })
 
-  it('sends message on Send click and adds assistant reply', async () => {
+  it('sends message via streaming and accumulates chunks', async () => {
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
     fireEvent.change(textarea, { target: { value: 'What files?' } })
     fireEvent.click(screen.getByText('Send'))
 
     await waitFor(() => {
-      expect(screen.getByText('AI response here')).toBeInTheDocument()
+      expect((window.api as any).workbench.chatStream).toHaveBeenCalled()
     })
-    expect((window.api as any).workbench.chat).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: expect.arrayContaining([
-          expect.objectContaining({ role: 'user', content: 'What files?' }),
-        ]),
-      }),
-    )
+
+    // Simulate streaming chunks
+    chunkCallback!({ streamId: 'test-stream-1', chunk: 'Hello ', done: false })
+    chunkCallback!({ streamId: 'test-stream-1', chunk: 'world!', done: false })
+    chunkCallback!({ streamId: 'test-stream-1', chunk: '', done: true, fullText: 'Hello world!' })
+
+    await waitFor(() => {
+      expect(screen.getByText('Hello world!')).toBeInTheDocument()
+    })
   })
 
   it('clears input after sending', async () => {
@@ -83,30 +93,66 @@ describe('WorkbenchCopilot', () => {
     expect(textarea.value).toBe('')
   })
 
-  it('shows loading state while waiting for response', async () => {
-    let resolveChat: (v: any) => void
-    ;(window.api as any).workbench.chat = vi.fn().mockReturnValue(
-      new Promise((r) => { resolveChat = r }),
-    )
-
+  it('shows streaming indicator and hides it when done', async () => {
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
     fireEvent.change(textarea, { target: { value: 'Research' } })
     fireEvent.click(screen.getByText('Send'))
 
+    // After chatStream resolves, startStreaming sets copilotLoading + streamingMessageId
     await waitFor(() => {
-      expect(screen.getByText('Thinking...')).toBeInTheDocument()
+      expect(screen.getByText('Streaming...')).toBeInTheDocument()
     })
 
-    // Resolve the chat
-    resolveChat!({ content: 'Done' })
+    // Complete the stream
+    chunkCallback!({ streamId: 'test-stream-1', chunk: 'Done', done: false })
+    chunkCallback!({ streamId: 'test-stream-1', chunk: '', done: true, fullText: 'Done' })
+
     await waitFor(() => {
-      expect(screen.queryByText('Thinking...')).not.toBeInTheDocument()
+      expect(screen.queryByText('Streaming...')).not.toBeInTheDocument()
     })
   })
 
-  it('shows error message when chat fails', async () => {
-    ;(window.api as any).workbench.chat = vi.fn().mockRejectedValue(new Error('Network error'))
+  it('shows cancel button during streaming and cancels on click', async () => {
+    render(<WorkbenchCopilot onClose={mockOnClose} />)
+    const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
+    fireEvent.change(textarea, { target: { value: 'Long question' } })
+    fireEvent.click(screen.getByText('Send'))
+
+    await waitFor(() => {
+      expect((window.api as any).workbench.chatStream).toHaveBeenCalled()
+    })
+
+    // Simulate first chunk to enter streaming state
+    chunkCallback!({ streamId: 'test-stream-1', chunk: 'Partial...', done: false })
+
+    await waitFor(() => {
+      expect(screen.getByText('Cancel')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('Cancel'))
+    expect((window.api as any).workbench.cancelStream).toHaveBeenCalledWith('test-stream-1')
+  })
+
+  it('shows error message when stream fails', async () => {
+    render(<WorkbenchCopilot onClose={mockOnClose} />)
+    const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
+    fireEvent.change(textarea, { target: { value: 'Try this' } })
+    fireEvent.click(screen.getByText('Send'))
+
+    await waitFor(() => {
+      expect((window.api as any).workbench.chatStream).toHaveBeenCalled()
+    })
+
+    chunkCallback!({ streamId: 'test-stream-1', chunk: '', done: true, error: 'Claude CLI timed out' })
+
+    await waitFor(() => {
+      expect(screen.getByText(/Claude CLI timed out/)).toBeInTheDocument()
+    })
+  })
+
+  it('shows error when chatStream call itself fails', async () => {
+    ;(window.api as any).workbench.chatStream = vi.fn().mockRejectedValue(new Error('Network error'))
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
@@ -125,7 +171,7 @@ describe('WorkbenchCopilot', () => {
     fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false })
 
     await waitFor(() => {
-      expect((window.api as any).workbench.chat).toHaveBeenCalled()
+      expect((window.api as any).workbench.chatStream).toHaveBeenCalled()
     })
   })
 
@@ -135,13 +181,13 @@ describe('WorkbenchCopilot', () => {
     fireEvent.change(textarea, { target: { value: 'No send' } })
     fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true })
 
-    expect((window.api as any).workbench.chat).not.toHaveBeenCalled()
+    expect((window.api as any).workbench.chatStream).not.toHaveBeenCalled()
   })
 
   it('does not send empty message', () => {
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     fireEvent.click(screen.getByText('Send'))
-    expect((window.api as any).workbench.chat).not.toHaveBeenCalled()
+    expect((window.api as any).workbench.chatStream).not.toHaveBeenCalled()
   })
 
   it('does not send whitespace-only message', () => {
@@ -149,7 +195,7 @@ describe('WorkbenchCopilot', () => {
     const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
     fireEvent.change(textarea, { target: { value: '   ' } })
     fireEvent.click(screen.getByText('Send'))
-    expect((window.api as any).workbench.chat).not.toHaveBeenCalled()
+    expect((window.api as any).workbench.chatStream).not.toHaveBeenCalled()
   })
 
   it('renders multiple messages from store', () => {
@@ -227,7 +273,7 @@ describe('WorkbenchCopilot', () => {
     fireEvent.click(screen.getByText('Send'))
 
     await waitFor(() => {
-      const call = (window.api as any).workbench.chat.mock.calls[0][0]
+      const call = (window.api as any).workbench.chatStream.mock.calls[0][0]
       // System messages should be filtered out
       const systemMsgs = call.messages.filter((m: any) => m.role === 'system')
       expect(systemMsgs).toHaveLength(0)

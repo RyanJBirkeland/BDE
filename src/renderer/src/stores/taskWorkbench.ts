@@ -38,6 +38,8 @@ interface TaskWorkbenchState {
   copilotVisible: boolean
   copilotMessages: CopilotMessage[]
   copilotLoading: boolean
+  streamingMessageId: string | null
+  activeStreamId: string | null
 
   // --- Readiness ---
   checksExpanded: boolean
@@ -58,6 +60,9 @@ interface TaskWorkbenchState {
   setOperationalChecks: (checks: CheckResult[]) => void
   addCopilotMessage: (msg: CopilotMessage) => void
   setCopilotLoading: (loading: boolean) => void
+  startStreaming: (messageId: string, streamId: string) => void
+  appendToStreamingMessage: (chunk: string) => void
+  finishStreaming: (insertable: boolean) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +92,8 @@ function defaults(): Pick<
   | 'copilotVisible'
   | 'copilotMessages'
   | 'copilotLoading'
+  | 'streamingMessageId'
+  | 'activeStreamId'
   | 'checksExpanded'
   | 'structuralChecks'
   | 'semanticChecks'
@@ -108,6 +115,8 @@ function defaults(): Pick<
     copilotVisible: true,
     copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
     copilotLoading: false,
+    streamingMessageId: null,
+    activeStreamId: null,
     checksExpanded: false,
     structuralChecks: [],
     semanticChecks: [],
@@ -140,6 +149,8 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       dependsOn: task.depends_on ?? [],
       playgroundEnabled: task.playground_enabled ?? false,
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
+      streamingMessageId: null,
+      activeStreamId: null,
       semanticChecks: [],
       operationalChecks: [],
     }),
@@ -157,4 +168,35 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
   }),
 
   setCopilotLoading: (loading) => set({ copilotLoading: loading }),
+
+  startStreaming: (messageId, streamId) => set({
+    streamingMessageId: messageId,
+    activeStreamId: streamId,
+    copilotLoading: true,
+  }),
+
+  appendToStreamingMessage: (chunk) => set((s) => {
+    if (!s.streamingMessageId) return s
+    const messages = s.copilotMessages.map((m) =>
+      m.id === s.streamingMessageId
+        ? { ...m, content: m.content + chunk }
+        : m
+    )
+    return { copilotMessages: messages }
+  }),
+
+  finishStreaming: (insertable) => set((s) => {
+    if (!s.streamingMessageId) return s
+    const messages = s.copilotMessages.map((m) =>
+      m.id === s.streamingMessageId
+        ? { ...m, insertable }
+        : m
+    )
+    return {
+      copilotMessages: messages,
+      streamingMessageId: null,
+      activeStreamId: null,
+      copilotLoading: false,
+    }
+  }),
 }))

@@ -59,7 +59,6 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
   const messages = useTaskWorkbenchStore((s) => s.copilotMessages)
   const loading = useTaskWorkbenchStore((s) => s.copilotLoading)
   const addMessage = useTaskWorkbenchStore((s) => s.addCopilotMessage)
-  const setCopilotLoading = useTaskWorkbenchStore((s) => s.setCopilotLoading)
   const title = useTaskWorkbenchStore((s) => s.title)
   const repo = useTaskWorkbenchStore((s) => s.repo)
   const spec = useTaskWorkbenchStore((s) => s.spec)
@@ -68,12 +67,45 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const activeStreamIdRef = useRef<string | null>(null)
 
-  // Auto-scroll on new messages
+  // Subscribe to streaming chunks
+  useEffect(() => {
+    const store = useTaskWorkbenchStore.getState
+    const unsub = window.api.workbench.onChatChunk((data) => {
+      if (data.streamId !== activeStreamIdRef.current) return
+
+      if (!data.done) {
+        store().appendToStreamingMessage(data.chunk)
+      } else {
+        if (data.error) {
+          // Replace streaming message content with error
+          const msgId = store().streamingMessageId
+          if (msgId) {
+            useTaskWorkbenchStore.setState((s) => ({
+              copilotMessages: s.copilotMessages.map((m) =>
+                m.id === msgId ? { ...m, content: `Error: ${data.error}` } : m
+              ),
+            }))
+          }
+          store().finishStreaming(false)
+        } else {
+          store().finishStreaming(true)
+        }
+        activeStreamIdRef.current = null
+      }
+    })
+    return unsub
+  }, [])
+
+  // Auto-scroll on new messages and streaming content
+  const streamingId = useTaskWorkbenchStore((s) => s.streamingMessageId)
+  const streamingContent = messages.find((m) => m.id === streamingId)?.content?.length ?? 0
+
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [messages.length, loading])
+  }, [messages.length, loading, streamingContent])
 
   const handleSend = useCallback(async () => {
     const text = input.trim()
@@ -81,37 +113,33 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
     setInput('')
 
     addMessage({ id: `user-${Date.now()}`, role: 'user', content: text, timestamp: Date.now() })
-    setCopilotLoading(true)
+
+    const allMessages = [...useTaskWorkbenchStore.getState().copilotMessages]
+      .filter((m) => m.role !== 'system')
+      .map((m) => ({ role: m.role, content: m.content }))
+    allMessages.push({ role: 'user', content: text })
+
+    // Create empty assistant message for streaming
+    const msgId = `assistant-${Date.now()}`
+    addMessage({ id: msgId, role: 'assistant', content: '', timestamp: Date.now() })
 
     try {
-      const allMessages = [...useTaskWorkbenchStore.getState().copilotMessages]
-        .filter((m) => m.role !== 'system')
-        .map((m) => ({ role: m.role, content: m.content }))
-      allMessages.push({ role: 'user', content: text })
-
-      const result = await window.api.workbench.chat({
+      const { streamId } = await window.api.workbench.chatStream({
         messages: allMessages,
         formContext: { title, repo, spec },
       })
-
-      addMessage({
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: result.content,
-        timestamp: Date.now(),
-        insertable: true,
-      })
+      activeStreamIdRef.current = streamId
+      useTaskWorkbenchStore.getState().startStreaming(msgId, streamId)
     } catch {
-      addMessage({
-        id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: 'Failed to reach Claude. Check your connection and try again.',
-        timestamp: Date.now(),
-      })
-    } finally {
-      setCopilotLoading(false)
+      // If we can't even start the stream, show error
+      useTaskWorkbenchStore.setState((s) => ({
+        copilotMessages: s.copilotMessages.map((m) =>
+          m.id === msgId ? { ...m, content: 'Failed to reach Claude. Check your connection and try again.' } : m
+        ),
+        copilotLoading: false,
+      }))
     }
-  }, [input, loading, title, repo, spec, addMessage, setCopilotLoading])
+  }, [input, loading, title, repo, spec, addMessage])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -168,9 +196,27 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
         {loading && (
           <div style={{
             alignSelf: 'flex-start', padding: `${tokens.space[2]} ${tokens.space[3]}`,
-            color: tokens.color.textMuted, fontSize: tokens.size.sm, fontStyle: 'italic',
+            display: 'flex', alignItems: 'center', gap: tokens.space[2],
           }}>
-            Thinking...
+            <span style={{ color: tokens.color.textMuted, fontSize: tokens.size.sm, fontStyle: 'italic' }}>
+              {useTaskWorkbenchStore.getState().streamingMessageId ? 'Streaming...' : 'Thinking...'}
+            </span>
+            <button
+              onClick={() => {
+                const sid = useTaskWorkbenchStore.getState().activeStreamId
+                if (sid) {
+                  window.api.workbench.cancelStream(sid)
+                  useTaskWorkbenchStore.getState().finishStreaming(true)
+                }
+              }}
+              style={{
+                background: 'none', border: `1px solid ${tokens.color.border}`,
+                borderRadius: tokens.radius.sm, color: tokens.color.textMuted,
+                padding: '1px 8px', fontSize: tokens.size.xs, cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
           </div>
         )}
       </div>

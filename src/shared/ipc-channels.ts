@@ -431,6 +431,17 @@ export interface WorkbenchChannels {
       totalMatches: number
     }
   }
+  'workbench:chatStream': {
+    args: [input: {
+      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+      formContext: { title: string; repo: string; spec: string }
+    }]
+    result: { streamId: string }
+  }
+  'workbench:cancelStream': {
+    args: [streamId: string]
+    result: { ok: boolean }
+  }
 }
 
 /** Dev Playground operations */

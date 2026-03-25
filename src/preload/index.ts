@@ -250,6 +250,18 @@ const api = {
       typedInvoke('workbench:checkOperational', input),
     researchRepo: (input: { query: string; repo: string }) =>
       typedInvoke('workbench:researchRepo', input),
+    chatStream: (input: {
+      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+      formContext: { title: string; repo: string; spec: string }
+    }) => typedInvoke('workbench:chatStream', input),
+    cancelStream: (streamId: string) => typedInvoke('workbench:cancelStream', streamId),
+    onChatChunk: (cb: (data: {
+      streamId: string; chunk: string; done: boolean; fullText?: string; error?: string
+    }) => void): (() => void) => {
+      const listener = (_e: unknown, data: any): void => cb(data)
+      ipcRenderer.on('workbench:chatChunk', listener)
+      return () => ipcRenderer.removeListener('workbench:chatChunk', listener)
+    },
   }
 }
 
