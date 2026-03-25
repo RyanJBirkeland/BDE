@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { GitBranch, RefreshCw } from 'lucide-react'
 import { useGitTreeStore } from '../stores/gitTree'
 import { CommitBox } from '../components/git-tree/CommitBox'
@@ -8,8 +9,10 @@ import { InlineDiffDrawer } from '../components/git-tree/InlineDiffDrawer'
 import { tokens } from '../design-system/tokens'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 export default function GitTreeView(): React.ReactElement {
+  const reduced = useReducedMotion()
   const branch = useGitTreeStore((s) => s.branch)
   const staged = useGitTreeStore((s) => s.staged)
   const unstaged = useGitTreeStore((s) => s.unstaged)
@@ -112,7 +115,7 @@ export default function GitTreeView(): React.ReactElement {
   }
 
   return (
-    <div
+    <motion.div
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -120,6 +123,10 @@ export default function GitTreeView(): React.ReactElement {
         backgroundColor: tokens.color.surface,
         overflow: 'hidden',
       }}
+      variants={VARIANTS.fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
       {/* Header */}
       <div
@@ -135,11 +142,11 @@ export default function GitTreeView(): React.ReactElement {
       >
         {/* Title */}
         <div
+          className="text-gradient-aurora"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: tokens.space[1],
-            color: tokens.color.textMuted,
             fontSize: tokens.size.xs,
             fontFamily: tokens.font.ui,
             fontWeight: 600,
@@ -297,6 +304,6 @@ export default function GitTreeView(): React.ReactElement {
           to { transform: rotate(360deg); }
         }
       `}</style>
-    </div>
+    </motion.div>
   )
 }

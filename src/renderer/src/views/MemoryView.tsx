@@ -265,7 +265,7 @@ export default function MemoryView(): React.JSX.Element {
   return (
     <motion.div className="memory-view memory-view--column" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <div className="memory-view__header">
-        <span className="memory-view__title">Memory</span>
+        <span className="memory-view__title text-gradient-aurora">Memory</span>
       </div>
       <div className="memory-view__content">
       <div className="memory-sidebar">

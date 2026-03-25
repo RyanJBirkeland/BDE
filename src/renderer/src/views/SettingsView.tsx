@@ -44,7 +44,7 @@ export default function SettingsView(): React.JSX.Element {
   return (
     <motion.div className="settings-view settings-view--column" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
       <div className="settings-view__header">
-        <span className="settings-view__header-title">Settings</span>
+        <span className="settings-view__header-title text-gradient-aurora">Settings</span>
       </div>
       <div className="settings-view__tabs" role="tablist" aria-label="Settings sections">
         {TABS.map(({ id, label, icon: Icon }) => (
