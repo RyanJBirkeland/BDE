@@ -151,6 +151,12 @@ declare global {
         kill: (taskId: string) => Promise<IpcResult<'agent-manager:kill'>>
       }
 
+      // Dashboard analytics
+      dashboard: {
+        completionsPerHour: () => Promise<IpcResult<'agent:completionsPerHour'>>
+        recentEvents: (limit?: number) => Promise<IpcResult<'agent:recentEvents'>>
+      }
+
       // Task Workbench
       workbench: {
         chat: (...args: IpcArgs<'workbench:chat'>) => Promise<IpcResult<'workbench:chat'>>

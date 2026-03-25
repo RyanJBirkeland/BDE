@@ -441,8 +441,27 @@ export interface PlaygroundChannels {
   }
 }
 
+/** Dashboard analytics */
+export interface CompletionBucket {
+  hour: string;
+  count: number;
+}
+
+export interface DashboardEvent {
+  id: number;
+  agent_id: string;
+  event_type: string;
+  payload: string;
+  timestamp: number;
+}
+
+export interface DashboardChannels {
+  'agent:completionsPerHour': { args: []; result: CompletionBucket[] };
+  'agent:recentEvents': { args: [limit?: number]; result: DashboardEvent[] };
+}
+
 // ---------------------------------------------------------------------------
 // Composite channel map — intersection of all domain maps
 // ---------------------------------------------------------------------------
 
-export type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & AgentConfigChannels & AgentChannels & GitHubApiChannels & CostChannels & SprintChannels & WindowChannels & MemoryChannels & FsChannels & AgentEventChannels & TemplateChannels & AuthChannels & AgentManagerChannels & TerminalChannels & WorkbenchChannels & PlaygroundChannels
+export type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & AgentConfigChannels & AgentChannels & GitHubApiChannels & CostChannels & SprintChannels & WindowChannels & MemoryChannels & FsChannels & AgentEventChannels & TemplateChannels & AuthChannels & AgentManagerChannels & TerminalChannels & WorkbenchChannels & PlaygroundChannels & DashboardChannels

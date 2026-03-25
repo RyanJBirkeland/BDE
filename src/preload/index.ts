@@ -236,6 +236,12 @@ const api = {
     }
   },
 
+  // Dashboard analytics
+  dashboard: {
+    completionsPerHour: () => typedInvoke('agent:completionsPerHour'),
+    recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit),
+  },
+
   // Task Workbench
   workbench: {
     chat: (input: {
