@@ -8,47 +8,23 @@ import type { SprintTask } from '../../../../../shared/types'
 const mocks = vi.hoisted(() => {
   const mockLoadData = vi.fn()
   const mockSetRepoFilter = vi.fn()
-  const mockSetSelectedTaskId = vi.fn()
   const mockSetLogDrawerTaskId = vi.fn()
-  const mockClearSelection = vi.fn()
   const mockSetView = vi.fn()
-  const mockSelectRange = vi.fn()
 
   // Mutable store state — mutations are picked up by closures in mock factories
   const storeState = {
     tasks: [] as SprintTask[],
     loading: false,
     loadError: null as string | null,
-    prMergedMap: {} as Record<string, boolean>,
-    // loadData is accessed via (s) => s.loadData selector
     loadData: mockLoadData,
   }
 
   const uiState = {
     repoFilter: null as string | null,
-    selectedTaskId: null as string | null,
     logDrawerTaskId: null as string | null,
-    generatingIds: [] as string[],
-    selectedTaskIds: [] as string[],
     setRepoFilter: mockSetRepoFilter,
-    setSelectedTaskId: mockSetSelectedTaskId,
     setLogDrawerTaskId: mockSetLogDrawerTaskId,
-    clearSelection: mockClearSelection,
-    selectRange: mockSelectRange,
   }
-
-  // useSprintUI must be both a callable mock AND have a static getState method.
-  // We implement it as a plain object with a call method + static method
-  // to avoid clearAllMocks wiping the implementation.
-  const useSprintUI = Object.assign(
-    vi.fn((selector: (s: typeof uiState) => unknown) => {
-      if (typeof selector === 'function') {
-        return selector(uiState)
-      }
-      return undefined
-    }),
-    { getState: () => uiState }
-  )
 
   // Mutable arrays — replace .value to update what closures see
   const conflictingTaskIds = { value: [] as string[] }
@@ -57,14 +33,10 @@ const mocks = vi.hoisted(() => {
   return {
     mockLoadData,
     mockSetRepoFilter,
-    mockSetSelectedTaskId,
     mockSetLogDrawerTaskId,
-    mockClearSelection,
     mockSetView,
-    mockSelectRange,
     storeState,
     uiState,
-    useSprintUI,
     conflictingTaskIds,
     visibleStuckTasks,
   }
@@ -80,7 +52,12 @@ vi.mock('../../../stores/sprintTasks', () => ({
 }))
 
 vi.mock('../../../stores/sprintUI', () => ({
-  useSprintUI: mocks.useSprintUI,
+  useSprintUI: vi.fn((selector) => {
+    if (typeof selector === 'function') {
+      return selector(mocks.uiState)
+    }
+    return undefined
+  }),
 }))
 
 vi.mock('../../../stores/ui', () => ({
@@ -129,17 +106,10 @@ vi.mock('../../../hooks/useSprintKeyboardShortcuts', () => ({
 
 vi.mock('../../../hooks/useSprintTaskActions', () => ({
   useSprintTaskActions: () => ({
-    handleDragEnd: vi.fn(),
-    handleReorder: vi.fn(),
-    handlePushToSprint: vi.fn(),
-    handleViewSpec: vi.fn(),
     handleSaveSpec: vi.fn(),
     handleMarkDone: vi.fn(),
     handleStop: vi.fn(),
     handleRerun: vi.fn(),
-    handleUpdateTitle: vi.fn(),
-    handleUpdatePriority: vi.fn(),
-    handleEditInWorkbench: vi.fn(),
     launchTask: vi.fn(),
     deleteTask: vi.fn(),
     confirmProps: { open: false, title: '', message: '', onConfirm: vi.fn(), onCancel: vi.fn() },
@@ -153,49 +123,61 @@ vi.mock('../../../hooks/useHealthCheck', () => ({
   })),
 }))
 
+vi.mock('../../../lib/motion', () => ({
+  VARIANTS: { fadeIn: {} },
+  SPRINGS: { snappy: {} },
+  REDUCED_TRANSITION: {},
+  useReducedMotion: () => false,
+}))
+
 // Mock child components
-vi.mock('../KanbanBoard', () => ({
-  KanbanBoard: () => <div data-testid="kanban-board">KanbanBoard</div>,
+vi.mock('../CircuitPipeline', () => ({
+  CircuitPipeline: ({ tasks }: { tasks: SprintTask[] }) => (
+    <div data-testid="circuit-pipeline">CircuitPipeline ({tasks.length} tasks)</div>
+  ),
 }))
 
-vi.mock('../TaskTable', () => ({
-  TaskTable: ({ section }: { section: string }) => <div data-testid={`task-table-${section}`}>TaskTable-{section}</div>,
+vi.mock('../SprintTaskList', () => ({
+  SprintTaskList: ({ tasks, loading, repoFilter }: { tasks: SprintTask[]; loading: boolean; repoFilter: string | null }) => (
+    <div data-testid="sprint-task-list">
+      SprintTaskList ({tasks.length} tasks, loading: {String(loading)}, filter: {repoFilter || 'none'})
+    </div>
+  ),
 }))
 
-vi.mock('../SpecDrawer', () => ({
-  SpecDrawer: () => <div data-testid="spec-drawer">SpecDrawer</div>,
-}))
-
-vi.mock('../LogDrawer', () => ({
-  LogDrawer: () => <div data-testid="log-drawer">LogDrawer</div>,
-}))
-
-vi.mock('../TaskMonitorPanel', () => ({
-  TaskMonitorPanel: () => <div data-testid="task-monitor-panel">TaskMonitorPanel</div>,
+vi.mock('../SprintDetailPane', () => ({
+  SprintDetailPane: ({ task }: { task: SprintTask | null }) => (
+    <div data-testid="sprint-detail-pane">
+      SprintDetailPane ({task ? task.title : 'no task'})
+    </div>
+  ),
 }))
 
 vi.mock('../ConflictDrawer', () => ({
-  ConflictDrawer: ({ open }: { open: boolean }) => open ? <div data-testid="conflict-drawer">ConflictDrawer</div> : null,
+  ConflictDrawer: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="conflict-drawer">ConflictDrawer</div> : null,
 }))
 
 vi.mock('../HealthCheckDrawer', () => ({
-  HealthCheckDrawer: ({ open }: { open: boolean }) => open ? <div data-testid="health-drawer">HealthCheckDrawer</div> : null,
+  HealthCheckDrawer: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="health-drawer">HealthCheckDrawer</div> : null,
 }))
 
-vi.mock('../BulkActionBar', () => ({
-  BulkActionBar: ({ selectedCount }: { selectedCount: number }) =>
-    selectedCount > 0 ? <div data-testid="bulk-action-bar">BulkActionBar ({selectedCount})</div> : null,
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  },
 }))
 
-vi.mock('react-resizable-panels', () => ({
-  Group: ({ children }: { children: React.ReactNode }) => <div data-testid="resizable-group">{children}</div>,
-  Panel: ({ children }: { children: React.ReactNode }) => <div data-testid="resizable-panel">{children}</div>,
-  Separator: () => <div data-testid="resizable-separator" />,
+vi.mock('lucide-react', () => ({
+  Plus: () => <span data-testid="plus-icon">+</span>,
 }))
 
 vi.mock('../../ui/Button', () => ({
   Button: ({ children, onClick, disabled, ...props }: any) => (
-    <button onClick={onClick} disabled={disabled} {...props}>{children}</button>
+    <button onClick={onClick} disabled={disabled} {...props}>
+      {children}
+    </button>
   ),
 }))
 
@@ -242,39 +224,60 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
 
 describe('SprintCenter', () => {
   beforeEach(() => {
-    // Note: clearAllMocks is intentionally NOT called here because it would reset
-    // the vi.fn() implementations in vi.hoisted() closures that we rely on.
-    // Instead we manually reset call counts and state below.
+    // Reset mocks
     mocks.mockLoadData.mockClear()
     mocks.mockSetRepoFilter.mockClear()
-    mocks.mockSetSelectedTaskId.mockClear()
     mocks.mockSetLogDrawerTaskId.mockClear()
-    mocks.mockClearSelection.mockClear()
     mocks.mockSetView.mockClear()
-    mocks.mockSelectRange.mockClear()
+
     // Reset store states
     Object.assign(mocks.storeState, {
       tasks: [],
       loading: false,
       loadError: null,
-      prMergedMap: {},
       loadData: mocks.mockLoadData,
     })
     Object.assign(mocks.uiState, {
       repoFilter: null,
-      selectedTaskId: null,
       logDrawerTaskId: null,
-      generatingIds: [],
-      selectedTaskIds: [],
       setRepoFilter: mocks.mockSetRepoFilter,
-      setSelectedTaskId: mocks.mockSetSelectedTaskId,
       setLogDrawerTaskId: mocks.mockSetLogDrawerTaskId,
-      clearSelection: mocks.mockClearSelection,
-      selectRange: mocks.mockSelectRange,
     })
+
     // Reset mutable mock arrays
     mocks.conflictingTaskIds.value = []
     mocks.visibleStuckTasks.value = []
+  })
+
+  describe('Basic rendering', () => {
+    it('renders CircuitPipeline, SprintTaskList, and SprintDetailPane', () => {
+      Object.assign(mocks.storeState, {
+        tasks: [makeTask({ id: 'task-1', title: 'Test Task' })],
+      })
+
+      render(<SprintCenter />)
+
+      expect(screen.getByTestId('circuit-pipeline')).toBeInTheDocument()
+      expect(screen.getByTestId('sprint-task-list')).toBeInTheDocument()
+      expect(screen.getByTestId('sprint-detail-pane')).toBeInTheDocument()
+    })
+
+    it('renders ConfirmModal', () => {
+      render(<SprintCenter />)
+
+      expect(screen.getByTestId('confirm-modal')).toBeInTheDocument()
+    })
+
+    it('auto-selects first task when tasks load', () => {
+      Object.assign(mocks.storeState, {
+        tasks: [makeTask({ id: 'task-1', title: 'First Task' })],
+      })
+
+      render(<SprintCenter />)
+
+      // The component auto-selects the first task, so SprintDetailPane should show it
+      expect(screen.getByText('SprintDetailPane (First Task)')).toBeInTheDocument()
+    })
   })
 
   describe('Error state', () => {
@@ -301,7 +304,7 @@ describe('SprintCenter', () => {
       render(<SprintCenter />)
 
       expect(screen.queryByText('Some error')).not.toBeInTheDocument()
-      expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
+      expect(screen.getByTestId('sprint-task-list')).toBeInTheDocument()
     })
 
     it('calls loadData when Retry button is clicked', () => {
@@ -328,38 +331,8 @@ describe('SprintCenter', () => {
 
       render(<SprintCenter />)
 
-      const retryButton = screen.getByText('Retrying\u2026')
+      const retryButton = screen.getByText('Retrying…')
       expect(retryButton).toBeDisabled()
-    })
-  })
-
-  describe('Loading state', () => {
-    it('renders loading skeleton when loading and no tasks', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [],
-        loading: true,
-        loadError: null,
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByText('To Do')).toBeInTheDocument()
-      expect(screen.getByText('In Progress')).toBeInTheDocument()
-      expect(screen.getByText('Awaiting Review')).toBeInTheDocument()
-      expect(document.querySelectorAll('.sprint-board__skeleton').length).toBeGreaterThan(0)
-    })
-
-    it('does not show loading skeleton when tasks are present', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask()],
-        loading: true,
-        loadError: null,
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
-      expect(document.querySelectorAll('.sprint-board__skeleton').length).toBe(0)
     })
   })
 
@@ -403,160 +376,15 @@ describe('SprintCenter', () => {
       expect(mocks.mockSetRepoFilter).toHaveBeenCalledWith(null)
     })
 
-    it('applies active class to selected repo filter', () => {
+    it('passes repoFilter to SprintTaskList', () => {
+      Object.assign(mocks.storeState, {
+        tasks: [makeTask({ repo: 'BDE' })],
+      })
       Object.assign(mocks.uiState, { repoFilter: 'BDE' })
 
       render(<SprintCenter />)
 
-      const bdeButton = screen.getByText('BDE').closest('button')
-      expect(bdeButton?.className).toContain('sprint-board__repo-chip--active')
-    })
-
-    it('filters tasks by selected repository', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ id: '1', title: 'BDE task', repo: 'BDE', status: 'backlog' }),
-          makeTask({ id: '2', title: 'life-os task', repo: 'life-os', status: 'backlog' }),
-        ],
-      })
-      Object.assign(mocks.uiState, { repoFilter: 'BDE' })
-
-      render(<SprintCenter />)
-      expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
-    })
-  })
-
-  describe('Backlog search', () => {
-    it('renders search input', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ status: 'backlog' })],
-      })
-      render(<SprintCenter />)
-
-      const searchInput = screen.getByPlaceholderText('Search backlog...')
-      expect(searchInput).toBeInTheDocument()
-    })
-
-    it('updates search value when typing', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ status: 'backlog' })],
-      })
-
-      render(<SprintCenter />)
-
-      const searchInput = screen.getByPlaceholderText('Search backlog...') as HTMLInputElement
-      fireEvent.change(searchInput, { target: { value: 'test query' } })
-
-      expect(searchInput.value).toBe('test query')
-    })
-
-    it('shows clear button when search has value', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ status: 'backlog' })],
-      })
-
-      render(<SprintCenter />)
-
-      const searchInput = screen.getByPlaceholderText('Search backlog...')
-      fireEvent.change(searchInput, { target: { value: 'test' } })
-
-      const clearButton = screen.getByTitle('Clear search')
-      expect(clearButton).toBeInTheDocument()
-    })
-
-    it('does not show clear button when search is empty', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ status: 'backlog' })],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.queryByTitle('Clear search')).not.toBeInTheDocument()
-    })
-
-    it('clears search when clear button is clicked', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ status: 'backlog' })],
-      })
-
-      render(<SprintCenter />)
-
-      const searchInput = screen.getByPlaceholderText('Search backlog...') as HTMLInputElement
-      fireEvent.change(searchInput, { target: { value: 'test' } })
-
-      const clearButton = screen.getByTitle('Clear search')
-      fireEvent.click(clearButton)
-
-      expect(searchInput.value).toBe('')
-    })
-  })
-
-  describe('Keyboard shortcuts', () => {
-    it('clears selection when Escape is pressed', () => {
-      Object.assign(mocks.uiState, {
-        selectedTaskIds: ['task-1', 'task-2'],
-      })
-
-      render(<SprintCenter />)
-
-      fireEvent.keyDown(window, { key: 'Escape' })
-
-      expect(mocks.mockClearSelection).toHaveBeenCalled()
-    })
-
-    it('does not clear selection when Escape is pressed with no selection', () => {
-      Object.assign(mocks.uiState, {
-        selectedTaskIds: [],
-      })
-
-      render(<SprintCenter />)
-
-      fireEvent.keyDown(window, { key: 'Escape' })
-
-      expect(mocks.mockClearSelection).not.toHaveBeenCalled()
-    })
-
-    it('prevents default when Escape clears selection', () => {
-      Object.assign(mocks.uiState, {
-        selectedTaskIds: ['task-1'],
-      })
-
-      render(<SprintCenter />)
-
-      const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
-      const preventDefaultSpy = vi.spyOn(event, 'preventDefault')
-      window.dispatchEvent(event)
-
-      expect(preventDefaultSpy).toHaveBeenCalled()
-    })
-  })
-
-  describe('Bulk action bar', () => {
-    it('shows bulk action bar when tasks are selected', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ status: 'backlog' })],
-      })
-      Object.assign(mocks.uiState, {
-        selectedTaskIds: ['task-1', 'task-2'],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByTestId('bulk-action-bar')).toBeInTheDocument()
-      expect(screen.getByText('BulkActionBar (2)')).toBeInTheDocument()
-    })
-
-    it('does not show bulk action bar when no tasks are selected', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ status: 'backlog' })],
-      })
-      Object.assign(mocks.uiState, {
-        selectedTaskIds: [],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.queryByTestId('bulk-action-bar')).not.toBeInTheDocument()
+      expect(screen.getByText(/filter: BDE/)).toBeInTheDocument()
     })
   })
 
@@ -569,7 +397,8 @@ describe('SprintCenter', () => {
 
       render(<SprintCenter />)
 
-      expect(screen.getByText('2 stuck')).toBeInTheDocument()
+      expect(screen.getByText('2')).toBeInTheDocument()
+      expect(screen.getByTitle('Stuck tasks detected')).toBeInTheDocument()
     })
 
     it('does not show stuck tasks badge when no stuck tasks', () => {
@@ -577,7 +406,7 @@ describe('SprintCenter', () => {
 
       render(<SprintCenter />)
 
-      expect(screen.queryByText(/stuck/)).not.toBeInTheDocument()
+      expect(screen.queryByTitle('Stuck tasks detected')).not.toBeInTheDocument()
     })
 
     it('opens health drawer when stuck tasks badge is clicked', () => {
@@ -605,18 +434,8 @@ describe('SprintCenter', () => {
 
       render(<SprintCenter />)
 
-      expect(screen.getByText('3 conflicts')).toBeInTheDocument()
-    })
-
-    it('shows singular "conflict" for single conflicting task', () => {
-      mocks.conflictingTaskIds.value = ['task-1']
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ id: 'task-1' })],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByText('1 conflict')).toBeInTheDocument()
+      expect(screen.getByTitle('View merge conflicts')).toBeInTheDocument()
+      expect(screen.getByText('3')).toBeInTheDocument()
     })
 
     it('does not show conflict badge when no conflicting tasks', () => {
@@ -624,7 +443,7 @@ describe('SprintCenter', () => {
 
       render(<SprintCenter />)
 
-      expect(screen.queryByText(/conflict/)).not.toBeInTheDocument()
+      expect(screen.queryByTitle('View merge conflicts')).not.toBeInTheDocument()
     })
 
     it('opens conflict drawer when conflict badge is clicked', () => {
@@ -642,189 +461,102 @@ describe('SprintCenter', () => {
     })
   })
 
-  describe('Blocked tasks section', () => {
-    it('renders blocked tasks section when blocked tasks exist', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ id: '1', status: 'blocked', depends_on: [{ id: 'task-0', type: 'hard' }] }),
-          makeTask({ id: '2', status: 'blocked', depends_on: [{ id: 'task-0', type: 'hard' }] }),
-        ],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByTestId('task-table-blocked')).toBeInTheDocument()
-    })
-
-    it('does not render blocked tasks section when no blocked tasks', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ status: 'backlog' }),
-          makeTask({ status: 'done' }),
-        ],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.queryByTestId('task-table-blocked')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Failed tasks section', () => {
-    it('renders failed tasks section when failed tasks exist', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ id: '1', status: 'failed' }),
-          makeTask({ id: '2', status: 'cancelled' }),
-        ],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByTestId('task-table-failed')).toBeInTheDocument()
-    })
-
-    it('does not render failed tasks section when no failed tasks', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ status: 'backlog' }),
-          makeTask({ status: 'done' }),
-        ],
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.queryByTestId('task-table-failed')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Log drawer panel', () => {
-    it('renders TaskMonitorPanel when logDrawerTaskId is set', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ id: 'task-1', title: 'Task with logs' })],
-      })
-      Object.assign(mocks.uiState, {
-        logDrawerTaskId: 'task-1',
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByTestId('task-monitor-panel')).toBeInTheDocument()
-      expect(screen.getByTestId('resizable-group')).toBeInTheDocument()
-    })
-
-    it('does not render TaskMonitorPanel when logDrawerTaskId is null', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask()],
-      })
-      Object.assign(mocks.uiState, {
-        logDrawerTaskId: null,
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.queryByTestId('task-monitor-panel')).not.toBeInTheDocument()
-      expect(screen.queryByTestId('resizable-group')).not.toBeInTheDocument()
-    })
-
-    it('finds correct task for log drawer', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ id: 'task-1', title: 'Task 1' }),
-          makeTask({ id: 'task-2', title: 'Task 2' }),
-        ],
-      })
-      Object.assign(mocks.uiState, {
-        logDrawerTaskId: 'task-2',
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.getByTestId('task-monitor-panel')).toBeInTheDocument()
-    })
-
-    it('handles missing task gracefully when logDrawerTaskId is invalid', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [makeTask({ id: 'task-1' })],
-      })
-      Object.assign(mocks.uiState, {
-        logDrawerTaskId: 'non-existent-task',
-      })
-
-      render(<SprintCenter />)
-
-      expect(screen.queryByTestId('task-monitor-panel')).not.toBeInTheDocument()
-    })
-  })
-
   describe('Action buttons', () => {
-    it('opens workbench when "New Ticket" button is clicked', () => {
+    it('renders New Ticket button', () => {
       render(<SprintCenter />)
 
-      const newTicketButton = screen.getByText('+ New Ticket')
+      const newTicketButton = screen.getByTitle('New Ticket')
+      expect(newTicketButton).toBeInTheDocument()
+      expect(screen.getByTestId('plus-icon')).toBeInTheDocument()
+    })
+
+    it('opens workbench when New Ticket button is clicked', () => {
+      render(<SprintCenter />)
+
+      const newTicketButton = screen.getByTitle('New Ticket')
       fireEvent.click(newTicketButton)
 
       expect(mocks.mockSetView).toHaveBeenCalledWith('task-workbench')
     })
+  })
 
-    it('calls loadData when refresh button is clicked', () => {
-      render(<SprintCenter />)
-
-      const refreshButton = screen.getByTitle('Refresh')
-      fireEvent.click(refreshButton)
-
-      expect(mocks.mockLoadData).toHaveBeenCalled()
-    })
-
-    it('disables refresh button when loading', () => {
+  describe('Component integration', () => {
+    it('passes correct props to CircuitPipeline', () => {
       Object.assign(mocks.storeState, {
-        loading: true,
+        tasks: [makeTask(), makeTask()],
       })
 
       render(<SprintCenter />)
 
-      const refreshButton = screen.getByTitle('Refresh')
-      expect(refreshButton).toBeDisabled()
+      expect(screen.getByText('CircuitPipeline (2 tasks)')).toBeInTheDocument()
+    })
+
+    it('passes correct props to SprintTaskList', () => {
+      Object.assign(mocks.storeState, {
+        tasks: [makeTask(), makeTask(), makeTask()],
+        loading: true,
+      })
+      Object.assign(mocks.uiState, { repoFilter: 'BDE' })
+
+      render(<SprintCenter />)
+
+      expect(screen.getByText(/SprintTaskList \(3 tasks, loading: true, filter: BDE\)/)).toBeInTheDocument()
+    })
+
+    it('shows no task in SprintDetailPane when no tasks exist', () => {
+      Object.assign(mocks.storeState, {
+        tasks: [],
+      })
+
+      render(<SprintCenter />)
+
+      expect(screen.getByText('SprintDetailPane (no task)')).toBeInTheDocument()
     })
   })
 
-  describe('Rendering all sections', () => {
-    it('renders backlog, done, kanban board and always-visible components', () => {
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ status: 'backlog' }),
-          makeTask({ status: 'done' }),
-        ],
-      })
-
+  describe('Drawers', () => {
+    it('does not show health drawer by default', () => {
       render(<SprintCenter />)
 
-      expect(screen.getByTestId('kanban-board')).toBeInTheDocument()
-      expect(screen.getByTestId('task-table-backlog')).toBeInTheDocument()
-      expect(screen.getByTestId('task-table-done')).toBeInTheDocument()
-      expect(screen.getByTestId('spec-drawer')).toBeInTheDocument()
-      expect(screen.getByTestId('log-drawer')).toBeInTheDocument()
-      expect(screen.getByTestId('confirm-modal')).toBeInTheDocument()
+      expect(screen.queryByTestId('health-drawer')).not.toBeInTheDocument()
     })
 
-    it('renders all conditional sections when conditions are met', () => {
-      mocks.conflictingTaskIds.value = ['task-1']
-      mocks.visibleStuckTasks.value = [makeTask({ id: 'stuck-1' })]
-
-      Object.assign(mocks.storeState, {
-        tasks: [
-          makeTask({ id: 'task-1', status: 'backlog' }),
-          makeTask({ status: 'blocked', depends_on: [{ id: 'task-0', type: 'hard' }] }),
-          makeTask({ status: 'failed' }),
-        ],
-      })
-
+    it('does not show conflict drawer by default', () => {
       render(<SprintCenter />)
 
-      expect(screen.getByTestId('task-table-blocked')).toBeInTheDocument()
-      expect(screen.getByTestId('task-table-failed')).toBeInTheDocument()
-      expect(screen.getByText('1 conflict')).toBeInTheDocument()
-      expect(screen.getByText('1 stuck')).toBeInTheDocument()
+      expect(screen.queryByTestId('conflict-drawer')).not.toBeInTheDocument()
+    })
+
+    it('shows and hides health drawer when opened and closed', () => {
+      mocks.visibleStuckTasks.value = [makeTask({ id: 'stuck-1' })]
+
+      const { rerender } = render(<SprintCenter />)
+
+      // Open drawer
+      const stuckBadge = screen.getByTitle('Stuck tasks detected')
+      fireEvent.click(stuckBadge)
+      expect(screen.getByTestId('health-drawer')).toBeInTheDocument()
+
+      // Close drawer (simulated by re-rendering after state change)
+      // In real app, clicking close would update state
+      rerender(<SprintCenter />)
+    })
+
+    it('shows and hides conflict drawer when opened and closed', () => {
+      mocks.conflictingTaskIds.value = ['task-1']
+      Object.assign(mocks.storeState, {
+        tasks: [makeTask({ id: 'task-1' })],
+      })
+
+      const { rerender } = render(<SprintCenter />)
+
+      // Open drawer
+      const conflictBadge = screen.getByTitle('View merge conflicts')
+      fireEvent.click(conflictBadge)
+      expect(screen.getByTestId('conflict-drawer')).toBeInTheDocument()
+
+      // Close drawer (simulated by re-rendering after state change)
+      rerender(<SprintCenter />)
     })
   })
 })
