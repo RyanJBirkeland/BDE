@@ -14,10 +14,12 @@
   flex-shrink: 0;
   position: relative;
   z-index: 10;
+  /* macOS traffic lights (hiddenInset) need ~80px clearance on the left */
+  padding-left: 80px;
 }
 
 .unified-header__logo {
-  width: 52px;
+  width: 44px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -117,6 +119,14 @@
   color: rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: color 100ms ease, background 100ms ease;
+  background: none;
+  border: none;
+  padding: 0;
+  opacity: 0;
+}
+
+.header-tab:hover .header-tab__close {
+  opacity: 1;
 }
 
 .header-tab__close:hover {
@@ -127,14 +137,15 @@
 /* ── Neon Sidebar ── */
 .neon-sidebar {
   width: 52px;
-  background: linear-gradient(180deg, rgba(138, 43, 226, 0.04), rgba(10, 0, 21, 0.4));
+  background: linear-gradient(180deg, rgba(138, 43, 226, 0.06), rgba(10, 0, 21, 0.6));
   border-right: 1px solid var(--neon-purple-border);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 8px;
+  padding-top: 10px;
   flex-shrink: 0;
   overflow: hidden;
+  overflow-y: auto;
 }
 
 .neon-sidebar__nav {
@@ -165,22 +176,22 @@
   justify-content: center;
   cursor: pointer;
   position: relative;
-  transition: background 150ms ease;
-  color: rgba(255, 255, 255, 0.3);
+  transition: background 150ms ease, color 150ms ease;
+  color: rgba(255, 255, 255, 0.5);
+  border: none;
+  background: transparent;
+  padding: 0;
 }
 
 .sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(191, 90, 242, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .sidebar-item--active {
   background: var(--neon-purple-surface);
   color: var(--neon-purple);
-  border-left: 3px solid var(--neon-purple);
-  border-radius: 0 8px 8px 0;
-  margin-left: -6px;
-  padding-left: 3px;
+  box-shadow: inset 3px 0 0 var(--neon-purple);
 }
 
 .sidebar-item__open-dot {
@@ -290,12 +301,16 @@
 .sidebar-model-badge {
   padding: 3px 6px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.25);
+  background: var(--neon-purple-surface);
+  border: 1px solid var(--neon-purple-border);
+  font-size: 8px;
+  color: var(--neon-purple);
   font-family: var(--bde-font-code);
   text-align: center;
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Reduced motion ── */
