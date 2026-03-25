@@ -5,6 +5,9 @@ out
 .eslintcache
 *.log*
 
+# Test coverage output
+coverage/
+
 # Git worktrees
 .worktrees/
 
