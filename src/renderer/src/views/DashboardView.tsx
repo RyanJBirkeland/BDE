@@ -109,7 +109,7 @@ export default function DashboardView() {
       .getPrList()
       .then((prs) => {
         if (cancelled) return
-        setPrCount(Array.isArray(prs) ? prs.length : 0)
+        setPrCount(prs?.prs?.length ?? 0)
       })
       .catch(() => {})
     return () => {
