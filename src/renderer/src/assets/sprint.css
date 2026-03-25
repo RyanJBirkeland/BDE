@@ -2044,3 +2044,212 @@ tr:hover .bde-task-table__action-btn--done {
   width: min(900px, 95vw);
   max-height: 720px;
 }
+
+/* ── Sprint Task List ───────────────────────────────────── */
+
+.sprint-task-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bde-bg);
+  border-right: 1px solid var(--bde-border);
+  overflow: hidden;
+}
+
+.sprint-task-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--bde-border);
+}
+
+.sprint-task-list__title {
+  font-size: var(--bde-size-lg);
+  font-weight: 600;
+  color: var(--bde-text);
+  margin: 0;
+}
+
+.sprint-task-list__count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  background: var(--glass-tint-mid);
+  border: 1px solid var(--bde-border);
+  padding: 2px 8px;
+  border-radius: var(--bde-radius-lg);
+}
+
+.sprint-task-list__search {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bde-border);
+}
+
+.sprint-task-list__clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.sprint-task-list__clear-btn:hover {
+  color: var(--bde-text);
+}
+
+.sprint-task-list__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bde-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.sprint-task-list__filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: var(--bde-size-xs);
+  font-family: var(--bde-font-ui);
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--bde-border);
+  border-radius: 12px;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sprint-task-list__filter-chip:hover:not(:disabled) {
+  border-color: var(--bde-text-muted);
+  color: var(--bde-text);
+  background: var(--bde-hover);
+}
+
+.sprint-task-list__filter-chip--active {
+  background: var(--bde-accent);
+  border-color: var(--bde-accent);
+  color: var(--bde-btn-primary-text);
+}
+
+.sprint-task-list__filter-chip:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sprint-task-list__filter-count {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: var(--bde-surface-high);
+}
+
+.sprint-task-list__filter-chip--active .sprint-task-list__filter-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--bde-btn-primary-text);
+}
+
+.sprint-task-list__items {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+}
+
+.sprint-task-list__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-muted);
+  text-align: center;
+}
+
+/* ── Sprint Task List Item ──────────────────────────────── */
+
+.sprint-task-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 6px;
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-lg);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+  animation: bde-slide-up-fade 200ms ease backwards;
+  animation-delay: calc(var(--stagger-index, 0) * 30ms);
+}
+
+.sprint-task-list-item:hover {
+  border-color: var(--bde-border-hover);
+  background: var(--bde-surface-high);
+}
+
+.sprint-task-list-item--selected {
+  border-color: var(--bde-accent);
+  background: var(--bde-surface-high);
+}
+
+.sprint-task-list-item__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.sprint-task-list-item__repo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.sprint-task-list-item__title {
+  flex: 1;
+  font-size: var(--bde-size-sm);
+  font-weight: 500;
+  color: var(--bde-text);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.sprint-task-list-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.sprint-task-list-item__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+}
+
+.sprint-task-list-item__time {
+  font-family: var(--bde-font-code);
+}
+
+.sprint-task-list-item__pr {
+  font-family: var(--bde-font-code);
+  color: var(--bde-accent);
+  font-weight: 500;
+}

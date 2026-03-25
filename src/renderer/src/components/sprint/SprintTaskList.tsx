@@ -1,0 +1,286 @@
+/**
+ * SprintTaskList — Filterable left-pane task list for Sprint Center redesign.
+ * Displays tasks with status badges, search, and filtering capabilities.
+ */
+import { useState, useMemo } from 'react'
+import { Badge } from '../ui/Badge'
+import { Input } from '../ui/Input'
+import { Search, X } from 'lucide-react'
+import { repoColor, repoBadgeVariant, timeAgo } from '../../lib/format'
+import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
+import type { SprintTask } from '../../../../shared/types'
+
+type StatusFilter = 'all' | 'backlog' | 'todo' | 'blocked' | 'in-progress' | 'awaiting-review' | 'done' | 'failed'
+
+interface SprintTaskListProps {
+  tasks: SprintTask[]
+  selectedTaskId: string | null
+  onSelectTask: (task: SprintTask) => void
+  repoFilter?: string | null
+}
+
+function getStatusLabel(status: StatusFilter): string {
+  switch (status) {
+    case 'all':
+      return 'All Tasks'
+    case 'backlog':
+      return 'Backlog'
+    case 'todo':
+      return 'To Do'
+    case 'blocked':
+      return 'Blocked'
+    case 'in-progress':
+      return 'In Progress'
+    case 'awaiting-review':
+      return 'Awaiting Review'
+    case 'done':
+      return 'Done'
+    case 'failed':
+      return 'Failed'
+    default:
+      return 'All Tasks'
+  }
+}
+
+function getStatusBadgeVariant(task: SprintTask): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'muted' {
+  switch (task.status) {
+    case 'active':
+      return task.pr_status === 'open' ? 'info' : 'warning'
+    case 'done':
+      return 'success'
+    case 'failed':
+    case 'error':
+    case 'cancelled':
+      return 'danger'
+    case 'blocked':
+      return 'danger'
+    case 'queued':
+      return 'info'
+    case 'backlog':
+    default:
+      return 'muted'
+  }
+}
+
+function getStatusDisplay(task: SprintTask): string {
+  if (task.status === 'active' && task.pr_status === 'open') {
+    return 'Review'
+  }
+  if (task.status === 'done' && task.pr_status === 'open') {
+    return 'Review'
+  }
+  switch (task.status) {
+    case 'active':
+      return 'Active'
+    case 'queued':
+      return 'Todo'
+    case 'blocked':
+      return 'Blocked'
+    case 'backlog':
+      return 'Backlog'
+    case 'done':
+      return 'Done'
+    case 'failed':
+      return 'Failed'
+    case 'cancelled':
+      return 'Cancelled'
+    case 'error':
+      return 'Error'
+    default:
+      return task.status
+  }
+}
+
+export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter }: SprintTaskListProps) {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+
+  // Apply repo filter first
+  const repoFilteredTasks = useMemo(() => {
+    if (!repoFilter) return tasks
+    return tasks.filter((t) => t.repo.toLowerCase() === repoFilter.toLowerCase())
+  }, [tasks, repoFilter])
+
+  // Partition tasks for status filtering
+  const partition = useMemo(() => partitionSprintTasks(repoFilteredTasks), [repoFilteredTasks])
+
+  // Apply status filter
+  const statusFilteredTasks = useMemo(() => {
+    switch (statusFilter) {
+      case 'all':
+        return repoFilteredTasks
+      case 'backlog':
+        return partition.backlog
+      case 'todo':
+        return partition.todo
+      case 'blocked':
+        return partition.blocked
+      case 'in-progress':
+        return partition.inProgress
+      case 'awaiting-review':
+        return partition.awaitingReview
+      case 'done':
+        return partition.done
+      case 'failed':
+        return partition.failed
+      default:
+        return repoFilteredTasks
+    }
+  }, [statusFilter, repoFilteredTasks, partition])
+
+  // Apply search filter
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery.trim()) return statusFilteredTasks
+    const query = searchQuery.toLowerCase().trim()
+    return statusFilteredTasks.filter(
+      (task) =>
+        task.title.toLowerCase().includes(query) ||
+        task.repo.toLowerCase().includes(query) ||
+        task.spec?.toLowerCase().includes(query) ||
+        task.notes?.toLowerCase().includes(query)
+    )
+  }, [statusFilteredTasks, searchQuery])
+
+  // Sort by priority (lower number = higher priority) for backlog/todo, by updated_at for others
+  const sortedTasks = useMemo(() => {
+    return [...filteredTasks].sort((a, b) => {
+      if (statusFilter === 'backlog' || statusFilter === 'todo' || statusFilter === 'all') {
+        return a.priority - b.priority
+      }
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    })
+  }, [filteredTasks, statusFilter])
+
+  const statusFilterOptions: StatusFilter[] = [
+    'all',
+    'backlog',
+    'todo',
+    'in-progress',
+    'awaiting-review',
+    'blocked',
+    'done',
+    'failed',
+  ]
+
+  const getFilterCount = (filter: StatusFilter): number => {
+    switch (filter) {
+      case 'all':
+        return repoFilteredTasks.length
+      case 'backlog':
+        return partition.backlog.length
+      case 'todo':
+        return partition.todo.length
+      case 'blocked':
+        return partition.blocked.length
+      case 'in-progress':
+        return partition.inProgress.length
+      case 'awaiting-review':
+        return partition.awaitingReview.length
+      case 'done':
+        return partition.done.length
+      case 'failed':
+        return partition.failed.length
+      default:
+        return 0
+    }
+  }
+
+  return (
+    <div className="sprint-task-list">
+      <div className="sprint-task-list__header">
+        <h2 className="sprint-task-list__title">Tasks</h2>
+        <span className="sprint-task-list__count bde-count-badge">{sortedTasks.length}</span>
+      </div>
+
+      <div className="sprint-task-list__search">
+        <Input
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search tasks..."
+          prefix={<Search size={14} />}
+          suffix={
+            searchQuery && (
+              <button
+                className="sprint-task-list__clear-btn"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )
+          }
+        />
+      </div>
+
+      <div className="sprint-task-list__filters">
+        {statusFilterOptions.map((filter) => {
+          const count = getFilterCount(filter)
+          const isActive = statusFilter === filter
+          return (
+            <button
+              key={filter}
+              className={`sprint-task-list__filter-chip ${isActive ? 'sprint-task-list__filter-chip--active' : ''}`}
+              onClick={() => setStatusFilter(filter)}
+              disabled={count === 0}
+            >
+              {getStatusLabel(filter)}
+              <span className="sprint-task-list__filter-count">{count}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="sprint-task-list__items">
+        {sortedTasks.length === 0 ? (
+          <div className="sprint-task-list__empty">
+            {searchQuery ? 'No tasks match your search' : 'No tasks in this category'}
+          </div>
+        ) : (
+          sortedTasks.map((task, index) => {
+            const isSelected = task.id === selectedTaskId
+            return (
+              <button
+                key={task.id}
+                className={`sprint-task-list-item ${isSelected ? 'sprint-task-list-item--selected' : ''}`}
+                onClick={() => onSelectTask(task)}
+                style={{ '--stagger-index': index } as React.CSSProperties}
+              >
+                <div className="sprint-task-list-item__header">
+                  <span
+                    className="sprint-task-list-item__repo-dot"
+                    style={{ background: repoColor(task.repo) }}
+                    title={task.repo}
+                  />
+                  <span className="sprint-task-list-item__title">{task.title}</span>
+                </div>
+
+                <div className="sprint-task-list-item__meta">
+                  <Badge variant={getStatusBadgeVariant(task)} size="sm">
+                    {getStatusDisplay(task)}
+                  </Badge>
+                  <Badge variant={repoBadgeVariant(task.repo)} size="sm">
+                    {task.repo}
+                  </Badge>
+                  {task.priority <= 2 && (
+                    <Badge variant="danger" size="sm">
+                      P{task.priority}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="sprint-task-list-item__footer">
+                  <span className="sprint-task-list-item__time">{timeAgo(task.updated_at)}</span>
+                  {task.pr_number && (
+                    <span className="sprint-task-list-item__pr" title={`PR #${task.pr_number}`}>
+                      #{task.pr_number}
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
+}
