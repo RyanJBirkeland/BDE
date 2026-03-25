@@ -11,6 +11,9 @@ import {
   getDoneTodayCount,
   listTasksWithOpenPrs,
   clearSprintTaskFk,
+  getQueuedTasks,
+  getOrphanedTasks,
+  getTasksWithDependencies,
   UPDATE_ALLOWLIST,
 } from '../sprint-queries'
 
@@ -23,7 +26,7 @@ const mockDelete = vi.fn()
 
 function chainable(terminal?: Record<string, unknown>) {
   const chain: Record<string, unknown> = {}
-  const methods = ['select', 'eq', 'not', 'gte', 'lt', 'order', 'single', 'maybeSingle']
+  const methods = ['select', 'eq', 'not', 'gte', 'lt', 'order', 'single', 'maybeSingle', 'limit', 'is']
   for (const m of methods) {
     chain[m] = vi.fn().mockReturnValue(chain)
   }
@@ -127,7 +130,7 @@ describe('createTask', () => {
     expect(result.repo).toBe('bde')
   })
 
-  it('throws on insert error', async () => {
+  it('returns null on insert error', async () => {
     const chain = chainable()
     ;(chain.single as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: null,
@@ -135,7 +138,8 @@ describe('createTask', () => {
     })
     mockInsert.mockReturnValue(chain)
 
-    await expect(createTask({ title: 'Fail', repo: 'bde' })).rejects.toThrow('insert failed')
+    const result = await createTask({ title: 'Fail', repo: 'bde' })
+    expect(result).toBeNull()
   })
 })
 
@@ -259,5 +263,79 @@ describe('clearSprintTaskFk', () => {
     mockUpdate.mockReturnValue(chain)
 
     await expect(clearSprintTaskFk('agent-123')).resolves.not.toThrow()
+  })
+})
+
+describe('getQueuedTasks', () => {
+  it('returns empty array on error instead of throwing', async () => {
+    const chain = chainable()
+    ;(chain.limit as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: null,
+      error: { message: 'connection refused' },
+    })
+    mockSelect.mockReturnValue(chain)
+
+    const result = await getQueuedTasks(5)
+    expect(result).toEqual([])
+  })
+
+  it('returns tasks on success', async () => {
+    const tasks = [{ id: 't1', status: 'queued' }]
+    const chain = chainable()
+    ;(chain.limit as ReturnType<typeof vi.fn>).mockResolvedValue({ data: tasks, error: null })
+    mockSelect.mockReturnValue(chain)
+
+    const result = await getQueuedTasks(5)
+    expect(result).toHaveLength(1)
+  })
+})
+
+describe('getOrphanedTasks', () => {
+  it('returns empty array on error instead of throwing', async () => {
+    const chain = chainable()
+    ;(chain.eq as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(chain) // .eq('status', 'active')
+      .mockResolvedValueOnce({ data: null, error: { message: 'timeout' } }) // .eq('claimed_by', ...)
+    mockSelect.mockReturnValue(chain)
+
+    const result = await getOrphanedTasks('exec-1')
+    expect(result).toEqual([])
+  })
+
+  it('returns tasks on success', async () => {
+    const tasks = [{ id: 't1', status: 'active', claimed_by: 'exec-1' }]
+    const chain = chainable()
+    ;(chain.eq as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(chain) // .eq('status', 'active')
+      .mockResolvedValueOnce({ data: tasks, error: null }) // .eq('claimed_by', ...)
+    mockSelect.mockReturnValue(chain)
+
+    const result = await getOrphanedTasks('exec-1')
+    expect(result).toHaveLength(1)
+  })
+})
+
+describe('getTasksWithDependencies', () => {
+  it('returns empty array on error instead of throwing', async () => {
+    const chain = chainable()
+    ;(chain.not as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: null,
+      error: { message: 'query failed' },
+    })
+    mockSelect.mockReturnValue(chain)
+
+    const result = await getTasksWithDependencies()
+    expect(result).toEqual([])
+  })
+
+  it('returns tasks with dependencies on success', async () => {
+    const tasks = [{ id: 't1', depends_on: [{ id: 't0', type: 'hard' }], status: 'blocked' }]
+    const chain = chainable()
+    ;(chain.not as ReturnType<typeof vi.fn>).mockResolvedValue({ data: tasks, error: null })
+    mockSelect.mockReturnValue(chain)
+
+    const result = await getTasksWithDependencies()
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('t1')
   })
 })

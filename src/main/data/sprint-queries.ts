@@ -118,7 +118,7 @@ export interface CreateTaskInput {
   playground_enabled?: boolean
 }
 
-export async function createTask(input: CreateTaskInput): Promise<SprintTask> {
+export async function createTask(input: CreateTaskInput): Promise<SprintTask | null> {
   const row: Record<string, unknown> = {
     title: input.title,
     repo: input.repo,
@@ -141,9 +141,10 @@ export async function createTask(input: CreateTaskInput): Promise<SprintTask> {
     .single()
 
   if (error) {
-    throw new Error(`[sprint-queries] createTask failed: ${error.message}`)
+    logger.warn(`[sprint-queries] createTask failed: ${error.message}`)
+    return null
   }
-  return sanitizeTask(data)
+  return data ? sanitizeTask(data) : null
 }
 
 export async function updateTask(
@@ -366,7 +367,10 @@ export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
     .order('priority', { ascending: true })
     .order('created_at', { ascending: true })
     .limit(limit)
-  if (error) throw error
+  if (error) {
+    logger.warn(`[sprint-queries] getQueuedTasks failed: ${error.message}`)
+    return []
+  }
   return sanitizeTasks(data ?? [])
 }
 
@@ -374,7 +378,10 @@ export async function getOrphanedTasks(claimedBy: string): Promise<SprintTask[]>
   const { data, error } = await getSupabaseClient()
     .from('sprint_tasks').select('*')
     .eq('status', 'active').eq('claimed_by', claimedBy)
-  if (error) throw error
+  if (error) {
+    logger.warn(`[sprint-queries] getOrphanedTasks failed: ${error.message}`)
+    return []
+  }
   return sanitizeTasks(data ?? [])
 }
 
@@ -413,7 +420,10 @@ export async function getTasksWithDependencies(): Promise<
     .from('sprint_tasks')
     .select('id, depends_on, status')
     .not('depends_on', 'is', null)
-  if (error) throw error
+  if (error) {
+    logger.warn(`[sprint-queries] getTasksWithDependencies failed: ${error.message}`)
+    return []
+  }
   // Sanitize each partial task object
   return (data ?? []).map((task) => ({
     ...task,
