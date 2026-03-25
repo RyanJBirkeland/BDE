@@ -1,7 +1,8 @@
 /**
- * AgentsView — unified agent workflow hub.
- * Left panel: agent list with running/recent/history grouping.
- * Right panel: agent detail with chat renderer and steering.
+ * AgentsView — Neon command center with three stacked zones:
+ * 1. Live Activity Strip (running agents as pills)
+ * 2. Fleet List + Agent Console (two-pane)
+ * 3. Timeline Waterfall (Gantt-style)
  */
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
@@ -10,11 +11,11 @@ import '../assets/agents.css'
 import { useUIStore } from '../stores/ui'
 import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useAgentEventsStore } from '../stores/agentEvents'
-import { useSidebarResize } from '../hooks/useSidebarResize'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { AgentList } from '../components/agents/AgentList'
-import { AgentDetail } from '../components/agents/AgentDetail'
-import { HealthBar } from '../components/agents/HealthBar'
+import { AgentConsole } from '../components/agents/AgentConsole'
+import { LiveActivityStrip } from '../components/agents/LiveActivityStrip'
+import { AgentTimeline } from '../components/agents/AgentTimeline'
 import { SpawnModal } from '../components/agents/SpawnModal'
 import { tokens } from '../design-system/tokens'
 import { POLL_SESSIONS_INTERVAL } from '../lib/constants'
@@ -26,13 +27,11 @@ export function AgentsView() {
   const agents = useAgentHistoryStore((s) => s.agents)
   const agentsLoading = useAgentHistoryStore((s) => s.loading)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
-  const events = useAgentEventsStore((s) => s.events)
-  const loadHistory = useAgentEventsStore((s) => s.loadHistory)
   const initEvents = useAgentEventsStore((s) => s.init)
+  const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [spawnOpen, setSpawnOpen] = useState(false)
-  const { sidebarWidth, onResizeHandleMouseDown } = useSidebarResize()
   const cleanupRef = useRef<(() => void) | null>(null)
 
   // Initialize event listener once
@@ -70,93 +69,139 @@ export function AgentsView() {
   }, [])
 
   const selectedAgent = agents.find((a) => a.id === selectedId)
-  const selectedEvents = selectedId ? (events[selectedId] ?? []) : []
 
   const handleSteer = useCallback(async (message: string) => {
     if (!selectedId) return
     await window.api.steerAgent(selectedId, message)
   }, [selectedId])
 
-  return (
-    <motion.div className="agents-view" style={{ display: 'flex', flexDirection: 'column', height: '100%' }} variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
-      {/* HealthBar */}
-      <HealthBarWrapper />
-
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-      {/* Left sidebar */}
-      <div style={{ width: sidebarWidth, minWidth: 200, borderRight: `1px solid ${tokens.color.border}`, display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <div className="agents-view__sidebar-header">
-          <span className="agents-view__title text-gradient-aurora">
-            Agents
-          </span>
-          <button
-            className="agents-view__spawn-btn"
-            onClick={() => setSpawnOpen(true)}
-            title="Spawn Agent"
-          >
-            <Plus size={14} />
-          </button>
-        </div>
-
-        <AgentList
-          agents={agents}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          loading={agentsLoading}
-        />
-      </div>
-
-      {/* Resize handle */}
-      <div
-        onMouseDown={onResizeHandleMouseDown}
-        style={{ width: 4, cursor: 'col-resize', background: 'transparent' }}
-      />
-
-      {/* Right content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {selectedAgent ? (
-          <AgentDetail
-            agent={selectedAgent}
-            events={selectedEvents}
-            onSteer={handleSteer}
-          />
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: tokens.color.textDim, fontSize: tokens.size.md }}>
-            {agents.length === 0 ? 'No agents yet. Spawn one to get started.' : 'Select an agent to view details.'}
-          </div>
-        )}
-      </div>
-
-      <SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />
-      </div>
-    </motion.div>
-  )
-}
-
-function HealthBarWrapper() {
-  const [status, setStatus] = useState<{
-    running: boolean
-    concurrency: { maxSlots: number; activeCount: number; cooldownUntil: number } | null
-    activeAgents: Array<unknown>
-  } | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const poll = (): void => {
-      window.api.agentManager.status().then((s) => {
-        if (!cancelled) setStatus(s)
-      }).catch(() => {})
+  const handleCommand = useCallback(async (cmd: string, _args?: string) => {
+    if (!selectedId || !selectedAgent) return
+    switch (cmd) {
+      case '/stop':
+        await window.api.killAgent(selectedId)
+        break
+      case '/retry':
+        if (selectedAgent.sprintTaskId) {
+          await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' })
+        }
+        break
+      case '/focus':
+        if (_args) await window.api.steerAgent(selectedId, `Focus on: ${_args}`)
+        break
+      default:
+        break
     }
-    poll()
-    const interval = setInterval(poll, 5000)
-    return () => { cancelled = true; clearInterval(interval) }
+  }, [selectedId, selectedAgent])
+
+  const handleSelectAgent = useCallback((id: string) => {
+    setSelectedId(id)
   }, [])
 
-  const connected = status !== null && status.running
-  const stats = status
-    ? { queued: 0, active: status.activeAgents.length, doneToday: 0, failed: 0 }
-    : null
+  return (
+    <motion.div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        background: 'var(--neon-bg)',
+      }}
+      variants={VARIANTS.fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+    >
+      {/* Zone 1: Live Activity Strip */}
+      <LiveActivityStrip onSelectAgent={handleSelectAgent} />
 
-  return <HealthBar connected={connected} stats={stats} />
+      {/* Zone 2: Fleet List + Agent Console */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        {/* Fleet sidebar */}
+        <div style={{
+          width: 220,
+          minWidth: 180,
+          borderRight: `1px solid var(--neon-purple-border)`,
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'linear-gradient(180deg, rgba(138, 43, 226, 0.04), rgba(10, 0, 21, 0.4))',
+        }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 12px',
+            borderBottom: '1px solid var(--neon-purple-border)',
+          }}>
+            <span style={{
+              color: 'var(--neon-purple)',
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '1.5px',
+              fontWeight: 600,
+            }}>
+              Fleet
+            </span>
+            <button
+              onClick={() => setSpawnOpen(true)}
+              title="Spawn Agent"
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                border: '1px solid var(--neon-cyan-border)',
+                background: 'var(--neon-cyan-surface)',
+                color: 'var(--neon-cyan)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+
+          <AgentList
+            agents={agents}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            loading={agentsLoading}
+          />
+        </div>
+
+        {/* Agent Console */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          {selectedAgent ? (
+            <AgentConsole
+              agentId={selectedAgent.id}
+              onSteer={handleSteer}
+              onCommand={handleCommand}
+            />
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: 'rgba(255, 255, 255, 0.2)',
+              fontSize: tokens.size.md,
+              fontFamily: 'var(--bde-font-code)',
+            }}>
+              {agents.length === 0
+                ? '> No agents yet. Spawn one to get started.'
+                : '> Select an agent to view console.'}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Zone 3: Timeline Waterfall */}
+      <AgentTimeline agents={agents} onSelectAgent={handleSelectAgent} />
+
+      {/* Spawn Modal */}
+      <SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />
+    </motion.div>
+  )
 }
