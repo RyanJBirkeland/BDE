@@ -92,12 +92,12 @@ describe('sidebar store', () => {
     const { useSidebarStore } = await import('../sidebar');
     const mockSet = window.api.settings.set as ReturnType<typeof vi.fn>;
 
-    const newOrder = ['ide', 'dashboard', 'agents'];
-    useSidebarStore.getState().reorderViews(newOrder);
+    const newOrder = ['ide', 'dashboard', 'agents'] as const;
+    useSidebarStore.getState().reorderViews([...newOrder]);
 
     expect(mockSet).toHaveBeenCalledWith(
       'sidebar.pinnedViews',
-      JSON.stringify(newOrder)
+      JSON.stringify([...newOrder])
     );
   });
 
@@ -163,8 +163,8 @@ describe('sidebar store', () => {
 describe('getUnpinnedViews', () => {
   it('returns views not in pinned list', async () => {
     const { getUnpinnedViews } = await import('../sidebar');
-    const pinned = ['dashboard', 'agents', 'ide'];
-    const unpinned = getUnpinnedViews(pinned);
+    const pinned = ['dashboard', 'agents', 'ide'] as const;
+    const unpinned = getUnpinnedViews([...pinned]);
 
     expect(unpinned).not.toContain('dashboard');
     expect(unpinned).not.toContain('agents');
@@ -180,8 +180,8 @@ describe('getUnpinnedViews', () => {
 
   it('returns empty array when all views are pinned', async () => {
     const { getUnpinnedViews } = await import('../sidebar');
-    const allViews = ['dashboard', 'agents', 'ide', 'sprint', 'pr-station', 'git', 'memory', 'cost', 'settings', 'task-workbench'];
-    const unpinned = getUnpinnedViews(allViews);
+    const allViews = ['dashboard', 'agents', 'ide', 'sprint', 'pr-station', 'git', 'memory', 'cost', 'settings', 'task-workbench'] as const;
+    const unpinned = getUnpinnedViews([...allViews]);
 
     expect(unpinned).toHaveLength(0);
   });
