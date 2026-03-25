@@ -60,3 +60,48 @@ test.describe('PR Station', () => {
     await expect(tabs).toHaveCount(0)
   })
 })
+
+test.describe('PR Station — filter bar', () => {
+  test('filter bar renders with repo chips and sort selector', async ({ bde }) => {
+    const { window } = bde
+
+    // Navigate to PR Station via Cmd+5
+    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+    await window.keyboard.press('Meta+5')
+    await expect(window.locator('.pr-station-wrapper')).toBeVisible({ timeout: 5_000 })
+
+    // Verify the filter bar group renders
+    const filterBar = window.locator('.pr-station-filters')
+    await expect(filterBar).toBeVisible({ timeout: 5_000 })
+
+    // The "All" repo chip should always be present
+    const allChip = filterBar.locator('button', { hasText: 'All' })
+    await expect(allChip).toBeVisible()
+
+    // "All" should be active (primary variant) by default
+    await expect(allChip).toHaveClass(/bde-btn--primary/)
+
+    // Verify the sort selector exists
+    const sortSelect = filterBar.locator('#pr-sort-select')
+    await expect(sortSelect).toBeVisible()
+
+    // Default sort should be "Last updated"
+    await expect(sortSelect).toHaveValue('updated')
+
+    // If there are additional repo chips beyond "All", clicking one should
+    // toggle it to active and deactivate "All"
+    const repoChips = filterBar.locator('.pr-station-filters__repos button')
+    const chipCount = await repoChips.count()
+    if (chipCount > 1) {
+      // Click the first repo-specific chip (index 1, since 0 is "All")
+      const repoChip = repoChips.nth(1)
+      await repoChip.click()
+
+      // The clicked chip should now be primary
+      await expect(repoChip).toHaveClass(/bde-btn--primary/)
+
+      // "All" should now be ghost (not active)
+      await expect(allChip).toHaveClass(/bde-btn--ghost/)
+    }
+  })
+})

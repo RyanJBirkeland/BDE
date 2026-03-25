@@ -52,3 +52,36 @@ test.describe('Settings view', () => {
     await expect(addRepoBtn).toBeVisible({ timeout: 3_000 })
   })
 })
+
+test.describe('Settings — Connections tab', () => {
+  test('Connections tab shows fields and accepts input', async ({ bde }) => {
+    const { window } = bde
+
+    // Navigate to Settings via Cmd+9
+    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+    await window.keyboard.press('Meta+9')
+    await expect(window.locator('.settings-view')).toBeVisible({ timeout: 5_000 })
+
+    // Click the Connections tab (it is the default, but click explicitly to be sure)
+    const connectionsTab = window.locator('.settings-view__tabs button', { hasText: 'Connections' })
+    await expect(connectionsTab).toBeVisible()
+    await connectionsTab.click()
+
+    // Verify "Connections" section title is visible
+    const sectionTitle = window.locator('.settings-section__title', { hasText: 'Connections' })
+    await expect(sectionTitle).toBeVisible({ timeout: 3_000 })
+
+    // Verify the Worktree Base Path input field exists (part of Agent Manager settings in Connections)
+    const worktreeInput = window.locator('.settings-field__input[placeholder="/tmp/worktrees/bde"]')
+    await expect(worktreeInput).toBeVisible()
+
+    // Fill a test value into the Worktree Base Path field
+    await worktreeInput.fill('/tmp/test-worktree-base')
+    await expect(worktreeInput).toHaveValue('/tmp/test-worktree-base')
+
+    // Verify the Save button becomes enabled after editing
+    const saveBtn = window.locator('.settings-connection button', { hasText: 'Save' })
+    await expect(saveBtn).toBeVisible()
+    await expect(saveBtn).toBeEnabled()
+  })
+})

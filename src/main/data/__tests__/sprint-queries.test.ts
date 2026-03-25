@@ -84,7 +84,8 @@ describe('getTask', () => {
     mockSelect.mockReturnValue(chain)
 
     const result = await getTask('abc')
-    expect(result).toEqual(task)
+    // sanitizeTask adds depends_on: null when not present
+    expect(result).toEqual({ ...task, depends_on: null })
   })
 })
 
@@ -152,7 +153,8 @@ describe('updateTask', () => {
     mockUpdate.mockReturnValue(chain)
 
     const result = await updateTask('abc', { title: 'Updated', priority: 3 })
-    expect(result).toEqual(updated)
+    // sanitizeTask adds depends_on: null when not present
+    expect(result).toEqual({ ...updated, depends_on: null })
   })
 })
 
@@ -174,7 +176,8 @@ describe('claimTask', () => {
     mockUpdate.mockReturnValue(chain)
 
     const result = await claimTask('t1', 'exec-1')
-    expect(result).toEqual(claimed)
+    // sanitizeTask adds depends_on: null when not present
+    expect(result).toEqual({ ...claimed, depends_on: null })
   })
 
   it('returns null for non-queued task', async () => {
@@ -198,7 +201,8 @@ describe('releaseTask', () => {
     mockUpdate.mockReturnValue(chain)
 
     const result = await releaseTask('t1')
-    expect(result).toEqual(released)
+    // sanitizeTask adds depends_on: null when not present
+    expect(result).toEqual({ ...released, depends_on: null })
   })
 })
 

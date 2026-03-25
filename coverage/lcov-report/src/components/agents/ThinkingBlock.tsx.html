@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.33% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>2/6</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>2/5</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -146,26 +146,7 @@
 <a name='L81'></a><a href='#L81'>81</a>
 <a name='L82'></a><a href='#L82'>82</a>
 <a name='L83'></a><a href='#L83'>83</a>
-<a name='L84'></a><a href='#L84'>84</a>
-<a name='L85'></a><a href='#L85'>85</a>
-<a name='L86'></a><a href='#L86'>86</a>
-<a name='L87'></a><a href='#L87'>87</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -175,7 +156,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -239,29 +233,26 @@
 import { ChevronRight } from 'lucide-react'
 import { tokens } from '../../design-system/tokens'
 &nbsp;
-const THINKING_ACCENT = '#A855F7'
-const THINKING_BG = 'rgba(168, 85, 247, 0.15)'
-&nbsp;
 interface ThinkingBlockProps {
   tokenCount: number
   text?: string
   timestamp?: number
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >ThinkingBlock({</span> tokenCount, text }: ThinkingBlockProps) {
-  const [expanded, setExpanded<span class="cstat-no" title="statement not covered" >] = useState(false)</span>
+export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
+  const [expanded, setExpanded] = useState(false)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;div
       style={{
-        border: `1px solid ${THINKING_ACCENT}`,
+        border: '1px solid var(--bde-purple)',
         borderRadius: tokens.radius.md,
-        backgroundColor: THINKING_BG,
+        backgroundColor: 'var(--bde-purple-dim)',
         overflow: 'hidden',
       }}
     &gt;
       &lt;button
-        onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etExpanded(<span class="fstat-no" title="function not covered" >(p</span>rev) =&gt; <span class="cstat-no" title="statement not covered" >!prev)</span>}</span>
+        onClick={() =&gt; setExpanded((prev) =&gt; !prev)}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -273,7 +264,7 @@ export function <span class="fstat-no" title="function not covered" >ThinkingBlo
           cursor: 'pointer',
           fontFamily: tokens.font.ui,
           fontSize: tokens.size.sm,
-          color: THINKING_ACCENT,
+          color: 'var(--bde-purple)',
           textAlign: 'left',
         }}
       &gt;
@@ -305,7 +296,7 @@ export function <span class="fstat-no" title="function not covered" >ThinkingBlo
         &lt;div
           style={{
             padding: `${tokens.space[2]} ${tokens.space[3]}`,
-            borderTop: `1px solid ${THINKING_ACCENT}`,
+            borderTop: '1px solid var(--bde-purple)',
             fontFamily: tokens.font.code,
             fontSize: tokens.size.sm,
             color: tokens.color.text,
@@ -328,7 +319,7 @@ export function <span class="fstat-no" title="function not covered" >ThinkingBlo
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-24T03:43:26.144Z
+                at 2026-03-25T01:44:05.222Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

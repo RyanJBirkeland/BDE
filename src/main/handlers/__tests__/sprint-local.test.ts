@@ -57,11 +57,21 @@ vi.mock('../../db', () => ({
 // Mock paths
 vi.mock('../../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue('/tmp/specs'),
+  BDE_DIR: '/tmp/bde',
+  BDE_AGENTS_INDEX: '/tmp/agents-index.json',
+  BDE_AGENT_LOGS_DIR: '/tmp/agent-logs',
 }))
 
 // Mock agent-queries
 vi.mock('../../data/agent-queries', () => ({
   getAgentLogInfo: vi.fn(),
+  getAgentLogPath: vi.fn(),
+}))
+
+// Mock agent-history (readLog uses file handles internally, mock at module level)
+vi.mock('../../agent-history', () => ({
+  readLog: vi.fn(),
+  initAgentHistory: vi.fn(),
 }))
 
 // Mock fs/promises (used in sprint:readLog)
@@ -108,7 +118,8 @@ import {
 } from '../../data/sprint-queries'
 import { notifySprintMutation } from '../sprint-listeners'
 import { getSettingJson } from '../../settings'
-import { getAgentLogInfo } from '../../data/agent-queries'
+import { getAgentLogInfo, getAgentLogPath } from '../../data/agent-queries'
+import { readLog } from '../../agent-history'
 import { readFile } from 'fs/promises'
 
 const mockEvent = {} as IpcMainInvokeEvent
@@ -391,7 +402,12 @@ describe('sprint:readLog handler', () => {
       logPath: '/tmp/agent-1/output.log',
       status: 'active',
     } as any)
-    vi.mocked(readFile).mockResolvedValue('log line 1\nlog line 2\n' as any)
+    const logContent = 'log line 1\nlog line 2\n'
+    vi.mocked(readLog).mockResolvedValue({
+      content: logContent,
+      nextByte: logContent.length,
+      totalBytes: logContent.length,
+    })
 
     const handler = captureHandler('sprint:readLog')
     const result = await handler(mockEvent, 'agent-1', 0)
@@ -406,7 +422,11 @@ describe('sprint:readLog handler', () => {
       logPath: '/tmp/agent-1/output.log',
       status: 'done',
     } as any)
-    vi.mocked(readFile).mockResolvedValue('short' as any)
+    vi.mocked(readLog).mockResolvedValue({
+      content: '',
+      nextByte: 9999,
+      totalBytes: 5,
+    })
 
     const handler = captureHandler('sprint:readLog')
     const result = await handler(mockEvent, 'agent-1', 9999)
@@ -419,7 +439,11 @@ describe('sprint:readLog handler', () => {
       logPath: '/tmp/agent-1/output.log',
       status: 'failed',
     } as any)
-    vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))
+    vi.mocked(readLog).mockResolvedValue({
+      content: '',
+      nextByte: 0,
+      totalBytes: 0,
+    })
 
     const handler = captureHandler('sprint:readLog')
     const result = await handler(mockEvent, 'agent-1', 0)

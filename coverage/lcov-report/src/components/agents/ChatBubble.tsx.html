@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">14.28% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/7</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">14.28% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/7</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -145,7 +145,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -164,15 +164,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -183,20 +183,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -233,16 +233,16 @@ const variantStyles: Record&lt;ChatBubbleVariant, CSSProperties&gt; = {
   },
 }
 &nbsp;
-function <span class="fstat-no" title="function not covered" >formatTime(t</span>s: number): string {
-  const date = <span class="cstat-no" title="statement not covered" >new Date(ts)</span>
-<span class="cstat-no" title="statement not covered" >  return date.toLocaleTimeString(undefined, {</span>
+function formatTime(ts: number): string {
+  const date = new Date(ts)
+  return date.toLocaleTimeString(undefined, {
     hour: '2-digit',
     minute: '2-digit',
   })
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >ChatBubble({</span> variant, text, timestamp }: ChatBubbleProps) {
-  const bubbleStyle: CSSProperties = <span class="cstat-no" title="statement not covered" >{</span>
+export function ChatBubble({ variant, text, timestamp }: ChatBubbleProps) {
+  const bubbleStyle: CSSProperties = {
     ...variantStyles[variant],
     maxWidth: '85%',
     padding: `${tokens.space[2]} ${tokens.space[3]}`,
@@ -253,20 +253,20 @@ export function <span class="fstat-no" title="function not covered" >ChatBubble(
     lineHeight: 1.5,
   }
 &nbsp;
-  const textStyle: CSSProperties = <span class="cstat-no" title="statement not covered" >{</span>
+  const textStyle: CSSProperties = {
     margin: 0,
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
   }
 &nbsp;
-  const timestampStyle: CSSProperties = <span class="cstat-no" title="statement not covered" >{</span>
+  const timestampStyle: CSSProperties = {
     marginTop: tokens.space[1],
     fontSize: tokens.size.xs,
     color: tokens.color.textMuted,
     textAlign: variant === 'user' ? 'right' : 'left',
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;div style={bubbleStyle}&gt;
       &lt;p style={textStyle}&gt;{text}&lt;/p&gt;
       {timestamp != null &amp;&amp; &lt;div style={timestampStyle}&gt;{formatTime(timestamp)}&lt;/div&gt;}
@@ -280,7 +280,7 @@ export function <span class="fstat-no" title="function not covered" >ChatBubble(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-24T03:43:26.144Z
+                at 2026-03-25T01:44:05.222Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

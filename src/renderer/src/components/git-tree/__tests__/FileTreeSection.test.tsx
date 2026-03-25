@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { FileTreeSection } from '../FileTreeSection'
 import type { GitFileEntry } from '../../../stores/gitTree'
@@ -21,6 +21,10 @@ const defaultProps = {
 }
 
 describe('FileTreeSection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('renders section title', () => {
     render(<FileTreeSection {...defaultProps} />)
     expect(screen.getByText('Staged Changes')).toBeInTheDocument()
@@ -72,7 +76,6 @@ describe('FileTreeSection', () => {
     render(<FileTreeSection {...defaultProps} />)
     const toggle = screen.getByLabelText('Collapse Staged Changes')
     fireEvent.click(toggle)
-
     expect(screen.queryByText('foo.ts')).not.toBeInTheDocument()
   })
 
@@ -80,10 +83,8 @@ describe('FileTreeSection', () => {
     render(<FileTreeSection {...defaultProps} />)
     const toggle = screen.getByLabelText('Collapse Staged Changes')
     fireEvent.click(toggle)
-
     const expandToggle = screen.getByLabelText('Expand Staged Changes')
     fireEvent.click(expandToggle)
-
     expect(screen.getByText('foo.ts')).toBeInTheDocument()
   })
 
@@ -104,5 +105,80 @@ describe('FileTreeSection', () => {
   it('provides rowgroup aria label for file list', () => {
     render(<FileTreeSection {...defaultProps} />)
     expect(screen.getByRole('rowgroup', { name: 'Staged Changes' })).toBeInTheDocument()
+  })
+
+  // --- Additional tests for branch coverage ---
+
+  it('does not show Unstage All when onUnstageAll is not provided', () => {
+    render(<FileTreeSection {...defaultProps} isStaged={true} onUnstageAll={undefined} />)
+    expect(screen.queryByLabelText('Unstage all')).not.toBeInTheDocument()
+  })
+
+  it('does not show Stage All when onStageAll is not provided', () => {
+    render(<FileTreeSection {...defaultProps} isStaged={false} onStageAll={undefined} />)
+    expect(screen.queryByLabelText('Stage all')).not.toBeInTheDocument()
+  })
+
+  it('hides rowgroup when collapsed', () => {
+    render(<FileTreeSection {...defaultProps} />)
+    fireEvent.click(screen.getByLabelText('Collapse Staged Changes'))
+    expect(screen.queryByRole('rowgroup')).not.toBeInTheDocument()
+  })
+
+  it('file count badge updates with different file counts', () => {
+    const manyFiles: GitFileEntry[] = [
+      { path: 'a.ts', status: 'M' },
+      { path: 'b.ts', status: 'A' },
+      { path: 'c.ts', status: 'D' },
+    ]
+    render(<FileTreeSection {...defaultProps} files={manyFiles} />)
+    expect(screen.getByLabelText('3 files')).toBeInTheDocument()
+  })
+
+  it('renders with single file', () => {
+    render(<FileTreeSection {...defaultProps} files={[{ path: 'only.ts', status: 'M' }]} />)
+    expect(screen.getByLabelText('1 files')).toBeInTheDocument()
+    expect(screen.getByText('only.ts')).toBeInTheDocument()
+  })
+
+  it('renders correct title for unstaged section', () => {
+    render(<FileTreeSection {...defaultProps} title="Unstaged Changes" isStaged={false} />)
+    expect(screen.getByText('Unstaged Changes')).toBeInTheDocument()
+  })
+
+  it('collapse toggle has aria-expanded=true initially', () => {
+    render(<FileTreeSection {...defaultProps} />)
+    const toggle = screen.getByLabelText('Collapse Staged Changes')
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('collapse toggle has aria-expanded=false after click', () => {
+    render(<FileTreeSection {...defaultProps} />)
+    fireEvent.click(screen.getByLabelText('Collapse Staged Changes'))
+    const expandToggle = screen.getByLabelText('Expand Staged Changes')
+    expect(expandToggle.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('selectedPath=null means no rows are selected', () => {
+    render(<FileTreeSection {...defaultProps} selectedPath={null} />)
+    const rows = screen.getAllByRole('row')
+    const selectedRow = rows.find((r) => r.getAttribute('aria-selected') === 'true')
+    expect(selectedRow).toBeFalsy()
+  })
+
+  it('hover effects on Stage All button', () => {
+    render(<FileTreeSection {...defaultProps} isStaged={false} />)
+    const stageAllBtn = screen.getByLabelText('Stage all')
+    fireEvent.mouseEnter(stageAllBtn)
+    fireEvent.mouseLeave(stageAllBtn)
+    expect(stageAllBtn).toBeInTheDocument()
+  })
+
+  it('hover effects on Unstage All button', () => {
+    render(<FileTreeSection {...defaultProps} isStaged={true} />)
+    const unstageAllBtn = screen.getByLabelText('Unstage all')
+    fireEvent.mouseEnter(unstageAllBtn)
+    fireEvent.mouseLeave(unstageAllBtn)
+    expect(unstageAllBtn).toBeInTheDocument()
   })
 })

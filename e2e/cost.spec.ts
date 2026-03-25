@@ -43,3 +43,31 @@ test.describe('Cost View', () => {
     await expect(panels.locator('> *').first()).toBeVisible({ timeout: 5_000 })
   })
 })
+
+test.describe('Cost View — export', () => {
+  test('Export CSV button exists and shows "Copied!" feedback on click', async ({ bde }) => {
+    const { window } = bde
+
+    // Navigate to Cost View via Cmd+8
+    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+    await window.keyboard.press('Meta+8')
+
+    // Wait for Cost View to load (past the skeleton loading state)
+    const costView = window.locator('.cost-view')
+    await expect(costView).toBeVisible({ timeout: 5_000 })
+
+    // Verify the Export CSV button exists in the header actions
+    const exportBtn = costView.locator('.cost-view__header-actions button', { hasText: 'Export CSV' })
+    await expect(exportBtn).toBeVisible({ timeout: 5_000 })
+
+    // Click the Export CSV button
+    await exportBtn.click()
+
+    // Verify the "Copied!" feedback text appears
+    const copiedBtn = costView.locator('.cost-view__header-actions button', { hasText: 'Copied!' })
+    await expect(copiedBtn).toBeVisible({ timeout: 3_000 })
+
+    // After the flash duration, it should revert back to "Export CSV"
+    await expect(exportBtn).toBeVisible({ timeout: 5_000 })
+  })
+})
