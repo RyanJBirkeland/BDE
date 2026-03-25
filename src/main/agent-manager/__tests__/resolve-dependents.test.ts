@@ -12,7 +12,6 @@ const softDep = (id: string): TaskDependency => ({ id, type: 'soft' })
 type MockTask = {
   id: string
   status: string
-  notes?: string | null
   depends_on: TaskDependency[] | null
 }
 
@@ -72,34 +71,30 @@ describe('resolveDependents', () => {
     expect(updateTask).toHaveBeenCalledWith('B', { status: 'queued' })
   })
 
-  it('keeps dependent blocked when hard dep fails (updates blocking notes)', async () => {
+  it('keeps dependent blocked when hard dep fails', async () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'failed', depends_on: null },
-      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')], notes: null },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
     await resolveDependents('A', 'failed', index, getTask, updateTask)
 
-    // Task stays blocked; notes updated to reflect current blocker
-    expect(updateTask).toHaveBeenCalledWith('B', { notes: '[auto-block] Blocked by: A' })
-    expect(updateTask).not.toHaveBeenCalledWith('B', expect.objectContaining({ status: 'queued' }))
+    expect(updateTask).not.toHaveBeenCalled()
   })
 
-  it('keeps dependent blocked when hard dep is cancelled (updates blocking notes)', async () => {
+  it('keeps dependent blocked when hard dep is cancelled', async () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'cancelled', depends_on: null },
-      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')], notes: null },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
     await resolveDependents('A', 'cancelled', index, getTask, updateTask)
 
-    // Task stays blocked; notes updated to reflect current blocker
-    expect(updateTask).toHaveBeenCalledWith('B', { notes: '[auto-block] Blocked by: A' })
-    expect(updateTask).not.toHaveBeenCalledWith('B', expect.objectContaining({ status: 'queued' }))
+    expect(updateTask).not.toHaveBeenCalled()
   })
 
   it('unblocks dependent when soft dep fails', async () => {
@@ -128,21 +123,19 @@ describe('resolveDependents', () => {
     expect(updateTask).not.toHaveBeenCalled()
   })
 
-  it('fan-in: does not unblock when only some deps are satisfied (updates blocking notes)', async () => {
+  it('fan-in: does not unblock when only some deps are satisfied', async () => {
     // C depends on A (hard) and B (hard); A is done but B is still active
     const index = makeIndex({ A: ['C'], B: ['C'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'active', depends_on: null },
-      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')], notes: null },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] },
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
     await resolveDependents('A', 'done', index, getTask, updateTask)
 
-    // C stays blocked because B is still active; notes updated to reflect remaining blocker
-    expect(updateTask).toHaveBeenCalledWith('C', { notes: '[auto-block] Blocked by: B' })
-    expect(updateTask).not.toHaveBeenCalledWith('C', expect.objectContaining({ status: 'queued' }))
+    expect(updateTask).not.toHaveBeenCalled()
   })
 
   it('fan-in: unblocks when last dep is satisfied', async () => {
