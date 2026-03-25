@@ -26,7 +26,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     case 'started':
       return (
         <div className="console-line" data-testid="console-line-started">
-          <span className="console-line__prefix console-prefix--agent">[agent]</span>
+          <span className="console-prefix console-prefix--agent">[agent]</span>
           <span className="console-line__content">Started with model {block.model}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
         </div>
@@ -35,7 +35,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     case 'text':
       return (
         <div className="console-line" data-testid="console-line-text">
-          <span className="console-line__prefix console-prefix--agent">[agent]</span>
+          <span className="console-prefix console-prefix--agent">[agent]</span>
           <span className="console-line__content">{block.text}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
         </div>
@@ -44,7 +44,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     case 'user_message':
       return (
         <div className="console-line" data-testid="console-line-user">
-          <span className="console-line__prefix console-prefix--user">[user]</span>
+          <span className="console-prefix console-prefix--user">[user]</span>
           <span className="console-line__content">{block.text}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
         </div>
@@ -80,7 +80,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
                 flexShrink: 0,
               }}
             />
-            <span className="console-line__prefix console-prefix--think">[think]</span>
+            <span className="console-prefix console-prefix--think">[think]</span>
             <span className="console-line__content">
               Thinking...{' '}
               <span
@@ -148,7 +148,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
                 flexShrink: 0,
               }}
             />
-            <span className="console-line__prefix console-prefix--tool">[tool]</span>
+            <span className="console-prefix console-prefix--tool">[tool]</span>
             <span className="console-line__content">
               {block.tool} — {block.summary}
             </span>
@@ -229,7 +229,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
                 flexShrink: 0,
               }}
             />
-            <span className="console-line__prefix console-prefix--tool">[tool]</span>
+            <span className="console-prefix console-prefix--tool">[tool]</span>
             <span className="console-line__content">
               {block.tool} — {block.summary}
             </span>
@@ -289,7 +289,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     case 'error':
       return (
         <div className="console-line" data-testid="console-line-error">
-          <span className="console-line__prefix console-prefix--error">[error]</span>
+          <span className="console-prefix console-prefix--error">[error]</span>
           <span className="console-line__content">{block.message}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
         </div>
@@ -298,7 +298,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     case 'rate_limited':
       return (
         <div className="console-line" data-testid="console-line-rate-limited">
-          <span className="console-line__prefix console-prefix--rate">[rate]</span>
+          <span className="console-prefix console-prefix--rate">[rate]</span>
           <span className="console-line__content">
             Rate limited, retry in {Math.ceil(block.retryDelayMs / 1000)}s (attempt {block.attempt})
           </span>
@@ -309,7 +309,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     case 'completed':
       return (
         <div className="console-line" data-testid="console-line-completed">
-          <span className="console-line__prefix console-prefix--done">[done]</span>
+          <span className="console-prefix console-prefix--done">[done]</span>
           <span className="console-line__content">
             ${block.costUsd.toFixed(4)} • {block.tokensIn + block.tokensOut} tokens • {(block.durationMs / 1000).toFixed(2)}s
           </span>
@@ -320,7 +320,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     case 'playground':
       return (
         <div className="console-line" data-testid="console-line-playground">
-          <span className="console-line__prefix console-prefix--play">[play]</span>
+          <span className="console-prefix console-prefix--play">[play]</span>
           <span className="console-line__content">
             {block.filename} ({Math.ceil(block.sizeBytes / 1024)}KB) — clickable
           </span>
@@ -331,7 +331,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
     default:
       return (
         <div className="console-line" data-testid="console-line-unknown">
-          <span className="console-line__prefix console-prefix--error">[unknown]</span>
+          <span className="console-prefix console-prefix--error">[unknown]</span>
           <span className="console-line__content">Unknown block type</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
         </div>
