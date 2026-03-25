@@ -1,0 +1,492 @@
+/* src/renderer/src/assets/agents-neon.css */
+/* ═══════════════════════════════════════════════════════
+   Neon Agents View — Console, Command Bar, Timeline
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Live Activity Strip ── */
+.live-strip {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, rgba(138, 43, 226, 0.15) 0%, rgba(10, 0, 21, 0.9) 100%);
+  border-bottom: 1px solid var(--neon-purple-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+
+.live-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.live-strip::-webkit-scrollbar-thumb {
+  background: var(--neon-purple-border);
+  border-radius: 2px;
+}
+
+/* ── Agent Pill ── */
+.agent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--neon-purple-border);
+  background: rgba(10, 0, 21, 0.6);
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  transition: background 150ms ease, border-color 150ms ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.agent-pill:hover {
+  background: rgba(191, 90, 242, 0.08);
+  border-color: var(--neon-purple);
+}
+
+.agent-pill--running {
+  animation: agent-pill-pulse 2s ease-in-out infinite;
+}
+
+.agent-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+  flex-shrink: 0;
+}
+
+.agent-pill__name {
+  font-weight: 600;
+  color: #fff;
+}
+
+.agent-pill__action {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Agent Console ── */
+.agent-console {
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 0, 21, 0.8);
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: var(--bde-font-code);
+  height: 100%;
+}
+
+/* ── Console Header ── */
+.console-header {
+  height: 32px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, rgba(191, 90, 242, 0.12) 0%, rgba(10, 0, 21, 0.95) 100%);
+  border-bottom: 1px solid var(--neon-purple-border);
+  flex-shrink: 0;
+}
+
+.console-header__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.console-header__status-dot--running {
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+  animation: neon-breathe 2s ease-in-out infinite;
+}
+
+.console-header__status-dot--done {
+  background: var(--neon-cyan);
+  opacity: 0.4;
+}
+
+.console-header__status-dot--failed {
+  background: var(--neon-red);
+  box-shadow: var(--neon-red-glow);
+}
+
+.console-header__status-dot--cancelled {
+  background: var(--neon-orange);
+}
+
+.console-header__task-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+
+.console-header__meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.console-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.console-header__action-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+  padding: 0;
+}
+
+.console-header__action-btn:hover {
+  background: var(--neon-purple-surface);
+  color: var(--neon-purple);
+}
+
+/* ── Console Body ── */
+.console-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+  background: rgba(10, 0, 21, 0.95);
+}
+
+/* ── Console Line ── */
+.console-line {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  line-height: 1.6;
+  transition: background 100ms ease;
+}
+
+.console-line:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.console-line--collapsible {
+  cursor: pointer;
+}
+
+.console-line__prefix {
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.console-prefix--agent {
+  color: var(--neon-cyan);
+}
+
+.console-prefix--user {
+  color: var(--neon-pink);
+}
+
+.console-prefix--tool {
+  color: var(--neon-blue);
+}
+
+.console-prefix--think {
+  color: var(--neon-purple);
+}
+
+.console-prefix--error {
+  color: var(--neon-red);
+  text-shadow: var(--neon-red-glow);
+}
+
+.console-prefix--rate {
+  color: var(--neon-orange);
+}
+
+.console-prefix--done {
+  color: var(--neon-cyan);
+}
+
+.console-prefix--play {
+  color: var(--neon-cyan);
+}
+
+.console-line__content {
+  flex: 1;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.7);
+  word-wrap: break-word;
+}
+
+.console-line__timestamp {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+}
+
+.console-line__chevron {
+  display: inline-block;
+  margin-right: 4px;
+  transition: transform 150ms ease;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.console-line--expanded .console-line__chevron {
+  transform: rotate(90deg);
+}
+
+.console-line__collapsed-content {
+  display: none;
+}
+
+.console-line--expanded .console-line__collapsed-content {
+  display: block;
+  margin-top: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  border-left: 2px solid var(--neon-purple-border);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  overflow-x: auto;
+}
+
+/* ── Command Bar ── */
+.command-bar {
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, rgba(10, 0, 21, 0.95) 0%, rgba(138, 43, 226, 0.1) 100%);
+  border-top: 1px solid var(--neon-purple-border);
+  flex-shrink: 0;
+}
+
+.command-bar__prompt {
+  color: var(--neon-purple);
+  font-family: var(--bde-font-code);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.command-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: var(--bde-font-code);
+  font-size: 13px;
+  outline: none;
+}
+
+.command-bar__input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.command-bar__input:disabled {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+/* ── Command Autocomplete ── */
+.command-autocomplete {
+  position: absolute;
+  bottom: 48px;
+  left: 12px;
+  min-width: 250px;
+  max-width: 400px;
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.15), rgba(10, 0, 21, 0.95));
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border-radius: 10px;
+  border: 1px solid var(--neon-purple-border);
+  box-shadow: var(--neon-glass-shadow);
+  padding: 6px;
+  z-index: 100;
+}
+
+.command-autocomplete__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.command-autocomplete__item:hover,
+.command-autocomplete__item--selected {
+  background: var(--neon-purple-surface);
+  color: #fff;
+}
+
+.command-autocomplete__item-command {
+  font-weight: 700;
+  color: var(--neon-purple);
+}
+
+.command-autocomplete__item-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Agent Timeline ── */
+.agent-timeline {
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, rgba(10, 0, 21, 0.9) 0%, rgba(138, 43, 226, 0.08) 100%);
+  border-top: 1px solid var(--neon-purple-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.agent-timeline__canvas {
+  position: relative;
+  height: 100%;
+  min-width: 100%;
+}
+
+/* ── Timeline Bar ── */
+.timeline-bar {
+  position: absolute;
+  height: 10px;
+  border-radius: 4px;
+  transition: width 300ms ease, left 300ms ease, opacity 150ms ease;
+  cursor: pointer;
+}
+
+.timeline-bar:hover {
+  opacity: 1 !important;
+}
+
+.timeline-bar--running {
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+  animation: neon-breathe 2s ease-in-out infinite;
+}
+
+.timeline-bar--done {
+  background: var(--neon-cyan);
+  opacity: 0.4;
+}
+
+.timeline-bar--failed {
+  background: var(--neon-red);
+  box-shadow: var(--neon-red-glow);
+}
+
+.timeline-bar--cancelled {
+  background: var(--neon-orange);
+  opacity: 0.5;
+}
+
+.timeline-bar__tooltip {
+  position: fixed;
+  z-index: 200;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(191, 90, 242, 0.2), rgba(10, 0, 21, 0.95));
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+  box-shadow: var(--neon-glass-shadow);
+  color: #fff;
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── Animations ── */
+@keyframes agent-pill-pulse {
+  0%, 100% {
+    border-color: var(--neon-purple-border);
+    box-shadow: 0 0 0 rgba(191, 90, 242, 0);
+  }
+  50% {
+    border-color: var(--neon-purple);
+    box-shadow: 0 0 12px rgba(191, 90, 242, 0.3);
+  }
+}
+
+/* ── Jump to Latest Button ── */
+.console-jump-to-latest {
+  position: absolute;
+  bottom: 56px;
+  right: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--neon-purple-surface), rgba(10, 0, 21, 0.9));
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+  box-shadow: var(--neon-glass-shadow);
+  color: var(--neon-purple);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+  z-index: 50;
+}
+
+.console-jump-to-latest:hover {
+  background: var(--neon-purple-surface);
+  color: #fff;
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .agent-pill--running,
+  .console-header__status-dot--running,
+  .timeline-bar--running {
+    animation: none !important;
+  }
+
+  .console-line__chevron {
+    transition: none;
+  }
+
+  .timeline-bar {
+    transition: opacity 150ms ease;
+  }
+}
