@@ -63,6 +63,70 @@ const defaultLogger: Logger = {
 }
 
 // ---------------------------------------------------------------------------
+// Extracted pure functions (testable independently)
+// ---------------------------------------------------------------------------
+
+/**
+ * Check whether the OAuth token file exists and contains a valid token.
+ * Returns true if the drain loop should proceed, false if it should skip.
+ */
+export async function checkOAuthToken(logger: Logger): Promise<boolean> {
+  try {
+    const { join: joinPath } = await import('node:path')
+    const { homedir: home } = await import('node:os')
+    const { readFileSync } = await import('node:fs')
+    const tokenPath = joinPath(home(), '.bde', 'oauth-token')
+    const token = readFileSync(tokenPath, 'utf-8').trim()
+    if (!token || token.length < 20) {
+      const { refreshOAuthTokenFromKeychain } = await import('../env-utils')
+      const refreshed = await refreshOAuthTokenFromKeychain()
+      if (refreshed) {
+        logger.info('[agent-manager] OAuth token auto-refreshed from Keychain')
+        return true
+      } else {
+        logger.warn('[agent-manager] OAuth token file missing/empty and keychain refresh failed — skipping drain cycle')
+        return false
+      }
+    }
+    return true
+  } catch {
+    logger.warn('[agent-manager] Cannot read OAuth token file — skipping drain cycle')
+    return false
+  }
+}
+
+export type WatchdogVerdict = 'max-runtime' | 'idle' | 'rate-limit-loop'
+
+/**
+ * Handle a watchdog verdict by updating the task and optionally applying backpressure.
+ * Returns the (possibly updated) concurrency state.
+ */
+export function handleWatchdogVerdict(
+  verdict: WatchdogVerdict,
+  taskId: string,
+  concurrency: ConcurrencyState,
+  now: string,
+  updateTaskFn: typeof updateTask,
+  onTerminal: (id: string, status: string) => Promise<void>,
+  logger: Logger,
+): ConcurrencyState {
+  if (verdict === 'max-runtime') {
+    updateTaskFn(taskId, { status: 'error', completed_at: now, notes: 'Max runtime exceeded' })
+      .then(() => onTerminal(taskId, 'error'))
+      .catch((err) => logger.warn(`[agent-manager] Failed to update task ${taskId} after max-runtime kill: ${err}`))
+  } else if (verdict === 'idle') {
+    updateTaskFn(taskId, { status: 'error', completed_at: now, notes: 'Idle timeout' })
+      .then(() => onTerminal(taskId, 'error'))
+      .catch((err) => logger.warn(`[agent-manager] Failed to update task ${taskId} after idle kill: ${err}`))
+  } else if (verdict === 'rate-limit-loop') {
+    concurrency = applyBackpressure(concurrency, Date.now())
+    updateTaskFn(taskId, { status: 'queued', claimed_by: null, notes: 'Rate-limit loop — re-queued' })
+      .catch((err) => logger.warn(`[agent-manager] Failed to requeue rate-limited task ${taskId}: ${err}`))
+  }
+  return concurrency
+}
+
+// ---------------------------------------------------------------------------
 // Public interface
 // ---------------------------------------------------------------------------
 
@@ -162,30 +226,8 @@ export function createAgentManager(
       if (available <= 0) return
 
       try {
-        // Quick token file check — avoid spawning agents that will immediately fail
-        // with "Invalid API key". Keychain access hangs in Electron, so we just
-        // check the file exists and is non-empty.
-        try {
-          const { join: joinPath } = await import('node:path')
-          const { homedir: home } = await import('node:os')
-          const { readFileSync } = await import('node:fs')
-          const tokenPath = joinPath(home(), '.bde', 'oauth-token')
-          const token = readFileSync(tokenPath, 'utf-8').trim()
-          if (!token || token.length < 20) {
-            // Auto-refresh from keychain before giving up
-            const { refreshOAuthTokenFromKeychain } = await import('../env-utils')
-            const refreshed = await refreshOAuthTokenFromKeychain()
-            if (refreshed) {
-              logger.info('[agent-manager] OAuth token auto-refreshed from Keychain')
-            } else {
-              logger.warn('[agent-manager] OAuth token file missing/empty and keychain refresh failed — skipping drain cycle')
-              return
-            }
-          }
-        } catch {
-          logger.warn('[agent-manager] Cannot read OAuth token file — skipping drain cycle')
-          return
-        }
+        const tokenOk = await checkOAuthToken(logger)
+        if (!tokenOk) return
 
         logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
         const queued = await fetchQueuedTasks(available)
@@ -304,18 +346,7 @@ export function createAgentManager(
 
       // Update task based on verdict
       const now = new Date().toISOString()
-      if (verdict === 'max-runtime') {
-        updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Max runtime exceeded' })
-          .then(() => onTaskTerminal(agent.taskId, 'error'))
-          .catch((err) => logger.warn(`[agent-manager] Failed to update task ${agent.taskId} after max-runtime kill: ${err}`))
-      } else if (verdict === 'idle') {
-        updateTask(agent.taskId, { status: 'error', completed_at: now, notes: 'Idle timeout' })
-          .then(() => onTaskTerminal(agent.taskId, 'error'))
-          .catch((err) => logger.warn(`[agent-manager] Failed to update task ${agent.taskId} after idle kill: ${err}`))
-      } else if (verdict === 'rate-limit-loop') {
-        concurrency = applyBackpressure(concurrency, Date.now())
-        updateTask(agent.taskId, { status: 'queued', claimed_by: null, notes: 'Rate-limit loop — re-queued' }).catch((err) => logger.warn(`[agent-manager] Failed to requeue rate-limited task ${agent.taskId}: ${err}`))
-      }
+      concurrency = handleWatchdogVerdict(verdict, agent.taskId, concurrency, now, updateTask, onTaskTerminal, logger)
     }
   }
 
