@@ -102,6 +102,7 @@ These files are edited frequently across branches. Take extra care when modifyin
 
 ## Gotchas
 
+- **Preload type declarations**: When adding new methods to `src/preload/index.ts`, you MUST also update `src/preload/index.d.ts` — the renderer's `window.api` types come from the `.d.ts` file, not the `.ts` implementation. Typecheck will fail with "Property does not exist on type" if you forget.
 - **Worktree node_modules**: Git worktrees don't include `node_modules`. Run `npm install` in the worktree (preferred — handles native module rebuilds). Alternatively, symlink from main repo but native modules like `better-sqlite3` may fail.
 - **Worktree /tmp path issue (macOS)**: `/tmp` is a symlink to `/private/tmp` on macOS. Git worktrees created under `/tmp/worktrees/` can lose tracked files between operations because tools resolve the path inconsistently. Fix with `git checkout -- .` to restore, or prefer `~/worktrees/` instead of `/tmp/worktrees/`. The `agentManager.worktreeBase` setting defaults to `/tmp/worktrees/bde` — consider changing to `~/worktrees/bde`.
 - **Pre-push hooks in worktrees**: The husky pre-push hook (`npm run typecheck && npm test`) often fails in `/tmp` worktrees due to missing `node_modules` or path resolution. Use `--no-verify` when pushing from worktrees, or use `~/worktrees/` paths.
