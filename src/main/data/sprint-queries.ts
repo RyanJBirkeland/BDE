@@ -107,20 +107,24 @@ export interface CreateTaskInput {
 }
 
 export async function createTask(input: CreateTaskInput): Promise<SprintTask> {
+  const row: Record<string, unknown> = {
+    title: input.title,
+    repo: input.repo,
+    prompt: input.prompt ?? input.spec ?? input.title,
+    spec: input.spec ?? null,
+    notes: input.notes ?? null,
+    priority: input.priority ?? 0,
+    status: input.status ?? 'backlog',
+    template_name: input.template_name ?? null,
+    depends_on: sanitizeDependsOn(input.depends_on),
+  }
+  // Only include playground_enabled when explicitly set — column may not exist yet
+  if (input.playground_enabled) {
+    row.playground_enabled = true
+  }
   const { data, error } = await getSupabaseClient()
     .from('sprint_tasks')
-    .insert({
-      title: input.title,
-      repo: input.repo,
-      prompt: input.prompt ?? input.spec ?? input.title,
-      spec: input.spec ?? null,
-      notes: input.notes ?? null,
-      priority: input.priority ?? 0,
-      status: input.status ?? 'backlog',
-      template_name: input.template_name ?? null,
-      depends_on: sanitizeDependsOn(input.depends_on),
-      playground_enabled: input.playground_enabled ?? false,
-    })
+    .insert(row)
     .select()
     .single()
 
