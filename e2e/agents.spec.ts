@@ -1,6 +1,37 @@
 import { test, expect } from './fixtures'
 
-test.describe('Spawn agent flow', () => {
+test.describe('Agents view loads', () => {
+  test('Agents view renders with agent list and sidebar', async ({ bde }) => {
+    const { window } = bde
+
+    // Default view is Dashboard — navigate to Agents via Cmd+2
+    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+    await window.keyboard.press('Meta+2')
+
+    // Wait for the agents view to be visible
+    const agentsView = window.locator('.agents-view')
+    await expect(agentsView).toBeVisible({ timeout: 5_000 })
+
+    // Assert the sidebar header is visible
+    const sidebarHeader = window.locator('.agents-view__sidebar-header')
+    await expect(sidebarHeader).toBeVisible()
+
+    // Assert the sidebar has the "Agents" title
+    const agentsTitle = window.locator('.agents-view__title')
+    await expect(agentsTitle).toHaveText('Agents')
+
+    // Assert AgentList renders — even if empty, the component mounts
+    // The search input inside the sidebar is always present
+    const filterInput = agentsView.locator('input[placeholder="Filter agents..."]')
+    await expect(filterInput).toBeVisible()
+
+    // Assert the spawn button (plus icon) is visible in the sidebar header
+    const spawnButton = window.locator('.agents-view__spawn-btn')
+    await expect(spawnButton).toBeVisible()
+  })
+})
+
+test.describe('Spawn agent modal', () => {
   test('opens SpawnModal via command palette and fills form', async ({ bde }) => {
     const { window } = bde
 

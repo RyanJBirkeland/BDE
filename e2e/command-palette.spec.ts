@@ -4,9 +4,8 @@ test.describe('Command palette navigation', () => {
   test('Cmd+P opens palette, typing Sprint navigates to Sprint view', async ({ bde }) => {
     const { window } = bde
 
-    // Wait for app to load on default Sessions view
+    // Wait for app to load
     await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await expect(window.locator('.sessions-chat')).toBeVisible({ timeout: 5_000 })
 
     // Open command palette with Cmd+P
     await window.keyboard.press('Meta+p')
