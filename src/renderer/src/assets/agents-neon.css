@@ -93,6 +93,25 @@
   background: var(--neon-purple-surface);
 }
 
+/* Agent Pill Subcomponents */
+.agent-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agent-pill__name {
+  font-weight: 600;
+  font-size: 12px;
+  color: #fff;
+}
+
+.agent-pill__action {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
 /* ── Agent Console ── */
 .agent-console {
   display: flex;
