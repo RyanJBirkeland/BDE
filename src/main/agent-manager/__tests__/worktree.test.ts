@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import path from 'node:path'
 import os from 'node:os'
-import { mkdirSync, rmSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
 
 // Mock node:child_process before importing module under test
 vi.mock('node:child_process', () => {
@@ -199,6 +199,63 @@ describe('setupWorktree', () => {
       (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('-D')
     )
     expect(branchDeleteCall).toBeDefined()
+  })
+
+  it('removes corrupted lock file and proceeds', async () => {
+    mockExecFileSuccess()
+    const repoSlug = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
+    const locksDir = path.join(tmpDir, '.locks')
+    mkdirSync(locksDir, { recursive: true })
+    writeFileSync(path.join(locksDir, `${repoSlug}.lock`), 'not-a-number', 'utf-8')
+
+    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
+
+    const result = await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'task-lock-1',
+      title: 'Lock test',
+      logger: logger as unknown as import('../types').Logger,
+    })
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Corrupted lock file')
+    )
+    expect(result.branch).toBe('agent/lock-test-task-loc')
+  })
+
+  it('cleans up lock held by dead PID and proceeds', async () => {
+    mockExecFileSuccess()
+    const repoSlug = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
+    const locksDir = path.join(tmpDir, '.locks')
+    mkdirSync(locksDir, { recursive: true })
+    writeFileSync(path.join(locksDir, `${repoSlug}.lock`), '99999999', 'utf-8')
+
+    const result = await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'task-lock-2',
+      title: 'Dead PID test',
+    })
+
+    expect(result.branch).toBe('agent/dead-pid-test-task-loc')
+  })
+
+  it('throws when lock is held by alive PID', async () => {
+    mockExecFileSuccess()
+    const repoSlug = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
+    const locksDir = path.join(tmpDir, '.locks')
+    mkdirSync(locksDir, { recursive: true })
+    writeFileSync(path.join(locksDir, `${repoSlug}.lock`), String(process.pid), 'utf-8')
+
+    await expect(
+      setupWorktree({
+        repoPath: mockRepoPath,
+        worktreeBase: tmpDir,
+        taskId: 'task-lock-3',
+        title: 'Alive PID test',
+      })
+    ).rejects.toThrow(`Worktree lock held by PID ${process.pid}`)
   })
 })
 
