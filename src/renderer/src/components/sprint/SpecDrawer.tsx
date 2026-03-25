@@ -4,9 +4,9 @@ import { Button } from '../ui/Button'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 import { toast } from '../../stores/toasts'
 import { TASK_STATUS } from '../../../../shared/constants'
+import { renderMarkdown } from '../../lib/render-markdown'
+import { EmptyState } from '../ui/EmptyState'
 import type { SprintTask } from './SprintCenter'
-import { SpecEditor } from './SpecEditor'
-import { SpecViewer } from './SpecViewer'
 
 function extractSpecPath(prompt: string): string | null {
   const match = prompt.match(/docs\/specs\/[\w-]+\.md/)
@@ -205,12 +205,24 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
 
             <div className="spec-drawer__body">
               {editing ? (
-                <SpecEditor
+                <textarea
+                  className="spec-drawer__editor"
                   value={draft}
-                  onChange={(v) => { setDraft(v); setDirty(true) }}
+                  onChange={(e) => { setDraft(e.target.value); setDirty(true) }}
+                  placeholder="Write your spec in markdown..."
+                  autoFocus
+                />
+              ) : draft ? (
+                <div
+                  className="spec-drawer__rendered"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(draft) }}
                 />
               ) : (
-                <SpecViewer content={draft} onEdit={() => setEditing(true)} />
+                <EmptyState
+                  title="No spec yet"
+                  description="Write a spec to guide the agent"
+                  action={{ label: 'Write Spec', onClick: () => setEditing(true) }}
+                />
               )}
             </div>
 
