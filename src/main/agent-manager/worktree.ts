@@ -7,13 +7,14 @@ import type { Logger } from './types'
 
 const execFileAsync = promisify(execFile)
 
-export function branchNameForTask(title: string): string {
+export function branchNameForTask(title: string, taskId?: string): string {
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 50)
-  return `agent/${slug}`
+    .slice(0, 40)
+  const suffix = taskId ? `-${taskId.slice(0, 8)}` : ''
+  return `agent/${slug}${suffix}`
 }
 
 export interface SetupWorktreeOpts {
@@ -76,7 +77,7 @@ function releaseLock(worktreeBase: string, repoPath: string): void {
 
 export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger }): Promise<SetupWorktreeResult> {
   const { repoPath, worktreeBase, taskId, title, logger } = opts
-  const branch = branchNameForTask(title)
+  const branch = branchNameForTask(title, taskId)
   const repoDir = path.join(worktreeBase, repoSlug(repoPath))
   const worktreePath = path.join(repoDir, taskId)
 

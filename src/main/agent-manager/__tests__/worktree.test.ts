@@ -44,12 +44,12 @@ describe('branchNameForTask', () => {
     expect(branchNameForTask('feat: add @user support (v2)')).toBe('agent/feat-add-user-support-v2')
   })
 
-  it('truncates slug to 50 characters', () => {
+  it('truncates slug to 40 characters', () => {
     const longTitle = 'a'.repeat(100)
     const result = branchNameForTask(longTitle)
-    // "agent/" prefix is not part of the 50-char slug
+    // "agent/" prefix is not part of the 40-char slug
     const slug = result.replace('agent/', '')
-    expect(slug.length).toBeLessThanOrEqual(50)
+    expect(slug.length).toBeLessThanOrEqual(40)
   })
 
   it('handles titles with only special characters', () => {
@@ -59,6 +59,27 @@ describe('branchNameForTask', () => {
 
   it('produces correct format for normal title', () => {
     expect(branchNameForTask('Add login page')).toBe('agent/add-login-page')
+  })
+
+  it('generates agent branch from title', () => {
+    expect(branchNameForTask('Fix auth bugs')).toBe('agent/fix-auth-bugs')
+  })
+
+  it('includes task ID suffix when provided', () => {
+    const branch = branchNameForTask('Fix auth bugs', 'abc12345-def6-7890')
+    expect(branch).toBe('agent/fix-auth-bugs-abc12345')
+  })
+
+  it('generates different branches for same title with different IDs', () => {
+    const b1 = branchNameForTask('Fix auth bugs', 'id-111111')
+    const b2 = branchNameForTask('Fix auth bugs', 'id-222222')
+    expect(b1).not.toBe(b2)
+  })
+
+  it('truncates title slug to 40 chars', () => {
+    const longTitle = 'This is a very long title that exceeds the forty character limit for slugs'
+    const branch = branchNameForTask(longTitle, 'abc12345')
+    expect(branch.length).toBeLessThanOrEqual(60) // agent/ + 40 + - + 8
   })
 })
 
@@ -96,9 +117,9 @@ describe('setupWorktree', () => {
     expect(addCall).toBeDefined()
     const args = addCall![1] as string[]
     expect(args[2]).toBe('-b')
-    expect(args[3]).toBe('agent/add-login-page')
+    expect(args[3]).toBe('agent/add-login-page-task-123')
     expect(args[4]).toContain('task-123')
-    expect(result.branch).toBe('agent/add-login-page')
+    expect(result.branch).toBe('agent/add-login-page-task-123')
     expect(result.worktreePath).toContain('task-123')
   })
 
@@ -171,7 +192,7 @@ describe('setupWorktree', () => {
     })
 
     // Should succeed after retry
-    expect(result.branch).toBe('agent/bad-task')
+    expect(result.branch).toBe('agent/bad-task-task-789')
 
     // Verify branch delete was called during retry
     const branchDeleteCall = execFileMock.mock.calls.find(
