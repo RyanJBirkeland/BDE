@@ -25,9 +25,8 @@ GitHub Actions runs on every push to `main` and every PR targeting `main`:
 
 - `npm run typecheck` — must pass
 - `npm run test:coverage` — must pass (enforces 68% coverage threshold)
-- `npm run test:main` — must pass
 
-All three checks are required before merge.
+Both checks are required before merge. Main process tests (`test:main`) run locally via husky pre-push hook, not in CI.
 
 ## Branch Conventions
 
