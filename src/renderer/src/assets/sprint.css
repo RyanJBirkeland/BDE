@@ -1534,7 +1534,7 @@ tr:hover .bde-task-table__action-btn--done {
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255, 77, 77, 0.4) 0%, rgba(255, 77, 77, 0.1) 60%, transparent 100%);
+  background: var(--bde-danger-gradient);
 }
 
 .conflict-drawer__header-left {
@@ -1747,7 +1747,7 @@ tr:hover .bde-task-table__action-btn--done {
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.4) 0%, rgba(245, 158, 11, 0.1) 60%, transparent 100%);
+  background: var(--bde-warning-gradient);
 }
 
 .health-drawer__header-left {
