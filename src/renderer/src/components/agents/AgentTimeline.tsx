@@ -48,25 +48,17 @@ export function AgentTimeline({ agents, onSelectAgent }: AgentTimelineProps): JS
     return labels
   }, [timeRange])
 
-  const handleBarClick = (agentId: string): void => {
-    onSelectAgent(agentId)
-  }
-
   return (
     <div className="agent-timeline">
       <div className="agent-timeline__canvas" style={{ minWidth: '100%' }}>
         {filteredAgents.map((agent) => (
-          <div
+          <TimelineBar
             key={agent.id}
-            onClick={() => handleBarClick(agent.id)}
-            style={{ cursor: 'pointer' }}
-          >
-            <TimelineBar
-              agent={agent}
-              timeRange={timeRange}
-              totalWidth={1000}
-            />
-          </div>
+            agent={agent}
+            timeRange={timeRange}
+            totalWidth={1000}
+            onClick={onSelectAgent}
+          />
         ))}
 
         {/* Time axis labels */}

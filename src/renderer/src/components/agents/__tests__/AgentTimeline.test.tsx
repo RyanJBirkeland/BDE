@@ -145,8 +145,8 @@ describe('AgentTimeline', () => {
     const bar = container.querySelector('.timeline-bar')
     expect(bar).toBeInTheDocument()
 
-    if (bar?.parentElement) {
-      await user.click(bar.parentElement)
+    if (bar) {
+      await user.click(bar)
       expect(onSelectAgent).toHaveBeenCalledWith('agent-1')
     }
   })

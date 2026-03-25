@@ -5,9 +5,10 @@ interface TimelineBarProps {
   agent: AgentMeta
   timeRange: { start: number; end: number }
   totalWidth: number
+  onClick: (id: string) => void
 }
 
-export function TimelineBar({ agent, timeRange, totalWidth }: TimelineBarProps): JSX.Element | null {
+export function TimelineBar({ agent, timeRange, totalWidth, onClick }: TimelineBarProps): JSX.Element | null {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const barRef = useRef<HTMLDivElement>(null)
@@ -62,6 +63,10 @@ export function TimelineBar({ agent, timeRange, totalWidth }: TimelineBarProps):
     setTooltipPos({ x: e.clientX, y: e.clientY })
   }
 
+  const handleClick = (): void => {
+    onClick(agent.id)
+  }
+
   return (
     <>
       <div
@@ -75,6 +80,7 @@ export function TimelineBar({ agent, timeRange, totalWidth }: TimelineBarProps):
         onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
       />
       {showTooltip && (
         <div
