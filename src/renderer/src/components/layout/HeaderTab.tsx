@@ -1,4 +1,9 @@
+import React from 'react'
 import { X } from 'lucide-react'
+
+// ---------------------------------------------------------------------------
+// HeaderTab — Single tab in the unified header
+// ---------------------------------------------------------------------------
 
 interface HeaderTabProps {
   label: string
@@ -21,7 +26,7 @@ export function HeaderTab({
   draggable = false,
   onDragStart,
 }: HeaderTabProps): React.JSX.Element {
-  const handleClose = (e: React.MouseEvent) => {
+  function handleClose(e: React.MouseEvent): void {
     e.stopPropagation()
     onClose()
   }
@@ -34,13 +39,21 @@ export function HeaderTab({
       onClick={onClick}
       draggable={draggable}
       onDragStart={onDragStart}
+      role="tab"
+      aria-selected={isActive}
+      title={label}
     >
       {showDot && <div className="header-tab__dot" />}
       <span>{label}</span>
       {showClose && (
-        <div className="header-tab__close" onClick={handleClose}>
+        <button
+          className="header-tab__close"
+          onClick={handleClose}
+          aria-label={`Close ${label}`}
+          type="button"
+        >
           <X size={11} />
-        </div>
+        </button>
       )}
     </div>
   )
