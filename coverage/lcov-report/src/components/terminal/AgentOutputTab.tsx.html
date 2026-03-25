@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>12/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -165,29 +165,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -202,8 +200,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -214,7 +214,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -228,7 +228,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -254,19 +254,19 @@ interface AgentOutputTabProps {
   sessionKey?: string
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >AgentOutputTab({</span> agentId, agentOutput, sessionKey }: AgentOutputTabProps) {
-  const <span class="cstat-no" title="statement not covered" >events = useAgentEventsStore(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.events[agentId])</span></span>
-  const <span class="cstat-no" title="statement not covered" >loadHistory = useAgentEventsStore(<span class="fstat-no" title="function not covered" >(s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.loadHistory)</span></span>
+export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutputTabProps) {
+  const events = useAgentEventsStore((s) =&gt; s.events[agentId])
+  const loadHistory = useAgentEventsStore((s) =&gt; s.loadHistory)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =&gt; {</span></span>
-<span class="cstat-no" title="statement not covered" >    if (agentId) {</span>
-<span class="cstat-no" title="statement not covered" >      loadHistory(agentId)</span>
+  useEffect(() =&gt; {
+    if (agentId) {
+      loadHistory(agentId)
     }
   }, [agentId, loadHistory])
 &nbsp;
   // Agent events available — use ChatRenderer
-<span class="cstat-no" title="statement not covered" >  if (events &amp;&amp; events.length &gt; 0) {</span>
-<span class="cstat-no" title="statement not covered" >    return (</span>
+  if (events &amp;&amp; events.length &gt; 0) {
+    return (
       &lt;div className="terminal-agent-tab"&gt;
         &lt;ChatRenderer events={events} /&gt;
       &lt;/div&gt;
@@ -274,8 +274,8 @@ export function <span class="fstat-no" title="function not covered" >AgentOutput
   }
 &nbsp;
   // Gateway session — plain text fallback (no AgentEvent source)
-<span class="cstat-no" title="statement not covered" >  if (sessionKey) {</span>
-<span class="cstat-no" title="statement not covered" >    return (</span>
+  if (sessionKey) {
+    return (
       &lt;div className="terminal-agent-tab"&gt;
         &lt;div style={{
           padding: tokens.space[4],
@@ -292,8 +292,8 @@ export function <span class="fstat-no" title="function not covered" >AgentOutput
   }
 &nbsp;
   // Legacy plaintext output
-<span class="cstat-no" title="statement not covered" >  if (agentOutput &amp;&amp; agentOutput.length &gt; 0) {</span>
-<span class="cstat-no" title="statement not covered" >    return (</span>
+  if (agentOutput &amp;&amp; agentOutput.length &gt; 0) {
+    return (
       &lt;div className="terminal-agent-tab"&gt;
         &lt;div style={{
           padding: tokens.space[3],
@@ -303,8 +303,8 @@ export function <span class="fstat-no" title="function not covered" >AgentOutput
           whiteSpace: 'pre-wrap',
           lineHeight: 1.5
         }}&gt;
-          {agentOutput.map(<span class="fstat-no" title="function not covered" >(c</span>hunk, i) =&gt; (
-<span class="cstat-no" title="statement not covered" >            &lt;div key={i} style={{</span>
+          {agentOutput.map((chunk, i) =&gt; (
+            &lt;div key={i} style={{
               borderBottom: `1px solid ${tokens.color.border}`,
               paddingBottom: tokens.space[2],
               marginBottom: tokens.space[2]
@@ -318,7 +318,7 @@ export function <span class="fstat-no" title="function not covered" >AgentOutput
   }
 &nbsp;
   // Empty state
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;div className="terminal-agent-tab"&gt;
       &lt;div style={{
         padding: tokens.space[4],
@@ -340,7 +340,7 @@ export function <span class="fstat-no" title="function not covered" >AgentOutput
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-24T03:43:26.144Z
+                at 2026-03-25T01:44:05.222Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

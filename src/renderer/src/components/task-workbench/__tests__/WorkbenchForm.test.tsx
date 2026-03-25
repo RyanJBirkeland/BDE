@@ -258,7 +258,6 @@ describe('WorkbenchForm', () => {
   it('handleConfirmedQueue creates and queues task in create mode', async () => {
     const mockCreate = vi.fn().mockResolvedValue(undefined)
     const mockUpdate = vi.fn().mockResolvedValue(undefined)
-    const mockReset = vi.fn()
     useSprintTasks.setState({
       createTask: mockCreate,
       updateTask: mockUpdate,

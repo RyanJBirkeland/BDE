@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
 import { WorkbenchActions } from '../WorkbenchActions'
-import { useTaskWorkbenchStore, type CheckResult } from '../../../stores/taskWorkbench'
+import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
 
 describe('WorkbenchActions', () => {
   const defaultProps = {

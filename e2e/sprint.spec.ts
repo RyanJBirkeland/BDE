@@ -9,7 +9,7 @@ test.describe('Sprint board', () => {
     await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
 
     // Navigate to Sprint view via Cmd+3
-    await window.keyboard.press('Meta+3')
+    await window.keyboard.press('Meta+4')
 
     // Assert Sprint center renders
     const sprintCenter = window.locator('.sprint-center')
@@ -34,7 +34,7 @@ test.describe('Sprint board', () => {
 
     // Navigate to Sprint view
     await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+3')
+    await window.keyboard.press('Meta+4')
     await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
 
     // Click "+ New Ticket" button
@@ -61,7 +61,7 @@ test.describe('Sprint board', () => {
 
     // Navigate to Sprint view
     await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+3')
+    await window.keyboard.press('Meta+4')
     await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
 
     // Open modal and fill in a unique title
@@ -91,7 +91,7 @@ test.describe('Sprint board', () => {
 
     // Navigate to Sprint view
     await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+3')
+    await window.keyboard.press('Meta+4')
     await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
 
     // Create a task
@@ -117,7 +117,7 @@ test.describe('Sprint board', () => {
 
     // Navigate to Sprint view
     await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+3')
+    await window.keyboard.press('Meta+4')
     await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
 
     // Ensure focus is not on an input element so the shortcut fires
