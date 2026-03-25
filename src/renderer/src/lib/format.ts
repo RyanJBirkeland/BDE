@@ -101,3 +101,17 @@ export function repoColor(repoName: string): string {
     'var(--bde-text-dim)'
   )
 }
+
+/**
+ * Format date to short locale format: "Jan 5", "Dec 25".
+ * Returns "—" if the input is null or invalid.
+ */
+export function formatDate(iso: string | null): string {
+  if (!iso) return '—'
+  try {
+    const d = new Date(iso)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  } catch {
+    return '—'
+  }
+}
