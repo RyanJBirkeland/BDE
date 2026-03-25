@@ -154,6 +154,9 @@ declare global {
       // Task Workbench
       workbench: {
         chat: (...args: IpcArgs<'workbench:chat'>) => Promise<IpcResult<'workbench:chat'>>
+        chatStream: (...args: IpcArgs<'workbench:chatStream'>) => Promise<IpcResult<'workbench:chatStream'>>
+        cancelStream: (...args: IpcArgs<'workbench:cancelStream'>) => Promise<IpcResult<'workbench:cancelStream'>>
+        onChatChunk: (cb: (data: { streamId: string; chunk: string; done: boolean; fullText?: string; error?: string }) => void) => () => void
         generateSpec: (...args: IpcArgs<'workbench:generateSpec'>) => Promise<IpcResult<'workbench:generateSpec'>>
         checkSpec: (...args: IpcArgs<'workbench:checkSpec'>) => Promise<IpcResult<'workbench:checkSpec'>>
         checkOperational: (...args: IpcArgs<'workbench:checkOperational'>) => Promise<IpcResult<'workbench:checkOperational'>>
