@@ -15,11 +15,13 @@ export interface ResolveSuccessOpts {
   ghRepo: string
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
   agentSummary?: string | null
+  retryCount: number
 }
 
 export interface ResolveFailureOpts {
   taskId: string
   retryCount: number
+  notes?: string
 }
 
 function parsePrOutput(stdout: string): { prUrl: string | null; prNumber: number | null } {
@@ -60,7 +62,7 @@ async function generatePrBody(worktreePath: string, branch: string): Promise<str
 }
 
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, ghRepo, onTaskTerminal, agentSummary } = opts
+  const { taskId, worktreePath, title, ghRepo, onTaskTerminal, agentSummary, retryCount } = opts
 
   // 0. Guard: worktree must still exist (macOS /tmp can evict it)
   if (!existsSync(worktreePath)) {
@@ -109,7 +111,9 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     )
     if (statusOut.trim()) {
       logger.info(`[completion] Task ${taskId}: auto-committing uncommitted changes`)
-      await execFile('git', ['add', '-u'], { cwd: worktreePath, env: buildAgentEnv() })
+      // Use -A to capture new (untracked) files created by agents, not just modifications.
+      // The repo's .gitignore excludes node_modules, .env, etc.
+      await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
       await execFile(
         'git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`],
         { cwd: worktreePath, env: buildAgentEnv() }
@@ -127,14 +131,16 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       { cwd: worktreePath, env: buildAgentEnv() }
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
-      logger.warn(`[completion] Task ${taskId}: no commits to push on branch ${branch} — marking error`)
       const summaryNote = agentSummary
         ? `Agent produced no commits. Last output: ${agentSummary.slice(0, 300)}`
         : 'Agent produced no commits (no output captured)'
-      await updateTask(taskId, { status: 'error', completed_at: new Date().toISOString(), notes: summaryNote, claimed_by: null }).catch((e) =>
-        logger.warn(`[completion] Failed to update task ${taskId} after empty branch: ${e}`)
-      )
-      await onTaskTerminal(taskId, 'error')
+      const isTerminal = await resolveFailure({ taskId, retryCount, notes: summaryNote }, logger)
+      if (isTerminal) {
+        logger.warn(`[completion] Task ${taskId}: no commits to push on branch ${branch} — exhausted retries`)
+        await onTaskTerminal(taskId, 'failed')
+      } else {
+        logger.warn(`[completion] Task ${taskId}: no commits to push on branch ${branch} — requeuing (retry ${retryCount + 1}/${MAX_RETRIES})`)
+      }
       return
     }
   } catch {
@@ -233,7 +239,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
 }
 
 export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): Promise<boolean> {
-  const { taskId, retryCount } = opts
+  const { taskId, retryCount, notes } = opts
 
   try {
     if (retryCount < MAX_RETRIES) {
@@ -241,6 +247,7 @@ export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger):
         status: 'queued',
         retry_count: retryCount + 1,
         claimed_by: null,
+        ...(notes ? { notes } : {}),
       })
       return false  // not terminal
     } else {
@@ -248,6 +255,7 @@ export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger):
         status: 'failed',
         completed_at: new Date().toISOString(),
         claimed_by: null,
+        ...(notes ? { notes } : {}),
       })
       return true  // terminal
     }

@@ -310,8 +310,9 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     return
   }
 
-  activeAgents.delete(task.id)
-  // activeCount is derived from activeAgents.size — no manual decrement needed
+  // NOTE: Do NOT delete from activeAgents until completion handlers finish.
+  // Removing early creates a race where orphan recovery re-queues the task
+  // while resolveSuccess is still running (the task is still 'active' in Supabase).
 
   // Update agent run record with final state
   updateAgentMeta(agentRunId, {
@@ -351,6 +352,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
         ghRepo,
         onTaskTerminal,
         agentSummary: lastAgentOutput || null,
+        retryCount: task.retry_count ?? 0,
       }, logger)
     } catch (err) {
       logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)
@@ -360,6 +362,9 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
       }
     }
   }
+
+  // Safe to remove from active map now — completion handler has updated Supabase
+  activeAgents.delete(task.id)
 
   // Cleanup worktree (fire-and-forget)
   cleanupWorktree({

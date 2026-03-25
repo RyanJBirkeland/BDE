@@ -46,7 +46,7 @@ Format: `{type}: {description}`
 - Sprint task dependency management: `src/main/handlers/sprint-local.ts` (auto-blocking on create/transition)
 - Dependency resolution after completion: `src/main/agent-manager/resolve-dependents.ts`
 - Shared sanitization: `src/shared/sanitize-depends-on.ts`
-- Agent auto-commit: `src/main/agent-manager/completion.ts` (uses `git add -u`, not `-A`)
+- Agent auto-commit: `src/main/agent-manager/completion.ts` (uses `git add -A` to capture new files; `.gitignore` excludes node_modules etc.)
 - Agent event mapping/emission: `src/main/agent-event-mapper.ts` (shared by adhoc + pipeline agents)
 - Worktree management: `src/main/agent-manager/worktree.ts`
 - Shutdown/lifecycle: `src/main/agent-manager/index.ts`

@@ -147,6 +147,7 @@ describe('Agent completion pipeline integration', () => {
         title: 'Add login page',
         ghRepo: 'owner/repo',
         onTaskTerminal,
+        retryCount: 0,
       }, logger)
 
       // Verify git push was called
@@ -194,12 +195,13 @@ describe('Agent completion pipeline integration', () => {
         title: 'Add login page',
         ghRepo: 'owner/repo',
         onTaskTerminal,
+        retryCount: 0,
       }, logger)
 
-      // Verify auto-commit sequence: git add -u then git commit
+      // Verify auto-commit sequence: git add -A then git commit
       const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
       const addCall = calls.find(
-        (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('add') && c[1].includes('-u')
+        (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('add') && c[1].includes('-A')
       )
       expect(addCall).toBeDefined()
 
@@ -220,7 +222,7 @@ describe('Agent completion pipeline integration', () => {
   // 2. Agent exits 0 with no changes: task error, no PR opened
   // -------------------------------------------------------------------------
   describe('agent exits 0 with no changes (empty diff)', () => {
-    it('marks task as error with no-commits note, does not push or open PR', async () => {
+    it('requeues task with incremented retry_count when no commits', async () => {
       mockExecFileSequence([
         { stdout: 'agent/empty-branch\n' },   // git rev-parse
         { stdout: '' },                         // git status --porcelain (clean)
@@ -233,6 +235,7 @@ describe('Agent completion pipeline integration', () => {
         title: 'Empty task',
         ghRepo: 'owner/repo',
         onTaskTerminal,
+        retryCount: 0,
       }, logger)
 
       // No push should have happened
@@ -248,17 +251,43 @@ describe('Agent completion pipeline integration', () => {
       )
       expect(prCall).toBeUndefined()
 
-      // Task marked as error
+      // Task requeued with incremented retry_count
       expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
-        status: 'error',
+        status: 'queued',
+        retry_count: 1,
+      }))
+
+      // onTaskTerminal NOT called (not terminal)
+      expect(onTaskTerminal).not.toHaveBeenCalled()
+    })
+
+    it('marks task failed when no commits and retries exhausted', async () => {
+      mockExecFileSequence([
+        { stdout: 'agent/empty-branch\n' },   // git rev-parse
+        { stdout: '' },                         // git status --porcelain (clean)
+        { stdout: '0\n' },                      // git rev-list (no commits)
+      ])
+
+      await resolveSuccess({
+        taskId: 'task-2',
+        worktreePath: '/tmp/wt/task-2',
+        title: 'Empty task',
+        ghRepo: 'owner/repo',
+        onTaskTerminal,
+        retryCount: MAX_RETRIES,
+      }, logger)
+
+      // Task marked as failed
+      expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
+        status: 'failed',
         claimed_by: null,
       }))
 
-      // onTaskTerminal called with error
-      expect(onTaskTerminal).toHaveBeenCalledWith('task-2', 'error')
+      // onTaskTerminal called with 'failed'
+      expect(onTaskTerminal).toHaveBeenCalledWith('task-2', 'failed')
     })
 
-    it('includes agent summary in error notes when available', async () => {
+    it('includes agent summary in notes when available', async () => {
       mockExecFileSequence([
         { stdout: 'agent/empty-branch\n' },
         { stdout: '' },
@@ -271,11 +300,11 @@ describe('Agent completion pipeline integration', () => {
         title: 'Empty task',
         ghRepo: 'owner/repo',
         onTaskTerminal,
+        retryCount: 0,
         agentSummary: 'I could not complete the task because the API was down',
       }, logger)
 
       expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
-        status: 'error',
         notes: expect.stringContaining('I could not complete the task'),
       }))
     })
@@ -501,10 +530,11 @@ describe('Agent completion pipeline integration', () => {
         title: 'Parent task',
         ghRepo: 'owner/repo',
         onTaskTerminal: onTerminal,
+        retryCount: MAX_RETRIES,
       }, logger)
 
-      // onTaskTerminal should have been called with 'error'
-      expect(onTerminal).toHaveBeenCalledWith('task-parent', 'error')
+      // onTaskTerminal should have been called with 'failed'
+      expect(onTerminal).toHaveBeenCalledWith('task-parent', 'failed')
 
       // Hard dep on error status does NOT unblock
       const queueCall = updateTaskMock.mock.calls.find(
