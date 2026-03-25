@@ -177,7 +177,7 @@ function renderBlock(block: ChatBlock) {
     case 'completed':
       return <CompletedBlock exitCode={block.exitCode} costUsd={block.costUsd} durationMs={block.durationMs} />
     case 'playground':
-      return <PlaygroundCard filename={block.filename} html={block.html} sizeBytes={block.sizeBytes} timestamp={block.timestamp} />
+      return <PlaygroundCard filename={block.filename} sizeBytes={block.sizeBytes} onClick={() => { /* TODO: open PlaygroundModal */ }} />
   }
 }
 
