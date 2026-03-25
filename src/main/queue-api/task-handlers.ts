@@ -200,7 +200,7 @@ export async function handleCreateTask(
   }
 
   // Create the task first to get its ID, then validate dependencies
-  const task = await createTask(body as Parameters<typeof createTask>[0])
+  let task = await createTask(body as Parameters<typeof createTask>[0])
 
   // If dependencies were provided, validate them (cycle detection + ID existence)
   if (task.depends_on && task.depends_on.length > 0) {
