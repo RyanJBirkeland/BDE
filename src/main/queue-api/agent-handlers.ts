@@ -3,7 +3,7 @@
  */
 import type http from 'node:http'
 import { sendJson } from './helpers'
-import { listAgentRunsByTaskId, readLog } from '../agent-history'
+import { listAgentRunsByTaskId, hasAgent, readLog } from '../agent-history'
 
 const MAX_LOG_BYTES = 204800 // 200KB
 const DEFAULT_LOG_BYTES = 50000
@@ -36,6 +36,12 @@ export async function handleAgentLog(
   agentId: string,
   query: URLSearchParams
 ): Promise<void> {
+  const agentExists = await hasAgent(agentId)
+  if (!agentExists) {
+    sendJson(res, 404, { error: `Agent ${agentId} not found` })
+    return
+  }
+
   const maxBytes = Math.min(
     parseInt(query.get('maxBytes') ?? String(DEFAULT_LOG_BYTES), 10) || DEFAULT_LOG_BYTES,
     MAX_LOG_BYTES
@@ -48,10 +54,6 @@ export async function handleAgentLog(
   } else {
     // Tail mode — stat to get totalBytes, then compute offset
     const stat = await readLog(agentId, 0, 0)
-    if (stat.totalBytes === 0) {
-      sendJson(res, 404, { error: `Agent ${agentId} not found or has no log` })
-      return
-    }
     fromByte = Math.max(0, stat.totalBytes - maxBytes)
   }
 
