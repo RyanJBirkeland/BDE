@@ -21,6 +21,7 @@ import { usePanelLayoutStore, findLeaf } from './stores/panelLayout'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 import { DEFAULT_MODEL } from '../../shared/models'
 import './assets/neon.css'
+import './assets/neon-shell.css'
 
 // Keyboard shortcut order: ⌘1=dashboard, ⌘2=agents, ⌘3=terminal, ⌘4=sprint,
 // ⌘5=pr-station, ⌘6=git, ⌘7=memory, ⌘8=cost, ⌘9=settings
