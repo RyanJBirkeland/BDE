@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { AgentEvent } from '../../../../../shared/types'
-import { pairEvents, ChatRenderer } from '../ChatRenderer'
+import { pairEvents } from '../../../lib/pair-events'
+import { ChatRenderer } from '../ChatRenderer'
 
 // Mock heavy child components to avoid DOM measurement complexity
 vi.mock('../ChatBubble', () => ({

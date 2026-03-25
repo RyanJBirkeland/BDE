@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PlaygroundModal } from '../PlaygroundModal'
-import { pairEvents } from '../ChatRenderer'
+import { pairEvents } from '../../../lib/pair-events'
 import type { AgentEvent } from '../../../../../shared/types'
 
 // ---------------------------------------------------------------------------
