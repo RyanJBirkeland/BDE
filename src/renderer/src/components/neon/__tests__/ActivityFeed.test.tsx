@@ -32,4 +32,28 @@ describe('ActivityFeed', () => {
     render(<ActivityFeed events={[]} />);
     expect(screen.getByText('No recent activity')).toBeInTheDocument();
   });
+
+  it('shows hours-ago format for timestamps 1-23 hours old', () => {
+    const hoursAgoEvents: FeedEvent[] = [
+      { id: 'h1', label: 'hours test', accent: 'cyan', timestamp: Date.now() - 3 * 60 * 60 * 1000 },
+    ];
+    render(<ActivityFeed events={hoursAgoEvents} />);
+    expect(screen.getByText('3h ago')).toBeInTheDocument();
+  });
+
+  it('shows days-ago format for timestamps 24+ hours old', () => {
+    const daysAgoEvents: FeedEvent[] = [
+      { id: 'd1', label: 'days test', accent: 'pink', timestamp: Date.now() - 48 * 60 * 60 * 1000 },
+    ];
+    render(<ActivityFeed events={daysAgoEvents} />);
+    expect(screen.getByText('2d ago')).toBeInTheDocument();
+  });
+
+  it('shows "just now" for events less than 1 second old', () => {
+    const justNowEvents: FeedEvent[] = [
+      { id: 'jn', label: 'just now test', accent: 'blue', timestamp: Date.now() },
+    ];
+    render(<ActivityFeed events={justNowEvents} />);
+    expect(screen.getByText('just now')).toBeInTheDocument();
+  });
 });
