@@ -124,110 +124,325 @@ describe('GitTreeView', () => {
     ;(useGitTreeStore as any).getState = storeGetState
   })
 
-  it('renders Source Control heading', () => {
-    render(<GitTreeView />)
-    expect(screen.getByText('Source Control')).toBeInTheDocument()
-  })
-
-  it('renders BranchSelector with current branch', () => {
-    render(<GitTreeView />)
-    expect(screen.getByTestId('branch-selector')).toBeInTheDocument()
-    expect(screen.getByText('main')).toBeInTheDocument()
-  })
-
-  it('renders CommitBox', () => {
-    render(<GitTreeView />)
-    expect(screen.getByTestId('commit-box')).toBeInTheDocument()
-  })
-
-  it('shows empty state when no changes', () => {
-    render(<GitTreeView />)
-    expect(screen.getByText('No changes')).toBeInTheDocument()
-  })
-
-  it('shows refresh button', () => {
-    render(<GitTreeView />)
-    expect(screen.getByLabelText('Refresh git status')).toBeInTheDocument()
-  })
-
-  it('renders staged section when staged files exist', () => {
-    vi.mocked(useGitTreeStore).mockImplementation((selector) => {
-      if (typeof selector === 'function') {
-        return selector({
-          ...mockStoreState,
-          staged: [{ path: 'foo.ts', status: 'M' }],
-        } as any)
-      }
-      return { ...mockStoreState, staged: [{ path: 'foo.ts', status: 'M' }] } as any
+  describe('Basic rendering', () => {
+    it('renders Source Control heading', () => {
+      render(<GitTreeView />)
+      expect(screen.getByText('Source Control')).toBeInTheDocument()
     })
 
-    render(<GitTreeView />)
-    expect(screen.getByTestId('section-staged-changes')).toBeInTheDocument()
-  })
-
-  it('renders changes section when unstaged files exist', () => {
-    vi.mocked(useGitTreeStore).mockImplementation((selector) => {
-      if (typeof selector === 'function') {
-        return selector({
-          ...mockStoreState,
-          unstaged: [{ path: 'bar.ts', status: 'M' }],
-        } as any)
-      }
-      return { ...mockStoreState, unstaged: [{ path: 'bar.ts', status: 'M' }] } as any
+    it('renders BranchSelector with current branch', () => {
+      render(<GitTreeView />)
+      expect(screen.getByTestId('branch-selector')).toBeInTheDocument()
+      expect(screen.getByText('main')).toBeInTheDocument()
     })
 
-    render(<GitTreeView />)
-    expect(screen.getByTestId('section-changes')).toBeInTheDocument()
+    it('renders CommitBox', () => {
+      render(<GitTreeView />)
+      expect(screen.getByTestId('commit-box')).toBeInTheDocument()
+    })
+
+    it('shows refresh button', () => {
+      render(<GitTreeView />)
+      expect(screen.getByLabelText('Refresh git status')).toBeInTheDocument()
+    })
+
+    it('calls loadRepoPaths on mount', () => {
+      render(<GitTreeView />)
+      expect(mockStoreState.loadRepoPaths).toHaveBeenCalled()
+    })
   })
 
-  it('renders InlineDiffDrawer when a file is selected', () => {
-    vi.mocked(useGitTreeStore).mockImplementation((selector) => {
-      if (typeof selector === 'function') {
-        return selector({
+  describe('Empty states', () => {
+    it('shows empty state when no changes exist', () => {
+      render(<GitTreeView />)
+      expect(screen.getByText('No changes')).toBeInTheDocument()
+    })
+
+    it('hides empty state when staged files exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            staged: [{ path: 'foo.ts', status: 'M' }],
+          } as any)
+        }
+        return { ...mockStoreState, staged: [{ path: 'foo.ts', status: 'M' }] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+    })
+
+    it('hides empty state when unstaged files exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            unstaged: [{ path: 'bar.ts', status: 'M' }],
+          } as any)
+        }
+        return { ...mockStoreState, unstaged: [{ path: 'bar.ts', status: 'M' }] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+    })
+
+    it('hides empty state when untracked files exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            untracked: [{ path: 'new.ts', status: '?' }],
+          } as any)
+        }
+        return { ...mockStoreState, untracked: [{ path: 'new.ts', status: '?' }] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+    })
+
+    it('does not show empty state when loading', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            loading: true,
+          } as any)
+        }
+        return { ...mockStoreState, loading: true } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Loading states', () => {
+    it('disables refresh button when loading', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            loading: true,
+          } as any)
+        }
+        return { ...mockStoreState, loading: true } as any
+      })
+
+      render(<GitTreeView />)
+      const refreshBtn = screen.getByLabelText('Refresh git status')
+      expect(refreshBtn).toBeDisabled()
+    })
+
+    it('enables refresh button when not loading', () => {
+      render(<GitTreeView />)
+      const refreshBtn = screen.getByLabelText('Refresh git status')
+      expect(refreshBtn).not.toBeDisabled()
+    })
+
+    it('shows spinning animation on refresh icon when loading', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            loading: true,
+          } as any)
+        }
+        return { ...mockStoreState, loading: true } as any
+      })
+
+      const { container } = render(<GitTreeView />)
+      const refreshIcon = container.querySelector('[style*="animation"]')
+      expect(refreshIcon).toBeInTheDocument()
+    })
+  })
+
+  describe('Conditional file sections', () => {
+    it('renders staged section when staged files exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            staged: [{ path: 'foo.ts', status: 'M' }],
+          } as any)
+        }
+        return { ...mockStoreState, staged: [{ path: 'foo.ts', status: 'M' }] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.getByTestId('section-staged-changes')).toBeInTheDocument()
+    })
+
+    it('renders changes section when unstaged files exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            unstaged: [{ path: 'bar.ts', status: 'M' }],
+          } as any)
+        }
+        return { ...mockStoreState, unstaged: [{ path: 'bar.ts', status: 'M' }] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.getByTestId('section-changes')).toBeInTheDocument()
+    })
+
+    it('renders changes section when only untracked files exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            untracked: [{ path: 'new.ts', status: '?' }],
+          } as any)
+        }
+        return { ...mockStoreState, untracked: [{ path: 'new.ts', status: '?' }] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.getByTestId('section-changes')).toBeInTheDocument()
+    })
+
+    it('merges unstaged and untracked files in changes section', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            unstaged: [{ path: 'modified.ts', status: 'M' }],
+            untracked: [{ path: 'new.ts', status: '?' }],
+          } as any)
+        }
+        return {
+          ...mockStoreState,
+          unstaged: [{ path: 'modified.ts', status: 'M' }],
+          untracked: [{ path: 'new.ts', status: '?' }],
+        } as any
+      })
+
+      render(<GitTreeView />)
+      const changesSection = screen.getByTestId('section-changes')
+      expect(changesSection).toHaveTextContent('Changes: 2')
+    })
+
+    it('renders both staged and unstaged sections when both exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            staged: [{ path: 'staged.ts', status: 'M' }],
+            unstaged: [{ path: 'unstaged.ts', status: 'M' }],
+          } as any)
+        }
+        return {
+          ...mockStoreState,
+          staged: [{ path: 'staged.ts', status: 'M' }],
+          unstaged: [{ path: 'unstaged.ts', status: 'M' }],
+        } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.getByTestId('section-staged-changes')).toBeInTheDocument()
+      expect(screen.getByTestId('section-changes')).toBeInTheDocument()
+    })
+  })
+
+  describe('Diff drawer conditional rendering', () => {
+    it('renders InlineDiffDrawer when a file is selected', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            selectedFile: { path: 'src/foo.ts', status: 'M' },
+            diffContent: 'some diff',
+          } as any)
+        }
+        return {
           ...mockStoreState,
           selectedFile: { path: 'src/foo.ts', status: 'M' },
           diffContent: 'some diff',
-        } as any)
-      }
-      return {
-        ...mockStoreState,
-        selectedFile: { path: 'src/foo.ts', status: 'M' },
-        diffContent: 'some diff',
-      } as any
+        } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.getByTestId('inline-diff')).toBeInTheDocument()
+      expect(screen.getByText('src/foo.ts')).toBeInTheDocument()
     })
 
-    render(<GitTreeView />)
-    expect(screen.getByTestId('inline-diff')).toBeInTheDocument()
-    expect(screen.getByText('src/foo.ts')).toBeInTheDocument()
+    it('does not render InlineDiffDrawer when no file selected', () => {
+      render(<GitTreeView />)
+      expect(screen.queryByTestId('inline-diff')).not.toBeInTheDocument()
+    })
   })
 
-  it('does not render InlineDiffDrawer when no file selected', () => {
-    render(<GitTreeView />)
-    expect(screen.queryByTestId('inline-diff')).not.toBeInTheDocument()
+  describe('Repository selector', () => {
+    it('shows repo selector when multiple repos exist', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            repoPaths: ['/repo/bde', '/repo/other'],
+          } as any)
+        }
+        return { ...mockStoreState, repoPaths: ['/repo/bde', '/repo/other'] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.getByLabelText('Select repository')).toBeInTheDocument()
+    })
+
+    it('does not show repo selector when only one repo', () => {
+      render(<GitTreeView />)
+      expect(screen.queryByLabelText('Select repository')).not.toBeInTheDocument()
+    })
+
+    it('does not show repo selector when no repos', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            repoPaths: [],
+          } as any)
+        }
+        return { ...mockStoreState, repoPaths: [] } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.queryByLabelText('Select repository')).not.toBeInTheDocument()
+    })
   })
 
-  it('calls loadRepoPaths on mount', () => {
-    render(<GitTreeView />)
-    expect(mockStoreState.loadRepoPaths).toHaveBeenCalled()
-  })
-
-  it('shows repo selector when multiple repos exist', () => {
-    vi.mocked(useGitTreeStore).mockImplementation((selector) => {
-      if (typeof selector === 'function') {
-        return selector({
+  describe('Staged count in CommitBox', () => {
+    it('passes correct staged count to CommitBox', () => {
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') {
+          return selector({
+            ...mockStoreState,
+            staged: [
+              { path: 'foo.ts', status: 'M' },
+              { path: 'bar.ts', status: 'A' },
+              { path: 'baz.ts', status: 'D' },
+            ],
+          } as any)
+        }
+        return {
           ...mockStoreState,
-          repoPaths: ['/repo/bde', '/repo/other'],
-        } as any)
-      }
-      return { ...mockStoreState, repoPaths: ['/repo/bde', '/repo/other'] } as any
+          staged: [
+            { path: 'foo.ts', status: 'M' },
+            { path: 'bar.ts', status: 'A' },
+            { path: 'baz.ts', status: 'D' },
+          ],
+        } as any
+      })
+
+      render(<GitTreeView />)
+      expect(screen.getByTestId('staged-count')).toHaveTextContent('3')
     })
 
-    render(<GitTreeView />)
-    expect(screen.getByLabelText('Select repository')).toBeInTheDocument()
-  })
-
-  it('does not show repo selector when only one repo', () => {
-    render(<GitTreeView />)
-    expect(screen.queryByLabelText('Select repository')).not.toBeInTheDocument()
+    it('shows zero staged count when no staged files', () => {
+      render(<GitTreeView />)
+      expect(screen.getByTestId('staged-count')).toHaveTextContent('0')
+    })
   })
 })
