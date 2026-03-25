@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import type { AgentMeta } from '../../../../shared/types'
 
 interface TimelineBarProps {
@@ -8,7 +8,7 @@ interface TimelineBarProps {
   onClick: (id: string) => void
 }
 
-export function TimelineBar({ agent, timeRange, totalWidth, onClick }: TimelineBarProps): JSX.Element | null {
+export function TimelineBar({ agent, timeRange, onClick }: TimelineBarProps): React.JSX.Element | null {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const barRef = useRef<HTMLDivElement>(null)

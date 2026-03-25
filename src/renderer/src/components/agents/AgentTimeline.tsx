@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
 import type { AgentMeta } from '../../../../shared/types'
 import { TimelineBar } from './TimelineBar'
 
@@ -7,7 +7,7 @@ interface AgentTimelineProps {
   onSelectAgent: (id: string) => void
 }
 
-export function AgentTimeline({ agents, onSelectAgent }: AgentTimelineProps): JSX.Element {
+export function AgentTimeline({ agents, onSelectAgent }: AgentTimelineProps): React.JSX.Element {
   // Default time range: last 6 hours
   const timeRange = useMemo(() => {
     const now = Date.now()
