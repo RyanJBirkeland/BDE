@@ -152,7 +152,7 @@ describe('runAgent — playground prompt injection', () => {
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', createDeps())
 
     expect(capturedPrompt).toBeDefined()
-    expect(capturedPrompt).toBe('Fix the database query')
+    expect(capturedPrompt).toContain('Fix the database query')
     expect(capturedPrompt).not.toContain('## Dev Playground')
   })
 
@@ -172,7 +172,7 @@ describe('runAgent — playground prompt injection', () => {
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', createDeps())
 
     expect(capturedPrompt).toBeDefined()
-    expect(capturedPrompt).toBe('Refactor the module')
+    expect(capturedPrompt).toContain('Refactor the module')
     expect(capturedPrompt).not.toContain('## Dev Playground')
   })
 

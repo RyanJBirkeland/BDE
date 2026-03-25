@@ -1,5 +1,6 @@
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
+import { existsSync } from 'node:fs'
 import { updateTask } from '../data/sprint-queries'
 import { buildAgentEnv } from '../env-utils'
 import { MAX_RETRIES } from './types'
@@ -61,6 +62,18 @@ async function generatePrBody(worktreePath: string, branch: string): Promise<str
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
   const { taskId, worktreePath, title, ghRepo, onTaskTerminal, agentSummary } = opts
 
+  // 0. Guard: worktree must still exist (macOS /tmp can evict it)
+  if (!existsSync(worktreePath)) {
+    logger.error(`[completion] Worktree path no longer exists for task ${taskId}: ${worktreePath}`)
+    await updateTask(taskId, {
+      status: 'error',
+      completed_at: new Date().toISOString(),
+      notes: `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
+      claimed_by: null,
+    }).catch((e) => logger.warn(`[completion] Failed to update task ${taskId} after worktree eviction: ${e}`))
+    await onTaskTerminal(taskId, 'error')
+    return
+  }
   // 1. Detect current branch
   let branch: string
   try {

@@ -23,6 +23,10 @@ import { promisify } from 'node:util'
 // Mocks — must be declared before imports
 // ---------------------------------------------------------------------------
 
+vi.mock('node:fs', async () => {
+  const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
+  return { ...actual, existsSync: vi.fn(() => true) }
+})
 vi.mock('node:child_process', () => {
   const fn = vi.fn() as ReturnType<typeof vi.fn> & { [k: symbol]: unknown }
   fn[promisify.custom] = vi.fn()

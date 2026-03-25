@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { promisify } from 'node:util'
 
+// Mock node:fs — existsSync must return true for worktree path guard
+vi.mock('node:fs', async () => {
+  const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
+  return { ...actual, existsSync: vi.fn(() => true) }
+})
+
 // Mock node:child_process before importing module under test.
 // We attach util.promisify.custom so that promisify(execFile) resolves to { stdout, stderr }
 // (matching real execFile behaviour) rather than the raw second callback argument.
@@ -15,6 +21,7 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
 }))
 
+import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'
 import { resolveSuccess, resolveFailure } from '../completion'
@@ -60,6 +67,7 @@ describe('resolveSuccess', () => {
   beforeEach(() => {
     resetMocks()
     mockOnTaskTerminal.mockReset()
+    vi.mocked(existsSync).mockReturnValue(true)
   })
 
   it('pushes the branch and creates PR, then updates task with PR info', async () => {

@@ -181,7 +181,7 @@ describe('AgentManager pipeline integration', () => {
     expect(vi.mocked(claimTask)).toHaveBeenCalledWith('task-pipeline-1', 'bde-embedded')
     expect(vi.mocked(spawnAgent)).toHaveBeenCalledWith(
       expect.objectContaining({
-        prompt: 'Build the feature',
+        prompt: expect.stringContaining('Build the feature'),
         cwd: '/tmp/wt/myrepo/task-pipeline-1',
         model: 'claude-sonnet-4-5',
       })

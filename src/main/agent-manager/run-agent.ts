@@ -141,6 +141,8 @@ export async function runAgent(
     return
   }
 
+  // CRITICAL: Tell the agent which branch it is on so it does not push to main.
+  prompt += `\n\n## Git Branch\nYou are working on branch \`${worktree.branch}\`. Commit and push ONLY to this branch.\nDo NOT checkout, merge to, or push to \`main\`. The CI/PR system handles integration.\nIf you need to push, use: \`git push origin ${worktree.branch}\``
   // Conditionally augment prompt with playground instructions
   if (task.playground_enabled) {
     prompt += `\n\n## Dev Playground

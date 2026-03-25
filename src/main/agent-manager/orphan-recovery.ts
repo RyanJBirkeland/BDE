@@ -11,6 +11,14 @@ export async function recoverOrphans(
   for (const task of orphans) {
     if (isAgentActive(task.id)) continue // still running
 
+    // Skip tasks that already have a PR — they completed successfully and are
+    // waiting for SprintPrPoller to mark them done on merge.
+    if (task.pr_url) {
+      logger.info(`[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`)
+      await updateTask(task.id, { claimed_by: null })
+      continue
+    }
+
     logger.warn(`[agent-manager] Orphaned task ${task.id} "${task.title}" — re-queuing`)
 
     // Re-queue: clear claimed_by so drain loop or external runner can pick it up

@@ -198,7 +198,7 @@ describe('createAgentManager', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
 
       expect(vi.mocked(spawnAgent)).toHaveBeenCalledWith(
-        expect.objectContaining({ prompt: 'Do the thing', cwd: '/tmp/wt/myrepo/task-1', model: 'claude-sonnet-4-5' })
+        expect.objectContaining({ prompt: expect.stringContaining('Do the thing'), cwd: '/tmp/wt/myrepo/task-1', model: 'claude-sonnet-4-5' })
       )
       expect(vi.mocked(claimTask)).toHaveBeenCalledWith('task-1', 'bde-embedded')
 
