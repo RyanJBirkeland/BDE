@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, basename, join } from 'node:path'
 import { broadcast } from '../broadcast'
+import { mapRawMessage, emitAgentEvent } from '../agent-event-mapper'
 import type { AgentEvent } from '../../shared/types'
 
 // ---------------------------------------------------------------------------
@@ -218,6 +219,9 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   )
   // activeCount is derived from activeAgents.size — no manual increment needed
 
+  // Emit agent:started event for console display
+  emitAgentEvent(agentRunId, { type: 'agent:started', model: defaultModel, timestamp: Date.now() })
+
   // Consume messages
   let exitCode: number | undefined
   try {
@@ -234,6 +238,12 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
       agent.tokensOut = getNumericField(msg, 'tokens_out') ?? agent.tokensOut
       // Track exit code if present (typically in last message)
       exitCode = getNumericField(msg, 'exit_code') ?? exitCode
+
+      // Map SDK message → AgentEvents and emit for console display + persistence
+      const mappedEvents = mapRawMessage(msg)
+      for (const event of mappedEvents) {
+        emitAgentEvent(agentRunId, event)
+      }
 
       // Detect playground HTML writes (when enabled)
       if (task.playground_enabled) {
@@ -255,8 +265,14 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     }
   } catch (err) {
     logger.error(`[agent-manager] Error consuming messages for task ${task.id}: ${err}`)
-    // Invalidate cached OAuth token on auth errors so next agent gets a fresh token
     const errMsg = err instanceof Error ? err.message : String(err)
+    // Emit error event for console display
+    emitAgentEvent(agentRunId, {
+      type: 'agent:error',
+      message: errMsg,
+      timestamp: Date.now(),
+    })
+    // Invalidate cached OAuth token on auth errors so next agent gets a fresh token
     if (errMsg.includes('Invalid API key') || errMsg.includes('invalid_api_key') || errMsg.includes('authentication')) {
       const { invalidateOAuthToken, refreshOAuthTokenFromKeychain } = await import('../env-utils')
       invalidateOAuthToken()
@@ -270,6 +286,18 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
 
   // Agent exited
   const exitedAt = Date.now()
+  const durationMs = exitedAt - agent.startedAt
+
+  // Emit agent:completed event for console display
+  emitAgentEvent(agentRunId, {
+    type: 'agent:completed',
+    exitCode: exitCode ?? 1,
+    costUsd: agent.costUsd,
+    tokensIn: agent.tokensIn,
+    tokensOut: agent.tokensOut,
+    durationMs,
+    timestamp: exitedAt,
+  })
 
   // Check if watchdog already cleaned up this agent
   if (!activeAgents.has(task.id)) {

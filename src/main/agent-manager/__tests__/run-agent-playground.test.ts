@@ -42,6 +42,11 @@ vi.mock('../../agent-history', () => ({
   updateAgentMeta: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('../../agent-event-mapper', () => ({
+  mapRawMessage: vi.fn().mockReturnValue([]),
+  emitAgentEvent: vi.fn(),
+}))
+
 // ---------------------------------------------------------------------------
 // Pure helper tests
 // ---------------------------------------------------------------------------

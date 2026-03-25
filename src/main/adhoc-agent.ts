@@ -9,10 +9,8 @@ import { randomUUID } from 'node:crypto'
 import { basename } from 'node:path'
 import { importAgent, updateAgentMeta } from './agent-history'
 import { buildAgentEnvWithAuth } from './env-utils'
-import { appendEvent } from './data/event-queries'
-import { getDb } from './db'
-import { broadcast } from './broadcast'
-import type { AgentEvent, SpawnLocalAgentResult } from '../shared/types'
+import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
+import type { SpawnLocalAgentResult } from '../shared/types'
 
 /** Wrapper around an SDK Query for ad-hoc agent management */
 interface AdhocSession {
@@ -125,14 +123,14 @@ async function consumeStream(
   let tokensOut = 0
   let exitCode = 0
 
-  emitEvent(agentId, { type: 'agent:started', model, timestamp: Date.now() })
+  emitAgentEvent(agentId, { type: 'agent:started', model, timestamp: Date.now() })
 
   try {
     try {
       for await (const raw of queryHandle) {
         const events = mapRawMessage(raw)
         for (const event of events) {
-          emitEvent(agentId, event)
+          emitAgentEvent(agentId, event)
         }
 
         // Track cost/token fields if present
@@ -151,7 +149,7 @@ async function consumeStream(
         }
       }
     } catch (err) {
-      emitEvent(agentId, {
+      emitAgentEvent(agentId, {
         type: 'agent:error',
         message: err instanceof Error ? err.message : String(err),
         timestamp: Date.now(),
@@ -159,7 +157,7 @@ async function consumeStream(
     }
 
     const durationMs = Date.now() - startedAt
-    emitEvent(agentId, {
+    emitAgentEvent(agentId, {
       type: 'agent:completed',
       exitCode,
       costUsd,
@@ -182,57 +180,4 @@ async function consumeStream(
   }
 }
 
-function emitEvent(agentId: string, event: AgentEvent): void {
-  broadcast('agent:event', { agentId, event })
-  try {
-    appendEvent(getDb(), agentId, event.type, JSON.stringify(event), event.timestamp)
-  } catch {
-    // SQLite write failure is non-fatal
-  }
-}
-
-// ---- Raw message → AgentEvent mapping ----
-
-function mapRawMessage(raw: unknown): AgentEvent[] {
-  if (typeof raw !== 'object' || raw === null) return []
-  const msg = raw as Record<string, unknown>
-  const now = Date.now()
-  const events: AgentEvent[] = []
-
-  const msgType = msg.type as string | undefined
-
-  if (msgType === 'assistant') {
-    const message = msg.message as Record<string, unknown> | undefined
-    const content = message?.content
-    if (Array.isArray(content)) {
-      for (const block of content) {
-        if (typeof block === 'object' && block !== null) {
-          const b = block as Record<string, unknown>
-          if (b.type === 'text' && typeof b.text === 'string') {
-            events.push({ type: 'agent:text', text: b.text, timestamp: now })
-          } else if (b.type === 'tool_use') {
-            events.push({
-              type: 'agent:tool_call',
-              tool: (b.name as string) ?? 'unknown',
-              summary: (b.name as string) ?? '',
-              input: b.input,
-              timestamp: now,
-            })
-          }
-        }
-      }
-    }
-  } else if (msgType === 'tool_result' || msgType === 'result') {
-    const content = msg.content ?? msg.output
-    events.push({
-      type: 'agent:tool_result',
-      tool: (msg.tool_name as string) ?? (msg.name as string) ?? 'unknown',
-      success: msg.is_error !== true,
-      summary: typeof content === 'string' ? content.slice(0, 200) : '',
-      output: content,
-      timestamp: now,
-    })
-  }
-
-  return events
-}
+// mapRawMessage and emitAgentEvent are imported from agent-event-mapper.ts
