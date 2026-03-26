@@ -1,5 +1,8 @@
 import { ipcMain } from 'electron'
 import type { IpcChannelMap } from '../shared/ipc-channels'
+import { createLogger } from './logger'
+
+const logger = createLogger('ipc')
 
 /**
  * Type-safe IPC handler for channels defined in IpcChannelMap.
@@ -16,7 +19,7 @@ export function safeHandle<K extends keyof IpcChannelMap>(
     try {
       return await handler(e, ...(args as IpcChannelMap[K]['args']))
     } catch (err) {
-      console.error(`[IPC:${channel}] unhandled error:`, err)
+      logger.error(`[${channel}] unhandled error: ${err}`)
       throw err
     }
   })

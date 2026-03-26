@@ -54,6 +54,7 @@ export interface ActiveAgent {
   costUsd: number
   tokensIn: number
   tokensOut: number
+  maxRuntimeMs: number | null
 }
 
 export interface Logger {

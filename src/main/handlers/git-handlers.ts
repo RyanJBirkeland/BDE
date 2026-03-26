@@ -23,6 +23,9 @@ import {
   updateTaskMergeableState
 } from './sprint-local'
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
+import { createLogger } from '../logger'
+
+const logger = createLogger('git-handlers')
 
 export function registerGitHandlers(): void {
   // --- GitHub API proxy (renderer -> main -> api.github.com) ---
@@ -63,7 +66,7 @@ export function registerGitHandlers(): void {
   safeHandle('git:status', async (_e, cwd: string) => {
     const result = await gitStatus(validateRepoPath(cwd))
     if (!result.ok) {
-      console.warn('[git:status]', result.error)
+      logger.warn(`git:status ${result.error}`)
       return { files: [] }
     }
     return result.data
@@ -71,7 +74,7 @@ export function registerGitHandlers(): void {
   safeHandle('git:diff', async (_e, cwd: string, file?: string) => {
     const result = await gitDiffFile(validateRepoPath(cwd), file)
     if (!result.ok) {
-      console.warn('[git:diff]', result.error)
+      logger.warn(`git:diff ${result.error}`)
       return ''
     }
     return result.data

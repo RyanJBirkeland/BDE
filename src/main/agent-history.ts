@@ -27,6 +27,9 @@ import {
 import type { AgentRunRow } from './data/agent-queries'
 import { pruneEventsByAgentIds } from './data/event-queries'
 import type { AgentMeta } from '../shared/types'
+import { createLogger } from './logger'
+
+const logger = createLogger('agent-history')
 
 export type { AgentMeta }
 
@@ -60,9 +63,9 @@ export async function migrateFromJson(): Promise<void> {
     tx()
 
     await rename(AGENTS_INDEX, AGENTS_INDEX + '.bak')
-    console.log(`[agent-history] Migrated ${agents.length} agents from agents.json to SQLite`)
+    logger.info(`Migrated ${agents.length} agents from agents.json to SQLite`)
   } catch (err) {
-    console.error('[agent-history] Migration from agents.json failed:', err)
+    logger.error(`Migration from agents.json failed: ${err}`)
   }
 }
 

@@ -1,5 +1,8 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { safeHandle } from '../ipc-utils'
+import { createLogger } from '../logger'
+
+const logger = createLogger('window-handlers')
 
 const ALLOWED_URL_SCHEMES = new Set(['https:', 'http:', 'mailto:'])
 
@@ -22,7 +25,7 @@ export function registerWindowHandlers(): void {
       const win = BrowserWindow.getFocusedWindow()
       if (win && typeof title === 'string') win.setTitle(title)
     } catch (err) {
-      console.error('[window:setTitle]', err)
+      logger.error(`setTitle: ${err}`)
     }
   })
 }

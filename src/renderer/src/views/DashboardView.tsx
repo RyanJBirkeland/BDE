@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
 import { POLL_DASHBOARD_INTERVAL } from '../lib/constants'
+import { useBackoffInterval } from '../hooks/useBackoffInterval'
 import {
   StatusBar,
   StatCounter,
@@ -48,65 +49,64 @@ export default function DashboardView() {
     [stats],
   )
 
-  // Fetch all dashboard data and poll every 60s
+  // Unmount guard for async fetches
+  const cancelledRef = useRef(false)
   useEffect(() => {
-    let cancelled = false
+    cancelledRef.current = false
+    return () => { cancelledRef.current = true }
+  }, [])
 
-    async function fetchDashboardData(): Promise<void> {
-      try {
-        const data = await window.api.dashboard?.completionsPerHour()
-        if (cancelled || !data) return
-        const accents: Array<'cyan' | 'pink' | 'blue' | 'orange' | 'purple'> = [
-          'cyan', 'pink', 'blue', 'orange', 'purple',
-        ]
-        setChartData(
-          data.map((d, i) => ({
-            value: d.count,
-            accent: accents[i % accents.length],
-            label: d.hour,
-          })),
-        )
-      } catch (err) {
-        console.error('[Dashboard] Failed to fetch completions:', err)
-      }
-
-      try {
-        const events = await window.api.dashboard?.recentEvents(30)
-        if (cancelled || !events) return
-        setFeedEvents(
-          events.map((e) => ({
-            id: String(e.id),
-            label: `${e.event_type}: ${e.agent_id}`,
-            accent:
-              e.event_type === 'error'
-                ? ('red' as const)
-                : e.event_type === 'complete'
-                  ? ('cyan' as const)
-                  : ('purple' as const),
-            timestamp: e.timestamp,
-          })),
-        )
-      } catch (err) {
-        console.error('[Dashboard] Failed to fetch events:', err)
-      }
-
-      try {
-        const prs = await window.api.getPrList()
-        if (cancelled) return
-        setPrCount(prs?.prs?.length ?? 0)
-      } catch (err) {
-        console.error('[Dashboard] Failed to fetch PR list:', err)
-      }
+  // Fetch all dashboard data — errors are caught per-fetch so backoff only
+  // triggers on total failure. Jitter prevents thundering herd across views.
+  const fetchDashboardData = useCallback(async (): Promise<void> => {
+    try {
+      const data = await window.api.dashboard?.completionsPerHour()
+      if (cancelledRef.current || !data) return
+      const accents: Array<'cyan' | 'pink' | 'blue' | 'orange' | 'purple'> = [
+        'cyan', 'pink', 'blue', 'orange', 'purple',
+      ]
+      setChartData(
+        data.map((d, i) => ({
+          value: d.count,
+          accent: accents[i % accents.length],
+          label: d.hour,
+        })),
+      )
+    } catch (err) {
+      console.error('[Dashboard] Failed to fetch completions:', err)
     }
 
-    fetchDashboardData()
-    const interval = setInterval(fetchDashboardData, POLL_DASHBOARD_INTERVAL)
+    try {
+      const events = await window.api.dashboard?.recentEvents(30)
+      if (cancelledRef.current || !events) return
+      setFeedEvents(
+        events.map((e) => ({
+          id: String(e.id),
+          label: `${e.event_type}: ${e.agent_id}`,
+          accent:
+            e.event_type === 'error'
+              ? ('red' as const)
+              : e.event_type === 'complete'
+                ? ('cyan' as const)
+                : ('purple' as const),
+          timestamp: e.timestamp,
+        })),
+      )
+    } catch (err) {
+      console.error('[Dashboard] Failed to fetch events:', err)
+    }
 
-    return () => {
-      cancelled = true
-      clearInterval(interval)
+    try {
+      const prs = await window.api.getPrList()
+      if (cancelledRef.current) return
+      setPrCount(prs?.prs?.length ?? 0)
+    } catch (err) {
+      console.error('[Dashboard] Failed to fetch PR list:', err)
     }
   }, [])
+
+  // Poll with jitter to prevent thundering herd; backoff on total failure
+  useBackoffInterval(fetchDashboardData, POLL_DASHBOARD_INTERVAL)
 
   const transition = reduced ? REDUCED_TRANSITION : SPRINGS.snappy
 

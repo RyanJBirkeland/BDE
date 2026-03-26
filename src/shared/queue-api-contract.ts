@@ -46,13 +46,14 @@ export const RUNNER_WRITABLE_STATUSES = new Set(['queued', 'active', 'done', 'fa
 export const STATUS_UPDATE_FIELDS = new Set([
   'status', 'prUrl', 'prNumber', 'prStatus', 'prMergeableState',
   'completedAt', 'startedAt', 'agentRunId', 'retryCount',
-  'fastFailCount', 'notes',
+  'fastFailCount', 'notes', 'maxRuntimeMs',
 ])
 
 /** Allowed fields for general PATCH /queue/tasks/:id — excludes status, claimed_by, depends_on
  *  which must go through their dedicated endpoints to enforce validation. */
 export const GENERAL_PATCH_FIELDS = new Set([
   'title', 'prompt', 'repo', 'spec', 'notes', 'priority', 'templateName', 'playgroundEnabled',
+  'maxRuntimeMs',
 ])
 
 // --- Streaming Visibility Event Types ---

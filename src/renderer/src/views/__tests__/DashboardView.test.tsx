@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, act } from '@testing-library/react'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -62,6 +62,13 @@ import DashboardView from '../DashboardView'
 describe('DashboardView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
   })
 
   it('renders the Ops Deck command center', () => {
@@ -89,9 +96,11 @@ describe('DashboardView', () => {
       { hour: '11:00', count: 3 },
     ])
     render(<DashboardView />)
-    await waitFor(() => {
-      expect(screen.getByText('Completions / Hour')).toBeInTheDocument()
+    // Flush initial useBackoffInterval tick (setTimeout 0ms with jitter=0)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1)
     })
+    expect(screen.getByText('Completions / Hour')).toBeInTheDocument()
   })
 
   it('renders feed events from recentEvents', async () => {
@@ -101,36 +110,33 @@ describe('DashboardView', () => {
       { id: 3, event_type: 'spawn', agent_id: 'agent-3', payload: '', timestamp: Date.now() - 20000 },
     ])
     render(<DashboardView />)
-    await waitFor(() => {
-      expect(screen.getByText('complete: agent-1')).toBeInTheDocument()
-      expect(screen.getByText('error: agent-2')).toBeInTheDocument()
-      expect(screen.getByText('spawn: agent-3')).toBeInTheDocument()
+    // Flush initial useBackoffInterval tick
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1)
     })
+    expect(screen.getByText('complete: agent-1')).toBeInTheDocument()
+    expect(screen.getByText('error: agent-2')).toBeInTheDocument()
+    expect(screen.getByText('spawn: agent-3')).toBeInTheDocument()
   })
 
   it('re-fetches dashboard data on polling interval', async () => {
-    vi.useFakeTimers()
-    try {
-      render(<DashboardView />)
+    render(<DashboardView />)
 
-      // Flush the initial fetchDashboardData() call
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(0)
-      })
+    // Flush the initial useBackoffInterval tick
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1)
+    })
 
-      expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(1)
+    expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(1)
 
-      // Advance past the 60s polling interval
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(60_000)
-      })
+    // Advance past the 60s polling interval
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000)
+    })
 
-      expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(2)
-      expect(window.api.dashboard.recentEvents).toHaveBeenCalledTimes(2)
-      expect(window.api.getPrList).toHaveBeenCalledTimes(2)
-    } finally {
-      vi.useRealTimers()
-    }
+    expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(2)
+    expect(window.api.dashboard.recentEvents).toHaveBeenCalledTimes(2)
+    expect(window.api.getPrList).toHaveBeenCalledTimes(2)
   })
 
   it('logs errors instead of swallowing them', async () => {
@@ -139,9 +145,9 @@ describe('DashboardView', () => {
 
     render(<DashboardView />)
 
+    // Flush initial useBackoffInterval tick to trigger the rejected promise
     await act(async () => {
-      // Allow microtasks to flush so the rejected promise is caught
-      await new Promise((r) => setTimeout(r, 0))
+      await vi.advanceTimersByTimeAsync(1)
     })
 
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -161,9 +167,10 @@ describe('DashboardView', () => {
       checks: {},
     })
     render(<DashboardView />)
-    // After the bugfix, PR count should be 2 (extracted from payload.prs.length)
-    await waitFor(() => {
-      expect(screen.getByText('2')).toBeInTheDocument()
+    // Flush initial useBackoffInterval tick
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1)
     })
+    expect(screen.getByText('2')).toBeInTheDocument()
   })
 })

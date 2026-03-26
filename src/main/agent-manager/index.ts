@@ -220,6 +220,7 @@ export function createAgentManager(
       retry_count: Number(raw.retryCount) || 0,
       fast_fail_count: Number(raw.fastFailCount) || 0,
       playground_enabled: Boolean(raw.playgroundEnabled),
+      max_runtime_ms: Number(raw.maxRuntimeMs) || null,
     }
 
     // Defense-in-depth: check dependencies before claiming.

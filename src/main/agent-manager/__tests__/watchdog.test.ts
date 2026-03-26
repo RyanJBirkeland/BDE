@@ -24,6 +24,7 @@ function makeAgent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
     costUsd: 0,
     tokensIn: 0,
     tokensOut: 0,
+    maxRuntimeMs: null,
     ...overrides,
   }
 }
@@ -70,6 +71,20 @@ describe('checkAgent', () => {
     const agent = makeAgent({ startedAt: 0, lastOutputAt: 0, rateLimitCount: RATE_LIMIT_LOOP_THRESHOLD + 1 })
     const now = 1_000
     expect(checkAgent(agent, now, baseConfig)).toBe('rate-limit-loop')
+  })
+
+  it('uses per-task maxRuntimeMs when set', () => {
+    // Agent has a 120s per-task override — should be killed at 120s, not config's 3600s
+    const agent = makeAgent({ startedAt: 0, lastOutputAt: 120_000, maxRuntimeMs: 120_000 })
+    const now = 120_000
+    expect(checkAgent(agent, now, baseConfig)).toBe('max-runtime')
+  })
+
+  it('uses config default when maxRuntimeMs is null', () => {
+    const agent = makeAgent({ startedAt: 0, lastOutputAt: 120_000, maxRuntimeMs: null })
+    // At 120s, should be ok since config default is 3600s
+    const now = 120_000
+    expect(checkAgent(agent, now, baseConfig)).toBe('ok')
   })
 
   it('max-runtime takes priority over idle', () => {

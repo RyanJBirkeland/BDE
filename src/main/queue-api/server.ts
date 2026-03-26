@@ -5,6 +5,9 @@
  */
 import http from 'node:http'
 import { route } from './router'
+import { createLogger } from '../logger'
+
+const logger = createLogger('queue-api')
 
 export interface QueueApiOptions {
   port?: number
@@ -18,7 +21,7 @@ export function startQueueApi(opts: QueueApiOptions = {}): http.Server {
   const host = opts.host ?? '127.0.0.1'
 
   if (server) {
-    console.warn('[queue-api] Server already running — skipping start')
+    logger.warn('Server already running — skipping start')
     return server
   }
 
@@ -26,7 +29,7 @@ export function startQueueApi(opts: QueueApiOptions = {}): http.Server {
     try {
       await route(req, res)
     } catch (err) {
-      console.error('[queue-api] Unhandled error:', err)
+      logger.error(`Unhandled error: ${err}`)
       if (!res.headersSent) {
         res.writeHead(500, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: 'Internal server error' }))
@@ -35,7 +38,7 @@ export function startQueueApi(opts: QueueApiOptions = {}): http.Server {
   })
 
   server.listen(port, host, () => {
-    console.log(`[queue-api] Listening on http://${host}:${port}`)
+    logger.info(`Listening on http://${host}:${port}`)
   })
 
   return server

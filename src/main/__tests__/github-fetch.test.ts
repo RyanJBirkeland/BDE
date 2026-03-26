@@ -156,6 +156,7 @@ describe('githubFetch', () => {
     expect(res.status).toBe(200)
     expect(fetch).toHaveBeenCalledTimes(2)
     expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[github-fetch]'),
       expect.stringContaining('Rate limited')
     )
     warnSpy.mockRestore()
