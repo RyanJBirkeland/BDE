@@ -641,6 +641,14 @@
 .console-completion-card__header--success { color: var(--neon-cyan); }
 .console-completion-card__header--failed { color: var(--neon-red); }
 
+/* ── Tool Group ── */
+.console-tool-group__items {
+  padding-left: 24px;
+  border-left: 2px solid var(--neon-blue-border);
+  margin-left: 6px;
+  margin-top: 4px;
+}
+
 /* ── Stderr Content ── */
 .console-line__content--stderr {
   color: var(--neon-orange);

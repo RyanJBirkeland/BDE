@@ -102,6 +102,21 @@ function renderBlock(block: ChatBlock) {
           timestamp={block.timestamp}
         />
       )
+    case 'tool_group':
+      return (
+        <>
+          {block.tools.map((tool, i) => (
+            <ToolCallBlock
+              key={i}
+              tool={tool.tool}
+              summary={tool.summary}
+              input={tool.input}
+              result={tool.type === 'tool_pair' ? tool.result : undefined}
+              timestamp={tool.timestamp}
+            />
+          ))}
+        </>
+      )
     case 'error':
       return <ChatBubble variant="error" text={block.message} timestamp={block.timestamp} />
     case 'rate_limited':

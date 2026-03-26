@@ -28,7 +28,10 @@ describe('pairEvents', () => {
     const blocks = pairEvents(events)
 
     expect(blocks).toHaveLength(1)
-    expect(blocks[0]).toEqual({
+    expect(blocks[0].type).toBe('tool_group')
+    const group = blocks[0] as { type: 'tool_group'; tools: unknown[] }
+    expect(group.tools).toHaveLength(1)
+    expect(group.tools[0]).toEqual({
       type: 'tool_pair',
       tool: 'Read',
       summary: 'Reading file.txt',
@@ -56,7 +59,9 @@ describe('pairEvents', () => {
     const blocks = pairEvents(events)
 
     expect(blocks).toHaveLength(1)
-    expect(blocks[0]).toEqual({
+    expect(blocks[0].type).toBe('tool_group')
+    const group = blocks[0] as { type: 'tool_group'; tools: unknown[] }
+    expect(group.tools[0]).toEqual({
       type: 'tool_call',
       tool: 'Write',
       summary: 'File written',
@@ -105,19 +110,10 @@ describe('pairEvents', () => {
 
     const blocks = pairEvents(events)
 
-    expect(blocks).toHaveLength(2)
-    expect(blocks[0]).toEqual({
-      type: 'tool_call',
-      tool: 'Read',
-      summary: 'Reading file.txt',
-      timestamp: 4000
-    })
-    expect(blocks[1]).toEqual({
-      type: 'tool_call',
-      tool: 'Write',
-      summary: 'File written',
-      timestamp: 4100
-    })
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0].type).toBe('tool_group')
+    const group = blocks[0] as { type: 'tool_group'; tools: unknown[] }
+    expect(group.tools).toHaveLength(2)
   })
 
   it('maps agent:stderr events to stderr blocks', () => {
@@ -194,6 +190,7 @@ describe('pairEvents', () => {
 
     expect(blocks).toHaveLength(3)
     expect(blocks[0]).toEqual({ type: 'text', text: 'Before', timestamp: 3000 })
+    expect(blocks[1].type).toBe('tool_group')
     expect(blocks[2]).toEqual({ type: 'text', text: 'After', timestamp: 3200 })
   })
 
@@ -257,7 +254,29 @@ describe('pairEvents', () => {
     expect(blocks[0].type).toBe('started')
     expect(blocks[1].type).toBe('text')
     expect(blocks[2].type).toBe('thinking')
-    expect(blocks[3].type).toBe('tool_pair')
+    expect(blocks[3].type).toBe('tool_group')
     expect(blocks[4].type).toBe('completed')
+  })
+
+  it('groups consecutive tool calls between text blocks', () => {
+    const events: AgentEvent[] = [
+      { type: 'agent:text', text: 'Starting', timestamp: 1000 },
+      { type: 'agent:tool_call', tool: 'Bash', summary: 'ls', timestamp: 2000 },
+      { type: 'agent:tool_result', tool: 'Bash', summary: 'output', success: true, timestamp: 2100 },
+      { type: 'agent:tool_call', tool: 'Read', summary: 'file.txt', timestamp: 3000 },
+      { type: 'agent:tool_result', tool: 'Read', summary: 'contents', success: true, timestamp: 3100 },
+      { type: 'agent:tool_call', tool: 'Bash', summary: 'npm test', timestamp: 4000 },
+      { type: 'agent:tool_result', tool: 'Bash', summary: 'passed', success: true, timestamp: 4100 },
+      { type: 'agent:text', text: 'Done', timestamp: 5000 }
+    ]
+
+    const blocks = pairEvents(events)
+
+    expect(blocks).toHaveLength(3) // text, tool_group, text
+    expect(blocks[0].type).toBe('text')
+    expect(blocks[1].type).toBe('tool_group')
+    const group = blocks[1] as { type: 'tool_group'; tools: unknown[] }
+    expect(group.tools).toHaveLength(3)
+    expect(blocks[2].type).toBe('text')
   })
 })

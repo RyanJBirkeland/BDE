@@ -6,11 +6,8 @@ import type { AgentEvent } from '../../../shared/types'
 
 // --- Chat Block Types (discriminated union) ---
 
-export type ChatBlock =
-  | { type: 'started'; model: string; timestamp: number }
-  | { type: 'text'; text: string; timestamp: number }
-  | { type: 'user_message'; text: string; timestamp: number }
-  | { type: 'thinking'; tokenCount: number; text?: string; timestamp: number }
+/** Tool blocks that can appear inside a tool_group */
+export type ToolBlock =
   | { type: 'tool_call'; tool: string; summary: string; input?: unknown; timestamp: number }
   | {
       type: 'tool_pair'
@@ -20,6 +17,14 @@ export type ChatBlock =
       result: { success: boolean; summary: string; output?: unknown }
       timestamp: number
     }
+
+export type ChatBlock =
+  | { type: 'started'; model: string; timestamp: number }
+  | { type: 'text'; text: string; timestamp: number }
+  | { type: 'user_message'; text: string; timestamp: number }
+  | { type: 'thinking'; tokenCount: number; text?: string; timestamp: number }
+  | ToolBlock
+  | { type: 'tool_group'; tools: ToolBlock[]; timestamp: number }
   | { type: 'error'; message: string; timestamp: number }
   | { type: 'stderr'; text: string; timestamp: number }
   | { type: 'rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
@@ -65,7 +70,6 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
         break
 
       case 'agent:tool_call': {
-        // Look ahead for a matching tool_result
         const next = events[i + 1]
         if (next?.type === 'agent:tool_result' && next.tool === ev.tool) {
           blocks.push({
@@ -76,7 +80,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
             result: { success: next.success, summary: next.summary, output: next.output },
             timestamp: ev.timestamp
           })
-          i++ // Skip the paired result
+          i++
         } else {
           blocks.push({
             type: 'tool_call',
@@ -90,7 +94,6 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
       }
 
       case 'agent:tool_result':
-        // Orphaned result (no preceding call) — render as-is
         blocks.push({
           type: 'tool_call',
           tool: ev.tool,
@@ -140,7 +143,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
     }
   }
 
-  // Merge consecutive text blocks into single grouped blocks
+  // Merge consecutive text blocks
   const merged: ChatBlock[] = []
   for (const block of blocks) {
     const prev = merged[merged.length - 1]
@@ -151,5 +154,20 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
     }
   }
 
-  return merged
+  // Group consecutive tool blocks into collapsible tool_group blocks
+  const grouped: ChatBlock[] = []
+  for (const block of merged) {
+    if (block.type === 'tool_call' || block.type === 'tool_pair') {
+      const prev = grouped[grouped.length - 1]
+      if (prev?.type === 'tool_group') {
+        prev.tools.push(block)
+      } else {
+        grouped.push({ type: 'tool_group', tools: [block], timestamp: block.timestamp })
+      }
+    } else {
+      grouped.push(block)
+    }
+  }
+
+  return grouped
 }

@@ -29,10 +29,14 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
           if (b.type === 'text' && typeof b.text === 'string') {
             events.push({ type: 'agent:text', text: b.text, timestamp: now })
           } else if (b.type === 'tool_use') {
+            const toolName =
+              (typeof b.name === 'string' && b.name) ||
+              (typeof b.tool_name === 'string' && b.tool_name) ||
+              'unknown'
             events.push({
               type: 'agent:tool_call',
-              tool: (b.name as string) ?? 'unknown',
-              summary: (b.name as string) ?? '',
+              tool: toolName,
+              summary: toolName,
               input: b.input,
               timestamp: now
             })
@@ -44,7 +48,10 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
     const content = msg.content ?? msg.output
     events.push({
       type: 'agent:tool_result',
-      tool: (msg.tool_name as string) ?? (msg.name as string) ?? 'unknown',
+      tool:
+        (typeof msg.tool_name === 'string' && msg.tool_name) ||
+        (typeof msg.name === 'string' && msg.name) ||
+        'unknown',
       success: msg.is_error !== true,
       summary: typeof content === 'string' ? content.slice(0, 200) : '',
       output: content,

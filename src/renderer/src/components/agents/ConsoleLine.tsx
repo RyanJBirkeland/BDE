@@ -316,6 +316,64 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
       )
     }
 
+    case 'tool_group': {
+      const total = block.tools.length
+      if (total === 1) {
+        return <ConsoleLine block={block.tools[0]} />
+      }
+      const counts: Record<string, number> = {}
+      for (const t of block.tools) {
+        counts[t.tool] = (counts[t.tool] || 0) + 1
+      }
+      const breakdown = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, count]) => `${count} ${name}`)
+        .join(', ')
+      return (
+        <div
+          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}`}
+          data-testid="console-line-tool-group"
+        >
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              width: '100%',
+              textAlign: 'left',
+            }}
+            aria-label={expanded ? 'Collapse tool group' : 'Expand tool group'}
+          >
+            <ChevronRight
+              size={14}
+              className="console-line__chevron"
+              style={{
+                transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              }}
+            />
+            <span className="console-prefix console-prefix--tool">[tools]</span>
+            <span className="console-line__content">
+              {total} tool calls ({breakdown})
+            </span>
+            <span className="console-badge console-badge--success">{total}</span>
+            <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
+          </button>
+          {expanded && (
+            <div className="console-tool-group__items">
+              {block.tools.map((tool, i) => (
+                <ConsoleLine key={i} block={tool} />
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
     case 'playground':
       return (
         <div className="console-line" data-testid="console-line-playground">

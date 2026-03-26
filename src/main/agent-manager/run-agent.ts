@@ -262,10 +262,20 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
       if (isRateLimitMessage(msg)) {
         agent.rateLimitCount++
       }
-      // Track cost / tokens if present
-      agent.costUsd = getNumericField(msg, 'cost_usd') ?? agent.costUsd
+      // Track cost / tokens if present (check both top-level and nested fields)
+      agent.costUsd =
+        getNumericField(msg, 'cost_usd') ?? getNumericField(msg, 'total_cost_usd') ?? agent.costUsd
       agent.tokensIn = getNumericField(msg, 'tokens_in') ?? agent.tokensIn
       agent.tokensOut = getNumericField(msg, 'tokens_out') ?? agent.tokensOut
+      // Also check nested usage object (SDK sometimes nests token counts)
+      if (typeof msg === 'object' && msg !== null) {
+        const m = msg as Record<string, unknown>
+        if (typeof m.usage === 'object' && m.usage !== null) {
+          const u = m.usage as Record<string, unknown>
+          if (typeof u.input_tokens === 'number') agent.tokensIn = u.input_tokens
+          if (typeof u.output_tokens === 'number') agent.tokensOut = u.output_tokens
+        }
+      }
       // Track exit code if present (typically in last message)
       exitCode = getNumericField(msg, 'exit_code') ?? exitCode
 
@@ -330,7 +340,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   // Emit agent:completed event for console display
   emitAgentEvent(agentRunId, {
     type: 'agent:completed',
-    exitCode: exitCode ?? 1,
+    exitCode: exitCode ?? 0,
     costUsd: agent.costUsd,
     tokensIn: agent.tokensIn,
     tokensOut: agent.tokensOut,

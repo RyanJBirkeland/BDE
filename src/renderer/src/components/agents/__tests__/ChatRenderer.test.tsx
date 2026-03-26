@@ -63,17 +63,17 @@ describe('pairEvents', () => {
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
-    expect(blocks[0].type).toBe('tool_pair')
+    expect(blocks[0].type).toBe('tool_group')
   })
 
-  it('leaves unpaired tool_call as standalone', () => {
+  it('leaves unpaired tool_call as standalone tool_group', () => {
     const events: AgentEvent[] = [
       { type: 'agent:tool_call', tool: 'Read', summary: 'src/foo.ts', timestamp: 100 },
       { type: 'agent:text', text: 'hello', timestamp: 102 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(2)
-    expect(blocks[0].type).toBe('tool_call')
+    expect(blocks[0].type).toBe('tool_group')
   })
 
   it('maps text events to text blocks', () => {
@@ -163,14 +163,14 @@ describe('pairEvents', () => {
       }
     ]
     const blocks = pairEvents(events)
-    expect(blocks).toHaveLength(7)
+    // tool_pair blocks are now wrapped in tool_group; consecutive tool groups merge
     expect(blocks.map((b) => b.type)).toEqual([
       'started',
       'thinking',
       'text',
-      'tool_pair',
+      'tool_group',
       'text',
-      'tool_pair',
+      'tool_group',
       'completed'
     ])
   })
@@ -181,8 +181,9 @@ describe('pairEvents', () => {
       { type: 'agent:tool_result', tool: 'Write', success: true, summary: 'ok', timestamp: 2 }
     ]
     const blocks = pairEvents(events)
-    expect(blocks).toHaveLength(2)
-    expect(blocks[0].type).toBe('tool_call')
+    // Both tools grouped into one tool_group
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0].type).toBe('tool_group')
   })
 
   it('returns empty array for empty events', () => {
@@ -204,7 +205,7 @@ describe('pairEvents', () => {
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
-    expect(blocks[0].type).toBe('tool_call')
+    expect(blocks[0].type).toBe('tool_group')
   })
 
   it('maps playground events to playground blocks', () => {
