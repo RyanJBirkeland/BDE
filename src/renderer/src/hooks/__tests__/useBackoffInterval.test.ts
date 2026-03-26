@@ -4,7 +4,6 @@ import { useBackoffInterval } from '../useBackoffInterval'
 
 describe('useBackoffInterval', () => {
   const BASE_MS = 1000
-  const JITTER_MS = 100 // 10% of base
 
   beforeEach(() => {
     vi.useFakeTimers()
