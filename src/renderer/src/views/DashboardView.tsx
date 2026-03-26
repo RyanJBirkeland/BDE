@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
+import { POLL_DASHBOARD_INTERVAL } from '../lib/constants'
 import {
   StatusBar,
   StatCounter,
@@ -47,19 +48,16 @@ export default function DashboardView() {
     [stats],
   )
 
-  // Fetch chart data
+  // Fetch all dashboard data and poll every 60s
   useEffect(() => {
     let cancelled = false
-    window.api.dashboard
-      ?.completionsPerHour()
-      ?.then((data) => {
-        if (cancelled) return
+
+    async function fetchDashboardData(): Promise<void> {
+      try {
+        const data = await window.api.dashboard?.completionsPerHour()
+        if (cancelled || !data) return
         const accents: Array<'cyan' | 'pink' | 'blue' | 'orange' | 'purple'> = [
-          'cyan',
-          'pink',
-          'blue',
-          'orange',
-          'purple',
+          'cyan', 'pink', 'blue', 'orange', 'purple',
         ]
         setChartData(
           data.map((d, i) => ({
@@ -68,20 +66,13 @@ export default function DashboardView() {
             label: d.hour,
           })),
         )
-      })
-      ?.catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [])
+      } catch (err) {
+        console.error('[Dashboard] Failed to fetch completions:', err)
+      }
 
-  // Fetch events
-  useEffect(() => {
-    let cancelled = false
-    window.api.dashboard
-      ?.recentEvents(30)
-      ?.then((events) => {
-        if (cancelled) return
+      try {
+        const events = await window.api.dashboard?.recentEvents(30)
+        if (cancelled || !events) return
         setFeedEvents(
           events.map((e) => ({
             id: String(e.id),
@@ -95,25 +86,25 @@ export default function DashboardView() {
             timestamp: e.timestamp,
           })),
         )
-      })
-      ?.catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [])
+      } catch (err) {
+        console.error('[Dashboard] Failed to fetch events:', err)
+      }
 
-  // Fetch PR count — using getPrList per preload/index.d.ts
-  useEffect(() => {
-    let cancelled = false
-    window.api
-      .getPrList()
-      .then((prs) => {
+      try {
+        const prs = await window.api.getPrList()
         if (cancelled) return
         setPrCount(prs?.prs?.length ?? 0)
-      })
-      .catch(() => {})
+      } catch (err) {
+        console.error('[Dashboard] Failed to fetch PR list:', err)
+      }
+    }
+
+    fetchDashboardData()
+    const interval = setInterval(fetchDashboardData, POLL_DASHBOARD_INTERVAL)
+
     return () => {
       cancelled = true
+      clearInterval(interval)
     }
   }, [])
 

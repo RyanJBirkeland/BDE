@@ -12,10 +12,10 @@ import {
   claimTask,
   releaseTask,
   getTasksWithDependencies,
-  deleteTask,
+  getActiveTaskCount,
 } from '../data/sprint-queries'
 import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-contract'
-import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS } from '../../shared/queue-api-contract'
+import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS, MAX_ACTIVE_TASKS } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
 import { detectCycle } from '../agent-manager/dependency-index'
 import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
@@ -200,13 +200,24 @@ export async function handleCreateTask(
     }
   }
 
-  // Auto-block tasks with unsatisfied hard dependencies before creation
-  // (matches sprint:create IPC behavior — check deps, set status=blocked if needed)
+  // Validate dependencies for cycles and non-existent IDs BEFORE creating the task
+  // (eliminates the need for rollback if validation fails)
   const createInput = body as Record<string, unknown>
   const dependsOn = createInput.depends_on as Array<{ id: string; type: 'hard' | 'soft' }> | undefined
+  const PENDING_TASK_ID = 'pending-new-task'
+  if (dependsOn && dependsOn.length > 0) {
+    const validationError = await validateDependencies(PENDING_TASK_ID, dependsOn as TaskDependency[])
+    if (validationError) {
+      sendJson(res, 400, { error: validationError })
+      return
+    }
+  }
+
+  // Auto-block tasks with unsatisfied hard dependencies before creation
+  // (matches sprint:create IPC behavior — check deps, set status=blocked if needed)
   if (dependsOn && dependsOn.length > 0 && (createInput.status === 'queued' || !createInput.status)) {
     const { shouldBlock, blockedBy } = await checkTaskDependencies(
-      'new-task',
+      PENDING_TASK_ID,
       dependsOn,
       console,
     )
@@ -221,21 +232,6 @@ export async function handleCreateTask(
   if (!task) {
     sendJson(res, 500, { error: 'Failed to create task' })
     return
-  }
-
-  // If dependencies were provided, validate them (cycle detection + ID existence)
-  if (task.depends_on && task.depends_on.length > 0) {
-    const validationError = await validateDependencies(task.id, task.depends_on)
-    if (validationError) {
-      // Rollback: delete the task we just created
-      try {
-        await deleteTask(task.id)
-      } catch (err) {
-        console.error(`Failed to rollback task ${task.id} after validation failure:`, err)
-      }
-      sendJson(res, 400, { error: validationError })
-      return
-    }
   }
 
   sendJson(res, 201, toCamelCase(task))
@@ -405,6 +401,18 @@ export async function handleClaim(
   const { executorId } = body as ClaimRequest
   if (typeof executorId !== 'string' || !executorId.trim()) {
     sendJson(res, 400, { error: 'executorId is required' })
+    return
+  }
+
+  // Enforce WIP limit — prevent more than MAX_ACTIVE_TASKS active tasks.
+  // Note: TOCTOU race exists between this check and claimTask() below.
+  // Acceptable because BDE's drain loop is the primary caller and runs
+  // sequentially. For true atomicity, this would need a Supabase RPC.
+  const activeCount = await getActiveTaskCount()
+  if (activeCount >= MAX_ACTIVE_TASKS) {
+    sendJson(res, 409, {
+      error: `WIP limit reached (${activeCount}/${MAX_ACTIVE_TASKS} active tasks). Complete or cancel an active task first.`
+    })
     return
   }
 

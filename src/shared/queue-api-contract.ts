@@ -3,6 +3,9 @@
  * Shared between BDE (server) and task runner (client).
  */
 
+/** Maximum tasks allowed in 'active' status at any time (enforced at API layer) */
+export const MAX_ACTIVE_TASKS = 5
+
 export interface QueueHealthResponse {
   status: 'ok'
   version: string

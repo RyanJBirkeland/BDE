@@ -361,6 +361,21 @@ export async function updateTaskMergeableState(
   }
 }
 
+export async function getActiveTaskCount(): Promise<number> {
+  const { count, error } = await getSupabaseClient()
+    .from('sprint_tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'active')
+
+  if (error) {
+    // Fail-closed: return MAX to prevent new claims when Supabase is down.
+    // This is intentional — better to block claims than to over-saturate.
+    logger.warn(`[sprint-queries] getActiveTaskCount failed: ${error}`)
+    return Infinity
+  }
+  return count ?? 0
+}
+
 export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
   const { data, error } = await getSupabaseClient()
     .from('sprint_tasks').select('*')

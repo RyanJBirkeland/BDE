@@ -13,6 +13,7 @@ const mockClaimTask = vi.fn()
 const mockReleaseTask = vi.fn()
 const mockGetTasksWithDependencies = vi.fn()
 const mockDeleteTask = vi.fn()
+const mockGetActiveTaskCount = vi.fn()
 
 vi.mock('../../data/sprint-queries', () => ({
   getQueueStats: (...args: unknown[]) => mockGetQueueStats(...args),
@@ -24,6 +25,7 @@ vi.mock('../../data/sprint-queries', () => ({
   releaseTask: (...args: unknown[]) => mockReleaseTask(...args),
   getTasksWithDependencies: (...args: unknown[]) => mockGetTasksWithDependencies(...args),
   deleteTask: (...args: unknown[]) => mockDeleteTask(...args),
+  getActiveTaskCount: (...args: unknown[]) => mockGetActiveTaskCount(...args),
 }))
 
 // ---------------------------------------------------------------------------
@@ -147,6 +149,7 @@ beforeEach(() => {
   mockGetDb.mockReturnValue({}) // default db mock
   mockGetTasksWithDependencies.mockResolvedValue([]) // default empty tasks list
   mockDeleteTask.mockResolvedValue(undefined) // default delete success
+  mockGetActiveTaskCount.mockResolvedValue(0) // default: no active tasks (WIP limit not hit)
   mockCheckSpecSemantic.mockResolvedValue({
     passed: true,
     hasFails: false,
@@ -287,19 +290,11 @@ describe('Queue API', () => {
       expect((body as { error: string }).error).toMatch(/dependency type must be/)
     })
 
-    it('rejects dependencies with non-existent task IDs', async () => {
-      const created = {
-        id: 'new-1',
-        title: 'Task with deps',
-        repo: 'my-repo',
-        depends_on: [{ id: 'missing-task', type: 'hard' }]
-      }
-      mockCreateTask.mockResolvedValue(created)
+    it('rejects dependencies with non-existent task IDs before creating task', async () => {
       mockGetTasksWithDependencies.mockResolvedValue([
         { id: 'existing-1', depends_on: null, status: 'done' },
         { id: 'existing-2', depends_on: null, status: 'queued' }
       ])
-      mockDeleteTask.mockResolvedValue(undefined)
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
@@ -309,22 +304,16 @@ describe('Queue API', () => {
       expect(status).toBe(400)
       expect((body as { error: string }).error).toMatch(/task IDs do not exist/)
       expect((body as { error: string }).error).toMatch(/missing-task/)
-      expect(mockDeleteTask).toHaveBeenCalledWith('new-1')
+      // Task should never have been created — no rollback needed
+      expect(mockCreateTask).not.toHaveBeenCalled()
+      expect(mockDeleteTask).not.toHaveBeenCalled()
     })
 
-    it('rejects dependencies that would create a cycle', async () => {
-      const created = {
-        id: 'new-1',
-        title: 'Task with deps',
-        repo: 'my-repo',
-        depends_on: [{ id: 'task-a', type: 'hard' }]
-      }
-      mockCreateTask.mockResolvedValue(created)
+    it('rejects dependencies that would create a cycle before creating task', async () => {
       mockGetTasksWithDependencies.mockResolvedValue([
         { id: 'task-a', depends_on: [{ id: 'task-b', type: 'hard' }], status: 'queued' },
-        { id: 'task-b', depends_on: [{ id: 'new-1', type: 'hard' }], status: 'queued' }
+        { id: 'task-b', depends_on: [{ id: 'pending-new-task', type: 'hard' }], status: 'queued' }
       ])
-      mockDeleteTask.mockResolvedValue(undefined)
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
@@ -333,28 +322,26 @@ describe('Queue API', () => {
       })
       expect(status).toBe(400)
       expect((body as { error: string }).error).toMatch(/cycle detected/)
-      expect(mockDeleteTask).toHaveBeenCalledWith('new-1')
+      // Task should never have been created — no rollback needed
+      expect(mockCreateTask).not.toHaveBeenCalled()
+      expect(mockDeleteTask).not.toHaveBeenCalled()
     })
 
-    it('rejects self-referencing dependencies', async () => {
-      const created = {
-        id: 'new-1',
-        title: 'Task with deps',
-        repo: 'my-repo',
-        depends_on: [{ id: 'new-1', type: 'hard' }]
-      }
-      mockCreateTask.mockResolvedValue(created)
+    it('rejects self-referencing dependencies before creating task', async () => {
+      // With pre-creation validation, the temporary ID is 'pending-new-task'
+      // so a self-reference uses that ID
       mockGetTasksWithDependencies.mockResolvedValue([])
-      mockDeleteTask.mockResolvedValue(undefined)
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
         repo: 'my-repo',
-        depends_on: [{ id: 'new-1', type: 'hard' }]
+        depends_on: [{ id: 'pending-new-task', type: 'hard' }]
       })
       expect(status).toBe(400)
       expect((body as { error: string }).error).toMatch(/cycle detected/)
-      expect(mockDeleteTask).toHaveBeenCalledWith('new-1')
+      // Task should never have been created — no rollback needed
+      expect(mockCreateTask).not.toHaveBeenCalled()
+      expect(mockDeleteTask).not.toHaveBeenCalled()
     })
 
     it('creates task with valid dependencies', async () => {
@@ -366,6 +353,10 @@ describe('Queue API', () => {
       }
       mockCreateTask.mockResolvedValue(created)
       mockGetTasksWithDependencies.mockResolvedValue([
+        { id: 'task-a', depends_on: null, status: 'done' }
+      ])
+      // checkTaskDependencies calls listTasks() for auto-blocking check
+      mockListTasks.mockResolvedValue([
         { id: 'task-a', depends_on: null, status: 'done' }
       ])
 
@@ -452,6 +443,29 @@ describe('Queue API', () => {
     it('rejects missing executorId', async () => {
       const { status } = await request('POST', '/queue/tasks/abc/claim', {})
       expect(status).toBe(400)
+    })
+
+    it('rejects claim when active task count is at WIP limit', async () => {
+      mockGetActiveTaskCount.mockResolvedValue(5)
+
+      const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
+        executorId: 'runner-1',
+      })
+      expect(status).toBe(409)
+      expect((body as { error: string }).error).toMatch(/WIP limit reached/)
+      expect(mockClaimTask).not.toHaveBeenCalled()
+    })
+
+    it('allows claim when active task count is below WIP limit', async () => {
+      mockGetActiveTaskCount.mockResolvedValue(4)
+      const claimed = { id: 'abc', status: 'active', claimed_by: 'runner-1' }
+      mockClaimTask.mockResolvedValue(claimed)
+
+      const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
+        executorId: 'runner-1',
+      })
+      expect(status).toBe(200)
+      expect(body).toEqual({ id: 'abc', status: 'active', claimedBy: 'runner-1' })
     })
   })
 

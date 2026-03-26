@@ -481,6 +481,57 @@ describe('createAgentManager', () => {
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
     })
+
+    it('re-checks available slots inside drain for-loop (defense-in-depth)', async () => {
+      // The drain loop re-checks availableSlots(concurrency, activeAgents.size)
+      // before each processQueuedTask call. This guards against over-spawning
+      // when activeAgents grows between fetchQueuedTasks and iteration.
+      //
+      // With the current fire-and-forget _runAgent pattern, activeAgents.set
+      // happens in a microtask that may not resolve between for-loop iterations
+      // under fake timers. So we test the guard by filling the slot from a
+      // PRIOR drain, then triggering a second drain where available=0 at the
+      // top-level check prevents even entering the for-loop.
+      //
+      // The in-loop re-check provides additional safety for edge cases where
+      // activeAgents.size changes between the top-level check and iteration
+      // (e.g., concurrent agent registration, backpressure changes).
+      vi.useFakeTimers()
+      const config = { ...baseConfig, maxConcurrent: 1, pollIntervalMs: 600_000 }
+      const logger = makeLogger()
+      setupDefaultMocks()
+
+      // First drain: fill the slot
+      const task1 = makeTask({ id: 'task-1' })
+      const { handle } = makeBlockingHandle()
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task1])
+      vi.mocked(claimTask).mockResolvedValueOnce(task1)
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
+
+      const mgr = createAgentManager(config, logger)
+      mgr.start()
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 30; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(mgr.getStatus().activeAgents.length).toBe(1)
+
+      // Second drain: slot full, should not process any new tasks
+      const task2 = makeTask({ id: 'task-2' })
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task2])
+      vi.mocked(claimTask).mockClear()
+
+      await vi.advanceTimersByTimeAsync(config.pollIntervalMs + 1_000)
+      for (let i = 0; i < 30; i++) await vi.advanceTimersByTimeAsync(1)
+
+      // No new claims — both the top-level check and the in-loop re-check
+      // would prevent processing task-2
+      expect(vi.mocked(claimTask)).not.toHaveBeenCalled()
+      expect(mgr.getStatus().activeAgents.length).toBe(1)
+
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
   })
 
   describe('stop()', () => {

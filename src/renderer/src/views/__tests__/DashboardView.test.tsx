@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -106,6 +106,50 @@ describe('DashboardView', () => {
       expect(screen.getByText('error: agent-2')).toBeInTheDocument()
       expect(screen.getByText('spawn: agent-3')).toBeInTheDocument()
     })
+  })
+
+  it('re-fetches dashboard data on polling interval', async () => {
+    vi.useFakeTimers()
+    try {
+      render(<DashboardView />)
+
+      // Flush the initial fetchDashboardData() call
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(1)
+
+      // Advance past the 60s polling interval
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000)
+      })
+
+      expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(2)
+      expect(window.api.dashboard.recentEvents).toHaveBeenCalledTimes(2)
+      expect(window.api.getPrList).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('logs errors instead of swallowing them', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(window.api.dashboard.completionsPerHour).mockRejectedValueOnce(new Error('Network error'))
+
+    render(<DashboardView />)
+
+    await act(async () => {
+      // Allow microtasks to flush so the rejected promise is caught
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[Dashboard] Failed to fetch completions:',
+      expect.any(Error)
+    )
+
+    consoleSpy.mockRestore()
   })
 
   it('renders correct PR count from getPrList payload', async () => {

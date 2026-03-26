@@ -14,6 +14,7 @@ import {
   getQueuedTasks,
   getOrphanedTasks,
   getTasksWithDependencies,
+  getActiveTaskCount,
   UPDATE_ALLOWLIST,
 } from '../sprint-queries'
 
@@ -337,5 +338,37 @@ describe('getTasksWithDependencies', () => {
     const result = await getTasksWithDependencies()
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('t1')
+  })
+})
+
+describe('getActiveTaskCount', () => {
+  it('returns count of active tasks', async () => {
+    const chain = chainable()
+    ;(chain.eq as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 3, error: null })
+    mockSelect.mockReturnValue(chain)
+
+    const count = await getActiveTaskCount()
+    expect(count).toBe(3)
+  })
+
+  it('returns Infinity on error (fail-closed)', async () => {
+    const chain = chainable()
+    ;(chain.eq as ReturnType<typeof vi.fn>).mockResolvedValue({
+      count: null,
+      error: { message: 'connection refused' },
+    })
+    mockSelect.mockReturnValue(chain)
+
+    const count = await getActiveTaskCount()
+    expect(count).toBe(Infinity)
+  })
+
+  it('returns 0 when count is null and no error', async () => {
+    const chain = chainable()
+    ;(chain.eq as ReturnType<typeof vi.fn>).mockResolvedValue({ count: null, error: null })
+    mockSelect.mockReturnValue(chain)
+
+    const count = await getActiveTaskCount()
+    expect(count).toBe(0)
   })
 })
