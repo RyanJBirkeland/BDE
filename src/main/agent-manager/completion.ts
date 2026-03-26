@@ -61,6 +61,107 @@ async function generatePrBody(worktreePath: string, branch: string): Promise<str
   return sections.join('\n\n')
 }
 
+async function detectBranch(worktreePath: string): Promise<string> {
+  const { stdout } = await execFile(
+    'git',
+    ['rev-parse', '--abbrev-ref', 'HEAD'],
+    { cwd: worktreePath, env: buildAgentEnv() }
+  )
+  return stdout.trim()
+}
+
+async function autoCommitIfDirty(worktreePath: string, title: string, logger: Logger): Promise<void> {
+  const { stdout: statusOut } = await execFile(
+    'git', ['status', '--porcelain'],
+    { cwd: worktreePath, env: buildAgentEnv() }
+  )
+  if (statusOut.trim()) {
+    logger.info(`[completion] auto-committing uncommitted changes`)
+    // Use -A to capture new (untracked) files created by agents, not just modifications.
+    // The repo's .gitignore excludes node_modules, .env, etc.
+    await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
+    await execFile(
+      'git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`],
+      { cwd: worktreePath, env: buildAgentEnv() }
+    )
+  }
+}
+
+async function findOrCreatePR(
+  worktreePath: string,
+  branch: string,
+  title: string,
+  ghRepo: string,
+  logger: Logger
+): Promise<{ prUrl: string | null; prNumber: number | null }> {
+  let prUrl: string | null = null
+  let prNumber: number | null = null
+
+  // Check if PR already exists for this branch
+  try {
+    const { stdout: listOut } = await execFile(
+      'gh',
+      ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
+      { cwd: worktreePath, env: buildAgentEnv() }
+    )
+    const trimmed = listOut.trim()
+    if (trimmed && trimmed !== 'null') {
+      const existing = JSON.parse(trimmed)
+      if (existing && existing.url && existing.number) {
+        prUrl = existing.url
+        prNumber = existing.number
+        logger.info(`[completion] PR already exists for branch ${branch}: ${prUrl}`)
+        return { prUrl, prNumber }
+      }
+    }
+  } catch (err) {
+    logger.warn(`[completion] Failed to check for existing PR on branch ${branch}: ${err}`)
+  }
+
+  // Open PR via gh CLI if one doesn't exist
+  try {
+    const body = await generatePrBody(worktreePath, branch)
+    const { stdout: prOut } = await execFile(
+      'gh',
+      ['pr', 'create', '--title', title, '--body', body, '--head', branch, '--repo', ghRepo],
+      { cwd: worktreePath, env: buildAgentEnv() }
+    )
+    const parsed = parsePrOutput(prOut)
+    prUrl = parsed.prUrl
+    prNumber = parsed.prNumber
+    logger.info(`[completion] created new PR ${prUrl}`)
+  } catch (err) {
+    const errMsg = String(err)
+    // If PR creation failed because one already exists (race condition), try to fetch it
+    if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
+      logger.info(`[completion] PR creation failed because one already exists, fetching existing PR`)
+      try {
+        const { stdout: retryListOut } = await execFile(
+          'gh',
+          ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
+          { cwd: worktreePath, env: buildAgentEnv() }
+        )
+        const retryTrimmed = retryListOut.trim()
+        if (retryTrimmed && retryTrimmed !== 'null') {
+          const existing = JSON.parse(retryTrimmed)
+          if (existing && existing.url && existing.number) {
+            prUrl = existing.url
+            prNumber = existing.number
+            logger.info(`[completion] found existing PR ${prUrl}`)
+          }
+        }
+      } catch (retryErr) {
+        logger.warn(`[completion] Failed to fetch existing PR after creation failure: ${retryErr}`)
+      }
+    } else {
+      logger.warn(`[completion] gh pr create failed: ${err}`)
+    }
+    // User can create PR manually from the pushed branch — do not throw
+  }
+
+  return { prUrl, prNumber }
+}
+
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
   const { taskId, worktreePath, title, ghRepo, onTaskTerminal, agentSummary, retryCount } = opts
 
@@ -76,15 +177,11 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     await onTaskTerminal(taskId, 'error')
     return
   }
+
   // 1. Detect current branch
   let branch: string
   try {
-    const { stdout: branchOut } = await execFile(
-      'git',
-      ['rev-parse', '--abbrev-ref', 'HEAD'],
-      { cwd: worktreePath, env: buildAgentEnv() }
-    )
-    branch = branchOut.trim()
+    branch = await detectBranch(worktreePath)
   } catch (err) {
     logger.error(`[completion] Failed to detect branch for task ${taskId}: ${err}`)
     await updateTask(taskId, { status: 'error', completed_at: new Date().toISOString(), notes: 'Failed to detect branch', claimed_by: null }).catch((e) =>
@@ -105,20 +202,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
 
   // 2. Auto-commit any uncommitted changes (agents may not commit before exiting)
   try {
-    const { stdout: statusOut } = await execFile(
-      'git', ['status', '--porcelain'],
-      { cwd: worktreePath, env: buildAgentEnv() }
-    )
-    if (statusOut.trim()) {
-      logger.info(`[completion] Task ${taskId}: auto-committing uncommitted changes`)
-      // Use -A to capture new (untracked) files created by agents, not just modifications.
-      // The repo's .gitignore excludes node_modules, .env, etc.
-      await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
-      await execFile(
-        'git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`],
-        { cwd: worktreePath, env: buildAgentEnv() }
-      )
-    }
+    await autoCommitIfDirty(worktreePath, title, logger)
   } catch (err) {
     logger.warn(`[completion] Auto-commit failed for task ${taskId}: ${err}`)
     // Continue — push will fail naturally if there are no commits
@@ -147,9 +231,8 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     // If rev-list fails, try pushing anyway
   }
 
+  // 4. Push branch to origin (skip pre-push hooks — agent code is reviewed via PR)
   logger.info(`[completion] Task ${taskId}: pushing branch ${branch}`)
-
-  // Push branch to origin (skip pre-push hooks — agent code is reviewed via PR)
   try {
     await execFile('git', ['push', '--no-verify', 'origin', branch], { cwd: worktreePath, env: buildAgentEnv() })
   } catch (err) {
@@ -160,72 +243,10 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     return
   }
 
-  // Check if PR already exists for this branch
-  let prUrl: string | null = null
-  let prNumber: number | null = null
-  try {
-    const { stdout: listOut } = await execFile(
-      'gh',
-      ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
-      { cwd: worktreePath, env: buildAgentEnv() }
-    )
-    const trimmed = listOut.trim()
-    if (trimmed && trimmed !== 'null') {
-      const existing = JSON.parse(trimmed)
-      if (existing && existing.url && existing.number) {
-        prUrl = existing.url
-        prNumber = existing.number
-        logger.info(`[completion] Task ${taskId}: PR already exists for branch ${branch}: ${prUrl}`)
-      }
-    }
-  } catch (err) {
-    logger.warn(`[completion] Failed to check for existing PR on branch ${branch}: ${err}`)
-  }
+  // 5. Find or create PR
+  const { prUrl, prNumber } = await findOrCreatePR(worktreePath, branch, title, ghRepo, logger)
 
-  // Open PR via gh CLI if one doesn't exist
-  if (!prUrl) {
-    try {
-      const body = await generatePrBody(worktreePath, branch)
-      const { stdout: prOut } = await execFile(
-        'gh',
-        ['pr', 'create', '--title', title, '--body', body, '--head', branch, '--repo', ghRepo],
-        { cwd: worktreePath, env: buildAgentEnv() }
-      )
-      const parsed = parsePrOutput(prOut)
-      prUrl = parsed.prUrl
-      prNumber = parsed.prNumber
-      logger.info(`[completion] Task ${taskId}: created new PR ${prUrl}`)
-    } catch (err) {
-      const errMsg = String(err)
-      // If PR creation failed because one already exists (race condition), try to fetch it
-      if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
-        logger.info(`[completion] Task ${taskId}: PR creation failed because one already exists, fetching existing PR`)
-        try {
-          const { stdout: retryListOut } = await execFile(
-            'gh',
-            ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
-            { cwd: worktreePath, env: buildAgentEnv() }
-          )
-          const retryTrimmed = retryListOut.trim()
-          if (retryTrimmed && retryTrimmed !== 'null') {
-            const existing = JSON.parse(retryTrimmed)
-            if (existing && existing.url && existing.number) {
-              prUrl = existing.url
-              prNumber = existing.number
-              logger.info(`[completion] Task ${taskId}: found existing PR ${prUrl}`)
-            }
-          }
-        } catch (retryErr) {
-          logger.warn(`[completion] Failed to fetch existing PR after creation failure: ${retryErr}`)
-        }
-      } else {
-        logger.warn(`[completion] gh pr create failed for task ${taskId}: ${err}`)
-      }
-      // User can create PR manually from the pushed branch — do not throw
-    }
-  }
-
-  // Update task with PR info (task stays active; SprintPrPoller handles done on merge)
+  // 6. Update task with PR info (task stays active; SprintPrPoller handles done on merge)
   try {
     if (prUrl !== null && prNumber !== null) {
       await updateTask(taskId, { pr_status: 'open', pr_url: prUrl, pr_number: prNumber })
