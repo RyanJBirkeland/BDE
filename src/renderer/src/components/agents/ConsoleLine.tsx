@@ -248,7 +248,7 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
       return (
         <div className="console-line" data-testid="console-line-stderr">
           <span className="console-prefix console-prefix--rate">[stderr]</span>
-          <span className="console-line__content" style={{ color: 'var(--neon-orange)' }}>{block.text}</span>
+          <span className="console-line__content console-line__content--stderr">{block.text}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
         </div>
       )

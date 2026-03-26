@@ -633,6 +633,11 @@
   margin-top: 2px;
 }
 
+/* ── Stderr Content ── */
+.console-line__content--stderr {
+  color: var(--neon-orange);
+}
+
 /* ── Grouped Text Blocks ── */
 .console-line__content--grouped {
   border-left: 2px solid var(--neon-cyan-border);
