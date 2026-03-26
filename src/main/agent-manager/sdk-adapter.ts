@@ -1,4 +1,4 @@
-import type { AgentHandle, Logger } from './types'
+import type { AgentHandle, SteerResult, Logger } from './types'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { buildAgentEnv, getOAuthToken } from '../env-utils'
@@ -72,12 +72,17 @@ function spawnViaSdk(
     abort() {
       abortController.abort()
     },
-    async steer(message: string) {
-      ;(logger ?? console).warn(`[agent-manager] Steer in SDK mode is limited — message may not reach agent: "${message.slice(0, 100)}"`)
-      await queryResult.interrupt()
-      // Re-send via streamInput is not straightforward for a single query.
-      // The interrupt signals the agent, then we log the steer message intention.
-      // Full steer support requires streaming input mode; this is best-effort.
+    async steer(message: string): Promise<SteerResult> {
+      try {
+        ;(logger ?? console).warn(`[agent-manager] Steer in SDK mode is limited — message may not reach agent: "${message.slice(0, 100)}"`)
+        await queryResult.interrupt()
+        // Re-send via streamInput is not straightforward for a single query.
+        // The interrupt signals the agent, then we log the steer message intention.
+        // Full steer support requires streaming input mode; this is best-effort.
+        return { delivered: true }
+      } catch (err) {
+        return { delivered: false, error: String(err) }
+      }
     },
   }
 }
@@ -163,16 +168,23 @@ function spawnViaCli(
     abort() {
       child.kill('SIGTERM')
     },
-    async steer(message: string) {
-      if (!child.stdin.writable) return
-      child.stdin.write(
-        JSON.stringify({
-          type: 'user',
-          message: { role: 'user', content: message },
-          parent_tool_use_id: null,
-          session_id: sessionId,
-        }) + '\n',
-      )
+    async steer(message: string): Promise<SteerResult> {
+      try {
+        if (!child.stdin.writable) {
+          return { delivered: false, error: 'Agent stdin is no longer writable' }
+        }
+        child.stdin.write(
+          JSON.stringify({
+            type: 'user',
+            message: { role: 'user', content: message },
+            parent_tool_use_id: null,
+            session_id: sessionId,
+          }) + '\n',
+        )
+        return { delivered: true }
+      } catch (err) {
+        return { delivered: false, error: String(err) }
+      }
     },
   }
 

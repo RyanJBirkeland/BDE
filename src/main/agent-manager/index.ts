@@ -1,4 +1,4 @@
-import type { AgentManagerConfig, ActiveAgent, Logger } from './types'
+import type { AgentManagerConfig, ActiveAgent, SteerResult, Logger } from './types'
 import {
   EXECUTOR_ID,
   WATCHDOG_INTERVAL_MS,
@@ -131,7 +131,7 @@ export interface AgentManager {
   start(): void
   stop(timeoutMs?: number): Promise<void>
   getStatus(): AgentManagerStatus
-  steerAgent(taskId: string, message: string): Promise<void>
+  steerAgent(taskId: string, message: string): Promise<SteerResult>
   killAgent(taskId: string): void
   onTaskTerminal(taskId: string, status: string): Promise<void>
 }
@@ -481,10 +481,10 @@ export function createAgentManager(
     }
   }
 
-  async function steerAgent(taskId: string, message: string): Promise<void> {
+  async function steerAgent(taskId: string, message: string): Promise<SteerResult> {
     const agent = activeAgents.get(taskId)
-    if (!agent) throw new Error(`No active agent for task ${taskId}`)
-    await agent.handle.steer(message)
+    if (!agent) return { delivered: false, error: 'Agent not found' }
+    return agent.handle.steer(message)
   }
 
   function killAgent(taskId: string): void {

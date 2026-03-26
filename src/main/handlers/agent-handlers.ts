@@ -48,12 +48,19 @@ export function registerAgentHandlers(am?: AgentManager): void {
     // Try ad-hoc agents first
     const adhocHandle = getAdhocHandle(agentId)
     if (adhocHandle) {
-      await adhocHandle.send(message)
-      return { ok: true }
+      try {
+        await adhocHandle.send(message)
+        return { ok: true }
+      } catch (err) {
+        return { ok: false, error: String(err) }
+      }
     }
     // Try local AgentManager
     if (am) {
-      try { await am.steerAgent(agentId, message); return { ok: true } } catch { /* fall through */ }
+      const result = await am.steerAgent(agentId, message)
+      if (result.delivered) return { ok: true }
+      // If agent not found in AM, fall through to runner-client
+      if (result.error !== 'Agent not found') return { ok: false, error: result.error }
     }
     // Fall back to runner-client
     return steerAgent(agentId, message)
