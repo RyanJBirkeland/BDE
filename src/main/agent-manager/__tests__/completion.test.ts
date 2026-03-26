@@ -25,6 +25,7 @@ import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'
 import { resolveSuccess, resolveFailure } from '../completion'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { MAX_RETRIES } from '../types'
 
 const execFileMock = vi.mocked(execFile)
@@ -54,6 +55,16 @@ function resetMocks() {
 
 const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 
+const mockRepo: ISprintTaskRepository = {
+  getTask: vi.fn(),
+  updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getOrphanedTasks: vi.fn(),
+  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  claimTask: vi.fn(),
+}
+
 describe('resolveSuccess', () => {
   const mockOnTaskTerminal = vi.fn()
   const opts = {
@@ -63,6 +74,7 @@ describe('resolveSuccess', () => {
     ghRepo: 'owner/repo',
     onTaskTerminal: mockOnTaskTerminal,
     retryCount: 0,
+    repo: mockRepo,
   }
 
   beforeEach(() => {
@@ -372,7 +384,7 @@ describe('resolveSuccess', () => {
 
 describe('resolveSuccess — catch handler coverage', () => {
   const mockOnTaskTerminal2 = vi.fn()
-  const catchOpts = { taskId: 'task-catch', worktreePath: '/tmp/worktrees/task-catch', title: 'Catch test', ghRepo: 'owner/repo', onTaskTerminal: mockOnTaskTerminal2 }
+  const catchOpts = { taskId: 'task-catch', worktreePath: '/tmp/worktrees/task-catch', title: 'Catch test', ghRepo: 'owner/repo', onTaskTerminal: mockOnTaskTerminal2, repo: mockRepo }
 
   beforeEach(() => { resetMocks(); mockOnTaskTerminal2.mockReset(); vi.mocked(existsSync).mockReturnValue(true) })
 
@@ -456,7 +468,7 @@ describe('resolveFailure', () => {
   })
 
   it('re-queues task with incremented retry count when retries remain', async () => {
-    const result = await resolveFailure({ taskId: 'task-2', retryCount: 1 })
+    const result = await resolveFailure({ taskId: 'task-2', retryCount: 1, repo: mockRepo })
 
     expect(updateTaskMock).toHaveBeenCalledWith('task-2', {
       status: 'queued',
@@ -467,7 +479,7 @@ describe('resolveFailure', () => {
   })
 
   it('marks task failed when retry count is exhausted', async () => {
-    const result = await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES })
+    const result = await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES, repo: mockRepo })
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
@@ -477,7 +489,7 @@ describe('resolveFailure', () => {
   })
 
   it('re-queues when retryCount is one below MAX_RETRIES', async () => {
-    const result = await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES - 1 })
+    const result = await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES - 1, repo: mockRepo })
 
     expect(updateTaskMock).toHaveBeenCalledWith('task-4', {
       status: 'queued',
@@ -488,7 +500,7 @@ describe('resolveFailure', () => {
   })
 
   it('includes notes when provided', async () => {
-    const result = await resolveFailure({ taskId: 'task-6', retryCount: 0, notes: 'Agent produced no commits' })
+    const result = await resolveFailure({ taskId: 'task-6', retryCount: 0, notes: 'Agent produced no commits', repo: mockRepo })
 
     expect(updateTaskMock).toHaveBeenCalledWith('task-6', expect.objectContaining({
       status: 'queued',
@@ -499,7 +511,7 @@ describe('resolveFailure', () => {
   })
 
   it('includes notes in terminal failure', async () => {
-    const result = await resolveFailure({ taskId: 'task-7', retryCount: MAX_RETRIES, notes: 'Agent produced no commits' })
+    const result = await resolveFailure({ taskId: 'task-7', retryCount: MAX_RETRIES, notes: 'Agent produced no commits', repo: mockRepo })
 
     expect(updateTaskMock).toHaveBeenCalledWith('task-7', expect.objectContaining({
       status: 'failed',
@@ -511,7 +523,7 @@ describe('resolveFailure', () => {
   it('returns false when updateTask throws', async () => {
     updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
 
-    const result = await resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES })
+    const result = await resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES, repo: mockRepo })
 
     expect(result).toBe(false) // not terminal because the update failed
   })

@@ -1,11 +1,12 @@
-import { getOrphanedTasks, updateTask } from '../data/sprint-queries'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { EXECUTOR_ID } from './types'
 
 export async function recoverOrphans(
   isAgentActive: (taskId: string) => boolean,
+  repo: ISprintTaskRepository,
   logger: { info: (msg: string) => void; warn: (msg: string) => void },
 ): Promise<number> {
-  const orphans = await getOrphanedTasks(EXECUTOR_ID)
+  const orphans = await repo.getOrphanedTasks(EXECUTOR_ID)
   let recovered = 0
 
   for (const task of orphans) {
@@ -15,14 +16,14 @@ export async function recoverOrphans(
     // waiting for SprintPrPoller to mark them done on merge.
     if (task.pr_url) {
       logger.info(`[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`)
-      await updateTask(task.id, { claimed_by: null })
+      await repo.updateTask(task.id, { claimed_by: null })
       continue
     }
 
     logger.warn(`[agent-manager] Orphaned task ${task.id} "${task.title}" — re-queuing`)
 
     // Re-queue: clear claimed_by so drain loop or external runner can pick it up
-    await updateTask(task.id, {
+    await repo.updateTask(task.id, {
       status: 'queued',
       claimed_by: null,
     })

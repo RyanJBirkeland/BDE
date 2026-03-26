@@ -4,7 +4,7 @@ import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'
 import { spawnAgent } from './sdk-adapter'
 import { resolveSuccess, resolveFailure } from './completion'
-import { updateTask } from '../data/sprint-queries'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getGhRepo } from '../paths'
 import { createAgentRecord, updateAgentMeta } from '../agent-history'
 import { randomUUID } from 'node:crypto'
@@ -35,6 +35,7 @@ export interface RunAgentDeps {
   defaultModel: string
   logger: Logger
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
+  repo: ISprintTaskRepository
 }
 
 // ---------------------------------------------------------------------------
@@ -132,12 +133,12 @@ export async function runAgent(
   repoPath: string,
   deps: RunAgentDeps,
 ): Promise<void> {
-  const { activeAgents, defaultModel, logger, onTaskTerminal } = deps
+  const { activeAgents, defaultModel, logger, onTaskTerminal, repo } = deps
 
   let prompt = (task.prompt || task.spec || task.title || '').trim()
   if (!prompt) {
     logger.error(`[agent-manager] Task ${task.id} has no prompt/spec/title — marking error`)
-    await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: 'Empty prompt', claimed_by: null })
+    await repo.updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: 'Empty prompt', claimed_by: null })
     await onTaskTerminal(task.id, 'error')
     cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
     return
@@ -172,7 +173,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     ])
   } catch (err) {
     logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
-    await updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}`, claimed_by: null }).catch((err) => logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${err}`))
+    await repo.updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}`, claimed_by: null }).catch((err) => logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${err}`))
     await onTaskTerminal(task.id, 'error')
     cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
     return
@@ -195,7 +196,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   activeAgents.set(task.id, agent)
   let lastAgentOutput = ''
   // Persist agent_run_id so LogDrawer can find logs after restart
-  await updateTask(task.id, { agent_run_id: agentRunId }).catch((err) =>
+  await repo.updateTask(task.id, { agent_run_id: agentRunId }).catch((err) =>
     logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
   )
   // Persist agent run to local SQLite for log access and history
@@ -333,11 +334,11 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   const now = new Date().toISOString()
 
   if (ffResult === 'fast-fail-exhausted') {
-    await updateTask(task.id, { status: 'error', completed_at: now, notes: 'Fast-fail exhausted', claimed_by: null })
+    await repo.updateTask(task.id, { status: 'error', completed_at: now, notes: 'Fast-fail exhausted', claimed_by: null })
       .catch((err) => logger.error(`[agent-manager] Failed to update task ${task.id} after fast-fail exhausted: ${err}`))
     await onTaskTerminal(task.id, 'error')
   } else if (ffResult === 'fast-fail-requeue') {
-    await updateTask(task.id, {
+    await repo.updateTask(task.id, {
       status: 'queued',
       fast_fail_count: (task.fast_fail_count ?? 0) + 1,
       claimed_by: null,
@@ -355,10 +356,11 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
         onTaskTerminal,
         agentSummary: lastAgentOutput || null,
         retryCount: task.retry_count ?? 0,
+        repo,
       }, logger)
     } catch (err) {
       logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)
-      const isTerminal = await resolveFailure({ taskId: task.id, retryCount: task.retry_count ?? 0 }, logger)
+      const isTerminal = await resolveFailure({ taskId: task.id, retryCount: task.retry_count ?? 0, repo }, logger)
       if (isTerminal) {
         await onTaskTerminal(task.id, 'failed')
       }

@@ -22,31 +22,10 @@ import { createDependencyIndex } from './dependency-index'
 import { formatBlockedNote } from './dependency-helpers'
 import { resolveDependents } from './resolve-dependents'
 import { runAgent as _runAgent, type RunAgentDeps } from './run-agent'
-import { updateTask, getTask, getTasksWithDependencies, setSprintQueriesLogger } from '../data/sprint-queries'
+import { setSprintQueriesLogger } from '../data/sprint-queries'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoPaths } from '../paths'
 import { refreshOAuthTokenFromKeychain } from '../env-utils'
-
-// Use sprint-queries directly but with a wrapper that catches hangs.
-// Electron's main process fetch/Supabase can hang, so we import the functions
-// that the Queue API uses (which work because they're called from HTTP handlers).
-import { getQueuedTasks as _getQueuedTasks, claimTask as _claimTask } from '../data/sprint-queries'
-
-async function fetchQueuedTasks(limit: number): Promise<Array<Record<string, unknown>>> {
-  // Wrap with timeout to prevent infinite hang
-  const result = await Promise.race([
-    _getQueuedTasks(limit),
-    new Promise<never>((_, rej) => setTimeout(() => rej(new Error('getQueuedTasks timeout')), QUEUE_TIMEOUT_MS)),
-  ])
-  return result as unknown as Array<Record<string, unknown>>
-}
-
-async function claimTaskViaApi(taskId: string): Promise<boolean> {
-  const result = await Promise.race([
-    _claimTask(taskId, EXECUTOR_ID),
-    new Promise<never>((_, rej) => setTimeout(() => rej(new Error('claimTask timeout')), QUEUE_TIMEOUT_MS)),
-  ])
-  return result !== null
-}
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to console
@@ -107,7 +86,7 @@ export function handleWatchdogVerdict(
   taskId: string,
   concurrency: ConcurrencyState,
   now: string,
-  updateTaskFn: typeof updateTask,
+  updateTaskFn: (id: string, patch: Record<string, unknown>) => Promise<unknown>,
   onTerminal: (id: string, status: string) => Promise<void>,
   logger: Logger,
 ): ConcurrencyState {
@@ -163,6 +142,7 @@ export interface AgentManager {
 
 export function createAgentManager(
   config: AgentManagerConfig,
+  repo: ISprintTaskRepository,
   logger: Logger = defaultLogger,
 ): AgentManager {
   // ---- Core state ----
@@ -182,9 +162,26 @@ export function createAgentManager(
   // Wire sprint-queries to use the same structured file logger as the agent manager
   setSprintQueriesLogger(logger)
 
+  // Wrap repo methods with timeout to prevent infinite hang (Electron main-process fetch can hang)
+  async function fetchQueuedTasks(limit: number): Promise<Array<Record<string, unknown>>> {
+    const result = await Promise.race([
+      repo.getQueuedTasks(limit),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error('getQueuedTasks timeout')), QUEUE_TIMEOUT_MS)),
+    ])
+    return result as unknown as Array<Record<string, unknown>>
+  }
+
+  async function claimTaskViaApi(taskId: string): Promise<boolean> {
+    const result = await Promise.race([
+      repo.claimTask(taskId, EXECUTOR_ID),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error('claimTask timeout')), QUEUE_TIMEOUT_MS)),
+    ])
+    return result !== null
+  }
+
   async function onTaskTerminal(taskId: string, status: string): Promise<void> {
     try {
-      await resolveDependents(taskId, status, depIndex, getTask, updateTask, logger)
+      await resolveDependents(taskId, status, depIndex, repo.getTask, repo.updateTask, logger)
     } catch (err) {
       logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
     }
@@ -192,7 +189,7 @@ export function createAgentManager(
 
   // ---- Helpers ----
 
-  const runAgentDeps: RunAgentDeps = { activeAgents, defaultModel: config.defaultModel, logger, onTaskTerminal }
+  const runAgentDeps: RunAgentDeps = { activeAgents, defaultModel: config.defaultModel, logger, onTaskTerminal, repo }
 
   function isActive(taskId: string): boolean {
     return activeAgents.has(taskId)
@@ -237,7 +234,7 @@ export function createAgentManager(
           )
           if (!satisfied) {
             logger.info(`[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`)
-            await updateTask(task.id, {
+            await repo.updateTask(task.id, {
               status: 'blocked',
               notes: formatBlockedNote(blockedBy),
             }).catch(() => {})
@@ -276,7 +273,7 @@ export function createAgentManager(
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err)
       logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
-      await updateTask(task.id, {
+      await repo.updateTask(task.id, {
         status: 'error',
         completed_at: new Date().toISOString(),
         notes: `Worktree setup failed: ${errMsg}`.slice(0, NOTES_MAX_LENGTH),
@@ -309,7 +306,7 @@ export function createAgentManager(
       // since startup or since the last drain. Rebuild is O(n) and cheap.
       let taskStatusMap = new Map<string, string>()
       try {
-        const allTasks = await getTasksWithDependencies()
+        const allTasks = await repo.getTasksWithDependencies()
         depIndex.rebuild(allTasks)
         taskStatusMap = new Map(allTasks.map((t) => [t.id, t.status]))
       } catch (err) {
@@ -366,7 +363,7 @@ export function createAgentManager(
 
       // Update task based on verdict
       const now = new Date().toISOString()
-      concurrency = handleWatchdogVerdict(verdict, agent.taskId, concurrency, now, updateTask, onTaskTerminal, logger)
+      concurrency = handleWatchdogVerdict(verdict, agent.taskId, concurrency, now, repo.updateTask, onTaskTerminal, logger)
     }
   }
 
@@ -374,7 +371,7 @@ export function createAgentManager(
 
   async function orphanLoop(): Promise<void> {
     try {
-      await recoverOrphans(isActive, logger)
+      await recoverOrphans(isActive, repo, logger)
     } catch (err) {
       logger.error(`[agent-manager] Orphan recovery error: ${err}`)
     }
@@ -399,12 +396,12 @@ export function createAgentManager(
     concurrency = makeConcurrencyState(config.maxConcurrent)
 
     // Initial orphan recovery (fire-and-forget)
-    recoverOrphans(isActive, logger).catch((err) => {
+    recoverOrphans(isActive, repo, logger).catch((err) => {
       logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
     })
 
     // Build dependency index
-    getTasksWithDependencies().then((tasks) => {
+    repo.getTasksWithDependencies().then((tasks) => {
       depIndex.rebuild(tasks)
       logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
     }).catch((err) => {

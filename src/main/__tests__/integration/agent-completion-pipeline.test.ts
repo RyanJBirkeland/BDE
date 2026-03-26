@@ -48,6 +48,7 @@ vi.mock('../../env-utils', () => ({
 
 import { execFile } from 'node:child_process'
 import { updateTask, getTask } from '../../data/sprint-queries'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { resolveSuccess, resolveFailure } from '../../agent-manager/completion'
 import { resolveDependents } from '../../agent-manager/resolve-dependents'
 import { createDependencyIndex } from '../../agent-manager/dependency-index'
@@ -76,6 +77,16 @@ function mockExecFileSequence(responses: Array<{ stdout?: string; error?: Error 
 }
 
 const updateTaskMock = vi.mocked(updateTask)
+
+const mockRepo: ISprintTaskRepository = {
+  getTask: (...args: [string]) => (getTask as any)(...args),
+  updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getOrphanedTasks: vi.fn(),
+  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  claimTask: vi.fn(),
+}
 const getTaskMock = vi.mocked(getTask)
 
 function makeLogger() {
@@ -142,6 +153,7 @@ describe('Agent completion pipeline integration', () => {
       ])
 
       await resolveSuccess({
+        repo: mockRepo,
         taskId: 'task-1',
         worktreePath: '/tmp/wt/task-1',
         title: 'Add login page',
@@ -190,6 +202,7 @@ describe('Agent completion pipeline integration', () => {
       ])
 
       await resolveSuccess({
+        repo: mockRepo,
         taskId: 'task-1',
         worktreePath: '/tmp/wt/task-1',
         title: 'Add login page',
@@ -230,6 +243,7 @@ describe('Agent completion pipeline integration', () => {
       ])
 
       await resolveSuccess({
+        repo: mockRepo,
         taskId: 'task-2',
         worktreePath: '/tmp/wt/task-2',
         title: 'Empty task',
@@ -269,6 +283,7 @@ describe('Agent completion pipeline integration', () => {
       ])
 
       await resolveSuccess({
+        repo: mockRepo,
         taskId: 'task-2',
         worktreePath: '/tmp/wt/task-2',
         title: 'Empty task',
@@ -295,6 +310,7 @@ describe('Agent completion pipeline integration', () => {
       ])
 
       await resolveSuccess({
+        repo: mockRepo,
         taskId: 'task-2',
         worktreePath: '/tmp/wt/task-2',
         title: 'Empty task',
@@ -315,7 +331,7 @@ describe('Agent completion pipeline integration', () => {
   // -------------------------------------------------------------------------
   describe('agent exits non-zero (resolveFailure)', () => {
     it('re-queues task with incremented retry count when under max retries', async () => {
-      const isTerminal = await resolveFailure({ taskId: 'task-3', retryCount: 0 }, logger)
+      const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: 0 }, logger)
 
       expect(updateTaskMock).toHaveBeenCalledWith('task-3', {
         status: 'queued',
@@ -328,7 +344,7 @@ describe('Agent completion pipeline integration', () => {
     it('re-queues at every retry count below MAX_RETRIES', async () => {
       for (let i = 0; i < MAX_RETRIES; i++) {
         updateTaskMock.mockClear()
-        const isTerminal = await resolveFailure({ taskId: 'task-3', retryCount: i }, logger)
+        const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: i }, logger)
         expect(updateTaskMock).toHaveBeenCalledWith('task-3', {
           status: 'queued',
           retry_count: i + 1,
@@ -339,7 +355,7 @@ describe('Agent completion pipeline integration', () => {
     })
 
     it('marks task permanently failed when retry count reaches MAX_RETRIES', async () => {
-      const isTerminal = await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
+      const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
 
       expect(updateTaskMock).toHaveBeenCalledWith('task-3', expect.objectContaining({
         status: 'failed',
@@ -351,7 +367,7 @@ describe('Agent completion pipeline integration', () => {
     it('returns false (non-terminal) when updateTask throws during failure resolution', async () => {
       updateTaskMock.mockRejectedValueOnce(new Error('Supabase timeout'))
 
-      const isTerminal = await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
+      const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
 
       expect(isTerminal).toBe(false)
     })
@@ -525,6 +541,7 @@ describe('Agent completion pipeline integration', () => {
       ])
 
       await resolveSuccess({
+        repo: mockRepo,
         taskId: 'task-parent',
         worktreePath: '/tmp/wt/task-parent',
         title: 'Parent task',

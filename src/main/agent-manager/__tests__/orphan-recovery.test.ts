@@ -11,10 +11,21 @@ vi.mock('../../agent-history', () => ({
 
 import { getOrphanedTasks, updateTask } from '../../data/sprint-queries'
 import { recoverOrphans } from '../orphan-recovery'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import type { SprintTask } from '../../../shared/types'
 
 const getOrphanedTasksMock = vi.mocked(getOrphanedTasks)
 const updateTaskMock = vi.mocked(updateTask)
+
+const mockRepo: ISprintTaskRepository = {
+  getTask: vi.fn(),
+  updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
+  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  claimTask: vi.fn(),
+}
 
 function makeTask(id: string, title = `Task ${id}`): SprintTask {
   return {
@@ -41,7 +52,7 @@ describe('recoverOrphans', () => {
     const task = makeTask('task-1')
     getOrphanedTasksMock.mockResolvedValue([task])
 
-    const recovered = await recoverOrphans(() => false, logger)
+    const recovered = await recoverOrphans(() => false, mockRepo, logger)
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
     expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
@@ -55,7 +66,7 @@ describe('recoverOrphans', () => {
     const task = makeTask('task-2')
     getOrphanedTasksMock.mockResolvedValue([task])
 
-    const recovered = await recoverOrphans((taskId) => taskId === 'task-2', logger)
+    const recovered = await recoverOrphans((taskId) => taskId === 'task-2', mockRepo, logger)
 
     expect(updateTaskMock).not.toHaveBeenCalled()
     expect(recovered).toBe(0)
@@ -67,7 +78,7 @@ describe('recoverOrphans', () => {
     const orphan2 = makeTask('task-orphan-2')
     getOrphanedTasksMock.mockResolvedValue([activeTask, orphan1, orphan2])
 
-    const recovered = await recoverOrphans((taskId) => taskId === 'task-active', logger)
+    const recovered = await recoverOrphans((taskId) => taskId === 'task-active', mockRepo, logger)
 
     expect(updateTaskMock).toHaveBeenCalledTimes(2)
     expect(recovered).toBe(2)
@@ -76,7 +87,7 @@ describe('recoverOrphans', () => {
   it('returns 0 and does nothing when orphan list is empty', async () => {
     getOrphanedTasksMock.mockResolvedValue([])
 
-    const recovered = await recoverOrphans(() => false, logger)
+    const recovered = await recoverOrphans(() => false, mockRepo, logger)
 
     expect(updateTaskMock).not.toHaveBeenCalled()
     expect(recovered).toBe(0)
@@ -86,7 +97,7 @@ describe('recoverOrphans', () => {
     const task = { ...makeTask('task-pr'), pr_url: 'https://github.com/org/repo/pull/42' }
     getOrphanedTasksMock.mockResolvedValue([task])
 
-    const recovered = await recoverOrphans(() => false, logger)
+    const recovered = await recoverOrphans(() => false, mockRepo, logger)
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
     expect(updateTaskMock).toHaveBeenCalledWith('task-pr', { claimed_by: null })
@@ -97,7 +108,7 @@ describe('recoverOrphans', () => {
   it('calls finalizeStaleAgentRuns and logs stale count', async () => {
     getOrphanedTasksMock.mockResolvedValue([])
 
-    await recoverOrphans(() => false, logger)
+    await recoverOrphans(() => false, mockRepo, logger)
 
     const { finalizeStaleAgentRuns } = await import('../../agent-history')
     expect(finalizeStaleAgentRuns).toHaveBeenCalled()

@@ -65,7 +65,8 @@ vi.mock('../../agent-manager/orphan-recovery', () => ({
 
 import { createAgentManager } from '../../agent-manager/index'
 import type { AgentManagerConfig, AgentHandle } from '../../agent-manager/types'
-import { getQueuedTasks, claimTask, updateTask } from '../../data/sprint-queries'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
+import { getQueuedTasks, claimTask, updateTask, getTask, getOrphanedTasks, getTasksWithDependencies } from '../../data/sprint-queries'
 import { getRepoPaths } from '../../paths'
 import { spawnAgent } from '../../agent-manager/sdk-adapter'
 import { setupWorktree, pruneStaleWorktrees } from '../../agent-manager/worktree'
@@ -128,6 +129,20 @@ function setupDefaultMocks(): void {
   })
 }
 
+function makeMockRepo(): ISprintTaskRepository {
+  return {
+    getTask: (...args: [string]) => (getTask as any)(...args),
+    updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
+    getQueuedTasks: (...args: [number]) => (getQueuedTasks as any)(...args),
+    getTasksWithDependencies: () => (getTasksWithDependencies as any)(),
+    getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
+    getActiveTaskCount: vi.fn().mockResolvedValue(0),
+    claimTask: (...args: [string, string]) => (claimTask as any)(...args),
+  }
+}
+
+const mockRepo = makeMockRepo()
+
 function makeMockHandle(messages: unknown[] = []) {
   const abortFn = vi.fn()
   const steerFn = vi.fn().mockResolvedValue(undefined)
@@ -171,7 +186,7 @@ describe('AgentManager pipeline integration', () => {
     const { handle } = makeMockHandle([{ type: 'text', content: 'done' }])
     vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
-    const mgr = createAgentManager(baseConfig, logger)
+    const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
 
     // Advance past INITIAL_DRAIN_DEFER_MS (5000ms) in small steps to let promises resolve
@@ -202,7 +217,7 @@ describe('AgentManager pipeline integration', () => {
     const { handle } = makeMockHandle([])
     vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
-    const mgr = createAgentManager(baseConfig, logger)
+    const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
 
     for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -225,7 +240,7 @@ describe('AgentManager pipeline integration', () => {
 
     vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
 
-    const mgr = createAgentManager(baseConfig, logger)
+    const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
 
     for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -248,7 +263,7 @@ describe('AgentManager pipeline integration', () => {
     vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
     vi.mocked(claimTask).mockResolvedValueOnce(null) // claim returns null = already taken
 
-    const mgr = createAgentManager(baseConfig, logger)
+    const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
 
     for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -271,7 +286,7 @@ describe('AgentManager pipeline integration', () => {
     vi.mocked(claimTask).mockResolvedValueOnce(task)
     vi.mocked(spawnAgent).mockRejectedValueOnce(new Error('OAuth token expired'))
 
-    const mgr = createAgentManager(baseConfig, logger)
+    const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
 
     for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -297,7 +312,7 @@ describe('AgentManager pipeline integration', () => {
     vi.mocked(claimTask).mockResolvedValueOnce(task)
     vi.mocked(setupWorktree).mockRejectedValueOnce(new Error('git worktree add failed'))
 
-    const mgr = createAgentManager(baseConfig, logger)
+    const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
 
     for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -324,7 +339,7 @@ describe('AgentManager pipeline integration', () => {
     vi.mocked(claimTask).mockResolvedValueOnce(task)
     vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
-    const mgr = createAgentManager(baseConfig, logger)
+    const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
 
     for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)

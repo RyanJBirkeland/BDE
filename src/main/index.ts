@@ -27,6 +27,7 @@ import { startQueueApi, stopQueueApi } from './queue-api'
 import { pruneOldEvents } from './data/event-queries'
 import { getEventRetentionDays } from './config'
 import { createAgentManager } from './agent-manager'
+import { createSprintTaskRepository } from './data/sprint-task-repository'
 import { getOAuthToken } from './env-utils'
 import { getSetting, getSettingJson } from './settings'
 
@@ -117,7 +118,8 @@ app.whenReady().then(() => {
   if (autoStart) {
     getOAuthToken()
 
-    const am = createAgentManager(amConfig)
+    const repo = createSprintTaskRepository()
+    const am = createAgentManager(amConfig, repo)
     am.start()
     app.on('will-quit', () => am.stop(10_000))
 

@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { isRateLimitMessage, getNumericField, runAgent } from '../run-agent'
 import type { RunAgentTask, RunAgentDeps } from '../run-agent'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -86,6 +87,16 @@ describe('runAgent — playground prompt injection', () => {
   let spawnAgentMock: ReturnType<typeof vi.fn>
   let capturedPrompt: string | undefined
 
+  const mockRepo: ISprintTaskRepository = {
+    getTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
+    getQueuedTasks: vi.fn(),
+    getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+    getOrphanedTasks: vi.fn(),
+    getActiveTaskCount: vi.fn().mockResolvedValue(0),
+    claimTask: vi.fn(),
+  }
+
   const createDeps = (): RunAgentDeps => ({
     activeAgents: new Map<string, ActiveAgent>(),
     defaultModel: 'claude-sonnet-4-20250514',
@@ -95,6 +106,7 @@ describe('runAgent — playground prompt injection', () => {
       error: vi.fn(),
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
+    repo: mockRepo,
   })
 
   beforeEach(async () => {
@@ -223,7 +235,6 @@ describe('runAgent — playground prompt injection', () => {
 
   it('marks task as error when prompt/spec/title are all empty', async () => {
     setupSpawnMock()
-    const { updateTask } = await import('../../data/sprint-queries')
     const deps = createDeps()
     const task: RunAgentTask = {
       id: 'task-pg-6',
@@ -238,7 +249,7 @@ describe('runAgent — playground prompt injection', () => {
 
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', deps)
 
-    expect(updateTask).toHaveBeenCalledWith('task-pg-6', expect.objectContaining({
+    expect(mockRepo.updateTask).toHaveBeenCalledWith('task-pg-6', expect.objectContaining({
       status: 'error',
       notes: 'Empty prompt',
     }))

@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { runAgent, detectHtmlWrite, tryEmitPlaygroundEvent } from '../run-agent'
 import type { RunAgentTask, RunAgentDeps } from '../run-agent'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -72,6 +73,16 @@ function makeTask(overrides: Partial<RunAgentTask> = {}): RunAgentTask {
   }
 }
 
+const mockRepo: ISprintTaskRepository = {
+  getTask: vi.fn(),
+  updateTask: vi.fn().mockResolvedValue(null),
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getOrphanedTasks: vi.fn(),
+  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  claimTask: vi.fn(),
+}
+
 function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
   return {
     activeAgents: new Map<string, ActiveAgent>(),
@@ -82,6 +93,7 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
       error: vi.fn(),
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
+    repo: mockRepo,
     ...overrides,
   }
 }
@@ -122,7 +134,6 @@ describe('runAgent — spawn failures', () => {
 
   it('marks task as error when spawn times out', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
-    const { updateTask } = await import('../../data/sprint-queries')
     const { cleanupWorktree } = await import('../worktree')
 
     // spawnAgent never resolves
@@ -135,7 +146,7 @@ describe('runAgent — spawn failures', () => {
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
 
-    expect(updateTask).toHaveBeenCalledWith(
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
       'task-1',
       expect.objectContaining({
         status: 'error',
@@ -151,7 +162,6 @@ describe('runAgent — spawn failures', () => {
 
   it('marks task as error when spawn rejects with a specific error', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
-    const { updateTask } = await import('../../data/sprint-queries')
     const { cleanupWorktree } = await import('../worktree')
 
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockRejectedValue(
@@ -161,7 +171,7 @@ describe('runAgent — spawn failures', () => {
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
 
-    expect(updateTask).toHaveBeenCalledWith(
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
       'task-1',
       expect.objectContaining({
         status: 'error',
@@ -257,7 +267,6 @@ describe('runAgent — fast-fail paths', () => {
   it('marks task as error when classifyExit returns fast-fail-exhausted', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
     const { classifyExit } = await import('../fast-fail')
-    const { updateTask } = await import('../../data/sprint-queries')
 
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-exhausted')
@@ -265,7 +274,7 @@ describe('runAgent — fast-fail paths', () => {
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 2 }), worktree, repoPath, deps)
 
-    expect(updateTask).toHaveBeenCalledWith(
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
       'task-1',
       expect.objectContaining({
         status: 'error',
@@ -279,7 +288,6 @@ describe('runAgent — fast-fail paths', () => {
   it('requeues task with incremented fast_fail_count when classifyExit returns fast-fail-requeue', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
     const { classifyExit } = await import('../fast-fail')
-    const { updateTask } = await import('../../data/sprint-queries')
 
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-requeue')
@@ -287,7 +295,7 @@ describe('runAgent — fast-fail paths', () => {
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 1 }), worktree, repoPath, deps)
 
-    expect(updateTask).toHaveBeenCalledWith(
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
       'task-1',
       expect.objectContaining({
         status: 'queued',
@@ -437,10 +445,9 @@ describe('runAgent — updateTask.catch error handlers', () => {
   it('logs error when updateTask rejects in fast-fail-exhausted path', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
     const { classifyExit } = await import('../fast-fail')
-    const { updateTask } = await import('../../data/sprint-queries')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-exhausted')
-    ;(updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 3 }), worktree, repoPath, deps)
     expect(deps.logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-1 after fast-fail exhausted'))
@@ -448,19 +455,17 @@ describe('runAgent — updateTask.catch error handlers', () => {
   it('logs error when updateTask rejects in fast-fail-requeue path', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
     const { classifyExit } = await import('../fast-fail')
-    const { updateTask } = await import('../../data/sprint-queries')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-requeue')
-    ;(updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 1 }), worktree, repoPath, deps)
     expect(deps.logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to requeue fast-fail task task-1'))
   })
   it('logs warning when updateTask rejects in spawn failure .catch path', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
-    const { updateTask } = await import('../../data/sprint-queries')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Spawn failed'))
-    ;(updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-1 after spawn failure'))
