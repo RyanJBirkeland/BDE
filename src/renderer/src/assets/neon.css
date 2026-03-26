@@ -62,6 +62,14 @@
   /* ── Particle ── */
   --neon-particle-count: 18;
   --neon-particle-size: 3px;
+
+  /* Semantic text/surface colors for neon components */
+  --neon-text: #ffffff;
+  --neon-text-muted: rgba(255, 255, 255, 0.6);
+  --neon-text-dim: rgba(255, 255, 255, 0.3);
+  --neon-surface-dim: rgba(255, 255, 255, 0.06);
+  --neon-surface-subtle: rgba(255, 255, 255, 0.1);
+  --neon-surface-deep: rgba(10, 0, 21, 0.5);
 }
 
 /* ── Light theme overrides ── */
@@ -110,6 +118,13 @@ html.theme-light {
 
   --neon-scanline-opacity: 0;
   --neon-particle-count: 0;
+
+  --neon-text: #1a1a2e;
+  --neon-text-muted: rgba(26, 26, 46, 0.6);
+  --neon-text-dim: rgba(26, 26, 46, 0.3);
+  --neon-surface-dim: rgba(0, 0, 0, 0.04);
+  --neon-surface-subtle: rgba(0, 0, 0, 0.08);
+  --neon-surface-deep: rgba(200, 200, 220, 0.3);
 }
 
 /* ═══════════════════════════════════════════════════════

@@ -85,5 +85,11 @@ export const tokens = {
     glassBg: 'var(--neon-glass-blur)',
     glassEdge: 'var(--neon-glass-edge)',
     glassShadow: 'var(--neon-glass-shadow)',
+    text: 'var(--neon-text)',
+    textMuted: 'var(--neon-text-muted)',
+    textDim: 'var(--neon-text-dim)',
+    surfaceDim: 'var(--neon-surface-dim)',
+    surfaceSubtle: 'var(--neon-surface-subtle)',
+    surfaceDeep: 'var(--neon-surface-deep)',
   },
 }
