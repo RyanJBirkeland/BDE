@@ -18,6 +18,7 @@ vi.mock('../../data/sprint-queries', () => ({
   getTask: vi.fn(),
   getOrphanedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  setSprintQueriesLogger: vi.fn(),
 }))
 
 vi.mock('../../agent-manager/dependency-index', () => ({

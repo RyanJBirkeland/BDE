@@ -22,7 +22,7 @@ import { createDependencyIndex } from './dependency-index'
 import { formatBlockedNote } from './dependency-helpers'
 import { resolveDependents } from './resolve-dependents'
 import { runAgent as _runAgent, type RunAgentDeps } from './run-agent'
-import { updateTask, getTask, getTasksWithDependencies } from '../data/sprint-queries'
+import { updateTask, getTask, getTasksWithDependencies, setSprintQueriesLogger } from '../data/sprint-queries'
 import { getRepoPaths } from '../paths'
 import { refreshOAuthTokenFromKeychain } from '../env-utils'
 
@@ -178,6 +178,9 @@ export function createAgentManager(
   let drainRunning = false
   const agentPromises = new Set<Promise<void>>()
   const depIndex = createDependencyIndex()
+
+  // Wire sprint-queries to use the same structured file logger as the agent manager
+  setSprintQueriesLogger(logger)
 
   async function onTaskTerminal(taskId: string, status: string): Promise<void> {
     try {
