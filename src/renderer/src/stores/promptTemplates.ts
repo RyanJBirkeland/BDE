@@ -75,7 +75,7 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
   loadTemplates: async () => {
     set({ loading: true })
     try {
-      const saved = await window.api.settings.getJson<PromptTemplate[]>(SETTINGS_KEY)
+      const saved = await window.api.settings.getJson(SETTINGS_KEY) as PromptTemplate[] | null
       const merged = mergeTemplates(saved ?? [])
       set({ templates: merged, loading: false })
     } catch {
