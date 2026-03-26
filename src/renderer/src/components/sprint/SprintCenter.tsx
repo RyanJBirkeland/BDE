@@ -1,7 +1,7 @@
 /**
- * SprintCenter — Three-zone neon layout:
- * 1. CircuitPipeline (top: pipeline status)
- * 2. SprintTaskList + SprintDetailPane (middle: task list + detail pane)
+ * SprintCenter — Two-column neon layout:
+ * Left sidebar: CircuitPipeline + repo filter + task list
+ * Right content: SprintDetailPane
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
@@ -46,14 +46,16 @@ export function SprintCenter() {
   )
   const loadData = useSprintTasks((s) => s.loadData)
 
-  const { repoFilter, logDrawerTaskId } = useSprintUI(
+  const { repoFilter, logDrawerTaskId, statusFilter } = useSprintUI(
     useShallow((s) => ({
       repoFilter: s.repoFilter,
       logDrawerTaskId: s.logDrawerTaskId,
+      statusFilter: s.statusFilter,
     }))
   )
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
+  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
 
   // --- Extracted hooks ---
   const {
@@ -123,63 +125,29 @@ export function SprintCenter() {
 
   return (
     <motion.div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: 'var(--neon-bg)',
-      }}
+      className="sprint-center"
       variants={VARIANTS.fadeIn}
       initial="initial"
       animate="animate"
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
-      {/* Zone 1: CircuitPipeline */}
-      <ErrorBoundary name="CircuitPipeline">
-        <CircuitPipeline tasks={tasks} />
-      </ErrorBoundary>
+      <div className="sprint-center__layout">
+        {/* Left: Sidebar (pipeline + filter + task list) */}
+        <div className="sprint-center__sidebar">
+          {/* Pipeline */}
+          <ErrorBoundary name="CircuitPipeline">
+            <CircuitPipeline tasks={tasks} statusFilter={statusFilter} onStageClick={setStatusFilter as (filter: string) => void} />
+          </ErrorBoundary>
 
-      {/* Zone 2: Task List + Detail Pane */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        {/* Left: Task List Sidebar */}
-        <div
-          style={{
-            width: 280,
-            minWidth: 200,
-            borderRight: '1px solid var(--neon-purple-border)',
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'linear-gradient(180deg, rgba(138, 43, 226, 0.04), rgba(10, 0, 21, 0.4))',
-          }}
-        >
           {/* Header */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 12px',
-              borderBottom: '1px solid var(--neon-purple-border)',
-            }}
-          >
-            <span
-              style={{
-                color: 'var(--neon-purple)',
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                fontWeight: 600,
-              }}
-            >
-              Tasks
-            </span>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div className="sprint-center__sidebar-header">
+            <span className="sprint-center__sidebar-title">Tasks</span>
+            <div className="sprint-center__sidebar-actions">
               {visibleStuckTasks.length > 0 && (
                 <button
                   className="conflict-badge-btn"
                   onClick={() => setHealthDrawerOpen(true)}
                   title="Stuck tasks detected"
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
                 >
                   <Badge variant="warning" size="sm">
                     {visibleStuckTasks.length}
@@ -191,7 +159,6 @@ export function SprintCenter() {
                   className="conflict-badge-btn"
                   onClick={() => setConflictDrawerOpen(true)}
                   title="View merge conflicts"
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
                 >
                   <Badge variant="danger" size="sm">
                     {conflictingTasks.length}
@@ -199,69 +166,33 @@ export function SprintCenter() {
                 </button>
               )}
               <button
+                className="sprint-center__add-btn"
                 onClick={openWorkbench}
                 title="New Ticket"
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  border: '1px solid var(--neon-cyan-border)',
-                  background: 'var(--neon-cyan-surface)',
-                  color: 'var(--neon-cyan)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
               >
-                <Plus size={12} />
+                <Plus size={13} />
               </button>
             </div>
           </div>
 
           {/* Repo Filter */}
-          <div
-            style={{
-              padding: '8px 12px',
-              borderBottom: '1px solid var(--neon-purple-border)',
-              display: 'flex',
-              gap: '4px',
-              flexWrap: 'wrap',
-            }}
-          >
-            {REPO_OPTIONS.map((r) => (
-              <button
-                key={r.label}
-                onClick={() => setRepoFilter(repoFilter === r.label ? null : r.label)}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '10px',
-                  borderRadius: '4px',
-                  border: `1px solid ${repoFilter === r.label ? r.color : 'rgba(255, 255, 255, 0.1)'}`,
-                  background: repoFilter === r.label ? `${r.color}22` : 'rgba(10, 0, 21, 0.4)',
-                  color: repoFilter === r.label ? r.color : 'rgba(255, 255, 255, 0.5)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontWeight: 600,
-                }}
-              >
-                {r.label}
-              </button>
-            ))}
+          <div className="sprint-center__repo-row">
+            {REPO_OPTIONS.map((r) => {
+              const active = repoFilter === r.label
+              return (
+                <button
+                  key={r.label}
+                  className={`sprint-center__repo-chip ${active ? 'sprint-center__repo-chip--active' : ''}`}
+                  onClick={() => setRepoFilter(active ? null : r.label)}
+                  style={active ? { borderColor: r.color, color: r.color } : undefined}
+                >
+                  {r.label}
+                </button>
+              )
+            })}
             <button
+              className={`sprint-center__repo-chip ${repoFilter === null ? 'sprint-center__repo-chip--active' : ''}`}
               onClick={() => setRepoFilter(null)}
-              style={{
-                padding: '4px 8px',
-                fontSize: '10px',
-                borderRadius: '4px',
-                border: `1px solid ${repoFilter === null ? 'var(--neon-cyan)' : 'rgba(255, 255, 255, 0.1)'}`,
-                background: repoFilter === null ? 'var(--neon-cyan-surface)' : 'rgba(10, 0, 21, 0.4)',
-                color: repoFilter === null ? 'var(--neon-cyan)' : 'rgba(255, 255, 255, 0.5)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                fontWeight: 600,
-              }}
             >
               All
             </button>
@@ -289,7 +220,7 @@ export function SprintCenter() {
 
         {/* Right: Detail Pane */}
         <ErrorBoundary name="SprintDetailPane">
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <div className="sprint-center__content">
             <SprintDetailPane
               task={selectedTask}
               onClose={() => setSelectedTaskId(null)}

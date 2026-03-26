@@ -8,7 +8,7 @@ import { Input } from '../ui/Input'
 import { Search, X, ChevronRight } from 'lucide-react'
 import { repoColor, repoBadgeVariant, timeAgo } from '../../lib/format'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
-import { useSprintUI, type StatusFilter } from '../../stores/sprintUI'
+import { useSprintUI } from '../../stores/sprintUI'
 import { SEARCH_DEBOUNCE_MS } from '../../lib/constants'
 import type { SprintTask } from '../../../../shared/types'
 
@@ -19,27 +19,14 @@ interface SprintTaskListProps {
   repoFilter?: string | null
 }
 
-function getStatusLabel(status: StatusFilter): string {
-  switch (status) {
-    case 'all':
-      return 'All Tasks'
-    case 'backlog':
-      return 'Backlog'
-    case 'todo':
-      return 'To Do'
-    case 'blocked':
-      return 'Blocked'
-    case 'in-progress':
-      return 'In Progress'
-    case 'awaiting-review':
-      return 'Awaiting Review'
-    case 'done':
-      return 'Done'
-    case 'failed':
-      return 'Failed'
-    default:
-      return 'All Tasks'
-  }
+const GROUP_COLORS: Record<string, string> = {
+  inProgress: 'var(--neon-purple)',
+  awaitingReview: 'var(--neon-blue)',
+  todo: 'var(--neon-cyan)',
+  blocked: 'var(--neon-orange)',
+  backlog: 'var(--neon-blue)',
+  done: 'var(--neon-pink)',
+  failed: 'var(--neon-red)',
 }
 
 function getStatusBadgeVariant(task: SprintTask): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'muted' {
@@ -120,7 +107,6 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
   const searchQuery = useSprintUI((s) => s.searchQuery)
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
   const statusFilter = useSprintUI((s) => s.statusFilter)
-  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
 
   // Collapsed state for status groups (when viewing "all")
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
@@ -148,7 +134,7 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
     }, SEARCH_DEBOUNCE_MS)
   }, [setSearchQuery])
 
-  // Sync store → local when store changes externally (e.g. Dashboard drill-down clears search)
+  // Sync store -> local when store changes externally (e.g. Dashboard drill-down clears search)
   useEffect(() => {
     setLocalSearch(searchQuery)
   }, [searchQuery])
@@ -210,47 +196,8 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
     })
   }, [filteredTasks, statusFilter])
 
-  const statusFilterOptions: StatusFilter[] = [
-    'all',
-    'backlog',
-    'todo',
-    'in-progress',
-    'awaiting-review',
-    'blocked',
-    'done',
-    'failed',
-  ]
-
-  const getFilterCount = (filter: StatusFilter): number => {
-    switch (filter) {
-      case 'all':
-        return repoFilteredTasks.length
-      case 'backlog':
-        return partition.backlog.length
-      case 'todo':
-        return partition.todo.length
-      case 'blocked':
-        return partition.blocked.length
-      case 'in-progress':
-        return partition.inProgress.length
-      case 'awaiting-review':
-        return partition.awaitingReview.length
-      case 'done':
-        return partition.done.length
-      case 'failed':
-        return partition.failed.length
-      default:
-        return 0
-    }
-  }
-
   return (
     <div className="sprint-task-list">
-      <div className="sprint-task-list__header">
-        <h2 className="sprint-task-list__title">Tasks</h2>
-        <span className="sprint-task-list__count bde-count-badge">{sortedTasks.length}</span>
-      </div>
-
       <div className="sprint-task-list__search">
         <Input
           value={localSearch}
@@ -269,24 +216,6 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
             )
           }
         />
-      </div>
-
-      <div className="sprint-task-list__filters">
-        {statusFilterOptions.map((filter) => {
-          const count = getFilterCount(filter)
-          const isActive = statusFilter === filter
-          return (
-            <button
-              key={filter}
-              className={`sprint-task-list__filter-chip ${isActive ? 'sprint-task-list__filter-chip--active' : ''}`}
-              onClick={() => setStatusFilter(filter)}
-              disabled={count === 0}
-            >
-              {getStatusLabel(filter)}
-              <span className="sprint-task-list__filter-count">{count}</span>
-            </button>
-          )
-        })}
       </div>
 
       <div className="sprint-task-list__items">
@@ -310,6 +239,7 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
                     size={12}
                     className={`sprint-task-list__group-chevron ${!isCollapsed ? 'sprint-task-list__group-chevron--open' : ''}`}
                   />
+                  <span className="sprint-task-list__group-dot" style={{ background: GROUP_COLORS[groupKey] || 'var(--neon-text-dim)' }} />
                   <span>{group.label}</span>
                   <span className="sprint-task-list__group-count">{groupTasks.length}</span>
                 </button>

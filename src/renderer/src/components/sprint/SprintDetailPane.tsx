@@ -19,7 +19,6 @@ import {
 import { Badge } from '../ui/Badge'
 import { renderMarkdown } from '../../lib/render-markdown'
 import { useSprintTasks } from '../../stores/sprintTasks'
-import { useSprintEvents } from '../../stores/sprintEvents'
 import { TASK_STATUS } from '../../../../shared/constants'
 import { toast } from '../../stores/toasts'
 import type { SprintTask } from '../../../../shared/types'
@@ -56,6 +55,22 @@ function statusBadgeVariant(
   }
 }
 
+function getStatusDisplay(task: SprintTask): string {
+  if (task.status === 'active' && task.pr_status === 'open') return 'Review'
+  if (task.status === 'done' && task.pr_status === 'open') return 'Review'
+  switch (task.status) {
+    case 'active': return 'Active'
+    case 'queued': return 'Queued'
+    case 'blocked': return 'Blocked'
+    case 'backlog': return 'Backlog'
+    case 'done': return 'Done'
+    case 'failed': return 'Failed'
+    case 'cancelled': return 'Cancelled'
+    case 'error': return 'Error'
+    default: return task.status
+  }
+}
+
 export function SprintDetailPane({
   task,
   onClose,
@@ -70,11 +85,8 @@ export function SprintDetailPane({
   const [editingSpec, setEditingSpec] = useState(false)
   const [specDraft, setSpecDraft] = useState('')
   const [specExpanded, setSpecExpanded] = useState(true)
-  const [metadataExpanded, setMetadataExpanded] = useState(true)
-  const [agentExpanded, setAgentExpanded] = useState(true)
 
   const allTasks = useSprintTasks((s) => s.tasks)
-  const latestEvent = useSprintEvents((s) => (task ? s.latestEvents[task.id] : null))
 
   const dependencyTasks = useMemo(() => {
     if (!task?.depends_on) return []
@@ -124,6 +136,9 @@ export function SprintDetailPane({
   const hasPR = !!task.pr_url
   const hasSpec = !!task.spec
 
+  const depsComplete = dependencyTasks.filter((d) => d.status === 'done').length
+  const depsTotal = dependencyTasks.length
+
   return (
     <div className="sprint-detail">
       <div className="sprint-detail__header">
@@ -132,15 +147,37 @@ export function SprintDetailPane({
             {task.title}
           </span>
           <Badge variant={statusBadgeVariant(task.status)} size="sm">
-            {task.status}
+            {getStatusDisplay(task)}
           </Badge>
-          <button
-            className="sprint-detail__close"
-            onClick={onClose}
-            aria-label="Close detail pane"
-          >
-            ✕
-          </button>
+        </div>
+
+        <div className="sprint-detail__meta-strip">
+          <div className="sprint-detail__meta-item">
+            <span className="sprint-detail__meta-item-icon"><GitBranch size={13} /></span>
+            <span className="sprint-detail__meta-item-label">Repo</span>
+            <span className="sprint-detail__meta-item-value">{task.repo}</span>
+          </div>
+          <div className="sprint-detail__meta-item">
+            <span className="sprint-detail__meta-item-label">Priority</span>
+            <span className={`sprint-detail__meta-item-value${task.priority <= 2 ? ' sprint-detail__meta-item-value--accent' : ''}`}>P{task.priority}</span>
+          </div>
+          {task.created_at && (
+            <div className="sprint-detail__meta-item">
+              <span className="sprint-detail__meta-item-icon"><Clock size={13} /></span>
+              <span className="sprint-detail__meta-item-label">Created</span>
+              <span className="sprint-detail__meta-item-value">
+                {new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {new Date(task.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </span>
+            </div>
+          )}
+          {task.started_at && (
+            <div className="sprint-detail__meta-item">
+              <span className="sprint-detail__meta-item-label">Started</span>
+              <span className="sprint-detail__meta-item-value">
+                {new Date(task.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {new Date(task.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="sprint-detail__actions">
@@ -190,50 +227,19 @@ export function SprintDetailPane({
       </div>
 
       <div className="sprint-detail__body">
-        <NeonSection
-          title="Metadata"
-          expanded={metadataExpanded}
-          onToggle={() => setMetadataExpanded(!metadataExpanded)}
-        >
-          <div className="sprint-detail__meta-grid">
-            <MetaRow icon={<GitBranch size={13} />} label="Repo" value={task.repo} />
-            <MetaRow label="Priority" value={`P${task.priority}`} accent={task.priority <= 2} />
-            {task.created_at && (
-              <MetaRow
-                icon={<Clock size={13} />}
-                label="Created"
-                value={new Date(task.created_at).toLocaleString()}
-              />
-            )}
-            {task.started_at && (
-              <MetaRow
-                icon={<Clock size={13} />}
-                label="Started"
-                value={new Date(task.started_at).toLocaleString()}
-              />
-            )}
-            {task.completed_at && (
-              <MetaRow
-                icon={<Clock size={13} />}
-                label="Completed"
-                value={new Date(task.completed_at).toLocaleString()}
-              />
-            )}
-            {task.retry_count > 0 && (
-              <MetaRow label="Retries" value={task.retry_count.toString()} />
-            )}
-          </div>
-        </NeonSection>
-
         {dependencyTasks.length > 0 && (
-          <NeonSection title="Dependencies" expanded>
+          <NeonSection
+            title="Dependencies"
+            expanded
+            headerRight={<span className="sprint-detail__section-header-right">{depsComplete}/{depsTotal}</span>}
+          >
             <div className="sprint-detail__deps">
               {dependencyTasks.map((dep) => (
                 <div key={dep.id} className="sprint-detail__dep-row">
                   <span
                     className={`sprint-detail__dep-dot ${dep.status === 'done' ? 'sprint-detail__dep-dot--done' : ''}`}
                   >
-                    {dep.status === 'done' ? '✓' : '○'}
+                    {dep.status === 'done' ? '\u2713' : '\u25CB'}
                   </span>
                   <span className="sprint-detail__dep-title">{dep.title}</span>
                   <Badge variant={statusBadgeVariant(dep.status)} size="sm">
@@ -263,6 +269,7 @@ export function SprintDetailPane({
             title="Specification"
             expanded={specExpanded}
             onToggle={() => setSpecExpanded(!specExpanded)}
+            className="sprint-detail__section--spec"
           >
             {editingSpec ? (
               <div className="sprint-detail__spec-edit">
@@ -305,27 +312,12 @@ export function SprintDetailPane({
         )}
 
         {hasAgent && (
-          <NeonSection
-            title="Agent Run"
-            expanded={agentExpanded}
-            onToggle={() => setAgentExpanded(!agentExpanded)}
-          >
-            <div className="sprint-detail__meta-grid">
-              <MetaRow label="Agent" value={task.agent_run_id?.slice(0, 16) || 'N/A'} mono />
-            </div>
-            {latestEvent && (
-              <div className="sprint-detail__agent-event">
-                {latestEvent.type === 'agent:thinking' &&
-                  'text' in latestEvent &&
-                  latestEvent.text}
-                {latestEvent.type === 'agent:tool_call' &&
-                  'tool' in latestEvent &&
-                  `Tool: ${latestEvent.tool}`}
-                {latestEvent.type === 'agent:text' && 'text' in latestEvent && latestEvent.text}
-              </div>
-            )}
+          <div className="sprint-detail__agent-bar">
+            <span className="sprint-detail__agent-dot" />
+            <span className="sprint-detail__agent-id">{task.agent_run_id?.slice(0, 16)}</span>
+            <span className="sprint-detail__agent-status">{isActive ? 'Running' : 'Completed'}</span>
             <button
-              className="sprint-detail__action-btn"
+              className="sprint-detail__agent-link"
               onClick={() => {
                 window.dispatchEvent(
                   new CustomEvent('bde:navigate', {
@@ -334,9 +326,9 @@ export function SprintDetailPane({
                 )
               }}
             >
-              <ExternalLink size={13} /> Open in Agents
+              Open in Agents &rarr;
             </button>
-          </NeonSection>
+          </div>
         )}
 
         {hasPR && (
@@ -399,27 +391,32 @@ export function SprintDetailPane({
   )
 }
 
-// ─── Helper Components ───────────────────────────────────────────────────────
+// --- Helper Components ---
 
 function NeonSection({
   title,
   expanded,
   onToggle,
   children,
+  className,
+  headerRight,
 }: {
   title: string
   expanded: boolean
   onToggle?: () => void
   children: React.ReactNode
+  className?: string
+  headerRight?: React.ReactNode
 }) {
   return (
-    <div className="sprint-detail__section">
+    <div className={`sprint-detail__section${className ? ` ${className}` : ''}`}>
       <button className="sprint-detail__section-header" onClick={onToggle}>
         <ChevronRight
           size={12}
           className={`sprint-detail__section-chevron ${expanded ? 'sprint-detail__section-chevron--open' : ''}`}
         />
         <span>{title}</span>
+        {headerRight}
       </button>
       {expanded && <div className="sprint-detail__section-body">{children}</div>}
     </div>

@@ -23,7 +23,7 @@ import './assets/neon.css'
 import './assets/neon-shell.css'
 import './assets/agents-neon.css'
 
-// Keyboard shortcut order: ⌘1=dashboard, ⌘2=agents, ⌘3=terminal, ⌘4=sprint,
+// Keyboard shortcut order: ⌘1=dashboard, ⌘2=agents, ⌘3=terminal, ⌘4=task-pipeline,
 // ⌘5=pr-station, ⌘6=git, ⌘7=memory, ⌘8=cost, ⌘9=settings
 const VIEW_SHORTCUT_MAP: Partial<Record<string, View>> = {
   '1': 'dashboard',
@@ -41,7 +41,7 @@ const VIEW_TITLES: Record<View, string> = {
   dashboard: 'Dashboard',
   agents: 'Agents',
   ide: 'IDE',
-  sprint: 'Sprint Center',
+  sprint: 'Task Pipeline',
   'pr-station': 'PR Station',
   git: 'Source Control',
   memory: 'Memory',
