@@ -1,4 +1,5 @@
 import { type NeonAccent, neonVar } from './types';
+import { tokens } from '../../design-system/tokens';
 
 export interface ChartBar {
   value: number;
@@ -14,7 +15,7 @@ interface MiniChartProps {
 export function MiniChart({ data, height = 80 }: MiniChartProps) {
   if (data.length === 0) {
     return (
-      <div style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '11px', height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: tokens.neon.textDim, fontSize: tokens.size.xs, height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         No data
       </div>
     );
