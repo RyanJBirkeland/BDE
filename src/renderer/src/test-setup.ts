@@ -28,6 +28,11 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   }
 }
 
+// scrollIntoView is not available in jsdom
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = vi.fn()
+}
+
 // Global window.api mock (centralized — no more per-file duplication)
 vi.stubGlobal('api', {
   getRepoPaths: vi.fn().mockResolvedValue({
