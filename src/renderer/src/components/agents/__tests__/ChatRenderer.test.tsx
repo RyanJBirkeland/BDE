@@ -359,8 +359,9 @@ describe('ChatRenderer component', () => {
       { type: 'agent:text', text: 'Message two', timestamp: 1002 }
     ]
     render(<ChatRenderer events={events} />)
-    expect(screen.getByText('Message one')).toBeInTheDocument()
-    expect(screen.getByText('Message two')).toBeInTheDocument()
+    // Consecutive text events are now merged by pairEvents()
+    expect(screen.getByText(/Message one/)).toBeInTheDocument()
+    expect(screen.getByText(/Message two/)).toBeInTheDocument()
   })
 
   it('renders playground event as playground card', () => {
