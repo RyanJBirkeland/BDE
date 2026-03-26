@@ -6,6 +6,7 @@ import {
   WORKTREE_PRUNE_INTERVAL_MS,
   QUEUE_TIMEOUT_MS,
   INITIAL_DRAIN_DEFER_MS,
+  NOTES_MAX_LENGTH,
 } from './types'
 import {
   makeConcurrencyState,
@@ -23,6 +24,7 @@ import { resolveDependents } from './resolve-dependents'
 import { runAgent as _runAgent, type RunAgentDeps } from './run-agent'
 import { updateTask, getTask, getTasksWithDependencies } from '../data/sprint-queries'
 import { getRepoPaths } from '../paths'
+import { refreshOAuthTokenFromKeychain } from '../env-utils'
 
 // Use sprint-queries directly but with a wrapper that catches hangs.
 // Electron's main process fetch/Supabase can hang, so we import the functions
@@ -50,7 +52,9 @@ async function claimTaskViaApi(taskId: string): Promise<boolean> {
 // Logger helper — callers can supply their own or fall back to console
 // ---------------------------------------------------------------------------
 
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, readFileSync } from 'node:fs'
+import { join as joinPath } from 'node:path'
+import { homedir as home } from 'node:os'
 import { BDE_AGENT_LOG_PATH } from '../paths'
 const LOG_PATH = BDE_AGENT_LOG_PATH
 function fileLog(level: string, m: string): void {
@@ -73,13 +77,9 @@ const defaultLogger: Logger = {
  */
 export async function checkOAuthToken(logger: Logger): Promise<boolean> {
   try {
-    const { join: joinPath } = await import('node:path')
-    const { homedir: home } = await import('node:os')
-    const { readFileSync } = await import('node:fs')
     const tokenPath = joinPath(home(), '.bde', 'oauth-token')
     const token = readFileSync(tokenPath, 'utf-8').trim()
     if (!token || token.length < 20) {
-      const { refreshOAuthTokenFromKeychain } = await import('../env-utils')
       const refreshed = await refreshOAuthTokenFromKeychain()
       if (refreshed) {
         logger.info('[agent-manager] OAuth token auto-refreshed from Keychain')
@@ -275,7 +275,7 @@ export function createAgentManager(
       await updateTask(task.id, {
         status: 'error',
         completed_at: new Date().toISOString(),
-        notes: `Worktree setup failed: ${errMsg}`.slice(0, 500),
+        notes: `Worktree setup failed: ${errMsg}`.slice(0, NOTES_MAX_LENGTH),
         claimed_by: null,
       })
       await onTaskTerminal(task.id, 'error')

@@ -3,6 +3,7 @@ import { mkdirSync, existsSync, readdirSync, writeFileSync, readFileSync, rmSync
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { buildAgentEnv } from '../env-utils'
+import { BRANCH_SLUG_MAX_LENGTH } from './types'
 import type { Logger } from './types'
 
 const execFileAsync = promisify(execFile)
@@ -12,7 +13,7 @@ export function branchNameForTask(title: string, taskId?: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
+    .slice(0, BRANCH_SLUG_MAX_LENGTH)
   const suffix = taskId ? `-${taskId.slice(0, 8)}` : ''
   return `agent/${slug}${suffix}`
 }

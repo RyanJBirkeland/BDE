@@ -1,5 +1,5 @@
 import type { ActiveAgent, AgentHandle, Logger } from './types'
-import { SPAWN_TIMEOUT_MS } from './types'
+import { SPAWN_TIMEOUT_MS, LAST_OUTPUT_MAX_LENGTH } from './types'
 import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'
 import { spawnAgent } from './sdk-adapter'
@@ -259,7 +259,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
       if (typeof msg === 'object' && msg !== null) {
         const m = msg as Record<string, unknown>
         if (m.type === 'assistant' && typeof m.text === 'string') {
-          lastAgentOutput = (m.text as string).slice(-500)
+          lastAgentOutput = (m.text as string).slice(-LAST_OUTPUT_MAX_LENGTH)
         }
       }
     }

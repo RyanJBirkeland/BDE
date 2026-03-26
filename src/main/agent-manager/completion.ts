@@ -3,7 +3,7 @@ import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
 import { updateTask } from '../data/sprint-queries'
 import { buildAgentEnv } from '../env-utils'
-import { MAX_RETRIES } from './types'
+import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
 import type { Logger } from './types'
 
 const execFile = promisify(execFileCb)
@@ -216,7 +216,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
       const summaryNote = agentSummary
-        ? `Agent produced no commits. Last output: ${agentSummary.slice(0, 300)}`
+        ? `Agent produced no commits. Last output: ${agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)}`
         : 'Agent produced no commits (no output captured)'
       const isTerminal = await resolveFailure({ taskId, retryCount, notes: summaryNote }, logger)
       if (isTerminal) {
