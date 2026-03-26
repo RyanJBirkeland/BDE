@@ -999,6 +999,99 @@ describe('Queue API', () => {
   })
 
   // -------------------------------------------------------------------------
+  // Batch operations
+  // -------------------------------------------------------------------------
+  describe('POST /queue/tasks/batch', () => {
+    it('batch updates 3 tasks, all succeed', async () => {
+      mockUpdateTask
+        .mockResolvedValueOnce({ id: 't1', title: 'Updated 1' })
+        .mockResolvedValueOnce({ id: 't2', title: 'Updated 2' })
+        .mockResolvedValueOnce({ id: 't3', title: 'Updated 3' })
+
+      const { status, body } = await request('POST', '/queue/tasks/batch', {
+        operations: [
+          { op: 'update', id: 't1', patch: { title: 'Updated 1' } },
+          { op: 'update', id: 't2', patch: { title: 'Updated 2' } },
+          { op: 'update', id: 't3', patch: { title: 'Updated 3' } },
+        ],
+      })
+      expect(status).toBe(200)
+      const b = body as { results: Array<{ id: string; op: string; ok: boolean }> }
+      expect(b.results).toHaveLength(3)
+      expect(b.results.every(r => r.ok)).toBe(true)
+      expect(mockUpdateTask).toHaveBeenCalledTimes(3)
+    })
+
+    it('batch mixed: 2 updates + 1 delete', async () => {
+      mockUpdateTask
+        .mockResolvedValueOnce({ id: 't1', title: 'Updated 1' })
+        .mockResolvedValueOnce({ id: 't2', title: 'Updated 2' })
+      mockDeleteTask.mockResolvedValueOnce(undefined)
+
+      const { status, body } = await request('POST', '/queue/tasks/batch', {
+        operations: [
+          { op: 'update', id: 't1', patch: { title: 'Updated 1' } },
+          { op: 'delete', id: 't3' },
+          { op: 'update', id: 't2', patch: { title: 'Updated 2' } },
+        ],
+      })
+      expect(status).toBe(200)
+      const b = body as { results: Array<{ id: string; op: string; ok: boolean }> }
+      expect(b.results).toHaveLength(3)
+      expect(b.results[0]).toMatchObject({ id: 't1', op: 'update', ok: true })
+      expect(b.results[1]).toMatchObject({ id: 't3', op: 'delete', ok: true })
+      expect(b.results[2]).toMatchObject({ id: 't2', op: 'update', ok: true })
+      expect(mockDeleteTask).toHaveBeenCalledWith('t3')
+    })
+
+    it('returns per-item error for invalid operation type', async () => {
+      const { status, body } = await request('POST', '/queue/tasks/batch', {
+        operations: [
+          { op: 'merge', id: 't1' },
+        ],
+      })
+      expect(status).toBe(200)
+      const b = body as { results: Array<{ id: string; ok: boolean; error?: string }> }
+      expect(b.results).toHaveLength(1)
+      expect(b.results[0].ok).toBe(false)
+      expect(b.results[0].error).toMatch(/Unknown operation/)
+    })
+
+    it('returns per-item error for missing id', async () => {
+      const { status, body } = await request('POST', '/queue/tasks/batch', {
+        operations: [
+          { op: 'update' },
+        ],
+      })
+      expect(status).toBe(200)
+      const b = body as { results: Array<{ id: string; ok: boolean; error?: string }> }
+      expect(b.results).toHaveLength(1)
+      expect(b.results[0].ok).toBe(false)
+      expect(b.results[0].error).toMatch(/id and op are required/)
+    })
+
+    it('returns 400 when exceeding 50 operations', async () => {
+      const operations = Array.from({ length: 51 }, (_, i) => ({
+        op: 'update',
+        id: `t${i}`,
+        patch: { title: `Task ${i}` },
+      }))
+
+      const { status, body } = await request('POST', '/queue/tasks/batch', { operations })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/Maximum 50/)
+    })
+
+    it('returns 400 for empty operations array', async () => {
+      const { status, body } = await request('POST', '/queue/tasks/batch', {
+        operations: [],
+      })
+      expect(status).toBe(400)
+      expect((body as { error: string }).error).toMatch(/operations array is required/)
+    })
+  })
+
+  // -------------------------------------------------------------------------
   // Spec quality guardrail tests
   // -------------------------------------------------------------------------
   describe('Spec quality guardrails', () => {

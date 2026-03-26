@@ -168,6 +168,86 @@ describe('spawnAgent (CLI fallback)', () => {
     expect(collected[1]).toEqual({ type: 'result', subtype: 'success' })
   })
 
+  it('calls onStderr callback for each stderr line', async () => {
+    const handle = await spawnAgent({
+      prompt: 'test',
+      cwd: '/tmp',
+      model: 'claude-sonnet-4-5',
+    })
+
+    const stderrLines: string[] = []
+    handle.onStderr = (line: string) => stderrLines.push(line)
+
+    // Push stderr data
+    child.stderr.push(Buffer.from('Warning: deprecated API\nError: something failed\n'))
+    child.stderr.push(null) // EOF
+
+    // Allow event handlers to fire
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(stderrLines).toEqual([
+      'Warning: deprecated API',
+      'Error: something failed',
+    ])
+  })
+
+  it('does not call onStderr for empty/whitespace-only lines', async () => {
+    const handle = await spawnAgent({
+      prompt: 'test',
+      cwd: '/tmp',
+      model: 'claude-sonnet-4-5',
+    })
+
+    const stderrLines: string[] = []
+    handle.onStderr = (line: string) => stderrLines.push(line)
+
+    child.stderr.push(Buffer.from('real output\n   \n\n'))
+    child.stderr.push(null) // EOF
+
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(stderrLines).toEqual(['real output'])
+  })
+
+  it('handles stderr chunks that split across lines', async () => {
+    const handle = await spawnAgent({
+      prompt: 'test',
+      cwd: '/tmp',
+      model: 'claude-sonnet-4-5',
+    })
+
+    const stderrLines: string[] = []
+    handle.onStderr = (line: string) => stderrLines.push(line)
+
+    // Split a line across two chunks
+    child.stderr.push(Buffer.from('partial li'))
+    child.stderr.push(Buffer.from('ne one\nline two\n'))
+    child.stderr.push(null) // EOF
+
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(stderrLines).toEqual(['partial line one', 'line two'])
+  })
+
+  it('flushes remaining stderr buffer on end', async () => {
+    const handle = await spawnAgent({
+      prompt: 'test',
+      cwd: '/tmp',
+      model: 'claude-sonnet-4-5',
+    })
+
+    const stderrLines: string[] = []
+    handle.onStderr = (line: string) => stderrLines.push(line)
+
+    // Push data without trailing newline
+    child.stderr.push(Buffer.from('no trailing newline'))
+    child.stderr.push(null) // EOF
+
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(stderrLines).toEqual(['no trailing newline'])
+  })
+
   it('messages AsyncIterable skips non-JSON lines', async () => {
     const handle = await spawnAgent({
       prompt: 'test',

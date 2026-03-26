@@ -18,6 +18,7 @@ import { LiveActivityStrip } from '../components/agents/LiveActivityStrip'
 import { AgentTimeline } from '../components/agents/AgentTimeline'
 import { SpawnModal } from '../components/agents/SpawnModal'
 import { tokens } from '../design-system/tokens'
+import { toast } from '../stores/toasts'
 import { POLL_SESSIONS_INTERVAL } from '../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
@@ -72,7 +73,10 @@ export function AgentsView() {
 
   const handleSteer = useCallback(async (message: string) => {
     if (!selectedId) return
-    await window.api.steerAgent(selectedId, message)
+    const result = await window.api.steerAgent(selectedId, message)
+    if (!result.ok) {
+      toast.error(result.error ?? 'Failed to send message to agent')
+    }
   }, [selectedId])
 
   const handleCommand = useCallback(async (cmd: string, _args?: string) => {
@@ -87,7 +91,10 @@ export function AgentsView() {
         }
         break
       case '/focus':
-        if (_args) await window.api.steerAgent(selectedId, `Focus on: ${_args}`)
+        if (_args) {
+          const focusResult = await window.api.steerAgent(selectedId, `Focus on: ${_args}`)
+          if (!focusResult.ok) toast.error(focusResult.error ?? 'Failed to send focus message')
+        }
         break
       default:
         break

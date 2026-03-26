@@ -10,6 +10,7 @@ const CAMEL_TO_SNAKE: Record<string, string> = {
   claimedBy: 'claimed_by', templateName: 'template_name',
   playgroundEnabled: 'playground_enabled',
   maxRuntimeMs: 'max_runtime_ms',
+  needsReview: 'needs_review',
 }
 
 const SNAKE_TO_CAMEL = Object.fromEntries(

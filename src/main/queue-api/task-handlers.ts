@@ -9,12 +9,13 @@ import {
   getTask,
   createTask,
   updateTask,
+  deleteTask,
   claimTask,
   releaseTask,
   getTasksWithDependencies,
   getActiveTaskCount,
 } from '../data/sprint-queries'
-import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-contract'
+import type { StatusUpdateRequest, ClaimRequest, BatchResult } from '../../shared/queue-api-contract'
 import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS, MAX_ACTIVE_TASKS } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
 import { detectCycle } from '../agent-manager/dependency-index'
@@ -520,4 +521,77 @@ export async function handleUpdateDependencies(
     return
   }
   sendJson(res, 200, toCamelCase(updated))
+}
+
+export async function handleBatchTasks(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): Promise<void> {
+  let body: unknown
+  try {
+    body = await parseBody(req, res)
+  } catch {
+    sendJson(res, 400, { error: 'Invalid JSON body' })
+    return
+  }
+
+  if (!body || typeof body !== 'object') {
+    sendJson(res, 400, { error: 'Request body must be a JSON object' })
+    return
+  }
+
+  const { operations } = body as { operations?: unknown[] }
+  if (!Array.isArray(operations) || operations.length === 0) {
+    sendJson(res, 400, { error: 'operations array is required and must not be empty' })
+    return
+  }
+
+  if (operations.length > 50) {
+    sendJson(res, 400, { error: 'Maximum 50 operations per batch' })
+    return
+  }
+
+  const results: BatchResult[] = []
+
+  for (const rawOp of operations) {
+    const op = rawOp as Record<string, unknown>
+    const id = op.id as string
+    const opType = op.op as string
+
+    if (!id || !opType) {
+      results.push({ id: id ?? 'unknown', op: opType as 'update' | 'delete', ok: false, error: 'id and op are required' })
+      continue
+    }
+
+    try {
+      if (opType === 'update') {
+        const patch = op.patch as Record<string, unknown>
+        if (!patch || typeof patch !== 'object') {
+          results.push({ id, op: 'update', ok: false, error: 'patch object required for update' })
+          continue
+        }
+        // Filter to safe fields (same as GENERAL_PATCH_FIELDS)
+        const filtered: Record<string, unknown> = {}
+        for (const [k, v] of Object.entries(patch)) {
+          if (GENERAL_PATCH_FIELDS.has(k)) filtered[k] = v
+        }
+        if (Object.keys(filtered).length === 0) {
+          results.push({ id, op: 'update', ok: false, error: 'No valid fields to update' })
+          continue
+        }
+        const updated = await updateTask(id, toSnakeCase(filtered))
+        results.push({ id, op: 'update', ok: !!updated, error: updated ? undefined : 'Task not found' })
+      } else if (opType === 'delete') {
+        await deleteTask(id)
+        results.push({ id, op: 'delete', ok: true })
+      } else {
+        results.push({ id, op: opType as 'update' | 'delete', ok: false, error: `Unknown operation: ${opType}` })
+      }
+    } catch (err) {
+      results.push({ id, op: opType as 'update' | 'delete', ok: false, error: String(err) })
+    }
+  }
+
+  // Return 200 with per-operation results (some may have failed)
+  sendJson(res, 200, { results })
 }

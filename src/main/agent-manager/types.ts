@@ -36,11 +36,18 @@ export const LAST_OUTPUT_MAX_LENGTH = 500
 export const AGENT_SUMMARY_MAX_LENGTH = 300
 export const NOTES_MAX_LENGTH = 500
 
+export interface SteerResult {
+  delivered: boolean
+  error?: string
+}
+
 export interface AgentHandle {
   messages: AsyncIterable<unknown>
   sessionId: string
   abort(): void
-  steer(message: string): Promise<void>
+  steer(message: string): Promise<SteerResult>
+  /** Optional callback invoked with each line of stderr output. */
+  onStderr?: (line: string) => void
 }
 
 export interface ActiveAgent {

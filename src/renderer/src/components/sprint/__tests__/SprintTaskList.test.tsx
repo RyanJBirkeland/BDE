@@ -1,9 +1,10 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { SprintTaskList } from '../SprintTaskList'
+import { useSprintUI } from '../../../stores/sprintUI'
 import type { SprintTask } from '../../../../../shared/types'
 
 const mockTasks: SprintTask[] = [
@@ -102,6 +103,15 @@ const mockTasks: SprintTask[] = [
 ]
 
 describe('SprintTaskList', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    useSprintUI.setState({ searchQuery: '', statusFilter: 'all' })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('renders task list with all tasks', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
@@ -122,12 +132,15 @@ describe('SprintTaskList', () => {
     expect(countBadges.length).toBeGreaterThan(0)
   })
 
-  it('filters tasks by search query', () => {
+  it('filters tasks by search query (after debounce)', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
     const searchInput = screen.getByPlaceholderText('Search tasks...')
     fireEvent.change(searchInput, { target: { value: 'authentication' } })
+
+    // Advance past SEARCH_DEBOUNCE_MS (150ms)
+    act(() => { vi.advanceTimersByTime(200) })
 
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.queryByText('Fix navbar styling bug')).not.toBeInTheDocument()
@@ -184,6 +197,9 @@ describe('SprintTaskList', () => {
     const searchInput = screen.getByPlaceholderText('Search tasks...') as HTMLInputElement
     fireEvent.change(searchInput, { target: { value: 'authentication' } })
 
+    // Advance past debounce so clear button appears
+    act(() => { vi.advanceTimersByTime(200) })
+
     expect(searchInput.value).toBe('authentication')
 
     const clearButton = screen.getByLabelText('Clear search')
@@ -198,6 +214,9 @@ describe('SprintTaskList', () => {
 
     const searchInput = screen.getByPlaceholderText('Search tasks...')
     fireEvent.change(searchInput, { target: { value: 'nonexistent task xyz' } })
+
+    // Advance past debounce
+    act(() => { vi.advanceTimersByTime(200) })
 
     expect(screen.getByText('No tasks match your search')).toBeInTheDocument()
   })

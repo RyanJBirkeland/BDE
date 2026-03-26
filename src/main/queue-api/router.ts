@@ -45,6 +45,11 @@ export async function route(
     return tasks.handleListTasks(res, query)
   }
 
+  // --- POST /queue/tasks/batch ---
+  if (method === 'POST' && path === '/queue/tasks/batch') {
+    return tasks.handleBatchTasks(req, res)
+  }
+
   // --- POST /queue/tasks ---
   if (method === 'POST' && path === '/queue/tasks') {
     return tasks.handleCreateTask(req, res)

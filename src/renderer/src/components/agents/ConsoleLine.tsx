@@ -275,6 +275,15 @@ export function ConsoleLine({ block }: ConsoleLineProps): React.JSX.Element {
       )
     }
 
+    case 'stderr':
+      return (
+        <div style={lineStyle} data-testid="console-line-stderr">
+          <span style={prefixStyle(tokens.color.warning)}>[stderr]</span>
+          <span style={{ ...contentStyle, fontFamily: tokens.font.code, color: tokens.color.warning }}>{block.text}</span>
+          <span style={timestampStyle}>{formatTime(block.timestamp)}</span>
+        </div>
+      )
+
     case 'error':
       return (
         <div style={lineStyle} data-testid="console-line-error">

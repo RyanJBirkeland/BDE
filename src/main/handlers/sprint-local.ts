@@ -182,6 +182,7 @@ export function registerSprintLocalHandlers(): void {
       }
     }
 
+    if (patch.status === 'queued') { patch.needs_review = false }
     return updateTask(id, patch)
   })
 
@@ -225,6 +226,7 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:healthCheck', async () => {
+    try { const allTasks = await _listTasks(); const oneHourAgo = Date.now() - 3600000; for (const task of allTasks) { if (['error', 'failed'].includes(task.status) && !task.needs_review) { const updatedAt = new Date(task.updated_at).getTime(); if (updatedAt < oneHourAgo) { await _updateTask(task.id, { needs_review: true }) } } } } catch (err) { console.warn('[sprint:healthCheck] Failed to flag stuck tasks:', err) }
     return _getHealthCheckTasks()
   })
 
@@ -282,5 +284,48 @@ export function registerSprintLocalHandlers(): void {
   safeHandle('sprint:getChanges', async (_e, taskId: string) => {
     const { getTaskChanges } = await import('../data/task-changes')
     return getTaskChanges(taskId)
+  })
+
+  safeHandle('sprint:batchUpdate', async (_e, operations: Array<{ op: 'update' | 'delete'; id: string; patch?: Record<string, unknown> }>) => {
+    const { GENERAL_PATCH_FIELDS } = await import('../../shared/queue-api-contract')
+    const results: Array<{ id: string; op: 'update' | 'delete'; ok: boolean; error?: string }> = []
+
+    for (const rawOp of operations) {
+      const { id, op, patch } = rawOp
+      if (!id || !op) {
+        results.push({ id: id ?? 'unknown', op: op as 'update' | 'delete', ok: false, error: 'id and op are required' })
+        continue
+      }
+      try {
+        if (op === 'update') {
+          if (!patch || typeof patch !== 'object') {
+            results.push({ id, op: 'update', ok: false, error: 'patch object required for update' })
+            continue
+          }
+          const filtered: Record<string, unknown> = {}
+          for (const [k, v] of Object.entries(patch)) {
+            if (GENERAL_PATCH_FIELDS.has(k)) filtered[k] = v
+          }
+          if (Object.keys(filtered).length === 0) {
+            results.push({ id, op: 'update', ok: false, error: 'No valid fields to update' })
+            continue
+          }
+          const updated = await updateTask(id, filtered)
+          if (updated) notifySprintMutation('updated', updated)
+          results.push({ id, op: 'update', ok: !!updated, error: updated ? undefined : 'Task not found' })
+        } else if (op === 'delete') {
+          const task = await getTask(id)
+          await _deleteTask(id)
+          if (task) notifySprintMutation('deleted', task)
+          results.push({ id, op: 'delete', ok: true })
+        } else {
+          results.push({ id, op, ok: false, error: `Unknown operation: ${op}` })
+        }
+      } catch (err) {
+        results.push({ id, op, ok: false, error: String(err) })
+      }
+    }
+
+    return { results }
   })
 }

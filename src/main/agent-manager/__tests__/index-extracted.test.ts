@@ -89,14 +89,14 @@ describe('handleWatchdogVerdict', () => {
   it('marks task as error with "Max runtime exceeded" on max-runtime', async () => {
     const now = '2026-03-25T12:00:00.000Z'
     handleWatchdogVerdict('max-runtime', 'task-1', concurrency, now, mockUpdateTask, mockOnTerminal, logger)
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { status: 'error', completed_at: now, notes: 'Max runtime exceeded' })
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { status: 'error', completed_at: now, notes: 'Max runtime exceeded', needs_review: true })
     await vi.waitFor(() => { expect(mockOnTerminal).toHaveBeenCalledWith('task-1', 'error') })
   })
 
   it('marks task as error with "Idle timeout" on idle', async () => {
     const now = '2026-03-25T12:00:00.000Z'
     handleWatchdogVerdict('idle', 'task-2', concurrency, now, mockUpdateTask, mockOnTerminal, logger)
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-2', { status: 'error', completed_at: now, notes: 'Idle timeout' })
+    expect(mockUpdateTask).toHaveBeenCalledWith('task-2', { status: 'error', completed_at: now, notes: 'Idle timeout', needs_review: true })
     await vi.waitFor(() => { expect(mockOnTerminal).toHaveBeenCalledWith('task-2', 'error') })
   })
 

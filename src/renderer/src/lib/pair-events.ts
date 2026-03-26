@@ -14,6 +14,7 @@ export type ChatBlock =
   | { type: 'tool_call'; tool: string; summary: string; input?: unknown; timestamp: number }
   | { type: 'tool_pair'; tool: string; summary: string; input?: unknown; result: { success: boolean; summary: string; output?: unknown }; timestamp: number }
   | { type: 'error'; message: string; timestamp: number }
+  | { type: 'stderr'; text: string; timestamp: number }
   | { type: 'rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
   | { type: 'completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
   | { type: 'playground'; filename: string; html: string; sizeBytes: number; timestamp: number }
@@ -74,6 +75,10 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
 
       case 'agent:error':
         blocks.push({ type: 'error', message: ev.message, timestamp: ev.timestamp })
+        break
+
+      case 'agent:stderr':
+        blocks.push({ type: 'stderr', text: ev.text, timestamp: ev.timestamp })
         break
 
       case 'agent:rate_limited':

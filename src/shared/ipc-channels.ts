@@ -12,6 +12,7 @@
 
 import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, ClaimedTask, PrListPayload, TaskTemplate } from './types'
 import type { AgentEvent } from './types'
+import type { BatchOperation, BatchResult } from './queue-api-contract'
 
 /** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
 export interface GitHubFetchInit {
@@ -250,6 +251,10 @@ export interface SprintChannels {
   'sprint:getChanges': {
     args: [taskId: string]
     result: Array<{ id: number; task_id: string; field: string; old_value: string | null; new_value: string | null; changed_by: string; changed_at: string }>
+  }
+  'sprint:batchUpdate': {
+    args: [operations: BatchOperation[]]
+    result: { results: BatchResult[] }
   }
 }
 

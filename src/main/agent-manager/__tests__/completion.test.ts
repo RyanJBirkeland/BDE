@@ -478,7 +478,7 @@ describe('resolveFailure', () => {
     expect(result).toBe(false) // not terminal
   })
 
-  it('marks task failed when retry count is exhausted', async () => {
+  it('marks task failed with needs_review when retry count is exhausted', async () => {
     const result = await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES, repo: mockRepo })
 
     expect(updateTaskMock).toHaveBeenCalledOnce()

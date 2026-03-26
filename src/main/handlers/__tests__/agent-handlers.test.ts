@@ -218,7 +218,7 @@ describe('agent:steer handler', () => {
 
   it('steers via AgentManager when no adhoc handle', async () => {
     vi.mocked(getAdhocHandle).mockReturnValue(undefined)
-    const mockAm = { steerAgent: vi.fn().mockResolvedValue(undefined) }
+    const mockAm = { steerAgent: vi.fn().mockResolvedValue({ delivered: true }) }
 
     const handler = captureHandler('agent:steer', mockAm)
     const result = await handler(mockEvent, { agentId: 'managed-1', message: 'Pivot' })

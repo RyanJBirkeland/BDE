@@ -133,6 +133,52 @@ describe('pairEvents', () => {
     })
   })
 
+  it('maps agent:stderr events to stderr blocks', () => {
+    const events: AgentEvent[] = [
+      {
+        type: 'agent:stderr',
+        text: 'Warning: something went wrong',
+        timestamp: 6000,
+      },
+      {
+        type: 'agent:stderr',
+        text: 'Segmentation fault (core dumped)',
+        timestamp: 6100,
+      },
+    ]
+
+    const blocks = pairEvents(events)
+
+    expect(blocks).toHaveLength(2)
+    expect(blocks[0]).toEqual({
+      type: 'stderr',
+      text: 'Warning: something went wrong',
+      timestamp: 6000,
+    })
+    expect(blocks[1]).toEqual({
+      type: 'stderr',
+      text: 'Segmentation fault (core dumped)',
+      timestamp: 6100,
+    })
+  })
+
+  it('interleaves stderr with other event types', () => {
+    const events: AgentEvent[] = [
+      { type: 'agent:started', model: 'claude-sonnet-4-5', timestamp: 7000 },
+      { type: 'agent:stderr', text: 'debug: initializing', timestamp: 7050 },
+      { type: 'agent:text', text: 'Hello', timestamp: 7100 },
+      { type: 'agent:stderr', text: 'debug: done', timestamp: 7150 },
+    ]
+
+    const blocks = pairEvents(events)
+
+    expect(blocks).toHaveLength(4)
+    expect(blocks[0].type).toBe('started')
+    expect(blocks[1].type).toBe('stderr')
+    expect(blocks[2].type).toBe('text')
+    expect(blocks[3].type).toBe('stderr')
+  })
+
   it('handles mixed event types correctly', () => {
     const events: AgentEvent[] = [
       {

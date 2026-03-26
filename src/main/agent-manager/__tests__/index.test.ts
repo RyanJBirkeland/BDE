@@ -127,7 +127,7 @@ const mockRepo = makeMockRepo()
 
 function makeMockHandle(messages: unknown[] = []) {
   const abortFn = vi.fn()
-  const steerFn = vi.fn().mockResolvedValue(undefined)
+  const steerFn = vi.fn().mockResolvedValue({ delivered: true })
   async function* gen(): AsyncIterable<unknown> { for (const m of messages) yield m }
   return {
     handle: { messages: gen(), sessionId: 'mock-session', abort: abortFn, steer: steerFn } as AgentHandle,
@@ -141,7 +141,7 @@ function makeBlockingHandle() {
   const abortFn = vi.fn(() => { resolveMessages?.() })
   async function* gen(): AsyncIterable<unknown> { await p }
   return {
-    handle: { messages: gen(), sessionId: 'blocking', abort: abortFn, steer: vi.fn().mockResolvedValue(undefined) } as AgentHandle,
+    handle: { messages: gen(), sessionId: 'blocking', abort: abortFn, steer: vi.fn().mockResolvedValue({ delivered: true }) } as AgentHandle,
     abortFn, resolve: () => resolveMessages?.(),
   }
 }
@@ -733,20 +733,20 @@ describe('createAgentManager', () => {
   })
 
   describe('steerAgent', () => {
-    it('throws when no active agent', async () => {
+    it('returns { delivered: false } when no active agent', async () => {
       const mgr = createAgentManager(baseConfig, mockRepo, makeLogger())
-      await expect(mgr.steerAgent('nonexistent', 'hello')).rejects.toThrow(
-        'No active agent for task nonexistent',
-      )
+      const result = await mgr.steerAgent('nonexistent', 'hello')
+      expect(result).toEqual({ delivered: false, error: 'Agent not found' })
     })
 
-    it('delegates to handle.steer()', async () => {
+    it('delegates to handle.steer() and returns result', async () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask()
       const { handle } = makeBlockingHandle()
       const steerFn = handle.steer as ReturnType<typeof vi.fn>
+      steerFn.mockResolvedValue({ delivered: true })
 
       vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
       vi.mocked(claimTask).mockResolvedValueOnce(task)
@@ -758,8 +758,35 @@ describe('createAgentManager', () => {
       await vi.advanceTimersByTimeAsync(6_000)
       for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
 
-      await mgr.steerAgent('task-1', 'focus on tests')
+      const result = await mgr.steerAgent('task-1', 'focus on tests')
       expect(steerFn).toHaveBeenCalledWith('focus on tests')
+      expect(result).toEqual({ delivered: true })
+
+      mgr.stop(0).catch(() => {})
+      vi.useRealTimers()
+    })
+
+    it('returns failure result when handle.steer fails', async () => {
+      vi.useFakeTimers()
+      const logger = makeLogger()
+      setupDefaultMocks()
+      const task = makeTask()
+      const { handle } = makeBlockingHandle()
+      const steerFn = handle.steer as ReturnType<typeof vi.fn>
+      steerFn.mockResolvedValue({ delivered: false, error: 'stdin closed' })
+
+      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
+      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
+
+      const mgr = createAgentManager(baseConfig, mockRepo, logger)
+      mgr.start()
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+      const result = await mgr.steerAgent('task-1', 'test')
+      expect(result).toEqual({ delivered: false, error: 'stdin closed' })
 
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()

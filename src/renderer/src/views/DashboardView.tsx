@@ -2,6 +2,8 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
+import { useSprintUI, type StatusFilter } from '../stores/sprintUI'
+import { useUIStore } from '../stores/ui'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
 import { POLL_DASHBOARD_INTERVAL } from '../lib/constants'
 import { useBackoffInterval } from '../hooks/useBackoffInterval'
@@ -18,12 +20,22 @@ import {
   type PipelineStage,
   type ChartBar,
 } from '../components/neon'
-import { Activity, GitPullRequest, CheckCircle, DollarSign, Zap } from 'lucide-react'
+import { Activity, GitPullRequest, CheckCircle, DollarSign, Zap, AlertTriangle } from 'lucide-react'
 
 export default function DashboardView() {
   const reduced = useReducedMotion()
   const tasks = useSprintTasks((s) => s.tasks)
   const totalCost = useCostDataStore((s) => s.totalCost)
+  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
+  const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
+  const setView = useUIStore((s) => s.setView)
+
+  /** Navigate to Sprint Center with a pre-applied status filter. */
+  const navigateToSprintWithFilter = useCallback((status: StatusFilter) => {
+    setSearchQuery('')
+    setStatusFilter(status)
+    setView('sprint')
+  }, [setStatusFilter, setSearchQuery, setView])
 
   const [chartData, setChartData] = useState<ChartBar[]>([])
   const [feedEvents, setFeedEvents] = useState<FeedEvent[]>([])
@@ -166,29 +178,40 @@ export default function DashboardView() {
           {/* Left: Stats Stack */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <StatCounter
-              label="Agents"
+              label="Active"
               value={stats.active}
               accent="cyan"
               suffix="live"
               icon={<Zap size={10} />}
+              onClick={() => navigateToSprintWithFilter('in-progress')}
             />
             <StatCounter
-              label="Tasks"
-              value={stats.queued + stats.active}
-              accent="pink"
+              label="Queued"
+              value={stats.queued}
+              accent="orange"
               icon={<Activity size={10} />}
+              onClick={() => navigateToSprintWithFilter('todo')}
+            />
+            <StatCounter
+              label="Blocked"
+              value={stats.blocked}
+              accent="red"
+              icon={<AlertTriangle size={10} />}
+              onClick={() => navigateToSprintWithFilter('blocked')}
             />
             <StatCounter
               label="PRs"
               value={prCount}
               accent="blue"
               icon={<GitPullRequest size={10} />}
+              onClick={() => navigateToSprintWithFilter('awaiting-review')}
             />
             <StatCounter
               label="Done"
               value={stats.done}
               accent="cyan"
               icon={<CheckCircle size={10} />}
+              onClick={() => navigateToSprintWithFilter('done')}
             />
           </div>
 

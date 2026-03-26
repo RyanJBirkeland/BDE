@@ -143,9 +143,9 @@ describe('registerSprintLocalHandlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers 12 handlers', () => {
+  it('registers 13 handlers', () => {
     registerSprintLocalHandlers()
-    expect(safeHandle).toHaveBeenCalledTimes(12)
+    expect(safeHandle).toHaveBeenCalledTimes(13)
   })
 
   it('registers the expected channel names', () => {
@@ -161,6 +161,7 @@ describe('registerSprintLocalHandlers', () => {
     expect(channels).toContain('sprint:validateDependencies')
     expect(channels).toContain('sprint:unblockTask')
     expect(channels).toContain('sprint:getChanges')
+    expect(channels).toContain('sprint:batchUpdate')
   })
 })
 
@@ -253,7 +254,7 @@ describe('sprint:update handler', () => {
     await handler(mockEvent, '1', { status: 'queued' })
 
     // Since deps are satisfied, patch should not be changed to blocked
-    expect(_updateTask).toHaveBeenCalledWith('1', { status: 'queued' })
+    expect(_updateTask).toHaveBeenCalledWith('1', { status: 'queued', needs_review: false })
   })
 
   it('transitions status to blocked when dependencies are unsatisfied', async () => {

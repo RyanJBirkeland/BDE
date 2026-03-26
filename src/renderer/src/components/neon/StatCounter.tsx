@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { type NeonAccent, neonVar } from './types';
 import { tokens } from '../../design-system/tokens';
 
@@ -11,16 +12,31 @@ interface StatCounterProps {
     label: string;
   };
   icon?: React.ReactNode;
+  onClick?: () => void;
 }
 
-export function StatCounter({ label, value, accent, suffix, trend, icon }: StatCounterProps) {
+export function StatCounter({ label, value, accent, suffix, trend, icon, onClick }: StatCounterProps) {
+  const [hovered, setHovered] = useState(false);
+  const isClickable = !!onClick;
+
   return (
-    <div style={{
-      background: neonVar(accent, 'surface'),
-      border: `1px solid ${neonVar(accent, 'border')}`,
-      borderRadius: tokens.radius.lg,
-      padding: tokens.space[3],
-    }}>
+    <div
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={isClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.() } } : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: neonVar(accent, 'surface'),
+        border: `1px solid ${neonVar(accent, 'border')}`,
+        borderRadius: tokens.radius.lg,
+        padding: tokens.space[3],
+        cursor: isClickable ? 'pointer' : undefined,
+        opacity: isClickable && hovered ? 0.85 : 1,
+        transition: 'opacity 0.15s ease',
+      }}
+    >
       <div data-role="stat-label" style={{
         color: neonVar(accent, 'color'),
         fontSize: tokens.size.xs,

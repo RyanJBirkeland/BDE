@@ -2,15 +2,15 @@
  * SprintTaskList — Filterable left-pane task list for Sprint Center redesign.
  * Displays tasks with status badges, search, and filtering capabilities.
  */
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Badge } from '../ui/Badge'
 import { Input } from '../ui/Input'
 import { Search, X } from 'lucide-react'
 import { repoColor, repoBadgeVariant, timeAgo } from '../../lib/format'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
+import { useSprintUI, type StatusFilter } from '../../stores/sprintUI'
+import { SEARCH_DEBOUNCE_MS } from '../../lib/constants'
 import type { SprintTask } from '../../../../shared/types'
-
-type StatusFilter = 'all' | 'backlog' | 'todo' | 'blocked' | 'in-progress' | 'awaiting-review' | 'done' | 'failed'
 
 interface SprintTaskListProps {
   tasks: SprintTask[]
@@ -91,9 +91,48 @@ function getStatusDisplay(task: SprintTask): string {
   }
 }
 
+/** Case-insensitive substring match against title, spec, and notes. */
+export function matchesSearch(task: SprintTask, query: string): boolean {
+  if (!query) return true
+  const q = query.toLowerCase()
+  return (
+    task.title.toLowerCase().includes(q) ||
+    (task.spec ?? '').toLowerCase().includes(q) ||
+    (task.notes ?? '').toLowerCase().includes(q)
+  )
+}
+
 export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter }: SprintTaskListProps) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  // Store-backed search & status filter (allows programmatic navigation from Dashboard)
+  const searchQuery = useSprintUI((s) => s.searchQuery)
+  const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
+  const statusFilter = useSprintUI((s) => s.statusFilter)
+  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
+
+  // Local input state for debounced search
+  const [localSearch, setLocalSearch] = useState(searchQuery)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync local input to store with debounce
+  const handleSearchChange = useCallback((value: string) => {
+    setLocalSearch(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(value)
+    }, SEARCH_DEBOUNCE_MS)
+  }, [setSearchQuery])
+
+  // Sync store → local when store changes externally (e.g. Dashboard drill-down clears search)
+  useEffect(() => {
+    setLocalSearch(searchQuery)
+  }, [searchQuery])
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   // Apply repo filter first
   const repoFilteredTasks = useMemo(() => {
@@ -128,17 +167,11 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
     }
   }, [statusFilter, repoFilteredTasks, partition])
 
-  // Apply search filter
+  // Apply search filter (uses debounced store value)
   const filteredTasks = useMemo(() => {
-    if (!searchQuery.trim()) return statusFilteredTasks
-    const query = searchQuery.toLowerCase().trim()
-    return statusFilteredTasks.filter(
-      (task) =>
-        task.title.toLowerCase().includes(query) ||
-        task.repo.toLowerCase().includes(query) ||
-        task.spec?.toLowerCase().includes(query) ||
-        task.notes?.toLowerCase().includes(query)
-    )
+    const q = searchQuery.trim()
+    if (!q) return statusFilteredTasks
+    return statusFilteredTasks.filter((task) => matchesSearch(task, q))
   }, [statusFilteredTasks, searchQuery])
 
   // Sort by priority (lower number = higher priority) for backlog/todo, by updated_at for others
@@ -194,15 +227,15 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
 
       <div className="sprint-task-list__search">
         <Input
-          value={searchQuery}
-          onChange={setSearchQuery}
+          value={localSearch}
+          onChange={handleSearchChange}
           placeholder="Search tasks..."
           prefix={<Search size={14} />}
           suffix={
-            searchQuery && (
+            localSearch && (
               <button
                 className="sprint-task-list__clear-btn"
-                onClick={() => setSearchQuery('')}
+                onClick={() => { setLocalSearch(''); setSearchQuery('') }}
                 aria-label="Clear search"
               >
                 <X size={14} />
@@ -233,7 +266,7 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
       <div className="sprint-task-list__items">
         {sortedTasks.length === 0 ? (
           <div className="sprint-task-list__empty">
-            {searchQuery ? 'No tasks match your search' : 'No tasks in this category'}
+            {localSearch ? 'No tasks match your search' : 'No tasks in this category'}
           </div>
         ) : (
           sortedTasks.map((task, index) => {

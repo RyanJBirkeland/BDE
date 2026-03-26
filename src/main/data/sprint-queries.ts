@@ -58,6 +58,7 @@ export const UPDATE_ALLOWLIST = new Set([
   'claimed_by',
   'depends_on',
   'playground_enabled',
+  'needs_review',
   'max_runtime_ms',
 ])
 

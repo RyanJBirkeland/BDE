@@ -9,7 +9,7 @@ describe('field-mapper', () => {
     pr_mergeable_state: null, agent_run_id: null, retry_count: 0,
     fast_fail_count: 0, repo_path: '/tmp/repo', gh_repo: 'org/repo',
     started_at: null, completed_at: null, claimed_by: null,
-    template_name: null, max_runtime_ms: null,
+    template_name: null, max_runtime_ms: null, needs_review: false,
     created_at: '2026-01-01', updated_at: '2026-01-01',
   }
 

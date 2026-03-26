@@ -46,7 +46,7 @@ export const RUNNER_WRITABLE_STATUSES = new Set(['queued', 'active', 'done', 'fa
 export const STATUS_UPDATE_FIELDS = new Set([
   'status', 'prUrl', 'prNumber', 'prStatus', 'prMergeableState',
   'completedAt', 'startedAt', 'agentRunId', 'retryCount',
-  'fastFailCount', 'notes', 'maxRuntimeMs',
+  'fastFailCount', 'notes', 'maxRuntimeMs', 'needsReview',
 ])
 
 /** Allowed fields for general PATCH /queue/tasks/:id — excludes status, claimed_by, depends_on
@@ -55,6 +55,21 @@ export const GENERAL_PATCH_FIELDS = new Set([
   'title', 'prompt', 'repo', 'spec', 'notes', 'priority', 'templateName', 'playgroundEnabled',
   'maxRuntimeMs',
 ])
+
+// --- Batch Operations ---
+
+export interface BatchOperation {
+  op: 'update' | 'delete'
+  id: string
+  patch?: Record<string, unknown>  // required for update
+}
+
+export interface BatchResult {
+  id: string
+  op: 'update' | 'delete'
+  ok: boolean
+  error?: string
+}
 
 // --- Streaming Visibility Event Types ---
 
@@ -114,6 +129,12 @@ export interface AgentRateLimitedEvent extends TaskOutputEvent {
 export interface AgentErrorEvent extends TaskOutputEvent {
   type: 'agent:error'
   message: string
+}
+
+/** Agent stderr output */
+export interface AgentStderrEvent extends TaskOutputEvent {
+  type: 'agent:stderr'
+  text: string
 }
 
 /** Agent finished execution */

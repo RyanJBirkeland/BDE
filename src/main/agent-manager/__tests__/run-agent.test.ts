@@ -279,6 +279,7 @@ describe('runAgent — fast-fail paths', () => {
       expect.objectContaining({
         status: 'error',
         notes: 'Fast-fail exhausted',
+        needs_review: true,
         claimed_by: null,
       }),
     )

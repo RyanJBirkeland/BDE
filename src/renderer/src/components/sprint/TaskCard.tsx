@@ -10,6 +10,7 @@ import { useSprintEvents } from '../../stores/sprintEvents'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
 
+import { AlertTriangle } from 'lucide-react'
 import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from './SprintCenter'
 
@@ -122,6 +123,7 @@ export const TaskCard = memo(function TaskCard({
         </span>
       )}
       <div className="task-card__badges">
+        {task.needs_review && (<span className="task-card__needs-review" title="Needs review"><AlertTriangle size={14} /></span>)}
         {isHighPriority && (
           <Badge variant={task.priority <= 1 ? 'danger' : 'warning'} size="sm">
             P{task.priority}

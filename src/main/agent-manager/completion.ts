@@ -278,6 +278,7 @@ export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger):
         status: 'failed',
         completed_at: new Date().toISOString(),
         claimed_by: null,
+        needs_review: true,
         ...(notes ? { notes } : {}),
       })
       return true  // terminal

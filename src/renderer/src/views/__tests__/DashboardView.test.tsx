@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, fireEvent } from '@testing-library/react'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -50,10 +50,12 @@ Object.defineProperty(window, 'api', {
 })
 
 // ---------------------------------------------------------------------------
-// Subject
+// Subject + stores
 // ---------------------------------------------------------------------------
 
 import DashboardView from '../DashboardView'
+import { useSprintUI } from '../../stores/sprintUI'
+import { useUIStore } from '../../stores/ui'
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -64,6 +66,7 @@ describe('DashboardView', () => {
     vi.clearAllMocks()
     vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
+    useSprintUI.setState({ searchQuery: '', statusFilter: 'all' })
   })
 
   afterEach(() => {
@@ -78,8 +81,9 @@ describe('DashboardView', () => {
 
   it('renders stat counters for key metrics', () => {
     render(<DashboardView />)
-    expect(screen.getByText('Agents')).toBeInTheDocument()
-    expect(screen.getByText('Tasks')).toBeInTheDocument()
+    expect(screen.getByText('Active')).toBeInTheDocument()
+    expect(screen.getByText('Queued')).toBeInTheDocument()
+    expect(screen.getByText('Blocked')).toBeInTheDocument()
     expect(screen.getByText('PRs')).toBeInTheDocument()
     expect(screen.getByText('Done')).toBeInTheDocument()
   })
@@ -88,6 +92,36 @@ describe('DashboardView', () => {
     render(<DashboardView />)
     expect(screen.getByText('Pipeline')).toBeInTheDocument()
     expect(screen.getByText(/Cost/)).toBeInTheDocument()
+  })
+
+  it('clicking Active stat navigates to Sprint with in-progress filter', () => {
+    render(<DashboardView />)
+    const activeStat = screen.getByText('Active').closest('[role="button"]')!
+    fireEvent.click(activeStat)
+
+    expect(useSprintUI.getState().statusFilter).toBe('in-progress')
+    expect(useUIStore.getState().activeView).toBe('sprint')
+  })
+
+  it('clicking Done stat navigates to Sprint with done filter', () => {
+    render(<DashboardView />)
+    // "Done" may appear in both stats and pipeline — find the one with role=button
+    const doneStats = screen.getAllByText('Done')
+    const doneStat = doneStats.find((el) => el.closest('[role="button"]'))!.closest('[role="button"]')!
+    fireEvent.click(doneStat)
+
+    expect(useSprintUI.getState().statusFilter).toBe('done')
+    expect(useUIStore.getState().activeView).toBe('sprint')
+  })
+
+  it('clicking Blocked stat navigates to Sprint with blocked filter', () => {
+    render(<DashboardView />)
+    const blockedElements = screen.getAllByText('Blocked')
+    const blockedStat = blockedElements.find((el) => el.closest('[role="button"]'))!.closest('[role="button"]')!
+    fireEvent.click(blockedStat)
+
+    expect(useSprintUI.getState().statusFilter).toBe('blocked')
+    expect(useUIStore.getState().activeView).toBe('sprint')
   })
 
   it('renders chart data from completionsPerHour', async () => {

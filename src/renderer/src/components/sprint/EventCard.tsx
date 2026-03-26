@@ -10,6 +10,7 @@ import {
   Brain,
   Clock,
   AlertTriangle,
+  Terminal,
   Flag,
   ChevronDown,
   ChevronRight,
@@ -22,6 +23,7 @@ import type {
   AgentThinkingEvent,
   AgentRateLimitedEvent,
   AgentErrorEvent,
+  AgentStderrEvent,
   AgentCompletedEvent,
 } from '../../../../shared/queue-api-contract'
 import type { AnyTaskEvent } from '../../stores/sprintEvents'
@@ -192,6 +194,20 @@ function RateLimitedCard({ event }: { event: WithFlexTimestamp<AgentRateLimitedE
   )
 }
 
+function StderrCard({ event }: { event: WithFlexTimestamp<AgentStderrEvent> }) {
+  return (
+    <div
+      style={{ ...cardBase, borderLeftColor: tokens.color.warning }}
+      data-testid="event-card-stderr"
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], color: tokens.color.warning }}>
+        <Terminal size={14} />
+        <span style={{ fontFamily: tokens.font.code, fontSize: tokens.size.xs }}>{event.text}</span>
+      </div>
+    </div>
+  )
+}
+
 function ErrorCard({ event }: { event: WithFlexTimestamp<AgentErrorEvent> }) {
   return (
     <div
@@ -243,6 +259,8 @@ export function EventCard({ event }: Props): React.JSX.Element {
       return <ThinkingCard event={event as WithFlexTimestamp<AgentThinkingEvent>} />
     case 'agent:rate_limited':
       return <RateLimitedCard event={event as WithFlexTimestamp<AgentRateLimitedEvent>} />
+    case 'agent:stderr':
+      return <StderrCard event={event as WithFlexTimestamp<AgentStderrEvent>} />
     case 'agent:error':
       return <ErrorCard event={event as WithFlexTimestamp<AgentErrorEvent>} />
     case 'agent:completed':

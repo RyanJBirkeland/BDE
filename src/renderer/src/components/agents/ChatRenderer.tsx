@@ -76,6 +76,10 @@ function renderBlock(block: ChatBlock) {
       return <CompletedBlock exitCode={block.exitCode} costUsd={block.costUsd} durationMs={block.durationMs} />
     case 'playground':
       return <PlaygroundCard filename={block.filename} sizeBytes={block.sizeBytes} onClick={() => { /* TODO: open PlaygroundModal */ }} />
+    case 'stderr':
+      return <ChatBubble variant="error" text={`[stderr] ${block.text}`} timestamp={block.timestamp} />
+    default:
+      return null
   }
 }
 

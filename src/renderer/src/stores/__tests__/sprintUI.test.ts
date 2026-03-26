@@ -5,6 +5,8 @@ const initialState = {
   selectedTaskId: null,
   logDrawerTaskId: null,
   repoFilter: null,
+  searchQuery: '',
+  statusFilter: 'all' as const,
   generatingIds: [] as string[],
   selectedTaskIds: [] as string[],
 }
@@ -19,6 +21,8 @@ describe('sprintUI store', () => {
     expect(state.selectedTaskId).toBeNull()
     expect(state.logDrawerTaskId).toBeNull()
     expect(state.repoFilter).toBeNull()
+    expect(state.searchQuery).toBe('')
+    expect(state.statusFilter).toBe('all')
     expect(state.generatingIds.length).toBe(0)
     expect(Array.isArray(state.generatingIds)).toBe(true)
   })
@@ -67,6 +71,32 @@ describe('sprintUI store', () => {
     const ids = useSprintUI.getState().generatingIds
     expect(ids.includes('task-1')).toBe(false)
     expect(ids.includes('task-2')).toBe(true)
+  })
+
+  // --- Search query tests ---
+
+  it('setSearchQuery updates searchQuery', () => {
+    useSprintUI.getState().setSearchQuery('hello')
+    expect(useSprintUI.getState().searchQuery).toBe('hello')
+  })
+
+  it('setSearchQuery can clear query', () => {
+    useSprintUI.getState().setSearchQuery('hello')
+    useSprintUI.getState().setSearchQuery('')
+    expect(useSprintUI.getState().searchQuery).toBe('')
+  })
+
+  // --- Status filter tests ---
+
+  it('setStatusFilter updates statusFilter', () => {
+    useSprintUI.getState().setStatusFilter('blocked')
+    expect(useSprintUI.getState().statusFilter).toBe('blocked')
+  })
+
+  it('setStatusFilter can reset to all', () => {
+    useSprintUI.getState().setStatusFilter('done')
+    useSprintUI.getState().setStatusFilter('all')
+    expect(useSprintUI.getState().statusFilter).toBe('all')
   })
 
   // --- Bulk selection tests ---
