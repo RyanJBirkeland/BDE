@@ -85,7 +85,7 @@ describe('SprintDetailPane', () => {
 
   it('renders empty state when no task is provided', () => {
     render(<SprintDetailPane task={null} onClose={vi.fn()} />)
-    expect(screen.getByText('Select a task to view details')).toBeInTheDocument()
+    expect(screen.getByText(/Select a task to view details/)).toBeInTheDocument()
   })
 
   it('renders task title and status badge', () => {
@@ -192,7 +192,7 @@ describe('SprintDetailPane', () => {
     const taskWithAgent = { ...mockTask, agent_run_id: 'agent-123', status: TASK_STATUS.ACTIVE }
     render(<SprintDetailPane task={taskWithAgent} onClose={vi.fn()} />)
 
-    const openButton = screen.getByText('Open in Agents View')
+    const openButton = screen.getByText('Open in Agents')
     fireEvent.click(openButton)
 
     expect(window.dispatchEvent).toHaveBeenCalledWith(
@@ -284,11 +284,11 @@ describe('SprintDetailPane', () => {
     confirmSpy.mockRestore()
   })
 
-  it('shows Mark Done button for queued and active tasks', () => {
+  it('shows Done button for queued and active tasks', () => {
     const onMarkDone = vi.fn()
     render(<SprintDetailPane task={mockTask} onClose={vi.fn()} onMarkDone={onMarkDone} />)
 
-    const markDoneButton = screen.getByText('Mark Done')
+    const markDoneButton = screen.getByText('Done')
     fireEvent.click(markDoneButton)
 
     expect(onMarkDone).toHaveBeenCalledWith(mockTask)
@@ -310,12 +310,12 @@ describe('SprintDetailPane', () => {
     const metadataButton = screen.getByText('Metadata')
 
     // Should be expanded by default
-    expect(screen.getByText('Repository:')).toBeInTheDocument()
+    expect(screen.getByText('Repo')).toBeInTheDocument()
 
     // Click to collapse
     fireEvent.click(metadataButton)
 
     // Should be collapsed (content should not be visible)
-    expect(screen.queryByText('Repository:')).not.toBeInTheDocument()
+    expect(screen.queryByText('Repo')).not.toBeInTheDocument()
   })
 })

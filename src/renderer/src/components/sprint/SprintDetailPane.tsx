@@ -1,6 +1,6 @@
 /**
- * SprintDetailPane — context-aware right pane for Sprint Center redesign.
- * Shows comprehensive task details, agent info, PR status, and actions.
+ * SprintDetailPane — Neon-styled context-aware detail pane for Sprint Center.
+ * Uses V2 neon design tokens via CSS classes in sprint-neon.css.
  */
 import { useState, useMemo, useCallback } from 'react'
 import {
@@ -14,19 +14,17 @@ import {
   RefreshCw,
   Edit3,
   Trash2,
-  FileText,
+  ChevronRight,
 } from 'lucide-react'
-import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { renderMarkdown } from '../../lib/render-markdown'
-import { tokens } from '../../design-system/tokens'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintEvents } from '../../stores/sprintEvents'
 import { TASK_STATUS } from '../../../../shared/constants'
 import { toast } from '../../stores/toasts'
 import type { SprintTask } from '../../../../shared/types'
 
-interface SprintDetailPaneProps {
+export interface SprintDetailPaneProps {
   task: SprintTask | null
   onClose: () => void
   onLaunch?: (task: SprintTask) => void
@@ -38,7 +36,9 @@ interface SprintDetailPaneProps {
   onEditInWorkbench?: (task: SprintTask) => void
 }
 
-function statusBadgeVariant(status: string): 'default' | 'success' | 'danger' | 'warning' | 'info' {
+function statusBadgeVariant(
+  status: string,
+): 'default' | 'success' | 'danger' | 'warning' | 'info' {
   switch (status) {
     case TASK_STATUS.ACTIVE:
       return 'success'
@@ -76,7 +76,6 @@ export function SprintDetailPane({
   const allTasks = useSprintTasks((s) => s.tasks)
   const latestEvent = useSprintEvents((s) => (task ? s.latestEvents[task.id] : null))
 
-  // Get dependency tasks
   const dependencyTasks = useMemo(() => {
     if (!task?.depends_on) return []
     return task.depends_on
@@ -108,19 +107,10 @@ export function SprintDetailPane({
 
   if (!task) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          background: tokens.color.surface,
-          color: tokens.color.textMuted,
-          fontSize: tokens.size.md,
-          fontFamily: tokens.font.ui,
-        }}
-      >
-        Select a task to view details
+      <div className="sprint-detail sprint-detail--empty">
+        <span className="sprint-detail__empty-text">
+          &gt; Select a task to view details
+        </span>
       </div>
     )
   }
@@ -135,347 +125,274 @@ export function SprintDetailPane({
   const hasSpec = !!task.spec
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: tokens.color.surface,
-        borderLeft: `1px solid ${tokens.color.border}`,
-        fontFamily: tokens.font.ui,
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: tokens.space[2],
-          padding: `${tokens.space[3]} ${tokens.space[4]}`,
-          borderBottom: `1px solid ${tokens.color.border}`,
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
-          <FileText size={16} color={tokens.color.textMuted} />
-          <span
-            style={{
-              fontSize: tokens.size.lg,
-              fontWeight: 600,
-              color: tokens.color.text,
-              flex: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-            title={task.title}
-          >
+    <div className="sprint-detail">
+      <div className="sprint-detail__header">
+        <div className="sprint-detail__title-row">
+          <span className="sprint-detail__title" title={task.title}>
             {task.title}
           </span>
           <Badge variant={statusBadgeVariant(task.status)} size="sm">
             {task.status}
           </Badge>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close detail pane">
+          <button
+            className="sprint-detail__close"
+            onClick={onClose}
+            aria-label="Close detail pane"
+          >
             ✕
-          </Button>
+          </button>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: tokens.space[2], flexWrap: 'wrap' }}>
+        <div className="sprint-detail__actions">
           {isQueued && onLaunch && (
-            <Button variant="primary" size="sm" onClick={() => onLaunch(task)}>
-              <PlayCircle size={14} /> Launch
-            </Button>
+            <button
+              className="sprint-detail__action-btn sprint-detail__action-btn--primary"
+              onClick={() => onLaunch(task)}
+            >
+              <PlayCircle size={13} /> Launch
+            </button>
           )}
           {isActive && onStop && (
-            <Button variant="danger" size="sm" onClick={() => onStop(task)}>
-              <StopCircle size={14} /> Stop
-            </Button>
+            <button
+              className="sprint-detail__action-btn sprint-detail__action-btn--danger"
+              onClick={() => onStop(task)}
+            >
+              <StopCircle size={13} /> Stop
+            </button>
           )}
           {(isFailed || (isDone && !hasPR)) && onRerun && (
-            <Button variant="ghost" size="sm" onClick={() => onRerun(task)}>
-              <RefreshCw size={14} /> Re-run
-            </Button>
+            <button className="sprint-detail__action-btn" onClick={() => onRerun(task)}>
+              <RefreshCw size={13} /> Re-run
+            </button>
           )}
           {(isQueued || isActive) && onMarkDone && (
-            <Button variant="ghost" size="sm" onClick={() => onMarkDone(task)}>
-              <CheckCircle2 size={14} /> Mark Done
-            </Button>
+            <button className="sprint-detail__action-btn" onClick={() => onMarkDone(task)}>
+              <CheckCircle2 size={13} /> Done
+            </button>
           )}
           {onEditInWorkbench && (
-            <Button variant="ghost" size="sm" onClick={() => onEditInWorkbench(task)}>
-              <Edit3 size={14} /> Edit
-            </Button>
+            <button
+              className="sprint-detail__action-btn"
+              onClick={() => onEditInWorkbench(task)}
+            >
+              <Edit3 size={13} /> Edit
+            </button>
           )}
           {onDelete && (
-            <Button variant="ghost" size="sm" onClick={handleDelete}>
-              <Trash2 size={14} />
-            </Button>
+            <button
+              className="sprint-detail__action-btn sprint-detail__action-btn--danger-ghost"
+              onClick={handleDelete}
+            >
+              <Trash2 size={13} />
+            </button>
           )}
         </div>
       </div>
 
-      {/* Scrollable body */}
-      <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-        {/* Metadata Section */}
-        <Section
+      <div className="sprint-detail__body">
+        <NeonSection
           title="Metadata"
           expanded={metadataExpanded}
           onToggle={() => setMetadataExpanded(!metadataExpanded)}
         >
-          <MetadataRow icon={GitBranch} label="Repository" value={task.repo} />
-          <MetadataRow label="Priority" value={`P${task.priority}`} />
-          {task.created_at && (
-            <MetadataRow
-              icon={Clock}
-              label="Created"
-              value={new Date(task.created_at).toLocaleString()}
-            />
-          )}
-          {task.started_at && (
-            <MetadataRow
-              icon={Clock}
-              label="Started"
-              value={new Date(task.started_at).toLocaleString()}
-            />
-          )}
-          {task.completed_at && (
-            <MetadataRow
-              icon={Clock}
-              label="Completed"
-              value={new Date(task.completed_at).toLocaleString()}
-            />
-          )}
-          {task.retry_count > 0 && (
-            <MetadataRow label="Retries" value={task.retry_count.toString()} />
-          )}
-        </Section>
+          <div className="sprint-detail__meta-grid">
+            <MetaRow icon={<GitBranch size={13} />} label="Repo" value={task.repo} />
+            <MetaRow label="Priority" value={`P${task.priority}`} accent={task.priority <= 2} />
+            {task.created_at && (
+              <MetaRow
+                icon={<Clock size={13} />}
+                label="Created"
+                value={new Date(task.created_at).toLocaleString()}
+              />
+            )}
+            {task.started_at && (
+              <MetaRow
+                icon={<Clock size={13} />}
+                label="Started"
+                value={new Date(task.started_at).toLocaleString()}
+              />
+            )}
+            {task.completed_at && (
+              <MetaRow
+                icon={<Clock size={13} />}
+                label="Completed"
+                value={new Date(task.completed_at).toLocaleString()}
+              />
+            )}
+            {task.retry_count > 0 && (
+              <MetaRow label="Retries" value={task.retry_count.toString()} />
+            )}
+          </div>
+        </NeonSection>
 
-        {/* Dependencies Section */}
         {dependencyTasks.length > 0 && (
-          <Section title="Dependencies" expanded defaultExpanded>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[2] }}>
+          <NeonSection title="Dependencies" expanded>
+            <div className="sprint-detail__deps">
               {dependencyTasks.map((dep) => (
-                <div
-                  key={dep.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: tokens.space[2],
-                    padding: tokens.space[2],
-                    background: tokens.color.surfaceHigh,
-                    borderRadius: tokens.radius.sm,
-                    fontSize: tokens.size.sm,
-                  }}
-                >
+                <div key={dep.id} className="sprint-detail__dep-row">
                   <span
-                    style={{
-                      color:
-                        dep.status === 'done'
-                          ? tokens.color.success
-                          : tokens.color.textMuted,
-                    }}
+                    className={`sprint-detail__dep-dot ${dep.status === 'done' ? 'sprint-detail__dep-dot--done' : ''}`}
                   >
                     {dep.status === 'done' ? '✓' : '○'}
                   </span>
-                  <span style={{ flex: 1, color: tokens.color.text }}>{dep.title}</span>
+                  <span className="sprint-detail__dep-title">{dep.title}</span>
                   <Badge variant={statusBadgeVariant(dep.status)} size="sm">
                     {dep.status}
                   </Badge>
                 </div>
               ))}
             </div>
-          </Section>
+          </NeonSection>
         )}
 
-        {/* Blocked Status Alert */}
         {isBlocked && (
-          <div
-            style={{
-              margin: tokens.space[3],
-              padding: tokens.space[3],
-              background: tokens.color.warningDim,
-              border: `1px solid ${tokens.color.warning}`,
-              borderRadius: tokens.radius.md,
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: tokens.space[2],
-            }}
-          >
-            <AlertCircle size={16} color={tokens.color.warning} style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: tokens.size.sm, color: tokens.color.text }}>
+          <div className="sprint-detail__blocked-alert">
+            <AlertCircle size={14} />
+            <div>
               <strong>Task is blocked</strong>
               <br />
               {dependencyTasks.length > 0
-                ? `Waiting for ${dependencyTasks.filter((d) => d.status !== 'done').length} dependencies to complete.`
-                : 'This task has dependencies that must be resolved first.'}
+                ? `Waiting for ${dependencyTasks.filter((d) => d.status !== 'done').length} dependencies`
+                : 'Dependencies must be resolved first'}
             </div>
           </div>
         )}
 
-        {/* Spec Section */}
         {(hasSpec || task.prompt) && (
-          <Section
+          <NeonSection
             title="Specification"
             expanded={specExpanded}
             onToggle={() => setSpecExpanded(!specExpanded)}
           >
             {editingSpec ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[2] }}>
+              <div className="sprint-detail__spec-edit">
                 <textarea
+                  className="sprint-detail__spec-textarea"
                   value={specDraft}
                   onChange={(e) => setSpecDraft(e.target.value)}
-                  style={{
-                    width: '100%',
-                    minHeight: '200px',
-                    padding: tokens.space[2],
-                    fontSize: tokens.size.sm,
-                    fontFamily: tokens.font.code,
-                    color: tokens.color.text,
-                    background: tokens.color.bg,
-                    border: `1px solid ${tokens.color.border}`,
-                    borderRadius: '4px',
-                    resize: 'vertical',
-                  }}
                 />
-                <div style={{ display: 'flex', gap: tokens.space[2] }}>
-                  <Button variant="primary" size="sm" onClick={handleSaveSpec}>
-                    Save Spec
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setEditingSpec(false)}>
+                <div className="sprint-detail__spec-edit-actions">
+                  <button
+                    className="sprint-detail__action-btn sprint-detail__action-btn--primary"
+                    onClick={handleSaveSpec}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="sprint-detail__action-btn"
+                    onClick={() => setEditingSpec(false)}
+                  >
                     Cancel
-                  </Button>
+                  </button>
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[2] }}>
+              <div className="sprint-detail__spec-view">
                 <div
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(task.spec || task.prompt || '') }}
-                  style={{
-                    fontSize: tokens.size.sm,
-                    fontFamily: tokens.font.code,
-                    color: tokens.color.text,
-                    lineHeight: 1.6,
+                  className="sprint-detail__spec-content"
+                  dangerouslySetInnerHTML={{
+                    __html: renderMarkdown(task.spec || task.prompt || ''),
                   }}
                 />
                 {onSaveSpec && (
-                  <Button variant="ghost" size="sm" onClick={handleStartEditSpec}>
-                    <Edit3 size={14} /> Edit Spec
-                  </Button>
+                  <button className="sprint-detail__action-btn" onClick={handleStartEditSpec}>
+                    <Edit3 size={13} /> Edit Spec
+                  </button>
                 )}
               </div>
             )}
-          </Section>
+          </NeonSection>
         )}
 
-        {/* Agent Section */}
         {hasAgent && (
-          <Section
+          <NeonSection
             title="Agent Run"
             expanded={agentExpanded}
             onToggle={() => setAgentExpanded(!agentExpanded)}
           >
-            <MetadataRow label="Agent ID" value={task.agent_run_id?.slice(0, 16) || 'N/A'} mono />
+            <div className="sprint-detail__meta-grid">
+              <MetaRow label="Agent" value={task.agent_run_id?.slice(0, 16) || 'N/A'} mono />
+            </div>
             {latestEvent && (
-              <div
-                style={{
-                  padding: tokens.space[2],
-                  background: tokens.color.surfaceHigh,
-                  borderRadius: tokens.radius.sm,
-                  fontSize: tokens.size.sm,
-                  color: tokens.color.textMuted,
-                  fontFamily: tokens.font.code,
-                }}
-              >
-                {latestEvent.type === 'agent:thinking' && 'text' in latestEvent && latestEvent.text}
-                {latestEvent.type === 'agent:tool_call' && 'tool' in latestEvent && `Tool: ${latestEvent.tool}`}
+              <div className="sprint-detail__agent-event">
+                {latestEvent.type === 'agent:thinking' &&
+                  'text' in latestEvent &&
+                  latestEvent.text}
+                {latestEvent.type === 'agent:tool_call' &&
+                  'tool' in latestEvent &&
+                  `Tool: ${latestEvent.tool}`}
                 {latestEvent.type === 'agent:text' && 'text' in latestEvent && latestEvent.text}
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
+              className="sprint-detail__action-btn"
               onClick={() => {
                 window.dispatchEvent(
                   new CustomEvent('bde:navigate', {
                     detail: { view: 'agents', sessionId: task.agent_run_id },
-                  })
+                  }),
                 )
               }}
             >
-              <ExternalLink size={14} /> Open in Agents View
-            </Button>
-          </Section>
+              <ExternalLink size={13} /> Open in Agents
+            </button>
+          </NeonSection>
         )}
 
-        {/* PR Section */}
         {hasPR && (
-          <Section title="Pull Request" expanded defaultExpanded>
-            <MetadataRow label="PR Number" value={`#${task.pr_number}`} />
-            <MetadataRow
-              label="Status"
-              value={task.pr_status || 'unknown'}
-              badge={
-                task.pr_status === 'merged' ? (
-                  <Badge variant="success" size="sm">
-                    Merged
-                  </Badge>
-                ) : task.pr_status === 'open' ? (
-                  <Badge variant="info" size="sm">
-                    Open
-                  </Badge>
-                ) : task.pr_status === 'closed' ? (
-                  <Badge variant="default" size="sm">
-                    Closed
-                  </Badge>
-                ) : null
-              }
-            />
-            {task.pr_mergeable_state && (
-              <MetadataRow
-                label="Mergeable"
-                value={task.pr_mergeable_state}
+          <NeonSection title="Pull Request" expanded>
+            <div className="sprint-detail__meta-grid">
+              <MetaRow label="PR" value={`#${task.pr_number}`} />
+              <MetaRow
+                label="Status"
+                value={task.pr_status || 'unknown'}
                 badge={
-                  task.pr_mergeable_state === 'dirty' ? (
-                    <Badge variant="danger" size="sm">
-                      Conflict
-                    </Badge>
-                  ) : task.pr_mergeable_state === 'clean' ? (
+                  task.pr_status === 'merged' ? (
                     <Badge variant="success" size="sm">
-                      Clean
+                      Merged
+                    </Badge>
+                  ) : task.pr_status === 'open' ? (
+                    <Badge variant="info" size="sm">
+                      Open
+                    </Badge>
+                  ) : task.pr_status === 'closed' ? (
+                    <Badge variant="default" size="sm">
+                      Closed
                     </Badge>
                   ) : null
                 }
               />
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
+              {task.pr_mergeable_state && (
+                <MetaRow
+                  label="Merge"
+                  value={task.pr_mergeable_state}
+                  badge={
+                    task.pr_mergeable_state === 'dirty' ? (
+                      <Badge variant="danger" size="sm">
+                        Conflict
+                      </Badge>
+                    ) : task.pr_mergeable_state === 'clean' ? (
+                      <Badge variant="success" size="sm">
+                        Clean
+                      </Badge>
+                    ) : null
+                  }
+                />
+              )}
+            </div>
+            <button
+              className="sprint-detail__action-btn"
               onClick={() => task.pr_url && window.api.openExternal(task.pr_url)}
             >
-              <ExternalLink size={14} /> View PR
-            </Button>
-          </Section>
+              <ExternalLink size={13} /> View PR
+            </button>
+          </NeonSection>
         )}
 
-        {/* Notes Section */}
         {task.notes && (
-          <Section title="Notes" expanded defaultExpanded>
-            <div
-              style={{
-                padding: tokens.space[3],
-                background: tokens.color.surfaceHigh,
-                borderRadius: tokens.radius.sm,
-                fontSize: tokens.size.sm,
-                color: tokens.color.text,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-              }}
-            >
-              {task.notes}
-            </div>
-          </Section>
+          <NeonSection title="Notes" expanded>
+            <div className="sprint-detail__notes">{task.notes}</div>
+          </NeonSection>
         )}
       </div>
     </div>
@@ -484,79 +401,52 @@ export function SprintDetailPane({
 
 // ─── Helper Components ───────────────────────────────────────────────────────
 
-interface SectionProps {
+function NeonSection({
+  title,
+  expanded,
+  onToggle,
+  children,
+}: {
   title: string
   expanded: boolean
-  defaultExpanded?: boolean
   onToggle?: () => void
   children: React.ReactNode
-}
-
-function Section({ title, expanded, onToggle, children }: SectionProps) {
+}) {
   return (
-    <div
-      style={{
-        borderBottom: `1px solid ${tokens.color.border}`,
-      }}
-    >
-      <button
-        onClick={onToggle}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: `${tokens.space[2]} ${tokens.space[4]}`,
-          background: tokens.color.surfaceHigh,
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: tokens.size.sm,
-          fontWeight: 600,
-          color: tokens.color.text,
-          fontFamily: tokens.font.ui,
-        }}
-      >
+    <div className="sprint-detail__section">
+      <button className="sprint-detail__section-header" onClick={onToggle}>
+        <ChevronRight
+          size={12}
+          className={`sprint-detail__section-chevron ${expanded ? 'sprint-detail__section-chevron--open' : ''}`}
+        />
         <span>{title}</span>
-        <span style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: tokens.transition.fast }}>
-          ›
-        </span>
       </button>
-      {expanded && (
-        <div style={{ padding: `${tokens.space[3]} ${tokens.space[4]}` }}>
-          {children}
-        </div>
-      )}
+      {expanded && <div className="sprint-detail__section-body">{children}</div>}
     </div>
   )
 }
 
-interface MetadataRowProps {
-  icon?: React.ComponentType<{ size: number; color?: string }>
+function MetaRow({
+  icon,
+  label,
+  value,
+  mono,
+  accent,
+  badge,
+}: {
+  icon?: React.ReactNode
   label: string
   value: string
   mono?: boolean
+  accent?: boolean
   badge?: React.ReactNode
-}
-
-function MetadataRow({ icon: Icon, label, value, mono, badge }: MetadataRowProps) {
+}) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: tokens.space[2],
-        padding: `${tokens.space[1]} 0`,
-        fontSize: tokens.size.sm,
-      }}
-    >
-      {Icon && <Icon size={14} color={tokens.color.textMuted} />}
-      <span style={{ color: tokens.color.textMuted, minWidth: '100px' }}>{label}:</span>
+    <div className="sprint-detail__meta-row">
+      {icon && <span className="sprint-detail__meta-icon">{icon}</span>}
+      <span className="sprint-detail__meta-label">{label}</span>
       <span
-        style={{
-          color: tokens.color.text,
-          fontFamily: mono ? tokens.font.code : tokens.font.ui,
-          flex: 1,
-        }}
+        className={`sprint-detail__meta-value${mono ? ' sprint-detail__meta-value--mono' : ''}${accent ? ' sprint-detail__meta-value--accent' : ''}`}
       >
         {value}
       </span>
