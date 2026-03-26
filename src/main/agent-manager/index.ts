@@ -200,6 +200,95 @@ export function createAgentManager(
     return repoPaths[repoSlug.toLowerCase()] ?? null
   }
 
+  // ---- processQueuedTask ----
+
+  async function processQueuedTask(
+    raw: Record<string, unknown>,
+    taskStatusMap: Map<string, string>,
+  ): Promise<void> {
+    // Map Queue API camelCase response to local task shape
+    // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
+    const task = {
+      id: raw.id as string,
+      title: raw.title as string,
+      prompt: (raw.prompt as string) ?? null,
+      spec: (raw.spec as string) ?? null,
+      repo: raw.repo as string,
+      retry_count: Number(raw.retryCount) || 0,
+      fast_fail_count: Number(raw.fastFailCount) || 0,
+      playground_enabled: Boolean(raw.playgroundEnabled),
+    }
+
+    // Defense-in-depth: check dependencies before claiming.
+    // Tasks created via direct API may be 'queued' with unsatisfied deps.
+    const rawDeps = raw.dependsOn ?? raw.depends_on
+    if (rawDeps) {
+      try {
+        const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
+        if (Array.isArray(deps) && deps.length > 0) {
+          const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
+            task.id,
+            deps,
+            (depId: string) => taskStatusMap.get(depId),
+          )
+          if (!satisfied) {
+            logger.info(`[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`)
+            await updateTask(task.id, {
+              status: 'blocked',
+              notes: formatBlockedNote(blockedBy),
+            }).catch(() => {})
+            return
+          }
+        }
+      } catch {
+        // If dep parsing fails, proceed without blocking
+      }
+    }
+
+    // Resolve repo path
+    const repoPath = resolveRepoPath(task.repo)
+    if (!repoPath) {
+      logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
+      return
+    }
+
+    // Claim task
+    const claimed = await claimTaskViaApi(task.id)
+    if (!claimed) {
+      logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
+      return
+    }
+
+    // Setup worktree
+    let wt: { worktreePath: string; branch: string }
+    try {
+      wt = await setupWorktree({
+        repoPath,
+        worktreeBase: config.worktreeBase,
+        taskId: task.id,
+        title: task.title,
+        logger,
+      })
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
+      await updateTask(task.id, {
+        status: 'error',
+        completed_at: new Date().toISOString(),
+        notes: `Worktree setup failed: ${errMsg}`.slice(0, 500),
+        claimed_by: null,
+      })
+      await onTaskTerminal(task.id, 'error')
+      return
+    }
+
+    // Fire-and-forget — errors logged inside runAgent
+    const p = _runAgent(task, wt, repoPath, runAgentDeps).catch((err) => {
+      logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
+    }).finally(() => { agentPromises.delete(p) })
+    agentPromises.add(p)
+  }
+
   // ---- drainLoop ----
 
   async function drainLoop(): Promise<void> {
@@ -235,89 +324,10 @@ export function createAgentManager(
         logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
         for (const raw of queued) {
           if (shuttingDown) break
-
           try {
-            // Map Queue API camelCase response to local task shape
-            // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
-            const task = {
-              id: raw.id as string,
-              title: raw.title as string,
-              prompt: (raw.prompt as string) ?? null,
-              spec: (raw.spec as string) ?? null,
-              repo: raw.repo as string,
-              retry_count: Number(raw.retryCount) || 0,
-              fast_fail_count: Number(raw.fastFailCount) || 0,
-              playground_enabled: Boolean(raw.playgroundEnabled),
-            }
-
-            // Defense-in-depth: check dependencies before claiming.
-            // Tasks created via direct API may be 'queued' with unsatisfied deps.
-            const rawDeps = (raw as Record<string, unknown>).dependsOn ?? (raw as Record<string, unknown>).depends_on
-            if (rawDeps) {
-              try {
-                const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
-                if (Array.isArray(deps) && deps.length > 0) {
-                  const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
-                    task.id,
-                    deps,
-                    (depId: string) => taskStatusMap.get(depId),
-                  )
-                  if (!satisfied) {
-                    logger.info(`[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`)
-                    await updateTask(task.id, {
-                      status: 'blocked',
-                      notes: formatBlockedNote(blockedBy),
-                    }).catch(() => {})
-                    continue
-                  }
-                }
-              } catch {
-                // If dep parsing fails, proceed without blocking
-              }
-            }
-
-            const repoPath = resolveRepoPath(task.repo)
-            if (!repoPath) {
-              logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
-              continue
-            }
-
-            const claimed = await claimTaskViaApi(task.id)
-            if (!claimed) {
-              logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
-              continue
-            }
-
-            let wt: { worktreePath: string; branch: string }
-            try {
-              wt = await setupWorktree({
-                repoPath,
-                worktreeBase: config.worktreeBase,
-                taskId: task.id,
-                title: task.title,
-                logger,
-              })
-            } catch (err) {
-              const errMsg = err instanceof Error ? err.message : String(err)
-              logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
-              await updateTask(task.id, {
-                status: 'error',
-                completed_at: new Date().toISOString(),
-                notes: `Worktree setup failed: ${errMsg}`.slice(0, 500),
-                claimed_by: null,
-              })
-              await onTaskTerminal(task.id, 'error')
-              continue
-            }
-
-            // Fire-and-forget — errors logged inside runAgent
-            const p = _runAgent(task, wt, repoPath, runAgentDeps).catch((err) => {
-              logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
-            }).finally(() => { agentPromises.delete(p) })
-            agentPromises.add(p)
+            await processQueuedTask(raw, taskStatusMap)
           } catch (err) {
-            logger.error(`[agent-manager] Failed to process task ${raw.id}: ${err}`)
-            continue
+            logger.error(`[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`)
           }
         }
       } catch (err) {
