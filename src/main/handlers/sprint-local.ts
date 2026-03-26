@@ -62,8 +62,8 @@ export async function updateTask(id: string, patch: Record<string, unknown>): Pr
   return result
 }
 
-export async function releaseTask(id: string): Promise<SprintTask | null> {
-  const result = await _releaseTask(id)
+export async function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
+  const result = await _releaseTask(id, claimedBy)
   if (result) notifySprintMutation('updated', result)
   return result
 }

@@ -427,12 +427,32 @@ export async function handleClaim(
 }
 
 export async function handleRelease(
+  req: http.IncomingMessage,
   res: http.ServerResponse,
   id: string
 ): Promise<void> {
-  const released = await releaseTask(id)
+  let body: unknown
+  try {
+    body = await parseBody(req, res)
+  } catch {
+    sendJson(res, 400, { error: 'Invalid JSON body' })
+    return
+  }
+
+  if (!body || typeof body !== 'object') {
+    sendJson(res, 400, { error: 'Request body must be a JSON object' })
+    return
+  }
+
+  const claimedBy = (body as Record<string, unknown>).claimed_by as string
+  if (typeof claimedBy !== 'string' || !claimedBy.trim()) {
+    sendJson(res, 400, { error: 'claimed_by is required for release' })
+    return
+  }
+
+  const released = await releaseTask(id, claimedBy)
   if (!released) {
-    sendJson(res, 409, { error: `Task ${id} is not releasable (not active or does not exist)` })
+    sendJson(res, 409, { error: `Task ${id} is not releasable (not active, not owned by caller, or does not exist)` })
     return
   }
   sendJson(res, 200, toCamelCase(released))

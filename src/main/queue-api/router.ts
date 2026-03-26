@@ -108,7 +108,7 @@ export async function route(
   // POST /queue/tasks/:id/release
   params = matchRoute('/queue/tasks/:id/release', path)
   if (method === 'POST' && params) {
-    return tasks.handleRelease(res, params['id'])
+    return tasks.handleRelease(req, res, params['id'])
   }
 
   // POST /queue/tasks/:id/output

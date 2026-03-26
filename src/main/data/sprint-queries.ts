@@ -205,12 +205,13 @@ export async function claimTask(
   return data ? sanitizeTask(data) : null
 }
 
-export async function releaseTask(id: string): Promise<SprintTask | null> {
+export async function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
   const { data, error } = await getSupabaseClient()
     .from('sprint_tasks')
     .update({ status: 'queued', claimed_by: null, started_at: null, agent_run_id: null })
     .eq('id', id)
     .eq('status', 'active')
+    .eq('claimed_by', claimedBy)
     .select()
     .single()
 

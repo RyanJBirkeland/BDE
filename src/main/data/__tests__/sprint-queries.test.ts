@@ -204,7 +204,7 @@ describe('releaseTask', () => {
     ;(chain.single as ReturnType<typeof vi.fn>).mockResolvedValue({ data: released, error: null })
     mockUpdate.mockReturnValue(chain)
 
-    const result = await releaseTask('t1')
+    const result = await releaseTask('t1', 'exec-1')
     // sanitizeTask adds depends_on: null when not present
     expect(result).toEqual({ ...released, depends_on: null })
   })
