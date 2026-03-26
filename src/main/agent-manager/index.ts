@@ -327,6 +327,11 @@ export function createAgentManager(
         logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
         for (const raw of queued) {
           if (shuttingDown) break
+          // Re-check slots before each task — an earlier iteration may have filled a slot
+          if (availableSlots(concurrency, activeAgents.size) <= 0) {
+            logger.info('[agent-manager] No slots available — stopping drain iteration')
+            break
+          }
           try {
             await processQueuedTask(raw, taskStatusMap)
           } catch (err) {
