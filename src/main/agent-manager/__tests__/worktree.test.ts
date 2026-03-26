@@ -266,7 +266,7 @@ describe('setupWorktree', () => {
     expect(forceRemoveCall).toBeDefined()
   })
 
-  it('pushes unpushed commits before deleting stale branch', async () => {
+  it('does not push before deleting stale branch (agent branches are throwaway)', async () => {
     const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
     const branch = 'agent/push-test-task-pus'
 
@@ -285,12 +285,6 @@ describe('setupWorktree', () => {
         }
       }
 
-      // rev-list returns 3 unpushed commits
-      if (gitArgs[0] === 'rev-list' && gitArgs[1] === '--count') {
-        if (typeof cb === 'function') cb(null, { stdout: '3', stderr: '' })
-        return Object.assign(Promise.resolve({ stdout: '3', stderr: '' }), { child: null }) as unknown as ChildProcess
-      }
-
       // Everything else succeeds
       if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
       return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
@@ -305,14 +299,16 @@ describe('setupWorktree', () => {
     })
 
     expect(result.branch).toBe(branch)
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('unpushed commits')
-    )
-    // Verify push was called
+    // Verify NO push was attempted (agent branches are throwaway)
     const pushCall = execFileMock.mock.calls.find(
       (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'push'
     )
-    expect(pushCall).toBeDefined()
+    expect(pushCall).toBeUndefined()
+    // Verify NO rev-list check for unpushed commits
+    const revListCall = execFileMock.mock.calls.find(
+      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'rev-list'
+    )
+    expect(revListCall).toBeUndefined()
   })
 
   it('throws original error for non-branch-exists failures', async () => {
