@@ -12,7 +12,7 @@ const reviews = [
     state: 'APPROVED' as const,
     body: 'LGTM',
     submitted_at: new Date().toISOString(),
-    html_url: '',
+    html_url: ''
   },
   {
     id: 2,
@@ -20,7 +20,7 @@ const reviews = [
     state: 'CHANGES_REQUESTED' as const,
     body: 'Fix types',
     submitted_at: new Date().toISOString(),
-    html_url: '',
+    html_url: ''
   },
   {
     id: 3,
@@ -28,8 +28,8 @@ const reviews = [
     state: 'COMMENTED' as const,
     body: 'Hmm',
     submitted_at: new Date(Date.now() - 60000).toISOString(),
-    html_url: '',
-  },
+    html_url: ''
+  }
 ]
 
 describe('PRStationReviews', () => {

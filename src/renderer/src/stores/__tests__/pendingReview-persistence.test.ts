@@ -13,7 +13,7 @@ function makeComment(id: string): PendingComment {
     path: 'src/foo.ts',
     line: 10,
     side: 'RIGHT',
-    body: `Comment ${id}`,
+    body: `Comment ${id}`
   }
 }
 

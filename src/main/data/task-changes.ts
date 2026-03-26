@@ -20,7 +20,7 @@ export function recordTaskChanges(
   oldTask: Record<string, unknown>,
   newPatch: Record<string, unknown>,
   changedBy: string = 'unknown',
-  db?: Database.Database,
+  db?: Database.Database
 ): void {
   const conn = db ?? getDb()
   const stmt = conn.prepare(
@@ -46,21 +46,18 @@ export function recordTaskChanges(
 export function getTaskChanges(
   taskId: string,
   limit: number = 50,
-  db?: Database.Database,
+  db?: Database.Database
 ): TaskChange[] {
   const conn = db ?? getDb()
-  return conn.prepare(
-    'SELECT * FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC LIMIT ?'
-  ).all(taskId, limit) as TaskChange[]
+  return conn
+    .prepare('SELECT * FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC LIMIT ?')
+    .all(taskId, limit) as TaskChange[]
 }
 
 /**
  * Prune old change records (keep last 30 days).
  */
-export function pruneOldChanges(
-  daysToKeep: number = 30,
-  db?: Database.Database,
-): number {
+export function pruneOldChanges(daysToKeep: number = 30, db?: Database.Database): number {
   const conn = db ?? getDb()
   const cutoff = new Date(Date.now() - daysToKeep * 86400000).toISOString()
   const result = conn.prepare('DELETE FROM task_changes WHERE changed_at < ?').run(cutoff)

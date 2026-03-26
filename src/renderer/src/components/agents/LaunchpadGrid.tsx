@@ -12,13 +12,52 @@ interface LaunchpadGridProps {
   onSelectRecent: (recent: RecentTask) => void
 }
 
-const ACCENT_VARS: Record<NeonAccent, { bg: string; border: string; color: string; glow: string; hover: string }> = {
-  cyan: { bg: 'rgba(0,255,255,0.06)', border: 'var(--neon-cyan-border)', color: 'var(--neon-cyan)', glow: 'rgba(0,255,255,0.15)', hover: 'rgba(0,255,255,0.3)' },
-  pink: { bg: 'rgba(255,0,255,0.06)', border: 'var(--neon-pink-border)', color: 'var(--neon-pink)', glow: 'rgba(255,0,255,0.15)', hover: 'rgba(255,0,255,0.3)' },
-  blue: { bg: 'rgba(100,100,255,0.06)', border: 'var(--neon-blue-border)', color: 'var(--neon-blue)', glow: 'rgba(100,100,255,0.15)', hover: 'rgba(100,100,255,0.3)' },
-  purple: { bg: 'rgba(138,43,226,0.06)', border: 'var(--neon-purple-border)', color: 'var(--neon-purple)', glow: 'rgba(138,43,226,0.15)', hover: 'rgba(138,43,226,0.3)' },
-  orange: { bg: 'rgba(255,165,0,0.06)', border: 'var(--neon-orange-border)', color: 'var(--neon-orange)', glow: 'rgba(255,165,0,0.15)', hover: 'rgba(255,165,0,0.3)' },
-  red: { bg: 'rgba(255,80,80,0.06)', border: 'var(--neon-red-border)', color: 'var(--neon-red)', glow: 'rgba(255,80,80,0.15)', hover: 'rgba(255,80,80,0.3)' },
+const ACCENT_VARS: Record<
+  NeonAccent,
+  { bg: string; border: string; color: string; glow: string; hover: string }
+> = {
+  cyan: {
+    bg: 'rgba(0,255,255,0.06)',
+    border: 'var(--neon-cyan-border)',
+    color: 'var(--neon-cyan)',
+    glow: 'rgba(0,255,255,0.15)',
+    hover: 'rgba(0,255,255,0.3)'
+  },
+  pink: {
+    bg: 'rgba(255,0,255,0.06)',
+    border: 'var(--neon-pink-border)',
+    color: 'var(--neon-pink)',
+    glow: 'rgba(255,0,255,0.15)',
+    hover: 'rgba(255,0,255,0.3)'
+  },
+  blue: {
+    bg: 'rgba(100,100,255,0.06)',
+    border: 'var(--neon-blue-border)',
+    color: 'var(--neon-blue)',
+    glow: 'rgba(100,100,255,0.15)',
+    hover: 'rgba(100,100,255,0.3)'
+  },
+  purple: {
+    bg: 'rgba(138,43,226,0.06)',
+    border: 'var(--neon-purple-border)',
+    color: 'var(--neon-purple)',
+    glow: 'rgba(138,43,226,0.15)',
+    hover: 'rgba(138,43,226,0.3)'
+  },
+  orange: {
+    bg: 'rgba(255,165,0,0.06)',
+    border: 'var(--neon-orange-border)',
+    color: 'var(--neon-orange)',
+    glow: 'rgba(255,165,0,0.15)',
+    hover: 'rgba(255,165,0,0.3)'
+  },
+  red: {
+    bg: 'rgba(255,80,80,0.06)',
+    border: 'var(--neon-red-border)',
+    color: 'var(--neon-red)',
+    glow: 'rgba(255,80,80,0.15)',
+    hover: 'rgba(255,80,80,0.3)'
+  }
 }
 
 function formatRelativeTime(ts: number): string {
@@ -36,7 +75,7 @@ export function LaunchpadGrid({
   recents,
   onSelectTemplate,
   onCustomPrompt,
-  onSelectRecent,
+  onSelectRecent
 }: LaunchpadGridProps) {
   const repos = useRepoOptions()
   const [prompt, setPrompt] = useState('')
@@ -50,7 +89,7 @@ export function LaunchpadGrid({
         onCustomPrompt(prompt.trim(), repo, model)
       }
     },
-    [prompt, repo, model, onCustomPrompt],
+    [prompt, repo, model, onCustomPrompt]
   )
 
   return (
@@ -71,13 +110,15 @@ export function LaunchpadGrid({
               key={t.id}
               type="button"
               className="launchpad__tile"
-              style={{
-                '--tile-bg': vars.bg,
-                '--tile-border': vars.border,
-                '--tile-color': vars.color,
-                '--tile-glow': vars.glow,
-                '--tile-hover-border': vars.hover,
-              } as React.CSSProperties}
+              style={
+                {
+                  '--tile-bg': vars.bg,
+                  '--tile-border': vars.border,
+                  '--tile-color': vars.color,
+                  '--tile-glow': vars.glow,
+                  '--tile-hover-border': vars.hover
+                } as React.CSSProperties
+              }
               onClick={() => onSelectTemplate(t)}
             >
               <div className="launchpad__tile-icon">{t.icon}</div>

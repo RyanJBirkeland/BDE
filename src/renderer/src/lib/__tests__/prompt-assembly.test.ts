@@ -10,10 +10,10 @@ const mockTemplate: PromptTemplate = {
   description: 'Test template',
   questions: [
     { id: 'scope', label: 'Scope?', type: 'choice', choices: ['All', 'Some'] },
-    { id: 'focus', label: 'Focus?', type: 'text' },
+    { id: 'focus', label: 'Focus?', type: 'text' }
   ],
   promptTemplate: 'Audit {{scope}} focusing on {{focus}}.',
-  order: 0,
+  order: 0
 }
 
 describe('assemblePrompt', () => {
@@ -25,7 +25,7 @@ describe('assemblePrompt', () => {
   it('replaces multiple occurrences of the same variable', () => {
     const template: PromptTemplate = {
       ...mockTemplate,
-      promptTemplate: '{{scope}} first, then {{scope}} again.',
+      promptTemplate: '{{scope}} first, then {{scope}} again.'
     }
     const result = assemblePrompt(template, { scope: 'All' })
     expect(result).toBe('All first, then All again.')
@@ -39,7 +39,7 @@ describe('assemblePrompt', () => {
   it('trims leading/trailing whitespace from result', () => {
     const template: PromptTemplate = {
       ...mockTemplate,
-      promptTemplate: '  {{scope}}  ',
+      promptTemplate: '  {{scope}}  '
     }
     const result = assemblePrompt(template, { scope: 'All' })
     expect(result).toBe('All')
@@ -48,7 +48,7 @@ describe('assemblePrompt', () => {
   it('collapses triple+ newlines left by empty optional fields', () => {
     const template: PromptTemplate = {
       ...mockTemplate,
-      promptTemplate: 'Line one.\n\n{{focus}}\n\nLine three.',
+      promptTemplate: 'Line one.\n\n{{focus}}\n\nLine three.'
     }
     const result = assemblePrompt(template, { focus: '' })
     expect(result).toBe('Line one.\n\nLine three.')
@@ -69,19 +69,19 @@ describe('migrateHistory', () => {
       prompt: 'Fix the bug',
       repo: '',
       model: '',
-      timestamp: 0,
+      timestamp: 0
     })
     expect(result[1]).toEqual({
       prompt: 'Add feature',
       repo: '',
       model: '',
-      timestamp: 0,
+      timestamp: 0
     })
   })
 
   it('returns RecentTask[] as-is if already migrated', () => {
     const already: RecentTask[] = [
-      { prompt: 'Fix bug', repo: 'BDE', model: 'sonnet', timestamp: 1000 },
+      { prompt: 'Fix bug', repo: 'BDE', model: 'sonnet', timestamp: 1000 }
     ]
     const result = migrateHistory(already)
     expect(result).toEqual(already)

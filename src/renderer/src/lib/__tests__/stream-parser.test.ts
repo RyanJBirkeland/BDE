@@ -38,7 +38,7 @@ describe('parseStreamJson', () => {
       const input = [
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'Hello' } }),
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: ' world' } }),
-        evt({ type: 'content_block_stop' }),
+        evt({ type: 'content_block_stop' })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -47,7 +47,7 @@ describe('parseStreamJson', () => {
 
     it('flushes trailing text as streaming when no stop event', () => {
       const input = [
-        evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'partial' } }),
+        evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'partial' } })
       ].join('\n')
 
       const { items, isStreaming } = parseStreamJson(input)
@@ -58,7 +58,7 @@ describe('parseStreamJson', () => {
     it('ignores deltas with non-text_delta type', () => {
       const input = [
         evt({ type: 'content_block_delta', delta: { type: 'other_delta', text: 'ignored' } }),
-        evt({ type: 'content_block_stop' }),
+        evt({ type: 'content_block_stop' })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -75,8 +75,8 @@ describe('parseStreamJson', () => {
           type: 'tool_use',
           id: 'toolu_01',
           name: 'Read',
-          input: {},
-        },
+          input: {}
+        }
       })
 
       const { items } = parseStreamJson(input)
@@ -85,7 +85,7 @@ describe('parseStreamJson', () => {
         kind: 'tool_use',
         id: 'toolu_01',
         name: 'Read',
-        input: '{}',
+        input: '{}'
       })
     })
 
@@ -94,8 +94,8 @@ describe('parseStreamJson', () => {
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'Thinking...' } }),
         evt({
           type: 'content_block_start',
-          content_block: { type: 'tool_use', id: 'toolu_02', name: 'Bash', input: '' },
-        }),
+          content_block: { type: 'tool_use', id: 'toolu_02', name: 'Bash', input: '' }
+        })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -107,7 +107,7 @@ describe('parseStreamJson', () => {
     it('handles content_block_start with non-tool_use type (no-op)', () => {
       const input = evt({
         type: 'content_block_start',
-        content_block: { type: 'text', text: '' },
+        content_block: { type: 'text', text: '' }
       })
 
       const { items } = parseStreamJson(input)
@@ -125,17 +125,17 @@ describe('parseStreamJson', () => {
       const input = [
         evt({
           type: 'content_block_start',
-          content_block: { type: 'tool_use', id: 'toolu_03', name: 'Edit', input: '' },
+          content_block: { type: 'tool_use', id: 'toolu_03', name: 'Edit', input: '' }
         }),
         evt({
           type: 'content_block_delta',
-          delta: { type: 'input_json_delta', partial_json: '{"file' },
+          delta: { type: 'input_json_delta', partial_json: '{"file' }
         }),
         evt({
           type: 'content_block_delta',
-          delta: { type: 'input_json_delta', partial_json: '":"a.ts"}' },
+          delta: { type: 'input_json_delta', partial_json: '":"a.ts"}' }
         }),
-        evt({ type: 'content_block_stop' }),
+        evt({ type: 'content_block_stop' })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -151,7 +151,7 @@ describe('parseStreamJson', () => {
     it('finalizes accumulated text into a text item', () => {
       const input = [
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'done' } }),
-        evt({ type: 'content_block_stop' }),
+        evt({ type: 'content_block_stop' })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -171,7 +171,7 @@ describe('parseStreamJson', () => {
       const input = [
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'hi' } }),
         evt({ type: 'content_block_stop' }),
-        evt({ type: 'message_delta', delta: { stop_reason: 'end_turn' } }),
+        evt({ type: 'message_delta', delta: { stop_reason: 'end_turn' } })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -186,7 +186,7 @@ describe('parseStreamJson', () => {
       const input = [
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'hi' } }),
         evt({ type: 'content_block_stop' }),
-        evt({ type: 'message_stop' }),
+        evt({ type: 'message_stop' })
       ].join('\n')
 
       const { items, isStreaming } = parseStreamJson(input)
@@ -201,12 +201,12 @@ describe('parseStreamJson', () => {
         type: 'result',
         subtype: 'success',
         result: 'Task completed',
-        cost_usd: 0.042,
+        cost_usd: 0.042
       })
 
       const { items, isStreaming } = parseStreamJson(input)
       expect(items).toEqual([
-        { kind: 'result', subtype: 'success', result: 'Task completed', costUsd: 0.042 },
+        { kind: 'result', subtype: 'success', result: 'Task completed', costUsd: 0.042 }
       ])
       expect(isStreaming).toBe(false)
     })
@@ -220,7 +220,7 @@ describe('parseStreamJson', () => {
     it('flushes accumulated text before result', () => {
       const input = [
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'working...' } }),
-        evt({ type: 'result', subtype: 'success', result: 'done', cost_usd: 0.01 }),
+        evt({ type: 'result', subtype: 'success', result: 'done', cost_usd: 0.01 })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -243,10 +243,10 @@ describe('parseStreamJson', () => {
           message: {
             content: [
               { type: 'text', text: 'Authoritative response' },
-              { type: 'tool_use', id: 'toolu_10', name: 'Bash', input: { command: 'ls' } },
-            ],
-          },
-        }),
+              { type: 'tool_use', id: 'toolu_10', name: 'Bash', input: { command: 'ls' } }
+            ]
+          }
+        })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -257,7 +257,7 @@ describe('parseStreamJson', () => {
         kind: 'tool_use',
         id: 'toolu_10',
         name: 'Bash',
-        input: JSON.stringify({ command: 'ls' }, null, 2),
+        input: JSON.stringify({ command: 'ls' }, null, 2)
       })
     })
 
@@ -267,9 +267,9 @@ describe('parseStreamJson', () => {
         message: {
           content: [
             { type: 'text', text: '   ' },
-            { type: 'text', text: 'Real content' },
-          ],
-        },
+            { type: 'text', text: 'Real content' }
+          ]
+        }
       })
 
       const { items } = parseStreamJson(input)
@@ -288,8 +288,8 @@ describe('parseStreamJson', () => {
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'delta' } }),
         evt({
           type: 'assistant',
-          message: { content: [{ type: 'text', text: 'final' }] },
-        }),
+          message: { content: [{ type: 'text', text: 'final' }] }
+        })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -307,7 +307,7 @@ describe('parseStreamJson', () => {
         type: 'tool_use',
         id: 'toolu_05',
         name: 'Grep',
-        input: { pattern: 'foo', path: '.' },
+        input: { pattern: 'foo', path: '.' }
       })
 
       const { items } = parseStreamJson(input)
@@ -316,8 +316,8 @@ describe('parseStreamJson', () => {
           kind: 'tool_use',
           id: 'toolu_05',
           name: 'Grep',
-          input: JSON.stringify({ pattern: 'foo', path: '.' }, null, 2),
-        },
+          input: JSON.stringify({ pattern: 'foo', path: '.' }, null, 2)
+        }
       ])
     })
 
@@ -346,7 +346,7 @@ describe('parseStreamJson', () => {
       const input = evt({ type: 'tool_result', tool_use_id: 'toolu_t1', content: 'file contents' })
       const { items } = parseStreamJson(input)
       expect(items).toEqual([
-        { kind: 'tool_result', toolUseId: 'toolu_t1', content: 'file contents' },
+        { kind: 'tool_result', toolUseId: 'toolu_t1', content: 'file contents' }
       ])
     })
 
@@ -354,12 +354,12 @@ describe('parseStreamJson', () => {
       const input = evt({
         type: 'tool_result',
         tool_use_id: 'toolu_t2',
-        content: { data: 123 },
+        content: { data: 123 }
       })
       const { items } = parseStreamJson(input)
       expect(items[0]).toMatchObject({
         kind: 'tool_result',
-        content: JSON.stringify({ data: 123 }),
+        content: JSON.stringify({ data: 123 })
       })
     })
   })
@@ -376,7 +376,7 @@ describe('parseStreamJson', () => {
       const input = [
         'Starting agent...',
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'hi' } }),
-        evt({ type: 'content_block_stop' }),
+        evt({ type: 'content_block_stop' })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -398,7 +398,7 @@ describe('parseStreamJson', () => {
       const input = [
         '{broken json',
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'ok' } }),
-        evt({ type: 'content_block_stop' }),
+        evt({ type: 'content_block_stop' })
       ].join('\n')
 
       const { items } = parseStreamJson(input)
@@ -413,7 +413,7 @@ describe('parseStreamJson', () => {
     it('is true when items exist but no stop/result event', () => {
       const input = evt({
         type: 'content_block_delta',
-        delta: { type: 'text_delta', text: 'streaming...' },
+        delta: { type: 'text_delta', text: 'streaming...' }
       })
       expect(parseStreamJson(input).isStreaming).toBe(true)
     })
@@ -422,7 +422,7 @@ describe('parseStreamJson', () => {
       const input = [
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'done' } }),
         evt({ type: 'content_block_stop' }),
-        evt({ type: 'message_stop' }),
+        evt({ type: 'message_stop' })
       ].join('\n')
       expect(parseStreamJson(input).isStreaming).toBe(false)
     })
@@ -442,7 +442,7 @@ describe('parseStreamJson', () => {
     it('unwraps events from stream_event wrapper', () => {
       const wrapped = JSON.stringify({
         type: 'stream_event',
-        event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'wrapped' } },
+        event: { type: 'content_block_delta', delta: { type: 'text_delta', text: 'wrapped' } }
       })
       const { items } = parseStreamJson(wrapped)
       expect(items).toEqual([{ kind: 'text', text: 'wrapped' }])
@@ -451,7 +451,7 @@ describe('parseStreamJson', () => {
     it('handles bare events without stream_event wrapper', () => {
       const bare = JSON.stringify({
         type: 'content_block_delta',
-        delta: { type: 'text_delta', text: 'bare' },
+        delta: { type: 'text_delta', text: 'bare' }
       })
       const { items } = parseStreamJson(bare)
       expect(items).toEqual([{ kind: 'text', text: 'bare' }])
@@ -468,13 +468,13 @@ describe('parseStreamJson', () => {
         evt({ type: 'content_block_stop' }),
         evt({
           type: 'content_block_start',
-          content_block: { type: 'tool_use', id: 'toolu_20', name: 'Read', input: '' },
+          content_block: { type: 'tool_use', id: 'toolu_20', name: 'Read', input: '' }
         }),
         evt({ type: 'content_block_stop' }),
         evt({ type: 'tool_result', tool_use_id: 'toolu_20', content: 'file contents here' }),
         evt({ type: 'content_block_delta', delta: { type: 'text_delta', text: 'Done!' } }),
         evt({ type: 'content_block_stop' }),
-        evt({ type: 'message_stop' }),
+        evt({ type: 'message_stop' })
       ].join('\n')
 
       const { items, isStreaming } = parseStreamJson(input)
@@ -482,7 +482,7 @@ describe('parseStreamJson', () => {
         { kind: 'text', text: 'I will read the file.' },
         { kind: 'tool_use', id: 'toolu_20', name: 'Read', input: '' },
         { kind: 'tool_result', toolUseId: 'toolu_20', content: 'file contents here' },
-        { kind: 'text', text: 'Done!' },
+        { kind: 'text', text: 'Done!' }
       ])
       expect(isStreaming).toBe(false)
     })

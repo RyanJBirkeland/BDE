@@ -25,7 +25,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: '2024-03-20T10:00:00Z',
     created_at: '2024-03-20T09:00:00Z',
-    ...overrides,
+    ...overrides
   } as SprintTask
 }
 

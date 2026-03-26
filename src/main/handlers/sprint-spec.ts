@@ -75,16 +75,14 @@ export function getTemplateScaffold(templateHint: string): string {
     performance: `## What's Slow\n\n## Approach\n\n## Files to Change\n\n## How to Verify`,
     ux: `## UX Problem\n\n## Target Design\n\n## Files to Change (CSS + TSX)\n\n## Out of Scope`,
     audit: `## Audit Scope\n\n## Criteria\n\n## Deliverable`,
-    infra: `## What's Being Changed\n\n## Steps\n\n## Verification`,
+    infra: `## What's Being Changed\n\n## Steps\n\n## Verification`
   }
   return SCAFFOLDS[templateHint] ?? SCAFFOLDS.feature
 }
 
 // --- Local prompt generation ---
 
-export function generatePrompt(
-  args: GeneratePromptRequest
-): GeneratePromptResponse {
+export function generatePrompt(args: GeneratePromptRequest): GeneratePromptResponse {
   const { taskId, title, repo, templateHint } = args
   const templateScaffold = getTemplateScaffold(templateHint)
   const prompt = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)

@@ -48,7 +48,19 @@ export function groupAgents(agents: AgentMeta[]): AgentGroups {
   return { running, recent, history }
 }
 
-function GroupHeader({ label, count, open, onToggle, showPulse }: { label: string; count: number; open: boolean; onToggle: () => void; showPulse?: boolean }) {
+function GroupHeader({
+  label,
+  count,
+  open,
+  onToggle,
+  showPulse
+}: {
+  label: string
+  count: number
+  open: boolean
+  onToggle: () => void
+  showPulse?: boolean
+}) {
   return (
     <button
       onClick={onToggle}
@@ -64,10 +76,16 @@ function GroupHeader({ label, count, open, onToggle, showPulse }: { label: strin
         color: neonVar('purple', 'color'),
         fontSize: tokens.size.xs,
         textTransform: 'uppercase',
-        letterSpacing: '0.05em',
+        letterSpacing: '0.05em'
       }}
     >
-      <ChevronRight size={12} style={{ transform: open ? 'rotate(90deg)' : undefined, transition: tokens.transition.fast }} />
+      <ChevronRight
+        size={12}
+        style={{
+          transform: open ? 'rotate(90deg)' : undefined,
+          transition: tokens.transition.fast
+        }}
+      />
       {showPulse && (
         <span
           style={{
@@ -76,7 +94,7 @@ function GroupHeader({ label, count, open, onToggle, showPulse }: { label: strin
             borderRadius: tokens.radius.full,
             background: neonVar('cyan', 'color'),
             boxShadow: `0 0 8px ${neonVar('cyan', 'glow')}`,
-            animation: 'pulse 2s infinite',
+            animation: 'pulse 2s infinite'
           }}
         />
       )}
@@ -94,38 +112,53 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
   const filtered = useMemo(() => {
     if (!searchText) return agents
     const lower = searchText.toLowerCase()
-    return agents.filter((a) =>
-      a.task.toLowerCase().includes(lower) ||
-      a.repo.toLowerCase().includes(lower) ||
-      a.model.toLowerCase().includes(lower)
+    return agents.filter(
+      (a) =>
+        a.task.toLowerCase().includes(lower) ||
+        a.repo.toLowerCase().includes(lower) ||
+        a.model.toLowerCase().includes(lower)
     )
   }, [agents, searchText])
 
   const groups = useMemo(() => groupAgents(filtered), [filtered])
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      background: `linear-gradient(180deg, rgba(88, 28, 135, 0.1) 0%, rgba(10, 0, 21, 0.6) 100%)`,
-      backdropFilter: 'var(--neon-glass-blur)',
-      WebkitBackdropFilter: 'var(--neon-glass-blur)',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        background: `linear-gradient(180deg, rgba(88, 28, 135, 0.1) 0%, rgba(10, 0, 21, 0.6) 100%)`,
+        backdropFilter: 'var(--neon-glass-blur)',
+        WebkitBackdropFilter: 'var(--neon-glass-blur)'
+      }}
+    >
       {/* Search */}
-      <div style={{ padding: tokens.space[2], borderBottom: `1px solid ${neonVar('purple', 'border')}` }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: tokens.space[2],
-          padding: `${tokens.space[1]} ${tokens.space[2]}`,
-          background: 'rgba(10, 0, 21, 0.4)',
-          borderRadius: tokens.radius.sm,
-          border: searchFocused ? `1px solid ${neonVar('purple', 'color')}` : `1px solid ${tokens.color.border}`,
-          boxShadow: searchFocused ? `0 0 12px ${neonVar('purple', 'glow')}` : 'none',
-          transition: tokens.transition.fast,
-        }}>
-          <Search size={12} color={searchFocused ? neonVar('purple', 'color') : tokens.color.textDim} />
+      <div
+        style={{
+          padding: tokens.space[2],
+          borderBottom: `1px solid ${neonVar('purple', 'border')}`
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.space[2],
+            padding: `${tokens.space[1]} ${tokens.space[2]}`,
+            background: 'rgba(10, 0, 21, 0.4)',
+            borderRadius: tokens.radius.sm,
+            border: searchFocused
+              ? `1px solid ${neonVar('purple', 'color')}`
+              : `1px solid ${tokens.color.border}`,
+            boxShadow: searchFocused ? `0 0 12px ${neonVar('purple', 'glow')}` : 'none',
+            transition: tokens.transition.fast
+          }}
+        >
+          <Search
+            size={12}
+            color={searchFocused ? neonVar('purple', 'color') : tokens.color.textDim}
+          />
           <input
             type="text"
             value={searchText}
@@ -139,7 +172,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
               border: 'none',
               color: tokens.color.text,
               fontSize: tokens.size.sm,
-              outline: 'none',
+              outline: 'none'
             }}
           />
         </div>
@@ -148,7 +181,14 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
       {/* Agent groups */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         {loading && agents.length === 0 && (
-          <div style={{ padding: tokens.space[2], display: 'flex', flexDirection: 'column', gap: tokens.space[2] }}>
+          <div
+            style={{
+              padding: tokens.space[2],
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokens.space[2]
+            }}
+          >
             <div className="bde-skeleton" style={{ height: 56 }} />
             <div className="bde-skeleton" style={{ height: 56 }} />
             <div className="bde-skeleton" style={{ height: 56 }} />
@@ -158,33 +198,73 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
 
         {groups.running.length > 0 && (
           <div>
-            <GroupHeader label="Running" count={groups.running.length} open onToggle={() => {}} showPulse />
+            <GroupHeader
+              label="Running"
+              count={groups.running.length}
+              open
+              onToggle={() => {}}
+              showPulse
+            />
             {groups.running.map((a) => (
-              <AgentCard key={a.id} agent={a} selected={a.id === selectedId} onClick={() => onSelect(a.id)} />
+              <AgentCard
+                key={a.id}
+                agent={a}
+                selected={a.id === selectedId}
+                onClick={() => onSelect(a.id)}
+              />
             ))}
           </div>
         )}
 
         {groups.recent.length > 0 && (
           <div>
-            <GroupHeader label="Recent" count={groups.recent.length} open onToggle={() => {}} showPulse={false} />
+            <GroupHeader
+              label="Recent"
+              count={groups.recent.length}
+              open
+              onToggle={() => {}}
+              showPulse={false}
+            />
             {groups.recent.map((a) => (
-              <AgentCard key={a.id} agent={a} selected={a.id === selectedId} onClick={() => onSelect(a.id)} />
+              <AgentCard
+                key={a.id}
+                agent={a}
+                selected={a.id === selectedId}
+                onClick={() => onSelect(a.id)}
+              />
             ))}
           </div>
         )}
 
         {groups.history.length > 0 && (
           <div>
-            <GroupHeader label="History" count={groups.history.length} open={historyOpen} onToggle={() => setHistoryOpen((v) => !v)} />
-            {historyOpen && groups.history.map((a) => (
-              <AgentCard key={a.id} agent={a} selected={a.id === selectedId} onClick={() => onSelect(a.id)} />
-            ))}
+            <GroupHeader
+              label="History"
+              count={groups.history.length}
+              open={historyOpen}
+              onToggle={() => setHistoryOpen((v) => !v)}
+            />
+            {historyOpen &&
+              groups.history.map((a) => (
+                <AgentCard
+                  key={a.id}
+                  agent={a}
+                  selected={a.id === selectedId}
+                  onClick={() => onSelect(a.id)}
+                />
+              ))}
           </div>
         )}
 
         {filtered.length === 0 && (
-          <div style={{ padding: tokens.space[4], textAlign: 'center', color: tokens.color.textDim, fontSize: tokens.size.sm }}>
+          <div
+            style={{
+              padding: tokens.space[4],
+              textAlign: 'center',
+              color: tokens.color.textDim,
+              fontSize: tokens.size.sm
+            }}
+          >
             No agents found
           </div>
         )}

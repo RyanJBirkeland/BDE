@@ -14,7 +14,7 @@ interface PRStationFiltersProps {
 const SORT_OPTIONS: { value: PRFilters['sort']; label: string }[] = [
   { value: 'updated', label: 'Last updated' },
   { value: 'created', label: 'Created' },
-  { value: 'title', label: 'Title' },
+  { value: 'title', label: 'Title' }
 ]
 
 export function PRStationFilters({ filters, repos, onChange }: PRStationFiltersProps) {

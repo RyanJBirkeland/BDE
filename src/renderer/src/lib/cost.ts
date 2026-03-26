@@ -7,10 +7,28 @@ export type ModelKey = 'haiku' | 'sonnet' | 'opus'
  */
 export const PRICING_VERSION = '2025-06-20'
 
-export const MODEL_PRICING: Record<ModelKey, { input: number; output: number; cacheRead?: number; cacheWrite?: number }> = {
-  haiku:  { input: 0.80 / 1_000_000, output: 4.00 / 1_000_000, cacheRead: 0.08 / 1_000_000, cacheWrite: 1.00 / 1_000_000 },
-  sonnet: { input: 3.00 / 1_000_000, output: 15.00 / 1_000_000, cacheRead: 0.30 / 1_000_000, cacheWrite: 3.75 / 1_000_000 },
-  opus:   { input: 15.00 / 1_000_000, output: 75.00 / 1_000_000, cacheRead: 1.50 / 1_000_000, cacheWrite: 18.75 / 1_000_000 },
+export const MODEL_PRICING: Record<
+  ModelKey,
+  { input: number; output: number; cacheRead?: number; cacheWrite?: number }
+> = {
+  haiku: {
+    input: 0.8 / 1_000_000,
+    output: 4.0 / 1_000_000,
+    cacheRead: 0.08 / 1_000_000,
+    cacheWrite: 1.0 / 1_000_000
+  },
+  sonnet: {
+    input: 3.0 / 1_000_000,
+    output: 15.0 / 1_000_000,
+    cacheRead: 0.3 / 1_000_000,
+    cacheWrite: 3.75 / 1_000_000
+  },
+  opus: {
+    input: 15.0 / 1_000_000,
+    output: 75.0 / 1_000_000,
+    cacheRead: 1.5 / 1_000_000,
+    cacheWrite: 18.75 / 1_000_000
+  }
 }
 
 export function resolveModel(model: string): ModelKey {
@@ -25,7 +43,7 @@ export function calcCost(
   output: number,
   modelKey: ModelKey,
   cacheRead = 0,
-  cacheCreate = 0,
+  cacheCreate = 0
 ): number {
   const p = MODEL_PRICING[modelKey]
   return (

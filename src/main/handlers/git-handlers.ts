@@ -10,7 +10,7 @@ import {
   gitCommit,
   gitPush,
   gitBranches,
-  gitCheckout,
+  gitCheckout
 } from '../git'
 import { pollPrStatuses, type PrStatusInput } from '../github-pr-status'
 import { checkConflictFiles, type ConflictFilesInput } from '../github-conflict-check'
@@ -31,7 +31,8 @@ export function registerGitHandlers(): void {
   // --- GitHub API proxy (renderer -> main -> api.github.com) ---
   safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
     const token = getGitHubToken()
-    if (!token) throw new Error('GitHub token not configured. Set it in Settings \u2192 Connections.')
+    if (!token)
+      throw new Error('GitHub token not configured. Set it in Settings \u2192 Connections.')
 
     let url: string
     if (path.startsWith('https://')) {
@@ -79,12 +80,20 @@ export function registerGitHandlers(): void {
     }
     return result.data
   })
-  safeHandle('git:stage', (_e, cwd: string, files: string[]) => gitStage(validateRepoPath(cwd), files))
-  safeHandle('git:unstage', (_e, cwd: string, files: string[]) => gitUnstage(validateRepoPath(cwd), files))
-  safeHandle('git:commit', (_e, cwd: string, message: string) => gitCommit(validateRepoPath(cwd), message))
+  safeHandle('git:stage', (_e, cwd: string, files: string[]) =>
+    gitStage(validateRepoPath(cwd), files)
+  )
+  safeHandle('git:unstage', (_e, cwd: string, files: string[]) =>
+    gitUnstage(validateRepoPath(cwd), files)
+  )
+  safeHandle('git:commit', (_e, cwd: string, message: string) =>
+    gitCommit(validateRepoPath(cwd), message)
+  )
   safeHandle('git:push', (_e, cwd: string) => gitPush(validateRepoPath(cwd)))
   safeHandle('git:branches', (_e, cwd: string) => gitBranches(validateRepoPath(cwd)))
-  safeHandle('git:checkout', (_e, cwd: string, branch: string) => gitCheckout(validateRepoPath(cwd), branch))
+  safeHandle('git:checkout', (_e, cwd: string, branch: string) =>
+    gitCheckout(validateRepoPath(cwd), branch)
+  )
 
   // --- PR status polling ---
   safeHandle('pr:pollStatuses', async (_e, prs: PrStatusInput[]) => {

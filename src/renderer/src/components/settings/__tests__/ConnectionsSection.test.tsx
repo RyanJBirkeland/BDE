@@ -6,13 +6,13 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 const mockAuthStatus = vi.fn().mockResolvedValue({
   cliFound: true,
   tokenFound: true,
-  tokenExpired: false,
+  tokenExpired: false
 })
 
 beforeEach(() => {
@@ -80,7 +80,10 @@ describe('ConnectionsSection', () => {
 
     await waitFor(() => {
       expect(window.api.settings.set).toHaveBeenCalledWith('agentManager.maxConcurrent', '5')
-      expect(window.api.settings.set).toHaveBeenCalledWith('agentManager.worktreeBase', '/tmp/worktrees/bde')
+      expect(window.api.settings.set).toHaveBeenCalledWith(
+        'agentManager.worktreeBase',
+        '/tmp/worktrees/bde'
+      )
       expect(window.api.settings.set).toHaveBeenCalledWith('agentManager.maxRuntimeMinutes', '60')
     })
   })
@@ -102,12 +105,20 @@ describe('ConnectionsSection', () => {
     await user.click(saveButtons[0])
 
     await waitFor(() => {
-      expect(window.api.settings.set).toHaveBeenCalledWith('agentManager.worktreeBase', '/custom/path')
+      expect(window.api.settings.set).toHaveBeenCalledWith(
+        'agentManager.worktreeBase',
+        '/custom/path'
+      )
     })
   })
 
   it('GitHub Test button calls github.fetch(/user) and shows OK badge on success', async () => {
-    vi.mocked(window.api.github.fetch).mockResolvedValue({ ok: true, status: 200, body: {}, linkNext: null })
+    vi.mocked(window.api.github.fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: {},
+      linkNext: null
+    })
     // Pre-existing token so Test button is enabled
     vi.mocked(window.api.settings.get).mockImplementation((key: string) => {
       if (key === 'github.token') return Promise.resolve('ghp_existing')
@@ -131,7 +142,12 @@ describe('ConnectionsSection', () => {
   })
 
   it('GitHub Test button shows Failed badge on error response', async () => {
-    vi.mocked(window.api.github.fetch).mockResolvedValue({ ok: false, status: 401, body: {}, linkNext: null })
+    vi.mocked(window.api.github.fetch).mockResolvedValue({
+      ok: false,
+      status: 401,
+      body: {},
+      linkNext: null
+    })
     vi.mocked(window.api.settings.get).mockImplementation((key: string) => {
       if (key === 'github.token') return Promise.resolve('ghp_bad_token')
       return Promise.resolve(null)

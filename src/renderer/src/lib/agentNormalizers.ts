@@ -5,7 +5,13 @@
  * Single source of truth for converting raw process/history data
  * into UnifiedAgent objects.
  */
-import type { UnifiedAgent, LocalAgent, HistoryAgent, UnifiedAgentSource, UnifiedAgentStatus } from '../../../shared/types'
+import type {
+  UnifiedAgent,
+  LocalAgent,
+  HistoryAgent,
+  UnifiedAgentSource,
+  UnifiedAgentStatus
+} from '../../../shared/types'
 import type { LocalAgentProcess } from '../stores/localAgents'
 import type { AgentMeta } from '../../../shared/types'
 
@@ -59,7 +65,7 @@ export function buildUnifiedAgentList(
 
   // Local running processes
   for (const p of processes) {
-    const label = p.cwd ? p.cwd.split('/').pop() ?? p.bin : p.bin
+    const label = p.cwd ? (p.cwd.split('/').pop() ?? p.bin) : p.bin
     const local: LocalAgent = {
       id: `local:${p.pid}`,
       label,
@@ -100,7 +106,7 @@ export function buildUnifiedAgentList(
         canKill: isRunning && !!a.pid,
         isBlocked: false,
         task: truncateTask(a.task, 80),
-        pid: a.pid ?? 0,
+        pid: a.pid ?? 0
       }
       agents.push(local)
     } else {
@@ -112,7 +118,7 @@ export function buildUnifiedAgentList(
         model: a.model ?? '',
         updatedAt: finished || started,
         startedAt: started,
-        historyId: a.id,
+        historyId: a.id
       }
       agents.push(history)
     }

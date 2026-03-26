@@ -29,7 +29,7 @@ vi.mock('../settings', () => ({
       return [
         { name: 'BDE', localPath: '/Users/ryan/projects/BDE' },
         { name: 'life-os', localPath: '/Users/ryan/projects/life-os' },
-        { name: 'feast', localPath: '/Users/ryan/projects/feast' },
+        { name: 'feast', localPath: '/Users/ryan/projects/feast' }
       ]
     }
     return null
@@ -45,7 +45,7 @@ import {
   gitStatus,
   gitBranches,
   gitDiffFile,
-  getRepoPaths,
+  getRepoPaths
 } from '../git'
 import { pollPrStatuses } from '../github-pr-status'
 import { parsePrUrl } from '../../shared/github'
@@ -163,13 +163,20 @@ describe('git.ts', () => {
 
   describe('gitStatus', () => {
     it('parses porcelain output correctly', async () => {
-      execFileAsyncMock.mockResolvedValueOnce({ stdout: 'M  src/file.ts\n?? untracked.ts\n', stderr: '' })
+      execFileAsyncMock.mockResolvedValueOnce({
+        stdout: 'M  src/file.ts\n?? untracked.ts\n',
+        stderr: ''
+      })
 
       const result = await gitStatus('/tmp/repo')
       expect(result.ok).toBe(true)
       if (result.ok) {
         expect(result.data.files).toContainEqual({ path: 'src/file.ts', status: 'M', staged: true })
-        expect(result.data.files).toContainEqual({ path: 'untracked.ts', status: '?', staged: false })
+        expect(result.data.files).toContainEqual({
+          path: 'untracked.ts',
+          status: '?',
+          staged: false
+        })
       }
     })
 
@@ -187,7 +194,10 @@ describe('git.ts', () => {
 
   describe('gitBranches', () => {
     it('parses branch output and identifies current branch', async () => {
-      execFileAsyncMock.mockResolvedValueOnce({ stdout: '  feat/test\n* main\n  develop\n', stderr: '' })
+      execFileAsyncMock.mockResolvedValueOnce({
+        stdout: '  feat/test\n* main\n  develop\n',
+        stderr: ''
+      })
 
       const result = await gitBranches('/tmp/repo')
       expect(result.current).toBe('main')
@@ -458,9 +468,7 @@ describe('git.ts', () => {
       })
 
       it('skips DB update when PR URL is unparseable', async () => {
-        const results = await pollPrStatuses([
-          { taskId: 't1', prUrl: 'not-a-url' }
-        ])
+        const results = await pollPrStatuses([{ taskId: 't1', prUrl: 'not-a-url' }])
 
         expect(results).toHaveLength(1)
         expect(mockPrepare).not.toHaveBeenCalled()
@@ -517,9 +525,7 @@ describe('git.ts', () => {
           json: async () => ({ state: 'open', merged_at: null })
         })
 
-        await pollPrStatuses([
-          { taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/88' }
-        ])
+        await pollPrStatuses([{ taskId: 't1', prUrl: 'https://github.com/octocat/repo/pull/88' }])
 
         expect(mockPrepare).not.toHaveBeenCalled()
       })

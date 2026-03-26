@@ -7,7 +7,7 @@ describe('NewTicketModal', () => {
   const defaultProps = {
     open: true,
     onClose: vi.fn(),
-    onCreate: vi.fn(),
+    onCreate: vi.fn()
   }
 
   beforeEach(() => {
@@ -30,9 +30,7 @@ describe('NewTicketModal', () => {
 
   it('Quick mode submit button says "Save — Paul writes the spec"', () => {
     render(<NewTicketModal {...defaultProps} />)
-    expect(
-      screen.getByRole('button', { name: /Save — Paul writes the spec/ })
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Save — Paul writes the spec/ })).toBeInTheDocument()
   })
 
   it('Quick mode submit is disabled when title is empty', () => {
@@ -54,7 +52,7 @@ describe('NewTicketModal', () => {
       notes: '',
       prompt: 'Fix the bug',
       spec: null,
-      priority: 3,
+      priority: 3
     })
     expect(defaultProps.onClose).toHaveBeenCalled()
   })
@@ -94,7 +92,7 @@ describe('NewTicketModal', () => {
       notes: '',
       prompt: 'My task',
       spec: null,
-      priority: 3,
+      priority: 3
     })
   })
 
@@ -148,7 +146,7 @@ describe('NewTicketModal', () => {
       vi.mocked(window.api.settings.getJson).mockResolvedValue([
         { name: 'bugfix', promptPrefix: 'Fix bugs' },
         { name: 'feature', promptPrefix: 'Build features' },
-        { name: 'custom', promptPrefix: 'Custom template' },
+        { name: 'custom', promptPrefix: 'Custom template' }
       ])
 
       render(<NewTicketModal {...defaultProps} />)
@@ -181,7 +179,7 @@ describe('NewTicketModal', () => {
     it('includes template_name in onCreate when template is selected', async () => {
       vi.mocked(window.api.settings.getJson).mockResolvedValue([
         { name: 'bugfix', promptPrefix: 'Fix bugs' },
-        { name: 'feature', promptPrefix: 'Build features' },
+        { name: 'feature', promptPrefix: 'Build features' }
       ])
 
       const user = userEvent.setup()
@@ -198,14 +196,14 @@ describe('NewTicketModal', () => {
       expect(defaultProps.onCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Fix the bug',
-          template_name: 'bugfix',
+          template_name: 'bugfix'
         })
       )
     })
 
     it('omits template_name from onCreate when no template is selected', async () => {
       vi.mocked(window.api.settings.getJson).mockResolvedValue([
-        { name: 'bugfix', promptPrefix: 'Fix bugs' },
+        { name: 'bugfix', promptPrefix: 'Fix bugs' }
       ])
 
       const user = userEvent.setup()
@@ -217,7 +215,7 @@ describe('NewTicketModal', () => {
       expect(defaultProps.onCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Some task',
-          template_name: undefined,
+          template_name: undefined
         })
       )
     })

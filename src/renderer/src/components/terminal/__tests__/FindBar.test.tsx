@@ -6,11 +6,11 @@ import userEvent from '@testing-library/user-event'
 let storeState = {
   showFind: true,
   activeTabId: 'tab-1' as string | null,
-  setShowFind: vi.fn(),
+  setShowFind: vi.fn()
 }
 
 vi.mock('../../../stores/terminal', () => ({
-  useTerminalStore: (selector: (s: unknown) => unknown) => selector(storeState),
+  useTerminalStore: (selector: (s: unknown) => unknown) => selector(storeState)
 }))
 
 // Mock getSearchAddon
@@ -24,8 +24,8 @@ vi.mock('../TerminalPane', () => ({
     findNext: mockFindNext,
     findPrevious: mockFindPrevious,
     clearDecorations: mockClearDecorations,
-    onDidChangeResults: mockOnDidChangeResults,
-  }),
+    onDidChangeResults: mockOnDidChangeResults
+  })
 }))
 
 import { FindBar } from '../FindBar'
@@ -36,7 +36,7 @@ describe('FindBar', () => {
     storeState = {
       showFind: true,
       activeTabId: 'tab-1',
-      setShowFind: vi.fn(),
+      setShowFind: vi.fn()
     }
   })
 

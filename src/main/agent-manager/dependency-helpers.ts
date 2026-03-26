@@ -33,16 +33,14 @@ export function buildBlockedNotes(blockedBy: string[], existingNotes?: string | 
 export async function checkTaskDependencies(
   taskId: string,
   deps: TaskDependency[],
-  logger: Logger,
+  logger: Logger
 ): Promise<{ shouldBlock: boolean; blockedBy: string[] }> {
   try {
     const allTasks = await listTasks()
     const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
     const idx = createDependencyIndex()
-    const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
-      taskId,
-      deps,
-      (depId: string) => statusMap.get(depId),
+    const { satisfied, blockedBy } = idx.areDependenciesSatisfied(taskId, deps, (depId: string) =>
+      statusMap.get(depId)
     )
     return { shouldBlock: !satisfied && blockedBy.length > 0, blockedBy }
   } catch (err) {

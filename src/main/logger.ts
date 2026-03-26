@@ -44,8 +44,17 @@ export function createLogger(name: string): Logger {
   ensureLogDir()
   rotateIfNeeded()
   return {
-    info: (m: string) => { console.log(`[${name}]`, m); fileLog('INFO', name, m) },
-    warn: (m: string) => { console.warn(`[${name}]`, m); fileLog('WARN', name, m) },
-    error: (m: string) => { console.error(`[${name}]`, m); fileLog('ERROR', name, m) },
+    info: (m: string) => {
+      console.log(`[${name}]`, m)
+      fileLog('INFO', name, m)
+    },
+    warn: (m: string) => {
+      console.warn(`[${name}]`, m)
+      fileLog('WARN', name, m)
+    },
+    error: (m: string) => {
+      console.error(`[${name}]`, m)
+      fileLog('ERROR', name, m)
+    }
   }
 }

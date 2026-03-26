@@ -40,20 +40,44 @@ export interface StatusUpdateRequest {
 }
 
 /** Runner-writable status values for PATCH /queue/tasks/:id/status */
-export const RUNNER_WRITABLE_STATUSES = new Set(['queued', 'active', 'done', 'failed', 'cancelled', 'error'])
+export const RUNNER_WRITABLE_STATUSES = new Set([
+  'queued',
+  'active',
+  'done',
+  'failed',
+  'cancelled',
+  'error'
+])
 
 /** Allowed fields in a status update patch */
 export const STATUS_UPDATE_FIELDS = new Set([
-  'status', 'prUrl', 'prNumber', 'prStatus', 'prMergeableState',
-  'completedAt', 'startedAt', 'agentRunId', 'retryCount',
-  'fastFailCount', 'notes', 'maxRuntimeMs', 'needsReview',
+  'status',
+  'prUrl',
+  'prNumber',
+  'prStatus',
+  'prMergeableState',
+  'completedAt',
+  'startedAt',
+  'agentRunId',
+  'retryCount',
+  'fastFailCount',
+  'notes',
+  'maxRuntimeMs',
+  'needsReview'
 ])
 
 /** Allowed fields for general PATCH /queue/tasks/:id — excludes status, claimed_by, depends_on
  *  which must go through their dedicated endpoints to enforce validation. */
 export const GENERAL_PATCH_FIELDS = new Set([
-  'title', 'prompt', 'repo', 'spec', 'notes', 'priority', 'templateName', 'playgroundEnabled',
-  'maxRuntimeMs',
+  'title',
+  'prompt',
+  'repo',
+  'spec',
+  'notes',
+  'priority',
+  'templateName',
+  'playgroundEnabled',
+  'maxRuntimeMs'
 ])
 
 // --- Batch Operations ---
@@ -61,7 +85,7 @@ export const GENERAL_PATCH_FIELDS = new Set([
 export interface BatchOperation {
   op: 'update' | 'delete'
   id: string
-  patch?: Record<string, unknown>  // required for update
+  patch?: Record<string, unknown> // required for update
 }
 
 export interface BatchResult {

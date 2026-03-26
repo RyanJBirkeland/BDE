@@ -8,11 +8,11 @@ const mockGetReviewComments = vi.fn()
 
 vi.mock('../../../lib/github-api', () => ({
   getPRDiff: (...args: unknown[]) => mockGetPRDiff(...args),
-  getReviewComments: (...args: unknown[]) => mockGetReviewComments(...args),
+  getReviewComments: (...args: unknown[]) => mockGetReviewComments(...args)
 }))
 
 vi.mock('../../../lib/diff-parser', () => ({
-  parseDiffChunked: vi.fn().mockResolvedValue(undefined),
+  parseDiffChunked: vi.fn().mockResolvedValue(undefined)
 }))
 
 // Mutable pending state for tests that need to control it
@@ -25,13 +25,12 @@ vi.mock('../../../stores/pendingReview', () => ({
     selector({
       pendingComments: pendingCommentsRecord,
       addComment: mockAddComment,
-      removeComment: mockRemoveComment,
-    }),
+      removeComment: mockRemoveComment
+    })
 }))
 
 vi.mock('../../../stores/ui', () => ({
-  useUIStore: (selector: (s: unknown) => unknown) =>
-    selector({ theme: 'dark' }),
+  useUIStore: (selector: (s: unknown) => unknown) => selector({ theme: 'dark' })
 }))
 
 // Capture the props passed to DiffViewer so we can assert on them
@@ -42,11 +41,11 @@ vi.mock('../../diff/DiffViewer', () => ({
     capturedDiffViewerProps = props
     const files = props.files as unknown[]
     return <div data-testid="diff-viewer">{files.length} files</div>
-  },
+  }
 }))
 
 vi.mock('../../diff/DiffSizeWarning', () => ({
-  DiffSizeWarning: () => <div data-testid="diff-size-warning" />,
+  DiffSizeWarning: () => <div data-testid="diff-size-warning" />
 }))
 
 import { PRStationDiff } from '../PRStationDiff'
@@ -65,7 +64,7 @@ const mockPr: OpenPr = {
   user: { login: 'alice' },
   merged: false,
   merged_at: null,
-  repo: 'BDE',
+  repo: 'BDE'
 }
 
 describe('PRStationDiff', () => {
@@ -95,13 +94,15 @@ describe('PRStationDiff', () => {
 
   it('fetches review comments in parallel with diff', async () => {
     render(<PRStationDiff pr={mockPr} />)
-    await waitFor(() => expect(mockGetReviewComments).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42))
+    await waitFor(() =>
+      expect(mockGetReviewComments).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42)
+    )
   })
 
   it('passes pending comments from the store to DiffViewer', async () => {
     const prKey = 'BDE#42'
     const pending: PendingComment[] = [
-      { id: 'p1', path: 'src/index.ts', line: 3, side: 'RIGHT', body: 'style issue' },
+      { id: 'p1', path: 'src/index.ts', line: 3, side: 'RIGHT', body: 'style issue' }
     ]
     pendingCommentsRecord[prKey] = pending
 
@@ -115,7 +116,10 @@ describe('PRStationDiff', () => {
     render(<PRStationDiff pr={mockPr} />)
     await waitFor(() => expect(screen.getByTestId('diff-viewer')).toBeInTheDocument())
 
-    const onAddComment = capturedDiffViewerProps.onAddComment as (range: LineRange, body: string) => void
+    const onAddComment = capturedDiffViewerProps.onAddComment as (
+      range: LineRange,
+      body: string
+    ) => void
     const range: LineRange = { file: 'src/index.ts', startLine: 5, endLine: 5, side: 'RIGHT' }
 
     act(() => {
@@ -128,7 +132,7 @@ describe('PRStationDiff', () => {
         path: 'src/index.ts',
         line: 5,
         side: 'RIGHT',
-        body: 'this needs a test',
+        body: 'this needs a test'
       })
     )
   })

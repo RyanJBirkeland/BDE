@@ -5,10 +5,7 @@
 import { useEffect } from 'react'
 import { useVisibilityAwareInterval } from './useVisibilityAwareInterval'
 import { useSprintTasks } from '../stores/sprintTasks'
-import {
-  POLL_SPRINT_INTERVAL,
-  POLL_SPRINT_ACTIVE_MS,
-} from '../lib/constants'
+import { POLL_SPRINT_INTERVAL, POLL_SPRINT_ACTIVE_MS } from '../lib/constants'
 import { TASK_STATUS } from '../../../shared/constants'
 
 export function useSprintPolling(): void {
@@ -19,7 +16,9 @@ export function useSprintPolling(): void {
   const hasActiveTasks = tasks.some((t) => t.status === TASK_STATUS.ACTIVE)
   const sprintPollMs = hasActiveTasks ? POLL_SPRINT_ACTIVE_MS : POLL_SPRINT_INTERVAL
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    loadData()
+  }, [loadData])
   useVisibilityAwareInterval(loadData, sprintPollMs)
 
   // Instant refresh when an external process writes to bde.db

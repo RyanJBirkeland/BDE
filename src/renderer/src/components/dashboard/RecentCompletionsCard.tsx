@@ -33,17 +33,14 @@ export function RecentCompletionsCard(): React.JSX.Element {
   }, [tasks])
 
   return (
-    <DashboardCard
-      title="Recent Completions"
-      icon={<CheckCircle size={14} aria-hidden="true" />}
-    >
+    <DashboardCard title="Recent Completions" icon={<CheckCircle size={14} aria-hidden="true" />}>
       {recentDone.length === 0 ? (
         <p
           style={{
             padding: `${tokens.space[4]} ${tokens.space[4]}`,
             color: tokens.color.textMuted,
             fontSize: tokens.size.sm,
-            margin: 0,
+            margin: 0
           }}
         >
           No completed tasks yet
@@ -59,7 +56,7 @@ export function RecentCompletionsCard(): React.JSX.Element {
                 gap: tokens.space[2],
                 padding: `${tokens.space[2]} ${tokens.space[4]}`,
                 borderBottom: `1px solid ${tokens.color.border}`,
-                fontSize: tokens.size.sm,
+                fontSize: tokens.size.sm
               }}
             >
               <CheckCircle
@@ -74,13 +71,15 @@ export function RecentCompletionsCard(): React.JSX.Element {
                   color: tokens.color.text,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: 'nowrap'
                 }}
                 title={task.title}
               >
                 {task.title}
               </span>
-              <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted, flexShrink: 0 }}>
+              <span
+                style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted, flexShrink: 0 }}
+              >
                 {formatRelative(task.completed_at ?? task.updated_at)}
               </span>
             </li>

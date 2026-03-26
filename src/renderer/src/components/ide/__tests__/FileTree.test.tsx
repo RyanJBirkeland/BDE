@@ -9,20 +9,20 @@ const mockOnDirChanged = vi.fn(() => vi.fn())
 Object.defineProperty(window, 'api', {
   value: { readDir: mockReadDir, onDirChanged: mockOnDirChanged },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 vi.mock('../../../stores/ide', () => ({
   useIDEStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ expandedDirs: {}, toggleDir: vi.fn(), activeTabId: null, openTabs: [] })
-  ),
+  )
 }))
 
 beforeEach(() => {
   vi.clearAllMocks()
   mockReadDir.mockResolvedValue([
     { name: 'src', type: 'directory', size: 0 },
-    { name: 'index.ts', type: 'file', size: 100 },
+    { name: 'index.ts', type: 'file', size: 100 }
   ])
   mockOnDirChanged.mockReturnValue(vi.fn())
 })
@@ -38,7 +38,7 @@ describe('FileTree', () => {
   it('filters hidden dirs like node_modules', async () => {
     mockReadDir.mockResolvedValue([
       { name: 'node_modules', type: 'directory', size: 0 },
-      { name: 'src', type: 'directory', size: 0 },
+      { name: 'src', type: 'directory', size: 0 }
     ])
     render(<FileTree dirPath="/project" onOpenFile={vi.fn()} />)
     await waitFor(() => {

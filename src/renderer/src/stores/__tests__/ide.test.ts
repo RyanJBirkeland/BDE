@@ -16,7 +16,7 @@ function resetStore(): void {
     terminalCollapsed: false,
     sidebarWidth: 240,
     terminalHeight: 200,
-    recentFolders: [],
+    recentFolders: []
   })
 }
 

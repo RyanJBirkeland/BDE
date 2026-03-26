@@ -16,7 +16,7 @@ describe('notifications store', () => {
     addNotification({
       type: 'agent_completed',
       title: 'Agent finished',
-      message: 'Task completed successfully',
+      message: 'Task completed successfully'
     })
     const notifications = useNotificationsStore.getState().notifications
     expect(notifications).toHaveLength(1)
@@ -24,7 +24,7 @@ describe('notifications store', () => {
       type: 'agent_completed',
       title: 'Agent finished',
       message: 'Task completed successfully',
-      read: false,
+      read: false
     })
     expect(notifications[0].id).toBeDefined()
     expect(notifications[0].timestamp).toBeDefined()
@@ -45,7 +45,7 @@ describe('notifications store', () => {
       type: 'agent_completed',
       title: 'Done',
       message: 'Task done',
-      viewLink: '/sprint/task-123',
+      viewLink: '/sprint/task-123'
     })
     const notifications = useNotificationsStore.getState().notifications
     expect(notifications[0].viewLink).toBe('/sprint/task-123')
@@ -55,7 +55,11 @@ describe('notifications store', () => {
     const { addNotification } = useNotificationsStore.getState()
     // Add 55 notifications
     for (let i = 0; i < 55; i++) {
-      addNotification({ type: 'agent_completed', title: `Notification ${i}`, message: `Message ${i}` })
+      addNotification({
+        type: 'agent_completed',
+        title: `Notification ${i}`,
+        message: `Message ${i}`
+      })
     }
     const notifications = useNotificationsStore.getState().notifications
     expect(notifications).toHaveLength(50)
@@ -126,7 +130,7 @@ describe('notifications store', () => {
 
     const notifications = useNotificationsStore.getState().notifications
     expect(notifications).toHaveLength(5)
-    expect(notifications.map(n => n.type)).toEqual([
+    expect(notifications.map((n) => n.type)).toEqual([
       'merge_conflict',
       'pr_closed',
       'pr_merged',

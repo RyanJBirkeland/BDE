@@ -1,43 +1,43 @@
-import { Sun, Moon } from 'lucide-react';
-import { useThemeStore } from '../../stores/theme';
-import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout';
-import { useUIStore } from '../../stores/ui';
-import { useCostDataStore } from '../../stores/costData';
-import { NeonBadge } from '../neon/NeonBadge';
-import { NotificationBell } from './NotificationBell';
-import { HeaderTab } from './HeaderTab';
+import { Sun, Moon } from 'lucide-react'
+import { useThemeStore } from '../../stores/theme'
+import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
+import { useUIStore } from '../../stores/ui'
+import { useCostDataStore } from '../../stores/costData'
+import { NeonBadge } from '../neon/NeonBadge'
+import { NotificationBell } from './NotificationBell'
+import { HeaderTab } from './HeaderTab'
 
 export function UnifiedHeader(): React.JSX.Element {
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const totalCost = useCostDataStore((s) => s.totalCost);
-  const setView = useUIStore((s) => s.setView);
+  const theme = useThemeStore((s) => s.theme)
+  const toggleTheme = useThemeStore((s) => s.toggleTheme)
+  const totalCost = useCostDataStore((s) => s.totalCost)
+  const setView = useUIStore((s) => s.setView)
 
-  const root = usePanelLayoutStore((s) => s.root);
-  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId);
-  const closeTab = usePanelLayoutStore((s) => s.closeTab);
-  const setActiveTab = usePanelLayoutStore((s) => s.setActiveTab);
+  const root = usePanelLayoutStore((s) => s.root)
+  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
+  const closeTab = usePanelLayoutStore((s) => s.closeTab)
+  const setActiveTab = usePanelLayoutStore((s) => s.setActiveTab)
 
   // Get the focused panel's tabs
-  const focusedPanel = focusedPanelId ? findLeaf(root, focusedPanelId) : null;
-  const tabs = focusedPanel?.tabs ?? [];
-  const activeTabIndex = focusedPanel?.activeTab ?? 0;
+  const focusedPanel = focusedPanelId ? findLeaf(root, focusedPanelId) : null
+  const tabs = focusedPanel?.tabs ?? []
+  const activeTabIndex = focusedPanel?.activeTab ?? 0
 
   const handleLogoClick = (): void => {
-    setView('dashboard');
-  };
+    setView('dashboard')
+  }
 
   const handleTabClick = (index: number): void => {
     if (focusedPanelId) {
-      setActiveTab(focusedPanelId, index);
+      setActiveTab(focusedPanelId, index)
     }
-  };
+  }
 
   const handleTabClose = (index: number): void => {
     if (focusedPanelId) {
-      closeTab(focusedPanelId, index);
+      closeTab(focusedPanelId, index)
     }
-  };
+  }
 
   return (
     <div className="unified-header">
@@ -74,5 +74,5 @@ export function UnifiedHeader(): React.JSX.Element {
         </button>
       </div>
     </div>
-  );
+  )
 }

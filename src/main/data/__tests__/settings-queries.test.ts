@@ -6,7 +6,7 @@ import {
   setSetting,
   deleteSetting,
   getSettingJson,
-  setSettingJson,
+  setSettingJson
 } from '../settings-queries'
 
 let db: Database.Database

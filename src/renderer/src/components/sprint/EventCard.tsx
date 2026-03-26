@@ -13,7 +13,7 @@ import {
   Terminal,
   Flag,
   ChevronDown,
-  ChevronRight,
+  ChevronRight
 } from 'lucide-react'
 import { tokens } from '../../design-system/tokens'
 import type {
@@ -24,7 +24,7 @@ import type {
   AgentRateLimitedEvent,
   AgentErrorEvent,
   AgentStderrEvent,
-  AgentCompletedEvent,
+  AgentCompletedEvent
 } from '../../../../shared/queue-api-contract'
 import type { AnyTaskEvent } from '../../stores/sprintEvents'
 
@@ -33,11 +33,17 @@ type Props = {
 }
 
 /** Widens the timestamp field to accept both ISO string (TaskOutputEvent) and epoch ms (AgentEvent). */
-type WithFlexTimestamp<T extends { timestamp: string }> = Omit<T, 'timestamp'> & { timestamp: string | number }
+type WithFlexTimestamp<T extends { timestamp: string }> = Omit<T, 'timestamp'> & {
+  timestamp: string | number
+}
 
 function formatTime(timestamp: string | number): string {
   try {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
   } catch {
     return ''
   }
@@ -64,17 +70,29 @@ const cardBase: React.CSSProperties = {
   padding: `${tokens.space[2]} ${tokens.space[3]}`,
   borderRadius: tokens.radius.sm,
   fontSize: tokens.size.sm,
-  borderLeft: `3px solid ${tokens.color.border}`,
+  borderLeft: `3px solid ${tokens.color.border}`
 }
 
 function StartedCard({ event }: { event: WithFlexTimestamp<AgentStartedEvent> }) {
   return (
-    <div style={{ ...cardBase, borderLeftColor: tokens.color.info }} data-testid="event-card-started">
-      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], color: tokens.color.textMuted }}>
+    <div
+      style={{ ...cardBase, borderLeftColor: tokens.color.info }}
+      data-testid="event-card-started"
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: tokens.space[2],
+          color: tokens.color.textMuted
+        }}
+      >
         <Play size={14} />
         <span>Agent started</span>
         <span style={{ color: tokens.color.textDim }}>{event.model}</span>
-        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>{formatTime(event.timestamp)}</span>
+        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>
+          {formatTime(event.timestamp)}
+        </span>
       </div>
     </div>
   )
@@ -84,7 +102,10 @@ function ToolCallCard({ event }: { event: WithFlexTimestamp<AgentToolCallEvent> 
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <div style={{ ...cardBase, borderLeftColor: tokens.color.accent }} data-testid="event-card-tool_call">
+    <div
+      style={{ ...cardBase, borderLeftColor: tokens.color.accent }}
+      data-testid="event-card-tool_call"
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
         <Wrench size={14} style={{ color: tokens.color.accent }} />
         <span
@@ -94,7 +115,7 @@ function ToolCallCard({ event }: { event: WithFlexTimestamp<AgentToolCallEvent> 
             padding: `0 ${tokens.space[1]}`,
             borderRadius: tokens.radius.sm,
             fontSize: tokens.size.xs,
-            fontFamily: tokens.font.code,
+            fontFamily: tokens.font.code
           }}
         >
           {event.tool}
@@ -111,14 +132,22 @@ function ToolCallCard({ event }: { event: WithFlexTimestamp<AgentToolCallEvent> 
               color: tokens.color.textDim,
               padding: 0,
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'center'
             }}
             aria-label={expanded ? 'Collapse input' : 'Expand input'}
           >
             {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
         )}
-        <span style={{ marginLeft: event.input ? undefined : 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>{formatTime(event.timestamp)}</span>
+        <span
+          style={{
+            marginLeft: event.input ? undefined : 'auto',
+            color: tokens.color.textDim,
+            fontSize: tokens.size.xs
+          }}
+        >
+          {formatTime(event.timestamp)}
+        </span>
       </div>
       {expanded && event.input && (
         <pre
@@ -133,7 +162,7 @@ function ToolCallCard({ event }: { event: WithFlexTimestamp<AgentToolCallEvent> 
             overflow: 'auto',
             maxHeight: '200px',
             whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
+            wordBreak: 'break-word'
           }}
         >
           {event.input}
@@ -147,22 +176,34 @@ function ToolResultCard({ event }: { event: WithFlexTimestamp<AgentToolResultEve
   const isSuccess = event.success
 
   return (
-    <div style={{ ...cardBase, borderLeftColor: isSuccess ? tokens.color.success : tokens.color.danger }} data-testid="event-card-tool_result">
+    <div
+      style={{
+        ...cardBase,
+        borderLeftColor: isSuccess ? tokens.color.success : tokens.color.danger
+      }}
+      data-testid="event-card-tool_result"
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
-        {isSuccess ? <Check size={14} style={{ color: tokens.color.success }} /> : <X size={14} style={{ color: tokens.color.danger }} />}
+        {isSuccess ? (
+          <Check size={14} style={{ color: tokens.color.success }} />
+        ) : (
+          <X size={14} style={{ color: tokens.color.danger }} />
+        )}
         <span
           style={{
             background: isSuccess ? tokens.color.accentDim : tokens.color.dangerDim,
             color: isSuccess ? tokens.color.success : tokens.color.danger,
             padding: `0 ${tokens.space[1]}`,
             borderRadius: tokens.radius.sm,
-            fontSize: tokens.size.xs,
+            fontSize: tokens.size.xs
           }}
         >
           {isSuccess ? 'success' : 'failed'}
         </span>
         <span style={{ color: tokens.color.text }}>{event.summary}</span>
-        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>{formatTime(event.timestamp)}</span>
+        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>
+          {formatTime(event.timestamp)}
+        </span>
       </div>
     </div>
   )
@@ -170,11 +211,23 @@ function ToolResultCard({ event }: { event: WithFlexTimestamp<AgentToolResultEve
 
 function ThinkingCard({ event }: { event: WithFlexTimestamp<AgentThinkingEvent> }) {
   return (
-    <div style={{ ...cardBase, borderLeftColor: tokens.color.info }} data-testid="event-card-thinking">
-      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], color: tokens.color.textMuted }}>
+    <div
+      style={{ ...cardBase, borderLeftColor: tokens.color.info }}
+      data-testid="event-card-thinking"
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: tokens.space[2],
+          color: tokens.color.textMuted
+        }}
+      >
         <Brain size={14} />
         <span>{event.tokenCount.toLocaleString()} tokens</span>
-        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>{formatTime(event.timestamp)}</span>
+        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>
+          {formatTime(event.timestamp)}
+        </span>
       </div>
     </div>
   )
@@ -183,12 +236,25 @@ function ThinkingCard({ event }: { event: WithFlexTimestamp<AgentThinkingEvent> 
 function RateLimitedCard({ event }: { event: WithFlexTimestamp<AgentRateLimitedEvent> }) {
   return (
     <div
-      style={{ ...cardBase, borderLeftColor: tokens.color.warning, background: tokens.color.warningDim }}
+      style={{
+        ...cardBase,
+        borderLeftColor: tokens.color.warning,
+        background: tokens.color.warningDim
+      }}
       data-testid="event-card-rate_limited"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], color: tokens.color.warning }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: tokens.space[2],
+          color: tokens.color.warning
+        }}
+      >
         <Clock size={14} />
-        <span>Rate limited — retrying in {formatDuration(event.retryDelayMs)} (attempt {event.attempt})</span>
+        <span>
+          Rate limited — retrying in {formatDuration(event.retryDelayMs)} (attempt {event.attempt})
+        </span>
       </div>
     </div>
   )
@@ -200,7 +266,14 @@ function StderrCard({ event }: { event: WithFlexTimestamp<AgentStderrEvent> }) {
       style={{ ...cardBase, borderLeftColor: tokens.color.warning }}
       data-testid="event-card-stderr"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], color: tokens.color.warning }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: tokens.space[2],
+          color: tokens.color.warning
+        }}
+      >
         <Terminal size={14} />
         <span style={{ fontFamily: tokens.font.code, fontSize: tokens.size.xs }}>{event.text}</span>
       </div>
@@ -211,10 +284,21 @@ function StderrCard({ event }: { event: WithFlexTimestamp<AgentStderrEvent> }) {
 function ErrorCard({ event }: { event: WithFlexTimestamp<AgentErrorEvent> }) {
   return (
     <div
-      style={{ ...cardBase, borderLeftColor: tokens.color.danger, background: tokens.color.dangerDim }}
+      style={{
+        ...cardBase,
+        borderLeftColor: tokens.color.danger,
+        background: tokens.color.dangerDim
+      }}
       data-testid="event-card-error"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], color: tokens.color.danger }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: tokens.space[2],
+          color: tokens.color.danger
+        }}
+      >
         <AlertTriangle size={14} />
         <span>{event.message}</span>
       </div>
@@ -227,7 +311,10 @@ function CompletedCard({ event }: { event: WithFlexTimestamp<AgentCompletedEvent
 
   return (
     <div
-      style={{ ...cardBase, borderLeftColor: isSuccess ? tokens.color.success : tokens.color.danger }}
+      style={{
+        ...cardBase,
+        borderLeftColor: isSuccess ? tokens.color.success : tokens.color.danger
+      }}
       data-testid="event-card-completed"
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
@@ -235,9 +322,18 @@ function CompletedCard({ event }: { event: WithFlexTimestamp<AgentCompletedEvent
         <span style={{ color: tokens.color.text, fontWeight: 600 }}>
           Completed (exit {event.exitCode})
         </span>
-        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>{formatTime(event.timestamp)}</span>
+        <span style={{ marginLeft: 'auto', color: tokens.color.textDim, fontSize: tokens.size.xs }}>
+          {formatTime(event.timestamp)}
+        </span>
       </div>
-      <div style={{ display: 'flex', gap: tokens.space[4], color: tokens.color.textMuted, fontSize: tokens.size.xs }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: tokens.space[4],
+          color: tokens.color.textMuted,
+          fontSize: tokens.size.xs
+        }}
+      >
         <span>Duration: {formatDuration(event.durationMs)}</span>
         <span>Cost: {formatCost(event.costUsd)}</span>
         {event.tokensIn !== null && <span>In: {event.tokensIn.toLocaleString()}</span>}

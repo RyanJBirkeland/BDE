@@ -4,7 +4,7 @@ import {
   setSetting as _setSetting,
   deleteSetting as _deleteSetting,
   getSettingJson as _getSettingJson,
-  setSettingJson as _setSettingJson,
+  setSettingJson as _setSettingJson
 } from './data/settings-queries'
 
 export function getSetting(key: string): string | null {

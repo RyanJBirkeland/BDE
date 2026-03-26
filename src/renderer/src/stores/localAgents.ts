@@ -100,7 +100,10 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
         sendToAgent: async (pid, message) => {
           const result = await window.api.sendToAgent(pid, message)
           if (!result.ok) {
-            throw new Error(result.error ?? 'Cannot send to agent — stdin not available (agent may have been spawned outside this session)')
+            throw new Error(
+              result.error ??
+                'Cannot send to agent — stdin not available (agent may have been spawned outside this session)'
+            )
           }
         },
 

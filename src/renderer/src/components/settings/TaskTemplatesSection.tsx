@@ -79,7 +79,17 @@ export function TaskTemplatesSection(): React.JSX.Element {
                 onChange={(e) => handleNameChange(i, e.target.value)}
               />
               {t.isBuiltIn && (
-                <span style={{ fontSize: '11px', padding: '2px 6px', borderRadius: '9999px', background: 'var(--bde-info-dim)', color: 'var(--bde-info)' }}>Built-in</span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    padding: '2px 6px',
+                    borderRadius: '9999px',
+                    background: 'var(--bde-info-dim)',
+                    color: 'var(--bde-info)'
+                  }}
+                >
+                  Built-in
+                </span>
               )}
               <Button
                 variant="icon"

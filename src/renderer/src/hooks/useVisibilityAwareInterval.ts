@@ -6,10 +6,7 @@ import { useEffect, useRef } from 'react'
  *
  * Pass `null` for intervalMs to disable the interval entirely.
  */
-export function useVisibilityAwareInterval(
-  callback: () => void,
-  intervalMs: number | null
-): void {
+export function useVisibilityAwareInterval(callback: () => void, intervalMs: number | null): void {
   const savedCallback = useRef(callback)
   savedCallback.current = callback
 

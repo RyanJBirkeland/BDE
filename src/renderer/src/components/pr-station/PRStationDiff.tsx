@@ -22,9 +22,7 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
 
   // Pending review comments
   const prKey = `${pr.repo}#${pr.number}`
-  const pendingComments = usePendingReviewStore(
-    (s) => s.pendingComments[prKey] ?? EMPTY_PENDING
-  )
+  const pendingComments = usePendingReviewStore((s) => s.pendingComments[prKey] ?? EMPTY_PENDING)
   const addComment = usePendingReviewStore((s) => s.addComment)
   const removeComment = usePendingReviewStore((s) => s.removeComment)
 
@@ -36,7 +34,7 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
       side: range.side,
       startLine: range.startLine !== range.endLine ? range.startLine : undefined,
       startSide: range.startLine !== range.endLine ? range.side : undefined,
-      body,
+      body
     })
   }
 
@@ -48,8 +46,12 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
     const controller = new AbortController()
     abortRef.current = controller
     parseDiffChunked(raw, setFiles, controller.signal)
-      .then(() => { setLoading(false) })
-      .catch((e) => { if (e?.name !== 'AbortError') setLoading(false) })
+      .then(() => {
+        setLoading(false)
+      })
+      .catch((e) => {
+        if (e?.name !== 'AbortError') setLoading(false)
+      })
   }
 
   useEffect(() => {
@@ -73,8 +75,12 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
 
         // Fetch review comments in parallel
         getReviewComments(repoOption.owner, repoOption.label, pr.number)
-          .then((c) => { if (!cancelled) setComments(c) })
-          .catch(() => { if (!cancelled) setComments([]) })
+          .then((c) => {
+            if (!cancelled) setComments(c)
+          })
+          .catch(() => {
+            if (!cancelled) setComments([])
+          })
 
         if (raw.length > DIFF_SIZE_WARN_BYTES) {
           setSizeWarning(raw.length)

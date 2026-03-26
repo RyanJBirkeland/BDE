@@ -13,7 +13,7 @@ function toRepoOptions(configs: RepoConfig[]): RepoOption[] {
   return configs.map((r) => ({
     label: r.name,
     owner: r.githubOwner ?? '',
-    color: r.color ?? 'var(--bde-text-dim)',
+    color: r.color ?? 'var(--bde-text-dim)'
   }))
 }
 

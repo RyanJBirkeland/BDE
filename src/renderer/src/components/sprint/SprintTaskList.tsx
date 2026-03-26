@@ -26,10 +26,12 @@ const GROUP_COLORS: Record<string, string> = {
   blocked: 'var(--neon-orange)',
   backlog: 'var(--neon-blue)',
   done: 'var(--neon-pink)',
-  failed: 'var(--neon-red)',
+  failed: 'var(--neon-red)'
 }
 
-function getStatusBadgeVariant(task: SprintTask): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'muted' {
+function getStatusBadgeVariant(
+  task: SprintTask
+): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'muted' {
   switch (task.status) {
     case 'active':
       return task.pr_status === 'open' ? 'info' : 'warning'
@@ -97,12 +99,17 @@ const STATUS_GROUPS = [
   { key: 'blocked', label: 'Blocked', defaultCollapsed: false },
   { key: 'backlog', label: 'Backlog', defaultCollapsed: false },
   { key: 'done', label: 'Done', defaultCollapsed: true },
-  { key: 'failed', label: 'Failed', defaultCollapsed: true },
+  { key: 'failed', label: 'Failed', defaultCollapsed: true }
 ] as const
 
-type GroupKey = typeof STATUS_GROUPS[number]['key']
+type GroupKey = (typeof STATUS_GROUPS)[number]['key']
 
-export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter }: SprintTaskListProps) {
+export function SprintTaskList({
+  tasks,
+  selectedTaskId,
+  onSelectTask,
+  repoFilter
+}: SprintTaskListProps) {
   // Store-backed search & status filter (allows programmatic navigation from Dashboard)
   const searchQuery = useSprintUI((s) => s.searchQuery)
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
@@ -126,13 +133,16 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Sync local input to store with debounce
-  const handleSearchChange = useCallback((value: string) => {
-    setLocalSearch(value)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      setSearchQuery(value)
-    }, SEARCH_DEBOUNCE_MS)
-  }, [setSearchQuery])
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setLocalSearch(value)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        setSearchQuery(value)
+      }, SEARCH_DEBOUNCE_MS)
+    },
+    [setSearchQuery]
+  )
 
   // Sync store -> local when store changes externally (e.g. Dashboard drill-down clears search)
   useEffect(() => {
@@ -208,7 +218,10 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
             localSearch && (
               <button
                 className="sprint-task-list__clear-btn"
-                onClick={() => { setLocalSearch(''); setSearchQuery('') }}
+                onClick={() => {
+                  setLocalSearch('')
+                  setSearchQuery('')
+                }}
                 aria-label="Clear search"
               >
                 <X size={14} />
@@ -239,19 +252,23 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
                     size={12}
                     className={`sprint-task-list__group-chevron ${!isCollapsed ? 'sprint-task-list__group-chevron--open' : ''}`}
                   />
-                  <span className="sprint-task-list__group-dot" style={{ background: GROUP_COLORS[groupKey] || 'var(--neon-text-dim)' }} />
+                  <span
+                    className="sprint-task-list__group-dot"
+                    style={{ background: GROUP_COLORS[groupKey] || 'var(--neon-text-dim)' }}
+                  />
                   <span>{group.label}</span>
                   <span className="sprint-task-list__group-count">{groupTasks.length}</span>
                 </button>
-                {!isCollapsed && groupTasks.map((task, index) => (
-                  <TaskListItem
-                    key={task.id}
-                    task={task}
-                    isSelected={task.id === selectedTaskId}
-                    onSelect={onSelectTask}
-                    index={index}
-                  />
-                ))}
+                {!isCollapsed &&
+                  groupTasks.map((task, index) => (
+                    <TaskListItem
+                      key={task.id}
+                      task={task}
+                      isSelected={task.id === selectedTaskId}
+                      onSelect={onSelectTask}
+                      index={index}
+                    />
+                  ))}
               </div>
             )
           })
@@ -275,7 +292,7 @@ function TaskListItem({
   task,
   isSelected,
   onSelect,
-  index,
+  index
 }: {
   task: SprintTask
   isSelected: boolean

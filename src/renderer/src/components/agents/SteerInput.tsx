@@ -46,7 +46,7 @@ export function SteerInput({ agentId, onSend }: SteerInputProps): React.JSX.Elem
       style={{
         display: 'flex',
         alignItems: 'flex-end',
-        gap: tokens.space[2],
+        gap: tokens.space[2]
       }}
     >
       <textarea
@@ -68,7 +68,7 @@ export function SteerInput({ agentId, onSend }: SteerInputProps): React.JSX.Elem
           fontSize: tokens.size.md,
           lineHeight: '20px',
           outline: 'none',
-          transition: `border-color ${tokens.transition.fast}`,
+          transition: `border-color ${tokens.transition.fast}`
         }}
         onFocus={(e) => {
           e.currentTarget.style.borderColor = tokens.color.accent
@@ -93,7 +93,7 @@ export function SteerInput({ agentId, onSend }: SteerInputProps): React.JSX.Elem
           background: isEmpty ? tokens.color.accentDim : tokens.color.accent,
           color: isEmpty ? tokens.color.textDim : tokens.color.bg,
           cursor: isEmpty ? 'not-allowed' : 'pointer',
-          transition: `background ${tokens.transition.fast}, color ${tokens.transition.fast}`,
+          transition: `background ${tokens.transition.fast}, color ${tokens.transition.fast}`
         }}
       >
         <SendHorizontal size={16} />

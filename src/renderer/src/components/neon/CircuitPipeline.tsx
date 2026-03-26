@@ -1,22 +1,22 @@
-import { type ReactNode } from 'react';
-import { tokens } from '../../design-system/tokens';
-import { type NeonAccent, neonVar } from './types';
+import { type ReactNode } from 'react'
+import { tokens } from '../../design-system/tokens'
+import { type NeonAccent, neonVar } from './types'
 
 export interface CircuitNode {
-  id: string;
-  label: string;
-  count: number;
-  accent: NeonAccent;
-  icon?: ReactNode;
-  active?: boolean;
+  id: string
+  label: string
+  count: number
+  accent: NeonAccent
+  icon?: ReactNode
+  active?: boolean
 }
 
 interface CircuitPipelineProps {
-  nodes: CircuitNode[];
-  orientation?: 'horizontal' | 'vertical';
-  animated?: boolean;
-  compact?: boolean;
-  className?: string;
+  nodes: CircuitNode[]
+  orientation?: 'horizontal' | 'vertical'
+  animated?: boolean
+  compact?: boolean
+  className?: string
 }
 
 /**
@@ -28,11 +28,11 @@ export function CircuitPipeline({
   orientation = 'horizontal',
   animated = true,
   compact = false,
-  className = '',
+  className = ''
 }: CircuitPipelineProps) {
-  const isHorizontal = orientation === 'horizontal';
-  const nodeSize = compact ? 64 : 80;
-  const connectorThickness = compact ? 2 : 3;
+  const isHorizontal = orientation === 'horizontal'
+  const nodeSize = compact ? 64 : 80
+  const connectorThickness = compact ? 2 : 3
 
   return (
     <div
@@ -43,7 +43,7 @@ export function CircuitPipeline({
         alignItems: 'center',
         gap: isHorizontal ? tokens.space[6] : tokens.space[4],
         padding: compact ? tokens.space[3] : tokens.space[4],
-        position: 'relative',
+        position: 'relative'
       }}
       data-orientation={orientation}
     >
@@ -55,33 +55,36 @@ export function CircuitPipeline({
             flexDirection: isHorizontal ? 'row' : 'column',
             alignItems: 'center',
             gap: isHorizontal ? tokens.space[6] : tokens.space[4],
-            position: 'relative',
+            position: 'relative'
           }}
         >
           {/* Circuit Node */}
           <div
             data-role="circuit-node"
             data-active={node.active || undefined}
-            style={{
-              position: 'relative',
-              width: `${nodeSize}px`,
-              height: `${nodeSize}px`,
-              borderRadius: tokens.radius.xl,
-              background: `linear-gradient(135deg, ${neonVar(node.accent, 'surface')}, ${tokens.neon.surfaceDeep})`,
-              border: `2px solid ${neonVar(node.accent, 'border')}`,
-              boxShadow: node.active
-                ? `${neonVar(node.accent, 'glow')}, inset 0 1px 0 ${tokens.neon.surfaceSubtle}`
-                : `inset 0 1px 0 ${tokens.neon.surfaceDim}`,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: tokens.space[1],
-              transition: 'all 200ms ease',
-              animation: node.active && animated ? 'circuit-pulse 2s ease-in-out infinite' : undefined,
-              '--pulse-shadow-min': `0 0 8px ${neonVar(node.accent, 'border')}`,
-              '--pulse-shadow-max': `0 0 20px ${neonVar(node.accent, 'border')}`,
-            } as React.CSSProperties}
+            style={
+              {
+                position: 'relative',
+                width: `${nodeSize}px`,
+                height: `${nodeSize}px`,
+                borderRadius: tokens.radius.xl,
+                background: `linear-gradient(135deg, ${neonVar(node.accent, 'surface')}, ${tokens.neon.surfaceDeep})`,
+                border: `2px solid ${neonVar(node.accent, 'border')}`,
+                boxShadow: node.active
+                  ? `${neonVar(node.accent, 'glow')}, inset 0 1px 0 ${tokens.neon.surfaceSubtle}`
+                  : `inset 0 1px 0 ${tokens.neon.surfaceDim}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: tokens.space[1],
+                transition: 'all 200ms ease',
+                animation:
+                  node.active && animated ? 'circuit-pulse 2s ease-in-out infinite' : undefined,
+                '--pulse-shadow-min': `0 0 8px ${neonVar(node.accent, 'border')}`,
+                '--pulse-shadow-max': `0 0 20px ${neonVar(node.accent, 'border')}`
+              } as React.CSSProperties
+            }
           >
             {/* Corner accent dots */}
             <div
@@ -94,7 +97,7 @@ export function CircuitPipeline({
                 height: '4px',
                 borderRadius: '50%',
                 background: neonVar(node.accent, 'color'),
-                boxShadow: neonVar(node.accent, 'glow'),
+                boxShadow: neonVar(node.accent, 'glow')
               }}
             />
             <div
@@ -107,7 +110,7 @@ export function CircuitPipeline({
                 height: '4px',
                 borderRadius: '50%',
                 background: neonVar(node.accent, 'color'),
-                boxShadow: neonVar(node.accent, 'glow'),
+                boxShadow: neonVar(node.accent, 'glow')
               }}
             />
 
@@ -117,7 +120,7 @@ export function CircuitPipeline({
                 style={{
                   color: neonVar(node.accent, 'color'),
                   fontSize: compact ? tokens.size.lg : tokens.size.xxl,
-                  lineHeight: 1,
+                  lineHeight: 1
                 }}
               >
                 {node.icon}
@@ -131,7 +134,7 @@ export function CircuitPipeline({
                 fontSize: compact ? tokens.size.xl : tokens.size.xxl,
                 fontWeight: 700,
                 lineHeight: 1,
-                textShadow: neonVar(node.accent, 'glow'),
+                textShadow: neonVar(node.accent, 'glow')
               }}
             >
               {node.count}
@@ -145,7 +148,7 @@ export function CircuitPipeline({
                 fontWeight: 600,
                 letterSpacing: '0.5px',
                 textTransform: 'uppercase' as const,
-                opacity: 0.8,
+                opacity: 0.8
               }}
             >
               {node.label}
@@ -164,7 +167,7 @@ export function CircuitPipeline({
                   isHorizontal ? 'to right' : 'to bottom'
                 }, ${neonVar(node.accent, 'border')}, ${neonVar(nodes[i + 1].accent, 'border')})`,
                 borderRadius: '2px',
-                overflow: 'hidden',
+                overflow: 'hidden'
               }}
             >
               {/* Animated current flow */}
@@ -181,7 +184,7 @@ export function CircuitPipeline({
                     }, transparent, ${neonVar(node.accent, 'color')}, transparent)`,
                     boxShadow: neonVar(node.accent, 'glow'),
                     animation: `circuit-flow-${orientation} 2s ease-in-out infinite`,
-                    opacity: 0.6,
+                    opacity: 0.6
                   }}
                 />
               )}
@@ -198,7 +201,7 @@ export function CircuitPipeline({
                   height: '6px',
                   borderRadius: '50%',
                   background: neonVar(node.accent, 'color'),
-                  boxShadow: neonVar(node.accent, 'glow'),
+                  boxShadow: neonVar(node.accent, 'glow')
                 }}
               />
               <div
@@ -212,7 +215,7 @@ export function CircuitPipeline({
                   height: '6px',
                   borderRadius: '50%',
                   background: neonVar(nodes[i + 1].accent, 'color'),
-                  boxShadow: neonVar(nodes[i + 1].accent, 'glow'),
+                  boxShadow: neonVar(nodes[i + 1].accent, 'glow')
                 }}
               />
             </div>
@@ -220,5 +223,5 @@ export function CircuitPipeline({
         </div>
       ))}
     </div>
-  );
+  )
 }

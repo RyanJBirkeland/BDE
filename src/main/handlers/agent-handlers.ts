@@ -3,19 +3,10 @@
  * task-runner's Runner API and provides local history/log access from SQLite.
  */
 import { safeHandle } from '../ipc-utils'
-import {
-  steerAgent,
-  killAgent,
-  listAgents as listRunnerAgents,
-} from '../runner-client'
+import { steerAgent, killAgent, listAgents as listRunnerAgents } from '../runner-client'
 import { tailAgentLog, cleanupOldLogs } from '../agent-log-manager'
 import type { TailLogArgs } from '../agent-log-manager'
-import {
-  listAgents,
-  readLog,
-  importAgent,
-  pruneOldAgents
-} from '../agent-history'
+import { listAgents, readLog, importAgent, pruneOldAgents } from '../agent-history'
 import type { AgentMeta } from '../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import type { SpawnLocalAgentArgs } from '../../shared/types'
@@ -36,35 +27,44 @@ export function registerAgentHandlers(am?: AgentManager): void {
     return spawnAdhocAgent({
       task: args.task,
       repoPath: args.repoPath,
-      model: args.model,
+      model: args.model
     })
   })
   safeHandle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
-  safeHandle('local:sendToAgent', async (_e, { pid: _pid, message: _message }: { pid: number; message: string }) => {
-    return { ok: false, error: 'Direct PID-based messaging removed. Use agent:steer with an agent ID instead.' } as const
-  })
+  safeHandle(
+    'local:sendToAgent',
+    async (_e, { pid: _pid, message: _message }: { pid: number; message: string }) => {
+      return {
+        ok: false,
+        error: 'Direct PID-based messaging removed. Use agent:steer with an agent ID instead.'
+      } as const
+    }
+  )
   safeHandle('local:isInteractive', () => false)
-  safeHandle('agent:steer', async (_e, { agentId, message }: { agentId: string; message: string }) => {
-    // Try ad-hoc agents first
-    const adhocHandle = getAdhocHandle(agentId)
-    if (adhocHandle) {
-      try {
-        await adhocHandle.send(message)
-        return { ok: true }
-      } catch (err) {
-        return { ok: false, error: String(err) }
+  safeHandle(
+    'agent:steer',
+    async (_e, { agentId, message }: { agentId: string; message: string }) => {
+      // Try ad-hoc agents first
+      const adhocHandle = getAdhocHandle(agentId)
+      if (adhocHandle) {
+        try {
+          await adhocHandle.send(message)
+          return { ok: true }
+        } catch (err) {
+          return { ok: false, error: String(err) }
+        }
       }
+      // Try local AgentManager
+      if (am) {
+        const result = await am.steerAgent(agentId, message)
+        if (result.delivered) return { ok: true }
+        // If agent not found in AM, fall through to runner-client
+        if (result.error !== 'Agent not found') return { ok: false, error: result.error }
+      }
+      // Fall back to runner-client
+      return steerAgent(agentId, message)
     }
-    // Try local AgentManager
-    if (am) {
-      const result = await am.steerAgent(agentId, message)
-      if (result.delivered) return { ok: true }
-      // If agent not found in AM, fall through to runner-client
-      if (result.error !== 'Agent not found') return { ok: false, error: result.error }
-    }
-    // Fall back to runner-client
-    return steerAgent(agentId, message)
-  })
+  )
   safeHandle('agent:kill', async (_e, agentId: string) => {
     // Try ad-hoc agents first
     const adhocHandle = getAdhocHandle(agentId)
@@ -73,7 +73,12 @@ export function registerAgentHandlers(am?: AgentManager): void {
       return { ok: true }
     }
     if (am) {
-      try { am.killAgent(agentId); return { ok: true } } catch { /* fall through */ }
+      try {
+        am.killAgent(agentId)
+        return { ok: true }
+      } catch {
+        /* fall through */
+      }
     }
     return killAgent(agentId)
   })
@@ -91,7 +96,7 @@ export function registerAgentHandlers(am?: AgentManager): void {
   // Return null to indicate these are no longer configurable from BDE.
   safeHandle('config:getAgentConfig', () => ({
     binary: null,
-    permissionMode: null,
+    permissionMode: null
   }))
   safeHandle('config:saveAgentConfig', () => {
     // No-op: agent config now lives in task-runner's own configuration.
@@ -104,10 +109,8 @@ export function registerAgentHandlers(am?: AgentManager): void {
   safeHandle('agents:readLog', (_e, args: { id: string; fromByte?: number }) =>
     readLog(args.id, args.fromByte)
   )
-  safeHandle(
-    'agents:import',
-    (_e, args: { meta: Partial<AgentMeta>; content: string }) =>
-      importAgent(args.meta, args.content)
+  safeHandle('agents:import', (_e, args: { meta: Partial<AgentMeta>; content: string }) =>
+    importAgent(args.meta, args.content)
   )
   pruneOldAgents()
 }

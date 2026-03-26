@@ -7,7 +7,7 @@ const FOCUSABLE_SELECTOR = [
   'input:not([disabled])',
   'textarea:not([disabled])',
   'select:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
+  '[tabindex]:not([tabindex="-1"])'
 ].join(', ')
 
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
@@ -26,10 +26,7 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
  * - Restores focus to the previously focused element
  * - Removes the keydown listener
  */
-export function useFocusTrap(
-  containerRef: RefObject<HTMLElement | null>,
-  active: boolean
-): void {
+export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active: boolean): void {
   useEffect(() => {
     if (!active || !containerRef.current) return
 

@@ -11,11 +11,17 @@ describe('FileContextMenu', () => {
   const onClose = vi.fn()
 
   const directoryTarget: ContextMenuTarget = {
-    x: 100, y: 200, path: '/project/src', type: 'directory',
+    x: 100,
+    y: 200,
+    path: '/project/src',
+    type: 'directory'
   }
 
   const fileTarget: ContextMenuTarget = {
-    x: 150, y: 250, path: '/project/src/index.ts', type: 'file',
+    x: 150,
+    y: 250,
+    path: '/project/src/index.ts',
+    type: 'file'
   }
 
   function renderMenu(target: ContextMenuTarget = directoryTarget) {

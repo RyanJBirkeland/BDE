@@ -71,15 +71,13 @@ export function useDesktopNotifications(): void {
         if (!shouldNotify()) continue
 
         const title = '✅ Agent completed'
-        const message = task.pr_url
-          ? `${task.title} — PR ready`
-          : `${task.title} completed`
+        const message = task.pr_url ? `${task.title} — PR ready` : `${task.title} completed`
 
         addNotification({
           type: 'agent_completed',
           title,
           message,
-          viewLink: `/sprint/${task.id}`,
+          viewLink: `/sprint/${task.id}`
         })
 
         fireDesktopNotification(title, message)
@@ -118,7 +116,7 @@ export function useDesktopNotifications(): void {
         type: 'pr_merged',
         title,
         message,
-        viewLink: task.pr_url || undefined,
+        viewLink: task.pr_url || undefined
       })
 
       fireDesktopNotification(title, message)

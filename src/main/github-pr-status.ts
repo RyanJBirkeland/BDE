@@ -16,9 +16,22 @@ export interface PrStatusResult {
 }
 
 async function fetchPrStatusRest(pr: PrStatusInput): Promise<PrStatusResult> {
-  const errorResult: PrStatusResult = { taskId: pr.taskId, merged: false, state: 'error', mergedAt: null, mergeableState: null }
+  const errorResult: PrStatusResult = {
+    taskId: pr.taskId,
+    merged: false,
+    state: 'error',
+    mergedAt: null,
+    mergeableState: null
+  }
   const parsed = parsePrUrl(pr.prUrl)
-  if (!parsed) return { taskId: pr.taskId, merged: false, state: 'unknown', mergedAt: null, mergeableState: null }
+  if (!parsed)
+    return {
+      taskId: pr.taskId,
+      merged: false,
+      state: 'unknown',
+      mergedAt: null,
+      mergeableState: null
+    }
 
   const token = getGitHubToken()
   if (!token) return errorResult

@@ -11,9 +11,9 @@ describe('IDE path traversal prevention', () => {
   })
 
   it('rejects relative traversal in subdirectory', () => {
-    expect(() =>
-      validateIdePath(`${WATCHED_ROOT}/src/../../etc/shadow`, WATCHED_ROOT)
-    ).toThrow('Path traversal blocked')
+    expect(() => validateIdePath(`${WATCHED_ROOT}/src/../../etc/shadow`, WATCHED_ROOT)).toThrow(
+      'Path traversal blocked'
+    )
   })
 
   it('rejects absolute paths outside watched root', () => {

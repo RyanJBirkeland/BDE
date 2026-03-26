@@ -4,7 +4,7 @@ import { EXECUTOR_ID } from './types'
 export async function recoverOrphans(
   isAgentActive: (taskId: string) => boolean,
   repo: ISprintTaskRepository,
-  logger: { info: (msg: string) => void; warn: (msg: string) => void },
+  logger: { info: (msg: string) => void; warn: (msg: string) => void }
 ): Promise<number> {
   const orphans = await repo.getOrphanedTasks(EXECUTOR_ID)
   let recovered = 0
@@ -15,7 +15,9 @@ export async function recoverOrphans(
     // Skip tasks that already have a PR — they completed successfully and are
     // waiting for SprintPrPoller to mark them done on merge.
     if (task.pr_url) {
-      logger.info(`[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`)
+      logger.info(
+        `[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`
+      )
       await repo.updateTask(task.id, { claimed_by: null })
       continue
     }
@@ -25,7 +27,7 @@ export async function recoverOrphans(
     // Re-queue: clear claimed_by so drain loop or external runner can pick it up
     await repo.updateTask(task.id, {
       status: 'queued',
-      claimed_by: null,
+      claimed_by: null
     })
     recovered++
   }
@@ -35,7 +37,9 @@ export async function recoverOrphans(
     const { finalizeStaleAgentRuns } = await import('../agent-history')
     const cleaned = finalizeStaleAgentRuns()
     if (cleaned > 0) logger.info(`[agent-manager] Finalized ${cleaned} stale agent_runs records`)
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 
   return recovered
 }

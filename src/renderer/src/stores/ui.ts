@@ -34,7 +34,7 @@ export const useUIStore = create<UIStore>((set) => ({
       store.addTab(getFocusedPanelId(), view)
     }
     set({ activeView: view })
-  },
+  }
 }))
 
 // Keep activeView in sync when panel focus changes

@@ -16,8 +16,8 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
       set((state) => ({
         events: {
           ...state.events,
-          [agentId]: [...(state.events[agentId] ?? []), event],
-        },
+          [agentId]: [...(state.events[agentId] ?? []), event]
+        }
       }))
     })
   },
@@ -25,7 +25,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
   async loadHistory(agentId: string) {
     const history = await window.api.agentEvents.getHistory(agentId)
     set((state) => ({
-      events: { ...state.events, [agentId]: history },
+      events: { ...state.events, [agentId]: history }
     }))
   },
 
@@ -35,5 +35,5 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
       delete next[agentId]
       return { events: next }
     })
-  },
+  }
 }))

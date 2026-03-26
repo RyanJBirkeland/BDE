@@ -7,7 +7,7 @@ function mockRes() {
     writeHead: vi.fn(),
     write: vi.fn().mockReturnValue(true),
     end: vi.fn(),
-    on: vi.fn(),
+    on: vi.fn()
   } as any
 }
 
@@ -17,15 +17,15 @@ describe('SSE Broadcaster', () => {
     const res = mockRes()
     broadcaster.addClient(res)
     broadcaster.broadcast('task:queued', { id: '1', title: 'Test' })
-    expect(res.write).toHaveBeenCalledWith(
-      expect.stringContaining('event: task:queued')
-    )
+    expect(res.write).toHaveBeenCalledWith(expect.stringContaining('event: task:queued'))
   })
 
   it('removes disconnected clients on error', () => {
     const broadcaster = createSseBroadcaster()
     const res = mockRes()
-    res.write.mockImplementation(() => { throw new Error('closed') })
+    res.write.mockImplementation(() => {
+      throw new Error('closed')
+    })
     broadcaster.addClient(res)
     broadcaster.broadcast('test', {})
     expect(broadcaster.clientCount()).toBe(0)
@@ -35,9 +35,12 @@ describe('SSE Broadcaster', () => {
     const broadcaster = createSseBroadcaster()
     const res = mockRes()
     broadcaster.addClient(res)
-    expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
-      'Content-Type': 'text/event-stream',
-    }))
+    expect(res.writeHead).toHaveBeenCalledWith(
+      200,
+      expect.objectContaining({
+        'Content-Type': 'text/event-stream'
+      })
+    )
     expect(res.write).toHaveBeenCalledWith(':connected\n\n')
   })
 })

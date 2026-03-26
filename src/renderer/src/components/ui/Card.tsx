@@ -8,19 +8,13 @@ type CardProps = {
   active?: boolean
 }
 
-export function Card({
-  children,
-  padding = 'md',
-  className,
-  onClick,
-  active = false,
-}: CardProps) {
+export function Card({ children, padding = 'md', className, onClick, active = false }: CardProps) {
   const classes = [
     'bde-card',
     `bde-card--pad-${padding}`,
     active && 'bde-card--active',
     onClick && 'bde-card--clickable',
-    className,
+    className
   ]
     .filter(Boolean)
     .join(' ')

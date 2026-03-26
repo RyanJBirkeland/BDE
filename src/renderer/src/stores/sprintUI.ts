@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 
-export type StatusFilter = 'all' | 'backlog' | 'todo' | 'blocked' | 'in-progress' | 'awaiting-review' | 'done' | 'failed'
+export type StatusFilter =
+  | 'all'
+  | 'backlog'
+  | 'todo'
+  | 'blocked'
+  | 'in-progress'
+  | 'awaiting-review'
+  | 'done'
+  | 'failed'
 
 interface SprintUIState {
   // --- State ---
@@ -48,7 +56,7 @@ export const useSprintUI = create<SprintUIState>((set) => ({
       return {
         selectedTaskIds: isSelected
           ? s.selectedTaskIds.filter((taskId) => taskId !== id)
-          : [...s.selectedTaskIds, id],
+          : [...s.selectedTaskIds, id]
       }
     })
   },
@@ -71,5 +79,5 @@ export const useSprintUI = create<SprintUIState>((set) => ({
 
   clearSelection: (): void => {
     set({ selectedTaskIds: [] })
-  },
+  }
 }))

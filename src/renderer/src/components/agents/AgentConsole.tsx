@@ -36,7 +36,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
     count: blocks.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 60,
-    overscan: 10,
+    overscan: 10
   })
 
   // Auto-scroll: follow tail when at bottom
@@ -84,7 +84,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
               style={{
                 height: virtualizer.getTotalSize(),
                 width: '100%',
-                position: 'relative',
+                position: 'relative'
               }}
             >
               {virtualizer.getVirtualItems().map((virtualRow) => (
@@ -97,7 +97,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
                     top: 0,
                     left: 0,
                     width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
+                    transform: `translateY(${virtualRow.start}px)`
                   }}
                 >
                   <ConsoleLine block={blocks[virtualRow.index]} />
@@ -105,7 +105,9 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
               ))}
             </div>
           ) : (
-            <div style={{ padding: '16px', color: 'rgba(255, 255, 255, 0.3)', textAlign: 'center' }}>
+            <div
+              style={{ padding: '16px', color: 'rgba(255, 255, 255, 0.3)', textAlign: 'center' }}
+            >
               No events available
             </div>
           )}

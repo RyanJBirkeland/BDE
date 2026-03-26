@@ -200,5 +200,5 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
     } catch {
       set({ repoPaths: [] })
     }
-  },
+  }
 }))

@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // Mock child_process.execFile before importing the module under test
 vi.mock('node:child_process', () => ({
-  execFile: vi.fn(),
+  execFile: vi.fn()
 }))
 
 vi.mock('node:fs', () => ({
-  existsSync: vi.fn(),
+  existsSync: vi.fn()
 }))
 
 import { execFile } from 'node:child_process'
@@ -27,28 +27,24 @@ function findCallback(...args: unknown[]): ExecFileCallback {
 
 // Helper to make the mocked execFile resolve with a value
 function mockExecFileResult(stdout: string): void {
-  vi.mocked(execFile).mockImplementation(
-    ((...args: unknown[]) => {
-      const cb = findCallback(...args)
-      cb(null, stdout, '')
-    }) as typeof execFile
-  )
+  vi.mocked(execFile).mockImplementation(((...args: unknown[]) => {
+    const cb = findCallback(...args)
+    cb(null, stdout, '')
+  }) as typeof execFile)
 }
 
 // Helper to make the mocked execFile reject with an error
 function mockExecFileError(message: string): void {
-  vi.mocked(execFile).mockImplementation(
-    ((...args: unknown[]) => {
-      const cb = findCallback(...args)
-      cb(new Error(message), '', '')
-    }) as typeof execFile
-  )
+  vi.mocked(execFile).mockImplementation(((...args: unknown[]) => {
+    const cb = findCallback(...args)
+    cb(new Error(message), '', '')
+  }) as typeof execFile)
 }
 
 function makeKeychainJson(overrides: Partial<{ accessToken: string; expiresAt: string }> = {}) {
   const defaults = {
     accessToken: 'test-token-abc',
-    expiresAt: String(Date.now() + 3600_000), // 1 hour from now
+    expiresAt: String(Date.now() + 3600_000) // 1 hour from now
   }
   const oauth = { ...defaults, ...overrides }
   return JSON.stringify({ claudeAiOauth: oauth })
@@ -95,7 +91,9 @@ describe('auth-guard', () => {
     })
 
     it('returns tokenFound: false when keychain has no entry', async () => {
-      mockExecFileError('security: SecKeychainSearchCopyNext: The specified item could not be found')
+      mockExecFileError(
+        'security: SecKeychainSearchCopyNext: The specified item could not be found'
+      )
 
       const status = await checkAuthStatus()
 
@@ -133,7 +131,7 @@ describe('auth-guard', () => {
     it('reports tokenExpired when expiresAt is missing', async () => {
       const store: CredentialStore = {
         readToken: async () => ({ claudeAiOauth: { accessToken: 'tok' } }),
-        detectCli: () => true,
+        detectCli: () => true
       }
       const status = await checkAuthStatus(store)
       expect(status.tokenExpired).toBe(true)

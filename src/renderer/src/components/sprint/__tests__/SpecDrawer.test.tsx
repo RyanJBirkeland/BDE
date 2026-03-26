@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import type { SprintTask } from '../../../../../shared/types'
 
 vi.mock('../../../lib/render-markdown', () => ({
-  renderMarkdown: (md: string) => md,
+  renderMarkdown: (md: string) => md
 }))
 
 vi.mock('framer-motion', () => ({
@@ -12,24 +12,24 @@ vi.mock('framer-motion', () => ({
     div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
       const { createElement } = require('react')
       return createElement('div', props, children)
-    },
+    }
   },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }))
 
 vi.mock('../../../lib/motion', () => ({
   VARIANTS: { scaleIn: {} },
   SPRINGS: { snappy: {} },
   REDUCED_TRANSITION: { duration: 0 },
-  useReducedMotion: () => false,
+  useReducedMotion: () => false
 }))
 
 vi.mock('../../../stores/toasts', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
-    info: vi.fn(),
-  },
+    info: vi.fn()
+  }
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -56,7 +56,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -67,7 +67,7 @@ describe('SpecDrawer', () => {
     onClose: vi.fn(),
     onSave: vi.fn(),
     onLaunch: vi.fn(),
-    onPushToSprint: vi.fn(),
+    onPushToSprint: vi.fn()
   }
 
   beforeEach(() => {
@@ -105,33 +105,43 @@ describe('SpecDrawer', () => {
     const readSpecFile = vi.mocked(window.api.sprint.readSpecFile)
 
     readSpecFile.mockImplementationOnce(
-      () => new Promise<string>((resolve) => { resolveFirst = resolve })
+      () =>
+        new Promise<string>((resolve) => {
+          resolveFirst = resolve
+        })
     )
     readSpecFile.mockImplementationOnce(
-      () => new Promise<string>((resolve) => { resolveSecond = resolve })
+      () =>
+        new Promise<string>((resolve) => {
+          resolveSecond = resolve
+        })
     )
 
     const taskA = makeTask({
       id: 'task-a',
       prompt: 'See docs/specs/task-a.md',
-      spec: null,
+      spec: null
     })
     const taskB = makeTask({
       id: 'task-b',
       prompt: 'See docs/specs/task-b.md',
-      spec: null,
+      spec: null
     })
 
     const { rerender } = render(<SpecDrawer {...defaultProps} task={taskA} />)
     rerender(<SpecDrawer {...defaultProps} task={taskB} />)
 
-    await act(async () => { resolveSecond('# Task B Spec') })
+    await act(async () => {
+      resolveSecond('# Task B Spec')
+    })
 
     await waitFor(() => {
       expect(screen.getByText('# Task B Spec')).toBeInTheDocument()
     })
 
-    await act(async () => { resolveFirst('# Task A Spec (STALE)') })
+    await act(async () => {
+      resolveFirst('# Task A Spec (STALE)')
+    })
 
     expect(screen.getByText('# Task B Spec')).toBeInTheDocument()
     expect(screen.queryByText('# Task A Spec (STALE)')).not.toBeInTheDocument()
@@ -264,23 +274,28 @@ describe('SpecDrawer', () => {
     const readSpecFile = vi.mocked(window.api.sprint.readSpecFile)
 
     readSpecFile.mockImplementationOnce(
-      () => new Promise<string>((_, reject) => { rejectFirst = reject })
+      () =>
+        new Promise<string>((_, reject) => {
+          rejectFirst = reject
+        })
     )
 
     const taskA = makeTask({
       id: 'task-err-a',
       prompt: 'See docs/specs/task-err-a.md',
-      spec: null,
+      spec: null
     })
     const taskB = makeTask({
       id: 'task-err-b',
-      spec: '# Inline Task B',
+      spec: '# Inline Task B'
     })
 
     const { rerender } = render(<SpecDrawer {...defaultProps} task={taskA} />)
     rerender(<SpecDrawer {...defaultProps} task={taskB} />)
 
-    await act(async () => { rejectFirst(new Error('File not found')) })
+    await act(async () => {
+      rejectFirst(new Error('File not found'))
+    })
 
     expect(screen.getByText('# Inline Task B')).toBeInTheDocument()
   })

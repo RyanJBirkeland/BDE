@@ -5,7 +5,7 @@ import type { TaskOutputEvent } from '../../../../shared/queue-api-contract'
 
 const initialState = {
   taskEvents: {},
-  latestEvents: {},
+  latestEvents: {}
 }
 
 beforeEach(() => {
@@ -17,7 +17,7 @@ function makeAgentEvent(text = 'hello'): AgentEvent {
   return {
     type: 'agent:text',
     text,
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
 }
 
@@ -25,7 +25,7 @@ function makeTaskOutputEvent(taskId: string, type = 'agent:started'): TaskOutput
   return {
     taskId,
     timestamp: new Date().toISOString(),
-    type,
+    type
   }
 }
 
@@ -125,7 +125,7 @@ describe('initTaskOutputListener', () => {
   it('preserves existing events from other agents when a new event arrives', () => {
     useSprintEvents.setState({
       taskEvents: { 'agent-existing': [makeAgentEvent('old')] },
-      latestEvents: {},
+      latestEvents: {}
     })
 
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
@@ -189,12 +189,12 @@ describe('clearTaskEvents', () => {
     useSprintEvents.setState({
       taskEvents: {
         'agent-a': [makeAgentEvent('a1'), makeAgentEvent('a2')],
-        'agent-b': [makeAgentEvent('b1')],
+        'agent-b': [makeAgentEvent('b1')]
       },
       latestEvents: {
         'agent-a': makeAgentEvent('a2'),
-        'agent-b': makeAgentEvent('b1'),
-      },
+        'agent-b': makeAgentEvent('b1')
+      }
     })
 
     useSprintEvents.getState().clearTaskEvents('agent-a')
@@ -208,12 +208,12 @@ describe('clearTaskEvents', () => {
     useSprintEvents.setState({
       taskEvents: {
         'agent-a': [makeAgentEvent('a1')],
-        'agent-b': [makeAgentEvent('b1')],
+        'agent-b': [makeAgentEvent('b1')]
       },
       latestEvents: {
         'agent-a': makeAgentEvent('a1'),
-        'agent-b': makeAgentEvent('b1'),
-      },
+        'agent-b': makeAgentEvent('b1')
+      }
     })
 
     useSprintEvents.getState().clearTaskEvents('agent-a')
@@ -226,7 +226,7 @@ describe('clearTaskEvents', () => {
   it('is a no-op when the agent id does not exist', () => {
     useSprintEvents.setState({
       taskEvents: { 'agent-a': [makeAgentEvent('a1')] },
-      latestEvents: { 'agent-a': makeAgentEvent('a1') },
+      latestEvents: { 'agent-a': makeAgentEvent('a1') }
     })
 
     // should not throw

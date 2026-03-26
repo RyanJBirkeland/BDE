@@ -33,7 +33,7 @@ function spawnViaSdk(
   sdk: typeof import('@anthropic-ai/claude-agent-sdk'),
   opts: { prompt: string; cwd: string; model: string },
   env: NodeJS.ProcessEnv,
-  logger?: Logger,
+  logger?: Logger
 ): AgentHandle {
   const abortController = new AbortController()
 
@@ -45,8 +45,8 @@ function spawnViaSdk(
       env: env as Record<string, string | undefined>,
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
-      abortController,
-    },
+      abortController
+    }
   })
 
   // Extract sessionId from the first message that carries it
@@ -74,7 +74,9 @@ function spawnViaSdk(
     },
     async steer(message: string): Promise<SteerResult> {
       try {
-        ;(logger ?? console).warn(`[agent-manager] Steer in SDK mode is limited — message may not reach agent: "${message.slice(0, 100)}"`)
+        ;(logger ?? console).warn(
+          `[agent-manager] Steer in SDK mode is limited — message may not reach agent: "${message.slice(0, 100)}"`
+        )
         await queryResult.interrupt()
         // Re-send via streamInput is not straightforward for a single query.
         // The interrupt signals the agent, then we log the steer message intention.
@@ -83,14 +85,14 @@ function spawnViaSdk(
       } catch (err) {
         return { delivered: false, error: String(err) }
       }
-    },
+    }
   }
 }
 
 function spawnViaCli(
   opts: { prompt: string; cwd: string; model: string },
   env: NodeJS.ProcessEnv,
-  _logger?: Logger,
+  _logger?: Logger
 ): AgentHandle {
   const child = spawn(
     'claude',
@@ -103,13 +105,13 @@ function spawnViaCli(
       '--model',
       opts.model,
       '--permission-mode',
-      'bypassPermissions',
+      'bypassPermissions'
     ],
     {
       cwd: opts.cwd,
       env: env as NodeJS.ProcessEnv,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    },
+      stdio: ['pipe', 'pipe', 'pipe']
+    }
   )
 
   // Capture stderr line-by-line and forward via onStderr callback
@@ -141,8 +143,8 @@ function spawnViaCli(
       type: 'user',
       message: { role: 'user', content: opts.prompt },
       parent_tool_use_id: null,
-      session_id: sessionId,
-    }) + '\n',
+      session_id: sessionId
+    }) + '\n'
   )
 
   async function* parseMessages(): AsyncIterable<unknown> {
@@ -178,14 +180,14 @@ function spawnViaCli(
             type: 'user',
             message: { role: 'user', content: message },
             parent_tool_use_id: null,
-            session_id: sessionId,
-          }) + '\n',
+            session_id: sessionId
+          }) + '\n'
         )
         return { delivered: true }
       } catch (err) {
         return { delivered: false, error: String(err) }
       }
-    },
+    }
   }
 
   return handle

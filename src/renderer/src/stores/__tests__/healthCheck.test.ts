@@ -3,7 +3,7 @@ import { useHealthCheckStore } from '../healthCheck'
 
 const initialState = {
   stuckTaskIds: [] as string[],
-  dismissedIds: [] as string[],
+  dismissedIds: [] as string[]
 }
 
 describe('healthCheck store', () => {

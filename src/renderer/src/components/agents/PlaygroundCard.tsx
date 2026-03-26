@@ -20,7 +20,11 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function PlaygroundCard({ filename, sizeBytes, onClick }: PlaygroundCardProps): React.JSX.Element {
+export function PlaygroundCard({
+  filename,
+  sizeBytes,
+  onClick
+}: PlaygroundCardProps): React.JSX.Element {
   return (
     <button
       onClick={onClick}
@@ -39,7 +43,7 @@ export function PlaygroundCard({ filename, sizeBytes, onClick }: PlaygroundCardP
         cursor: 'pointer',
         transition: tokens.transition.fast,
         fontFamily: tokens.font.ui,
-        textAlign: 'left',
+        textAlign: 'left'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = tokens.color.accent
@@ -60,7 +64,7 @@ export function PlaygroundCard({ filename, sizeBytes, onClick }: PlaygroundCardP
           height: '40px',
           background: tokens.color.accentDim,
           borderRadius: tokens.radius.sm,
-          flexShrink: 0,
+          flexShrink: 0
         }}
       >
         <FileCode size={20} style={{ color: tokens.color.accent }} />
@@ -76,7 +80,7 @@ export function PlaygroundCard({ filename, sizeBytes, onClick }: PlaygroundCardP
             color: tokens.color.text,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'nowrap'
           }}
         >
           {filename}
@@ -85,7 +89,7 @@ export function PlaygroundCard({ filename, sizeBytes, onClick }: PlaygroundCardP
           style={{
             fontSize: tokens.size.xs,
             color: tokens.color.textMuted,
-            marginTop: tokens.space[1],
+            marginTop: tokens.space[1]
           }}
         >
           {formatFileSize(sizeBytes)}
@@ -103,7 +107,7 @@ export function PlaygroundCard({ filename, sizeBytes, onClick }: PlaygroundCardP
           borderRadius: tokens.radius.sm,
           fontSize: tokens.size.xs,
           color: tokens.color.textMuted,
-          flexShrink: 0,
+          flexShrink: 0
         }}
       >
         <Eye size={12} />

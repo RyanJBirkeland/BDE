@@ -6,7 +6,7 @@ import type { IpcMainInvokeEvent } from 'electron'
 
 // Mock ipc-utils first
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 // Mock git module
@@ -19,40 +19,40 @@ vi.mock('../../git', () => ({
   gitCommit: vi.fn(),
   gitPush: vi.fn(),
   gitBranches: vi.fn(),
-  gitCheckout: vi.fn(),
+  gitCheckout: vi.fn()
 }))
 
 // Mock validation — passthrough by default
 vi.mock('../../validation', () => ({
-  validateRepoPath: vi.fn((p: string) => p),
+  validateRepoPath: vi.fn((p: string) => p)
 }))
 
 // Mock github-fetch
 vi.mock('../../github-fetch', () => ({
   githubFetch: vi.fn(),
   parseNextLink: vi.fn().mockReturnValue(null),
-  fetchAllGitHubPages: vi.fn(),
+  fetchAllGitHubPages: vi.fn()
 }))
 
 // Mock config
 vi.mock('../../config', () => ({
-  getGitHubToken: vi.fn(),
+  getGitHubToken: vi.fn()
 }))
 
 // Mock github-pr-status
 vi.mock('../../github-pr-status', () => ({
-  pollPrStatuses: vi.fn(),
+  pollPrStatuses: vi.fn()
 }))
 
 // Mock github-conflict-check
 vi.mock('../../github-conflict-check', () => ({
-  checkConflictFiles: vi.fn(),
+  checkConflictFiles: vi.fn()
 }))
 
 // Mock pr-poller
 vi.mock('../../pr-poller', () => ({
   getLatestPrList: vi.fn(),
-  refreshPrList: vi.fn(),
+  refreshPrList: vi.fn()
 }))
 
 // Mock sprint-local (imported by git-handlers for PR task status updates)
@@ -63,22 +63,17 @@ vi.mock('../sprint-local', () => ({
   UPDATE_ALLOWLIST: new Set(),
   onSprintMutation: vi.fn(),
   buildQuickSpecPrompt: vi.fn(),
-  getTemplateScaffold: vi.fn(),
+  getTemplateScaffold: vi.fn()
 }))
 
 // Mock shared/github
 vi.mock('../../../shared/github', () => ({
-  parsePrUrl: vi.fn(),
+  parsePrUrl: vi.fn()
 }))
 
 import { registerGitHandlers } from '../git-handlers'
 import { safeHandle } from '../../ipc-utils'
-import {
-  getRepoPaths,
-  gitStatus,
-  gitDiffFile,
-  gitCommit,
-} from '../../git'
+import { getRepoPaths, gitStatus, gitDiffFile, gitCommit } from '../../git'
 import { getGitHubToken } from '../../config'
 import { githubFetch, parseNextLink } from '../../github-fetch'
 import { getLatestPrList, refreshPrList } from '../../pr-poller'
@@ -87,7 +82,7 @@ import { parsePrUrl } from '../../../shared/github'
 import {
   markTaskDoneByPrNumber,
   markTaskCancelledByPrNumber,
-  updateTaskMergeableState,
+  updateTaskMergeableState
 } from '../sprint-local'
 
 const mockEvent = {} as IpcMainInvokeEvent
@@ -238,9 +233,9 @@ describe('github:fetch handler', () => {
           if (key === 'content-type') return 'application/json'
           if (key === 'Link') return null
           return null
-        }),
+        })
       },
-      json: vi.fn().mockResolvedValue([{ id: 1, title: 'PR #1' }]),
+      json: vi.fn().mockResolvedValue([{ id: 1, title: 'PR #1' }])
     }
     vi.mocked(githubFetch).mockResolvedValue(mockResponse as any)
 
@@ -250,7 +245,7 @@ describe('github:fetch handler', () => {
     expect(githubFetch).toHaveBeenCalledWith(
       'https://api.github.com/repos/owner/repo/pulls',
       expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: 'Bearer ghp_token' }),
+        headers: expect.objectContaining({ Authorization: 'Bearer ghp_token' })
       })
     )
     expect(result).toMatchObject({ ok: true, status: 200, linkNext: null })
@@ -268,15 +263,15 @@ describe('github:fetch handler', () => {
         get: vi.fn((key: string) => {
           if (key === 'content-type') return 'application/json'
           return null
-        }),
+        })
       },
-      json: vi.fn().mockResolvedValue({}),
+      json: vi.fn().mockResolvedValue({})
     }
     vi.mocked(githubFetch).mockResolvedValue(mockResponse as any)
 
     const handler = captureHandler('github:fetch')
     await handler(mockEvent, '/repos/owner/repo', {
-      headers: { Authorization: 'Bearer caller_token', 'X-Custom': 'value' },
+      headers: { Authorization: 'Bearer caller_token', 'X-Custom': 'value' }
     })
 
     // The Authorization header in the call should be the server token, not the caller token
@@ -288,9 +283,9 @@ describe('github:fetch handler', () => {
     vi.mocked(getGitHubToken).mockReturnValue('ghp_token')
 
     const handler = captureHandler('github:fetch')
-    await expect(
-      handler(mockEvent, 'https://evil.example.com/steal')
-    ).rejects.toThrow('github:fetch only allows api.github.com URLs')
+    await expect(handler(mockEvent, 'https://evil.example.com/steal')).rejects.toThrow(
+      'github:fetch only allows api.github.com URLs'
+    )
   })
 })
 
@@ -302,7 +297,7 @@ describe('pr:getList handler', () => {
   it('returns latest PR list when available', () => {
     const payload = {
       prs: [{ id: 1, title: 'PR #1' }],
-      checks: { 'sha-abc': { status: 'pass', total: 1, passed: 1, failed: 0, pending: 0 } },
+      checks: { 'sha-abc': { status: 'pass', total: 1, passed: 1, failed: 0, pending: 0 } }
     }
     vi.mocked(getLatestPrList).mockReturnValue(payload as any)
 

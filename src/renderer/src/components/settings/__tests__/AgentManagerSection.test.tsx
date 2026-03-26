@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 beforeEach(() => {
@@ -110,7 +110,10 @@ describe('AgentManagerSection', () => {
 
     await waitFor(() => {
       // 90 minutes * 60_000 ms/minute = 5_400_000 ms
-      expect(window.api.settings.setJson).toHaveBeenCalledWith('agentManager.maxRuntimeMs', 5_400_000)
+      expect(window.api.settings.setJson).toHaveBeenCalledWith(
+        'agentManager.maxRuntimeMs',
+        5_400_000
+      )
     })
   })
 
@@ -138,7 +141,10 @@ describe('AgentManagerSection', () => {
 
     await waitFor(() => {
       // 120 minutes * 60_000 = 7_200_000 ms — round-trip intact
-      expect(window.api.settings.setJson).toHaveBeenCalledWith('agentManager.maxRuntimeMs', 7_200_000)
+      expect(window.api.settings.setJson).toHaveBeenCalledWith(
+        'agentManager.maxRuntimeMs',
+        7_200_000
+      )
     })
   })
 })

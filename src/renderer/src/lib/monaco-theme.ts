@@ -32,13 +32,13 @@ export function getMonacoTheme(): editor.IStandaloneThemeData {
       'input.background': get('--bde-surface'),
       'input.border': get('--bde-border'),
       'input.foreground': get('--bde-text'),
-      'focusBorder': get('--bde-accent'),
+      focusBorder: get('--bde-accent'),
       'scrollbar.shadow': 'transparent',
       'scrollbarSlider.background': get('--bde-border'),
       'scrollbarSlider.hoverBackground': get('--bde-text-dim') || get('--bde-text'),
       'scrollbarSlider.activeBackground': get('--bde-accent'),
-      'minimap.background': get('--bde-bg'),
-    },
+      'minimap.background': get('--bde-bg')
+    }
   }
 }
 
@@ -74,12 +74,12 @@ export function getLightMonacoTheme(): editor.IStandaloneThemeData {
       'input.background': get('--bde-surface'),
       'input.border': get('--bde-border'),
       'input.foreground': get('--bde-text'),
-      'focusBorder': get('--bde-accent'),
+      focusBorder: get('--bde-accent'),
       'scrollbar.shadow': 'transparent',
       'scrollbarSlider.background': get('--bde-border'),
       'scrollbarSlider.hoverBackground': get('--bde-text-dim') || get('--bde-text'),
       'scrollbarSlider.activeBackground': get('--bde-accent'),
-      'minimap.background': get('--bde-bg'),
-    },
+      'minimap.background': get('--bde-bg')
+    }
   }
 }

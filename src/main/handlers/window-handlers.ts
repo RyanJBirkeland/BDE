@@ -17,7 +17,10 @@ export function registerWindowHandlers(): void {
 
   safeHandle('agent:killLocal', async (_event, _pid: number) => {
     // Local PID-based agent kill removed — use agent:kill with agent ID instead
-    return { ok: false, error: 'Local PID-based agent kill removed. Use agent:kill with an agent ID instead.' }
+    return {
+      ok: false,
+      error: 'Local PID-based agent kill removed. Use agent:kill with an agent ID instead.'
+    }
   })
 
   ipcMain.on('window:setTitle', (_e, title: string) => {

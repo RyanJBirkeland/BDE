@@ -22,9 +22,9 @@ vi.mock('../../../stores/agentHistory', () => ({
       clearSelection: vi.fn(),
       startLogPolling: vi.fn(),
       stopLogPolling: vi.fn(),
-      importExternal: vi.fn(),
+      importExternal: vi.fn()
     })
-  ),
+  )
 }))
 
 vi.mock('../../../stores/agentEvents', () => ({
@@ -33,9 +33,9 @@ vi.mock('../../../stores/agentEvents', () => ({
       events: mockEvents,
       init: vi.fn(),
       loadHistory: vi.fn(),
-      clear: vi.fn(),
+      clear: vi.fn()
     })
-  ),
+  )
 }))
 
 describe('LiveActivityStrip', () => {
@@ -75,7 +75,7 @@ describe('LiveActivityStrip', () => {
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
-      sprintTaskId: null,
+      sprintTaskId: null
     }
 
     const doneAgent: AgentMeta = {
@@ -84,15 +84,15 @@ describe('LiveActivityStrip', () => {
       task: 'Fix bug Y',
       status: 'done',
       finishedAt: '2026-03-25T10:30:00Z',
-      exitCode: 0,
+      exitCode: 0
     }
 
     mockAgents = [runningAgent, doneAgent]
     mockEvents = {
       'agent-1': [
         { type: 'agent:started', model: 'opus', timestamp: Date.now() },
-        { type: 'agent:tool_call', tool: 'Read', summary: 'Reading file.ts', timestamp: Date.now() },
-      ],
+        { type: 'agent:tool_call', tool: 'Read', summary: 'Reading file.ts', timestamp: Date.now() }
+      ]
     }
 
     render(<LiveActivityStrip onSelectAgent={mockOnSelectAgent} />)
@@ -121,15 +121,15 @@ describe('LiveActivityStrip', () => {
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
-      sprintTaskId: null,
+      sprintTaskId: null
     }
 
     mockAgents = [runningAgent]
     mockEvents = {
       'agent-1': [
         { type: 'agent:started', model: 'opus', timestamp: Date.now() },
-        { type: 'agent:thinking', tokenCount: 100, timestamp: Date.now() },
-      ],
+        { type: 'agent:thinking', tokenCount: 100, timestamp: Date.now() }
+      ]
     }
 
     render(<LiveActivityStrip onSelectAgent={mockOnSelectAgent} />)

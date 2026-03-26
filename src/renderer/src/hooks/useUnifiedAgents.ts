@@ -7,7 +7,13 @@
 import { useMemo } from 'react'
 import { useLocalAgentsStore } from '../stores/localAgents'
 import { useAgentHistoryStore } from '../stores/agentHistory'
-import type { UnifiedAgent, LocalAgent, HistoryAgent, UnifiedAgentSource, UnifiedAgentStatus } from '../../../shared/types'
+import type {
+  UnifiedAgent,
+  LocalAgent,
+  HistoryAgent,
+  UnifiedAgentSource,
+  UnifiedAgentStatus
+} from '../../../shared/types'
 import { buildUnifiedAgentList } from '../lib/agentNormalizers'
 
 export type { UnifiedAgent, LocalAgent, HistoryAgent, UnifiedAgentSource, UnifiedAgentStatus }
@@ -20,10 +26,7 @@ export function useUnifiedAgents(): UnifiedAgent[] {
   const processes = useLocalAgentsStore((s) => s.processes)
   const historyAgents = useAgentHistoryStore((s) => s.agents)
 
-  return useMemo(
-    () => buildUnifiedAgentList(processes, historyAgents),
-    [processes, historyAgents]
-  )
+  return useMemo(() => buildUnifiedAgentList(processes, historyAgents), [processes, historyAgents])
 }
 
 export function groupUnifiedAgents(agents: UnifiedAgent[]): {

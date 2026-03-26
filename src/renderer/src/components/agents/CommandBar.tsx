@@ -12,7 +12,7 @@ export function CommandBar({
   onSend,
   onCommand,
   disabled = false,
-  disabledReason,
+  disabledReason
 }: CommandBarProps): React.JSX.Element {
   const [value, setValue] = useState('')
   const [showAutocomplete, setShowAutocomplete] = useState(false)
@@ -63,14 +63,11 @@ export function CommandBar({
     [showAutocomplete, handleSubmit]
   )
 
-  const handleAutocompleteSelect = useCallback(
-    (command: string): void => {
-      setValue(command + ' ')
-      setShowAutocomplete(false)
-      inputRef.current?.focus()
-    },
-    []
-  )
+  const handleAutocompleteSelect = useCallback((command: string): void => {
+    setValue(command + ' ')
+    setShowAutocomplete(false)
+    inputRef.current?.focus()
+  }, [])
 
   const handleAutocompleteClose = useCallback((): void => {
     setShowAutocomplete(false)
@@ -95,7 +92,9 @@ export function CommandBar({
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder={disabled && disabledReason ? disabledReason : 'Type a message or / for commands...'}
+        placeholder={
+          disabled && disabledReason ? disabledReason : 'Type a message or / for commands...'
+        }
         autoFocus
       />
     </div>

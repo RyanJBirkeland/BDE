@@ -26,11 +26,17 @@ interface AgentManagerSettings {
 const DEFAULTS: AgentManagerSettings = {
   maxConcurrent: '3',
   worktreeBase: '/tmp/worktrees/bde',
-  maxRuntimeMinutes: '60',
+  maxRuntimeMinutes: '60'
 }
 
 const GITHUB_FIELDS: CredentialField[] = [
-  { key: 'token', label: 'Personal Access Token', type: 'token', placeholder: 'ghp_...', savedPlaceholder: 'Token saved — enter new value to change' },
+  {
+    key: 'token',
+    label: 'Personal Access Token',
+    type: 'token',
+    placeholder: 'ghp_...',
+    savedPlaceholder: 'Token saved — enter new value to change'
+  }
 ]
 
 function formatExpiry(iso: string): string {
@@ -58,7 +64,9 @@ export function ConnectionsSection(): React.JSX.Element {
     }
   }, [])
 
-  useEffect(() => { refreshAuth() }, [refreshAuth])
+  useEffect(() => {
+    refreshAuth()
+  }, [refreshAuth])
 
   // --- Agent Manager settings state ---
   const [amSettings, setAmSettings] = useState<AgentManagerSettings>(DEFAULTS)
@@ -69,23 +77,20 @@ export function ConnectionsSection(): React.JSX.Element {
     Promise.all([
       window.api.settings.get('agentManager.maxConcurrent'),
       window.api.settings.get('agentManager.worktreeBase'),
-      window.api.settings.get('agentManager.maxRuntimeMinutes'),
+      window.api.settings.get('agentManager.maxRuntimeMinutes')
     ]).then(([maxConcurrent, worktreeBase, maxRuntimeMinutes]) => {
       setAmSettings({
         maxConcurrent: maxConcurrent || DEFAULTS.maxConcurrent,
         worktreeBase: worktreeBase || DEFAULTS.worktreeBase,
-        maxRuntimeMinutes: maxRuntimeMinutes || DEFAULTS.maxRuntimeMinutes,
+        maxRuntimeMinutes: maxRuntimeMinutes || DEFAULTS.maxRuntimeMinutes
       })
     })
   }, [])
 
-  const handleAmChange = useCallback(
-    (key: keyof AgentManagerSettings, value: string) => {
-      setAmSettings((prev) => ({ ...prev, [key]: value }))
-      setAmDirty(true)
-    },
-    [],
-  )
+  const handleAmChange = useCallback((key: keyof AgentManagerSettings, value: string) => {
+    setAmSettings((prev) => ({ ...prev, [key]: value }))
+    setAmDirty(true)
+  }, [])
 
   const handleAmSave = useCallback(async () => {
     setAmSaving(true)
@@ -93,7 +98,7 @@ export function ConnectionsSection(): React.JSX.Element {
       await Promise.all([
         window.api.settings.set('agentManager.maxConcurrent', amSettings.maxConcurrent),
         window.api.settings.set('agentManager.worktreeBase', amSettings.worktreeBase),
-        window.api.settings.set('agentManager.maxRuntimeMinutes', amSettings.maxRuntimeMinutes),
+        window.api.settings.set('agentManager.maxRuntimeMinutes', amSettings.maxRuntimeMinutes)
       ])
       setAmDirty(false)
       toast.success('Agent manager settings saved')
@@ -174,7 +179,9 @@ export function ConnectionsSection(): React.JSX.Element {
 
         <div className="settings-field__row" style={{ marginTop: 0, marginBottom: 12 }}>
           <div className="settings-field__status">
-            <Badge variant={authBadgeVariant} size="sm">{authBadgeLabel}</Badge>
+            <Badge variant={authBadgeVariant} size="sm">
+              {authBadgeLabel}
+            </Badge>
             {authStatus?.expiresAt && (
               <span style={{ fontSize: 'var(--bde-size-sm)', color: 'var(--bde-text-muted)' }}>
                 Expires: {formatExpiry(authStatus.expiresAt)}

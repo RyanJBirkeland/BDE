@@ -18,7 +18,7 @@ vi.mock('node:child_process', () => {
 
 // Mock sprint-queries
 vi.mock('../../data/sprint-queries', () => ({
-  updateTask: vi.fn(),
+  updateTask: vi.fn()
 }))
 
 import { existsSync } from 'node:fs'
@@ -62,7 +62,7 @@ const mockRepo: ISprintTaskRepository = {
   getTasksWithDependencies: vi.fn().mockResolvedValue([]),
   getOrphanedTasks: vi.fn(),
   getActiveTaskCount: vi.fn().mockResolvedValue(0),
-  claimTask: vi.fn(),
+  claimTask: vi.fn()
 }
 
 describe('resolveSuccess', () => {
@@ -74,7 +74,7 @@ describe('resolveSuccess', () => {
     ghRepo: 'owner/repo',
     onTaskTerminal: mockOnTaskTerminal,
     retryCount: 0,
-    repo: mockRepo,
+    repo: mockRepo
   }
 
   beforeEach(() => {
@@ -85,14 +85,14 @@ describe('resolveSuccess', () => {
 
   it('pushes the branch and creates PR, then updates task with PR info', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },                    // git rev-parse
-      { stdout: '' },                                           // git status --porcelain (no uncommitted changes)
-      { stdout: '1\n' },                                        // git rev-list --count (has commits)
-      { stdout: '' },                                           // git push
-      { stdout: '' },                                           // gh pr list (no existing PR)
-      { stdout: 'abc123 first commit\n' },                      // git log (generatePrBody)
-      { stdout: ' file.ts | 10 ++++\n' },                      // git diff --stat (generatePrBody)
-      { stdout: 'https://github.com/owner/repo/pull/42\n' },   // gh pr create
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain (no uncommitted changes)
+      { stdout: '1\n' }, // git rev-list --count (has commits)
+      { stdout: '' }, // git push
+      { stdout: '' }, // gh pr list (no existing PR)
+      { stdout: 'abc123 first commit\n' }, // git log (generatePrBody)
+      { stdout: ' file.ts | 10 ++++\n' }, // git diff --stat (generatePrBody)
+      { stdout: 'https://github.com/owner/repo/pull/42\n' } // gh pr create
     ])
 
     await resolveSuccess(opts, noopLogger)
@@ -141,17 +141,17 @@ describe('resolveSuccess', () => {
     expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
       pr_status: 'open',
       pr_url: 'https://github.com/owner/repo/pull/42',
-      pr_number: 42,
+      pr_number: 42
     })
   })
 
   it('uses existing PR when one already exists for the branch', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },                                       // git rev-parse
-      { stdout: '' },                                                              // git status --porcelain
-      { stdout: '1\n' },                                                           // git rev-list --count
-      { stdout: '' },                                                              // git push
-      { stdout: '{"url":"https://github.com/owner/repo/pull/99","number":99}\n' }, // gh pr list (existing PR)
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain
+      { stdout: '1\n' }, // git rev-list --count
+      { stdout: '' }, // git push
+      { stdout: '{"url":"https://github.com/owner/repo/pull/99","number":99}\n' } // gh pr list (existing PR)
     ])
 
     await resolveSuccess(opts, noopLogger)
@@ -174,7 +174,7 @@ describe('resolveSuccess', () => {
     expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
       pr_status: 'open',
       pr_url: 'https://github.com/owner/repo/pull/99',
-      pr_number: 99,
+      pr_number: 99
     })
   })
 
@@ -182,15 +182,15 @@ describe('resolveSuccess', () => {
     // Use implementation-based mock to track calls by command
     let callIndex = 0
     const responses = [
-      { stdout: 'agent/add-login-page\n' },                                        // 0: git rev-parse
-      { stdout: '' },                                                               // 1: git status --porcelain
-      { stdout: '1\n' },                                                            // 2: git rev-list --count
-      { stdout: '' },                                                               // 3: git push
-      { stdout: '' },                                                               // 4: gh pr list (no existing PR — race condition)
-      { stdout: '' },                                                               // 5: git log (generatePrBody)
-      { stdout: '' },                                                               // 6: git diff --stat (generatePrBody)
+      { stdout: 'agent/add-login-page\n' }, // 0: git rev-parse
+      { stdout: '' }, // 1: git status --porcelain
+      { stdout: '1\n' }, // 2: git rev-list --count
+      { stdout: '' }, // 3: git push
+      { stdout: '' }, // 4: gh pr list (no existing PR — race condition)
+      { stdout: '' }, // 5: git log (generatePrBody)
+      { stdout: '' }, // 6: git diff --stat (generatePrBody)
       { error: new Error('a pull request already exists for branch agent/add-login-page') }, // 7: gh pr create fails
-      { stdout: '{"url":"https://github.com/owner/repo/pull/77","number":77}\n' }, // 8: gh pr list retry
+      { stdout: '{"url":"https://github.com/owner/repo/pull/77","number":77}\n' } // 8: gh pr list retry
     ] as Array<{ stdout?: string; error?: Error }>
     getCustomMock().mockImplementation((..._args: unknown[]) => {
       const resp = responses[callIndex] ?? { stdout: '' }
@@ -208,20 +208,20 @@ describe('resolveSuccess', () => {
     expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
       pr_status: 'open',
       pr_url: 'https://github.com/owner/repo/pull/77',
-      pr_number: 77,
+      pr_number: 77
     })
   })
 
   it('pushes branch and records notes when gh pr create fails (does not set pr_status=open)', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },             // git rev-parse
-      { stdout: '' },                                    // git status --porcelain
-      { stdout: '1\n' },                                 // git rev-list --count
-      { stdout: '' },                                    // git push
-      { stdout: '' },                                    // gh pr list (no existing PR)
-      { stdout: '' },                                    // git log (generatePrBody)
-      { stdout: '' },                                    // git diff --stat (generatePrBody)
-      { error: new Error('gh: authentication error') }, // gh pr create fails
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain
+      { stdout: '1\n' }, // git rev-list --count
+      { stdout: '' }, // git push
+      { stdout: '' }, // gh pr list (no existing PR)
+      { stdout: '' }, // git log (generatePrBody)
+      { stdout: '' }, // git diff --stat (generatePrBody)
+      { error: new Error('gh: authentication error') } // gh pr create fails
     ])
 
     // Should not throw — user can create PR manually
@@ -239,7 +239,7 @@ describe('resolveSuccess', () => {
 
   it('sets task to error and calls onTaskTerminal when branch detection fails', async () => {
     mockExecFileSequence([
-      { error: new Error('fatal: not a git repository') }, // git rev-parse fails
+      { error: new Error('fatal: not a git repository') } // git rev-parse fails
     ])
 
     await resolveSuccess(opts, noopLogger)
@@ -249,7 +249,7 @@ describe('resolveSuccess', () => {
       status: 'error',
       completed_at: expect.any(String),
       notes: 'Failed to detect branch',
-      claimed_by: null,
+      claimed_by: null
     })
 
     // Should call onTaskTerminal with 'error'
@@ -261,27 +261,33 @@ describe('resolveSuccess', () => {
 
     await resolveSuccess(opts, noopLogger)
 
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, expect.objectContaining({
-      status: 'error',
-      notes: expect.stringContaining('Worktree evicted'),
-    }))
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'error',
+        notes: expect.stringContaining('Worktree evicted')
+      })
+    )
     expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'error')
   })
 
   it('requeues task via resolveFailure when no commits to push (retry_count < MAX_RETRIES)', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },   // git rev-parse
-      { stdout: '' },                           // git status --porcelain (clean)
-      { stdout: '0\n' },                        // git rev-list --count (no commits)
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain (clean)
+      { stdout: '0\n' } // git rev-list --count (no commits)
     ])
 
     await resolveSuccess(opts, noopLogger)
 
     // Should requeue via resolveFailure
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, expect.objectContaining({
-      status: 'queued',
-      retry_count: 1,
-    }))
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'queued',
+        retry_count: 1
+      })
+    )
 
     // onTaskTerminal should NOT have been called (not terminal)
     expect(mockOnTaskTerminal).not.toHaveBeenCalled()
@@ -289,17 +295,20 @@ describe('resolveSuccess', () => {
 
   it('marks task failed via resolveFailure when no commits and retries exhausted', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },   // git rev-parse
-      { stdout: '' },                           // git status --porcelain (clean)
-      { stdout: '0\n' },                        // git rev-list --count (no commits)
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain (clean)
+      { stdout: '0\n' } // git rev-list --count (no commits)
     ])
 
     await resolveSuccess({ ...opts, retryCount: MAX_RETRIES }, noopLogger)
 
     // Should mark as failed
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, expect.objectContaining({
-      status: 'failed',
-    }))
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'failed'
+      })
+    )
 
     // onTaskTerminal should have been called with 'failed'
     expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'failed')
@@ -307,41 +316,45 @@ describe('resolveSuccess', () => {
 
   it('includes agent summary in no-commits notes', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },   // git rev-parse
-      { stdout: '' },                           // git status --porcelain (clean)
-      { stdout: '0\n' },                        // git rev-list --count (no commits)
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain (clean)
+      { stdout: '0\n' } // git rev-list --count (no commits)
     ])
 
-    await resolveSuccess({
-      ...opts,
-      agentSummary: 'I could not complete the task because the API was down',
-    }, noopLogger)
+    await resolveSuccess(
+      {
+        ...opts,
+        agentSummary: 'I could not complete the task because the API was down'
+      },
+      noopLogger
+    )
 
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, expect.objectContaining({
-      notes: expect.stringContaining('I could not complete the task'),
-    }))
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        notes: expect.stringContaining('I could not complete the task')
+      })
+    )
   })
 
   it('uses git add -A (not -u) in auto-commit to capture new files', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },                    // git rev-parse
-      { stdout: ' M src/file.ts\n' },                           // git status --porcelain (dirty)
-      { stdout: '' },                                           // git add -A
-      { stdout: '' },                                           // git commit
-      { stdout: '1\n' },                                        // git rev-list --count
-      { stdout: '' },                                           // git push
-      { stdout: '' },                                           // gh pr list
-      { stdout: '' },                                           // git log
-      { stdout: '' },                                           // git diff --stat
-      { stdout: 'https://github.com/owner/repo/pull/42\n' },   // gh pr create
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: ' M src/file.ts\n' }, // git status --porcelain (dirty)
+      { stdout: '' }, // git add -A
+      { stdout: '' }, // git commit
+      { stdout: '1\n' }, // git rev-list --count
+      { stdout: '' }, // git push
+      { stdout: '' }, // gh pr list
+      { stdout: '' }, // git log
+      { stdout: '' }, // git diff --stat
+      { stdout: 'https://github.com/owner/repo/pull/42\n' } // gh pr create
     ])
 
     await resolveSuccess(opts, noopLogger)
 
     const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
-    const addCall = calls.find(
-      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('add')
-    )
+    const addCall = calls.find((c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('add'))
     expect(addCall).toBeDefined()
     expect(addCall![1]).toContain('-A')
     expect(addCall![1]).not.toContain('-u')
@@ -349,22 +362,22 @@ describe('resolveSuccess', () => {
 
   it('records push failure in notes but does not call onTaskTerminal', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/add-login-page\n' },              // git rev-parse
-      { stdout: '' },                                      // git status --porcelain
-      { stdout: '1\n' },                                   // git rev-list --count
-      { error: new Error('failed to push some refs') },   // git push fails
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain
+      { stdout: '1\n' }, // git rev-list --count
+      { error: new Error('failed to push some refs') } // git push fails
     ])
 
     await resolveSuccess(opts, noopLogger)
 
     expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
-      notes: expect.stringContaining('git push failed'),
+      notes: expect.stringContaining('git push failed')
     })
     expect(mockOnTaskTerminal).not.toHaveBeenCalled()
   })
   it('sets task to error and calls onTaskTerminal when branch name is empty', async () => {
     mockExecFileSequence([
-      { stdout: '' }, // git rev-parse returns empty string
+      { stdout: '' } // git rev-parse returns empty string
     ])
 
     await resolveSuccess(opts, noopLogger)
@@ -374,7 +387,7 @@ describe('resolveSuccess', () => {
       status: 'error',
       completed_at: expect.any(String),
       notes: 'Empty branch name',
-      claimed_by: null,
+      claimed_by: null
     })
 
     // Should call onTaskTerminal with 'error'
@@ -384,80 +397,174 @@ describe('resolveSuccess', () => {
 
 describe('resolveSuccess — catch handler coverage', () => {
   const mockOnTaskTerminal2 = vi.fn()
-  const catchOpts = { taskId: 'task-catch', worktreePath: '/tmp/worktrees/task-catch', title: 'Catch test', ghRepo: 'owner/repo', onTaskTerminal: mockOnTaskTerminal2, repo: mockRepo }
+  const catchOpts = {
+    taskId: 'task-catch',
+    worktreePath: '/tmp/worktrees/task-catch',
+    title: 'Catch test',
+    ghRepo: 'owner/repo',
+    onTaskTerminal: mockOnTaskTerminal2,
+    repo: mockRepo
+  }
 
-  beforeEach(() => { resetMocks(); mockOnTaskTerminal2.mockReset(); vi.mocked(existsSync).mockReturnValue(true) })
+  beforeEach(() => {
+    resetMocks()
+    mockOnTaskTerminal2.mockReset()
+    vi.mocked(existsSync).mockReturnValue(true)
+  })
 
   it('logs warning when updateTask fails after push error (line 152)', async () => {
     let i = 0
-    const r = [{ stdout: 'agent/b\n' }, { stdout: '' }, { stdout: '1\n' }, { error: new Error('push failed') }] as any[]
-    getCustomMock().mockImplementation(() => { const x = r[i] ?? { stdout: '' }; i++; return x.error ? Promise.reject(x.error) : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' }) })
+    const r = [
+      { stdout: 'agent/b\n' },
+      { stdout: '' },
+      { stdout: '1\n' },
+      { error: new Error('push failed') }
+    ] as any[]
+    getCustomMock().mockImplementation(() => {
+      const x = r[i] ?? { stdout: '' }
+      i++
+      return x.error
+        ? Promise.reject(x.error)
+        : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' })
+    })
     updateTaskMock.mockRejectedValueOnce(new Error('DB down'))
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-catch after push error'))
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-catch after push error')
+    )
   })
 
   it('logs warning when gh pr list fails during existing PR check (line 176)', async () => {
     let i = 0
-    const r = [{ stdout: 'agent/b\n' }, { stdout: '' }, { stdout: '1\n' }, { stdout: '' }, { error: new Error('gh CLI crash') }, { stdout: '' }, { stdout: '' }, { stdout: 'https://github.com/o/r/pull/10\n' }] as any[]
-    getCustomMock().mockImplementation(() => { const x = r[i] ?? { stdout: '' }; i++; return x.error ? Promise.reject(x.error) : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' }) })
+    const r = [
+      { stdout: 'agent/b\n' },
+      { stdout: '' },
+      { stdout: '1\n' },
+      { stdout: '' },
+      { error: new Error('gh CLI crash') },
+      { stdout: '' },
+      { stdout: '' },
+      { stdout: 'https://github.com/o/r/pull/10\n' }
+    ] as any[]
+    getCustomMock().mockImplementation(() => {
+      const x = r[i] ?? { stdout: '' }
+      i++
+      return x.error
+        ? Promise.reject(x.error)
+        : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' })
+    })
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to check for existing PR'))
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to check for existing PR')
+    )
   })
 
   it('logs warning when retry PR list fails after "already exists" error (line 213)', async () => {
     let i = 0
-    const r = [{ stdout: 'agent/b\n' }, { stdout: '' }, { stdout: '1\n' }, { stdout: '' }, { stdout: '' }, { stdout: '' }, { stdout: '' }, { error: new Error('a pull request already exists for branch') }, { error: new Error('gh CLI down') }] as any[]
-    getCustomMock().mockImplementation(() => { const x = r[i] ?? { stdout: '' }; i++; return x.error ? Promise.reject(x.error) : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' }) })
+    const r = [
+      { stdout: 'agent/b\n' },
+      { stdout: '' },
+      { stdout: '1\n' },
+      { stdout: '' },
+      { stdout: '' },
+      { stdout: '' },
+      { stdout: '' },
+      { error: new Error('a pull request already exists for branch') },
+      { error: new Error('gh CLI down') }
+    ] as any[]
+    getCustomMock().mockImplementation(() => {
+      const x = r[i] ?? { stdout: '' }
+      i++
+      return x.error
+        ? Promise.reject(x.error)
+        : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' })
+    })
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to fetch existing PR after creation failure'))
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to fetch existing PR after creation failure')
+    )
   })
 
   it('logs error when final updateTask with PR info fails (line 231)', async () => {
-    mockExecFileSequence([{ stdout: 'agent/b\n' }, { stdout: '' }, { stdout: '1\n' }, { stdout: '' }, { stdout: '{"url":"https://github.com/o/r/pull/1","number":1}\n' }])
+    mockExecFileSequence([
+      { stdout: 'agent/b\n' },
+      { stdout: '' },
+      { stdout: '1\n' },
+      { stdout: '' },
+      { stdout: '{"url":"https://github.com/o/r/pull/1","number":1}\n' }
+    ])
     updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-catch with PR info'))
+    expect(noopLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-catch with PR info')
+    )
   })
 
   it('handles generatePrBody when git log and diff both fail', async () => {
     let i = 0
-    const r = [{ stdout: 'agent/b\n' }, { stdout: '' }, { stdout: '1\n' }, { stdout: '' }, { stdout: '' }, { error: new Error('git log failed') }, { error: new Error('git diff failed') }, { stdout: 'https://github.com/o/r/pull/55\n' }] as any[]
-    getCustomMock().mockImplementation(() => { const x = r[i] ?? { stdout: '' }; i++; return x.error ? Promise.reject(x.error) : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' }) })
+    const r = [
+      { stdout: 'agent/b\n' },
+      { stdout: '' },
+      { stdout: '1\n' },
+      { stdout: '' },
+      { stdout: '' },
+      { error: new Error('git log failed') },
+      { error: new Error('git diff failed') },
+      { stdout: 'https://github.com/o/r/pull/55\n' }
+    ] as any[]
+    getCustomMock().mockImplementation(() => {
+      const x = r[i] ?? { stdout: '' }
+      i++
+      return x.error
+        ? Promise.reject(x.error)
+        : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' })
+    })
     await resolveSuccess(catchOpts, noopLogger)
-    expect(updateTaskMock).toHaveBeenCalledWith(catchOpts.taskId, { pr_status: 'open', pr_url: 'https://github.com/o/r/pull/55', pr_number: 55 })
+    expect(updateTaskMock).toHaveBeenCalledWith(catchOpts.taskId, {
+      pr_status: 'open',
+      pr_url: 'https://github.com/o/r/pull/55',
+      pr_number: 55
+    })
   })
 
   it('logs warning when updateTask fails after worktree eviction (line 73)', async () => {
     vi.mocked(existsSync).mockReturnValueOnce(false)
     updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-catch after worktree eviction'))
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-catch after worktree eviction')
+    )
   })
 
   it('logs warning when updateTask fails after branch detection error (line 89)', async () => {
     mockExecFileSequence([{ error: new Error('not a git repository') }])
     updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-catch after branch detection error'))
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-catch after branch detection error')
+    )
   })
 
   it('logs warning when updateTask fails after empty branch (line 98)', async () => {
     mockExecFileSequence([{ stdout: '\n' }])
     updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-catch after empty branch'))
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-catch after empty branch')
+    )
   })
 
   it('logs warning when updateTask fails in no-commits path (line 135)', async () => {
     mockExecFileSequence([
-      { stdout: 'agent/b\n' },  // git rev-parse
-      { stdout: '' },            // git status --porcelain
-      { stdout: '0\n' },         // git rev-list --count (0 commits)
+      { stdout: 'agent/b\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain
+      { stdout: '0\n' } // git rev-list --count (0 commits)
     ])
     updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
     await resolveSuccess({ ...catchOpts, agentSummary: 'some output' }, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-catch after empty branch'))
+    expect(noopLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-catch after empty branch')
+    )
   })
 })
 
@@ -473,13 +580,17 @@ describe('resolveFailure', () => {
     expect(updateTaskMock).toHaveBeenCalledWith('task-2', {
       status: 'queued',
       retry_count: 2,
-      claimed_by: null,
+      claimed_by: null
     })
     expect(result).toBe(false) // not terminal
   })
 
   it('marks task failed with needs_review when retry count is exhausted', async () => {
-    const result = await resolveFailure({ taskId: 'task-3', retryCount: MAX_RETRIES, repo: mockRepo })
+    const result = await resolveFailure({
+      taskId: 'task-3',
+      retryCount: MAX_RETRIES,
+      repo: mockRepo
+    })
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
@@ -489,41 +600,65 @@ describe('resolveFailure', () => {
   })
 
   it('re-queues when retryCount is one below MAX_RETRIES', async () => {
-    const result = await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES - 1, repo: mockRepo })
+    const result = await resolveFailure({
+      taskId: 'task-4',
+      retryCount: MAX_RETRIES - 1,
+      repo: mockRepo
+    })
 
     expect(updateTaskMock).toHaveBeenCalledWith('task-4', {
       status: 'queued',
       retry_count: MAX_RETRIES,
-      claimed_by: null,
+      claimed_by: null
     })
     expect(result).toBe(false) // not terminal
   })
 
   it('includes notes when provided', async () => {
-    const result = await resolveFailure({ taskId: 'task-6', retryCount: 0, notes: 'Agent produced no commits', repo: mockRepo })
-
-    expect(updateTaskMock).toHaveBeenCalledWith('task-6', expect.objectContaining({
-      status: 'queued',
-      retry_count: 1,
+    const result = await resolveFailure({
+      taskId: 'task-6',
+      retryCount: 0,
       notes: 'Agent produced no commits',
-    }))
+      repo: mockRepo
+    })
+
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      'task-6',
+      expect.objectContaining({
+        status: 'queued',
+        retry_count: 1,
+        notes: 'Agent produced no commits'
+      })
+    )
     expect(result).toBe(false)
   })
 
   it('includes notes in terminal failure', async () => {
-    const result = await resolveFailure({ taskId: 'task-7', retryCount: MAX_RETRIES, notes: 'Agent produced no commits', repo: mockRepo })
-
-    expect(updateTaskMock).toHaveBeenCalledWith('task-7', expect.objectContaining({
-      status: 'failed',
+    const result = await resolveFailure({
+      taskId: 'task-7',
+      retryCount: MAX_RETRIES,
       notes: 'Agent produced no commits',
-    }))
+      repo: mockRepo
+    })
+
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      'task-7',
+      expect.objectContaining({
+        status: 'failed',
+        notes: 'Agent produced no commits'
+      })
+    )
     expect(result).toBe(true)
   })
 
   it('returns false when updateTask throws', async () => {
     updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
 
-    const result = await resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES, repo: mockRepo })
+    const result = await resolveFailure({
+      taskId: 'task-5',
+      retryCount: MAX_RETRIES,
+      repo: mockRepo
+    })
 
     expect(result).toBe(false) // not terminal because the update failed
   })

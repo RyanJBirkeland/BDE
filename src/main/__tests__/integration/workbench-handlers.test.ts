@@ -4,10 +4,11 @@ import { buildChatPrompt } from '../../handlers/workbench'
 describe('workbench handlers', () => {
   describe('buildChatPrompt', () => {
     it('includes constraint instructions in system prompt', () => {
-      const prompt = buildChatPrompt(
-        [{ role: 'user', content: 'Hello' }],
-        { title: 'Test', repo: 'BDE', spec: '' }
-      )
+      const prompt = buildChatPrompt([{ role: 'user', content: 'Hello' }], {
+        title: 'Test',
+        repo: 'BDE',
+        spec: ''
+      })
       expect(prompt).toContain('text-only assistant')
       expect(prompt).toContain('cannot open URLs')
     })
@@ -17,7 +18,7 @@ describe('workbench handlers', () => {
         [
           { role: 'user', content: 'What files?' },
           { role: 'assistant', content: 'Found 3 files' },
-          { role: 'user', content: 'Show me' },
+          { role: 'user', content: 'Show me' }
         ],
         { title: 'Test', repo: 'BDE', spec: 'Do stuff' }
       )
@@ -28,10 +29,11 @@ describe('workbench handlers', () => {
     })
 
     it('handles empty spec gracefully', () => {
-      const prompt = buildChatPrompt(
-        [{ role: 'user', content: 'Hi' }],
-        { title: 'Test', repo: 'BDE', spec: '' }
-      )
+      const prompt = buildChatPrompt([{ role: 'user', content: 'Hi' }], {
+        title: 'Test',
+        repo: 'BDE',
+        spec: ''
+      })
       expect(prompt).toContain('(no spec yet)')
     })
   })

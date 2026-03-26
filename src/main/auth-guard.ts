@@ -3,10 +3,7 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-function execFileAsync(
-  cmd: string,
-  args: string[]
-): Promise<{ stdout: string; stderr: string }> {
+function execFileAsync(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     execFile(cmd, args, (err, stdout, stderr) => {
       if (err) return reject(err)
@@ -47,7 +44,7 @@ export class MacOSCredentialStore implements CredentialStore {
         'find-generic-password',
         '-s',
         'Claude Code-credentials',
-        '-w',
+        '-w'
       ])
       return JSON.parse(stdout.trim()) as KeychainPayload
     } catch {

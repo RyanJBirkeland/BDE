@@ -14,7 +14,7 @@ export default defineConfig({
   preload: {},
   renderer: {
     define: {
-      __APP_VERSION__: JSON.stringify(pkg.version),
+      __APP_VERSION__: JSON.stringify(pkg.version)
     },
     resolve: {
       alias: {

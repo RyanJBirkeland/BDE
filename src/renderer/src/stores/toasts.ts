@@ -22,7 +22,12 @@ const MAX_TOASTS = 4
 
 interface ToastStore {
   toasts: Toast[]
-  addToast: (message: string, type: ToastType, durationMs?: number, extra?: { onUndo?: () => void; action?: string; onAction?: () => void }) => string
+  addToast: (
+    message: string,
+    type: ToastType,
+    durationMs?: number,
+    extra?: { onUndo?: () => void; action?: string; onAction?: () => void }
+  ) => string
   removeToast: (id: string) => void
 }
 
@@ -68,7 +73,10 @@ export const toast = {
   error: (msg: string, durationMs?: number): void => {
     useToastStore.getState().addToast(msg, 'error', durationMs)
   },
-  info: (msg: string, options?: { action?: string; onAction?: () => void; durationMs?: number }): void => {
+  info: (
+    msg: string,
+    options?: { action?: string; onAction?: () => void; durationMs?: number }
+  ): void => {
     useToastStore.getState().addToast(msg, 'info', options?.durationMs, {
       action: options?.action,
       onAction: options?.onAction

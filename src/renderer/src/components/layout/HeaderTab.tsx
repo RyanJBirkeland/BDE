@@ -24,7 +24,7 @@ export function HeaderTab({
   onClick,
   onClose,
   draggable = false,
-  onDragStart,
+  onDragStart
 }: HeaderTabProps): React.JSX.Element {
   function handleClose(e: React.MouseEvent): void {
     e.stopPropagation()

@@ -18,7 +18,7 @@ const STAGES: StageConfig[] = [
   { label: 'Active', filter: 'in-progress', accent: 'purple', alwaysShow: false },
   { label: 'Done', filter: 'done', accent: 'pink', alwaysShow: false },
   { label: 'Blocked', filter: 'blocked', accent: 'orange', alwaysShow: true },
-  { label: 'Failed', filter: 'failed', accent: 'red', alwaysShow: true },
+  { label: 'Failed', filter: 'failed', accent: 'red', alwaysShow: true }
 ]
 
 function countForStage(tasks: SprintTask[], filter: string): number {
@@ -34,7 +34,9 @@ function countForStage(tasks: SprintTask[], filter: string): number {
     case 'blocked':
       return tasks.filter((t) => t.status === 'blocked').length
     case 'failed':
-      return tasks.filter((t) => t.status === 'failed' || t.status === 'error' || t.status === 'cancelled').length
+      return tasks.filter(
+        (t) => t.status === 'failed' || t.status === 'error' || t.status === 'cancelled'
+      ).length
     default:
       return 0
   }
@@ -44,7 +46,7 @@ function accentVars(accent: string) {
   return {
     background: `var(--neon-${accent}-surface)`,
     borderColor: `var(--neon-${accent}-border)`,
-    color: `var(--neon-${accent}-color, var(--neon-${accent}))`,
+    color: `var(--neon-${accent}-color, var(--neon-${accent}))`
   }
 }
 
@@ -74,7 +76,9 @@ export function CircuitPipeline({ tasks, statusFilter, onStageClick }: CircuitPi
           return (
             <React.Fragment key={s.filter}>
               {i > 0 && count > 0 && <span className="circuit-pipeline__arrow">&rsaquo;</span>}
-              {i > 0 && count === 0 && s.alwaysShow && <span className="circuit-pipeline__arrow">&rsaquo;</span>}
+              {i > 0 && count === 0 && s.alwaysShow && (
+                <span className="circuit-pipeline__arrow">&rsaquo;</span>
+              )}
               <button
                 className={`circuit-pipeline__stage${isActive ? ' circuit-pipeline__stage--active' : ''}`}
                 style={{ ...accentVars(s.accent), opacity: count === 0 ? 0.5 : 1 }}

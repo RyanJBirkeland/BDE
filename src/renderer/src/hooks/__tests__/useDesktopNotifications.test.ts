@@ -22,7 +22,7 @@ vi.stubGlobal('Notification', MockNotification)
 const mockHasFocus = vi.fn()
 Object.defineProperty(document, 'hasFocus', {
   value: mockHasFocus,
-  writable: true,
+  writable: true
 })
 
 describe('useDesktopNotifications', () => {
@@ -74,7 +74,7 @@ describe('useDesktopNotifications', () => {
       template_name: null,
       depends_on: null,
       updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     }
 
     useSprintTasks.setState({ tasks: [task] })
@@ -82,7 +82,7 @@ describe('useDesktopNotifications', () => {
 
     // Now transition to done
     useSprintTasks.setState({
-      tasks: [{ ...task, status: TASK_STATUS.DONE, completed_at: new Date().toISOString() }],
+      tasks: [{ ...task, status: TASK_STATUS.DONE, completed_at: new Date().toISOString() }]
     })
     rerender()
 
@@ -119,7 +119,7 @@ describe('useDesktopNotifications', () => {
       template_name: null,
       depends_on: null,
       updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     }
 
     useSprintTasks.setState({ tasks: [task] })
@@ -127,7 +127,7 @@ describe('useDesktopNotifications', () => {
 
     // Transition to done while focused
     useSprintTasks.setState({
-      tasks: [{ ...task, status: TASK_STATUS.DONE }],
+      tasks: [{ ...task, status: TASK_STATUS.DONE }]
     })
     rerender()
 
@@ -161,7 +161,7 @@ describe('useDesktopNotifications', () => {
       template_name: null,
       depends_on: null,
       updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     }
 
     useSprintTasks.setState({ tasks: [task] })
@@ -169,13 +169,13 @@ describe('useDesktopNotifications', () => {
 
     // Transition to failed
     useSprintTasks.setState({
-      tasks: [{ ...task, status: TASK_STATUS.BACKLOG }], // "failed" means back to backlog
+      tasks: [{ ...task, status: TASK_STATUS.BACKLOG }] // "failed" means back to backlog
     })
     rerender()
 
     // For this test, let's use error status instead
     useSprintTasks.setState({
-      tasks: [{ ...task, status: 'error' as any }],
+      tasks: [{ ...task, status: 'error' as any }]
     })
     rerender()
 
@@ -208,7 +208,7 @@ describe('useDesktopNotifications', () => {
       template_name: null,
       depends_on: null,
       updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     }
 
     useSprintTasks.setState({ tasks: [task], prMergedMap: {} })
@@ -216,7 +216,7 @@ describe('useDesktopNotifications', () => {
 
     // PR gets merged
     useSprintTasks.setState({
-      prMergedMap: { 'task-3': true },
+      prMergedMap: { 'task-3': true }
     })
     rerender()
 
@@ -251,7 +251,7 @@ describe('useDesktopNotifications', () => {
       template_name: null,
       depends_on: null,
       updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     }
 
     useSprintTasks.setState({ tasks: [task] })
@@ -259,7 +259,7 @@ describe('useDesktopNotifications', () => {
 
     // Transition to done
     useSprintTasks.setState({
-      tasks: [{ ...task, status: TASK_STATUS.DONE }],
+      tasks: [{ ...task, status: TASK_STATUS.DONE }]
     })
     rerender()
 
@@ -296,7 +296,7 @@ describe('useDesktopNotifications', () => {
       template_name: null,
       depends_on: null,
       updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     }
 
     useSprintTasks.setState({ tasks: [task] })

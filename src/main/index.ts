@@ -104,7 +104,11 @@ app.whenReady().then(() => {
   pruneOldEvents(getDb(), getEventRetentionDays())
 
   // Prune old audit trail records (non-fatal)
-  try { pruneOldChanges(30) } catch { /* non-fatal */ }
+  try {
+    pruneOldChanges(30)
+  } catch {
+    /* non-fatal */
+  }
 
   // --- Agent Manager initialization ---
   const amConfig = {
@@ -113,7 +117,7 @@ app.whenReady().then(() => {
     maxRuntimeMs: getSettingJson<number>('agentManager.maxRuntimeMs') ?? 3_600_000,
     idleTimeoutMs: 900_000,
     pollIntervalMs: 30_000,
-    defaultModel: getSetting('agentManager.defaultModel') ?? 'claude-sonnet-4-5',
+    defaultModel: getSetting('agentManager.defaultModel') ?? 'claude-sonnet-4-5'
   }
 
   const autoStart = getSettingJson<boolean>('agentManager.autoStart') ?? true

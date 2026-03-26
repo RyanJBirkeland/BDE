@@ -1,21 +1,28 @@
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 
 const CAMEL_TO_SNAKE: Record<string, string> = {
-  agentRunId: 'agent_run_id', prUrl: 'pr_url', prNumber: 'pr_number',
-  prStatus: 'pr_status', prMergeableState: 'pr_mergeable_state',
-  retryCount: 'retry_count', fastFailCount: 'fast_fail_count',
-  repoPath: 'repo_path', ghRepo: 'gh_repo', dependsOn: 'depends_on',
-  startedAt: 'started_at', completedAt: 'completed_at',
-  createdAt: 'created_at', updatedAt: 'updated_at',
-  claimedBy: 'claimed_by', templateName: 'template_name',
+  agentRunId: 'agent_run_id',
+  prUrl: 'pr_url',
+  prNumber: 'pr_number',
+  prStatus: 'pr_status',
+  prMergeableState: 'pr_mergeable_state',
+  retryCount: 'retry_count',
+  fastFailCount: 'fast_fail_count',
+  repoPath: 'repo_path',
+  ghRepo: 'gh_repo',
+  dependsOn: 'depends_on',
+  startedAt: 'started_at',
+  completedAt: 'completed_at',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  claimedBy: 'claimed_by',
+  templateName: 'template_name',
   playgroundEnabled: 'playground_enabled',
   maxRuntimeMs: 'max_runtime_ms',
-  needsReview: 'needs_review',
+  needsReview: 'needs_review'
 }
 
-const SNAKE_TO_CAMEL = Object.fromEntries(
-  Object.entries(CAMEL_TO_SNAKE).map(([c, s]) => [s, c])
-)
+const SNAKE_TO_CAMEL = Object.fromEntries(Object.entries(CAMEL_TO_SNAKE).map(([c, s]) => [s, c]))
 
 // JSONB columns that need parsing if they come back as strings
 const JSONB_FIELDS = new Set(['depends_on'])

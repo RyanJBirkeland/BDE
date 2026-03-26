@@ -23,7 +23,7 @@ export function CommitBox({
   stagedCount,
   onMessageChange,
   onCommit,
-  onPush,
+  onPush
 }: CommitBoxProps): React.ReactElement {
   const canCommit = commitMessage.trim().length > 0 && stagedCount > 0
 
@@ -41,7 +41,7 @@ export function CommitBox({
         borderBottom: `1px solid ${tokens.color.border}`,
         display: 'flex',
         flexDirection: 'column',
-        gap: tokens.space[2],
+        gap: tokens.space[2]
       }}
     >
       {/* Commit message textarea */}
@@ -64,15 +64,13 @@ export function CommitBox({
           padding: tokens.space[2],
           boxSizing: 'border-box',
           outline: 'none',
-          lineHeight: '1.5',
+          lineHeight: '1.5'
         }}
         onFocus={(e) => {
-          ;(e.currentTarget as HTMLTextAreaElement).style.borderColor =
-            tokens.color.accent
+          ;(e.currentTarget as HTMLTextAreaElement).style.borderColor = tokens.color.accent
         }}
         onBlur={(e) => {
-          ;(e.currentTarget as HTMLTextAreaElement).style.borderColor =
-            tokens.color.border
+          ;(e.currentTarget as HTMLTextAreaElement).style.borderColor = tokens.color.border
         }}
       />
 
@@ -104,15 +102,13 @@ export function CommitBox({
             fontSize: tokens.size.sm,
             fontFamily: tokens.font.ui,
             fontWeight: 600,
-            cursor: canCommit ? 'pointer' : 'not-allowed',
+            cursor: canCommit ? 'pointer' : 'not-allowed'
           }}
         >
           <GitCommitHorizontal size={14} />
           Commit
           {stagedCount > 0 && (
-            <span style={{ fontSize: tokens.size.xs, opacity: 0.8 }}>
-              ({stagedCount})
-            </span>
+            <span style={{ fontSize: tokens.size.xs, opacity: 0.8 }}>({stagedCount})</span>
           )}
         </button>
 
@@ -133,15 +129,13 @@ export function CommitBox({
             borderRadius: tokens.radius.sm,
             fontSize: tokens.size.sm,
             fontFamily: tokens.font.ui,
-            cursor: 'pointer',
+            cursor: 'pointer'
           }}
           onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-              tokens.color.borderHover
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = tokens.color.borderHover
           }}
           onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.borderColor =
-              tokens.color.border
+            ;(e.currentTarget as HTMLButtonElement).style.borderColor = tokens.color.border
           }}
         >
           <Upload size={14} />

@@ -20,7 +20,7 @@ function makePr(overrides: Partial<OpenPr> = {}): OpenPr {
     merged: false,
     merged_at: null,
     repo: 'test-repo',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -53,7 +53,7 @@ describe('OpenPRsCard', () => {
   it('renders PR titles after loading', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ number: 42, title: 'Add auth module' })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -64,7 +64,7 @@ describe('OpenPRsCard', () => {
   it('shows PR number', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ number: 99 })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -75,7 +75,7 @@ describe('OpenPRsCard', () => {
   it('shows Draft badge for draft PRs', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ draft: true })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -86,7 +86,7 @@ describe('OpenPRsCard', () => {
   it('does not show Draft badge for non-draft PRs', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ draft: false })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -96,9 +96,7 @@ describe('OpenPRsCard', () => {
   })
 
   it('limits display to 5 PRs', async () => {
-    const prs = Array.from({ length: 7 }, (_, i) =>
-      makePr({ number: i + 1, title: `PR ${i + 1}` }),
-    )
+    const prs = Array.from({ length: 7 }, (_, i) => makePr({ number: i + 1, title: `PR ${i + 1}` }))
     vi.mocked(window.api.getPrList).mockResolvedValue({ prs, checks: {} })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -111,16 +109,14 @@ describe('OpenPRsCard', () => {
     const user = userEvent.setup()
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ number: 7, html_url: 'https://github.com/test/repo/pull/7' })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
       expect(screen.getByText('Test PR')).toBeInTheDocument()
     })
     await user.click(screen.getByLabelText('Open PR #7 in browser'))
-    expect(window.api.openExternal).toHaveBeenCalledWith(
-      'https://github.com/test/repo/pull/7',
-    )
+    expect(window.api.openExternal).toHaveBeenCalledWith('https://github.com/test/repo/pull/7')
   })
 
   it('handles getPrList rejection gracefully', async () => {

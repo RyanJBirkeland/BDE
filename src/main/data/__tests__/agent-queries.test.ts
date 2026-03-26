@@ -13,7 +13,7 @@ import {
   getAgentLogPath,
   getAgentsToRemove,
   updateAgentRunCost,
-  listAgentRunsByTaskId,
+  listAgentRunsByTaskId
 } from '../agent-queries'
 
 let db: Database.Database
@@ -46,7 +46,7 @@ function makeAgent(overrides: Record<string, unknown> = {}) {
     tokensIn: null,
     tokensOut: null,
     sprintTaskId: null,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -203,11 +203,16 @@ describe('updateAgentRunCost', () => {
       cacheRead: 200,
       cacheCreate: 100,
       durationMs: 30000,
-      numTurns: 5,
+      numTurns: 5
     })
     const row = db
       .prepare('SELECT cost_usd, tokens_in, tokens_out, num_turns FROM agent_runs WHERE id = ?')
-      .get('agent-1') as { cost_usd: number; tokens_in: number; tokens_out: number; num_turns: number }
+      .get('agent-1') as {
+      cost_usd: number
+      tokens_in: number
+      tokens_out: number
+      num_turns: number
+    }
     expect(row.cost_usd).toBe(0.05)
     expect(row.tokens_in).toBe(1000)
     expect(row.tokens_out).toBe(500)
@@ -217,12 +222,15 @@ describe('updateAgentRunCost', () => {
 
 describe('rowToMeta includes cost fields and sprintTaskId', () => {
   it('maps cost columns and sprint_task_id to camelCase', () => {
-    insertAgentRecord(db, makeAgent({
-      costUsd: 0.45,
-      tokensIn: 12000,
-      tokensOut: 3400,
-      sprintTaskId: 'task-abc',
-    }))
+    insertAgentRecord(
+      db,
+      makeAgent({
+        costUsd: 0.45,
+        tokensIn: 12000,
+        tokensOut: 3400,
+        sprintTaskId: 'task-abc'
+      })
+    )
     const result = getAgentMeta(db, 'agent-1')
     expect(result).not.toBeNull()
     expect(result!.costUsd).toBe(0.45)
@@ -244,9 +252,18 @@ describe('rowToMeta includes cost fields and sprintTaskId', () => {
 
 describe('listAgentRunsByTaskId', () => {
   it('returns runs filtered by sprint_task_id', () => {
-    insertAgentRecord(db, makeAgent({ id: 'run-1', sprintTaskId: 'task-A', startedAt: '2025-01-01T00:00:00Z' }))
-    insertAgentRecord(db, makeAgent({ id: 'run-2', sprintTaskId: 'task-A', startedAt: '2025-01-02T00:00:00Z' }))
-    insertAgentRecord(db, makeAgent({ id: 'run-3', sprintTaskId: 'task-B', startedAt: '2025-01-03T00:00:00Z' }))
+    insertAgentRecord(
+      db,
+      makeAgent({ id: 'run-1', sprintTaskId: 'task-A', startedAt: '2025-01-01T00:00:00Z' })
+    )
+    insertAgentRecord(
+      db,
+      makeAgent({ id: 'run-2', sprintTaskId: 'task-A', startedAt: '2025-01-02T00:00:00Z' })
+    )
+    insertAgentRecord(
+      db,
+      makeAgent({ id: 'run-3', sprintTaskId: 'task-B', startedAt: '2025-01-03T00:00:00Z' })
+    )
 
     const runs = listAgentRunsByTaskId(db, 'task-A')
     expect(runs).toHaveLength(2)
@@ -263,9 +280,18 @@ describe('listAgentRunsByTaskId', () => {
   })
 
   it('respects limit parameter', () => {
-    insertAgentRecord(db, makeAgent({ id: 'run-1', sprintTaskId: 'task-A', startedAt: '2025-01-01T00:00:00Z' }))
-    insertAgentRecord(db, makeAgent({ id: 'run-2', sprintTaskId: 'task-A', startedAt: '2025-01-02T00:00:00Z' }))
-    insertAgentRecord(db, makeAgent({ id: 'run-3', sprintTaskId: 'task-A', startedAt: '2025-01-03T00:00:00Z' }))
+    insertAgentRecord(
+      db,
+      makeAgent({ id: 'run-1', sprintTaskId: 'task-A', startedAt: '2025-01-01T00:00:00Z' })
+    )
+    insertAgentRecord(
+      db,
+      makeAgent({ id: 'run-2', sprintTaskId: 'task-A', startedAt: '2025-01-02T00:00:00Z' })
+    )
+    insertAgentRecord(
+      db,
+      makeAgent({ id: 'run-3', sprintTaskId: 'task-A', startedAt: '2025-01-03T00:00:00Z' })
+    )
 
     const runs = listAgentRunsByTaskId(db, 'task-A', 2)
     expect(runs).toHaveLength(2)

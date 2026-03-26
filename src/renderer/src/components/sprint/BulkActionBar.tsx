@@ -14,7 +14,7 @@ export function BulkActionBar({
   onSetPriority,
   onDelete,
   onMarkDone,
-  onClearSelection,
+  onClearSelection
 }: BulkActionBarProps) {
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)

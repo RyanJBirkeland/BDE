@@ -12,10 +12,10 @@ const mockTemplate: PromptTemplate = {
   description: 'Test',
   questions: [
     { id: 'scope', label: 'Pick a scope', type: 'choice', choices: ['All', 'Some', 'None'] },
-    { id: 'detail', label: 'Describe in detail', type: 'text', required: true },
+    { id: 'detail', label: 'Describe in detail', type: 'text', required: true }
   ],
   promptTemplate: '{{scope}} — {{detail}}',
-  order: 0,
+  order: 0
 }
 
 describe('LaunchpadConfigure', () => {

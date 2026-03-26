@@ -26,7 +26,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -40,7 +40,7 @@ describe('partitionSprintTasks', () => {
       inProgress: [],
       awaitingReview: [],
       done: [],
-      failed: [],
+      failed: []
     })
   })
 
@@ -126,7 +126,7 @@ describe('partitionSprintTasks', () => {
       makeTask({ title: 'D2', status: 'done', pr_status: null }),
       makeTask({ title: 'R1', status: 'done', pr_status: 'open' }),
       makeTask({ title: 'R2', status: 'done', pr_status: 'open' }),
-      makeTask({ title: 'C1', status: 'cancelled' }),
+      makeTask({ title: 'C1', status: 'cancelled' })
     ]
 
     const result = partitionSprintTasks(tasks)
@@ -145,7 +145,7 @@ describe('partitionSprintTasks', () => {
       makeTask({ status: 'active' }),
       makeTask({ status: 'done', pr_status: 'open' }),
       makeTask({ status: 'done', pr_status: 'merged' }),
-      makeTask({ status: 'cancelled' }),
+      makeTask({ status: 'cancelled' })
     ]
 
     const result = partitionSprintTasks(tasks)
@@ -156,7 +156,7 @@ describe('partitionSprintTasks', () => {
       ...result.inProgress,
       ...result.awaitingReview,
       ...result.done,
-      ...result.failed,
+      ...result.failed
     ]
 
     expect(allPartitioned).toHaveLength(tasks.length)

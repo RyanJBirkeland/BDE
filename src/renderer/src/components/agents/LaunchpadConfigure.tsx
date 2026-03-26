@@ -29,13 +29,15 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
   useEffect(() => {
     if (template.questions.length > 0) {
       const q = template.questions[0]
-      setMessages([{
-        type: 'system',
-        text: q.label,
-        questionId: q.id,
-        choices: q.choices,
-        questionType: q.type,
-      }])
+      setMessages([
+        {
+          type: 'system',
+          text: q.label,
+          questionId: q.id,
+          choices: q.choices,
+          questionType: q.type
+        }
+      ])
     }
   }, [template])
 
@@ -59,14 +61,14 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
           text: q.label,
           questionId: q.id,
           choices: q.choices,
-          questionType: q.type,
-        },
+          questionType: q.type
+        }
       ])
       setCurrentStep(nextStep)
       setInputValue('')
       inputRef.current?.focus()
     },
-    [template, totalSteps, onComplete],
+    [template, totalSteps, onComplete]
   )
 
   const handleChoiceClick = useCallback(
@@ -77,7 +79,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
       setMessages((prev) => [...prev, { type: 'user', text: choice }])
       advanceOrComplete(newAnswers, currentStep + 1)
     },
-    [answers, currentStep, template, advanceOrComplete],
+    [answers, currentStep, template, advanceOrComplete]
   )
 
   const handleTextSubmit = useCallback(() => {
@@ -98,7 +100,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
         handleTextSubmit()
       }
     },
-    [handleTextSubmit],
+    [handleTextSubmit]
   )
 
   const currentQuestion = template.questions[currentStep]
@@ -109,12 +111,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
       <div className="launchpad__chat">
         {/* Header */}
         <div className="launchpad__chat-header">
-          <button
-            type="button"
-            className="launchpad__back"
-            onClick={onBack}
-            title="Back to grid"
-          >
+          <button type="button" className="launchpad__back" onClick={onBack} title="Back to grid">
             &#x2190;
           </button>
           <div className="launchpad__chat-badge">
@@ -152,7 +149,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
               <div key={i} className="launchpad__msg launchpad__msg--user">
                 {msg.text}
               </div>
-            ),
+            )
           )}
           <div ref={messagesEndRef} />
         </div>

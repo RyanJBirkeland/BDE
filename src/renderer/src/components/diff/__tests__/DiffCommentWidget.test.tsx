@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../lib/render-markdown', () => ({
-  renderMarkdown: (s: string) => s,
+  renderMarkdown: (s: string) => s
 }))
 
 import { DiffCommentWidget } from '../DiffCommentWidget'
@@ -17,7 +17,7 @@ function makeComment(overrides: Partial<PrComment> = {}): PrComment {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     html_url: 'https://github.com',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -33,11 +33,7 @@ describe('DiffCommentWidget', () => {
   })
 
   it('renders plural comment count for multiple comments', () => {
-    render(
-      <DiffCommentWidget
-        comments={[makeComment({ id: 1 }), makeComment({ id: 2 })]}
-      />
-    )
+    render(<DiffCommentWidget comments={[makeComment({ id: 1 }), makeComment({ id: 2 })]} />)
     expect(screen.getByText('2 comments')).toBeInTheDocument()
   })
 
@@ -67,7 +63,9 @@ describe('DiffCommentWidget', () => {
   })
 
   it('renders comment author login', () => {
-    render(<DiffCommentWidget comments={[makeComment({ user: { login: 'bob', avatar_url: '' } })]} />)
+    render(
+      <DiffCommentWidget comments={[makeComment({ user: { login: 'bob', avatar_url: '' } })]} />
+    )
     expect(screen.getByText('bob')).toBeInTheDocument()
   })
 })

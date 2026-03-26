@@ -22,7 +22,7 @@ import {
   getAgentsToRemove,
   deleteAgent,
   getAgentLogPath,
-  listAgentRunsByTaskId as _listAgentRunsByTaskId,
+  listAgentRunsByTaskId as _listAgentRunsByTaskId
 } from './data/agent-queries'
 import type { AgentRunRow } from './data/agent-queries'
 import { pruneEventsByAgentIds } from './data/event-queries'
@@ -54,8 +54,18 @@ export async function migrateFromJson(): Promise<void> {
     const tx = db.transaction(() => {
       for (const a of agents) {
         insert.run(
-          a.id, a.pid, a.bin, a.task, a.repo, a.repoPath, a.model,
-          a.status, a.logPath, a.startedAt, a.finishedAt, a.exitCode,
+          a.id,
+          a.pid,
+          a.bin,
+          a.task,
+          a.repo,
+          a.repoPath,
+          a.model,
+          a.status,
+          a.logPath,
+          a.startedAt,
+          a.finishedAt,
+          a.exitCode,
           a.source ?? 'external'
         )
       }
@@ -91,9 +101,7 @@ export async function listAgents(limit = 100, status?: string): Promise<AgentMet
   return _listAgents(getDb(), limit, status)
 }
 
-export async function createAgentRecord(
-  meta: Omit<AgentMeta, 'logPath'>
-): Promise<AgentMeta> {
+export async function createAgentRecord(meta: Omit<AgentMeta, 'logPath'>): Promise<AgentMeta> {
   initAgentHistory()
   const date = datePrefix(meta.startedAt)
   const logDir = join(LOGS_DIR, date, meta.id)
@@ -149,10 +157,7 @@ export async function getAgentMeta(id: string): Promise<AgentMeta | null> {
   return _getAgentMeta(getDb(), id)
 }
 
-export async function updateAgentMeta(
-  id: string,
-  patch: Partial<AgentMeta>
-): Promise<void> {
+export async function updateAgentMeta(id: string, patch: Partial<AgentMeta>): Promise<void> {
   initAgentHistory()
   const row = _updateAgentMeta(getDb(), id, patch)
 
@@ -167,10 +172,7 @@ export async function updateAgentMeta(
   }
 }
 
-export async function importAgent(
-  meta: Partial<AgentMeta>,
-  content: string
-): Promise<AgentMeta> {
+export async function importAgent(meta: Partial<AgentMeta>, content: string): Promise<AgentMeta> {
   const id = meta.id ?? randomUUID()
   const startedAt = meta.startedAt ?? new Date().toISOString()
   const full: Omit<AgentMeta, 'logPath'> = {
@@ -189,7 +191,7 @@ export async function importAgent(
     costUsd: meta.costUsd ?? null,
     tokensIn: meta.tokensIn ?? null,
     tokensOut: meta.tokensOut ?? null,
-    sprintTaskId: meta.sprintTaskId ?? null,
+    sprintTaskId: meta.sprintTaskId ?? null
   }
   const record = await createAgentRecord(full)
   if (content) {
@@ -214,7 +216,10 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
   }
 
   // Prune associated events before removing agent records
-  pruneEventsByAgentIds(db, toRemove.map((r) => r.id))
+  pruneEventsByAgentIds(
+    db,
+    toRemove.map((r) => r.id)
+  )
 
   // Then delete agents from local SQLite in a transaction
   const tx = db.transaction(() => {

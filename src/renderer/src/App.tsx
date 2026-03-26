@@ -34,7 +34,7 @@ const VIEW_SHORTCUT_MAP: Partial<Record<string, View>> = {
   '6': 'git',
   '7': 'memory',
   '8': 'cost',
-  '9': 'settings',
+  '9': 'settings'
 }
 
 const VIEW_TITLES: Record<View, string> = {
@@ -47,7 +47,7 @@ const VIEW_TITLES: Record<View, string> = {
   memory: 'Memory',
   cost: 'Cost',
   settings: 'Settings',
-  'task-workbench': 'Task Workbench',
+  'task-workbench': 'Task Workbench'
 }
 
 const SHORTCUTS_LEFT: { keys: string; description: string }[] = [
@@ -66,7 +66,6 @@ const SHORTCUTS_RIGHT: { keys: string; description: string }[] = [
   { keys: '[ / ]', description: 'Prev / next diff file' }
 ]
 
-
 function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Element {
   const reduced = useReducedMotion()
 
@@ -82,7 +81,13 @@ function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Eleme
   }, [onClose])
 
   return (
-    <div className="shortcuts-overlay elevation-3-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+    <div
+      className="shortcuts-overlay elevation-3-backdrop"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard shortcuts"
+    >
       <motion.div
         className="shortcuts-overlay__panel glass-modal"
         onClick={(e) => e.stopPropagation()}
@@ -180,9 +185,18 @@ function App(): React.JSX.Element {
 
       if (e.key === 'Escape') {
         e.preventDefault()
-        if (paletteOpen) { closePalette(); return }
-        if (shortcutsOpen) { setShortcutsOpen(false); return }
-        if (inInput) { (document.activeElement as HTMLElement)?.blur(); return }
+        if (paletteOpen) {
+          closePalette()
+          return
+        }
+        if (shortcutsOpen) {
+          setShortcutsOpen(false)
+          return
+        }
+        if (inInput) {
+          ;(document.activeElement as HTMLElement)?.blur()
+          return
+        }
         window.dispatchEvent(new CustomEvent('bde:escape'))
         return
       }
@@ -274,7 +288,7 @@ function App(): React.JSX.Element {
           color: 'var(--bde-bg)',
           padding: '8px 16px',
           zIndex: 9999,
-          transition: 'top 0.2s',
+          transition: 'top 0.2s'
         }}
         onFocus={(e) => {
           e.currentTarget.style.top = '0'

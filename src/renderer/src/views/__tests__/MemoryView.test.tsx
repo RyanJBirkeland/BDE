@@ -9,11 +9,11 @@ Element.prototype.scrollIntoView = vi.fn()
 vi.mock('../../stores/ui', () => ({
   useUIStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ activeView: 'memory', setView: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 describe('MemoryView', () => {
@@ -41,7 +41,7 @@ describe('MemoryView', () => {
   it('renders file list when files are returned', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
       { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() },
-      { path: 'MEMORY.md', name: 'MEMORY.md', size: 200, modifiedAt: Date.now() },
+      { path: 'MEMORY.md', name: 'MEMORY.md', size: 200, modifiedAt: Date.now() }
     ])
     render(<MemoryView />)
     await waitFor(() => {
@@ -52,7 +52,7 @@ describe('MemoryView', () => {
 
   it('loads file content on selection', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
-      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() },
+      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() }
     ])
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('Hello, world!')
 
@@ -74,7 +74,7 @@ describe('MemoryView', () => {
 
   it('tracks dirty state on edit', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
-      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() },
+      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() }
     ])
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('Initial content')
 
@@ -108,7 +108,7 @@ describe('MemoryView', () => {
 
   it('shows "Select a file to view" when no file is selected', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
-      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() },
+      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() }
     ])
     render(<MemoryView />)
     await waitFor(() => {
@@ -118,7 +118,7 @@ describe('MemoryView', () => {
 
   it('groups date-named files under Daily Logs', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
-      { path: '2024-01-15.md', name: '2024-01-15.md', size: 50, modifiedAt: Date.now() },
+      { path: '2024-01-15.md', name: '2024-01-15.md', size: 50, modifiedAt: Date.now() }
     ])
     render(<MemoryView />)
     await waitFor(() => {
@@ -140,7 +140,9 @@ describe('MemoryView', () => {
   it('create new file: type filename → Enter → writeMemoryFile called with empty content', async () => {
     vi.mocked(window.api.listMemoryFiles)
       .mockResolvedValueOnce([]) // initial load
-      .mockResolvedValue([{ path: 'new-note.md', name: 'new-note.md', size: 0, modifiedAt: Date.now() }]) // after reload
+      .mockResolvedValue([
+        { path: 'new-note.md', name: 'new-note.md', size: 0, modifiedAt: Date.now() }
+      ]) // after reload
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('')
 
     const user = userEvent.setup()
@@ -163,7 +165,9 @@ describe('MemoryView', () => {
   it('create new file: auto-appends .md extension if omitted', async () => {
     vi.mocked(window.api.listMemoryFiles)
       .mockResolvedValueOnce([])
-      .mockResolvedValue([{ path: 'my-note.md', name: 'my-note.md', size: 0, modifiedAt: Date.now() }])
+      .mockResolvedValue([
+        { path: 'my-note.md', name: 'my-note.md', size: 0, modifiedAt: Date.now() }
+      ])
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('')
 
     const user = userEvent.setup()
@@ -184,7 +188,7 @@ describe('MemoryView', () => {
 
   it('save edited file: select → edit → Save → writeMemoryFile called with path + new content', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
-      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() },
+      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() }
     ])
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('Original content')
 
@@ -214,7 +218,7 @@ describe('MemoryView', () => {
 
   it('discard changes reverts content to original', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
-      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() },
+      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() }
     ])
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('Original content')
 
@@ -227,7 +231,9 @@ describe('MemoryView', () => {
     await user.click(screen.getByText('notes.md'))
 
     await waitFor(() => {
-      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe('Original content')
+      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe(
+        'Original content'
+      )
     })
 
     const textarea = document.querySelector('textarea')! as HTMLTextAreaElement
@@ -235,20 +241,24 @@ describe('MemoryView', () => {
     await user.type(textarea, 'Edited content')
 
     await waitFor(() => {
-      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe('Edited content')
+      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe(
+        'Edited content'
+      )
     })
 
     const discardButton = screen.getByRole('button', { name: 'Discard' })
     await user.click(discardButton)
 
     await waitFor(() => {
-      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe('Original content')
+      expect((document.querySelector('textarea')! as HTMLTextAreaElement).value).toBe(
+        'Original content'
+      )
     })
   })
 
   it('Cmd+S keyboard shortcut saves the file', async () => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
-      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() },
+      { path: 'notes.md', name: 'notes.md', size: 100, modifiedAt: Date.now() }
     ])
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('Initial')
 

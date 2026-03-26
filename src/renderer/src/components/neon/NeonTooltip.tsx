@@ -1,50 +1,56 @@
 // src/renderer/src/components/neon/NeonTooltip.tsx
-import { useState, useRef, useCallback, useEffect, useId, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef, useCallback, useEffect, useId, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface NeonTooltipProps {
-  label: string;
-  shortcut?: string;
-  delay?: number;
-  children: ReactNode;
+  label: string
+  shortcut?: string
+  delay?: number
+  children: ReactNode
 }
 
 export function NeonTooltip({ label, shortcut, delay = 300, children }: NeonTooltipProps) {
-  const [visible, setVisible] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const tooltipId = useId();
+  const [visible, setVisible] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+  const triggerRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const tooltipId = useId()
 
   const updatePosition = useCallback(() => {
     if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
+      const rect = triggerRef.current.getBoundingClientRect()
       setPosition({
         top: rect.top + rect.height / 2 - 14,
-        left: rect.right + 8,
-      });
+        left: rect.right + 8
+      })
     }
-  }, []);
+  }, [])
 
   const show = useCallback(() => {
     timerRef.current = setTimeout(() => {
-      updatePosition();
-      setVisible(true);
-    }, delay);
-  }, [delay, updatePosition]);
+      updatePosition()
+      setVisible(true)
+    }, delay)
+  }, [delay, updatePosition])
 
   const hide = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setVisible(false);
-  }, []);
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setVisible(false)
+  }, [])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') hide();
-  }, [hide]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') hide()
+    },
+    [hide]
+  )
 
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    []
+  )
 
   return (
     <>
@@ -71,8 +77,8 @@ export function NeonTooltip({ label, shortcut, delay = 300, children }: NeonTool
             {label}
             {shortcut && <span className="neon-tooltip__shortcut">{shortcut}</span>}
           </div>,
-          document.body,
+          document.body
         )}
     </>
-  );
+  )
 }

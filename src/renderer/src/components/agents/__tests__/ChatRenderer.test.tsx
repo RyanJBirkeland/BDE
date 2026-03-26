@@ -8,25 +8,29 @@ import { ChatRenderer } from '../ChatRenderer'
 vi.mock('../ChatBubble', () => ({
   ChatBubble: ({ text, variant }: { text: string; variant: string }) => (
     <div data-testid={`chat-bubble-${variant}`}>{text}</div>
-  ),
+  )
 }))
 
 vi.mock('../ThinkingBlock', () => ({
   ThinkingBlock: ({ tokenCount }: { tokenCount: number }) => (
     <div data-testid="thinking-block">Thinking ({tokenCount} tokens)</div>
-  ),
+  )
 }))
 
 vi.mock('../ToolCallBlock', () => ({
   ToolCallBlock: ({ tool, summary }: { tool: string; summary: string }) => (
-    <div data-testid="tool-call-block">{tool}: {summary}</div>
-  ),
+    <div data-testid="tool-call-block">
+      {tool}: {summary}
+    </div>
+  )
 }))
 
 vi.mock('../PlaygroundCard', () => ({
   PlaygroundCard: ({ filename, sizeBytes }: { filename: string; sizeBytes: number }) => (
-    <div data-testid="playground-card">{filename} ({sizeBytes} bytes)</div>
-  ),
+    <div data-testid="playground-card">
+      {filename} ({sizeBytes} bytes)
+    </div>
+  )
 }))
 
 // Stub virtualizer — jsdom has no layout engine, measurements are all 0
@@ -38,18 +42,24 @@ vi.mock('@tanstack/react-virtual', () => ({
         key: i,
         index: i,
         start: i * 60,
-        size: 60,
+        size: 60
       })),
     scrollToIndex: vi.fn(),
-    measureElement: vi.fn(),
-  }),
+    measureElement: vi.fn()
+  })
 }))
 
 describe('pairEvents', () => {
   it('pairs tool_call with following tool_result of same tool', () => {
     const events: AgentEvent[] = [
       { type: 'agent:tool_call', tool: 'Read', summary: 'src/foo.ts', timestamp: 100 },
-      { type: 'agent:tool_result', tool: 'Read', success: true, summary: '50 lines', timestamp: 101 },
+      {
+        type: 'agent:tool_result',
+        tool: 'Read',
+        success: true,
+        summary: '50 lines',
+        timestamp: 101
+      }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -59,7 +69,7 @@ describe('pairEvents', () => {
   it('leaves unpaired tool_call as standalone', () => {
     const events: AgentEvent[] = [
       { type: 'agent:tool_call', tool: 'Read', summary: 'src/foo.ts', timestamp: 100 },
-      { type: 'agent:text', text: 'hello', timestamp: 102 },
+      { type: 'agent:text', text: 'hello', timestamp: 102 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(2)
@@ -67,9 +77,7 @@ describe('pairEvents', () => {
   })
 
   it('maps text events to text blocks', () => {
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'hello', timestamp: 100 },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'hello', timestamp: 100 }]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
     expect(blocks[0].type).toBe('text')
@@ -77,7 +85,7 @@ describe('pairEvents', () => {
 
   it('maps user_message events to user_message blocks', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:user_message', text: 'do the thing', timestamp: 100 },
+      { type: 'agent:user_message', text: 'do the thing', timestamp: 100 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -86,7 +94,7 @@ describe('pairEvents', () => {
 
   it('maps thinking events to thinking blocks', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:thinking', tokenCount: 150, text: 'Let me think...', timestamp: 100 },
+      { type: 'agent:thinking', tokenCount: 150, text: 'Let me think...', timestamp: 100 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -95,7 +103,7 @@ describe('pairEvents', () => {
 
   it('maps error events to error blocks', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:error', message: 'something broke', timestamp: 100 },
+      { type: 'agent:error', message: 'something broke', timestamp: 100 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -104,7 +112,7 @@ describe('pairEvents', () => {
 
   it('maps started events to started blocks', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:started', model: 'claude-sonnet-4-6', timestamp: 100 },
+      { type: 'agent:started', model: 'claude-sonnet-4-6', timestamp: 100 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -113,7 +121,15 @@ describe('pairEvents', () => {
 
   it('maps completed events to completed blocks', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:completed', exitCode: 0, costUsd: 0.1, tokensIn: 100, tokensOut: 50, durationMs: 5000, timestamp: 100 },
+      {
+        type: 'agent:completed',
+        exitCode: 0,
+        costUsd: 0.1,
+        tokensIn: 100,
+        tokensOut: 50,
+        durationMs: 5000,
+        timestamp: 100
+      }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -126,23 +142,43 @@ describe('pairEvents', () => {
       { type: 'agent:thinking', tokenCount: 50, timestamp: 2 },
       { type: 'agent:text', text: 'I will read the file', timestamp: 3 },
       { type: 'agent:tool_call', tool: 'Read', summary: 'src/app.ts', timestamp: 4 },
-      { type: 'agent:tool_result', tool: 'Read', success: true, summary: '100 lines', timestamp: 5 },
+      {
+        type: 'agent:tool_result',
+        tool: 'Read',
+        success: true,
+        summary: '100 lines',
+        timestamp: 5
+      },
       { type: 'agent:text', text: 'Here is the fix', timestamp: 6 },
       { type: 'agent:tool_call', tool: 'Edit', summary: 'src/app.ts', timestamp: 7 },
       { type: 'agent:tool_result', tool: 'Edit', success: true, summary: 'applied', timestamp: 8 },
-      { type: 'agent:completed', exitCode: 0, costUsd: 0.05, tokensIn: 200, tokensOut: 100, durationMs: 10000, timestamp: 9 },
+      {
+        type: 'agent:completed',
+        exitCode: 0,
+        costUsd: 0.05,
+        tokensIn: 200,
+        tokensOut: 100,
+        durationMs: 10000,
+        timestamp: 9
+      }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(7)
     expect(blocks.map((b) => b.type)).toEqual([
-      'started', 'thinking', 'text', 'tool_pair', 'text', 'tool_pair', 'completed',
+      'started',
+      'thinking',
+      'text',
+      'tool_pair',
+      'text',
+      'tool_pair',
+      'completed'
     ])
   })
 
   it('does not pair tool_call with non-matching tool_result', () => {
     const events: AgentEvent[] = [
       { type: 'agent:tool_call', tool: 'Read', summary: 'foo', timestamp: 1 },
-      { type: 'agent:tool_result', tool: 'Write', success: true, summary: 'ok', timestamp: 2 },
+      { type: 'agent:tool_result', tool: 'Write', success: true, summary: 'ok', timestamp: 2 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(2)
@@ -155,7 +191,7 @@ describe('pairEvents', () => {
 
   it('maps rate_limited events to rate_limited blocks', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:rate_limited', retryDelayMs: 5000, attempt: 2, timestamp: 100 },
+      { type: 'agent:rate_limited', retryDelayMs: 5000, attempt: 2, timestamp: 100 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -164,7 +200,7 @@ describe('pairEvents', () => {
 
   it('handles orphaned tool_result as tool_call block', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:tool_result', tool: 'Read', success: true, summary: 'content', timestamp: 100 },
+      { type: 'agent:tool_result', tool: 'Read', success: true, summary: 'content', timestamp: 100 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -178,8 +214,8 @@ describe('pairEvents', () => {
         filename: 'demo.html',
         html: '<h1>Test</h1>',
         sizeBytes: 12,
-        timestamp: 100,
-      },
+        timestamp: 100
+      }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -203,9 +239,7 @@ describe('ChatRenderer component', () => {
   })
 
   it('renders text event as agent chat bubble', () => {
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'Hello from agent', timestamp: 1000 },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'Hello from agent', timestamp: 1000 }]
     render(<ChatRenderer events={events} />)
     expect(screen.getByTestId('chat-bubble-agent')).toBeInTheDocument()
     expect(screen.getByText('Hello from agent')).toBeInTheDocument()
@@ -213,7 +247,7 @@ describe('ChatRenderer component', () => {
 
   it('renders user_message as user chat bubble', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:user_message', text: 'User sent this', timestamp: 1000 },
+      { type: 'agent:user_message', text: 'User sent this', timestamp: 1000 }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByTestId('chat-bubble-user')).toBeInTheDocument()
@@ -222,7 +256,7 @@ describe('ChatRenderer component', () => {
 
   it('renders thinking block', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:thinking', tokenCount: 77, text: 'reasoning', timestamp: 1000 },
+      { type: 'agent:thinking', tokenCount: 77, text: 'reasoning', timestamp: 1000 }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByTestId('thinking-block')).toBeInTheDocument()
@@ -232,7 +266,7 @@ describe('ChatRenderer component', () => {
   it('renders tool call block', () => {
     const events: AgentEvent[] = [
       { type: 'agent:tool_call', tool: 'bash', summary: 'ls -la', input: {}, timestamp: 1000 },
-      { type: 'agent:text', text: 'after', timestamp: 1001 },
+      { type: 'agent:text', text: 'after', timestamp: 1001 }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByTestId('tool-call-block')).toBeInTheDocument()
@@ -240,8 +274,21 @@ describe('ChatRenderer component', () => {
 
   it('renders paired tool as tool block', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:tool_call', tool: 'read_file', summary: 'reading', input: {}, timestamp: 1000 },
-      { type: 'agent:tool_result', tool: 'read_file', summary: 'content', success: true, output: '', timestamp: 1001 },
+      {
+        type: 'agent:tool_call',
+        tool: 'read_file',
+        summary: 'reading',
+        input: {},
+        timestamp: 1000
+      },
+      {
+        type: 'agent:tool_result',
+        tool: 'read_file',
+        summary: 'content',
+        success: true,
+        output: '',
+        timestamp: 1001
+      }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByTestId('tool-call-block')).toBeInTheDocument()
@@ -249,7 +296,7 @@ describe('ChatRenderer component', () => {
 
   it('renders error as error chat bubble', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:error', message: 'Something failed', timestamp: 1000 },
+      { type: 'agent:error', message: 'Something failed', timestamp: 1000 }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByTestId('chat-bubble-error')).toBeInTheDocument()
@@ -258,7 +305,7 @@ describe('ChatRenderer component', () => {
 
   it('renders rate_limited block', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:rate_limited', retryDelayMs: 10000, attempt: 1, timestamp: 1000 },
+      { type: 'agent:rate_limited', retryDelayMs: 10000, attempt: 1, timestamp: 1000 }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByText(/Rate limited.*attempt 1/i)).toBeInTheDocument()
@@ -266,37 +313,41 @@ describe('ChatRenderer component', () => {
   })
 
   it('renders completed block with success message', () => {
-    const events: AgentEvent[] = [{
-      type: 'agent:completed',
-      exitCode: 0,
-      costUsd: 0.05,
-      tokensIn: 1000,
-      tokensOut: 500,
-      durationMs: 30000,
-      timestamp: 1000,
-    }]
+    const events: AgentEvent[] = [
+      {
+        type: 'agent:completed',
+        exitCode: 0,
+        costUsd: 0.05,
+        tokensIn: 1000,
+        tokensOut: 500,
+        durationMs: 30000,
+        timestamp: 1000
+      }
+    ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByText(/Completed/)).toBeInTheDocument()
     expect(screen.getByText(/\$0\.0500/)).toBeInTheDocument()
   })
 
   it('renders completed block with failure message', () => {
-    const events: AgentEvent[] = [{
-      type: 'agent:completed',
-      exitCode: 2,
-      costUsd: 0.01,
-      tokensIn: 200,
-      tokensOut: 100,
-      durationMs: 5000,
-      timestamp: 1000,
-    }]
+    const events: AgentEvent[] = [
+      {
+        type: 'agent:completed',
+        exitCode: 2,
+        costUsd: 0.01,
+        tokensIn: 200,
+        tokensOut: 100,
+        durationMs: 5000,
+        timestamp: 1000
+      }
+    ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByText(/Failed.*exit 2/i)).toBeInTheDocument()
   })
 
   it('renders started block with model name', () => {
     const events: AgentEvent[] = [
-      { type: 'agent:started', model: 'claude-3-7-sonnet', timestamp: Date.now() },
+      { type: 'agent:started', model: 'claude-3-7-sonnet', timestamp: Date.now() }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByText(/claude-3-7-sonnet/)).toBeInTheDocument()
@@ -305,7 +356,7 @@ describe('ChatRenderer component', () => {
   it('renders multiple events in sequence', () => {
     const events: AgentEvent[] = [
       { type: 'agent:text', text: 'Message one', timestamp: 1001 },
-      { type: 'agent:text', text: 'Message two', timestamp: 1002 },
+      { type: 'agent:text', text: 'Message two', timestamp: 1002 }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByText('Message one')).toBeInTheDocument()
@@ -319,8 +370,8 @@ describe('ChatRenderer component', () => {
         filename: 'preview.html',
         html: '<html><body>Preview</body></html>',
         sizeBytes: 30,
-        timestamp: 1000,
-      },
+        timestamp: 1000
+      }
     ]
     render(<ChatRenderer events={events} />)
     expect(screen.getByTestId('playground-card')).toBeInTheDocument()

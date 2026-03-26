@@ -69,7 +69,12 @@ describe('recordTaskChanges', () => {
 
   it('handles complex values like depends_on arrays', () => {
     const oldTask = { depends_on: [{ id: 'a', type: 'hard' }] }
-    const newPatch = { depends_on: [{ id: 'a', type: 'hard' }, { id: 'b', type: 'soft' }] }
+    const newPatch = {
+      depends_on: [
+        { id: 'a', type: 'hard' },
+        { id: 'b', type: 'soft' }
+      ]
+    }
 
     recordTaskChanges('task-5', oldTask, newPatch, 'user', db)
 
@@ -82,7 +87,7 @@ describe('recordTaskChanges', () => {
 describe('getTaskChanges', () => {
   it('returns changes ordered by most recent first', () => {
     const stmt = db.prepare(
-      "INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)"
+      'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)'
     )
     stmt.run('task-6', 'status', '"backlog"', '"queued"', 'user', '2026-01-01T00:00:00.000Z')
     stmt.run('task-6', 'status', '"queued"', '"active"', 'agent', '2026-01-02T00:00:00.000Z')
@@ -97,7 +102,7 @@ describe('getTaskChanges', () => {
 
   it('respects limit parameter', () => {
     const stmt = db.prepare(
-      "INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)"
+      'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)'
     )
     stmt.run('task-7', 'status', '"a"', '"b"', 'user', '2026-01-01T00:00:00.000Z')
     stmt.run('task-7', 'status', '"b"', '"c"', 'user', '2026-01-02T00:00:00.000Z')
@@ -116,7 +121,7 @@ describe('getTaskChanges', () => {
 describe('pruneOldChanges', () => {
   it('removes records older than threshold', () => {
     const stmt = db.prepare(
-      "INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)"
+      'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)'
     )
     const oldDate = new Date(Date.now() - 60 * 86400000).toISOString()
     const recentDate = new Date(Date.now() - 1 * 86400000).toISOString()
@@ -135,7 +140,7 @@ describe('pruneOldChanges', () => {
   it('keeps all records when none are old enough', () => {
     const recentDate = new Date(Date.now() - 1000).toISOString()
     db.prepare(
-      "INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)"
+      'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)'
     ).run('task-9', 'status', '"a"', '"b"', 'user', recentDate)
 
     const pruned = pruneOldChanges(30, db)

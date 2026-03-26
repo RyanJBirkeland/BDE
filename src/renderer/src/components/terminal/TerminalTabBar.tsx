@@ -35,7 +35,9 @@ export function TerminalTabBar({
   const [showAgentPicker, setShowAgentPicker] = useState(false)
   const [editingTabId, setEditingTabId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; tabId: string } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; tabId: string } | null>(
+    null
+  )
   const [draggedTabIdx, setDraggedTabIdx] = useState<number | null>(null)
   const [showLeftScroll, setShowLeftScroll] = useState(false)
   const [showRightScroll, setShowRightScroll] = useState(false)
@@ -48,7 +50,9 @@ export function TerminalTabBar({
     if (!container) return
     const hasOverflow = container.scrollWidth > container.clientWidth
     setShowLeftScroll(hasOverflow && container.scrollLeft > 0)
-    setShowRightScroll(hasOverflow && container.scrollLeft < container.scrollWidth - container.clientWidth)
+    setShowRightScroll(
+      hasOverflow && container.scrollLeft < container.scrollWidth - container.clientWidth
+    )
   }, [])
 
   useEffect(() => {
@@ -158,11 +162,7 @@ export function TerminalTabBar({
           </button>
         )}
 
-        <div
-          ref={tabsContainerRef}
-          className="terminal-tab-bar__tabs"
-          onScroll={checkOverflow}
-        >
+        <div ref={tabsContainerRef} className="terminal-tab-bar__tabs" onScroll={checkOverflow}>
           {tabs.map((tab, idx) => {
             const isActive = tab.id === activeTabId
             const isAgent = tab.kind === 'agent'

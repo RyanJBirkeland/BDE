@@ -5,14 +5,16 @@ import type { SprintTask } from '../../../../shared/types'
 
 // Mock useVisibilityAwareInterval to prevent timer side-effects
 vi.mock('../useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn(),
+  useVisibilityAwareInterval: vi.fn()
 }))
 
 // Mock the healthCheck store
 vi.mock('../../stores/healthCheck', () => {
   let stuckTaskIds: string[] = []
-  let dismissedIds: string[] = []
-  const setStuckTasks = vi.fn((ids: string[]) => { stuckTaskIds = [...ids] })
+  const dismissedIds: string[] = []
+  const setStuckTasks = vi.fn((ids: string[]) => {
+    stuckTaskIds = [...ids]
+  })
   const dismiss = vi.fn()
 
   const store = vi.fn((sel: (s: unknown) => unknown) =>
@@ -46,7 +48,7 @@ function makeTask(id: string): SprintTask {
     template_name: null,
     depends_on: null,
     updated_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
   }
 }
 

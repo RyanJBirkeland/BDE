@@ -18,45 +18,45 @@ vi.mock('../../data/sprint-queries', () => ({
   getTask: vi.fn(),
   getOrphanedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn().mockResolvedValue([]),
-  setSprintQueriesLogger: vi.fn(),
+  setSprintQueriesLogger: vi.fn()
 }))
 
 vi.mock('../../agent-manager/dependency-index', () => ({
   createDependencyIndex: vi.fn(() => ({
     rebuild: vi.fn(),
     getDependents: vi.fn(() => new Set()),
-    areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] })),
-  })),
+    areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] }))
+  }))
 }))
 
 vi.mock('../../agent-manager/resolve-dependents', () => ({
-  resolveDependents: vi.fn().mockResolvedValue(undefined),
+  resolveDependents: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getGhRepo: vi.fn(),
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-integration-test.log',
+  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-integration-test.log'
 }))
 
 vi.mock('../../agent-manager/sdk-adapter', () => ({
-  spawnAgent: vi.fn(),
+  spawnAgent: vi.fn()
 }))
 
 vi.mock('../../agent-manager/worktree', () => ({
   setupWorktree: vi.fn(),
   cleanupWorktree: vi.fn(),
   pruneStaleWorktrees: vi.fn(),
-  branchNameForTask: vi.fn(),
+  branchNameForTask: vi.fn()
 }))
 
 vi.mock('../../agent-manager/completion', () => ({
   resolveSuccess: vi.fn(),
-  resolveFailure: vi.fn(),
+  resolveFailure: vi.fn()
 }))
 
 vi.mock('../../agent-manager/orphan-recovery', () => ({
-  recoverOrphans: vi.fn(),
+  recoverOrphans: vi.fn()
 }))
 
 // ---------------------------------------------------------------------------
@@ -66,7 +66,14 @@ vi.mock('../../agent-manager/orphan-recovery', () => ({
 import { createAgentManager } from '../../agent-manager/index'
 import type { AgentManagerConfig, AgentHandle } from '../../agent-manager/types'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
-import { getQueuedTasks, claimTask, updateTask, getTask, getOrphanedTasks, getTasksWithDependencies } from '../../data/sprint-queries'
+import {
+  getQueuedTasks,
+  claimTask,
+  updateTask,
+  getTask,
+  getOrphanedTasks,
+  getTasksWithDependencies
+} from '../../data/sprint-queries'
 import { getRepoPaths } from '../../paths'
 import { spawnAgent } from '../../agent-manager/sdk-adapter'
 import { setupWorktree, pruneStaleWorktrees } from '../../agent-manager/worktree'
@@ -82,7 +89,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: 'claude-sonnet-4-5'
 }
 
 function makeLogger() {
@@ -112,7 +119,7 @@ function makeTask(overrides: Record<string, unknown> = {}) {
     depends_on: null,
     updated_at: '2026-01-01T00:00:00Z',
     created_at: '2026-01-01T00:00:00Z',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -125,7 +132,7 @@ function setupDefaultMocks(): void {
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
   vi.mocked(setupWorktree).mockResolvedValue({
     worktreePath: '/tmp/wt/myrepo/task-pipeline-1',
-    branch: 'agent/pipeline-test-task',
+    branch: 'agent/pipeline-test-task'
   })
 }
 
@@ -137,7 +144,7 @@ function makeMockRepo(): ISprintTaskRepository {
     getTasksWithDependencies: () => (getTasksWithDependencies as any)(),
     getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
     getActiveTaskCount: vi.fn().mockResolvedValue(0),
-    claimTask: (...args: [string, string]) => (claimTask as any)(...args),
+    claimTask: (...args: [string, string]) => (claimTask as any)(...args)
   }
 }
 
@@ -146,23 +153,41 @@ const mockRepo = makeMockRepo()
 function makeMockHandle(messages: unknown[] = []) {
   const abortFn = vi.fn()
   const steerFn = vi.fn().mockResolvedValue(undefined)
-  async function* gen(): AsyncIterable<unknown> { for (const m of messages) yield m }
+  async function* gen(): AsyncIterable<unknown> {
+    for (const m of messages) yield m
+  }
   return {
-    handle: { messages: gen(), sessionId: 'mock-session', abort: abortFn, steer: steerFn } as AgentHandle,
+    handle: {
+      messages: gen(),
+      sessionId: 'mock-session',
+      abort: abortFn,
+      steer: steerFn
+    } as AgentHandle,
     abortFn,
-    steerFn,
+    steerFn
   }
 }
 
 function makeBlockingHandle() {
   let resolveMessages: (() => void) | undefined
-  const p = new Promise<void>((r) => { resolveMessages = r })
-  const abortFn = vi.fn(() => { resolveMessages?.() })
-  async function* gen(): AsyncIterable<unknown> { await p }
+  const p = new Promise<void>((r) => {
+    resolveMessages = r
+  })
+  const abortFn = vi.fn(() => {
+    resolveMessages?.()
+  })
+  async function* gen(): AsyncIterable<unknown> {
+    await p
+  }
   return {
-    handle: { messages: gen(), sessionId: 'blocking', abort: abortFn, steer: vi.fn().mockResolvedValue(undefined) } as AgentHandle,
+    handle: {
+      messages: gen(),
+      sessionId: 'blocking',
+      abort: abortFn,
+      steer: vi.fn().mockResolvedValue(undefined)
+    } as AgentHandle,
     abortFn,
-    resolve: () => resolveMessages?.(),
+    resolve: () => resolveMessages?.()
   }
 }
 
@@ -199,7 +224,7 @@ describe('AgentManager pipeline integration', () => {
       expect.objectContaining({
         prompt: expect.stringContaining('Build the feature'),
         cwd: '/tmp/wt/myrepo/task-pipeline-1',
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-5'
       })
     )
 

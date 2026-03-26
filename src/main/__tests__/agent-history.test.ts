@@ -1,10 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 
 vi.mock('electron', () => ({
-  app: { getPath: vi.fn(() => '/tmp'), getName: vi.fn(() => 'BDE'), getVersion: vi.fn(() => '0.0.0') },
+  app: {
+    getPath: vi.fn(() => '/tmp'),
+    getName: vi.fn(() => 'BDE'),
+    getVersion: vi.fn(() => '0.0.0')
+  },
   BrowserWindow: { getAllWindows: vi.fn(() => []) },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
-  dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn(), showMessageBox: vi.fn() },
+  dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn(), showMessageBox: vi.fn() }
 }))
 import Database from 'better-sqlite3'
 import { mkdirSync, rmSync, existsSync, readFileSync } from 'fs'
@@ -137,18 +141,36 @@ describe('agent-history (SQLite)', () => {
 
   it('listAgents returns agents ordered by started_at DESC', async () => {
     await agentHistory.createAgentRecord({
-      id: 'a1', pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'first', startedAt: '2026-03-16T09:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'running', source: 'bde',
+      id: 'a1',
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'first',
+      startedAt: '2026-03-16T09:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
       sprintTaskId: null
     })
     await agentHistory.createAgentRecord({
-      id: 'a2', pid: null, bin: 'claude', model: 'opus', repo: 'bde',
-      repoPath: '', task: 'second', startedAt: '2026-03-16T10:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'done', source: 'bde',
+      id: 'a2',
+      pid: null,
+      bin: 'claude',
+      model: 'opus',
+      repo: 'bde',
+      repoPath: '',
+      task: 'second',
+      startedAt: '2026-03-16T10:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'done',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -163,18 +185,36 @@ describe('agent-history (SQLite)', () => {
 
   it('listAgents filters by status', async () => {
     await agentHistory.createAgentRecord({
-      id: 'r1', pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'run', startedAt: '2026-03-16T10:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'running', source: 'bde',
+      id: 'r1',
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'run',
+      startedAt: '2026-03-16T10:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
       sprintTaskId: null
     })
     await agentHistory.createAgentRecord({
-      id: 'd1', pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'done', startedAt: '2026-03-16T09:00:00.000Z',
-      finishedAt: '2026-03-16T09:30:00.000Z', exitCode: 0, status: 'done', source: 'bde',
+      id: 'd1',
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'done',
+      startedAt: '2026-03-16T09:00:00.000Z',
+      finishedAt: '2026-03-16T09:30:00.000Z',
+      exitCode: 0,
+      status: 'done',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -188,9 +228,18 @@ describe('agent-history (SQLite)', () => {
 
   it('updateAgentMeta updates SQLite row', async () => {
     await agentHistory.createAgentRecord({
-      id: 'u1', pid: 100, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'test', startedAt: '2026-03-16T10:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'running', source: 'bde',
+      id: 'u1',
+      pid: 100,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'test',
+      startedAt: '2026-03-16T10:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -211,9 +260,18 @@ describe('agent-history (SQLite)', () => {
 
   it('appendLog writes to disk file', async () => {
     const record = await agentHistory.createAgentRecord({
-      id: 'log1', pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'logging', startedAt: '2026-03-16T10:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'running', source: 'bde',
+      id: 'log1',
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'logging',
+      startedAt: '2026-03-16T10:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -229,9 +287,18 @@ describe('agent-history (SQLite)', () => {
 
   it('readLog returns content from disk with byte offset', async () => {
     await agentHistory.createAgentRecord({
-      id: 'read1', pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'reading', startedAt: '2026-03-16T10:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'running', source: 'bde',
+      id: 'read1',
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'reading',
+      startedAt: '2026-03-16T10:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -256,9 +323,18 @@ describe('agent-history (SQLite)', () => {
 
   it('hasAgent returns true/false correctly', async () => {
     await agentHistory.createAgentRecord({
-      id: 'exists1', pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'test', startedAt: '2026-03-16T10:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'running', source: 'bde',
+      id: 'exists1',
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'test',
+      startedAt: '2026-03-16T10:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -271,18 +347,36 @@ describe('agent-history (SQLite)', () => {
 
   it('findAgentByPid finds running agent by PID', async () => {
     await agentHistory.createAgentRecord({
-      id: 'pid1', pid: 9999, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'test', startedAt: '2026-03-16T10:00:00.000Z',
-      finishedAt: null, exitCode: null, status: 'running', source: 'bde',
+      id: 'pid1',
+      pid: 9999,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'test',
+      startedAt: '2026-03-16T10:00:00.000Z',
+      finishedAt: null,
+      exitCode: null,
+      status: 'running',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
       sprintTaskId: null
     })
     await agentHistory.createAgentRecord({
-      id: 'pid2', pid: 8888, bin: 'claude', model: 'sonnet', repo: 'bde',
-      repoPath: '', task: 'done', startedAt: '2026-03-16T09:00:00.000Z',
-      finishedAt: '2026-03-16T09:30:00.000Z', exitCode: 0, status: 'done', source: 'bde',
+      id: 'pid2',
+      pid: 8888,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '',
+      task: 'done',
+      startedAt: '2026-03-16T09:00:00.000Z',
+      finishedAt: '2026-03-16T09:30:00.000Z',
+      exitCode: 0,
+      status: 'done',
+      source: 'bde',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -313,14 +407,22 @@ describe('agent-history (SQLite)', () => {
     // Create 5 agents
     for (let i = 0; i < 5; i++) {
       await agentHistory.createAgentRecord({
-        id: `prune-${i}`, pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-        repoPath: '', task: `task ${i}`,
+        id: `prune-${i}`,
+        pid: null,
+        bin: 'claude',
+        model: 'sonnet',
+        repo: 'bde',
+        repoPath: '',
+        task: `task ${i}`,
         startedAt: `2026-03-${String(10 + i).padStart(2, '0')}T10:00:00.000Z`,
-        finishedAt: null, exitCode: null, status: 'done', source: 'bde',
-      costUsd: null,
-      tokensIn: null,
-      tokensOut: null,
-      sprintTaskId: null
+        finishedAt: null,
+        exitCode: null,
+        status: 'done',
+        source: 'bde',
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        sprintTaskId: null
       })
     }
 
@@ -329,7 +431,7 @@ describe('agent-history (SQLite)', () => {
     const remaining = await agentHistory.listAgents()
     expect(remaining).toHaveLength(3)
     // Should keep the 3 newest (prune-4, prune-3, prune-2)
-    expect(remaining.map(a => a.id)).toEqual(['prune-4', 'prune-3', 'prune-2'])
+    expect(remaining.map((a) => a.id)).toEqual(['prune-4', 'prune-3', 'prune-2'])
   })
 
   it('pruneOldAgents also removes agent_events for pruned agents', async () => {
@@ -339,19 +441,32 @@ describe('agent-history (SQLite)', () => {
     // Create 4 agents
     for (let i = 0; i < 4; i++) {
       await agentHistory.createAgentRecord({
-        id: `evt-prune-${i}`, pid: null, bin: 'claude', model: 'sonnet', repo: 'bde',
-        repoPath: '', task: `task ${i}`,
+        id: `evt-prune-${i}`,
+        pid: null,
+        bin: 'claude',
+        model: 'sonnet',
+        repo: 'bde',
+        repoPath: '',
+        task: `task ${i}`,
         startedAt: `2026-03-${String(10 + i).padStart(2, '0')}T10:00:00.000Z`,
-        finishedAt: null, exitCode: null, status: 'done', source: 'bde',
-        costUsd: null, tokensIn: null, tokensOut: null, sprintTaskId: null,
+        finishedAt: null,
+        exitCode: null,
+        status: 'done',
+        source: 'bde',
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        sprintTaskId: null
       })
     }
 
     // Insert events for the two oldest agents (evt-prune-0 and evt-prune-1)
-    db.prepare('INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)')
-      .run('evt-prune-0', 'agent:started', '{}', 1000)
-    db.prepare('INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)')
-      .run('evt-prune-1', 'agent:completed', '{}', 2000)
+    db.prepare(
+      'INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)'
+    ).run('evt-prune-0', 'agent:started', '{}', 1000)
+    db.prepare(
+      'INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)'
+    ).run('evt-prune-1', 'agent:completed', '{}', 2000)
 
     // Prune down to 2 (removes evt-prune-0 and evt-prune-1)
     await agentHistory.pruneOldAgents(2)
@@ -359,10 +474,12 @@ describe('agent-history (SQLite)', () => {
     // Agent records should be gone
     const remaining = await agentHistory.listAgents()
     expect(remaining).toHaveLength(2)
-    expect(remaining.map(a => a.id)).toEqual(['evt-prune-3', 'evt-prune-2'])
+    expect(remaining.map((a) => a.id)).toEqual(['evt-prune-3', 'evt-prune-2'])
 
     // Events for pruned agents should be gone
-    const eventsLeft = db.prepare('SELECT COUNT(*) as cnt FROM agent_events').get() as { cnt: number }
+    const eventsLeft = db.prepare('SELECT COUNT(*) as cnt FROM agent_events').get() as {
+      cnt: number
+    }
     expect(eventsLeft.cnt).toBe(0)
   })
 
@@ -384,7 +501,7 @@ describe('agent-history (SQLite)', () => {
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
-        sprintTaskId: null,
+        sprintTaskId: null
       })
       await agentHistory.appendLog('log-test-1', 'Hello World -- this is a test log')
       const result = await agentHistory.readLog('log-test-1', 0)
@@ -409,7 +526,7 @@ describe('agent-history (SQLite)', () => {
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
-        sprintTaskId: null,
+        sprintTaskId: null
       })
       await agentHistory.appendLog('log-test-2', 'A'.repeat(10000))
       const result = await agentHistory.readLog('log-test-2', 0, 100)

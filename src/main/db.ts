@@ -80,9 +80,7 @@ export const migrations: Migration[] = [
     version: 3,
     description: 'Add cost columns to agent_runs',
     up: (db) => {
-      const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map(
-        (c) => c.name
-      )
+      const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map((c) => c.name)
       for (const [col, type] of [
         ['cost_usd', 'REAL'],
         ['tokens_in', 'INTEGER'],
@@ -119,7 +117,7 @@ export const migrations: Migration[] = [
     version: 5,
     description: 'Add source column to agent_runs',
     up: (db) => {
-      const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map(c => c.name)
+      const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map((c) => c.name)
       if (!cols.includes('source')) {
         db.exec("ALTER TABLE agent_runs ADD COLUMN source TEXT NOT NULL DEFAULT 'bde'")
       }
@@ -166,7 +164,7 @@ export const migrations: Migration[] = [
     version: 7,
     description: 'Add claimed_by column to sprint_tasks',
     up: (db) => {
-      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map(c => c.name)
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
       if (!cols.includes('claimed_by')) {
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN claimed_by TEXT')
       }
@@ -176,7 +174,7 @@ export const migrations: Migration[] = [
     version: 8,
     description: 'Add template_name column to sprint_tasks',
     up: (db) => {
-      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map(c => c.name)
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
       if (!cols.includes('template_name')) {
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN template_name TEXT')
       }
@@ -184,7 +182,8 @@ export const migrations: Migration[] = [
   },
   {
     version: 9,
-    description: 'Add error status, retry_count, fast_fail_count to sprint_tasks; add release endpoint support',
+    description:
+      'Add error status, retry_count, fast_fail_count to sprint_tasks; add release endpoint support',
     up: (db) => {
       // SQLite cannot ALTER CHECK constraints — recreate the table with updated CHECK.
       db.exec(`
@@ -246,7 +245,8 @@ export const migrations: Migration[] = [
   },
   {
     version: 10,
-    description: 'Drop FK constraint on agent_run_id (agent runs live in task runner DB, not BDE DB)',
+    description:
+      'Drop FK constraint on agent_run_id (agent runs live in task runner DB, not BDE DB)',
     up: (db) => {
       db.exec(`
         PRAGMA foreign_keys = OFF;
@@ -309,7 +309,7 @@ export const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_agent_events_agent
           ON agent_events(agent_id, timestamp);
       `)
-    },
+    }
   },
   {
     version: 12,
@@ -319,18 +319,20 @@ export const migrations: Migration[] = [
         DROP TABLE IF EXISTS sprint_tasks;
         DROP TRIGGER IF EXISTS sprint_tasks_updated_at;
       `)
-    },
+    }
   },
   {
     version: 13,
     description: 'Add sprint_task_id column to agent_runs for task-to-run linking',
     up: (db) => {
-      const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map(c => c.name)
+      const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map((c) => c.name)
       if (!cols.includes('sprint_task_id')) {
         db.exec('ALTER TABLE agent_runs ADD COLUMN sprint_task_id TEXT')
-        db.exec('CREATE INDEX IF NOT EXISTS idx_agent_runs_sprint_task ON agent_runs(sprint_task_id)')
+        db.exec(
+          'CREATE INDEX IF NOT EXISTS idx_agent_runs_sprint_task ON agent_runs(sprint_task_id)'
+        )
       }
-    },
+    }
   },
   {
     version: 14,
@@ -349,7 +351,7 @@ export const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_task_changes_task_id ON task_changes(task_id);
         CREATE INDEX IF NOT EXISTS idx_task_changes_changed_at ON task_changes(changed_at);
       `)
-    },
+    }
   }
 ]
 

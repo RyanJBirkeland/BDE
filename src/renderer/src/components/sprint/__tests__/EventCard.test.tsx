@@ -6,7 +6,7 @@ import type {
   AgentToolResultEvent,
   AgentCompletedEvent,
   AgentStartedEvent,
-  AgentErrorEvent,
+  AgentErrorEvent
 } from '../../../../../shared/queue-api-contract'
 
 describe('EventCard', () => {
@@ -16,7 +16,7 @@ describe('EventCard', () => {
       timestamp: '2026-03-19T10:00:00Z',
       type: 'agent:tool_call',
       tool: 'bash',
-      summary: 'Running npm test',
+      summary: 'Running npm test'
     }
     render(<EventCard event={event} />)
     expect(screen.getByText('bash')).toBeInTheDocument()
@@ -31,7 +31,7 @@ describe('EventCard', () => {
       type: 'agent:tool_result',
       tool: 'edit',
       success: true,
-      summary: 'File written (42 lines)',
+      summary: 'File written (42 lines)'
     }
     render(<EventCard event={event} />)
     expect(screen.getByText('success')).toBeInTheDocument()
@@ -46,7 +46,7 @@ describe('EventCard', () => {
       type: 'agent:tool_result',
       tool: 'bash',
       success: false,
-      summary: 'Command failed (exit 1)',
+      summary: 'Command failed (exit 1)'
     }
     render(<EventCard event={event} />)
     expect(screen.getByText('failed')).toBeInTheDocument()
@@ -62,7 +62,7 @@ describe('EventCard', () => {
       costUsd: 0.0342,
       tokensIn: 15000,
       tokensOut: 3200,
-      durationMs: 120000,
+      durationMs: 120000
     }
     render(<EventCard event={event} />)
     expect(screen.getByText('Completed (exit 0)')).toBeInTheDocument()
@@ -78,7 +78,7 @@ describe('EventCard', () => {
       taskId: 'task-1',
       timestamp: '2026-03-19T10:00:00Z',
       type: 'agent:started',
-      model: 'opus',
+      model: 'opus'
     }
     render(<EventCard event={event} />)
     expect(screen.getByText('Agent started')).toBeInTheDocument()
@@ -91,7 +91,7 @@ describe('EventCard', () => {
       taskId: 'task-1',
       timestamp: '2026-03-19T10:00:00Z',
       type: 'agent:error',
-      message: 'API key expired',
+      message: 'API key expired'
     }
     render(<EventCard event={event} />)
     expect(screen.getByText('API key expired')).toBeInTheDocument()
@@ -102,7 +102,7 @@ describe('EventCard', () => {
     const event = {
       taskId: 'task-1',
       timestamp: '2026-03-19T10:00:00Z',
-      type: 'agent:custom_future_type',
+      type: 'agent:custom_future_type'
     }
     render(<EventCard event={event} />)
     expect(screen.getByText('agent:custom_future_type')).toBeInTheDocument()

@@ -43,7 +43,7 @@ const state: RateLimitState = {
   remaining: null,
   limit: null,
   resetEpoch: null,
-  warningEmitted: false,
+  warningEmitted: false
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +67,7 @@ export function parseRateLimitHeaders(headers: Headers): RateLimitHeaders {
     remaining: remaining !== null ? parseInt(remaining, 10) : null,
     limit: limit !== null ? parseInt(limit, 10) : null,
     resetEpoch: reset !== null ? parseInt(reset, 10) : null,
-    retryAfterMs: retryAfter !== null ? parseInt(retryAfter, 10) * 1_000 : null,
+    retryAfterMs: retryAfter !== null ? parseInt(retryAfter, 10) * 1_000 : null
   }
 }
 
@@ -166,7 +166,7 @@ export async function githubFetch(url: string, options?: GithubFetchOptions): Pr
       method,
       headers,
       body,
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: AbortSignal.timeout(timeoutMs)
     })
 
     const rl = parseRateLimitHeaders(lastResponse.headers)
@@ -216,7 +216,7 @@ export function getRateLimitState(): {
   return {
     remaining: state.remaining,
     limit: state.limit,
-    resetEpoch: state.resetEpoch,
+    resetEpoch: state.resetEpoch
   }
 }
 
@@ -263,9 +263,9 @@ export async function fetchAllGitHubPages<T>(
       headers: {
         Authorization: `Bearer ${opts.token}`,
         Accept: 'application/vnd.github+json',
-        ...opts.headers,
+        ...opts.headers
       },
-      timeoutMs: opts.timeoutMs,
+      timeoutMs: opts.timeoutMs
     })
 
     if (!res.ok) return items

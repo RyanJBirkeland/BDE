@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { timeAgo, formatElapsed, formatDuration, modelBadgeLabel, repoBadgeVariant, repoColor, formatTime } from '../format'
+import {
+  timeAgo,
+  formatElapsed,
+  formatDuration,
+  modelBadgeLabel,
+  repoBadgeVariant,
+  repoColor,
+  formatTime
+} from '../format'
 
 describe('timeAgo', () => {
   afterEach(() => {

@@ -10,20 +10,20 @@ import { useAgentEventsStore } from '../../../stores/agentEvents'
 
 // Mock stores
 vi.mock('../../../stores/agentHistory', () => ({
-  useAgentHistoryStore: vi.fn(),
+  useAgentHistoryStore: vi.fn()
 }))
 
 vi.mock('../../../stores/agentEvents', () => ({
-  useAgentEventsStore: vi.fn(),
+  useAgentEventsStore: vi.fn()
 }))
 
 // Mock terminal store
 vi.mock('../../../stores/terminal', () => ({
   useTerminalStore: {
     getState: vi.fn(() => ({
-      addTab: vi.fn(),
-    })),
-  },
+      addTab: vi.fn()
+    }))
+  }
 }))
 
 // Mock @tanstack/react-virtual
@@ -36,13 +36,13 @@ vi.mock('@tanstack/react-virtual', () => ({
         key: i,
         index: i,
         start: i * 60,
-        size: 60,
+        size: 60
       }))
     },
     getTotalSize: () => (config?.count ?? 0) * 60,
     scrollToIndex: vi.fn(),
-    measureElement: vi.fn(),
-  })),
+    measureElement: vi.fn()
+  }))
 }))
 
 // Mock CommandBar component
@@ -51,7 +51,7 @@ vi.mock('../CommandBar', () => ({
     <div data-testid="command-bar" data-disabled={disabled}>
       Command Bar
     </div>
-  ),
+  )
 }))
 
 describe('AgentConsole', () => {
@@ -72,20 +72,20 @@ describe('AgentConsole', () => {
     costUsd: null,
     tokensIn: null,
     tokensOut: null,
-    sprintTaskId: null,
+    sprintTaskId: null
   }
 
   const mockEvents: AgentEvent[] = [
     {
       type: 'agent:started',
       model: 'opus-4',
-      timestamp: Date.now() - 60000,
+      timestamp: Date.now() - 60000
     },
     {
       type: 'agent:text',
       text: 'Starting task...',
-      timestamp: Date.now() - 50000,
-    },
+      timestamp: Date.now() - 50000
+    }
   ]
 
   beforeEach(() => {

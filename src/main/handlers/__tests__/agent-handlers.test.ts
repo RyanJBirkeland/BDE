@@ -6,20 +6,20 @@ import type { IpcMainInvokeEvent } from 'electron'
 
 // Mock ipc-utils first
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 // Mock runner-client
 vi.mock('../../runner-client', () => ({
   listAgents: vi.fn(),
   steerAgent: vi.fn(),
-  killAgent: vi.fn(),
+  killAgent: vi.fn()
 }))
 
 // Mock agent-log-manager
 vi.mock('../../agent-log-manager', () => ({
   tailAgentLog: vi.fn(),
-  cleanupOldLogs: vi.fn(),
+  cleanupOldLogs: vi.fn()
 }))
 
 // Mock agent-history
@@ -27,38 +27,31 @@ vi.mock('../../agent-history', () => ({
   listAgents: vi.fn(),
   readLog: vi.fn(),
   importAgent: vi.fn(),
-  pruneOldAgents: vi.fn(),
+  pruneOldAgents: vi.fn()
 }))
 
 // Mock adhoc-agent
 vi.mock('../../adhoc-agent', () => ({
   spawnAdhocAgent: vi.fn(),
-  getAdhocHandle: vi.fn(),
+  getAdhocHandle: vi.fn()
 }))
 
 // Mock data/event-queries (used lazily in agent:history)
 vi.mock('../../data/event-queries', () => ({
   getEventHistory: vi.fn(),
-  appendEvent: vi.fn(),
+  appendEvent: vi.fn()
 }))
 
 // Mock db (used lazily in agent:history)
 vi.mock('../../db', () => ({
-  getDb: vi.fn().mockReturnValue({}),
+  getDb: vi.fn().mockReturnValue({})
 }))
 
 import { registerAgentHandlers } from '../agent-handlers'
 import { safeHandle } from '../../ipc-utils'
-import {
-  steerAgent as runnerSteer,
-  killAgent as runnerKill,
-} from '../../runner-client'
+import { steerAgent as runnerSteer, killAgent as runnerKill } from '../../runner-client'
 import { cleanupOldLogs } from '../../agent-log-manager'
-import {
-  listAgents,
-  readLog,
-  pruneOldAgents,
-} from '../../agent-history'
+import { listAgents, readLog, pruneOldAgents } from '../../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../../adhoc-agent'
 import { getEventHistory } from '../../data/event-queries'
 
@@ -111,7 +104,7 @@ describe('agents:list handler', () => {
   it('returns list of agents', async () => {
     const agents = [
       { id: 'agent-1', status: 'done', task: 'Build feature' },
-      { id: 'agent-2', status: 'active', task: 'Fix bug' },
+      { id: 'agent-2', status: 'active', task: 'Fix bug' }
     ]
     vi.mocked(listAgents).mockResolvedValue(agents as any)
 
@@ -247,7 +240,7 @@ describe('agent:history handler', () => {
   it('returns parsed event history from SQLite', async () => {
     const rows = [
       { payload: JSON.stringify({ type: 'message', text: 'Hello' }) },
-      { payload: JSON.stringify({ type: 'result', exitCode: 0 }) },
+      { payload: JSON.stringify({ type: 'result', exitCode: 0 }) }
     ]
     vi.mocked(getEventHistory).mockReturnValue(rows as any)
 
@@ -257,7 +250,7 @@ describe('agent:history handler', () => {
     expect(getEventHistory).toHaveBeenCalledWith({}, 'agent-42')
     expect(result).toEqual([
       { type: 'message', text: 'Hello' },
-      { type: 'result', exitCode: 0 },
+      { type: 'result', exitCode: 0 }
     ])
   })
 
@@ -284,13 +277,13 @@ describe('local:spawnClaudeAgent handler', () => {
     const result = await handler(mockEvent, {
       task: 'Build the feature',
       repoPath: '/Users/test/projects/BDE',
-      model: 'claude-opus-4',
+      model: 'claude-opus-4'
     })
 
     expect(spawnAdhocAgent).toHaveBeenCalledWith({
       task: 'Build the feature',
       repoPath: '/Users/test/projects/BDE',
-      model: 'claude-opus-4',
+      model: 'claude-opus-4'
     })
     expect(result).toEqual(spawnResult)
   })

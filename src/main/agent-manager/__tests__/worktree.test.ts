@@ -107,7 +107,7 @@ describe('setupWorktree', () => {
       repoPath: mockRepoPath,
       worktreeBase: tmpDir,
       taskId: 'task-123',
-      title: 'Add login page',
+      title: 'Add login page'
     })
 
     // Find the call to `git worktree add`
@@ -130,7 +130,7 @@ describe('setupWorktree', () => {
       repoPath: mockRepoPath,
       worktreeBase: tmpDir,
       taskId: 'task-456',
-      title: 'Fix bug',
+      title: 'Fix bug'
     })
 
     const addCall = execFileMock.mock.calls.find(
@@ -149,7 +149,7 @@ describe('setupWorktree', () => {
         repoPath: '/nonexistent/repo',
         worktreeBase: tmpDir,
         taskId: 'task-123',
-        title: 'Test task',
+        title: 'Test task'
       })
     ).rejects.toThrow('Repo path does not exist or is not a git repository: /nonexistent/repo')
   })
@@ -164,7 +164,7 @@ describe('setupWorktree', () => {
         repoPath: nonGitDir,
         worktreeBase: tmpDir,
         taskId: 'task-456',
-        title: 'Test task',
+        title: 'Test task'
       })
     ).rejects.toThrow(`Repo path does not exist or is not a git repository: ${nonGitDir}`)
   })
@@ -176,7 +176,7 @@ describe('setupWorktree', () => {
       repoPath: mockRepoPath,
       worktreeBase: tmpDir,
       taskId: 'task-789',
-      title: 'Bad task',
+      title: 'Bad task'
     })
 
     expect(result.branch).toBe('agent/bad-task-task-789')
@@ -208,7 +208,7 @@ describe('setupWorktree', () => {
       '',
       `worktree ${mockRepoPath}`,
       `branch refs/heads/main`,
-      '',
+      ''
     ].join('\n')
 
     execFileMock.mockImplementation((...args: unknown[]) => {
@@ -218,12 +218,16 @@ describe('setupWorktree', () => {
       // worktree list returns porcelain output with stale entry
       if (gitArgs[0] === 'worktree' && gitArgs[1] === 'list') {
         if (typeof cb === 'function') cb(null, { stdout: porcelainList, stderr: '' })
-        return Object.assign(Promise.resolve({ stdout: porcelainList, stderr: '' }), { child: null }) as unknown as ChildProcess
+        return Object.assign(Promise.resolve({ stdout: porcelainList, stderr: '' }), {
+          child: null
+        }) as unknown as ChildProcess
       }
 
       // Everything else succeeds
       if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
-      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), {
+        child: null
+      }) as unknown as ChildProcess
     })
 
     const result = await setupWorktree({
@@ -231,22 +235,30 @@ describe('setupWorktree', () => {
       worktreeBase: tmpDir,
       taskId: 'task-stale',
       title: 'Stale test',
-      logger: logger as unknown as import('../types').Logger,
+      logger: logger as unknown as import('../types').Logger
     })
 
     expect(result.branch).toBe(branch)
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Removing stale worktree')
-    )
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Removing stale worktree'))
     // Verify force-remove was called on the stale path (proactively, before worktree add)
     const forceRemoveCall = execFileMock.mock.calls.find(
-      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'worktree' && c[1][1] === 'remove' && c[1].includes('/some/stale/path')
+      (c) =>
+        c[0] === 'git' &&
+        Array.isArray(c[1]) &&
+        c[1][0] === 'worktree' &&
+        c[1][1] === 'remove' &&
+        c[1].includes('/some/stale/path')
     )
     expect(forceRemoveCall).toBeDefined()
 
     // Verify force-remove occurred BEFORE worktree add
     const forceRemoveIndex = execFileMock.mock.calls.findIndex(
-      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'worktree' && c[1][1] === 'remove' && c[1].includes('/some/stale/path')
+      (c) =>
+        c[0] === 'git' &&
+        Array.isArray(c[1]) &&
+        c[1][0] === 'worktree' &&
+        c[1][1] === 'remove' &&
+        c[1].includes('/some/stale/path')
     )
     const worktreeAddIndex = execFileMock.mock.calls.findIndex(
       (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'worktree' && c[1][1] === 'add'
@@ -265,7 +277,7 @@ describe('setupWorktree', () => {
       worktreeBase: tmpDir,
       taskId: 'task-push',
       title: 'Push test',
-      logger: logger as unknown as import('../types').Logger,
+      logger: logger as unknown as import('../types').Logger
     })
 
     expect(result.branch).toBe(branch)
@@ -295,7 +307,9 @@ describe('setupWorktree', () => {
 
       // Everything else succeeds (cleanup calls)
       if (typeof cb === 'function') cb(null, '', '')
-      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), {
+        child: null
+      }) as unknown as ChildProcess
     })
 
     await expect(
@@ -303,7 +317,7 @@ describe('setupWorktree', () => {
         repoPath: mockRepoPath,
         worktreeBase: tmpDir,
         taskId: 'task-fail',
-        title: 'Fail test',
+        title: 'Fail test'
       })
     ).rejects.toThrow('fatal: unable to create worktree')
 
@@ -327,7 +341,9 @@ describe('setupWorktree', () => {
 
       // Everything else (nukeStaleState calls) succeeds
       if (typeof cb === 'function') cb(null, '', '')
-      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), { child: null }) as unknown as ChildProcess
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), {
+        child: null
+      }) as unknown as ChildProcess
     })
 
     await expect(
@@ -335,7 +351,7 @@ describe('setupWorktree', () => {
         repoPath: mockRepoPath,
         worktreeBase: tmpDir,
         taskId: 'task-retry',
-        title: 'Retry test',
+        title: 'Retry test'
       })
     ).rejects.toThrow('fatal: unable to create worktree')
 
@@ -359,12 +375,10 @@ describe('setupWorktree', () => {
       worktreeBase: tmpDir,
       taskId: 'task-lock-1',
       title: 'Lock test',
-      logger: logger as unknown as import('../types').Logger,
+      logger: logger as unknown as import('../types').Logger
     })
 
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Corrupted lock file')
-    )
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Corrupted lock file'))
     expect(result.branch).toBe('agent/lock-test-task-loc')
   })
 
@@ -379,7 +393,7 @@ describe('setupWorktree', () => {
       repoPath: mockRepoPath,
       worktreeBase: tmpDir,
       taskId: 'task-lock-2',
-      title: 'Dead PID test',
+      title: 'Dead PID test'
     })
 
     expect(result.branch).toBe('agent/dead-pid-test-task-loc')
@@ -397,7 +411,7 @@ describe('setupWorktree', () => {
         repoPath: mockRepoPath,
         worktreeBase: tmpDir,
         taskId: 'task-lock-3',
-        title: 'Alive PID test',
+        title: 'Alive PID test'
       })
     ).rejects.toThrow(`Worktree lock held by PID ${process.pid}`)
   })
@@ -413,7 +427,7 @@ describe('cleanupWorktree', () => {
     cleanupWorktree({
       repoPath: '/repos/proj',
       worktreePath: '/tmp/worktrees/task-1',
-      branch: 'agent/my-task',
+      branch: 'agent/my-task'
     })
 
     const removeCall = execFileMock.mock.calls.find(
@@ -429,7 +443,7 @@ describe('cleanupWorktree', () => {
     cleanupWorktree({
       repoPath: '/repos/proj',
       worktreePath: '/tmp/worktrees/task-1',
-      branch: 'agent/my-task',
+      branch: 'agent/my-task'
     })
 
     const branchCall = execFileMock.mock.calls.find(
@@ -445,7 +459,7 @@ describe('cleanupWorktree', () => {
     cleanupWorktree({
       repoPath: '/repos/proj',
       worktreePath: '/tmp/worktrees/task-1',
-      branch: 'agent/my-task',
+      branch: 'agent/my-task'
     })
 
     for (const call of execFileMock.mock.calls) {

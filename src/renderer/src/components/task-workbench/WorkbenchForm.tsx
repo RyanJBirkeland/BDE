@@ -14,7 +14,7 @@ const PRIORITY_OPTIONS = [
   { label: 'P2 High', value: 2 },
   { label: 'P3 Medium', value: 3 },
   { label: 'P4 Low', value: 4 },
-  { label: 'P5 Backlog', value: 5 },
+  { label: 'P5 Backlog', value: 5 }
 ] as const
 
 interface WorkbenchFormProps {
@@ -57,15 +57,33 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
       try {
         const result = await window.api.workbench.checkSpec({ title, repo, spec })
         setSemanticChecks([
-          { id: 'clarity', label: 'Clarity', tier: 2, status: result.clarity.status, message: result.clarity.message },
-          { id: 'scope', label: 'Scope', tier: 2, status: result.scope.status, message: result.scope.message },
-          { id: 'files-exist', label: 'Files', tier: 2, status: result.filesExist.status, message: result.filesExist.message },
+          {
+            id: 'clarity',
+            label: 'Clarity',
+            tier: 2,
+            status: result.clarity.status,
+            message: result.clarity.message
+          },
+          {
+            id: 'scope',
+            label: 'Scope',
+            tier: 2,
+            status: result.scope.status,
+            message: result.scope.message
+          },
+          {
+            id: 'files-exist',
+            label: 'Files',
+            tier: 2,
+            status: result.filesExist.status,
+            message: result.filesExist.message
+          }
         ])
       } catch {
         setSemanticChecks([
           { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Unable to check' },
           { id: 'scope', label: 'Scope', tier: 2, status: 'warn', message: 'Unable to check' },
-          { id: 'files-exist', label: 'Files', tier: 2, status: 'warn', message: 'Unable to check' },
+          { id: 'files-exist', label: 'Files', tier: 2, status: 'warn', message: 'Unable to check' }
         ])
       }
     }, 2000)
@@ -78,66 +96,119 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     return () => clearTimeout(t)
   }, [])
 
-  const handleSubmit = useCallback(async (action: 'backlog' | 'queue') => {
-    setSubmitting(true)
-    try {
-      // Run operational checks for queue
-      if (action === 'queue') {
-        useTaskWorkbenchStore.setState({ operationalLoading: true })
-        const opResult = await window.api.workbench.checkOperational({ repo })
-        const opChecks = [
-          { id: 'auth', label: 'Auth', tier: 3 as const, status: opResult.auth.status, message: opResult.auth.message },
-          { id: 'repo-path', label: 'Repo Path', tier: 3 as const, status: opResult.repoPath.status, message: opResult.repoPath.message },
-          { id: 'git-clean', label: 'Git Clean', tier: 3 as const, status: opResult.gitClean.status, message: opResult.gitClean.message },
-          { id: 'no-conflict', label: 'No Conflict', tier: 3 as const, status: opResult.noConflict.status, message: opResult.noConflict.message },
-          { id: 'slots', label: 'Agent Slots', tier: 3 as const, status: opResult.slotsAvailable.status, message: opResult.slotsAvailable.message },
-        ]
-        setOperationalChecks(opChecks)
-
-        // Block if any operational check fails
-        if (opChecks.some((c) => c.status === 'fail')) {
-          useTaskWorkbenchStore.setState({ checksExpanded: true })
-          setSubmitting(false)
-          return
-        }
-
-        // Warn if any operational check has warnings
-        const hasWarnings = opChecks.some((c) => c.status === 'warn')
-        if (hasWarnings) {
-          useTaskWorkbenchStore.setState({ checksExpanded: true })
-          setShowQueueConfirm(true)
-          setSubmitting(false)
-          return
-        }
-      }
-
-      // Proceed with create/update
-      if (mode === 'edit' && taskId) {
-        await updateTask(taskId, {
-          title, repo, priority, spec,
-          depends_on: dependsOn.length > 0 ? dependsOn : null,
-          playground_enabled: playgroundEnabled || undefined,
-          status: action === 'queue' ? 'queued' : 'backlog',
-        })
-      } else {
-        const input: CreateTicketInput = {
-          title, repo, prompt: title, spec, priority,
-          depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-          playground_enabled: playgroundEnabled || undefined,
-        }
-        await createTask(input)
-        // createTask hardcodes status=backlog. If queuing, find and update.
+  const handleSubmit = useCallback(
+    async (action: 'backlog' | 'queue') => {
+      setSubmitting(true)
+      try {
+        // Run operational checks for queue
         if (action === 'queue') {
-          const tasks = useSprintTasks.getState().tasks
-          const created = tasks.find((t) => t.title === title && t.status === 'backlog')
-          if (created) await updateTask(created.id, { status: 'queued' })
+          useTaskWorkbenchStore.setState({ operationalLoading: true })
+          const opResult = await window.api.workbench.checkOperational({ repo })
+          const opChecks = [
+            {
+              id: 'auth',
+              label: 'Auth',
+              tier: 3 as const,
+              status: opResult.auth.status,
+              message: opResult.auth.message
+            },
+            {
+              id: 'repo-path',
+              label: 'Repo Path',
+              tier: 3 as const,
+              status: opResult.repoPath.status,
+              message: opResult.repoPath.message
+            },
+            {
+              id: 'git-clean',
+              label: 'Git Clean',
+              tier: 3 as const,
+              status: opResult.gitClean.status,
+              message: opResult.gitClean.message
+            },
+            {
+              id: 'no-conflict',
+              label: 'No Conflict',
+              tier: 3 as const,
+              status: opResult.noConflict.status,
+              message: opResult.noConflict.message
+            },
+            {
+              id: 'slots',
+              label: 'Agent Slots',
+              tier: 3 as const,
+              status: opResult.slotsAvailable.status,
+              message: opResult.slotsAvailable.message
+            }
+          ]
+          setOperationalChecks(opChecks)
+
+          // Block if any operational check fails
+          if (opChecks.some((c) => c.status === 'fail')) {
+            useTaskWorkbenchStore.setState({ checksExpanded: true })
+            setSubmitting(false)
+            return
+          }
+
+          // Warn if any operational check has warnings
+          const hasWarnings = opChecks.some((c) => c.status === 'warn')
+          if (hasWarnings) {
+            useTaskWorkbenchStore.setState({ checksExpanded: true })
+            setShowQueueConfirm(true)
+            setSubmitting(false)
+            return
+          }
         }
+
+        // Proceed with create/update
+        if (mode === 'edit' && taskId) {
+          await updateTask(taskId, {
+            title,
+            repo,
+            priority,
+            spec,
+            depends_on: dependsOn.length > 0 ? dependsOn : null,
+            playground_enabled: playgroundEnabled || undefined,
+            status: action === 'queue' ? 'queued' : 'backlog'
+          })
+        } else {
+          const input: CreateTicketInput = {
+            title,
+            repo,
+            prompt: title,
+            spec,
+            priority,
+            depends_on: dependsOn.length > 0 ? dependsOn : undefined,
+            playground_enabled: playgroundEnabled || undefined
+          }
+          await createTask(input)
+          // createTask hardcodes status=backlog. If queuing, find and update.
+          if (action === 'queue') {
+            const tasks = useSprintTasks.getState().tasks
+            const created = tasks.find((t) => t.title === title && t.status === 'backlog')
+            if (created) await updateTask(created.id, { status: 'queued' })
+          }
+        }
+        resetForm()
+      } finally {
+        setSubmitting(false)
       }
-      resetForm()
-    } finally {
-      setSubmitting(false)
-    }
-  }, [mode, taskId, title, repo, priority, spec, dependsOn, playgroundEnabled, createTask, updateTask, resetForm, setOperationalChecks])
+    },
+    [
+      mode,
+      taskId,
+      title,
+      repo,
+      priority,
+      spec,
+      dependsOn,
+      playgroundEnabled,
+      createTask,
+      updateTask,
+      resetForm,
+      setOperationalChecks
+    ]
+  )
 
   const handleConfirmedQueue = useCallback(async () => {
     setShowQueueConfirm(false)
@@ -145,16 +216,23 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     try {
       if (mode === 'edit' && taskId) {
         await updateTask(taskId, {
-          title, repo, priority, spec,
+          title,
+          repo,
+          priority,
+          spec,
           depends_on: dependsOn.length > 0 ? dependsOn : null,
           playground_enabled: playgroundEnabled || undefined,
-          status: 'queued',
+          status: 'queued'
         })
       } else {
         const input: CreateTicketInput = {
-          title, repo, prompt: title, spec, priority,
+          title,
+          repo,
+          prompt: title,
+          spec,
+          priority,
           depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-          playground_enabled: playgroundEnabled || undefined,
+          playground_enabled: playgroundEnabled || undefined
         }
         await createTask(input)
         const tasks = useSprintTasks.getState().tasks
@@ -165,12 +243,28 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     } finally {
       setSubmitting(false)
     }
-  }, [mode, taskId, title, repo, priority, spec, dependsOn, playgroundEnabled, createTask, updateTask, resetForm])
+  }, [
+    mode,
+    taskId,
+    title,
+    repo,
+    priority,
+    spec,
+    dependsOn,
+    playgroundEnabled,
+    createTask,
+    updateTask,
+    resetForm
+  ])
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)
     try {
-      const result = await window.api.workbench.generateSpec({ title, repo, templateHint: 'feature' })
+      const result = await window.api.workbench.generateSpec({
+        title,
+        repo,
+        templateHint: 'feature'
+      })
       if (result.spec) setField('spec', result.spec)
     } finally {
       setGenerating(false)
@@ -199,21 +293,35 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   }, [submitting, handleSubmit])
 
   const inputStyle = {
-    padding: tokens.space[2], background: tokens.color.surface,
-    border: `1px solid ${tokens.color.border}`, borderRadius: tokens.radius.md,
-    color: tokens.color.text, fontSize: tokens.size.md, outline: 'none', width: '100%',
+    padding: tokens.space[2],
+    background: tokens.color.surface,
+    border: `1px solid ${tokens.color.border}`,
+    borderRadius: tokens.radius.md,
+    color: tokens.color.text,
+    fontSize: tokens.size.md,
+    outline: 'none',
+    width: '100%'
   }
 
   const labelStyle = {
-    fontSize: tokens.size.sm, fontWeight: 600 as const, color: tokens.color.textMuted,
-    textTransform: 'uppercase' as const, letterSpacing: '0.06em',
+    fontSize: tokens.size.sm,
+    fontWeight: 600 as const,
+    color: tokens.color.textMuted,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.06em'
   }
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: tokens.space[4],
-      padding: tokens.space[4], overflowY: 'auto', height: '100%',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.space[4],
+        padding: tokens.space[4],
+        overflowY: 'auto',
+        height: '100%'
+      }}
+    >
       <div style={{ fontSize: tokens.size.xl, fontWeight: 600, color: tokens.color.text }}>
         {mode === 'edit' ? `Edit: ${title || 'Untitled'}` : 'New Task'}
       </div>
@@ -221,33 +329,69 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[3] }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
           <label style={labelStyle}>Title *</label>
-          <input ref={titleRef} type="text" value={title}
+          <input
+            ref={titleRef}
+            type="text"
+            value={title}
             onChange={(e) => setField('title', e.target.value)}
             placeholder='e.g. "Add recipe search to Feast onboarding"'
-            style={inputStyle} />
+            style={inputStyle}
+          />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
           <label style={labelStyle}>Repo</label>
-          <select value={repo} onChange={(e) => setField('repo', e.target.value)} style={inputStyle}>
-            {REPO_OPTIONS.map((r) => <option key={r.label} value={r.label}>{r.label}</option>)}
+          <select
+            value={repo}
+            onChange={(e) => setField('repo', e.target.value)}
+            style={inputStyle}
+          >
+            {REPO_OPTIONS.map((r) => (
+              <option key={r.label} value={r.label}>
+                {r.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
       <div>
-        <button onClick={() => setField('advancedOpen', !advancedOpen)} style={{
-          background: 'none', border: 'none', color: tokens.color.textMuted,
-          fontSize: tokens.size.sm, cursor: 'pointer', padding: 0,
-        }}>
+        <button
+          onClick={() => setField('advancedOpen', !advancedOpen)}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: tokens.color.textMuted,
+            fontSize: tokens.size.sm,
+            cursor: 'pointer',
+            padding: 0
+          }}
+        >
           {advancedOpen ? '\u25be' : '\u25b8'} More options
         </button>
         {advancedOpen && (
-          <div style={{ marginTop: tokens.space[2], display: 'flex', flexDirection: 'column', gap: tokens.space[3] }}>
+          <div
+            style={{
+              marginTop: tokens.space[2],
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokens.space[3]
+            }}
+          >
             <div style={{ display: 'flex', gap: tokens.space[3] }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1], flex: 1 }}>
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1], flex: 1 }}
+              >
                 <label style={labelStyle}>Priority</label>
-                <select value={priority} onChange={(e) => setField('priority', Number(e.target.value))} style={inputStyle}>
-                  {PRIORITY_OPTIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                <select
+                  value={priority}
+                  onChange={(e) => setField('priority', Number(e.target.value))}
+                  style={inputStyle}
+                >
+                  {PRIORITY_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -261,7 +405,12 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
               />
               <label
                 htmlFor="playground-enabled-workbench"
-                style={{ margin: 0, cursor: 'pointer', fontSize: tokens.size.sm, color: tokens.color.text }}
+                style={{
+                  margin: 0,
+                  cursor: 'pointer',
+                  fontSize: tokens.size.sm,
+                  color: tokens.color.text
+                }}
                 title="Enable native HTML preview rendering for frontend work"
               >
                 Dev Playground
@@ -273,7 +422,11 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
         <label style={labelStyle}>Spec</label>
-        <SpecEditor onRequestGenerate={handleGenerate} onRequestResearch={handleResearch} generating={generating} />
+        <SpecEditor
+          onRequestGenerate={handleGenerate}
+          onRequestResearch={handleResearch}
+          generating={generating}
+        />
       </div>
 
       <ReadinessChecks />

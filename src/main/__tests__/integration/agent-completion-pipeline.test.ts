@@ -35,11 +35,11 @@ vi.mock('node:child_process', () => {
 
 vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
-  getTask: vi.fn(),
+  getTask: vi.fn()
 }))
 
 vi.mock('../../env-utils', () => ({
-  buildAgentEnv: vi.fn(() => ({ ...process.env })),
+  buildAgentEnv: vi.fn(() => ({ ...process.env }))
 }))
 
 // ---------------------------------------------------------------------------
@@ -85,7 +85,7 @@ const mockRepo: ISprintTaskRepository = {
   getTasksWithDependencies: vi.fn().mockResolvedValue([]),
   getOrphanedTasks: vi.fn(),
   getActiveTaskCount: vi.fn().mockResolvedValue(0),
-  claimTask: vi.fn(),
+  claimTask: vi.fn()
 }
 const getTaskMock = vi.mocked(getTask)
 
@@ -117,7 +117,7 @@ function makeTaskRecord(overrides: Record<string, unknown> = {}) {
     template_name: null,
     updated_at: '2026-01-01T00:00:00Z',
     created_at: '2026-01-01T00:00:00Z',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -142,25 +142,28 @@ describe('Agent completion pipeline integration', () => {
   describe('agent exits 0 with changes', () => {
     it('pushes branch, opens PR, and updates task with pr_url and pr_number', async () => {
       mockExecFileSequence([
-        { stdout: 'agent/add-login-page\n' },                    // git rev-parse --abbrev-ref HEAD
-        { stdout: '' },                                           // git status --porcelain (clean)
-        { stdout: '3\n' },                                        // git rev-list --count
-        { stdout: '' },                                           // git push
-        { stdout: '' },                                           // gh pr list (no existing PR)
-        { stdout: 'abc123 first commit\n' },                      // git log (generatePrBody)
-        { stdout: ' src/login.ts | 42 ++++\n' },                  // git diff --stat (generatePrBody)
-        { stdout: 'https://github.com/owner/repo/pull/42\n' },   // gh pr create
+        { stdout: 'agent/add-login-page\n' }, // git rev-parse --abbrev-ref HEAD
+        { stdout: '' }, // git status --porcelain (clean)
+        { stdout: '3\n' }, // git rev-list --count
+        { stdout: '' }, // git push
+        { stdout: '' }, // gh pr list (no existing PR)
+        { stdout: 'abc123 first commit\n' }, // git log (generatePrBody)
+        { stdout: ' src/login.ts | 42 ++++\n' }, // git diff --stat (generatePrBody)
+        { stdout: 'https://github.com/owner/repo/pull/42\n' } // gh pr create
       ])
 
-      await resolveSuccess({
-        repo: mockRepo,
-        taskId: 'task-1',
-        worktreePath: '/tmp/wt/task-1',
-        title: 'Add login page',
-        ghRepo: 'owner/repo',
-        onTaskTerminal,
-        retryCount: 0,
-      }, logger)
+      await resolveSuccess(
+        {
+          repo: mockRepo,
+          taskId: 'task-1',
+          worktreePath: '/tmp/wt/task-1',
+          title: 'Add login page',
+          ghRepo: 'owner/repo',
+          onTaskTerminal,
+          retryCount: 0
+        },
+        logger
+      )
 
       // Verify git push was called
       const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
@@ -183,33 +186,36 @@ describe('Agent completion pipeline integration', () => {
       expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
         pr_status: 'open',
         pr_url: 'https://github.com/owner/repo/pull/42',
-        pr_number: 42,
+        pr_number: 42
       })
     })
 
     it('auto-commits uncommitted changes before pushing', async () => {
       mockExecFileSequence([
-        { stdout: 'agent/add-login-page\n' },                    // git rev-parse
-        { stdout: ' M src/file.ts\n' },                           // git status --porcelain (dirty)
-        { stdout: '' },                                           // git add -u
-        { stdout: '' },                                           // git commit
-        { stdout: '2\n' },                                        // git rev-list --count
-        { stdout: '' },                                           // git push
-        { stdout: '' },                                           // gh pr list
-        { stdout: '' },                                           // git log
-        { stdout: '' },                                           // git diff --stat
-        { stdout: 'https://github.com/owner/repo/pull/10\n' },   // gh pr create
+        { stdout: 'agent/add-login-page\n' }, // git rev-parse
+        { stdout: ' M src/file.ts\n' }, // git status --porcelain (dirty)
+        { stdout: '' }, // git add -u
+        { stdout: '' }, // git commit
+        { stdout: '2\n' }, // git rev-list --count
+        { stdout: '' }, // git push
+        { stdout: '' }, // gh pr list
+        { stdout: '' }, // git log
+        { stdout: '' }, // git diff --stat
+        { stdout: 'https://github.com/owner/repo/pull/10\n' } // gh pr create
       ])
 
-      await resolveSuccess({
-        repo: mockRepo,
-        taskId: 'task-1',
-        worktreePath: '/tmp/wt/task-1',
-        title: 'Add login page',
-        ghRepo: 'owner/repo',
-        onTaskTerminal,
-        retryCount: 0,
-      }, logger)
+      await resolveSuccess(
+        {
+          repo: mockRepo,
+          taskId: 'task-1',
+          worktreePath: '/tmp/wt/task-1',
+          title: 'Add login page',
+          ghRepo: 'owner/repo',
+          onTaskTerminal,
+          retryCount: 0
+        },
+        logger
+      )
 
       // Verify auto-commit sequence: git add -A then git commit
       const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
@@ -224,10 +230,13 @@ describe('Agent completion pipeline integration', () => {
       expect(commitCall).toBeDefined()
 
       // Should still update task with PR info
-      expect(updateTaskMock).toHaveBeenCalledWith('task-1', expect.objectContaining({
-        pr_status: 'open',
-        pr_number: 10,
-      }))
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          pr_status: 'open',
+          pr_number: 10
+        })
+      )
     })
   })
 
@@ -237,20 +246,23 @@ describe('Agent completion pipeline integration', () => {
   describe('agent exits 0 with no changes (empty diff)', () => {
     it('requeues task with incremented retry_count when no commits', async () => {
       mockExecFileSequence([
-        { stdout: 'agent/empty-branch\n' },   // git rev-parse
-        { stdout: '' },                         // git status --porcelain (clean)
-        { stdout: '0\n' },                      // git rev-list (no commits)
+        { stdout: 'agent/empty-branch\n' }, // git rev-parse
+        { stdout: '' }, // git status --porcelain (clean)
+        { stdout: '0\n' } // git rev-list (no commits)
       ])
 
-      await resolveSuccess({
-        repo: mockRepo,
-        taskId: 'task-2',
-        worktreePath: '/tmp/wt/task-2',
-        title: 'Empty task',
-        ghRepo: 'owner/repo',
-        onTaskTerminal,
-        retryCount: 0,
-      }, logger)
+      await resolveSuccess(
+        {
+          repo: mockRepo,
+          taskId: 'task-2',
+          worktreePath: '/tmp/wt/task-2',
+          title: 'Empty task',
+          ghRepo: 'owner/repo',
+          onTaskTerminal,
+          retryCount: 0
+        },
+        logger
+      )
 
       // No push should have happened
       const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
@@ -266,10 +278,13 @@ describe('Agent completion pipeline integration', () => {
       expect(prCall).toBeUndefined()
 
       // Task requeued with incremented retry_count
-      expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
-        status: 'queued',
-        retry_count: 1,
-      }))
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-2',
+        expect.objectContaining({
+          status: 'queued',
+          retry_count: 1
+        })
+      )
 
       // onTaskTerminal NOT called (not terminal)
       expect(onTaskTerminal).not.toHaveBeenCalled()
@@ -277,52 +292,60 @@ describe('Agent completion pipeline integration', () => {
 
     it('marks task failed when no commits and retries exhausted', async () => {
       mockExecFileSequence([
-        { stdout: 'agent/empty-branch\n' },   // git rev-parse
-        { stdout: '' },                         // git status --porcelain (clean)
-        { stdout: '0\n' },                      // git rev-list (no commits)
+        { stdout: 'agent/empty-branch\n' }, // git rev-parse
+        { stdout: '' }, // git status --porcelain (clean)
+        { stdout: '0\n' } // git rev-list (no commits)
       ])
 
-      await resolveSuccess({
-        repo: mockRepo,
-        taskId: 'task-2',
-        worktreePath: '/tmp/wt/task-2',
-        title: 'Empty task',
-        ghRepo: 'owner/repo',
-        onTaskTerminal,
-        retryCount: MAX_RETRIES,
-      }, logger)
+      await resolveSuccess(
+        {
+          repo: mockRepo,
+          taskId: 'task-2',
+          worktreePath: '/tmp/wt/task-2',
+          title: 'Empty task',
+          ghRepo: 'owner/repo',
+          onTaskTerminal,
+          retryCount: MAX_RETRIES
+        },
+        logger
+      )
 
       // Task marked as failed
-      expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
-        status: 'failed',
-        claimed_by: null,
-      }))
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-2',
+        expect.objectContaining({
+          status: 'failed',
+          claimed_by: null
+        })
+      )
 
       // onTaskTerminal called with 'failed'
       expect(onTaskTerminal).toHaveBeenCalledWith('task-2', 'failed')
     })
 
     it('includes agent summary in notes when available', async () => {
-      mockExecFileSequence([
-        { stdout: 'agent/empty-branch\n' },
-        { stdout: '' },
-        { stdout: '0\n' },
-      ])
+      mockExecFileSequence([{ stdout: 'agent/empty-branch\n' }, { stdout: '' }, { stdout: '0\n' }])
 
-      await resolveSuccess({
-        repo: mockRepo,
-        taskId: 'task-2',
-        worktreePath: '/tmp/wt/task-2',
-        title: 'Empty task',
-        ghRepo: 'owner/repo',
-        onTaskTerminal,
-        retryCount: 0,
-        agentSummary: 'I could not complete the task because the API was down',
-      }, logger)
+      await resolveSuccess(
+        {
+          repo: mockRepo,
+          taskId: 'task-2',
+          worktreePath: '/tmp/wt/task-2',
+          title: 'Empty task',
+          ghRepo: 'owner/repo',
+          onTaskTerminal,
+          retryCount: 0,
+          agentSummary: 'I could not complete the task because the API was down'
+        },
+        logger
+      )
 
-      expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
-        notes: expect.stringContaining('I could not complete the task'),
-      }))
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-2',
+        expect.objectContaining({
+          notes: expect.stringContaining('I could not complete the task')
+        })
+      )
     })
   })
 
@@ -331,12 +354,15 @@ describe('Agent completion pipeline integration', () => {
   // -------------------------------------------------------------------------
   describe('agent exits non-zero (resolveFailure)', () => {
     it('re-queues task with incremented retry count when under max retries', async () => {
-      const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: 0 }, logger)
+      const isTerminal = await resolveFailure(
+        { repo: mockRepo, taskId: 'task-3', retryCount: 0 },
+        logger
+      )
 
       expect(updateTaskMock).toHaveBeenCalledWith('task-3', {
         status: 'queued',
         retry_count: 1,
-        claimed_by: null,
+        claimed_by: null
       })
       expect(isTerminal).toBe(false)
     })
@@ -344,30 +370,42 @@ describe('Agent completion pipeline integration', () => {
     it('re-queues at every retry count below MAX_RETRIES', async () => {
       for (let i = 0; i < MAX_RETRIES; i++) {
         updateTaskMock.mockClear()
-        const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: i }, logger)
+        const isTerminal = await resolveFailure(
+          { repo: mockRepo, taskId: 'task-3', retryCount: i },
+          logger
+        )
         expect(updateTaskMock).toHaveBeenCalledWith('task-3', {
           status: 'queued',
           retry_count: i + 1,
-          claimed_by: null,
+          claimed_by: null
         })
         expect(isTerminal).toBe(false)
       }
     })
 
     it('marks task permanently failed when retry count reaches MAX_RETRIES', async () => {
-      const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
+      const isTerminal = await resolveFailure(
+        { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES },
+        logger
+      )
 
-      expect(updateTaskMock).toHaveBeenCalledWith('task-3', expect.objectContaining({
-        status: 'failed',
-        claimed_by: null,
-      }))
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-3',
+        expect.objectContaining({
+          status: 'failed',
+          claimed_by: null
+        })
+      )
       expect(isTerminal).toBe(true)
     })
 
     it('returns false (non-terminal) when updateTask throws during failure resolution', async () => {
       updateTaskMock.mockRejectedValueOnce(new Error('Supabase timeout'))
 
-      const isTerminal = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
+      const isTerminal = await resolveFailure(
+        { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES },
+        logger
+      )
 
       expect(isTerminal).toBe(false)
     })
@@ -384,16 +422,14 @@ describe('Agent completion pipeline integration', () => {
     })
 
     it('unblocks a blocked dependent when parent completes as done', async () => {
-      depIndex.rebuild([
-        { id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] },
-      ])
+      depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] }])
 
       getTaskMock.mockImplementation(async (id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',
             status: 'blocked',
-            depends_on: [{ id: 'task-A', type: 'hard' }],
+            depends_on: [{ id: 'task-A', type: 'hard' }]
           }) as any
         }
         if (id === 'task-A') {
@@ -408,16 +444,14 @@ describe('Agent completion pipeline integration', () => {
     })
 
     it('does NOT unblock dependent when parent fails and dependency is hard', async () => {
-      depIndex.rebuild([
-        { id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] },
-      ])
+      depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] }])
 
       getTaskMock.mockImplementation(async (id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',
             status: 'blocked',
-            depends_on: [{ id: 'task-A', type: 'hard' }],
+            depends_on: [{ id: 'task-A', type: 'hard' }]
           }) as any
         }
         return null
@@ -432,16 +466,14 @@ describe('Agent completion pipeline integration', () => {
     })
 
     it('unblocks dependent with soft dependency when parent fails', async () => {
-      depIndex.rebuild([
-        { id: 'task-B', depends_on: [{ id: 'task-A', type: 'soft' }] },
-      ])
+      depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'soft' }] }])
 
       getTaskMock.mockImplementation(async (id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',
             status: 'blocked',
-            depends_on: [{ id: 'task-A', type: 'soft' }],
+            depends_on: [{ id: 'task-A', type: 'soft' }]
           }) as any
         }
         if (id === 'task-A') {
@@ -457,7 +489,13 @@ describe('Agent completion pipeline integration', () => {
 
     it('handles fan-in: only unblocks when ALL hard dependencies are satisfied', async () => {
       depIndex.rebuild([
-        { id: 'task-C', depends_on: [{ id: 'task-A', type: 'hard' }, { id: 'task-B', type: 'hard' }] },
+        {
+          id: 'task-C',
+          depends_on: [
+            { id: 'task-A', type: 'hard' },
+            { id: 'task-B', type: 'hard' }
+          ]
+        }
       ])
 
       getTaskMock.mockImplementation(async (id: string) => {
@@ -465,7 +503,10 @@ describe('Agent completion pipeline integration', () => {
           return makeTaskRecord({
             id: 'task-C',
             status: 'blocked',
-            depends_on: [{ id: 'task-A', type: 'hard' }, { id: 'task-B', type: 'hard' }],
+            depends_on: [
+              { id: 'task-A', type: 'hard' },
+              { id: 'task-B', type: 'hard' }
+            ]
           }) as any
         }
         if (id === 'task-B') {
@@ -490,7 +531,13 @@ describe('Agent completion pipeline integration', () => {
 
     it('fan-in: unblocks when the last dependency completes', async () => {
       depIndex.rebuild([
-        { id: 'task-C', depends_on: [{ id: 'task-A', type: 'hard' }, { id: 'task-B', type: 'hard' }] },
+        {
+          id: 'task-C',
+          depends_on: [
+            { id: 'task-A', type: 'hard' },
+            { id: 'task-B', type: 'hard' }
+          ]
+        }
       ])
 
       getTaskMock.mockImplementation(async (id: string) => {
@@ -498,7 +545,10 @@ describe('Agent completion pipeline integration', () => {
           return makeTaskRecord({
             id: 'task-C',
             status: 'blocked',
-            depends_on: [{ id: 'task-A', type: 'hard' }, { id: 'task-B', type: 'hard' }],
+            depends_on: [
+              { id: 'task-A', type: 'hard' },
+              { id: 'task-B', type: 'hard' }
+            ]
           }) as any
         }
         if (id === 'task-A') {
@@ -513,16 +563,14 @@ describe('Agent completion pipeline integration', () => {
     })
 
     it('wires resolveSuccess onTaskTerminal callback to resolveDependents', async () => {
-      depIndex.rebuild([
-        { id: 'task-dep', depends_on: [{ id: 'task-parent', type: 'hard' }] },
-      ])
+      depIndex.rebuild([{ id: 'task-dep', depends_on: [{ id: 'task-parent', type: 'hard' }] }])
 
       getTaskMock.mockImplementation(async (id: string) => {
         if (id === 'task-dep') {
           return makeTaskRecord({
             id: 'task-dep',
             status: 'blocked',
-            depends_on: [{ id: 'task-parent', type: 'hard' }],
+            depends_on: [{ id: 'task-parent', type: 'hard' }]
           }) as any
         }
         return null
@@ -535,20 +583,23 @@ describe('Agent completion pipeline integration', () => {
 
       // Parent task produced no commits (triggers error path)
       mockExecFileSequence([
-        { stdout: 'agent/parent-branch\n' },   // git rev-parse
-        { stdout: '' },                          // git status --porcelain
-        { stdout: '0\n' },                       // git rev-list (no commits)
+        { stdout: 'agent/parent-branch\n' }, // git rev-parse
+        { stdout: '' }, // git status --porcelain
+        { stdout: '0\n' } // git rev-list (no commits)
       ])
 
-      await resolveSuccess({
-        repo: mockRepo,
-        taskId: 'task-parent',
-        worktreePath: '/tmp/wt/task-parent',
-        title: 'Parent task',
-        ghRepo: 'owner/repo',
-        onTaskTerminal: onTerminal,
-        retryCount: MAX_RETRIES,
-      }, logger)
+      await resolveSuccess(
+        {
+          repo: mockRepo,
+          taskId: 'task-parent',
+          worktreePath: '/tmp/wt/task-parent',
+          title: 'Parent task',
+          ghRepo: 'owner/repo',
+          onTaskTerminal: onTerminal,
+          retryCount: MAX_RETRIES
+        },
+        logger
+      )
 
       // onTaskTerminal should have been called with 'failed'
       expect(onTerminal).toHaveBeenCalledWith('task-parent', 'failed')
@@ -561,16 +612,14 @@ describe('Agent completion pipeline integration', () => {
     })
 
     it('does not modify dependents that are not in blocked status', async () => {
-      depIndex.rebuild([
-        { id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] },
-      ])
+      depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] }])
 
       getTaskMock.mockImplementation(async (id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',
             status: 'done',
-            depends_on: [{ id: 'task-A', type: 'hard' }],
+            depends_on: [{ id: 'task-A', type: 'hard' }]
           }) as any
         }
         return null

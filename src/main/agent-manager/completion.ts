@@ -39,24 +39,35 @@ async function generatePrBody(worktreePath: string, branch: string): Promise<str
   const sections: string[] = []
 
   try {
-    const { stdout: log } = await execFile(
-      'git', ['log', '--oneline', `origin/main..${branch}`],
-      { cwd: worktreePath, env }
-    )
+    const { stdout: log } = await execFile('git', ['log', '--oneline', `origin/main..${branch}`], {
+      cwd: worktreePath,
+      env
+    })
     if (log.trim()) {
-      sections.push('## Commits\n' + log.trim().split('\n').map((l) => `- ${l}`).join('\n'))
+      sections.push(
+        '## Commits\n' +
+          log
+            .trim()
+            .split('\n')
+            .map((l) => `- ${l}`)
+            .join('\n')
+      )
     }
-  } catch { /* non-fatal */ }
+  } catch {
+    /* non-fatal */
+  }
 
   try {
-    const { stdout: stat } = await execFile(
-      'git', ['diff', '--stat', `origin/main..${branch}`],
-      { cwd: worktreePath, env }
-    )
+    const { stdout: stat } = await execFile('git', ['diff', '--stat', `origin/main..${branch}`], {
+      cwd: worktreePath,
+      env
+    })
     if (stat.trim()) {
       sections.push('## Changes\n```\n' + stat.trim() + '\n```')
     }
-  } catch { /* non-fatal */ }
+  } catch {
+    /* non-fatal */
+  }
 
   sections.push('🤖 Automated by BDE Agent Manager')
 
@@ -64,28 +75,31 @@ async function generatePrBody(worktreePath: string, branch: string): Promise<str
 }
 
 async function detectBranch(worktreePath: string): Promise<string> {
-  const { stdout } = await execFile(
-    'git',
-    ['rev-parse', '--abbrev-ref', 'HEAD'],
-    { cwd: worktreePath, env: buildAgentEnv() }
-  )
+  const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+    cwd: worktreePath,
+    env: buildAgentEnv()
+  })
   return stdout.trim()
 }
 
-async function autoCommitIfDirty(worktreePath: string, title: string, logger: Logger): Promise<void> {
-  const { stdout: statusOut } = await execFile(
-    'git', ['status', '--porcelain'],
-    { cwd: worktreePath, env: buildAgentEnv() }
-  )
+async function autoCommitIfDirty(
+  worktreePath: string,
+  title: string,
+  logger: Logger
+): Promise<void> {
+  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
+    cwd: worktreePath,
+    env: buildAgentEnv()
+  })
   if (statusOut.trim()) {
     logger.info(`[completion] auto-committing uncommitted changes`)
     // Use -A to capture new (untracked) files created by agents, not just modifications.
     // The repo's .gitignore excludes node_modules, .env, etc.
     await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
-    await execFile(
-      'git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`],
-      { cwd: worktreePath, env: buildAgentEnv() }
-    )
+    await execFile('git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`], {
+      cwd: worktreePath,
+      env: buildAgentEnv()
+    })
   }
 }
 
@@ -136,7 +150,9 @@ async function findOrCreatePR(
     const errMsg = String(err)
     // If PR creation failed because one already exists (race condition), try to fetch it
     if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
-      logger.info(`[completion] PR creation failed because one already exists, fetching existing PR`)
+      logger.info(
+        `[completion] PR creation failed because one already exists, fetching existing PR`
+      )
       try {
         const { stdout: retryListOut } = await execFile(
           'gh',
@@ -165,17 +181,22 @@ async function findOrCreatePR(
 }
 
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, ghRepo, onTaskTerminal, agentSummary, retryCount, repo } = opts
+  const { taskId, worktreePath, title, ghRepo, onTaskTerminal, agentSummary, retryCount, repo } =
+    opts
 
   // 0. Guard: worktree must still exist (macOS /tmp can evict it)
   if (!existsSync(worktreePath)) {
     logger.error(`[completion] Worktree path no longer exists for task ${taskId}: ${worktreePath}`)
-    await repo.updateTask(taskId, {
-      status: 'error',
-      completed_at: new Date().toISOString(),
-      notes: `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
-      claimed_by: null,
-    }).catch((e) => logger.warn(`[completion] Failed to update task ${taskId} after worktree eviction: ${e}`))
+    await repo
+      .updateTask(taskId, {
+        status: 'error',
+        completed_at: new Date().toISOString(),
+        notes: `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
+        claimed_by: null
+      })
+      .catch((e) =>
+        logger.warn(`[completion] Failed to update task ${taskId} after worktree eviction: ${e}`)
+      )
     await onTaskTerminal(taskId, 'error')
     return
   }
@@ -186,18 +207,34 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     branch = await detectBranch(worktreePath)
   } catch (err) {
     logger.error(`[completion] Failed to detect branch for task ${taskId}: ${err}`)
-    await repo.updateTask(taskId, { status: 'error', completed_at: new Date().toISOString(), notes: 'Failed to detect branch', claimed_by: null }).catch((e) =>
-      logger.warn(`[completion] Failed to update task ${taskId} after branch detection error: ${e}`)
-    )
+    await repo
+      .updateTask(taskId, {
+        status: 'error',
+        completed_at: new Date().toISOString(),
+        notes: 'Failed to detect branch',
+        claimed_by: null
+      })
+      .catch((e) =>
+        logger.warn(
+          `[completion] Failed to update task ${taskId} after branch detection error: ${e}`
+        )
+      )
     await onTaskTerminal(taskId, 'error')
     return
   }
 
   if (!branch) {
     logger.error(`[completion] Empty branch name for task ${taskId}`)
-    await repo.updateTask(taskId, { status: 'error', completed_at: new Date().toISOString(), notes: 'Empty branch name', claimed_by: null }).catch((e) =>
-      logger.warn(`[completion] Failed to update task ${taskId} after empty branch: ${e}`)
-    )
+    await repo
+      .updateTask(taskId, {
+        status: 'error',
+        completed_at: new Date().toISOString(),
+        notes: 'Empty branch name',
+        claimed_by: null
+      })
+      .catch((e) =>
+        logger.warn(`[completion] Failed to update task ${taskId} after empty branch: ${e}`)
+      )
     await onTaskTerminal(taskId, 'error')
     return
   }
@@ -213,19 +250,27 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   // 3. Check if there are any commits to push
   try {
     const { stdout: diffOut } = await execFile(
-      'git', ['rev-list', '--count', `origin/main..${branch}`],
+      'git',
+      ['rev-list', '--count', `origin/main..${branch}`],
       { cwd: worktreePath, env: buildAgentEnv() }
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
       const summaryNote = agentSummary
         ? `Agent produced no commits. Last output: ${agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)}`
         : 'Agent produced no commits (no output captured)'
-      const isTerminal = await resolveFailure({ taskId, retryCount, notes: summaryNote, repo }, logger)
+      const isTerminal = await resolveFailure(
+        { taskId, retryCount, notes: summaryNote, repo },
+        logger
+      )
       if (isTerminal) {
-        logger.warn(`[completion] Task ${taskId}: no commits to push on branch ${branch} — exhausted retries`)
+        logger.warn(
+          `[completion] Task ${taskId}: no commits to push on branch ${branch} — exhausted retries`
+        )
         await onTaskTerminal(taskId, 'failed')
       } else {
-        logger.warn(`[completion] Task ${taskId}: no commits to push on branch ${branch} — requeuing (retry ${retryCount + 1}/${MAX_RETRIES})`)
+        logger.warn(
+          `[completion] Task ${taskId}: no commits to push on branch ${branch} — requeuing (retry ${retryCount + 1}/${MAX_RETRIES})`
+        )
       }
       return
     }
@@ -236,12 +281,17 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   // 4. Push branch to origin (skip pre-push hooks — agent code is reviewed via PR)
   logger.info(`[completion] Task ${taskId}: pushing branch ${branch}`)
   try {
-    await execFile('git', ['push', '--no-verify', 'origin', branch], { cwd: worktreePath, env: buildAgentEnv() })
+    await execFile('git', ['push', '--no-verify', 'origin', branch], {
+      cwd: worktreePath,
+      env: buildAgentEnv()
+    })
   } catch (err) {
     logger.error(`[completion] git push failed for task ${taskId} (branch ${branch}): ${err}`)
-    await repo.updateTask(taskId, { notes: `git push failed for branch ${branch}: ${err}` }).catch((e) =>
-      logger.warn(`[completion] Failed to update task ${taskId} after push error: ${e}`)
-    )
+    await repo
+      .updateTask(taskId, { notes: `git push failed for branch ${branch}: ${err}` })
+      .catch((e) =>
+        logger.warn(`[completion] Failed to update task ${taskId} after push error: ${e}`)
+      )
     return
   }
 
@@ -270,18 +320,18 @@ export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger):
         status: 'queued',
         retry_count: retryCount + 1,
         claimed_by: null,
-        ...(notes ? { notes } : {}),
+        ...(notes ? { notes } : {})
       })
-      return false  // not terminal
+      return false // not terminal
     } else {
       await repo.updateTask(taskId, {
         status: 'failed',
         completed_at: new Date().toISOString(),
         claimed_by: null,
         needs_review: true,
-        ...(notes ? { notes } : {}),
+        ...(notes ? { notes } : {})
       })
-      return true  // terminal
+      return true // terminal
     }
   } catch (err) {
     logger?.error(`[completion] Failed to update task ${taskId} during failure resolution: ${err}`)

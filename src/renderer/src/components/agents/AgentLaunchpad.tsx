@@ -36,7 +36,10 @@ export function AgentLaunchpad({ onAgentSpawned }: AgentLaunchpadProps) {
   // Load templates and recents on mount
   useEffect(() => {
     loadTemplates()
-    window.api.getRepoPaths().then(setRepoPaths).catch(() => {})
+    window.api
+      .getRepoPaths()
+      .then(setRepoPaths)
+      .catch(() => {})
 
     try {
       const stored = localStorage.getItem(RECENT_TASKS_KEY)
@@ -44,17 +47,25 @@ export function AgentLaunchpad({ onAgentSpawned }: AgentLaunchpadProps) {
         const parsed = JSON.parse(stored)
         setRecents(migrateHistory(parsed))
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [loadTemplates])
 
   const visibleTemplates = templates.filter((t) => !t.hidden)
 
-  const saveRecent = useCallback((prompt: string) => {
-    const entry: RecentTask = { prompt, repo, model, timestamp: Date.now() }
-    const updated = [entry, ...recents.filter((r) => r.prompt !== prompt)].slice(0, RECENT_TASKS_LIMIT)
-    setRecents(updated)
-    localStorage.setItem(RECENT_TASKS_KEY, JSON.stringify(updated))
-  }, [recents, repo, model])
+  const saveRecent = useCallback(
+    (prompt: string) => {
+      const entry: RecentTask = { prompt, repo, model, timestamp: Date.now() }
+      const updated = [entry, ...recents.filter((r) => r.prompt !== prompt)].slice(
+        0,
+        RECENT_TASKS_LIMIT
+      )
+      setRecents(updated)
+      localStorage.setItem(RECENT_TASKS_KEY, JSON.stringify(updated))
+    },
+    [recents, repo, model]
+  )
 
   // ── Phase transitions ──
 
@@ -88,31 +99,37 @@ export function AgentLaunchpad({ onAgentSpawned }: AgentLaunchpadProps) {
     setPhase('review')
   }, [])
 
-  const handleConfigureComplete = useCallback((configAnswers: Record<string, string>) => {
-    setAnswers(configAnswers)
-    if (selectedTemplate) {
-      setAssembledPromptText(assemblePrompt(selectedTemplate, configAnswers))
-    }
-    setPhase('review')
-  }, [selectedTemplate])
+  const handleConfigureComplete = useCallback(
+    (configAnswers: Record<string, string>) => {
+      setAnswers(configAnswers)
+      if (selectedTemplate) {
+        setAssembledPromptText(assemblePrompt(selectedTemplate, configAnswers))
+      }
+      setPhase('review')
+    },
+    [selectedTemplate]
+  )
 
-  const handleSpawn = useCallback(async (finalPrompt: string) => {
-    const repoPath = repoPaths[repo.toLowerCase()]
-    if (!repoPath) {
-      toast.error(`Repo path not found for "${repo}"`)
-      return
-    }
-    try {
-      await spawnAgent({ task: finalPrompt, repoPath, model })
-      saveRecent(finalPrompt)
-      fetchProcesses()
-      toast.success('Agent spawned')
-      onAgentSpawned()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      toast.error(`Spawn failed: ${message}`)
-    }
-  }, [repo, model, repoPaths, spawnAgent, fetchProcesses, saveRecent, onAgentSpawned])
+  const handleSpawn = useCallback(
+    async (finalPrompt: string) => {
+      const repoPath = repoPaths[repo.toLowerCase()]
+      if (!repoPath) {
+        toast.error(`Repo path not found for "${repo}"`)
+        return
+      }
+      try {
+        await spawnAgent({ task: finalPrompt, repoPath, model })
+        saveRecent(finalPrompt)
+        fetchProcesses()
+        toast.success('Agent spawned')
+        onAgentSpawned()
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        toast.error(`Spawn failed: ${message}`)
+      }
+    },
+    [repo, model, repoPaths, spawnAgent, fetchProcesses, saveRecent, onAgentSpawned]
+  )
 
   const handleSaveTemplate = useCallback(() => {
     toast.info('Template saving coming soon')

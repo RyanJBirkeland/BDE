@@ -13,7 +13,7 @@ export function useUnsavedDialog(): UnsavedDialogResult {
       title: 'Unsaved changes',
       message: `"${fileName}" has unsaved changes. Discard them?`,
       confirmLabel: 'Discard',
-      variant: 'default',
+      variant: 'default'
     })
   }
 

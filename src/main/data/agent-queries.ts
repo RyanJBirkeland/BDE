@@ -46,21 +46,15 @@ export function rowToMeta(row: AgentRunRow): AgentMeta {
     costUsd: row.cost_usd ?? null,
     tokensIn: row.tokens_in ?? null,
     tokensOut: row.tokens_out ?? null,
-    sprintTaskId: row.sprint_task_id ?? null,
+    sprintTaskId: row.sprint_task_id ?? null
   }
 }
 
-export function listAgents(
-  db: Database.Database,
-  limit = 100,
-  status?: string
-): AgentMeta[] {
+export function listAgents(db: Database.Database, limit = 100, status?: string): AgentMeta[] {
   if (status) {
     return (
       db
-        .prepare(
-          'SELECT * FROM agent_runs WHERE status = ? ORDER BY started_at DESC LIMIT ?'
-        )
+        .prepare('SELECT * FROM agent_runs WHERE status = ? ORDER BY started_at DESC LIMIT ?')
         .all(status, limit) as AgentRunRow[]
     ).map(rowToMeta)
   }
@@ -71,13 +65,8 @@ export function listAgents(
   ).map(rowToMeta)
 }
 
-export function getAgentMeta(
-  db: Database.Database,
-  id: string
-): AgentMeta | null {
-  const row = db
-    .prepare('SELECT * FROM agent_runs WHERE id = ?')
-    .get(id) as AgentRunRow | undefined
+export function getAgentMeta(db: Database.Database, id: string): AgentMeta | null {
+  const row = db.prepare('SELECT * FROM agent_runs WHERE id = ?').get(id) as AgentRunRow | undefined
   return row ? rowToMeta(row) : null
 }
 
@@ -125,7 +114,7 @@ const AGENT_COLUMN_MAP: Record<string, string> = {
   costUsd: 'cost_usd',
   tokensIn: 'tokens_in',
   tokensOut: 'tokens_out',
-  sprintTaskId: 'sprint_task_id',
+  sprintTaskId: 'sprint_task_id'
 }
 
 export function updateAgentMeta(
@@ -147,24 +136,15 @@ export function updateAgentMeta(
   if (setClauses.length === 0) return null
   values.push(id)
 
-  db.prepare(`UPDATE agent_runs SET ${setClauses.join(', ')} WHERE id = ?`).run(
-    ...values
-  )
+  db.prepare(`UPDATE agent_runs SET ${setClauses.join(', ')} WHERE id = ?`).run(...values)
 
   // Return the updated row for callers that need to write meta.json
-  return db
-    .prepare('SELECT * FROM agent_runs WHERE id = ?')
-    .get(id) as AgentRunRow | null
+  return db.prepare('SELECT * FROM agent_runs WHERE id = ?').get(id) as AgentRunRow | null
 }
 
-export function findAgentByPid(
-  db: Database.Database,
-  pid: number
-): AgentMeta | null {
+export function findAgentByPid(db: Database.Database, pid: number): AgentMeta | null {
   const row = db
-    .prepare(
-      "SELECT * FROM agent_runs WHERE pid = ? AND status = 'running' LIMIT 1"
-    )
+    .prepare("SELECT * FROM agent_runs WHERE pid = ? AND status = 'running' LIMIT 1")
     .get(pid) as AgentRunRow | undefined
   return row ? rowToMeta(row) : null
 }
@@ -197,13 +177,10 @@ export function deleteAgent(db: Database.Database, id: string): void {
   db.prepare('DELETE FROM agent_runs WHERE id = ?').run(id)
 }
 
-export function getAgentLogPath(
-  db: Database.Database,
-  id: string
-): string | null {
-  const row = db
-    .prepare('SELECT log_path FROM agent_runs WHERE id = ?')
-    .get(id) as { log_path: string } | undefined
+export function getAgentLogPath(db: Database.Database, id: string): string | null {
+  const row = db.prepare('SELECT log_path FROM agent_runs WHERE id = ?').get(id) as
+    | { log_path: string }
+    | undefined
   return row?.log_path ?? null
 }
 
@@ -211,9 +188,9 @@ export function getAgentLogInfo(
   db: Database.Database,
   id: string
 ): { logPath: string; status: string } | null {
-  const row = db
-    .prepare('SELECT log_path, status FROM agent_runs WHERE id = ?')
-    .get(id) as { log_path: string; status: string } | undefined
+  const row = db.prepare('SELECT log_path, status FROM agent_runs WHERE id = ?').get(id) as
+    | { log_path: string; status: string }
+    | undefined
   if (!row?.log_path) return null
   return { logPath: row.log_path, status: row.status }
 }

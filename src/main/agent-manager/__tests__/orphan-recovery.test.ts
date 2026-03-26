@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../../data/sprint-queries', () => ({
   getOrphanedTasks: vi.fn(),
-  updateTask: vi.fn(),
+  updateTask: vi.fn()
 }))
 
 vi.mock('../../agent-history', () => ({
-  finalizeStaleAgentRuns: vi.fn().mockReturnValue(2),
+  finalizeStaleAgentRuns: vi.fn().mockReturnValue(2)
 }))
 
 import { getOrphanedTasks, updateTask } from '../../data/sprint-queries'
@@ -24,7 +24,7 @@ const mockRepo: ISprintTaskRepository = {
   getTasksWithDependencies: vi.fn().mockResolvedValue([]),
   getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
   getActiveTaskCount: vi.fn().mockResolvedValue(0),
-  claimTask: vi.fn(),
+  claimTask: vi.fn()
 }
 
 function makeTask(id: string, title = `Task ${id}`): SprintTask {
@@ -33,13 +33,13 @@ function makeTask(id: string, title = `Task ${id}`): SprintTask {
     title,
     status: 'active',
     claimed_by: 'bde-embedded',
-    depends_on: null,
+    depends_on: null
   } as SprintTask
 }
 
 const logger = {
   info: vi.fn(),
-  warn: vi.fn(),
+  warn: vi.fn()
 }
 
 beforeEach(() => {
@@ -57,7 +57,7 @@ describe('recoverOrphans', () => {
     expect(updateTaskMock).toHaveBeenCalledOnce()
     expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
       status: 'queued',
-      claimed_by: null,
+      claimed_by: null
     })
     expect(recovered).toBe(1)
   })

@@ -23,7 +23,10 @@ interface ExtendedCheckState {
   supabaseConnected: CheckState
 }
 
-function getCheckState(status: AuthStatus | null, field: keyof Pick<AuthStatus, 'cliFound' | 'tokenFound'>): CheckState {
+function getCheckState(
+  status: AuthStatus | null,
+  field: keyof Pick<AuthStatus, 'cliFound' | 'tokenFound'>
+): CheckState {
   if (!status) return 'loading'
   return status[field] ? 'pass' : 'fail'
 }
@@ -59,7 +62,7 @@ function CheckRow({
   state,
   label,
   helpText,
-  optional = false,
+  optional = false
 }: {
   state: CheckState
   label: string
@@ -76,7 +79,7 @@ function CheckRow({
             style={{
               fontSize: tokens.size.xs,
               color: tokens.color.textMuted,
-              marginLeft: tokens.space[1],
+              marginLeft: tokens.space[1]
             }}
           >
             (optional)
@@ -88,7 +91,7 @@ function CheckRow({
           style={{
             margin: `0 0 0 ${tokens.space[6]}`,
             fontSize: tokens.size.xs,
-            color: tokens.color.textMuted,
+            color: tokens.color.textMuted
           }}
         >
           {helpText}
@@ -99,7 +102,7 @@ function CheckRow({
           style={{
             margin: `0 0 0 ${tokens.space[6]}`,
             fontSize: tokens.size.xs,
-            color: tokens.color.warning,
+            color: tokens.color.warning
           }}
         >
           {helpText}
@@ -115,19 +118,23 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
   const [extended, setExtended] = useState<ExtendedCheckState>({
     gitAvailable: 'loading',
     reposConfigured: 'loading',
-    supabaseConnected: 'loading',
+    supabaseConnected: 'loading'
   })
 
   const runCheck = useCallback(async () => {
     setChecking(true)
-    setExtended({ gitAvailable: 'loading', reposConfigured: 'loading', supabaseConnected: 'loading' })
+    setExtended({
+      gitAvailable: 'loading',
+      reposConfigured: 'loading',
+      supabaseConnected: 'loading'
+    })
 
     // Run auth check and extended checks concurrently
     const [authResult] = await Promise.allSettled([
       window.api.authStatus().then((result) => {
         setStatus(result)
         return result
-      }),
+      })
     ])
 
     // Git check — try to call getRepoPaths (requires git CLI)
@@ -180,14 +187,20 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
           <h2 style={styles.title}>Setup Check</h2>
         </div>
 
-        <p style={styles.subtitle}>
-          Verifying Claude Code CLI and environment
-        </p>
+        <p style={styles.subtitle}>Verifying Claude Code CLI and environment</p>
 
         <div style={styles.checks}>
           <div style={styles.sectionLabel}>Required</div>
-          <CheckRow state={cliState} label="Claude Code CLI installed" helpText="Install Claude Code CLI and add it to your PATH" />
-          <CheckRow state={tokenState} label="Claude login completed" helpText="Run `claude login` in your terminal" />
+          <CheckRow
+            state={cliState}
+            label="Claude Code CLI installed"
+            helpText="Install Claude Code CLI and add it to your PATH"
+          />
+          <CheckRow
+            state={tokenState}
+            label="Claude login completed"
+            helpText="Run `claude login` in your terminal"
+          />
           <CheckRow
             state={expiryState}
             label="Token not expired"
@@ -222,12 +235,7 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
 
         <div style={styles.actions}>
           {!allPassed && (
-            <Button
-              variant="ghost"
-              onClick={runCheck}
-              loading={checking}
-              disabled={checking}
-            >
+            <Button variant="ghost" onClick={runCheck} loading={checking} disabled={checking}>
               <RefreshCw size={14} />
               Check Again
             </Button>
@@ -256,7 +264,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     width: '100%',
     background: tokens.color.bg,
-    fontFamily: tokens.font.ui,
+    fontFamily: tokens.font.ui
   },
   card: {
     background: tokens.color.surface,
@@ -265,30 +273,30 @@ const styles: Record<string, React.CSSProperties> = {
     padding: tokens.space[8],
     maxWidth: '460px',
     width: '100%',
-    boxShadow: tokens.shadow.lg,
+    boxShadow: tokens.shadow.lg
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     gap: tokens.space[3],
-    marginBottom: tokens.space[2],
+    marginBottom: tokens.space[2]
   },
   title: {
     fontSize: tokens.size.xxl,
     fontWeight: 600,
     color: tokens.color.text,
-    margin: 0,
+    margin: 0
   },
   subtitle: {
     fontSize: tokens.size.md,
     color: tokens.color.textMuted,
-    margin: `0 0 ${tokens.space[6]} 0`,
+    margin: `0 0 ${tokens.space[6]} 0`
   },
   checks: {
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.space[3],
-    marginBottom: tokens.space[6],
+    marginBottom: tokens.space[6]
   },
   sectionLabel: {
     fontSize: tokens.size.xs,
@@ -296,32 +304,32 @@ const styles: Record<string, React.CSSProperties> = {
     color: tokens.color.textDim,
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
-    marginBottom: tokens.space[1],
+    marginBottom: tokens.space[1]
   },
   checkRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.space[3],
+    gap: tokens.space[3]
   },
   checkLabel: {
     fontSize: tokens.size.md,
-    color: tokens.color.text,
+    color: tokens.color.text
   },
   instruction: {
     background: tokens.color.surfaceHigh,
     border: `1px solid ${tokens.color.border}`,
     borderRadius: tokens.radius.md,
     padding: `${tokens.space[3]} ${tokens.space[4]}`,
-    marginBottom: tokens.space[6],
+    marginBottom: tokens.space[6]
   },
   instructionCode: {
     fontSize: tokens.size.sm,
     color: tokens.color.warning,
-    fontFamily: tokens.font.code,
+    fontFamily: tokens.font.code
   },
   actions: {
     display: 'flex',
     justifyContent: 'flex-end',
-    gap: tokens.space[3],
-  },
+    gap: tokens.space[3]
+  }
 }

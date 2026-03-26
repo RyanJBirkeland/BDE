@@ -5,26 +5,24 @@ import type { TerminalTab } from '../../../stores/terminal'
 
 // Mock heavy child components
 vi.mock('../TerminalPane', () => ({
-  TerminalPane: ({ tabId }: { tabId: string }) => (
-    <div data-testid={`terminal-pane-${tabId}`} />
-  ),
+  TerminalPane: ({ tabId }: { tabId: string }) => <div data-testid={`terminal-pane-${tabId}`} />
 }))
 
 vi.mock('../FindBar', () => ({
-  FindBar: () => <div data-testid="find-bar" />,
+  FindBar: () => <div data-testid="find-bar" />
 }))
 
 vi.mock('../AgentOutputTab', () => ({
   AgentOutputTab: ({ agentId }: { agentId: string }) => (
     <div data-testid={`agent-output-${agentId}`} />
-  ),
+  )
 }))
 
 // react-resizable-panels is used in the split pane path — provide minimal stubs
 vi.mock('react-resizable-panels', () => ({
   Group: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Panel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Separator: () => <div />,
+  Separator: () => <div />
 }))
 
 function makeTab(overrides: Partial<TerminalTab> = {}): TerminalTab {
@@ -37,7 +35,7 @@ function makeTab(overrides: Partial<TerminalTab> = {}): TerminalTab {
     isLabelCustom: false,
     status: 'running',
     hasUnread: false,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -47,7 +45,7 @@ const defaultProps = {
   splitEnabled: false,
   showFind: false,
   isAgentTab: false,
-  activeView: 'ide',
+  activeView: 'ide'
 }
 
 describe('TerminalContent', () => {
@@ -59,7 +57,7 @@ describe('TerminalContent', () => {
   it('renders multiple tab panes (non-active are hidden)', () => {
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Terminal 1' }),
-      makeTab({ id: 'tab-2', title: 'Terminal 2' }),
+      makeTab({ id: 'tab-2', title: 'Terminal 2' })
     ]
     render(<TerminalContent {...defaultProps} tabs={tabs} activeTabId="tab-1" />)
     expect(screen.getByTestId('terminal-pane-tab-1')).toBeInTheDocument()
@@ -71,7 +69,7 @@ describe('TerminalContent', () => {
       id: 'agent-1',
       title: 'My Agent',
       kind: 'agent',
-      agentId: 'agent-abc',
+      agentId: 'agent-abc'
     })
     render(
       <TerminalContent
@@ -89,7 +87,7 @@ describe('TerminalContent', () => {
       id: 'agent-1',
       title: 'My Agent',
       kind: 'agent',
-      agentId: 'agent-abc',
+      agentId: 'agent-abc'
     })
     render(
       <TerminalContent

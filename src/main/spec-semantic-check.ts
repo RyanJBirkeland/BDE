@@ -25,7 +25,7 @@ function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn('claude', ['-p', '--output-format', 'text'], {
       env: buildAgentEnv(),
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     })
     let stdout = ''
     let stderr = ''
@@ -83,8 +83,8 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
       scope: parsed.scope ?? { status: 'warn', message: 'Unable to assess' },
       filesExist: parsed.filesExist ?? {
         status: 'warn',
-        message: 'Unable to assess',
-      },
+        message: 'Unable to assess'
+      }
     }
   } catch {
     // If Claude CLI is unavailable, degrade to pass-through (don't block queuing)
@@ -95,10 +95,10 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
       results: {
         clarity: { status: 'warn', message: 'AI check unavailable — skipped' },
         scope: { status: 'warn', message: 'AI check unavailable — skipped' },
-        filesExist: { status: 'warn', message: 'AI check unavailable — skipped' },
+        filesExist: { status: 'warn', message: 'AI check unavailable — skipped' }
       },
       failMessages: [],
-      warnMessages: ['Semantic checks skipped — Claude CLI unavailable'],
+      warnMessages: ['Semantic checks skipped — Claude CLI unavailable']
     }
   }
 
@@ -115,6 +115,6 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
     hasWarns: warnMessages.length > 0,
     results,
     failMessages,
-    warnMessages,
+    warnMessages
   }
 }

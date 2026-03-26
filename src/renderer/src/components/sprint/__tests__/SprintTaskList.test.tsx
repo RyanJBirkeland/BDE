@@ -29,7 +29,7 @@ const mockTasks: SprintTask[] = [
     template_name: null,
     depends_on: null,
     updated_at: '2024-03-20T10:00:00Z',
-    created_at: '2024-03-20T09:00:00Z',
+    created_at: '2024-03-20T09:00:00Z'
   },
   {
     id: 'task-2',
@@ -52,7 +52,7 @@ const mockTasks: SprintTask[] = [
     template_name: null,
     depends_on: null,
     updated_at: '2024-03-19T14:00:00Z',
-    created_at: '2024-03-19T14:00:00Z',
+    created_at: '2024-03-19T14:00:00Z'
   },
   {
     id: 'task-3',
@@ -75,7 +75,7 @@ const mockTasks: SprintTask[] = [
     template_name: null,
     depends_on: null,
     updated_at: '2024-03-18T12:00:00Z',
-    created_at: '2024-03-18T07:00:00Z',
+    created_at: '2024-03-18T07:00:00Z'
   },
   {
     id: 'task-4',
@@ -98,8 +98,8 @@ const mockTasks: SprintTask[] = [
     template_name: null,
     depends_on: null,
     updated_at: '2024-03-21T09:00:00Z',
-    created_at: '2024-03-21T09:00:00Z',
-  },
+    created_at: '2024-03-21T09:00:00Z'
+  }
 ]
 
 describe('SprintTaskList', () => {
@@ -121,7 +121,9 @@ describe('SprintTaskList', () => {
     expect(screen.getByText('Update documentation')).toBeInTheDocument()
     // Done tasks are collapsed by default — expand to verify
     const doneEls = screen.getAllByText('Done')
-    const doneGroup = doneEls.find((el) => el.closest('.sprint-task-list__group-header'))!.closest('button')!
+    const doneGroup = doneEls
+      .find((el) => el.closest('.sprint-task-list__group-header'))!
+      .closest('button')!
     fireEvent.click(doneGroup)
     expect(screen.getByText('Refactor API endpoints')).toBeInTheDocument()
   })
@@ -142,7 +144,9 @@ describe('SprintTaskList', () => {
     fireEvent.change(searchInput, { target: { value: 'authentication' } })
 
     // Advance past SEARCH_DEBOUNCE_MS (150ms)
-    act(() => { vi.advanceTimersByTime(200) })
+    act(() => {
+      vi.advanceTimersByTime(200)
+    })
 
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.queryByText('Fix navbar styling bug')).not.toBeInTheDocument()
@@ -194,7 +198,9 @@ describe('SprintTaskList', () => {
     fireEvent.change(searchInput, { target: { value: 'authentication' } })
 
     // Advance past debounce so clear button appears
-    act(() => { vi.advanceTimersByTime(200) })
+    act(() => {
+      vi.advanceTimersByTime(200)
+    })
 
     expect(searchInput.value).toBe('authentication')
 
@@ -212,7 +218,9 @@ describe('SprintTaskList', () => {
     fireEvent.change(searchInput, { target: { value: 'nonexistent task xyz' } })
 
     // Advance past debounce
-    act(() => { vi.advanceTimersByTime(200) })
+    act(() => {
+      vi.advanceTimersByTime(200)
+    })
 
     expect(screen.getByText('No tasks match your search')).toBeInTheDocument()
   })
@@ -224,14 +232,23 @@ describe('SprintTaskList', () => {
     expect(screen.getByText('#123')).toBeInTheDocument()
     // #456 is on a done task — expand Done group
     const doneEls = screen.getAllByText('Done')
-    const doneGroup = doneEls.find((el) => el.closest('.sprint-task-list__group-header'))!.closest('button')!
+    const doneGroup = doneEls
+      .find((el) => el.closest('.sprint-task-list__group-header'))!
+      .closest('button')!
     fireEvent.click(doneGroup)
     expect(screen.getByText('#456')).toBeInTheDocument()
   })
 
   it('applies repo filter when provided', () => {
     const onSelectTask = vi.fn()
-    render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} repoFilter="BDE" />)
+    render(
+      <SprintTaskList
+        tasks={mockTasks}
+        selectedTaskId={null}
+        onSelectTask={onSelectTask}
+        repoFilter="BDE"
+      />
+    )
 
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.getByText('Update documentation')).toBeInTheDocument()
@@ -241,7 +258,7 @@ describe('SprintTaskList', () => {
 
   it('shows colored accent dots on group headers', () => {
     const onSelectTask = vi.fn()
-    
+
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
     const groupDots = document.querySelectorAll('.sprint-task-list__group-dot')
@@ -256,7 +273,9 @@ describe('SprintTaskList', () => {
     expect(screen.getByText('P1')).toBeInTheDocument()
     // Task 3 has priority 2 and is done — expand Done group
     const doneEls = screen.getAllByText('Done')
-    const doneGroup = doneEls.find((el) => el.closest('.sprint-task-list__group-header'))!.closest('button')!
+    const doneGroup = doneEls
+      .find((el) => el.closest('.sprint-task-list__group-header'))!
+      .closest('button')!
     fireEvent.click(doneGroup)
     expect(screen.getByText('P2')).toBeInTheDocument()
   })

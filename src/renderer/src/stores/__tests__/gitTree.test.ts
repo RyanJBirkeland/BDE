@@ -5,8 +5,8 @@ vi.mock('../toasts', () => ({
     success: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
-    undoable: vi.fn(),
-  },
+    undoable: vi.fn()
+  }
 }))
 
 // Mock window.api
@@ -19,7 +19,7 @@ const mockApi = {
   gitPush: vi.fn(),
   gitBranches: vi.fn(),
   gitCheckout: vi.fn(),
-  getRepoPaths: vi.fn(),
+  getRepoPaths: vi.fn()
 }
 
 vi.stubGlobal('window', { api: mockApi })
@@ -33,8 +33,8 @@ const GIT_STATUS_RESULT = {
     { path: 'src/foo.ts', status: 'M', staged: true },
     { path: 'src/added.ts', status: 'A', staged: true },
     { path: 'src/bar.ts', status: 'M', staged: false },
-    { path: 'src/new.ts', status: '?', staged: false },
-  ],
+    { path: 'src/new.ts', status: '?', staged: false }
+  ]
 }
 
 describe('useGitTreeStore', () => {
@@ -52,7 +52,7 @@ describe('useGitTreeStore', () => {
       commitMessage: '',
       repoPaths: [],
       activeRepo: null,
-      branches: [],
+      branches: []
     })
   })
 
@@ -62,10 +62,12 @@ describe('useGitTreeStore', () => {
       await useGitTreeStore.getState().fetchStatus('/repo')
 
       const state = useGitTreeStore.getState()
-      expect(state.staged).toEqual(expect.arrayContaining([
-        { path: 'src/foo.ts', status: 'M' },
-        { path: 'src/added.ts', status: 'A' },
-      ]))
+      expect(state.staged).toEqual(
+        expect.arrayContaining([
+          { path: 'src/foo.ts', status: 'M' },
+          { path: 'src/added.ts', status: 'A' }
+        ])
+      )
       expect(state.unstaged).toEqual([{ path: 'src/bar.ts', status: 'M' }])
       expect(state.untracked).toEqual([{ path: 'src/new.ts', status: '?' }])
       expect(state.loading).toBe(false)
@@ -95,7 +97,7 @@ describe('useGitTreeStore', () => {
       useGitTreeStore.setState({
         staged: [{ path: 'src/foo.ts', status: 'M' }],
         unstaged: [{ path: 'src/bar.ts', status: 'M' }],
-        untracked: [{ path: 'src/new.ts', status: '?' }],
+        untracked: [{ path: 'src/new.ts', status: '?' }]
       })
     })
 
@@ -129,7 +131,7 @@ describe('useGitTreeStore', () => {
       useGitTreeStore.setState({
         selectedFile: { path: 'foo.ts', status: 'M' },
         diffContent: 'some diff',
-        selectedStaged: true,
+        selectedStaged: true
       })
       useGitTreeStore.getState().clearSelection()
 
@@ -181,7 +183,7 @@ describe('useGitTreeStore', () => {
     it('stages all unstaged and untracked files', async () => {
       useGitTreeStore.setState({
         unstaged: [{ path: 'a.ts', status: 'M' }],
-        untracked: [{ path: 'b.ts', status: '?' }],
+        untracked: [{ path: 'b.ts', status: '?' }]
       })
       mockApi.gitStage.mockResolvedValue(undefined)
       mockApi.gitStatus.mockResolvedValue({ files: [] })
@@ -201,7 +203,10 @@ describe('useGitTreeStore', () => {
   describe('unstageAll', () => {
     it('unstages all staged files', async () => {
       useGitTreeStore.setState({
-        staged: [{ path: 'a.ts', status: 'M' }, { path: 'b.ts', status: 'A' }],
+        staged: [
+          { path: 'a.ts', status: 'M' },
+          { path: 'b.ts', status: 'A' }
+        ]
       })
       mockApi.gitUnstage.mockResolvedValue(undefined)
       mockApi.gitStatus.mockResolvedValue({ files: [] })
@@ -229,7 +234,7 @@ describe('useGitTreeStore', () => {
     it('commits and clears message on success', async () => {
       useGitTreeStore.setState({
         commitMessage: 'feat: test',
-        staged: [{ path: 'foo.ts', status: 'M' }],
+        staged: [{ path: 'foo.ts', status: 'M' }]
       })
       mockApi.gitCommit.mockResolvedValue(undefined)
       mockApi.gitStatus.mockResolvedValue({ files: [] })
@@ -244,7 +249,7 @@ describe('useGitTreeStore', () => {
     it('does nothing when message is empty', async () => {
       useGitTreeStore.setState({
         commitMessage: '',
-        staged: [{ path: 'foo.ts', status: 'M' }],
+        staged: [{ path: 'foo.ts', status: 'M' }]
       })
       await useGitTreeStore.getState().commit('/repo')
       expect(mockApi.gitCommit).not.toHaveBeenCalled()
@@ -259,7 +264,7 @@ describe('useGitTreeStore', () => {
     it('shows error toast on failure', async () => {
       useGitTreeStore.setState({
         commitMessage: 'msg',
-        staged: [{ path: 'foo.ts', status: 'M' }],
+        staged: [{ path: 'foo.ts', status: 'M' }]
       })
       mockApi.gitCommit.mockRejectedValue(new Error('fail'))
       await useGitTreeStore.getState().commit('/repo')

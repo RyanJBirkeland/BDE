@@ -38,7 +38,7 @@ function lineBackground(line: string): string {
 export function InlineDiffDrawer({
   selectedFile,
   diffContent,
-  onClose,
+  onClose
 }: InlineDiffDrawerProps): React.ReactElement | null {
   if (!selectedFile) return null
 
@@ -56,7 +56,7 @@ export function InlineDiffDrawer({
         flexShrink: 0,
         maxHeight: '40%',
         minHeight: '120px',
-        backgroundColor: tokens.color.surface,
+        backgroundColor: tokens.color.surface
       }}
     >
       {/* Drawer header */}
@@ -67,7 +67,7 @@ export function InlineDiffDrawer({
           justifyContent: 'space-between',
           padding: `${tokens.space[1]} ${tokens.space[3]}`,
           borderBottom: `1px solid ${tokens.color.border}`,
-          flexShrink: 0,
+          flexShrink: 0
         }}
       >
         <span
@@ -77,7 +77,7 @@ export function InlineDiffDrawer({
             color: tokens.color.textMuted,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'nowrap'
           }}
         >
           {selectedFile.path}
@@ -97,7 +97,7 @@ export function InlineDiffDrawer({
             cursor: 'pointer',
             color: tokens.color.textMuted,
             borderRadius: tokens.radius.sm,
-            flexShrink: 0,
+            flexShrink: 0
           }}
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
@@ -116,7 +116,7 @@ export function InlineDiffDrawer({
           flex: 1,
           overflowY: 'auto',
           fontFamily: tokens.font.code,
-          fontSize: tokens.size.sm,
+          fontSize: tokens.size.sm
         }}
       >
         {lines.length === 0 ? (
@@ -126,7 +126,7 @@ export function InlineDiffDrawer({
               color: tokens.color.textMuted,
               textAlign: 'center',
               fontSize: tokens.size.sm,
-              fontFamily: tokens.font.ui,
+              fontFamily: tokens.font.ui
             }}
           >
             No diff available
@@ -141,7 +141,7 @@ export function InlineDiffDrawer({
                 color: lineColor(line),
                 backgroundColor: lineBackground(line),
                 whiteSpace: 'pre',
-                lineHeight: '1.6',
+                lineHeight: '1.6'
               }}
             >
               {line || ' '}

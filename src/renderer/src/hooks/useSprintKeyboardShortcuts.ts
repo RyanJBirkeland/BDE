@@ -12,7 +12,7 @@ interface UseSprintKeyboardShortcutsArgs {
 
 export function useSprintKeyboardShortcuts({
   openWorkbench,
-  setConflictDrawerOpen,
+  setConflictDrawerOpen
 }: UseSprintKeyboardShortcutsArgs): void {
   const selectedTaskId = useSprintUI((s) => s.selectedTaskId)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)

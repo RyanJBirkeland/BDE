@@ -21,7 +21,7 @@ vi.mock('../../data/sprint-queries', () => ({
   createTask: vi.fn(),
   updateTask: vi.fn(),
   claimTask: vi.fn(),
-  releaseTask: vi.fn(),
+  releaseTask: vi.fn()
 }))
 
 // Mock settings — auth enabled by default for these tests
@@ -29,17 +29,17 @@ const API_KEY = 'test-secret-key-123'
 const mockGetSetting = vi.fn()
 
 vi.mock('../../settings', () => ({
-  getSetting: (...args: unknown[]) => mockGetSetting(...args),
+  getSetting: (...args: unknown[]) => mockGetSetting(...args)
 }))
 
 // Mock event-queries and db (needed by event-handlers)
 vi.mock('../../data/event-queries', () => ({
   insertEventBatch: vi.fn(),
-  queryEvents: vi.fn(),
+  queryEvents: vi.fn()
 }))
 
 vi.mock('../../db', () => ({
-  getDb: vi.fn(),
+  getDb: vi.fn()
 }))
 
 // ---------------------------------------------------------------------------
@@ -64,8 +64,8 @@ function request(
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...headers,
-      },
+        ...headers
+      }
     }
 
     const req = http.request(opts, (res) => {
@@ -124,7 +124,7 @@ beforeEach(() => {
     done: 0,
     failed: 0,
     cancelled: 0,
-    error: 0,
+    error: 0
   })
 })
 
@@ -162,47 +162,35 @@ describe('Queue API auth — query param and Bearer header', () => {
   describe('Bearer header takes precedence over query param', () => {
     it('uses Bearer header when both are provided', async () => {
       // Bearer header has the correct key, query param has wrong key
-      const { status } = await request(
-        'GET',
-        '/queue/health?token=wrong-key',
-        undefined,
-        { Authorization: `Bearer ${API_KEY}` }
-      )
+      const { status } = await request('GET', '/queue/health?token=wrong-key', undefined, {
+        Authorization: `Bearer ${API_KEY}`
+      })
       expect(status).toBe(200)
     })
 
     it('rejects when Bearer header is wrong even if query param is correct', async () => {
       // Bearer header has wrong key, query param has correct key
       // Since Bearer is checked first, it should use the Bearer value
-      const { status } = await request(
-        'GET',
-        `/queue/health?token=${API_KEY}`,
-        undefined,
-        { Authorization: 'Bearer wrong-key' }
-      )
+      const { status } = await request('GET', `/queue/health?token=${API_KEY}`, undefined, {
+        Authorization: 'Bearer wrong-key'
+      })
       expect(status).toBe(403)
     })
   })
 
   describe('Bearer header auth', () => {
     it('returns 200 with correct Bearer token', async () => {
-      const { status, body } = await request(
-        'GET',
-        '/queue/health',
-        undefined,
-        { Authorization: `Bearer ${API_KEY}` }
-      )
+      const { status, body } = await request('GET', '/queue/health', undefined, {
+        Authorization: `Bearer ${API_KEY}`
+      })
       expect(status).toBe(200)
       expect(body).toMatchObject({ status: 'ok' })
     })
 
     it('returns 403 with wrong Bearer token', async () => {
-      const { status, body } = await request(
-        'GET',
-        '/queue/health',
-        undefined,
-        { Authorization: 'Bearer bad-token' }
-      )
+      const { status, body } = await request('GET', '/queue/health', undefined, {
+        Authorization: 'Bearer bad-token'
+      })
       expect(status).toBe(403)
       expect((body as { error: string }).error).toMatch(/invalid api key/i)
     })

@@ -9,7 +9,7 @@ export interface DependencyIndex {
   areDependenciesSatisfied(
     taskId: string,
     deps: TaskDependency[],
-    getTaskStatus: (id: string) => string | undefined,
+    getTaskStatus: (id: string) => string | undefined
   ): { satisfied: boolean; blockedBy: string[] }
 }
 
@@ -49,14 +49,14 @@ export function createDependencyIndex(): DependencyIndex {
         }
       }
       return { satisfied: blockedBy.length === 0, blockedBy }
-    },
+    }
   }
 }
 
 export function detectCycle(
   taskId: string,
   proposedDeps: TaskDependency[],
-  getDepsForTask: (id: string) => TaskDependency[] | null,
+  getDepsForTask: (id: string) => TaskDependency[] | null
 ): string[] | null {
   for (const dep of proposedDeps) {
     if (dep.id === taskId) return [taskId, taskId]

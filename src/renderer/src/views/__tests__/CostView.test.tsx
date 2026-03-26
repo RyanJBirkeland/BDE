@@ -9,12 +9,12 @@ const mockFetchLocalAgents = vi.fn().mockResolvedValue(undefined)
 vi.mock('../../stores/costData', () => ({
   useCostDataStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ fetchLocalAgents: mockFetchLocalAgents })
-  ),
+  )
 }))
 
 // Mock useVisibilityAwareInterval — do nothing
 vi.mock('../../hooks/useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn(),
+  useVisibilityAwareInterval: vi.fn()
 }))
 
 const mockSummary: CostSummary = {
@@ -23,7 +23,7 @@ const mockSummary: CostSummary = {
   tasksAllTime: 47,
   totalTokensThisWeek: 1_500_000,
   avgCostPerTask: 0.42,
-  mostExpensiveTask: { task: 'Build feature X', costUsd: 1.25 },
+  mostExpensiveTask: { task: 'Build feature X', costUsd: 1.25 }
 }
 
 const mockRun1: AgentRunCostRow = {
@@ -40,7 +40,7 @@ const mockRun1: AgentRunCostRow = {
   num_turns: 8,
   started_at: '2026-03-20T10:00:00.000Z',
   finished_at: '2026-03-20T10:02:00.000Z',
-  pr_url: 'https://github.com/org/repo/pull/42',
+  pr_url: 'https://github.com/org/repo/pull/42'
 }
 
 const mockRun2: AgentRunCostRow = {
@@ -57,12 +57,12 @@ const mockRun2: AgentRunCostRow = {
   num_turns: 3,
   started_at: '2026-03-21T14:30:00.000Z',
   finished_at: '2026-03-21T14:30:45.000Z',
-  pr_url: null,
+  pr_url: null
 }
 
 const mockCostApi = {
   summary: vi.fn(),
-  agentRuns: vi.fn(),
+  agentRuns: vi.fn()
 }
 
 beforeEach(() => {
@@ -73,10 +73,10 @@ beforeEach(() => {
   Object.defineProperty(window, 'api', {
     value: {
       cost: mockCostApi,
-      openExternal: vi.fn(),
+      openExternal: vi.fn()
     },
     writable: true,
-    configurable: true,
+    configurable: true
   })
 })
 
@@ -187,7 +187,7 @@ describe('CostView', () => {
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: mockWriteText },
       writable: true,
-      configurable: true,
+      configurable: true
     })
 
     render(<CostView />)

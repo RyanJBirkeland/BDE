@@ -14,7 +14,7 @@ export async function seedTask(
       repo: opts.repo ?? 'BDE',
       status: opts.status ?? 'backlog',
       priority: opts.priority ?? 0,
-      ...opts,
+      ...opts
     })
   }, overrides)
 }

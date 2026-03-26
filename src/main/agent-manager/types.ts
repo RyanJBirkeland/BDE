@@ -15,7 +15,7 @@ export const DEFAULT_CONFIG: AgentManagerConfig = {
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: 'claude-sonnet-4-5'
 }
 
 export const EXECUTOR_ID = 'bde-embedded'

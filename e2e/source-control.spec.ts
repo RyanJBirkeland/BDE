@@ -25,7 +25,10 @@ async function waitForAppShell(window: import('@playwright/test').Page): Promise
  * Navigate to Source Control and set the active repo to the mock repo path.
  * The gitTree store needs an activeRepo to trigger fetchStatus.
  */
-async function openSourceControlWithRepo(window: import('@playwright/test').Page, repoPath: string): Promise<void> {
+async function openSourceControlWithRepo(
+  window: import('@playwright/test').Page,
+  repoPath: string
+): Promise<void> {
   // Navigate to Source Control view
   await window.keyboard.press('Meta+6')
 
@@ -39,7 +42,9 @@ async function openSourceControlWithRepo(window: import('@playwright/test').Page
 }
 
 test.describe('Source Control view — repo status', () => {
-  test('Cmd+6 navigates to Source Control, sets active repo, and shows staged + unstaged sections', async ({ bde }) => {
+  test('Cmd+6 navigates to Source Control, sets active repo, and shows staged + unstaged sections', async ({
+    bde
+  }) => {
     const { window } = bde
     await waitForAppShell(window)
 

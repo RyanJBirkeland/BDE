@@ -33,6 +33,6 @@ export function createMockGitRepo(): { path: string; cleanup: () => void } {
 
   return {
     path: dir,
-    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+    cleanup: () => rmSync(dir, { recursive: true, force: true })
   }
 }

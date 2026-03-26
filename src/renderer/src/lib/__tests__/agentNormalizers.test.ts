@@ -4,7 +4,7 @@ import {
   normalizeSource,
   truncateTask,
   safeTimestamp,
-  buildUnifiedAgentList,
+  buildUnifiedAgentList
 } from '../agentNormalizers'
 import type { AgentMeta } from '../../../../shared/types'
 import type { LocalAgentProcess } from '../../stores/localAgents'
@@ -28,7 +28,7 @@ function makeAgentMeta(overrides: Partial<AgentMeta> = {}): AgentMeta {
     tokensIn: null,
     tokensOut: null,
     sprintTaskId: null,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -41,7 +41,7 @@ function makeProcess(overrides: Partial<LocalAgentProcess> = {}): LocalAgentProc
     startedAt: Date.now(),
     cpuPct: 0,
     memMb: 0,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -258,7 +258,7 @@ describe('buildUnifiedAgentList', () => {
     const procs = [makeProcess({ pid: 1 }), makeProcess({ pid: 2, cwd: '/other' })]
     const agents = [
       makeAgentMeta({ id: 'a1', source: 'bde', status: 'done' }),
-      makeAgentMeta({ id: 'a2', source: 'external', status: 'failed' }),
+      makeAgentMeta({ id: 'a2', source: 'external', status: 'failed' })
     ]
     const result = buildUnifiedAgentList(procs, agents)
     expect(result).toHaveLength(4)

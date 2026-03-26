@@ -10,16 +10,16 @@ vi.mock('@dnd-kit/sortable', () => ({
     setNodeRef: () => {},
     transform: null,
     transition: null,
-    isDragging: false,
-  }),
+    isDragging: false
+  })
 }))
 
 vi.mock('@dnd-kit/utilities', () => ({
-  CSS: { Transform: { toString: () => undefined } },
+  CSS: { Transform: { toString: () => undefined } }
 }))
 
 vi.mock('../../../stores/sprintTasks', () => ({
-  useSprintTasks: vi.fn(),
+  useSprintTasks: vi.fn()
 }))
 
 const mockToggleTaskSelection = vi.fn()
@@ -33,10 +33,10 @@ vi.mock('../../../stores/sprintUI', () => ({
       selectedTaskIds: mockSelectedTaskIds,
       toggleTaskSelection: mockToggleTaskSelection,
       selectRange: mockSelectRange,
-      clearSelection: mockClearSelection,
+      clearSelection: mockClearSelection
     }
     return selector ? selector(state) : state
-  },
+  }
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -63,7 +63,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -79,7 +79,7 @@ describe('TaskCard', () => {
     onPushToSprint: vi.fn(),
     onLaunch: vi.fn(),
     onViewSpec: vi.fn(),
-    onViewOutput: vi.fn(),
+    onViewOutput: vi.fn()
   }
 
   beforeEach(() => {
@@ -252,7 +252,7 @@ describe('TaskCard', () => {
   it('shows Conflict badge when pr_mergeable_state is dirty and not merged', () => {
     const task = makeTask({
       pr_url: 'https://github.com/org/repo/pull/1',
-      pr_mergeable_state: 'dirty',
+      pr_mergeable_state: 'dirty'
     })
     render(<TaskCard {...defaultProps} task={task} prMerged={false} />)
     expect(screen.getByText('Conflict')).toBeInTheDocument()
@@ -261,7 +261,7 @@ describe('TaskCard', () => {
   it('does not show Conflict badge when pr is merged', () => {
     const task = makeTask({
       pr_url: 'https://github.com/org/repo/pull/1',
-      pr_mergeable_state: 'dirty',
+      pr_mergeable_state: 'dirty'
     })
     render(<TaskCard {...defaultProps} task={task} prMerged={true} />)
     expect(screen.queryByText('Conflict')).not.toBeInTheDocument()
@@ -286,7 +286,7 @@ describe('TaskCard', () => {
     const blockerTask = makeTask({ id: blockerId, title: 'Setup authentication' })
     const blockedTask = makeTask({
       status: 'blocked',
-      depends_on: [{ id: blockerId, type: 'hard' }],
+      depends_on: [{ id: blockerId, type: 'hard' }]
     })
 
     mockTasksData = [blockerTask, blockedTask]
@@ -304,8 +304,8 @@ describe('TaskCard', () => {
       status: 'blocked',
       depends_on: [
         { id: blocker1Id, type: 'hard' },
-        { id: blocker2Id, type: 'hard' },
-      ],
+        { id: blocker2Id, type: 'hard' }
+      ]
     })
 
     mockTasksData = [blocker1, blocker2, blockedTask]
@@ -324,7 +324,7 @@ describe('TaskCard', () => {
     const blockerId = crypto.randomUUID()
     const task = makeTask({
       status: 'queued',
-      depends_on: [{ id: blockerId, type: 'hard' }],
+      depends_on: [{ id: blockerId, type: 'hard' }]
     })
     render(<TaskCard {...defaultProps} task={task} />)
     expect(screen.queryByText(/Blocked by:/)).not.toBeInTheDocument()
@@ -335,13 +335,15 @@ describe('TaskCard', () => {
     const task = makeTask({
       depends_on: [
         { id: 'abcdef123456', type: 'hard' },
-        { id: 'fedcba654321', type: 'soft' },
-      ],
+        { id: 'fedcba654321', type: 'soft' }
+      ]
     })
     const { container } = render(<TaskCard {...defaultProps} task={task} />)
     // Hard dep chip has --hard modifier
     expect(container.querySelector('.task-card__dep-chip--hard')).toBeInTheDocument()
-    expect(container.querySelector('.task-card__dep-chip:not(.task-card__dep-chip--hard)')).toBeInTheDocument()
+    expect(
+      container.querySelector('.task-card__dep-chip:not(.task-card__dep-chip--hard)')
+    ).toBeInTheDocument()
   })
 
   it('does not render dependency chips when depends_on is null', () => {

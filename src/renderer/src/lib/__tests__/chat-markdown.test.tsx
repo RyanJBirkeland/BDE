@@ -10,17 +10,17 @@ vi.mock('../../components/sprint/TicketEditor', () => ({
         <span key={i}>{t.title}</span>
       ))}
     </div>
-  ),
+  )
 }))
 
 vi.mock('../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 describe('renderContent — tickets-json detection', () => {
   it('renders TicketEditor for valid tickets-json code block', () => {
     const json = JSON.stringify([
-      { title: 'Add auth', prompt: 'Implement OAuth', repo: 'bde', priority: 1 },
+      { title: 'Add auth', prompt: 'Implement OAuth', repo: 'bde', priority: 1 }
     ])
     const text = `Here are the tickets:\n\n\`\`\`tickets-json\n${json}\n\`\`\``
 
@@ -60,7 +60,7 @@ describe('renderContent — tickets-json detection', () => {
 
   it('handles mixed content with tickets-json and regular code blocks', () => {
     const json = JSON.stringify([
-      { title: 'Build feature', prompt: 'Do the work', repo: 'bde', priority: 1 },
+      { title: 'Build feature', prompt: 'Do the work', repo: 'bde', priority: 1 }
     ])
     const text = `Some text\n\n\`\`\`typescript\nconst a = 1\n\`\`\`\n\nMore text\n\n\`\`\`tickets-json\n${json}\n\`\`\`\n\nEnd`
 

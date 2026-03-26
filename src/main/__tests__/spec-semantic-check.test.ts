@@ -3,7 +3,7 @@ import { EventEmitter } from 'events'
 
 // Mock env-utils
 vi.mock('../env-utils', () => ({
-  buildAgentEnv: () => ({ ...process.env }),
+  buildAgentEnv: () => ({ ...process.env })
 }))
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +22,7 @@ function createMockChild(): MockChild {
 let mockChild: MockChild
 
 vi.mock('child_process', () => ({
-  spawn: () => mockChild,
+  spawn: () => mockChild
 }))
 
 // Import after mocks
@@ -31,7 +31,7 @@ const { checkSpecSemantic } = await import('../spec-semantic-check')
 const validInput = {
   title: 'Fix login bug',
   repo: 'bde',
-  spec: '## Problem\nLogin broken\n## Solution\nFix auth flow',
+  spec: '## Problem\nLogin broken\n## Solution\nFix auth flow'
 }
 
 describe('checkSpecSemantic', () => {
@@ -47,7 +47,7 @@ describe('checkSpecSemantic', () => {
     const response = JSON.stringify({
       clarity: { status: 'pass', message: 'Clear and actionable' },
       scope: { status: 'pass', message: 'Good scope' },
-      filesExist: { status: 'pass', message: 'Paths look valid' },
+      filesExist: { status: 'pass', message: 'Paths look valid' }
     })
     mockChild.stdout.emit('data', Buffer.from(response))
     mockChild.emit('close', 0)
@@ -64,7 +64,7 @@ describe('checkSpecSemantic', () => {
     const response = JSON.stringify({
       clarity: { status: 'fail', message: 'Too vague' },
       scope: { status: 'pass', message: 'Good scope' },
-      filesExist: { status: 'pass', message: 'Paths look valid' },
+      filesExist: { status: 'pass', message: 'Paths look valid' }
     })
     mockChild.stdout.emit('data', Buffer.from(response))
     mockChild.emit('close', 0)
@@ -81,7 +81,7 @@ describe('checkSpecSemantic', () => {
     const response = JSON.stringify({
       clarity: { status: 'warn', message: 'Could be clearer' },
       scope: { status: 'warn', message: 'Might be broad' },
-      filesExist: { status: 'warn', message: 'No specific paths' },
+      filesExist: { status: 'warn', message: 'No specific paths' }
     })
     mockChild.stdout.emit('data', Buffer.from(response))
     mockChild.emit('close', 0)
@@ -100,9 +100,7 @@ describe('checkSpecSemantic', () => {
     const result = await promise
     expect(result.passed).toBe(true)
     expect(result.hasWarns).toBe(true)
-    expect(result.warnMessages).toContainEqual(
-      expect.stringContaining('Claude CLI unavailable')
-    )
+    expect(result.warnMessages).toContainEqual(expect.stringContaining('Claude CLI unavailable'))
   })
 
   it('degrades gracefully when Claude CLI returns invalid JSON', async () => {

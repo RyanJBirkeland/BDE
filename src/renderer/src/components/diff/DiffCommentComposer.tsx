@@ -51,12 +51,7 @@ export function DiffCommentComposer({
         <Button variant="ghost" size="sm" onClick={onCancel}>
           Cancel
         </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={!body.trim()}
-        >
+        <Button variant="primary" size="sm" onClick={handleSubmit} disabled={!body.trim()}>
           Add review comment
         </Button>
       </div>

@@ -12,18 +12,19 @@ describe('WorkbenchCopilot', () => {
     vi.clearAllMocks()
     chunkCallback = null
     useTaskWorkbenchStore.getState().resetForm()
-
     ;(window.api as any).workbench = {
       chat: vi.fn().mockResolvedValue({ content: 'AI response here' }),
       chatStream: vi.fn().mockResolvedValue({ streamId: 'test-stream-1' }),
       cancelStream: vi.fn().mockResolvedValue({ ok: true }),
       onChatChunk: vi.fn().mockImplementation((cb: any) => {
         chunkCallback = cb
-        return () => { chunkCallback = null }
+        return () => {
+          chunkCallback = null
+        }
       }),
       checkSpec: vi.fn().mockResolvedValue({}),
       checkOperational: vi.fn().mockResolvedValue({}),
-      generateSpec: vi.fn().mockResolvedValue({ spec: '' }),
+      generateSpec: vi.fn().mockResolvedValue({ spec: '' })
     }
   })
 
@@ -144,7 +145,12 @@ describe('WorkbenchCopilot', () => {
       expect((window.api as any).workbench.chatStream).toHaveBeenCalled()
     })
 
-    chunkCallback!({ streamId: 'test-stream-1', chunk: '', done: true, error: 'Claude CLI timed out' })
+    chunkCallback!({
+      streamId: 'test-stream-1',
+      chunk: '',
+      done: true,
+      error: 'Claude CLI timed out'
+    })
 
     await waitFor(() => {
       expect(screen.getByText(/Claude CLI timed out/)).toBeInTheDocument()
@@ -152,7 +158,9 @@ describe('WorkbenchCopilot', () => {
   })
 
   it('shows error when chatStream call itself fails', async () => {
-    ;(window.api as any).workbench.chatStream = vi.fn().mockRejectedValue(new Error('Network error'))
+    ;(window.api as any).workbench.chatStream = vi
+      .fn()
+      .mockRejectedValue(new Error('Network error'))
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
@@ -202,7 +210,13 @@ describe('WorkbenchCopilot', () => {
     const msgs: CopilotMessage[] = [
       { id: 'sys-1', role: 'system', content: 'Welcome', timestamp: Date.now() },
       { id: 'usr-1', role: 'user', content: 'Hello bot', timestamp: Date.now() },
-      { id: 'ast-1', role: 'assistant', content: 'Hi there', timestamp: Date.now(), insertable: true },
+      {
+        id: 'ast-1',
+        role: 'assistant',
+        content: 'Hi there',
+        timestamp: Date.now(),
+        insertable: true
+      }
     ]
     useTaskWorkbenchStore.setState({ copilotMessages: msgs })
 
@@ -214,7 +228,13 @@ describe('WorkbenchCopilot', () => {
 
   it('shows "Insert into spec" button for insertable messages', () => {
     const msgs: CopilotMessage[] = [
-      { id: 'ast-1', role: 'assistant', content: 'Spec content', timestamp: Date.now(), insertable: true },
+      {
+        id: 'ast-1',
+        role: 'assistant',
+        content: 'Spec content',
+        timestamp: Date.now(),
+        insertable: true
+      }
     ]
     useTaskWorkbenchStore.setState({ copilotMessages: msgs })
 
@@ -224,7 +244,7 @@ describe('WorkbenchCopilot', () => {
 
   it('does not show "Insert into spec" for non-insertable messages', () => {
     const msgs: CopilotMessage[] = [
-      { id: 'usr-1', role: 'user', content: 'My question', timestamp: Date.now() },
+      { id: 'usr-1', role: 'user', content: 'My question', timestamp: Date.now() }
     ]
     useTaskWorkbenchStore.setState({ copilotMessages: msgs })
 
@@ -236,8 +256,14 @@ describe('WorkbenchCopilot', () => {
     useTaskWorkbenchStore.setState({
       spec: 'Existing spec',
       copilotMessages: [
-        { id: 'ast-1', role: 'assistant', content: 'New content', timestamp: Date.now(), insertable: true },
-      ],
+        {
+          id: 'ast-1',
+          role: 'assistant',
+          content: 'New content',
+          timestamp: Date.now(),
+          insertable: true
+        }
+      ]
     })
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
@@ -250,8 +276,14 @@ describe('WorkbenchCopilot', () => {
     useTaskWorkbenchStore.setState({
       spec: '',
       copilotMessages: [
-        { id: 'ast-1', role: 'assistant', content: 'First content', timestamp: Date.now(), insertable: true },
-      ],
+        {
+          id: 'ast-1',
+          role: 'assistant',
+          content: 'First content',
+          timestamp: Date.now(),
+          insertable: true
+        }
+      ]
     })
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
@@ -262,9 +294,7 @@ describe('WorkbenchCopilot', () => {
 
   it('filters system messages from chat API call', async () => {
     useTaskWorkbenchStore.setState({
-      copilotMessages: [
-        { id: 'sys-1', role: 'system', content: 'Welcome', timestamp: Date.now() },
-      ],
+      copilotMessages: [{ id: 'sys-1', role: 'system', content: 'Welcome', timestamp: Date.now() }]
     })
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)

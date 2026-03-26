@@ -39,7 +39,7 @@ export function setup(): void {
     execFileSync('node-gyp', ['rebuild', '--directory=node_modules/better-sqlite3'], {
       stdio: 'inherit',
       cwd: process.cwd(),
-      timeout: 120_000,
+      timeout: 120_000
     })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)

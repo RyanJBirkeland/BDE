@@ -9,7 +9,7 @@ describe('WorkbenchActions', () => {
     onSaveBacklog: vi.fn(),
     onQueueNow: vi.fn(),
     onLaunch: vi.fn(),
-    submitting: false,
+    submitting: false
   }
 
   beforeEach(() => {
@@ -41,8 +41,8 @@ describe('WorkbenchActions', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'fail', message: 'Missing' },
-        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' },
-      ],
+        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Save to Backlog')).toBeDisabled()
@@ -54,8 +54,8 @@ describe('WorkbenchActions', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
-        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' },
-      ],
+        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Save to Backlog')).not.toBeDisabled()
@@ -65,8 +65,8 @@ describe('WorkbenchActions', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
-        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' },
-      ],
+        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Queue Now')).toBeDisabled()
@@ -76,9 +76,9 @@ describe('WorkbenchActions', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
-        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'pass', message: 'OK' }
       ],
-      operationalChecks: [],
+      operationalChecks: []
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Queue Now')).not.toBeDisabled()
@@ -87,11 +87,11 @@ describe('WorkbenchActions', () => {
   it('Queue Now disabled when tier 3 has fails', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ],
       operationalChecks: [
-        { id: 'auth', label: 'Auth', tier: 3, status: 'fail', message: 'No auth' },
-      ],
+        { id: 'auth', label: 'Auth', tier: 3, status: 'fail', message: 'No auth' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Queue Now')).toBeDisabled()
@@ -100,12 +100,10 @@ describe('WorkbenchActions', () => {
   it('Launch enabled when all tier 1 pass and no semantic fails and no tier 3 fails', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ],
-      semanticChecks: [
-        { id: 'clarity', label: 'Clarity', tier: 2, status: 'pass', message: 'OK' },
-      ],
-      operationalChecks: [],
+      semanticChecks: [{ id: 'clarity', label: 'Clarity', tier: 2, status: 'pass', message: 'OK' }],
+      operationalChecks: []
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Launch')).not.toBeDisabled()
@@ -114,12 +112,12 @@ describe('WorkbenchActions', () => {
   it('Launch disabled when semantic checks have fails', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ],
       semanticChecks: [
-        { id: 'clarity', label: 'Clarity', tier: 2, status: 'fail', message: 'Unclear' },
+        { id: 'clarity', label: 'Clarity', tier: 2, status: 'fail', message: 'Unclear' }
       ],
-      operationalChecks: [],
+      operationalChecks: []
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Launch')).toBeDisabled()
@@ -128,12 +126,12 @@ describe('WorkbenchActions', () => {
   it('Launch allowed when semantic checks have warnings (not fails)', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ],
       semanticChecks: [
-        { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Vague' },
+        { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Vague' }
       ],
-      operationalChecks: [],
+      operationalChecks: []
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Launch')).not.toBeDisabled()
@@ -142,10 +140,10 @@ describe('WorkbenchActions', () => {
   it('Launch enabled when semantic checks are empty', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ],
       semanticChecks: [],
-      operationalChecks: [],
+      operationalChecks: []
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Launch')).not.toBeDisabled()
@@ -154,8 +152,8 @@ describe('WorkbenchActions', () => {
   it('calls onSaveBacklog when Save to Backlog clicked', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
-      ],
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     fireEvent.click(screen.getByText('Save to Backlog'))
@@ -165,8 +163,8 @@ describe('WorkbenchActions', () => {
   it('calls onQueueNow when Queue Now clicked', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
-      ],
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     fireEvent.click(screen.getByText('Queue Now'))
@@ -176,8 +174,8 @@ describe('WorkbenchActions', () => {
   it('calls onLaunch when Launch clicked', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
-      ],
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     fireEvent.click(screen.getByText('Launch'))
@@ -187,8 +185,8 @@ describe('WorkbenchActions', () => {
   it('all buttons disabled when submitting=true', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
-      ],
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} submitting={true} />)
     expect(screen.getByText('Save to Backlog')).toBeDisabled()
@@ -211,12 +209,12 @@ describe('WorkbenchActions', () => {
   it('Launch disabled when tier 3 operational check fails even if tier 1 passes', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [
-        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ],
       semanticChecks: [],
       operationalChecks: [
-        { id: 'slots', label: 'Agent Slots', tier: 3, status: 'fail', message: 'No slots' },
-      ],
+        { id: 'slots', label: 'Agent Slots', tier: 3, status: 'fail', message: 'No slots' }
+      ]
     })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Launch')).toBeDisabled()

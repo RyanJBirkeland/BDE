@@ -67,7 +67,7 @@ export function LiveActivityStrip({ onSelectAgent }: LiveActivityStripProps) {
             fontSize: '12px',
             fontWeight: 600,
             cursor: 'pointer',
-            transition: 'all 150ms ease',
+            transition: 'all 150ms ease'
           }}
           onClick={() => {
             // TODO: implement spawn agent dialog

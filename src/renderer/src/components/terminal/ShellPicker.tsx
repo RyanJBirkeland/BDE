@@ -72,9 +72,7 @@ export function ShellPicker({ onSelect, onClose }: ShellPickerProps): React.JSX.
               onClick={() => onSelect(item.value)}
             >
               <span>{item.label}</span>
-              {item.shortcut && (
-                <span className="shell-picker__shortcut">{item.shortcut}</span>
-              )}
+              {item.shortcut && <span className="shell-picker__shortcut">{item.shortcut}</span>}
             </button>
           ))}
         </div>
@@ -102,10 +100,7 @@ export function ShellPicker({ onSelect, onClose }: ShellPickerProps): React.JSX.
           />
         </div>
       ) : (
-        <button
-          className="shell-picker__item"
-          onClick={() => setShowCustom(true)}
-        >
+        <button className="shell-picker__item" onClick={() => setShowCustom(true)}>
           Custom…
         </button>
       )}

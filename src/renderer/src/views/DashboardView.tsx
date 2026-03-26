@@ -18,7 +18,7 @@ import {
   ParticleField,
   type FeedEvent,
   type PipelineStage,
-  type ChartBar,
+  type ChartBar
 } from '../components/neon'
 import { Activity, GitPullRequest, CheckCircle, DollarSign, Zap, AlertTriangle } from 'lucide-react'
 
@@ -31,11 +31,14 @@ export default function DashboardView() {
   const setView = useUIStore((s) => s.setView)
 
   /** Navigate to Sprint Center with a pre-applied status filter. */
-  const navigateToSprintWithFilter = useCallback((status: StatusFilter) => {
-    setSearchQuery('')
-    setStatusFilter(status)
-    setView('sprint')
-  }, [setStatusFilter, setSearchQuery, setView])
+  const navigateToSprintWithFilter = useCallback(
+    (status: StatusFilter) => {
+      setSearchQuery('')
+      setStatusFilter(status)
+      setView('sprint')
+    },
+    [setStatusFilter, setSearchQuery, setView]
+  )
 
   const [chartData, setChartData] = useState<ChartBar[]>([])
   const [feedEvents, setFeedEvents] = useState<FeedEvent[]>([])
@@ -56,16 +59,18 @@ export default function DashboardView() {
       { label: 'queued', count: stats.queued, accent: 'orange' },
       { label: 'active', count: stats.active, accent: 'cyan' },
       { label: 'blocked', count: stats.blocked, accent: 'red' },
-      { label: 'done', count: stats.done, accent: 'blue' },
+      { label: 'done', count: stats.done, accent: 'blue' }
     ],
-    [stats],
+    [stats]
   )
 
   // Unmount guard for async fetches
   const cancelledRef = useRef(false)
   useEffect(() => {
     cancelledRef.current = false
-    return () => { cancelledRef.current = true }
+    return () => {
+      cancelledRef.current = true
+    }
   }, [])
 
   // Fetch all dashboard data — errors are caught per-fetch so backoff only
@@ -75,14 +80,18 @@ export default function DashboardView() {
       const data = await window.api.dashboard?.completionsPerHour()
       if (cancelledRef.current || !data) return
       const accents: Array<'cyan' | 'pink' | 'blue' | 'orange' | 'purple'> = [
-        'cyan', 'pink', 'blue', 'orange', 'purple',
+        'cyan',
+        'pink',
+        'blue',
+        'orange',
+        'purple'
       ]
       setChartData(
         data.map((d, i) => ({
           value: d.count,
           accent: accents[i % accents.length],
-          label: d.hour,
-        })),
+          label: d.hour
+        }))
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch completions:', err)
@@ -101,8 +110,8 @@ export default function DashboardView() {
               : e.event_type === 'complete'
                 ? ('cyan' as const)
                 : ('purple' as const),
-          timestamp: e.timestamp,
-        })),
+          timestamp: e.timestamp
+        }))
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch events:', err)
@@ -134,7 +143,7 @@ export default function DashboardView() {
         flexDirection: 'column',
         background: 'var(--neon-bg)',
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'hidden'
       }}
     >
       {/* Background effects */}
@@ -146,7 +155,7 @@ export default function DashboardView() {
           inset: 0,
           background: 'var(--neon-bg-gradient)',
           pointerEvents: 'none',
-          zIndex: 0,
+          zIndex: 0
         }}
       />
 
@@ -157,7 +166,7 @@ export default function DashboardView() {
           zIndex: 1,
           display: 'flex',
           flexDirection: 'column',
-          height: '100%',
+          height: '100%'
         }}
       >
         <StatusBar title="BDE Command Center" status="ok">
@@ -172,7 +181,7 @@ export default function DashboardView() {
             gridTemplateColumns: '200px 1fr 240px',
             gap: '12px',
             padding: '12px',
-            overflow: 'auto',
+            overflow: 'auto'
           }}
         >
           {/* Left: Stats Stack */}
@@ -228,9 +237,7 @@ export default function DashboardView() {
               style={{ flex: 1 }}
             >
               <MiniChart data={chartData} height={120} />
-              <div
-                style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '9px', marginTop: '6px' }}
-              >
+              <div style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '9px', marginTop: '6px' }}>
                 last 24 hours
               </div>
             </NeonCard>
@@ -250,7 +257,7 @@ export default function DashboardView() {
                   color: '#fff',
                   fontSize: '24px',
                   fontWeight: 800,
-                  textShadow: 'var(--neon-orange-glow)',
+                  textShadow: 'var(--neon-orange-glow)'
                 }}
               >
                 ${totalCost.toFixed(2)}

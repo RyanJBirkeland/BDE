@@ -11,9 +11,9 @@ export interface TerminalTab {
   ptyId?: number | null
   agentId?: string
   agentSessionKey?: string
-  isLabelCustom: boolean       // user renamed this tab
+  isLabelCustom: boolean // user renamed this tab
   status: 'running' | 'exited'
-  hasUnread: boolean           // new output while tab not focused
+  hasUnread: boolean // new output while tab not focused
 }
 
 let nextTabNum = 1
@@ -90,8 +90,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     if (tabs.length <= 1) return
     const idx = tabs.findIndex((t) => t.id === id)
     const next = tabs.filter((t) => t.id !== id)
-    const newActive =
-      activeTabId === id ? next[Math.min(idx, next.length - 1)].id : activeTabId
+    const newActive = activeTabId === id ? next[Math.min(idx, next.length - 1)].id : activeTabId
     // If closing the split tab, disable split
     const newSplitState = splitTabId === id ? { splitEnabled: false, splitTabId: null } : {}
     set({ tabs: next, activeTabId: newActive, ...newSplitState })

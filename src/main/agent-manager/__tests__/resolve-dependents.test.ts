@@ -25,7 +25,7 @@ function makeIndex(dependentsMap: Record<string, string[]>): DependencyIndex {
     areDependenciesSatisfied(
       _taskId: string,
       deps: TaskDependency[],
-      getStatus: (id: string) => string | undefined,
+      getStatus: (id: string) => string | undefined
     ): { satisfied: boolean; blockedBy: string[] } {
       const blockedBy: string[] = []
       for (const dep of deps) {
@@ -37,7 +37,7 @@ function makeIndex(dependentsMap: Record<string, string[]>): DependencyIndex {
         }
       }
       return { satisfied: blockedBy.length === 0, blockedBy }
-    },
+    }
   }
 }
 
@@ -62,7 +62,7 @@ describe('resolveDependents', () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'done', depends_on: null },
-      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -75,7 +75,7 @@ describe('resolveDependents', () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'failed', depends_on: null },
-      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -89,7 +89,7 @@ describe('resolveDependents', () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'cancelled', depends_on: null },
-      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] },
+      B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -103,7 +103,7 @@ describe('resolveDependents', () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'failed', depends_on: null },
-      B: { id: 'B', status: 'blocked', depends_on: [softDep('A')] },
+      B: { id: 'B', status: 'blocked', depends_on: [softDep('A')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -116,7 +116,7 @@ describe('resolveDependents', () => {
     const index = makeIndex({ A: ['B'] })
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'done', depends_on: null },
-      B: { id: 'B', status: 'active', depends_on: [hardDep('A')] },
+      B: { id: 'B', status: 'active', depends_on: [hardDep('A')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -131,7 +131,7 @@ describe('resolveDependents', () => {
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'active', depends_on: null },
-      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -147,7 +147,7 @@ describe('resolveDependents', () => {
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'done', depends_on: null },
-      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -161,7 +161,7 @@ describe('resolveDependents', () => {
     const tasks: Record<string, MockTask> = {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'failed', depends_on: null },
-      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), softDep('B')] },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), softDep('B')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
 
@@ -176,19 +176,17 @@ describe('resolveDependents', () => {
     // getTask returns null for B (task not found)
     const getTask = vi.fn().mockResolvedValue(null)
 
-    await expect(
-      resolveDependents('A', 'done', index, getTask, updateTask),
-    ).resolves.not.toThrow()
+    await expect(resolveDependents('A', 'done', index, getTask, updateTask)).resolves.not.toThrow()
 
     expect(updateTask).not.toHaveBeenCalled()
   })
 
   it('skips dependents that are not in blocked status', async () => {
     const index = createDependencyIndex()
-    index.rebuild([
-      { id: 'A', depends_on: [{ id: 'B', type: 'hard' }] },
-    ])
-    const getTask = vi.fn().mockResolvedValue({ id: 'A', status: 'done', depends_on: [{ id: 'B', type: 'hard' }] })
+    index.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
+    const getTask = vi
+      .fn()
+      .mockResolvedValue({ id: 'A', status: 'done', depends_on: [{ id: 'B', type: 'hard' }] })
     const update = vi.fn()
 
     await resolveDependents('B', 'done', index, getTask, update)
@@ -197,9 +195,7 @@ describe('resolveDependents', () => {
 
   it('handles getTask throwing without crashing', async () => {
     const index = createDependencyIndex()
-    index.rebuild([
-      { id: 'A', depends_on: [{ id: 'B', type: 'hard' }] },
-    ])
+    index.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
     const getTask = vi.fn().mockRejectedValue(new Error('DB error'))
     const update = vi.fn()
 
@@ -211,16 +207,23 @@ describe('resolveDependents', () => {
     const index = createDependencyIndex()
     index.rebuild([
       { id: 'A', depends_on: [{ id: 'B', type: 'hard' }] },
-      { id: 'C', depends_on: [{ id: 'B', type: 'soft' }] },
+      { id: 'C', depends_on: [{ id: 'B', type: 'soft' }] }
     ])
     // B is the completedTaskId so its status is seeded in the cache;
     // getTask is only called once per dependent (A and C), not for B itself.
-    const getTask = vi.fn()
-      .mockResolvedValueOnce({ id: 'A', status: 'blocked', depends_on: [{ id: 'B', type: 'hard' }] })
-      .mockResolvedValueOnce({ id: 'C', status: 'blocked', depends_on: [{ id: 'B', type: 'soft' }] })
-    const update = vi.fn()
-      .mockRejectedValueOnce(new Error('DB error'))
-      .mockResolvedValueOnce(null)
+    const getTask = vi
+      .fn()
+      .mockResolvedValueOnce({
+        id: 'A',
+        status: 'blocked',
+        depends_on: [{ id: 'B', type: 'hard' }]
+      })
+      .mockResolvedValueOnce({
+        id: 'C',
+        status: 'blocked',
+        depends_on: [{ id: 'B', type: 'soft' }]
+      })
+    const update = vi.fn().mockRejectedValueOnce(new Error('DB error')).mockResolvedValueOnce(null)
 
     await resolveDependents('B', 'done', index, getTask, update)
     expect(update).toHaveBeenCalledTimes(2)
@@ -229,14 +232,27 @@ describe('resolveDependents', () => {
   it('treats deleted dependency as satisfied', async () => {
     const index = createDependencyIndex()
     index.rebuild([
-      { id: 'A', depends_on: [{ id: 'B', type: 'hard' }, { id: 'DELETED', type: 'hard' }] },
+      {
+        id: 'A',
+        depends_on: [
+          { id: 'B', type: 'hard' },
+          { id: 'DELETED', type: 'hard' }
+        ]
+      }
     ])
-    const getTask = vi.fn()
-      .mockImplementation((id: string) => {
-        if (id === 'A') return Promise.resolve({ id: 'A', status: 'blocked', depends_on: [{ id: 'B', type: 'hard' }, { id: 'DELETED', type: 'hard' }] })
-        if (id === 'B') return Promise.resolve({ id: 'B', status: 'done', depends_on: null })
-        return Promise.resolve(null)
-      })
+    const getTask = vi.fn().mockImplementation((id: string) => {
+      if (id === 'A')
+        return Promise.resolve({
+          id: 'A',
+          status: 'blocked',
+          depends_on: [
+            { id: 'B', type: 'hard' },
+            { id: 'DELETED', type: 'hard' }
+          ]
+        })
+      if (id === 'B') return Promise.resolve({ id: 'B', status: 'done', depends_on: null })
+      return Promise.resolve(null)
+    })
     const update = vi.fn()
 
     await resolveDependents('B', 'done', index, getTask, update)

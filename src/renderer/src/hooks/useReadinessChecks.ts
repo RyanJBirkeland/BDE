@@ -19,7 +19,7 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
     label: 'Title',
     tier: 1,
     status: form.title.trim() ? 'pass' : 'fail',
-    message: form.title.trim() ? 'Title provided' : 'Title is required',
+    message: form.title.trim() ? 'Title provided' : 'Title is required'
   })
 
   // Repo selected
@@ -28,7 +28,7 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
     label: 'Repo',
     tier: 1,
     status: form.repo ? 'pass' : 'fail',
-    message: form.repo ? `Repo: ${form.repo}` : 'No repo selected',
+    message: form.repo ? `Repo: ${form.repo}` : 'No repo selected'
   })
 
   // Spec present
@@ -61,7 +61,13 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
     structureStatus = 'fail'
     structureMsg = 'No sections — use ## headings to structure the spec'
   }
-  checks.push({ id: 'spec-structure', label: 'Structure', tier: 1, status: structureStatus, message: structureMsg })
+  checks.push({
+    id: 'spec-structure',
+    label: 'Structure',
+    tier: 1,
+    status: structureStatus,
+    message: structureMsg
+  })
 
   return checks
 }

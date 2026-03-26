@@ -48,7 +48,7 @@ describe('PlaygroundModal — integration', () => {
         filename="index.html"
         sizeBytes={MULTI_LINE_HTML.length}
         onClose={onClose}
-      />,
+      />
     )
     // Switch to source-only to simplify assertions
     fireEvent.click(screen.getByRole('tab', { name: 'Source' }))
@@ -65,7 +65,7 @@ describe('PlaygroundModal — integration', () => {
         filename="app.html"
         sizeBytes={MULTI_LINE_HTML.length}
         onClose={onClose}
-      />,
+      />
     )
     const iframe = screen.getByTitle('Preview of app.html') as HTMLIFrameElement
     expect(iframe.getAttribute('srcdoc')).toBe(MULTI_LINE_HTML)
@@ -78,7 +78,7 @@ describe('PlaygroundModal — integration', () => {
         filename="secure.html"
         sizeBytes={14}
         onClose={onClose}
-      />,
+      />
     )
     const iframe = screen.getByTitle('Preview of secure.html')
     const sandbox = iframe.getAttribute('sandbox')
@@ -92,12 +92,7 @@ describe('PlaygroundModal — integration', () => {
 
   it('view mode cycle: split -> preview -> source -> split', () => {
     render(
-      <PlaygroundModal
-        html="<h1>Hi</h1>"
-        filename="test.html"
-        sizeBytes={12}
-        onClose={onClose}
-      />,
+      <PlaygroundModal html="<h1>Hi</h1>" filename="test.html" sizeBytes={12} onClose={onClose} />
     )
 
     // Default is split — both panes visible
@@ -121,14 +116,7 @@ describe('PlaygroundModal — integration', () => {
   })
 
   it('aria-selected tracks active view mode', () => {
-    render(
-      <PlaygroundModal
-        html="<p>x</p>"
-        filename="a.html"
-        sizeBytes={7}
-        onClose={onClose}
-      />,
-    )
+    render(<PlaygroundModal html="<p>x</p>" filename="a.html" sizeBytes={7} onClose={onClose} />)
 
     const splitTab = screen.getByRole('tab', { name: 'Split' })
     const previewTab = screen.getByRole('tab', { name: 'Preview' })
@@ -148,12 +136,7 @@ describe('PlaygroundModal — integration', () => {
 
   it('Escape key closes modal even when fired from nested element', () => {
     render(
-      <PlaygroundModal
-        html="<p>test</p>"
-        filename="test.html"
-        sizeBytes={12}
-        onClose={onClose}
-      />,
+      <PlaygroundModal html="<p>test</p>" filename="test.html" sizeBytes={12} onClose={onClose} />
     )
     // Fire Escape from the modal itself (not document)
     const modal = screen.getByTestId('playground-modal')
@@ -163,12 +146,7 @@ describe('PlaygroundModal — integration', () => {
 
   it('does not close on non-Escape key press', () => {
     render(
-      <PlaygroundModal
-        html="<p>test</p>"
-        filename="test.html"
-        sizeBytes={12}
-        onClose={onClose}
-      />,
+      <PlaygroundModal html="<p>test</p>" filename="test.html" sizeBytes={12} onClose={onClose} />
     )
     fireEvent.keyDown(document, { key: 'Enter' })
     fireEvent.keyDown(document, { key: 'a' })
@@ -182,7 +160,7 @@ describe('PlaygroundModal — integration', () => {
         filename="open.html"
         sizeBytes={18}
         onClose={onClose}
-      />,
+      />
     )
     const openBtn = screen.getByLabelText('Open in browser')
     fireEvent.click(openBtn)
@@ -197,7 +175,7 @@ describe('PlaygroundModal — integration', () => {
         filename="large.html"
         sizeBytes={3.5 * 1024 * 1024}
         onClose={onClose}
-      />,
+      />
     )
     expect(screen.getByText('3.5 MB')).toBeTruthy()
   })
@@ -205,12 +183,7 @@ describe('PlaygroundModal — integration', () => {
   it('source pane HTML is escaped (no raw tags)', () => {
     const html = '<script>alert("xss")</script>'
     render(
-      <PlaygroundModal
-        html={html}
-        filename="xss.html"
-        sizeBytes={html.length}
-        onClose={onClose}
-      />,
+      <PlaygroundModal html={html} filename="xss.html" sizeBytes={html.length} onClose={onClose} />
     )
     fireEvent.click(screen.getByRole('tab', { name: 'Source' }))
     const source = screen.getByTestId('playground-source')
@@ -234,7 +207,7 @@ describe('pairEvents — playground event handling', () => {
         filename: 'preview.html',
         html: '<h1>Hello</h1>',
         sizeBytes: 14,
-        timestamp: 2000,
+        timestamp: 2000
       },
       {
         type: 'agent:completed',
@@ -243,8 +216,8 @@ describe('pairEvents — playground event handling', () => {
         tokensIn: 100,
         tokensOut: 200,
         durationMs: 5000,
-        timestamp: 3000,
-      },
+        timestamp: 3000
+      }
     ]
 
     const blocks = pairEvents(events)
@@ -263,7 +236,7 @@ describe('pairEvents — playground event handling', () => {
         filename: 'v1.html',
         html: '<h1>V1</h1>',
         sizeBytes: 12,
-        timestamp: 2000,
+        timestamp: 2000
       },
       { type: 'agent:text', text: 'Iterating...', timestamp: 2500 },
       {
@@ -271,7 +244,7 @@ describe('pairEvents — playground event handling', () => {
         filename: 'v2.html',
         html: '<h1>V2</h1>',
         sizeBytes: 12,
-        timestamp: 3000,
+        timestamp: 3000
       },
       {
         type: 'agent:completed',
@@ -280,8 +253,8 @@ describe('pairEvents — playground event handling', () => {
         tokensIn: 200,
         tokensOut: 400,
         durationMs: 10000,
-        timestamp: 4000,
-      },
+        timestamp: 4000
+      }
     ]
 
     const blocks = pairEvents(events)

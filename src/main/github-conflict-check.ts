@@ -15,7 +15,12 @@ export interface ConflictFilesResult {
 }
 
 export async function checkConflictFiles(input: ConflictFilesInput): Promise<ConflictFilesResult> {
-  const empty: ConflictFilesResult = { prNumber: input.prNumber, files: [], baseBranch: '', headBranch: '' }
+  const empty: ConflictFilesResult = {
+    prNumber: input.prNumber,
+    files: [],
+    baseBranch: '',
+    headBranch: ''
+  }
   const token = getGitHubToken()
   if (!token) return empty
 
@@ -44,7 +49,7 @@ export async function checkConflictFiles(input: ConflictFilesInput): Promise<Con
       prNumber: input.prNumber,
       files: filesData.map((f) => f.filename),
       baseBranch: prData.base.ref,
-      headBranch: prData.head.ref,
+      headBranch: prData.head.ref
     }
   } catch {
     return empty

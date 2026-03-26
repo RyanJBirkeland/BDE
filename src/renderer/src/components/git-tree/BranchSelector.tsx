@@ -21,7 +21,7 @@ export function BranchSelector({
   currentBranch,
   branches,
   hasUncommittedChanges,
-  onCheckout,
+  onCheckout
 }: BranchSelectorProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -73,11 +73,18 @@ export function BranchSelector({
           color: isDisabled ? tokens.color.textDim : tokens.color.text,
           fontSize: tokens.size.sm,
           fontFamily: tokens.font.ui,
-          cursor: isDisabled ? 'not-allowed' : 'pointer',
+          cursor: isDisabled ? 'not-allowed' : 'pointer'
         }}
       >
         <GitBranch size={14} />
-        <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span
+          style={{
+            maxWidth: '160px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}
+        >
           {currentBranch || 'unknown'}
         </span>
         <ChevronDown size={12} />
@@ -106,7 +113,7 @@ export function BranchSelector({
               border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.md,
               boxShadow: tokens.shadow.md,
-              marginTop: tokens.space[1],
+              marginTop: tokens.space[1]
             }}
           >
             {branches.length === 0 ? (
@@ -115,7 +122,7 @@ export function BranchSelector({
                   padding: tokens.space[3],
                   color: tokens.color.textMuted,
                   fontSize: tokens.size.sm,
-                  textAlign: 'center',
+                  textAlign: 'center'
                 }}
               >
                 No branches found
@@ -139,7 +146,7 @@ export function BranchSelector({
                     color: branch === currentBranch ? tokens.color.accent : tokens.color.text,
                     fontSize: tokens.size.sm,
                     fontFamily: tokens.font.ui,
-                    cursor: 'pointer',
+                    cursor: 'pointer'
                   }}
                   onMouseEnter={(e) => {
                     if (branch !== currentBranch) {
@@ -149,13 +156,14 @@ export function BranchSelector({
                   }}
                   onMouseLeave={(e) => {
                     if (branch !== currentBranch) {
-                      ;(e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                        'transparent'
+                      ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
                     }
                   }}
                 >
                   <GitBranch size={12} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
                     {branch}
                   </span>
                 </button>

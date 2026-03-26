@@ -40,7 +40,12 @@ function formatDuration(ms: number | null | undefined): string {
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  })
 }
 
 function cacheHitPct(row: AgentRunCostRow): number | null {
@@ -80,7 +85,9 @@ function ClaudeCodePanel({ summary }: { summary: CostSummary }): React.JSX.Eleme
         </div>
         <div className="cost-panel__stat">
           <span className="cost-panel__stat-label">Total tokens this week</span>
-          <span className="cost-panel__stat-value">{formatTokens(summary.totalTokensThisWeek)}</span>
+          <span className="cost-panel__stat-value">
+            {formatTokens(summary.totalTokensThisWeek)}
+          </span>
         </div>
         <div className="cost-panel__stat">
           <span className="cost-panel__stat-label">Avg cost per task</span>
@@ -95,7 +102,9 @@ function ClaudeCodePanel({ summary }: { summary: CostSummary }): React.JSX.Eleme
             <span className="cost-panel__stat-value">
               {formatCost(summary.mostExpensiveTask.costUsd)}
             </span>
-            <span className="cost-panel__stat-note">{truncate(summary.mostExpensiveTask.task, 60)}</span>
+            <span className="cost-panel__stat-note">
+              {truncate(summary.mostExpensiveTask.task, 60)}
+            </span>
           </div>
         )}
       </div>
@@ -111,7 +120,7 @@ function TaskTable({
   runs,
   sortField,
   onSort,
-  onRowClick,
+  onRowClick
 }: {
   runs: AgentRunCostRow[]
   sortField: SortField
@@ -129,14 +138,20 @@ function TaskTable({
             <th className="cost-table__num cost-table__sortable" onClick={() => onSort('cost_usd')}>
               Est. Cost{sortIndicator('cost_usd')}
             </th>
-            <th className="cost-table__num cost-table__sortable" onClick={() => onSort('duration_ms')}>
+            <th
+              className="cost-table__num cost-table__sortable"
+              onClick={() => onSort('duration_ms')}
+            >
               Duration{sortIndicator('duration_ms')}
             </th>
             <th className="cost-table__num">Turns</th>
             <th className="cost-table__num">Cache Hit %</th>
             <th>Repo</th>
             <th>PR</th>
-            <th className="cost-table__num cost-table__sortable" onClick={() => onSort('started_at')}>
+            <th
+              className="cost-table__num cost-table__sortable"
+              onClick={() => onSort('started_at')}
+            >
               Date{sortIndicator('started_at')}
             </th>
           </tr>
@@ -152,12 +167,16 @@ function TaskTable({
                 onClick={() => onRowClick(r)}
               >
                 <td className="cost-table__session" title={r.task || r.id}>
-                  <span className="cost-table__key">{truncate(r.task || r.id.slice(0, 8), 50)}</span>
+                  <span className="cost-table__key">
+                    {truncate(r.task || r.id.slice(0, 8), 50)}
+                  </span>
                 </td>
                 <td className="cost-table__num cost-table__cost">{formatCost(r.cost_usd)}</td>
                 <td className="cost-table__num">{formatDuration(r.duration_ms)}</td>
                 <td className="cost-table__num">{r.num_turns ?? '--'}</td>
-                <td className="cost-table__num">{cache !== null ? `${cache.toFixed(0)}%` : '--'}</td>
+                <td className="cost-table__num">
+                  {cache !== null ? `${cache.toFixed(0)}%` : '--'}
+                </td>
                 <td className="cost-table__model">
                   <span className="cost-table__repo-badge">{r.repo || '--'}</span>
                 </td>
@@ -191,7 +210,8 @@ function TaskTable({
 // ── CSV Export ───────────────────────────────────────────
 
 function exportCsv(runs: AgentRunCostRow[]): void {
-  const header = 'task,repo,cost_usd,duration_ms,turns,cache_hit_pct,tokens_in,tokens_out,pr_url,date'
+  const header =
+    'task,repo,cost_usd,duration_ms,turns,cache_hit_pct,tokens_in,tokens_out,pr_url,date'
   const rows = runs.map((r) => {
     const cache = cacheHitPct(r)
     const title = (r.task || r.id).replace(/,/g, ' ')
@@ -217,7 +237,7 @@ export default function CostView(): React.JSX.Element {
     try {
       const [s, r] = await Promise.all([
         window.api.cost.summary(),
-        window.api.cost.agentRuns(AGENT_HISTORY_LIMIT),
+        window.api.cost.agentRuns(AGENT_HISTORY_LIMIT)
       ])
       setSummary(s)
       setRuns(r)
@@ -230,7 +250,9 @@ export default function CostView(): React.JSX.Element {
     }
   }, [refreshStore])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
   useVisibilityAwareInterval(fetchData, POLL_COST_INTERVAL)
 
   const sortedRuns = useMemo(() => {
@@ -253,14 +275,20 @@ export default function CostView(): React.JSX.Element {
   const handleRowClick = useCallback((run: AgentRunCostRow) => {
     window.dispatchEvent(
       new CustomEvent('bde:navigate', {
-        detail: { view: 'agents', sessionId: run.id },
+        detail: { view: 'agents', sessionId: run.id }
       })
     )
   }, [])
 
   if (loading) {
     return (
-      <motion.div className="cost-view cost-view--glass" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
+      <motion.div
+        className="cost-view cost-view--glass"
+        variants={VARIANTS.fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+      >
         <div className="cost-view__header">
           <span className="cost-view__title text-gradient-aurora">Cost Tracker</span>
         </div>
@@ -276,7 +304,13 @@ export default function CostView(): React.JSX.Element {
   }
 
   return (
-    <motion.div className="cost-view cost-view--glass" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
+    <motion.div
+      className="cost-view cost-view--glass"
+      variants={VARIANTS.fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+    >
       <div className="cost-view__header">
         <span className="cost-view__title text-gradient-aurora">Cost Tracker</span>
         <div className="cost-view__header-actions">
@@ -291,9 +325,7 @@ export default function CostView(): React.JSX.Element {
       </div>
 
       <div className="cost-view__scroll">
-        <div className="cost-view__panels">
-          {summary && <ClaudeCodePanel summary={summary} />}
-        </div>
+        <div className="cost-view__panels">{summary && <ClaudeCodePanel summary={summary} />}</div>
 
         {sortedRuns.length === 0 ? (
           <EmptyState

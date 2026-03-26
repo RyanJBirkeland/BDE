@@ -8,7 +8,11 @@ interface TimelineBarProps {
   onClick: (id: string) => void
 }
 
-export function TimelineBar({ agent, timeRange, onClick }: TimelineBarProps): React.JSX.Element | null {
+export function TimelineBar({
+  agent,
+  timeRange,
+  onClick
+}: TimelineBarProps): React.JSX.Element | null {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
   const barRef = useRef<HTMLDivElement>(null)

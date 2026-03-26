@@ -5,7 +5,7 @@ import type { GitFileEntry } from '../../../stores/gitTree'
 
 const files: GitFileEntry[] = [
   { path: 'src/foo.ts', status: 'M' },
-  { path: 'src/bar.ts', status: 'A' },
+  { path: 'src/bar.ts', status: 'A' }
 ]
 
 const defaultProps = {
@@ -17,7 +17,7 @@ const defaultProps = {
   onUnstageAll: vi.fn(),
   onStageFile: vi.fn(),
   onUnstageFile: vi.fn(),
-  onSelectFile: vi.fn(),
+  onSelectFile: vi.fn()
 }
 
 describe('FileTreeSection', () => {
@@ -129,7 +129,7 @@ describe('FileTreeSection', () => {
     const manyFiles: GitFileEntry[] = [
       { path: 'a.ts', status: 'M' },
       { path: 'b.ts', status: 'A' },
-      { path: 'c.ts', status: 'D' },
+      { path: 'c.ts', status: 'D' }
     ]
     render(<FileTreeSection {...defaultProps} files={manyFiles} />)
     expect(screen.getByLabelText('3 files')).toBeInTheDocument()

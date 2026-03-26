@@ -6,11 +6,11 @@ Element.prototype.scrollIntoView = vi.fn()
 
 vi.mock('../../../stores/ui', () => ({
   useUIStore: (selector: (s: { activeView: string }) => unknown) =>
-    selector({ activeView: 'pr-station' }),
+    selector({ activeView: 'pr-station' })
 }))
 
 vi.mock('../../../lib/render-markdown', () => ({
-  renderMarkdown: (s: string) => s,
+  renderMarkdown: (s: string) => s
 }))
 
 import { DiffViewer } from '../DiffViewer'
@@ -27,11 +27,11 @@ function makeDiffFile(path: string, overrides: Partial<DiffFile> = {}): DiffFile
         lines: [
           { type: 'ctx', content: 'context line', lineNo: { old: 1, new: 1 } },
           { type: 'add', content: 'added line', lineNo: { old: undefined, new: 2 } },
-          { type: 'del', content: 'deleted line', lineNo: { old: 2, new: undefined } },
-        ],
-      },
+          { type: 'del', content: 'deleted line', lineNo: { old: 2, new: undefined } }
+        ]
+      }
     ],
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -40,13 +40,13 @@ function makeLargeDiffFile(path: string): DiffFile {
   const lines = Array.from({ length: 550 }, (_, i) => ({
     type: 'ctx' as const,
     content: `line ${i}`,
-    lineNo: { old: i + 1, new: i + 1 },
+    lineNo: { old: i + 1, new: i + 1 }
   }))
   return {
     path,
     additions: 0,
     deletions: 0,
-    hunks: [{ header: '@@ -1,550 +1,550 @@', lines }],
+    hunks: [{ header: '@@ -1,550 +1,550 @@', lines }]
   }
 }
 
@@ -163,10 +163,7 @@ describe('DiffViewer', () => {
   })
 
   it('keyboard ArrowUp on first hunk wraps to last', () => {
-    const files = [
-      makeDiffFile('src/a.ts'),
-      makeDiffFile('src/b.ts'),
-    ]
+    const files = [makeDiffFile('src/a.ts'), makeDiffFile('src/b.ts')]
     render(<DiffViewer files={files} />)
 
     // ArrowUp from unselected (-1) wraps to last hunk
@@ -202,8 +199,8 @@ describe('DiffViewer', () => {
         original_line: 2,
         position: 2,
         in_reply_to_id: null,
-        pull_request_review_id: null,
-      },
+        pull_request_review_id: null
+      }
     ]
     render(<DiffViewer files={files} comments={comments as any} />)
     expect(screen.getAllByText('This is a review comment').length).toBeGreaterThan(0)
@@ -214,7 +211,9 @@ describe('DiffViewer', () => {
     const files = [makeDiffFile('src/example.ts')]
     render(<DiffViewer files={files} onSelectRange={onSelectRange} />)
 
-    const gutters = document.querySelectorAll('.diff-line__gutter--new.diff-line__gutter--selectable')
+    const gutters = document.querySelectorAll(
+      '.diff-line__gutter--new.diff-line__gutter--selectable'
+    )
     expect(gutters.length).toBeGreaterThan(0)
     fireEvent.mouseDown(gutters[0])
     expect(onSelectRange).toHaveBeenCalled()
@@ -230,8 +229,8 @@ describe('DiffViewer', () => {
         body: 'My pending comment',
         side: 'RIGHT' as const,
         startLine: 2,
-        endLine: 2,
-      },
+        endLine: 2
+      }
     ]
     render(<DiffViewer files={files} pendingComments={pendingComments} />)
     expect(screen.getAllByText('My pending comment').length).toBeGreaterThan(0)
@@ -249,10 +248,16 @@ describe('DiffViewer', () => {
         body: 'To be removed',
         side: 'RIGHT' as const,
         startLine: 2,
-        endLine: 2,
-      },
+        endLine: 2
+      }
     ]
-    render(<DiffViewer files={files} pendingComments={pendingComments} onRemovePendingComment={onRemovePendingComment} />)
+    render(
+      <DiffViewer
+        files={files}
+        pendingComments={pendingComments}
+        onRemovePendingComment={onRemovePendingComment}
+      />
+    )
     fireEvent.click(screen.getAllByText('Remove')[0])
     expect(onRemovePendingComment).toHaveBeenCalledWith('pending-1')
   })
@@ -273,8 +278,8 @@ describe('DiffViewer', () => {
         original_line: 1,
         position: 1,
         in_reply_to_id: null,
-        pull_request_review_id: null,
-      },
+        pull_request_review_id: null
+      }
     ]
     render(<DiffViewer files={files} comments={comments as any} />)
     // In plain mode we see diff-file elements; in virt mode we see the absolute-positioned container
@@ -307,8 +312,20 @@ describe('DiffViewer', () => {
     const onSelectRange = vi.fn()
     const onAddComment = vi.fn()
     const files = [makeDiffFile('src/example.ts')]
-    const selectedRange = { file: 'src/example.ts', startLine: 2, endLine: 2, side: 'RIGHT' as const }
-    render(<DiffViewer files={files} onSelectRange={onSelectRange} onAddComment={onAddComment} selectedRange={selectedRange} />)
+    const selectedRange = {
+      file: 'src/example.ts',
+      startLine: 2,
+      endLine: 2,
+      side: 'RIGHT' as const
+    }
+    render(
+      <DiffViewer
+        files={files}
+        onSelectRange={onSelectRange}
+        onAddComment={onAddComment}
+        selectedRange={selectedRange}
+      />
+    )
     // The comment trigger (+) button should appear before startLine
     expect(document.querySelector('.diff-selection-trigger')).toBeInTheDocument()
   })

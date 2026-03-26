@@ -29,8 +29,8 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
     set((state) => ({
       pendingComments: {
         ...state.pendingComments,
-        [prKey]: [...(state.pendingComments[prKey] ?? []), comment],
-      },
+        [prKey]: [...(state.pendingComments[prKey] ?? []), comment]
+      }
     })),
 
   updateComment: (prKey, commentId, body) =>
@@ -39,16 +39,16 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
         ...state.pendingComments,
         [prKey]: (state.pendingComments[prKey] ?? []).map((c) =>
           c.id === commentId ? { ...c, body } : c
-        ),
-      },
+        )
+      }
     })),
 
   removeComment: (prKey, commentId) =>
     set((state) => ({
       pendingComments: {
         ...state.pendingComments,
-        [prKey]: (state.pendingComments[prKey] ?? []).filter((c) => c.id !== commentId),
-      },
+        [prKey]: (state.pendingComments[prKey] ?? []).filter((c) => c.id !== commentId)
+      }
     })),
 
   clearPending: (prKey) =>
@@ -70,7 +70,7 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
     } catch {
       // Corrupt localStorage — ignore and start fresh
     }
-  },
+  }
 }))
 
 // Auto-persist to localStorage whenever pendingComments changes

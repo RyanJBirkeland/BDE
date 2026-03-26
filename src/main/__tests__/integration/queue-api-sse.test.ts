@@ -20,22 +20,22 @@ vi.mock('../../data/sprint-queries', () => ({
   createTask: vi.fn(),
   updateTask: vi.fn(),
   claimTask: vi.fn(),
-  releaseTask: vi.fn(),
+  releaseTask: vi.fn()
 }))
 
 // Mock settings — no API key (auth disabled for SSE tests)
 vi.mock('../../settings', () => ({
-  getSetting: vi.fn().mockReturnValue(null),
+  getSetting: vi.fn().mockReturnValue(null)
 }))
 
 // Mock event-queries and db (needed by event-handlers)
 vi.mock('../../data/event-queries', () => ({
   insertEventBatch: vi.fn(),
-  queryEvents: vi.fn(),
+  queryEvents: vi.fn()
 }))
 
 vi.mock('../../db', () => ({
-  getDb: vi.fn(),
+  getDb: vi.fn()
 }))
 
 // ---------------------------------------------------------------------------
@@ -76,33 +76,35 @@ beforeEach(() => {
 function connectSse(
   path: string,
   opts?: { timeoutMs?: number }
-): Promise<{ status: number; headers: http.IncomingHttpHeaders; chunks: string[]; close: () => void }> {
+): Promise<{
+  status: number
+  headers: http.IncomingHttpHeaders
+  chunks: string[]
+  close: () => void
+}> {
   const timeoutMs = opts?.timeoutMs ?? 5000
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error('SSE connection timed out'))
     }, timeoutMs)
 
-    const req = http.get(
-      { hostname: '127.0.0.1', port, path },
-      (res) => {
-        const chunks: string[] = []
-        res.setEncoding('utf8')
-        res.on('data', (chunk: string) => chunks.push(chunk))
+    const req = http.get({ hostname: '127.0.0.1', port, path }, (res) => {
+      const chunks: string[] = []
+      res.setEncoding('utf8')
+      res.on('data', (chunk: string) => chunks.push(chunk))
 
-        // Resolve once we get the initial response headers
-        clearTimeout(timer)
-        resolve({
-          status: res.statusCode ?? 0,
-          headers: res.headers,
-          chunks,
-          close: () => {
-            res.destroy()
-            req.destroy()
-          },
-        })
-      }
-    )
+      // Resolve once we get the initial response headers
+      clearTimeout(timer)
+      resolve({
+        status: res.statusCode ?? 0,
+        headers: res.headers,
+        chunks,
+        close: () => {
+          res.destroy()
+          req.destroy()
+        }
+      })
+    })
     req.on('error', (err) => {
       clearTimeout(timer)
       reject(err)
@@ -154,7 +156,7 @@ describe('Queue API SSE event delivery', () => {
       const eventPayload = {
         taskId: 'task-123',
         type: 'agent:started',
-        message: 'Agent started working',
+        message: 'Agent started working'
       }
       sseBroadcaster.broadcast('task:output', eventPayload)
 

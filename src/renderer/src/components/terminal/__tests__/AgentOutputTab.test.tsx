@@ -9,15 +9,15 @@ vi.mock('../../../stores/agentEvents', () => ({
   useAgentEventsStore: (selector: (s: unknown) => unknown) =>
     selector({
       events: mockEvents,
-      loadHistory: mockLoadHistory,
-    }),
+      loadHistory: mockLoadHistory
+    })
 }))
 
 // Mock ChatRenderer
 vi.mock('../../agents/ChatRenderer', () => ({
   ChatRenderer: ({ events }: { events: unknown[] }) => (
     <div data-testid="chat-renderer">Events: {events.length}</div>
-  ),
+  )
 }))
 
 // Mock design-system tokens
@@ -26,8 +26,8 @@ vi.mock('../../../design-system/tokens', () => ({
     space: { 2: '0.5rem', 3: '0.75rem', 4: '1rem', 8: '2rem' },
     color: { text: '#fff', textDim: '#888', border: '#333' },
     font: { ui: 'sans-serif', code: 'monospace' },
-    size: { md: '14px' },
-  },
+    size: { md: '14px' }
+  }
 }))
 
 import { AgentOutputTab } from '../AgentOutputTab'
@@ -62,9 +62,7 @@ describe('AgentOutputTab', () => {
   })
 
   it('renders legacy plaintext output when agentOutput is provided', () => {
-    render(
-      <AgentOutputTab agentId="agent-1" agentOutput={['chunk 1', 'chunk 2']} />
-    )
+    render(<AgentOutputTab agentId="agent-1" agentOutput={['chunk 1', 'chunk 2']} />)
     expect(screen.getByText('chunk 1')).toBeInTheDocument()
     expect(screen.getByText('chunk 2')).toBeInTheDocument()
   })
@@ -82,25 +80,13 @@ describe('AgentOutputTab', () => {
 
   it('prefers events over sessionKey and agentOutput', () => {
     mockEvents['agent-1'] = [{ type: 'message' }]
-    render(
-      <AgentOutputTab
-        agentId="agent-1"
-        sessionKey="sess-123"
-        agentOutput={['text']}
-      />
-    )
+    render(<AgentOutputTab agentId="agent-1" sessionKey="sess-123" agentOutput={['text']} />)
     expect(screen.getByTestId('chat-renderer')).toBeInTheDocument()
     expect(screen.queryByText('text')).not.toBeInTheDocument()
   })
 
   it('prefers sessionKey over agentOutput when no events', () => {
-    render(
-      <AgentOutputTab
-        agentId="agent-1"
-        sessionKey="sess-123"
-        agentOutput={['legacy text']}
-      />
-    )
+    render(<AgentOutputTab agentId="agent-1" sessionKey="sess-123" agentOutput={['legacy text']} />)
     // sessionKey path shows waiting message, not legacy output
     expect(screen.getByText(/Waiting for agent output/)).toBeInTheDocument()
     expect(screen.queryByText('legacy text')).not.toBeInTheDocument()

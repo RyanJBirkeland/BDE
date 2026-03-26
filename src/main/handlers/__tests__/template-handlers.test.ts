@@ -5,12 +5,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 vi.mock('../../settings', () => ({
   getSettingJson: vi.fn(),
-  setSettingJson: vi.fn(),
+  setSettingJson: vi.fn()
 }))
 
 import { registerTemplateHandlers } from '../template-handlers'
@@ -89,7 +89,10 @@ describe('Template handlers', () => {
     it('returns built-in templates followed by custom templates in order', () => {
       vi.mocked(getSettingJson).mockImplementation((key: string) => {
         if (key === 'templates.custom')
-          return [{ name: 'alpha', promptPrefix: 'Alpha' }, { name: 'beta', promptPrefix: 'Beta' }]
+          return [
+            { name: 'alpha', promptPrefix: 'Alpha' },
+            { name: 'beta', promptPrefix: 'Beta' }
+          ]
         return null
       })
       const handler = captureHandler('templates:list')
@@ -113,7 +116,7 @@ describe('Template handlers', () => {
       handler(mockEvent, { name: 'bugfix', promptPrefix: 'New prefix', isBuiltIn: true })
 
       expect(setSettingJson).toHaveBeenCalledWith('templates.overrides', {
-        bugfix: 'New prefix',
+        bugfix: 'New prefix'
       })
     })
 
@@ -127,7 +130,7 @@ describe('Template handlers', () => {
 
       expect(setSettingJson).toHaveBeenCalledWith('templates.overrides', {
         feature: 'Existing override',
-        bugfix: 'New bugfix',
+        bugfix: 'New bugfix'
       })
     })
   })
@@ -141,25 +144,22 @@ describe('Template handlers', () => {
       const handler = captureHandler('templates:save')
       handler(mockEvent, { name: 'newtemplate', promptPrefix: 'Do new things', isBuiltIn: false })
 
-      expect(setSettingJson).toHaveBeenCalledWith(
-        'templates.custom',
-        [{ name: 'newtemplate', promptPrefix: 'Do new things' }],
-      )
+      expect(setSettingJson).toHaveBeenCalledWith('templates.custom', [
+        { name: 'newtemplate', promptPrefix: 'Do new things' }
+      ])
     })
 
     it('updates existing custom template in place', () => {
       vi.mocked(getSettingJson).mockImplementation((key: string) => {
-        if (key === 'templates.custom')
-          return [{ name: 'existing', promptPrefix: 'Old prefix' }]
+        if (key === 'templates.custom') return [{ name: 'existing', promptPrefix: 'Old prefix' }]
         return null
       })
       const handler = captureHandler('templates:save')
       handler(mockEvent, { name: 'existing', promptPrefix: 'Updated prefix', isBuiltIn: false })
 
-      expect(setSettingJson).toHaveBeenCalledWith(
-        'templates.custom',
-        [{ name: 'existing', promptPrefix: 'Updated prefix' }],
-      )
+      expect(setSettingJson).toHaveBeenCalledWith('templates.custom', [
+        { name: 'existing', promptPrefix: 'Updated prefix' }
+      ])
     })
 
     it('also syncs legacy task.templates setting after save', () => {
@@ -167,9 +167,9 @@ describe('Template handlers', () => {
       const handler = captureHandler('templates:save')
       handler(mockEvent, { name: 'mytemplate', promptPrefix: 'Prefix', isBuiltIn: false })
 
-      const legacyCall = vi.mocked(setSettingJson).mock.calls.find(
-        ([key]) => key === 'task.templates',
-      )
+      const legacyCall = vi
+        .mocked(setSettingJson)
+        .mock.calls.find(([key]) => key === 'task.templates')
       expect(legacyCall).toBeDefined()
     })
   })
@@ -180,7 +180,7 @@ describe('Template handlers', () => {
         if (key === 'templates.custom')
           return [
             { name: 'keep', promptPrefix: 'Keep this' },
-            { name: 'remove', promptPrefix: 'Remove this' },
+            { name: 'remove', promptPrefix: 'Remove this' }
           ]
         return null
       })
@@ -188,7 +188,7 @@ describe('Template handlers', () => {
       handler(mockEvent, 'remove')
 
       expect(setSettingJson).toHaveBeenCalledWith('templates.custom', [
-        { name: 'keep', promptPrefix: 'Keep this' },
+        { name: 'keep', promptPrefix: 'Keep this' }
       ])
     })
 
@@ -201,7 +201,7 @@ describe('Template handlers', () => {
       handler(mockEvent, 'nonexistent')
 
       expect(setSettingJson).toHaveBeenCalledWith('templates.custom', [
-        { name: 'keep', promptPrefix: 'Keep this' },
+        { name: 'keep', promptPrefix: 'Keep this' }
       ])
     })
 
@@ -210,9 +210,9 @@ describe('Template handlers', () => {
       const handler = captureHandler('templates:delete')
       handler(mockEvent, 'anything')
 
-      const legacyCall = vi.mocked(setSettingJson).mock.calls.find(
-        ([key]) => key === 'task.templates',
-      )
+      const legacyCall = vi
+        .mocked(setSettingJson)
+        .mock.calls.find(([key]) => key === 'task.templates')
       expect(legacyCall).toBeDefined()
     })
   })
@@ -220,14 +220,15 @@ describe('Template handlers', () => {
   describe('templates:reset', () => {
     it('removes the override for a built-in template', () => {
       vi.mocked(getSettingJson).mockImplementation((key: string) => {
-        if (key === 'templates.overrides') return { bugfix: 'Custom prefix', feature: 'Other override' }
+        if (key === 'templates.overrides')
+          return { bugfix: 'Custom prefix', feature: 'Other override' }
         return null
       })
       const handler = captureHandler('templates:reset')
       handler(mockEvent, 'bugfix')
 
       expect(setSettingJson).toHaveBeenCalledWith('templates.overrides', {
-        feature: 'Other override',
+        feature: 'Other override'
       })
     })
 
@@ -240,7 +241,7 @@ describe('Template handlers', () => {
       handler(mockEvent, 'bugfix')
 
       expect(setSettingJson).toHaveBeenCalledWith('templates.overrides', {
-        feature: 'Other override',
+        feature: 'Other override'
       })
     })
 
@@ -249,9 +250,9 @@ describe('Template handlers', () => {
       const handler = captureHandler('templates:reset')
       handler(mockEvent, 'bugfix')
 
-      const legacyCall = vi.mocked(setSettingJson).mock.calls.find(
-        ([key]) => key === 'task.templates',
-      )
+      const legacyCall = vi
+        .mocked(setSettingJson)
+        .mock.calls.find(([key]) => key === 'task.templates')
       expect(legacyCall).toBeDefined()
     })
   })

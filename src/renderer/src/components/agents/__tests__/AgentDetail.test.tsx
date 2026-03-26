@@ -9,7 +9,7 @@ import { useTerminalStore } from '../../../stores/terminal'
 vi.mock('../ChatRenderer', () => ({
   ChatRenderer: ({ events }: { events: AgentEvent[] }) => (
     <div data-testid="chat-renderer">Chat events: {events.length}</div>
-  ),
+  )
 }))
 
 vi.mock('../SteerInput', () => ({
@@ -17,16 +17,16 @@ vi.mock('../SteerInput', () => ({
     <div data-testid="steer-input" data-agent-id={agentId}>
       <button onClick={() => onSend('test message')}>Send</button>
     </div>
-  ),
+  )
 }))
 
 // Mock terminal store
 vi.mock('../../../stores/terminal', () => ({
   useTerminalStore: {
     getState: vi.fn(() => ({
-      addTab: vi.fn(),
-    })),
-  },
+      addTab: vi.fn()
+    }))
+  }
 }))
 
 function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
@@ -48,7 +48,7 @@ function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
     tokensIn: null,
     tokensOut: null,
     sprintTaskId: null,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -59,13 +59,13 @@ const completedEvent: AgentEvent = {
   tokensIn: 1000,
   tokensOut: 500,
   durationMs: 5000,
-  timestamp: Date.now(),
+  timestamp: Date.now()
 }
 
 describe('AgentDetail', () => {
   const defaultProps = {
     onSteer: vi.fn(),
-    events: [],
+    events: []
   }
 
   beforeEach(() => {
@@ -123,9 +123,7 @@ describe('AgentDetail', () => {
 
   it('renders ChatRenderer when events are provided', () => {
     const agent = makeAgent()
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'Hello', timestamp: Date.now() },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'Hello', timestamp: Date.now() }]
     render(<AgentDetail {...defaultProps} agent={agent} events={events} />)
     expect(screen.getByTestId('chat-renderer')).toBeInTheDocument()
   })
@@ -147,7 +145,10 @@ describe('AgentDetail', () => {
   })
 
   it('shows log content when log has data', async () => {
-    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: 'Agent output here', nextByte: 17 })
+    vi.mocked(window.api.tailAgentLog).mockResolvedValue({
+      content: 'Agent output here',
+      nextByte: 17
+    })
     const agent = makeAgent({ logPath: '/tmp/agent.log' })
     render(<AgentDetail {...defaultProps} agent={agent} events={[]} />)
     await waitFor(() => {
@@ -157,27 +158,21 @@ describe('AgentDetail', () => {
 
   it('shows SteerInput when agent is running', () => {
     const agent = makeAgent({ status: 'running' })
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'Working...', timestamp: Date.now() },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'Working...', timestamp: Date.now() }]
     render(<AgentDetail {...defaultProps} agent={agent} events={events} />)
     expect(screen.getByTestId('steer-input')).toBeInTheDocument()
   })
 
   it('does not show SteerInput when agent is done', () => {
     const agent = makeAgent({ status: 'done', finishedAt: new Date().toISOString() })
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'Done', timestamp: Date.now() },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'Done', timestamp: Date.now() }]
     render(<AgentDetail {...defaultProps} agent={agent} events={events} />)
     expect(screen.queryByTestId('steer-input')).not.toBeInTheDocument()
   })
 
   it('does not show SteerInput when agent is failed', () => {
     const agent = makeAgent({ status: 'failed', finishedAt: new Date().toISOString() })
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'Error', timestamp: Date.now() },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'Error', timestamp: Date.now() }]
     render(<AgentDetail {...defaultProps} agent={agent} events={events} />)
     expect(screen.queryByTestId('steer-input')).not.toBeInTheDocument()
   })
@@ -185,9 +180,7 @@ describe('AgentDetail', () => {
   it('calls onSteer when message is sent via SteerInput', async () => {
     const onSteer = vi.fn()
     const agent = makeAgent({ status: 'running' })
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'Working...', timestamp: Date.now() },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'Working...', timestamp: Date.now() }]
     render(<AgentDetail agent={agent} events={events} onSteer={onSteer} />)
     const sendButton = screen.getByRole('button', { name: 'Send' })
     sendButton.click()
@@ -203,9 +196,7 @@ describe('AgentDetail', () => {
 
   it('does not show cost when no completed event', () => {
     const agent = makeAgent({ status: 'running' })
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'Working...', timestamp: Date.now() },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'Working...', timestamp: Date.now() }]
     render(<AgentDetail {...defaultProps} agent={agent} events={events} />)
     // No dollar sign in the document beyond the model info
     expect(screen.queryByText(/\$0\./)).not.toBeInTheDocument()
@@ -238,7 +229,7 @@ describe('AgentDetail', () => {
     const user = userEvent.setup()
     const mockAddTab = vi.fn()
     vi.mocked(useTerminalStore.getState).mockReturnValue({
-      addTab: mockAddTab,
+      addTab: mockAddTab
     } as never)
     const agent = makeAgent({ repo: 'BDE', repoPath: '/home/user/bde' })
     render(<AgentDetail {...defaultProps} agent={agent} events={[]} />)

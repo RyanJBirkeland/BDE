@@ -19,7 +19,7 @@ vi.mock('../../stores/sprintTasks', () => {
       deleteTask: mockDeleteTask,
       launchTask: mockLaunchTask,
       loadData: mockLoadData,
-      setTasks: mockSetTasks,
+      setTasks: mockSetTasks
     })
   )
   ;(store as any).getState = () => ({
@@ -28,7 +28,7 @@ vi.mock('../../stores/sprintTasks', () => {
     deleteTask: mockDeleteTask,
     launchTask: mockLaunchTask,
     loadData: mockLoadData,
-    setTasks: mockSetTasks,
+    setTasks: mockSetTasks
   })
   return { useSprintTasks: store }
 })
@@ -40,7 +40,10 @@ vi.mock('../../stores/sprintUI', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({ selectedTaskId: null, setSelectedTaskId: mockSetSelectedTaskId })
   )
-  ;(store as any).getState = () => ({ selectedTaskId: null, setSelectedTaskId: mockSetSelectedTaskId })
+  ;(store as any).getState = () => ({
+    selectedTaskId: null,
+    setSelectedTaskId: mockSetSelectedTaskId
+  })
   return { useSprintUI: store }
 })
 
@@ -49,8 +52,8 @@ vi.mock('../../stores/toasts', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
-    info: vi.fn(),
-  },
+    info: vi.fn()
+  }
 }))
 
 // Mock framer-motion (used by ConfirmModal, which useConfirm depends on)
@@ -59,9 +62,9 @@ vi.mock('framer-motion', () => ({
     div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
       const { createElement } = require('react')
       return createElement('div', props, children)
-    },
+    }
   },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => children
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -88,7 +91,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -248,9 +251,14 @@ describe('useSprintTaskActions', () => {
       result.current.confirmProps.onConfirm()
     })
 
-    await act(async () => { await promise! })
+    await act(async () => {
+      await promise!
+    })
 
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-done', expect.objectContaining({ status: 'done' }))
+    expect(mockUpdateTask).toHaveBeenCalledWith(
+      'task-done',
+      expect.objectContaining({ status: 'done' })
+    )
     expect(toast.success).toHaveBeenCalledWith('Marked as done')
   })
 
@@ -283,7 +291,9 @@ describe('useSprintTaskActions', () => {
       result.current.confirmProps.onCancel()
     })
 
-    await act(async () => { await promise! })
+    await act(async () => {
+      await promise!
+    })
 
     expect(mockUpdateTask).not.toHaveBeenCalled()
     expect(toast.success).not.toHaveBeenCalled()
@@ -319,7 +329,9 @@ describe('useSprintTaskActions', () => {
       result.current.confirmProps.onConfirm()
     })
 
-    await act(async () => { await promise! })
+    await act(async () => {
+      await promise!
+    })
 
     expect(window.api.killAgent).toHaveBeenCalledWith('run-abc')
     expect(mockUpdateTask).toHaveBeenCalledWith(task.id, { status: 'cancelled' })
@@ -342,7 +354,9 @@ describe('useSprintTaskActions', () => {
       result.current.confirmProps.onConfirm()
     })
 
-    await act(async () => { await promise! })
+    await act(async () => {
+      await promise!
+    })
 
     expect(mockUpdateTask).not.toHaveBeenCalled()
     expect(toast.error).toHaveBeenCalledWith('Process not found')
@@ -364,7 +378,9 @@ describe('useSprintTaskActions', () => {
       result.current.confirmProps.onConfirm()
     })
 
-    await act(async () => { await promise! })
+    await act(async () => {
+      await promise!
+    })
 
     expect(toast.error).toHaveBeenCalledWith('IPC error')
   })
@@ -382,7 +398,9 @@ describe('useSprintTaskActions', () => {
       result.current.confirmProps.onCancel()
     })
 
-    await act(async () => { await promise! })
+    await act(async () => {
+      await promise!
+    })
 
     expect(window.api.killAgent).not.toHaveBeenCalled()
     expect(mockUpdateTask).not.toHaveBeenCalled()
@@ -401,7 +419,7 @@ describe('useSprintTaskActions', () => {
       prompt: 'do the thing',
       spec: '# Spec',
       priority: 2,
-      status: 'done',
+      status: 'done'
     })
 
     await act(async () => {
@@ -415,7 +433,7 @@ describe('useSprintTaskActions', () => {
         prompt: 'do the thing',
         spec: '# Spec',
         priority: 2,
-        status: 'queued',
+        status: 'queued'
       })
     )
     expect(mockLoadData).toHaveBeenCalled()

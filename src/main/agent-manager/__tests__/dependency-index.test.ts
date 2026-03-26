@@ -8,7 +8,7 @@ describe('DependencyIndex', () => {
       const idx = createDependencyIndex()
       idx.rebuild([
         { id: 'A', depends_on: [{ id: 'B', type: 'hard' }] },
-        { id: 'C', depends_on: [{ id: 'B', type: 'soft' }] },
+        { id: 'C', depends_on: [{ id: 'B', type: 'soft' }] }
       ])
       expect(idx.getDependents('B')).toEqual(new Set(['A', 'C']))
     })
@@ -17,7 +17,7 @@ describe('DependencyIndex', () => {
       const idx = createDependencyIndex()
       idx.rebuild([
         { id: 'A', depends_on: null },
-        { id: 'B', depends_on: [{ id: 'A', type: 'hard' }] },
+        { id: 'B', depends_on: [{ id: 'A', type: 'hard' }] }
       ])
       expect(idx.getDependents('A')).toEqual(new Set(['B']))
       expect(idx.getDependents('X')).toEqual(new Set())
@@ -32,7 +32,7 @@ describe('DependencyIndex', () => {
     })
   })
 
-describe('areDependenciesSatisfied', () => {
+  describe('areDependenciesSatisfied', () => {
     test('empty deps = satisfied', () => {
       const idx = createDependencyIndex()
       const result = idx.areDependenciesSatisfied('T', [], () => undefined)
@@ -108,7 +108,7 @@ describe('areDependenciesSatisfied', () => {
       const idx = createDependencyIndex()
       const deps: TaskDependency[] = [
         { id: 'A', type: 'hard' },
-        { id: 'B', type: 'soft' },
+        { id: 'B', type: 'soft' }
       ]
       const statuses: Record<string, string> = { A: 'done', B: 'failed' }
       const result = idx.areDependenciesSatisfied('T', deps, (id) => statuses[id])
@@ -119,7 +119,7 @@ describe('areDependenciesSatisfied', () => {
       const idx = createDependencyIndex()
       const deps: TaskDependency[] = [
         { id: 'A', type: 'hard' },
-        { id: 'B', type: 'soft' },
+        { id: 'B', type: 'soft' }
       ]
       const statuses: Record<string, string> = { A: 'active', B: 'done' }
       const result = idx.areDependenciesSatisfied('T', deps, (id) => statuses[id])
@@ -132,7 +132,7 @@ describe('areDependenciesSatisfied', () => {
 describe('detectCycle', () => {
   test('no cycle → null', () => {
     const deps: Record<string, TaskDependency[]> = {
-      B: [{ id: 'C', type: 'hard' }],
+      B: [{ id: 'C', type: 'hard' }]
     }
     const result = detectCycle('A', [{ id: 'B', type: 'hard' }], (id) => deps[id] ?? null)
     expect(result).toBeNull()
@@ -145,7 +145,7 @@ describe('detectCycle', () => {
 
   test('A→B→A cycle → path containing A and B', () => {
     const deps: Record<string, TaskDependency[]> = {
-      B: [{ id: 'A', type: 'hard' }],
+      B: [{ id: 'A', type: 'hard' }]
     }
     const result = detectCycle('A', [{ id: 'B', type: 'hard' }], (id) => deps[id] ?? null)
     expect(result).not.toBeNull()
@@ -156,7 +156,7 @@ describe('detectCycle', () => {
   test('A→B→C→A deep cycle → path containing A', () => {
     const deps: Record<string, TaskDependency[]> = {
       B: [{ id: 'C', type: 'hard' }],
-      C: [{ id: 'A', type: 'hard' }],
+      C: [{ id: 'A', type: 'hard' }]
     }
     const result = detectCycle('A', [{ id: 'B', type: 'hard' }], (id) => deps[id] ?? null)
     expect(result).not.toBeNull()
@@ -167,15 +167,15 @@ describe('detectCycle', () => {
     // A→B, A→C, B→D, C→D — diamond, not a cycle
     const deps: Record<string, TaskDependency[]> = {
       B: [{ id: 'D', type: 'hard' }],
-      C: [{ id: 'D', type: 'hard' }],
+      C: [{ id: 'D', type: 'hard' }]
     }
     const result = detectCycle(
       'A',
       [
         { id: 'B', type: 'hard' },
-        { id: 'C', type: 'hard' },
+        { id: 'C', type: 'hard' }
       ],
-      (id) => deps[id] ?? null,
+      (id) => deps[id] ?? null
     )
     expect(result).toBeNull()
   })

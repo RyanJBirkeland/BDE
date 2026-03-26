@@ -42,30 +42,46 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTaskMergeableState: (...args: unknown[]) => mockUpdateTaskMergeableState(...args),
   getHealthCheckTasks: (...args: unknown[]) => mockGetHealthCheckTasks(...args),
   UPDATE_ALLOWLIST: new Set([
-    'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
-    'pr_url', 'pr_number', 'pr_status', 'pr_mergeable_state', 'agent_run_id',
-    'retry_count', 'fast_fail_count', 'started_at', 'completed_at',
-    'template_name', 'claimed_by', 'depends_on', 'playground_enabled',
-  ]),
+    'title',
+    'prompt',
+    'repo',
+    'status',
+    'priority',
+    'spec',
+    'notes',
+    'pr_url',
+    'pr_number',
+    'pr_status',
+    'pr_mergeable_state',
+    'agent_run_id',
+    'retry_count',
+    'fast_fail_count',
+    'started_at',
+    'completed_at',
+    'template_name',
+    'claimed_by',
+    'depends_on',
+    'playground_enabled'
+  ])
 }))
 
 vi.mock('../../agent-manager/dependency-index', () => ({
   createDependencyIndex: vi.fn(() => ({
     rebuild: vi.fn(),
     getDependents: vi.fn(() => new Set()),
-    areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] })),
+    areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] }))
   })),
-  detectCycle: vi.fn(() => null),
+  detectCycle: vi.fn(() => null)
 }))
 
 // Mock sprint-listeners — suppress SSE broadcasting
 vi.mock('../../handlers/sprint-listeners', () => ({
-  notifySprintMutation: vi.fn(),
+  notifySprintMutation: vi.fn()
 }))
 
 // Mock spec-semantic-check
 vi.mock('../../spec-semantic-check', () => ({
-  checkSpecSemantic: vi.fn().mockResolvedValue({ passed: true, failMessages: [] }),
+  checkSpecSemantic: vi.fn().mockResolvedValue({ passed: true, failMessages: [] })
 }))
 
 // Mock Electron ipcMain.handle — capture registered handlers
@@ -74,39 +90,39 @@ vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
       registeredHandlers.set(channel, handler)
-    }),
-  },
+    })
+  }
 }))
 
 // Mock getDb (used by sprint:readLog)
 vi.mock('../../db', () => ({
-  getDb: vi.fn(() => ({})),
+  getDb: vi.fn(() => ({}))
 }))
 
 // Mock agent-queries and agent-history (used by sprint:readLog)
 vi.mock('../../data/agent-queries', () => ({
-  getAgentLogInfo: vi.fn(() => null),
+  getAgentLogInfo: vi.fn(() => null)
 }))
 
 vi.mock('../../agent-history', () => ({
-  readLog: vi.fn().mockResolvedValue({ content: '', nextByte: 0 }),
+  readLog: vi.fn().mockResolvedValue({ content: '', nextByte: 0 })
 }))
 
 // Mock settings (used by sprint:claimTask)
 vi.mock('../../settings', () => ({
   getSetting: vi.fn().mockReturnValue(null),
-  getSettingJson: vi.fn().mockReturnValue(null),
+  getSettingJson: vi.fn().mockReturnValue(null)
 }))
 
 // Mock sprint-spec (used by sprint:generatePrompt and sprint:readSpecFile)
 vi.mock('../../handlers/sprint-spec', () => ({
   generatePrompt: vi.fn().mockResolvedValue({ prompt: 'generated prompt', spec: null }),
-  validateSpecPath: vi.fn((p: string) => p),
+  validateSpecPath: vi.fn((p: string) => p)
 }))
 
 // Mock fs/promises (used by sprint:readSpecFile)
 vi.mock('fs/promises', () => ({
-  readFile: vi.fn().mockResolvedValue('# Spec content'),
+  readFile: vi.fn().mockResolvedValue('# Spec content')
 }))
 
 // ---------------------------------------------------------------------------
@@ -152,7 +168,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     playground_enabled: false,
     updated_at: '2025-01-01T00:00:00Z',
     created_at: '2025-01-01T00:00:00Z',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -176,26 +192,26 @@ describe('Sprint IPC handlers — integration', () => {
       const result = await invoke('sprint:create', {
         title: 'Fix login bug',
         repo: 'BDE',
-        status: 'backlog',
+        status: 'backlog'
       })
 
       expect(result).toEqual(created)
       expect(mockCreateTask).toHaveBeenCalledOnce()
       expect(mockCreateTask).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Fix login bug', repo: 'BDE' }),
+        expect.objectContaining({ title: 'Fix login bug', repo: 'BDE' })
       )
     })
 
     it('rejects creation when title is missing', async () => {
-      await expect(
-        invoke('sprint:create', { title: '', repo: 'BDE' }),
-      ).rejects.toThrow('Spec quality checks failed')
+      await expect(invoke('sprint:create', { title: '', repo: 'BDE' })).rejects.toThrow(
+        'Spec quality checks failed'
+      )
     })
 
     it('rejects creation when repo is missing', async () => {
-      await expect(
-        invoke('sprint:create', { title: 'Some task', repo: '' }),
-      ).rejects.toThrow('Spec quality checks failed')
+      await expect(invoke('sprint:create', { title: 'Some task', repo: '' })).rejects.toThrow(
+        'Spec quality checks failed'
+      )
     })
   })
 
@@ -227,13 +243,13 @@ describe('Sprint IPC handlers — integration', () => {
 
       const result = await invoke('sprint:update', 'task-001', {
         title: 'Updated title',
-        notes: 'New notes',
+        notes: 'New notes'
       })
 
       expect(result).toEqual(updated)
       expect(mockUpdateTask).toHaveBeenCalledWith(
         'task-001',
-        expect.objectContaining({ title: 'Updated title', notes: 'New notes' }),
+        expect.objectContaining({ title: 'Updated title', notes: 'New notes' })
       )
     })
   })
@@ -246,7 +262,7 @@ describe('Sprint IPC handlers — integration', () => {
         'The login page does not handle expired tokens correctly.',
         '',
         '## Solution',
-        'Add token refresh logic before redirecting to the login page.',
+        'Add token refresh logic before redirecting to the login page.'
       ].join('\n')
 
       const existing = makeTask({ id: 'task-001', status: 'backlog', spec: specText })
@@ -263,9 +279,9 @@ describe('Sprint IPC handlers — integration', () => {
       const existing = makeTask({ id: 'task-001', status: 'backlog', spec: null })
       mockGetTask.mockResolvedValue(existing)
 
-      await expect(
-        invoke('sprint:update', 'task-001', { status: 'queued' }),
-      ).rejects.toThrow('Cannot queue task')
+      await expect(invoke('sprint:update', 'task-001', { status: 'queued' })).rejects.toThrow(
+        'Cannot queue task'
+      )
     })
   })
 
@@ -290,7 +306,7 @@ describe('Sprint IPC handlers — integration', () => {
       'The login page does not handle expired tokens correctly.',
       '',
       '## Solution',
-      'Add token refresh logic before redirecting to the login page.',
+      'Add token refresh logic before redirecting to the login page.'
     ].join('\n')
 
     it('auto-blocks a queued task when dependencies are unsatisfied', async () => {
@@ -300,22 +316,20 @@ describe('Sprint IPC handlers — integration', () => {
         getDependents: vi.fn(() => new Set()),
         areDependenciesSatisfied: vi.fn(() => ({
           satisfied: false,
-          blockedBy: ['dep-task-1'],
-        })),
+          blockedBy: ['dep-task-1']
+        }))
       }
       vi.mocked(createDependencyIndex).mockReturnValue(mockIdx as any)
 
       // listTasks is called to build the status map for dependency checking
-      mockListTasks.mockResolvedValue([
-        makeTask({ id: 'dep-task-1', status: 'backlog' }),
-      ])
+      mockListTasks.mockResolvedValue([makeTask({ id: 'dep-task-1', status: 'backlog' })])
 
       const blockedTask = makeTask({
         id: 'task-blocked',
         status: 'blocked',
         spec: validSpec,
         depends_on: [{ id: 'dep-task-1', type: 'hard' }],
-        notes: '[auto-block] Blocked by: dep-task-1',
+        notes: '[auto-block] Blocked by: dep-task-1'
       })
       mockCreateTask.mockResolvedValue(blockedTask)
 
@@ -324,14 +338,12 @@ describe('Sprint IPC handlers — integration', () => {
         repo: 'BDE',
         spec: validSpec,
         status: 'queued',
-        depends_on: [{ id: 'dep-task-1', type: 'hard' }],
+        depends_on: [{ id: 'dep-task-1', type: 'hard' }]
       })
 
       expect(result).toEqual(blockedTask)
       // The handler should pass status: 'blocked' to createTask
-      expect(mockCreateTask).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'blocked' }),
-      )
+      expect(mockCreateTask).toHaveBeenCalledWith(expect.objectContaining({ status: 'blocked' }))
     })
 
     it('allows queued task when all dependencies are satisfied', async () => {
@@ -341,20 +353,18 @@ describe('Sprint IPC handlers — integration', () => {
         getDependents: vi.fn(() => new Set()),
         areDependenciesSatisfied: vi.fn(() => ({
           satisfied: true,
-          blockedBy: [],
-        })),
+          blockedBy: []
+        }))
       }
       vi.mocked(createDependencyIndex).mockReturnValue(mockIdx as any)
 
-      mockListTasks.mockResolvedValue([
-        makeTask({ id: 'dep-task-1', status: 'done' }),
-      ])
+      mockListTasks.mockResolvedValue([makeTask({ id: 'dep-task-1', status: 'done' })])
 
       const queuedTask = makeTask({
         id: 'task-queued',
         status: 'queued',
         spec: validSpec,
-        depends_on: [{ id: 'dep-task-1', type: 'hard' }],
+        depends_on: [{ id: 'dep-task-1', type: 'hard' }]
       })
       mockCreateTask.mockResolvedValue(queuedTask)
 
@@ -363,14 +373,12 @@ describe('Sprint IPC handlers — integration', () => {
         repo: 'BDE',
         spec: validSpec,
         status: 'queued',
-        depends_on: [{ id: 'dep-task-1', type: 'hard' }],
+        depends_on: [{ id: 'dep-task-1', type: 'hard' }]
       })
 
       expect(result).toEqual(queuedTask)
       // Should remain queued since dependency is satisfied
-      expect(mockCreateTask).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'queued' }),
-      )
+      expect(mockCreateTask).toHaveBeenCalledWith(expect.objectContaining({ status: 'queued' }))
     })
   })
 
@@ -385,9 +393,9 @@ describe('Sprint IPC handlers — integration', () => {
     it('propagates create errors', async () => {
       mockCreateTask.mockRejectedValue(new Error('Insert failed: duplicate key'))
 
-      await expect(
-        invoke('sprint:create', { title: 'Dup task', repo: 'BDE' }),
-      ).rejects.toThrow('Insert failed: duplicate key')
+      await expect(invoke('sprint:create', { title: 'Dup task', repo: 'BDE' })).rejects.toThrow(
+        'Insert failed: duplicate key'
+      )
     })
   })
 
@@ -409,17 +417,13 @@ describe('Sprint IPC handlers — integration', () => {
       const active = makeTask({ id: 'task-act', status: 'active' })
       mockGetTask.mockResolvedValue(active)
 
-      await expect(
-        invoke('sprint:unblockTask', 'task-act'),
-      ).rejects.toThrow('not blocked')
+      await expect(invoke('sprint:unblockTask', 'task-act')).rejects.toThrow('not blocked')
     })
 
     it('throws if task does not exist', async () => {
       mockGetTask.mockResolvedValue(null)
 
-      await expect(
-        invoke('sprint:unblockTask', 'task-missing'),
-      ).rejects.toThrow('not found')
+      await expect(invoke('sprint:unblockTask', 'task-missing')).rejects.toThrow('not found')
     })
   })
 
@@ -441,7 +445,7 @@ describe('Sprint IPC handlers — integration', () => {
       mockListTasks.mockResolvedValue([makeTask({ id: 'dep-1' })])
 
       const result = await invoke('sprint:validateDependencies', 'task-001', [
-        { id: 'dep-1', type: 'hard' },
+        { id: 'dep-1', type: 'hard' }
       ])
 
       expect(result).toEqual({ valid: true })
@@ -451,7 +455,7 @@ describe('Sprint IPC handlers — integration', () => {
       mockGetTask.mockResolvedValue(null)
 
       const result = await invoke('sprint:validateDependencies', 'task-001', [
-        { id: 'nonexistent', type: 'hard' },
+        { id: 'nonexistent', type: 'hard' }
       ])
 
       expect(result).toEqual({ valid: false, error: 'Task nonexistent not found' })

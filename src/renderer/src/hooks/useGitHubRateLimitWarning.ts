@@ -17,6 +17,9 @@ export function useGitHubRateLimitWarning(): void {
     const unsubToken = window.api.onGitHubTokenExpired(() => {
       toast.error('GitHub token expired or invalid. Update it in Settings.', 12_000)
     })
-    return () => { unsubRate(); unsubToken() }
+    return () => {
+      unsubRate()
+      unsubToken()
+    }
   }, [])
 }

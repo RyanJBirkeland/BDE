@@ -25,7 +25,7 @@ function makeMockChild() {
   const stdin = new Writable({
     write(_chunk, _enc, cb) {
       cb()
-    },
+    }
   })
 
   vi.spyOn(stdin, 'write')
@@ -35,7 +35,7 @@ function makeMockChild() {
     stdout,
     stderr,
     stdin,
-    kill,
+    kill
   }
 
   return child
@@ -53,7 +53,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'Hello',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     expect(handle).toHaveProperty('messages')
@@ -70,7 +70,7 @@ describe('spawnAgent (CLI fallback)', () => {
     await spawnAgent({
       prompt: 'Do the thing',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     expect(child.stdin.write).toHaveBeenCalledOnce()
@@ -84,7 +84,7 @@ describe('spawnAgent (CLI fallback)', () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/my/project',
-      model: 'claude-opus-4-5',
+      model: 'claude-opus-4-5'
     })
 
     expect(mockSpawn).toHaveBeenCalledWith(
@@ -97,9 +97,9 @@ describe('spawnAgent (CLI fallback)', () => {
         '--model',
         'claude-opus-4-5',
         '--permission-mode',
-        'bypassPermissions',
+        'bypassPermissions'
       ]),
-      expect.objectContaining({ cwd: '/my/project' }),
+      expect.objectContaining({ cwd: '/my/project' })
     )
   })
 
@@ -115,7 +115,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     handle.abort()
@@ -127,7 +127,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'initial',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     // Reset the mock to isolate steer call
@@ -146,7 +146,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     const collected: unknown[] = []
@@ -172,7 +172,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     const stderrLines: string[] = []
@@ -185,17 +185,14 @@ describe('spawnAgent (CLI fallback)', () => {
     // Allow event handlers to fire
     await new Promise((r) => setTimeout(r, 50))
 
-    expect(stderrLines).toEqual([
-      'Warning: deprecated API',
-      'Error: something failed',
-    ])
+    expect(stderrLines).toEqual(['Warning: deprecated API', 'Error: something failed'])
   })
 
   it('does not call onStderr for empty/whitespace-only lines', async () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     const stderrLines: string[] = []
@@ -213,7 +210,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     const stderrLines: string[] = []
@@ -233,7 +230,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     const stderrLines: string[] = []
@@ -252,7 +249,7 @@ describe('spawnAgent (CLI fallback)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     const collected: unknown[] = []

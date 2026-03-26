@@ -19,13 +19,13 @@ export function Input({
   suffix,
   disabled = false,
   className,
-  'aria-label': ariaLabel,
+  'aria-label': ariaLabel
 }: InputProps) {
   const classes = [
     'bde-input',
     prefix && 'bde-input--has-prefix',
     suffix && 'bde-input--has-suffix',
-    className,
+    className
   ]
     .filter(Boolean)
     .join(' ')

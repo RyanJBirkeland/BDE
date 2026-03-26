@@ -19,12 +19,12 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'Agent done',
-      message: 'Task completed',
+      message: 'Task completed'
     })
     useNotificationsStore.getState().addNotification({
       type: 'pr_merged',
       title: 'PR merged',
-      message: 'PR was merged',
+      message: 'PR was merged'
     })
 
     render(<NotificationBell />)
@@ -35,7 +35,7 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'Agent done',
-      message: 'Task completed',
+      message: 'Task completed'
     })
     useNotificationsStore.getState().markAllAsRead()
 
@@ -48,7 +48,7 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'Agent completed',
-      message: 'Task done successfully',
+      message: 'Task done successfully'
     })
 
     render(<NotificationBell />)
@@ -64,7 +64,7 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'Agent completed',
-      message: 'Task done',
+      message: 'Task done'
     })
 
     render(<NotificationBell />)
@@ -93,7 +93,7 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'Agent completed',
-      message: 'Task done',
+      message: 'Task done'
     })
 
     render(<NotificationBell />)
@@ -113,12 +113,12 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'First',
-      message: 'First message',
+      message: 'First message'
     })
     useNotificationsStore.getState().addNotification({
       type: 'pr_merged',
       title: 'Second',
-      message: 'Second message',
+      message: 'Second message'
     })
 
     render(<NotificationBell />)
@@ -139,7 +139,7 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'First',
-      message: 'First message',
+      message: 'First message'
     })
     useNotificationsStore.getState().markAllAsRead()
 
@@ -159,7 +159,7 @@ describe('NotificationBell', () => {
       title: 'Test',
       message: 'Test message',
       timestamp: new Date(now.getTime() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-      read: false,
+      read: false
     }
 
     useNotificationsStore.setState({ notifications: [notification] })
@@ -177,17 +177,17 @@ describe('NotificationBell', () => {
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',
       title: 'Completed',
-      message: 'Done',
+      message: 'Done'
     })
     useNotificationsStore.getState().addNotification({
       type: 'agent_failed',
       title: 'Failed',
-      message: 'Error',
+      message: 'Error'
     })
     useNotificationsStore.getState().addNotification({
       type: 'pr_merged',
       title: 'Merged',
-      message: 'PR merged',
+      message: 'PR merged'
     })
 
     render(<NotificationBell />)

@@ -11,7 +11,7 @@ let mockTheme = 'dark'
 vi.mock('../../../stores/theme', () => ({
   useThemeStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ theme: mockTheme, toggleTheme: vi.fn(), setTheme: mockSetTheme })
-  ),
+  )
 }))
 
 import { AppearanceSection } from '../AppearanceSection'
@@ -74,7 +74,9 @@ describe('AppearanceSection', () => {
     const { useThemeStore } = await import('../../../stores/theme')
     vi.mocked(useThemeStore).mockImplementation((selector) =>
       (selector as unknown as (s: Record<string, unknown>) => unknown)({
-        theme: 'light', toggleTheme: vi.fn(), setTheme: mockSetTheme,
+        theme: 'light',
+        toggleTheme: vi.fn(),
+        setTheme: mockSetTheme
       })
     )
     render(<AppearanceSection />)
@@ -125,9 +127,9 @@ describe('AppearanceSection', () => {
 
   it('all 6 accent buttons are rendered', () => {
     render(<AppearanceSection />)
-    const colorButtons = screen.getAllByRole('button').filter(
-      (btn) => btn.className.includes('settings-color')
-    )
+    const colorButtons = screen
+      .getAllByRole('button')
+      .filter((btn) => btn.className.includes('settings-color'))
     expect(colorButtons).toHaveLength(6)
   })
 })

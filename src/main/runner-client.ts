@@ -12,7 +12,9 @@ interface RunnerConfig {
 
 function getRunnerConfig(): RunnerConfig {
   const runnersJson = getSetting('runners')
-  const runners = runnersJson ? JSON.parse(runnersJson) : [{ url: 'http://127.0.0.1:18799', apiKey: '' }]
+  const runners = runnersJson
+    ? JSON.parse(runnersJson)
+    : [{ url: 'http://127.0.0.1:18799', apiKey: '' }]
   return runners[0]
 }
 
@@ -23,8 +25,8 @@ async function runnerFetch(path: string, opts?: RequestInit) {
     headers: {
       ...opts?.headers,
       ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-      'Content-Type': 'application/json',
-    },
+      'Content-Type': 'application/json'
+    }
   })
 }
 
@@ -45,7 +47,7 @@ export async function getAgent(id: string) {
 export async function steerAgent(agentId: string, message: string) {
   const res = await runnerFetch(`/agents/${agentId}/steer`, {
     method: 'POST',
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message })
   })
   if (!res.ok) {
     throw new Error(`steerAgent failed: ${res.status} ${await res.text()}`)

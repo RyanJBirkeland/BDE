@@ -12,13 +12,14 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function DiffSizeWarning({ sizeBytes, onLoadAnyway }: DiffSizeWarningProps): React.JSX.Element {
+export function DiffSizeWarning({
+  sizeBytes,
+  onLoadAnyway
+}: DiffSizeWarningProps): React.JSX.Element {
   return (
     <div className="bde-warning-banner">
       <AlertTriangle size={16} />
-      <span>
-        Large diff ({formatBytes(sizeBytes)}) may slow down the editor.
-      </span>
+      <span>Large diff ({formatBytes(sizeBytes)}) may slow down the editor.</span>
       <Button variant="ghost" size="sm" onClick={onLoadAnyway}>
         Load anyway
       </Button>

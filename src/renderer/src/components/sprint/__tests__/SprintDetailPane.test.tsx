@@ -7,16 +7,16 @@ import { TASK_STATUS } from '../../../../../shared/constants'
 // Mock stores
 const mocks = vi.hoisted(() => {
   const storeState = {
-    tasks: [] as SprintTask[],
+    tasks: [] as SprintTask[]
   }
 
   const eventState = {
-    latestEvents: {} as Record<string, any>,
+    latestEvents: {} as Record<string, any>
   }
 
   return {
     storeState,
-    eventState,
+    eventState
   }
 })
 
@@ -26,7 +26,7 @@ vi.mock('../../../stores/sprintTasks', () => ({
       return selector(mocks.storeState)
     }
     return []
-  }),
+  })
 }))
 
 vi.mock('../../../stores/sprintEvents', () => ({
@@ -35,14 +35,14 @@ vi.mock('../../../stores/sprintEvents', () => ({
       return selector(mocks.eventState)
     }
     return null
-  }),
+  })
 }))
 
 vi.mock('../../../stores/toasts', () => ({
   toast: {
     success: vi.fn(),
-    error: vi.fn(),
-  },
+    error: vi.fn()
+  }
 }))
 
 // Mock window.api
@@ -52,7 +52,7 @@ beforeEach(() => {
   mocks.eventState.latestEvents = {}
 
   window.api = {
-    openExternal: vi.fn(),
+    openExternal: vi.fn()
   } as any
 
   window.dispatchEvent = vi.fn()
@@ -80,7 +80,7 @@ describe('SprintDetailPane', () => {
     template_name: null,
     depends_on: null,
     updated_at: '2024-01-01T00:00:00Z',
-    created_at: '2024-01-01T00:00:00Z',
+    created_at: '2024-01-01T00:00:00Z'
   }
 
   it('renders empty state when no task is provided', () => {
@@ -93,7 +93,6 @@ describe('SprintDetailPane', () => {
     expect(screen.getByText('Test Task')).toBeInTheDocument()
     expect(screen.getByText('Queued')).toBeInTheDocument()
   })
-
 
   it('shows Launch button for queued tasks', () => {
     const onLaunch = vi.fn()
@@ -142,12 +141,12 @@ describe('SprintDetailPane', () => {
       ...mockTask,
       id: 'dep-1',
       title: 'Dependency Task',
-      status: 'done',
+      status: 'done'
     }
 
     const taskWithDeps: SprintTask = {
       ...mockTask,
-      depends_on: [{ id: 'dep-1', type: 'hard' }],
+      depends_on: [{ id: 'dep-1', type: 'hard' }]
     }
 
     mocks.storeState.tasks = [depTask]
@@ -189,7 +188,7 @@ describe('SprintDetailPane', () => {
     expect(window.dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'bde:navigate',
-        detail: { view: 'agents', sessionId: 'agent-123' },
+        detail: { view: 'agents', sessionId: 'agent-123' }
       })
     )
   })
@@ -201,7 +200,7 @@ describe('SprintDetailPane', () => {
       pr_number: 123,
       pr_status: 'open',
       pr_mergeable_state: 'clean',
-      status: TASK_STATUS.DONE,
+      status: TASK_STATUS.DONE
     }
 
     render(<SprintDetailPane task={taskWithPR} onClose={vi.fn()} />)
@@ -216,7 +215,7 @@ describe('SprintDetailPane', () => {
       pr_url: 'https://github.com/test/test/pull/123',
       pr_number: 123,
       pr_status: 'open',
-      status: TASK_STATUS.DONE,
+      status: TASK_STATUS.DONE
     }
 
     render(<SprintDetailPane task={taskWithPR} onClose={vi.fn()} />)
@@ -234,7 +233,7 @@ describe('SprintDetailPane', () => {
       pr_number: 123,
       pr_status: 'open',
       pr_mergeable_state: 'dirty',
-      status: TASK_STATUS.DONE,
+      status: TASK_STATUS.DONE
     }
 
     render(<SprintDetailPane task={taskWithConflict} onClose={vi.fn()} />)
@@ -255,14 +254,18 @@ describe('SprintDetailPane', () => {
     const onClose = vi.fn()
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    const { container } = render(<SprintDetailPane task={mockTask} onClose={onClose} onDelete={onDelete} />)
+    const { container } = render(
+      <SprintDetailPane task={mockTask} onClose={onClose} onDelete={onDelete} />
+    )
 
     // Find the delete button - it's the one with Trash2 icon
     const buttons = container.querySelectorAll('button')
-    const deleteButton = Array.from(buttons).find(btn => {
+    const deleteButton = Array.from(buttons).find((btn) => {
       // The delete button has a Trash2 icon child
-      return btn.querySelector('svg')?.classList.contains('lucide-trash-2') ||
-             btn.innerHTML.includes('Trash2')
+      return (
+        btn.querySelector('svg')?.classList.contains('lucide-trash-2') ||
+        btn.innerHTML.includes('Trash2')
+      )
     })
 
     if (deleteButton) {
@@ -287,7 +290,9 @@ describe('SprintDetailPane', () => {
 
   it('calls onEditInWorkbench when Edit button is clicked', () => {
     const onEditInWorkbench = vi.fn()
-    render(<SprintDetailPane task={mockTask} onClose={vi.fn()} onEditInWorkbench={onEditInWorkbench} />)
+    render(
+      <SprintDetailPane task={mockTask} onClose={vi.fn()} onEditInWorkbench={onEditInWorkbench} />
+    )
 
     const editButton = screen.getByText('Edit')
     fireEvent.click(editButton)

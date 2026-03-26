@@ -15,7 +15,7 @@ import {
   getOrphanedTasks,
   getTasksWithDependencies,
   getActiveTaskCount,
-  UPDATE_ALLOWLIST,
+  UPDATE_ALLOWLIST
 } from '../sprint-queries'
 
 // --- Mock the Supabase client ---
@@ -27,7 +27,18 @@ const mockDelete = vi.fn()
 
 function chainable(terminal?: Record<string, unknown>) {
   const chain: Record<string, unknown> = {}
-  const methods = ['select', 'eq', 'not', 'gte', 'lt', 'order', 'single', 'maybeSingle', 'limit', 'is']
+  const methods = [
+    'select',
+    'eq',
+    'not',
+    'gte',
+    'lt',
+    'order',
+    'single',
+    'maybeSingle',
+    'limit',
+    'is'
+  ]
   for (const m of methods) {
     chain[m] = vi.fn().mockReturnValue(chain)
   }
@@ -42,18 +53,18 @@ function makeFrom() {
     select: mockSelect,
     insert: mockInsert,
     update: mockUpdate,
-    delete: mockDelete,
+    delete: mockDelete
   }))
 }
 
 const mockFrom = makeFrom()
 
 vi.mock('../supabase-client', () => ({
-  getSupabaseClient: () => ({ from: mockFrom }),
+  getSupabaseClient: () => ({ from: mockFrom })
 }))
 
 vi.mock('../task-changes', () => ({
-  recordTaskChanges: vi.fn(),
+  recordTaskChanges: vi.fn()
 }))
 
 beforeEach(() => {
@@ -99,7 +110,10 @@ describe('getTask', () => {
 
 describe('listTasks', () => {
   it('returns all tasks when no status filter', async () => {
-    const tasks = [{ id: '1', title: 'A' }, { id: '2', title: 'B' }]
+    const tasks = [
+      { id: '1', title: 'A' },
+      { id: '2', title: 'B' }
+    ]
     const chain = chainable()
     // First .order() returns the chain; second .order() resolves the data
     ;(chain.order as ReturnType<typeof vi.fn>)
@@ -139,7 +153,7 @@ describe('createTask', () => {
     const chain = chainable()
     ;(chain.single as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: null,
-      error: { message: 'insert failed' },
+      error: { message: 'insert failed' }
     })
     mockInsert.mockReturnValue(chain)
 
@@ -161,12 +175,18 @@ describe('updateTask', () => {
 
     // First call: getTask (SELECT) — returns the old task
     const selectChain = chainable()
-    ;(selectChain.maybeSingle as ReturnType<typeof vi.fn>).mockResolvedValue({ data: oldTask, error: null })
+    ;(selectChain.maybeSingle as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: oldTask,
+      error: null
+    })
     mockSelect.mockReturnValueOnce(selectChain)
 
     // Second call: update — returns the updated task
     const updateChain = chainable()
-    ;(updateChain.single as ReturnType<typeof vi.fn>).mockResolvedValue({ data: updated, error: null })
+    ;(updateChain.single as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: updated,
+      error: null
+    })
     mockUpdate.mockReturnValue(updateChain)
 
     const result = await updateTask('abc', { title: 'Updated', priority: 3 })
@@ -201,7 +221,7 @@ describe('claimTask', () => {
     const chain = chainable()
     ;(chain.single as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: null,
-      error: { code: 'PGRST116', message: 'no rows' },
+      error: { code: 'PGRST116', message: 'no rows' }
     })
     mockUpdate.mockReturnValue(chain)
 
@@ -237,7 +257,7 @@ describe('getQueueStats', () => {
   it('counts tasks by status', async () => {
     mockSelect.mockResolvedValue({
       data: [{ status: 'backlog' }, { status: 'backlog' }, { status: 'queued' }],
-      error: null,
+      error: null
     })
 
     const stats = await getQueueStats()
@@ -284,7 +304,7 @@ describe('getQueuedTasks', () => {
     const chain = chainable()
     ;(chain.limit as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: null,
-      error: { message: 'connection refused' },
+      error: { message: 'connection refused' }
     })
     mockSelect.mockReturnValue(chain)
 
@@ -333,7 +353,7 @@ describe('getTasksWithDependencies', () => {
     const chain = chainable()
     ;(chain.not as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: null,
-      error: { message: 'query failed' },
+      error: { message: 'query failed' }
     })
     mockSelect.mockReturnValue(chain)
 
@@ -367,7 +387,7 @@ describe('getActiveTaskCount', () => {
     const chain = chainable()
     ;(chain.eq as ReturnType<typeof vi.fn>).mockResolvedValue({
       count: null,
-      error: { message: 'connection refused' },
+      error: { message: 'connection refused' }
     })
     mockSelect.mockReturnValue(chain)
 

@@ -26,5 +26,5 @@ export const useHealthCheckStore = create<HealthCheckStore>((set) => ({
       if (state.dismissedIds.includes(taskId)) return state
       return { dismissedIds: [...state.dismissedIds, taskId] }
     }),
-  clearDismissed: () => set({ dismissedIds: [] }),
+  clearDismissed: () => set({ dismissedIds: [] })
 }))

@@ -32,22 +32,17 @@ const MAX_READ_BYTES = 10 * 1024 * 1024 // 10 MB
 export function validateMemoryPath(p: string): string {
   const resolved = resolve(MEMORY_ROOT, p)
   if (!resolved.startsWith(MEMORY_ROOT + '/') && resolved !== MEMORY_ROOT) {
-    throw new Error(
-      `Path traversal blocked: "${p}" resolves outside ${MEMORY_ROOT}`
-    )
+    throw new Error(`Path traversal blocked: "${p}" resolves outside ${MEMORY_ROOT}`)
   }
   return resolved
 }
 
 export function validateLogPath(p: string): string {
   const resolved = resolve(p)
-  const inAgentLogs =
-    resolved.startsWith(AGENT_LOGS_ROOT + '/') || resolved === AGENT_LOGS_ROOT
+  const inAgentLogs = resolved.startsWith(AGENT_LOGS_ROOT + '/') || resolved === AGENT_LOGS_ROOT
   const inTmp = resolved.startsWith(TMP_ROOT + '/') || resolved === TMP_ROOT
   if (!inAgentLogs && !inTmp) {
-    throw new Error(
-      `Path traversal blocked: "${p}" is not under ${AGENT_LOGS_ROOT} or ${TMP_ROOT}`
-    )
+    throw new Error(`Path traversal blocked: "${p}" is not under ${AGENT_LOGS_ROOT} or ${TMP_ROOT}`)
   }
   return resolved
 }
@@ -91,9 +86,7 @@ export async function readMemoryFile(relativePath: string): Promise<string> {
   const safePath = validateMemoryPath(relativePath)
   const info = await stat(safePath)
   if (info.size > MAX_READ_BYTES) {
-    throw new Error(
-      `File too large: ${info.size} bytes exceeds ${MAX_READ_BYTES} byte limit`
-    )
+    throw new Error(`File too large: ${info.size} bytes exceeds ${MAX_READ_BYTES} byte limit`)
   }
   return readFile(safePath, 'utf-8')
 }
@@ -125,16 +118,14 @@ export function validateSafePath(filePath: string): string {
   const inHome = resolved.startsWith(HOME_ROOT + '/') || resolved === HOME_ROOT
   const inTmp = resolved.startsWith(TMP_ROOT + '/') || resolved === TMP_ROOT
   if (!inHome && !inTmp) {
-    throw new Error(
-      `Path blocked: "${filePath}" is outside allowed directories`
-    )
+    throw new Error(`Path blocked: "${filePath}" is outside allowed directories`)
   }
   return resolved
 }
 
-async function openFileDialog(
-  opts?: { filters?: Electron.FileFilter[] }
-): Promise<string[] | null> {
+async function openFileDialog(opts?: {
+  filters?: Electron.FileFilter[]
+}): Promise<string[] | null> {
   const result = await dialog.showOpenDialog({
     properties: ['openFile', 'multiSelections'],
     filters: opts?.filters ?? [
@@ -155,7 +146,9 @@ async function readFileAsBase64(
   const safe = validateSafePath(filePath)
   const info = await stat(safe)
   if (info.size > MAX_IMAGE_BYTES) {
-    throw new Error(`Image too large: ${(info.size / 1024 / 1024).toFixed(1)} MB exceeds 5 MB limit`)
+    throw new Error(
+      `Image too large: ${(info.size / 1024 / 1024).toFixed(1)} MB exceeds 5 MB limit`
+    )
   }
   const buf = await readFile(safe)
   const ext = extname(safe).toLowerCase().replace('.', '')
@@ -166,9 +159,7 @@ async function readFileAsBase64(
   }
 }
 
-async function readFileAsText(
-  filePath: string
-): Promise<{ content: string; name: string }> {
+async function readFileAsText(filePath: string): Promise<{ content: string; name: string }> {
   const safe = validateSafePath(filePath)
   const info = await stat(safe)
   if (info.size > MAX_TEXT_BYTES) {
@@ -182,7 +173,7 @@ async function readFileAsText(
 
 async function openDirectoryDialog(): Promise<string | null> {
   const result = await dialog.showOpenDialog({
-    properties: ['openDirectory'],
+    properties: ['openDirectory']
   })
   return result.canceled ? null : (result.filePaths[0] ?? null)
 }

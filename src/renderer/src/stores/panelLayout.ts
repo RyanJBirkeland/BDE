@@ -4,7 +4,17 @@ import { create } from 'zustand'
 // Types
 // ---------------------------------------------------------------------------
 
-export type View = 'dashboard' | 'agents' | 'ide' | 'sprint' | 'pr-station' | 'git' | 'memory' | 'cost' | 'settings' | 'task-workbench'
+export type View =
+  | 'dashboard'
+  | 'agents'
+  | 'ide'
+  | 'sprint'
+  | 'pr-station'
+  | 'git'
+  | 'memory'
+  | 'cost'
+  | 'settings'
+  | 'task-workbench'
 export type DropZone = 'top' | 'bottom' | 'left' | 'right' | 'center'
 
 export interface PanelTab {
@@ -42,7 +52,7 @@ export const VIEW_LABELS: Record<View, string> = {
   cost: 'Cost',
   settings: 'Settings',
   'task-workbench': 'Task Workbench',
-  git: 'Source Control',
+  git: 'Source Control'
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +79,7 @@ export function createLeaf(viewKey: View): PanelLeafNode {
     type: 'leaf',
     panelId: nextId(),
     tabs: [{ viewKey, label: VIEW_LABELS[viewKey] }],
-    activeTab: 0,
+    activeTab: 0
   }
 }
 
@@ -100,7 +110,7 @@ export function splitNode(
       type: 'split',
       direction,
       children: [root, newLeaf],
-      sizes: [50, 50],
+      sizes: [50, 50]
     }
     return split
   }
@@ -148,7 +158,10 @@ export function closeTab(root: PanelNode, targetId: string, tabIndex: number): P
     if (root.panelId !== targetId) return null
     if (root.tabs.length === 1) return null // signal: remove leaf
     const tabs = root.tabs.filter((_, i) => i !== tabIndex)
-    const activeTab = Math.min(root.activeTab - (tabIndex < root.activeTab ? 1 : 0), tabs.length - 1)
+    const activeTab = Math.min(
+      root.activeTab - (tabIndex < root.activeTab ? 1 : 0),
+      tabs.length - 1
+    )
     return { ...root, tabs, activeTab }
   }
 
@@ -228,7 +241,13 @@ export function moveTab(
       return treeAfterClose
     }
     const newLeaf = createLeaf(movedTab.viewKey)
-    const splitResult = replaceLeafWithSplit(treeAfterClose, targetPanelId, direction, newLeaf, 'first')
+    const splitResult = replaceLeafWithSplit(
+      treeAfterClose,
+      targetPanelId,
+      direction,
+      newLeaf,
+      'first'
+    )
     return splitResult ?? treeAfterClose
   }
 
@@ -236,7 +255,13 @@ export function moveTab(
   const targetLeaf = findLeaf(treeAfterClose, targetPanelId)
   if (!targetLeaf) return treeAfterClose
   const newLeaf = createLeaf(movedTab.viewKey)
-  const splitResult = replaceLeafWithSplit(treeAfterClose, targetPanelId, direction, newLeaf, 'second')
+  const splitResult = replaceLeafWithSplit(
+    treeAfterClose,
+    targetPanelId,
+    direction,
+    newLeaf,
+    'second'
+  )
   return splitResult ?? treeAfterClose
 }
 
@@ -259,7 +284,7 @@ function replaceLeafWithSplit(
       type: 'split',
       direction,
       children,
-      sizes: [50, 50],
+      sizes: [50, 50]
     }
     return split
   }
@@ -318,7 +343,12 @@ interface PanelLayoutState {
   closeTab: (targetId: string, tabIndex: number) => void
   addTab: (targetId: string, viewKey: View) => void
   setActiveTab: (panelId: string, tabIndex: number) => void
-  moveTab: (sourcePanelId: string, sourceTabIndex: number, targetPanelId: string, zone: DropZone) => void
+  moveTab: (
+    sourcePanelId: string,
+    sourceTabIndex: number,
+    targetPanelId: string,
+    zone: DropZone
+  ) => void
   focusPanel: (panelId: string) => void
   resetLayout: () => void
   loadSavedLayout: () => Promise<void>
@@ -413,7 +443,7 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
 
   getOpenViews: (): View[] => {
     return getOpenViews(get().root)
-  },
+  }
 }))
 
 // ---------------------------------------------------------------------------

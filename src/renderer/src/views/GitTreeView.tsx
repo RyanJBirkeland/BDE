@@ -38,11 +38,10 @@ export default function GitTreeView(): React.ReactElement {
     push,
     fetchBranches,
     setActiveRepo,
-    loadRepoPaths,
+    loadRepoPaths
   } = useGitTreeStore.getState()
 
-  const hasUncommittedChanges =
-    staged.length > 0 || unstaged.length > 0 || untracked.length > 0
+  const hasUncommittedChanges = staged.length > 0 || unstaged.length > 0 || untracked.length > 0
 
   // Load repos and initial status on mount
   useEffect(() => {
@@ -121,7 +120,7 @@ export default function GitTreeView(): React.ReactElement {
         flexDirection: 'column',
         height: '100%',
         backgroundColor: tokens.color.surface,
-        overflow: 'hidden',
+        overflow: 'hidden'
       }}
       variants={VARIANTS.fadeIn}
       initial="initial"
@@ -137,7 +136,7 @@ export default function GitTreeView(): React.ReactElement {
           padding: `${tokens.space[2]} ${tokens.space[3]}`,
           borderBottom: `1px solid ${tokens.color.border}`,
           flexShrink: 0,
-          flexWrap: 'wrap',
+          flexWrap: 'wrap'
         }}
       >
         {/* Title */}
@@ -151,7 +150,7 @@ export default function GitTreeView(): React.ReactElement {
             fontFamily: tokens.font.ui,
             fontWeight: 600,
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.05em'
           }}
         >
           <GitBranch size={14} />
@@ -175,7 +174,7 @@ export default function GitTreeView(): React.ReactElement {
               fontSize: tokens.size.sm,
               fontFamily: tokens.font.ui,
               padding: `2px ${tokens.space[2]}`,
-              cursor: 'pointer',
+              cursor: 'pointer'
             }}
           >
             {repoPaths.map((p) => (
@@ -211,7 +210,7 @@ export default function GitTreeView(): React.ReactElement {
             cursor: loading ? 'wait' : 'pointer',
             color: tokens.color.textMuted,
             borderRadius: tokens.radius.sm,
-            padding: 0,
+            padding: 0
           }}
           onMouseEnter={(e) => {
             ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
@@ -223,7 +222,7 @@ export default function GitTreeView(): React.ReactElement {
           <RefreshCw
             size={14}
             style={{
-              animation: loading ? 'bde-spin 1s linear infinite' : 'none',
+              animation: loading ? 'bde-spin 1s linear infinite' : 'none'
             }}
           />
         </button>
@@ -244,7 +243,7 @@ export default function GitTreeView(): React.ReactElement {
           flex: 1,
           overflowY: 'auto',
           padding: `${tokens.space[2]} 0`,
-          minHeight: 0,
+          minHeight: 0
         }}
       >
         {/* Staged changes */}
@@ -272,22 +271,19 @@ export default function GitTreeView(): React.ReactElement {
         />
 
         {/* Empty state */}
-        {staged.length === 0 &&
-          unstaged.length === 0 &&
-          untracked.length === 0 &&
-          !loading && (
-            <div
-              style={{
-                padding: tokens.space[6],
-                textAlign: 'center',
-                color: tokens.color.textMuted,
-                fontSize: tokens.size.sm,
-                fontFamily: tokens.font.ui,
-              }}
-            >
-              No changes
-            </div>
-          )}
+        {staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && !loading && (
+          <div
+            style={{
+              padding: tokens.space[6],
+              textAlign: 'center',
+              color: tokens.color.textMuted,
+              fontSize: tokens.size.sm,
+              fontFamily: tokens.font.ui
+            }}
+          >
+            No changes
+          </div>
+        )}
       </div>
 
       {/* Inline diff drawer */}

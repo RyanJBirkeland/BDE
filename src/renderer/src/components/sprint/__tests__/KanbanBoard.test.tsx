@@ -7,8 +7,8 @@ vi.mock('../../../stores/toasts', () => ({
   toast: {
     info: vi.fn(),
     success: vi.fn(),
-    error: vi.fn(),
-  },
+    error: vi.fn()
+  }
 }))
 
 // Capture DndContext's onDragEnd so we can invoke it manually
@@ -17,7 +17,7 @@ let capturedOnDragEnd: ((event: unknown) => void) | null = null
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({
     children,
-    onDragEnd,
+    onDragEnd
   }: {
     children: React.ReactNode
     onDragEnd: (e: unknown) => void
@@ -32,7 +32,7 @@ vi.mock('@dnd-kit/core', () => ({
   KeyboardSensor: class {},
   closestCenter: vi.fn(),
   useSensor: () => ({}),
-  useSensors: () => [],
+  useSensors: () => []
 }))
 
 vi.mock('@dnd-kit/sortable', () => ({
@@ -44,17 +44,15 @@ vi.mock('@dnd-kit/sortable', () => ({
     setNodeRef: () => {},
     transform: null,
     transition: null,
-    isDragging: false,
+    isDragging: false
   }),
-  arrayMove: vi.fn(
-    <T,>(arr: T[], from: number, to: number): T[] => {
-      const copy = [...arr]
-      const [item] = copy.splice(from, 1)
-      copy.splice(to, 0, item)
-      return copy
-    }
-  ),
-  sortableKeyboardCoordinates: vi.fn(),
+  arrayMove: vi.fn(<T,>(arr: T[], from: number, to: number): T[] => {
+    const copy = [...arr]
+    const [item] = copy.splice(from, 1)
+    copy.splice(to, 0, item)
+    return copy
+  }),
+  sortableKeyboardCoordinates: vi.fn()
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -81,7 +79,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -99,7 +97,7 @@ describe('KanbanBoard', () => {
     onPushToSprint: vi.fn(),
     onLaunch: vi.fn(),
     onViewSpec: vi.fn(),
-    onViewOutput: vi.fn(),
+    onViewOutput: vi.fn()
   }
 
   beforeEach(() => {
@@ -125,7 +123,7 @@ describe('KanbanBoard', () => {
       ...defaultProps,
       todoTasks: [makeTask({ title: 'Queued item', status: 'queued' })],
       activeTasks: [makeTask({ title: 'Active item', status: 'active' })],
-      awaitingReviewTasks: [makeTask({ title: 'Review item', status: 'done', pr_status: 'open' })],
+      awaitingReviewTasks: [makeTask({ title: 'Review item', status: 'done', pr_status: 'open' })]
     }
 
     render(<KanbanBoard {...props} />)
@@ -147,11 +145,9 @@ describe('KanbanBoard', () => {
       ...defaultProps,
       todoTasks: [
         makeTask({ title: 'T1', status: 'queued' }),
-        makeTask({ title: 'T2', status: 'queued' }),
+        makeTask({ title: 'T2', status: 'queued' })
       ],
-      awaitingReviewTasks: [
-        makeTask({ title: 'R1', status: 'done', pr_status: 'open' }),
-      ],
+      awaitingReviewTasks: [makeTask({ title: 'R1', status: 'done', pr_status: 'open' })]
     }
 
     render(<KanbanBoard {...props} />)
@@ -170,7 +166,7 @@ describe('KanbanBoard', () => {
 
     capturedOnDragEnd?.({
       active: { id: 'task-1' },
-      over: { id: 'active' },
+      over: { id: 'active' }
     })
 
     expect(defaultProps.onDragEnd).toHaveBeenCalledWith('task-1', 'active')
@@ -182,7 +178,7 @@ describe('KanbanBoard', () => {
 
     capturedOnDragEnd?.({
       active: { id: 'task-1' },
-      over: { id: 'queued' },
+      over: { id: 'queued' }
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
@@ -194,7 +190,7 @@ describe('KanbanBoard', () => {
 
     capturedOnDragEnd?.({
       active: { id: 'task-1' },
-      over: null,
+      over: null
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
@@ -207,7 +203,7 @@ describe('KanbanBoard', () => {
     act(() => {
       capturedOnDragEnd?.({
         active: { id: 'task-active' },
-        over: { id: 'queued' },
+        over: { id: 'queued' }
       })
     })
 
@@ -223,7 +219,7 @@ describe('KanbanBoard', () => {
     act(() => {
       capturedOnDragEnd?.({
         active: { id: 'task-active' },
-        over: { id: 'queued' },
+        over: { id: 'queued' }
       })
     })
 
@@ -242,7 +238,7 @@ describe('KanbanBoard', () => {
     act(() => {
       capturedOnDragEnd?.({
         active: { id: 'task-active' },
-        over: { id: 'queued' },
+        over: { id: 'queued' }
       })
     })
 
@@ -260,7 +256,7 @@ describe('KanbanBoard', () => {
 
     capturedOnDragEnd?.({
       active: { id: 'task-1' },
-      over: { id: 'review' },
+      over: { id: 'review' }
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
@@ -272,17 +268,11 @@ describe('KanbanBoard', () => {
     )
     const todoTask = makeTask({ id: 'queued-1', title: 'Queued', status: 'queued' })
 
-    render(
-      <KanbanBoard
-        {...defaultProps}
-        todoTasks={[todoTask]}
-        activeTasks={activeTasks}
-      />
-    )
+    render(<KanbanBoard {...defaultProps} todoTasks={[todoTask]} activeTasks={activeTasks} />)
 
     capturedOnDragEnd?.({
       active: { id: 'queued-1' },
-      over: { id: 'active' },
+      over: { id: 'active' }
     })
 
     expect(defaultProps.onDragEnd).not.toHaveBeenCalled()
@@ -294,17 +284,11 @@ describe('KanbanBoard', () => {
     )
     const todoTask = makeTask({ id: 'queued-1', title: 'Queued', status: 'queued' })
 
-    render(
-      <KanbanBoard
-        {...defaultProps}
-        todoTasks={[todoTask]}
-        activeTasks={activeTasks}
-      />
-    )
+    render(<KanbanBoard {...defaultProps} todoTasks={[todoTask]} activeTasks={activeTasks} />)
 
     capturedOnDragEnd?.({
       active: { id: 'queued-1' },
-      over: { id: 'active' },
+      over: { id: 'active' }
     })
 
     expect(defaultProps.onDragEnd).toHaveBeenCalledWith('queued-1', 'active')
@@ -327,18 +311,12 @@ describe('KanbanBoard', () => {
     )
     const todoTask = makeTask({ id: 'queued-1', title: 'Queued', status: 'queued' })
 
-    render(
-      <KanbanBoard
-        {...defaultProps}
-        todoTasks={[todoTask]}
-        activeTasks={activeTasks}
-      />
-    )
+    render(<KanbanBoard {...defaultProps} todoTasks={[todoTask]} activeTasks={activeTasks} />)
 
     act(() => {
       capturedOnDragEnd?.({
         active: { id: 'queued-1' },
-        over: { id: 'active' },
+        over: { id: 'active' }
       })
     })
 

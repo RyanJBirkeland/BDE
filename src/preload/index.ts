@@ -34,13 +34,12 @@ const api = {
     set: (key: string, value: string) => typedInvoke('settings:set', key, value),
     getJson: (key: string) => typedInvoke('settings:getJson', key),
     setJson: (key: string, value: unknown) => typedInvoke('settings:setJson', key, value),
-    delete: (key: string) => typedInvoke('settings:delete', key),
+    delete: (key: string) => typedInvoke('settings:delete', key)
   },
 
   // GitHub API proxy — all GitHub REST calls routed through main process
   github: {
-    fetch: (path: string, init?: GitHubFetchInit) =>
-      typedInvoke('github:fetch', path, init)
+    fetch: (path: string, init?: GitHubFetchInit) => typedInvoke('github:fetch', path, init)
   },
 
   // Git client
@@ -60,10 +59,8 @@ const api = {
 
   // Local agent process detection + spawning
   getAgentProcesses: () => typedInvoke('local:getAgentProcesses'),
-  spawnLocalAgent: (args: SpawnLocalAgentArgs) =>
-    typedInvoke('local:spawnClaudeAgent', args),
-  sendToAgent: (pid: number, message: string) =>
-    typedInvoke('local:sendToAgent', { pid, message }),
+  spawnLocalAgent: (args: SpawnLocalAgentArgs) => typedInvoke('local:spawnClaudeAgent', args),
+  sendToAgent: (pid: number, message: string) => typedInvoke('local:sendToAgent', { pid, message }),
   isAgentInteractive: (pid: number) => typedInvoke('local:isInteractive', pid),
   steerAgent: (agentId: string, message: string) =>
     typedInvoke('agent:steer', { agentId, message }),
@@ -74,26 +71,22 @@ const api = {
 
   // Agent history — persistent audit trail
   agents: {
-    list: (args: { limit?: number; status?: string }) =>
-      typedInvoke('agents:list', args),
-    readLog: (args: { id: string; fromByte?: number }) =>
-      typedInvoke('agents:readLog', args),
+    list: (args: { limit?: number; status?: string }) => typedInvoke('agents:list', args),
+    readLog: (args: { id: string; fromByte?: number }) => typedInvoke('agents:readLog', args),
     import: (args: { meta: Partial<AgentMeta>; content: string }) =>
-      typedInvoke('agents:import', args),
+      typedInvoke('agents:import', args)
   },
 
   // Cost analytics
   cost: {
     summary: () => typedInvoke('cost:summary'),
-    agentRuns: (limit?: number) =>
-      typedInvoke('cost:agentRuns', { limit: limit ?? 20 }),
+    agentRuns: (limit?: number) => typedInvoke('cost:agentRuns', { limit: limit ?? 20 }),
     getAgentHistory: (args?: { limit?: number; offset?: number }) =>
-      typedInvoke('cost:getAgentHistory', args),
+      typedInvoke('cost:getAgentHistory', args)
   },
 
   // PR status polling
-  pollPrStatuses: (prs: { taskId: string; prUrl: string }[]) =>
-    typedInvoke('pr:pollStatuses', prs),
+  pollPrStatuses: (prs: { taskId: string; prUrl: string }[]) => typedInvoke('pr:pollStatuses', prs),
 
   // Conflict file detection
   checkConflictFiles: (input: { owner: string; repo: string; prNumber: number }) =>
@@ -114,24 +107,17 @@ const api = {
       playground_enabled?: boolean
     }) => typedInvoke('sprint:create', task),
     claimTask: (taskId: string) => typedInvoke('sprint:claimTask', taskId),
-    update: (id: string, patch: Record<string, unknown>) =>
-      typedInvoke('sprint:update', id, patch),
+    update: (id: string, patch: Record<string, unknown>) => typedInvoke('sprint:update', id, patch),
     readLog: (agentId: string, fromByte?: number) =>
       typedInvoke('sprint:readLog', agentId, fromByte),
     readSpecFile: (filePath: string) => typedInvoke('sprint:readSpecFile', filePath),
-    generatePrompt: (args: {
-      taskId: string
-      title: string
-      repo: string
-      templateHint: string
-    }) => typedInvoke('sprint:generatePrompt', args),
+    generatePrompt: (args: { taskId: string; title: string; repo: string; templateHint: string }) =>
+      typedInvoke('sprint:generatePrompt', args),
     delete: (id: string) => typedInvoke('sprint:delete', id),
     healthCheck: () => typedInvoke('sprint:healthCheck'),
-    validateDependencies: (
-      taskId: string,
-      deps: Array<{ id: string; type: 'hard' | 'soft' }>,
-    ) => typedInvoke('sprint:validateDependencies', taskId, deps),
-    unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId),
+    validateDependencies: (taskId: string, deps: Array<{ id: string; type: 'hard' | 'soft' }>) =>
+      typedInvoke('sprint:validateDependencies', taskId, deps),
+    unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId)
   },
 
   // File attachments
@@ -153,14 +139,19 @@ const api = {
   onDirChanged: (callback: (dirPath: string) => void) => {
     const handler = (_event: unknown, dirPath: string): void => callback(dirPath)
     ipcRenderer.on('fs:dirChanged', handler)
-    return () => { ipcRenderer.removeListener('fs:dirChanged', handler) }
+    return () => {
+      ipcRenderer.removeListener('fs:dirChanged', handler)
+    }
   },
 
   // GitHub rate-limit warning push events
   onGitHubRateLimitWarning: (
     cb: (data: { remaining: number; limit: number; resetEpoch: number }) => void
   ): (() => void) => {
-    const listener = (_e: unknown, data: { remaining: number; limit: number; resetEpoch: number }): void => cb(data)
+    const listener = (
+      _e: unknown,
+      data: { remaining: number; limit: number; resetEpoch: number }
+    ): void => cb(data)
     ipcRenderer.on('github:rateLimitWarning', listener)
     return () => ipcRenderer.removeListener('github:rateLimitWarning', listener)
   },
@@ -192,12 +183,14 @@ const api = {
     onEvent: (
       callback: (payload: { agentId: string; event: AgentEvent }) => void
     ): (() => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { agentId: string; event: AgentEvent }): void =>
-        callback(payload)
+      const handler = (
+        _e: IpcRendererEvent,
+        payload: { agentId: string; event: AgentEvent }
+      ): void => callback(payload)
       ipcRenderer.on('agent:event', handler)
       return () => ipcRenderer.removeListener('agent:event', handler)
     },
-    getHistory: (agentId: string) => typedInvoke('agent:history', agentId),
+    getHistory: (agentId: string) => typedInvoke('agent:history', agentId)
   },
 
   // Auth status
@@ -206,23 +199,23 @@ const api = {
   // Agent Manager
   agentManager: {
     status: () => typedInvoke('agent-manager:status'),
-    kill: (taskId: string) => typedInvoke('agent-manager:kill', taskId),
+    kill: (taskId: string) => typedInvoke('agent-manager:kill', taskId)
   },
 
   // Template CRUD (Phase 2)
   templates: {
     list: () => typedInvoke('templates:list'),
-    save: (template: import('../shared/types').TaskTemplate) => typedInvoke('templates:save', template),
+    save: (template: import('../shared/types').TaskTemplate) =>
+      typedInvoke('templates:save', template),
     delete: (name: string) => typedInvoke('templates:delete', name),
-    reset: (name: string) => typedInvoke('templates:reset', name),
+    reset: (name: string) => typedInvoke('templates:reset', name)
   },
 
   // Terminal PTY
   terminal: {
     create: (opts: { cols: number; rows: number; shell?: string }) =>
       typedInvoke('terminal:create', opts),
-    write: (id: number, data: string): void =>
-      ipcRenderer.send('terminal:write', { id, data }),
+    write: (id: number, data: string): void => ipcRenderer.send('terminal:write', { id, data }),
     resize: (id: number, cols: number, rows: number) =>
       typedInvoke('terminal:resize', { id, cols, rows }),
     kill: (id: number) => typedInvoke('terminal:kill', id),
@@ -239,7 +232,7 @@ const api = {
   // Dashboard analytics
   dashboard: {
     completionsPerHour: () => typedInvoke('agent:completionsPerHour'),
-    recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit),
+    recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit)
   },
 
   // Task Workbench
@@ -252,8 +245,7 @@ const api = {
       typedInvoke('workbench:generateSpec', input),
     checkSpec: (input: { title: string; repo: string; spec: string }) =>
       typedInvoke('workbench:checkSpec', input),
-    checkOperational: (input: { repo: string }) =>
-      typedInvoke('workbench:checkOperational', input),
+    checkOperational: (input: { repo: string }) => typedInvoke('workbench:checkOperational', input),
     researchRepo: (input: { query: string; repo: string }) =>
       typedInvoke('workbench:researchRepo', input),
     chatStream: (input: {
@@ -261,13 +253,19 @@ const api = {
       formContext: { title: string; repo: string; spec: string }
     }) => typedInvoke('workbench:chatStream', input),
     cancelStream: (streamId: string) => typedInvoke('workbench:cancelStream', streamId),
-    onChatChunk: (cb: (data: {
-      streamId: string; chunk: string; done: boolean; fullText?: string; error?: string
-    }) => void): (() => void) => {
+    onChatChunk: (
+      cb: (data: {
+        streamId: string
+        chunk: string
+        done: boolean
+        fullText?: string
+        error?: string
+      }) => void
+    ): (() => void) => {
       const listener = (_e: unknown, data: any): void => cb(data)
       ipcRenderer.on('workbench:chatChunk', listener)
       return () => ipcRenderer.removeListener('workbench:chatChunk', listener)
-    },
+    }
   }
 }
 

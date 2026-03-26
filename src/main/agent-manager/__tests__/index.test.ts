@@ -11,50 +11,50 @@ vi.mock('../../data/sprint-queries', () => ({
   getTask: vi.fn(),
   getOrphanedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn().mockResolvedValue([]),
-  setSprintQueriesLogger: vi.fn(),
+  setSprintQueriesLogger: vi.fn()
 }))
 
 vi.mock('../dependency-index', () => ({
   createDependencyIndex: vi.fn(() => ({
     rebuild: vi.fn(),
     getDependents: vi.fn(() => new Set()),
-    areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] })),
-  })),
+    areDependenciesSatisfied: vi.fn(() => ({ satisfied: true, blockedBy: [] }))
+  }))
 }))
 
 vi.mock('../resolve-dependents', () => ({
-  resolveDependents: vi.fn().mockResolvedValue(undefined),
+  resolveDependents: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getGhRepo: vi.fn(),
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
+  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log'
 }))
 
 vi.mock('../sdk-adapter', () => ({
-  spawnAgent: vi.fn(),
+  spawnAgent: vi.fn()
 }))
 
 vi.mock('../worktree', () => ({
   setupWorktree: vi.fn(),
   cleanupWorktree: vi.fn(),
   pruneStaleWorktrees: vi.fn(),
-  branchNameForTask: vi.fn(),
+  branchNameForTask: vi.fn()
 }))
 
 vi.mock('../completion', () => ({
   resolveSuccess: vi.fn(),
-  resolveFailure: vi.fn(),
+  resolveFailure: vi.fn()
 }))
 
 vi.mock('../orphan-recovery', () => ({
-  recoverOrphans: vi.fn(),
+  recoverOrphans: vi.fn()
 }))
 
 vi.mock('../../agent-history', () => ({
   createAgentRecord: vi.fn().mockResolvedValue({}),
-  updateAgentMeta: vi.fn().mockResolvedValue(undefined),
+  updateAgentMeta: vi.fn().mockResolvedValue(undefined)
 }))
 
 // ---------------------------------------------------------------------------
@@ -65,7 +65,14 @@ import { createAgentManager } from '../index'
 import type { AgentManagerConfig, AgentHandle } from '../types'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { createAgentRecord } from '../../agent-history'
-import { getQueuedTasks, claimTask, updateTask, getTask, getOrphanedTasks, getTasksWithDependencies } from '../../data/sprint-queries'
+import {
+  getQueuedTasks,
+  claimTask,
+  updateTask,
+  getTask,
+  getOrphanedTasks,
+  getTasksWithDependencies
+} from '../../data/sprint-queries'
 import { getRepoPaths } from '../../paths'
 import { spawnAgent } from '../sdk-adapter'
 import { setupWorktree, pruneStaleWorktrees } from '../worktree'
@@ -81,7 +88,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: 'claude-sonnet-4-5'
 }
 
 function makeLogger() {
@@ -90,14 +97,28 @@ function makeLogger() {
 
 function makeTask(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'task-1', title: 'Test task', repo: 'myrepo', prompt: 'Do the thing',
-    spec: null, priority: 1, status: 'queued' as const, notes: null,
-    retry_count: 0, fast_fail_count: 0, agent_run_id: null,
-    pr_number: null, pr_status: null, pr_url: null, claimed_by: null,
-    started_at: null, completed_at: null, template_name: null,
+    id: 'task-1',
+    title: 'Test task',
+    repo: 'myrepo',
+    prompt: 'Do the thing',
+    spec: null,
+    priority: 1,
+    status: 'queued' as const,
+    notes: null,
+    retry_count: 0,
+    fast_fail_count: 0,
+    agent_run_id: null,
+    pr_number: null,
+    pr_status: null,
+    pr_url: null,
+    claimed_by: null,
+    started_at: null,
+    completed_at: null,
+    template_name: null,
     depends_on: null,
-    updated_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z',
-    ...overrides,
+    updated_at: '2026-01-01T00:00:00Z',
+    created_at: '2026-01-01T00:00:00Z',
+    ...overrides
   }
 }
 
@@ -108,7 +129,10 @@ function setupDefaultMocks(): void {
   vi.mocked(updateTask).mockResolvedValue(null)
   vi.mocked(recoverOrphans).mockResolvedValue(0)
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
-  vi.mocked(setupWorktree).mockResolvedValue({ worktreePath: '/tmp/wt/myrepo/task-1', branch: 'agent/test-task' })
+  vi.mocked(setupWorktree).mockResolvedValue({
+    worktreePath: '/tmp/wt/myrepo/task-1',
+    branch: 'agent/test-task'
+  })
 }
 
 function makeMockRepo(): ISprintTaskRepository {
@@ -119,7 +143,7 @@ function makeMockRepo(): ISprintTaskRepository {
     getTasksWithDependencies: () => (getTasksWithDependencies as any)(),
     getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
     getActiveTaskCount: vi.fn().mockResolvedValue(0),
-    claimTask: (...args: [string, string]) => (claimTask as any)(...args),
+    claimTask: (...args: [string, string]) => (claimTask as any)(...args)
   }
 }
 
@@ -128,21 +152,41 @@ const mockRepo = makeMockRepo()
 function makeMockHandle(messages: unknown[] = []) {
   const abortFn = vi.fn()
   const steerFn = vi.fn().mockResolvedValue({ delivered: true })
-  async function* gen(): AsyncIterable<unknown> { for (const m of messages) yield m }
+  async function* gen(): AsyncIterable<unknown> {
+    for (const m of messages) yield m
+  }
   return {
-    handle: { messages: gen(), sessionId: 'mock-session', abort: abortFn, steer: steerFn } as AgentHandle,
-    abortFn, steerFn,
+    handle: {
+      messages: gen(),
+      sessionId: 'mock-session',
+      abort: abortFn,
+      steer: steerFn
+    } as AgentHandle,
+    abortFn,
+    steerFn
   }
 }
 
 function makeBlockingHandle() {
   let resolveMessages: (() => void) | undefined
-  const p = new Promise<void>((r) => { resolveMessages = r })
-  const abortFn = vi.fn(() => { resolveMessages?.() })
-  async function* gen(): AsyncIterable<unknown> { await p }
+  const p = new Promise<void>((r) => {
+    resolveMessages = r
+  })
+  const abortFn = vi.fn(() => {
+    resolveMessages?.()
+  })
+  async function* gen(): AsyncIterable<unknown> {
+    await p
+  }
   return {
-    handle: { messages: gen(), sessionId: 'blocking', abort: abortFn, steer: vi.fn().mockResolvedValue({ delivered: true }) } as AgentHandle,
-    abortFn, resolve: () => resolveMessages?.(),
+    handle: {
+      messages: gen(),
+      sessionId: 'blocking',
+      abort: abortFn,
+      steer: vi.fn().mockResolvedValue({ delivered: true })
+    } as AgentHandle,
+    abortFn,
+    resolve: () => resolveMessages?.()
   }
 }
 
@@ -236,7 +280,11 @@ describe('createAgentManager', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
 
       expect(vi.mocked(spawnAgent)).toHaveBeenCalledWith(
-        expect.objectContaining({ prompt: expect.stringContaining('Do the thing'), cwd: '/tmp/wt/myrepo/task-1', model: 'claude-sonnet-4-5' })
+        expect.objectContaining({
+          prompt: expect.stringContaining('Do the thing'),
+          cwd: '/tmp/wt/myrepo/task-1',
+          model: 'claude-sonnet-4-5'
+        })
       )
       expect(vi.mocked(claimTask)).toHaveBeenCalledWith('task-1', 'bde-embedded')
 
@@ -262,7 +310,7 @@ describe('createAgentManager', () => {
 
       expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
         'task-1',
-        expect.objectContaining({ agent_run_id: expect.any(String) }),
+        expect.objectContaining({ agent_run_id: expect.any(String) })
       )
 
       mgr.stop(0).catch(() => {})
@@ -293,7 +341,7 @@ describe('createAgentManager', () => {
           repo: expect.any(String),
           status: 'running',
           sprintTaskId: 'task-1',
-          source: 'bde',
+          source: 'bde'
         })
       )
 
@@ -316,9 +364,12 @@ describe('createAgentManager', () => {
       await vi.advanceTimersByTimeAsync(6_000)
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
 
-      expect(vi.mocked(updateTask)).toHaveBeenCalledWith('task-1', expect.objectContaining({
-        status: 'error',
-      }))
+      expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          status: 'error'
+        })
+      )
 
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
@@ -402,9 +453,7 @@ describe('createAgentManager', () => {
       await vi.advanceTimersByTimeAsync(6_000)
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('No repo path'),
-      )
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('No repo path'))
 
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
@@ -429,7 +478,7 @@ describe('createAgentManager', () => {
         status: 'error',
         completed_at: expect.any(String),
         notes: expect.stringContaining('Worktree setup failed:'),
-        claimed_by: null,
+        claimed_by: null
       })
 
       mgr.stop(0).catch(() => {})
@@ -605,7 +654,11 @@ describe('createAgentManager', () => {
     it('aborts agent and marks task error when maxRuntimeMs exceeded', async () => {
       vi.useFakeTimers()
 
-      const config: AgentManagerConfig = { ...baseConfig, maxRuntimeMs: 100, pollIntervalMs: 999_999 }
+      const config: AgentManagerConfig = {
+        ...baseConfig,
+        maxRuntimeMs: 100,
+        pollIntervalMs: 999_999
+      }
       const task = makeTask()
       const { handle, abortFn } = makeBlockingHandle()
 
@@ -630,11 +683,11 @@ describe('createAgentManager', () => {
 
       expect(abortFn).toHaveBeenCalled()
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Watchdog killing task task-1: max-runtime'),
+        expect.stringContaining('Watchdog killing task task-1: max-runtime')
       )
       expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
         'task-1',
-        expect.objectContaining({ status: 'error', notes: 'Max runtime exceeded' }),
+        expect.objectContaining({ status: 'error', notes: 'Max runtime exceeded' })
       )
 
       mgr.stop(0).catch(() => {})
@@ -650,7 +703,11 @@ describe('createAgentManager', () => {
     it('kills idle agent after timeout', async () => {
       vi.useFakeTimers()
 
-      const config: AgentManagerConfig = { ...baseConfig, idleTimeoutMs: 50, pollIntervalMs: 999_999 }
+      const config: AgentManagerConfig = {
+        ...baseConfig,
+        idleTimeoutMs: 50,
+        pollIntervalMs: 999_999
+      }
       const task = makeTask()
       const { handle, abortFn } = makeBlockingHandle()
 
@@ -674,7 +731,7 @@ describe('createAgentManager', () => {
 
       expect(abortFn).toHaveBeenCalled()
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Watchdog killing task task-1: idle'),
+        expect.stringContaining('Watchdog killing task task-1: idle')
       )
 
       // Cleanup
@@ -684,7 +741,11 @@ describe('createAgentManager', () => {
 
     it('logs warning when updateTask rejects after max-runtime kill', async () => {
       vi.useFakeTimers()
-      const config: AgentManagerConfig = { ...baseConfig, maxRuntimeMs: 100, pollIntervalMs: 999_999 }
+      const config: AgentManagerConfig = {
+        ...baseConfig,
+        maxRuntimeMs: 100,
+        pollIntervalMs: 999_999
+      }
       const task = makeTask()
       const { handle } = makeBlockingHandle()
       vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
@@ -700,7 +761,9 @@ describe('createAgentManager', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
       await vi.advanceTimersByTimeAsync(10_100)
       for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-1 after max-runtime kill'))
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to update task task-1 after max-runtime kill')
+      )
       vi.mocked(updateTask).mockResolvedValue(null) // reset
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
@@ -708,7 +771,11 @@ describe('createAgentManager', () => {
 
     it('logs warning when updateTask rejects after idle kill', async () => {
       vi.useFakeTimers()
-      const config: AgentManagerConfig = { ...baseConfig, idleTimeoutMs: 50, pollIntervalMs: 999_999 }
+      const config: AgentManagerConfig = {
+        ...baseConfig,
+        idleTimeoutMs: 50,
+        pollIntervalMs: 999_999
+      }
       const task = makeTask()
       const { handle } = makeBlockingHandle()
       vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
@@ -723,7 +790,9 @@ describe('createAgentManager', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
       await vi.advanceTimersByTimeAsync(10_100)
       for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task task-1 after idle kill'))
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to update task task-1 after idle kill')
+      )
       vi.mocked(updateTask).mockResolvedValue(null)
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
@@ -796,9 +865,7 @@ describe('createAgentManager', () => {
   describe('killAgent', () => {
     it('throws when no active agent', () => {
       const mgr = createAgentManager(baseConfig, mockRepo, makeLogger())
-      expect(() => mgr.killAgent('nonexistent')).toThrow(
-        'No active agent for task nonexistent',
-      )
+      expect(() => mgr.killAgent('nonexistent')).toThrow('No active agent for task nonexistent')
     })
 
     it('calls handle.abort()', async () => {
@@ -832,10 +899,22 @@ describe('createAgentManager', () => {
       setupDefaultMocks()
       const task = makeTask()
       let resolveMessages: (() => void) | undefined
-      const p = new Promise<void>((r) => { resolveMessages = r })
-      const abortFn = vi.fn(() => { resolveMessages?.(); throw new Error('Abort failed') })
-      async function* gen(): AsyncIterable<unknown> { await p }
-      const handle = { messages: gen(), sessionId: 's', abort: abortFn, steer: vi.fn().mockResolvedValue(undefined) } as AgentHandle
+      const p = new Promise<void>((r) => {
+        resolveMessages = r
+      })
+      const abortFn = vi.fn(() => {
+        resolveMessages?.()
+        throw new Error('Abort failed')
+      })
+      async function* gen(): AsyncIterable<unknown> {
+        await p
+      }
+      const handle = {
+        messages: gen(),
+        sessionId: 's',
+        abort: abortFn,
+        steer: vi.fn().mockResolvedValue(undefined)
+      } as AgentHandle
       vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
       vi.mocked(claimTask).mockResolvedValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
@@ -850,7 +929,9 @@ describe('createAgentManager', () => {
       for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
       await stopPromise.catch(() => {})
       expect(abortFn).toHaveBeenCalled()
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to abort agent task-1 during shutdown'))
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to abort agent task-1 during shutdown')
+      )
       vi.useRealTimers()
     })
 
@@ -859,8 +940,13 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       let resolveDrain: (() => void) | undefined
-      const drainDelay = new Promise<void>((r) => { resolveDrain = r })
-      vi.mocked(getQueuedTasks).mockImplementation(async () => { await drainDelay; return [] })
+      const drainDelay = new Promise<void>((r) => {
+        resolveDrain = r
+      })
+      vi.mocked(getQueuedTasks).mockImplementation(async () => {
+        await drainDelay
+        return []
+      })
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -884,7 +970,14 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       await mgr.onTaskTerminal('task-1', 'done')
-      expect(vi.mocked(resolveDependents)).toHaveBeenCalledWith('task-1', 'done', expect.anything(), expect.anything(), expect.anything(), logger)
+      expect(vi.mocked(resolveDependents)).toHaveBeenCalledWith(
+        'task-1',
+        'done',
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        logger
+      )
     })
 
     it('logs error when resolveDependents throws', async () => {
@@ -893,7 +986,9 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       await mgr.onTaskTerminal('task-1', 'done')
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('resolveDependents failed for task-1'))
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('resolveDependents failed for task-1')
+      )
     })
   })
 
@@ -905,7 +1000,9 @@ describe('createAgentManager', () => {
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       await flush(20)
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Initial orphan recovery error'))
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Initial orphan recovery error')
+      )
       await mgr.stop(100)
       await flush()
     })
@@ -917,7 +1014,9 @@ describe('createAgentManager', () => {
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       await flush(20)
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Initial worktree prune error'))
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Initial worktree prune error')
+      )
       await mgr.stop(100)
       await flush()
     })
@@ -929,7 +1028,9 @@ describe('createAgentManager', () => {
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       await flush(20)
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to build dependency index'))
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to build dependency index')
+      )
       await mgr.stop(100)
       await flush()
     })
@@ -940,7 +1041,9 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(recoverOrphans).mockResolvedValueOnce(0).mockRejectedValueOnce(new Error('orphan periodic error'))
+      vi.mocked(recoverOrphans)
+        .mockResolvedValueOnce(0)
+        .mockRejectedValueOnce(new Error('orphan periodic error'))
       const mgr = createAgentManager({ ...baseConfig, pollIntervalMs: 999_999 }, mockRepo, logger)
       mgr.start()
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -955,7 +1058,9 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(pruneStaleWorktrees).mockResolvedValueOnce(0).mockRejectedValueOnce(new Error('prune periodic error'))
+      vi.mocked(pruneStaleWorktrees)
+        .mockResolvedValueOnce(0)
+        .mockRejectedValueOnce(new Error('prune periodic error'))
       const mgr = createAgentManager({ ...baseConfig, pollIntervalMs: 999_999 }, mockRepo, logger)
       mgr.start()
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -990,7 +1095,7 @@ describe('createAgentManager', () => {
       // Return tasks with data so the .map() callback fires
       vi.mocked(getTasksWithDependencies).mockResolvedValue([
         { id: 'dep-1', status: 'done', depends_on: null } as any,
-        { id: 'dep-2', status: 'queued', depends_on: null } as any,
+        { id: 'dep-2', status: 'queued', depends_on: null } as any
       ])
       vi.mocked(getQueuedTasks).mockResolvedValueOnce([])
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -1010,13 +1115,17 @@ describe('createAgentManager', () => {
       // Return tasks for dep index
       vi.mocked(getTasksWithDependencies).mockResolvedValue([
         { id: 'blocker-1', status: 'active', depends_on: null } as any,
-        { id: 'task-dep', status: 'queued', depends_on: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }]) } as any,
+        {
+          id: 'task-dep',
+          status: 'queued',
+          depends_on: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }])
+        } as any
       ])
       // Return a task with depends_on
       const taskWithDeps = makeTask({
         id: 'task-dep',
         depends_on: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }]),
-        dependsOn: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }]),
+        dependsOn: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }])
       })
       vi.mocked(getQueuedTasks).mockResolvedValueOnce([taskWithDeps])
 
@@ -1029,7 +1138,7 @@ describe('createAgentManager', () => {
           // Invoke the callback to cover fn 16 (line 220)
           if (typeof getStatus === 'function') getStatus('blocker-1')
           return { satisfied: false, blockedBy: ['blocker-1'] }
-        }),
+        })
       } as any)
 
       const mgr = createAgentManager(baseConfig, mockRepo, logger)

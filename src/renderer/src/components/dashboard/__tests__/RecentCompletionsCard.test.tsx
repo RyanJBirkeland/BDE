@@ -6,7 +6,7 @@ let mockTasks: SprintTask[] = []
 
 vi.mock('../../../stores/sprintTasks', () => ({
   useSprintTasks: (selector: (s: { tasks: SprintTask[] }) => unknown) =>
-    selector({ tasks: mockTasks }),
+    selector({ tasks: mockTasks })
 }))
 
 import { RecentCompletionsCard } from '../RecentCompletionsCard'
@@ -34,7 +34,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: '2025-01-01T00:00:00Z',
     created_at: '2025-01-01T00:00:00Z',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -66,44 +66,65 @@ describe('RecentCompletionsCard', () => {
   })
 
   it('shows completed tasks', () => {
-    mockTasks = [makeTask({ title: 'Finished task', status: 'done', completed_at: '2025-06-15T11:30:00Z' })]
+    mockTasks = [
+      makeTask({ title: 'Finished task', status: 'done', completed_at: '2025-06-15T11:30:00Z' })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByText('Finished task')).toBeInTheDocument()
   })
 
   it('formats timestamp as "just now" for < 1 minute', () => {
-    mockTasks = [makeTask({ title: 'Recent', status: 'done', completed_at: '2025-06-15T11:59:50Z' })]
+    mockTasks = [
+      makeTask({ title: 'Recent', status: 'done', completed_at: '2025-06-15T11:59:50Z' })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByText('just now')).toBeInTheDocument()
   })
 
   it('formats timestamp as minutes ago', () => {
-    mockTasks = [makeTask({ title: 'A few mins', status: 'done', completed_at: '2025-06-15T11:45:00Z' })]
+    mockTasks = [
+      makeTask({ title: 'A few mins', status: 'done', completed_at: '2025-06-15T11:45:00Z' })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByText('15m ago')).toBeInTheDocument()
   })
 
   it('formats timestamp as hours ago', () => {
-    mockTasks = [makeTask({ title: 'Hours ago', status: 'done', completed_at: '2025-06-15T09:00:00Z' })]
+    mockTasks = [
+      makeTask({ title: 'Hours ago', status: 'done', completed_at: '2025-06-15T09:00:00Z' })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByText('3h ago')).toBeInTheDocument()
   })
 
   it('formats timestamp as days ago', () => {
-    mockTasks = [makeTask({ title: 'Days ago', status: 'done', completed_at: '2025-06-13T12:00:00Z' })]
+    mockTasks = [
+      makeTask({ title: 'Days ago', status: 'done', completed_at: '2025-06-13T12:00:00Z' })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByText('2d ago')).toBeInTheDocument()
   })
 
   it('uses updated_at as fallback when completed_at is null', () => {
-    mockTasks = [makeTask({ title: 'Fallback', status: 'done', completed_at: null, updated_at: '2025-06-15T11:00:00Z' })]
+    mockTasks = [
+      makeTask({
+        title: 'Fallback',
+        status: 'done',
+        completed_at: null,
+        updated_at: '2025-06-15T11:00:00Z'
+      })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByText('1h ago')).toBeInTheDocument()
   })
 
   it('limits to 5 most recent completions', () => {
     mockTasks = Array.from({ length: 8 }, (_, i) =>
-      makeTask({ title: `Task ${i}`, status: 'done', completed_at: `2025-06-15T${String(11 - i).padStart(2, '0')}:00:00Z` })
+      makeTask({
+        title: `Task ${i}`,
+        status: 'done',
+        completed_at: `2025-06-15T${String(11 - i).padStart(2, '0')}:00:00Z`
+      })
     )
     render(<RecentCompletionsCard />)
     expect(screen.getByText('Task 0')).toBeInTheDocument()
@@ -114,7 +135,7 @@ describe('RecentCompletionsCard', () => {
   it('sorts by completed_at descending (most recent first)', () => {
     mockTasks = [
       makeTask({ title: 'Older', status: 'done', completed_at: '2025-06-15T08:00:00Z' }),
-      makeTask({ title: 'Newer', status: 'done', completed_at: '2025-06-15T11:00:00Z' }),
+      makeTask({ title: 'Newer', status: 'done', completed_at: '2025-06-15T11:00:00Z' })
     ]
     render(<RecentCompletionsCard />)
     const items = screen.getAllByRole('listitem')
@@ -125,7 +146,7 @@ describe('RecentCompletionsCard', () => {
   it('filters out non-done tasks', () => {
     mockTasks = [
       makeTask({ title: 'Active task', status: 'active' }),
-      makeTask({ title: 'Done task', status: 'done', completed_at: '2025-06-15T11:00:00Z' }),
+      makeTask({ title: 'Done task', status: 'done', completed_at: '2025-06-15T11:00:00Z' })
     ]
     render(<RecentCompletionsCard />)
     expect(screen.queryByText('Active task')).not.toBeInTheDocument()
@@ -144,13 +165,22 @@ describe('RecentCompletionsCard', () => {
   })
 
   it('renders title attribute for tooltip on task titles', () => {
-    mockTasks = [makeTask({ title: 'Tooltip task', status: 'done', completed_at: '2025-06-15T11:00:00Z' })]
+    mockTasks = [
+      makeTask({ title: 'Tooltip task', status: 'done', completed_at: '2025-06-15T11:00:00Z' })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByTitle('Tooltip task')).toBeInTheDocument()
   })
 
   it('handles task with null completed_at falling back to updated_at', () => {
-    mockTasks = [makeTask({ title: 'Null completed', status: 'done', completed_at: null, updated_at: '2025-06-15T11:30:00Z' })]
+    mockTasks = [
+      makeTask({
+        title: 'Null completed',
+        status: 'done',
+        completed_at: null,
+        updated_at: '2025-06-15T11:30:00Z'
+      })
+    ]
     render(<RecentCompletionsCard />)
     expect(screen.getByText('Null completed')).toBeInTheDocument()
     expect(screen.getByText('30m ago')).toBeInTheDocument()

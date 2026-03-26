@@ -21,11 +21,18 @@ vi.mock('../settings', () => ({
       return JSON.stringify([{ url: mockRunnerUrl, apiKey: mockApiKey }])
     }
     return null
-  }),
+  })
 }))
 
 // Import the module under test AFTER the mock is established
-import { listAgents, steerAgent, killAgent, getAgent, getAgentLogUrl, getEventsUrl } from '../runner-client'
+import {
+  listAgents,
+  steerAgent,
+  killAgent,
+  getAgent,
+  getAgentLogUrl,
+  getEventsUrl
+} from '../runner-client'
 
 // ---------------------------------------------------------------------------
 // In-process mock HTTP server
@@ -68,7 +75,7 @@ const mockServer = createServer(async (req: IncomingMessage, res: ServerResponse
     method: req.method ?? 'GET',
     url: req.url ?? '/',
     headers: req.headers as Record<string, string | string[] | undefined>,
-    body,
+    body
   })
 
   res.writeHead(mockStatusCode, { 'Content-Type': 'application/json' })
@@ -108,7 +115,10 @@ function lastRequest(): CapturedRequest {
 describe('runner-client', () => {
   describe('listAgents()', () => {
     it('GETs /agents and returns the parsed response', async () => {
-      const agents = [{ id: 'a1', status: 'running' }, { id: 'a2', status: 'idle' }]
+      const agents = [
+        { id: 'a1', status: 'running' },
+        { id: 'a2', status: 'idle' }
+      ]
       resetMock(200, agents)
 
       const result = await listAgents()

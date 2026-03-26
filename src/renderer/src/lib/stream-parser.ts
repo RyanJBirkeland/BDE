@@ -47,9 +47,18 @@ export interface ChatItemError {
   text: string
 }
 
-export type ChatItem = ChatItemText | ChatItemToolUse | ChatItemToolResult | ChatItemResult | ChatItemPlain | ChatItemError
+export type ChatItem =
+  | ChatItemText
+  | ChatItemToolUse
+  | ChatItemToolResult
+  | ChatItemResult
+  | ChatItemPlain
+  | ChatItemError
 
-export function parseStreamJson(raw: string, startLine = 0): { items: ChatItem[]; isStreaming: boolean; lineCount: number } {
+export function parseStreamJson(
+  raw: string,
+  startLine = 0
+): { items: ChatItem[]; isStreaming: boolean; lineCount: number } {
   const allLines = stripAnsi(raw).split('\n')
   const lines = allLines.slice(startLine)
   const items: ChatItem[] = []
@@ -88,7 +97,10 @@ export function parseStreamJson(raw: string, startLine = 0): { items: ChatItem[]
           // Accumulate partial JSON into the last tool_use block
           for (let i = items.length - 1; i >= 0; i--) {
             if (items[i].kind === 'tool_use') {
-              items[i] = { ...items[i], input: (items[i] as ChatItemToolUse).input + delta.partial_json } as ChatItemToolUse
+              items[i] = {
+                ...items[i],
+                input: (items[i] as ChatItemToolUse).input + delta.partial_json
+              } as ChatItemToolUse
               break
             }
           }
@@ -159,11 +171,16 @@ export function parseStreamJson(raw: string, startLine = 0): { items: ChatItem[]
         // Complete assistant turn from --verbose output.
         // Authoritative — discard streaming delta text for this turn to avoid duplication.
         currentText = ''
-        while (items.length > 0 && (items[items.length - 1].kind === 'text' || items[items.length - 1].kind === 'tool_use')) {
+        while (
+          items.length > 0 &&
+          (items[items.length - 1].kind === 'text' || items[items.length - 1].kind === 'tool_use')
+        ) {
           items.pop()
         }
         const msg = parsed.message as Record<string, unknown> | undefined
-        const contentBlocks = Array.isArray(msg?.content) ? msg.content as Record<string, unknown>[] : []
+        const contentBlocks = Array.isArray(msg?.content)
+          ? (msg.content as Record<string, unknown>[])
+          : []
         for (const block of contentBlocks) {
           if (block.type === 'text' && typeof block.text === 'string' && block.text.trim()) {
             items.push({ kind: 'text', text: block.text })
@@ -173,7 +190,8 @@ export function parseStreamJson(raw: string, startLine = 0): { items: ChatItem[]
               kind: 'tool_use',
               id: String(block.id ?? ''),
               name: String(block.name ?? 'tool'),
-              input: inp && typeof inp === 'object' ? JSON.stringify(inp, null, 2) : String(inp ?? '')
+              input:
+                inp && typeof inp === 'object' ? JSON.stringify(inp, null, 2) : String(inp ?? '')
             })
           }
         }
@@ -193,9 +211,12 @@ export function parseStreamJson(raw: string, startLine = 0): { items: ChatItem[]
             currentText = ''
           }
           const inputRaw = block.input
-          const inputStr = inputRaw && typeof inputRaw === 'object'
-            ? JSON.stringify(inputRaw, null, 2)
-            : typeof inputRaw === 'string' ? inputRaw : ''
+          const inputStr =
+            inputRaw && typeof inputRaw === 'object'
+              ? JSON.stringify(inputRaw, null, 2)
+              : typeof inputRaw === 'string'
+                ? inputRaw
+                : ''
           // Only push if input is non-empty (it often fills in via input_json_delta)
           items.push({
             kind: 'tool_use',

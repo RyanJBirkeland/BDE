@@ -20,7 +20,11 @@ export interface EditorPaneProps {
 }
 
 export function EditorPane({
-  filePath, content, language, onContentChange, onSave,
+  filePath,
+  content,
+  language,
+  onContentChange,
+  onSave
 }: EditorPaneProps): React.JSX.Element {
   const theme = useThemeStore((s) => s.theme)
   const monacoRef = useRef<typeof Monaco | null>(null)
@@ -50,7 +54,9 @@ export function EditorPane({
   function handleMount(editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco): void {
     monacoRef.current = monaco
     monaco.editor.setTheme(theme === 'light' ? 'bde-light' : 'bde-dark')
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => { onSave?.() })
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      onSave?.()
+    })
   }
 
   function handleChange(value: string | undefined): void {
@@ -59,12 +65,24 @@ export function EditorPane({
 
   return (
     <MonacoEditor
-      height="100%" width="100%" language={language} value={content}
+      height="100%"
+      width="100%"
+      language={language}
+      value={content}
       theme={theme === 'light' ? 'bde-light' : 'bde-dark'}
-      beforeMount={handleBeforeMount} onMount={handleMount} onChange={handleChange}
-      options={{ fontSize: 13, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-        minimap: { enabled: true }, automaticLayout: true, tabSize: 2,
-        bracketPairColorization: { enabled: true }, scrollBeyondLastLine: false, wordWrap: 'off' }}
+      beforeMount={handleBeforeMount}
+      onMount={handleMount}
+      onChange={handleChange}
+      options={{
+        fontSize: 13,
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+        minimap: { enabled: true },
+        automaticLayout: true,
+        tabSize: 2,
+        bracketPairColorization: { enabled: true },
+        scrollBeyondLastLine: false,
+        wordWrap: 'off'
+      }}
     />
   )
 }

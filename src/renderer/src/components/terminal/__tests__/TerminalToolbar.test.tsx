@@ -7,7 +7,7 @@ const defaultProps = {
   isAgentTab: false,
   splitEnabled: false,
   onClear: vi.fn(),
-  onToggleSplit: vi.fn(),
+  onToggleSplit: vi.fn()
 }
 
 describe('TerminalToolbar', () => {

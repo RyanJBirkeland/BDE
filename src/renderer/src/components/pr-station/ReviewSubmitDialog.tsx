@@ -39,8 +39,8 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
           side: c.side,
           ...(c.startLine ? { start_line: c.startLine } : {}),
           ...(c.startSide ? { start_side: c.startSide } : {}),
-          body: c.body,
-        })),
+          body: c.body
+        }))
       }
       await createReview(repo.owner, repo.label, pr.number, review)
       clearPending(prKey)
@@ -57,7 +57,11 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
   const eventOptions: { value: ReviewEvent; label: string; description: string }[] = [
     { value: 'COMMENT', label: 'Comment', description: 'Submit general feedback without approval' },
     { value: 'APPROVE', label: 'Approve', description: 'Approve this pull request' },
-    { value: 'REQUEST_CHANGES', label: 'Request changes', description: 'Submit feedback that must be addressed' },
+    {
+      value: 'REQUEST_CHANGES',
+      label: 'Request changes',
+      description: 'Submit feedback that must be addressed'
+    }
   ]
 
   return (
@@ -93,7 +97,8 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
 
         {pendingComments.length > 0 && (
           <div className="review-dialog__pending-count">
-            {pendingComments.length} pending comment{pendingComments.length > 1 ? 's' : ''} will be included
+            {pendingComments.length} pending comment{pendingComments.length > 1 ? 's' : ''} will be
+            included
           </div>
         )}
 

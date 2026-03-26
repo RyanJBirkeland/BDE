@@ -61,9 +61,7 @@ describe('useBackoffInterval', () => {
   })
 
   it('resets interval after recovery from error', async () => {
-    const cb = vi.fn()
-      .mockRejectedValueOnce(new Error('fail'))
-      .mockResolvedValue(undefined)
+    const cb = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue(undefined)
 
     renderHook(() => useBackoffInterval(cb, BASE_MS))
 

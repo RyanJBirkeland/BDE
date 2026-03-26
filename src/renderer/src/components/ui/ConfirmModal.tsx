@@ -28,7 +28,7 @@ export function ConfirmModal({
   cancelLabel = 'Cancel',
   variant = 'default',
   onConfirm,
-  onCancel,
+  onCancel
 }: ConfirmModalProps): React.JSX.Element {
   const reduced = useReducedMotion()
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -105,14 +105,24 @@ export function ConfirmModal({
  * Returns a `confirm` function and props to spread onto <ConfirmModal />.
  */
 export function useConfirm(): {
-  confirm: (opts: { message: string; title?: string; confirmLabel?: string; variant?: 'danger' | 'default' }) => Promise<boolean>
+  confirm: (opts: {
+    message: string
+    title?: string
+    confirmLabel?: string
+    variant?: 'danger' | 'default'
+  }) => Promise<boolean>
   confirmProps: ConfirmModalProps
 } {
   const resolveRef = useRef<((value: boolean) => void) | null>(null)
   const [state, setState] = useConfirmState()
 
   const confirm = useCallback(
-    (opts: { message: string; title?: string; confirmLabel?: string; variant?: 'danger' | 'default' }) => {
+    (opts: {
+      message: string
+      title?: string
+      confirmLabel?: string
+      variant?: 'danger' | 'default'
+    }) => {
       return new Promise<boolean>((resolve) => {
         resolveRef.current = resolve
         setState({
@@ -120,7 +130,7 @@ export function useConfirm(): {
           message: opts.message,
           title: opts.title,
           confirmLabel: opts.confirmLabel,
-          variant: opts.variant,
+          variant: opts.variant
         })
       })
     },
@@ -148,8 +158,8 @@ export function useConfirm(): {
       confirmLabel: state.confirmLabel,
       variant: state.variant,
       onConfirm: handleConfirm,
-      onCancel: handleCancel,
-    },
+      onCancel: handleCancel
+    }
   }
 }
 

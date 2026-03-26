@@ -15,8 +15,14 @@ describe('useRepoOptions', () => {
 
   it('loads repos from settings via IPC and maps to RepoOption shape', async () => {
     const configs = [
-      { name: 'MyRepo', localPath: '/path/to/repo', githubOwner: 'myorg', githubRepo: 'myrepo', color: '#ff0000' },
-      { name: 'OtherRepo', localPath: '/path/to/other' },
+      {
+        name: 'MyRepo',
+        localPath: '/path/to/repo',
+        githubOwner: 'myorg',
+        githubRepo: 'myrepo',
+        color: '#ff0000'
+      },
+      { name: 'OtherRepo', localPath: '/path/to/other' }
     ]
     vi.mocked(window.api.settings.getJson).mockResolvedValue(configs)
 
@@ -25,7 +31,7 @@ describe('useRepoOptions', () => {
     await waitFor(() => {
       expect(result.current).toEqual([
         { label: 'MyRepo', owner: 'myorg', color: '#ff0000' },
-        { label: 'OtherRepo', owner: '', color: 'var(--bde-text-dim)' },
+        { label: 'OtherRepo', owner: '', color: 'var(--bde-text-dim)' }
       ])
     })
   })

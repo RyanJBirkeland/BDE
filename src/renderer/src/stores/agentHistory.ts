@@ -50,9 +50,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
         logTrimmedLines: 0
       })
       if (id) {
-        poller.startLogPolling((fromByte) =>
-          window.api.agents.readLog({ id, fromByte })
-        )
+        poller.startLogPolling((fromByte) => window.api.agents.readLog({ id, fromByte }))
       }
     },
 
@@ -67,9 +65,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
     },
 
     startLogPolling: (id): (() => void) => {
-      return poller.startLogPolling((fromByte) =>
-        window.api.agents.readLog({ id, fromByte })
-      )
+      return poller.startLogPolling((fromByte) => window.api.agents.readLog({ id, fromByte }))
     },
 
     stopLogPolling: poller.stopLogPolling,

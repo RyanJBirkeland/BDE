@@ -29,7 +29,7 @@ test.describe('Terminal I/O', () => {
 
     // Assert tab count increased by 1
     await expect(tabBar.locator('.terminal-tab')).toHaveCount(initialCount + 1, {
-      timeout: 3_000,
+      timeout: 3_000
     })
   })
 
@@ -63,7 +63,7 @@ test.describe('Terminal I/O', () => {
         }
         return false
       },
-      { timeout: 5_000 },
+      { timeout: 5_000 }
     )
     expect(output).toBeTruthy()
   })

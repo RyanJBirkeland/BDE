@@ -4,13 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../../env-utils', () => ({
   buildAgentEnv: vi.fn(() => ({ PATH: '/usr/local/bin' })),
-  getOAuthToken: vi.fn(() => 'mock-oauth-token'),
+  getOAuthToken: vi.fn(() => 'mock-oauth-token')
 }))
 
 // We also need child_process mocked so the CLI fallback (if it were hit) wouldn't crash.
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(),
-  execFile: vi.fn(),
+  execFile: vi.fn()
 }))
 
 // The SDK mock: query() returns an async iterable with an interrupt() method.
@@ -19,7 +19,7 @@ const mockInterrupt = vi.fn().mockResolvedValue(undefined)
 const mockQuery = vi.fn()
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
-  query: (...args: unknown[]) => mockQuery(...args),
+  query: (...args: unknown[]) => mockQuery(...args)
 }))
 
 import { spawnAgent } from '../sdk-adapter'
@@ -44,10 +44,10 @@ function setupMockQuery() {
             }
             consumed = true
             return { done: true, value: undefined }
-          },
+          }
         }
       },
-      interrupt: mockInterrupt,
+      interrupt: mockInterrupt
     }
   })
 }
@@ -65,7 +65,7 @@ describe('spawnAgent (SDK path)', () => {
     const handle = await spawnAgent({
       prompt: 'Hello',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     expect(handle).toHaveProperty('messages')
@@ -78,20 +78,18 @@ describe('spawnAgent (SDK path)', () => {
   it('extracts session_id from messages via wrapMessages()', async () => {
     mockMessages = [
       { type: 'system', session_id: 'real-session-id' },
-      { type: 'assistant', text: 'hello' },
+      { type: 'assistant', text: 'hello' }
     ]
 
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     // Before consuming, sessionId is a fallback UUID
     const initialId = handle.sessionId
-    expect(initialId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-    )
+    expect(initialId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
 
     // Consume messages
     const collected: unknown[] = []
@@ -109,7 +107,7 @@ describe('spawnAgent (SDK path)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     // Consume all messages
@@ -119,7 +117,7 @@ describe('spawnAgent (SDK path)', () => {
 
     // sessionId should still be the fallback UUID
     expect(handle.sessionId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
     )
   })
 
@@ -131,15 +129,13 @@ describe('spawnAgent (SDK path)', () => {
       prompt: 'test',
       cwd: '/tmp',
       model: 'claude-sonnet-4-5',
-      logger,
+      logger
     })
 
     await handle.steer('please do something else')
 
     expect(mockInterrupt).toHaveBeenCalledOnce()
-    expect(mockWarn).toHaveBeenCalledWith(
-      expect.stringContaining('Steer in SDK mode is limited'),
-    )
+    expect(mockWarn).toHaveBeenCalledWith(expect.stringContaining('Steer in SDK mode is limited'))
   })
 
   it('does not set ANTHROPIC_API_KEY when getOAuthToken returns null', async () => {
@@ -148,7 +144,7 @@ describe('spawnAgent (SDK path)', () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     // Verify SDK query was called with env that does NOT contain ANTHROPIC_API_KEY
@@ -161,7 +157,7 @@ describe('spawnAgent (SDK path)', () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5'
     })
 
     const callArgs = mockQuery.mock.calls[0][0]

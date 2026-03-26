@@ -28,8 +28,12 @@ export function IDEEmptyState({ onOpenFolder }: IDEEmptyStateProps): React.JSX.E
         <div className="ide-empty-state__recent">
           <span className="ide-empty-state__recent-label">Recent</span>
           {recentFolders.map((folder) => (
-            <button key={folder} className="ide-empty-state__recent-item"
-              onClick={() => void handleRecentFolder(folder)} title={folder}>
+            <button
+              key={folder}
+              className="ide-empty-state__recent-item"
+              onClick={() => void handleRecentFolder(folder)}
+              title={folder}
+            >
               {folder}
             </button>
           ))}

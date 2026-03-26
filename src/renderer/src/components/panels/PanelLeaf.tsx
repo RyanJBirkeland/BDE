@@ -32,7 +32,7 @@ export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
   'pr-station': () => import('../../views/PRStationView'),
   'task-workbench': () => import('../../views/TaskWorkbenchView'),
   git: () => import('../../views/GitTreeView'),
-  ide: () => import('../../views/IDEView'),
+  ide: () => import('../../views/IDEView')
 }
 
 // ---------------------------------------------------------------------------
@@ -76,7 +76,7 @@ function ViewSkeleton(): React.ReactElement {
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-        height: '100%',
+        height: '100%'
       }}
     >
       <div
@@ -85,7 +85,7 @@ function ViewSkeleton(): React.ReactElement {
           height: '32px',
           borderRadius: tokens.radius.full,
           background: tokens.color.surfaceHigh,
-          animation: 'bde-pulse 1.2s ease-in-out infinite',
+          animation: 'bde-pulse 1.2s ease-in-out infinite'
         }}
       />
       <style>{`
@@ -137,25 +137,20 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
     }
   }
 
-  const handleDrop = useCallback(
-    (panelId: string, zone: DropZone, data: DragPayload): void => {
-      if (data.sourcePanelId !== undefined && data.sourceTabIndex !== undefined) {
-        usePanelLayoutStore
-          .getState()
-          .moveTab(data.sourcePanelId, data.sourceTabIndex, panelId, zone)
-      } else if (data.viewKey) {
-        if (zone === 'center') {
-          usePanelLayoutStore.getState().addTab(panelId, data.viewKey as View)
-        } else {
-          const dir: 'horizontal' | 'vertical' =
-            zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical'
-          usePanelLayoutStore.getState().splitPanel(panelId, dir, data.viewKey as View)
-        }
+  const handleDrop = useCallback((panelId: string, zone: DropZone, data: DragPayload): void => {
+    if (data.sourcePanelId !== undefined && data.sourceTabIndex !== undefined) {
+      usePanelLayoutStore.getState().moveTab(data.sourcePanelId, data.sourceTabIndex, panelId, zone)
+    } else if (data.viewKey) {
+      if (zone === 'center') {
+        usePanelLayoutStore.getState().addTab(panelId, data.viewKey as View)
+      } else {
+        const dir: 'horizontal' | 'vertical' =
+          zone === 'left' || zone === 'right' ? 'horizontal' : 'vertical'
+        usePanelLayoutStore.getState().splitPanel(panelId, dir, data.viewKey as View)
       }
-      setIsDragOver(false)
-    },
-    []
-  )
+    }
+    setIsDragOver(false)
+  }, [])
 
   return (
     <div
@@ -174,14 +169,11 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
         outline: isFocused ? `1px solid ${tokens.color.accent}` : '1px solid transparent',
         overflow: 'hidden',
         boxSizing: 'border-box',
-        position: 'relative',
+        position: 'relative'
       }}
     >
       {isFocused ? null : (
-        <div
-          className="panel-label-slim"
-          onClick={() => focusPanel(node.panelId)}
-        >
+        <div className="panel-label-slim" onClick={() => focusPanel(node.panelId)}>
           {node.tabs[node.activeTab]?.label ?? 'Untitled'}
         </div>
       )}
@@ -197,7 +189,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
                 position: 'absolute',
                 inset: 0,
                 display: isActive ? 'flex' : 'none',
-                flexDirection: 'column',
+                flexDirection: 'column'
               }}
             >
               <ErrorBoundary name={tab.label}>

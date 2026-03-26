@@ -38,7 +38,7 @@ describe('validateStructural', () => {
     const result = validateStructural({
       title: 'Fix bug',
       repo: 'bde',
-      spec: 'Short spec with ## A\n## B',
+      spec: 'Short spec with ## A\n## B'
     })
     expect(result.valid).toBe(false)
     expect(result.errors).toContainEqual(expect.stringContaining(`minimum ${MIN_SPEC_LENGTH}`))
@@ -48,7 +48,7 @@ describe('validateStructural', () => {
     const result = validateStructural({
       title: 'Fix bug',
       repo: 'bde',
-      spec: 'x'.repeat(100),
+      spec: 'x'.repeat(100)
     })
     expect(result.valid).toBe(false)
     expect(result.errors).toContainEqual(
@@ -60,7 +60,7 @@ describe('validateStructural', () => {
     const result = validateStructural({
       title: 'Fix bug',
       repo: 'bde',
-      spec: `${'x'.repeat(60)}\n## Problem\nSomething is broken`,
+      spec: `${'x'.repeat(60)}\n## Problem\nSomething is broken`
     })
     expect(result.valid).toBe(false)
     expect(result.errors).toContainEqual(
@@ -72,7 +72,7 @@ describe('validateStructural', () => {
     const result = validateStructural({
       title: 'Fix bug',
       repo: 'bde',
-      spec: validSpec,
+      spec: validSpec
     })
     expect(result.valid).toBe(true)
     expect(result.errors).toEqual([])
@@ -84,7 +84,7 @@ describe('validateStructural', () => {
       title: 'Fix bug',
       repo: 'bde',
       spec: null,
-      status: 'backlog',
+      status: 'backlog'
     })
     expect(result.valid).toBe(true)
   })
@@ -94,7 +94,7 @@ describe('validateStructural', () => {
       title: '',
       repo: 'bde',
       spec: null,
-      status: 'backlog',
+      status: 'backlog'
     })
     expect(result.valid).toBe(false)
     expect(result.errors).toContainEqual(expect.stringContaining('title is required'))

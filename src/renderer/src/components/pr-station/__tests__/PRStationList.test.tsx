@@ -20,7 +20,7 @@ const mockPr = {
   user: { login: 'alice' },
   merged: false,
   merged_at: null,
-  repo: 'BDE',
+  repo: 'BDE'
 }
 
 describe('PRStationList', () => {
@@ -28,7 +28,7 @@ describe('PRStationList', () => {
     vi.clearAllMocks()
     ;(window.api as any).getPrList = vi.fn().mockResolvedValue({
       prs: [mockPr],
-      checks: { 'BDE-42': { total: 1, passed: 1, failed: 0, pending: 0, status: 'pass' } },
+      checks: { 'BDE-42': { total: 1, passed: 1, failed: 0, pending: 0, status: 'pass' } }
     })
     ;(window.api as any).onPrListUpdated = vi.fn().mockReturnValue(() => {})
     ;(window.api as any).refreshPrList = vi.fn().mockResolvedValue({ prs: [], checks: {} })

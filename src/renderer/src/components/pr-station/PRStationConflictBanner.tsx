@@ -46,7 +46,9 @@ export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerPr
       ) : conflictFiles.length > 0 ? (
         <ul className="pr-conflict-banner__files">
           {conflictFiles.map((f) => (
-            <li key={f} className="pr-conflict-banner__file">{f}</li>
+            <li key={f} className="pr-conflict-banner__file">
+              {f}
+            </li>
           ))}
         </ul>
       ) : null}

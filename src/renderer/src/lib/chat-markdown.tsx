@@ -19,9 +19,7 @@ export function renderContent(text: string): React.JSX.Element {
   while ((match = codeBlockRe.exec(text)) !== null) {
     // Text before this code block
     if (match.index > lastIndex) {
-      parts.push(
-        <span key={key++}>{renderInline(text.slice(lastIndex, match.index))}</span>
-      )
+      parts.push(<span key={key++}>{renderInline(text.slice(lastIndex, match.index))}</span>)
     }
 
     const lang = match[1]
@@ -30,7 +28,11 @@ export function renderContent(text: string): React.JSX.Element {
     if (lang === 'tickets-json') {
       try {
         const parsed = JSON.parse(codeContent)
-        if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every(t => typeof t.title === 'string' && typeof t.prompt === 'string')) {
+        if (
+          !Array.isArray(parsed) ||
+          parsed.length === 0 ||
+          !parsed.every((t) => typeof t.title === 'string' && typeof t.prompt === 'string')
+        ) {
           throw new Error('Invalid ticket shape')
         }
         const tickets = parsed as TicketDraft[]
@@ -80,19 +82,18 @@ export function renderUserContent(text: string): React.JSX.Element {
     if (match.index > lastIndex) {
       const before = text.slice(lastIndex, match.index).trim()
       if (before) {
-        parts.push(<span key={key++} className="chat-msg__text-plain">{before}</span>)
+        parts.push(
+          <span key={key++} className="chat-msg__text-plain">
+            {before}
+          </span>
+        )
       }
     }
 
     if (match[1] !== undefined && match[2] !== undefined) {
       // Inline image: ![name](data:...)
       parts.push(
-        <img
-          key={key++}
-          src={match[2]}
-          alt={match[1]}
-          className="chat-msg__inline-image"
-        />
+        <img key={key++} src={match[2]} alt={match[1]} className="chat-msg__inline-image" />
       )
     } else if (match[3] !== undefined && match[5] !== undefined) {
       // File attachment: 📄 filename + code block
@@ -113,7 +114,11 @@ export function renderUserContent(text: string): React.JSX.Element {
   if (lastIndex < text.length) {
     const remaining = text.slice(lastIndex).trim()
     if (remaining) {
-      parts.push(<span key={key++} className="chat-msg__text-plain">{remaining}</span>)
+      parts.push(
+        <span key={key++} className="chat-msg__text-plain">
+          {remaining}
+        </span>
+      )
     }
   }
 

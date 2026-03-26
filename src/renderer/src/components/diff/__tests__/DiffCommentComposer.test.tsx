@@ -56,7 +56,9 @@ describe('DiffCommentComposer', () => {
   })
 
   it('pre-fills textarea with initialBody', () => {
-    render(<DiffCommentComposer onSubmit={vi.fn()} onCancel={vi.fn()} initialBody="pre-filled text" />)
+    render(
+      <DiffCommentComposer onSubmit={vi.fn()} onCancel={vi.fn()} initialBody="pre-filled text" />
+    )
     const textarea = screen.getByPlaceholderText(/leave a comment/i) as HTMLTextAreaElement
     expect(textarea.value).toBe('pre-filled text')
   })

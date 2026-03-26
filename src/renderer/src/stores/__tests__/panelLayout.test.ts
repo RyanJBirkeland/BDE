@@ -11,7 +11,7 @@ import {
   DEFAULT_LAYOUT,
   _resetIdCounter,
   usePanelLayoutStore,
-  VIEW_LABELS,
+  VIEW_LABELS
 } from '../panelLayout'
 import type { PanelLeafNode, PanelSplitNode, PanelNode } from '../panelLayout'
 
@@ -102,7 +102,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       expect(findLeaf(split, leaf1.panelId)?.panelId).toBe(leaf1.panelId)
       expect(findLeaf(split, leaf2.panelId)?.panelId).toBe(leaf2.panelId)
@@ -115,7 +115,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       expect(findLeaf(split, 'nonexistent')).toBeNull()
     })
@@ -136,7 +136,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const views = getOpenViews(split)
       expect(views).toContain('agents')
@@ -192,7 +192,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Split leaf1 (left child) horizontally
       const result = splitNode(root, leaf1.panelId, 'horizontal', 'sprint')
@@ -212,7 +212,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Split leaf2 vertically
       const result = splitNode(root, leaf2.panelId, 'vertical', 'sprint')
@@ -237,7 +237,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       expect(splitNode(split, 'nonexistent', 'vertical', 'sprint')).toBeNull()
     })
@@ -274,7 +274,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = addTab(split, leaf2.panelId, 'sprint')
       expect(result).not.toBeNull()
@@ -292,7 +292,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = addTab(split, leaf1.panelId, 'sprint')
       expect(result).not.toBeNull()
@@ -309,7 +309,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       expect(addTab(split, 'nonexistent', 'sprint')).toBeNull()
     })
@@ -368,7 +368,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Close the only tab of leaf1 — split should collapse to leaf2
       const result = closeTab(split, leaf1.panelId, 0)
@@ -384,7 +384,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Close the only tab of leaf2 — split should collapse to leaf1
       const result = closeTab(split, leaf2.panelId, 0)
@@ -401,7 +401,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = closeTab(split, leaf1.panelId, 0) // remove 'agents', keep 'sprint'
       expect(result).not.toBeNull()
@@ -438,7 +438,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = setActiveTab(split, leaf1.panelId, 0)
       expect(result).not.toBeNull()
@@ -454,7 +454,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = setActiveTab(split, leaf2.panelId, 1)
       expect(result).not.toBeNull()
@@ -469,7 +469,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       expect(setActiveTab(split, 'nonexistent', 0)).toBeNull()
     })
@@ -487,7 +487,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Move leaf1's 'sprint' tab (index 1) to leaf2 center
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'center')
@@ -510,7 +510,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'vertical',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Move leaf1's 'sprint' tab (index 1) to leaf2's right zone
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'right')
@@ -534,7 +534,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'vertical',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'left')
       expect(result).not.toBeNull()
@@ -556,7 +556,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'top')
       expect(result).not.toBeNull()
@@ -578,7 +578,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'bottom')
       expect(result).not.toBeNull()
@@ -615,7 +615,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Move leaf1's only tab to its own panel center — leaf1 is removed, result is just leaf2
       const result = moveTab(split, leaf1.panelId, 0, leaf1.panelId, 'center')
@@ -631,7 +631,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Move leaf1's only tab to itself (left zone) — leaf1 removed, target not found → return treeAfterClose
       const result = moveTab(split, leaf1.panelId, 0, leaf1.panelId, 'left')
@@ -648,7 +648,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Move leaf1's only tab to itself (right zone) — leaf1 removed, target not found → return treeAfterClose
       const result = moveTab(split, leaf1.panelId, 0, leaf1.panelId, 'right')
@@ -764,7 +764,11 @@ describe('usePanelLayoutStore', () => {
 
   describe('setActiveTab store action', () => {
     it('updates activeTab on the target panel', () => {
-      const { root, addTab: storeAddTab, setActiveTab: storeSetActiveTab } = usePanelLayoutStore.getState()
+      const {
+        root,
+        addTab: storeAddTab,
+        setActiveTab: storeSetActiveTab
+      } = usePanelLayoutStore.getState()
       const leafId = (root as PanelLeafNode).panelId
       storeAddTab(leafId, 'ide')
       storeSetActiveTab(leafId, 0)
@@ -957,7 +961,7 @@ describe('usePanelLayoutStore', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leftLeaf, rightLeaf],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const getJson = vi.fn().mockResolvedValue(savedRoot)
       vi.stubGlobal('window', { api: { settings: { getJson } } })

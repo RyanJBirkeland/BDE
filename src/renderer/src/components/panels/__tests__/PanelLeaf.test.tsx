@@ -18,43 +18,72 @@ vi.mock('../../../stores/panelLayout', async () => {
   const actual = await vi.importActual('../../../stores/panelLayout')
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({
-      get focusedPanelId() { return mockFocusedPanelId },
+      get focusedPanelId() {
+        return mockFocusedPanelId
+      },
       focusPanel: mockFocusPanel,
       setActiveTab: vi.fn(),
       closeTab: vi.fn(),
-      root: { type: 'split' },
+      root: { type: 'split' }
     })
   )
   ;(store as any).subscribe = vi.fn()
   ;(store as any).getState = () => ({
-    get focusedPanelId() { return mockFocusedPanelId },
+    get focusedPanelId() {
+      return mockFocusedPanelId
+    },
     focusPanel: mockFocusPanel,
     moveTab: mockMoveTab,
     addTab: mockAddTab,
     splitPanel: mockSplitPanel,
     setActiveTab: vi.fn(),
     closeTab: vi.fn(),
-    root: { type: 'split' },
+    root: { type: 'split' }
   })
   return { ...(actual as object), usePanelLayoutStore: store }
 })
 
 // Mock views used in PanelLeaf
-vi.mock('../../../views/AgentsView', () => ({ AgentsView: () => <div data-testid="agents-view">Agents</div> }))
-vi.mock('../../../views/IDEView', () => ({ default: () => <div data-testid="ide-view">IDE</div>, IDEView: () => <div data-testid="ide-view">IDE</div> }))
-vi.mock('../../../views/SprintView', () => ({ default: () => <div data-testid="sprint-view">Sprint</div> }))
-vi.mock('../../../views/MemoryView', () => ({ default: () => <div data-testid="memory-view">Memory</div> }))
-vi.mock('../../../views/CostView', () => ({ default: () => <div data-testid="cost-view">Cost</div> }))
-vi.mock('../../../views/SettingsView', () => ({ default: () => <div data-testid="settings-view">Settings</div> }))
-vi.mock('../../../views/PRStationView', () => ({ default: () => <div data-testid="pr-station-view">PRStation</div> }))
+vi.mock('../../../views/AgentsView', () => ({
+  AgentsView: () => <div data-testid="agents-view">Agents</div>
+}))
+vi.mock('../../../views/IDEView', () => ({
+  default: () => <div data-testid="ide-view">IDE</div>,
+  IDEView: () => <div data-testid="ide-view">IDE</div>
+}))
+vi.mock('../../../views/SprintView', () => ({
+  default: () => <div data-testid="sprint-view">Sprint</div>
+}))
+vi.mock('../../../views/MemoryView', () => ({
+  default: () => <div data-testid="memory-view">Memory</div>
+}))
+vi.mock('../../../views/CostView', () => ({
+  default: () => <div data-testid="cost-view">Cost</div>
+}))
+vi.mock('../../../views/SettingsView', () => ({
+  default: () => <div data-testid="settings-view">Settings</div>
+}))
+vi.mock('../../../views/PRStationView', () => ({
+  default: () => <div data-testid="pr-station-view">PRStation</div>
+}))
 
 // Mock PanelDropOverlay to avoid complex drag logic in these tests
 vi.mock('../PanelDropOverlay', () => ({
-  PanelDropOverlay: ({ panelId, onDrop }: { panelId: string; onDrop: (panelId: string, zone: string, data: unknown) => void }) => (
-    <div data-testid="drop-overlay" data-panel-id={panelId} onClick={() => onDrop(panelId, 'center', { viewKey: 'sprint' })}>
+  PanelDropOverlay: ({
+    panelId,
+    onDrop
+  }: {
+    panelId: string
+    onDrop: (panelId: string, zone: string, data: unknown) => void
+  }) => (
+    <div
+      data-testid="drop-overlay"
+      data-panel-id={panelId}
+      onClick={() => onDrop(panelId, 'center', { viewKey: 'sprint' })}
+    >
       Drop Overlay
     </div>
-  ),
+  )
 }))
 
 // ---------------------------------------------------------------------------
@@ -67,7 +96,7 @@ function makeLeaf(overrides: Partial<PanelLeafNode> = {}): PanelLeafNode {
     panelId: 'panel-1',
     tabs: [{ viewKey: 'agents', label: 'Agents' }],
     activeTab: 0,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -93,7 +122,9 @@ describe('PanelLeaf', () => {
     const node = makeLeaf({ panelId: 'panel-1' })
     render(<PanelLeaf node={node} />)
     // Should not have slim label when focused
-    expect(screen.queryByText('Agents', { selector: '.panel-label-slim *' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Agents', { selector: '.panel-label-slim *' })
+    ).not.toBeInTheDocument()
   })
 
   it('renders slim label when panel is not focused', async () => {
@@ -134,9 +165,9 @@ describe('PanelLeaf', () => {
     const node = makeLeaf({
       tabs: [
         { viewKey: 'agents', label: 'Agents' },
-        { viewKey: 'ide', label: 'IDE' },
+        { viewKey: 'ide', label: 'IDE' }
       ],
-      activeTab: 0,
+      activeTab: 0
     })
     render(<PanelLeaf node={node} />)
 
@@ -171,7 +202,7 @@ describe('PanelLeaf', () => {
     const outerDiv = container.firstChild as HTMLElement
 
     fireEvent.dragEnter(outerDiv, {
-      dataTransfer: { types: ['application/bde-panel'] },
+      dataTransfer: { types: ['application/bde-panel'] }
     })
 
     expect(screen.getByTestId('drop-overlay')).toBeInTheDocument()
@@ -183,7 +214,7 @@ describe('PanelLeaf', () => {
     const outerDiv = container.firstChild as HTMLElement
 
     fireEvent.dragEnter(outerDiv, {
-      dataTransfer: { types: ['text/plain'] },
+      dataTransfer: { types: ['text/plain'] }
     })
 
     expect(screen.queryByTestId('drop-overlay')).not.toBeInTheDocument()
@@ -197,7 +228,7 @@ describe('PanelLeaf', () => {
 
     // Trigger drag enter to show overlay
     fireEvent.dragEnter(outerDiv, {
-      dataTransfer: { types: ['application/bde-panel'] },
+      dataTransfer: { types: ['application/bde-panel'] }
     })
 
     const overlay = screen.getByTestId('drop-overlay')

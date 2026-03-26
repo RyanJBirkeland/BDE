@@ -325,9 +325,9 @@ diff --git a/src/main.ts b/src/main.ts
     controller.abort()
     const onProgress = vi.fn()
 
-    await expect(parseDiffChunked(SAMPLE_DIFF, onProgress, controller.signal)).rejects.toMatchObject(
-      { name: 'AbortError' }
-    )
+    await expect(
+      parseDiffChunked(SAMPLE_DIFF, onProgress, controller.signal)
+    ).rejects.toMatchObject({ name: 'AbortError' })
     expect(onProgress).not.toHaveBeenCalled()
   })
 
@@ -356,7 +356,9 @@ diff --git a/src/main.ts b/src/main.ts
     })
 
     const diff = buildDiff(25)
-    await expect(parseDiffChunked(diff, onProgress, controller.signal)).rejects.toMatchObject({ name: 'AbortError' })
+    await expect(parseDiffChunked(diff, onProgress, controller.signal)).rejects.toMatchObject({
+      name: 'AbortError'
+    })
     // onProgress was called once before abort
     expect(onProgress).toHaveBeenCalledTimes(1)
   })

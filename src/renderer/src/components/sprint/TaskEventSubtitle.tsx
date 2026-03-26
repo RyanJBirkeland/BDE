@@ -2,16 +2,7 @@
  * Renders a compact subtitle for the latest streaming event on a task card.
  * Shows an icon + summary text using lucide-react icons and design tokens.
  */
-import {
-  Play,
-  Wrench,
-  Check,
-  X,
-  Brain,
-  Clock,
-  AlertTriangle,
-  Flag,
-} from 'lucide-react'
+import { Play, Wrench, Check, X, Brain, Clock, AlertTriangle, Flag } from 'lucide-react'
 import { tokens } from '../../design-system/tokens'
 import type { AnyTaskEvent } from '../../stores/sprintEvents'
 import type {
@@ -20,7 +11,7 @@ import type {
   AgentToolResultEvent,
   AgentThinkingEvent,
   AgentErrorEvent,
-  AgentCompletedEvent,
+  AgentCompletedEvent
 } from '../../../../shared/queue-api-contract'
 
 type Props = {
@@ -41,7 +32,7 @@ function getIconAndText(event: AnyTaskEvent): { icon: React.ReactNode; text: str
       const e = event as AgentToolResultEvent
       return {
         icon: e.success ? <Check size={12} /> : <X size={12} />,
-        text: e.summary,
+        text: e.summary
       }
     }
     case 'agent:thinking': {
@@ -80,7 +71,7 @@ export function TaskEventSubtitle({ event }: Props): React.JSX.Element | null {
         overflow: 'hidden',
         whiteSpace: 'nowrap',
         textOverflow: 'ellipsis',
-        marginTop: tokens.space[1],
+        marginTop: tokens.space[1]
       }}
     >
       {icon}

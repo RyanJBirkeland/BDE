@@ -14,7 +14,7 @@ import {
   RefreshCw,
   Edit3,
   Trash2,
-  ChevronRight,
+  ChevronRight
 } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { renderMarkdown } from '../../lib/render-markdown'
@@ -35,9 +35,7 @@ export interface SprintDetailPaneProps {
   onEditInWorkbench?: (task: SprintTask) => void
 }
 
-function statusBadgeVariant(
-  status: string,
-): 'default' | 'success' | 'danger' | 'warning' | 'info' {
+function statusBadgeVariant(status: string): 'default' | 'success' | 'danger' | 'warning' | 'info' {
   switch (status) {
     case TASK_STATUS.ACTIVE:
       return 'success'
@@ -59,15 +57,24 @@ function getStatusDisplay(task: SprintTask): string {
   if (task.status === 'active' && task.pr_status === 'open') return 'Review'
   if (task.status === 'done' && task.pr_status === 'open') return 'Review'
   switch (task.status) {
-    case 'active': return 'Active'
-    case 'queued': return 'Queued'
-    case 'blocked': return 'Blocked'
-    case 'backlog': return 'Backlog'
-    case 'done': return 'Done'
-    case 'failed': return 'Failed'
-    case 'cancelled': return 'Cancelled'
-    case 'error': return 'Error'
-    default: return task.status
+    case 'active':
+      return 'Active'
+    case 'queued':
+      return 'Queued'
+    case 'blocked':
+      return 'Blocked'
+    case 'backlog':
+      return 'Backlog'
+    case 'done':
+      return 'Done'
+    case 'failed':
+      return 'Failed'
+    case 'cancelled':
+      return 'Cancelled'
+    case 'error':
+      return 'Error'
+    default:
+      return task.status
   }
 }
 
@@ -80,7 +87,7 @@ export function SprintDetailPane({
   onMarkDone,
   onDelete,
   onSaveSpec,
-  onEditInWorkbench,
+  onEditInWorkbench
 }: SprintDetailPaneProps) {
   const [editingSpec, setEditingSpec] = useState(false)
   const [specDraft, setSpecDraft] = useState('')
@@ -120,9 +127,7 @@ export function SprintDetailPane({
   if (!task) {
     return (
       <div className="sprint-detail sprint-detail--empty">
-        <span className="sprint-detail__empty-text">
-          &gt; Select a task to view details
-        </span>
+        <span className="sprint-detail__empty-text">&gt; Select a task to view details</span>
       </div>
     )
   }
@@ -153,20 +158,36 @@ export function SprintDetailPane({
 
         <div className="sprint-detail__meta-strip">
           <div className="sprint-detail__meta-item">
-            <span className="sprint-detail__meta-item-icon"><GitBranch size={13} /></span>
+            <span className="sprint-detail__meta-item-icon">
+              <GitBranch size={13} />
+            </span>
             <span className="sprint-detail__meta-item-label">Repo</span>
             <span className="sprint-detail__meta-item-value">{task.repo}</span>
           </div>
           <div className="sprint-detail__meta-item">
             <span className="sprint-detail__meta-item-label">Priority</span>
-            <span className={`sprint-detail__meta-item-value${task.priority <= 2 ? ' sprint-detail__meta-item-value--accent' : ''}`}>P{task.priority}</span>
+            <span
+              className={`sprint-detail__meta-item-value${task.priority <= 2 ? ' sprint-detail__meta-item-value--accent' : ''}`}
+            >
+              P{task.priority}
+            </span>
           </div>
           {task.created_at && (
             <div className="sprint-detail__meta-item">
-              <span className="sprint-detail__meta-item-icon"><Clock size={13} /></span>
+              <span className="sprint-detail__meta-item-icon">
+                <Clock size={13} />
+              </span>
               <span className="sprint-detail__meta-item-label">Created</span>
               <span className="sprint-detail__meta-item-value">
-                {new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {new Date(task.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                {new Date(task.created_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric'
+                })}
+                ,{' '}
+                {new Date(task.created_at).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
               </span>
             </div>
           )}
@@ -174,7 +195,15 @@ export function SprintDetailPane({
             <div className="sprint-detail__meta-item">
               <span className="sprint-detail__meta-item-label">Started</span>
               <span className="sprint-detail__meta-item-value">
-                {new Date(task.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {new Date(task.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                {new Date(task.started_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric'
+                })}
+                ,{' '}
+                {new Date(task.started_at).toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
               </span>
             </div>
           )}
@@ -208,10 +237,7 @@ export function SprintDetailPane({
             </button>
           )}
           {onEditInWorkbench && (
-            <button
-              className="sprint-detail__action-btn"
-              onClick={() => onEditInWorkbench(task)}
-            >
+            <button className="sprint-detail__action-btn" onClick={() => onEditInWorkbench(task)}>
               <Edit3 size={13} /> Edit
             </button>
           )}
@@ -231,7 +257,11 @@ export function SprintDetailPane({
           <NeonSection
             title="Dependencies"
             expanded
-            headerRight={<span className="sprint-detail__section-header-right">{depsComplete}/{depsTotal}</span>}
+            headerRight={
+              <span className="sprint-detail__section-header-right">
+                {depsComplete}/{depsTotal}
+              </span>
+            }
           >
             <div className="sprint-detail__deps">
               {dependencyTasks.map((dep) => (
@@ -298,7 +328,7 @@ export function SprintDetailPane({
                 <div
                   className="sprint-detail__spec-content"
                   dangerouslySetInnerHTML={{
-                    __html: renderMarkdown(task.spec || task.prompt || ''),
+                    __html: renderMarkdown(task.spec || task.prompt || '')
                   }}
                 />
                 {onSaveSpec && (
@@ -315,14 +345,16 @@ export function SprintDetailPane({
           <div className="sprint-detail__agent-bar">
             <span className="sprint-detail__agent-dot" />
             <span className="sprint-detail__agent-id">{task.agent_run_id?.slice(0, 16)}</span>
-            <span className="sprint-detail__agent-status">{isActive ? 'Running' : 'Completed'}</span>
+            <span className="sprint-detail__agent-status">
+              {isActive ? 'Running' : 'Completed'}
+            </span>
             <button
               className="sprint-detail__agent-link"
               onClick={() => {
                 window.dispatchEvent(
                   new CustomEvent('bde:navigate', {
-                    detail: { view: 'agents', sessionId: task.agent_run_id },
-                  }),
+                    detail: { view: 'agents', sessionId: task.agent_run_id }
+                  })
                 )
               }}
             >
@@ -399,7 +431,7 @@ function NeonSection({
   onToggle,
   children,
   className,
-  headerRight,
+  headerRight
 }: {
   title: string
   expanded: boolean
@@ -429,7 +461,7 @@ function MetaRow({
   value,
   mono,
   accent,
-  badge,
+  badge
 }: {
   icon?: React.ReactNode
   label: string

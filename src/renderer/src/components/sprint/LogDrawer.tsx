@@ -19,7 +19,12 @@ type LogDrawerProps = {
   onRerun?: (task: SprintTask) => void
 }
 
-export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): React.JSX.Element | null {
+export function LogDrawer({
+  task,
+  onClose,
+  onStop,
+  onRerun
+}: LogDrawerProps): React.JSX.Element | null {
   const [logContent, setLogContent] = useState('')
   const [agentStatus, setAgentStatus] = useState('unknown')
   const [steerInput, setSteerInput] = useState('')
@@ -68,7 +73,10 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
     catchUp()
 
     // For active tasks, poll periodically for new log content
-    if (!isActive) return () => { cancelled = true }
+    if (!isActive)
+      return () => {
+        cancelled = true
+      }
 
     const interval = setInterval(catchUp, 2000)
 
@@ -91,7 +99,11 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
   const displayEvents = useMemo(() => {
     const result: AnyTaskEvent[] = []
     for (const ev of mergedEvents) {
-      if (ev.type === 'agent:thinking' && result.length > 0 && result[result.length - 1].type === 'agent:thinking') {
+      if (
+        ev.type === 'agent:thinking' &&
+        result.length > 0 &&
+        result[result.length - 1].type === 'agent:thinking'
+      ) {
         result[result.length - 1] = ev
       } else {
         result.push(ev)
@@ -133,7 +145,7 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
     if (!task?.agent_run_id) return
     window.dispatchEvent(
       new CustomEvent('bde:navigate', {
-        detail: { view: 'agents', sessionId: task.agent_run_id },
+        detail: { view: 'agents', sessionId: task.agent_run_id }
       })
     )
     onClose()
@@ -170,7 +182,14 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
       <div className="log-drawer__body">
         {task.agent_run_id ? (
           hasEvents ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1], padding: tokens.space[2] }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: tokens.space[1],
+                padding: tokens.space[2]
+              }}
+            >
               {displayEvents.map((ev, i) => (
                 <EventCard key={`${ev.timestamp}-${ev.type}-${i}`} event={ev} />
               ))}
@@ -211,11 +230,13 @@ export function LogDrawer({ task, onClose, onStop, onRerun }: LogDrawerProps): R
             Stop Agent
           </Button>
         )}
-        {onRerun && (agentStatus === AGENT_STATUS.FAILED || (task.status === TASK_STATUS.DONE && !task.pr_url)) && (
-          <Button variant="ghost" size="sm" onClick={() => onRerun(task)}>
-            <RefreshCw size={14} /> Re-run
-          </Button>
-        )}
+        {onRerun &&
+          (agentStatus === AGENT_STATUS.FAILED ||
+            (task.status === TASK_STATUS.DONE && !task.pr_url)) && (
+            <Button variant="ghost" size="sm" onClick={() => onRerun(task)}>
+              <RefreshCw size={14} /> Re-run
+            </Button>
+          )}
         <Button variant="ghost" size="sm" onClick={handleOpenInAgents}>
           Open in Agents
         </Button>

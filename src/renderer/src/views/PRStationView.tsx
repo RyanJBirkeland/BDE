@@ -32,10 +32,7 @@ export default function PRStationView() {
     prKey ? (s.pendingComments[prKey] ?? []).length : 0
   )
 
-  const repos = useMemo(
-    () => [...new Set(allPrs.map((pr) => pr.repo))],
-    [allPrs]
-  )
+  const repos = useMemo(() => [...new Set(allPrs.map((pr) => pr.repo))], [allPrs])
 
   const filteredPrs = useMemo(() => {
     let result = allPrs
@@ -59,44 +56,44 @@ export default function PRStationView() {
 
   const { confirm, confirmProps } = useConfirm()
 
-  const handleRemovePr = useCallback(
-    (pr: OpenPr) => {
-      setRemovedKeys((prev) => {
-        const next = new Set(prev)
-        next.add(`${pr.repo}-${pr.number}`)
-        // Evict oldest entries when the set grows beyond a reasonable bound
-        if (next.size > 200) {
-          let toDelete = next.size - 200
-          for (const key of next) {
-            if (toDelete <= 0) break
-            next.delete(key)
-            toDelete--
-          }
+  const handleRemovePr = useCallback((pr: OpenPr) => {
+    setRemovedKeys((prev) => {
+      const next = new Set(prev)
+      next.add(`${pr.repo}-${pr.number}`)
+      // Evict oldest entries when the set grows beyond a reasonable bound
+      if (next.size > 200) {
+        let toDelete = next.size - 200
+        for (const key of next) {
+          if (toDelete <= 0) break
+          next.delete(key)
+          toDelete--
         }
-        return next
-      })
-      setSelectedPr(null)
-    },
-    []
-  )
+      }
+      return next
+    })
+    setSelectedPr(null)
+  }, [])
 
   /**
    * Attempt to select a PR, showing a confirmation if there are pending comments
    * on the current PR (informational — comments are persisted to localStorage).
    */
-  const handleSelectPr = useCallback(async (pr: OpenPr) => {
-    if (pendingCount > 0 && selectedPr && pr.number !== selectedPr.number) {
-      const ok = await confirm({
-        title: 'Pending review comments',
-        message: `You have ${pendingCount} pending comment${pendingCount > 1 ? 's' : ''} on this PR. Your comments are saved and will be here when you return. Switch PRs anyway?`,
-        confirmLabel: 'Switch PR',
-        variant: 'default',
-      })
-      if (!ok) return
-    }
+  const handleSelectPr = useCallback(
+    async (pr: OpenPr) => {
+      if (pendingCount > 0 && selectedPr && pr.number !== selectedPr.number) {
+        const ok = await confirm({
+          title: 'Pending review comments',
+          message: `You have ${pendingCount} pending comment${pendingCount > 1 ? 's' : ''} on this PR. Your comments are saved and will be here when you return. Switch PRs anyway?`,
+          confirmLabel: 'Switch PR',
+          variant: 'default'
+        })
+        if (!ok) return
+      }
 
-    setSelectedPr(pr)
-  }, [pendingCount, selectedPr, confirm])
+      setSelectedPr(pr)
+    },
+    [pendingCount, selectedPr, confirm]
+  )
 
   useEffect(() => {
     if (!selectedPr) {
@@ -121,96 +118,103 @@ export default function PRStationView() {
   }, [prKey])
 
   return (
-    <motion.div className="pr-station-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%' }} variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
+    <motion.div
+      className="pr-station-wrapper"
+      style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+      variants={VARIANTS.fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+    >
       <div className="pr-station__view-header">
         <span className="pr-station__view-title text-gradient-aurora">PR Station</span>
       </div>
       <div className="pr-station" style={{ flex: 1, minHeight: 0 }}>
-      <div className="pr-station__list-panel">
-        <PRStationFilters filters={filters} repos={repos} onChange={setFilters} />
-        <PRStationList
-          selectedPr={selectedPr}
-          onSelectPr={handleSelectPr}
-          removedKeys={removedKeys}
-          prs={filteredPrs}
-          onPrsChange={setAllPrs}
-        />
-      </div>
-      <div className="pr-station__detail-panel">
-        {selectedPr ? (
-          <>
-            <div className="pr-station__detail-header">
-              <span className="pr-station__detail-title">
-                #{selectedPr.number} — {selectedPr.title}
-              </span>
-              <div className="pr-station__tabs">
-                <button
-                  className={`pr-station__tab${activeTab === 'info' ? ' pr-station__tab--active' : ''}`}
-                  onClick={() => setActiveTab('info')}
-                >
-                  Info
-                </button>
-                <button
-                  className={`pr-station__tab${activeTab === 'diff' ? ' pr-station__tab--active' : ''}`}
-                  onClick={() => setActiveTab('diff')}
-                >
-                  Diff
-                </button>
+        <div className="pr-station__list-panel">
+          <PRStationFilters filters={filters} repos={repos} onChange={setFilters} />
+          <PRStationList
+            selectedPr={selectedPr}
+            onSelectPr={handleSelectPr}
+            removedKeys={removedKeys}
+            prs={filteredPrs}
+            onPrsChange={setAllPrs}
+          />
+        </div>
+        <div className="pr-station__detail-panel">
+          {selectedPr ? (
+            <>
+              <div className="pr-station__detail-header">
+                <span className="pr-station__detail-title">
+                  #{selectedPr.number} — {selectedPr.title}
+                </span>
+                <div className="pr-station__tabs">
+                  <button
+                    className={`pr-station__tab${activeTab === 'info' ? ' pr-station__tab--active' : ''}`}
+                    onClick={() => setActiveTab('info')}
+                  >
+                    Info
+                  </button>
+                  <button
+                    className={`pr-station__tab${activeTab === 'diff' ? ' pr-station__tab--active' : ''}`}
+                    onClick={() => setActiveTab('diff')}
+                  >
+                    Diff
+                  </button>
+                </div>
               </div>
-            </div>
-            {pendingCount > 0 && (
-              <div className="pr-review-banner">
-                <span className="pr-review-banner__count">{pendingCount}</span>
-                <span>pending comment{pendingCount > 1 ? 's' : ''}</span>
-                <Button
-                  className="pr-review-banner__submit"
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setShowReviewDialog(true)}
-                >
-                  Submit Review
-                </Button>
-              </div>
-            )}
-            {activeTab === 'info' ? (
-              <div className="pr-station__detail-content">
-                <PRStationDetail
-                  key={`${selectedPr.repo}-${selectedPr.number}`}
-                  pr={selectedPr}
-                  mergeability={mergeability}
-                  onMerged={handleRemovePr}
-                />
-                <PRStationActions
-                  pr={selectedPr}
-                  mergeability={mergeability}
-                  onRemovePr={handleRemovePr}
-                />
-              </div>
-            ) : (
-              <PRStationDiff pr={selectedPr} />
-            )}
-          </>
-        ) : (
-          <EmptyState
-            icon={<FileCode2 size={32} strokeWidth={1} />}
-            title="Select a PR to view details"
+              {pendingCount > 0 && (
+                <div className="pr-review-banner">
+                  <span className="pr-review-banner__count">{pendingCount}</span>
+                  <span>pending comment{pendingCount > 1 ? 's' : ''}</span>
+                  <Button
+                    className="pr-review-banner__submit"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setShowReviewDialog(true)}
+                  >
+                    Submit Review
+                  </Button>
+                </div>
+              )}
+              {activeTab === 'info' ? (
+                <div className="pr-station__detail-content">
+                  <PRStationDetail
+                    key={`${selectedPr.repo}-${selectedPr.number}`}
+                    pr={selectedPr}
+                    mergeability={mergeability}
+                    onMerged={handleRemovePr}
+                  />
+                  <PRStationActions
+                    pr={selectedPr}
+                    mergeability={mergeability}
+                    onRemovePr={handleRemovePr}
+                  />
+                </div>
+              ) : (
+                <PRStationDiff pr={selectedPr} />
+              )}
+            </>
+          ) : (
+            <EmptyState
+              icon={<FileCode2 size={32} strokeWidth={1} />}
+              title="Select a PR to view details"
+            />
+          )}
+        </div>
+        {showReviewDialog && selectedPr && (
+          <ReviewSubmitDialog
+            pr={selectedPr}
+            prKey={prKey}
+            onClose={() => setShowReviewDialog(false)}
+            onSubmitted={() => {
+              const pr = selectedPr
+              setSelectedPr(null)
+              setTimeout(() => setSelectedPr(pr), 0)
+            }}
           />
         )}
       </div>
-      {showReviewDialog && selectedPr && (
-        <ReviewSubmitDialog
-          pr={selectedPr}
-          prKey={prKey}
-          onClose={() => setShowReviewDialog(false)}
-          onSubmitted={() => {
-            const pr = selectedPr
-            setSelectedPr(null)
-            setTimeout(() => setSelectedPr(pr), 0)
-          }}
-        />
-      )}
-    </div>
-    <ConfirmModal {...confirmProps} />
+      <ConfirmModal {...confirmProps} />
     </motion.div>
   )
 }

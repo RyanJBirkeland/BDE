@@ -28,13 +28,13 @@ vi.mock('../../data/sprint-queries', () => ({
   createTask: (...args: unknown[]) => mockCreateTask(...args),
   updateTask: (...args: unknown[]) => mockUpdateTask(...args),
   claimTask: (...args: unknown[]) => mockClaimTask(...args),
-  releaseTask: (...args: unknown[]) => mockReleaseTask(...args),
+  releaseTask: (...args: unknown[]) => mockReleaseTask(...args)
 }))
 
 // Mock settings — no API key by default (auth disabled)
 const mockGetSetting = vi.fn().mockReturnValue(null)
 vi.mock('../../settings', () => ({
-  getSetting: (...args: unknown[]) => mockGetSetting(...args),
+  getSetting: (...args: unknown[]) => mockGetSetting(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -59,8 +59,8 @@ function request(
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...headers,
-      },
+        ...headers
+      }
     }
 
     const req = http.request(opts, (res) => {
@@ -123,7 +123,7 @@ describe('Queue API integration', () => {
         done: 5,
         failed: 0,
         cancelled: 0,
-        error: 0,
+        error: 0
       })
 
       const { status, body } = await request('GET', '/queue/health')
@@ -133,8 +133,8 @@ describe('Queue API integration', () => {
         queue: {
           backlog: 1,
           queued: 2,
-          active: 1,
-        },
+          active: 1
+        }
       })
     })
 
@@ -150,7 +150,12 @@ describe('Queue API integration', () => {
   describe('POST /queue/tasks', () => {
     it('creates a task and returns 201', async () => {
       const input = { title: 'Build login page', repo: 'frontend' }
-      const created = { id: 'task-new-1', title: 'Build login page', repo: 'frontend', status: 'backlog' }
+      const created = {
+        id: 'task-new-1',
+        title: 'Build login page',
+        repo: 'frontend',
+        status: 'backlog'
+      }
       mockCreateTask.mockResolvedValue(created)
 
       const { status, body } = await request('POST', '/queue/tasks', input)

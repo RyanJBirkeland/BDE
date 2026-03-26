@@ -13,21 +13,24 @@ interface SidebarResizeResult {
 export function useSidebarResize(): SidebarResizeResult {
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_WIDTH_DEFAULT)
 
-  const onResizeHandleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    const startX = e.clientX
-    const startW = sidebarWidth
-    const onMove = (ev: MouseEvent): void => {
-      const delta = ev.clientX - startX
-      setSidebarWidth(Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, startW + delta)))
-    }
-    const onUp = (): void => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }, [sidebarWidth])
+  const onResizeHandleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      const startX = e.clientX
+      const startW = sidebarWidth
+      const onMove = (ev: MouseEvent): void => {
+        const delta = ev.clientX - startX
+        setSidebarWidth(Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, startW + delta)))
+      }
+      const onUp = (): void => {
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+      }
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+    },
+    [sidebarWidth]
+  )
 
   return { sidebarWidth, onResizeHandleMouseDown }
 }

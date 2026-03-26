@@ -48,7 +48,9 @@ test.describe('Settings view', () => {
     await reposTab.click()
 
     // "Add Repository" button should be visible in RepositoriesSection
-    const addRepoBtn = window.locator('button.settings-repos__add-btn', { hasText: 'Add Repository' })
+    const addRepoBtn = window.locator('button.settings-repos__add-btn', {
+      hasText: 'Add Repository'
+    })
     await expect(addRepoBtn).toBeVisible({ timeout: 3_000 })
   })
 })

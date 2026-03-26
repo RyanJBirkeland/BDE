@@ -16,11 +16,7 @@ function getGitHubRepos(): { owner: string; repo: string }[] {
 let timer: ReturnType<typeof setInterval> | null = null
 let latestPayload: PrListPayload | null = null
 
-async function fetchOpenPrs(
-  owner: string,
-  repo: string,
-  token: string
-): Promise<OpenPr[]> {
+async function fetchOpenPrs(owner: string, repo: string, token: string): Promise<OpenPr[]> {
   try {
     const data = await fetchAllGitHubPages<OpenPr>(
       `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
@@ -45,9 +41,9 @@ async function fetchCheckRuns(
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json',
+          Accept: 'application/vnd.github+json'
         },
-        timeoutMs: REQUEST_TIMEOUT_MS,
+        timeoutMs: REQUEST_TIMEOUT_MS
       }
     )
     if (!res.ok) return empty
@@ -75,9 +71,7 @@ async function poll(): Promise<void> {
   if (!token) return
 
   const repos = getGitHubRepos()
-  const results = await Promise.all(
-    repos.map((r) => fetchOpenPrs(r.owner, r.repo, token))
-  )
+  const results = await Promise.all(repos.map((r) => fetchOpenPrs(r.owner, r.repo, token)))
   const prs = results
     .flat()
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())

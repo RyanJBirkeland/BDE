@@ -3,7 +3,7 @@ import { usePendingReviewStore } from '../pendingReview'
 import type { PendingComment } from '../pendingReview'
 
 const initialState = {
-  pendingComments: {} as Record<string, PendingComment[]>,
+  pendingComments: {} as Record<string, PendingComment[]>
 }
 
 const makeComment = (id: string): PendingComment => ({
@@ -11,7 +11,7 @@ const makeComment = (id: string): PendingComment => ({
   path: 'src/foo.ts',
   line: 10,
   side: 'RIGHT' as const,
-  body: `comment ${id}`,
+  body: `comment ${id}`
 })
 
 describe('pendingReview store', () => {

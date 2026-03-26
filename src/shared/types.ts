@@ -269,12 +269,33 @@ export type AgentEvent =
   | { type: 'agent:user_message'; text: string; timestamp: number }
   | { type: 'agent:thinking'; tokenCount: number; text?: string; timestamp: number }
   | { type: 'agent:tool_call'; tool: string; summary: string; input?: unknown; timestamp: number }
-  | { type: 'agent:tool_result'; tool: string; success: boolean; summary: string; output?: unknown; timestamp: number }
+  | {
+      type: 'agent:tool_result'
+      tool: string
+      success: boolean
+      summary: string
+      output?: unknown
+      timestamp: number
+    }
   | { type: 'agent:rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
   | { type: 'agent:error'; message: string; timestamp: number }
   | { type: 'agent:stderr'; text: string; timestamp: number }
-  | { type: 'agent:completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
-  | { type: 'agent:playground'; filename: string; html: string; sizeBytes: number; timestamp: number }
+  | {
+      type: 'agent:completed'
+      exitCode: number
+      costUsd: number
+      tokensIn: number
+      tokensOut: number
+      durationMs: number
+      timestamp: number
+    }
+  | {
+      type: 'agent:playground'
+      filename: string
+      html: string
+      sizeBytes: number
+      timestamp: number
+    }
 
 // --- Agent Provider Interface ---
 

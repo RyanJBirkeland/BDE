@@ -32,17 +32,14 @@ export function OpenPRsCard(): React.JSX.Element {
   }, [])
 
   return (
-    <DashboardCard
-      title="Open PRs"
-      icon={<GitPullRequest size={14} aria-hidden="true" />}
-    >
+    <DashboardCard title="Open PRs" icon={<GitPullRequest size={14} aria-hidden="true" />}>
       {loading ? (
         <p
           style={{
             padding: `${tokens.space[4]} ${tokens.space[4]}`,
             color: tokens.color.textMuted,
             fontSize: tokens.size.sm,
-            margin: 0,
+            margin: 0
           }}
         >
           Loading…
@@ -53,7 +50,7 @@ export function OpenPRsCard(): React.JSX.Element {
             padding: `${tokens.space[4]} ${tokens.space[4]}`,
             color: tokens.color.textMuted,
             fontSize: tokens.size.sm,
-            margin: 0,
+            margin: 0
           }}
         >
           No open pull requests
@@ -69,14 +66,14 @@ export function OpenPRsCard(): React.JSX.Element {
                 gap: tokens.space[2],
                 padding: `${tokens.space[2]} ${tokens.space[4]}`,
                 borderBottom: `1px solid ${tokens.color.border}`,
-                fontSize: tokens.size.sm,
+                fontSize: tokens.size.sm
               }}
             >
               <span
                 style={{
                   fontSize: tokens.size.xs,
                   color: tokens.color.textMuted,
-                  flexShrink: 0,
+                  flexShrink: 0
                 }}
               >
                 #{pr.number}
@@ -87,7 +84,7 @@ export function OpenPRsCard(): React.JSX.Element {
                   color: tokens.color.text,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: 'nowrap'
                 }}
                 title={pr.title}
               >
@@ -101,7 +98,7 @@ export function OpenPRsCard(): React.JSX.Element {
                     background: tokens.color.surfaceHigh,
                     borderRadius: tokens.radius.full,
                     padding: `2px ${tokens.space[2]}`,
-                    flexShrink: 0,
+                    flexShrink: 0
                   }}
                 >
                   Draft
@@ -119,7 +116,7 @@ export function OpenPRsCard(): React.JSX.Element {
                   display: 'flex',
                   alignItems: 'center',
                   padding: 0,
-                  flexShrink: 0,
+                  flexShrink: 0
                 }}
               >
                 <ExternalLink size={12} aria-hidden="true" />

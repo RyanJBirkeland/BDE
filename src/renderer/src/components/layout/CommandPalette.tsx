@@ -149,7 +149,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
           const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
           if (focusedPanelId) splitPanel(focusedPanelId, 'horizontal', 'agents')
           onClose()
-        },
+        }
       },
       {
         id: 'panel-split-below',
@@ -159,7 +159,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
           const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
           if (focusedPanelId) splitPanel(focusedPanelId, 'vertical', 'agents')
           onClose()
-        },
+        }
       },
       {
         id: 'panel-close',
@@ -173,7 +173,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
             if (leaf) closeTab(focusedPanelId, leaf.activeTab)
           }
           onClose()
-        },
+        }
       },
       {
         id: 'panel-reset',
@@ -182,8 +182,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         action: () => {
           usePanelLayoutStore.getState().resetLayout()
           onClose()
-        },
-      },
+        }
+      }
     ]
 
     const agentItems: Command[] = recentAgents.map((agent) => {
@@ -274,58 +274,58 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   return (
     <AnimatePresence>
       {open && (
-    <div className="command-palette__overlay elevation-3-backdrop" onClick={onClose}>
-      <motion.div
-        ref={paletteRef}
-        className="command-palette glass-modal"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleKeyDown}
-        variants={VARIANTS.scaleIn}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-      >
-        <input
-          ref={inputRef}
-          className="command-palette__input"
-          type="text"
-          placeholder="Type a command\u2026"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search commands"
-        />
-        <div className="command-palette__list" ref={listRef} role="listbox">
-          {groups.map((group) => (
-            <div key={group.category} className="command-palette__group">
-              <div className="command-palette__group-header">{group.label}</div>
-              {group.items.map((cmd) => {
-                const idx = flatIndexMap.get(cmd.id) ?? 0
-                return (
-                  <button
-                    key={cmd.id}
-                    className={`command-palette__item ${idx === selectedIndex ? 'command-palette__item--selected' : ''}`}
-                    role="option"
-                    aria-selected={idx === selectedIndex}
-                    onClick={() => cmd.action()}
-                    onMouseEnter={() => setSelectedIndex(idx)}
-                  >
-                    <span className="command-palette__label">{cmd.label}</span>
-                    {cmd.hint && <Kbd>{cmd.hint}</Kbd>}
-                  </button>
-                )
-              })}
+        <div className="command-palette__overlay elevation-3-backdrop" onClick={onClose}>
+          <motion.div
+            ref={paletteRef}
+            className="command-palette glass-modal"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={handleKeyDown}
+            variants={VARIANTS.scaleIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
+          >
+            <input
+              ref={inputRef}
+              className="command-palette__input"
+              type="text"
+              placeholder="Type a command\u2026"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search commands"
+            />
+            <div className="command-palette__list" ref={listRef} role="listbox">
+              {groups.map((group) => (
+                <div key={group.category} className="command-palette__group">
+                  <div className="command-palette__group-header">{group.label}</div>
+                  {group.items.map((cmd) => {
+                    const idx = flatIndexMap.get(cmd.id) ?? 0
+                    return (
+                      <button
+                        key={cmd.id}
+                        className={`command-palette__item ${idx === selectedIndex ? 'command-palette__item--selected' : ''}`}
+                        role="option"
+                        aria-selected={idx === selectedIndex}
+                        onClick={() => cmd.action()}
+                        onMouseEnter={() => setSelectedIndex(idx)}
+                      >
+                        <span className="command-palette__label">{cmd.label}</span>
+                        {cmd.hint && <Kbd>{cmd.hint}</Kbd>}
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+              {flatItems.length === 0 && (
+                <div className="command-palette__empty">No matching commands</div>
+              )}
             </div>
-          ))}
-          {flatItems.length === 0 && (
-            <div className="command-palette__empty">No matching commands</div>
-          )}
+          </motion.div>
         </div>
-      </motion.div>
-    </div>
       )}
     </AnimatePresence>
   )

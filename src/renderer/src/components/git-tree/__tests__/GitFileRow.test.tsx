@@ -10,7 +10,7 @@ describe('GitFileRow', () => {
     selected: false,
     onStage: vi.fn(),
     onUnstage: vi.fn(),
-    onClick: vi.fn(),
+    onClick: vi.fn()
   }
 
   it('renders file name', () => {

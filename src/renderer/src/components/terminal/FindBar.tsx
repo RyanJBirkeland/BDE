@@ -86,11 +86,7 @@ export function FindBar(): React.JSX.Element | null {
   if (!showFind) return null
 
   const countLabel =
-    query && resultCount > 0
-      ? `${resultIndex + 1} of ${resultCount}`
-      : query
-        ? 'No results'
-        : ''
+    query && resultCount > 0 ? `${resultIndex + 1} of ${resultCount}` : query ? 'No results' : ''
 
   return (
     <div className="terminal-find">
@@ -111,11 +107,7 @@ export function FindBar(): React.JSX.Element | null {
       >
         <ChevronUp size={14} />
       </button>
-      <button
-        className="terminal-find__btn"
-        onClick={findNext}
-        title="Next match (Enter)"
-      >
+      <button className="terminal-find__btn" onClick={findNext} title="Next match (Enter)">
         <ChevronDown size={14} />
       </button>
       <button className="terminal-find__btn" onClick={close} title="Close (Escape)">

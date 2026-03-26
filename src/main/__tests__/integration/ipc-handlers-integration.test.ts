@@ -7,33 +7,33 @@ const handlers = new Map<string, Function>()
 vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn((channel: string, handler: Function) => handlers.set(channel, handler)),
-    on: vi.fn(),
+    on: vi.fn()
   },
   BrowserWindow: {
-    getAllWindows: vi.fn().mockReturnValue([]),
-  },
+    getAllWindows: vi.fn().mockReturnValue([])
+  }
 }))
 
 // --- Mock auth-guard ---
 
 const { mockCheckAuthStatus } = vi.hoisted(() => ({
-  mockCheckAuthStatus: vi.fn(),
+  mockCheckAuthStatus: vi.fn()
 }))
 
 vi.mock('../../auth-guard', () => ({
-  checkAuthStatus: mockCheckAuthStatus,
+  checkAuthStatus: mockCheckAuthStatus
 }))
 
 // --- Mock runner-client ---
 
 const { mockListAgents, mockKillAgent } = vi.hoisted(() => ({
   mockListAgents: vi.fn().mockResolvedValue([]),
-  mockKillAgent: vi.fn().mockResolvedValue({ ok: true }),
+  mockKillAgent: vi.fn().mockResolvedValue({ ok: true })
 }))
 
 vi.mock('../../runner-client', () => ({
   listAgents: mockListAgents,
-  killAgent: mockKillAgent,
+  killAgent: mockKillAgent
 }))
 
 import { registerAuthHandlers } from '../../handlers/auth-handlers'
@@ -72,7 +72,7 @@ describe('IPC handlers integration', () => {
         cliFound: true,
         tokenFound: true,
         tokenExpired: false,
-        expiresAt,
+        expiresAt
       })
 
       const result = (await invoke('auth:status')) as {
@@ -86,7 +86,7 @@ describe('IPC handlers integration', () => {
         cliFound: true,
         tokenFound: true,
         tokenExpired: false,
-        expiresAt: expiresAt.toISOString(),
+        expiresAt: expiresAt.toISOString()
       })
     })
 
@@ -95,7 +95,7 @@ describe('IPC handlers integration', () => {
         cliFound: true,
         tokenFound: true,
         tokenExpired: true,
-        expiresAt: new Date(Date.now() - 3_600_000),
+        expiresAt: new Date(Date.now() - 3_600_000)
       })
 
       const result = (await invoke('auth:status')) as {
@@ -113,7 +113,7 @@ describe('IPC handlers integration', () => {
       mockCheckAuthStatus.mockResolvedValue({
         cliFound: true,
         tokenFound: false,
-        tokenExpired: false,
+        tokenExpired: false
       })
 
       const result = (await invoke('auth:status')) as {
@@ -127,7 +127,7 @@ describe('IPC handlers integration', () => {
         cliFound: true,
         tokenFound: false,
         tokenExpired: false,
-        expiresAt: undefined,
+        expiresAt: undefined
       })
     })
 
@@ -135,7 +135,7 @@ describe('IPC handlers integration', () => {
       mockCheckAuthStatus.mockResolvedValue({
         cliFound: false,
         tokenFound: false,
-        tokenExpired: false,
+        tokenExpired: false
       })
 
       const result = (await invoke('auth:status')) as { cliFound: boolean }
@@ -175,7 +175,7 @@ describe('IPC handlers integration', () => {
       expect(result).toEqual({
         running: false,
         concurrency: null,
-        activeAgents: [],
+        activeAgents: []
       })
     })
 
@@ -184,7 +184,19 @@ describe('IPC handlers integration', () => {
         running: true,
         shuttingDown: false,
         concurrency: { maxSlots: 2, activeCount: 1, cooldownUntil: 0 },
-        activeAgents: [{ taskId: 't1', agentRunId: 'r1', model: 'claude-sonnet-4-5', startedAt: 0, lastOutputAt: 0, rateLimitCount: 0, costUsd: 0, tokensIn: 0, tokensOut: 0 }],
+        activeAgents: [
+          {
+            taskId: 't1',
+            agentRunId: 'r1',
+            model: 'claude-sonnet-4-5',
+            startedAt: 0,
+            lastOutputAt: 0,
+            rateLimitCount: 0,
+            costUsd: 0,
+            tokensIn: 0,
+            tokensOut: 0
+          }
+        ]
       }
       handlers.clear()
       registerAgentManagerHandlers({ getStatus: () => mockStatus } as any)

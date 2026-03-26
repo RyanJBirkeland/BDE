@@ -24,10 +24,7 @@ export function onSprintMutation(cb: SprintMutationListener): () => void {
   }
 }
 
-export function notifySprintMutation(
-  type: SprintMutationEvent['type'],
-  task: SprintTask
-): void {
+export function notifySprintMutation(type: SprintMutationEvent['type'], task: SprintTask): void {
   const event = { type, task }
   for (const cb of listeners) {
     try {
@@ -39,6 +36,10 @@ export function notifySprintMutation(
 
   sseBroadcaster.broadcast('task:updated', { id: task.id, status: task.status })
   if (task.status === 'queued') {
-    sseBroadcaster.broadcast('task:queued', { id: task.id, title: task.title, priority: task.priority })
+    sseBroadcaster.broadcast('task:queued', {
+      id: task.id,
+      title: task.title,
+      priority: task.priority
+    })
   }
 }

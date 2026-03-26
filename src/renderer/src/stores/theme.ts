@@ -38,5 +38,5 @@ export const useThemeStore = create<ThemeStore>((set) => ({
       localStorage.setItem('bde-theme', t)
       applyTheme(t)
       return { theme: t }
-    }),
+    })
 }))

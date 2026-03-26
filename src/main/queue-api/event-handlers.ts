@@ -23,14 +23,17 @@ const CURATED_EVENT_TYPES = new Set([
   'agent:tool_result',
   'agent:rate_limited',
   'agent:error',
-  'agent:completed',
+  'agent:completed'
 ])
 
 // ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
 
-export async function handleEvents(_req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+export async function handleEvents(
+  _req: http.IncomingMessage,
+  res: http.ServerResponse
+): Promise<void> {
   sseBroadcaster.addClient(res)
 }
 
@@ -63,7 +66,7 @@ export async function handleTaskOutput(
 
   // Broadcast each event to connected SSE clients
   for (const event of events) {
-    sseBroadcaster.broadcast('task:output', { taskId, ...event as Record<string, unknown> })
+    sseBroadcaster.broadcast('task:output', { taskId, ...(event as Record<string, unknown>) })
   }
 
   // Persist curated event types to SQLite (best-effort)
@@ -85,7 +88,7 @@ export async function handleTaskOutput(
         timestamp:
           typeof e['timestamp'] === 'string'
             ? new Date(e['timestamp'] as string).getTime() || now
-            : now,
+            : now
       }))
     if (batch.length > 0) {
       insertEventBatch(getDb(), batch)
@@ -108,9 +111,7 @@ export async function handleTaskEvents(
     afterTimestampRaw != null ? parseInt(afterTimestampRaw, 10) || undefined : undefined
   const limitRaw = query.get('limit')
   const limit =
-    limitRaw != null
-      ? Math.max(1, Math.min(parseInt(limitRaw, 10) || 200, 1000))
-      : undefined
+    limitRaw != null ? Math.max(1, Math.min(parseInt(limitRaw, 10) || 200, 1000)) : undefined
 
   const result = queryEvents(getDb(), { agentId: taskId, eventType, afterTimestamp, limit })
 
@@ -120,8 +121,8 @@ export async function handleTaskEvents(
       agentId: e.agent_id,
       eventType: e.event_type,
       payload: e.payload,
-      timestamp: e.timestamp,
+      timestamp: e.timestamp
     })),
-    hasMore: result.hasMore,
+    hasMore: result.hasMore
   })
 }

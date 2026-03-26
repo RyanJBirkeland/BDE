@@ -92,9 +92,9 @@ describe('agent_runs CRUD', () => {
     )
 
     // Confirm update
-    const updated = db.prepare('SELECT status, finished_at FROM agent_runs WHERE id = ?').get(
-      id
-    ) as Record<string, unknown>
+    const updated = db
+      .prepare('SELECT status, finished_at FROM agent_runs WHERE id = ?')
+      .get(id) as Record<string, unknown>
     expect(updated.status).toBe('done')
     expect(updated.finished_at).toBe(now)
   })
@@ -102,9 +102,7 @@ describe('agent_runs CRUD', () => {
   it('rejects invalid status values', () => {
     expect(() =>
       db
-        .prepare(
-          'INSERT INTO agent_runs (id, bin, status, started_at) VALUES (?, ?, ?, ?)'
-        )
+        .prepare('INSERT INTO agent_runs (id, bin, status, started_at) VALUES (?, ?, ?, ?)')
         .run('run-bad', 'claude', 'invalid_status', new Date().toISOString())
     ).toThrow()
   })
@@ -176,9 +174,11 @@ describe('cost_events CRUD', () => {
   })
 
   it('auto-generates id when not provided', () => {
-    db.prepare(
-      'INSERT INTO cost_events (source, model, total_tokens) VALUES (?, ?, ?)'
-    ).run('manual', 'gpt-4', 1000)
+    db.prepare('INSERT INTO cost_events (source, model, total_tokens) VALUES (?, ?, ?)').run(
+      'manual',
+      'gpt-4',
+      1000
+    )
 
     const row = db.prepare('SELECT id FROM cost_events WHERE source = ?').get('manual') as {
       id: string

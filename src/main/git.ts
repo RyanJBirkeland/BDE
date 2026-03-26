@@ -56,7 +56,10 @@ export async function gitDiffFile(cwd: string, file?: string): Promise<Result<st
     const { stdout: staged } = await execFileAsync('git', stagedArgs, opts)
     return { ok: true, data: staged + unstaged }
   } catch (err) {
-    return { ok: false, error: `git diff failed in ${cwd}${file ? ` for ${file}` : ''}: ${(err as Error).message}` }
+    return {
+      ok: false,
+      error: `git diff failed in ${cwd}${file ? ` for ${file}` : ''}: ${(err as Error).message}`
+    }
   }
 }
 
@@ -100,9 +103,7 @@ export async function gitPush(cwd: string): Promise<string> {
   }
 }
 
-export async function gitBranches(
-  cwd: string
-): Promise<{ current: string; branches: string[] }> {
+export async function gitBranches(cwd: string): Promise<{ current: string; branches: string[] }> {
   try {
     const { stdout } = await execFileAsync('git', ['branch'], {
       cwd,
@@ -134,4 +135,3 @@ export async function gitCheckout(cwd: string, branch: string): Promise<void> {
     maxBuffer: MAX_BUFFER
   })
 }
-

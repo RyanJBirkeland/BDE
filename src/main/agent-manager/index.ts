@@ -6,14 +6,14 @@ import {
   WORKTREE_PRUNE_INTERVAL_MS,
   QUEUE_TIMEOUT_MS,
   INITIAL_DRAIN_DEFER_MS,
-  NOTES_MAX_LENGTH,
+  NOTES_MAX_LENGTH
 } from './types'
 import {
   makeConcurrencyState,
   availableSlots,
   applyBackpressure,
   tryRecover,
-  type ConcurrencyState,
+  type ConcurrencyState
 } from './concurrency'
 import { checkAgent } from './watchdog'
 import { setupWorktree, pruneStaleWorktrees } from './worktree'
@@ -37,13 +37,24 @@ import { homedir as home } from 'node:os'
 import { BDE_AGENT_LOG_PATH } from '../paths'
 const LOG_PATH = BDE_AGENT_LOG_PATH
 function fileLog(level: string, m: string): void {
-  try { appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [${level}] ${m}\n`) } catch {}
+  try {
+    appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [${level}] ${m}\n`)
+  } catch {}
 }
 
 const defaultLogger: Logger = {
-  info: (m) => { console.log(m); fileLog('INFO', m) },
-  warn: (m) => { console.warn(m); fileLog('WARN', m) },
-  error: (m) => { console.error(m); fileLog('ERROR', m) },
+  info: (m) => {
+    console.log(m)
+    fileLog('INFO', m)
+  },
+  warn: (m) => {
+    console.warn(m)
+    fileLog('WARN', m)
+  },
+  error: (m) => {
+    console.error(m)
+    fileLog('ERROR', m)
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -64,7 +75,9 @@ export async function checkOAuthToken(logger: Logger): Promise<boolean> {
         logger.info('[agent-manager] OAuth token auto-refreshed from Keychain')
         return true
       } else {
-        logger.warn('[agent-manager] OAuth token file missing/empty and keychain refresh failed — skipping drain cycle')
+        logger.warn(
+          '[agent-manager] OAuth token file missing/empty and keychain refresh failed — skipping drain cycle'
+        )
         return false
       }
     }
@@ -82,7 +95,9 @@ export async function checkOAuthToken(logger: Logger): Promise<boolean> {
           logger.info('[agent-manager] OAuth token proactively refreshed from Keychain')
         }
       }
-    } catch { /* stat failed — continue with existing token */ }
+    } catch {
+      /* stat failed — continue with existing token */
+    }
 
     return true
   } catch {
@@ -104,20 +119,41 @@ export function handleWatchdogVerdict(
   now: string,
   updateTaskFn: (id: string, patch: Record<string, unknown>) => Promise<unknown>,
   onTerminal: (id: string, status: string) => Promise<void>,
-  logger: Logger,
+  logger: Logger
 ): ConcurrencyState {
   if (verdict === 'max-runtime') {
-    updateTaskFn(taskId, { status: 'error', completed_at: now, notes: 'Max runtime exceeded', needs_review: true })
+    updateTaskFn(taskId, {
+      status: 'error',
+      completed_at: now,
+      notes: 'Max runtime exceeded',
+      needs_review: true
+    })
       .then(() => onTerminal(taskId, 'error'))
-      .catch((err) => logger.warn(`[agent-manager] Failed to update task ${taskId} after max-runtime kill: ${err}`))
+      .catch((err) =>
+        logger.warn(
+          `[agent-manager] Failed to update task ${taskId} after max-runtime kill: ${err}`
+        )
+      )
   } else if (verdict === 'idle') {
-    updateTaskFn(taskId, { status: 'error', completed_at: now, notes: 'Idle timeout', needs_review: true })
+    updateTaskFn(taskId, {
+      status: 'error',
+      completed_at: now,
+      notes: 'Idle timeout',
+      needs_review: true
+    })
       .then(() => onTerminal(taskId, 'error'))
-      .catch((err) => logger.warn(`[agent-manager] Failed to update task ${taskId} after idle kill: ${err}`))
+      .catch((err) =>
+        logger.warn(`[agent-manager] Failed to update task ${taskId} after idle kill: ${err}`)
+      )
   } else if (verdict === 'rate-limit-loop') {
     concurrency = applyBackpressure(concurrency, Date.now())
-    updateTaskFn(taskId, { status: 'queued', claimed_by: null, notes: 'Rate-limit loop — re-queued' })
-      .catch((err) => logger.warn(`[agent-manager] Failed to requeue rate-limited task ${taskId}: ${err}`))
+    updateTaskFn(taskId, {
+      status: 'queued',
+      claimed_by: null,
+      notes: 'Rate-limit loop — re-queued'
+    }).catch((err) =>
+      logger.warn(`[agent-manager] Failed to requeue rate-limited task ${taskId}: ${err}`)
+    )
   }
   return concurrency
 }
@@ -159,7 +195,7 @@ export interface AgentManager {
 export function createAgentManager(
   config: AgentManagerConfig,
   repo: ISprintTaskRepository,
-  logger: Logger = defaultLogger,
+  logger: Logger = defaultLogger
 ): AgentManager {
   // ---- Core state ----
   let concurrency: ConcurrencyState = makeConcurrencyState(config.maxConcurrent)
@@ -182,7 +218,9 @@ export function createAgentManager(
   async function fetchQueuedTasks(limit: number): Promise<Array<Record<string, unknown>>> {
     const result = await Promise.race([
       repo.getQueuedTasks(limit),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error('getQueuedTasks timeout')), QUEUE_TIMEOUT_MS)),
+      new Promise<never>((_, rej) =>
+        setTimeout(() => rej(new Error('getQueuedTasks timeout')), QUEUE_TIMEOUT_MS)
+      )
     ])
     return result as unknown as Array<Record<string, unknown>>
   }
@@ -190,7 +228,9 @@ export function createAgentManager(
   async function claimTaskViaApi(taskId: string): Promise<boolean> {
     const result = await Promise.race([
       repo.claimTask(taskId, EXECUTOR_ID),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error('claimTask timeout')), QUEUE_TIMEOUT_MS)),
+      new Promise<never>((_, rej) =>
+        setTimeout(() => rej(new Error('claimTask timeout')), QUEUE_TIMEOUT_MS)
+      )
     ])
     return result !== null
   }
@@ -205,7 +245,13 @@ export function createAgentManager(
 
   // ---- Helpers ----
 
-  const runAgentDeps: RunAgentDeps = { activeAgents, defaultModel: config.defaultModel, logger, onTaskTerminal, repo }
+  const runAgentDeps: RunAgentDeps = {
+    activeAgents,
+    defaultModel: config.defaultModel,
+    logger,
+    onTaskTerminal,
+    repo
+  }
 
   function isActive(taskId: string): boolean {
     return activeAgents.has(taskId)
@@ -220,7 +266,7 @@ export function createAgentManager(
 
   async function processQueuedTask(
     raw: Record<string, unknown>,
-    taskStatusMap: Map<string, string>,
+    taskStatusMap: Map<string, string>
   ): Promise<void> {
     // Map Queue API camelCase response to local task shape
     // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
@@ -233,7 +279,7 @@ export function createAgentManager(
       retry_count: Number(raw.retryCount) || 0,
       fast_fail_count: Number(raw.fastFailCount) || 0,
       playground_enabled: Boolean(raw.playgroundEnabled),
-      max_runtime_ms: Number(raw.maxRuntimeMs) || null,
+      max_runtime_ms: Number(raw.maxRuntimeMs) || null
     }
 
     // Defense-in-depth: check dependencies before claiming.
@@ -246,14 +292,18 @@ export function createAgentManager(
           const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
             task.id,
             deps,
-            (depId: string) => taskStatusMap.get(depId),
+            (depId: string) => taskStatusMap.get(depId)
           )
           if (!satisfied) {
-            logger.info(`[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`)
-            await repo.updateTask(task.id, {
-              status: 'blocked',
-              notes: formatBlockedNote(blockedBy),
-            }).catch(() => {})
+            logger.info(
+              `[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`
+            )
+            await repo
+              .updateTask(task.id, {
+                status: 'blocked',
+                notes: formatBlockedNote(blockedBy)
+              })
+              .catch(() => {})
             return
           }
         }
@@ -284,7 +334,7 @@ export function createAgentManager(
         worktreeBase: config.worktreeBase,
         taskId: task.id,
         title: task.title,
-        logger,
+        logger
       })
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err)
@@ -293,16 +343,20 @@ export function createAgentManager(
         status: 'error',
         completed_at: new Date().toISOString(),
         notes: `Worktree setup failed: ${errMsg}`.slice(0, NOTES_MAX_LENGTH),
-        claimed_by: null,
+        claimed_by: null
       })
       await onTaskTerminal(task.id, 'error')
       return
     }
 
     // Fire-and-forget — errors logged inside runAgent
-    const p = _runAgent(task, wt, repoPath, runAgentDeps).catch((err) => {
-      logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
-    }).finally(() => { agentPromises.delete(p) })
+    const p = _runAgent(task, wt, repoPath, runAgentDeps)
+      .catch((err) => {
+        logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
+      })
+      .finally(() => {
+        agentPromises.delete(p)
+      })
     agentPromises.add(p)
   }
 
@@ -315,7 +369,9 @@ export function createAgentManager(
     }
     drainRunning = true
     try {
-      logger.info(`[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`)
+      logger.info(
+        `[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`
+      )
       if (shuttingDown) return
 
       // Refresh dependency index each drain cycle to pick up tasks created
@@ -349,7 +405,9 @@ export function createAgentManager(
           try {
             await processQueuedTask(raw, taskStatusMap)
           } catch (err) {
-            logger.error(`[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`)
+            logger.error(
+              `[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`
+            )
           }
         }
       } catch (err) {
@@ -370,7 +428,9 @@ export function createAgentManager(
       if (verdict === 'ok') continue
 
       logger.warn(`[agent-manager] Watchdog killing task ${agent.taskId}: ${verdict}`)
-      try { agent.handle.abort() } catch (err) {
+      try {
+        agent.handle.abort()
+      } catch (err) {
         logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId}: ${err}`)
       }
 
@@ -379,7 +439,15 @@ export function createAgentManager(
 
       // Update task based on verdict
       const now = new Date().toISOString()
-      concurrency = handleWatchdogVerdict(verdict, agent.taskId, concurrency, now, repo.updateTask, onTaskTerminal, logger)
+      concurrency = handleWatchdogVerdict(
+        verdict,
+        agent.taskId,
+        concurrency,
+        now,
+        repo.updateTask,
+        onTaskTerminal,
+        logger
+      )
     }
   }
 
@@ -417,12 +485,15 @@ export function createAgentManager(
     })
 
     // Build dependency index
-    repo.getTasksWithDependencies().then((tasks) => {
-      depIndex.rebuild(tasks)
-      logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
-    }).catch((err) => {
-      logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
-    })
+    repo
+      .getTasksWithDependencies()
+      .then((tasks) => {
+        depIndex.rebuild(tasks)
+        logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
+      })
+      .catch((err) => {
+        logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
+      })
 
     // Initial worktree prune (fire-and-forget)
     pruneStaleWorktrees(config.worktreeBase, isActive).catch((err) => {
@@ -432,15 +503,27 @@ export function createAgentManager(
     // Start periodic loops
     pollTimer = setInterval(() => {
       if (drainInFlight) return // skip if previous drain still running
-      drainInFlight = drainLoop().catch((err) => logger.warn(`[agent-manager] Drain loop error: ${err}`)).finally(() => { drainInFlight = null })
+      drainInFlight = drainLoop()
+        .catch((err) => logger.warn(`[agent-manager] Drain loop error: ${err}`))
+        .finally(() => {
+          drainInFlight = null
+        })
     }, config.pollIntervalMs)
     watchdogTimer = setInterval(watchdogLoop, WATCHDOG_INTERVAL_MS)
-    orphanTimer = setInterval(() => { orphanLoop().catch((err) => logger.warn(`[agent-manager] Orphan loop error: ${err}`)) }, ORPHAN_CHECK_INTERVAL_MS)
-    pruneTimer = setInterval(() => { pruneLoop().catch((err) => logger.warn(`[agent-manager] Prune loop error: ${err}`)) }, WORKTREE_PRUNE_INTERVAL_MS)
+    orphanTimer = setInterval(() => {
+      orphanLoop().catch((err) => logger.warn(`[agent-manager] Orphan loop error: ${err}`))
+    }, ORPHAN_CHECK_INTERVAL_MS)
+    pruneTimer = setInterval(() => {
+      pruneLoop().catch((err) => logger.warn(`[agent-manager] Prune loop error: ${err}`))
+    }, WORKTREE_PRUNE_INTERVAL_MS)
 
     // Defer initial drain to let the event loop process (Supabase fetch needs this)
     setTimeout(() => {
-      drainInFlight = drainLoop().catch((err) => logger.warn(`[agent-manager] Initial drain error: ${err}`)).finally(() => { drainInFlight = null })
+      drainInFlight = drainLoop()
+        .catch((err) => logger.warn(`[agent-manager] Initial drain error: ${err}`))
+        .finally(() => {
+          drainInFlight = null
+        })
     }, INITIAL_DRAIN_DEFER_MS)
 
     logger.info('[agent-manager] Started')
@@ -449,10 +532,22 @@ export function createAgentManager(
   async function stop(timeoutMs = 10_000): Promise<void> {
     shuttingDown = true
 
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
-    if (watchdogTimer) { clearInterval(watchdogTimer); watchdogTimer = null }
-    if (orphanTimer) { clearInterval(orphanTimer); orphanTimer = null }
-    if (pruneTimer) { clearInterval(pruneTimer); pruneTimer = null }
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+    if (watchdogTimer) {
+      clearInterval(watchdogTimer)
+      watchdogTimer = null
+    }
+    if (orphanTimer) {
+      clearInterval(orphanTimer)
+      orphanTimer = null
+    }
+    if (pruneTimer) {
+      clearInterval(pruneTimer)
+      pruneTimer = null
+    }
 
     // Wait for any in-flight drain to complete before aborting agents
     if (drainInFlight) {
@@ -462,7 +557,9 @@ export function createAgentManager(
 
     // Abort all active agents
     for (const agent of activeAgents.values()) {
-      try { agent.handle.abort() } catch (err) {
+      try {
+        agent.handle.abort()
+      } catch (err) {
         logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId} during shutdown: ${err}`)
       }
     }
@@ -492,8 +589,8 @@ export function createAgentManager(
         rateLimitCount: a.rateLimitCount,
         costUsd: a.costUsd,
         tokensIn: a.tokensIn,
-        tokensOut: a.tokensOut,
-      })),
+        tokensOut: a.tokensOut
+      }))
     }
   }
 

@@ -27,7 +27,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: '2026-01-15T10:00:00Z',
     created_at: '2026-01-10T10:00:00Z',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -36,7 +36,7 @@ const defaultProps = {
   tasks: [],
   onPushToSprint: vi.fn(),
   onViewSpec: vi.fn(),
-  onViewOutput: vi.fn(),
+  onViewOutput: vi.fn()
 }
 
 describe('TaskTable', () => {
@@ -132,7 +132,9 @@ describe('TaskTable', () => {
       const onPushToSprint = vi.fn()
       const task = makeTask()
       render(<TaskTable {...defaultProps} tasks={[task]} onPushToSprint={onPushToSprint} />)
-      const sprintBtn = Array.from(document.querySelectorAll('button')).find((b) => b.textContent?.includes('Sprint'))!
+      const sprintBtn = Array.from(document.querySelectorAll('button')).find((b) =>
+        b.textContent?.includes('Sprint')
+      )!
       expect(sprintBtn).toBeTruthy()
       fireEvent.click(sprintBtn)
       expect(onPushToSprint).toHaveBeenCalledWith(task)
@@ -202,7 +204,7 @@ describe('TaskTable', () => {
       id: 'done-1',
       title: 'Completed task',
       status: 'done',
-      completed_at: '2026-01-20T10:00:00Z',
+      completed_at: '2026-01-20T10:00:00Z'
     })
 
     it('renders done task title', () => {
@@ -222,7 +224,7 @@ describe('TaskTable', () => {
         status: 'done',
         completed_at: '2026-01-20T10:00:00Z',
         pr_url: 'https://github.com/owner/repo/pull/42',
-        pr_number: 42,
+        pr_number: 42
       })
       render(<TaskTable {...defaultProps} section="done" tasks={[taskWithPr]} />)
       const link = screen.getByRole('link')
@@ -231,14 +233,23 @@ describe('TaskTable', () => {
 
     it('calls onViewOutput when eye button clicked', () => {
       const onViewOutput = vi.fn()
-      render(<TaskTable {...defaultProps} section="done" tasks={[doneTask]} onViewOutput={onViewOutput} />)
+      render(
+        <TaskTable
+          {...defaultProps}
+          section="done"
+          tasks={[doneTask]}
+          onViewOutput={onViewOutput}
+        />
+      )
       fireEvent.click(screen.getByTitle('View Output'))
       expect(onViewOutput).toHaveBeenCalledWith(doneTask)
     })
 
     it('calls onViewSpec when title clicked', () => {
       const onViewSpec = vi.fn()
-      render(<TaskTable {...defaultProps} section="done" tasks={[doneTask]} onViewSpec={onViewSpec} />)
+      render(
+        <TaskTable {...defaultProps} section="done" tasks={[doneTask]} onViewSpec={onViewSpec} />
+      )
       fireEvent.click(screen.getByText('Completed task'))
       expect(onViewSpec).toHaveBeenCalledWith(doneTask)
     })
@@ -258,7 +269,7 @@ describe('TaskTable', () => {
         status: 'done',
         pr_url: 'https://github.com/owner/repo/pull/1',
         pr_number: 1,
-        completed_at: '2026-01-20T10:00:00Z',
+        completed_at: '2026-01-20T10:00:00Z'
       })
       render(<TaskTable {...defaultProps} section="done" tasks={[taskWithPr]} onRerun={onRerun} />)
       expect(screen.queryByTitle('Re-run')).not.toBeInTheDocument()
@@ -270,7 +281,7 @@ describe('TaskTable', () => {
       id: 'failed-1',
       title: 'Failed task',
       status: 'failed',
-      updated_at: '2026-01-18T10:00:00Z',
+      updated_at: '2026-01-18T10:00:00Z'
     })
 
     it('renders failed task title', () => {
@@ -280,7 +291,14 @@ describe('TaskTable', () => {
 
     it('shows Retry button and calls onPushToSprint', () => {
       const onPushToSprint = vi.fn()
-      render(<TaskTable {...defaultProps} section="failed" tasks={[failedTask]} onPushToSprint={onPushToSprint} />)
+      render(
+        <TaskTable
+          {...defaultProps}
+          section="failed"
+          tasks={[failedTask]}
+          onPushToSprint={onPushToSprint}
+        />
+      )
       const retryBtn = screen.getByTitle(/Retry/i)
       expect(retryBtn).toBeInTheDocument()
       fireEvent.click(retryBtn)
@@ -289,14 +307,28 @@ describe('TaskTable', () => {
 
     it('calls onViewOutput when eye button clicked', () => {
       const onViewOutput = vi.fn()
-      render(<TaskTable {...defaultProps} section="failed" tasks={[failedTask]} onViewOutput={onViewOutput} />)
+      render(
+        <TaskTable
+          {...defaultProps}
+          section="failed"
+          tasks={[failedTask]}
+          onViewOutput={onViewOutput}
+        />
+      )
       fireEvent.click(screen.getByTitle('View Output'))
       expect(onViewOutput).toHaveBeenCalledWith(failedTask)
     })
 
     it('calls onViewSpec when title clicked', () => {
       const onViewSpec = vi.fn()
-      render(<TaskTable {...defaultProps} section="failed" tasks={[failedTask]} onViewSpec={onViewSpec} />)
+      render(
+        <TaskTable
+          {...defaultProps}
+          section="failed"
+          tasks={[failedTask]}
+          onViewSpec={onViewSpec}
+        />
+      )
       fireEvent.click(screen.getByText('Failed task'))
       expect(onViewSpec).toHaveBeenCalledWith(failedTask)
     })
@@ -305,7 +337,11 @@ describe('TaskTable', () => {
   describe('row limiting', () => {
     it('shows only defaultRowLimit rows initially for done section', () => {
       const tasks = Array.from({ length: 15 }, (_, i) =>
-        makeTask({ id: `task-${i}`, title: `Task ${i}`, completed_at: `2026-01-${(i + 1).toString().padStart(2, '0')}T10:00:00Z` })
+        makeTask({
+          id: `task-${i}`,
+          title: `Task ${i}`,
+          completed_at: `2026-01-${(i + 1).toString().padStart(2, '0')}T10:00:00Z`
+        })
       )
       render(<TaskTable {...defaultProps} section="done" tasks={tasks} defaultRowLimit={10} />)
       // Should show "Show 5 more →"
@@ -314,7 +350,11 @@ describe('TaskTable', () => {
 
     it('shows all rows after clicking show more', () => {
       const tasks = Array.from({ length: 15 }, (_, i) =>
-        makeTask({ id: `task-${i}`, title: `Task ${i}`, completed_at: `2026-01-${(i + 1).toString().padStart(2, '0')}T10:00:00Z` })
+        makeTask({
+          id: `task-${i}`,
+          title: `Task ${i}`,
+          completed_at: `2026-01-${(i + 1).toString().padStart(2, '0')}T10:00:00Z`
+        })
       )
       render(<TaskTable {...defaultProps} section="done" tasks={tasks} defaultRowLimit={10} />)
       fireEvent.click(screen.getByText(/Show 5 more/))
@@ -327,7 +367,7 @@ describe('TaskTable', () => {
       const tasks = [
         makeTask({ id: 't1', title: 'Low prio', priority: 5 }),
         makeTask({ id: 't2', title: 'High prio', priority: 1 }),
-        makeTask({ id: 't3', title: 'Mid prio', priority: 3 }),
+        makeTask({ id: 't3', title: 'Mid prio', priority: 3 })
       ]
       render(<TaskTable {...defaultProps} tasks={tasks} />)
       const rows = document.querySelectorAll('tbody tr')
@@ -338,8 +378,18 @@ describe('TaskTable', () => {
 
     it('sorts done tasks by completed_at descending', () => {
       const tasks = [
-        makeTask({ id: 't1', title: 'Older task', status: 'done', completed_at: '2026-01-10T10:00:00Z' }),
-        makeTask({ id: 't2', title: 'Newer task', status: 'done', completed_at: '2026-01-20T10:00:00Z' }),
+        makeTask({
+          id: 't1',
+          title: 'Older task',
+          status: 'done',
+          completed_at: '2026-01-10T10:00:00Z'
+        }),
+        makeTask({
+          id: 't2',
+          title: 'Newer task',
+          status: 'done',
+          completed_at: '2026-01-20T10:00:00Z'
+        })
       ]
       render(<TaskTable {...defaultProps} section="done" tasks={tasks} />)
       const rows = document.querySelectorAll('tbody tr')

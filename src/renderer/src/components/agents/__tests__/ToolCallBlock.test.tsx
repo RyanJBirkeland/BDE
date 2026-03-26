@@ -5,7 +5,7 @@ import { ToolCallBlock } from '../ToolCallBlock'
 const baseProps = {
   tool: 'Read',
   summary: 'src/app.ts',
-  timestamp: new Date('2024-06-01T14:30:00Z').getTime(),
+  timestamp: new Date('2024-06-01T14:30:00Z').getTime()
 }
 
 describe('ToolCallBlock', () => {

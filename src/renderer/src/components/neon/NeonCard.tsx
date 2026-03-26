@@ -1,15 +1,15 @@
-import { type ReactNode } from 'react';
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type ReactNode } from 'react'
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 interface NeonCardProps {
-  accent?: NeonAccent;
-  title?: string;
-  icon?: ReactNode;
-  action?: ReactNode;
-  children: ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
+  accent?: NeonAccent
+  title?: string
+  icon?: ReactNode
+  action?: ReactNode
+  children: ReactNode
+  className?: string
+  style?: React.CSSProperties
 }
 
 export function NeonCard({
@@ -19,7 +19,7 @@ export function NeonCard({
   action,
   children,
   className = '',
-  style,
+  style
 }: NeonCardProps) {
   const cardStyle: React.CSSProperties = {
     '--card-accent': neonVar(accent, 'color'),
@@ -35,33 +35,37 @@ export function NeonCard({
     padding: title ? '0' : tokens.space[3],
     overflow: 'hidden',
     transition: `box-shadow ${tokens.transition.base}, transform ${tokens.transition.base}`,
-    ...style,
-  } as React.CSSProperties;
+    ...style
+  } as React.CSSProperties
 
   return (
     <div className={`neon-card ${className}`.trim()} style={cardStyle}>
       {title && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: tokens.space[2],
-          padding: `${tokens.space[2]} ${tokens.space[3]}`,
-          borderBottom: `1px solid ${neonVar(accent, 'border')}`,
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.space[2],
+            padding: `${tokens.space[2]} ${tokens.space[3]}`,
+            borderBottom: `1px solid ${neonVar(accent, 'border')}`
+          }}
+        >
           {icon && <span style={{ color: neonVar(accent, 'color'), display: 'flex' }}>{icon}</span>}
-          <span style={{
-            color: neonVar(accent, 'color'),
-            fontSize: tokens.size.xs,
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            fontWeight: 600,
-          }}>{title}</span>
+          <span
+            style={{
+              color: neonVar(accent, 'color'),
+              fontSize: tokens.size.xs,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              fontWeight: 600
+            }}
+          >
+            {title}
+          </span>
           {action && <span style={{ marginLeft: 'auto' }}>{action}</span>}
         </div>
       )}
-      <div style={{ padding: title ? tokens.space[3] : '0' }}>
-        {children}
-      </div>
+      <div style={{ padding: title ? tokens.space[3] : '0' }}>{children}</div>
     </div>
-  );
+  )
 }

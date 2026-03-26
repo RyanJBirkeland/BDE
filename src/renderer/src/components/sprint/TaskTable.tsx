@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, ChevronRight, ExternalLink, ArrowRight, Eye, CheckCircle2, RefreshCw } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  ArrowRight,
+  Eye,
+  CheckCircle2,
+  RefreshCw
+} from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { timeAgo, repoBadgeVariant } from '../../lib/format'
 import type { SprintTask } from '../../../../shared/types'
@@ -9,7 +17,7 @@ const PRIORITY_OPTIONS = [
   { value: 2, label: 'P2 High' },
   { value: 3, label: 'P3 Medium' },
   { value: 4, label: 'P4 Low' },
-  { value: 5, label: 'P5 Backlog' },
+  { value: 5, label: 'P5 Backlog' }
 ] as const
 
 type TaskTableProps = {
@@ -54,14 +62,16 @@ export function TaskTable({
   section,
   tasks,
   defaultExpanded = true,
-  defaultRowLimit = (section === 'done' || section === 'failed' || section === 'blocked') ? 10 : undefined,
+  defaultRowLimit = section === 'done' || section === 'failed' || section === 'blocked'
+    ? 10
+    : undefined,
   onPushToSprint,
   onViewSpec,
   onViewOutput,
   onMarkDone,
   onRerun,
   onUpdate,
-  onEditInWorkbench,
+  onEditInWorkbench
 }: TaskTableProps) {
   const [collapsed, setCollapsed] = useState(() => getInitialCollapsed(section, defaultExpanded))
   const [showAll, setShowAll] = useState(false)
@@ -80,7 +90,9 @@ export function TaskTable({
   const sorted =
     section === 'done' || section === 'failed' || section === 'blocked'
       ? [...tasks].sort(
-          (a, b) => new Date(b.completed_at ?? b.updated_at).getTime() - new Date(a.completed_at ?? a.updated_at).getTime()
+          (a, b) =>
+            new Date(b.completed_at ?? b.updated_at).getTime() -
+            new Date(a.completed_at ?? a.updated_at).getTime()
         )
       : [...tasks].sort((a, b) => a.priority - b.priority)
 
@@ -94,7 +106,15 @@ export function TaskTable({
     <div className="bde-task-section">
       <div className="bde-task-section__header" onClick={toggleCollapsed}>
         <Chevron size={14} />
-        <span>{section === 'done' ? 'Done' : section === 'failed' ? 'Failed / Cancelled' : section === 'blocked' ? 'Blocked' : 'Backlog'}</span>
+        <span>
+          {section === 'done'
+            ? 'Done'
+            : section === 'failed'
+              ? 'Failed / Cancelled'
+              : section === 'blocked'
+                ? 'Blocked'
+                : 'Backlog'}
+        </span>
         <span className="sprint-col__count bde-count-badge">{tasks.length}</span>
       </div>
 
@@ -102,11 +122,19 @@ export function TaskTable({
         <>
           {tasks.length === 0 ? (
             <div className="bde-task-table__empty">
-              {section === 'done' ? 'No completed tasks' : section === 'failed' ? 'No failed tasks' : section === 'blocked' ? 'No blocked tasks' : 'Backlog is empty'}
+              {section === 'done'
+                ? 'No completed tasks'
+                : section === 'failed'
+                  ? 'No failed tasks'
+                  : section === 'blocked'
+                    ? 'No blocked tasks'
+                    : 'Backlog is empty'}
             </div>
           ) : (
             <>
-              <table className={`bde-task-table ${section === 'failed' ? 'bde-task-table--dimmed' : ''}`}>
+              <table
+                className={`bde-task-table ${section === 'failed' ? 'bde-task-table--dimmed' : ''}`}
+              >
                 <thead>
                   {section === 'done' || section === 'failed' ? (
                     <tr>
@@ -185,7 +213,7 @@ function DoneRow({
   task,
   onViewSpec,
   onViewOutput,
-  onRerun,
+  onRerun
 }: {
   task: SprintTask
   onViewSpec: (t: SprintTask) => void
@@ -246,7 +274,7 @@ function FailedRow({
   task,
   onViewSpec,
   onViewOutput,
-  onPushToSprint,
+  onPushToSprint
 }: {
   task: SprintTask
   onViewSpec: (t: SprintTask) => void
@@ -307,7 +335,7 @@ function BlockedRow({
   onViewSpec,
   onMarkDone,
   onUpdate,
-  onEditInWorkbench,
+  onEditInWorkbench
 }: {
   task: SprintTask
   onPushToSprint: (t: SprintTask) => void
@@ -334,7 +362,11 @@ function BlockedRow({
     <tr>
       <td>
         <button className="bde-task-table__title-btn" onClick={() => onViewSpec(task)}>
-          <span style={{ marginRight: '6px', display: 'inline-flex' }}><Badge variant="warning" size="sm">BLOCKED</Badge></span>
+          <span style={{ marginRight: '6px', display: 'inline-flex' }}>
+            <Badge variant="warning" size="sm">
+              BLOCKED
+            </Badge>
+          </span>
           {task.title}
         </button>
       </td>
@@ -357,7 +389,9 @@ function BlockedRow({
                   setPopoverOpen(false)
                 }}
               >
-                <span className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(opt.value)}`} />
+                <span
+                  className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(opt.value)}`}
+                />
                 {opt.label}
               </button>
             ))}
@@ -389,7 +423,10 @@ function BlockedRow({
             Edit
           </button>
         )}
-        <button className="bde-task-table__action-btn bde-task-table__action-btn--sprint" onClick={() => onPushToSprint(task)}>
+        <button
+          className="bde-task-table__action-btn bde-task-table__action-btn--sprint"
+          onClick={() => onPushToSprint(task)}
+        >
           <ArrowRight size={13} /> Sprint
         </button>
       </td>
@@ -403,7 +440,7 @@ function BacklogRow({
   onViewSpec,
   onMarkDone,
   onUpdate,
-  onEditInWorkbench,
+  onEditInWorkbench
 }: {
   task: SprintTask
   onPushToSprint: (t: SprintTask) => void
@@ -452,7 +489,9 @@ function BacklogRow({
                   setPopoverOpen(false)
                 }}
               >
-                <span className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(opt.value)}`} />
+                <span
+                  className={`bde-task-table__priority-dot bde-task-table__priority-dot--${priorityVariant(opt.value)}`}
+                />
                 {opt.label}
               </button>
             ))}
@@ -484,7 +523,10 @@ function BacklogRow({
             Edit
           </button>
         )}
-        <button className="bde-task-table__action-btn bde-task-table__action-btn--sprint" onClick={() => onPushToSprint(task)}>
+        <button
+          className="bde-task-table__action-btn bde-task-table__action-btn--sprint"
+          onClick={() => onPushToSprint(task)}
+        >
           <ArrowRight size={13} /> Sprint
         </button>
       </td>

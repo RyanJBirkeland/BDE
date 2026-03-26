@@ -18,8 +18,8 @@ describe('ToastContainer', () => {
     useToastStore.setState({
       toasts: [
         { id: '1', message: 'Success!', type: 'success' },
-        { id: '2', message: 'Error!', type: 'error' },
-      ],
+        { id: '2', message: 'Error!', type: 'error' }
+      ]
     })
     render(<ToastContainer />)
     expect(screen.getByText('Success!')).toBeInTheDocument()
@@ -28,7 +28,7 @@ describe('ToastContainer', () => {
 
   it('renders success toast with message text', () => {
     useToastStore.setState({
-      toasts: [{ id: '1', message: 'Done', type: 'success' }],
+      toasts: [{ id: '1', message: 'Done', type: 'success' }]
     })
     render(<ToastContainer />)
     expect(screen.getByText('Done')).toBeInTheDocument()
@@ -36,7 +36,7 @@ describe('ToastContainer', () => {
 
   it('renders error toast with message text', () => {
     useToastStore.setState({
-      toasts: [{ id: '1', message: 'Fail', type: 'error' }],
+      toasts: [{ id: '1', message: 'Fail', type: 'error' }]
     })
     render(<ToastContainer />)
     expect(screen.getByText('Fail')).toBeInTheDocument()
@@ -44,7 +44,7 @@ describe('ToastContainer', () => {
 
   it('renders info toast with message text', () => {
     useToastStore.setState({
-      toasts: [{ id: '1', message: 'Info', type: 'info' }],
+      toasts: [{ id: '1', message: 'Info', type: 'info' }]
     })
     render(<ToastContainer />)
     expect(screen.getByText('Info')).toBeInTheDocument()
@@ -53,7 +53,7 @@ describe('ToastContainer', () => {
   it('dismisses toast on click and removes it from DOM', async () => {
     const user = userEvent.setup()
     useToastStore.setState({
-      toasts: [{ id: '1', message: 'Click me', type: 'success' }],
+      toasts: [{ id: '1', message: 'Click me', type: 'success' }]
     })
     render(<ToastContainer />)
 
@@ -64,7 +64,7 @@ describe('ToastContainer', () => {
 
   it('renders undo button for undoable toasts', () => {
     useToastStore.setState({
-      toasts: [{ id: '1', message: 'Session killed', type: 'info', onUndo: () => {} }],
+      toasts: [{ id: '1', message: 'Session killed', type: 'info', onUndo: () => {} }]
     })
     render(<ToastContainer />)
     expect(screen.getByText('Undo')).toBeInTheDocument()
@@ -72,7 +72,7 @@ describe('ToastContainer', () => {
 
   it('renders action button when action and onAction are set', () => {
     useToastStore.setState({
-      toasts: [{ id: '1', message: 'Agent done', type: 'info', action: 'View', onAction: () => {} }],
+      toasts: [{ id: '1', message: 'Agent done', type: 'info', action: 'View', onAction: () => {} }]
     })
     render(<ToastContainer />)
     expect(screen.getByText('View')).toBeInTheDocument()

@@ -24,9 +24,8 @@ export function PaneStatusBar({ tab, cols, rows }: PaneStatusBarProps): React.JS
   //   return () => clearInterval(interval)
   // }, [tab.ptyId])
 
-  const shellName = tab.kind === 'agent'
-    ? '🤖 Agent Output'
-    : tab.shell?.split('/').pop() || 'shell'
+  const shellName =
+    tab.kind === 'agent' ? '🤖 Agent Output' : tab.shell?.split('/').pop() || 'shell'
 
   return (
     <div className="terminal-pane-status">

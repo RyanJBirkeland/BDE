@@ -40,14 +40,14 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
 
       setBranchInfo((prev) => ({
         ...prev,
-        [task.id]: { headBranch: '', baseBranch: '', files: [], loading: true },
+        [task.id]: { headBranch: '', baseBranch: '', files: [], loading: true }
       }))
 
       window.api
         .checkConflictFiles({
           owner: parsed.owner,
           repo: parsed.repo,
-          prNumber: task.pr_number,
+          prNumber: task.pr_number
         })
         .then((result) => {
           if (controller.signal.aborted) return
@@ -57,20 +57,22 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
               headBranch: result.headBranch,
               baseBranch: result.baseBranch,
               files: result.files,
-              loading: false,
-            },
+              loading: false
+            }
           }))
         })
         .catch(() => {
           if (controller.signal.aborted) return
           setBranchInfo((prev) => ({
             ...prev,
-            [task.id]: { ...prev[task.id], loading: false },
+            [task.id]: { ...prev[task.id], loading: false }
           }))
         })
     }
 
-    return () => { controller.abort() }
+    return () => {
+      controller.abort()
+    }
   }, [open, tasks])
 
   // Reset when drawer closes
@@ -111,7 +113,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
           '',
           'IMPORTANT: Do NOT drop any changes from either side unless they are truly redundant.',
           'For import lists, keep all imports from both sides.',
-          'For props/interfaces, keep all fields from both sides.',
+          'For props/interfaces, keep all fields from both sides.'
         ].join('\n')
 
         await window.api.spawnLocalAgent({ task: prompt, repoPath })
@@ -133,7 +135,9 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
           <div className="conflict-drawer__header-left">
             <GitMerge size={14} />
             <span className="conflict-drawer__title">Merge Conflicts</span>
-            <Badge variant="danger" size="sm">{tasks.length}</Badge>
+            <Badge variant="danger" size="sm">
+              {tasks.length}
+            </Badge>
           </div>
           <Button variant="icon" size="sm" onClick={onClose} title="Close" aria-label="Close">
             &#x2715;
@@ -165,7 +169,9 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
                         {info?.headBranch && ` \u00B7 ${info.headBranch}`}
                       </span>
                     </div>
-                    <Badge variant="danger" size="sm">dirty</Badge>
+                    <Badge variant="danger" size="sm">
+                      dirty
+                    </Badge>
                     <span className="conflict-row__chevron">
                       {isExpanded ? '\u25BE' : '\u25B8'}
                     </span>
@@ -187,9 +193,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
                           </ul>
                         </>
                       ) : (
-                        <div className="conflict-row__loading">
-                          Could not load file details.
-                        </div>
+                        <div className="conflict-row__loading">Could not load file details.</div>
                       )}
 
                       <div className="conflict-row__actions">

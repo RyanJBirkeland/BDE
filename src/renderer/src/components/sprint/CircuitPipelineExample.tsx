@@ -10,15 +10,15 @@
  * 3. Pass in the partition data from partitionSprintTasks
  */
 
-import { useMemo } from 'react';
-import { CircuitPipeline, type CircuitNode } from '../neon/CircuitPipeline';
-import { partitionSprintTasks } from '../../lib/partitionSprintTasks';
-import type { SprintTask } from './SprintCenter';
+import { useMemo } from 'react'
+import { CircuitPipeline, type CircuitNode } from '../neon/CircuitPipeline'
+import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
+import type { SprintTask } from './SprintCenter'
 
 interface CircuitPipelineExampleProps {
-  tasks: SprintTask[];
-  compact?: boolean;
-  className?: string;
+  tasks: SprintTask[]
+  compact?: boolean
+  className?: string
 }
 
 export function CircuitPipelineExample({
@@ -28,12 +28,12 @@ export function CircuitPipelineExample({
 }: CircuitPipelineExampleProps) {
   const nodes: CircuitNode[] = useMemo(() => {
     // Use the partition function to properly count tasks
-    const partition = partitionSprintTasks(tasks);
+    const partition = partitionSprintTasks(tasks)
 
-    const queuedCount = partition.todo.length;
-    const activeCount = partition.inProgress.length;
-    const reviewCount = partition.awaitingReview.length;
-    const doneCount = partition.done.length;
+    const queuedCount = partition.todo.length
+    const activeCount = partition.inProgress.length
+    const reviewCount = partition.awaitingReview.length
+    const doneCount = partition.done.length
 
     return [
       {
@@ -42,7 +42,7 @@ export function CircuitPipelineExample({
         count: queuedCount,
         accent: 'orange' as const,
         icon: '⏳',
-        active: false,
+        active: false
       },
       {
         id: 'active',
@@ -50,7 +50,7 @@ export function CircuitPipelineExample({
         count: activeCount,
         accent: 'cyan' as const,
         icon: '⚡',
-        active: activeCount > 0, // Active if there are any running tasks
+        active: activeCount > 0 // Active if there are any running tasks
       },
       {
         id: 'review',
@@ -58,7 +58,7 @@ export function CircuitPipelineExample({
         count: reviewCount,
         accent: 'blue' as const,
         icon: '👁️',
-        active: false,
+        active: false
       },
       {
         id: 'done',
@@ -66,10 +66,10 @@ export function CircuitPipelineExample({
         count: doneCount,
         accent: 'purple' as const,
         icon: '✓',
-        active: false,
-      },
-    ];
-  }, [tasks]);
+        active: false
+      }
+    ]
+  }, [tasks])
 
   return (
     <CircuitPipeline
@@ -79,7 +79,7 @@ export function CircuitPipelineExample({
       compact={compact}
       className={className}
     />
-  );
+  )
 }
 
 /**

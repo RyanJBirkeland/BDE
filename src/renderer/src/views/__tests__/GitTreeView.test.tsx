@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react'
 
 // Mock stores and hooks
 vi.mock('../../stores/gitTree', () => ({
-  useGitTreeStore: vi.fn(),
+  useGitTreeStore: vi.fn()
 }))
 
 vi.mock('../../hooks/useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn(),
+  useVisibilityAwareInterval: vi.fn()
 }))
 
 // Mock sub-components to isolate GitTreeView
@@ -17,7 +17,7 @@ vi.mock('../../components/git-tree/CommitBox', () => ({
     stagedCount,
     onCommit,
     onPush,
-    onMessageChange,
+    onMessageChange
   }: {
     commitMessage: string
     stagedCount: number
@@ -39,13 +39,13 @@ vi.mock('../../components/git-tree/CommitBox', () => ({
         Push
       </button>
     </div>
-  ),
+  )
 }))
 
 vi.mock('../../components/git-tree/FileTreeSection', () => ({
   FileTreeSection: ({
     title,
-    files,
+    files
   }: {
     title: string
     files: { path: string; status: string }[]
@@ -54,19 +54,19 @@ vi.mock('../../components/git-tree/FileTreeSection', () => ({
       <div data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}>
         {title}: {files.length}
       </div>
-    ) : null,
+    ) : null
 }))
 
 vi.mock('../../components/git-tree/BranchSelector', () => ({
   BranchSelector: ({ currentBranch }: { currentBranch: string }) => (
     <div data-testid="branch-selector">{currentBranch}</div>
-  ),
+  )
 }))
 
 vi.mock('../../components/git-tree/InlineDiffDrawer', () => ({
   InlineDiffDrawer: ({
     selectedFile,
-    onClose,
+    onClose
   }: {
     selectedFile: { path: string } | null
     onClose: () => void
@@ -76,7 +76,7 @@ vi.mock('../../components/git-tree/InlineDiffDrawer', () => ({
         <span>{selectedFile.path}</span>
         <button onClick={onClose}>Close</button>
       </div>
-    ) : null,
+    ) : null
 }))
 
 import GitTreeView from '../GitTreeView'
@@ -106,7 +106,7 @@ const mockStoreState = {
   push: vi.fn(),
   fetchBranches: vi.fn(),
   setActiveRepo: vi.fn(),
-  loadRepoPaths: vi.fn(),
+  loadRepoPaths: vi.fn()
 }
 
 describe('GitTreeView', () => {
@@ -163,7 +163,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            staged: [{ path: 'foo.ts', status: 'M' }],
+            staged: [{ path: 'foo.ts', status: 'M' }]
           } as any)
         }
         return { ...mockStoreState, staged: [{ path: 'foo.ts', status: 'M' }] } as any
@@ -178,7 +178,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            unstaged: [{ path: 'bar.ts', status: 'M' }],
+            unstaged: [{ path: 'bar.ts', status: 'M' }]
           } as any)
         }
         return { ...mockStoreState, unstaged: [{ path: 'bar.ts', status: 'M' }] } as any
@@ -193,7 +193,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            untracked: [{ path: 'new.ts', status: '?' }],
+            untracked: [{ path: 'new.ts', status: '?' }]
           } as any)
         }
         return { ...mockStoreState, untracked: [{ path: 'new.ts', status: '?' }] } as any
@@ -208,7 +208,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            loading: true,
+            loading: true
           } as any)
         }
         return { ...mockStoreState, loading: true } as any
@@ -225,7 +225,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            loading: true,
+            loading: true
           } as any)
         }
         return { ...mockStoreState, loading: true } as any
@@ -247,7 +247,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            loading: true,
+            loading: true
           } as any)
         }
         return { ...mockStoreState, loading: true } as any
@@ -265,7 +265,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            staged: [{ path: 'foo.ts', status: 'M' }],
+            staged: [{ path: 'foo.ts', status: 'M' }]
           } as any)
         }
         return { ...mockStoreState, staged: [{ path: 'foo.ts', status: 'M' }] } as any
@@ -280,7 +280,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            unstaged: [{ path: 'bar.ts', status: 'M' }],
+            unstaged: [{ path: 'bar.ts', status: 'M' }]
           } as any)
         }
         return { ...mockStoreState, unstaged: [{ path: 'bar.ts', status: 'M' }] } as any
@@ -295,7 +295,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            untracked: [{ path: 'new.ts', status: '?' }],
+            untracked: [{ path: 'new.ts', status: '?' }]
           } as any)
         }
         return { ...mockStoreState, untracked: [{ path: 'new.ts', status: '?' }] } as any
@@ -311,13 +311,13 @@ describe('GitTreeView', () => {
           return selector({
             ...mockStoreState,
             unstaged: [{ path: 'modified.ts', status: 'M' }],
-            untracked: [{ path: 'new.ts', status: '?' }],
+            untracked: [{ path: 'new.ts', status: '?' }]
           } as any)
         }
         return {
           ...mockStoreState,
           unstaged: [{ path: 'modified.ts', status: 'M' }],
-          untracked: [{ path: 'new.ts', status: '?' }],
+          untracked: [{ path: 'new.ts', status: '?' }]
         } as any
       })
 
@@ -332,13 +332,13 @@ describe('GitTreeView', () => {
           return selector({
             ...mockStoreState,
             staged: [{ path: 'staged.ts', status: 'M' }],
-            unstaged: [{ path: 'unstaged.ts', status: 'M' }],
+            unstaged: [{ path: 'unstaged.ts', status: 'M' }]
           } as any)
         }
         return {
           ...mockStoreState,
           staged: [{ path: 'staged.ts', status: 'M' }],
-          unstaged: [{ path: 'unstaged.ts', status: 'M' }],
+          unstaged: [{ path: 'unstaged.ts', status: 'M' }]
         } as any
       })
 
@@ -355,13 +355,13 @@ describe('GitTreeView', () => {
           return selector({
             ...mockStoreState,
             selectedFile: { path: 'src/foo.ts', status: 'M' },
-            diffContent: 'some diff',
+            diffContent: 'some diff'
           } as any)
         }
         return {
           ...mockStoreState,
           selectedFile: { path: 'src/foo.ts', status: 'M' },
-          diffContent: 'some diff',
+          diffContent: 'some diff'
         } as any
       })
 
@@ -382,7 +382,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            repoPaths: ['/repo/bde', '/repo/other'],
+            repoPaths: ['/repo/bde', '/repo/other']
           } as any)
         }
         return { ...mockStoreState, repoPaths: ['/repo/bde', '/repo/other'] } as any
@@ -402,7 +402,7 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            repoPaths: [],
+            repoPaths: []
           } as any)
         }
         return { ...mockStoreState, repoPaths: [] } as any
@@ -422,8 +422,8 @@ describe('GitTreeView', () => {
             staged: [
               { path: 'foo.ts', status: 'M' },
               { path: 'bar.ts', status: 'A' },
-              { path: 'baz.ts', status: 'D' },
-            ],
+              { path: 'baz.ts', status: 'D' }
+            ]
           } as any)
         }
         return {
@@ -431,8 +431,8 @@ describe('GitTreeView', () => {
           staged: [
             { path: 'foo.ts', status: 'M' },
             { path: 'bar.ts', status: 'A' },
-            { path: 'baz.ts', status: 'D' },
-          ],
+            { path: 'baz.ts', status: 'D' }
+          ]
         } as any
       })
 

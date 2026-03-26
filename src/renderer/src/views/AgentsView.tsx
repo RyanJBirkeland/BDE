@@ -74,35 +74,41 @@ export function AgentsView() {
 
   const selectedAgent = agents.find((a) => a.id === selectedId)
 
-  const handleSteer = useCallback(async (message: string) => {
-    if (!selectedId) return
-    const result = await window.api.steerAgent(selectedId, message)
-    if (!result.ok) {
-      toast.error(result.error ?? 'Failed to send message to agent')
-    }
-  }, [selectedId])
+  const handleSteer = useCallback(
+    async (message: string) => {
+      if (!selectedId) return
+      const result = await window.api.steerAgent(selectedId, message)
+      if (!result.ok) {
+        toast.error(result.error ?? 'Failed to send message to agent')
+      }
+    },
+    [selectedId]
+  )
 
-  const handleCommand = useCallback(async (cmd: string, _args?: string) => {
-    if (!selectedId || !selectedAgent) return
-    switch (cmd) {
-      case '/stop':
-        await window.api.killAgent(selectedId)
-        break
-      case '/retry':
-        if (selectedAgent.sprintTaskId) {
-          await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' })
-        }
-        break
-      case '/focus':
-        if (_args) {
-          const focusResult = await window.api.steerAgent(selectedId, `Focus on: ${_args}`)
-          if (!focusResult.ok) toast.error(focusResult.error ?? 'Failed to send focus message')
-        }
-        break
-      default:
-        break
-    }
-  }, [selectedId, selectedAgent])
+  const handleCommand = useCallback(
+    async (cmd: string, _args?: string) => {
+      if (!selectedId || !selectedAgent) return
+      switch (cmd) {
+        case '/stop':
+          await window.api.killAgent(selectedId)
+          break
+        case '/retry':
+          if (selectedAgent.sprintTaskId) {
+            await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' })
+          }
+          break
+        case '/focus':
+          if (_args) {
+            const focusResult = await window.api.steerAgent(selectedId, `Focus on: ${_args}`)
+            if (!focusResult.ok) toast.error(focusResult.error ?? 'Failed to send focus message')
+          }
+          break
+        default:
+          break
+      }
+    },
+    [selectedId, selectedAgent]
+  )
 
   const handleSelectAgent = useCallback((id: string) => {
     setSelectedId(id)
@@ -115,7 +121,7 @@ export function AgentsView() {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: 'var(--neon-bg)',
+        background: 'var(--neon-bg)'
       }}
       variants={VARIANTS.fadeIn}
       initial="initial"
@@ -128,29 +134,35 @@ export function AgentsView() {
       {/* Zone 2: Fleet List + Agent Console */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Fleet sidebar */}
-        <div style={{
-          width: 220,
-          minWidth: 180,
-          borderRight: `1px solid var(--neon-purple-border)`,
-          display: 'flex',
-          flexDirection: 'column',
-          background: 'linear-gradient(180deg, rgba(138, 43, 226, 0.04), rgba(10, 0, 21, 0.4))',
-        }}>
-          {/* Header */}
-          <div style={{
+        <div
+          style={{
+            width: 220,
+            minWidth: 180,
+            borderRight: `1px solid var(--neon-purple-border)`,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 12px',
-            borderBottom: '1px solid var(--neon-purple-border)',
-          }}>
-            <span style={{
-              color: 'var(--neon-purple)',
-              fontSize: '10px',
-              textTransform: 'uppercase',
-              letterSpacing: '1.5px',
-              fontWeight: 600,
-            }}>
+            flexDirection: 'column',
+            background: 'linear-gradient(180deg, rgba(138, 43, 226, 0.04), rgba(10, 0, 21, 0.4))'
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 12px',
+              borderBottom: '1px solid var(--neon-purple-border)'
+            }}
+          >
+            <span
+              style={{
+                color: 'var(--neon-purple)',
+                fontSize: '10px',
+                textTransform: 'uppercase',
+                letterSpacing: '1.5px',
+                fontWeight: 600
+              }}
+            >
               Fleet
             </span>
             <button
@@ -170,7 +182,7 @@ export function AgentsView() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                padding: 0,
+                padding: 0
               }}
             >
               <Plus size={12} />
@@ -201,15 +213,17 @@ export function AgentsView() {
               onCommand={handleCommand}
             />
           ) : (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: 'rgba(255, 255, 255, 0.2)',
-              fontSize: tokens.size.md,
-              fontFamily: 'var(--bde-font-code)',
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                color: 'rgba(255, 255, 255, 0.2)',
+                fontSize: tokens.size.md,
+                fontFamily: 'var(--bde-font-code)'
+              }}
+            >
               {'> Select an agent to view console.'}
             </div>
           )}

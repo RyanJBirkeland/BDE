@@ -27,14 +27,27 @@ function MessageBubble({ msg, onInsert }: { msg: CopilotMessage; onInsert?: () =
     ...(isUser
       ? { background: tokens.color.accentDim, border: '1px solid transparent' }
       : isSystem
-        ? { background: 'transparent', border: `1px solid ${tokens.color.border}`, fontStyle: 'italic', color: tokens.color.textMuted, fontSize: tokens.size.sm }
-        : { background: tokens.color.surface, border: `1px solid ${tokens.color.border}` }),
+        ? {
+            background: 'transparent',
+            border: `1px solid ${tokens.color.border}`,
+            fontStyle: 'italic',
+            color: tokens.color.textMuted,
+            fontSize: tokens.size.sm
+          }
+        : { background: tokens.color.surface, border: `1px solid ${tokens.color.border}` })
   }
 
   return (
     <div style={style}>
       <div>{msg.content}</div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: tokens.space[1] }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: tokens.space[1]
+        }}
+      >
         <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
           {formatTime(msg.timestamp)}
         </span>
@@ -42,9 +55,13 @@ function MessageBubble({ msg, onInsert }: { msg: CopilotMessage; onInsert?: () =
           <button
             onClick={onInsert}
             style={{
-              background: tokens.color.accentDim, border: `1px solid ${tokens.color.accent}`,
-              borderRadius: tokens.radius.sm, color: tokens.color.accent,
-              padding: '1px 8px', fontSize: tokens.size.xs, cursor: 'pointer',
+              background: tokens.color.accentDim,
+              border: `1px solid ${tokens.color.accent}`,
+              borderRadius: tokens.radius.sm,
+              color: tokens.color.accent,
+              padding: '1px 8px',
+              fontSize: tokens.size.xs,
+              cursor: 'pointer'
             }}
           >
             Insert into spec
@@ -85,7 +102,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
             useTaskWorkbenchStore.setState((s) => ({
               copilotMessages: s.copilotMessages.map((m) =>
                 m.id === msgId ? { ...m, content: `Error: ${data.error}` } : m
-              ),
+              )
             }))
           }
           store().finishStreaming(false)
@@ -126,7 +143,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
     try {
       const { streamId } = await window.api.workbench.chatStream({
         messages: allMessages,
-        formContext: { title, repo, spec },
+        formContext: { title, repo, spec }
       })
       activeStreamIdRef.current = streamId
       useTaskWorkbenchStore.getState().startStreaming(msgId, streamId)
@@ -134,46 +151,75 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
       // If we can't even start the stream, show error
       useTaskWorkbenchStore.setState((s) => ({
         copilotMessages: s.copilotMessages.map((m) =>
-          m.id === msgId ? { ...m, content: 'Failed to reach Claude. Check your connection and try again.' } : m
+          m.id === msgId
+            ? { ...m, content: 'Failed to reach Claude. Check your connection and try again.' }
+            : m
         ),
-        copilotLoading: false,
+        copilotLoading: false
       }))
     }
   }, [input, loading, title, repo, spec, addMessage])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }, [handleSend])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        handleSend()
+      }
+    },
+    [handleSend]
+  )
 
-  const handleInsert = useCallback((msg: CopilotMessage) => {
-    const current = useTaskWorkbenchStore.getState().spec
-    const separator = current.trim() ? '\n\n' : ''
-    setField('spec', current + separator + msg.content)
-  }, [setField])
+  const handleInsert = useCallback(
+    (msg: CopilotMessage) => {
+      const current = useTaskWorkbenchStore.getState().spec
+      const separator = current.trim() ? '\n\n' : ''
+      setField('spec', current + separator + msg.content)
+    },
+    [setField]
+  )
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', height: '100%',
-      borderLeft: `1px solid ${tokens.color.border}`,
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        borderLeft: `1px solid ${tokens.color.border}`
+      }}
+    >
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: `${tokens.space[2]} ${tokens.space[3]}`,
-        borderBottom: `1px solid ${tokens.color.border}`,
-        flexShrink: 0,
-      }}>
-        <span style={{ fontSize: tokens.size.sm, fontWeight: 600, color: tokens.color.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: `${tokens.space[2]} ${tokens.space[3]}`,
+          borderBottom: `1px solid ${tokens.color.border}`,
+          flexShrink: 0
+        }}
+      >
+        <span
+          style={{
+            fontSize: tokens.size.sm,
+            fontWeight: 600,
+            color: tokens.color.textMuted,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em'
+          }}
+        >
           AI Copilot
         </span>
         <button
           onClick={onClose}
           style={{
-            background: 'none', border: 'none', color: tokens.color.textMuted,
-            cursor: 'pointer', fontSize: tokens.size.lg, lineHeight: 1, padding: 0,
+            background: 'none',
+            border: 'none',
+            color: tokens.color.textMuted,
+            cursor: 'pointer',
+            fontSize: tokens.size.lg,
+            lineHeight: 1,
+            padding: 0
           }}
           title="Close copilot"
         >
@@ -182,10 +228,17 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} style={{
-        flex: 1, overflowY: 'auto', padding: tokens.space[3],
-        display: 'flex', flexDirection: 'column', gap: tokens.space[2],
-      }}>
+      <div
+        ref={scrollRef}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: tokens.space[3],
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.space[2]
+        }}
+      >
         {messages.map((msg) => (
           <MessageBubble
             key={msg.id}
@@ -194,11 +247,22 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
           />
         ))}
         {loading && (
-          <div style={{
-            alignSelf: 'flex-start', padding: `${tokens.space[2]} ${tokens.space[3]}`,
-            display: 'flex', alignItems: 'center', gap: tokens.space[2],
-          }}>
-            <span style={{ color: tokens.color.textMuted, fontSize: tokens.size.sm, fontStyle: 'italic' }}>
+          <div
+            style={{
+              alignSelf: 'flex-start',
+              padding: `${tokens.space[2]} ${tokens.space[3]}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: tokens.space[2]
+            }}
+          >
+            <span
+              style={{
+                color: tokens.color.textMuted,
+                fontSize: tokens.size.sm,
+                fontStyle: 'italic'
+              }}
+            >
               {useTaskWorkbenchStore.getState().streamingMessageId ? 'Streaming...' : 'Thinking...'}
             </span>
             <button
@@ -210,9 +274,13 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
                 }
               }}
               style={{
-                background: 'none', border: `1px solid ${tokens.color.border}`,
-                borderRadius: tokens.radius.sm, color: tokens.color.textMuted,
-                padding: '1px 8px', fontSize: tokens.size.xs, cursor: 'pointer',
+                background: 'none',
+                border: `1px solid ${tokens.color.border}`,
+                borderRadius: tokens.radius.sm,
+                color: tokens.color.textMuted,
+                padding: '1px 8px',
+                fontSize: tokens.size.xs,
+                cursor: 'pointer'
               }}
             >
               Cancel
@@ -222,10 +290,15 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
       </div>
 
       {/* Input */}
-      <div style={{
-        padding: tokens.space[2], borderTop: `1px solid ${tokens.color.border}`,
-        display: 'flex', gap: tokens.space[2], flexShrink: 0,
-      }}>
+      <div
+        style={{
+          padding: tokens.space[2],
+          borderTop: `1px solid ${tokens.color.border}`,
+          display: 'flex',
+          gap: tokens.space[2],
+          flexShrink: 0
+        }}
+      >
         <textarea
           ref={inputRef}
           value={input}
@@ -234,11 +307,16 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
           placeholder="Ask about the codebase, brainstorm approaches..."
           rows={2}
           style={{
-            flex: 1, resize: 'none',
-            padding: tokens.space[2], background: tokens.color.surface,
-            border: `1px solid ${tokens.color.border}`, borderRadius: tokens.radius.md,
-            color: tokens.color.text, fontSize: tokens.size.md,
-            fontFamily: tokens.font.ui, outline: 'none',
+            flex: 1,
+            resize: 'none',
+            padding: tokens.space[2],
+            background: tokens.color.surface,
+            border: `1px solid ${tokens.color.border}`,
+            borderRadius: tokens.radius.md,
+            color: tokens.color.text,
+            fontSize: tokens.size.md,
+            fontFamily: tokens.font.ui,
+            outline: 'none'
           }}
         />
         <button
@@ -248,10 +326,13 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
             alignSelf: 'flex-end',
             padding: `${tokens.space[2]} ${tokens.space[3]}`,
             background: !input.trim() || loading ? tokens.color.surface : tokens.color.accent,
-            color: !input.trim() || loading ? tokens.color.textMuted : 'var(--bde-btn-primary-text)',
-            border: 'none', borderRadius: tokens.radius.md,
+            color:
+              !input.trim() || loading ? tokens.color.textMuted : 'var(--bde-btn-primary-text)',
+            border: 'none',
+            borderRadius: tokens.radius.md,
             cursor: !input.trim() || loading ? 'not-allowed' : 'pointer',
-            fontSize: tokens.size.sm, fontWeight: 600,
+            fontSize: tokens.size.sm,
+            fontWeight: 600
           }}
         >
           Send

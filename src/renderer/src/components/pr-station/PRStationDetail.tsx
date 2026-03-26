@@ -11,7 +11,7 @@ import {
   cachedGetPRFiles,
   cachedGetReviews,
   cachedGetReviewComments,
-  cachedGetIssueComments,
+  cachedGetIssueComments
 } from '../../lib/github-cache'
 import type { OpenPr, PrReview, PrComment, PrIssueComment } from '../../../../shared/types'
 import { REPO_OPTIONS } from '../../lib/constants'
@@ -42,18 +42,25 @@ function FileStatusIcon({ status }: { status: string }) {
 
 function fileStatusLabel(status: string): string {
   switch (status) {
-    case 'added': return 'A'
-    case 'removed': return 'D'
-    case 'renamed': return 'R'
-    default: return 'M'
+    case 'added':
+      return 'A'
+    case 'removed':
+      return 'D'
+    case 'renamed':
+      return 'R'
+    default:
+      return 'M'
   }
 }
 
 function fileStatusBadgeClass(status: string): string {
   switch (status) {
-    case 'added': return 'pr-detail__file-badge--added'
-    case 'removed': return 'pr-detail__file-badge--removed'
-    default: return 'pr-detail__file-badge--modified'
+    case 'added':
+      return 'pr-detail__file-badge--added'
+    case 'removed':
+      return 'pr-detail__file-badge--removed'
+    default:
+      return 'pr-detail__file-badge--modified'
   }
 }
 
@@ -82,21 +89,28 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
       setCommentsLoading(true)
 
       try {
-        const [detailResult, filesResult, reviewsResult, reviewCommentsResult, issueCommentsResult] =
-          await Promise.allSettled([
-            cachedGetPRDetail(repo.owner, repo.label, pr.number),
-            cachedGetPRFiles(repo.owner, repo.label, pr.number),
-            cachedGetReviews(repo.owner, repo.label, pr.number),
-            cachedGetReviewComments(repo.owner, repo.label, pr.number),
-            cachedGetIssueComments(repo.owner, repo.label, pr.number)
-          ])
+        const [
+          detailResult,
+          filesResult,
+          reviewsResult,
+          reviewCommentsResult,
+          issueCommentsResult
+        ] = await Promise.allSettled([
+          cachedGetPRDetail(repo.owner, repo.label, pr.number),
+          cachedGetPRFiles(repo.owner, repo.label, pr.number),
+          cachedGetReviews(repo.owner, repo.label, pr.number),
+          cachedGetReviewComments(repo.owner, repo.label, pr.number),
+          cachedGetIssueComments(repo.owner, repo.label, pr.number)
+        ])
         if (controller.signal.aborted) return
 
         const prDetail = detailResult.status === 'fulfilled' ? detailResult.value : null
         const prFiles = filesResult.status === 'fulfilled' ? filesResult.value : []
         const prReviews = reviewsResult.status === 'fulfilled' ? reviewsResult.value : []
-        const prReviewComments = reviewCommentsResult.status === 'fulfilled' ? reviewCommentsResult.value : []
-        const prIssueComments = issueCommentsResult.status === 'fulfilled' ? issueCommentsResult.value : []
+        const prReviewComments =
+          reviewCommentsResult.status === 'fulfilled' ? reviewCommentsResult.value : []
+        const prIssueComments =
+          issueCommentsResult.status === 'fulfilled' ? issueCommentsResult.value : []
 
         setDetail(prDetail)
         setFiles(prFiles)
@@ -123,7 +137,9 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
     }
 
     fetchAll()
-    return () => { controller.abort() }
+    return () => {
+      controller.abort()
+    }
   }, [pr.repo, pr.number])
 
   if (loading) {

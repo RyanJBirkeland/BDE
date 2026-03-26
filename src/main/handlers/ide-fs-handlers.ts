@@ -58,9 +58,7 @@ export async function readDir(
 export async function readFileContent(filePath: string): Promise<string> {
   const info = await stat(filePath)
   if (info.size > MAX_READ_BYTES) {
-    throw new Error(
-      `File too large: ${(info.size / 1024 / 1024).toFixed(1)} MB exceeds 5 MB limit`
-    )
+    throw new Error(`File too large: ${(info.size / 1024 / 1024).toFixed(1)} MB exceeds 5 MB limit`)
   }
 
   const buf = await readFile(filePath)

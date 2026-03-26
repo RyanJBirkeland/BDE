@@ -7,12 +7,12 @@ export default defineConfig({
   workers: 1, // Electron tests must run serially — one app instance at a time
   use: {
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
+    screenshot: 'only-on-failure'
   },
   projects: [
     {
       name: 'electron',
-      testMatch: '**/*.spec.ts',
-    },
-  ],
+      testMatch: '**/*.spec.ts'
+    }
+  ]
 })

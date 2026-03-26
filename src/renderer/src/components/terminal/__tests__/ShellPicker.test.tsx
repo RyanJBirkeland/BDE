@@ -6,7 +6,7 @@ import { ShellPicker } from '../ShellPicker'
 describe('ShellPicker', () => {
   const defaultProps = {
     onSelect: vi.fn(),
-    onClose: vi.fn(),
+    onClose: vi.fn()
   }
 
   beforeEach(() => {

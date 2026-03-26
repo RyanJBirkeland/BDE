@@ -10,7 +10,18 @@
  * the narrow domain type when they only need a subset.
  */
 
-import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, ClaimedTask, PrListPayload, TaskTemplate } from './types'
+import type {
+  SpawnLocalAgentArgs,
+  SpawnLocalAgentResult,
+  AgentMeta,
+  AgentCostRecord,
+  AgentRunCostRow,
+  CostSummary,
+  SprintTask,
+  ClaimedTask,
+  PrListPayload,
+  TaskTemplate
+} from './types'
 import type { AgentEvent } from './types'
 import type { BatchOperation, BatchResult } from './queue-api-contract'
 
@@ -102,7 +113,13 @@ export interface GitChannels {
 export interface PrChannels {
   'pr:pollStatuses': {
     args: [prs: { taskId: string; prUrl: string }[]]
-    result: { taskId: string; merged: boolean; state: string; mergedAt: string | null; mergeableState: string | null }[]
+    result: {
+      taskId: string
+      merged: boolean
+      state: string
+      mergedAt: string | null
+      mergeableState: string | null
+    }[]
   }
   'pr:checkConflictFiles': {
     args: [input: { owner: string; repo: string; prNumber: number }]
@@ -138,7 +155,15 @@ export interface AgentChannels {
   }
   'local:getAgentProcesses': {
     args: []
-    result: { pid: number; bin: string; args: string; cwd: string | null; startedAt: number; cpuPct: number; memMb: number }[]
+    result: {
+      pid: number
+      bin: string
+      args: string
+      cwd: string | null
+      startedAt: number
+      cpuPct: number
+      memMb: number
+    }[]
   }
   'local:sendToAgent': {
     args: [args: { pid: number; message: string }]
@@ -209,7 +234,19 @@ export interface SprintChannels {
     result: SprintTask[]
   }
   'sprint:create': {
-    args: [task: { title: string; repo: string; prompt?: string; notes?: string; spec?: string; priority?: number; status?: string; template_name?: string; playground_enabled?: boolean }]
+    args: [
+      task: {
+        title: string
+        repo: string
+        prompt?: string
+        notes?: string
+        spec?: string
+        priority?: number
+        status?: string
+        template_name?: string
+        playground_enabled?: boolean
+      }
+    ]
     result: SprintTask
   }
   'sprint:update': {
@@ -250,7 +287,15 @@ export interface SprintChannels {
   }
   'sprint:getChanges': {
     args: [taskId: string]
-    result: Array<{ id: number; task_id: string; field: string; old_value: string | null; new_value: string | null; changed_by: string; changed_at: string }>
+    result: Array<{
+      id: number
+      task_id: string
+      field: string
+      old_value: string | null
+      new_value: string | null
+      changed_by: string
+      changed_at: string
+    }>
   }
   'sprint:batchUpdate': {
     args: [operations: BatchOperation[]]
@@ -307,7 +352,10 @@ export interface FsChannels {
     args: []
     result: string | null
   }
-  'fs:readDir': { args: [dirPath: string]; result: { name: string; type: 'file' | 'directory'; size: number }[] }
+  'fs:readDir': {
+    args: [dirPath: string]
+    result: { name: string; type: 'file' | 'directory'; size: number }[]
+  }
   'fs:readFile': { args: [filePath: string]; result: string }
   'fs:writeFile': { args: [filePath: string, content: string]; result: void }
   'fs:watchDir': { args: [dirPath: string]; result: void }
@@ -316,7 +364,10 @@ export interface FsChannels {
   'fs:createDir': { args: [dirPath: string]; result: void }
   'fs:rename': { args: [oldPath: string, newPath: string]; result: void }
   'fs:delete': { args: [targetPath: string]; result: void }
-  'fs:stat': { args: [targetPath: string]; result: { size: number; mtime: number; isDirectory: boolean } }
+  'fs:stat': {
+    args: [targetPath: string]
+    result: { size: number; mtime: number; isDirectory: boolean }
+  }
 }
 
 /** Agent event streaming */
@@ -404,10 +455,12 @@ export interface TerminalChannels {
 /** Task Workbench AI-assisted creation */
 export interface WorkbenchChannels {
   'workbench:chat': {
-    args: [input: {
-      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-      formContext: { title: string; repo: string; spec: string }
-    }]
+    args: [
+      input: {
+        messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+        formContext: { title: string; repo: string; spec: string }
+      }
+    ]
     result: { content: string }
   }
   'workbench:generateSpec': {
@@ -441,10 +494,12 @@ export interface WorkbenchChannels {
     }
   }
   'workbench:chatStream': {
-    args: [input: {
-      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-      formContext: { title: string; repo: string; spec: string }
-    }]
+    args: [
+      input: {
+        messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+        formContext: { title: string; repo: string; spec: string }
+      }
+    ]
     result: { streamId: string }
   }
   'workbench:cancelStream': {
@@ -463,25 +518,43 @@ export interface PlaygroundChannels {
 
 /** Dashboard analytics */
 export interface CompletionBucket {
-  hour: string;
-  count: number;
+  hour: string
+  count: number
 }
 
 export interface DashboardEvent {
-  id: number;
-  agent_id: string;
-  event_type: string;
-  payload: string;
-  timestamp: number;
+  id: number
+  agent_id: string
+  event_type: string
+  payload: string
+  timestamp: number
 }
 
 export interface DashboardChannels {
-  'agent:completionsPerHour': { args: []; result: CompletionBucket[] };
-  'agent:recentEvents': { args: [limit?: number]; result: DashboardEvent[] };
+  'agent:completionsPerHour': { args: []; result: CompletionBucket[] }
+  'agent:recentEvents': { args: [limit?: number]; result: DashboardEvent[] }
 }
 
 // ---------------------------------------------------------------------------
 // Composite channel map — intersection of all domain maps
 // ---------------------------------------------------------------------------
 
-export type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & AgentConfigChannels & AgentChannels & GitHubApiChannels & CostChannels & SprintChannels & WindowChannels & MemoryChannels & FsChannels & AgentEventChannels & TemplateChannels & AuthChannels & AgentManagerChannels & TerminalChannels & WorkbenchChannels & PlaygroundChannels & DashboardChannels
+export type IpcChannelMap = SettingsChannels &
+  GitChannels &
+  PrChannels &
+  AgentConfigChannels &
+  AgentChannels &
+  GitHubApiChannels &
+  CostChannels &
+  SprintChannels &
+  WindowChannels &
+  MemoryChannels &
+  FsChannels &
+  AgentEventChannels &
+  TemplateChannels &
+  AuthChannels &
+  AgentManagerChannels &
+  TerminalChannels &
+  WorkbenchChannels &
+  PlaygroundChannels &
+  DashboardChannels

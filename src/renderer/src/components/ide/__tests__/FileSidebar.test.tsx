@@ -14,10 +14,10 @@ Object.defineProperty(window, 'api', {
     createFile: vi.fn(),
     createDir: vi.fn(),
     rename: vi.fn(),
-    deletePath: vi.fn(),
+    deletePath: vi.fn()
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 const mockToggleSidebar = vi.fn()
@@ -33,9 +33,9 @@ vi.mock('../../../stores/ide', () => ({
       expandedDirs: {},
       toggleDir: vi.fn(),
       activeTabId: null,
-      openTabs: [],
+      openTabs: []
     })
-  ),
+  )
 }))
 
 import { FileSidebar } from '../FileSidebar'

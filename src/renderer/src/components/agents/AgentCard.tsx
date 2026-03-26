@@ -20,7 +20,7 @@ const STATUS_ACCENTS: Record<string, NeonAccent> = {
   done: 'purple',
   failed: 'red',
   cancelled: 'orange',
-  unknown: 'purple',
+  unknown: 'purple'
 }
 
 function formatDuration(startedAt: string, finishedAt: string | null): string {
@@ -54,7 +54,7 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
         width: '100%',
         padding: `${tokens.space[2]} ${tokens.space[3]}`,
         cursor: 'pointer',
-        boxSizing: 'border-box',
+        boxSizing: 'border-box'
       }}
     >
       <NeonCard
@@ -65,7 +65,7 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
             ? `0 0 16px ${neonVar(accent, 'glow')}, var(--neon-glass-shadow), var(--neon-glass-edge)`
             : undefined,
           border: selected ? `1px solid ${neonVar(accent, 'color')}` : undefined,
-          transform: selected ? 'scale(1.02)' : undefined,
+          transform: selected ? 'scale(1.02)' : undefined
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
@@ -79,7 +79,7 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
                 background: neonVar(accent, 'color'),
                 boxShadow: `0 0 8px ${neonVar(accent, 'glow')}`,
                 flexShrink: 0,
-                animation: isRunning ? 'pulse 2s infinite' : undefined,
+                animation: isRunning ? 'pulse 2s infinite' : undefined
               }}
             />
             <span
@@ -89,14 +89,16 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                flex: 1,
+                flex: 1
               }}
             >
               {agent.task.slice(0, 80)}
             </span>
           </div>
           {/* Bottom row: meta info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], paddingLeft: 14 }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], paddingLeft: 14 }}
+          >
             <SourceIcon size={10} color={tokens.color.textDim} />
             <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
               {agent.model}

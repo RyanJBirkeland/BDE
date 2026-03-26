@@ -1,12 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown, GitMerge, X } from 'lucide-react'
 import { Button } from '../ui/Button'
-import {
-  mergePR,
-  closePR,
-  type MergeMethod,
-  type PrMergeability
-} from '../../lib/github-api'
+import { mergePR, closePR, type MergeMethod, type PrMergeability } from '../../lib/github-api'
 import type { OpenPr } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
 import { REPO_OPTIONS } from '../../lib/constants'
@@ -137,7 +132,11 @@ export function PRStationActions({ pr, mergeability, onRemovePr }: PRStationActi
           size="sm"
           disabled={mergeBlocked}
           onClick={() => setConfirmAction('merge')}
-          title={mergeBlocked ? `Not mergeable (${mergeability?.mergeable_state})` : `${strategyLabel} merge`}
+          title={
+            mergeBlocked
+              ? `Not mergeable (${mergeability?.mergeable_state})`
+              : `${strategyLabel} merge`
+          }
         >
           <GitMerge size={14} />
           {strategyLabel}
@@ -168,12 +167,7 @@ export function PRStationActions({ pr, mergeability, onRemovePr }: PRStationActi
         )}
       </div>
 
-      <Button
-        variant="danger"
-        size="sm"
-        onClick={() => setConfirmAction('close')}
-        title="Close PR"
-      >
+      <Button variant="danger" size="sm" onClick={() => setConfirmAction('close')} title="Close PR">
         <X size={14} />
         Close
       </Button>

@@ -6,9 +6,24 @@ vi.mock('../../../lib/github-api', () => ({}))
 import { PRStationChecks } from '../PRStationChecks'
 
 const checks = [
-  { name: 'CI Build', status: 'completed', conclusion: 'success', html_url: 'https://github.com/checks/1' },
-  { name: 'Lint', status: 'in_progress', conclusion: null, html_url: 'https://github.com/checks/2' },
-  { name: 'Tests', status: 'completed', conclusion: 'failure', html_url: 'https://github.com/checks/3' },
+  {
+    name: 'CI Build',
+    status: 'completed',
+    conclusion: 'success',
+    html_url: 'https://github.com/checks/1'
+  },
+  {
+    name: 'Lint',
+    status: 'in_progress',
+    conclusion: null,
+    html_url: 'https://github.com/checks/2'
+  },
+  {
+    name: 'Tests',
+    status: 'completed',
+    conclusion: 'failure',
+    html_url: 'https://github.com/checks/3'
+  }
 ]
 
 describe('PRStationChecks', () => {

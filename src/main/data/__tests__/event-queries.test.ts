@@ -7,7 +7,7 @@ import {
   pruneOldEvents,
   insertEventBatch,
   queryEvents,
-  pruneEventsByAgentIds,
+  pruneEventsByAgentIds
 } from '../event-queries'
 
 let db: Database.Database
@@ -79,9 +79,24 @@ describe('pruneOldEvents', () => {
 describe('insertEventBatch', () => {
   it('inserts multiple events in a single transaction', () => {
     const events = [
-      { agentId: 'agent-1', eventType: 'agent:started', payload: '{"type":"agent:started","model":"opus"}', timestamp: 1000 },
-      { agentId: 'agent-1', eventType: 'agent:tool_call', payload: '{"type":"agent:tool_call","tool":"Bash"}', timestamp: 2000 },
-      { agentId: 'agent-1', eventType: 'agent:completed', payload: '{"type":"agent:completed","exitCode":0}', timestamp: 3000 },
+      {
+        agentId: 'agent-1',
+        eventType: 'agent:started',
+        payload: '{"type":"agent:started","model":"opus"}',
+        timestamp: 1000
+      },
+      {
+        agentId: 'agent-1',
+        eventType: 'agent:tool_call',
+        payload: '{"type":"agent:tool_call","tool":"Bash"}',
+        timestamp: 2000
+      },
+      {
+        agentId: 'agent-1',
+        eventType: 'agent:completed',
+        payload: '{"type":"agent:completed","exitCode":0}',
+        timestamp: 3000
+      }
     ]
 
     insertEventBatch(db, events)
@@ -105,7 +120,7 @@ describe('insertEventBatch', () => {
     // The batch itself should succeed since all fields are valid
     const events = [
       { agentId: 'agent-1', eventType: 'agent:started', payload: '{"a":1}', timestamp: 1000 },
-      { agentId: 'agent-1', eventType: 'agent:text', payload: '{"b":2}', timestamp: 2000 },
+      { agentId: 'agent-1', eventType: 'agent:text', payload: '{"b":2}', timestamp: 2000 }
     ]
     insertEventBatch(db, events)
 
@@ -134,7 +149,7 @@ describe('queryEvents', () => {
   it('filters by event type', () => {
     const result = queryEvents(db, { agentId: 'agent-1', eventType: 'agent:tool_call' })
     expect(result.events).toHaveLength(2)
-    expect(result.events.every(e => e.event_type === 'agent:tool_call')).toBe(true)
+    expect(result.events.every((e) => e.event_type === 'agent:tool_call')).toBe(true)
   })
 
   it('supports afterTimestamp for pagination', () => {

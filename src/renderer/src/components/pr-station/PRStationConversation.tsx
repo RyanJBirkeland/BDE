@@ -70,10 +70,7 @@ function CommentCard({
         <span className="pr-conversation__author">{login}</span>
         <span className="pr-conversation__time">{timeAgo(createdAt)}</span>
       </div>
-      <div
-        className="pr-conversation__body"
-        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-      />
+      <div className="pr-conversation__body" dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
     </div>
   )
 }
@@ -132,9 +129,7 @@ export function PRStationConversation({
               <div className="pr-conversation__thread-file">
                 <FileCode2 size={12} />
                 <span>{item.path}</span>
-                {root.line && (
-                  <span className="pr-conversation__thread-line">L{root.line}</span>
-                )}
+                {root.line && <span className="pr-conversation__thread-line">L{root.line}</span>}
               </div>
               {item.comments.map((c) => (
                 <CommentCard

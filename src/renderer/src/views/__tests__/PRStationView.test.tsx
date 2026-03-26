@@ -7,15 +7,21 @@ Element.prototype.scrollIntoView = vi.fn()
 vi.mock('../../stores/pendingReview', () => ({
   usePendingReviewStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ pendingComments: {} })
-  ),
+  )
 }))
 
 vi.mock('../../lib/github-api', () => ({
-  getPrMergeability: vi.fn().mockResolvedValue(null),
+  getPrMergeability: vi.fn().mockResolvedValue(null)
 }))
 
 vi.mock('../../components/pr-station/PRStationList', () => ({
-  PRStationList: ({ onSelectPr }: { onSelectPr: (pr: unknown) => void; selectedPr: unknown; removedKeys: Set<string> }) => (
+  PRStationList: ({
+    onSelectPr
+  }: {
+    onSelectPr: (pr: unknown) => void
+    selectedPr: unknown
+    removedKeys: Set<string>
+  }) => (
     <div data-testid="pr-station-list">
       <button
         data-testid="select-pr-btn"
@@ -33,24 +39,30 @@ vi.mock('../../components/pr-station/PRStationList', () => ({
             user: { login: 'testuser' },
             merged: false,
             merged_at: null,
-            repo: 'BDE',
+            repo: 'BDE'
           })
         }
       >
         Select PR
       </button>
     </div>
-  ),
+  )
 }))
 
 vi.mock('../../components/pr-station/PRStationDetail', () => ({
   PRStationDetail: ({ pr }: { pr: { title: string } }) => (
     <div data-testid="pr-station-detail">{pr.title}</div>
-  ),
+  )
 }))
 
 vi.mock('../../components/pr-station/PRStationActions', () => ({
-  PRStationActions: ({ onRemovePr }: { pr: unknown; mergeability: unknown; onRemovePr: (pr: unknown) => void }) => (
+  PRStationActions: ({
+    onRemovePr
+  }: {
+    pr: unknown
+    mergeability: unknown
+    onRemovePr: (pr: unknown) => void
+  }) => (
     <div data-testid="pr-station-actions">
       <button
         data-testid="remove-pr-btn"
@@ -58,26 +70,35 @@ vi.mock('../../components/pr-station/PRStationActions', () => ({
           onRemovePr({
             number: 42,
             title: 'Test PR Title',
-            repo: 'BDE',
+            repo: 'BDE'
           })
         }
       >
         Remove
       </button>
     </div>
-  ),
+  )
 }))
 
 vi.mock('../../components/pr-station/PRStationDiff', () => ({
-  PRStationDiff: () => <div data-testid="pr-station-diff" />,
+  PRStationDiff: () => <div data-testid="pr-station-diff" />
 }))
 
 vi.mock('../../components/pr-station/ReviewSubmitDialog', () => ({
-  ReviewSubmitDialog: ({ onClose }: { pr: unknown; prKey: string; onClose: () => void; onSubmitted: () => void }) => (
+  ReviewSubmitDialog: ({
+    onClose
+  }: {
+    pr: unknown
+    prKey: string
+    onClose: () => void
+    onSubmitted: () => void
+  }) => (
     <div data-testid="review-submit-dialog">
-      <button data-testid="close-dialog-btn" onClick={onClose}>Close</button>
+      <button data-testid="close-dialog-btn" onClick={onClose}>
+        Close
+      </button>
     </div>
-  ),
+  )
 }))
 
 import PRStationView from '../PRStationView'
@@ -193,7 +214,9 @@ describe('PRStationView', () => {
   it('shows pending review banner when pendingComments exist', async () => {
     const { usePendingReviewStore } = await import('../../stores/pendingReview')
     vi.mocked(usePendingReviewStore).mockImplementation((selector) =>
-      selector({ pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] } } as any)
+      selector({
+        pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] }
+      } as any)
     )
 
     render(<PRStationView />)
@@ -209,7 +232,9 @@ describe('PRStationView', () => {
   it('opens review submit dialog when Submit Review is clicked', async () => {
     const { usePendingReviewStore } = await import('../../stores/pendingReview')
     vi.mocked(usePendingReviewStore).mockImplementation((selector) =>
-      selector({ pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] } } as any)
+      selector({
+        pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] }
+      } as any)
     )
 
     render(<PRStationView />)
@@ -225,7 +250,9 @@ describe('PRStationView', () => {
   it('closes review submit dialog when closed', async () => {
     const { usePendingReviewStore } = await import('../../stores/pendingReview')
     vi.mocked(usePendingReviewStore).mockImplementation((selector) =>
-      selector({ pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] } } as any)
+      selector({
+        pendingComments: { 'BDE#42': [{ id: 'c1', body: 'test', path: 'foo.ts', line: 1 }] }
+      } as any)
     )
 
     render(<PRStationView />)

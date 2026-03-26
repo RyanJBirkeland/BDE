@@ -44,7 +44,7 @@ const PRIORITY_OPTIONS = [
   { value: 2, label: 'P2 High' },
   { value: 3, label: 'P3 Medium' },
   { value: 4, label: 'P4 Low' },
-  { value: 5, label: 'P5 Backlog' },
+  { value: 5, label: 'P5 Backlog' }
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -100,7 +100,7 @@ function PriorityPopover({ task, onUpdate, onClose }: PriorityPopoverProps) {
         borderRadius: tokens.radius.md,
         boxShadow: tokens.shadow.md,
         zIndex: 100,
-        minWidth: '140px',
+        minWidth: '140px'
       }}
     >
       {PRIORITY_OPTIONS.map((opt) => (
@@ -124,7 +124,7 @@ function PriorityPopover({ task, onUpdate, onClose }: PriorityPopoverProps) {
             fontSize: tokens.size.sm,
             fontFamily: tokens.font.ui,
             cursor: 'pointer',
-            textAlign: 'left',
+            textAlign: 'left'
           }}
           onMouseEnter={(e) => {
             if (opt.value !== task.priority) {
@@ -143,7 +143,7 @@ function PriorityPopover({ task, onUpdate, onClose }: PriorityPopoverProps) {
               height: '8px',
               borderRadius: '50%',
               background: priorityDotColor(opt.value),
-              flexShrink: 0,
+              flexShrink: 0
             }}
           />
           {opt.label}
@@ -169,7 +169,7 @@ export function SprintTaskRow({
   onRerun,
   onUpdatePriority,
   onEditInWorkbench,
-  onClick,
+  onClick
 }: SprintTaskRowProps): React.ReactElement {
   const [popoverOpen, setPopoverOpen] = useState(false)
 
@@ -184,7 +184,7 @@ export function SprintTaskRow({
   // Base row styles
   const rowStyle: React.CSSProperties = {
     display: 'contents',
-    cursor: onClick || onViewSpec ? 'pointer' : 'default',
+    cursor: onClick || onViewSpec ? 'pointer' : 'default'
   }
 
   // Cell styles
@@ -193,19 +193,19 @@ export function SprintTaskRow({
     fontSize: tokens.size.sm,
     fontFamily: tokens.font.ui,
     color: dimmed ? tokens.color.textMuted : tokens.color.text,
-    borderBottom: `1px solid ${tokens.color.border}`,
+    borderBottom: `1px solid ${tokens.color.border}`
   }
 
   const titleCellStyle: React.CSSProperties = {
     ...cellStyle,
-    fontWeight: 500,
+    fontWeight: 500
   }
 
   const dateCellStyle: React.CSSProperties = {
     ...cellStyle,
     color: tokens.color.textMuted,
     fontSize: tokens.size.xs,
-    fontFamily: tokens.font.code,
+    fontFamily: tokens.font.code
   }
 
   const actionsCellStyle: React.CSSProperties = {
@@ -213,12 +213,12 @@ export function SprintTaskRow({
     display: 'flex',
     gap: tokens.space[2],
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-end'
   }
 
   const priorityCellStyle: React.CSSProperties = {
     ...cellStyle,
-    position: 'relative',
+    position: 'relative'
   }
 
   // Render priority dot with optional popover
@@ -238,12 +238,16 @@ export function SprintTaskRow({
           background: priorityDotColor(task.priority),
           border: 'none',
           cursor: onUpdatePriority ? 'pointer' : 'default',
-          padding: 0,
+          padding: 0
         }}
         aria-label={`Priority ${task.priority}`}
       />
       {popoverOpen && onUpdatePriority && (
-        <PriorityPopover task={task} onUpdate={onUpdatePriority} onClose={() => setPopoverOpen(false)} />
+        <PriorityPopover
+          task={task}
+          onUpdate={onUpdatePriority}
+          onClose={() => setPopoverOpen(false)}
+        />
       )}
     </td>
   )
@@ -265,7 +269,7 @@ export function SprintTaskRow({
           textAlign: 'left',
           display: 'flex',
           alignItems: 'center',
-          gap: tokens.space[2],
+          gap: tokens.space[2]
         }}
       >
         {variant === 'blocked' && (
@@ -315,7 +319,7 @@ export function SprintTaskRow({
             fontSize: tokens.size.xs,
             display: 'inline-flex',
             alignItems: 'center',
-            gap: tokens.space[1],
+            gap: tokens.space[1]
           }}
         >
           #{task.pr_number} <ExternalLink size={10} />
@@ -341,12 +345,12 @@ export function SprintTaskRow({
       background: 'transparent',
       color: tokens.color.textMuted,
       cursor: 'pointer',
-      transition: tokens.transition.fast,
+      transition: tokens.transition.fast
     }
 
     const iconButtonStyle: React.CSSProperties = {
       ...buttonStyle,
-      padding: tokens.space[1],
+      padding: tokens.space[1]
     }
 
     return (
@@ -449,7 +453,7 @@ export function SprintTaskRow({
             title={variant === 'failed' ? 'Retry — move back to sprint' : 'Move to sprint'}
             style={{
               ...buttonStyle,
-              color: tokens.color.accent,
+              color: tokens.color.accent
             }}
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.background = tokens.color.surfaceHigh

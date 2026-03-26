@@ -30,17 +30,27 @@ export function EditorTabBar({ onCloseTab }: EditorTabBarProps): React.JSX.Eleme
       {openTabs.map((tab) => {
         const isActive = tab.id === activeTabId
         return (
-          <div key={tab.id} role="tab" aria-selected={isActive}
+          <div
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
             className={`ide-editor-tab${isActive ? ' ide-editor-tab--active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
             onMouseDown={(e) => handleMiddleClick(e, tab.id, tab.isDirty)}
             title={tab.filePath}
           >
             <span className="ide-editor-tab__name">{tab.displayName}</span>
-            {tab.isDirty && <span className="ide-editor-tab__dirty" aria-label="unsaved changes">&#x25cf;</span>}
-            <button className="ide-editor-tab__close"
+            {tab.isDirty && (
+              <span className="ide-editor-tab__dirty" aria-label="unsaved changes">
+                &#x25cf;
+              </span>
+            )}
+            <button
+              className="ide-editor-tab__close"
               onClick={(e) => handleClose(e, tab.id, tab.isDirty)}
-              aria-label={`Close ${tab.displayName}`} tabIndex={-1}>
+              aria-label={`Close ${tab.displayName}`}
+              tabIndex={-1}
+            >
               <X size={12} />
             </button>
           </div>

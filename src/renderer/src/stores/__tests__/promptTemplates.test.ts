@@ -13,11 +13,11 @@ Object.defineProperty(window, 'api', {
       set: vi.fn(),
       getJson: mockGetJson,
       setJson: mockSetJson,
-      delete: vi.fn(),
-    },
+      delete: vi.fn()
+    }
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 // Import AFTER mocks are set up
@@ -30,7 +30,7 @@ describe('promptTemplatesStore', () => {
     // Reset store state
     usePromptTemplatesStore.setState({
       templates: [],
-      loading: false,
+      loading: false
     })
   })
 
@@ -56,7 +56,7 @@ describe('promptTemplatesStore', () => {
         description: 'Custom task',
         questions: [],
         promptTemplate: 'Do the thing.',
-        order: 10,
+        order: 10
       }
       mockGetJson.mockResolvedValue([userTemplate])
 
@@ -88,7 +88,7 @@ describe('promptTemplatesStore', () => {
         description: '',
         questions: [],
         promptTemplate: '',
-        order: -1, // before all built-ins
+        order: -1 // before all built-ins
       }
       mockGetJson.mockResolvedValue([userFirst])
 
@@ -112,7 +112,7 @@ describe('promptTemplatesStore', () => {
         description: 'Brand new',
         questions: [],
         promptTemplate: 'Do something new.',
-        order: 99,
+        order: 99
       }
 
       await usePromptTemplatesStore.getState().saveTemplate(newTemplate)
@@ -121,7 +121,7 @@ describe('promptTemplatesStore', () => {
       expect(templates.find((t) => t.id === 'user-new')).toBeDefined()
       expect(mockSetJson).toHaveBeenCalledWith(
         'prompt_templates',
-        expect.arrayContaining([expect.objectContaining({ id: 'user-new' })]),
+        expect.arrayContaining([expect.objectContaining({ id: 'user-new' })])
       )
     })
 
@@ -134,14 +134,14 @@ describe('promptTemplatesStore', () => {
         description: 'Old',
         questions: [],
         promptTemplate: 'Old prompt.',
-        order: 10,
+        order: 10
       }
       mockGetJson.mockResolvedValue([existing])
       await usePromptTemplatesStore.getState().loadTemplates()
 
       await usePromptTemplatesStore.getState().saveTemplate({
         ...existing,
-        name: 'New Name',
+        name: 'New Name'
       })
 
       const { templates } = usePromptTemplatesStore.getState()
@@ -160,7 +160,7 @@ describe('promptTemplatesStore', () => {
         description: '',
         questions: [],
         promptTemplate: '',
-        order: 10,
+        order: 10
       }
       mockGetJson.mockResolvedValue([userTemplate])
       await usePromptTemplatesStore.getState().loadTemplates()
@@ -204,7 +204,10 @@ describe('promptTemplatesStore', () => {
       mockGetJson.mockResolvedValue(null)
       await usePromptTemplatesStore.getState().loadTemplates()
 
-      const ids = usePromptTemplatesStore.getState().templates.map((t) => t.id).reverse()
+      const ids = usePromptTemplatesStore
+        .getState()
+        .templates.map((t) => t.id)
+        .reverse()
       await usePromptTemplatesStore.getState().reorderTemplates(ids)
 
       const { templates } = usePromptTemplatesStore.getState()

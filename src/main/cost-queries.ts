@@ -6,7 +6,7 @@ import { getDb } from './db'
 import {
   getCostSummary as _getCostSummary,
   getRecentAgentRunsWithCost as _getRecentAgentRunsWithCost,
-  getAgentHistory as _getAgentHistory,
+  getAgentHistory as _getAgentHistory
 } from './data/cost-queries'
 import type { AgentRunCostRow, AgentCostRecord, CostSummary } from '../shared/types'
 

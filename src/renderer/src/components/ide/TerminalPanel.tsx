@@ -26,10 +26,15 @@ export function TerminalPanel(): React.JSX.Element {
     if (activeTabId && !isAgentTab) clearTerminal(activeTabId)
   }, [activeTabId, isAgentTab])
 
-  const handleCloseOthers = useCallback((keepId: string) => {
-    const { tabs: currentTabs } = useTerminalStore.getState()
-    currentTabs.forEach((tab) => { if (tab.id !== keepId) closeTab(tab.id) })
-  }, [closeTab])
+  const handleCloseOthers = useCallback(
+    (keepId: string) => {
+      const { tabs: currentTabs } = useTerminalStore.getState()
+      currentTabs.forEach((tab) => {
+        if (tab.id !== keepId) closeTab(tab.id)
+      })
+    },
+    [closeTab]
+  )
 
   const handleCloseAll = useCallback(() => {
     const { tabs: currentTabs } = useTerminalStore.getState()
@@ -39,15 +44,33 @@ export function TerminalPanel(): React.JSX.Element {
   return (
     <div className="ide-terminal-panel">
       <div className="terminal-tab-bar">
-        <TerminalTabBar tabs={tabs} activeTabId={activeTabId} onSelectTab={setActiveTab}
-          onCloseTab={closeTab} onAddTab={addTab} onCreateAgentTab={createAgentTab}
-          onRenameTab={renameTab} onReorderTab={reorderTab}
-          onCloseOthers={handleCloseOthers} onCloseAll={handleCloseAll} />
-        <TerminalToolbar isAgentTab={!!isAgentTab} splitEnabled={splitEnabled}
-          onClear={handleClear} onToggleSplit={toggleSplit} />
+        <TerminalTabBar
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSelectTab={setActiveTab}
+          onCloseTab={closeTab}
+          onAddTab={addTab}
+          onCreateAgentTab={createAgentTab}
+          onRenameTab={renameTab}
+          onReorderTab={reorderTab}
+          onCloseOthers={handleCloseOthers}
+          onCloseAll={handleCloseAll}
+        />
+        <TerminalToolbar
+          isAgentTab={!!isAgentTab}
+          splitEnabled={splitEnabled}
+          onClear={handleClear}
+          onToggleSplit={toggleSplit}
+        />
       </div>
-      <TerminalContent tabs={tabs} activeTabId={activeTabId} splitEnabled={splitEnabled}
-        showFind={showFind} isAgentTab={!!isAgentTab} activeView={activeView} />
+      <TerminalContent
+        tabs={tabs}
+        activeTabId={activeTabId}
+        splitEnabled={splitEnabled}
+        showFind={showFind}
+        isAgentTab={!!isAgentTab}
+        activeView={activeView}
+      />
     </div>
   )
 }

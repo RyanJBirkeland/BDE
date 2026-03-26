@@ -34,14 +34,22 @@ describe('db schema migrations', () => {
       .map((r) => r.name)
       .sort()
 
-    expect(tables).toEqual(['agent_events', 'agent_runs', 'cost_events', 'settings', 'task_changes'])
+    expect(tables).toEqual([
+      'agent_events',
+      'agent_runs',
+      'cost_events',
+      'settings',
+      'task_changes'
+    ])
   })
 
   it('creates expected indexes', () => {
     runMigrations(db)
 
     const indexes = (
-      db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'").all() as {
+      db
+        .prepare("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'")
+        .all() as {
         name: string
       }[]
     )
@@ -55,7 +63,7 @@ describe('db schema migrations', () => {
       'idx_agent_runs_sprint_task',
       'idx_agent_runs_status',
       'idx_task_changes_changed_at',
-      'idx_task_changes_task_id',
+      'idx_task_changes_task_id'
     ])
   })
 
@@ -63,7 +71,15 @@ describe('db schema migrations', () => {
     runMigrations(db)
 
     const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map((c) => c.name)
-    for (const col of ['cost_usd', 'tokens_in', 'tokens_out', 'cache_read', 'cache_create', 'duration_ms', 'num_turns']) {
+    for (const col of [
+      'cost_usd',
+      'tokens_in',
+      'tokens_out',
+      'cache_read',
+      'cache_create',
+      'duration_ms',
+      'num_turns'
+    ]) {
       expect(cols).toContain(col)
     }
   })
@@ -141,7 +157,7 @@ describe('db schema migrations', () => {
   it('migration v13 adds sprint_task_id column to agent_runs', () => {
     const db = new Database(':memory:')
     runMigrations(db)
-    const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map(c => c.name)
+    const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map((c) => c.name)
     expect(cols).toContain('sprint_task_id')
     db.close()
   })

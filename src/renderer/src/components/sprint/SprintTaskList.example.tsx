@@ -43,7 +43,7 @@ export function FilteredSprintTaskListExample() {
     useShallow((s) => ({
       repoFilter: s.repoFilter,
       selectedTaskId: s.selectedTaskId,
-      setSelectedTaskId: s.setSelectedTaskId,
+      setSelectedTaskId: s.setSelectedTaskId
     }))
   )
 
@@ -71,13 +71,11 @@ export function SprintCenterWithTaskList() {
     useShallow((s) => ({
       repoFilter: s.repoFilter,
       selectedTaskId: s.selectedTaskId,
-      setSelectedTaskId: s.setSelectedTaskId,
+      setSelectedTaskId: s.setSelectedTaskId
     }))
   )
 
-  const selectedTask = selectedTaskId
-    ? tasks.find((t) => t.id === selectedTaskId) ?? null
-    : null
+  const selectedTask = selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null
 
   return (
     <div style={{ height: '100vh' }}>
@@ -97,7 +95,7 @@ export function SprintCenterWithTaskList() {
             width: '4px',
             background: 'var(--bde-border)',
             cursor: 'col-resize',
-            flexShrink: 0,
+            flexShrink: 0
           }}
         />
 

@@ -6,7 +6,7 @@ import { SteerInput } from '../SteerInput'
 describe('SteerInput', () => {
   const defaultProps = {
     agentId: 'agent-1',
-    onSend: vi.fn(),
+    onSend: vi.fn()
   }
 
   beforeEach(() => {

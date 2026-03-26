@@ -89,7 +89,7 @@ export async function tryEmitPlaygroundEvent(
   taskId: string,
   filePath: string,
   worktreePath: string,
-  logger: Logger,
+  logger: Logger
 ): Promise<void> {
   try {
     // Resolve absolute path
@@ -112,7 +112,7 @@ export async function tryEmitPlaygroundEvent(
       filename,
       html,
       sizeBytes: stats.size,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
 
     broadcast('agent:event', { agentId: taskId, event })
@@ -131,14 +131,19 @@ export async function runAgent(
   task: RunAgentTask,
   worktree: { worktreePath: string; branch: string },
   repoPath: string,
-  deps: RunAgentDeps,
+  deps: RunAgentDeps
 ): Promise<void> {
   const { activeAgents, defaultModel, logger, onTaskTerminal, repo } = deps
 
   let prompt = (task.prompt || task.spec || task.title || '').trim()
   if (!prompt) {
     logger.error(`[agent-manager] Task ${task.id} has no prompt/spec/title — marking error`)
-    await repo.updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: 'Empty prompt', claimed_by: null })
+    await repo.updateTask(task.id, {
+      status: 'error',
+      completed_at: new Date().toISOString(),
+      notes: 'Empty prompt',
+      claimed_by: null
+    })
     await onTaskTerminal(task.id, 'error')
     cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
     return
@@ -167,13 +172,27 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
         prompt,
         cwd: worktree.worktreePath,
         model: defaultModel,
-        logger,
+        logger
       }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Spawn timed out after ${SPAWN_TIMEOUT_MS / 1000}s`)), SPAWN_TIMEOUT_MS)),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Spawn timed out after ${SPAWN_TIMEOUT_MS / 1000}s`)),
+          SPAWN_TIMEOUT_MS
+        )
+      )
     ])
   } catch (err) {
     logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
-    await repo.updateTask(task.id, { status: 'error', completed_at: new Date().toISOString(), notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}`, claimed_by: null }).catch((err) => logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${err}`))
+    await repo
+      .updateTask(task.id, {
+        status: 'error',
+        completed_at: new Date().toISOString(),
+        notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}`,
+        claimed_by: null
+      })
+      .catch((err) =>
+        logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${err}`)
+      )
     await onTaskTerminal(task.id, 'error')
     cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
     return
@@ -197,14 +216,16 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     costUsd: 0,
     tokensIn: 0,
     tokensOut: 0,
-    maxRuntimeMs: task.max_runtime_ms ?? null,
+    maxRuntimeMs: task.max_runtime_ms ?? null
   }
   activeAgents.set(task.id, agent)
   let lastAgentOutput = ''
   // Persist agent_run_id so LogDrawer can find logs after restart
-  await repo.updateTask(task.id, { agent_run_id: agentRunId }).catch((err) =>
-    logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
-  )
+  await repo
+    .updateTask(task.id, { agent_run_id: agentRunId })
+    .catch((err) =>
+      logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
+    )
   // Persist agent run to local SQLite for log access and history
   createAgentRecord({
     id: agentRunId,
@@ -222,7 +243,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     costUsd: null,
     tokensIn: null,
     tokensOut: null,
-    sprintTaskId: task.id,
+    sprintTaskId: task.id
   }).catch((err) =>
     logger.warn(`[agent-manager] Failed to create agent record for ${agentRunId}: ${err}`)
   )
@@ -279,16 +300,25 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     emitAgentEvent(agentRunId, {
       type: 'agent:error',
       message: errMsg,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     })
     // Invalidate cached OAuth token on auth errors so next agent gets a fresh token
-    if (errMsg.includes('Invalid API key') || errMsg.includes('invalid_api_key') || errMsg.includes('authentication')) {
+    if (
+      errMsg.includes('Invalid API key') ||
+      errMsg.includes('invalid_api_key') ||
+      errMsg.includes('authentication')
+    ) {
       const { invalidateOAuthToken, refreshOAuthTokenFromKeychain } = await import('../env-utils')
       invalidateOAuthToken()
       // Try to auto-refresh so next agent doesn't fail too
-      refreshOAuthTokenFromKeychain().then((ok) => {
-        if (ok) logger.info('[agent-manager] OAuth token auto-refreshed from Keychain after auth failure')
-      }).catch(() => {})
+      refreshOAuthTokenFromKeychain()
+        .then((ok) => {
+          if (ok)
+            logger.info(
+              '[agent-manager] OAuth token auto-refreshed from Keychain after auth failure'
+            )
+        })
+        .catch(() => {})
       logger.warn(`[agent-manager] Auth failure detected — OAuth token cache invalidated`)
     }
   }
@@ -305,7 +335,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     tokensIn: agent.tokensIn,
     tokensOut: agent.tokensOut,
     durationMs,
-    timestamp: exitedAt,
+    timestamp: exitedAt
   })
 
   // Check if watchdog already cleaned up this agent
@@ -314,7 +344,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     cleanupWorktree({
       repoPath,
       worktreePath: worktree.worktreePath,
-      branch: worktree.branch,
+      branch: worktree.branch
     })
     return
   }
@@ -330,7 +360,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     exitCode: exitCode ?? null,
     costUsd: agent.costUsd,
     tokensIn: agent.tokensIn,
-    tokensOut: agent.tokensOut,
+    tokensOut: agent.tokensOut
   }).catch((err) =>
     logger.warn(`[agent-manager] Failed to update agent record for ${agentRunId}: ${err}`)
   )
@@ -340,33 +370,54 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   const now = new Date().toISOString()
 
   if (ffResult === 'fast-fail-exhausted') {
-    await repo.updateTask(task.id, { status: 'error', completed_at: now, notes: 'Fast-fail exhausted', claimed_by: null, needs_review: true })
-      .catch((err) => logger.error(`[agent-manager] Failed to update task ${task.id} after fast-fail exhausted: ${err}`))
+    await repo
+      .updateTask(task.id, {
+        status: 'error',
+        completed_at: now,
+        notes: 'Fast-fail exhausted',
+        claimed_by: null,
+        needs_review: true
+      })
+      .catch((err) =>
+        logger.error(
+          `[agent-manager] Failed to update task ${task.id} after fast-fail exhausted: ${err}`
+        )
+      )
     await onTaskTerminal(task.id, 'error')
   } else if (ffResult === 'fast-fail-requeue') {
-    await repo.updateTask(task.id, {
-      status: 'queued',
-      fast_fail_count: (task.fast_fail_count ?? 0) + 1,
-      claimed_by: null,
-    }).catch((err) => logger.error(`[agent-manager] Failed to requeue fast-fail task ${task.id}: ${err}`))
+    await repo
+      .updateTask(task.id, {
+        status: 'queued',
+        fast_fail_count: (task.fast_fail_count ?? 0) + 1,
+        claimed_by: null
+      })
+      .catch((err) =>
+        logger.error(`[agent-manager] Failed to requeue fast-fail task ${task.id}: ${err}`)
+      )
   } else {
     // Normal exit — attempt success resolution
     try {
       const ghRepo = getGhRepo(task.repo) ?? task.repo
 
-      await resolveSuccess({
-        taskId: task.id,
-        worktreePath: worktree.worktreePath,
-        title: task.title,
-        ghRepo,
-        onTaskTerminal,
-        agentSummary: lastAgentOutput || null,
-        retryCount: task.retry_count ?? 0,
-        repo,
-      }, logger)
+      await resolveSuccess(
+        {
+          taskId: task.id,
+          worktreePath: worktree.worktreePath,
+          title: task.title,
+          ghRepo,
+          onTaskTerminal,
+          agentSummary: lastAgentOutput || null,
+          retryCount: task.retry_count ?? 0,
+          repo
+        },
+        logger
+      )
     } catch (err) {
       logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)
-      const isTerminal = await resolveFailure({ taskId: task.id, retryCount: task.retry_count ?? 0, repo }, logger)
+      const isTerminal = await resolveFailure(
+        { taskId: task.id, retryCount: task.retry_count ?? 0, repo },
+        logger
+      )
       if (isTerminal) {
         await onTaskTerminal(task.id, 'failed')
       }
@@ -380,7 +431,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   cleanupWorktree({
     repoPath,
     worktreePath: worktree.worktreePath,
-    branch: worktree.branch,
+    branch: worktree.branch
   })
 
   logger.info(`[agent-manager] Agent completed for task ${task.id} (${ffResult})`)

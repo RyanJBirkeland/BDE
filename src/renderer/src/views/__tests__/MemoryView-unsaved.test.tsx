@@ -13,18 +13,18 @@ Element.prototype.scrollIntoView = vi.fn()
 vi.mock('../../stores/ui', () => ({
   useUIStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ activeView: 'memory', setView: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 describe('MemoryView — unsaved changes guard', () => {
   beforeEach(() => {
     vi.mocked(window.api.listMemoryFiles).mockResolvedValue([
       { path: 'file-a.md', name: 'file-a.md', size: 100, modifiedAt: Date.now() },
-      { path: 'file-b.md', name: 'file-b.md', size: 100, modifiedAt: Date.now() },
+      { path: 'file-b.md', name: 'file-b.md', size: 100, modifiedAt: Date.now() }
     ])
     vi.mocked(window.api.readMemoryFile).mockResolvedValue('Original content')
     vi.mocked(window.api.writeMemoryFile).mockResolvedValue(undefined)

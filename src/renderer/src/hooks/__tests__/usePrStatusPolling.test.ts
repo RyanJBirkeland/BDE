@@ -5,7 +5,7 @@ import type { SprintTask } from '../../../../shared/types'
 
 // Mock useVisibilityAwareInterval to prevent timer side-effects
 vi.mock('../useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn(),
+  useVisibilityAwareInterval: vi.fn()
 }))
 
 // Mutable state that tests can override
@@ -19,17 +19,25 @@ const mockSetPrMergedMap = vi.fn()
 vi.mock('../../stores/sprintTasks', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({
-      get tasks() { return currentTasks },
-      get prMergedMap() { return currentPrMergedMap },
+      get tasks() {
+        return currentTasks
+      },
+      get prMergedMap() {
+        return currentPrMergedMap
+      },
       updateTask: mockUpdateTask,
-      setPrMergedMap: mockSetPrMergedMap,
+      setPrMergedMap: mockSetPrMergedMap
     })
   )
   ;(store as any).getState = () => ({
-    get tasks() { return currentTasks },
-    get prMergedMap() { return currentPrMergedMap },
+    get tasks() {
+      return currentTasks
+    },
+    get prMergedMap() {
+      return currentPrMergedMap
+    },
     updateTask: mockUpdateTask,
-    setPrMergedMap: mockSetPrMergedMap,
+    setPrMergedMap: mockSetPrMergedMap
   })
   return { useSprintTasks: store }
 })
@@ -51,8 +59,8 @@ vi.mock('../../stores/toasts', () => ({
   toast: {
     success: vi.fn(),
     error: (...args: unknown[]) => mockToastError(...args),
-    info: vi.fn(),
-  },
+    info: vi.fn()
+  }
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -79,7 +87,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -119,7 +127,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' }
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -127,7 +135,7 @@ describe('usePrStatusPolling', () => {
     await act(async () => {})
 
     expect(window.api.pollPrStatuses).toHaveBeenCalledWith([
-      { taskId: 'task-1', prUrl: 'https://github.com/org/repo/pull/1' },
+      { taskId: 'task-1', prUrl: 'https://github.com/org/repo/pull/1' }
     ])
   })
 
@@ -147,7 +155,13 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: true, state: 'closed', mergedAt: '2026-01-01T00:00:00Z', mergeableState: 'clean' },
+      {
+        taskId: 'task-1',
+        merged: true,
+        state: 'closed',
+        mergedAt: '2026-01-01T00:00:00Z',
+        mergeableState: 'clean'
+      }
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -167,7 +181,13 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: true, state: 'closed', mergedAt: '2026-01-01T00:00:00Z', mergeableState: 'clean' },
+      {
+        taskId: 'task-1',
+        merged: true,
+        state: 'closed',
+        mergedAt: '2026-01-01T00:00:00Z',
+        mergeableState: 'clean'
+      }
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -182,7 +202,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'dirty' },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'dirty' }
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -197,7 +217,13 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-conflict', merged: false, state: 'open', mergedAt: null, mergeableState: 'dirty' },
+      {
+        taskId: 'task-conflict',
+        merged: false,
+        state: 'open',
+        mergedAt: null,
+        mergeableState: 'dirty'
+      }
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -212,7 +238,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' }
     ])
 
     renderHook(() => usePrStatusPolling())
@@ -244,7 +270,7 @@ describe('usePrStatusPolling', () => {
 
     // merged: false with prev already having false
     vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
-      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: null },
+      { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: null }
     ])
 
     renderHook(() => usePrStatusPolling())

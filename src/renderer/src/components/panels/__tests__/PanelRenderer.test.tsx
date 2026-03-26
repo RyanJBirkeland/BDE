@@ -9,9 +9,11 @@ import { PanelRenderer } from '../PanelRenderer'
 // ---------------------------------------------------------------------------
 
 vi.mock('react-resizable-panels', () => ({
-  Group: ({ children }: { children: React.ReactNode }) => <div data-testid="panel-group">{children}</div>,
+  Group: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="panel-group">{children}</div>
+  ),
   Panel: ({ children }: { children: React.ReactNode }) => <div data-testid="panel">{children}</div>,
-  Separator: () => <div data-testid="resize-handle" />,
+  Separator: () => <div data-testid="resize-handle" />
 }))
 
 vi.mock('../../../views/AgentsView', () => ({ AgentsView: () => <div>Agents</div> }))

@@ -87,7 +87,7 @@ describe('useFocusTrap', () => {
     const tabEvent = new KeyboardEvent('keydown', {
       key: 'Tab',
       bubbles: true,
-      cancelable: true,
+      cancelable: true
     })
     const preventDefaultSpy = vi.spyOn(tabEvent, 'preventDefault')
     document.dispatchEvent(tabEvent)
@@ -115,7 +115,7 @@ describe('useFocusTrap', () => {
       key: 'Tab',
       shiftKey: true,
       bubbles: true,
-      cancelable: true,
+      cancelable: true
     })
     const preventDefaultSpy = vi.spyOn(shiftTabEvent, 'preventDefault')
     document.dispatchEvent(shiftTabEvent)

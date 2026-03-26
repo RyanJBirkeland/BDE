@@ -7,19 +7,19 @@ import type { IpcMainInvokeEvent } from 'electron'
 const mockExecFileAsync = vi.hoisted(() => vi.fn())
 
 vi.mock('util', () => ({
-  promisify: vi.fn(() => mockExecFileAsync),
+  promisify: vi.fn(() => mockExecFileAsync)
 }))
 
 vi.mock('child_process', () => ({
-  execFile: vi.fn(),
+  execFile: vi.fn()
 }))
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 vi.mock('../../paths', () => ({
-  BDE_MEMORY_DIR: '/mock/memory/dir',
+  BDE_MEMORY_DIR: '/mock/memory/dir'
 }))
 
 import { registerMemorySearchHandler } from '../memory-search'
@@ -65,7 +65,7 @@ projects/foo.md:12:more test content`
       ['-rni', '--', 'test', '.'],
       expect.objectContaining({
         cwd: '/mock/memory/dir',
-        encoding: 'utf-8',
+        encoding: 'utf-8'
       })
     )
 
@@ -74,16 +74,16 @@ projects/foo.md:12:more test content`
         path: 'MEMORY.md',
         matches: [
           { line: 1, content: 'This is a test line' },
-          { line: 5, content: 'Another test match' },
-        ],
+          { line: 5, content: 'Another test match' }
+        ]
       },
       {
         path: 'projects/foo.md',
         matches: [
           { line: 10, content: 'test result here' },
-          { line: 12, content: 'more test content' },
-        ],
-      },
+          { line: 12, content: 'more test content' }
+        ]
+      }
     ])
   })
 

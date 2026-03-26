@@ -34,7 +34,7 @@ const EMPTY_LABELS: Record<ColumnStatus, string> = {
   failed: 'No failed tasks',
   error: 'No errored tasks',
   blocked: 'No blocked tasks',
-  review: 'No PRs awaiting review',
+  review: 'No PRs awaiting review'
 }
 
 const STATUS_CLASS: Record<ColumnStatus, string> = {
@@ -46,7 +46,7 @@ const STATUS_CLASS: Record<ColumnStatus, string> = {
   failed: 'kanban-col--done',
   error: 'kanban-col--done',
   blocked: 'kanban-col--blocked',
-  review: 'kanban-col--review',
+  review: 'kanban-col--review'
 }
 
 export const KanbanColumn = memo(function KanbanColumn({
@@ -62,13 +62,13 @@ export const KanbanColumn = memo(function KanbanColumn({
   onViewSpec,
   onViewOutput,
   onMarkDone,
-  onStop,
+  onStop
 }: KanbanColumnProps) {
   const reduced = useReducedMotion()
   const wipFull = wipLimit !== undefined && tasks.length >= wipLimit
   const droppable = useDroppable({ id: status, disabled: readOnly || wipFull })
-  const isOver = (readOnly || wipFull) ? false : droppable.isOver
-  const setNodeRef = (readOnly || wipFull) ? undefined : droppable.setNodeRef
+  const isOver = readOnly || wipFull ? false : droppable.isOver
+  const setNodeRef = readOnly || wipFull ? undefined : droppable.setNodeRef
   const ids = tasks.map((t) => t.id)
 
   const renderTasks = () => {
@@ -124,7 +124,9 @@ export const KanbanColumn = memo(function KanbanColumn({
       <div className="kanban-col__header">
         {label}
         {wipLimit !== undefined ? (
-          <span className={`sprint-col__count bde-count-badge ${wipFull ? 'bde-count-badge--wip-full' : ''}`}>
+          <span
+            className={`sprint-col__count bde-count-badge ${wipFull ? 'bde-count-badge--wip-full' : ''}`}
+          >
             {tasks.length}/{wipLimit}
           </span>
         ) : (

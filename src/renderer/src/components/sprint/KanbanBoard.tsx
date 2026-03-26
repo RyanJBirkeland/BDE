@@ -9,7 +9,7 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
-  closestCenter,
+  closestCenter
 } from '@dnd-kit/core'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { KanbanColumn } from './KanbanColumn'
@@ -38,10 +38,7 @@ type KanbanBoardProps = {
 
 const VALID_STATUSES: SprintTask['status'][] = [TASK_STATUS.QUEUED, TASK_STATUS.ACTIVE]
 
-function resolveTargetStatus(
-  overId: string,
-  allTasks: SprintTask[]
-): SprintTask['status'] | null {
+function resolveTargetStatus(overId: string, allTasks: SprintTask[]): SprintTask['status'] | null {
   if (VALID_STATUSES.includes(overId as SprintTask['status'])) {
     return overId as SprintTask['status']
   }
@@ -67,14 +64,17 @@ export function KanbanBoard({
   onViewSpec,
   onViewOutput,
   onMarkDone,
-  onStop,
+  onStop
 }: KanbanBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
   const [activeTask, setActiveTask] = useState<SprintTask | null>(null)
-  const [pendingDrag, setPendingDrag] = useState<{ taskId: string; targetStatus: SprintTask['status'] } | null>(null)
+  const [pendingDrag, setPendingDrag] = useState<{
+    taskId: string
+    targetStatus: SprintTask['status']
+  } | null>(null)
 
   const wipFull = activeTasks.length >= WIP_LIMIT_IN_PROGRESS
 
@@ -83,7 +83,7 @@ export function KanbanBoard({
 
   const columnsByStatus: Partial<Record<SprintTask['status'], SprintTask[]>> = {
     queued: todoTasks,
-    active: activeTasks,
+    active: activeTasks
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -109,7 +109,9 @@ export function KanbanBoard({
       sourceTask.status !== TASK_STATUS.ACTIVE &&
       wipFull
     ) {
-      toast.info(`WIP limit reached (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}). Complete or remove an in-progress task first.`)
+      toast.info(
+        `WIP limit reached (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}). Complete or remove an in-progress task first.`
+      )
       return
     }
 
@@ -122,7 +124,10 @@ export function KanbanBoard({
           const newIndex = column.findIndex((t) => t.id === String(over.id))
           if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
             const reordered = arrayMove(column, oldIndex, newIndex)
-            onReorder(targetStatus, reordered.map((t) => t.id))
+            onReorder(
+              targetStatus,
+              reordered.map((t) => t.id)
+            )
           }
         }
       }
@@ -153,73 +158,78 @@ export function KanbanBoard({
 
   return (
     <>
-    <ConfirmModal
-      open={pendingDrag !== null}
-      message="Move back to queue? This won't stop the running agent."
-      confirmLabel="Move to Queue"
-      onConfirm={handleConfirmDrag}
-      onCancel={handleCancelDrag}
-    />
-    <LayoutGroup>
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="kanban-board">
-        <KanbanColumn
-          status="queued"
-          label="To Do"
-          tasks={todoTasks}
-          prMergedMap={prMergedMap}
-          generatingIds={generatingIds}
-          onPushToSprint={onPushToSprint}
-          onLaunch={onLaunch}
-          onViewSpec={onViewSpec}
-          onViewOutput={onViewOutput}
-          onMarkDone={onMarkDone}
-          onStop={onStop}
-        />
-        <KanbanColumn
-          status="active"
-          label="In Progress"
-          tasks={activeTasks}
-          prMergedMap={prMergedMap}
-          generatingIds={generatingIds}
-          wipLimit={WIP_LIMIT_IN_PROGRESS}
-          onPushToSprint={onPushToSprint}
-          onLaunch={onLaunch}
-          onViewSpec={onViewSpec}
-          onViewOutput={onViewOutput}
-          onMarkDone={onMarkDone}
-          onStop={onStop}
-        />
-        <KanbanColumn
-          status="review"
-          label="Awaiting Review"
-          tasks={awaitingReviewTasks}
-          prMergedMap={prMergedMap}
-          generatingIds={generatingIds}
-          readOnly
-          onPushToSprint={onPushToSprint}
-          onLaunch={onLaunch}
-          onViewSpec={onViewSpec}
-          onViewOutput={onViewOutput}
-          onMarkDone={onMarkDone}
-          onStop={onStop}
-        />
-      </div>
-      <DragOverlay dropAnimation={null}>
-        {activeTask ? (
-          <TaskCard
-            task={activeTask}
-            index={0}
-            prMerged={prMergedMap[activeTask.id] ?? false}
-            onPushToSprint={noop}
-            onLaunch={noop}
-            onViewSpec={noop}
-            onViewOutput={noop}
-          />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
-    </LayoutGroup>
+      <ConfirmModal
+        open={pendingDrag !== null}
+        message="Move back to queue? This won't stop the running agent."
+        confirmLabel="Move to Queue"
+        onConfirm={handleConfirmDrag}
+        onCancel={handleCancelDrag}
+      />
+      <LayoutGroup>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="kanban-board">
+            <KanbanColumn
+              status="queued"
+              label="To Do"
+              tasks={todoTasks}
+              prMergedMap={prMergedMap}
+              generatingIds={generatingIds}
+              onPushToSprint={onPushToSprint}
+              onLaunch={onLaunch}
+              onViewSpec={onViewSpec}
+              onViewOutput={onViewOutput}
+              onMarkDone={onMarkDone}
+              onStop={onStop}
+            />
+            <KanbanColumn
+              status="active"
+              label="In Progress"
+              tasks={activeTasks}
+              prMergedMap={prMergedMap}
+              generatingIds={generatingIds}
+              wipLimit={WIP_LIMIT_IN_PROGRESS}
+              onPushToSprint={onPushToSprint}
+              onLaunch={onLaunch}
+              onViewSpec={onViewSpec}
+              onViewOutput={onViewOutput}
+              onMarkDone={onMarkDone}
+              onStop={onStop}
+            />
+            <KanbanColumn
+              status="review"
+              label="Awaiting Review"
+              tasks={awaitingReviewTasks}
+              prMergedMap={prMergedMap}
+              generatingIds={generatingIds}
+              readOnly
+              onPushToSprint={onPushToSprint}
+              onLaunch={onLaunch}
+              onViewSpec={onViewSpec}
+              onViewOutput={onViewOutput}
+              onMarkDone={onMarkDone}
+              onStop={onStop}
+            />
+          </div>
+          <DragOverlay dropAnimation={null}>
+            {activeTask ? (
+              <TaskCard
+                task={activeTask}
+                index={0}
+                prMerged={prMergedMap[activeTask.id] ?? false}
+                onPushToSprint={noop}
+                onLaunch={noop}
+                onViewSpec={noop}
+                onViewOutput={noop}
+              />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </LayoutGroup>
     </>
   )
 }

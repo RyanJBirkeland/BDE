@@ -34,7 +34,7 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
               tool: (b.name as string) ?? 'unknown',
               summary: (b.name as string) ?? '',
               input: b.input,
-              timestamp: now,
+              timestamp: now
             })
           }
         }
@@ -48,7 +48,7 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
       success: msg.is_error !== true,
       summary: typeof content === 'string' ? content.slice(0, 200) : '',
       output: content,
-      timestamp: now,
+      timestamp: now
     })
   }
 

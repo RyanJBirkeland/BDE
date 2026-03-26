@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 
 const mockCreateReview = vi.fn()
 vi.mock('../../../lib/github-api', () => ({
-  createReview: (...args: unknown[]) => mockCreateReview(...args),
+  createReview: (...args: unknown[]) => mockCreateReview(...args)
 }))
 
 const mockClearPending = vi.fn()
@@ -14,8 +14,8 @@ vi.mock('../../../stores/pendingReview', () => ({
   usePendingReviewStore: (selector: (s: unknown) => unknown) =>
     selector({
       pendingComments: pendingCommentsRecord,
-      clearPending: mockClearPending,
-    }),
+      clearPending: mockClearPending
+    })
 }))
 
 const mockToastSuccess = vi.fn()
@@ -23,8 +23,8 @@ const mockToastError = vi.fn()
 vi.mock('../../../stores/toasts', () => ({
   toast: {
     success: (...args: unknown[]) => mockToastSuccess(...args),
-    error: (...args: unknown[]) => mockToastError(...args),
-  },
+    error: (...args: unknown[]) => mockToastError(...args)
+  }
 }))
 
 import { ReviewSubmitDialog } from '../ReviewSubmitDialog'
@@ -43,12 +43,16 @@ const mockPr: OpenPr = {
   user: { login: 'alice' },
   merged: false,
   merged_at: null,
-  repo: 'BDE',
+  repo: 'BDE'
 }
 
 const prKey = 'BDE#42'
 
-function renderDialog(overrides?: { prKey?: string; onClose?: () => void; onSubmitted?: () => void }) {
+function renderDialog(overrides?: {
+  prKey?: string
+  onClose?: () => void
+  onSubmitted?: () => void
+}) {
   const onClose = overrides?.onClose ?? vi.fn()
   const onSubmitted = overrides?.onSubmitted ?? vi.fn()
   return {
@@ -61,7 +65,7 @@ function renderDialog(overrides?: { prKey?: string; onClose?: () => void; onSubm
         onClose={onClose}
         onSubmitted={onSubmitted}
       />
-    ),
+    )
   }
 }
 
@@ -99,7 +103,7 @@ describe('ReviewSubmitDialog', () => {
   it('shows pending comment count when there are pending comments', () => {
     pendingCommentsRecord[prKey] = [
       { id: '1', path: 'foo.ts', line: 1, side: 'RIGHT', body: 'nice' },
-      { id: '2', path: 'bar.ts', line: 5, side: 'RIGHT', body: 'fix this' },
+      { id: '2', path: 'bar.ts', line: 5, side: 'RIGHT', body: 'fix this' }
     ]
     renderDialog()
     expect(screen.getByText(/2 pending comments will be included/i)).toBeInTheDocument()
@@ -107,7 +111,7 @@ describe('ReviewSubmitDialog', () => {
 
   it('shows singular "comment" when exactly 1 pending comment', () => {
     pendingCommentsRecord[prKey] = [
-      { id: '1', path: 'foo.ts', line: 1, side: 'RIGHT', body: 'nice' },
+      { id: '1', path: 'foo.ts', line: 1, side: 'RIGHT', body: 'nice' }
     ]
     renderDialog()
     expect(screen.getByText(/1 pending comment will be included/i)).toBeInTheDocument()
@@ -116,10 +120,14 @@ describe('ReviewSubmitDialog', () => {
   it('submits review and calls onSubmitted + onClose', async () => {
     const { onClose, onSubmitted } = renderDialog()
     await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
-    await waitFor(() => expect(mockCreateReview).toHaveBeenCalledWith(
-      'RyanJBirkeland', 'BDE', 42,
-      expect.objectContaining({ event: 'COMMENT' })
-    ))
+    await waitFor(() =>
+      expect(mockCreateReview).toHaveBeenCalledWith(
+        'RyanJBirkeland',
+        'BDE',
+        42,
+        expect.objectContaining({ event: 'COMMENT' })
+      )
+    )
     expect(mockToastSuccess).toHaveBeenCalledWith('Review submitted')
     expect(mockClearPending).toHaveBeenCalledWith(prKey)
     expect(onSubmitted).toHaveBeenCalled()
@@ -145,7 +153,9 @@ describe('ReviewSubmitDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
     await waitFor(() =>
       expect(mockCreateReview).toHaveBeenCalledWith(
-        'RyanJBirkeland', 'BDE', 42,
+        'RyanJBirkeland',
+        'BDE',
+        42,
         expect.objectContaining({ event: 'APPROVE' })
       )
     )
@@ -155,11 +165,16 @@ describe('ReviewSubmitDialog', () => {
   it('submits with REQUEST_CHANGES event and body when Request Changes is selected and body typed', async () => {
     renderDialog()
     await userEvent.click(screen.getByRole('radio', { name: /request changes/i }))
-    await userEvent.type(screen.getByPlaceholderText(/leave an overall comment/i), 'Please fix the types')
+    await userEvent.type(
+      screen.getByPlaceholderText(/leave an overall comment/i),
+      'Please fix the types'
+    )
     await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
     await waitFor(() =>
       expect(mockCreateReview).toHaveBeenCalledWith(
-        'RyanJBirkeland', 'BDE', 42,
+        'RyanJBirkeland',
+        'BDE',
+        42,
         expect.objectContaining({ event: 'REQUEST_CHANGES', body: 'Please fix the types' })
       )
     )
@@ -168,18 +183,20 @@ describe('ReviewSubmitDialog', () => {
   it('passes pending comments to createReview', async () => {
     pendingCommentsRecord[prKey] = [
       { id: 'c1', path: 'src/foo.ts', line: 10, side: 'RIGHT', body: 'nit: rename this' },
-      { id: 'c2', path: 'src/bar.ts', line: 5, side: 'RIGHT', body: 'extract to helper' },
+      { id: 'c2', path: 'src/bar.ts', line: 5, side: 'RIGHT', body: 'extract to helper' }
     ]
     renderDialog()
     await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
     await waitFor(() =>
       expect(mockCreateReview).toHaveBeenCalledWith(
-        'RyanJBirkeland', 'BDE', 42,
+        'RyanJBirkeland',
+        'BDE',
+        42,
         expect.objectContaining({
           comments: [
             expect.objectContaining({ path: 'src/foo.ts', line: 10, body: 'nit: rename this' }),
-            expect.objectContaining({ path: 'src/bar.ts', line: 5, body: 'extract to helper' }),
-          ],
+            expect.objectContaining({ path: 'src/bar.ts', line: 5, body: 'extract to helper' })
+          ]
         })
       )
     )

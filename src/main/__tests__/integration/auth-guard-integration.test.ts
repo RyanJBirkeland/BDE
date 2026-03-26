@@ -3,11 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // --- Mock child_process and fs before imports ---
 
 vi.mock('node:child_process', () => ({
-  execFile: vi.fn(),
+  execFile: vi.fn()
 }))
 
 vi.mock('node:fs', () => ({
-  existsSync: vi.fn().mockReturnValue(false),
+  existsSync: vi.fn().mockReturnValue(false)
 }))
 
 import { execFile } from 'node:child_process'
@@ -22,7 +22,7 @@ function mockKeychainResult(payload: Record<string, unknown>) {
     const cb = rawArgs[rawArgs.length - 1] as (
       err: Error | null,
       stdout?: string,
-      stderr?: string,
+      stderr?: string
     ) => void
     cb(null, JSON.stringify(payload), '')
     return {} as ReturnType<typeof execFile>
@@ -63,8 +63,8 @@ describe('AuthGuard integration', () => {
       mockKeychainResult({
         claudeAiOauth: {
           accessToken: 'valid-token-abc',
-          expiresAt: String(futureMs),
-        },
+          expiresAt: String(futureMs)
+        }
       })
 
       const status = await checkAuthStatus()
@@ -82,8 +82,8 @@ describe('AuthGuard integration', () => {
       mockKeychainResult({
         claudeAiOauth: {
           accessToken: 'expired-token',
-          expiresAt: String(pastMs),
-        },
+          expiresAt: String(pastMs)
+        }
       })
 
       const status = await checkAuthStatus()
@@ -98,8 +98,8 @@ describe('AuthGuard integration', () => {
       mockKeychainResult({
         claudeAiOauth: {
           accessToken: 'token',
-          expiresAt: String(Date.now() + 3_600_000),
-        },
+          expiresAt: String(Date.now() + 3_600_000)
+        }
       })
 
       const status = await checkAuthStatus()
@@ -124,8 +124,8 @@ describe('AuthGuard integration', () => {
       mockKeychainResult({
         claudeAiOauth: {
           // accessToken is missing
-          expiresAt: String(Date.now() + 3_600_000),
-        },
+          expiresAt: String(Date.now() + 3_600_000)
+        }
       })
 
       const status = await checkAuthStatus()
@@ -156,8 +156,8 @@ describe('AuthGuard integration', () => {
       mockKeychainResult({
         claudeAiOauth: {
           accessToken: 'valid-token',
-          expiresAt: String(Date.now() + 3_600_000),
-        },
+          expiresAt: String(Date.now() + 3_600_000)
+        }
       })
 
       await ensureSubscriptionAuth()
@@ -170,9 +170,7 @@ describe('AuthGuard integration', () => {
       mockCliExists(true)
       mockKeychainFailure()
 
-      await expect(ensureSubscriptionAuth()).rejects.toThrow(
-        'No Claude subscription token found',
-      )
+      await expect(ensureSubscriptionAuth()).rejects.toThrow('No Claude subscription token found')
     })
 
     it('throws when token is expired', async () => {
@@ -180,13 +178,11 @@ describe('AuthGuard integration', () => {
       mockKeychainResult({
         claudeAiOauth: {
           accessToken: 'expired-token',
-          expiresAt: String(Date.now() - 3_600_000),
-        },
+          expiresAt: String(Date.now() - 3_600_000)
+        }
       })
 
-      await expect(ensureSubscriptionAuth()).rejects.toThrow(
-        'Claude subscription token expired',
-      )
+      await expect(ensureSubscriptionAuth()).rejects.toThrow('Claude subscription token expired')
     })
   })
 

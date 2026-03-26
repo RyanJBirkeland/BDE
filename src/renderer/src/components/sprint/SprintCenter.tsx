@@ -41,7 +41,7 @@ export function SprintCenter() {
     useShallow((s) => ({
       tasks: s.tasks,
       loading: s.loading,
-      loadError: s.loadError,
+      loadError: s.loadError
     }))
   )
   const loadData = useSprintTasks((s) => s.loadData)
@@ -50,7 +50,7 @@ export function SprintCenter() {
     useShallow((s) => ({
       repoFilter: s.repoFilter,
       logDrawerTaskId: s.logDrawerTaskId,
-      statusFilter: s.statusFilter,
+      statusFilter: s.statusFilter
     }))
   )
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
@@ -65,7 +65,7 @@ export function SprintCenter() {
     handleRerun,
     launchTask,
     deleteTask,
-    confirmProps,
+    confirmProps
   } = useSprintTaskActions()
 
   const { visibleStuckTasks, dismissTask } = useHealthCheck(tasks)
@@ -79,7 +79,7 @@ export function SprintCenter() {
   const [healthDrawerOpen, setHealthDrawerOpen] = useState(false)
 
   const selectedTask = useMemo(
-    () => (selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) ?? null : null),
+    () => (selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null),
     [selectedTaskId, tasks]
   )
 
@@ -136,7 +136,11 @@ export function SprintCenter() {
         <div className="sprint-center__sidebar">
           {/* Pipeline */}
           <ErrorBoundary name="CircuitPipeline">
-            <CircuitPipeline tasks={tasks} statusFilter={statusFilter} onStageClick={setStatusFilter as (filter: string) => void} />
+            <CircuitPipeline
+              tasks={tasks}
+              statusFilter={statusFilter}
+              onStageClick={setStatusFilter as (filter: string) => void}
+            />
           </ErrorBoundary>
 
           {/* Header */}
@@ -165,11 +169,7 @@ export function SprintCenter() {
                   </Badge>
                 </button>
               )}
-              <button
-                className="sprint-center__add-btn"
-                onClick={openWorkbench}
-                title="New Ticket"
-              >
+              <button className="sprint-center__add-btn" onClick={openWorkbench} title="New Ticket">
                 <Plus size={13} />
               </button>
             </div>

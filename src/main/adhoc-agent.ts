@@ -44,7 +44,7 @@ export async function spawnAdhocAgent(args: {
     type: 'user',
     message: { role: 'user', content: args.task },
     parent_tool_use_id: null,
-    session_id: sessionId,
+    session_id: sessionId
   }
 
   // Use an async generator that yields the first message then stays open
@@ -62,8 +62,8 @@ export async function spawnAdhocAgent(args: {
       cwd: args.repoPath,
       env: env as Record<string, string>,
       permissionMode: 'bypassPermissions',
-      allowDangerouslySkipPermissions: true,
-    },
+      allowDangerouslySkipPermissions: true
+    }
   })
 
   // Record in agent_runs
@@ -78,9 +78,9 @@ export async function spawnAdhocAgent(args: {
       repoPath: args.repoPath,
       task: args.task,
       status: 'running',
-      source: 'adhoc',
+      source: 'adhoc'
     },
-    '',
+    ''
   )
 
   // Track for steering / kill
@@ -90,13 +90,17 @@ export async function spawnAdhocAgent(args: {
         type: 'user',
         message: { role: 'user', content: message },
         parent_tool_use_id: null,
-        session_id: sessionId,
+        session_id: sessionId
       }
-      await queryHandle.streamInput((async function* () { yield userMsg })())
+      await queryHandle.streamInput(
+        (async function* () {
+          yield userMsg
+        })()
+      )
     },
     close() {
       queryHandle.close()
-    },
+    }
   })
 
   // Consume messages in the background — do NOT await
@@ -106,7 +110,7 @@ export async function spawnAdhocAgent(args: {
     id: meta.id,
     pid: 0,
     logPath: meta.logPath ?? '',
-    interactive: true,
+    interactive: true
   }
 }
 
@@ -115,7 +119,7 @@ export async function spawnAdhocAgent(args: {
 async function consumeStream(
   agentId: string,
   model: string,
-  queryHandle: AsyncIterable<unknown> & { close(): void },
+  queryHandle: AsyncIterable<unknown> & { close(): void }
 ): Promise<void> {
   const startedAt = Date.now()
   let costUsd = 0
@@ -152,7 +156,7 @@ async function consumeStream(
       emitAgentEvent(agentId, {
         type: 'agent:error',
         message: err instanceof Error ? err.message : String(err),
-        timestamp: Date.now(),
+        timestamp: Date.now()
       })
     }
 
@@ -164,16 +168,18 @@ async function consumeStream(
       tokensIn,
       tokensOut,
       durationMs,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     })
 
     try {
       await updateAgentMeta(agentId, {
         status: 'done',
         finishedAt: new Date().toISOString(),
-        exitCode,
+        exitCode
       })
-    } catch { /* update failure is non-fatal */ }
+    } catch {
+      /* update failure is non-fatal */
+    }
   } finally {
     adhocSessions.delete(agentId)
     queryHandle.close()

@@ -7,11 +7,11 @@ import type { RecentTask } from '../../../lib/launchpad-types'
 
 const mockRepos = [
   { label: 'BDE', owner: 'owner', color: '#fff' },
-  { label: 'life-os', owner: 'owner', color: '#fff' },
+  { label: 'life-os', owner: 'owner', color: '#fff' }
 ]
 
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => mockRepos,
+  useRepoOptions: () => mockRepos
 }))
 
 describe('LaunchpadGrid', () => {
@@ -24,7 +24,7 @@ describe('LaunchpadGrid', () => {
     recents: [] as RecentTask[],
     onSelectTemplate,
     onCustomPrompt,
-    onSelectRecent,
+    onSelectRecent
   }
 
   beforeEach(() => {
@@ -52,13 +52,13 @@ describe('LaunchpadGrid', () => {
     render(<LaunchpadGrid {...defaultProps} />)
     fireEvent.click(screen.getByText('Clean Code'))
     expect(onSelectTemplate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'builtin-clean-code' }),
+      expect.objectContaining({ id: 'builtin-clean-code' })
     )
   })
 
   it('renders recent tasks when provided', () => {
     const recents: RecentTask[] = [
-      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() - 3600000 },
+      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() - 3600000 }
     ]
     render(<LaunchpadGrid {...defaultProps} recents={recents} />)
     expect(screen.getByText(/Fix the login bug/)).toBeInTheDocument()
@@ -66,7 +66,7 @@ describe('LaunchpadGrid', () => {
 
   it('calls onSelectRecent when a recent item is clicked', () => {
     const recents: RecentTask[] = [
-      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() },
+      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() }
     ]
     render(<LaunchpadGrid {...defaultProps} recents={recents} />)
     fireEvent.click(screen.getByText(/Fix the login bug/))
@@ -93,7 +93,7 @@ describe('LaunchpadGrid', () => {
     expect(onCustomPrompt).toHaveBeenCalledWith(
       'Do something custom',
       expect.any(String), // repo
-      expect.any(String), // model
+      expect.any(String) // model
     )
   })
 })

@@ -13,16 +13,16 @@ const mockSetTitle = vi.fn()
 vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn((channel: string, handler: Function) => handlers.set(channel, handler)),
-    on: vi.fn((channel: string, handler: Function) => onListeners.set(channel, handler)),
+    on: vi.fn((channel: string, handler: Function) => onListeners.set(channel, handler))
   },
   BrowserWindow: {
     getAllWindows: vi.fn(() => [{ id: 1, webContents: { send: mockSend } }]),
     getFocusedWindow: vi.fn(() => ({ setTitle: mockSetTitle })),
-    fromWebContents: vi.fn(() => ({ id: 1 })),
+    fromWebContents: vi.fn(() => ({ id: 1 }))
   },
   shell: { openExternal: vi.fn().mockResolvedValue(undefined) },
   dialog: { showErrorBox: vi.fn() },
-  app: { quit: vi.fn() },
+  app: { quit: vi.fn() }
 }))
 
 // ---------------------------------------------------------------------------
@@ -32,12 +32,12 @@ vi.mock('electron', () => ({
 vi.mock('../runner-client', () => ({
   listAgents: vi.fn().mockResolvedValue([]),
   steerAgent: vi.fn().mockResolvedValue({ ok: true }),
-  killAgent: vi.fn().mockResolvedValue({ ok: true }),
+  killAgent: vi.fn().mockResolvedValue({ ok: true })
 }))
 
 vi.mock('../agent-log-manager', () => ({
   tailAgentLog: vi.fn().mockResolvedValue({ content: 'log data', nextByte: 42 }),
-  cleanupOldLogs: vi.fn(),
+  cleanupOldLogs: vi.fn()
 }))
 
 vi.mock('../agent-history', () => ({
@@ -46,16 +46,18 @@ vi.mock('../agent-history', () => ({
   readLog: vi.fn().mockResolvedValue({ content: '', nextByte: 0 }),
   importAgent: vi.fn().mockResolvedValue({ id: 'imported-1' }),
   updateAgentMeta: vi.fn(),
-  pruneOldAgents: vi.fn(),
+  pruneOldAgents: vi.fn()
 }))
 
 vi.mock('../adhoc-agent', () => ({
-  spawnAdhocAgent: vi.fn().mockResolvedValue({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true }),
-  getAdhocHandle: vi.fn(),
+  spawnAdhocAgent: vi
+    .fn()
+    .mockResolvedValue({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true }),
+  getAdhocHandle: vi.fn()
 }))
 
 vi.mock('../data/event-queries', () => ({
-  getEventHistory: vi.fn().mockReturnValue([]),
+  getEventHistory: vi.fn().mockReturnValue([])
 }))
 
 vi.mock('../git', () => ({
@@ -67,19 +69,21 @@ vi.mock('../git', () => ({
   gitCommit: vi.fn().mockResolvedValue(undefined),
   gitPush: vi.fn().mockResolvedValue('push output'),
   gitBranches: vi.fn().mockResolvedValue({ current: 'main', branches: ['main'] }),
-  gitCheckout: vi.fn().mockResolvedValue(undefined),
+  gitCheckout: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../github-pr-status', () => ({
-  pollPrStatuses: vi.fn().mockResolvedValue([]),
+  pollPrStatuses: vi.fn().mockResolvedValue([])
 }))
 
 vi.mock('../github-conflict-check', () => ({
-  checkConflictFiles: vi.fn().mockResolvedValue({ prNumber: 0, files: [], baseBranch: '', headBranch: '' }),
+  checkConflictFiles: vi
+    .fn()
+    .mockResolvedValue({ prNumber: 0, files: [], baseBranch: '', headBranch: '' })
 }))
 
 vi.mock('../config', () => ({
-  getGitHubToken: vi.fn().mockReturnValue('gh-token'),
+  getGitHubToken: vi.fn().mockReturnValue('gh-token')
 }))
 
 vi.mock('../db', () => ({
@@ -87,13 +91,13 @@ vi.mock('../db', () => ({
     prepare: vi.fn().mockReturnValue({
       all: vi.fn().mockReturnValue([]),
       get: vi.fn().mockReturnValue({ id: '1', title: 'task' }),
-      run: vi.fn().mockReturnValue({ changes: 1 }),
-    }),
-  }),
+      run: vi.fn().mockReturnValue({ changes: 1 })
+    })
+  })
 }))
 
 const { mockGetSetting } = vi.hoisted(() => ({
-  mockGetSetting: vi.fn().mockReturnValue(null),
+  mockGetSetting: vi.fn().mockReturnValue(null)
 }))
 vi.mock('../settings', () => ({
   getSetting: mockGetSetting,
@@ -103,7 +107,7 @@ vi.mock('../settings', () => ({
   deleteSetting: vi.fn(),
   SETTING_RUNNERS: 'runners',
   SETTING_SUPABASE_URL: 'supabase.url',
-  SETTING_SUPABASE_KEY: 'supabase.serviceKey',
+  SETTING_SUPABASE_KEY: 'supabase.serviceKey'
 }))
 
 vi.mock('fs/promises', () => ({
@@ -111,14 +115,14 @@ vi.mock('fs/promises', () => ({
   readdir: vi.fn().mockResolvedValue([]),
   stat: vi.fn().mockResolvedValue({ size: 100, mtimeMs: Date.now() }),
   mkdir: vi.fn().mockResolvedValue(undefined),
-  writeFile: vi.fn().mockResolvedValue(undefined),
+  writeFile: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>()
   return {
     ...actual,
-    readFileSync: vi.fn().mockReturnValue(''),
+    readFileSync: vi.fn().mockReturnValue('')
   }
 })
 
@@ -129,7 +133,7 @@ const mockPtyProcess = {
   onExit: vi.fn(),
   write: vi.fn(),
   resize: vi.fn(),
-  kill: vi.fn(),
+  kill: vi.fn()
 }
 const mockPtySpawn = vi.fn().mockReturnValue(mockPtyProcess)
 
@@ -243,7 +247,7 @@ describe('IPC handler registration', () => {
         'config:saveAgentConfig',
         'agents:list',
         'agents:readLog',
-        'agents:import',
+        'agents:import'
       ]
       for (const ch of expected) {
         expect(handlers.has(ch), `missing channel: ${ch}`).toBe(true)
@@ -256,7 +260,10 @@ describe('IPC handler registration', () => {
     })
 
     it('"local:spawnClaudeAgent" calls spawnAdhocAgent and returns result', async () => {
-      const result = await invoke('local:spawnClaudeAgent', { repoPath: '/tmp/bde', task: 'fix bug' })
+      const result = await invoke('local:spawnClaudeAgent', {
+        repoPath: '/tmp/bde',
+        task: 'fix bug'
+      })
       expect(result).toEqual({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true })
     })
 
@@ -319,7 +326,7 @@ describe('IPC handler registration', () => {
         'git:push',
         'git:branches',
         'git:checkout',
-        'pr:pollStatuses',
+        'pr:pollStatuses'
       ]
       for (const ch of expected) {
         expect(handlers.has(ch), `missing channel: ${ch}`).toBe(true)
@@ -381,9 +388,7 @@ describe('IPC handler registration', () => {
     })
 
     it('rejects cwd outside known repository paths', async () => {
-      await expect(invoke('git:status', '/etc/evil')).rejects.toThrow(
-        'Path rejected'
-      )
+      await expect(invoke('git:status', '/etc/evil')).rejects.toThrow('Path rejected')
     })
 
     it('error in gitStatus propagates via safeHandle', async () => {
@@ -491,9 +496,7 @@ describe('IPC handler registration', () => {
 
     it('"terminal:resize" does not throw', async () => {
       const id = await invoke('terminal:create', { cols: 80, rows: 24 })
-      await expect(
-        invoke('terminal:resize', { id, cols: 200, rows: 50 })
-      ).resolves.not.toThrow()
+      await expect(invoke('terminal:resize', { id, cols: 200, rows: 50 })).resolves.not.toThrow()
     })
   })
 
@@ -520,9 +523,9 @@ describe('IPC handler registration', () => {
     })
 
     it('"memory:writeFile" rejects path traversal', async () => {
-      await expect(
-        invoke('memory:writeFile', '../../../etc/evil', 'bad')
-      ).rejects.toThrow('Path traversal blocked')
+      await expect(invoke('memory:writeFile', '../../../etc/evil', 'bad')).rejects.toThrow(
+        'Path traversal blocked'
+      )
     })
   })
 })

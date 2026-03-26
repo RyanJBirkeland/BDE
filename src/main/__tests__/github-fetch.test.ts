@@ -7,8 +7,8 @@ const mockSend = vi.fn()
 
 vi.mock('electron', () => ({
   BrowserWindow: {
-    getAllWindows: vi.fn(() => [{ id: 1, webContents: { send: mockSend } }]),
-  },
+    getAllWindows: vi.fn(() => [{ id: 1, webContents: { send: mockSend } }])
+  }
 }))
 
 // ---------------------------------------------------------------------------
@@ -20,7 +20,7 @@ import {
   computeBackoffMs,
   _resetRateLimitState,
   parseNextLink,
-  fetchAllGitHubPages,
+  fetchAllGitHubPages
 } from '../github-fetch'
 
 // ---------------------------------------------------------------------------
@@ -39,7 +39,7 @@ function mockResponse(
 ): Response {
   return new Response(body, {
     status,
-    headers: new Headers(headerMap),
+    headers: new Headers(headerMap)
   })
 }
 
@@ -65,7 +65,7 @@ describe('parseRateLimitHeaders', () => {
       'x-ratelimit-remaining': '42',
       'x-ratelimit-limit': '5000',
       'x-ratelimit-reset': '1700000000',
-      'retry-after': '60',
+      'retry-after': '60'
     })
     const rl = parseRateLimitHeaders(h)
     expect(rl.remaining).toBe(42)
@@ -109,13 +109,13 @@ describe('githubFetch', () => {
         mockResponse(200, {
           'x-ratelimit-remaining': '4999',
           'x-ratelimit-limit': '5000',
-          'x-ratelimit-reset': '1700000000',
+          'x-ratelimit-reset': '1700000000'
         })
       )
     )
 
     const res = await githubFetch('https://api.github.com/repos/o/r', {
-      headers: { Authorization: 'Bearer tok' },
+      headers: { Authorization: 'Bearer tok' }
     })
 
     expect(res.status).toBe(200)
@@ -123,24 +123,26 @@ describe('githubFetch', () => {
   })
 
   it('retries on 403 with x-ratelimit-remaining: 0 and respects Retry-After', async () => {
-    const rateLimitedResponse = mockResponse(403, {
-      'x-ratelimit-remaining': '0',
-      'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
-      'retry-after': '1',
-    }, '{"message":"API rate limit exceeded"}')
+    const rateLimitedResponse = mockResponse(
+      403,
+      {
+        'x-ratelimit-remaining': '0',
+        'x-ratelimit-limit': '5000',
+        'x-ratelimit-reset': '1700000000',
+        'retry-after': '1'
+      },
+      '{"message":"API rate limit exceeded"}'
+    )
 
     const okResponse = mockResponse(200, {
       'x-ratelimit-remaining': '4999',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     vi.stubGlobal(
       'fetch',
-      vi.fn()
-        .mockResolvedValueOnce(rateLimitedResponse)
-        .mockResolvedValueOnce(okResponse)
+      vi.fn().mockResolvedValueOnce(rateLimitedResponse).mockResolvedValueOnce(okResponse)
     )
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -148,9 +150,9 @@ describe('githubFetch', () => {
     const [res] = await Promise.all([
       githubFetch('https://api.github.com/test', {
         headers: { Authorization: 'Bearer tok' },
-        timeoutMs: 10_000,
+        timeoutMs: 10_000
       }),
-      vi.runAllTimersAsync(),
+      vi.runAllTimersAsync()
     ])
 
     expect(res.status).toBe(200)
@@ -166,29 +168,27 @@ describe('githubFetch', () => {
     const serverError = mockResponse(502, {
       'x-ratelimit-remaining': '4000',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     const okResponse = mockResponse(200, {
       'x-ratelimit-remaining': '3999',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     vi.stubGlobal(
       'fetch',
-      vi.fn()
-        .mockResolvedValueOnce(serverError)
-        .mockResolvedValueOnce(okResponse)
+      vi.fn().mockResolvedValueOnce(serverError).mockResolvedValueOnce(okResponse)
     )
 
     vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const [res] = await Promise.all([
       githubFetch('https://api.github.com/test', {
-        headers: { Authorization: 'Bearer tok' },
+        headers: { Authorization: 'Bearer tok' }
       }),
-      vi.runAllTimersAsync(),
+      vi.runAllTimersAsync()
     ])
 
     expect(res.status).toBe(200)
@@ -199,7 +199,7 @@ describe('githubFetch', () => {
     const serverError = mockResponse(503, {
       'x-ratelimit-remaining': '4000',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(serverError))
@@ -207,9 +207,9 @@ describe('githubFetch', () => {
 
     const [res] = await Promise.all([
       githubFetch('https://api.github.com/test', {
-        headers: { Authorization: 'Bearer tok' },
+        headers: { Authorization: 'Bearer tok' }
       }),
-      vi.runAllTimersAsync(),
+      vi.runAllTimersAsync()
     ])
 
     expect(res.status).toBe(503)
@@ -218,16 +218,20 @@ describe('githubFetch', () => {
   })
 
   it('does not retry 403 when x-ratelimit-remaining is > 0 (not a rate limit)', async () => {
-    const forbidden = mockResponse(403, {
-      'x-ratelimit-remaining': '4999',
-      'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
-    }, '{"message":"Resource not accessible by integration"}')
+    const forbidden = mockResponse(
+      403,
+      {
+        'x-ratelimit-remaining': '4999',
+        'x-ratelimit-limit': '5000',
+        'x-ratelimit-reset': '1700000000'
+      },
+      '{"message":"Resource not accessible by integration"}'
+    )
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(forbidden))
 
     const res = await githubFetch('https://api.github.com/test', {
-      headers: { Authorization: 'Bearer tok' },
+      headers: { Authorization: 'Bearer tok' }
     })
 
     expect(res.status).toBe(403)
@@ -238,13 +242,13 @@ describe('githubFetch', () => {
     const notFound = mockResponse(404, {
       'x-ratelimit-remaining': '4000',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(notFound))
 
     const res = await githubFetch('https://api.github.com/test', {
-      headers: { Authorization: 'Bearer tok' },
+      headers: { Authorization: 'Bearer tok' }
     })
 
     expect(res.status).toBe(404)
@@ -255,20 +259,20 @@ describe('githubFetch', () => {
     const lowLimitResponse = mockResponse(200, {
       'x-ratelimit-remaining': '50',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(lowLimitResponse))
     vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     await githubFetch('https://api.github.com/test', {
-      headers: { Authorization: 'Bearer tok' },
+      headers: { Authorization: 'Bearer tok' }
     })
 
     expect(mockSend).toHaveBeenCalledWith('github:rateLimitWarning', {
       remaining: 50,
       limit: 5000,
-      resetEpoch: 1700000000,
+      resetEpoch: 1700000000
     })
   })
 
@@ -276,13 +280,13 @@ describe('githubFetch', () => {
     const healthyResponse = mockResponse(200, {
       'x-ratelimit-remaining': '4500',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(healthyResponse))
 
     await githubFetch('https://api.github.com/test', {
-      headers: { Authorization: 'Bearer tok' },
+      headers: { Authorization: 'Bearer tok' }
     })
 
     expect(mockSend).not.toHaveBeenCalled()
@@ -292,7 +296,7 @@ describe('githubFetch', () => {
     const lowLimit = mockResponse(200, {
       'x-ratelimit-remaining': '50',
       'x-ratelimit-limit': '5000',
-      'x-ratelimit-reset': '1700000000',
+      'x-ratelimit-reset': '1700000000'
     })
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(lowLimit))
@@ -313,7 +317,7 @@ describe('githubFetch', () => {
         mockResponse(200, {
           'x-ratelimit-remaining': '5000',
           'x-ratelimit-limit': '5000',
-          'x-ratelimit-reset': '1700000000',
+          'x-ratelimit-reset': '1700000000'
         })
       )
     )
@@ -330,14 +334,11 @@ describe('parseNextLink', () => {
     const header =
       '<https://api.github.com/repos/o/r/pulls?page=2&per_page=100>; rel="next", ' +
       '<https://api.github.com/repos/o/r/pulls?page=5&per_page=100>; rel="last"'
-    expect(parseNextLink(header)).toBe(
-      'https://api.github.com/repos/o/r/pulls?page=2&per_page=100'
-    )
+    expect(parseNextLink(header)).toBe('https://api.github.com/repos/o/r/pulls?page=2&per_page=100')
   })
 
   it('returns null when there is no next link', () => {
-    const header =
-      '<https://api.github.com/repos/o/r/pulls?page=1&per_page=100>; rel="prev"'
+    const header = '<https://api.github.com/repos/o/r/pulls?page=1&per_page=100>; rel="prev"'
     expect(parseNextLink(header)).toBeNull()
   })
 
@@ -362,12 +363,7 @@ describe('fetchAllGitHubPages', () => {
     vi.unstubAllGlobals()
   })
 
-  function jsonResponse(
-    body: unknown,
-    linkNext: string | null = null,
-    ok = true,
-    status = 200
-  ) {
+  function jsonResponse(body: unknown, linkNext: string | null = null, ok = true, status = 200) {
     const headers = new Map<string, string>()
     if (linkNext) {
       headers.set('Link', `<${linkNext}>; rel="next"`)
@@ -376,7 +372,7 @@ describe('fetchAllGitHubPages', () => {
       ok,
       status,
       json: async () => body,
-      headers: { get: (name: string) => headers.get(name) ?? null },
+      headers: { get: (name: string) => headers.get(name) ?? null }
     }
   }
 
@@ -395,16 +391,10 @@ describe('fetchAllGitHubPages', () => {
   it('follows pagination across multiple pages', async () => {
     mockFetch
       .mockResolvedValueOnce(
-        jsonResponse(
-          [{ id: 1 }],
-          'https://api.github.com/repos/o/r/pulls?per_page=100&page=2'
-        )
+        jsonResponse([{ id: 1 }], 'https://api.github.com/repos/o/r/pulls?per_page=100&page=2')
       )
       .mockResolvedValueOnce(
-        jsonResponse(
-          [{ id: 2 }],
-          'https://api.github.com/repos/o/r/pulls?per_page=100&page=3'
-        )
+        jsonResponse([{ id: 2 }], 'https://api.github.com/repos/o/r/pulls?per_page=100&page=3')
       )
       .mockResolvedValueOnce(jsonResponse([{ id: 3 }]))
 
@@ -421,10 +411,7 @@ describe('fetchAllGitHubPages', () => {
     // Use 404 (non-retryable) to avoid githubFetch retry delays
     mockFetch
       .mockResolvedValueOnce(
-        jsonResponse(
-          [{ id: 1 }],
-          'https://api.github.com/repos/repos/o/r/pulls?page=2'
-        )
+        jsonResponse([{ id: 1 }], 'https://api.github.com/repos/repos/o/r/pulls?page=2')
       )
       .mockResolvedValueOnce(jsonResponse(null, null, false, 404))
 
@@ -451,18 +438,17 @@ describe('fetchAllGitHubPages', () => {
   it('sends Authorization header with the provided token', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse([]))
 
-    await fetchAllGitHubPages(
-      'https://api.github.com/repos/o/r/pulls?per_page=100',
-      { token: 'ghp_secret' }
-    )
+    await fetchAllGitHubPages('https://api.github.com/repos/o/r/pulls?per_page=100', {
+      token: 'ghp_secret'
+    })
 
     expect(mockFetch).toHaveBeenCalledWith(
       'https://api.github.com/repos/o/r/pulls?per_page=100',
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer ghp_secret',
-          Accept: 'application/vnd.github+json',
-        }),
+          Accept: 'application/vnd.github+json'
+        })
       })
     )
   })

@@ -8,14 +8,14 @@ import userEvent from '@testing-library/user-event'
 vi.mock('../../../stores/theme', () => ({
   useThemeStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ theme: 'dark', toggleTheme: vi.fn(), setTheme: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../../stores/toasts', () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
   useToastStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ toasts: [], removeToast: vi.fn() })
-  ),
+  )
 }))
 
 // Provide authStatus on window.api for ConnectionsSection
@@ -25,11 +25,11 @@ Object.defineProperty(window, 'api', {
     authStatus: vi.fn().mockResolvedValue({
       cliFound: true,
       tokenFound: true,
-      tokenExpired: false,
-    }),
+      tokenExpired: false
+    })
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 import SettingsView from '../../../views/SettingsView'

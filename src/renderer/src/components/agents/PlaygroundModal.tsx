@@ -59,7 +59,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
       parts.push(
         <span key={key++} style={{ color: tokens.color.textDim, fontStyle: 'italic' }}>
           {match[1]}
-        </span>,
+        </span>
       )
     } else if (match[2] && match[3]) {
       // Tag bracket + tag name
@@ -67,7 +67,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
       parts.push(
         <span key={key++} style={{ color: tokens.color.danger }}>
           {match[3]}
-        </span>,
+        </span>
       )
     } else if (match[4] && match[5] && match[6]) {
       // Attribute
@@ -75,7 +75,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
       parts.push(
         <span key={key++} style={{ color: tokens.color.warning }}>
           {match[5]}
-        </span>,
+        </span>
       )
       parts.push(<span key={key++}>{match[6]}</span>)
     } else if (match[7]) {
@@ -83,7 +83,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
       parts.push(
         <span key={key++} style={{ color: tokens.color.success }}>
           {match[7]}
-        </span>,
+        </span>
       )
     }
 
@@ -101,20 +101,20 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
 const VIEW_MODE_ICONS: Record<ViewMode, typeof Columns> = {
   split: Columns,
   preview: Eye,
-  source: Code,
+  source: Code
 }
 
 const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   split: 'Split',
   preview: 'Preview',
-  source: 'Source',
+  source: 'Source'
 }
 
 export function PlaygroundModal({
   html,
   filename,
   sizeBytes,
-  onClose,
+  onClose
 }: PlaygroundModalProps): React.JSX.Element {
   const [viewMode, setViewMode] = useState<ViewMode>('split')
 
@@ -126,7 +126,7 @@ export function PlaygroundModal({
         onClose()
       }
     },
-    [onClose],
+    [onClose]
   )
 
   useEffect(() => {
@@ -164,7 +164,7 @@ export function PlaygroundModal({
         alignItems: 'center',
         justifyContent: 'center',
         background: 'var(--bde-overlay)',
-        animation: 'bde-fade-in 150ms ease',
+        animation: 'bde-fade-in 150ms ease'
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
@@ -181,7 +181,7 @@ export function PlaygroundModal({
           borderRadius: tokens.radius.xl,
           boxShadow: 'var(--bde-shadow-lg)',
           overflow: 'hidden',
-          animation: 'bde-scale-fade-in 150ms ease',
+          animation: 'bde-scale-fade-in 150ms ease'
         }}
         data-testid="playground-modal"
       >
@@ -193,7 +193,7 @@ export function PlaygroundModal({
             gap: tokens.space[3],
             padding: `${tokens.space[2]} ${tokens.space[4]}`,
             borderBottom: `1px solid ${tokens.color.border}`,
-            flexShrink: 0,
+            flexShrink: 0
           }}
         >
           {/* Filename + size */}
@@ -205,7 +205,7 @@ export function PlaygroundModal({
               color: tokens.color.text,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              whiteSpace: 'nowrap'
             }}
           >
             {filename}
@@ -214,7 +214,7 @@ export function PlaygroundModal({
             style={{
               fontSize: tokens.size.xs,
               color: tokens.color.textMuted,
-              flexShrink: 0,
+              flexShrink: 0
             }}
           >
             {formatFileSize(sizeBytes)}
@@ -232,7 +232,7 @@ export function PlaygroundModal({
               gap: tokens.space[1],
               background: tokens.color.surface,
               padding: tokens.space[1],
-              borderRadius: tokens.radius.sm,
+              borderRadius: tokens.radius.sm
             }}
           >
             {(['split', 'preview', 'source'] as ViewMode[]).map((mode) => {
@@ -257,7 +257,7 @@ export function PlaygroundModal({
                     cursor: 'pointer',
                     fontSize: tokens.size.xs,
                     fontFamily: tokens.font.ui,
-                    transition: tokens.transition.fast,
+                    transition: tokens.transition.fast
                   }}
                 >
                   <Icon size={12} />
@@ -283,7 +283,7 @@ export function PlaygroundModal({
               cursor: 'pointer',
               fontSize: tokens.size.xs,
               fontFamily: tokens.font.ui,
-              transition: tokens.transition.fast,
+              transition: tokens.transition.fast
             }}
           >
             <ExternalLink size={12} />
@@ -305,7 +305,7 @@ export function PlaygroundModal({
               border: 'none',
               borderRadius: tokens.radius.sm,
               cursor: 'pointer',
-              transition: tokens.transition.fast,
+              transition: tokens.transition.fast
             }}
           >
             <X size={16} />
@@ -317,7 +317,7 @@ export function PlaygroundModal({
           style={{
             flex: 1,
             display: 'flex',
-            overflow: 'hidden',
+            overflow: 'hidden'
           }}
         >
           {/* Preview pane */}
@@ -326,7 +326,7 @@ export function PlaygroundModal({
               style={{
                 flex: 1,
                 minWidth: 0,
-                borderRight: showSource ? `1px solid ${tokens.color.border}` : undefined,
+                borderRight: showSource ? `1px solid ${tokens.color.border}` : undefined
               }}
               data-testid="playground-preview"
             >
@@ -338,7 +338,7 @@ export function PlaygroundModal({
                   width: '100%',
                   height: '100%',
                   border: 'none',
-                  background: '#ffffff',
+                  background: '#ffffff'
                 }}
               />
             </div>
@@ -351,7 +351,7 @@ export function PlaygroundModal({
                 flex: 1,
                 minWidth: 0,
                 overflow: 'auto',
-                background: tokens.color.surface,
+                background: tokens.color.surface
               }}
               data-testid="playground-source"
             >
@@ -364,7 +364,7 @@ export function PlaygroundModal({
                   lineHeight: '20px',
                   color: tokens.color.text,
                   whiteSpace: 'pre',
-                  tabSize: 2,
+                  tabSize: 2
                 }}
               >
                 <code>
@@ -378,7 +378,7 @@ export function PlaygroundModal({
                           paddingRight: tokens.space[3],
                           color: tokens.color.textDim,
                           userSelect: 'none',
-                          flexShrink: 0,
+                          flexShrink: 0
                         }}
                       >
                         {i + 1}

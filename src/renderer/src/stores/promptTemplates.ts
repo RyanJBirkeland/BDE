@@ -75,7 +75,7 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
   loadTemplates: async () => {
     set({ loading: true })
     try {
-      const saved = await window.api.settings.getJson(SETTINGS_KEY) as PromptTemplate[] | null
+      const saved = (await window.api.settings.getJson(SETTINGS_KEY)) as PromptTemplate[] | null
       const merged = mergeTemplates(saved ?? [])
       set({ templates: merged, loading: false })
     } catch {
@@ -128,9 +128,9 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
   hideBuiltIn: async (id) => {
     const { templates } = get()
     const updated = templates.map((t) =>
-      t.id === id && t.builtIn ? { ...t, hidden: !t.hidden } : t,
+      t.id === id && t.builtIn ? { ...t, hidden: !t.hidden } : t
     )
     set({ templates: updated })
     await window.api.settings.setJson(SETTINGS_KEY, toPersistedTemplates(updated))
-  },
+  }
 }))

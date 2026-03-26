@@ -7,7 +7,7 @@ const defaultProps = {
   stagedCount: 0,
   onMessageChange: vi.fn(),
   onCommit: vi.fn(),
-  onPush: vi.fn(),
+  onPush: vi.fn()
 }
 
 describe('CommitBox', () => {
@@ -45,7 +45,7 @@ describe('CommitBox', () => {
     const onMessageChange = vi.fn()
     render(<CommitBox {...defaultProps} onMessageChange={onMessageChange} />)
     fireEvent.change(screen.getByLabelText('Commit message'), {
-      target: { value: 'new message' },
+      target: { value: 'new message' }
     })
     expect(onMessageChange).toHaveBeenCalledWith('new message')
   })
@@ -53,12 +53,7 @@ describe('CommitBox', () => {
   it('calls onCommit when Commit button clicked', () => {
     const onCommit = vi.fn()
     render(
-      <CommitBox
-        {...defaultProps}
-        commitMessage="feat: test"
-        stagedCount={1}
-        onCommit={onCommit}
-      />
+      <CommitBox {...defaultProps} commitMessage="feat: test" stagedCount={1} onCommit={onCommit} />
     )
     fireEvent.click(screen.getByLabelText('Commit staged changes'))
     expect(onCommit).toHaveBeenCalled()
@@ -74,12 +69,7 @@ describe('CommitBox', () => {
   it('commits on Cmd+Enter keyboard shortcut', () => {
     const onCommit = vi.fn()
     render(
-      <CommitBox
-        {...defaultProps}
-        commitMessage="feat: test"
-        stagedCount={1}
-        onCommit={onCommit}
-      />
+      <CommitBox {...defaultProps} commitMessage="feat: test" stagedCount={1} onCommit={onCommit} />
     )
     const textarea = screen.getByLabelText('Commit message')
     fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true })
@@ -107,12 +97,7 @@ describe('CommitBox', () => {
   it('commits on Ctrl+Enter keyboard shortcut', () => {
     const onCommit = vi.fn()
     render(
-      <CommitBox
-        {...defaultProps}
-        commitMessage="feat: test"
-        stagedCount={1}
-        onCommit={onCommit}
-      />
+      <CommitBox {...defaultProps} commitMessage="feat: test" stagedCount={1} onCommit={onCommit} />
     )
     const textarea = screen.getByLabelText('Commit message')
     fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true })

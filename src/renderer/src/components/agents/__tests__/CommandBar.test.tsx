@@ -6,7 +6,7 @@ import { CommandBar } from '../CommandBar'
 describe('CommandBar', () => {
   const defaultProps = {
     onSend: vi.fn(),
-    onCommand: vi.fn(),
+    onCommand: vi.fn()
   }
 
   beforeEach(() => {
@@ -22,9 +22,7 @@ describe('CommandBar', () => {
 
   it('renders input field with placeholder', () => {
     render(<CommandBar {...defaultProps} />)
-    expect(
-      screen.getByPlaceholderText('Type a message or / for commands...')
-    ).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Type a message or / for commands...')).toBeInTheDocument()
   })
 
   it('shows autocomplete when typing /', async () => {
@@ -136,9 +134,7 @@ describe('CommandBar', () => {
     const user = userEvent.setup()
     const onSend = vi.fn()
     const onCommand = vi.fn()
-    render(
-      <CommandBar {...defaultProps} onSend={onSend} onCommand={onCommand} disabled={true} />
-    )
+    render(<CommandBar {...defaultProps} onSend={onSend} onCommand={onCommand} disabled={true} />)
     const input = screen.getByPlaceholderText('Type a message or / for commands...')
 
     // Try to type and send (should not work due to disabled state)

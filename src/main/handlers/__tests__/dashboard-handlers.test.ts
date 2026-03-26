@@ -8,14 +8,18 @@ const mockAll = vi.fn()
 const mockPrepare = vi.fn(() => ({ all: mockAll }))
 
 vi.mock('../../db', () => ({
-  getDb: vi.fn(() => ({ prepare: mockPrepare })),
+  getDb: vi.fn(() => ({ prepare: mockPrepare }))
 }))
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
-import { registerDashboardHandlers, getCompletionsPerHour, getRecentEvents } from '../dashboard-handlers'
+import {
+  registerDashboardHandlers,
+  getCompletionsPerHour,
+  getRecentEvents
+} from '../dashboard-handlers'
 import { safeHandle } from '../../ipc-utils'
 
 describe('Dashboard handlers', () => {
@@ -36,7 +40,7 @@ describe('Dashboard handlers', () => {
     it('calls db.prepare with a GROUP BY query and returns rows', () => {
       const buckets = [
         { hour: '2026-03-24T10:00:00', count: 3 },
-        { hour: '2026-03-24T11:00:00', count: 5 },
+        { hour: '2026-03-24T11:00:00', count: 5 }
       ]
       mockAll.mockReturnValueOnce(buckets)
 
@@ -56,7 +60,9 @@ describe('Dashboard handlers', () => {
 
   describe('getRecentEvents', () => {
     it('queries agent_events with default limit of 20', () => {
-      const events = [{ id: 1, agent_id: 'a1', event_type: 'output', payload: '{}', timestamp: 1000 }]
+      const events = [
+        { id: 1, agent_id: 'a1', event_type: 'output', payload: '{}', timestamp: 1000 }
+      ]
       mockAll.mockReturnValueOnce(events)
 
       const result = getRecentEvents()
@@ -103,7 +109,9 @@ describe('Dashboard handlers', () => {
     })
 
     it('agent:recentEvents handler passes limit to getRecentEvents', async () => {
-      const events = [{ id: 1, agent_id: 'a1', event_type: 'output', payload: '{}', timestamp: 1000 }]
+      const events = [
+        { id: 1, agent_id: 'a1', event_type: 'output', payload: '{}', timestamp: 1000 }
+      ]
       mockAll.mockReturnValueOnce(events)
       const handlers = captureHandlers()
 

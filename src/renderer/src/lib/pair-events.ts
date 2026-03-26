@@ -12,11 +12,26 @@ export type ChatBlock =
   | { type: 'user_message'; text: string; timestamp: number }
   | { type: 'thinking'; tokenCount: number; text?: string; timestamp: number }
   | { type: 'tool_call'; tool: string; summary: string; input?: unknown; timestamp: number }
-  | { type: 'tool_pair'; tool: string; summary: string; input?: unknown; result: { success: boolean; summary: string; output?: unknown }; timestamp: number }
+  | {
+      type: 'tool_pair'
+      tool: string
+      summary: string
+      input?: unknown
+      result: { success: boolean; summary: string; output?: unknown }
+      timestamp: number
+    }
   | { type: 'error'; message: string; timestamp: number }
   | { type: 'stderr'; text: string; timestamp: number }
   | { type: 'rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
-  | { type: 'completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
+  | {
+      type: 'completed'
+      exitCode: number
+      costUsd: number
+      tokensIn: number
+      tokensOut: number
+      durationMs: number
+      timestamp: number
+    }
   | { type: 'playground'; filename: string; html: string; sizeBytes: number; timestamp: number }
 
 // --- Event Pairing Logic ---
@@ -41,7 +56,12 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
         break
 
       case 'agent:thinking':
-        blocks.push({ type: 'thinking', tokenCount: ev.tokenCount, text: ev.text, timestamp: ev.timestamp })
+        blocks.push({
+          type: 'thinking',
+          tokenCount: ev.tokenCount,
+          text: ev.text,
+          timestamp: ev.timestamp
+        })
         break
 
       case 'agent:tool_call': {
@@ -54,11 +74,17 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
             summary: ev.summary,
             input: ev.input,
             result: { success: next.success, summary: next.summary, output: next.output },
-            timestamp: ev.timestamp,
+            timestamp: ev.timestamp
           })
           i++ // Skip the paired result
         } else {
-          blocks.push({ type: 'tool_call', tool: ev.tool, summary: ev.summary, input: ev.input, timestamp: ev.timestamp })
+          blocks.push({
+            type: 'tool_call',
+            tool: ev.tool,
+            summary: ev.summary,
+            input: ev.input,
+            timestamp: ev.timestamp
+          })
         }
         break
       }
@@ -69,7 +95,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
           type: 'tool_call',
           tool: ev.tool,
           summary: ev.summary,
-          timestamp: ev.timestamp,
+          timestamp: ev.timestamp
         })
         break
 
@@ -82,7 +108,12 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
         break
 
       case 'agent:rate_limited':
-        blocks.push({ type: 'rate_limited', retryDelayMs: ev.retryDelayMs, attempt: ev.attempt, timestamp: ev.timestamp })
+        blocks.push({
+          type: 'rate_limited',
+          retryDelayMs: ev.retryDelayMs,
+          attempt: ev.attempt,
+          timestamp: ev.timestamp
+        })
         break
 
       case 'agent:completed':
@@ -93,7 +124,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
           tokensIn: ev.tokensIn,
           tokensOut: ev.tokensOut,
           durationMs: ev.durationMs,
-          timestamp: ev.timestamp,
+          timestamp: ev.timestamp
         })
         break
 
@@ -103,7 +134,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
           filename: ev.filename,
           html: ev.html,
           sizeBytes: ev.sizeBytes,
-          timestamp: ev.timestamp,
+          timestamp: ev.timestamp
         })
         break
     }

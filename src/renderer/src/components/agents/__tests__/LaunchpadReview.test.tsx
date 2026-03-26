@@ -9,11 +9,9 @@ const mockTemplate: PromptTemplate = {
   icon: '🧹',
   accent: 'cyan',
   description: 'Audit',
-  questions: [
-    { id: 'scope', label: 'Scope', type: 'choice', choices: ['All'] },
-  ],
+  questions: [{ id: 'scope', label: 'Scope', type: 'choice', choices: ['All'] }],
   promptTemplate: 'Audit {{scope}}',
-  order: 0,
+  order: 0
 }
 
 describe('LaunchpadReview', () => {
@@ -30,7 +28,7 @@ describe('LaunchpadReview', () => {
     onSpawn,
     onBack,
     onSaveTemplate,
-    spawning: false,
+    spawning: false
   }
 
   beforeEach(() => vi.clearAllMocks())

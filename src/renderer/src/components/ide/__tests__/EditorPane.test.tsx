@@ -4,17 +4,19 @@ import { EditorPane } from '../EditorPane'
 
 vi.mock('@monaco-editor/react', () => ({
   default: ({ value }: { value?: string }) => <div data-testid="monaco-editor">{value}</div>,
-  loader: { config: vi.fn() },
+  loader: { config: vi.fn() }
 }))
 vi.mock('../../../stores/theme', () => ({
-  useThemeStore: vi.fn((selector: (s: { theme: string }) => unknown) => selector({ theme: 'dark' })),
+  useThemeStore: vi.fn((selector: (s: { theme: string }) => unknown) => selector({ theme: 'dark' }))
 }))
 vi.mock('../../../lib/monaco-theme', () => ({
   getMonacoTheme: vi.fn(() => ({ base: 'vs-dark', inherit: true, rules: [], colors: {} })),
-  getLightMonacoTheme: vi.fn(() => ({ base: 'vs', inherit: true, rules: [], colors: {} })),
+  getLightMonacoTheme: vi.fn(() => ({ base: 'vs', inherit: true, rules: [], colors: {} }))
 }))
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe('EditorPane', () => {
   it('shows empty state when no file is open', () => {

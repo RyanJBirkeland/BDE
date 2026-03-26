@@ -73,7 +73,14 @@ export function PRList() {
       <div className="pr-list__header">
         <span className="pr-list__title">Open Pull Requests</span>
         <span className="pr-list__count bde-count-badge">{prs.length}</span>
-        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh" aria-label="Refresh">
+        <Button
+          variant="icon"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={loading}
+          title="Refresh"
+          aria-label="Refresh"
+        >
           &#x21bb;
         </Button>
       </div>
@@ -93,55 +100,58 @@ export function PRList() {
             const hasConflicts = mergeability[`${pr.repo}-${pr.number}`] === 'dirty'
             const prKey = `${pr.repo}-${pr.number}`
             return (
-            <div key={prKey}>
-              <div className={`pr-row ${hasConflicts ? 'pr-row--conflicts' : ''}`} style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}>
-                <span
-                  className="pr-row__repo-dot"
-                  style={{ background: repoColor(pr.repo) }}
-                  title={pr.repo}
-                />
-                {hasConflicts && (
-                  <span className="pr-row__conflict-dot" title="Has merge conflicts" />
-                )}
-                <div className="pr-row__info">
-                  <span className="pr-row__title">{pr.title}</span>
-                  <span className="pr-row__meta">
-                    {pr.repo} #{pr.number} &middot; {timeAgo(pr.updated_at)}
-                    {hasConflicts && <span className="pr-row__conflict-label"> &middot; conflicts</span>}
-                  </span>
+              <div key={prKey}>
+                <div
+                  className={`pr-row ${hasConflicts ? 'pr-row--conflicts' : ''}`}
+                  style={{ '--stagger-index': Math.min(i, 10) } as React.CSSProperties}
+                >
+                  <span
+                    className="pr-row__repo-dot"
+                    style={{ background: repoColor(pr.repo) }}
+                    title={pr.repo}
+                  />
+                  {hasConflicts && (
+                    <span className="pr-row__conflict-dot" title="Has merge conflicts" />
+                  )}
+                  <div className="pr-row__info">
+                    <span className="pr-row__title">{pr.title}</span>
+                    <span className="pr-row__meta">
+                      {pr.repo} #{pr.number} &middot; {timeAgo(pr.updated_at)}
+                      {hasConflicts && (
+                        <span className="pr-row__conflict-label"> &middot; conflicts</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="pr-row__actions">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="pr-row__btn"
+                      onClick={() => setDiffPrKey(diffPrKey === prKey ? null : prKey)}
+                    >
+                      {diffPrKey === prKey ? 'Hide Diff' : 'Diff'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="pr-row__btn pr-row__btn--open"
+                      onClick={() => window.api.openExternal(pr.html_url)}
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="pr-row__btn pr-row__btn--merge"
+                      disabled={merging === pr.number}
+                      onClick={() => setConfirmMerge(pr)}
+                    >
+                      {merging === pr.number ? '...' : 'Merge'}
+                    </Button>
+                  </div>
                 </div>
-                <div className="pr-row__actions">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="pr-row__btn"
-                    onClick={() => setDiffPrKey(diffPrKey === prKey ? null : prKey)}
-                  >
-                    {diffPrKey === prKey ? 'Hide Diff' : 'Diff'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="pr-row__btn pr-row__btn--open"
-                    onClick={() => window.api.openExternal(pr.html_url)}
-                  >
-                    Open
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="pr-row__btn pr-row__btn--merge"
-                    disabled={merging === pr.number}
-                    onClick={() => setConfirmMerge(pr)}
-                  >
-                    {merging === pr.number ? '...' : 'Merge'}
-                  </Button>
-                </div>
+                {diffPrKey === prKey && <PRStationDiff pr={pr} />}
               </div>
-              {diffPrKey === prKey && (
-                <PRStationDiff pr={pr} />
-              )}
-            </div>
             )
           })
         )}
@@ -149,8 +159,16 @@ export function PRList() {
 
       {confirmMerge && (
         <div className="pr-confirm-overlay" onClick={() => setConfirmMerge(null)}>
-          <div className="pr-confirm" role="alertdialog" aria-modal="true" aria-labelledby="pr-confirm-title" onClick={(e) => e.stopPropagation()}>
-            <p className="pr-confirm__title" id="pr-confirm-title">Squash merge this PR?</p>
+          <div
+            className="pr-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="pr-confirm-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="pr-confirm__title" id="pr-confirm-title">
+              Squash merge this PR?
+            </p>
             <p className="pr-confirm__detail">
               #{confirmMerge.number} &mdash; {confirmMerge.title}
             </p>

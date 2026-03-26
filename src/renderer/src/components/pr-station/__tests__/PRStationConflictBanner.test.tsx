@@ -17,7 +17,7 @@ const mockPr = {
   base: { ref: 'main' },
   user: { login: '' },
   merged: false,
-  merged_at: null,
+  merged_at: null
 }
 
 describe('PRStationConflictBanner', () => {
@@ -27,7 +27,7 @@ describe('PRStationConflictBanner', () => {
       files: ['src/main.ts', 'README.md'],
       prNumber: 42,
       baseBranch: 'main',
-      headBranch: 'feat/x',
+      headBranch: 'feat/x'
     })
   })
 

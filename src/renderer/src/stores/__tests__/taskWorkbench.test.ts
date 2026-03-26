@@ -62,7 +62,7 @@ describe('taskWorkbench store', () => {
       template_name: null,
       depends_on: null,
       updated_at: '2026-01-01',
-      created_at: '2026-01-01',
+      created_at: '2026-01-01'
     })
     const s = useTaskWorkbenchStore.getState()
     expect(s.mode).toBe('edit')
@@ -74,9 +74,9 @@ describe('taskWorkbench store', () => {
   })
 
   it('loadTask clears stale checks', () => {
-    useTaskWorkbenchStore.getState().setSemanticChecks([
-      { id: 'old', label: 'Old', tier: 2, status: 'pass', message: 'stale' },
-    ])
+    useTaskWorkbenchStore
+      .getState()
+      .setSemanticChecks([{ id: 'old', label: 'Old', tier: 2, status: 'pass', message: 'stale' }])
     useTaskWorkbenchStore.getState().loadTask({
       id: 'task-456',
       title: 'New task',
@@ -98,7 +98,7 @@ describe('taskWorkbench store', () => {
       template_name: null,
       depends_on: null,
       updated_at: '2026-01-01',
-      created_at: '2026-01-01',
+      created_at: '2026-01-01'
     })
     expect(useTaskWorkbenchStore.getState().semanticChecks).toHaveLength(0)
     expect(useTaskWorkbenchStore.getState().operationalChecks).toHaveLength(0)
@@ -116,7 +116,7 @@ describe('taskWorkbench store', () => {
       id: 'test-1',
       role: 'user',
       content: 'Hello',
-      timestamp: Date.now(),
+      timestamp: Date.now()
     })
     expect(useTaskWorkbenchStore.getState().copilotMessages).toHaveLength(before + 1)
   })

@@ -3,20 +3,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mock dependencies before imports
 const mockQuery = vi.fn()
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
-  query: (...args: unknown[]) => mockQuery(...args),
+  query: (...args: unknown[]) => mockQuery(...args)
 }))
 vi.mock('../agent-history', () => ({
   importAgent: vi.fn(),
-  updateAgentMeta: vi.fn(),
+  updateAgentMeta: vi.fn()
 }))
 vi.mock('../data/event-queries', () => ({
-  appendEvent: vi.fn(),
+  appendEvent: vi.fn()
 }))
 vi.mock('../db', () => ({
-  getDb: vi.fn(() => ({})),
+  getDb: vi.fn(() => ({}))
 }))
 vi.mock('../broadcast', () => ({
-  broadcast: vi.fn(),
+  broadcast: vi.fn()
 }))
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
@@ -33,7 +33,7 @@ function createMockQueryHandle(messages: unknown[] = []) {
       for (const msg of messages) yield msg
     },
     close: vi.fn(),
-    streamInput: vi.fn(),
+    streamInput: vi.fn()
   }
   return handle
 }
@@ -58,7 +58,7 @@ describe('spawnAdhocAgent', () => {
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
-      sprintTaskId: null,
+      sprintTaskId: null
     } as any)
   })
 
@@ -69,14 +69,14 @@ describe('spawnAdhocAgent', () => {
     const result = await spawnAdhocAgent({
       task: 'fix the bug',
       repoPath: '/tmp/test-repo',
-      model: 'sonnet',
+      model: 'sonnet'
     })
 
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: expect.anything(),
-        options: expect.objectContaining({ model: 'sonnet', cwd: '/tmp/test-repo' }),
-      }),
+        options: expect.objectContaining({ model: 'sonnet', cwd: '/tmp/test-repo' })
+      })
     )
     expect(importAgent).toHaveBeenCalled()
     expect(result.id).toBe('agent-1')
@@ -92,8 +92,8 @@ describe('spawnAdhocAgent', () => {
 
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        options: expect.objectContaining({ model: 'claude-sonnet-4-5' }),
-      }),
+        options: expect.objectContaining({ model: 'claude-sonnet-4-5' })
+      })
     )
   })
 
@@ -106,13 +106,13 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:started', model: 'sonnet' }),
+      event: expect.objectContaining({ type: 'agent:started', model: 'sonnet' })
     })
   })
 
   it('maps assistant text messages to agent:text events', async () => {
     const handle = createMockQueryHandle([
-      { type: 'assistant', message: { content: [{ type: 'text', text: 'Hello' }] } },
+      { type: 'assistant', message: { content: [{ type: 'text', text: 'Hello' }] } }
     ])
     mockQuery.mockReturnValue(handle)
 
@@ -121,13 +121,16 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:text', text: 'Hello' }),
+      event: expect.objectContaining({ type: 'agent:text', text: 'Hello' })
     })
   })
 
   it('maps tool_use blocks to agent:tool_call events', async () => {
     const handle = createMockQueryHandle([
-      { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { path: '/tmp' } }] } },
+      {
+        type: 'assistant',
+        message: { content: [{ type: 'tool_use', name: 'Read', input: { path: '/tmp' } }] }
+      }
     ])
     mockQuery.mockReturnValue(handle)
 
@@ -136,7 +139,7 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:tool_call', tool: 'Read' }),
+      event: expect.objectContaining({ type: 'agent:tool_call', tool: 'Read' })
     })
   })
 
@@ -149,16 +152,21 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:completed' }),
+      event: expect.objectContaining({ type: 'agent:completed' })
     })
-    expect(updateAgentMeta).toHaveBeenCalledWith('agent-1', expect.objectContaining({ status: 'done' }))
+    expect(updateAgentMeta).toHaveBeenCalledWith(
+      'agent-1',
+      expect.objectContaining({ status: 'done' })
+    )
   })
 
   it('emits agent:error on message consumption failure', async () => {
     const handle = {
-      [Symbol.asyncIterator]: async function* () { throw new Error('SDK crash') },
+      [Symbol.asyncIterator]: async function* () {
+        throw new Error('SDK crash')
+      },
       close: vi.fn(),
-      streamInput: vi.fn(),
+      streamInput: vi.fn()
     }
     mockQuery.mockReturnValue(handle)
 
@@ -167,7 +175,7 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:error', message: 'SDK crash' }),
+      event: expect.objectContaining({ type: 'agent:error', message: 'SDK crash' })
     })
   })
 })

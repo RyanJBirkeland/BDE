@@ -289,22 +289,26 @@ function PlainDiffContent({
 
                 return (
                   <React.Fragment key={li}>
-                    {selectedRange && selectedRange.file === file.path &&
-                      line.lineNo.new === selectedRange.startLine && onAddComment && (
-                      <div style={{ position: 'relative' }}>
-                        <button
-                          className="diff-selection-trigger"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setComposerRange(selectedRange)
-                          }}
-                          title="Add comment"
-                        >
-                          +
-                        </button>
-                      </div>
-                    )}
-                    <div className={`diff-line diff-line--${line.type}${selected ? ' diff-line--selected' : ''}`}>
+                    {selectedRange &&
+                      selectedRange.file === file.path &&
+                      line.lineNo.new === selectedRange.startLine &&
+                      onAddComment && (
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            className="diff-selection-trigger"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setComposerRange(selectedRange)
+                            }}
+                            title="Add comment"
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
+                    <div
+                      className={`diff-line diff-line--${line.type}${selected ? ' diff-line--selected' : ''}`}
+                    >
                       <span className="diff-line__gutter diff-line__gutter--old">
                         {line.lineNo.old ?? ''}
                       </span>
@@ -312,12 +316,27 @@ function PlainDiffContent({
                         className={`diff-line__gutter diff-line__gutter--new${onSelectRange ? ' diff-line__gutter--selectable' : ''}`}
                         onMouseDown={() => {
                           if (!onSelectRange || line.lineNo.new == null) return
-                          setSelectionStart({ file: file.path, line: line.lineNo.new, side: 'RIGHT' })
+                          setSelectionStart({
+                            file: file.path,
+                            line: line.lineNo.new,
+                            side: 'RIGHT'
+                          })
                           setIsSelecting(true)
-                          onSelectRange({ file: file.path, startLine: line.lineNo.new, endLine: line.lineNo.new, side: 'RIGHT' })
+                          onSelectRange({
+                            file: file.path,
+                            startLine: line.lineNo.new,
+                            endLine: line.lineNo.new,
+                            side: 'RIGHT'
+                          })
                         }}
                         onMouseEnter={() => {
-                          if (!isSelecting || !selectionStart || selectionStart.file !== file.path || !onSelectRange) return
+                          if (
+                            !isSelecting ||
+                            !selectionStart ||
+                            selectionStart.file !== file.path ||
+                            !onSelectRange
+                          )
+                            return
                           if (line.lineNo.new == null) return
                           onSelectRange({
                             file: file.path,
@@ -337,26 +356,30 @@ function PlainDiffContent({
                     {lineComments && lineComments.length > 0 && (
                       <DiffCommentWidget comments={lineComments} />
                     )}
-                    {composerRange && composerRange.file === file.path &&
+                    {composerRange &&
+                      composerRange.file === file.path &&
                       line.lineNo.new === composerRange.endLine && (
-                      <DiffCommentComposer
-                        onSubmit={(body) => {
-                          onAddComment?.(composerRange, body)
-                          setComposerRange(null)
-                          onSelectRange?.(null)
-                        }}
-                        onCancel={() => {
-                          setComposerRange(null)
-                          onSelectRange?.(null)
-                        }}
-                      />
-                    )}
+                        <DiffCommentComposer
+                          onSubmit={(body) => {
+                            onAddComment?.(composerRange, body)
+                            setComposerRange(null)
+                            onSelectRange?.(null)
+                          }}
+                          onCancel={() => {
+                            setComposerRange(null)
+                            onSelectRange?.(null)
+                          }}
+                        />
+                      )}
                     {(() => {
                       const pendingKey = lineNum ? `${file.path}:${lineNum}` : null
                       const pending = pendingKey ? pendingByPosition.get(pendingKey) : undefined
                       if (!pending || pending.length === 0) return null
                       return pending.map((pc) => (
-                        <div key={pc.id} className="diff-comment-widget diff-comment-widget--pending">
+                        <div
+                          key={pc.id}
+                          className="diff-comment-widget diff-comment-widget--pending"
+                        >
                           <div className="diff-comment-widget__toggle">
                             <span>Pending comment</span>
                             <span className="diff-comment-widget__pending-badge">Pending</span>
@@ -439,7 +462,7 @@ function DiffViewer({
   // Build pending-by-position map
   const pendingByPosition = useMemo(() => {
     const map = new Map<string, PendingComment[]>()
-    for (const c of (pendingComments ?? [])) {
+    for (const c of pendingComments ?? []) {
       const key = `${c.path}:${c.line}`
       const arr = map.get(key) ?? []
       arr.push(c)
@@ -449,7 +472,11 @@ function DiffViewer({
   }, [pendingComments])
 
   // Selection state for line range picking
-  const [selectionStart, setSelectionStart] = useState<{ file: string; line: number; side: 'LEFT' | 'RIGHT' } | null>(null)
+  const [selectionStart, setSelectionStart] = useState<{
+    file: string
+    line: number
+    side: 'LEFT' | 'RIGHT'
+  } | null>(null)
   const [isSelecting, setIsSelecting] = useState(false)
 
   useEffect(() => {
@@ -458,12 +485,17 @@ function DiffViewer({
     return () => window.removeEventListener('mouseup', handleMouseUp)
   }, [])
 
-  const isLineSelected = useCallback((filePath: string, lineNo: number | undefined): boolean => {
-    if (!selectedRange || !lineNo) return false
-    return selectedRange.file === filePath &&
-      lineNo >= selectedRange.startLine &&
-      lineNo <= selectedRange.endLine
-  }, [selectedRange])
+  const isLineSelected = useCallback(
+    (filePath: string, lineNo: number | undefined): boolean => {
+      if (!selectedRange || !lineNo) return false
+      return (
+        selectedRange.file === filePath &&
+        lineNo >= selectedRange.startLine &&
+        lineNo <= selectedRange.endLine
+      )
+    },
+    [selectedRange]
+  )
 
   // Build flat row list for virtualized mode
   const { flatRows, totalHeight, fileIndexToRow, hunkAddressToRow } = useMemo(() => {
@@ -488,7 +520,12 @@ function DiffViewer({
 
       for (let hi = 0; hi < files[fi].hunks.length; hi++) {
         haToRow.set(`${fi}-${hi}`, rows.length)
-        rows.push({ kind: 'hunk-header', header: files[fi].hunks[hi].header, fileIndex: fi, hunkIndex: hi })
+        rows.push({
+          kind: 'hunk-header',
+          header: files[fi].hunks[hi].header,
+          fileIndex: fi,
+          hunkIndex: hi
+        })
         height += HUNK_HEADER_HEIGHT
 
         for (let li = 0; li < files[fi].hunks[hi].lines.length; li++) {
@@ -498,7 +535,12 @@ function DiffViewer({
       }
     }
 
-    return { flatRows: rows, totalHeight: height, fileIndexToRow: fiToRow, hunkAddressToRow: haToRow }
+    return {
+      flatRows: rows,
+      totalHeight: height,
+      fileIndexToRow: fiToRow,
+      hunkAddressToRow: haToRow
+    }
   }, [files, useVirtualization])
 
   // Build flat hunk list for arrow key navigation
@@ -524,36 +566,42 @@ function DiffViewer({
     return arr
   }, [flatRows, useVirtualization])
 
-  const scrollToFile = useCallback((index: number): void => {
-    if (index < 0 || index >= files.length) return
-    setActiveFileIndex(index)
+  const scrollToFile = useCallback(
+    (index: number): void => {
+      if (index < 0 || index >= files.length) return
+      setActiveFileIndex(index)
 
-    if (useVirtualization) {
-      const rowIdx = fileIndexToRow.get(index)
-      if (rowIdx !== undefined && containerRef.current) {
-        containerRef.current.scrollTop = flatOffsets[rowIdx]
+      if (useVirtualization) {
+        const rowIdx = fileIndexToRow.get(index)
+        if (rowIdx !== undefined && containerRef.current) {
+          containerRef.current.scrollTop = flatOffsets[rowIdx]
+        }
+      } else {
+        const el = fileRefs.current.get(files[index].path)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
-    } else {
-      const el = fileRefs.current.get(files[index].path)
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }, [files, useVirtualization, fileIndexToRow, flatOffsets])
+    },
+    [files, useVirtualization, fileIndexToRow, flatOffsets]
+  )
 
-  const scrollToHunk = useCallback((addr: HunkAddress): void => {
-    setActiveHunk(addr)
-    setActiveFileIndex(addr.fileIndex)
+  const scrollToHunk = useCallback(
+    (addr: HunkAddress): void => {
+      setActiveHunk(addr)
+      setActiveFileIndex(addr.fileIndex)
 
-    if (useVirtualization) {
-      const rowIdx = hunkAddressToRow.get(`${addr.fileIndex}-${addr.hunkIndex}`)
-      if (rowIdx !== undefined && containerRef.current) {
-        containerRef.current.scrollTop = flatOffsets[rowIdx]
+      if (useVirtualization) {
+        const rowIdx = hunkAddressToRow.get(`${addr.fileIndex}-${addr.hunkIndex}`)
+        if (rowIdx !== undefined && containerRef.current) {
+          containerRef.current.scrollTop = flatOffsets[rowIdx]
+        }
+      } else {
+        const key = `${addr.fileIndex}-${addr.hunkIndex}`
+        const el = hunkRefs.current.get(key)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
-    } else {
-      const key = `${addr.fileIndex}-${addr.hunkIndex}`
-      const el = hunkRefs.current.get(key)
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }, [useVirtualization, hunkAddressToRow, flatOffsets])
+    },
+    [useVirtualization, hunkAddressToRow, flatOffsets]
+  )
 
   // Keyboard navigation
   useEffect(() => {

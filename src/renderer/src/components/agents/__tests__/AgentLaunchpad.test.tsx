@@ -12,13 +12,11 @@ const mockTemplates = [
     icon: '🧹',
     accent: 'cyan',
     description: 'Audit',
-    questions: [
-      { id: 'scope', label: 'Pick scope', type: 'choice', choices: ['All', 'Some'] },
-    ],
+    questions: [{ id: 'scope', label: 'Pick scope', type: 'choice', choices: ['All', 'Some'] }],
     promptTemplate: 'Audit {{scope}}',
     order: 0,
-    builtIn: true,
-  },
+    builtIn: true
+  }
 ]
 
 vi.mock('../../../stores/localAgents', () => ({
@@ -26,9 +24,9 @@ vi.mock('../../../stores/localAgents', () => ({
     selector({
       spawnAgent: mockSpawnAgent,
       fetchProcesses: mockFetchProcesses,
-      isSpawning: false,
-    }),
-  ),
+      isSpawning: false
+    })
+  )
 }))
 
 vi.mock('../../../stores/promptTemplates', () => ({
@@ -36,19 +34,17 @@ vi.mock('../../../stores/promptTemplates', () => ({
     selector({
       templates: mockTemplates,
       loading: false,
-      loadTemplates: mockLoadTemplates,
-    }),
-  ),
+      loadTemplates: mockLoadTemplates
+    })
+  )
 }))
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => [
-    { label: 'BDE', owner: 'owner', color: '#fff' },
-  ],
+  useRepoOptions: () => [{ label: 'BDE', owner: 'owner', color: '#fff' }]
 }))
 
 Object.defineProperty(window, 'api', {
@@ -60,11 +56,11 @@ Object.defineProperty(window, 'api', {
       set: vi.fn(),
       getJson: vi.fn().mockResolvedValue(null),
       setJson: vi.fn(),
-      delete: vi.fn(),
-    },
+      delete: vi.fn()
+    }
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 import { AgentLaunchpad } from '../AgentLaunchpad'
@@ -109,7 +105,7 @@ describe('AgentLaunchpad', () => {
 
     await waitFor(() => {
       expect(mockSpawnAgent).toHaveBeenCalledWith(
-        expect.objectContaining({ task: expect.stringContaining('Audit All') }),
+        expect.objectContaining({ task: expect.stringContaining('Audit All') })
       )
     })
   })

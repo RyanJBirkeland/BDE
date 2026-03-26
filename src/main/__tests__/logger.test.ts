@@ -6,7 +6,7 @@ vi.mock('node:fs', () => ({
   statSync: vi.fn(() => ({ size: 100 })),
   writeFileSync: vi.fn(),
   existsSync: vi.fn(() => true),
-  mkdirSync: vi.fn(),
+  mkdirSync: vi.fn()
 }))
 
 import { createLogger } from '../logger'

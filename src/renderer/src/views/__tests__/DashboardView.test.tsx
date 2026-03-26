@@ -10,9 +10,9 @@ vi.mock('../../stores/sprintTasks', () => ({
     selector({
       tasks: [],
       loading: false,
-      loadData: vi.fn().mockResolvedValue(undefined),
+      loadData: vi.fn().mockResolvedValue(undefined)
     })
-  ),
+  )
 }))
 
 vi.mock('../../stores/costData', () => ({
@@ -20,19 +20,18 @@ vi.mock('../../stores/costData', () => ({
     selector({
       localAgents: [],
       totalCost: 0,
-      fetchLocalAgents: vi.fn().mockResolvedValue(undefined),
+      fetchLocalAgents: vi.fn().mockResolvedValue(undefined)
     })
-  ),
+  )
 }))
 
 vi.mock('../../components/neon', async () => {
-  const actual = await vi.importActual<typeof import('../../components/neon')>(
-    '../../components/neon',
-  )
+  const actual =
+    await vi.importActual<typeof import('../../components/neon')>('../../components/neon')
   return {
     ...actual,
     ScanlineOverlay: () => null,
-    ParticleField: () => null,
+    ParticleField: () => null
   }
 })
 
@@ -42,11 +41,11 @@ Object.defineProperty(window, 'api', {
     openExternal: vi.fn(),
     dashboard: {
       completionsPerHour: vi.fn().mockResolvedValue([]),
-      recentEvents: vi.fn().mockResolvedValue([]),
-    },
+      recentEvents: vi.fn().mockResolvedValue([])
+    }
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 // ---------------------------------------------------------------------------
@@ -107,7 +106,9 @@ describe('DashboardView', () => {
     render(<DashboardView />)
     // "Done" may appear in both stats and pipeline — find the one with role=button
     const doneStats = screen.getAllByText('Done')
-    const doneStat = doneStats.find((el) => el.closest('[role="button"]'))!.closest('[role="button"]')!
+    const doneStat = doneStats
+      .find((el) => el.closest('[role="button"]'))!
+      .closest('[role="button"]')!
     fireEvent.click(doneStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('done')
@@ -117,7 +118,9 @@ describe('DashboardView', () => {
   it('clicking Blocked stat navigates to Sprint with blocked filter', () => {
     render(<DashboardView />)
     const blockedElements = screen.getAllByText('Blocked')
-    const blockedStat = blockedElements.find((el) => el.closest('[role="button"]'))!.closest('[role="button"]')!
+    const blockedStat = blockedElements
+      .find((el) => el.closest('[role="button"]'))!
+      .closest('[role="button"]')!
     fireEvent.click(blockedStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('blocked')
@@ -127,7 +130,7 @@ describe('DashboardView', () => {
   it('renders chart data from completionsPerHour', async () => {
     vi.mocked(window.api.dashboard.completionsPerHour).mockResolvedValue([
       { hour: '10:00', count: 5 },
-      { hour: '11:00', count: 3 },
+      { hour: '11:00', count: 3 }
     ])
     render(<DashboardView />)
     // Flush initial useBackoffInterval tick (setTimeout 0ms with jitter=0)
@@ -139,9 +142,27 @@ describe('DashboardView', () => {
 
   it('renders feed events from recentEvents', async () => {
     vi.mocked(window.api.dashboard.recentEvents).mockResolvedValue([
-      { id: 1, event_type: 'complete', agent_id: 'agent-1', payload: '', timestamp: Date.now() - 5000 },
-      { id: 2, event_type: 'error', agent_id: 'agent-2', payload: '', timestamp: Date.now() - 10000 },
-      { id: 3, event_type: 'spawn', agent_id: 'agent-3', payload: '', timestamp: Date.now() - 20000 },
+      {
+        id: 1,
+        event_type: 'complete',
+        agent_id: 'agent-1',
+        payload: '',
+        timestamp: Date.now() - 5000
+      },
+      {
+        id: 2,
+        event_type: 'error',
+        agent_id: 'agent-2',
+        payload: '',
+        timestamp: Date.now() - 10000
+      },
+      {
+        id: 3,
+        event_type: 'spawn',
+        agent_id: 'agent-3',
+        payload: '',
+        timestamp: Date.now() - 20000
+      }
     ])
     render(<DashboardView />)
     // Flush initial useBackoffInterval tick
@@ -175,7 +196,9 @@ describe('DashboardView', () => {
 
   it('logs errors instead of swallowing them', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.mocked(window.api.dashboard.completionsPerHour).mockRejectedValueOnce(new Error('Network error'))
+    vi.mocked(window.api.dashboard.completionsPerHour).mockRejectedValueOnce(
+      new Error('Network error')
+    )
 
     render(<DashboardView />)
 
@@ -195,10 +218,38 @@ describe('DashboardView', () => {
   it('renders correct PR count from getPrList payload', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [
-        { number: 1, title: 'PR1', html_url: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'a', sha: 'b' }, base: { ref: 'main' }, user: { login: 'u' }, merged: false, merged_at: null, repo: 'r' },
-        { number: 2, title: 'PR2', html_url: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'c', sha: 'd' }, base: { ref: 'main' }, user: { login: 'u' }, merged: false, merged_at: null, repo: 'r' },
+        {
+          number: 1,
+          title: 'PR1',
+          html_url: '',
+          state: 'open',
+          draft: false,
+          created_at: '',
+          updated_at: '',
+          head: { ref: 'a', sha: 'b' },
+          base: { ref: 'main' },
+          user: { login: 'u' },
+          merged: false,
+          merged_at: null,
+          repo: 'r'
+        },
+        {
+          number: 2,
+          title: 'PR2',
+          html_url: '',
+          state: 'open',
+          draft: false,
+          created_at: '',
+          updated_at: '',
+          head: { ref: 'c', sha: 'd' },
+          base: { ref: 'main' },
+          user: { login: 'u' },
+          merged: false,
+          merged_at: null,
+          repo: 'r'
+        }
       ],
-      checks: {},
+      checks: {}
     })
     render(<DashboardView />)
     // Flush initial useBackoffInterval tick

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { usePrConflictsStore } from '../prConflicts'
 
 const initialState = {
-  conflictingTaskIds: [] as string[],
+  conflictingTaskIds: [] as string[]
 }
 
 describe('prConflicts store', () => {

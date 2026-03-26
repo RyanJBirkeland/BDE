@@ -7,7 +7,12 @@ interface DashboardCardProps {
   children: React.ReactNode
 }
 
-export function DashboardCard({ title, icon, action, children }: DashboardCardProps): React.JSX.Element {
+export function DashboardCard({
+  title,
+  icon,
+  action,
+  children
+}: DashboardCardProps): React.JSX.Element {
   return (
     <div
       style={{
@@ -16,7 +21,7 @@ export function DashboardCard({ title, icon, action, children }: DashboardCardPr
         borderRadius: tokens.radius.lg,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: 'hidden'
       }}
     >
       <div
@@ -25,11 +30,14 @@ export function DashboardCard({ title, icon, action, children }: DashboardCardPr
           alignItems: 'center',
           gap: tokens.space[2],
           padding: `${tokens.space[3]} ${tokens.space[4]}`,
-          borderBottom: `1px solid ${tokens.color.border}`,
+          borderBottom: `1px solid ${tokens.color.border}`
         }}
       >
         {icon && (
-          <span style={{ color: tokens.color.textMuted, display: 'flex', alignItems: 'center' }} aria-hidden="true">
+          <span
+            style={{ color: tokens.color.textMuted, display: 'flex', alignItems: 'center' }}
+            aria-hidden="true"
+          >
             {icon}
           </span>
         )}
@@ -40,7 +48,7 @@ export function DashboardCard({ title, icon, action, children }: DashboardCardPr
             color: tokens.color.textMuted,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            flex: 1,
+            flex: 1
           }}
         >
           {title}

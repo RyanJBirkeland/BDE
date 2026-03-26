@@ -17,22 +17,39 @@ import { PlaygroundCard } from './PlaygroundCard'
 
 function StartedBlock({ model, timestamp }: { model: string; timestamp: number }) {
   return (
-    <div style={{ padding: tokens.space[2], color: tokens.color.textMuted, fontSize: tokens.size.xs, textAlign: 'center' }}>
+    <div
+      style={{
+        padding: tokens.space[2],
+        color: tokens.color.textMuted,
+        fontSize: tokens.size.xs,
+        textAlign: 'center'
+      }}
+    >
       Agent started {model ? `(${model})` : ''} at {new Date(timestamp).toLocaleTimeString()}
     </div>
   )
 }
 
-function CompletedBlock({ exitCode, costUsd, durationMs }: { exitCode: number; costUsd: number; durationMs: number }) {
+function CompletedBlock({
+  exitCode,
+  costUsd,
+  durationMs
+}: {
+  exitCode: number
+  costUsd: number
+  durationMs: number
+}) {
   const durationSec = (durationMs / 1000).toFixed(1)
   const color = exitCode === 0 ? tokens.color.success : tokens.color.danger
   return (
-    <div style={{
-      padding: tokens.space[2],
-      fontSize: tokens.size.xs,
-      textAlign: 'center',
-      color,
-    }}>
+    <div
+      style={{
+        padding: tokens.space[2],
+        fontSize: tokens.size.xs,
+        textAlign: 'center',
+        color
+      }}
+    >
       {exitCode === 0 ? 'Completed' : `Failed (exit ${exitCode})`}
       {' — '}${costUsd.toFixed(4)} · {durationSec}s
     </div>
@@ -41,14 +58,16 @@ function CompletedBlock({ exitCode, costUsd, durationMs }: { exitCode: number; c
 
 function RateLimitedBlock({ attempt, retryDelayMs }: { attempt: number; retryDelayMs: number }) {
   return (
-    <div style={{
-      padding: tokens.space[2],
-      fontSize: tokens.size.xs,
-      textAlign: 'center',
-      color: tokens.color.warning,
-      background: tokens.color.warningDim,
-      borderRadius: tokens.radius.sm,
-    }}>
+    <div
+      style={{
+        padding: tokens.space[2],
+        fontSize: tokens.size.xs,
+        textAlign: 'center',
+        color: tokens.color.warning,
+        background: tokens.color.warningDim,
+        borderRadius: tokens.radius.sm
+      }}
+    >
       Rate limited (attempt {attempt}) — retrying in {(retryDelayMs / 1000).toFixed(0)}s
     </div>
   )
@@ -65,19 +84,50 @@ function renderBlock(block: ChatBlock) {
     case 'thinking':
       return <ThinkingBlock tokenCount={block.tokenCount} text={block.text} />
     case 'tool_call':
-      return <ToolCallBlock tool={block.tool} summary={block.summary} input={block.input} timestamp={block.timestamp} />
+      return (
+        <ToolCallBlock
+          tool={block.tool}
+          summary={block.summary}
+          input={block.input}
+          timestamp={block.timestamp}
+        />
+      )
     case 'tool_pair':
-      return <ToolCallBlock tool={block.tool} summary={block.summary} input={block.input} result={block.result} timestamp={block.timestamp} />
+      return (
+        <ToolCallBlock
+          tool={block.tool}
+          summary={block.summary}
+          input={block.input}
+          result={block.result}
+          timestamp={block.timestamp}
+        />
+      )
     case 'error':
       return <ChatBubble variant="error" text={block.message} timestamp={block.timestamp} />
     case 'rate_limited':
       return <RateLimitedBlock attempt={block.attempt} retryDelayMs={block.retryDelayMs} />
     case 'completed':
-      return <CompletedBlock exitCode={block.exitCode} costUsd={block.costUsd} durationMs={block.durationMs} />
+      return (
+        <CompletedBlock
+          exitCode={block.exitCode}
+          costUsd={block.costUsd}
+          durationMs={block.durationMs}
+        />
+      )
     case 'playground':
-      return <PlaygroundCard filename={block.filename} sizeBytes={block.sizeBytes} onClick={() => { /* TODO: open PlaygroundModal */ }} />
+      return (
+        <PlaygroundCard
+          filename={block.filename}
+          sizeBytes={block.sizeBytes}
+          onClick={() => {
+            /* TODO: open PlaygroundModal */
+          }}
+        />
+      )
     case 'stderr':
-      return <ChatBubble variant="error" text={`[stderr] ${block.text}`} timestamp={block.timestamp} />
+      return (
+        <ChatBubble variant="error" text={`[stderr] ${block.text}`} timestamp={block.timestamp} />
+      )
     default:
       return null
   }
@@ -98,7 +148,7 @@ export function ChatRenderer({ events }: ChatRendererProps) {
     count: blocks.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 60,
-    overscan: 10,
+    overscan: 10
   })
 
   // Auto-scroll: follow tail when at bottom
@@ -122,14 +172,14 @@ export function ChatRenderer({ events }: ChatRendererProps) {
       style={{
         height: '100%',
         overflow: 'auto',
-        contain: 'strict',
+        contain: 'strict'
       }}
     >
       <div
         style={{
           height: virtualizer.getTotalSize(),
           width: '100%',
-          position: 'relative',
+          position: 'relative'
         }}
       >
         {virtualizer.getVirtualItems().map((virtualRow) => (
@@ -143,7 +193,7 @@ export function ChatRenderer({ events }: ChatRendererProps) {
               left: 0,
               width: '100%',
               transform: `translateY(${virtualRow.start}px)`,
-              padding: `${tokens.space[1]} ${tokens.space[3]}`,
+              padding: `${tokens.space[1]} ${tokens.space[3]}`
             }}
           >
             {renderBlock(blocks[virtualRow.index])}

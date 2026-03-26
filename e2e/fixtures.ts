@@ -16,8 +16,8 @@ async function launchBDE(): Promise<{ app: ElectronApplication; window: Page }> 
     env: {
       ...process.env,
       NODE_ENV: 'test',
-      BDE_TEST_MODE: '1',
-    },
+      BDE_TEST_MODE: '1'
+    }
   })
 
   const window = await app.firstWindow()
@@ -35,7 +35,7 @@ export const test = base.extend<TestFixtures>({
     const bde = await launchBDE()
     await use(bde)
     await bde.app.close()
-  },
+  }
 })
 
 export { expect } from '@playwright/test'

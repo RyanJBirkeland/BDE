@@ -5,11 +5,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 
 vi.mock('../../auth-guard', () => ({
-  checkAuthStatus: vi.fn(),
+  checkAuthStatus: vi.fn()
 }))
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 import { registerAuthHandlers } from '../auth-handlers'
@@ -42,7 +42,7 @@ describe('Auth handlers', () => {
       cliFound: true,
       tokenFound: true,
       tokenExpired: false,
-      expiresAt,
+      expiresAt
     })
 
     registerAuthHandlers()
@@ -56,7 +56,7 @@ describe('Auth handlers', () => {
       cliFound: true,
       tokenFound: true,
       tokenExpired: false,
-      expiresAt: expiresAt.toISOString(),
+      expiresAt: expiresAt.toISOString()
     })
   })
 
@@ -73,7 +73,7 @@ describe('Auth handlers', () => {
       cliFound: false,
       tokenFound: false,
       tokenExpired: true,
-      expiresAt: undefined,
+      expiresAt: undefined
     })
 
     registerAuthHandlers()
@@ -85,7 +85,7 @@ describe('Auth handlers', () => {
       cliFound: false,
       tokenFound: false,
       tokenExpired: true,
-      expiresAt: undefined,
+      expiresAt: undefined
     })
   })
 })

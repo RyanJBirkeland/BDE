@@ -8,40 +8,40 @@ import type { SprintTask } from '../../../../../shared/types'
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../lib/stream-parser', () => ({
-  stripAnsi: vi.fn((s: string) => s),
+  stripAnsi: vi.fn((s: string) => s)
 }))
 
 vi.mock('../../agents/ChatRenderer', () => ({
   ChatRenderer: ({ events }: { events: unknown[] }) => (
     <div data-testid="chat-renderer">Events: {events.length}</div>
-  ),
+  )
 }))
 
 vi.mock('../../../stores/sprintEvents', () => ({
   useSprintEvents: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ taskEvents: {} })
-  ),
+  )
 }))
 
 vi.mock('../../../stores/agentEvents', () => ({
   useAgentEventsStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ events: {}, loadHistory: vi.fn().mockResolvedValue(undefined) })
-  ),
+  )
 }))
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 Object.defineProperty(window, 'api', {
   value: {
     sprint: {
-      readLog: vi.fn().mockResolvedValue({ content: '', status: 'unknown', nextByte: 0 }),
+      readLog: vi.fn().mockResolvedValue({ content: '', status: 'unknown', nextByte: 0 })
     },
-    openExternal: vi.fn(),
+    openExternal: vi.fn()
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 // ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -125,7 +125,7 @@ describe('TaskMonitorPanel', () => {
     const task = makeTask({
       agent_run_id: 'run-abc',
       pr_number: 42,
-      pr_url: 'https://github.com/org/repo/pull/42',
+      pr_url: 'https://github.com/org/repo/pull/42'
     })
     render(<TaskMonitorPanel task={task} onClose={vi.fn()} />)
     expect(screen.getByText(/PR #42/)).toBeInTheDocument()

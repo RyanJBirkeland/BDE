@@ -3,14 +3,32 @@ import { toCamelCase, toSnakeCase } from '../field-mapper'
 
 describe('field-mapper', () => {
   const snakeRow = {
-    id: 'abc', title: 'Test', prompt: 'Do thing', repo: 'bde',
-    status: 'queued', priority: 1, spec: null, notes: null,
-    depends_on: null, pr_url: null, pr_number: null, pr_status: null,
-    pr_mergeable_state: null, agent_run_id: null, retry_count: 0,
-    fast_fail_count: 0, repo_path: '/tmp/repo', gh_repo: 'org/repo',
-    started_at: null, completed_at: null, claimed_by: null,
-    template_name: null, max_runtime_ms: null, needs_review: false,
-    created_at: '2026-01-01', updated_at: '2026-01-01',
+    id: 'abc',
+    title: 'Test',
+    prompt: 'Do thing',
+    repo: 'bde',
+    status: 'queued',
+    priority: 1,
+    spec: null,
+    notes: null,
+    depends_on: null,
+    pr_url: null,
+    pr_number: null,
+    pr_status: null,
+    pr_mergeable_state: null,
+    agent_run_id: null,
+    retry_count: 0,
+    fast_fail_count: 0,
+    repo_path: '/tmp/repo',
+    gh_repo: 'org/repo',
+    started_at: null,
+    completed_at: null,
+    claimed_by: null,
+    template_name: null,
+    max_runtime_ms: null,
+    needs_review: false,
+    created_at: '2026-01-01',
+    updated_at: '2026-01-01'
   }
 
   it('converts snake_case row to camelCase SprintTask', () => {
@@ -52,7 +70,10 @@ describe('field-mapper', () => {
   it('preserves properly parsed depends_on array', () => {
     const rowWithArrayDeps = {
       ...snakeRow,
-      depends_on: [{ id: 'task-1', type: 'hard' }, { id: 'task-2', type: 'soft' }]
+      depends_on: [
+        { id: 'task-1', type: 'hard' },
+        { id: 'task-2', type: 'soft' }
+      ]
     }
     const result = toCamelCase(rowWithArrayDeps)
     expect(result.dependsOn).toEqual([
@@ -102,7 +123,7 @@ describe('field-mapper', () => {
         { id: '', type: 'soft' }, // Invalid: empty id
         { type: 'hard' }, // Invalid: missing id
         { id: 'task-2', type: 'invalid' }, // Invalid: wrong type
-        { id: 'task-3', type: 'soft' },
+        { id: 'task-3', type: 'soft' }
       ]
     }
     const result = toCamelCase(rowWithMixedDeps)
@@ -116,11 +137,7 @@ describe('field-mapper', () => {
   it('returns null if all dependencies are invalid', () => {
     const rowWithAllInvalidDeps = {
       ...snakeRow,
-      depends_on: [
-        { id: '', type: 'soft' },
-        { type: 'hard' },
-        { id: 'task-1', type: 'invalid' }
-      ]
+      depends_on: [{ id: '', type: 'soft' }, { type: 'hard' }, { id: 'task-1', type: 'invalid' }]
     }
     const result = toCamelCase(rowWithAllInvalidDeps)
     expect(result.dependsOn).toBeNull()
@@ -129,7 +146,7 @@ describe('field-mapper', () => {
   it('toSnakeCase preserves dependsOn array structure', () => {
     const camelRow = {
       dependsOn: [{ id: 'task-1', type: 'hard' }],
-      prUrl: 'https://github.com/org/repo/pull/1',
+      prUrl: 'https://github.com/org/repo/pull/1'
     }
     const result = toSnakeCase(camelRow)
     expect(result.depends_on).toEqual([{ id: 'task-1', type: 'hard' }])

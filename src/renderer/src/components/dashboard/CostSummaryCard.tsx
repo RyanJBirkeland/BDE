@@ -22,20 +22,17 @@ export function CostSummaryCard(): React.JSX.Element {
   const stats = [
     { label: 'Total Cost', value: formatCost(totalCost) },
     { label: 'Runs', value: String(localAgents.length) },
-    { label: 'Avg / Run', value: formatCost(avgCost) },
+    { label: 'Avg / Run', value: formatCost(avgCost) }
   ]
 
   return (
-    <DashboardCard
-      title="Cost Summary"
-      icon={<DollarSign size={14} aria-hidden="true" />}
-    >
+    <DashboardCard title="Cost Summary" icon={<DollarSign size={14} aria-hidden="true" />}>
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '1px',
-          background: tokens.color.border,
+          background: tokens.color.border
         }}
       >
         {stats.map(({ label, value }) => (
@@ -46,7 +43,7 @@ export function CostSummaryCard(): React.JSX.Element {
               padding: `${tokens.space[3]} ${tokens.space[4]}`,
               display: 'flex',
               flexDirection: 'column',
-              gap: tokens.space[1],
+              gap: tokens.space[1]
             }}
           >
             <span
@@ -54,7 +51,7 @@ export function CostSummaryCard(): React.JSX.Element {
                 fontSize: tokens.size.xs,
                 color: tokens.color.textMuted,
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.05em'
               }}
             >
               {label}
@@ -64,7 +61,7 @@ export function CostSummaryCard(): React.JSX.Element {
                 fontSize: tokens.size.xl,
                 fontWeight: 600,
                 color: tokens.color.text,
-                fontFamily: tokens.font.code,
+                fontFamily: tokens.font.code
               }}
             >
               {value}

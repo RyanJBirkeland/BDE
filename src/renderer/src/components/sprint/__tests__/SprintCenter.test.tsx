@@ -14,14 +14,14 @@ const mocks = vi.hoisted(() => {
     tasks: [] as SprintTask[],
     loading: false,
     loadError: null as string | null,
-    loadData: mockLoadData,
+    loadData: mockLoadData
   }
 
   const uiState = {
     repoFilter: null as string | null,
     logDrawerTaskId: null as string | null,
     setRepoFilter: mockSetRepoFilter,
-    setLogDrawerTaskId: mockSetLogDrawerTaskId,
+    setLogDrawerTaskId: mockSetLogDrawerTaskId
   }
 
   const conflictingTaskIds = { value: [] as string[] }
@@ -35,7 +35,7 @@ const mocks = vi.hoisted(() => {
     storeState,
     uiState,
     conflictingTaskIds,
-    visibleStuckTasks,
+    visibleStuckTasks
   }
 })
 
@@ -45,7 +45,7 @@ vi.mock('../../../stores/sprintTasks', () => ({
       return selector(mocks.storeState)
     }
     return mocks.mockLoadData
-  }),
+  })
 }))
 
 vi.mock('../../../stores/sprintUI', () => ({
@@ -54,7 +54,7 @@ vi.mock('../../../stores/sprintUI', () => ({
       return selector(mocks.uiState)
     }
     return undefined
-  }),
+  })
 }))
 
 vi.mock('../../../stores/ui', () => ({
@@ -63,7 +63,7 @@ vi.mock('../../../stores/ui', () => ({
       return selector({ setView: mocks.mockSetView })
     }
     return mocks.mockSetView
-  }),
+  })
 }))
 
 vi.mock('../../../stores/prConflicts', () => ({
@@ -72,7 +72,7 @@ vi.mock('../../../stores/prConflicts', () => ({
       return selector({ conflictingTaskIds: mocks.conflictingTaskIds.value })
     }
     return mocks.conflictingTaskIds.value
-  }),
+  })
 }))
 
 vi.mock('../../../stores/sprintEvents', () => ({
@@ -81,17 +81,19 @@ vi.mock('../../../stores/sprintEvents', () => ({
       return selector({ initTaskOutputListener: () => () => {} })
     }
     return () => () => {}
-  }),
+  })
 }))
 
 vi.mock('../../../hooks/useTaskNotifications', () => ({
   setOpenLogDrawerTaskId: vi.fn(),
-  useTaskToasts: vi.fn(),
+  useTaskToasts: vi.fn()
 }))
 
 vi.mock('../../../hooks/useSprintPolling', () => ({ useSprintPolling: vi.fn() }))
 vi.mock('../../../hooks/usePrStatusPolling', () => ({ usePrStatusPolling: vi.fn() }))
-vi.mock('../../../hooks/useSprintKeyboardShortcuts', () => ({ useSprintKeyboardShortcuts: vi.fn() }))
+vi.mock('../../../hooks/useSprintKeyboardShortcuts', () => ({
+  useSprintKeyboardShortcuts: vi.fn()
+}))
 
 vi.mock('../../../hooks/useSprintTaskActions', () => ({
   useSprintTaskActions: () => ({
@@ -101,26 +103,32 @@ vi.mock('../../../hooks/useSprintTaskActions', () => ({
     handleRerun: vi.fn(),
     launchTask: vi.fn(),
     deleteTask: vi.fn(),
-    confirmProps: { open: false, title: '', message: '', onConfirm: vi.fn(), onCancel: vi.fn() },
-  }),
+    confirmProps: { open: false, title: '', message: '', onConfirm: vi.fn(), onCancel: vi.fn() }
+  })
 }))
 
 vi.mock('../../../hooks/useHealthCheck', () => ({
   useHealthCheck: vi.fn(() => ({
     visibleStuckTasks: mocks.visibleStuckTasks.value,
-    dismissTask: vi.fn(),
-  })),
+    dismissTask: vi.fn()
+  }))
 }))
 
 // Mock child components for the three-zone layout
 vi.mock('../CircuitPipeline', () => ({
   CircuitPipeline: ({ tasks }: { tasks: SprintTask[] }) => (
     <div data-testid="circuit-pipeline">Pipeline ({tasks.length} tasks)</div>
-  ),
+  )
 }))
 
 vi.mock('../SprintTaskList', () => ({
-  SprintTaskList: ({ tasks, onSelectTask }: { tasks: SprintTask[]; onSelectTask: (t: SprintTask) => void }) => (
+  SprintTaskList: ({
+    tasks,
+    onSelectTask
+  }: {
+    tasks: SprintTask[]
+    onSelectTask: (t: SprintTask) => void
+  }) => (
     <div data-testid="sprint-task-list">
       {tasks.map((t) => (
         <button key={t.id} data-testid={`task-${t.id}`} onClick={() => onSelectTask(t)}>
@@ -128,7 +136,7 @@ vi.mock('../SprintTaskList', () => ({
         </button>
       ))}
     </div>
-  ),
+  )
 }))
 
 vi.mock('../SprintDetailPane', () => ({
@@ -136,35 +144,37 @@ vi.mock('../SprintDetailPane', () => ({
     <div data-testid="sprint-detail-pane">
       {task ? `Detail: ${task.title}` : 'No task selected'}
     </div>
-  ),
+  )
 }))
 
 vi.mock('../ConflictDrawer', () => ({
   ConflictDrawer: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="conflict-drawer">ConflictDrawer</div> : null,
+    open ? <div data-testid="conflict-drawer">ConflictDrawer</div> : null
 }))
 
 vi.mock('../HealthCheckDrawer', () => ({
   HealthCheckDrawer: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="health-drawer">HealthCheckDrawer</div> : null,
+    open ? <div data-testid="health-drawer">HealthCheckDrawer</div> : null
 }))
 
 vi.mock('../../ui/Button', () => ({
   Button: ({ children, onClick, disabled, ...props }: React.ComponentProps<'button'>) => (
-    <button onClick={onClick} disabled={disabled} {...props}>{children}</button>
-  ),
+    <button onClick={onClick} disabled={disabled} {...props}>
+      {children}
+    </button>
+  )
 }))
 
 vi.mock('../../ui/Badge', () => ({
-  Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  Badge: ({ children }: { children: React.ReactNode }) => <span>{children}</span>
 }))
 
 vi.mock('../../ui/ConfirmModal', () => ({
-  ConfirmModal: () => <div data-testid="confirm-modal">ConfirmModal</div>,
+  ConfirmModal: () => <div data-testid="confirm-modal">ConfirmModal</div>
 }))
 
 vi.mock('../../ui/ErrorBoundary', () => ({
-  ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  ErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -191,7 +201,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -206,13 +216,13 @@ describe('SprintCenter', () => {
       tasks: [],
       loading: false,
       loadError: null,
-      loadData: mocks.mockLoadData,
+      loadData: mocks.mockLoadData
     })
     Object.assign(mocks.uiState, {
       repoFilter: null,
       logDrawerTaskId: null,
       setRepoFilter: mocks.mockSetRepoFilter,
-      setLogDrawerTaskId: mocks.mockSetLogDrawerTaskId,
+      setLogDrawerTaskId: mocks.mockSetLogDrawerTaskId
     })
     mocks.conflictingTaskIds.value = []
     mocks.visibleStuckTasks.value = []
@@ -221,7 +231,7 @@ describe('SprintCenter', () => {
   describe('Three-zone layout', () => {
     it('renders CircuitPipeline with tasks', () => {
       Object.assign(mocks.storeState, {
-        tasks: [makeTask(), makeTask()],
+        tasks: [makeTask(), makeTask()]
       })
 
       render(<SprintCenter />)
@@ -232,7 +242,7 @@ describe('SprintCenter', () => {
 
     it('renders SprintTaskList', () => {
       Object.assign(mocks.storeState, {
-        tasks: [makeTask({ title: 'My task' })],
+        tasks: [makeTask({ title: 'My task' })]
       })
 
       render(<SprintCenter />)
@@ -243,7 +253,7 @@ describe('SprintCenter', () => {
 
     it('renders SprintDetailPane', () => {
       Object.assign(mocks.storeState, {
-        tasks: [makeTask({ id: 'task-1', title: 'Selected task' })],
+        tasks: [makeTask({ id: 'task-1', title: 'Selected task' })]
       })
 
       render(<SprintCenter />)
@@ -253,7 +263,7 @@ describe('SprintCenter', () => {
 
     it('auto-selects first task when none selected', () => {
       Object.assign(mocks.storeState, {
-        tasks: [makeTask({ id: 'task-1', title: 'First task' })],
+        tasks: [makeTask({ id: 'task-1', title: 'First task' })]
       })
 
       render(<SprintCenter />)
@@ -273,7 +283,7 @@ describe('SprintCenter', () => {
       Object.assign(mocks.storeState, {
         tasks: [],
         loadError: 'Failed to load tasks from database',
-        loading: false,
+        loading: false
       })
 
       render(<SprintCenter />)
@@ -286,7 +296,7 @@ describe('SprintCenter', () => {
       Object.assign(mocks.storeState, {
         tasks: [],
         loadError: 'Failed to load',
-        loading: false,
+        loading: false
       })
 
       render(<SprintCenter />)
@@ -300,7 +310,7 @@ describe('SprintCenter', () => {
       Object.assign(mocks.storeState, {
         tasks: [],
         loadError: 'Failed to load',
-        loading: true,
+        loading: true
       })
 
       render(<SprintCenter />)
@@ -372,7 +382,7 @@ describe('SprintCenter', () => {
     it('shows conflict badge when conflicting tasks exist', () => {
       mocks.conflictingTaskIds.value = ['task-1']
       Object.assign(mocks.storeState, {
-        tasks: [makeTask({ id: 'task-1' })],
+        tasks: [makeTask({ id: 'task-1' })]
       })
 
       render(<SprintCenter />)
@@ -383,7 +393,7 @@ describe('SprintCenter', () => {
     it('opens conflict drawer when badge clicked', () => {
       mocks.conflictingTaskIds.value = ['task-1']
       Object.assign(mocks.storeState, {
-        tasks: [makeTask({ id: 'task-1' })],
+        tasks: [makeTask({ id: 'task-1' })]
       })
 
       render(<SprintCenter />)

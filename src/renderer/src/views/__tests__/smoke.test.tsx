@@ -13,7 +13,7 @@ Element.prototype.scrollIntoView = vi.fn()
 vi.mock('../../stores/ui', () => ({
   useUIStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ activeView: 'agents', setView: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../stores/unifiedAgents', () => ({
@@ -26,27 +26,37 @@ vi.mock('../../stores/unifiedAgents', () => ({
       select: vi.fn(),
       spawn: vi.fn().mockResolvedValue(undefined),
       steer: vi.fn().mockResolvedValue(undefined),
-      kill: vi.fn().mockResolvedValue(undefined),
+      kill: vi.fn().mockResolvedValue(undefined)
     })
-  ),
+  )
 }))
 
 vi.mock('../../stores/agentHistory', () => ({
   useAgentHistoryStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ agents: [], selectedId: null, fetchAgents: vi.fn().mockResolvedValue(undefined), selectAgent: vi.fn() })
-  ),
+    selector({
+      agents: [],
+      selectedId: null,
+      fetchAgents: vi.fn().mockResolvedValue(undefined),
+      selectAgent: vi.fn()
+    })
+  )
 }))
 
 vi.mock('../../stores/agentEvents', () => ({
   useAgentEventsStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ events: {}, init: vi.fn().mockReturnValue(() => {}), loadHistory: vi.fn().mockResolvedValue(undefined), clear: vi.fn() })
-  ),
+    selector({
+      events: {},
+      init: vi.fn().mockReturnValue(() => {}),
+      loadHistory: vi.fn().mockResolvedValue(undefined),
+      clear: vi.fn()
+    })
+  )
 }))
 
 vi.mock('../../stores/theme', () => ({
   useThemeStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ theme: 'dark', toggleTheme: vi.fn(), setTheme: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../stores/terminal', () => {
@@ -62,10 +72,10 @@ vi.mock('../../stores/terminal', () => {
         closeTab: vi.fn(),
         setActiveTab: vi.fn(),
         setShowFind: vi.fn(),
-        setSelectedShell: vi.fn(),
+        setSelectedShell: vi.fn()
       }
       return selector ? selector(state) : state
-    }),
+    })
   }
 })
 
@@ -73,79 +83,78 @@ vi.mock('../../stores/toasts', () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
   useToastStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ toasts: [], removeToast: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../stores/chat', () => ({
   useChatStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ lines: {}, addLine: vi.fn(), clearSession: vi.fn(), clearAll: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../lib/github-api', () => ({
   listOpenPRs: vi.fn().mockResolvedValue([]),
   mergePR: vi.fn().mockResolvedValue(undefined),
-  getPrMergeability: vi.fn().mockResolvedValue(null),
+  getPrMergeability: vi.fn().mockResolvedValue(null)
 }))
 
 // Mock heavy child components
 vi.mock('../../components/sessions/SessionList', () => ({
-  SessionList: () => <div data-testid="session-list" />,
+  SessionList: () => <div data-testid="session-list" />
 }))
 
-
 vi.mock('../../components/sessions/MessageInput', () => ({
-  MessageInput: () => <div data-testid="message-input" />,
+  MessageInput: () => <div data-testid="message-input" />
 }))
 
 vi.mock('../../components/sprint/SprintBoard', () => ({
-  default: () => <div data-testid="sprint-board" />,
+  default: () => <div data-testid="sprint-board" />
 }))
 
 vi.mock('../../components/sprint/PRList', () => ({
   default: () => <div data-testid="pr-list" />,
-  PRList: () => <div data-testid="pr-list" />,
+  PRList: () => <div data-testid="pr-list" />
 }))
 
 vi.mock('../../components/diff/DiffViewer', () => ({
   default: () => <div data-testid="diff-viewer" />,
-  DiffViewer: () => <div data-testid="diff-viewer" />,
+  DiffViewer: () => <div data-testid="diff-viewer" />
 }))
 
 vi.mock('../../components/terminal/TerminalPane', () => ({
   TerminalPane: () => <div data-testid="terminal-pane" />,
   clearTerminal: vi.fn(),
-  getSearchAddon: vi.fn(),
+  getSearchAddon: vi.fn()
 }))
 
 vi.mock('../../components/terminal/FindBar', () => ({
-  FindBar: () => null,
+  FindBar: () => null
 }))
 
 vi.mock('../../components/pr-station/PRStationList', () => ({
-  PRStationList: () => <div data-testid="pr-station-list" />,
+  PRStationList: () => <div data-testid="pr-station-list" />
 }))
 
 vi.mock('../../components/pr-station/PRStationDetail', () => ({
-  PRStationDetail: () => <div data-testid="pr-station-detail" />,
+  PRStationDetail: () => <div data-testid="pr-station-detail" />
 }))
 
 vi.mock('../../components/pr-station/PRStationActions', () => ({
-  PRStationActions: () => <div data-testid="pr-station-actions" />,
+  PRStationActions: () => <div data-testid="pr-station-actions" />
 }))
 
 vi.mock('../../components/pr-station/PRStationDiff', () => ({
-  PRStationDiff: () => <div data-testid="pr-station-diff" />,
+  PRStationDiff: () => <div data-testid="pr-station-diff" />
 }))
 
 vi.mock('../../components/pr-station/ReviewSubmitDialog', () => ({
-  ReviewSubmitDialog: () => null,
+  ReviewSubmitDialog: () => null
 }))
 
 vi.mock('../../stores/pendingReview', () => ({
   usePendingReviewStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ pendingComments: new Map() })
-  ),
+  )
 }))
 
 // Mock window.api for views that use it — assign directly to preserve window methods
@@ -163,7 +172,9 @@ Object.defineProperty(window, 'api', {
     listMemoryFiles: vi.fn().mockResolvedValue([]),
     readMemoryFile: vi.fn().mockResolvedValue(''),
     writeMemoryFile: vi.fn().mockResolvedValue(undefined),
-    getAgentConfig: vi.fn().mockResolvedValue({ binary: 'claude', permissionMode: 'bypassPermissions' }),
+    getAgentConfig: vi
+      .fn()
+      .mockResolvedValue({ binary: 'claude', permissionMode: 'bypassPermissions' }),
     saveAgentConfig: vi.fn().mockResolvedValue(undefined),
     openExternal: vi.fn(),
     pollPrStatuses: vi.fn().mockResolvedValue([]),
@@ -176,17 +187,17 @@ Object.defineProperty(window, 'api', {
       update: vi.fn().mockResolvedValue({}),
       readLog: vi.fn().mockResolvedValue({ content: '', status: '' }),
       readSpecFile: vi.fn().mockResolvedValue(''),
-      healthCheck: vi.fn().mockResolvedValue([]),
+      healthCheck: vi.fn().mockResolvedValue([])
     },
     settings: {
       get: vi.fn().mockResolvedValue(null),
       set: vi.fn().mockResolvedValue(undefined),
       getJson: vi.fn().mockResolvedValue(null),
       setJson: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined)
     },
     github: {
-      fetch: vi.fn().mockResolvedValue({ ok: true, status: 200, body: {}, linkNext: null }),
+      fetch: vi.fn().mockResolvedValue({ ok: true, status: 200, body: {}, linkNext: null })
     },
     openDirectoryDialog: vi.fn().mockResolvedValue(null),
     onExternalSprintChange: vi.fn().mockReturnValue(() => {}),
@@ -194,15 +205,15 @@ Object.defineProperty(window, 'api', {
       list: vi.fn().mockResolvedValue([]),
       save: vi.fn().mockResolvedValue(undefined),
       delete: vi.fn().mockResolvedValue(undefined),
-      reset: vi.fn().mockResolvedValue(undefined),
+      reset: vi.fn().mockResolvedValue(undefined)
     },
     agentManager: {
       status: vi.fn().mockResolvedValue({ running: false, concurrency: null, activeAgents: [] }),
-      kill: vi.fn().mockResolvedValue({ ok: true }),
-    },
+      kill: vi.fn().mockResolvedValue({ ok: true })
+    }
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 // ---------- Imports ----------

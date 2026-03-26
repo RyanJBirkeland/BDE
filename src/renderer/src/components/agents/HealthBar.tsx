@@ -18,14 +18,14 @@ export function HealthBar({ connected, stats }: HealthBarProps) {
         borderBottom: `1px solid ${tokens.color.border}`,
         fontFamily: tokens.font.ui,
         fontSize: tokens.size.sm,
-        color: tokens.color.textMuted,
+        color: tokens.color.textMuted
       }}
     >
       <span
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: tokens.space[1],
+          gap: tokens.space[1]
         }}
       >
         <span
@@ -34,7 +34,7 @@ export function HealthBar({ connected, stats }: HealthBarProps) {
             height: '8px',
             borderRadius: tokens.radius.full,
             background: connected ? tokens.color.success : tokens.color.danger,
-            flexShrink: 0,
+            flexShrink: 0
           }}
         />
         {connected ? (

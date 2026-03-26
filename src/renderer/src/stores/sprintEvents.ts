@@ -33,12 +33,12 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
         return {
           taskEvents: {
             ...s.taskEvents,
-            [agentId]: updated,
+            [agentId]: updated
           },
           latestEvents: {
             ...s.latestEvents,
-            [agentId]: event,
-          },
+            [agentId]: event
+          }
         }
       })
     })
@@ -54,5 +54,5 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
       const { [taskId]: _latest, ...restLatest } = s.latestEvents
       return { taskEvents: restEvents, latestEvents: restLatest }
     })
-  },
+  }
 }))

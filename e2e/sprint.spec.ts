@@ -83,7 +83,9 @@ test.describe('Sprint board', () => {
 
     // Task title should appear in the backlog table
     const backlogTable = window.locator('.bde-task-table').first()
-    await expect(backlogTable.locator('.bde-task-table__title-btn', { hasText: taskTitle })).toBeVisible({ timeout: 5_000 })
+    await expect(
+      backlogTable.locator('.bde-task-table__title-btn', { hasText: taskTitle })
+    ).toBeVisible({ timeout: 5_000 })
   })
 
   test('Task card details — created task shows title text', async ({ bde }) => {
@@ -155,7 +157,7 @@ test.describe('Sprint — SpecDrawer', () => {
 
     // Find and click the seeded task's title button in the backlog table
     const titleBtn = window.locator('.bde-task-table__title-btn', {
-      hasText: task.title as string,
+      hasText: task.title as string
     })
     await expect(titleBtn).toBeVisible({ timeout: 5_000 })
     await titleBtn.click()
@@ -193,14 +195,14 @@ test.describe('Sprint — dependency blocked badge', () => {
     // Seed parent task (queued so it appears on the kanban board)
     const parent = await seedTask(window, {
       title: `E2E Parent ${ts}`,
-      status: 'queued',
+      status: 'queued'
     })
     parentId = parent.id
 
     // Seed child task (also queued initially)
     const child = await seedTask(window, {
       title: `E2E Child ${ts}`,
-      status: 'queued',
+      status: 'queued'
     })
     childId = child.id
 
@@ -210,7 +212,7 @@ test.describe('Sprint — dependency blocked badge', () => {
       async ({ childId, parentId }) => {
         await (window as any).api.sprint.update(childId, {
           depends_on: [{ id: parentId, type: 'hard' }],
-          status: 'blocked',
+          status: 'blocked'
         })
       },
       { childId: child.id, parentId: parent.id }
@@ -223,7 +225,7 @@ test.describe('Sprint — dependency blocked badge', () => {
     // The child task should now appear in the Blocked section with a BLOCKED badge.
     // In TaskTable's BlockedRow, the title button contains a Badge with text "BLOCKED".
     const blockedTitle = window.locator('.bde-task-table__title-btn', {
-      hasText: `E2E Child ${ts}`,
+      hasText: `E2E Child ${ts}`
     })
     await expect(blockedTitle).toBeVisible({ timeout: 5_000 })
 

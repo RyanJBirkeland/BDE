@@ -3,7 +3,7 @@ import { useAgentEventsStore } from '../agentEvents'
 import type { AgentEvent } from '../../../../shared/types'
 
 const initialState = {
-  events: {},
+  events: {}
 }
 
 beforeEach(() => {
@@ -15,7 +15,7 @@ function makeEvent(text = 'hello'): AgentEvent {
   return {
     type: 'agent:text',
     text,
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
 }
 
@@ -88,12 +88,14 @@ describe('loadHistory', () => {
 
     expect(window.api.agentEvents.getHistory).toHaveBeenCalledWith('agent-z')
     expect(useAgentEventsStore.getState().events['agent-z']).toHaveLength(2)
-    expect((useAgentEventsStore.getState().events['agent-z'][0] as { type: string; text: string }).text).toBe('h1')
+    expect(
+      (useAgentEventsStore.getState().events['agent-z'][0] as { type: string; text: string }).text
+    ).toBe('h1')
   })
 
   it('overwrites any previously cached events for that agent', async () => {
     useAgentEventsStore.setState({
-      events: { 'agent-z': [makeEvent('old-1'), makeEvent('old-2')] },
+      events: { 'agent-z': [makeEvent('old-1'), makeEvent('old-2')] }
     })
     vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent('new-1')])
 
@@ -106,7 +108,7 @@ describe('loadHistory', () => {
 
   it('does not affect events for other agents', async () => {
     useAgentEventsStore.setState({
-      events: { other: [makeEvent('o1')] },
+      events: { other: [makeEvent('o1')] }
     })
     vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent('n1')])
 
@@ -121,8 +123,8 @@ describe('clear', () => {
     useAgentEventsStore.setState({
       events: {
         'agent-a': [makeEvent('a1')],
-        'agent-b': [makeEvent('b1')],
-      },
+        'agent-b': [makeEvent('b1')]
+      }
     })
 
     useAgentEventsStore.getState().clear('agent-a')
@@ -135,8 +137,8 @@ describe('clear', () => {
     useAgentEventsStore.setState({
       events: {
         'agent-a': [makeEvent('a1')],
-        'agent-b': [makeEvent('b1')],
-      },
+        'agent-b': [makeEvent('b1')]
+      }
     })
 
     useAgentEventsStore.getState().clear('agent-a')

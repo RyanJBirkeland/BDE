@@ -8,10 +8,8 @@ import { getRepoPaths } from './git'
  */
 export function validateRepoPath(path: string, label = 'Path'): string {
   const resolved = resolve(path)
-  const repoPaths = Object.values(getRepoPaths()).map(p => resolve(p))
-  const allowed = repoPaths.some(
-    root => resolved.startsWith(root + '/') || resolved === root
-  )
+  const repoPaths = Object.values(getRepoPaths()).map((p) => resolve(p))
+  const allowed = repoPaths.some((root) => resolved.startsWith(root + '/') || resolved === root)
   if (!allowed) {
     throw new Error(`${label} rejected: "${path}" is not under a known repository`)
   }

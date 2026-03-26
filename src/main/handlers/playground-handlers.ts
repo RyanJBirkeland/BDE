@@ -37,7 +37,7 @@ export function registerPlaygroundHandlers(): void {
       filename,
       html,
       sizeBytes: stats.size,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
 
     // Broadcast via agent:event channel with generic 'playground' agentId

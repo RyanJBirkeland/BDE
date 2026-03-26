@@ -30,7 +30,7 @@ function runClaudeStreaming(
   return new Promise((resolve, reject) => {
     const child = spawn('claude', ['-p', '--output-format', 'text'], {
       env: buildAgentEnv(),
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     })
     activeStreams.set(streamId, child)
 
@@ -47,7 +47,9 @@ function runClaudeStreaming(
       stdout += chunk
       onChunk(chunk)
     })
-    child.stderr.on('data', (d: Buffer) => { stderr += d.toString() })
+    child.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString()
+    })
     child.on('close', (code) => {
       clearTimeout(timer)
       activeStreams.delete(streamId)
@@ -73,7 +75,7 @@ function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn('claude', ['-p', '--output-format', 'text'], {
       env: buildAgentEnv(),
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     })
 
     let stdout = ''
@@ -83,8 +85,12 @@ function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
       reject(new Error('Claude CLI timed out'))
     }, timeoutMs)
 
-    child.stdout.on('data', (d: Buffer) => { stdout += d.toString() })
-    child.stderr.on('data', (d: Buffer) => { stderr += d.toString() })
+    child.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString()
+    })
+    child.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString()
+    })
     child.on('close', (code) => {
       clearTimeout(timer)
       if (code === 0) {
@@ -109,7 +115,7 @@ export function buildChatPrompt(
 ): string {
   const contextBlock = [
     `[Task Context] Title: "${formContext.title}", Repo: ${formContext.repo}`,
-    formContext.spec ? `Spec draft:\n${formContext.spec}` : '(no spec yet)',
+    formContext.spec ? `Spec draft:\n${formContext.spec}` : '(no spec yet)'
   ].join('\n')
 
   const history = messages
@@ -152,13 +158,22 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     const authStatus = await checkAuthStatus()
     let authResult: { status: 'pass' | 'warn' | 'fail'; message: string }
     if (!authStatus.tokenFound) {
-      authResult = { status: 'fail', message: 'No Claude subscription token found — run: claude login' }
+      authResult = {
+        status: 'fail',
+        message: 'No Claude subscription token found — run: claude login'
+      }
     } else if (authStatus.tokenExpired) {
-      authResult = { status: 'fail', message: 'Claude subscription token expired — run: claude login' }
+      authResult = {
+        status: 'fail',
+        message: 'Claude subscription token expired — run: claude login'
+      }
     } else if (authStatus.expiresAt) {
       const hoursUntilExpiry = (authStatus.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60)
       if (hoursUntilExpiry < 1) {
-        authResult = { status: 'warn', message: `Token expires in ${Math.round(hoursUntilExpiry * 60)} minutes` }
+        authResult = {
+          status: 'warn',
+          message: `Token expires in ${Math.round(hoursUntilExpiry * 60)} minutes`
+        }
       } else {
         authResult = { status: 'pass', message: 'Authentication valid' }
       }
@@ -182,18 +197,27 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       try {
         const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
           cwd: repoPath,
-          encoding: 'utf-8',
+          encoding: 'utf-8'
         })
         if (stdout.trim().length === 0) {
           gitCleanResult = { status: 'pass', message: 'Working directory clean' }
         } else {
-          gitCleanResult = { status: 'warn', message: 'Uncommitted changes present (agent may conflict)' }
+          gitCleanResult = {
+            status: 'warn',
+            message: 'Uncommitted changes present (agent may conflict)'
+          }
         }
       } catch (err) {
-        gitCleanResult = { status: 'warn', message: `Unable to check git status: ${(err as Error).message}` }
+        gitCleanResult = {
+          status: 'warn',
+          message: `Unable to check git status: ${(err as Error).message}`
+        }
       }
     } else {
-      gitCleanResult = { status: 'warn', message: 'Cannot check git status (repo path not configured)' }
+      gitCleanResult = {
+        status: 'warn',
+        message: 'Cannot check git status (repo path not configured)'
+      }
     }
 
     // Conflict check: query for other active/queued tasks on same repo
@@ -206,34 +230,68 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
         .in('status', ['active', 'queued'])
 
       if (error) {
-        noConflictResult = { status: 'warn', message: `Unable to check for conflicts: ${error.message}` }
+        noConflictResult = {
+          status: 'warn',
+          message: `Unable to check for conflicts: ${error.message}`
+        }
       } else if (!data || data.length === 0) {
         noConflictResult = { status: 'pass', message: 'No conflicting tasks' }
       } else {
         const activeCount = data.filter((t) => t.status === 'active').length
         const queuedCount = data.filter((t) => t.status === 'queued').length
         if (activeCount > 0) {
-          noConflictResult = { status: 'fail', message: `${activeCount} active task(s) on this repo` }
+          noConflictResult = {
+            status: 'fail',
+            message: `${activeCount} active task(s) on this repo`
+          }
         } else {
-          noConflictResult = { status: 'warn', message: `${queuedCount} queued task(s) on this repo` }
+          noConflictResult = {
+            status: 'warn',
+            message: `${queuedCount} queued task(s) on this repo`
+          }
         }
       }
     } catch (err) {
-      noConflictResult = { status: 'warn', message: `Error checking for conflicts: ${(err as Error).message}` }
+      noConflictResult = {
+        status: 'warn',
+        message: `Error checking for conflicts: ${(err as Error).message}`
+      }
     }
 
     // Agent slots available check
-    let slotsAvailableResult: { status: 'pass' | 'warn'; message: string; available: number; max: number }
+    let slotsAvailableResult: {
+      status: 'pass' | 'warn'
+      message: string
+      available: number
+      max: number
+    }
     if (!am) {
-      slotsAvailableResult = { status: 'warn', message: 'Agent manager not available', available: 0, max: 0 }
+      slotsAvailableResult = {
+        status: 'warn',
+        message: 'Agent manager not available',
+        available: 0,
+        max: 0
+      }
     } else {
       const status = am.getStatus()
-      const available = status.concurrency ? status.concurrency.maxSlots - status.concurrency.activeCount : 0
+      const available = status.concurrency
+        ? status.concurrency.maxSlots - status.concurrency.activeCount
+        : 0
       const max = status.concurrency?.maxSlots ?? 0
       if (available > 0) {
-        slotsAvailableResult = { status: 'pass', message: `${available} of ${max} slots available`, available, max }
+        slotsAvailableResult = {
+          status: 'pass',
+          message: `${available} of ${max} slots available`,
+          available,
+          max
+        }
       } else {
-        slotsAvailableResult = { status: 'warn', message: 'All agent slots occupied (task will wait in queue)', available: 0, max }
+        slotsAvailableResult = {
+          status: 'warn',
+          message: 'All agent slots occupied (task will wait in queue)',
+          available: 0,
+          max
+        }
       }
     }
 
@@ -242,7 +300,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       repoPath: repoPathResult,
       gitClean: gitCleanResult,
       noConflict: noConflictResult,
-      slotsAvailable: slotsAvailableResult,
+      slotsAvailable: slotsAvailableResult
     }
   })
 
@@ -256,7 +314,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       return {
         content: `Error: No path configured for repo "${repo}"`,
         filesSearched: [],
-        totalMatches: 0,
+        totalMatches: 0
       }
     }
 
@@ -264,7 +322,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       const { stdout } = await execFileAsync('grep', ['-rn', '-i', '--', query, '.'], {
         cwd: repoPath,
         encoding: 'utf-8',
-        maxBuffer: 5 * 1024 * 1024, // 5MB
+        maxBuffer: 5 * 1024 * 1024 // 5MB
       })
 
       const lines = stdout.trim().split('\n').filter(Boolean)
@@ -296,30 +354,36 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
         return {
           content: `No matches found for "${query}" in repo "${repo}"`,
           filesSearched: [],
-          totalMatches: 0,
+          totalMatches: 0
         }
       }
       return {
         content: `Error searching repo: ${err.message}`,
         filesSearched: [],
-        totalMatches: 0,
+        totalMatches: 0
       }
     }
   })
 
   // --- AI-powered chat ---
-  safeHandle('workbench:chat', async (_e, input: {
-    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-    formContext: { title: string; repo: string; spec: string }
-  }) => {
-    const prompt = buildChatPrompt(input.messages, input.formContext)
-    try {
-      const result = await runClaudePrint(prompt)
-      return { content: result || 'No response received.' }
-    } catch (err) {
-      return { content: `Error: ${(err as Error).message}` }
+  safeHandle(
+    'workbench:chat',
+    async (
+      _e,
+      input: {
+        messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+        formContext: { title: string; repo: string; spec: string }
+      }
+    ) => {
+      const prompt = buildChatPrompt(input.messages, input.formContext)
+      try {
+        const result = await runClaudePrint(prompt)
+        return { content: result || 'No response received.' }
+      } catch (err) {
+        return { content: `Error: ${(err as Error).message}` }
+      }
     }
-  })
+  )
 
   // --- AI-powered streaming chat ---
   safeHandle('workbench:chatStream', async (e, input) => {
@@ -332,23 +396,31 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       (chunk) => {
         try {
           e.sender.send('workbench:chatChunk', { streamId, chunk, done: false })
-        } catch { /* window may have closed */ }
+        } catch {
+          /* window may have closed */
+        }
       },
       streamId
-    ).then((fullText) => {
-      try {
-        e.sender.send('workbench:chatChunk', { streamId, chunk: '', done: true, fullText })
-      } catch { /* window may have closed */ }
-    }).catch((err) => {
-      try {
-        e.sender.send('workbench:chatChunk', {
-          streamId,
-          chunk: '',
-          done: true,
-          error: (err as Error).message,
-        })
-      } catch { /* window may have closed */ }
-    })
+    )
+      .then((fullText) => {
+        try {
+          e.sender.send('workbench:chatChunk', { streamId, chunk: '', done: true, fullText })
+        } catch {
+          /* window may have closed */
+        }
+      })
+      .catch((err) => {
+        try {
+          e.sender.send('workbench:chatChunk', {
+            streamId,
+            chunk: '',
+            done: true,
+            error: (err as Error).message
+          })
+        } catch {
+          /* window may have closed */
+        }
+      })
 
     return { streamId }
   })
@@ -365,19 +437,25 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
   })
 
   // --- AI-powered spec generation ---
-  safeHandle('workbench:generateSpec', async (_e, input: { title: string; repo: string; templateHint: string }) => {
-    const prompt = buildSpecGenerationPrompt(input)
-    try {
-      const result = await runClaudePrint(prompt)
-      return { spec: result || `# ${input.title}\n\n(No spec generated)` }
-    } catch (err) {
-      return { spec: `# ${input.title}\n\nError generating spec: ${(err as Error).message}` }
+  safeHandle(
+    'workbench:generateSpec',
+    async (_e, input: { title: string; repo: string; templateHint: string }) => {
+      const prompt = buildSpecGenerationPrompt(input)
+      try {
+        const result = await runClaudePrint(prompt)
+        return { spec: result || `# ${input.title}\n\n(No spec generated)` }
+      } catch (err) {
+        return { spec: `# ${input.title}\n\nError generating spec: ${(err as Error).message}` }
+      }
     }
-  })
+  )
 
   // --- AI-powered spec checks ---
-  safeHandle('workbench:checkSpec', async (_e, input: { title: string; repo: string; spec: string }) => {
-    const summary = await checkSpecSemantic(input)
-    return summary.results // Returns { clarity, scope, filesExist } — same shape as before
-  })
+  safeHandle(
+    'workbench:checkSpec',
+    async (_e, input: { title: string; repo: string; spec: string }) => {
+      const summary = await checkSpecSemantic(input)
+      return summary.results // Returns { clarity, scope, filesExist } — same shape as before
+    }
+  )
 }

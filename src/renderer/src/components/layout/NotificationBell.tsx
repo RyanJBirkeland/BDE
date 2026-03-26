@@ -1,14 +1,24 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bell, CheckCircle2, XCircle, GitMerge, GitPullRequestClosed, AlertTriangle } from 'lucide-react'
+import {
+  Bell,
+  CheckCircle2,
+  XCircle,
+  GitMerge,
+  GitPullRequestClosed,
+  AlertTriangle
+} from 'lucide-react'
 import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
 import { timeAgo } from '../../lib/format'
 
-const NOTIFICATION_ICONS: Record<NotificationType, React.FC<{ size: number; className?: string }>> = {
+const NOTIFICATION_ICONS: Record<
+  NotificationType,
+  React.FC<{ size: number; className?: string }>
+> = {
   agent_completed: CheckCircle2,
   agent_failed: XCircle,
   pr_merged: GitMerge,
   pr_closed: GitPullRequestClosed,
-  merge_conflict: AlertTriangle,
+  merge_conflict: AlertTriangle
 }
 
 const NOTIFICATION_COLORS: Record<NotificationType, string> = {
@@ -16,7 +26,7 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   agent_failed: 'notification-item--error',
   pr_merged: 'notification-item--success',
   pr_closed: 'notification-item--muted',
-  merge_conflict: 'notification-item--warning',
+  merge_conflict: 'notification-item--warning'
 }
 
 export function NotificationBell(): React.JSX.Element {
@@ -77,7 +87,10 @@ export function NotificationBell(): React.JSX.Element {
       >
         <Bell size={14} />
         {unreadCount > 0 && (
-          <span className="notification-bell__badge" aria-label={`${unreadCount} unread notifications`}>
+          <span
+            className="notification-bell__badge"
+            aria-label={`${unreadCount} unread notifications`}
+          >
             {unreadCount}
           </span>
         )}
@@ -88,10 +101,7 @@ export function NotificationBell(): React.JSX.Element {
           <div className="notification-bell__header">
             <h3 className="notification-bell__title">Notifications</h3>
             {unreadCount > 0 && (
-              <button
-                className="bde-btn bde-btn--ghost bde-btn--sm"
-                onClick={handleMarkAllAsRead}
-              >
+              <button className="bde-btn bde-btn--ghost bde-btn--sm" onClick={handleMarkAllAsRead}>
                 Mark all as read
               </button>
             )}
@@ -122,7 +132,9 @@ export function NotificationBell(): React.JSX.Element {
                     <div className="notification-item__content">
                       <div className="notification-item__title">{notification.title}</div>
                       <div className="notification-item__message">{notification.message}</div>
-                      <div className="notification-item__time">{timeAgo(notification.timestamp)}</div>
+                      <div className="notification-item__time">
+                        {timeAgo(notification.timestamp)}
+                      </div>
                     </div>
                     {!notification.read && <div className="notification-item__unread-dot" />}
                   </button>

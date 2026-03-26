@@ -14,38 +14,38 @@ import type { ActiveAgent } from '../types'
 // ---------------------------------------------------------------------------
 
 vi.mock('../fast-fail', () => ({
-  classifyExit: vi.fn().mockReturnValue('normal-exit'),
+  classifyExit: vi.fn().mockReturnValue('normal-exit')
 }))
 
 vi.mock('../worktree', () => ({
-  cleanupWorktree: vi.fn(),
+  cleanupWorktree: vi.fn()
 }))
 
 vi.mock('../sdk-adapter', () => ({
-  spawnAgent: vi.fn(),
+  spawnAgent: vi.fn()
 }))
 
 vi.mock('../completion', () => ({
   resolveSuccess: vi.fn().mockResolvedValue(undefined),
-  resolveFailure: vi.fn().mockResolvedValue(false),
+  resolveFailure: vi.fn().mockResolvedValue(false)
 }))
 
 vi.mock('../../data/sprint-queries', () => ({
-  updateTask: vi.fn().mockResolvedValue(undefined),
+  updateTask: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../../paths', () => ({
-  getGhRepo: vi.fn().mockReturnValue('owner/repo'),
+  getGhRepo: vi.fn().mockReturnValue('owner/repo')
 }))
 
 vi.mock('../../agent-history', () => ({
   createAgentRecord: vi.fn().mockResolvedValue(undefined),
-  updateAgentMeta: vi.fn().mockResolvedValue(undefined),
+  updateAgentMeta: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../../agent-event-mapper', () => ({
   mapRawMessage: vi.fn().mockReturnValue([]),
-  emitAgentEvent: vi.fn(),
+  emitAgentEvent: vi.fn()
 }))
 
 // ---------------------------------------------------------------------------
@@ -94,7 +94,7 @@ describe('runAgent — playground prompt injection', () => {
     getTasksWithDependencies: vi.fn().mockResolvedValue([]),
     getOrphanedTasks: vi.fn(),
     getActiveTaskCount: vi.fn().mockResolvedValue(0),
-    claimTask: vi.fn(),
+    claimTask: vi.fn()
   }
 
   const createDeps = (): RunAgentDeps => ({
@@ -103,10 +103,10 @@ describe('runAgent — playground prompt injection', () => {
     logger: {
       info: vi.fn(),
       warn: vi.fn(),
-      error: vi.fn(),
+      error: vi.fn()
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
-    repo: mockRepo,
+    repo: mockRepo
   })
 
   beforeEach(async () => {
@@ -123,7 +123,7 @@ describe('runAgent — playground prompt injection', () => {
     const messages = {
       async *[Symbol.asyncIterator]() {
         yield { exit_code: 0, cost_usd: 0.01, tokens_in: 100, tokens_out: 50 }
-      },
+      }
     }
     spawnAgentMock.mockImplementation(async (opts: { prompt: string }) => {
       capturedPrompt = opts.prompt
@@ -141,7 +141,7 @@ describe('runAgent — playground prompt injection', () => {
       repo: 'BDE',
       retry_count: 0,
       fast_fail_count: 0,
-      playground_enabled: true,
+      playground_enabled: true
     }
 
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', createDeps())
@@ -163,7 +163,7 @@ describe('runAgent — playground prompt injection', () => {
       repo: 'BDE',
       retry_count: 0,
       fast_fail_count: 0,
-      playground_enabled: false,
+      playground_enabled: false
     }
 
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', createDeps())
@@ -182,7 +182,7 @@ describe('runAgent — playground prompt injection', () => {
       spec: null,
       repo: 'BDE',
       retry_count: 0,
-      fast_fail_count: 0,
+      fast_fail_count: 0
       // playground_enabled not set
     }
 
@@ -203,7 +203,7 @@ describe('runAgent — playground prompt injection', () => {
       repo: 'BDE',
       retry_count: 0,
       fast_fail_count: 0,
-      playground_enabled: true,
+      playground_enabled: true
     }
 
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', createDeps())
@@ -223,7 +223,7 @@ describe('runAgent — playground prompt injection', () => {
       repo: 'BDE',
       retry_count: 0,
       fast_fail_count: 0,
-      playground_enabled: true,
+      playground_enabled: true
     }
 
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', createDeps())
@@ -244,15 +244,18 @@ describe('runAgent — playground prompt injection', () => {
       repo: 'BDE',
       retry_count: 0,
       fast_fail_count: 0,
-      playground_enabled: true,
+      playground_enabled: true
     }
 
     await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', deps)
 
-    expect(mockRepo.updateTask).toHaveBeenCalledWith('task-pg-6', expect.objectContaining({
-      status: 'error',
-      notes: 'Empty prompt',
-    }))
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
+      'task-pg-6',
+      expect.objectContaining({
+        status: 'error',
+        notes: 'Empty prompt'
+      })
+    )
     // spawnAgent should NOT have been called
     expect(spawnAgentMock).not.toHaveBeenCalled()
   })
@@ -272,7 +275,7 @@ describe('RunAgentTask interface', () => {
       repo: 'BDE',
       retry_count: 0,
       fast_fail_count: 0,
-      playground_enabled: true,
+      playground_enabled: true
     }
     expect(taskWithPlayground.playground_enabled).toBe(true)
 
@@ -283,7 +286,7 @@ describe('RunAgentTask interface', () => {
       spec: null,
       repo: 'BDE',
       retry_count: 0,
-      fast_fail_count: 0,
+      fast_fail_count: 0
     }
     expect(taskWithoutPlayground.playground_enabled).toBeUndefined()
   })

@@ -48,7 +48,7 @@ const EXTENSION_MAP: Record<string, string> = {
   kt: 'kotlin',
   sql: 'sql',
   graphql: 'graphql',
-  gql: 'graphql',
+  gql: 'graphql'
 }
 
 function detectLanguage(filePath: string): string {
@@ -122,8 +122,8 @@ export const useIDEStore = create<IDEState>((set) => ({
     set((s) => ({
       expandedDirs: {
         ...s.expandedDirs,
-        [dirPath]: !s.expandedDirs[dirPath],
-      },
+        [dirPath]: !s.expandedDirs[dirPath]
+      }
     }))
   },
 
@@ -140,11 +140,11 @@ export const useIDEStore = create<IDEState>((set) => ({
         filePath,
         displayName: getDisplayName(filePath),
         language: detectLanguage(filePath),
-        isDirty: false,
+        isDirty: false
       }
       return {
         openTabs: [...s.openTabs, tab],
-        activeTabId: tab.id,
+        activeTabId: tab.id
       }
     })
   },
@@ -177,7 +177,7 @@ export const useIDEStore = create<IDEState>((set) => ({
 
   setDirty: (tabId: string, isDirty: boolean): void => {
     set((s) => ({
-      openTabs: s.openTabs.map((t) => (t.id === tabId ? { ...t, isDirty } : t)),
+      openTabs: s.openTabs.map((t) => (t.id === tabId ? { ...t, isDirty } : t))
     }))
   },
 
@@ -203,7 +203,7 @@ export const useIDEStore = create<IDEState>((set) => ({
 
   setTerminalHeight: (height: number): void => {
     set({ terminalHeight: height })
-  },
+  }
 }))
 
 // ---------------------------------------------------------------------------
@@ -221,7 +221,7 @@ useIDEStore.subscribe((state) => {
       activeFilePath: state.openTabs.find((t) => t.id === state.activeTabId)?.filePath ?? null,
       sidebarCollapsed: state.sidebarCollapsed,
       terminalCollapsed: state.terminalCollapsed,
-      recentFolders: state.recentFolders,
+      recentFolders: state.recentFolders
     }
     window.api.settings.setJson('ide.state', toSave)
   }, 2000)

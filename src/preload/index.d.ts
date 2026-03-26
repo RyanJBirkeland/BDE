@@ -1,5 +1,11 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, PrListPayload, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask } from '../shared/types'
+import type {
+  AgentMeta,
+  PrListPayload,
+  SpawnLocalAgentArgs,
+  SpawnLocalAgentResult,
+  SprintTask
+} from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 import type { AgentEvent } from '../shared/types'
 
@@ -15,10 +21,14 @@ declare global {
     electron: ElectronAPI
     api: {
       getRepoPaths: () => Promise<IpcResult<'git:getRepoPaths'>>
-      openExternal: (...args: IpcArgs<'window:openExternal'>) => Promise<IpcResult<'window:openExternal'>>
+      openExternal: (
+        ...args: IpcArgs<'window:openExternal'>
+      ) => Promise<IpcResult<'window:openExternal'>>
       listMemoryFiles: () => Promise<IpcResult<'memory:listFiles'>>
       readMemoryFile: (...args: IpcArgs<'memory:readFile'>) => Promise<IpcResult<'memory:readFile'>>
-      writeMemoryFile: (...args: IpcArgs<'memory:writeFile'>) => Promise<IpcResult<'memory:writeFile'>>
+      writeMemoryFile: (
+        ...args: IpcArgs<'memory:writeFile'>
+      ) => Promise<IpcResult<'memory:writeFile'>>
       searchMemory: (...args: IpcArgs<'memory:search'>) => Promise<IpcResult<'memory:search'>>
       setTitle: (title: string) => void
 
@@ -38,17 +48,25 @@ declare global {
 
       // Agent runtime config
       getAgentConfig: () => Promise<IpcResult<'config:getAgentConfig'>>
-      saveAgentConfig: (...args: IpcArgs<'config:saveAgentConfig'>) => Promise<IpcResult<'config:saveAgentConfig'>>
+      saveAgentConfig: (
+        ...args: IpcArgs<'config:saveAgentConfig'>
+      ) => Promise<IpcResult<'config:saveAgentConfig'>>
 
       // Local agent process detection + spawning
       getAgentProcesses: () => Promise<IpcResult<'local:getAgentProcesses'>>
-      spawnLocalAgent: (...args: IpcArgs<'local:spawnClaudeAgent'>) => Promise<IpcResult<'local:spawnClaudeAgent'>>
+      spawnLocalAgent: (
+        ...args: IpcArgs<'local:spawnClaudeAgent'>
+      ) => Promise<IpcResult<'local:spawnClaudeAgent'>>
       sendToAgent: (pid: number, message: string) => Promise<IpcResult<'local:sendToAgent'>>
-      isAgentInteractive: (...args: IpcArgs<'local:isInteractive'>) => Promise<IpcResult<'local:isInteractive'>>
+      isAgentInteractive: (
+        ...args: IpcArgs<'local:isInteractive'>
+      ) => Promise<IpcResult<'local:isInteractive'>>
       steerAgent: (agentId: string, message: string) => Promise<IpcResult<'agent:steer'>>
       killLocalAgent: (...args: IpcArgs<'agent:killLocal'>) => Promise<IpcResult<'agent:killLocal'>>
       killAgent: (...args: IpcArgs<'agent:kill'>) => Promise<IpcResult<'agent:kill'>>
-      tailAgentLog: (...args: IpcArgs<'local:tailAgentLog'>) => Promise<IpcResult<'local:tailAgentLog'>>
+      tailAgentLog: (
+        ...args: IpcArgs<'local:tailAgentLog'>
+      ) => Promise<IpcResult<'local:tailAgentLog'>>
 
       // Agent event streaming (Phase 2)
       agentEvents: {
@@ -85,14 +103,19 @@ declare global {
       cost: {
         summary: () => Promise<IpcResult<'cost:summary'>>
         agentRuns: (limit?: number) => Promise<IpcResult<'cost:agentRuns'>>
-        getAgentHistory: (args?: { limit?: number; offset?: number }) => Promise<IpcResult<'cost:getAgentHistory'>>
+        getAgentHistory: (args?: {
+          limit?: number
+          offset?: number
+        }) => Promise<IpcResult<'cost:getAgentHistory'>>
       }
 
       // PR status polling
       pollPrStatuses: (...args: IpcArgs<'pr:pollStatuses'>) => Promise<IpcResult<'pr:pollStatuses'>>
 
       // Conflict file detection
-      checkConflictFiles: (...args: IpcArgs<'pr:checkConflictFiles'>) => Promise<IpcResult<'pr:checkConflictFiles'>>
+      checkConflictFiles: (
+        ...args: IpcArgs<'pr:checkConflictFiles'>
+      ) => Promise<IpcResult<'pr:checkConflictFiles'>>
 
       // Sprint tasks — SQLite-backed Kanban
       sprint: {
@@ -100,19 +123,33 @@ declare global {
         create: (...args: IpcArgs<'sprint:create'>) => Promise<IpcResult<'sprint:create'>>
         update: (...args: IpcArgs<'sprint:update'>) => Promise<IpcResult<'sprint:update'>>
         readLog: (...args: IpcArgs<'sprint:readLog'>) => Promise<IpcResult<'sprint:readLog'>>
-        readSpecFile: (...args: IpcArgs<'sprint:readSpecFile'>) => Promise<IpcResult<'sprint:readSpecFile'>>
-        generatePrompt: (...args: IpcArgs<'sprint:generatePrompt'>) => Promise<IpcResult<'sprint:generatePrompt'>>
+        readSpecFile: (
+          ...args: IpcArgs<'sprint:readSpecFile'>
+        ) => Promise<IpcResult<'sprint:readSpecFile'>>
+        generatePrompt: (
+          ...args: IpcArgs<'sprint:generatePrompt'>
+        ) => Promise<IpcResult<'sprint:generatePrompt'>>
         delete: (...args: IpcArgs<'sprint:delete'>) => Promise<IpcResult<'sprint:delete'>>
         healthCheck: () => Promise<IpcResult<'sprint:healthCheck'>>
         claimTask: (taskId: string) => Promise<IpcResult<'sprint:claimTask'>>
-        validateDependencies: (...args: IpcArgs<'sprint:validateDependencies'>) => Promise<IpcResult<'sprint:validateDependencies'>>
-        unblockTask: (...args: IpcArgs<'sprint:unblockTask'>) => Promise<IpcResult<'sprint:unblockTask'>>
+        validateDependencies: (
+          ...args: IpcArgs<'sprint:validateDependencies'>
+        ) => Promise<IpcResult<'sprint:validateDependencies'>>
+        unblockTask: (
+          ...args: IpcArgs<'sprint:unblockTask'>
+        ) => Promise<IpcResult<'sprint:unblockTask'>>
       }
 
       // File attachments
-      openFileDialog: (...args: IpcArgs<'fs:openFileDialog'>) => Promise<IpcResult<'fs:openFileDialog'>>
-      readFileAsBase64: (...args: IpcArgs<'fs:readFileAsBase64'>) => Promise<IpcResult<'fs:readFileAsBase64'>>
-      readFileAsText: (...args: IpcArgs<'fs:readFileAsText'>) => Promise<IpcResult<'fs:readFileAsText'>>
+      openFileDialog: (
+        ...args: IpcArgs<'fs:openFileDialog'>
+      ) => Promise<IpcResult<'fs:openFileDialog'>>
+      readFileAsBase64: (
+        ...args: IpcArgs<'fs:readFileAsBase64'>
+      ) => Promise<IpcResult<'fs:readFileAsBase64'>>
+      readFileAsText: (
+        ...args: IpcArgs<'fs:readFileAsText'>
+      ) => Promise<IpcResult<'fs:readFileAsText'>>
       openDirectoryDialog: () => Promise<IpcResult<'fs:openDirectoryDialog'>>
       readDir: (...args: IpcArgs<'fs:readDir'>) => Promise<IpcResult<'fs:readDir'>>
       readFile: (...args: IpcArgs<'fs:readFile'>) => Promise<IpcResult<'fs:readFile'>>
@@ -160,13 +197,33 @@ declare global {
       // Task Workbench
       workbench: {
         chat: (...args: IpcArgs<'workbench:chat'>) => Promise<IpcResult<'workbench:chat'>>
-        chatStream: (...args: IpcArgs<'workbench:chatStream'>) => Promise<IpcResult<'workbench:chatStream'>>
-        cancelStream: (...args: IpcArgs<'workbench:cancelStream'>) => Promise<IpcResult<'workbench:cancelStream'>>
-        onChatChunk: (cb: (data: { streamId: string; chunk: string; done: boolean; fullText?: string; error?: string }) => void) => () => void
-        generateSpec: (...args: IpcArgs<'workbench:generateSpec'>) => Promise<IpcResult<'workbench:generateSpec'>>
-        checkSpec: (...args: IpcArgs<'workbench:checkSpec'>) => Promise<IpcResult<'workbench:checkSpec'>>
-        checkOperational: (...args: IpcArgs<'workbench:checkOperational'>) => Promise<IpcResult<'workbench:checkOperational'>>
-        researchRepo: (...args: IpcArgs<'workbench:researchRepo'>) => Promise<IpcResult<'workbench:researchRepo'>>
+        chatStream: (
+          ...args: IpcArgs<'workbench:chatStream'>
+        ) => Promise<IpcResult<'workbench:chatStream'>>
+        cancelStream: (
+          ...args: IpcArgs<'workbench:cancelStream'>
+        ) => Promise<IpcResult<'workbench:cancelStream'>>
+        onChatChunk: (
+          cb: (data: {
+            streamId: string
+            chunk: string
+            done: boolean
+            fullText?: string
+            error?: string
+          }) => void
+        ) => () => void
+        generateSpec: (
+          ...args: IpcArgs<'workbench:generateSpec'>
+        ) => Promise<IpcResult<'workbench:generateSpec'>>
+        checkSpec: (
+          ...args: IpcArgs<'workbench:checkSpec'>
+        ) => Promise<IpcResult<'workbench:checkSpec'>>
+        checkOperational: (
+          ...args: IpcArgs<'workbench:checkOperational'>
+        ) => Promise<IpcResult<'workbench:checkOperational'>>
+        researchRepo: (
+          ...args: IpcArgs<'workbench:researchRepo'>
+        ) => Promise<IpcResult<'workbench:researchRepo'>>
       }
 
       // Terminal PTY

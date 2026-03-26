@@ -37,7 +37,7 @@ export const TaskCard = memo(function TaskCard({
   onViewSpec,
   onViewOutput,
   onMarkDone,
-  onStop,
+  onStop
 }: TaskCardProps) {
   const latestEvent = useSprintEvents((s) => s.latestEvents[task.id] ?? null)
   const allTasks = useSprintTasks((s) => s.tasks)
@@ -48,7 +48,7 @@ export const TaskCard = memo(function TaskCard({
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
-    data: { task },
+    data: { task }
   })
 
   // Override dnd-kit's default aria-roledescription with a more descriptive label
@@ -57,7 +57,7 @@ export const TaskCard = memo(function TaskCard({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    '--stagger-index': index,
+    '--stagger-index': index
   } as React.CSSProperties
 
   const isHighPriority = task.priority <= 2
@@ -67,7 +67,7 @@ export const TaskCard = memo(function TaskCard({
     isDragging && 'task-card--dragging',
     isHighPriority && 'task-card--high-priority',
     task.status === 'blocked' && 'task-card--blocked',
-    isSelected && 'task-card--selected',
+    isSelected && 'task-card--selected'
   ]
     .filter(Boolean)
     .join(' ')
@@ -86,7 +86,13 @@ export const TaskCard = memo(function TaskCard({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={className} {...sortableAttributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={className}
+      {...sortableAttributes}
+      {...listeners}
+    >
       {hasAnySelection && (
         <input
           type="checkbox"
@@ -123,7 +129,11 @@ export const TaskCard = memo(function TaskCard({
         </span>
       )}
       <div className="task-card__badges">
-        {task.needs_review && (<span className="task-card__needs-review" title="Needs review"><AlertTriangle size={14} /></span>)}
+        {task.needs_review && (
+          <span className="task-card__needs-review" title="Needs review">
+            <AlertTriangle size={14} />
+          </span>
+        )}
         {isHighPriority && (
           <Badge variant={task.priority <= 1 ? 'danger' : 'warning'} size="sm">
             P{task.priority}
@@ -151,11 +161,11 @@ export const TaskCard = memo(function TaskCard({
           </a>
         )}
         {task.pr_url && task.pr_mergeable_state === 'dirty' && !prMerged && (
-          <Badge variant="danger" size="sm">Conflict</Badge>
+          <Badge variant="danger" size="sm">
+            Conflict
+          </Badge>
         )}
-        {task.status === 'blocked' && (
-          <Badge variant="warning">Blocked</Badge>
-        )}
+        {task.status === 'blocked' && <Badge variant="warning">Blocked</Badge>}
       </div>
 
       {task.status === TASK_STATUS.ACTIVE && (

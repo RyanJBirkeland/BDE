@@ -18,7 +18,7 @@ const LANG_MAP: Record<string, string> = {
   html: 'html',
   json: 'json',
   md: 'markdown',
-  txt: '',
+  txt: ''
 }
 
 function getExtension(filename: string): string {
@@ -35,9 +35,7 @@ function getLanguage(filename: string): string {
 }
 
 /** Open native file dialog, read selected files, return Attachment objects. */
-export async function pickAndReadFiles(
-  existing: Attachment[]
-): Promise<Attachment[]> {
+export async function pickAndReadFiles(existing: Attachment[]): Promise<Attachment[]> {
   const remaining = MAX_ATTACHMENTS - existing.length
   if (remaining <= 0) return []
 
@@ -57,7 +55,7 @@ export async function pickAndReadFiles(
         type: 'image',
         data,
         mimeType,
-        preview: `data:${mimeType};base64,${data}`,
+        preview: `data:${mimeType};base64,${data}`
       })
     } else {
       const { content } = await window.api.readFileAsText(filePath)
@@ -65,7 +63,7 @@ export async function pickAndReadFiles(
         path: filePath,
         name,
         type: 'text',
-        content,
+        content
       })
     }
   }
@@ -77,10 +75,7 @@ export async function pickAndReadFiles(
  * Build a message string for local agents (stdin).
  * Text files prepended as fenced code blocks, images appended as base64 markdown.
  */
-export function buildLocalAgentMessage(
-  text: string,
-  attachments: Attachment[]
-): string {
+export function buildLocalAgentMessage(text: string, attachments: Attachment[]): string {
   const parts: string[] = []
 
   for (const att of attachments) {
@@ -113,7 +108,7 @@ export function buildGatewayPayload(
     return {
       sessionKey,
       message: text,
-      idempotencyKey: crypto.randomUUID(),
+      idempotencyKey: crypto.randomUUID()
     }
   }
 
@@ -139,8 +134,8 @@ export function buildGatewayPayload(
         source: {
           type: 'base64',
           media_type: att.mimeType,
-          data: att.data,
-        },
+          data: att.data
+        }
       })
     }
   }
@@ -148,7 +143,7 @@ export function buildGatewayPayload(
   return {
     sessionKey,
     content,
-    idempotencyKey: crypto.randomUUID(),
+    idempotencyKey: crypto.randomUUID()
   }
 }
 
@@ -156,10 +151,7 @@ export function buildGatewayPayload(
  * Build a display-friendly version of message content for optimistic rendering.
  * Images become inline markdown refs, text files become code blocks.
  */
-export function buildDisplayContent(
-  text: string,
-  attachments: Attachment[]
-): string {
+export function buildDisplayContent(text: string, attachments: Attachment[]): string {
   const parts: string[] = []
 
   for (const att of attachments) {

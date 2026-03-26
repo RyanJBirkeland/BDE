@@ -14,7 +14,10 @@ export function PanelRenderer({ node }: PanelRendererProps): React.ReactElement 
   }
 
   return (
-    <Group orientation={node.direction} style={{ width: '100%', height: '100%', flex: 1, minHeight: 0 }}>
+    <Group
+      orientation={node.direction}
+      style={{ width: '100%', height: '100%', flex: 1, minHeight: 0 }}
+    >
       <Panel defaultSize={node.sizes[0]} minSize={10}>
         <PanelRenderer node={node.children[0]} />
       </Panel>

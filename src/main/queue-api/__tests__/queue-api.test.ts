@@ -25,7 +25,7 @@ vi.mock('../../data/sprint-queries', () => ({
   releaseTask: (...args: unknown[]) => mockReleaseTask(...args),
   getTasksWithDependencies: (...args: unknown[]) => mockGetTasksWithDependencies(...args),
   deleteTask: (...args: unknown[]) => mockDeleteTask(...args),
-  getActiveTaskCount: (...args: unknown[]) => mockGetActiveTaskCount(...args),
+  getActiveTaskCount: (...args: unknown[]) => mockGetActiveTaskCount(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ const mockReadLog = vi.fn()
 vi.mock('../../agent-history', () => ({
   listAgentRunsByTaskId: (...args: unknown[]) => mockListAgentRunsByTaskId(...args),
   hasAgent: (...args: unknown[]) => mockHasAgent(...args),
-  readLog: (...args: unknown[]) => mockReadLog(...args),
+  readLog: (...args: unknown[]) => mockReadLog(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -49,7 +49,7 @@ const mockQueryEvents = vi.fn()
 
 vi.mock('../../data/event-queries', () => ({
   insertEventBatch: (...args: unknown[]) => mockInsertEventBatch(...args),
-  queryEvents: (...args: unknown[]) => mockQueryEvents(...args),
+  queryEvents: (...args: unknown[]) => mockQueryEvents(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -58,13 +58,13 @@ vi.mock('../../data/event-queries', () => ({
 const mockGetDb = vi.fn().mockReturnValue({})
 
 vi.mock('../../db', () => ({
-  getDb: (...args: unknown[]) => mockGetDb(...args),
+  getDb: (...args: unknown[]) => mockGetDb(...args)
 }))
 
 // Mock settings — no API key by default (auth disabled)
 const mockGetSetting = vi.fn().mockReturnValue(null)
 vi.mock('../../settings', () => ({
-  getSetting: (...args: unknown[]) => mockGetSetting(...args),
+  getSetting: (...args: unknown[]) => mockGetSetting(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ vi.mock('../../settings', () => ({
 // ---------------------------------------------------------------------------
 const mockCheckSpecSemantic = vi.fn()
 vi.mock('../../spec-semantic-check', () => ({
-  checkSpecSemantic: (...args: unknown[]) => mockCheckSpecSemantic(...args),
+  checkSpecSemantic: (...args: unknown[]) => mockCheckSpecSemantic(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ vi.mock('../../spec-semantic-check', () => ({
 // ---------------------------------------------------------------------------
 const mockResolveDependents = vi.fn().mockResolvedValue(undefined)
 vi.mock('../../agent-manager/resolve-dependents', () => ({
-  resolveDependents: (...args: unknown[]) => mockResolveDependents(...args),
+  resolveDependents: (...args: unknown[]) => mockResolveDependents(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -104,8 +104,8 @@ function request(
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...headers,
-      },
+        ...headers
+      }
     }
 
     const req = http.request(opts, (res) => {
@@ -165,10 +165,10 @@ beforeEach(() => {
     results: {
       clarity: { status: 'pass', message: 'Clear' },
       scope: { status: 'pass', message: 'Good' },
-      filesExist: { status: 'pass', message: 'OK' },
+      filesExist: { status: 'pass', message: 'OK' }
     },
     failMessages: [],
-    warnMessages: [],
+    warnMessages: []
   }) // default semantic pass
 })
 
@@ -186,7 +186,7 @@ describe('Queue API', () => {
         done: 10,
         failed: 0,
         cancelled: 1,
-        error: 0,
+        error: 0
       })
 
       const { status, body } = await request('GET', '/queue/health')
@@ -201,8 +201,8 @@ describe('Queue API', () => {
           done: 10,
           failed: 0,
           cancelled: 1,
-          error: 0,
-        },
+          error: 0
+        }
       })
     })
   })
@@ -364,9 +364,7 @@ describe('Queue API', () => {
         { id: 'task-a', depends_on: null, status: 'done' }
       ])
       // checkTaskDependencies calls listTasks() for auto-blocking check
-      mockListTasks.mockResolvedValue([
-        { id: 'task-a', depends_on: null, status: 'done' }
-      ])
+      mockListTasks.mockResolvedValue([{ id: 'task-a', depends_on: null, status: 'done' }])
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
@@ -391,7 +389,7 @@ describe('Queue API', () => {
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/status', {
         status: 'done',
-        notes: 'Completed successfully',
+        notes: 'Completed successfully'
       })
       expect(status).toBe(200)
       expect(body).toEqual(updated)
@@ -399,7 +397,7 @@ describe('Queue API', () => {
 
     it('rejects invalid status', async () => {
       const { status } = await request('PATCH', '/queue/tasks/abc/status', {
-        status: 'invented',
+        status: 'invented'
       })
       expect(status).toBe(400)
     })
@@ -409,8 +407,8 @@ describe('Queue API', () => {
 
       await request('PATCH', '/queue/tasks/abc/status', {
         status: 'done',
-        id: 'hacked',        // not in STATUS_UPDATE_FIELDS
-        created_at: 'nope',  // not in STATUS_UPDATE_FIELDS
+        id: 'hacked', // not in STATUS_UPDATE_FIELDS
+        created_at: 'nope' // not in STATUS_UPDATE_FIELDS
       })
 
       expect(mockUpdateTask).toHaveBeenCalledWith('abc', { status: 'done' })
@@ -420,7 +418,7 @@ describe('Queue API', () => {
       mockUpdateTask.mockResolvedValue(null)
 
       const { status } = await request('PATCH', '/queue/tasks/missing/status', {
-        status: 'done',
+        status: 'done'
       })
       expect(status).toBe(404)
     })
@@ -435,7 +433,12 @@ describe('Queue API', () => {
       // Give the async post-response work time to complete
       await new Promise((r) => setTimeout(r, 50))
       expect(mockResolveDependents).toHaveBeenCalledWith(
-        'abc', 'done', expect.anything(), expect.anything(), expect.anything(), console
+        'abc',
+        'done',
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        console
       )
     })
 
@@ -445,12 +448,19 @@ describe('Queue API', () => {
         mockUpdateTask.mockResolvedValue({ id: 'abc', status: terminalStatus })
         mockGetTasksWithDependencies.mockResolvedValue([])
 
-        const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: terminalStatus })
+        const { status } = await request('PATCH', '/queue/tasks/abc/status', {
+          status: terminalStatus
+        })
         expect(status).toBe(200)
 
         await new Promise((r) => setTimeout(r, 50))
         expect(mockResolveDependents).toHaveBeenCalledWith(
-          'abc', terminalStatus, expect.anything(), expect.anything(), expect.anything(), console
+          'abc',
+          terminalStatus,
+          expect.anything(),
+          expect.anything(),
+          expect.anything(),
+          console
         )
       }
     })
@@ -472,7 +482,7 @@ describe('Queue API', () => {
       mockClaimTask.mockResolvedValue(claimed)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
-        executorId: 'runner-1',
+        executorId: 'runner-1'
       })
       expect(status).toBe(200)
       expect(body).toEqual({ id: 'abc', status: 'active', claimedBy: 'runner-1' })
@@ -483,7 +493,7 @@ describe('Queue API', () => {
       mockClaimTask.mockResolvedValue(null)
 
       const { status } = await request('POST', '/queue/tasks/abc/claim', {
-        executorId: 'runner-1',
+        executorId: 'runner-1'
       })
       expect(status).toBe(409)
     })
@@ -497,7 +507,7 @@ describe('Queue API', () => {
       mockGetActiveTaskCount.mockResolvedValue(5)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
-        executorId: 'runner-1',
+        executorId: 'runner-1'
       })
       expect(status).toBe(409)
       expect((body as { error: string }).error).toMatch(/WIP limit reached/)
@@ -510,7 +520,7 @@ describe('Queue API', () => {
       mockClaimTask.mockResolvedValue(claimed)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
-        executorId: 'runner-1',
+        executorId: 'runner-1'
       })
       expect(status).toBe(200)
       expect(body).toEqual({ id: 'abc', status: 'active', claimedBy: 'runner-1' })
@@ -523,7 +533,7 @@ describe('Queue API', () => {
       mockReleaseTask.mockResolvedValue(released)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {
-        claimed_by: 'runner-1',
+        claimed_by: 'runner-1'
       })
       expect(status).toBe(200)
       expect(body).toEqual({ id: 'abc', status: 'queued', claimedBy: null })
@@ -540,7 +550,7 @@ describe('Queue API', () => {
       mockReleaseTask.mockResolvedValue(null)
 
       const { status } = await request('POST', '/queue/tasks/abc/release', {
-        claimed_by: 'runner-1',
+        claimed_by: 'runner-1'
       })
       expect(status).toBe(409)
     })
@@ -735,7 +745,7 @@ describe('Queue API', () => {
       mockGetSetting.mockReturnValue('secret-key')
 
       const { status } = await request('GET', '/queue/health', undefined, {
-        Authorization: 'Bearer wrong-key',
+        Authorization: 'Bearer wrong-key'
       })
       expect(status).toBe(403)
     })
@@ -743,11 +753,17 @@ describe('Queue API', () => {
     it('allows requests with correct bearer token', async () => {
       mockGetSetting.mockReturnValue('secret-key')
       mockGetQueueStats.mockResolvedValue({
-        backlog: 0, queued: 0, active: 0, done: 0, failed: 0, cancelled: 0, error: 0,
+        backlog: 0,
+        queued: 0,
+        active: 0,
+        done: 0,
+        failed: 0,
+        cancelled: 0,
+        error: 0
       })
 
       const { status } = await request('GET', '/queue/health', undefined, {
-        Authorization: 'Bearer secret-key',
+        Authorization: 'Bearer secret-key'
       })
       expect(status).toBe(200)
     })
@@ -755,7 +771,13 @@ describe('Queue API', () => {
     it('allows all requests when no API key is configured', async () => {
       mockGetSetting.mockReturnValue(null)
       mockGetQueueStats.mockResolvedValue({
-        backlog: 0, queued: 0, active: 0, done: 0, failed: 0, cancelled: 0, error: 0,
+        backlog: 0,
+        queued: 0,
+        active: 0,
+        done: 0,
+        failed: 0,
+        cancelled: 0,
+        error: 0
       })
 
       const { status } = await request('GET', '/queue/health')
@@ -785,8 +807,8 @@ describe('Queue API', () => {
           costUsd: 0.45,
           tokensIn: 12000,
           tokensOut: 3400,
-          source: 'bde',
-        },
+          source: 'bde'
+        }
       ])
       const res = await request('GET', '/queue/agents')
       expect(res.status).toBe(200)
@@ -822,13 +844,13 @@ describe('Queue API', () => {
       mockReadLog.mockResolvedValueOnce({
         content: '',
         nextByte: 0,
-        totalBytes: 5000,
+        totalBytes: 5000
       })
       // Second call: actual read from tail offset
       mockReadLog.mockResolvedValueOnce({
         content: 'last 100 bytes of log...',
         nextByte: 5000,
-        totalBytes: 5000,
+        totalBytes: 5000
       })
       const res = await request('GET', '/queue/agents/run-1/log')
       expect(res.status).toBe(200)
@@ -842,7 +864,7 @@ describe('Queue API', () => {
       mockReadLog.mockResolvedValue({
         content: 'more log data',
         nextByte: 200,
-        totalBytes: 200,
+        totalBytes: 200
       })
       const res = await request('GET', '/queue/agents/run-1/log?fromByte=100')
       expect(res.status).toBe(200)
@@ -887,7 +909,7 @@ describe('Queue API', () => {
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'New task',
-        repo: 'my-repo',
+        repo: 'my-repo'
       })
       expect(status).toBe(500)
       expect((body as { error: string }).error).toMatch(/internal server error/i)
@@ -897,7 +919,7 @@ describe('Queue API', () => {
       mockClaimTask.mockRejectedValue(new Error('lock contention'))
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
-        executorId: 'runner-1',
+        executorId: 'runner-1'
       })
       expect(status).toBe(500)
       expect((body as { error: string }).error).toMatch(/internal server error/i)
@@ -907,7 +929,7 @@ describe('Queue API', () => {
       mockReleaseTask.mockRejectedValue(new Error('constraint violation'))
 
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {
-        claimed_by: 'runner-1',
+        claimed_by: 'runner-1'
       })
       expect(status).toBe(500)
       expect((body as { error: string }).error).toMatch(/internal server error/i)
@@ -919,8 +941,21 @@ describe('Queue API', () => {
       const events = [
         { type: 'agent:started', timestamp: '2026-01-01T00:00:00Z', model: 'claude-sonnet' },
         { type: 'agent:thinking', timestamp: '2026-01-01T00:00:01Z', tokenCount: 100 },
-        { type: 'agent:tool_call', timestamp: '2026-01-01T00:00:02Z', tool: 'Bash', summary: 'run cmd' },
-        { type: 'agent:completed', timestamp: '2026-01-01T00:01:00Z', exitCode: 0, costUsd: 0.1, tokensIn: 500, tokensOut: 200, durationMs: 60000 },
+        {
+          type: 'agent:tool_call',
+          timestamp: '2026-01-01T00:00:02Z',
+          tool: 'Bash',
+          summary: 'run cmd'
+        },
+        {
+          type: 'agent:completed',
+          timestamp: '2026-01-01T00:01:00Z',
+          exitCode: 0,
+          costUsd: 0.1,
+          tokensIn: 500,
+          tokensOut: 200,
+          durationMs: 60000
+        }
       ]
 
       const res = await request('POST', '/queue/tasks/task-123/output', { events })
@@ -928,7 +963,10 @@ describe('Queue API', () => {
 
       // insertEventBatch should be called with curated types only (not agent:thinking)
       expect(mockInsertEventBatch).toHaveBeenCalledTimes(1)
-      const [, batch] = mockInsertEventBatch.mock.calls[0] as [unknown, Array<{ eventType: string }>]
+      const [, batch] = mockInsertEventBatch.mock.calls[0] as [
+        unknown,
+        Array<{ eventType: string }>
+      ]
       const eventTypes = batch.map((e) => e.eventType)
       expect(eventTypes).toContain('agent:started')
       expect(eventTypes).toContain('agent:tool_call')
@@ -938,7 +976,7 @@ describe('Queue API', () => {
 
     it('uses agentId from body when provided', async () => {
       const events = [
-        { type: 'agent:started', timestamp: '2026-01-01T00:00:00Z', model: 'claude-sonnet' },
+        { type: 'agent:started', timestamp: '2026-01-01T00:00:00Z', model: 'claude-sonnet' }
       ]
 
       await request('POST', '/queue/tasks/task-123/output', { events, agentId: 'agent-abc' })
@@ -949,9 +987,7 @@ describe('Queue API', () => {
     })
 
     it('falls back to taskId when agentId is not provided', async () => {
-      const events = [
-        { type: 'agent:error', timestamp: '2026-01-01T00:00:00Z', message: 'oops' },
-      ]
+      const events = [{ type: 'agent:error', timestamp: '2026-01-01T00:00:00Z', message: 'oops' }]
 
       await request('POST', '/queue/tasks/task-xyz/output', { events })
 
@@ -961,16 +997,16 @@ describe('Queue API', () => {
     })
 
     it('does not fail the request when insertEventBatch throws', async () => {
-      mockInsertEventBatch.mockImplementation(() => { throw new Error('DB error') })
+      mockInsertEventBatch.mockImplementation(() => {
+        throw new Error('DB error')
+      })
       const events = [{ type: 'agent:started', timestamp: '2026-01-01T00:00:00Z', model: 'claude' }]
       const res = await request('POST', '/queue/tasks/task-123/output', { events })
       expect(res.status).toBe(200)
     })
 
     it('skips insertEventBatch when no curated events present', async () => {
-      const events = [
-        { type: 'agent:thinking', timestamp: '2026-01-01T00:00:00Z', tokenCount: 50 },
-      ]
+      const events = [{ type: 'agent:thinking', timestamp: '2026-01-01T00:00:00Z', tokenCount: 50 }]
       await request('POST', '/queue/tasks/task-123/output', { events })
       expect(mockInsertEventBatch).not.toHaveBeenCalled()
     })
@@ -980,10 +1016,22 @@ describe('Queue API', () => {
     it('returns events for a task', async () => {
       mockQueryEvents.mockReturnValue({
         events: [
-          { id: 1, agent_id: 'task-abc', event_type: 'agent:started', payload: '{}', timestamp: 1000 },
-          { id: 2, agent_id: 'task-abc', event_type: 'agent:completed', payload: '{}', timestamp: 2000 },
+          {
+            id: 1,
+            agent_id: 'task-abc',
+            event_type: 'agent:started',
+            payload: '{}',
+            timestamp: 1000
+          },
+          {
+            id: 2,
+            agent_id: 'task-abc',
+            event_type: 'agent:completed',
+            payload: '{}',
+            timestamp: 2000
+          }
         ],
-        hasMore: false,
+        hasMore: false
       })
 
       const res = await request('GET', '/queue/tasks/task-abc/events')
@@ -1037,8 +1085,16 @@ describe('Queue API', () => {
 
     it('returns hasMore=true when more events available', async () => {
       mockQueryEvents.mockReturnValue({
-        events: [{ id: 1, agent_id: 'task-abc', event_type: 'agent:started', payload: '{}', timestamp: 1000 }],
-        hasMore: true,
+        events: [
+          {
+            id: 1,
+            agent_id: 'task-abc',
+            event_type: 'agent:started',
+            payload: '{}',
+            timestamp: 1000
+          }
+        ],
+        hasMore: true
       })
       const res = await request('GET', '/queue/tasks/task-abc/events')
       const body = res.body as { hasMore: boolean }
@@ -1060,13 +1116,13 @@ describe('Queue API', () => {
         operations: [
           { op: 'update', id: 't1', patch: { title: 'Updated 1' } },
           { op: 'update', id: 't2', patch: { title: 'Updated 2' } },
-          { op: 'update', id: 't3', patch: { title: 'Updated 3' } },
-        ],
+          { op: 'update', id: 't3', patch: { title: 'Updated 3' } }
+        ]
       })
       expect(status).toBe(200)
       const b = body as { results: Array<{ id: string; op: string; ok: boolean }> }
       expect(b.results).toHaveLength(3)
-      expect(b.results.every(r => r.ok)).toBe(true)
+      expect(b.results.every((r) => r.ok)).toBe(true)
       expect(mockUpdateTask).toHaveBeenCalledTimes(3)
     })
 
@@ -1080,8 +1136,8 @@ describe('Queue API', () => {
         operations: [
           { op: 'update', id: 't1', patch: { title: 'Updated 1' } },
           { op: 'delete', id: 't3' },
-          { op: 'update', id: 't2', patch: { title: 'Updated 2' } },
-        ],
+          { op: 'update', id: 't2', patch: { title: 'Updated 2' } }
+        ]
       })
       expect(status).toBe(200)
       const b = body as { results: Array<{ id: string; op: string; ok: boolean }> }
@@ -1094,9 +1150,7 @@ describe('Queue API', () => {
 
     it('returns per-item error for invalid operation type', async () => {
       const { status, body } = await request('POST', '/queue/tasks/batch', {
-        operations: [
-          { op: 'merge', id: 't1' },
-        ],
+        operations: [{ op: 'merge', id: 't1' }]
       })
       expect(status).toBe(200)
       const b = body as { results: Array<{ id: string; ok: boolean; error?: string }> }
@@ -1107,9 +1161,7 @@ describe('Queue API', () => {
 
     it('returns per-item error for missing id', async () => {
       const { status, body } = await request('POST', '/queue/tasks/batch', {
-        operations: [
-          { op: 'update' },
-        ],
+        operations: [{ op: 'update' }]
       })
       expect(status).toBe(200)
       const b = body as { results: Array<{ id: string; ok: boolean; error?: string }> }
@@ -1122,7 +1174,7 @@ describe('Queue API', () => {
       const operations = Array.from({ length: 51 }, (_, i) => ({
         op: 'update',
         id: `t${i}`,
-        patch: { title: `Task ${i}` },
+        patch: { title: `Task ${i}` }
       }))
 
       const { status, body } = await request('POST', '/queue/tasks/batch', { operations })
@@ -1132,7 +1184,7 @@ describe('Queue API', () => {
 
     it('returns 400 for empty operations array', async () => {
       const { status, body } = await request('POST', '/queue/tasks/batch', {
-        operations: [],
+        operations: []
       })
       expect(status).toBe(400)
       expect((body as { error: string }).error).toMatch(/operations array is required/)
@@ -1150,7 +1202,7 @@ describe('Queue API', () => {
         const { status, body } = await request('POST', '/queue/tasks', {
           title: 'Test task',
           repo: 'bde',
-          status: 'queued',
+          status: 'queued'
         })
         expect(status).toBe(400)
         const b = body as { details: string[] }
@@ -1162,7 +1214,7 @@ describe('Queue API', () => {
           title: 'Test task',
           repo: 'bde',
           status: 'queued',
-          spec: '## A\n## B\nshort spec',
+          spec: '## A\n## B\nshort spec'
         })
         expect(status).toBe(400)
         const b = body as { details: string[] }
@@ -1170,13 +1222,19 @@ describe('Queue API', () => {
       })
 
       it('creates task with valid spec (50+ chars, 2+ headings)', async () => {
-        const created = { id: 'new-1', title: 'Test task', repo: 'bde', status: 'backlog', spec: validSpec }
+        const created = {
+          id: 'new-1',
+          title: 'Test task',
+          repo: 'bde',
+          status: 'backlog',
+          spec: validSpec
+        }
         mockCreateTask.mockResolvedValue(created)
 
         const { status } = await request('POST', '/queue/tasks', {
           title: 'Test task',
           repo: 'bde',
-          spec: validSpec,
+          spec: validSpec
         })
         expect(status).toBe(201)
       })
@@ -1187,7 +1245,7 @@ describe('Queue API', () => {
 
         const { status } = await request('POST', '/queue/tasks', {
           title: 'Test task',
-          repo: 'bde',
+          repo: 'bde'
         })
         expect(status).toBe(201)
       })
@@ -1200,11 +1258,11 @@ describe('Queue API', () => {
           title: 'Test',
           repo: 'bde',
           spec: 'too short',
-          status: 'backlog',
+          status: 'backlog'
         })
 
         const { status, body } = await request('PATCH', '/queue/tasks/abc/status', {
-          status: 'queued',
+          status: 'queued'
         })
         expect(status).toBe(400)
         const b = body as { error: string }
@@ -1214,11 +1272,9 @@ describe('Queue API', () => {
       it('allows queue transition with skipValidation=true on bad spec', async () => {
         mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'queued' })
 
-        const { status } = await request(
-          'PATCH',
-          '/queue/tasks/abc/status?skipValidation=true',
-          { status: 'queued' }
-        )
+        const { status } = await request('PATCH', '/queue/tasks/abc/status?skipValidation=true', {
+          status: 'queued'
+        })
         expect(status).toBe(200)
       })
 
@@ -1226,7 +1282,7 @@ describe('Queue API', () => {
         mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'active' })
 
         await request('PATCH', '/queue/tasks/abc/status', {
-          status: 'active',
+          status: 'active'
         })
 
         expect(mockCheckSpecSemantic).not.toHaveBeenCalled()
@@ -1238,7 +1294,7 @@ describe('Queue API', () => {
           title: 'Test',
           repo: 'bde',
           spec: validSpec,
-          status: 'backlog',
+          status: 'backlog'
         })
         mockCheckSpecSemantic.mockResolvedValue({
           passed: true,
@@ -1246,12 +1302,12 @@ describe('Queue API', () => {
           hasWarns: false,
           results: {},
           failMessages: [],
-          warnMessages: [],
+          warnMessages: []
         })
         mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'queued' })
 
         const { status } = await request('PATCH', '/queue/tasks/abc/status', {
-          status: 'queued',
+          status: 'queued'
         })
         expect(status).toBe(200)
       })
@@ -1262,7 +1318,7 @@ describe('Queue API', () => {
           title: 'Test',
           repo: 'bde',
           spec: validSpec,
-          status: 'backlog',
+          status: 'backlog'
         })
         mockCheckSpecSemantic.mockResolvedValue({
           passed: false,
@@ -1270,11 +1326,11 @@ describe('Queue API', () => {
           hasWarns: false,
           results: {},
           failMessages: ['clarity: Too vague'],
-          warnMessages: [],
+          warnMessages: []
         })
 
         const { status, body } = await request('PATCH', '/queue/tasks/abc/status', {
-          status: 'queued',
+          status: 'queued'
         })
         expect(status).toBe(400)
         const b = body as { error: string; details: string[] }

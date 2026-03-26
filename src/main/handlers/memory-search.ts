@@ -28,15 +28,11 @@ async function searchMemory(query: string): Promise<MemorySearchResult[]> {
   }
 
   try {
-    const { stdout } = await execFileAsync(
-      'grep',
-      ['-rni', '--', query, '.'],
-      {
-        cwd: BDE_MEMORY_DIR,
-        encoding: 'utf-8',
-        maxBuffer: 5 * 1024 * 1024, // 5MB
-      }
-    )
+    const { stdout } = await execFileAsync('grep', ['-rni', '--', query, '.'], {
+      cwd: BDE_MEMORY_DIR,
+      encoding: 'utf-8',
+      maxBuffer: 5 * 1024 * 1024 // 5MB
+    })
 
     const lines = stdout.trim().split('\n').filter(Boolean)
     const fileMap = new Map<string, MemorySearchMatch[]>()
@@ -54,14 +50,14 @@ async function searchMemory(query: string): Promise<MemorySearchResult[]> {
 
       fileMap.get(filePath)!.push({
         line: parseInt(lineNum, 10),
-        content: content.trim(),
+        content: content.trim()
       })
     }
 
     // Convert map to array of results
     return Array.from(fileMap.entries()).map(([path, matches]) => ({
       path,
-      matches,
+      matches
     }))
   } catch (err: any) {
     // grep exits with code 1 when no matches found

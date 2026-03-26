@@ -14,7 +14,7 @@ interface MergeButtonProps {
 const MERGE_STRATEGIES: { value: MergeMethod; label: string }[] = [
   { value: 'squash', label: 'Squash' },
   { value: 'merge', label: 'Merge commit' },
-  { value: 'rebase', label: 'Rebase' },
+  { value: 'rebase', label: 'Rebase' }
 ]
 
 export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
@@ -65,8 +65,8 @@ export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
   const mergeTitle = mergeBlocked
     ? `Not mergeable (${mergeability?.mergeable_state})`
     : merging
-    ? 'Merging…'
-    : `${strategyLabel} merge`
+      ? 'Merging…'
+      : `${strategyLabel} merge`
 
   return (
     <div className="merge-button" ref={dropdownRef}>

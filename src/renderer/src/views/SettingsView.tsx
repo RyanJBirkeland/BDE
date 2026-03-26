@@ -21,7 +21,7 @@ const TABS = [
   { id: 'agent', label: 'Agent', icon: Bot },
   { id: 'agentManager', label: 'Agent Manager', icon: Cpu },
   { id: 'appearance', label: 'Appearance', icon: Palette },
-  { id: 'about', label: 'About', icon: Info },
+  { id: 'about', label: 'About', icon: Info }
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -33,7 +33,7 @@ const SECTION_MAP: Record<TabId, () => React.JSX.Element> = {
   agent: AgentRuntimeSection,
   agentManager: AgentManagerSection,
   appearance: AppearanceSection,
-  about: AboutSection,
+  about: AboutSection
 }
 
 export default function SettingsView(): React.JSX.Element {
@@ -42,7 +42,13 @@ export default function SettingsView(): React.JSX.Element {
   const ActiveSection = SECTION_MAP[activeTab]
 
   return (
-    <motion.div className="settings-view settings-view--column" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
+    <motion.div
+      className="settings-view settings-view--column"
+      variants={VARIANTS.fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+    >
       <div className="settings-view__header">
         <span className="settings-view__header-title text-gradient-aurora">Settings</span>
       </div>
@@ -61,7 +67,11 @@ export default function SettingsView(): React.JSX.Element {
           </button>
         ))}
       </div>
-      <div className="settings-view__scroll" role="tabpanel" aria-label={`${TABS.find(t => t.id === activeTab)?.label} settings`}>
+      <div
+        className="settings-view__scroll"
+        role="tabpanel"
+        aria-label={`${TABS.find((t) => t.id === activeTab)?.label} settings`}
+      >
         <ActiveSection />
       </div>
     </motion.div>

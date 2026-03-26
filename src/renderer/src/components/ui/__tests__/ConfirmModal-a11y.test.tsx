@@ -9,33 +9,46 @@ import * as focusTrapModule from '../../../hooks/useFocusTrap'
 
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, onKeyDown, role, 'aria-modal': ariaModal, 'aria-labelledby': ariaLabelledby, 'aria-describedby': ariaDescribedby, className, ...rest }: any) => {
+    div: ({
+      children,
+      onKeyDown,
+      role,
+      'aria-modal': ariaModal,
+      'aria-labelledby': ariaLabelledby,
+      'aria-describedby': ariaDescribedby,
+      className,
+      ...rest
+    }: any) => {
       const { createElement } = require('react')
-      return createElement('div', {
-        onKeyDown,
-        role,
-        'aria-modal': ariaModal,
-        'aria-labelledby': ariaLabelledby,
-        'aria-describedby': ariaDescribedby,
-        className,
-        ref: rest.ref,
-      }, children)
-    },
+      return createElement(
+        'div',
+        {
+          onKeyDown,
+          role,
+          'aria-modal': ariaModal,
+          'aria-labelledby': ariaLabelledby,
+          'aria-describedby': ariaDescribedby,
+          className,
+          ref: rest.ref
+        },
+        children
+      )
+    }
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useReducedMotion: () => false,
+  useReducedMotion: () => false
 }))
 
 vi.mock('../../../lib/motion', () => ({
   VARIANTS: { scaleIn: {} },
   SPRINGS: { snappy: {} },
   REDUCED_TRANSITION: { duration: 0 },
-  useReducedMotion: () => false,
+  useReducedMotion: () => false
 }))
 
 // Mock useFocusTrap to avoid DOM focus complications in unit tests
 vi.mock('../../../hooks/useFocusTrap', () => ({
-  useFocusTrap: vi.fn(),
+  useFocusTrap: vi.fn()
 }))
 
 describe('ConfirmModal accessibility', () => {
@@ -43,7 +56,7 @@ describe('ConfirmModal accessibility', () => {
     open: true,
     message: 'Are you sure?',
     onConfirm: vi.fn(),
-    onCancel: vi.fn(),
+    onCancel: vi.fn()
   }
 
   it('has role="alertdialog"', () => {

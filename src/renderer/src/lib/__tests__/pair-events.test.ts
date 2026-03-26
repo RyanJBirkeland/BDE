@@ -13,7 +13,7 @@ describe('pairEvents', () => {
         tool: 'Read',
         summary: 'Reading file.txt',
         input: { path: 'file.txt' },
-        timestamp: 1000,
+        timestamp: 1000
       },
       {
         type: 'agent:tool_result',
@@ -21,8 +21,8 @@ describe('pairEvents', () => {
         summary: 'File contents',
         success: true,
         output: 'Hello world',
-        timestamp: 1100,
-      },
+        timestamp: 1100
+      }
     ]
 
     const blocks = pairEvents(events)
@@ -36,9 +36,9 @@ describe('pairEvents', () => {
       result: {
         success: true,
         summary: 'File contents',
-        output: 'Hello world',
+        output: 'Hello world'
       },
-      timestamp: 1000,
+      timestamp: 1000
     })
   })
 
@@ -49,8 +49,8 @@ describe('pairEvents', () => {
         tool: 'Write',
         summary: 'File written',
         success: true,
-        timestamp: 2000,
-      },
+        timestamp: 2000
+      }
     ]
 
     const blocks = pairEvents(events)
@@ -60,7 +60,7 @@ describe('pairEvents', () => {
       type: 'tool_call',
       tool: 'Write',
       summary: 'File written',
-      timestamp: 2000,
+      timestamp: 2000
     })
   })
 
@@ -69,13 +69,13 @@ describe('pairEvents', () => {
       {
         type: 'agent:text',
         text: 'Hello from agent',
-        timestamp: 3000,
+        timestamp: 3000
       },
       {
         type: 'agent:text',
         text: 'Another message',
-        timestamp: 3100,
-      },
+        timestamp: 3100
+      }
     ]
 
     const blocks = pairEvents(events)
@@ -84,12 +84,12 @@ describe('pairEvents', () => {
     expect(blocks[0]).toEqual({
       type: 'text',
       text: 'Hello from agent',
-      timestamp: 3000,
+      timestamp: 3000
     })
     expect(blocks[1]).toEqual({
       type: 'text',
       text: 'Another message',
-      timestamp: 3100,
+      timestamp: 3100
     })
   })
 
@@ -105,15 +105,15 @@ describe('pairEvents', () => {
         type: 'agent:tool_call',
         tool: 'Read',
         summary: 'Reading file.txt',
-        timestamp: 4000,
+        timestamp: 4000
       },
       {
         type: 'agent:tool_result',
         tool: 'Write', // Different tool
         summary: 'File written',
         success: true,
-        timestamp: 4100,
-      },
+        timestamp: 4100
+      }
     ]
 
     const blocks = pairEvents(events)
@@ -123,13 +123,13 @@ describe('pairEvents', () => {
       type: 'tool_call',
       tool: 'Read',
       summary: 'Reading file.txt',
-      timestamp: 4000,
+      timestamp: 4000
     })
     expect(blocks[1]).toEqual({
       type: 'tool_call',
       tool: 'Write',
       summary: 'File written',
-      timestamp: 4100,
+      timestamp: 4100
     })
   })
 
@@ -138,13 +138,13 @@ describe('pairEvents', () => {
       {
         type: 'agent:stderr',
         text: 'Warning: something went wrong',
-        timestamp: 6000,
+        timestamp: 6000
       },
       {
         type: 'agent:stderr',
         text: 'Segmentation fault (core dumped)',
-        timestamp: 6100,
-      },
+        timestamp: 6100
+      }
     ]
 
     const blocks = pairEvents(events)
@@ -153,12 +153,12 @@ describe('pairEvents', () => {
     expect(blocks[0]).toEqual({
       type: 'stderr',
       text: 'Warning: something went wrong',
-      timestamp: 6000,
+      timestamp: 6000
     })
     expect(blocks[1]).toEqual({
       type: 'stderr',
       text: 'Segmentation fault (core dumped)',
-      timestamp: 6100,
+      timestamp: 6100
     })
   })
 
@@ -167,7 +167,7 @@ describe('pairEvents', () => {
       { type: 'agent:started', model: 'claude-sonnet-4-5', timestamp: 7000 },
       { type: 'agent:stderr', text: 'debug: initializing', timestamp: 7050 },
       { type: 'agent:text', text: 'Hello', timestamp: 7100 },
-      { type: 'agent:stderr', text: 'debug: done', timestamp: 7150 },
+      { type: 'agent:stderr', text: 'debug: done', timestamp: 7150 }
     ]
 
     const blocks = pairEvents(events)
@@ -184,24 +184,24 @@ describe('pairEvents', () => {
       {
         type: 'agent:started',
         model: 'claude-opus-4',
-        timestamp: 5000,
+        timestamp: 5000
       },
       {
         type: 'agent:text',
         text: 'Starting task',
-        timestamp: 5100,
+        timestamp: 5100
       },
       {
         type: 'agent:thinking',
         tokenCount: 150,
         text: 'Thinking...',
-        timestamp: 5200,
+        timestamp: 5200
       },
       {
         type: 'agent:tool_call',
         tool: 'Bash',
         summary: 'Running ls',
-        timestamp: 5300,
+        timestamp: 5300
       },
       {
         type: 'agent:tool_result',
@@ -209,7 +209,7 @@ describe('pairEvents', () => {
         summary: 'Command output',
         success: true,
         output: 'file1.txt\nfile2.txt',
-        timestamp: 5400,
+        timestamp: 5400
       },
       {
         type: 'agent:completed',
@@ -218,8 +218,8 @@ describe('pairEvents', () => {
         tokensIn: 1000,
         tokensOut: 500,
         durationMs: 5000,
-        timestamp: 5500,
-      },
+        timestamp: 5500
+      }
     ]
 
     const blocks = pairEvents(events)

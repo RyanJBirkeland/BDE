@@ -9,15 +9,15 @@ import type { IpcMainInvokeEvent } from 'electron'
 vi.mock('electron', () => ({
   BrowserWindow: {
     fromWebContents: vi.fn(),
-    getAllWindows: vi.fn(),
+    getAllWindows: vi.fn()
   },
   ipcMain: {
-    on: vi.fn(),
-  },
+    on: vi.fn()
+  }
 }))
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 // We use _setPty to inject a mock pty rather than vi.mock (CJS require can't be intercepted)
@@ -28,7 +28,7 @@ vi.mock('../../pty', async (importOriginal) => {
     isPtyAvailable: vi.fn().mockReturnValue(true),
     validateShell: vi.fn().mockReturnValue(true),
     createPty: vi.fn(),
-    _setPty: actual._setPty,
+    _setPty: actual._setPty
   }
 })
 
@@ -47,14 +47,18 @@ function makeMockPtyHandle() {
   let exitCallback: (() => void) | undefined
 
   const handle = {
-    onData: vi.fn((cb: (data: string) => void) => { dataCallback = cb }),
-    onExit: vi.fn((cb: () => void) => { exitCallback = cb }),
+    onData: vi.fn((cb: (data: string) => void) => {
+      dataCallback = cb
+    }),
+    onExit: vi.fn((cb: () => void) => {
+      exitCallback = cb
+    }),
     write: vi.fn(),
     resize: vi.fn(),
     kill: vi.fn(),
     // helpers for triggering callbacks in tests
     _triggerData: (d: string) => dataCallback?.(d),
-    _triggerExit: () => exitCallback?.(),
+    _triggerExit: () => exitCallback?.()
   }
   return handle
 }
@@ -115,9 +119,9 @@ describe('Terminal handlers', () => {
       vi.mocked(isPtyAvailable).mockReturnValue(false)
       const handlers = captureHandlers()
 
-      expect(() =>
-        handlers['terminal:create'](mockEvent, { cols: 80, rows: 24 })
-      ).toThrow('Terminal unavailable')
+      expect(() => handlers['terminal:create'](mockEvent, { cols: 80, rows: 24 })).toThrow(
+        'Terminal unavailable'
+      )
     })
 
     it('throws when shell is not in allow-list', () => {
@@ -174,9 +178,11 @@ describe('Terminal handlers', () => {
       const id = handlers['terminal:create'](mockEvent, { cols: 80, rows: 24 })
 
       // Capture the ipcMain.on handler
-      const writeListener = vi.mocked(ipcMain.on).mock.calls.find(
-        ([ch]) => ch === 'terminal:write',
-      )?.[1] as ((_e: any, args: any) => void) | undefined
+      const writeListener = vi
+        .mocked(ipcMain.on)
+        .mock.calls.find(([ch]) => ch === 'terminal:write')?.[1] as
+        | ((_e: any, args: any) => void)
+        | undefined
       expect(writeListener).toBeDefined()
 
       writeListener!({} as any, { id, data: 'ls -la\n' })
@@ -186,9 +192,11 @@ describe('Terminal handlers', () => {
     it('silently ignores writes to unknown terminal ids', () => {
       captureHandlers()
 
-      const writeListener = vi.mocked(ipcMain.on).mock.calls.find(
-        ([ch]) => ch === 'terminal:write',
-      )?.[1] as ((_e: any, args: any) => void) | undefined
+      const writeListener = vi
+        .mocked(ipcMain.on)
+        .mock.calls.find(([ch]) => ch === 'terminal:write')?.[1] as
+        | ((_e: any, args: any) => void)
+        | undefined
 
       expect(() => writeListener!({} as any, { id: 9999, data: 'hello' })).not.toThrow()
     })
@@ -200,9 +208,11 @@ describe('Terminal handlers', () => {
 
       const id = handlers['terminal:create'](mockEvent, { cols: 80, rows: 24 })
 
-      const writeListener = vi.mocked(ipcMain.on).mock.calls.find(
-        ([ch]) => ch === 'terminal:write',
-      )?.[1] as ((_e: any, args: any) => void) | undefined
+      const writeListener = vi
+        .mocked(ipcMain.on)
+        .mock.calls.find(([ch]) => ch === 'terminal:write')?.[1] as
+        | ((_e: any, args: any) => void)
+        | undefined
 
       const oversized = 'x'.repeat(65_537)
       writeListener!({} as any, { id, data: oversized })
@@ -216,9 +226,11 @@ describe('Terminal handlers', () => {
 
       const id = handlers['terminal:create'](mockEvent, { cols: 80, rows: 24 })
 
-      const writeListener = vi.mocked(ipcMain.on).mock.calls.find(
-        ([ch]) => ch === 'terminal:write',
-      )?.[1] as ((_e: any, args: any) => void) | undefined
+      const writeListener = vi
+        .mocked(ipcMain.on)
+        .mock.calls.find(([ch]) => ch === 'terminal:write')?.[1] as
+        | ((_e: any, args: any) => void)
+        | undefined
 
       writeListener!({} as any, { id, data: 42 })
       expect(mockHandle.write).not.toHaveBeenCalled()
@@ -269,9 +281,7 @@ describe('Terminal handlers', () => {
       const handlers = captureHandlers()
 
       handlers['terminal:create'](mockEvent, { cols: 80, rows: 24 })
-      expect(() =>
-        handlers['terminal:kill']({} as IpcMainInvokeEvent, 9999)
-      ).not.toThrow()
+      expect(() => handlers['terminal:kill']({} as IpcMainInvokeEvent, 9999)).not.toThrow()
       expect(mockHandle.kill).not.toHaveBeenCalled()
     })
 

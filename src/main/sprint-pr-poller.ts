@@ -68,7 +68,7 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
         clearInterval(timer)
         timer = null
       }
-    },
+    }
   }
 }
 
@@ -79,7 +79,7 @@ import {
   listTasksWithOpenPrs,
   markTaskDoneByPrNumber,
   markTaskCancelledByPrNumber,
-  updateTaskMergeableState,
+  updateTaskMergeableState
 } from './handlers/sprint-local'
 
 let _instance: SprintPrPollerInstance | null = null
@@ -96,7 +96,7 @@ export function startSprintPrPoller(): void {
     markTaskDoneByPrNumber,
     markTaskCancelledByPrNumber,
     updateTaskMergeableState,
-    onTaskTerminal: _onTaskTerminal ?? undefined,
+    onTaskTerminal: _onTaskTerminal ?? undefined
   })
   _instance.start()
 }

@@ -11,7 +11,7 @@ const initialState = {
   loadError: null,
   prMergedMap: {},
   pendingUpdates: {},
-  pendingCreates: [],
+  pendingCreates: []
 }
 
 describe('sprintTasks store — Map/Set removal', () => {
@@ -44,7 +44,7 @@ describe('sprintTasks store — Map/Set removal', () => {
 
   it('pendingUpdates can be set and read via spread', () => {
     useSprintTasks.setState((s) => ({
-      pendingUpdates: { ...s.pendingUpdates, 'task-1': { ts: 12345, fields: ['status'] } },
+      pendingUpdates: { ...s.pendingUpdates, 'task-1': { ts: 12345, fields: ['status'] } }
     }))
     const { pendingUpdates } = useSprintTasks.getState()
     expect('task-1' in pendingUpdates).toBe(true)
@@ -53,7 +53,12 @@ describe('sprintTasks store — Map/Set removal', () => {
   })
 
   it('pendingUpdates can remove a key via destructuring', () => {
-    useSprintTasks.setState({ pendingUpdates: { 'task-1': { ts: 100, fields: ['status'] }, 'task-2': { ts: 200, fields: ['notes'] } } })
+    useSprintTasks.setState({
+      pendingUpdates: {
+        'task-1': { ts: 100, fields: ['status'] },
+        'task-2': { ts: 200, fields: ['notes'] }
+      }
+    })
     useSprintTasks.setState((s) => {
       const { ['task-1']: _, ...rest } = s.pendingUpdates
       return { pendingUpdates: rest }
@@ -65,7 +70,7 @@ describe('sprintTasks store — Map/Set removal', () => {
 
   it('pendingCreates can add via spread', () => {
     useSprintTasks.setState((s) => ({
-      pendingCreates: [...s.pendingCreates, 'temp-1'],
+      pendingCreates: [...s.pendingCreates, 'temp-1']
     }))
     const { pendingCreates } = useSprintTasks.getState()
     expect(pendingCreates.includes('temp-1')).toBe(true)
@@ -75,7 +80,7 @@ describe('sprintTasks store — Map/Set removal', () => {
   it('pendingCreates can remove via filter', () => {
     useSprintTasks.setState({ pendingCreates: ['temp-1', 'temp-2'] })
     useSprintTasks.setState((s) => ({
-      pendingCreates: s.pendingCreates.filter((id) => id !== 'temp-1'),
+      pendingCreates: s.pendingCreates.filter((id) => id !== 'temp-1')
     }))
     const { pendingCreates } = useSprintTasks.getState()
     expect(pendingCreates.includes('temp-1')).toBe(false)

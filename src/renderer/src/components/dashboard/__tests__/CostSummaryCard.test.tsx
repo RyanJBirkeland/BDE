@@ -10,7 +10,7 @@ let mockTotalCost = 0
 
 vi.mock('../../../stores/costData', () => ({
   useCostDataStore: (selector: (s: { localAgents: Agent[]; totalCost: number }) => unknown) =>
-    selector({ localAgents: mockLocalAgents, totalCost: mockTotalCost }),
+    selector({ localAgents: mockLocalAgents, totalCost: mockTotalCost })
 }))
 
 import { CostSummaryCard } from '../CostSummaryCard'

@@ -13,9 +13,11 @@ export function Badge({
   size = 'md',
   children,
   className,
-  style,
+  style
 }: BadgeProps) {
-  const cls = [`bde-badge`, `bde-badge--${variant}`, `bde-badge--${size}`, className].filter(Boolean).join(' ')
+  const cls = [`bde-badge`, `bde-badge--${variant}`, `bde-badge--${size}`, className]
+    .filter(Boolean)
+    .join(' ')
   return (
     <span className={cls} style={style}>
       <span className="bde-badge__dot" />

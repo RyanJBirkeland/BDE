@@ -14,16 +14,13 @@ export { sseBroadcaster } from './event-handlers'
 // Route dispatcher
 // ---------------------------------------------------------------------------
 
-export async function route(
-  req: http.IncomingMessage,
-  res: http.ServerResponse
-): Promise<void> {
+export async function route(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   // CORS preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type'
     })
     res.end()
     return

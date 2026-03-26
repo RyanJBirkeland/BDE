@@ -9,16 +9,22 @@ vi.mock('../../settings', () => ({
   setSetting: vi.fn(),
   getSettingJson: vi.fn(),
   setSettingJson: vi.fn(),
-  deleteSetting: vi.fn(),
+  deleteSetting: vi.fn()
 }))
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 import { registerConfigHandlers } from '../config-handlers'
 import { safeHandle } from '../../ipc-utils'
-import { getSetting, setSetting, getSettingJson, setSettingJson, deleteSetting } from '../../settings'
+import {
+  getSetting,
+  setSetting,
+  getSettingJson,
+  setSettingJson,
+  deleteSetting
+} from '../../settings'
 
 describe('Config handlers', () => {
   beforeEach(() => {

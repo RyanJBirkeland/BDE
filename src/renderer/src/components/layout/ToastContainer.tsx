@@ -13,7 +13,11 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   const hasAction = toast.onUndo || toast.onAction
 
   return (
-    <div className={`toast ${modifier} ${hasAction ? 'toast--has-action' : ''}`} role={toast.type === 'error' ? 'alert' : 'status'} onClick={onDismiss}>
+    <div
+      className={`toast ${modifier} ${hasAction ? 'toast--has-action' : ''}`}
+      role={toast.type === 'error' ? 'alert' : 'status'}
+      onClick={onDismiss}
+    >
       <span className="toast__message">{toast.message}</span>
       {toast.onUndo && (
         <button
@@ -51,7 +55,13 @@ export function ToastContainer() {
   if (toasts.length === 0) return null
 
   return (
-    <div className="toast-container" role="region" aria-live="polite" aria-atomic="true" aria-label="Notifications">
+    <div
+      className="toast-container"
+      role="region"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label="Notifications"
+    >
       <AnimatePresence>
         {toasts.map((t) => (
           <motion.div

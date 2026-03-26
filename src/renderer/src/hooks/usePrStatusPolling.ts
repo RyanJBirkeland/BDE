@@ -28,54 +28,69 @@ export function usePrStatusPolling(): void {
   const tasksRef = useRef(tasks)
   tasksRef.current = tasks
 
-  const pollPrStatuses = useCallback(async (taskList: SprintTask[]) => {
-    const withPr = taskList.filter((t) => t.pr_url && !prMergedRef.current[t.id])
-    if (withPr.length === 0) return
-    try {
-      const results = await window.api.pollPrStatuses(
-        withPr.map((t) => ({ taskId: t.id, prUrl: t.pr_url! }))
-      )
-      setPrMergedMap((prev) => {
-        let changed = false
+  const pollPrStatuses = useCallback(
+    async (taskList: SprintTask[]) => {
+      const withPr = taskList.filter((t) => t.pr_url && !prMergedRef.current[t.id])
+      if (withPr.length === 0) return
+      try {
+        const results = await window.api.pollPrStatuses(
+          withPr.map((t) => ({ taskId: t.id, prUrl: t.pr_url! }))
+        )
+        setPrMergedMap((prev) => {
+          let changed = false
+          for (const r of results) {
+            if (prev[r.taskId] !== r.merged) {
+              changed = true
+              break
+            }
+          }
+          if (!changed) return prev
+          const next = { ...prev }
+          for (const r of results) next[r.taskId] = r.merged
+          return next
+        })
+        // Write pr_status='merged' back so tasks leave Awaiting Review
         for (const r of results) {
-          if (prev[r.taskId] !== r.merged) { changed = true; break }
+          if (r.merged) updateTaskRef.current(r.taskId, { pr_status: PR_STATUS.MERGED })
         }
-        if (!changed) return prev
-        const next = { ...prev }
-        for (const r of results) next[r.taskId] = r.merged
-        return next
-      })
-      // Write pr_status='merged' back so tasks leave Awaiting Review
-      for (const r of results) {
-        if (r.merged) updateTaskRef.current(r.taskId, { pr_status: PR_STATUS.MERGED })
-      }
 
-      // Track merge conflicts
-      const conflicting = results.filter((r) => r.mergeableState === 'dirty' && !r.merged)
-      const conflictIds = conflicting.map((r) => r.taskId)
-      setConflicts(conflictIds)
+        // Track merge conflicts
+        const conflicting = results.filter((r) => r.mergeableState === 'dirty' && !r.merged)
+        const conflictIds = conflicting.map((r) => r.taskId)
+        setConflicts(conflictIds)
 
-      // Toast when NEW conflicts appear
-      const prev = prevConflictIdsRef.current
-      const newConflicts = conflictIds.filter((id) => !prev.has(id))
-      if (newConflicts.length > 0) {
-        toast.error(`${newConflicts.length} PR${newConflicts.length > 1 ? 's have' : ' has'} merge conflicts`)
-      }
-      prevConflictIdsRef.current = new Set(conflictIds)
-
-      // Persist mergeable state to SQLite
-      for (const r of results) {
-        if (r.mergeableState) {
-          updateTaskRef.current(r.taskId, { pr_mergeable_state: r.mergeableState as SprintTask['pr_mergeable_state'] })
+        // Toast when NEW conflicts appear
+        const prev = prevConflictIdsRef.current
+        const newConflicts = conflictIds.filter((id) => !prev.has(id))
+        if (newConflicts.length > 0) {
+          toast.error(
+            `${newConflicts.length} PR${newConflicts.length > 1 ? 's have' : ' has'} merge conflicts`
+          )
         }
-      }
-    } catch {
-      // gh CLI unavailable — degrade gracefully
-    }
-  }, [setConflicts, setPrMergedMap])
+        prevConflictIdsRef.current = new Set(conflictIds)
 
-  const pollPrStatusesCurrent = useCallback(() => pollPrStatuses(tasksRef.current), [pollPrStatuses])
-  useEffect(() => { pollPrStatusesCurrent() }, [pollPrStatusesCurrent])
+        // Persist mergeable state to SQLite
+        for (const r of results) {
+          if (r.mergeableState) {
+            updateTaskRef.current(r.taskId, {
+              pr_mergeable_state: r.mergeableState as SprintTask['pr_mergeable_state']
+            })
+          }
+        }
+      } catch {
+        // gh CLI unavailable — degrade gracefully
+      }
+    },
+    [setConflicts, setPrMergedMap]
+  )
+
+  const pollPrStatusesCurrent = useCallback(
+    () => pollPrStatuses(tasksRef.current),
+    [pollPrStatuses]
+  )
+  useEffect(() => {
+    pollPrStatusesCurrent()
+  }, [pollPrStatusesCurrent])
   useVisibilityAwareInterval(pollPrStatusesCurrent, POLL_PR_STATUS_MS)
 
   // Detect active->done transitions and trigger immediate PR poll
@@ -85,7 +100,10 @@ export function usePrStatusPolling(): void {
     prevTasksRef.current = tasks
     if (prev.length === 0) return
     const justDone = tasks.filter(
-      (t) => t.status === TASK_STATUS.DONE && t.pr_url && prev.find((p) => p.id === t.id)?.status === TASK_STATUS.ACTIVE
+      (t) =>
+        t.status === TASK_STATUS.DONE &&
+        t.pr_url &&
+        prev.find((p) => p.id === t.id)?.status === TASK_STATUS.ACTIVE
     )
     if (justDone.length > 0) pollPrStatuses(justDone)
   }, [tasks, pollPrStatuses])

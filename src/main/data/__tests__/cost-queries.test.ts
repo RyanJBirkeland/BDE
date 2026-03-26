@@ -43,7 +43,7 @@ describe('getCostSummary', () => {
     expect(summary.totalTokensThisWeek).toBe(1100) // 500+200+300+100
     expect(summary.avgCostPerTask).toBeCloseTo(0.15)
     expect(summary.mostExpensiveTask).not.toBeNull()
-    expect(summary.mostExpensiveTask!.costUsd).toBe(0.20)
+    expect(summary.mostExpensiveTask!.costUsd).toBe(0.2)
   })
 })
 

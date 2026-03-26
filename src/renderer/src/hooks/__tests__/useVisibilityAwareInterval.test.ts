@@ -95,10 +95,9 @@ describe('useVisibilityAwareInterval', () => {
 
   it('restarts interval when intervalMs changes', () => {
     const cb = vi.fn()
-    const { rerender } = renderHook(
-      ({ ms }) => useVisibilityAwareInterval(cb, ms),
-      { initialProps: { ms: 1000 as number | null } }
-    )
+    const { rerender } = renderHook(({ ms }) => useVisibilityAwareInterval(cb, ms), {
+      initialProps: { ms: 1000 as number | null }
+    })
 
     vi.advanceTimersByTime(2000)
     expect(cb).toHaveBeenCalledTimes(2)
@@ -113,10 +112,9 @@ describe('useVisibilityAwareInterval', () => {
   it('uses latest callback without restarting interval', () => {
     const cb1 = vi.fn()
     const cb2 = vi.fn()
-    const { rerender } = renderHook(
-      ({ cb }) => useVisibilityAwareInterval(cb, 1000),
-      { initialProps: { cb: cb1 } }
-    )
+    const { rerender } = renderHook(({ cb }) => useVisibilityAwareInterval(cb, 1000), {
+      initialProps: { cb: cb1 }
+    })
 
     vi.advanceTimersByTime(1000)
     expect(cb1).toHaveBeenCalledTimes(1)

@@ -1,21 +1,21 @@
-import { useState, type ReactNode } from 'react';
-import { NeonTooltip } from '../neon/NeonTooltip';
-import type { View } from '../../stores/ui';
+import { useState, type ReactNode } from 'react'
+import { NeonTooltip } from '../neon/NeonTooltip'
+import type { View } from '../../stores/ui'
 
 interface SidebarItemProps {
-  view: View;
-  icon: ReactNode;
-  label: string;
-  shortcut: string;
-  isActive: boolean;
-  isOpen: boolean;
-  onActivate: (view: View) => void;
-  onContextAction: (action: string, view: View) => void;
+  view: View
+  icon: ReactNode
+  label: string
+  shortcut: string
+  isActive: boolean
+  isOpen: boolean
+  onActivate: (view: View) => void
+  onContextAction: (action: string, view: View) => void
 }
 
 interface ContextMenuState {
-  x: number;
-  y: number;
+  x: number
+  y: number
 }
 
 export function SidebarItem({
@@ -26,24 +26,24 @@ export function SidebarItem({
   isActive,
   isOpen,
   onActivate,
-  onContextAction,
+  onContextAction
 }: SidebarItemProps) {
-  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenu({ x: e.clientX, y: e.clientY });
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({ x: e.clientX, y: e.clientY })
+  }
 
   const closeContextMenu = () => {
-    setContextMenu(null);
-  };
+    setContextMenu(null)
+  }
 
   const handleMenuAction = (action: string) => {
-    onContextAction(action, view);
-    closeContextMenu();
-  };
+    onContextAction(action, view)
+    closeContextMenu()
+  }
 
   return (
     <>
@@ -51,14 +51,14 @@ export function SidebarItem({
         <button
           draggable
           onDragStart={(e) => {
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('application/bde-panel', JSON.stringify({ viewKey: view }));
-            e.dataTransfer.setData('text/plain', label);
+            e.dataTransfer.effectAllowed = 'move'
+            e.dataTransfer.setData('application/bde-panel', JSON.stringify({ viewKey: view }))
+            e.dataTransfer.setData('text/plain', label)
           }}
           className={`sidebar-item${isActive ? ' sidebar-item--active' : ''}`}
           onClick={(e) => {
-            e.stopPropagation();
-            onActivate(view);
+            e.stopPropagation()
+            onActivate(view)
           }}
           onContextMenu={handleContextMenu}
           aria-label={label}
@@ -76,12 +76,12 @@ export function SidebarItem({
             style={{
               position: 'fixed',
               inset: 0,
-              zIndex: 999,
+              zIndex: 999
             }}
             onClick={closeContextMenu}
             onContextMenu={(e) => {
-              e.preventDefault();
-              closeContextMenu();
+              e.preventDefault()
+              closeContextMenu()
             }}
           />
           <div
@@ -97,7 +97,7 @@ export function SidebarItem({
               borderRadius: '8px',
               backdropFilter: 'blur(16px) saturate(180%)',
               padding: '4px 0',
-              minWidth: '200px',
+              minWidth: '200px'
             }}
           >
             {[
@@ -105,14 +105,14 @@ export function SidebarItem({
               { label: 'Open to Right', action: 'open-right' },
               { label: 'Open Below', action: 'open-below' },
               { label: 'Open in New Tab', action: 'open-tab' },
-              { label: 'Close All', action: 'close-all' },
+              { label: 'Close All', action: 'close-all' }
             ].map(({ label: menuLabel, action }) => (
               <button
                 key={action}
                 role="menuitem"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  handleMenuAction(action);
+                  e.stopPropagation()
+                  handleMenuAction(action)
                 }}
                 style={{
                   display: 'block',
@@ -124,15 +124,15 @@ export function SidebarItem({
                   color: 'rgba(255, 255, 255, 0.6)',
                   fontSize: '12px',
                   cursor: 'pointer',
-                  transition: 'background 100ms ease, color 100ms ease',
+                  transition: 'background 100ms ease, color 100ms ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--neon-purple-surface)';
-                  e.currentTarget.style.color = '#fff';
+                  e.currentTarget.style.background = 'var(--neon-purple-surface)'
+                  e.currentTarget.style.color = '#fff'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'none';
-                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)';
+                  e.currentTarget.style.background = 'none'
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'
                 }}
               >
                 {menuLabel}
@@ -142,5 +142,5 @@ export function SidebarItem({
         </>
       )}
     </>
-  );
+  )
 }

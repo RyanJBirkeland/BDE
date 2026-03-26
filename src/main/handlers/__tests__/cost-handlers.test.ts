@@ -7,11 +7,11 @@ import type { IpcMainInvokeEvent } from 'electron'
 vi.mock('../../cost-queries', () => ({
   getCostSummary: vi.fn(),
   getRecentAgentRunsWithCost: vi.fn(),
-  getAgentHistory: vi.fn(),
+  getAgentHistory: vi.fn()
 }))
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 import { registerCostHandlers } from '../cost-handlers'

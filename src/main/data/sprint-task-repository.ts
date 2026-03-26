@@ -30,6 +30,6 @@ export function createSprintTaskRepository(): ISprintTaskRepository {
     getTasksWithDependencies: queries.getTasksWithDependencies,
     getOrphanedTasks: queries.getOrphanedTasks,
     getActiveTaskCount: queries.getActiveTaskCount,
-    claimTask: queries.claimTask,
+    claimTask: queries.claimTask
   }
 }

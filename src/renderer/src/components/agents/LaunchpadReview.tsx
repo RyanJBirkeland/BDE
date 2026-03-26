@@ -22,7 +22,7 @@ export function LaunchpadReview({
   onSpawn,
   onBack,
   onSaveTemplate,
-  spawning,
+  spawning
 }: LaunchpadReviewProps) {
   const [editing, setEditing] = useState(false)
   const [editedPrompt, setEditedPrompt] = useState(assembledPrompt)
@@ -37,8 +37,8 @@ export function LaunchpadReview({
     { label: 'Model', value: model.charAt(0).toUpperCase() + model.slice(1) },
     ...Object.entries(answers).map(([key, value]) => ({
       label: key.charAt(0).toUpperCase() + key.slice(1),
-      value,
-    })),
+      value
+    }))
   ]
 
   return (
@@ -85,9 +85,7 @@ export function LaunchpadReview({
               onChange={(e) => setEditedPrompt(e.target.value)}
             />
           ) : (
-            <div className="launchpad__spec-content">
-              {assembledPrompt}
-            </div>
+            <div className="launchpad__spec-content">{assembledPrompt}</div>
           )}
         </div>
 

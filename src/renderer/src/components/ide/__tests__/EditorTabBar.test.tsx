@@ -9,15 +9,31 @@ vi.mock('../../../stores/ide', () => ({
   useIDEStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({
       openTabs: [
-        { id: 'tab-1', filePath: '/project/file.ts', displayName: 'file.ts', language: 'typescript', isDirty: false },
-        { id: 'tab-2', filePath: '/project/dirty.ts', displayName: 'dirty.ts', language: 'typescript', isDirty: true },
+        {
+          id: 'tab-1',
+          filePath: '/project/file.ts',
+          displayName: 'file.ts',
+          language: 'typescript',
+          isDirty: false
+        },
+        {
+          id: 'tab-2',
+          filePath: '/project/dirty.ts',
+          displayName: 'dirty.ts',
+          language: 'typescript',
+          isDirty: true
+        }
       ],
-      activeTabId: 'tab-1', setActiveTab: mockSetActiveTab, closeTab: mockCloseTab,
+      activeTabId: 'tab-1',
+      setActiveTab: mockSetActiveTab,
+      closeTab: mockCloseTab
     })
-  ),
+  )
 }))
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe('EditorTabBar', () => {
   it('renders all open tabs', () => {

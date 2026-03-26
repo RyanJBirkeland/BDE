@@ -8,7 +8,7 @@ const initialState = {
   searchQuery: '',
   statusFilter: 'all' as const,
   generatingIds: [] as string[],
-  selectedTaskIds: [] as string[],
+  selectedTaskIds: [] as string[]
 }
 
 describe('sprintUI store', () => {

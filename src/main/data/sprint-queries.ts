@@ -11,7 +11,7 @@ import type { Logger } from '../agent-manager/types'
 let logger: Logger = {
   info: (m) => console.log(m),
   warn: (m) => console.warn(m),
-  error: (m) => console.error(m),
+  error: (m) => console.error(m)
 }
 
 export function setSprintQueriesLogger(l: Logger): void {
@@ -24,7 +24,7 @@ export function setSprintQueriesLogger(l: Logger): void {
 function sanitizeTask(task: any): SprintTask {
   return {
     ...task,
-    depends_on: sanitizeDependsOn(task.depends_on),
+    depends_on: sanitizeDependsOn(task.depends_on)
   }
 }
 
@@ -59,7 +59,7 @@ export const UPDATE_ALLOWLIST = new Set([
   'depends_on',
   'playground_enabled',
   'needs_review',
-  'max_runtime_ms',
+  'max_runtime_ms'
 ])
 
 export interface QueueStats {
@@ -130,7 +130,7 @@ export async function createTask(input: CreateTaskInput): Promise<SprintTask | n
     priority: input.priority ?? 0,
     status: input.status ?? 'backlog',
     template_name: input.template_name ?? null,
-    depends_on: sanitizeDependsOn(input.depends_on),
+    depends_on: sanitizeDependsOn(input.depends_on)
   }
   // Only include playground_enabled when explicitly set — column may not exist yet
   if (input.playground_enabled) {
@@ -191,20 +191,14 @@ export async function updateTask(
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const { error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .delete()
-    .eq('id', id)
+  const { error } = await getSupabaseClient().from('sprint_tasks').delete().eq('id', id)
 
   if (error) {
     logger.warn(`[sprint-queries] deleteTask failed for id=${id}: ${error}`)
   }
 }
 
-export async function claimTask(
-  id: string,
-  claimedBy: string
-): Promise<SprintTask | null> {
+export async function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
   const now = new Date().toISOString()
   const { data, error } = await getSupabaseClient()
     .from('sprint_tasks')
@@ -246,13 +240,11 @@ export async function getQueueStats(): Promise<QueueStats> {
     failed: 0,
     cancelled: 0,
     error: 0,
-    blocked: 0,
+    blocked: 0
   }
 
   // Supabase doesn't have native GROUP BY in the client — fetch statuses
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('status')
+  const { data, error } = await getSupabaseClient().from('sprint_tasks').select('status')
 
   if (error) {
     logger.warn(`[sprint-queries] getQueueStats failed: ${error}`)
@@ -371,9 +363,7 @@ export async function updateTaskMergeableState(
       .update({ pr_mergeable_state: mergeableState })
       .eq('pr_number', prNumber)
   } catch (err) {
-    logger.warn(
-      `[sprint-queries] failed to update mergeable_state for PR #${prNumber}: ${err}`
-    )
+    logger.warn(`[sprint-queries] failed to update mergeable_state for PR #${prNumber}: ${err}`)
   }
 }
 
@@ -394,8 +384,10 @@ export async function getActiveTaskCount(): Promise<number> {
 
 export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
   const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks').select('*')
-    .eq('status', 'queued').is('claimed_by', null)
+    .from('sprint_tasks')
+    .select('*')
+    .eq('status', 'queued')
+    .is('claimed_by', null)
     .order('priority', { ascending: true })
     .order('created_at', { ascending: true })
     .limit(limit)
@@ -408,8 +400,10 @@ export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
 
 export async function getOrphanedTasks(claimedBy: string): Promise<SprintTask[]> {
   const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks').select('*')
-    .eq('status', 'active').eq('claimed_by', claimedBy)
+    .from('sprint_tasks')
+    .select('*')
+    .eq('status', 'active')
+    .eq('claimed_by', claimedBy)
   if (error) {
     logger.warn(`[sprint-queries] getOrphanedTasks failed: ${error.message}`)
     return []
@@ -424,9 +418,7 @@ export async function clearSprintTaskFk(agentRunId: string): Promise<void> {
       .update({ agent_run_id: null })
       .eq('agent_run_id', agentRunId)
   } catch (err) {
-    logger.warn(
-      `[sprint-queries] failed to clear FK for agent_run_id=${agentRunId}: ${err}`
-    )
+    logger.warn(`[sprint-queries] failed to clear FK for agent_run_id=${agentRunId}: ${err}`)
   }
 }
 
@@ -459,6 +451,6 @@ export async function getTasksWithDependencies(): Promise<
   // Sanitize each partial task object
   return (data ?? []).map((task) => ({
     ...task,
-    depends_on: sanitizeDependsOn(task.depends_on),
+    depends_on: sanitizeDependsOn(task.depends_on)
   }))
 }

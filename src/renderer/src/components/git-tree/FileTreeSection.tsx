@@ -33,7 +33,7 @@ export function FileTreeSection({
   onUnstageAll,
   onStageFile,
   onUnstageFile,
-  onSelectFile,
+  onSelectFile
 }: FileTreeSectionProps): React.ReactElement | null {
   const [collapsed, setCollapsed] = useState(false)
 
@@ -52,7 +52,7 @@ export function FileTreeSection({
           alignItems: 'center',
           padding: `${tokens.space[1]} ${tokens.space[3]}`,
           gap: tokens.space[1],
-          userSelect: 'none',
+          userSelect: 'none'
         }}
       >
         {/* Collapse toggle */}
@@ -75,14 +75,10 @@ export function FileTreeSection({
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             padding: 0,
-            textAlign: 'left',
+            textAlign: 'left'
           }}
         >
-          {collapsed ? (
-            <ChevronRight size={12} />
-          ) : (
-            <ChevronDown size={12} />
-          )}
+          {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
           <span>{title}</span>
           {/* File count badge */}
           <span
@@ -98,7 +94,7 @@ export function FileTreeSection({
               borderRadius: tokens.radius.full,
               fontSize: tokens.size.xs,
               color: tokens.color.textMuted,
-              fontWeight: 400,
+              fontWeight: 400
             }}
           >
             {files.length}
@@ -119,7 +115,7 @@ export function FileTreeSection({
               fontSize: tokens.size.xs,
               fontFamily: tokens.font.ui,
               padding: `2px ${tokens.space[1]}`,
-              borderRadius: tokens.radius.sm,
+              borderRadius: tokens.radius.sm
             }}
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
@@ -147,7 +143,7 @@ export function FileTreeSection({
               fontSize: tokens.size.xs,
               fontFamily: tokens.font.ui,
               padding: `2px ${tokens.space[1]}`,
-              borderRadius: tokens.radius.sm,
+              borderRadius: tokens.radius.sm
             }}
             onMouseEnter={(e) => {
               ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text

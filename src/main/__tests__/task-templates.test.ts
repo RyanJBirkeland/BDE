@@ -4,50 +4,65 @@ import Database from 'better-sqlite3'
 let db: Database.Database
 
 vi.mock('../db', () => ({
-  getDb: () => db,
+  getDb: () => db
 }))
 
 vi.mock('../settings', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../settings')>()
   return {
     ...actual,
-    getSettingJson: vi.fn(),
+    getSettingJson: vi.fn()
   }
 })
 
 vi.mock('../config', () => ({
-  getGitHubToken: vi.fn().mockReturnValue(null),
+  getGitHubToken: vi.fn().mockReturnValue(null)
 }))
 
 vi.mock('../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue(null),
   BDE_DIR: '/tmp/bde-test',
-  BDE_DB_PATH: '/tmp/bde-test/bde.db',
+  BDE_DB_PATH: '/tmp/bde-test/bde.db'
 }))
 
 vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn(),
-    on: vi.fn(),
-  },
+    on: vi.fn()
+  }
 }))
 
 vi.mock('../data/sprint-queries', () => ({
   getTask: vi.fn(async (id: string) => {
-    const row = db
-      .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
-      .get(id) as Record<string, unknown> | undefined
+    const row = db.prepare('SELECT * FROM sprint_tasks WHERE id = ?').get(id) as
+      | Record<string, unknown>
+      | undefined
     return row ?? null
   }),
   listTasks: vi.fn(async () => {
     return db.prepare('SELECT * FROM sprint_tasks').all()
   }),
   UPDATE_ALLOWLIST: new Set([
-    'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
-    'pr_url', 'pr_number', 'pr_status', 'pr_mergeable_state', 'agent_run_id',
-    'retry_count', 'fast_fail_count', 'started_at', 'completed_at',
-    'template_name', 'claimed_by', 'depends_on',
-  ]),
+    'title',
+    'prompt',
+    'repo',
+    'status',
+    'priority',
+    'spec',
+    'notes',
+    'pr_url',
+    'pr_number',
+    'pr_status',
+    'pr_mergeable_state',
+    'agent_run_id',
+    'retry_count',
+    'fast_fail_count',
+    'started_at',
+    'completed_at',
+    'template_name',
+    'claimed_by',
+    'depends_on'
+  ])
 }))
 
 import { getSettingJson } from '../settings'
@@ -135,7 +150,7 @@ describe('task template resolution in claimTask', () => {
 
     const templates: TaskTemplate[] = [
       { name: 'bugfix', promptPrefix: 'You are fixing a bug.' },
-      { name: 'feature', promptPrefix: 'You are building a feature.' },
+      { name: 'feature', promptPrefix: 'You are building a feature.' }
     ]
     vi.mocked(getSettingJson).mockReturnValue(templates)
 
@@ -151,9 +166,7 @@ describe('task template resolution in claimTask', () => {
       "INSERT INTO sprint_tasks (id, title, template_name) VALUES ('t2', 'Unknown', 'nonexistent')"
     ).run()
 
-    const templates: TaskTemplate[] = [
-      { name: 'bugfix', promptPrefix: 'You are fixing a bug.' },
-    ]
+    const templates: TaskTemplate[] = [{ name: 'bugfix', promptPrefix: 'You are fixing a bug.' }]
     vi.mocked(getSettingJson).mockReturnValue(templates)
 
     const result = await registerAndClaim('t2')
@@ -163,9 +176,7 @@ describe('task template resolution in claimTask', () => {
   })
 
   it('returns null templatePromptPrefix when task has no template_name', async () => {
-    db.prepare(
-      "INSERT INTO sprint_tasks (id, title) VALUES ('t3', 'No template')"
-    ).run()
+    db.prepare("INSERT INTO sprint_tasks (id, title) VALUES ('t3', 'No template')").run()
 
     const result = await registerAndClaim('t3')
 

@@ -113,7 +113,7 @@ describe('IPC Registration Completeness', () => {
     // We allow those but flag safeHandle channels that drift from the type map.
     const allowedExtras = new Set([
       'window:setTitle', // ipcMain.on, fire-and-forget
-      'terminal:write',  // ipcMain.on, fire-and-forget
+      'terminal:write' // ipcMain.on, fire-and-forget
     ])
 
     const extras = [...registeredChannels]

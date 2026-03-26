@@ -76,7 +76,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         for (const [id, pending] of nextPendingMap) {
           if (now - pending.ts > PENDING_UPDATE_TTL) nextPendingMap.delete(id)
         }
-        const nextPending: Record<string, { ts: number; fields: string[] }> = Object.fromEntries(nextPendingMap)
+        const nextPending: Record<string, { ts: number; fields: string[] }> =
+          Object.fromEntries(nextPendingMap)
 
         // Build a map of current optimistic tasks by ID for quick lookup
         const currentTaskMap = new Map(s.tasks.map((t) => [t.id, t]))
@@ -123,10 +124,13 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   updateTask: async (taskId, patch): Promise<void> => {
     // Record pending update before optimistic patch
     set((s) => ({
-      pendingUpdates: { ...s.pendingUpdates, [taskId]: { ts: Date.now(), fields: Object.keys(patch) } },
+      pendingUpdates: {
+        ...s.pendingUpdates,
+        [taskId]: { ts: Date.now(), fields: Object.keys(patch) }
+      },
       tasks: s.tasks.map((t) =>
         t.id === taskId ? { ...t, ...patch, updated_at: new Date().toISOString() } : t
-      ),
+      )
     }))
     try {
       await window.api.sprint.update(taskId, patch)
@@ -150,7 +154,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     try {
       await window.api.sprint.delete(taskId)
       set((s) => ({
-        tasks: s.tasks.filter((t) => t.id !== taskId),
+        tasks: s.tasks.filter((t) => t.id !== taskId)
       }))
       // Notify UI store to deselect if this task was selected
       window.dispatchEvent(new CustomEvent('sprint:task-deleted', { detail: { taskId } }))
@@ -184,11 +188,11 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       template_name: data.template_name ?? null,
       depends_on: null,
       updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     }
     set((s) => ({
       tasks: [optimistic, ...s.tasks],
-      pendingCreates: [...s.pendingCreates, optimistic.id],
+      pendingCreates: [...s.pendingCreates, optimistic.id]
     }))
 
     try {
@@ -201,20 +205,22 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         priority: data.priority,
         status: TASK_STATUS.BACKLOG,
         template_name: data.template_name || undefined,
-        playground_enabled: data.playground_enabled || undefined,
+        playground_enabled: data.playground_enabled || undefined
       })) as SprintTask
 
       if (result?.id) {
         set((s) => ({
           tasks: s.tasks.map((t) => (t.id === optimistic.id ? result : t)),
-          pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id),
+          pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id)
         }))
 
         // Background spec generation for Quick Mode tasks
         if (!data.spec) {
           const templateHint = detectTemplate(data.title)
           // Use a local Set to track generating state (no cross-store dependency)
-          const generatingEvent = new CustomEvent('sprint:generating', { detail: { taskId: result.id, generating: true } })
+          const generatingEvent = new CustomEvent('sprint:generating', {
+            detail: { taskId: result.id, generating: true }
+          })
           window.dispatchEvent(generatingEvent)
 
           window.api.sprint
@@ -222,7 +228,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
               taskId: result.id,
               title: data.title,
               repo: repoEnum,
-              templateHint,
+              templateHint
             })
             .then((genResult) => {
               set((s) => ({
@@ -230,22 +236,26 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
                   t.id === genResult.taskId
                     ? { ...t, spec: genResult.spec || null, prompt: genResult.prompt }
                     : t
-                ),
+                )
               }))
               toast.info(`Spec ready for "${data.title}"`, {
                 action: 'View Spec',
                 onAction: () => {
-                  const selectEvent = new CustomEvent('sprint:select-task', { detail: { taskId: result.id } })
+                  const selectEvent = new CustomEvent('sprint:select-task', {
+                    detail: { taskId: result.id }
+                  })
                   window.dispatchEvent(selectEvent)
                 },
-                durationMs: 6000,
+                durationMs: 6000
               })
             })
             .catch((e: unknown) => {
               toast.error('Spec generation failed: ' + (e instanceof Error ? e.message : String(e)))
             })
             .finally(() => {
-              const doneEvent = new CustomEvent('sprint:generating', { detail: { taskId: result.id, generating: false } })
+              const doneEvent = new CustomEvent('sprint:generating', {
+                detail: { taskId: result.id, generating: false }
+              })
               window.dispatchEvent(doneEvent)
             })
         }
@@ -254,7 +264,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     } catch (e) {
       set((s) => ({
         tasks: s.tasks.filter((t) => t.id !== optimistic.id),
-        pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id),
+        pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id)
       }))
       toast.error(e instanceof Error ? e.message : 'Failed to create task')
     }
@@ -266,7 +276,9 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     if (task.status !== TASK_STATUS.ACTIVE) {
       const activeCount = tasks.filter((t) => t.status === TASK_STATUS.ACTIVE).length
       if (activeCount >= WIP_LIMIT_IN_PROGRESS) {
-        toast.error(`In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}) — finish or stop a task first`)
+        toast.error(
+          `In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}) — finish or stop a task first`
+        )
         return
       }
     }
@@ -281,13 +293,13 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
       const result = await window.api.spawnLocalAgent({
         task: task.spec ?? task.title,
-        repoPath,
+        repoPath
       })
 
       await updateTask(task.id, {
         status: TASK_STATUS.ACTIVE,
         agent_run_id: result.id,
-        started_at: new Date().toISOString(),
+        started_at: new Date().toISOString()
       })
       toast.success('Agent launched')
     } catch (e) {
@@ -304,7 +316,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
           merged.pr_status = PR_STATUS.OPEN
         }
         return merged
-      }),
+      })
     }))
   },
 
@@ -312,5 +324,5 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     set((s) => ({ prMergedMap: updater(s.prMergedMap) }))
   },
 
-  setTasks: (tasks): void => set({ tasks: tasks.map(sanitizeDeps) }),
+  setTasks: (tasks): void => set({ tasks: tasks.map(sanitizeDeps) })
 }))

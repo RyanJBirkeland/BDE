@@ -18,7 +18,7 @@ function makeAgent(overrides: Partial<LocalAgent> = {}): UnifiedAgent {
     canSteer: false,
     canKill: false,
     pid: 1234,
-    ...overrides,
+    ...overrides
   }
 }
 

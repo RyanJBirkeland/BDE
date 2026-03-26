@@ -156,7 +156,7 @@ export function useTaskToasts(
         toast.info(`Agent finished: ${task.title}`, {
           action: 'View Output',
           onAction: () => onViewOutputRef.current(captured),
-          durationMs: TOAST_DURATION,
+          durationMs: TOAST_DURATION
         })
       }
 
@@ -166,7 +166,7 @@ export function useTaskToasts(
         toast.info(`PR opened: ${task.title}`, {
           action: 'Open PR',
           onAction: () => window.open(url, '_blank'),
-          durationMs: TOAST_DURATION,
+          durationMs: TOAST_DURATION
         })
       }
     }

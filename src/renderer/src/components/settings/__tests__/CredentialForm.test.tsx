@@ -7,11 +7,17 @@ import userEvent from '@testing-library/user-event'
 import { CredentialForm, type CredentialField } from '../CredentialForm'
 
 const TOKEN_FIELDS: CredentialField[] = [
-  { key: 'token', label: 'API Token', type: 'token', placeholder: 'sk-...', savedPlaceholder: 'Token saved' },
+  {
+    key: 'token',
+    label: 'API Token',
+    type: 'token',
+    placeholder: 'sk-...',
+    savedPlaceholder: 'Token saved'
+  }
 ]
 
 const URL_FIELDS: CredentialField[] = [
-  { key: 'url', label: 'Service URL', type: 'url', placeholder: 'https://...' },
+  { key: 'url', label: 'Service URL', type: 'url', placeholder: 'https://...' }
 ]
 
 const defaultProps = {
@@ -21,7 +27,7 @@ const defaultProps = {
   hasExisting: { token: false },
   onChange: vi.fn(),
   onSave: vi.fn().mockResolvedValue(undefined),
-  dirty: false,
+  dirty: false
 }
 
 describe('CredentialForm', () => {
@@ -85,7 +91,14 @@ describe('CredentialForm', () => {
   })
 
   it('renders URL field as text input', () => {
-    render(<CredentialForm {...defaultProps} fields={URL_FIELDS} values={{ url: '' }} hasExisting={{ url: false }} />)
+    render(
+      <CredentialForm
+        {...defaultProps}
+        fields={URL_FIELDS}
+        values={{ url: '' }}
+        hasExisting={{ url: false }}
+      />
+    )
     const input = screen.getByPlaceholderText('https://...')
     expect(input).toHaveAttribute('type', 'text')
   })

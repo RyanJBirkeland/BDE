@@ -28,7 +28,7 @@ export function AgentManagerSection(): React.JSX.Element {
         window.api.settings.get('agentManager.defaultModel'),
         window.api.settings.get('agentManager.worktreeBase'),
         window.api.settings.getJson('agentManager.maxRuntimeMs'),
-        window.api.settings.getJson('agentManager.autoStart'),
+        window.api.settings.getJson('agentManager.autoStart')
       ])
       if (typeof maxC === 'number') setMaxConcurrent(maxC)
       if (typeof model === 'string' && model) setDefaultModel(model)
@@ -47,7 +47,7 @@ export function AgentManagerSection(): React.JSX.Element {
         window.api.settings.set('agentManager.defaultModel', defaultModel),
         window.api.settings.set('agentManager.worktreeBase', worktreeBase),
         window.api.settings.setJson('agentManager.maxRuntimeMs', maxRuntimeMinutes * 60_000),
-        window.api.settings.setJson('agentManager.autoStart', autoStart),
+        window.api.settings.setJson('agentManager.autoStart', autoStart)
       ])
       setDirty(false)
       toast.success('Agent Manager settings saved')

@@ -7,8 +7,14 @@ import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 
 const REPO_COLOR_PALETTE = [
-  '#6C8EEF', '#00D37F', '#FF8A00', '#EF4444', '#8B5CF6',
-  '#3B82F6', '#F97316', '#06B6D4',
+  '#6C8EEF',
+  '#00D37F',
+  '#FF8A00',
+  '#EF4444',
+  '#8B5CF6',
+  '#3B82F6',
+  '#F97316',
+  '#06B6D4'
 ]
 
 interface RepoConfig {
@@ -57,8 +63,8 @@ export function RepositoriesSection(): React.JSX.Element {
         localPath: newPath.trim(),
         githubOwner: newOwner.trim() || undefined,
         githubRepo: newRepo.trim() || undefined,
-        color: newColor,
-      },
+        color: newColor
+      }
     ]
     await saveRepos(updated)
     setAdding(false)

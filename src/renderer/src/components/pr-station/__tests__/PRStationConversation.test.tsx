@@ -11,8 +11,8 @@ const issueComments = [
     user: { login: 'alice', avatar_url: '' },
     body: 'Looks good overall',
     created_at: '2026-01-01T00:00:00Z',
-    html_url: '',
-  },
+    html_url: ''
+  }
 ]
 const reviewComments = [
   {
@@ -25,7 +25,7 @@ const reviewComments = [
     path: 'src/main.ts',
     line: 42,
     side: 'RIGHT' as const,
-    in_reply_to_id: null,
+    in_reply_to_id: null
   },
   {
     id: 21,
@@ -37,8 +37,8 @@ const reviewComments = [
     path: 'src/main.ts',
     line: 42,
     side: 'RIGHT' as const,
-    in_reply_to_id: 20,
-  },
+    in_reply_to_id: 20
+  }
 ]
 
 describe('PRStationConversation', () => {
@@ -57,19 +57,13 @@ describe('PRStationConversation', () => {
 
   it('groups review comment replies into threads', () => {
     render(
-      <PRStationConversation
-        reviewComments={reviewComments}
-        issueComments={[]}
-        loading={false}
-      />
+      <PRStationConversation reviewComments={reviewComments} issueComments={[]} loading={false} />
     )
     expect(screen.getByText(/src\/main\.ts/)).toBeInTheDocument()
   })
 
   it('shows empty state when no comments', () => {
-    render(
-      <PRStationConversation reviewComments={[]} issueComments={[]} loading={false} />
-    )
+    render(<PRStationConversation reviewComments={[]} issueComments={[]} loading={false} />)
     expect(screen.getByText(/no comment/i)).toBeInTheDocument()
   })
 })

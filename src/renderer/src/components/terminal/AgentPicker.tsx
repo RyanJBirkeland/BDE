@@ -66,17 +66,18 @@ export function AgentPicker({ onSelect, onClose }: AgentPickerProps): React.JSX.
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
-  const handleSelect = useCallback((agent: AgentMeta) => {
-    const label = `${agent.repo} \u2014 ${truncate(agent.task, 30)}`
-    onSelect(agent.id, label)
-  }, [onSelect])
+  const handleSelect = useCallback(
+    (agent: AgentMeta) => {
+      const label = `${agent.repo} \u2014 ${truncate(agent.task, 30)}`
+      onSelect(agent.id, label)
+    },
+    [onSelect]
+  )
 
   return (
     <div ref={ref} className="agent-picker">
       {/* Header */}
-      <div className="agent-picker__header">
-        Watch Agent Output
-      </div>
+      <div className="agent-picker__header">Watch Agent Output</div>
       <div className="agent-picker__divider" />
 
       {/* Agent list */}
@@ -86,11 +87,7 @@ export function AgentPicker({ onSelect, onClose }: AgentPickerProps): React.JSX.
         <div className="agent-picker__empty">No running agents</div>
       ) : (
         agents.map((agent) => (
-          <button
-            key={agent.id}
-            className="agent-picker__item"
-            onClick={() => handleSelect(agent)}
-          >
+          <button key={agent.id} className="agent-picker__item" onClick={() => handleSelect(agent)}>
             <div className="agent-picker__item-left">
               <span className="agent-picker__icon">{'\u{1F916}'}</span>
               <span className="agent-picker__repo">{agent.repo}</span>

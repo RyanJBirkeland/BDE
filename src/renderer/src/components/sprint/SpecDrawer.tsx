@@ -24,7 +24,16 @@ type SpecDrawerProps = {
   onDelete?: (taskId: string) => void
 }
 
-export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, onMarkDone, onUpdate, onDelete }: SpecDrawerProps) {
+export function SpecDrawer({
+  task,
+  onClose,
+  onSave,
+  onLaunch,
+  onPushToSprint,
+  onMarkDone,
+  onUpdate,
+  onDelete
+}: SpecDrawerProps) {
   const { confirm, confirmProps } = useConfirm()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -68,7 +77,9 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
       setDraft(fallback)
     }
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [task?.id, task?.spec])
 
   // When task.spec changes externally and the user hasn't made local edits, sync content
@@ -100,7 +111,11 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
 
   const handleDelete = useCallback(async () => {
     if (!task || !onDelete) return
-    const ok = await confirm({ message: 'Delete this task? This cannot be undone.', confirmLabel: 'Delete', variant: 'danger' })
+    const ok = await confirm({
+      message: 'Delete this task? This cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })
     if (!ok) return
     onDelete(task.id)
   }, [task, onDelete, confirm])
@@ -139,7 +154,10 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
           className="spec-drawer__overlay"
           onClick={async () => {
             if (editing && dirty) {
-              const ok = await confirm({ message: 'Discard unsaved changes?', confirmLabel: 'Discard' })
+              const ok = await confirm({
+                message: 'Discard unsaved changes?',
+                confirmLabel: 'Discard'
+              })
               if (!ok) return
               setEditing(false)
               setDraft(resolvedContentRef.current)
@@ -208,7 +226,10 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
                 <textarea
                   className="spec-drawer__editor"
                   value={draft}
-                  onChange={(e) => { setDraft(e.target.value); setDirty(true) }}
+                  onChange={(e) => {
+                    setDraft(e.target.value)
+                    setDirty(true)
+                  }}
                   placeholder="Write your spec in markdown..."
                   autoFocus
                 />
@@ -234,9 +255,7 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
                 >
                   {showPrompt ? '▾ Hide Prompt' : '▸ View Full Prompt'}
                 </button>
-                {showPrompt && (
-                  <pre className="spec-drawer__prompt-body">{task.prompt}</pre>
-                )}
+                {showPrompt && <pre className="spec-drawer__prompt-body">{task.prompt}</pre>}
               </div>
             )}
 
@@ -253,19 +272,11 @@ export function SpecDrawer({ task, onClose, onSave, onLaunch, onPushToSprint, on
                   Launch
                 </Button>
               ) : task.status === TASK_STATUS.BACKLOG ? (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => onPushToSprint(task)}
-                >
+                <Button variant="primary" size="sm" onClick={() => onPushToSprint(task)}>
                   → Push to Sprint
                 </Button>
               ) : task.status === TASK_STATUS.QUEUED ? (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => onLaunch(task)}
-                >
+                <Button variant="primary" size="sm" onClick={() => onLaunch(task)}>
                   Launch Agent
                 </Button>
               ) : null}

@@ -74,17 +74,13 @@ describe('InlineDiffDrawer', () => {
   })
 
   it('shows "No diff available" when diff is empty', () => {
-    render(
-      <InlineDiffDrawer selectedFile={selectedFile} diffContent="" onClose={vi.fn()} />
-    )
+    render(<InlineDiffDrawer selectedFile={selectedFile} diffContent="" onClose={vi.fn()} />)
     expect(screen.getByText('No diff available')).toBeInTheDocument()
   })
 
   it('handles file path without directory', () => {
     const rootFile: GitFileEntry = { path: 'README.md', status: 'M' }
-    render(
-      <InlineDiffDrawer selectedFile={rootFile} diffContent={diffContent} onClose={vi.fn()} />
-    )
+    render(<InlineDiffDrawer selectedFile={rootFile} diffContent={diffContent} onClose={vi.fn()} />)
     expect(screen.getByRole('region', { name: /Diff for README.md/ })).toBeInTheDocument()
   })
 })

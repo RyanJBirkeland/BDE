@@ -11,11 +11,15 @@ const rect = { left: 0, top: 0, width: 400, height: 300 }
 describe('getDropZone', () => {
   it('returns top for upper 25%', () => expect(getDropZone(200, 30, rect)).toBe('top'))
   it('returns bottom for lower 25%', () => expect(getDropZone(200, 270, rect)).toBe('bottom'))
-  it('returns left for left 25% (mid-height)', () => expect(getDropZone(50, 150, rect)).toBe('left'))
-  it('returns right for right 25% (mid-height)', () => expect(getDropZone(350, 150, rect)).toBe('right'))
+  it('returns left for left 25% (mid-height)', () =>
+    expect(getDropZone(50, 150, rect)).toBe('left'))
+  it('returns right for right 25% (mid-height)', () =>
+    expect(getDropZone(350, 150, rect)).toBe('right'))
   it('returns center for middle', () => expect(getDropZone(200, 150, rect)).toBe('center'))
-  it('top takes priority over left in top-left corner', () => expect(getDropZone(30, 30, rect)).toBe('top'))
-  it('bottom takes priority over right in bottom-right corner', () => expect(getDropZone(370, 270, rect)).toBe('bottom'))
+  it('top takes priority over left in top-left corner', () =>
+    expect(getDropZone(30, 30, rect)).toBe('top'))
+  it('bottom takes priority over right in bottom-right corner', () =>
+    expect(getDropZone(370, 270, rect)).toBe('bottom'))
 
   // Additional boundary tests for branch coverage
   it('returns left when pctY is exactly 0.25 (boundary)', () => {
@@ -49,8 +53,10 @@ function makeDragInit(opts: { panelData?: string } = {}) {
     dataTransfer: {
       dropEffect: '' as string,
       getData: (key: string) => store[key] ?? '',
-      setData: (key: string, val: string) => { store[key] = val },
-    },
+      setData: (key: string, val: string) => {
+        store[key] = val
+      }
+    }
   }
 }
 
@@ -98,7 +104,9 @@ describe('PanelDropOverlay component', () => {
     // Zone is a valid DropZone string
     expect(['top', 'bottom', 'left', 'right', 'center']).toContain(onDrop.mock.calls[0][1])
     expect(onDrop.mock.calls[0][2]).toEqual({
-      viewKey: 'editor', sourcePanelId: 'p2', sourceTabIndex: 0,
+      viewKey: 'editor',
+      sourcePanelId: 'p2',
+      sourceTabIndex: 0
     })
   })
 

@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 import { registerAgentManagerHandlers } from '../agent-manager-handlers'
@@ -58,10 +58,10 @@ describe('Agent manager handlers', () => {
         const mockStatus = {
           running: true,
           concurrency: { maxSlots: 3, activeCount: 1 },
-          activeAgents: [{ id: 'agent-1' }],
+          activeAgents: [{ id: 'agent-1' }]
         }
         const mockAm = {
-          getStatus: vi.fn().mockReturnValue(mockStatus),
+          getStatus: vi.fn().mockReturnValue(mockStatus)
         }
         const handlers = captureHandlersWithAm(mockAm as any)
 

@@ -37,8 +37,8 @@ const mocks = vi.hoisted(() => {
       clear: mockClear,
       onData: mockOnData,
       focus: mockFocus,
-      options: {} as Record<string, unknown>,
-    },
+      options: {} as Record<string, unknown>
+    }
   }
 })
 
@@ -54,46 +54,46 @@ vi.mock('xterm', () => ({
     clear = mocks.mockClear
     onData = mocks.mockOnData
     focus = mocks.mockFocus
-  },
+  }
 }))
 
 vi.mock('xterm-addon-fit', () => ({
   FitAddon: class {
     fit = mocks.mockFit
-  },
+  }
 }))
 
 vi.mock('xterm-addon-search', () => ({
-  SearchAddon: class {},
+  SearchAddon: class {}
 }))
 
 vi.mock('xterm-addon-web-links', () => ({
-  WebLinksAddon: class {},
+  WebLinksAddon: class {}
 }))
 
 vi.mock('xterm/css/xterm.css', () => ({}))
 
 vi.mock('../../../stores/terminal', () => ({
   useTerminalStore: {
-    getState: () => ({ setPtyId: mocks.mockSetPtyId }),
-  },
+    getState: () => ({ setPtyId: mocks.mockSetPtyId })
+  }
 }))
 
 vi.mock('../../../stores/theme', () => ({
   useThemeStore: {
-    subscribe: mocks.mockThemeSubscribe,
-  },
+    subscribe: mocks.mockThemeSubscribe
+  }
 }))
 
 vi.mock('../../../lib/terminal-theme', () => ({
-  getTerminalTheme: () => ({ background: '#000', foreground: '#fff' }),
+  getTerminalTheme: () => ({ background: '#000', foreground: '#fff' })
 }))
 
 vi.mock('../../../design-system/tokens', () => ({
   tokens: {
     space: { 2: '0.5rem' },
-    font: { code: 'monospace' },
-  },
+    font: { code: 'monospace' }
+  }
 }))
 
 import { TerminalPane, clearTerminal, getSearchAddon } from '../TerminalPane'
@@ -112,8 +112,8 @@ beforeEach(() => {
       resize: vi.fn(),
       kill: vi.fn(),
       onData: vi.fn(() => vi.fn()),
-      onExit: vi.fn(),
-    },
+      onExit: vi.fn()
+    }
   } as unknown as typeof window.api
 
   global.ResizeObserver = class {
@@ -125,24 +125,18 @@ beforeEach(() => {
 
 describe('TerminalPane', () => {
   it('renders a container div', () => {
-    const { container } = render(
-      <TerminalPane tabId="tab-1" visible={true} />
-    )
+    const { container } = render(<TerminalPane tabId="tab-1" visible={true} />)
     expect(container.firstChild).toBeInstanceOf(HTMLDivElement)
   })
 
   it('hides container when visible is false', () => {
-    const { container } = render(
-      <TerminalPane tabId="tab-1" visible={false} />
-    )
+    const { container } = render(<TerminalPane tabId="tab-1" visible={false} />)
     const div = container.firstChild as HTMLDivElement
     expect(div.style.display).toBe('none')
   })
 
   it('shows container when visible is true', () => {
-    const { container } = render(
-      <TerminalPane tabId="tab-1" visible={true} />
-    )
+    const { container } = render(<TerminalPane tabId="tab-1" visible={true} />)
     const div = container.firstChild as HTMLDivElement
     expect(div.style.display).toBe('block')
   })
@@ -154,14 +148,12 @@ describe('TerminalPane', () => {
   })
 
   it('calls window.api.terminal.create with cols, rows, shell, and cwd', () => {
-    render(
-      <TerminalPane tabId="tab-1" shell="/bin/zsh" cwd="/home" visible={true} />
-    )
+    render(<TerminalPane tabId="tab-1" shell="/bin/zsh" cwd="/home" visible={true} />)
     expect(window.api.terminal.create).toHaveBeenCalledWith({
       cols: 80,
       rows: 24,
       shell: '/bin/zsh',
-      cwd: '/home',
+      cwd: '/home'
     })
   })
 
@@ -179,9 +171,7 @@ describe('TerminalPane', () => {
   })
 
   it('cleans up terminal on unmount', async () => {
-    const { unmount } = render(
-      <TerminalPane tabId="tab-1" visible={true} />
-    )
+    const { unmount } = render(<TerminalPane tabId="tab-1" visible={true} />)
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0))
     })
@@ -195,7 +185,7 @@ describe('TerminalPane', () => {
       cols: 80,
       rows: 24,
       shell: undefined,
-      cwd: undefined,
+      cwd: undefined
     })
   })
 

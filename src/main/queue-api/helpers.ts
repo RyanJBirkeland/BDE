@@ -101,10 +101,7 @@ export function parseUrl(req: http.IncomingMessage): { path: string; query: URLS
 }
 
 /** Match a route pattern like /queue/tasks/:id against a path */
-export function matchRoute(
-  pattern: string,
-  path: string
-): Record<string, string> | null {
+export function matchRoute(pattern: string, path: string): Record<string, string> | null {
   const patternParts = pattern.split('/')
   const pathParts = path.split('/')
 

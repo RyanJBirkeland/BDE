@@ -7,15 +7,15 @@ import type { IpcMainInvokeEvent } from 'electron'
 vi.mock('electron', () => ({
   shell: { openExternal: vi.fn().mockResolvedValue(undefined) },
   BrowserWindow: {
-    getFocusedWindow: vi.fn(() => ({ setTitle: vi.fn() })),
+    getFocusedWindow: vi.fn(() => ({ setTitle: vi.fn() }))
   },
   ipcMain: {
-    on: vi.fn(),
-  },
+    on: vi.fn()
+  }
 }))
 
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 import { registerWindowHandlers } from '../window-handlers'
@@ -76,9 +76,9 @@ describe('Window handlers', () => {
       it('blocks non-allowed URL schemes', () => {
         const handlers = captureHandlers()
 
-        expect(() =>
-          handlers['window:openExternal'](mockEvent, 'file:///etc/passwd')
-        ).toThrow('Blocked URL scheme: "file:"')
+        expect(() => handlers['window:openExternal'](mockEvent, 'file:///etc/passwd')).toThrow(
+          'Blocked URL scheme: "file:"'
+        )
 
         expect(shell.openExternal).not.toHaveBeenCalled()
       })
@@ -86,9 +86,9 @@ describe('Window handlers', () => {
       it('blocks javascript: scheme', () => {
         const handlers = captureHandlers()
 
-        expect(() =>
-          handlers['window:openExternal'](mockEvent, 'javascript:alert(1)')
-        ).toThrow('Blocked URL scheme: "javascript:"')
+        expect(() => handlers['window:openExternal'](mockEvent, 'javascript:alert(1)')).toThrow(
+          'Blocked URL scheme: "javascript:"'
+        )
 
         expect(shell.openExternal).not.toHaveBeenCalled()
       })
@@ -102,7 +102,7 @@ describe('Window handlers', () => {
 
         expect(result).toEqual({
           ok: false,
-          error: 'Local PID-based agent kill removed. Use agent:kill with an agent ID instead.',
+          error: 'Local PID-based agent kill removed. Use agent:kill with an agent ID instead.'
         })
       })
     })

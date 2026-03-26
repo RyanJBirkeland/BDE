@@ -7,12 +7,12 @@ vi.mock('../toasts', () => ({
     success: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
-    undoable: vi.fn(),
-  },
+    undoable: vi.fn()
+  }
 }))
 
 vi.mock('../../../../shared/template-heuristics', () => ({
-  detectTemplate: vi.fn().mockReturnValue(null),
+  detectTemplate: vi.fn().mockReturnValue(null)
 }))
 
 import { useSprintTasks } from '../sprintTasks'
@@ -41,7 +41,7 @@ const makeTask = (id: string, overrides: Partial<SprintTask> = {}): SprintTask =
   depends_on: null,
   updated_at: new Date().toISOString(),
   created_at: new Date().toISOString(),
-  ...overrides,
+  ...overrides
 })
 
 const initialState = {
@@ -50,7 +50,7 @@ const initialState = {
   loadError: null,
   prMergedMap: {},
   pendingUpdates: {} as Record<string, { ts: number; fields: string[] }>,
-  pendingCreates: [] as string[],
+  pendingCreates: [] as string[]
 }
 
 describe('sprintTasks store', () => {
@@ -121,7 +121,7 @@ describe('sprintTasks store', () => {
 
       await useSprintTasks.getState().updateTask('t1', { status: 'active' })
 
-      expect(('t1' in useSprintTasks.getState().pendingUpdates)).toBe(false)
+      expect('t1' in useSprintTasks.getState().pendingUpdates).toBe(false)
     })
 
     it('calls toast.error and reloads on failure', async () => {
@@ -144,7 +144,9 @@ describe('sprintTasks store', () => {
       const task = makeTask('t1', { status: 'active' })
       useSprintTasks.setState({ tasks: [task] })
 
-      useSprintTasks.getState().mergeSseUpdate({ taskId: 't1', status: 'done', pr_url: 'https://github.com/pr/1' })
+      useSprintTasks
+        .getState()
+        .mergeSseUpdate({ taskId: 't1', status: 'done', pr_url: 'https://github.com/pr/1' })
 
       const updated = useSprintTasks.getState().tasks[0]
       expect(updated.status).toBe('done')
@@ -158,7 +160,7 @@ describe('sprintTasks store', () => {
       useSprintTasks.getState().mergeSseUpdate({
         taskId: 't1',
         status: 'done',
-        pr_url: 'https://github.com/pr/1',
+        pr_url: 'https://github.com/pr/1'
       })
 
       expect(useSprintTasks.getState().tasks[0].pr_status).toBe('open')
@@ -234,20 +236,22 @@ describe('sprintTasks store', () => {
       ;(window.api.sprint.generatePrompt as ReturnType<typeof vi.fn>).mockResolvedValue({
         taskId: 'server-id-1',
         spec: 'generated spec',
-        prompt: 'generated prompt',
+        prompt: 'generated prompt'
       })
     })
 
     it('optimistically adds task before IPC call resolves', async () => {
       let resolveCreate!: (v: SprintTask) => void
       ;(window.api.sprint.create as ReturnType<typeof vi.fn>).mockReturnValue(
-        new Promise<SprintTask>((res) => { resolveCreate = res })
+        new Promise<SprintTask>((res) => {
+          resolveCreate = res
+        })
       )
 
       const createPromise = useSprintTasks.getState().createTask({
         title: 'New task',
         repo: 'BDE',
-        priority: 1,
+        priority: 1
       })
 
       // Before IPC resolves, task should already be in list
@@ -263,7 +267,7 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().createTask({
         title: 'My task',
         repo: 'BDE',
-        priority: 2,
+        priority: 2
       })
 
       const tasks = useSprintTasks.getState().tasks
@@ -276,7 +280,7 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().createTask({
         title: 'My task',
         repo: 'BDE',
-        priority: 1,
+        priority: 1
       })
 
       expect(toast.success).toHaveBeenCalledWith('Ticket created — saved to Backlog')
@@ -286,7 +290,7 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().createTask({
         title: 'Repo case test',
         repo: 'BDE',
-        priority: 1,
+        priority: 1
       })
 
       // The IPC was called with the lowercased repo
@@ -303,7 +307,7 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().createTask({
         title: 'Failed task',
         repo: 'BDE',
-        priority: 1,
+        priority: 1
       })
 
       expect(useSprintTasks.getState().tasks).toHaveLength(0)
@@ -316,7 +320,7 @@ describe('sprintTasks store', () => {
         title: 'Task with spec',
         repo: 'BDE',
         priority: 1,
-        spec: 'existing spec',
+        spec: 'existing spec'
       })
 
       expect(window.api.sprint.generatePrompt).not.toHaveBeenCalled()
@@ -327,7 +331,7 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().createTask({
         title: 'Quick task',
         repo: 'BDE',
-        priority: 1,
+        priority: 1
       })
 
       // generatePrompt is called asynchronously (fire and forget), so we need to flush
@@ -340,7 +344,7 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().createTask({
         title: 'Quick task',
         repo: 'BDE',
-        priority: 1,
+        priority: 1
       })
 
       await vi.waitFor(() => {
@@ -357,13 +361,13 @@ describe('sprintTasks store', () => {
     beforeEach(() => {
       useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({
-        bde: '/repos/bde',
+        bde: '/repos/bde'
       })
       ;(window.api.spawnLocalAgent as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'agent-99',
         pid: 5678,
         logPath: '/tmp/log',
-        interactive: false,
+        interactive: false
       })
       ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockResolvedValue({})
     })
@@ -373,7 +377,7 @@ describe('sprintTasks store', () => {
 
       expect(window.api.spawnLocalAgent).toHaveBeenCalledWith({
         task: task.title,
-        repoPath: '/repos/bde',
+        repoPath: '/repos/bde'
       })
       const updated = useSprintTasks.getState().tasks[0]
       expect(updated.status).toBe('active')
@@ -409,7 +413,7 @@ describe('sprintTasks store', () => {
       useSprintTasks.setState({
         tasks: [...activeTasks, task],
         pendingUpdates: {},
-        pendingCreates: [],
+        pendingCreates: []
       })
 
       await useSprintTasks.getState().launchTask(task)
@@ -426,7 +430,7 @@ describe('sprintTasks store', () => {
       useSprintTasks.setState({
         tasks: [...otherActiveTasks, alreadyActive],
         pendingUpdates: {},
-        pendingCreates: [],
+        pendingCreates: []
       })
 
       // Should not block even though there are 5 active tasks
@@ -450,7 +454,7 @@ describe('sprintTasks store', () => {
     it('preserves only pending fields from optimistic version during poll', async () => {
       const optimistic = makeTask('t1', { status: 'active', notes: 'local notes' })
       const pendingUpdates: Record<string, { ts: number; fields: string[] }> = {
-        't1': { ts: Date.now(), fields: ['status'] },
+        t1: { ts: Date.now(), fields: ['status'] }
       }
       useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: [] })
 
@@ -471,7 +475,7 @@ describe('sprintTasks store', () => {
       // Timestamp older than PENDING_UPDATE_TTL (2000ms)
       const oldTs = Date.now() - 3000
       const pendingUpdates: Record<string, { ts: number; fields: string[] }> = {
-        't1': { ts: oldTs, fields: ['status'] },
+        t1: { ts: oldTs, fields: ['status'] }
       }
       useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: [] })
 
@@ -485,14 +489,24 @@ describe('sprintTasks store', () => {
     })
 
     it('merges field-by-field: pending fields from local, rest from server', async () => {
-      const local = makeTask('t1', { status: 'active', priority: 1, notes: 'old local notes', claimed_by: 'agent-1' })
+      const local = makeTask('t1', {
+        status: 'active',
+        priority: 1,
+        notes: 'old local notes',
+        claimed_by: 'agent-1'
+      })
       const pendingUpdates: Record<string, { ts: number; fields: string[] }> = {
-        't1': { ts: Date.now(), fields: ['status', 'claimed_by'] },
+        t1: { ts: Date.now(), fields: ['status', 'claimed_by'] }
       }
       useSprintTasks.setState({ tasks: [local], pendingUpdates, pendingCreates: [] })
 
       // Server has updated priority and notes, but stale status
-      const server = makeTask('t1', { status: 'backlog', priority: 5, notes: 'server notes', claimed_by: null })
+      const server = makeTask('t1', {
+        status: 'backlog',
+        priority: 5,
+        notes: 'server notes',
+        claimed_by: null
+      })
       ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([server])
 
       await useSprintTasks.getState().loadData()
@@ -541,14 +555,12 @@ describe('sprintTasks store', () => {
     it('removes taskId from pendingUpdates on failure', async () => {
       const task = makeTask('t1')
       useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
-      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('fail')
-      )
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('fail'))
       ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([task])
 
       await useSprintTasks.getState().updateTask('t1', { status: 'active' })
 
-      expect(('t1' in useSprintTasks.getState().pendingUpdates)).toBe(false)
+      expect('t1' in useSprintTasks.getState().pendingUpdates).toBe(false)
     })
   })
 
@@ -560,7 +572,7 @@ describe('sprintTasks store', () => {
       useSprintTasks.getState().mergeSseUpdate({
         taskId: 't1',
         status: 'active',
-        pr_url: 'https://github.com/pr/1',
+        pr_url: 'https://github.com/pr/1'
       })
 
       expect(useSprintTasks.getState().tasks[0].pr_status).toBeNull()
@@ -573,7 +585,7 @@ describe('sprintTasks store', () => {
       useSprintTasks.getState().mergeSseUpdate({
         taskId: 't1',
         status: 'done',
-        pr_url: 'https://github.com/pr/1',
+        pr_url: 'https://github.com/pr/1'
       })
 
       // pr_status was already 'merged' — should not be overwritten to 'open'

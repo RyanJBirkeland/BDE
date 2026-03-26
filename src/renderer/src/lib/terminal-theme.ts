@@ -30,6 +30,6 @@ export function getTerminalTheme(): ITheme {
     cyan: get('--bde-info'),
     brightCyan: get('--bde-info'),
     white: get('--bde-text'),
-    brightWhite: get('--bde-text'),
+    brightWhite: get('--bde-text')
   }
 }

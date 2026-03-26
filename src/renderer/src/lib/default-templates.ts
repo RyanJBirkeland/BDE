@@ -19,22 +19,28 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         label: 'Which area of the codebase should I focus on?',
         type: 'choice',
         choices: ['Entire repo', 'Specific directory', 'Changed files only'],
-        default: 'Entire repo',
+        default: 'Entire repo'
       },
       {
         id: 'focus',
         label: 'What should I prioritize?',
         type: 'multi-choice',
-        choices: ['Dead code', 'Naming & readability', 'SOLID violations', 'Magic numbers', 'All of the above'],
-        default: 'All of the above',
+        choices: [
+          'Dead code',
+          'Naming & readability',
+          'SOLID violations',
+          'Magic numbers',
+          'All of the above'
+        ],
+        default: 'All of the above'
       },
       {
         id: 'action',
         label: 'Should I auto-fix issues or just report them?',
         type: 'choice',
         choices: ['Report only', 'Auto-fix safe changes', 'Auto-fix everything'],
-        default: 'Auto-fix safe changes',
-      },
+        default: 'Auto-fix safe changes'
+      }
     ],
     promptTemplate:
       'Perform a comprehensive clean code audit on {{scope}} of this repository.\n\n' +
@@ -42,10 +48,10 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'Action mode: {{action}}.\n\n' +
       'For auto-fix: apply changes where the fix is clearly correct. For changes that require judgment ' +
       'or could alter behavior, report them with file path and line number but do not modify.\n\n' +
-      'Use the project\'s existing conventions in CLAUDE.md. Run `npm test` after changes to verify nothing breaks. ' +
+      "Use the project's existing conventions in CLAUDE.md. Run `npm test` after changes to verify nothing breaks. " +
       'Commit fixes in logical groups with descriptive messages.',
     builtIn: true,
-    order: 0,
+    order: 0
   },
   {
     id: 'builtin-fix-bug',
@@ -56,22 +62,22 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
     questions: [
       {
         id: 'description',
-        label: 'Describe the bug — what\'s happening vs what should happen?',
+        label: "Describe the bug — what's happening vs what should happen?",
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'repro',
         label: 'How can the bug be reproduced?',
         type: 'text',
-        required: false,
+        required: false
       },
       {
         id: 'area',
         label: 'Where do you suspect the issue is?',
         type: 'text',
-        required: false,
-      },
+        required: false
+      }
     ],
     promptTemplate:
       'Fix the following bug:\n\n' +
@@ -81,7 +87,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'Investigate the root cause, implement a fix, add a regression test, and verify existing tests still pass. ' +
       'Commit with a descriptive message explaining what was broken and why.',
     builtIn: true,
-    order: 1,
+    order: 1
   },
   {
     id: 'builtin-new-feature',
@@ -94,21 +100,21 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'feature',
         label: 'Describe the feature you want built.',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'files',
         label: 'Any specific files or areas to modify?',
         type: 'text',
-        required: false,
+        required: false
       },
       {
         id: 'tests',
         label: 'What testing approach should I use?',
         type: 'choice',
         choices: ['TDD — write tests first', 'Tests after implementation', 'No tests needed'],
-        default: 'TDD — write tests first',
-      },
+        default: 'TDD — write tests first'
+      }
     ],
     promptTemplate:
       'Implement the following feature:\n\n' +
@@ -118,7 +124,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'Follow the existing code patterns and conventions in CLAUDE.md. Keep the implementation focused — ' +
       'build only what was requested, no extras. Commit in logical increments.',
     builtIn: true,
-    order: 2,
+    order: 2
   },
   {
     id: 'builtin-write-tests',
@@ -131,21 +137,21 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'target',
         label: 'Which files or components should I write tests for?',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'testType',
         label: 'What type of tests?',
         type: 'choice',
         choices: ['Unit tests', 'Integration tests', 'Both unit and integration'],
-        default: 'Unit tests',
+        default: 'Unit tests'
       },
       {
         id: 'goal',
         label: 'Any specific coverage goal or scenarios to cover?',
         type: 'text',
-        required: false,
-      },
+        required: false
+      }
     ],
     promptTemplate:
       'Write {{testType}} for: {{target}}\n\n' +
@@ -154,7 +160,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'vitest for main process). Test real behavior, not implementation details. Cover happy path, ' +
       'error cases, and edge cases. Run `npm test` to verify all tests pass.',
     builtIn: true,
-    order: 3,
+    order: 3
   },
   {
     id: 'builtin-code-review',
@@ -167,22 +173,29 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'target',
         label: 'What should I review? (PR number, branch name, or file paths)',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'focus',
         label: 'What should I focus on?',
         type: 'multi-choice',
-        choices: ['Correctness', 'Performance', 'Security', 'Code style', 'Test coverage', 'All of the above'],
-        default: 'All of the above',
+        choices: [
+          'Correctness',
+          'Performance',
+          'Security',
+          'Code style',
+          'Test coverage',
+          'All of the above'
+        ],
+        default: 'All of the above'
       },
       {
         id: 'strictness',
         label: 'How strict should the review be?',
         type: 'choice',
         choices: ['Lenient — only flag real issues', 'Standard', 'Strict — flag everything'],
-        default: 'Standard',
-      },
+        default: 'Standard'
+      }
     ],
     promptTemplate:
       'Review the following code: {{target}}\n\n' +
@@ -191,7 +204,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'For each issue found, provide: file path, line number, severity (critical/warning/suggestion), ' +
       'and a clear explanation of the problem and recommended fix. Group findings by file.',
     builtIn: true,
-    order: 4,
+    order: 4
   },
   {
     id: 'builtin-refactor',
@@ -204,21 +217,27 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'target',
         label: 'What code needs to be refactored?',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'type',
         label: 'What kind of refactoring?',
         type: 'choice',
-        choices: ['Extract/split — break up large file', 'Rename/reorganize', 'Simplify complex logic', 'Remove duplication', 'Other'],
-        default: 'Simplify complex logic',
+        choices: [
+          'Extract/split — break up large file',
+          'Rename/reorganize',
+          'Simplify complex logic',
+          'Remove duplication',
+          'Other'
+        ],
+        default: 'Simplify complex logic'
       },
       {
         id: 'constraints',
         label: 'Any constraints or things to preserve?',
         type: 'text',
-        required: false,
-      },
+        required: false
+      }
     ],
     promptTemplate:
       'Refactor the following code: {{target}}\n\n' +
@@ -228,6 +247,6 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'each change to verify nothing breaks. Commit in small, logical increments. Follow existing ' +
       'patterns and conventions in CLAUDE.md.',
     builtIn: true,
-    order: 5,
-  },
+    order: 5
+  }
 ]

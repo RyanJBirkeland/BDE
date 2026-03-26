@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 beforeEach(() => {
@@ -41,7 +41,12 @@ describe('RepositoriesSection', () => {
 
   it('renders repo list from settings', async () => {
     vi.mocked(window.api.settings.getJson).mockResolvedValue([
-      { name: 'my-repo', localPath: '/home/user/my-repo', githubOwner: 'acme', githubRepo: 'my-repo' },
+      {
+        name: 'my-repo',
+        localPath: '/home/user/my-repo',
+        githubOwner: 'acme',
+        githubRepo: 'my-repo'
+      }
     ])
     render(<RepositoriesSection />)
     await waitFor(() => {
@@ -84,8 +89,8 @@ describe('RepositoriesSection', () => {
             name: 'my-project',
             localPath: '/home/user/my-project',
             githubOwner: 'acme',
-            githubRepo: 'my-project',
-          }),
+            githubRepo: 'my-project'
+          })
         ])
       )
     })
@@ -93,8 +98,20 @@ describe('RepositoriesSection', () => {
 
   it('deletes a repo and saves updated array without the deleted entry', async () => {
     vi.mocked(window.api.settings.getJson).mockResolvedValue([
-      { name: 'keep-me', localPath: '/path/keep', githubOwner: 'org', githubRepo: 'keep-me', color: '#6C8EEF' },
-      { name: 'delete-me', localPath: '/path/delete', githubOwner: 'org', githubRepo: 'delete-me', color: '#00D37F' },
+      {
+        name: 'keep-me',
+        localPath: '/path/keep',
+        githubOwner: 'org',
+        githubRepo: 'keep-me',
+        color: '#6C8EEF'
+      },
+      {
+        name: 'delete-me',
+        localPath: '/path/delete',
+        githubOwner: 'org',
+        githubRepo: 'delete-me',
+        color: '#00D37F'
+      }
     ])
 
     const user = userEvent.setup()
@@ -111,15 +128,11 @@ describe('RepositoriesSection', () => {
     await waitFor(() => {
       expect(window.api.settings.setJson).toHaveBeenCalledWith(
         'repos',
-        expect.not.arrayContaining([
-          expect.objectContaining({ name: 'delete-me' }),
-        ])
+        expect.not.arrayContaining([expect.objectContaining({ name: 'delete-me' })])
       )
       expect(window.api.settings.setJson).toHaveBeenCalledWith(
         'repos',
-        expect.arrayContaining([
-          expect.objectContaining({ name: 'keep-me' }),
-        ])
+        expect.arrayContaining([expect.objectContaining({ name: 'keep-me' })])
       )
     })
   })
@@ -136,7 +149,9 @@ describe('RepositoriesSection', () => {
 
     await waitFor(() => {
       expect(window.api.openDirectoryDialog).toHaveBeenCalled()
-      expect((screen.getByPlaceholderText('Local path') as HTMLInputElement).value).toBe('/picked/path')
+      expect((screen.getByPlaceholderText('Local path') as HTMLInputElement).value).toBe(
+        '/picked/path'
+      )
     })
   })
 })

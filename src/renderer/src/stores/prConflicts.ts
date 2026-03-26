@@ -19,5 +19,5 @@ export const usePrConflictsStore = create<PrConflictsStore>((set) => ({
         return state
       }
       return { conflictingTaskIds: [...taskIds] }
-    }),
+    })
 }))

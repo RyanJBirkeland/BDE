@@ -6,10 +6,7 @@ import type { PrReview, PrComment, PrIssueComment } from '../../../shared/types'
  * The token never enters renderer memory — auth is handled entirely in main.
  */
 
-async function githubFetchRaw(
-  path: string,
-  init?: GitHubFetchInit
-): Promise<GitHubFetchResult> {
+async function githubFetchRaw(path: string, init?: GitHubFetchInit): Promise<GitHubFetchResult> {
   return window.api.github.fetch(path, init)
 }
 
@@ -74,7 +71,7 @@ export async function getPrMergeability(
     number: prNumber,
     repo,
     mergeable: data.mergeable ?? null,
-    mergeable_state: data.mergeable_state ?? null,
+    mergeable_state: data.mergeable_state ?? null
   }
 }
 
@@ -96,7 +93,11 @@ export interface CheckRunSummary {
   pending: number
 }
 
-export async function getCheckRuns(owner: string, repo: string, sha: string): Promise<CheckRunSummary> {
+export async function getCheckRuns(
+  owner: string,
+  repo: string,
+  sha: string
+): Promise<CheckRunSummary> {
   const res = await githubFetchRaw(`/repos/${owner}/${repo}/commits/${sha}/check-runs`)
   if (!res.ok) return { status: 'pending', total: 0, passed: 0, failed: 0, pending: 0 }
   const data = res.body as {
@@ -124,7 +125,6 @@ export async function getPRDiff(owner: string, repo: string, number: number): Pr
   return res.body as string
 }
 
-
 export interface PRDetail {
   number: number
   title: string
@@ -140,11 +140,7 @@ export interface PRDetail {
   labels: { name: string; color: string }[]
 }
 
-export async function getPRDetail(
-  owner: string,
-  repo: string,
-  number: number
-): Promise<PRDetail> {
+export async function getPRDetail(owner: string, repo: string, number: number): Promise<PRDetail> {
   const res = await githubFetchRaw(`/repos/${owner}/${repo}/pulls/${number}`)
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
   return res.body as PRDetail
@@ -157,11 +153,7 @@ export interface PRFile {
   deletions: number
 }
 
-export async function getPRFiles(
-  owner: string,
-  repo: string,
-  number: number
-): Promise<PRFile[]> {
+export async function getPRFiles(owner: string, repo: string, number: number): Promise<PRFile[]> {
   return fetchAllPages<PRFile>(`/repos/${owner}/${repo}/pulls/${number}/files?per_page=100`)
 }
 
@@ -201,20 +193,12 @@ export async function mergePR(
   })
   if (!res.ok) {
     const err = (res.body ?? {}) as { message?: string }
-    throw new Error(
-      `Merge failed: ${res.status} — ${err.message ?? 'unknown'}`
-    )
+    throw new Error(`Merge failed: ${res.status} — ${err.message ?? 'unknown'}`)
   }
 }
 
-export async function getReviews(
-  owner: string,
-  repo: string,
-  number: number
-): Promise<PrReview[]> {
-  return fetchAllPages<PrReview>(
-    `/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100`
-  )
+export async function getReviews(owner: string, repo: string, number: number): Promise<PrReview[]> {
+  return fetchAllPages<PrReview>(`/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100`)
 }
 
 export async function getReviewComments(
@@ -222,9 +206,7 @@ export async function getReviewComments(
   repo: string,
   number: number
 ): Promise<PrComment[]> {
-  return fetchAllPages<PrComment>(
-    `/repos/${owner}/${repo}/pulls/${number}/comments?per_page=100`
-  )
+  return fetchAllPages<PrComment>(`/repos/${owner}/${repo}/pulls/${number}/comments?per_page=100`)
 }
 
 export async function getIssueComments(
@@ -297,8 +279,6 @@ export async function closePR(owner: string, repo: string, number: number): Prom
   })
   if (!res.ok) {
     const err = (res.body ?? {}) as { message?: string }
-    throw new Error(
-      `Close failed: ${res.status} — ${err.message ?? 'unknown'}`
-    )
+    throw new Error(`Close failed: ${res.status} — ${err.message ?? 'unknown'}`)
   }
 }

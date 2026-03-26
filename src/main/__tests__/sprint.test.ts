@@ -58,7 +58,7 @@ describe('sprint-adjacent SQLite tests', () => {
       const templateName = 'bugfix'
       const templates = [
         { name: 'bugfix', promptPrefix: 'You are fixing a bug.' },
-        { name: 'feature', promptPrefix: 'You are building a feature.' },
+        { name: 'feature', promptPrefix: 'You are building a feature.' }
       ]
       const match = templates.find((t) => t.name === templateName)
       expect(match?.promptPrefix).toBe('You are fixing a bug.')
@@ -66,9 +66,7 @@ describe('sprint-adjacent SQLite tests', () => {
 
     it('returns undefined when template_name does not match any template', () => {
       const templateName = 'nonexistent'
-      const templates = [
-        { name: 'bugfix', promptPrefix: 'You are fixing a bug.' },
-      ]
+      const templates = [{ name: 'bugfix', promptPrefix: 'You are fixing a bug.' }]
       const match = templates.find((t) => t.name === templateName)
       expect(match).toBeUndefined()
     })

@@ -23,14 +23,14 @@ function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
     tokensIn: null,
     tokensOut: null,
     sprintTaskId: null,
-    ...overrides,
+    ...overrides
   }
 }
 
 describe('AgentTimeline', () => {
   const defaultProps = {
     agents: [],
-    onSelectAgent: vi.fn(),
+    onSelectAgent: vi.fn()
   }
 
   beforeEach(() => {
@@ -50,7 +50,7 @@ describe('AgentTimeline', () => {
 
     const agents = [
       makeAgent({ id: 'agent-1', startedAt: twoHoursAgo, finishedAt: oneHourAgo, status: 'done' }),
-      makeAgent({ id: 'agent-2', startedAt: oneHourAgo, status: 'running' }),
+      makeAgent({ id: 'agent-2', startedAt: oneHourAgo, status: 'running' })
     ]
 
     const { container } = render(<AgentTimeline {...defaultProps} agents={agents} />)
@@ -65,9 +65,18 @@ describe('AgentTimeline', () => {
 
     const agents = [
       // This agent is outside the 6-hour window
-      makeAgent({ id: 'agent-old', startedAt: eightHoursAgo, finishedAt: sevenHoursAgo, status: 'done' }),
+      makeAgent({
+        id: 'agent-old',
+        startedAt: eightHoursAgo,
+        finishedAt: sevenHoursAgo,
+        status: 'done'
+      }),
       // This agent is within the window
-      makeAgent({ id: 'agent-recent', startedAt: new Date(now - 1 * 3600 * 1000).toISOString(), status: 'running' }),
+      makeAgent({
+        id: 'agent-recent',
+        startedAt: new Date(now - 1 * 3600 * 1000).toISOString(),
+        status: 'running'
+      })
     ]
 
     const { container } = render(<AgentTimeline {...defaultProps} agents={agents} />)
@@ -81,7 +90,7 @@ describe('AgentTimeline', () => {
     const oneHourAgo = new Date(now - 1 * 3600 * 1000).toISOString()
 
     const agents = [
-      makeAgent({ id: 'agent-running', startedAt: oneHourAgo, finishedAt: null, status: 'running' }),
+      makeAgent({ id: 'agent-running', startedAt: oneHourAgo, finishedAt: null, status: 'running' })
     ]
 
     const { container } = render(<AgentTimeline {...defaultProps} agents={agents} />)
@@ -95,7 +104,12 @@ describe('AgentTimeline', () => {
     const oneHourAgo = new Date(now - 1 * 3600 * 1000).toISOString()
 
     const agents = [
-      makeAgent({ id: 'agent-done', startedAt: twoHoursAgo, finishedAt: oneHourAgo, status: 'done' }),
+      makeAgent({
+        id: 'agent-done',
+        startedAt: twoHoursAgo,
+        finishedAt: oneHourAgo,
+        status: 'done'
+      })
     ]
 
     const { container } = render(<AgentTimeline {...defaultProps} agents={agents} />)
@@ -109,7 +123,12 @@ describe('AgentTimeline', () => {
     const oneHourAgo = new Date(now - 1 * 3600 * 1000).toISOString()
 
     const agents = [
-      makeAgent({ id: 'agent-failed', startedAt: twoHoursAgo, finishedAt: oneHourAgo, status: 'failed' }),
+      makeAgent({
+        id: 'agent-failed',
+        startedAt: twoHoursAgo,
+        finishedAt: oneHourAgo,
+        status: 'failed'
+      })
     ]
 
     const { container } = render(<AgentTimeline {...defaultProps} agents={agents} />)
@@ -123,7 +142,12 @@ describe('AgentTimeline', () => {
     const oneHourAgo = new Date(now - 1 * 3600 * 1000).toISOString()
 
     const agents = [
-      makeAgent({ id: 'agent-cancelled', startedAt: twoHoursAgo, finishedAt: oneHourAgo, status: 'cancelled' }),
+      makeAgent({
+        id: 'agent-cancelled',
+        startedAt: twoHoursAgo,
+        finishedAt: oneHourAgo,
+        status: 'cancelled'
+      })
     ]
 
     const { container } = render(<AgentTimeline {...defaultProps} agents={agents} />)
@@ -137,11 +161,11 @@ describe('AgentTimeline', () => {
     const now = Date.now()
     const oneHourAgo = new Date(now - 1 * 3600 * 1000).toISOString()
 
-    const agents = [
-      makeAgent({ id: 'agent-1', startedAt: oneHourAgo, status: 'running' }),
-    ]
+    const agents = [makeAgent({ id: 'agent-1', startedAt: oneHourAgo, status: 'running' })]
 
-    const { container } = render(<AgentTimeline {...defaultProps} agents={agents} onSelectAgent={onSelectAgent} />)
+    const { container } = render(
+      <AgentTimeline {...defaultProps} agents={agents} onSelectAgent={onSelectAgent} />
+    )
     const bar = container.querySelector('.timeline-bar')
     expect(bar).toBeInTheDocument()
 
@@ -169,9 +193,23 @@ describe('AgentTimeline', () => {
   it('renders multiple agents with different statuses', () => {
     const now = Date.now()
     const agents = [
-      makeAgent({ id: 'agent-1', startedAt: new Date(now - 5 * 3600 * 1000).toISOString(), finishedAt: new Date(now - 4 * 3600 * 1000).toISOString(), status: 'done' }),
-      makeAgent({ id: 'agent-2', startedAt: new Date(now - 3 * 3600 * 1000).toISOString(), finishedAt: new Date(now - 2 * 3600 * 1000).toISOString(), status: 'failed' }),
-      makeAgent({ id: 'agent-3', startedAt: new Date(now - 1 * 3600 * 1000).toISOString(), status: 'running' }),
+      makeAgent({
+        id: 'agent-1',
+        startedAt: new Date(now - 5 * 3600 * 1000).toISOString(),
+        finishedAt: new Date(now - 4 * 3600 * 1000).toISOString(),
+        status: 'done'
+      }),
+      makeAgent({
+        id: 'agent-2',
+        startedAt: new Date(now - 3 * 3600 * 1000).toISOString(),
+        finishedAt: new Date(now - 2 * 3600 * 1000).toISOString(),
+        status: 'failed'
+      }),
+      makeAgent({
+        id: 'agent-3',
+        startedAt: new Date(now - 1 * 3600 * 1000).toISOString(),
+        status: 'running'
+      })
     ]
 
     const { container } = render(<AgentTimeline {...defaultProps} agents={agents} />)

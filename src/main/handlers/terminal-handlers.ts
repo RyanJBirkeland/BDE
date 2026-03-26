@@ -15,7 +15,10 @@ let termId = 0
 export function registerTerminalHandlers(): void {
   safeHandle(
     'terminal:create',
-    (event, { cols, rows, shell, cwd }: { cols: number; rows: number; shell?: string; cwd?: string }) => {
+    (
+      event,
+      { cols, rows, shell, cwd }: { cols: number; rows: number; shell?: string; cwd?: string }
+    ) => {
       if (!isPtyAvailable()) throw new Error('Terminal unavailable: node-pty failed to load')
       const id = ++termId
       const shellPath = shell || process.env.SHELL || '/bin/zsh'
@@ -28,12 +31,16 @@ export function registerTerminalHandlers(): void {
       if (win) terminalWindows.set(id, win.id)
       handle.onData((data) => {
         const winId = terminalWindows.get(id)
-        const targetWin = winId ? BrowserWindow.getAllWindows().find(w => w.id === winId) : undefined
+        const targetWin = winId
+          ? BrowserWindow.getAllWindows().find((w) => w.id === winId)
+          : undefined
         targetWin?.webContents.send(`terminal:data:${id}`, data)
       })
       handle.onExit(() => {
         const winId = terminalWindows.get(id)
-        const targetWin = winId ? BrowserWindow.getAllWindows().find(w => w.id === winId) : undefined
+        const targetWin = winId
+          ? BrowserWindow.getAllWindows().find((w) => w.id === winId)
+          : undefined
         targetWin?.webContents.send(`terminal:exit:${id}`)
         terminals.delete(id)
         terminalWindows.delete(id)

@@ -22,7 +22,9 @@ async function waitForAppShell(window: import('@playwright/test').Page): Promise
 }
 
 test.describe('IDE view — empty state', () => {
-  test('Cmd+3 navigates to IDE and shows empty state with "Open Folder" prompt', async ({ bde }) => {
+  test('Cmd+3 navigates to IDE and shows empty state with "Open Folder" prompt', async ({
+    bde
+  }) => {
     const { window } = bde
     await waitForAppShell(window)
 
@@ -76,8 +78,12 @@ test.describe('IDE view — file explorer', () => {
     await expect(fileTree).toBeVisible({ timeout: 5_000 })
 
     // The mock repo has: README.md, unstaged.txt, staged.txt
-    await expect(fileTree.locator('.ide-file-node__name', { hasText: 'README.md' })).toBeVisible({ timeout: 5_000 })
-    await expect(fileTree.locator('.ide-file-node__name', { hasText: 'unstaged.txt' })).toBeVisible()
+    await expect(fileTree.locator('.ide-file-node__name', { hasText: 'README.md' })).toBeVisible({
+      timeout: 5_000
+    })
+    await expect(
+      fileTree.locator('.ide-file-node__name', { hasText: 'unstaged.txt' })
+    ).toBeVisible()
     await expect(fileTree.locator('.ide-file-node__name', { hasText: 'staged.txt' })).toBeVisible()
   })
 

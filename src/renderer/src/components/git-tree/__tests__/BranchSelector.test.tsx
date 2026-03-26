@@ -6,7 +6,7 @@ const defaultProps = {
   currentBranch: 'main',
   branches: ['main', 'feat/test', 'fix/bug'],
   hasUncommittedChanges: false,
-  onCheckout: vi.fn(),
+  onCheckout: vi.fn()
 }
 
 describe('BranchSelector', () => {

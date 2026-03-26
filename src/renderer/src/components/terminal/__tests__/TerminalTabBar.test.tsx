@@ -6,11 +6,11 @@ import type { TerminalTab } from '../../../stores/terminal'
 
 // Mock child pickers — they open popovers that aren't relevant here
 vi.mock('../ShellPicker', () => ({
-  ShellPicker: () => null,
+  ShellPicker: () => null
 }))
 
 vi.mock('../AgentPicker', () => ({
-  AgentPicker: () => null,
+  AgentPicker: () => null
 }))
 
 function makeTab(overrides: Partial<TerminalTab> = {}): TerminalTab {
@@ -23,7 +23,7 @@ function makeTab(overrides: Partial<TerminalTab> = {}): TerminalTab {
     isLabelCustom: false,
     status: 'running',
     hasUnread: false,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -33,14 +33,14 @@ const defaultProps = {
   onSelectTab: vi.fn(),
   onCloseTab: vi.fn(),
   onAddTab: vi.fn(),
-  onCreateAgentTab: vi.fn(),
+  onCreateAgentTab: vi.fn()
 }
 
 describe('TerminalTabBar', () => {
   it('renders tab labels', () => {
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Terminal 1' }),
-      makeTab({ id: 'tab-2', title: 'Terminal 2' }),
+      makeTab({ id: 'tab-2', title: 'Terminal 2' })
     ]
     render(<TerminalTabBar {...defaultProps} tabs={tabs} activeTabId="tab-1" />)
     expect(screen.getByText('Terminal 1')).toBeInTheDocument()
@@ -51,16 +51,11 @@ describe('TerminalTabBar', () => {
     const onSelectTab = vi.fn()
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Terminal 1' }),
-      makeTab({ id: 'tab-2', title: 'Terminal 2' }),
+      makeTab({ id: 'tab-2', title: 'Terminal 2' })
     ]
     const user = userEvent.setup()
     render(
-      <TerminalTabBar
-        {...defaultProps}
-        tabs={tabs}
-        activeTabId="tab-1"
-        onSelectTab={onSelectTab}
-      />
+      <TerminalTabBar {...defaultProps} tabs={tabs} activeTabId="tab-1" onSelectTab={onSelectTab} />
     )
     await user.click(screen.getByText('Terminal 2'))
     expect(onSelectTab).toHaveBeenCalledWith('tab-2')
@@ -82,20 +77,14 @@ describe('TerminalTabBar', () => {
 
   it('renders agent tab with bot icon class', () => {
     const agentTab = makeTab({ id: 'agent-1', title: 'My Agent', kind: 'agent', agentId: 'a1' })
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        tabs={[agentTab]}
-        activeTabId="agent-1"
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} tabs={[agentTab]} activeTabId="agent-1" />)
     expect(screen.getByText('My Agent')).toBeInTheDocument()
   })
 
   it('shows close button on active tab when there are multiple tabs', () => {
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Tab 1' }),
-      makeTab({ id: 'tab-2', title: 'Tab 2' }),
+      makeTab({ id: 'tab-2', title: 'Tab 2' })
     ]
     const { container } = render(
       <TerminalTabBar {...defaultProps} tabs={tabs} activeTabId="tab-1" />
@@ -113,15 +102,10 @@ describe('TerminalTabBar', () => {
     const onCloseTab = vi.fn()
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Tab 1' }),
-      makeTab({ id: 'tab-2', title: 'Tab 2' }),
+      makeTab({ id: 'tab-2', title: 'Tab 2' })
     ]
     render(
-      <TerminalTabBar
-        {...defaultProps}
-        tabs={tabs}
-        activeTabId="tab-1"
-        onCloseTab={onCloseTab}
-      />
+      <TerminalTabBar {...defaultProps} tabs={tabs} activeTabId="tab-1" onCloseTab={onCloseTab} />
     )
     const closeBtn = document.querySelector('.terminal-tab__close') as HTMLButtonElement
     await user.click(closeBtn)
@@ -131,12 +115,7 @@ describe('TerminalTabBar', () => {
   it('enters rename mode on double-click when onRenameTab is provided', async () => {
     const user = userEvent.setup()
     const onRenameTab = vi.fn()
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        onRenameTab={onRenameTab}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} onRenameTab={onRenameTab} />)
     await user.dblClick(screen.getByText('Terminal 1'))
     expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
@@ -151,12 +130,7 @@ describe('TerminalTabBar', () => {
   it('submits rename on Enter key', async () => {
     const user = userEvent.setup()
     const onRenameTab = vi.fn()
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        onRenameTab={onRenameTab}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} onRenameTab={onRenameTab} />)
     await user.dblClick(screen.getByText('Terminal 1'))
     const input = screen.getByRole('textbox')
     await user.clear(input)
@@ -167,12 +141,7 @@ describe('TerminalTabBar', () => {
   it('cancels rename on Escape key', async () => {
     const user = userEvent.setup()
     const onRenameTab = vi.fn()
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        onRenameTab={onRenameTab}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} onRenameTab={onRenameTab} />)
     await user.dblClick(screen.getByText('Terminal 1'))
     const input = screen.getByRole('textbox')
     await user.type(input, '{Escape}')
@@ -183,12 +152,7 @@ describe('TerminalTabBar', () => {
   it('shows context menu on right-click', async () => {
     const user = userEvent.setup()
     const onRenameTab = vi.fn()
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        onRenameTab={onRenameTab}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} onRenameTab={onRenameTab} />)
     await user.pointer({ keys: '[MouseRight]', target: screen.getByText('Terminal 1') })
     expect(screen.getByText('Rename')).toBeInTheDocument()
   })
@@ -196,12 +160,7 @@ describe('TerminalTabBar', () => {
   it('shows Duplicate option in context menu when onDuplicateTab provided', async () => {
     const user = userEvent.setup()
     const onDuplicateTab = vi.fn()
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        onDuplicateTab={onDuplicateTab}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} onDuplicateTab={onDuplicateTab} />)
     await user.pointer({ keys: '[MouseRight]', target: screen.getByText('Terminal 1') })
     expect(screen.getByText('Duplicate')).toBeInTheDocument()
   })
@@ -209,12 +168,7 @@ describe('TerminalTabBar', () => {
   it('calls onDuplicateTab from context menu', async () => {
     const user = userEvent.setup()
     const onDuplicateTab = vi.fn()
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        onDuplicateTab={onDuplicateTab}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} onDuplicateTab={onDuplicateTab} />)
     await user.pointer({ keys: '[MouseRight]', target: screen.getByText('Terminal 1') })
     await user.click(screen.getByText('Duplicate'))
     expect(onDuplicateTab).toHaveBeenCalledWith('tab-1')
@@ -225,15 +179,9 @@ describe('TerminalTabBar', () => {
     const onCloseOthers = vi.fn()
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Tab 1' }),
-      makeTab({ id: 'tab-2', title: 'Tab 2' }),
+      makeTab({ id: 'tab-2', title: 'Tab 2' })
     ]
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        tabs={tabs}
-        onCloseOthers={onCloseOthers}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} tabs={tabs} onCloseOthers={onCloseOthers} />)
     await user.pointer({ keys: '[MouseRight]', target: screen.getByText('Tab 1') })
     expect(screen.getByText('Close Others')).toBeInTheDocument()
   })
@@ -243,15 +191,9 @@ describe('TerminalTabBar', () => {
     const onCloseOthers = vi.fn()
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Tab 1' }),
-      makeTab({ id: 'tab-2', title: 'Tab 2' }),
+      makeTab({ id: 'tab-2', title: 'Tab 2' })
     ]
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        tabs={tabs}
-        onCloseOthers={onCloseOthers}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} tabs={tabs} onCloseOthers={onCloseOthers} />)
     await user.pointer({ keys: '[MouseRight]', target: screen.getByText('Tab 1') })
     await user.click(screen.getByText('Close Others'))
     expect(onCloseOthers).toHaveBeenCalledWith('tab-1')
@@ -262,15 +204,9 @@ describe('TerminalTabBar', () => {
     const onCloseAll = vi.fn()
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Tab 1' }),
-      makeTab({ id: 'tab-2', title: 'Tab 2' }),
+      makeTab({ id: 'tab-2', title: 'Tab 2' })
     ]
-    render(
-      <TerminalTabBar
-        {...defaultProps}
-        tabs={tabs}
-        onCloseAll={onCloseAll}
-      />
-    )
+    render(<TerminalTabBar {...defaultProps} tabs={tabs} onCloseAll={onCloseAll} />)
     await user.pointer({ keys: '[MouseRight]', target: screen.getByText('Tab 1') })
     await user.click(screen.getByText('Close All'))
     expect(onCloseAll).toHaveBeenCalled()
@@ -279,7 +215,7 @@ describe('TerminalTabBar', () => {
   it('marks active tab with terminal-tab--active class', () => {
     const tabs = [
       makeTab({ id: 'tab-1', title: 'Tab 1' }),
-      makeTab({ id: 'tab-2', title: 'Tab 2' }),
+      makeTab({ id: 'tab-2', title: 'Tab 2' })
     ]
     const { container } = render(
       <TerminalTabBar {...defaultProps} tabs={tabs} activeTabId="tab-1" />

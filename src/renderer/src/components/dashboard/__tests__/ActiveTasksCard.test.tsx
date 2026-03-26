@@ -6,7 +6,7 @@ let mockTasks: SprintTask[] = []
 
 vi.mock('../../../stores/sprintTasks', () => ({
   useSprintTasks: (selector: (s: { tasks: SprintTask[] }) => unknown) =>
-    selector({ tasks: mockTasks }),
+    selector({ tasks: mockTasks })
 }))
 
 import { ActiveTasksCard } from '../ActiveTasksCard'
@@ -34,7 +34,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: '2025-01-01T00:00:00Z',
     created_at: '2025-01-01T00:00:00Z',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -85,7 +85,7 @@ describe('ActiveTasksCard', () => {
       makeTask({ title: 'Done task', status: 'done' }),
       makeTask({ title: 'Backlog task', status: 'backlog' }),
       makeTask({ title: 'Cancelled task', status: 'cancelled' }),
-      makeTask({ title: 'Active task', status: 'active' }),
+      makeTask({ title: 'Active task', status: 'active' })
     ]
     render(<ActiveTasksCard />)
     expect(screen.queryByText('Done task')).not.toBeInTheDocument()
@@ -98,7 +98,7 @@ describe('ActiveTasksCard', () => {
     mockTasks = [
       makeTask({ title: 'Task A', status: 'active' }),
       makeTask({ title: 'Task B', status: 'queued' }),
-      makeTask({ title: 'Task C', status: 'blocked' }),
+      makeTask({ title: 'Task C', status: 'blocked' })
     ]
     render(<ActiveTasksCard />)
     expect(screen.getByText('Task A')).toBeInTheDocument()

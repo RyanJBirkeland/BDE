@@ -13,10 +13,19 @@ import {
   claimTask,
   releaseTask,
   getTasksWithDependencies,
-  getActiveTaskCount,
+  getActiveTaskCount
 } from '../data/sprint-queries'
-import type { StatusUpdateRequest, ClaimRequest, BatchResult } from '../../shared/queue-api-contract'
-import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS, MAX_ACTIVE_TASKS } from '../../shared/queue-api-contract'
+import type {
+  StatusUpdateRequest,
+  ClaimRequest,
+  BatchResult
+} from '../../shared/queue-api-contract'
+import {
+  STATUS_UPDATE_FIELDS,
+  RUNNER_WRITABLE_STATUSES,
+  GENERAL_PATCH_FIELDS,
+  MAX_ACTIVE_TASKS
+} from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
 import { detectCycle, createDependencyIndex } from '../agent-manager/dependency-index'
 import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
@@ -40,7 +49,7 @@ async function validateDependencies(
 
   // Fetch all existing tasks for validation
   const allTasks = await getTasksWithDependencies()
-  const existingTaskIds = new Set(allTasks.map(t => t.id))
+  const existingTaskIds = new Set(allTasks.map((t) => t.id))
 
   // Add the current task ID to the set for self-reference detection
   existingTaskIds.add(taskId)
@@ -91,8 +100,8 @@ export async function handleHealth(res: http.ServerResponse): Promise<void> {
       done: stats.done,
       failed: stats.failed,
       cancelled: stats.cancelled,
-      error: stats.error,
-    },
+      error: stats.error
+    }
   })
 }
 
@@ -105,10 +114,7 @@ export async function handleListTasks(
   sendJson(res, 200, tasks.map(toCamelCase))
 }
 
-export async function handleGetTask(
-  res: http.ServerResponse,
-  id: string
-): Promise<void> {
+export async function handleGetTask(res: http.ServerResponse, id: string): Promise<void> {
   const task = await getTask(id)
   if (!task) {
     sendJson(res, 404, { error: `Task ${id} not found` })
@@ -151,7 +157,7 @@ export async function handleCreateTask(
     title: title as string,
     repo: repo as string,
     spec: typeof spec === 'string' ? spec : null,
-    status: typeof bodyObj.status === 'string' ? bodyObj.status : 'backlog',
+    status: typeof bodyObj.status === 'string' ? bodyObj.status : 'backlog'
   })
   if (!structural.valid) {
     sendJson(res, 400, { error: 'Spec quality checks failed', details: structural.errors })
@@ -166,12 +172,12 @@ export async function handleCreateTask(
       const semantic = await checkSpecSemantic({
         title: title as string,
         repo: repo as string,
-        spec: spec as string,
+        spec: spec as string
       })
       if (!semantic.passed) {
         sendJson(res, 400, {
           error: 'Cannot create task with queued status — semantic checks failed',
-          details: semantic.failMessages,
+          details: semantic.failMessages
         })
         return
       }
@@ -205,10 +211,15 @@ export async function handleCreateTask(
   // Validate dependencies for cycles and non-existent IDs BEFORE creating the task
   // (eliminates the need for rollback if validation fails)
   const createInput = body as Record<string, unknown>
-  const dependsOn = createInput.depends_on as Array<{ id: string; type: 'hard' | 'soft' }> | undefined
+  const dependsOn = createInput.depends_on as
+    | Array<{ id: string; type: 'hard' | 'soft' }>
+    | undefined
   const PENDING_TASK_ID = 'pending-new-task'
   if (dependsOn && dependsOn.length > 0) {
-    const validationError = await validateDependencies(PENDING_TASK_ID, dependsOn as TaskDependency[])
+    const validationError = await validateDependencies(
+      PENDING_TASK_ID,
+      dependsOn as TaskDependency[]
+    )
     if (validationError) {
       sendJson(res, 400, { error: validationError })
       return
@@ -217,11 +228,15 @@ export async function handleCreateTask(
 
   // Auto-block tasks with unsatisfied hard dependencies before creation
   // (matches sprint:create IPC behavior — check deps, set status=blocked if needed)
-  if (dependsOn && dependsOn.length > 0 && (createInput.status === 'queued' || !createInput.status)) {
+  if (
+    dependsOn &&
+    dependsOn.length > 0 &&
+    (createInput.status === 'queued' || !createInput.status)
+  ) {
     const { shouldBlock, blockedBy } = await checkTaskDependencies(
       PENDING_TASK_ID,
       dependsOn,
-      console,
+      console
     )
     if (shouldBlock) {
       createInput.status = 'blocked'
@@ -242,7 +257,7 @@ export async function handleCreateTask(
 export async function handleUpdateTask(
   req: http.IncomingMessage,
   res: http.ServerResponse,
-  id: string,
+  id: string
 ): Promise<void> {
   let body: unknown
   try {
@@ -276,7 +291,9 @@ export async function handleUpdateTask(
   try {
     updated = await updateTask(id, snaked)
   } catch (err) {
-    sendJson(res, 500, { error: `Failed to update task ${id}: ${err instanceof Error ? err.message : String(err)}` })
+    sendJson(res, 500, {
+      error: `Failed to update task ${id}: ${err instanceof Error ? err.message : String(err)}`
+    })
     return
   }
   if (!updated) {
@@ -327,12 +344,12 @@ export async function handleUpdateStatus(
       const structural = validateStructural({
         title: task.title,
         repo: task.repo,
-        spec: task.spec,
+        spec: task.spec
       })
       if (!structural.valid) {
         sendJson(res, 400, {
           error: 'Cannot queue task — spec quality checks failed',
-          details: structural.errors,
+          details: structural.errors
         })
         return
       }
@@ -342,12 +359,12 @@ export async function handleUpdateStatus(
         const semantic = await checkSpecSemantic({
           title: task.title,
           repo: task.repo,
-          spec: task.spec,
+          spec: task.spec
         })
         if (!semantic.passed) {
           sendJson(res, 400, {
             error: 'Cannot queue task — semantic spec checks failed',
-            details: semantic.failMessages,
+            details: semantic.failMessages
           })
           return
         }
@@ -372,7 +389,9 @@ export async function handleUpdateStatus(
   try {
     updated = await updateTask(id, toSnakeCase(filtered))
   } catch (err) {
-    sendJson(res, 500, { error: `Failed to update task status ${id}: ${err instanceof Error ? err.message : String(err)}` })
+    sendJson(res, 500, {
+      error: `Failed to update task status ${id}: ${err instanceof Error ? err.message : String(err)}`
+    })
     return
   }
   if (!updated) {
@@ -467,7 +486,9 @@ export async function handleRelease(
 
   const released = await releaseTask(id, claimedBy)
   if (!released) {
-    sendJson(res, 409, { error: `Task ${id} is not releasable (not active, not owned by caller, or does not exist)` })
+    sendJson(res, 409, {
+      error: `Task ${id} is not releasable (not active, not owned by caller, or does not exist)`
+    })
     return
   }
   sendJson(res, 200, toCamelCase(released))
@@ -529,7 +550,9 @@ export async function handleUpdateDependencies(
   try {
     updated = await updateTask(id, snaked)
   } catch (err) {
-    sendJson(res, 500, { error: `Failed to update task dependencies ${id}: ${err instanceof Error ? err.message : String(err)}` })
+    sendJson(res, 500, {
+      error: `Failed to update task dependencies ${id}: ${err instanceof Error ? err.message : String(err)}`
+    })
     return
   }
   if (!updated) {
@@ -541,7 +564,7 @@ export async function handleUpdateDependencies(
 
 export async function handleBatchTasks(
   req: http.IncomingMessage,
-  res: http.ServerResponse,
+  res: http.ServerResponse
 ): Promise<void> {
   let body: unknown
   try {
@@ -575,7 +598,12 @@ export async function handleBatchTasks(
     const opType = op.op as string
 
     if (!id || !opType) {
-      results.push({ id: id ?? 'unknown', op: opType as 'update' | 'delete', ok: false, error: 'id and op are required' })
+      results.push({
+        id: id ?? 'unknown',
+        op: opType as 'update' | 'delete',
+        ok: false,
+        error: 'id and op are required'
+      })
       continue
     }
 
@@ -596,12 +624,22 @@ export async function handleBatchTasks(
           continue
         }
         const updated = await updateTask(id, toSnakeCase(filtered))
-        results.push({ id, op: 'update', ok: !!updated, error: updated ? undefined : 'Task not found' })
+        results.push({
+          id,
+          op: 'update',
+          ok: !!updated,
+          error: updated ? undefined : 'Task not found'
+        })
       } else if (opType === 'delete') {
         await deleteTask(id)
         results.push({ id, op: 'delete', ok: true })
       } else {
-        results.push({ id, op: opType as 'update' | 'delete', ok: false, error: `Unknown operation: ${opType}` })
+        results.push({
+          id,
+          op: opType as 'update' | 'delete',
+          ok: false,
+          error: `Unknown operation: ${opType}`
+        })
       }
     } catch (err) {
       results.push({ id, op: opType as 'update' | 'delete', ok: false, error: String(err) })

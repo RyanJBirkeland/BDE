@@ -19,13 +19,9 @@ interface BackoffOptions {
 export function useBackoffInterval(
   callback: () => void | Promise<void>,
   baseMs: number,
-  options: BackoffOptions = {},
+  options: BackoffOptions = {}
 ): void {
-  const {
-    maxMs = baseMs * 5,
-    jitterMs = Math.round(baseMs * 0.1),
-    backoffFactor = 2,
-  } = options
+  const { maxMs = baseMs * 5, jitterMs = Math.round(baseMs * 0.1), backoffFactor = 2 } = options
 
   const savedCallback = useRef(callback)
   const currentInterval = useRef(baseMs)
@@ -52,10 +48,7 @@ export function useBackoffInterval(
         await savedCallback.current()
         currentInterval.current = baseMs
       } catch {
-        currentInterval.current = Math.min(
-          currentInterval.current * backoffFactor,
-          maxMs,
-        )
+        currentInterval.current = Math.min(currentInterval.current * backoffFactor, maxMs)
       }
       schedule()
     }

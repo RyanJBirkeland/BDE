@@ -21,7 +21,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   done: { label: 'Done', color: tokens.color.textMuted },
   failed: { label: 'Failed', color: tokens.color.danger },
   cancelled: { label: 'Cancelled', color: tokens.color.warning },
-  unknown: { label: 'Unknown', color: tokens.color.textDim },
+  unknown: { label: 'Unknown', color: tokens.color.textDim }
 }
 
 export function AgentDetail({ agent, events, onSteer }: AgentDetailProps) {
@@ -29,11 +29,15 @@ export function AgentDetail({ agent, events, onSteer }: AgentDetailProps) {
   const isRunning = agent.status === 'running'
 
   const costInfo = useMemo(() => {
-    const completed = events.find((e): e is Extract<AgentEvent, { type: 'agent:completed' }> =>
-      e.type === 'agent:completed'
+    const completed = events.find(
+      (e): e is Extract<AgentEvent, { type: 'agent:completed' }> => e.type === 'agent:completed'
     )
     return completed
-      ? { cost: completed.costUsd, tokens: completed.tokensIn + completed.tokensOut, duration: completed.durationMs }
+      ? {
+          cost: completed.costUsd,
+          tokens: completed.tokensIn + completed.tokensOut,
+          duration: completed.durationMs
+        }
       : null
   }, [events])
 
@@ -45,16 +49,28 @@ export function AgentDetail({ agent, events, onSteer }: AgentDetailProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div style={{
-        padding: `${tokens.space[3]} ${tokens.space[4]}`,
-        borderBottom: `1px solid ${tokens.color.border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: tokens.space[1],
-      }}>
+      <div
+        style={{
+          padding: `${tokens.space[3]} ${tokens.space[4]}`,
+          borderBottom: `1px solid ${tokens.color.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.space[1]
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
           <Bot size={16} color={tokens.color.textMuted} />
-          <span style={{ fontSize: tokens.size.lg, color: tokens.color.text, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span
+            style={{
+              fontSize: tokens.size.lg,
+              color: tokens.color.text,
+              fontWeight: 500,
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
             {agent.task.slice(0, 120)}
           </span>
           <button
@@ -69,7 +85,7 @@ export function AgentDetail({ agent, events, onSteer }: AgentDetailProps) {
               display: 'flex',
               alignItems: 'center',
               color: tokens.color.textMuted,
-              borderRadius: tokens.radius.md,
+              borderRadius: tokens.radius.md
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = tokens.color.surfaceHigh
@@ -80,17 +96,27 @@ export function AgentDetail({ agent, events, onSteer }: AgentDetailProps) {
           >
             <Terminal size={16} />
           </button>
-          <span style={{
-            fontSize: tokens.size.xs,
-            padding: `2px ${tokens.space[2]}`,
-            borderRadius: tokens.radius.full,
-            background: status.color + '22',
-            color: status.color,
-          }}>
+          <span
+            style={{
+              fontSize: tokens.size.xs,
+              padding: `2px ${tokens.space[2]}`,
+              borderRadius: tokens.radius.full,
+              background: status.color + '22',
+              color: status.color
+            }}
+          >
             {status.label}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[3], fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.space[3],
+            fontSize: tokens.size.xs,
+            color: tokens.color.textMuted
+          }}
+        >
           <span style={{ display: 'flex', alignItems: 'center', gap: tokens.space[1] }}>
             <Zap size={10} /> {agent.model}
           </span>
@@ -133,15 +159,20 @@ function LogFallback({ logPath }: { logPath: string }) {
 
   useEffect(() => {
     let cancelled = false
-    window.api.tailAgentLog({ logPath, fromByte: 0 }).then((result) => {
-      if (!cancelled) {
-        setContent(result.content)
-        setLoading(false)
-      }
-    }).catch(() => {
-      if (!cancelled) setLoading(false)
-    })
-    return () => { cancelled = true }
+    window.api
+      .tailAgentLog({ logPath, fromByte: 0 })
+      .then((result) => {
+        if (!cancelled) {
+          setContent(result.content)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [logPath])
 
   if (loading) {
@@ -161,17 +192,19 @@ function LogFallback({ logPath }: { logPath: string }) {
   }
 
   return (
-    <pre style={{
-      padding: tokens.space[3],
-      margin: 0,
-      fontFamily: tokens.font.code,
-      fontSize: tokens.size.sm,
-      color: tokens.color.text,
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-      overflow: 'auto',
-      height: '100%',
-    }}>
+    <pre
+      style={{
+        padding: tokens.space[3],
+        margin: 0,
+        fontFamily: tokens.font.code,
+        fontSize: tokens.size.sm,
+        color: tokens.color.text,
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        overflow: 'auto',
+        height: '100%'
+      }}
+    >
       {content}
     </pre>
   )

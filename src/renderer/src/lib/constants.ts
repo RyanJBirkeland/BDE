@@ -11,7 +11,7 @@ export const POLL_SPRINT_ACTIVE_MS = 30_000
 export const POLL_PR_STATUS_MS = 60_000
 export const POLL_COST_INTERVAL = 30_000
 export const POLL_HEALTH_CHECK_MS = 600_000
-export const POLL_DASHBOARD_INTERVAL = 60_000   // 60s
+export const POLL_DASHBOARD_INTERVAL = 60_000 // 60s
 
 // Debounce / flash durations (ms)
 export const SSE_DEBOUNCE_MS = 300

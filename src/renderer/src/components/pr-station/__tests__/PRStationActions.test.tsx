@@ -6,13 +6,16 @@ const mockMergePR = vi.fn()
 const mockClosePR = vi.fn()
 vi.mock('../../../lib/github-api', () => ({
   mergePR: (...args: unknown[]) => mockMergePR(...args),
-  closePR: (...args: unknown[]) => mockClosePR(...args),
+  closePR: (...args: unknown[]) => mockClosePR(...args)
 }))
 
 const mockToastSuccess = vi.fn()
 const mockToastError = vi.fn()
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: (...args: unknown[]) => mockToastSuccess(...args), error: (...args: unknown[]) => mockToastError(...args) },
+  toast: {
+    success: (...args: unknown[]) => mockToastSuccess(...args),
+    error: (...args: unknown[]) => mockToastError(...args)
+  }
 }))
 
 import { PRStationActions } from '../PRStationActions'
@@ -31,7 +34,7 @@ const mockPr: OpenPr = {
   user: { login: 'alice' },
   merged: false,
   merged_at: null,
-  repo: 'BDE',
+  repo: 'BDE'
 }
 
 const mergeability = { number: 42, repo: 'BDE', mergeable: true, mergeable_state: 'clean' }
@@ -62,7 +65,9 @@ describe('PRStationActions', () => {
     render(<PRStationActions pr={mockPr} mergeability={mergeability} onRemovePr={onRemovePr} />)
     await userEvent.click(screen.getByTitle(/squash merge/i))
     await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
-    await waitFor(() => expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'squash'))
+    await waitFor(() =>
+      expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'squash')
+    )
     expect(onRemovePr).toHaveBeenCalledWith(mockPr)
     expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('Merged'))
   })
@@ -124,7 +129,9 @@ describe('PRStationActions', () => {
     // Now confirm merge — method should be 'merge'
     await userEvent.click(screen.getByTitle(/merge commit merge/i))
     await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
-    await waitFor(() => expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'merge'))
+    await waitFor(() =>
+      expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'merge')
+    )
   })
 
   it('changes merge method to rebase and uses rebase on merge', async () => {
@@ -136,7 +143,9 @@ describe('PRStationActions', () => {
 
     await userEvent.click(screen.getByTitle(/rebase merge/i))
     await userEvent.click(screen.getByRole('button', { name: /confirm/i }))
-    await waitFor(() => expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'rebase'))
+    await waitFor(() =>
+      expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42, 'rebase')
+    )
   })
 
   it('shows toast error when closePR throws', async () => {

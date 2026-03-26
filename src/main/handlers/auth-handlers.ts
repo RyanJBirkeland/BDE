@@ -8,7 +8,7 @@ export function registerAuthHandlers(): void {
       cliFound: status.cliFound,
       tokenFound: status.tokenFound,
       tokenExpired: status.tokenExpired,
-      expiresAt: status.expiresAt?.toISOString(),
+      expiresAt: status.expiresAt?.toISOString()
     }
   })
 }

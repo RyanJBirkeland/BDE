@@ -12,7 +12,7 @@ type TextareaProps = {
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   { value, onChange, onKeyDown, placeholder, disabled = false, className, 'aria-label': ariaLabel },
-  forwardedRef,
+  forwardedRef
 ) {
   const innerRef = useRef<HTMLTextAreaElement>(null)
 

@@ -5,16 +5,16 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 vi.mock('../SpecEditor', () => ({
   SpecEditor: ({ generating }: { generating: boolean }) => (
     <div data-testid="spec-editor">{generating ? 'Generating...' : 'SpecEditor'}</div>
-  ),
+  )
 }))
 vi.mock('../ReadinessChecks', () => ({
-  ReadinessChecks: () => <div data-testid="readiness-checks">ReadinessChecks</div>,
+  ReadinessChecks: () => <div data-testid="readiness-checks">ReadinessChecks</div>
 }))
 vi.mock('../WorkbenchActions', () => ({
   WorkbenchActions: ({
     onSaveBacklog,
     onQueueNow,
-    submitting,
+    submitting
   }: {
     onSaveBacklog: () => void
     onQueueNow: () => void
@@ -29,19 +29,31 @@ vi.mock('../WorkbenchActions', () => ({
         Queue Now
       </button>
     </div>
-  ),
+  )
 }))
 vi.mock('../../ui/ConfirmModal', () => ({
-  ConfirmModal: ({ open, onConfirm, onCancel }: { open: boolean; onConfirm: () => void; onCancel: () => void }) =>
+  ConfirmModal: ({
+    open,
+    onConfirm,
+    onCancel
+  }: {
+    open: boolean
+    onConfirm: () => void
+    onCancel: () => void
+  }) =>
     open ? (
       <div data-testid="confirm-modal">
-        <button data-testid="confirm-yes" onClick={onConfirm}>Confirm</button>
-        <button data-testid="confirm-cancel" onClick={onCancel}>Cancel</button>
+        <button data-testid="confirm-yes" onClick={onConfirm}>
+          Confirm
+        </button>
+        <button data-testid="confirm-cancel" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
-    ) : null,
+    ) : null
 }))
 vi.mock('../../../hooks/useReadinessChecks', () => ({
-  useReadinessChecks: vi.fn(),
+  useReadinessChecks: vi.fn()
 }))
 
 import { WorkbenchForm } from '../WorkbenchForm'
@@ -60,17 +72,17 @@ describe('WorkbenchForm', () => {
       checkSpec: vi.fn().mockResolvedValue({
         clarity: { status: 'pass', message: 'OK' },
         scope: { status: 'pass', message: 'OK' },
-        filesExist: { status: 'pass', message: 'OK' },
+        filesExist: { status: 'pass', message: 'OK' }
       }),
       checkOperational: vi.fn().mockResolvedValue({
         auth: { status: 'pass', message: 'OK' },
         repoPath: { status: 'pass', message: 'OK' },
         gitClean: { status: 'pass', message: 'OK' },
         noConflict: { status: 'pass', message: 'OK' },
-        slotsAvailable: { status: 'pass', message: 'OK' },
+        slotsAvailable: { status: 'pass', message: 'OK' }
       }),
       generateSpec: vi.fn().mockResolvedValue({ spec: '## Generated spec' }),
-      chat: vi.fn().mockResolvedValue({ content: 'response' }),
+      chat: vi.fn().mockResolvedValue({ content: 'response' })
     }
   })
 
@@ -180,7 +192,7 @@ describe('WorkbenchForm', () => {
       taskId: 'task-1',
       title: 'Updated task',
       repo: 'BDE',
-      spec: 'Updated spec',
+      spec: 'Updated spec'
     })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
@@ -189,7 +201,7 @@ describe('WorkbenchForm', () => {
     await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalledWith(
         'task-1',
-        expect.objectContaining({ title: 'Updated task', status: 'backlog' }),
+        expect.objectContaining({ title: 'Updated task', status: 'backlog' })
       )
     })
   })
@@ -200,7 +212,7 @@ describe('WorkbenchForm', () => {
       repoPath: { status: 'pass', message: 'OK' },
       gitClean: { status: 'pass', message: 'OK' },
       noConflict: { status: 'pass', message: 'OK' },
-      slotsAvailable: { status: 'pass', message: 'OK' },
+      slotsAvailable: { status: 'pass', message: 'OK' }
     })
     const mockCreate = vi.fn()
     useSprintTasks.setState({ createTask: mockCreate, tasks: [] })
@@ -222,7 +234,7 @@ describe('WorkbenchForm', () => {
       repoPath: { status: 'pass', message: 'OK' },
       gitClean: { status: 'warn', message: 'Dirty' },
       noConflict: { status: 'pass', message: 'OK' },
-      slotsAvailable: { status: 'pass', message: 'OK' },
+      slotsAvailable: { status: 'pass', message: 'OK' }
     })
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
 
@@ -240,7 +252,7 @@ describe('WorkbenchForm', () => {
       repoPath: { status: 'pass', message: 'OK' },
       gitClean: { status: 'warn', message: 'Dirty' },
       noConflict: { status: 'pass', message: 'OK' },
-      slotsAvailable: { status: 'pass', message: 'OK' },
+      slotsAvailable: { status: 'pass', message: 'OK' }
     })
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
 
@@ -261,7 +273,7 @@ describe('WorkbenchForm', () => {
     useSprintTasks.setState({
       createTask: mockCreate,
       updateTask: mockUpdate,
-      tasks: [{ id: 'new-1', title: 'Test task', status: 'backlog' }] as any,
+      tasks: [{ id: 'new-1', title: 'Test task', status: 'backlog' }] as any
     })
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
 
@@ -271,7 +283,7 @@ describe('WorkbenchForm', () => {
       repoPath: { status: 'pass', message: 'OK' },
       gitClean: { status: 'warn', message: 'Dirty' },
       noConflict: { status: 'pass', message: 'OK' },
-      slotsAvailable: { status: 'pass', message: 'OK' },
+      slotsAvailable: { status: 'pass', message: 'OK' }
     })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
@@ -291,14 +303,18 @@ describe('WorkbenchForm', () => {
   it('handleConfirmedQueue updates task in edit mode', async () => {
     const mockUpdate = vi.fn().mockResolvedValue(undefined)
     useSprintTasks.setState({ updateTask: mockUpdate, tasks: [] })
-    useTaskWorkbenchStore.setState({ mode: 'edit', taskId: 'task-99', title: 'Edit me', repo: 'BDE' })
-
+    useTaskWorkbenchStore.setState({
+      mode: 'edit',
+      taskId: 'task-99',
+      title: 'Edit me',
+      repo: 'BDE'
+    })
     ;(window.api as any).workbench.checkOperational = vi.fn().mockResolvedValue({
       auth: { status: 'pass', message: 'OK' },
       repoPath: { status: 'pass', message: 'OK' },
       gitClean: { status: 'warn', message: 'Dirty' },
       noConflict: { status: 'pass', message: 'OK' },
-      slotsAvailable: { status: 'pass', message: 'OK' },
+      slotsAvailable: { status: 'pass', message: 'OK' }
     })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
@@ -313,7 +329,7 @@ describe('WorkbenchForm', () => {
     await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalledWith(
         'task-99',
-        expect.objectContaining({ status: 'queued' }),
+        expect.objectContaining({ status: 'queued' })
       )
     })
   })
@@ -324,7 +340,7 @@ describe('WorkbenchForm', () => {
     useTaskWorkbenchStore.setState({
       title: 'With deps',
       repo: 'BDE',
-      dependsOn: [{ task_id: 'dep-1', depends_on_task_id: 'dep-2' }] as any,
+      dependsOn: [{ task_id: 'dep-1', depends_on_task_id: 'dep-2' }] as any
     })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
@@ -333,8 +349,8 @@ describe('WorkbenchForm', () => {
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
-          depends_on: expect.arrayContaining([expect.objectContaining({ task_id: 'dep-1' })]),
-        }),
+          depends_on: expect.arrayContaining([expect.objectContaining({ task_id: 'dep-1' })])
+        })
       )
     })
   })

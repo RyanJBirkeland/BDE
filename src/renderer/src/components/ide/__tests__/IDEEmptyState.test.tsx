@@ -8,16 +8,16 @@ let mockRecentFolders: string[] = []
 Object.defineProperty(window, 'api', {
   value: { watchDir: mockWatchDir },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 vi.mock('../../../stores/ide', () => ({
   useIDEStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({
       recentFolders: mockRecentFolders,
-      setRootPath: mockSetRootPath,
+      setRootPath: mockSetRootPath
     })
-  ),
+  )
 }))
 
 import { IDEEmptyState } from '../IDEEmptyState'

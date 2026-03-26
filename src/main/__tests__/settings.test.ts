@@ -5,16 +5,10 @@ import Database from 'better-sqlite3'
 let db: Database.Database
 
 vi.mock('../db', () => ({
-  getDb: () => db,
+  getDb: () => db
 }))
 
-import {
-  getSetting,
-  setSetting,
-  deleteSetting,
-  getSettingJson,
-  setSettingJson,
-} from '../settings'
+import { getSetting, setSetting, deleteSetting, getSettingJson, setSettingJson } from '../settings'
 
 describe('settings.ts', () => {
   beforeEach(() => {
@@ -80,7 +74,7 @@ describe('settings.ts', () => {
     it('handles arrays', () => {
       const repos = [
         { name: 'BDE', localPath: '/tmp/bde' },
-        { name: 'life-os', localPath: '/tmp/life-os' },
+        { name: 'life-os', localPath: '/tmp/life-os' }
       ]
       setSettingJson('repos', repos)
       expect(getSettingJson('repos')).toEqual(repos)

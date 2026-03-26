@@ -9,14 +9,19 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: 'claude-sonnet-4-5'
 }
 
 function makeAgent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
   return {
     taskId: 'task-1',
     agentRunId: 'run-1',
-    handle: { messages: (async function* () {})(), sessionId: 'sess-1', abort: () => {}, steer: async () => {} },
+    handle: {
+      messages: (async function* () {})(),
+      sessionId: 'sess-1',
+      abort: () => {},
+      steer: async () => {}
+    },
     model: 'claude-sonnet-4-5',
     startedAt: 0,
     lastOutputAt: 0,
@@ -25,7 +30,7 @@ function makeAgent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
     tokensIn: 0,
     tokensOut: 0,
     maxRuntimeMs: null,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -62,13 +67,21 @@ describe('checkAgent', () => {
   })
 
   it('returns rate-limit-loop when rateLimitCount meets threshold', () => {
-    const agent = makeAgent({ startedAt: 0, lastOutputAt: 0, rateLimitCount: RATE_LIMIT_LOOP_THRESHOLD })
+    const agent = makeAgent({
+      startedAt: 0,
+      lastOutputAt: 0,
+      rateLimitCount: RATE_LIMIT_LOOP_THRESHOLD
+    })
     const now = 1_000
     expect(checkAgent(agent, now, baseConfig)).toBe('rate-limit-loop')
   })
 
   it('returns rate-limit-loop when rateLimitCount exceeds threshold', () => {
-    const agent = makeAgent({ startedAt: 0, lastOutputAt: 0, rateLimitCount: RATE_LIMIT_LOOP_THRESHOLD + 1 })
+    const agent = makeAgent({
+      startedAt: 0,
+      lastOutputAt: 0,
+      rateLimitCount: RATE_LIMIT_LOOP_THRESHOLD + 1
+    })
     const now = 1_000
     expect(checkAgent(agent, now, baseConfig)).toBe('rate-limit-loop')
   })

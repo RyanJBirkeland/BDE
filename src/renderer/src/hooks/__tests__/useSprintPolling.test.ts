@@ -4,7 +4,7 @@ import { useSprintPolling } from '../useSprintPolling'
 
 // Mock useVisibilityAwareInterval to prevent timer side-effects
 vi.mock('../useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn(),
+  useVisibilityAwareInterval: vi.fn()
 }))
 
 // Mock the sprintTasks store

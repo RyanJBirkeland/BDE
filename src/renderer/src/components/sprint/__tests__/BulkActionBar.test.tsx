@@ -14,7 +14,7 @@ describe('BulkActionBar', () => {
     onSetPriority: mockOnSetPriority,
     onDelete: mockOnDelete,
     onMarkDone: mockOnMarkDone,
-    onClearSelection: mockOnClearSelection,
+    onClearSelection: mockOnClearSelection
   }
 
   beforeEach(() => {

@@ -30,14 +30,23 @@ describe('ConsoleLine', () => {
   })
 
   it('renders error block with [error] prefix', () => {
-    const block: ChatBlock = { type: 'error', message: 'Something went wrong', timestamp: Date.now() }
+    const block: ChatBlock = {
+      type: 'error',
+      message: 'Something went wrong',
+      timestamp: Date.now()
+    }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[error]')).toBeInTheDocument()
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
   })
 
   it('renders rate_limited block with [rate] prefix and retry info', () => {
-    const block: ChatBlock = { type: 'rate_limited', retryDelayMs: 5000, attempt: 2, timestamp: Date.now() }
+    const block: ChatBlock = {
+      type: 'rate_limited',
+      retryDelayMs: 5000,
+      attempt: 2,
+      timestamp: Date.now()
+    }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[rate]')).toBeInTheDocument()
     expect(screen.getByText(/Rate limited, retry in 5s \(attempt 2\)/)).toBeInTheDocument()
@@ -51,7 +60,7 @@ describe('ConsoleLine', () => {
       tokensIn: 1000,
       tokensOut: 500,
       durationMs: 12345,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[done]')).toBeInTheDocument()
@@ -64,7 +73,7 @@ describe('ConsoleLine', () => {
       filename: 'chart.html',
       html: '<html></html>',
       sizeBytes: 2048,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[play]')).toBeInTheDocument()
@@ -72,20 +81,35 @@ describe('ConsoleLine', () => {
   })
 
   it('renders thinking block with [think] prefix and token count badge', () => {
-    const block: ChatBlock = { type: 'thinking', tokenCount: 1234, text: 'Thoughts', timestamp: Date.now() }
+    const block: ChatBlock = {
+      type: 'thinking',
+      tokenCount: 1234,
+      text: 'Thoughts',
+      timestamp: Date.now()
+    }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[think]')).toBeInTheDocument()
     expect(screen.getByText('1,234 tokens')).toBeInTheDocument()
   })
 
   it('renders thinking block collapsed by default', () => {
-    const block: ChatBlock = { type: 'thinking', tokenCount: 100, text: 'Hidden thoughts', timestamp: Date.now() }
+    const block: ChatBlock = {
+      type: 'thinking',
+      tokenCount: 100,
+      text: 'Hidden thoughts',
+      timestamp: Date.now()
+    }
     render(<ConsoleLine block={block} />)
     expect(screen.queryByText('Hidden thoughts')).not.toBeInTheDocument()
   })
 
   it('expands thinking block on click', () => {
-    const block: ChatBlock = { type: 'thinking', tokenCount: 100, text: 'My thoughts', timestamp: Date.now() }
+    const block: ChatBlock = {
+      type: 'thinking',
+      tokenCount: 100,
+      text: 'My thoughts',
+      timestamp: Date.now()
+    }
     render(<ConsoleLine block={block} />)
     fireEvent.click(screen.getByRole('button'))
     expect(screen.getByText('My thoughts')).toBeInTheDocument()
@@ -97,7 +121,7 @@ describe('ConsoleLine', () => {
       tool: 'Read',
       summary: 'Reading file.txt',
       input: { path: 'file.txt' },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[tool]')).toBeInTheDocument()
@@ -110,7 +134,7 @@ describe('ConsoleLine', () => {
       tool: 'Read',
       summary: 'Reading file.txt',
       input: { path: 'file.txt' },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     expect(screen.queryByText('Input')).not.toBeInTheDocument()
@@ -122,7 +146,7 @@ describe('ConsoleLine', () => {
       tool: 'Read',
       summary: 'Reading file.txt',
       input: { path: 'file.txt' },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     fireEvent.click(screen.getByRole('button'))
@@ -137,7 +161,7 @@ describe('ConsoleLine', () => {
       summary: 'Reading file.txt',
       input: { path: 'file.txt' },
       result: { success: true, summary: 'File contents', output: 'Hello' },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[tool]')).toBeInTheDocument()
@@ -151,7 +175,7 @@ describe('ConsoleLine', () => {
       summary: 'Reading missing.txt',
       input: { path: 'missing.txt' },
       result: { success: false, summary: 'File not found', output: null },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     expect(screen.getByText('[tool]')).toBeInTheDocument()
@@ -165,7 +189,7 @@ describe('ConsoleLine', () => {
       summary: 'Reading file.txt',
       input: { path: 'file.txt' },
       result: { success: true, summary: 'File contents', output: { content: 'Hello world' } },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     render(<ConsoleLine block={block} />)
     fireEvent.click(screen.getByRole('button'))
@@ -176,7 +200,12 @@ describe('ConsoleLine', () => {
   })
 
   it('toggles collapsible blocks back to collapsed on second click', () => {
-    const block: ChatBlock = { type: 'thinking', tokenCount: 100, text: 'Toggle me', timestamp: Date.now() }
+    const block: ChatBlock = {
+      type: 'thinking',
+      tokenCount: 100,
+      text: 'Toggle me',
+      timestamp: Date.now()
+    }
     render(<ConsoleLine block={block} />)
     const button = screen.getByRole('button')
     fireEvent.click(button)
@@ -196,7 +225,12 @@ describe('ConsoleLine', () => {
   })
 
   it('chevron rotates when thinking block is expanded', () => {
-    const block: ChatBlock = { type: 'thinking', tokenCount: 100, text: 'Test', timestamp: Date.now() }
+    const block: ChatBlock = {
+      type: 'thinking',
+      tokenCount: 100,
+      text: 'Test',
+      timestamp: Date.now()
+    }
     const { container } = render(<ConsoleLine block={block} />)
     const svg = container.querySelector('svg')!
     expect(svg.style.transform).toBe('rotate(0deg)')
@@ -210,7 +244,7 @@ describe('ConsoleLine', () => {
       tool: 'Read',
       summary: 'Test',
       input: {},
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     const { container } = render(<ConsoleLine block={block} />)
     const svg = container.querySelector('svg')!
@@ -226,7 +260,7 @@ describe('ConsoleLine', () => {
       summary: 'Test',
       input: {},
       result: { success: true, summary: 'Done', output: {} },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     const { container } = render(<ConsoleLine block={block} />)
     const svg = container.querySelector('svg')!

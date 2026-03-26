@@ -42,7 +42,12 @@ interface UnifiedAgentsStore {
 
   fetchAll: () => Promise<void>
   select: (id: string | null) => void
-  spawn: (args: { task: string; repoPath: string; model?: string; planning?: boolean }) => Promise<void>
+  spawn: (args: {
+    task: string
+    repoPath: string
+    model?: string
+    planning?: boolean
+  }) => Promise<void>
   steer: (id: string, message: string) => Promise<void>
   kill: (agent: UnifiedAgent) => Promise<void>
 }

@@ -124,18 +124,21 @@ export default function MemoryView(): React.JSX.Element {
   /**
    * Attempt to switch to a new file, showing a confirmation if there are unsaved changes.
    */
-  const handleSelectFile = useCallback(async (path: string) => {
-    if (isDirty) {
-      const ok = await confirm({
-        title: 'Unsaved changes',
-        message: 'You have unsaved changes. Switch files and discard them?',
-        confirmLabel: 'Discard & switch',
-        variant: 'danger',
-      })
-      if (!ok) return
-    }
-    await openFile(path)
-  }, [isDirty, confirm, openFile])
+  const handleSelectFile = useCallback(
+    async (path: string) => {
+      if (isDirty) {
+        const ok = await confirm({
+          title: 'Unsaved changes',
+          message: 'You have unsaved changes. Switch files and discard them?',
+          confirmLabel: 'Discard & switch',
+          variant: 'danger'
+        })
+        if (!ok) return
+      }
+      await openFile(path)
+    },
+    [isDirty, confirm, openFile]
+  )
 
   const saveFile = useCallback(async () => {
     if (!selectedPath) return
@@ -258,202 +261,224 @@ export default function MemoryView(): React.JSX.Element {
   // Scroll focused file into view
   useEffect(() => {
     if (focusIndex < 0) return
-    const el = sidebarRef.current?.querySelector(`[data-memory-index="${focusIndex}"]`) as HTMLElement
+    const el = sidebarRef.current?.querySelector(
+      `[data-memory-index="${focusIndex}"]`
+    ) as HTMLElement
     el?.scrollIntoView({ block: 'nearest' })
   }, [focusIndex])
 
   return (
-    <motion.div className="memory-view memory-view--column" variants={VARIANTS.fadeIn} initial="initial" animate="animate" transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}>
+    <motion.div
+      className="memory-view memory-view--column"
+      variants={VARIANTS.fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+    >
       <div className="memory-view__header">
         <span className="memory-view__title text-gradient-aurora">Memory</span>
       </div>
       <div className="memory-view__content">
-      <div className="memory-sidebar">
-        <div className="memory-sidebar__header">
-          <span className="memory-sidebar__title">Files</span>
-          <span className="memory-sidebar__count bde-count-badge">{files.length}</span>
-          <div className="memory-sidebar__actions">
-            <Button variant="icon" size="sm" onClick={() => setNewFilePrompt(true)} title="New file" aria-label="New file">
-              +
-            </Button>
-            <Button variant="icon" size="sm" onClick={loadFiles} title="Refresh" aria-label="Refresh">
-              &#x21bb;
-            </Button>
-          </div>
-        </div>
-
-        {newFilePrompt && (
-          <div className="memory-sidebar__new-file">
-            <input
-              className="memory-sidebar__new-input"
-              value={newFileName}
-              onChange={(e) => setNewFileName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') createFile()
-                if (e.key === 'Escape') {
-                  setNewFilePrompt(false)
-                  setNewFileName('')
-                }
-              }}
-              placeholder="filename.md"
-              disabled={creating}
-              autoFocus
-            />
-          </div>
-        )}
-
-        <div className="memory-sidebar__search">
-          <div className="memory-sidebar__search-input-wrapper">
-            <Search size={16} className="memory-sidebar__search-icon" />
-            <input
-              className="memory-sidebar__search-input"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search memory files..."
-            />
-            {searchQuery && (
-              <button
-                className="memory-sidebar__search-clear"
-                onClick={clearSearch}
-                title="Clear search"
-                aria-label="Clear search"
+        <div className="memory-sidebar">
+          <div className="memory-sidebar__header">
+            <span className="memory-sidebar__title">Files</span>
+            <span className="memory-sidebar__count bde-count-badge">{files.length}</span>
+            <div className="memory-sidebar__actions">
+              <Button
+                variant="icon"
+                size="sm"
+                onClick={() => setNewFilePrompt(true)}
+                title="New file"
+                aria-label="New file"
               >
-                <X size={16} />
-              </button>
+                +
+              </Button>
+              <Button
+                variant="icon"
+                size="sm"
+                onClick={loadFiles}
+                title="Refresh"
+                aria-label="Refresh"
+              >
+                &#x21bb;
+              </Button>
+            </div>
+          </div>
+
+          {newFilePrompt && (
+            <div className="memory-sidebar__new-file">
+              <input
+                className="memory-sidebar__new-input"
+                value={newFileName}
+                onChange={(e) => setNewFileName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') createFile()
+                  if (e.key === 'Escape') {
+                    setNewFilePrompt(false)
+                    setNewFileName('')
+                  }
+                }}
+                placeholder="filename.md"
+                disabled={creating}
+                autoFocus
+              />
+            </div>
+          )}
+
+          <div className="memory-sidebar__search">
+            <div className="memory-sidebar__search-input-wrapper">
+              <Search size={16} className="memory-sidebar__search-icon" />
+              <input
+                className="memory-sidebar__search-input"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search memory files..."
+              />
+              {searchQuery && (
+                <button
+                  className="memory-sidebar__search-clear"
+                  onClick={clearSearch}
+                  title="Clear search"
+                  aria-label="Clear search"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="memory-sidebar__list" ref={sidebarRef}>
+            {searchQuery ? (
+              <>
+                {isSearching ? (
+                  <div className="memory-sidebar__loading">
+                    <div className="bde-skeleton memory-sidebar__skeleton" />
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="memory-search-results">
+                    {searchResults.map((result) => (
+                      <button
+                        key={result.path}
+                        className={`memory-search-result ${selectedPath === result.path ? 'memory-search-result--active' : ''}`}
+                        onClick={() => handleSelectFile(result.path)}
+                      >
+                        <div className="memory-search-result__header">
+                          <span className="memory-search-result__path">{result.path}</span>
+                          <span className="memory-search-result__count">
+                            {result.matches.length} match{result.matches.length !== 1 ? 'es' : ''}
+                          </span>
+                        </div>
+                        <div className="memory-search-result__matches">
+                          {result.matches.slice(0, 2).map((match, idx) => (
+                            <div key={idx} className="memory-search-result__match">
+                              <span className="memory-search-result__line">{match.line}:</span>
+                              <span className="memory-search-result__content">{match.content}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={<Search size={24} />}
+                    title="No matches found"
+                    description={`No files match "${searchQuery}"`}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                {pinned && (
+                  <button
+                    className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''} ${focusIndex === 0 ? 'memory-file--focused' : ''}`}
+                    data-memory-index={0}
+                    onClick={() => handleSelectFile(pinned.path)}
+                  >
+                    <span className="memory-file__name">
+                      <span className="memory-file__pin">{'\uD83D\uDCCC'}</span> {pinned.name}
+                    </span>
+                    <span className="memory-file__meta">
+                      {formatRelativeTime(pinned.modifiedAt)} &middot; {formatSize(pinned.size)}
+                    </span>
+                  </button>
+                )}
+
+                {groups.map((group) => (
+                  <div key={group.label} className="memory-group">
+                    <div className="memory-group__label">{group.label}</div>
+                    {group.files.map((f) => {
+                      const idx = flatFiles.indexOf(f)
+                      return (
+                        <button
+                          key={f.path}
+                          className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''} ${focusIndex === idx ? 'memory-file--focused' : ''}`}
+                          data-memory-index={idx}
+                          onClick={() => handleSelectFile(f.path)}
+                        >
+                          <span className="memory-file__name">{f.name}</span>
+                          <span className="memory-file__meta">
+                            {formatRelativeTime(f.modifiedAt)} &middot; {formatSize(f.size)}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ))}
+
+                {loadingFiles && files.length === 0 && (
+                  <div className="memory-sidebar__loading">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="bde-skeleton memory-sidebar__skeleton" />
+                    ))}
+                  </div>
+                )}
+                {!loadingFiles && files.length === 0 && (
+                  <EmptyState
+                    icon={<FileText size={24} />}
+                    title="No memory files"
+                    description="Create a file to start taking notes"
+                    action={{ label: 'New File', onClick: () => setNewFilePrompt(true) }}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
 
-        <div className="memory-sidebar__list" ref={sidebarRef}>
-          {searchQuery ? (
+        <div className="memory-editor">
+          {loadingContent ? (
+            <div className="memory-editor__loading">
+              <div className="bde-skeleton memory-editor__skeleton" />
+            </div>
+          ) : selectedPath ? (
             <>
-              {isSearching ? (
-                <div className="memory-sidebar__loading">
-                  <div className="bde-skeleton memory-sidebar__skeleton" />
+              <div className="memory-editor__toolbar">
+                <span className="memory-editor__path">
+                  memory/{selectedPath}
+                  {isDirty && <span className="memory-editor__dirty"> &bull;</span>}
+                </span>
+                <div className="memory-editor__actions">
+                  <Button variant="ghost" size="sm" onClick={discard} disabled={!isDirty}>
+                    Discard
+                  </Button>
+                  <Button variant="primary" size="sm" onClick={saveFile} disabled={!isDirty}>
+                    Save
+                  </Button>
                 </div>
-              ) : searchResults.length > 0 ? (
-                <div className="memory-search-results">
-                  {searchResults.map((result) => (
-                    <button
-                      key={result.path}
-                      className={`memory-search-result ${selectedPath === result.path ? 'memory-search-result--active' : ''}`}
-                      onClick={() => handleSelectFile(result.path)}
-                    >
-                      <div className="memory-search-result__header">
-                        <span className="memory-search-result__path">{result.path}</span>
-                        <span className="memory-search-result__count">{result.matches.length} match{result.matches.length !== 1 ? 'es' : ''}</span>
-                      </div>
-                      <div className="memory-search-result__matches">
-                        {result.matches.slice(0, 2).map((match, idx) => (
-                          <div key={idx} className="memory-search-result__match">
-                            <span className="memory-search-result__line">{match.line}:</span>
-                            <span className="memory-search-result__content">{match.content}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={<Search size={24} />}
-                  title="No matches found"
-                  description={`No files match "${searchQuery}"`}
-                />
-              )}
+              </div>
+              <textarea
+                ref={editorRef}
+                className="memory-editor__textarea"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                spellCheck={false}
+              />
             </>
           ) : (
-            <>
-              {pinned && (
-                <button
-                  className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''} ${focusIndex === 0 ? 'memory-file--focused' : ''}`}
-                  data-memory-index={0}
-                  onClick={() => handleSelectFile(pinned.path)}
-                >
-                  <span className="memory-file__name">
-                    <span className="memory-file__pin">{'\uD83D\uDCCC'}</span> {pinned.name}
-                  </span>
-                  <span className="memory-file__meta">
-                    {formatRelativeTime(pinned.modifiedAt)} &middot; {formatSize(pinned.size)}
-                  </span>
-                </button>
-              )}
-
-              {groups.map((group) => (
-                <div key={group.label} className="memory-group">
-                  <div className="memory-group__label">{group.label}</div>
-                  {group.files.map((f) => {
-                    const idx = flatFiles.indexOf(f)
-                    return (
-                      <button
-                        key={f.path}
-                        className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''} ${focusIndex === idx ? 'memory-file--focused' : ''}`}
-                        data-memory-index={idx}
-                        onClick={() => handleSelectFile(f.path)}
-                      >
-                        <span className="memory-file__name">{f.name}</span>
-                        <span className="memory-file__meta">
-                          {formatRelativeTime(f.modifiedAt)} &middot; {formatSize(f.size)}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              ))}
-
-              {loadingFiles && files.length === 0 && (
-                <div className="memory-sidebar__loading">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="bde-skeleton memory-sidebar__skeleton" />
-                  ))}
-                </div>
-              )}
-              {!loadingFiles && files.length === 0 && (
-                <EmptyState
-                  icon={<FileText size={24} />}
-                  title="No memory files"
-                  description="Create a file to start taking notes"
-                  action={{ label: 'New File', onClick: () => setNewFilePrompt(true) }}
-                />
-              )}
-            </>
+            <EmptyState title="Select a file to view" />
           )}
         </div>
-      </div>
-
-      <div className="memory-editor">
-        {loadingContent ? (
-          <div className="memory-editor__loading">
-            <div className="bde-skeleton memory-editor__skeleton" />
-          </div>
-        ) : selectedPath ? (
-          <>
-            <div className="memory-editor__toolbar">
-              <span className="memory-editor__path">
-                memory/{selectedPath}
-                {isDirty && <span className="memory-editor__dirty"> &bull;</span>}
-              </span>
-              <div className="memory-editor__actions">
-                <Button variant="ghost" size="sm" onClick={discard} disabled={!isDirty}>
-                  Discard
-                </Button>
-                <Button variant="primary" size="sm" onClick={saveFile} disabled={!isDirty}>
-                  Save
-                </Button>
-              </div>
-            </div>
-            <textarea
-              ref={editorRef}
-              className="memory-editor__textarea"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              spellCheck={false}
-            />
-          </>
-        ) : (
-          <EmptyState title="Select a file to view" />
-        )}
-      </div>
       </div>
       <ConfirmModal {...confirmProps} />
     </motion.div>

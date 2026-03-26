@@ -50,7 +50,10 @@ export function AgentRuntimeSection(): React.JSX.Element {
           className="settings-field__input"
           type="text"
           value={agentBinary}
-          onChange={(e) => { setAgentBinary(e.target.value); setAgentDirty(true) }}
+          onChange={(e) => {
+            setAgentBinary(e.target.value)
+            setAgentDirty(true)
+          }}
           placeholder="claude"
         />
       </label>
@@ -60,10 +63,15 @@ export function AgentRuntimeSection(): React.JSX.Element {
         <select
           className="settings-field__input"
           value={agentPermissionMode}
-          onChange={(e) => { setAgentPermissionMode(e.target.value); setAgentDirty(true) }}
+          onChange={(e) => {
+            setAgentPermissionMode(e.target.value)
+            setAgentDirty(true)
+          }}
         >
           {PERMISSION_MODES.map((m) => (
-            <option key={m.value} value={m.value}>{m.label}</option>
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
           ))}
         </select>
       </label>

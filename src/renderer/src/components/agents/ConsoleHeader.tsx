@@ -51,8 +51,8 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps) {
   }, [isRunning, agent.startedAt, agent.finishedAt])
 
   // Extract cost from completed event or agent meta
-  const completedEvent = events.find((e): e is Extract<AgentEvent, { type: 'agent:completed' }> =>
-    e.type === 'agent:completed'
+  const completedEvent = events.find(
+    (e): e is Extract<AgentEvent, { type: 'agent:completed' }> => e.type === 'agent:completed'
   )
   const costUsd = completedEvent?.costUsd ?? agent.costUsd
 
@@ -92,7 +92,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps) {
           flex: 1,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          whiteSpace: 'nowrap'
         }}
         title={agent.task}
       >

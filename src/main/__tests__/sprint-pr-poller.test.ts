@@ -10,7 +10,7 @@ function makeDeps(overrides: Partial<SprintPrPollerDeps> = {}): SprintPrPollerDe
     markTaskCancelledByPrNumber: vi.fn().mockResolvedValue([]),
     updateTaskMergeableState: vi.fn().mockResolvedValue(undefined),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -41,7 +41,7 @@ function makeTask(overrides: Record<string, unknown> = {}) {
     depends_on: null,
     updated_at: '2026-01-01T00:00:00Z',
     created_at: '2026-01-01T00:00:00Z',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -63,10 +63,12 @@ describe('createSprintPrPoller', () => {
     const task = makeTask()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockResolvedValue([task]),
-      pollPrStatuses: vi.fn().mockResolvedValue([
-        { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null },
-      ]),
-      markTaskDoneByPrNumber: vi.fn().mockResolvedValue(['task-1']),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null }
+        ]),
+      markTaskDoneByPrNumber: vi.fn().mockResolvedValue(['task-1'])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -77,9 +79,7 @@ describe('createSprintPrPoller', () => {
     for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
 
     expect(deps.listTasksWithOpenPrs).toHaveBeenCalled()
-    expect(deps.pollPrStatuses).toHaveBeenCalledWith([
-      { taskId: 'task-1', prUrl: PR_URL },
-    ])
+    expect(deps.pollPrStatuses).toHaveBeenCalledWith([{ taskId: 'task-1', prUrl: PR_URL }])
     expect(deps.markTaskDoneByPrNumber).toHaveBeenCalledWith(42)
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'done')
   })
@@ -88,10 +88,12 @@ describe('createSprintPrPoller', () => {
     const task = makeTask()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockResolvedValue([task]),
-      pollPrStatuses: vi.fn().mockResolvedValue([
-        { taskId: 'task-1', merged: false, state: 'CLOSED', mergeableState: null },
-      ]),
-      markTaskCancelledByPrNumber: vi.fn().mockResolvedValue(['task-1']),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-1', merged: false, state: 'CLOSED', mergeableState: null }
+        ]),
+      markTaskCancelledByPrNumber: vi.fn().mockResolvedValue(['task-1'])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -109,9 +111,11 @@ describe('createSprintPrPoller', () => {
     const task = makeTask()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockResolvedValue([task]),
-      pollPrStatuses: vi.fn().mockResolvedValue([
-        { taskId: 'task-1', merged: false, state: 'OPEN', mergeableState: 'MERGEABLE' },
-      ]),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-1', merged: false, state: 'OPEN', mergeableState: 'MERGEABLE' }
+        ])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -127,7 +131,7 @@ describe('createSprintPrPoller', () => {
 
   it('skips polling when no tasks with open PRs', async () => {
     const deps = makeDeps({
-      listTasksWithOpenPrs: vi.fn().mockResolvedValue([]),
+      listTasksWithOpenPrs: vi.fn().mockResolvedValue([])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -142,7 +146,7 @@ describe('createSprintPrPoller', () => {
 
   it('stops polling on stop()', async () => {
     const deps = makeDeps({
-      listTasksWithOpenPrs: vi.fn().mockResolvedValue([]),
+      listTasksWithOpenPrs: vi.fn().mockResolvedValue([])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -150,7 +154,8 @@ describe('createSprintPrPoller', () => {
 
     // Let the initial poll fire
     for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
-    const callCountAfterStart = (deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls.length
+    const callCountAfterStart = (deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls
+      .length
 
     poller.stop()
 
@@ -158,12 +163,14 @@ describe('createSprintPrPoller', () => {
     await vi.advanceTimersByTimeAsync(120_000)
     for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
 
-    expect((deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callCountAfterStart)
+    expect((deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls.length).toBe(
+      callCountAfterStart
+    )
   })
 
   it('polls again after 60s interval elapses', async () => {
     const deps = makeDeps({
-      listTasksWithOpenPrs: vi.fn().mockResolvedValue([]),
+      listTasksWithOpenPrs: vi.fn().mockResolvedValue([])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -171,14 +178,17 @@ describe('createSprintPrPoller', () => {
 
     // Initial poll
     for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
-    const callsAfterStart = (deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls.length
+    const callsAfterStart = (deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls
+      .length
     expect(callsAfterStart).toBeGreaterThanOrEqual(1)
 
     // Advance exactly 60 seconds to trigger next interval poll
     await vi.advanceTimersByTimeAsync(60_000)
     for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
 
-    expect((deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(callsAfterStart)
+    expect(
+      (deps.listTasksWithOpenPrs as ReturnType<typeof vi.fn>).mock.calls.length
+    ).toBeGreaterThan(callsAfterStart)
 
     poller.stop()
   })
@@ -187,10 +197,12 @@ describe('createSprintPrPoller', () => {
     const task = makeTask()
     const { onTaskTerminal: _omit, ...depsWithoutTerminal } = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockResolvedValue([task]),
-      pollPrStatuses: vi.fn().mockResolvedValue([
-        { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null },
-      ]),
-      markTaskDoneByPrNumber: vi.fn().mockResolvedValue(['task-1']),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null }
+        ]),
+      markTaskDoneByPrNumber: vi.fn().mockResolvedValue(['task-1'])
     })
 
     const poller = createSprintPrPoller(depsWithoutTerminal)

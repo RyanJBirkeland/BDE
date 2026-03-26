@@ -48,7 +48,7 @@ function zoneStyle(zone: DropZone): React.CSSProperties {
   const base: React.CSSProperties = {
     position: 'absolute',
     background: HIGHLIGHT_COLOR,
-    pointerEvents: 'none',
+    pointerEvents: 'none'
   }
 
   switch (zone) {
@@ -112,7 +112,7 @@ export function PanelDropOverlay({ panelId, onDrop }: PanelDropOverlayProps): Re
         position: 'absolute',
         inset: 0,
         pointerEvents: 'all',
-        zIndex: 10,
+        zIndex: 10
       }}
     >
       {activeZone !== null && <div style={zoneStyle(activeZone)} />}

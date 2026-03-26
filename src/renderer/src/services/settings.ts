@@ -11,6 +11,9 @@ export async function getAgentConfig(): Promise<AgentConfig> {
   return window.api.getAgentConfig()
 }
 
-export async function saveAgentConfig(config: { binary: string; permissionMode: string }): Promise<void> {
+export async function saveAgentConfig(config: {
+  binary: string
+  permissionMode: string
+}): Promise<void> {
   return window.api.saveAgentConfig(config)
 }

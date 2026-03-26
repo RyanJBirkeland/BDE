@@ -21,18 +21,28 @@ const REPO_COLOR: Record<string, string> = Object.fromEntries(
 
 function CIBadge({ summary }: { summary: CheckRunSummary | undefined }) {
   if (!summary || summary.total === 0) {
-    return <span className="pr-station__ci pr-station__ci--none" title="No checks">—</span>
+    return (
+      <span className="pr-station__ci pr-station__ci--none" title="No checks">
+        —
+      </span>
+    )
   }
   if (summary.status === 'pass') {
     return (
-      <span className="pr-station__ci pr-station__ci--pass" title={`${summary.passed}/${summary.total} passed`}>
+      <span
+        className="pr-station__ci pr-station__ci--pass"
+        title={`${summary.passed}/${summary.total} passed`}
+      >
         <CircleCheck size={14} />
       </span>
     )
   }
   if (summary.status === 'fail') {
     return (
-      <span className="pr-station__ci pr-station__ci--fail" title={`${summary.failed} failed, ${summary.passed} passed`}>
+      <span
+        className="pr-station__ci pr-station__ci--fail"
+        title={`${summary.failed} failed, ${summary.passed} passed`}
+      >
         <CircleX size={14} />
       </span>
     )
@@ -44,19 +54,28 @@ function CIBadge({ summary }: { summary: CheckRunSummary | undefined }) {
   )
 }
 
-export function PRStationList({ selectedPr, onSelectPr, removedKeys, prs: externalPrs, onPrsChange }: PRStationListProps) {
+export function PRStationList({
+  selectedPr,
+  onSelectPr,
+  removedKeys,
+  prs: externalPrs,
+  onPrsChange
+}: PRStationListProps) {
   const [internalPrs, setInternalPrs] = useState<OpenPr[]>([])
   const [checks, setChecks] = useState<Record<string, CheckRunSummary>>({})
   const [loading, setLoading] = useState(true)
 
   const prs = externalPrs ?? internalPrs
 
-  const applyPayload = useCallback((payload: PrListPayload) => {
-    setInternalPrs(payload.prs)
-    onPrsChange?.(payload.prs)
-    setChecks(payload.checks)
-    setLoading(false)
-  }, [onPrsChange])
+  const applyPayload = useCallback(
+    (payload: PrListPayload) => {
+      setInternalPrs(payload.prs)
+      onPrsChange?.(payload.prs)
+      setChecks(payload.checks)
+      setLoading(false)
+    },
+    [onPrsChange]
+  )
 
   // Subscribe to main-process push events
   useEffect(() => {
@@ -78,7 +97,14 @@ export function PRStationList({ selectedPr, onSelectPr, removedKeys, prs: extern
         <span className="pr-station-list__count bde-count-badge">
           {prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).length}
         </span>
-        <Button variant="icon" size="sm" onClick={handleRefresh} disabled={loading} title="Refresh" aria-label="Refresh">
+        <Button
+          variant="icon"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={loading}
+          title="Refresh"
+          aria-label="Refresh"
+        >
           &#x21bb;
         </Button>
       </div>
@@ -91,34 +117,40 @@ export function PRStationList({ selectedPr, onSelectPr, removedKeys, prs: extern
             <div className="sprint-board__skeleton" />
           </div>
         ) : prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).length === 0 ? (
-          <EmptyState icon={<FileCode2 size={24} />} title="No open PRs" description="All clear across repos" />
+          <EmptyState
+            icon={<FileCode2 size={24} />}
+            title="No open PRs"
+            description="All clear across repos"
+          />
         ) : (
-          prs.filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`)).map((pr) => {
-            const isSelected = selectedPr?.number === pr.number && selectedPr?.repo === pr.repo
-            return (
-              <button
-                key={`${pr.repo}-${pr.number}`}
-                className={`pr-station-list__row${isSelected ? ' pr-station-list__row--selected' : ''}`}
-                onClick={() => onSelectPr(pr)}
-              >
-                <div className="pr-station-list__row-top">
-                  <span
-                    className="pr-station-list__repo-badge"
-                    style={{ background: REPO_COLOR[pr.repo] ?? 'var(--bde-text-dim)' }}
-                  >
-                    {pr.repo}
-                  </span>
-                  <span className="pr-station-list__number">#{pr.number}</span>
-                  {pr.draft && <span className="pr-station-list__draft">draft</span>}
-                  <CIBadge summary={checks[`${pr.repo}-${pr.number}`]} />
-                </div>
-                <div className="pr-station-list__title-text">{pr.title}</div>
-                <div className="pr-station-list__meta">
-                  <span className="pr-station-list__time">{timeAgo(pr.updated_at)}</span>
-                </div>
-              </button>
-            )
-          })
+          prs
+            .filter((p) => !removedKeys?.has(`${p.repo}-${p.number}`))
+            .map((pr) => {
+              const isSelected = selectedPr?.number === pr.number && selectedPr?.repo === pr.repo
+              return (
+                <button
+                  key={`${pr.repo}-${pr.number}`}
+                  className={`pr-station-list__row${isSelected ? ' pr-station-list__row--selected' : ''}`}
+                  onClick={() => onSelectPr(pr)}
+                >
+                  <div className="pr-station-list__row-top">
+                    <span
+                      className="pr-station-list__repo-badge"
+                      style={{ background: REPO_COLOR[pr.repo] ?? 'var(--bde-text-dim)' }}
+                    >
+                      {pr.repo}
+                    </span>
+                    <span className="pr-station-list__number">#{pr.number}</span>
+                    {pr.draft && <span className="pr-station-list__draft">draft</span>}
+                    <CIBadge summary={checks[`${pr.repo}-${pr.number}`]} />
+                  </div>
+                  <div className="pr-station-list__title-text">{pr.title}</div>
+                  <div className="pr-station-list__meta">
+                    <span className="pr-station-list__time">{timeAgo(pr.updated_at)}</span>
+                  </div>
+                </button>
+              )
+            })
         )}
       </div>
     </div>

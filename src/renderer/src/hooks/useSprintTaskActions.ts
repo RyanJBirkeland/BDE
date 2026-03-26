@@ -105,7 +105,7 @@ export function useSprintTaskActions() {
       const ok = await confirm({
         message: 'Stop this agent? The task will be marked cancelled.',
         confirmLabel: 'Stop Agent',
-        variant: 'danger',
+        variant: 'danger'
       })
       if (!ok) return
       try {
@@ -133,7 +133,7 @@ export function useSprintTaskActions() {
           prompt: task.prompt || task.title,
           spec: task.spec || undefined,
           priority: task.priority,
-          status: TASK_STATUS.QUEUED,
+          status: TASK_STATUS.QUEUED
         })
         toast.success('Task re-queued as new ticket')
         loadData()
@@ -183,6 +183,6 @@ export function useSprintTaskActions() {
     handleEditInWorkbench,
     launchTask,
     deleteTask,
-    confirmProps,
+    confirmProps
   }
 }

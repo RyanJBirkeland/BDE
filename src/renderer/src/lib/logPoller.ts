@@ -10,7 +10,9 @@ export function createLogPollerActions(
   get: () => LogPollerState,
   set: (s: Partial<LogPollerState>) => void
 ): {
-  startLogPolling: (readFn: (fromByte: number) => Promise<{ content: string; nextByte: number }>) => () => void
+  startLogPolling: (
+    readFn: (fromByte: number) => Promise<{ content: string; nextByte: number }>
+  ) => () => void
   stopLogPolling: () => void
 } {
   let logInterval: ReturnType<typeof setInterval> | null = null

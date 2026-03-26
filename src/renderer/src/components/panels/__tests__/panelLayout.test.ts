@@ -9,7 +9,7 @@ import {
   setActiveTab,
   moveTab,
   DEFAULT_LAYOUT,
-  _resetIdCounter,
+  _resetIdCounter
 } from '../../../stores/panelLayout'
 import type { PanelLeafNode, PanelSplitNode } from '../../../stores/panelLayout'
 
@@ -77,7 +77,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       expect(findLeaf(split, leaf1.panelId)?.panelId).toBe(leaf1.panelId)
       expect(findLeaf(split, leaf2.panelId)?.panelId).toBe(leaf2.panelId)
@@ -99,7 +99,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const views = getOpenViews(split)
       expect(views).toContain('agents')
@@ -155,7 +155,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Split leaf2 vertically
       const result = splitNode(root, leaf2.panelId, 'vertical', 'sprint')
@@ -205,7 +205,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = addTab(split, leaf2.panelId, 'sprint')
       expect(result).not.toBeNull()
@@ -288,7 +288,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'horizontal',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Move leaf1's 'sprint' tab (index 1) to leaf2 center
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'center')
@@ -311,7 +311,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'vertical',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       // Move leaf1's 'sprint' tab (index 1) to leaf2's right zone
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'right')
@@ -335,7 +335,7 @@ describe('panelLayout pure functions', () => {
         type: 'split',
         direction: 'vertical',
         children: [leaf1WithTwo, leaf2],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
       const result = moveTab(split, leaf1WithTwo.panelId, 1, leaf2.panelId, 'left')
       expect(result).not.toBeNull()

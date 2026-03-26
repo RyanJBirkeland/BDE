@@ -16,12 +16,12 @@ export function AgentPill({ agent, currentAction, accent, onClick }: AgentPillPr
 
   const dotStyle = {
     background: neonVar(accent, 'color'),
-    boxShadow: neonVar(accent, 'glow'),
+    boxShadow: neonVar(accent, 'glow')
   }
 
   const pillStyle = {
     borderColor: neonVar(accent, 'border'),
-    background: neonVar(accent, 'surface'),
+    background: neonVar(accent, 'surface')
   }
 
   return (

@@ -40,7 +40,7 @@ function splitPath(filePath: string): { dir: string; name: string } {
   if (lastSlash === -1) return { dir: '', name: filePath }
   return {
     dir: filePath.slice(0, lastSlash + 1),
-    name: filePath.slice(lastSlash + 1),
+    name: filePath.slice(lastSlash + 1)
   }
 }
 
@@ -55,7 +55,7 @@ export function GitFileRow({
   selected = false,
   onStage,
   onUnstage,
-  onClick,
+  onClick
 }: GitFileRowProps): React.ReactElement {
   const { dir, name } = splitPath(path)
 
@@ -87,12 +87,11 @@ export function GitFileRow({
         backgroundColor: selected ? tokens.color.accentDim : 'transparent',
         borderRadius: tokens.radius.sm,
         fontSize: tokens.size.sm,
-        fontFamily: tokens.font.ui,
+        fontFamily: tokens.font.ui
       }}
       onMouseEnter={(e) => {
         if (!selected) {
-          ;(e.currentTarget as HTMLDivElement).style.backgroundColor =
-            tokens.color.surfaceHigh
+          ;(e.currentTarget as HTMLDivElement).style.backgroundColor = tokens.color.surfaceHigh
         }
       }}
       onMouseLeave={(e) => {
@@ -110,7 +109,7 @@ export function GitFileRow({
           fontSize: tokens.size.xs,
           width: '12px',
           flexShrink: 0,
-          textAlign: 'center',
+          textAlign: 'center'
         }}
         aria-label={`status: ${status}`}
       >
@@ -119,9 +118,7 @@ export function GitFileRow({
 
       {/* File path */}
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {dir && (
-          <span style={{ color: tokens.color.textMuted }}>{dir}</span>
-        )}
+        {dir && <span style={{ color: tokens.color.textMuted }}>{dir}</span>}
         <span style={{ color: tokens.color.text }}>{name}</span>
       </span>
 
@@ -142,12 +139,11 @@ export function GitFileRow({
           cursor: 'pointer',
           color: tokens.color.textMuted,
           flexShrink: 0,
-          padding: 0,
+          padding: 0
         }}
         onMouseEnter={(e) => {
           ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
-          ;(e.currentTarget as HTMLButtonElement).style.backgroundColor =
-            tokens.color.surfaceHigh
+          ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = tokens.color.surfaceHigh
         }}
         onMouseLeave={(e) => {
           ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.textMuted

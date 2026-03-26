@@ -23,14 +23,14 @@ function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
     tokensIn: null,
     tokensOut: null,
     sprintTaskId: null,
-    ...overrides,
+    ...overrides
   }
 }
 
 describe('AgentCard', () => {
   const defaultProps = {
     selected: false,
-    onClick: vi.fn(),
+    onClick: vi.fn()
   }
 
   beforeEach(() => {

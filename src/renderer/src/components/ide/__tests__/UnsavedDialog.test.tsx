@@ -9,17 +9,17 @@ vi.mock('framer-motion', () => ({
     div: ({ children, onKeyDown, role, ...rest }: any) => {
       const { createElement } = require('react')
       return createElement('div', { onKeyDown, role, ...rest }, children)
-    },
+    }
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useReducedMotion: () => false,
+  useReducedMotion: () => false
 }))
 
 vi.mock('../../../lib/motion', () => ({
   VARIANTS: { scaleIn: {} },
   SPRINGS: { snappy: {} },
   REDUCED_TRANSITION: { duration: 0 },
-  useReducedMotion: () => false,
+  useReducedMotion: () => false
 }))
 
 describe('UnsavedDialog', () => {

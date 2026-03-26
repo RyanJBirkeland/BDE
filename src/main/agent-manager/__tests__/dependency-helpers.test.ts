@@ -3,10 +3,10 @@ import { formatBlockedNote, stripBlockedNote, buildBlockedNotes } from '../depen
 
 // Mocks for checkTaskDependencies tests — must be declared before dynamic import
 vi.mock('../../data/sprint-queries', () => ({
-  listTasks: vi.fn(),
+  listTasks: vi.fn()
 }))
 vi.mock('../dependency-index', () => ({
-  createDependencyIndex: vi.fn(),
+  createDependencyIndex: vi.fn()
 }))
 
 describe('formatBlockedNote', () => {
@@ -21,7 +21,9 @@ describe('formatBlockedNote', () => {
 
 describe('stripBlockedNote', () => {
   it('removes auto-block prefix and returns user notes', () => {
-    expect(stripBlockedNote('[auto-block] Blocked by: task-1\nUser notes here')).toBe('User notes here')
+    expect(stripBlockedNote('[auto-block] Blocked by: task-1\nUser notes here')).toBe(
+      'User notes here'
+    )
   })
 
   it('returns empty string for null', () => {
@@ -43,12 +45,15 @@ describe('buildBlockedNotes', () => {
   })
 
   it('preserves existing user notes after blocked-by', () => {
-    expect(buildBlockedNotes(['task-1'], 'User wrote this')).toBe('[auto-block] Blocked by: task-1\nUser wrote this')
+    expect(buildBlockedNotes(['task-1'], 'User wrote this')).toBe(
+      '[auto-block] Blocked by: task-1\nUser wrote this'
+    )
   })
 
   it('strips old auto-block prefix from existing notes before rebuilding', () => {
-    expect(buildBlockedNotes(['task-2'], '[auto-block] Blocked by: task-1\nOriginal notes'))
-      .toBe('[auto-block] Blocked by: task-2\nOriginal notes')
+    expect(buildBlockedNotes(['task-2'], '[auto-block] Blocked by: task-1\nOriginal notes')).toBe(
+      '[auto-block] Blocked by: task-2\nOriginal notes'
+    )
   })
 
   it('handles null existing notes', () => {
@@ -70,18 +75,18 @@ describe('checkTaskDependencies', () => {
 
     vi.mocked(listTasks).mockResolvedValue([
       { id: 'task-1', status: 'queued' },
-      { id: 'task-2', status: 'done' },
+      { id: 'task-2', status: 'done' }
     ] as any)
     vi.mocked(createDependencyIndex).mockReturnValue({
       rebuild: vi.fn(),
       getDependents: vi.fn(),
-      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true, blockedBy: [] }),
+      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true, blockedBy: [] })
     })
 
     const result = await checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
-      mockLogger,
+      mockLogger
     )
 
     expect(result).toEqual({ shouldBlock: false, blockedBy: [] })
@@ -94,18 +99,18 @@ describe('checkTaskDependencies', () => {
 
     vi.mocked(listTasks).mockResolvedValue([
       { id: 'task-1', status: 'queued' },
-      { id: 'task-2', status: 'queued' },
+      { id: 'task-2', status: 'queued' }
     ] as any)
     vi.mocked(createDependencyIndex).mockReturnValue({
       rebuild: vi.fn(),
       getDependents: vi.fn(),
-      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['task-2'] }),
+      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['task-2'] })
     })
 
     const result = await checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
-      mockLogger,
+      mockLogger
     )
 
     expect(result).toEqual({ shouldBlock: true, blockedBy: ['task-2'] })
@@ -120,12 +125,12 @@ describe('checkTaskDependencies', () => {
     const result = await checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
-      mockLogger,
+      mockLogger
     )
 
     expect(result).toEqual({ shouldBlock: false, blockedBy: [] })
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('checkTaskDependencies failed for task-1'),
+      expect.stringContaining('checkTaskDependencies failed for task-1')
     )
   })
 })

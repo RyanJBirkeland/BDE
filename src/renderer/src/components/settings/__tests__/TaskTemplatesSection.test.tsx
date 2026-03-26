@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 beforeEach(() => {
@@ -42,7 +42,7 @@ describe('TaskTemplatesSection', () => {
 
   it('loads templates on mount', async () => {
     vi.mocked(window.api.templates.list).mockResolvedValue([
-      { name: 'My Template', promptPrefix: 'Always use TypeScript.', isBuiltIn: false },
+      { name: 'My Template', promptPrefix: 'Always use TypeScript.', isBuiltIn: false }
     ])
     render(<TaskTemplatesSection />)
     await waitFor(() => {
@@ -53,7 +53,7 @@ describe('TaskTemplatesSection', () => {
 
   it('renders built-in badge for built-in templates', async () => {
     vi.mocked(window.api.templates.list).mockResolvedValue([
-      { name: 'Default', promptPrefix: 'You are helpful.', isBuiltIn: true },
+      { name: 'Default', promptPrefix: 'You are helpful.', isBuiltIn: true }
     ])
     render(<TaskTemplatesSection />)
     await waitFor(() => {

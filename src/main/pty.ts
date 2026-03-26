@@ -29,7 +29,7 @@ const ALLOWED_SHELLS = new Set([
   '/usr/local/bin/fish',
   '/opt/homebrew/bin/bash',
   '/opt/homebrew/bin/zsh',
-  '/opt/homebrew/bin/fish',
+  '/opt/homebrew/bin/fish'
 ])
 
 export function isPtyAvailable(): boolean {
@@ -56,14 +56,13 @@ export function createPty(opts: {
   cwd?: string
 }): PtyHandle {
   if (!pty) throw new Error('Terminal unavailable: node-pty failed to load')
-  if (!validateShell(opts.shell))
-    throw new Error(`Shell not allowed: "${opts.shell}"`)
+  if (!validateShell(opts.shell)) throw new Error(`Shell not allowed: "${opts.shell}"`)
   const proc = pty.spawn(opts.shell, [], {
     name: 'xterm-256color',
     cols: opts.cols,
     rows: opts.rows,
     cwd: opts.cwd ?? process.env.HOME ?? '/',
-    env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>,
+    env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>
   })
   return {
     process: proc,
@@ -81,6 +80,6 @@ export function createPty(opts: {
     },
     kill: () => {
       proc.kill()
-    },
+    }
   }
 }

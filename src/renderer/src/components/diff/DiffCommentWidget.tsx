@@ -15,10 +15,7 @@ export function DiffCommentWidget({ comments }: DiffCommentWidgetProps) {
 
   return (
     <div className="diff-comment-widget">
-      <button
-        className="diff-comment-widget__toggle"
-        onClick={() => setCollapsed((c) => !c)}
-      >
+      <button className="diff-comment-widget__toggle" onClick={() => setCollapsed((c) => !c)}>
         {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
         <MessageSquare size={12} />
         <span>

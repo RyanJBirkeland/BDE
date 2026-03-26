@@ -8,7 +8,7 @@ function makeEvent(overrides: Record<string, unknown>): TaskOutputEvent {
     taskId: 'task-1',
     timestamp: '2026-03-19T10:00:00Z',
     type: 'agent:started',
-    ...overrides,
+    ...overrides
   } as TaskOutputEvent
 }
 
@@ -25,13 +25,22 @@ describe('TaskEventSubtitle', () => {
   })
 
   it('renders agent:tool_call with summary', () => {
-    const event = makeEvent({ type: 'agent:tool_call', tool: 'edit', summary: 'Editing src/main/db.ts' })
+    const event = makeEvent({
+      type: 'agent:tool_call',
+      tool: 'edit',
+      summary: 'Editing src/main/db.ts'
+    })
     render(<TaskEventSubtitle event={event} />)
     expect(screen.getByText('Editing src/main/db.ts')).toBeInTheDocument()
   })
 
   it('renders agent:tool_result with summary', () => {
-    const event = makeEvent({ type: 'agent:tool_result', tool: 'edit', success: true, summary: 'File written (42 lines)' })
+    const event = makeEvent({
+      type: 'agent:tool_result',
+      tool: 'edit',
+      success: true,
+      summary: 'File written (42 lines)'
+    })
     render(<TaskEventSubtitle event={event} />)
     expect(screen.getByText('File written (42 lines)')).toBeInTheDocument()
   })
@@ -55,7 +64,14 @@ describe('TaskEventSubtitle', () => {
   })
 
   it('renders agent:completed with exit code', () => {
-    const event = makeEvent({ type: 'agent:completed', exitCode: 0, costUsd: null, tokensIn: null, tokensOut: null, durationMs: 5000 })
+    const event = makeEvent({
+      type: 'agent:completed',
+      exitCode: 0,
+      costUsd: null,
+      tokensIn: null,
+      tokensOut: null,
+      durationMs: 5000
+    })
     render(<TaskEventSubtitle event={event} />)
     expect(screen.getByText('Completed (exit 0)')).toBeInTheDocument()
   })

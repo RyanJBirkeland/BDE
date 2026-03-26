@@ -10,7 +10,7 @@ function getTemplates(): TaskTemplate[] {
   const builtIn = DEFAULT_TASK_TEMPLATES.map((t) => ({
     name: t.name,
     promptPrefix: overrides[t.name] ?? t.promptPrefix,
-    isBuiltIn: true as const,
+    isBuiltIn: true as const
   }))
 
   return [...builtIn, ...custom.map((t) => ({ ...t, isBuiltIn: false as const }))]
@@ -43,7 +43,10 @@ export function registerTemplateHandlers(): void {
 
   safeHandle('templates:delete', (_e, name: string) => {
     const custom = getSettingJson<TaskTemplate[]>('templates.custom') ?? []
-    setSettingJson('templates.custom', custom.filter((t) => t.name !== name))
+    setSettingJson(
+      'templates.custom',
+      custom.filter((t) => t.name !== name)
+    )
     syncLegacyTemplates()
   })
 
@@ -58,5 +61,8 @@ export function registerTemplateHandlers(): void {
 /** Keep legacy `task.templates` setting in sync for existing consumers. */
 function syncLegacyTemplates(): void {
   const all = getTemplates()
-  setSettingJson('task.templates', all.map(({ name, promptPrefix }) => ({ name, promptPrefix })))
+  setSettingJson(
+    'task.templates',
+    all.map(({ name, promptPrefix }) => ({ name, promptPrefix }))
+  )
 }

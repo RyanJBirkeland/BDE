@@ -32,14 +32,16 @@ export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutput
   if (sessionKey) {
     return (
       <div className="terminal-agent-tab">
-        <div style={{
-          padding: tokens.space[4],
-          color: tokens.color.textDim,
-          fontFamily: tokens.font.ui,
-          fontSize: tokens.size.md,
-          textAlign: 'center',
-          marginTop: tokens.space[8]
-        }}>
+        <div
+          style={{
+            padding: tokens.space[4],
+            color: tokens.color.textDim,
+            fontFamily: tokens.font.ui,
+            fontSize: tokens.size.md,
+            textAlign: 'center',
+            marginTop: tokens.space[8]
+          }}
+        >
           Waiting for agent output…
         </div>
       </div>
@@ -50,20 +52,25 @@ export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutput
   if (agentOutput && agentOutput.length > 0) {
     return (
       <div className="terminal-agent-tab">
-        <div style={{
-          padding: tokens.space[3],
-          fontFamily: tokens.font.code,
-          fontSize: tokens.size.md,
-          color: tokens.color.text,
-          whiteSpace: 'pre-wrap',
-          lineHeight: 1.5
-        }}>
+        <div
+          style={{
+            padding: tokens.space[3],
+            fontFamily: tokens.font.code,
+            fontSize: tokens.size.md,
+            color: tokens.color.text,
+            whiteSpace: 'pre-wrap',
+            lineHeight: 1.5
+          }}
+        >
           {agentOutput.map((chunk, i) => (
-            <div key={i} style={{
-              borderBottom: `1px solid ${tokens.color.border}`,
-              paddingBottom: tokens.space[2],
-              marginBottom: tokens.space[2]
-            }}>
+            <div
+              key={i}
+              style={{
+                borderBottom: `1px solid ${tokens.color.border}`,
+                paddingBottom: tokens.space[2],
+                marginBottom: tokens.space[2]
+              }}
+            >
               {chunk}
             </div>
           ))}
@@ -75,14 +82,16 @@ export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutput
   // Empty state
   return (
     <div className="terminal-agent-tab">
-      <div style={{
-        padding: tokens.space[4],
-        color: tokens.color.textDim,
-        fontFamily: tokens.font.ui,
-        fontSize: tokens.size.md,
-        textAlign: 'center',
-        marginTop: tokens.space[8]
-      }}>
+      <div
+        style={{
+          padding: tokens.space[4],
+          color: tokens.color.textDim,
+          fontFamily: tokens.font.ui,
+          fontSize: tokens.size.md,
+          textAlign: 'center',
+          marginTop: tokens.space[8]
+        }}
+      >
         Waiting for agent output…
       </div>
     </div>

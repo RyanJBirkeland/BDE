@@ -9,7 +9,7 @@ vi.mock('lucide-react', () => ({
   Eye: () => <span>Eye</span>,
   CheckCircle2: () => <span>CheckCircle2</span>,
   RefreshCw: () => <span>RefreshCw</span>,
-  ExternalLink: () => <span>ExternalLink</span>,
+  ExternalLink: () => <span>ExternalLink</span>
 }))
 
 // Mock Badge component
@@ -18,7 +18,7 @@ vi.mock('../../ui/Badge', () => ({
     <span data-testid="badge" data-variant={variant}>
       {children}
     </span>
-  ),
+  )
 }))
 
 describe('SprintTaskRow', () => {
@@ -43,7 +43,7 @@ describe('SprintTaskRow', () => {
     template_name: null,
     depends_on: null,
     updated_at: '2026-03-20T10:00:00Z',
-    created_at: '2026-03-20T10:00:00Z',
+    created_at: '2026-03-20T10:00:00Z'
   }
 
   describe('backlog variant', () => {
@@ -127,7 +127,11 @@ describe('SprintTaskRow', () => {
       render(
         <table>
           <tbody>
-            <SprintTaskRow task={mockTask} variant="backlog" onEditInWorkbench={onEditInWorkbench} />
+            <SprintTaskRow
+              task={mockTask}
+              variant="backlog"
+              onEditInWorkbench={onEditInWorkbench}
+            />
           </tbody>
         </table>
       )
@@ -150,7 +154,7 @@ describe('SprintTaskRow', () => {
   describe('blocked variant', () => {
     const blockedTask: SprintTask = {
       ...mockTask,
-      status: 'blocked',
+      status: 'blocked'
     }
 
     it('renders BLOCKED badge', () => {
@@ -185,7 +189,7 @@ describe('SprintTaskRow', () => {
       status: 'done',
       completed_at: '2026-03-21T15:30:00Z',
       pr_number: 42,
-      pr_url: 'https://github.com/user/repo/pull/42',
+      pr_url: 'https://github.com/user/repo/pull/42'
     }
 
     it('renders PR link', () => {
@@ -259,7 +263,7 @@ describe('SprintTaskRow', () => {
   describe('failed variant', () => {
     const failedTask: SprintTask = {
       ...mockTask,
-      status: 'failed',
+      status: 'failed'
     }
 
     it('renders failed task with dimmed prop', () => {
@@ -353,11 +357,7 @@ describe('SprintTaskRow', () => {
       render(
         <table>
           <tbody>
-            <SprintTaskRow
-              task={mockTask}
-              variant="backlog"
-              onViewOutput={vi.fn()}
-            />
+            <SprintTaskRow task={mockTask} variant="backlog" onViewOutput={vi.fn()} />
           </tbody>
         </table>
       )

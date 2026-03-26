@@ -8,7 +8,7 @@ vi.mock('electron', () => ({
   },
   BrowserWindow: { getAllWindows: vi.fn(() => []) },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
-  shell: { trashItem: vi.fn() },
+  shell: { trashItem: vi.fn() }
 }))
 
 vi.mock('fs/promises', async (importOriginal) => {
@@ -21,12 +21,17 @@ vi.mock('fs/promises', async (importOriginal) => {
     mkdir: vi.fn(),
     writeFile: vi.fn(),
     rename: vi.fn(),
-    rm: vi.fn(),
+    rm: vi.fn()
   }
 })
 
 import { stat, readFile, readdir } from 'fs/promises'
-import { validateIdePath, readDir, readFileContent, writeFileContent } from '../handlers/ide-fs-handlers'
+import {
+  validateIdePath,
+  readDir,
+  readFileContent,
+  writeFileContent
+} from '../handlers/ide-fs-handlers'
 
 const ROOT = '/home/user/projects/myapp'
 
@@ -67,7 +72,7 @@ describe('readDir', () => {
       { name: 'zebra.ts', isDirectory: () => false, isFile: () => true },
       { name: 'alpha', isDirectory: () => true, isFile: () => false },
       { name: 'beta.ts', isDirectory: () => false, isFile: () => true },
-      { name: 'aardvark', isDirectory: () => true, isFile: () => false },
+      { name: 'aardvark', isDirectory: () => true, isFile: () => false }
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
     const result = await readDir('/some/dir')
@@ -84,7 +89,7 @@ describe('readDir', () => {
 
   it('includes file sizes', async () => {
     vi.mocked(readdir).mockResolvedValue([
-      { name: 'file.ts', isDirectory: () => false, isFile: () => true },
+      { name: 'file.ts', isDirectory: () => false, isFile: () => true }
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
     vi.mocked(stat).mockResolvedValue({ size: 4096 } as Awaited<ReturnType<typeof stat>>)
 
@@ -94,7 +99,7 @@ describe('readDir', () => {
 
   it('sets size 0 for directories', async () => {
     vi.mocked(readdir).mockResolvedValue([
-      { name: 'subdir', isDirectory: () => true, isFile: () => false },
+      { name: 'subdir', isDirectory: () => true, isFile: () => false }
     ] as unknown as Awaited<ReturnType<typeof readdir>>)
 
     const result = await readDir('/some/dir')
@@ -140,9 +145,9 @@ describe('readFileContent', () => {
 
 describe('writeFileContent', () => {
   it('writes content via temp file rename (atomic write)', async () => {
-    const mkdir = vi.mocked(await import('fs/promises').then(m => m.mkdir))
-    const writeFileFn = vi.mocked(await import('fs/promises').then(m => m.writeFile))
-    const renameFn = vi.mocked(await import('fs/promises').then(m => m.rename))
+    const mkdir = vi.mocked(await import('fs/promises').then((m) => m.mkdir))
+    const writeFileFn = vi.mocked(await import('fs/promises').then((m) => m.writeFile))
+    const renameFn = vi.mocked(await import('fs/promises').then((m) => m.rename))
 
     mkdir.mockResolvedValue(undefined)
     writeFileFn.mockResolvedValue(undefined)
@@ -163,9 +168,9 @@ describe('writeFileContent', () => {
   })
 
   it('cleans up temp file on write failure', async () => {
-    const mkdir = vi.mocked(await import('fs/promises').then(m => m.mkdir))
-    const writeFileFn = vi.mocked(await import('fs/promises').then(m => m.writeFile))
-    const rmFn = vi.mocked(await import('fs/promises').then(m => m.rm))
+    const mkdir = vi.mocked(await import('fs/promises').then((m) => m.mkdir))
+    const writeFileFn = vi.mocked(await import('fs/promises').then((m) => m.writeFile))
+    const rmFn = vi.mocked(await import('fs/promises').then((m) => m.rm))
 
     mkdir.mockResolvedValue(undefined)
     writeFileFn.mockRejectedValue(new Error('disk full'))

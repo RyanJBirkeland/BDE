@@ -4,29 +4,29 @@ import userEvent from '@testing-library/user-event'
 import type { SprintTask } from '../../../../../shared/types'
 
 vi.mock('../../../lib/stream-parser', () => ({
-  stripAnsi: vi.fn((s: string) => s),
+  stripAnsi: vi.fn((s: string) => s)
 }))
 
 vi.mock('../../agents/ChatRenderer', () => ({
   ChatRenderer: ({ events }: { events: unknown[] }) => (
     <div data-testid="chat-renderer">Events: {events.length}</div>
-  ),
+  )
 }))
 
 vi.mock('../../../stores/sprintEvents', () => ({
-  useSprintEvents: vi.fn(),
+  useSprintEvents: vi.fn()
 }))
 
 vi.mock('../../../stores/agentEvents', () => ({
-  useAgentEventsStore: vi.fn(),
+  useAgentEventsStore: vi.fn()
 }))
 
 vi.mock('../../../stores/toasts', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
-    info: vi.fn(),
-  },
+    info: vi.fn()
+  }
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -53,7 +53,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     depends_on: null,
     updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -113,7 +113,11 @@ describe('LogDrawer', () => {
   })
 
   it('shows status label for done agent', async () => {
-    vi.mocked(window.api.sprint.readLog).mockResolvedValue({ content: '', status: 'done', nextByte: 0 })
+    vi.mocked(window.api.sprint.readLog).mockResolvedValue({
+      content: '',
+      status: 'done',
+      nextByte: 0
+    })
 
     const task = makeTask({ agent_run_id: 'run-789', status: 'done' })
     render(<LogDrawer task={task} onClose={onClose} />)
@@ -146,7 +150,7 @@ describe('LogDrawer', () => {
     expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'bde:navigate',
-        detail: { view: 'agents', sessionId: 'session-abc' },
+        detail: { view: 'agents', sessionId: 'session-abc' }
       })
     )
     expect(onClose).toHaveBeenCalled()
@@ -157,7 +161,7 @@ describe('LogDrawer', () => {
     vi.mocked(window.api.sprint.readLog).mockResolvedValue({
       content: 'Hello from the agent log',
       status: 'running',
-      nextByte: 24,
+      nextByte: 24
     })
 
     const task = makeTask({ agent_run_id: 'run-plain', status: 'done' })
@@ -172,7 +176,7 @@ describe('LogDrawer', () => {
     vi.mocked(window.api.sprint.readLog).mockResolvedValue({
       content: '',
       status: 'failed',
-      nextByte: 0,
+      nextByte: 0
     })
 
     const task = makeTask({ agent_run_id: 'run-fail', status: 'done' })
@@ -187,7 +191,7 @@ describe('LogDrawer', () => {
     vi.mocked(window.api.sprint.readLog).mockResolvedValue({
       content: '',
       status: 'running',
-      nextByte: 0,
+      nextByte: 0
     })
 
     const task = makeTask({ agent_run_id: 'run-running', status: 'active' })
@@ -259,9 +263,9 @@ describe('LogDrawer', () => {
     vi.mocked(useAgentEventsStore).mockImplementation((sel: any) =>
       sel({
         events: {
-          'run-chat': [{ type: 'text', content: 'Hello', timestamp: Date.now() }],
+          'run-chat': [{ type: 'text', content: 'Hello', timestamp: Date.now() }]
         },
-        loadHistory: mockLoadHistory,
+        loadHistory: mockLoadHistory
       })
     )
 
@@ -275,7 +279,7 @@ describe('LogDrawer', () => {
     vi.mocked(window.api.sprint.readLog).mockResolvedValue({
       content: '',
       status: 'failed',
-      nextByte: 0,
+      nextByte: 0
     })
 
     const onRerun = vi.fn()
@@ -292,14 +296,14 @@ describe('LogDrawer', () => {
     vi.mocked(window.api.sprint.readLog).mockResolvedValue({
       content: 'log line 1',
       status: 'done',
-      nextByte: 10,
+      nextByte: 10
     })
 
     const writeTextMock = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: writeTextMock },
       writable: true,
-      configurable: true,
+      configurable: true
     })
 
     const task = makeTask({ agent_run_id: 'run-copy', status: 'done' })

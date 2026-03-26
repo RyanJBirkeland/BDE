@@ -10,7 +10,7 @@ describe('localAgents store', () => {
       spawnedAgents: [],
       selectedLocalAgentPid: null,
       logContent: '',
-      logNextByte: 0,
+      logNextByte: 0
     })
     vi.clearAllMocks()
     // Reset queued mockResolvedValueOnce from previous tests
@@ -25,8 +25,24 @@ describe('localAgents store', () => {
 
   it('fetchProcesses sets processes from getAgentProcesses', async () => {
     const mockProcs = [
-      { pid: 100, bin: 'claude', args: '--task fix', cwd: '/tmp/repo', startedAt: Date.now(), cpuPct: 5, memMb: 120 },
-      { pid: 200, bin: 'claude', args: '--task test', cwd: '/tmp/repo2', startedAt: Date.now(), cpuPct: 3, memMb: 80 },
+      {
+        pid: 100,
+        bin: 'claude',
+        args: '--task fix',
+        cwd: '/tmp/repo',
+        startedAt: Date.now(),
+        cpuPct: 5,
+        memMb: 120
+      },
+      {
+        pid: 200,
+        bin: 'claude',
+        args: '--task test',
+        cwd: '/tmp/repo2',
+        startedAt: Date.now(),
+        cpuPct: 3,
+        memMb: 80
+      }
     ]
     vi.mocked(window.api.getAgentProcesses).mockResolvedValue(mockProcs)
 
@@ -50,13 +66,13 @@ describe('localAgents store', () => {
       pid: 999,
       logPath: '/tmp/agent.log',
       id: 'spawn-1',
-      interactive: true,
+      interactive: true
     })
 
     const result = await useLocalAgentsStore.getState().spawnAgent({
       task: 'write tests',
       repoPath: '/tmp/repo',
-      model: 'opus',
+      model: 'opus'
     })
 
     expect(result.pid).toBe(999)
@@ -64,7 +80,7 @@ describe('localAgents store', () => {
     expect(window.api.spawnLocalAgent).toHaveBeenCalledWith({
       task: 'write tests',
       repoPath: '/tmp/repo',
-      model: 'opus',
+      model: 'opus'
     })
 
     const state = useLocalAgentsStore.getState()
@@ -79,12 +95,12 @@ describe('localAgents store', () => {
       pid: 888,
       logPath: '/tmp/log',
       id: 'spawn-2',
-      interactive: false,
+      interactive: false
     })
 
     await useLocalAgentsStore.getState().spawnAgent({
       task: 'fix bug',
-      repoPath: '/tmp/repo',
+      repoPath: '/tmp/repo'
     })
 
     expect(useLocalAgentsStore.getState().spawnedAgents[0].model).toBe('sonnet')
@@ -93,9 +109,9 @@ describe('localAgents store', () => {
   it('sendToAgent throws on { ok: false }', async () => {
     vi.mocked(window.api.sendToAgent).mockResolvedValue({ ok: false, error: 'agent busy' })
 
-    await expect(
-      useLocalAgentsStore.getState().sendToAgent(123, 'hello')
-    ).rejects.toThrow('agent busy')
+    await expect(useLocalAgentsStore.getState().sendToAgent(123, 'hello')).rejects.toThrow(
+      'agent busy'
+    )
 
     expect(window.api.sendToAgent).toHaveBeenCalledWith(123, 'hello')
   })
@@ -103,14 +119,14 @@ describe('localAgents store', () => {
   it('sendToAgent resolves on { ok: true }', async () => {
     vi.mocked(window.api.sendToAgent).mockResolvedValue({ ok: true })
 
-    await expect(
-      useLocalAgentsStore.getState().sendToAgent(123, 'hello')
-    ).resolves.toBeUndefined()
+    await expect(useLocalAgentsStore.getState().sendToAgent(123, 'hello')).resolves.toBeUndefined()
   })
 
   it('killLocalAgent calls IPC and does NOT remove process (ps-poll handles that)', async () => {
     useLocalAgentsStore.setState({
-      processes: [{ pid: 100, bin: 'claude', args: '', cwd: null, startedAt: Date.now(), cpuPct: 0, memMb: 0 }],
+      processes: [
+        { pid: 100, bin: 'claude', args: '', cwd: null, startedAt: Date.now(), cpuPct: 0, memMb: 0 }
+      ]
     })
 
     await useLocalAgentsStore.getState().killLocalAgent(100)

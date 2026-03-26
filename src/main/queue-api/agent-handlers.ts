@@ -15,20 +15,24 @@ export async function handleListAgents(
   const taskId = query.get('taskId') ?? undefined
   const limit = Math.min(Math.max(parseInt(query.get('limit') ?? '10', 10) || 10, 1), 100)
   const agents = await listAgentRunsByTaskId(taskId, limit)
-  sendJson(res, 200, agents.map((a) => ({
-    id: a.id,
-    status: a.status,
-    model: a.model,
-    task: a.task,
-    repo: a.repo,
-    startedAt: a.startedAt,
-    finishedAt: a.finishedAt,
-    exitCode: a.exitCode,
-    costUsd: a.costUsd,
-    tokensIn: a.tokensIn,
-    tokensOut: a.tokensOut,
-    source: a.source,
-  })))
+  sendJson(
+    res,
+    200,
+    agents.map((a) => ({
+      id: a.id,
+      status: a.status,
+      model: a.model,
+      task: a.task,
+      repo: a.repo,
+      startedAt: a.startedAt,
+      finishedAt: a.finishedAt,
+      exitCode: a.exitCode,
+      costUsd: a.costUsd,
+      tokensIn: a.tokensIn,
+      tokensOut: a.tokensOut,
+      source: a.source
+    }))
+  )
 }
 
 export async function handleAgentLog(
@@ -66,6 +70,6 @@ export async function handleAgentLog(
   sendJson(res, 200, {
     content: result.content,
     nextByte: result.nextByte,
-    totalBytes: result.totalBytes,
+    totalBytes: result.totalBytes
   })
 }

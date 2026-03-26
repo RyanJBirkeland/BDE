@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('electron', () => ({
-  app: { getPath: vi.fn(() => '/tmp'), getName: vi.fn(() => 'BDE'), getVersion: vi.fn(() => '0.0.0') },
+  app: {
+    getPath: vi.fn(() => '/tmp'),
+    getName: vi.fn(() => 'BDE'),
+    getVersion: vi.fn(() => '0.0.0')
+  },
   BrowserWindow: { getAllWindows: vi.fn(() => []) },
   ipcMain: { handle: vi.fn(), on: vi.fn() },
-  dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn(), showMessageBox: vi.fn() },
+  dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn(), showMessageBox: vi.fn() }
 }))
 import { join, resolve } from 'path'
 import { homedir, tmpdir } from 'os'
@@ -18,7 +22,7 @@ vi.mock('fs/promises', async (importOriginal) => {
     readFile: vi.fn(),
     mkdir: vi.fn(),
     writeFile: vi.fn(),
-    readdir: vi.fn(),
+    readdir: vi.fn()
   }
 })
 
@@ -39,28 +43,20 @@ describe('validateMemoryPath', () => {
   })
 
   it('rejects path traversal with ..', () => {
-    expect(() => validateMemoryPath('../../../etc/passwd')).toThrow(
-      'Path traversal blocked'
-    )
+    expect(() => validateMemoryPath('../../../etc/passwd')).toThrow('Path traversal blocked')
   })
 
   it('rejects path traversal with embedded ..', () => {
-    expect(() => validateMemoryPath('subdir/../../etc/passwd')).toThrow(
-      'Path traversal blocked'
-    )
+    expect(() => validateMemoryPath('subdir/../../etc/passwd')).toThrow('Path traversal blocked')
   })
 
   it('rejects absolute path outside root', () => {
-    expect(() => validateMemoryPath('/etc/passwd')).toThrow(
-      'Path traversal blocked'
-    )
+    expect(() => validateMemoryPath('/etc/passwd')).toThrow('Path traversal blocked')
   })
 
   it('rejects path that starts with the root as a prefix but is a sibling directory', () => {
     // e.g. ~/.openclaw/workspace/memory-evil/secret
-    expect(() => validateMemoryPath('../memory-evil/secret')).toThrow(
-      'Path traversal blocked'
-    )
+    expect(() => validateMemoryPath('../memory-evil/secret')).toThrow('Path traversal blocked')
   })
 })
 
@@ -83,15 +79,11 @@ describe('validateLogPath', () => {
   })
 
   it('rejects arbitrary absolute path', () => {
-    expect(() => validateLogPath('/etc/shadow')).toThrow(
-      'Path traversal blocked'
-    )
+    expect(() => validateLogPath('/etc/shadow')).toThrow('Path traversal blocked')
   })
 
   it('rejects path outside allowed roots', () => {
-    expect(() => validateLogPath('/var/log/system.log')).toThrow(
-      'Path traversal blocked'
-    )
+    expect(() => validateLogPath('/var/log/system.log')).toThrow('Path traversal blocked')
   })
 
   it('rejects path that is a prefix sibling of agent-logs', () => {
@@ -144,9 +136,7 @@ describe('readMemoryFile', () => {
     const oversize = 10 * 1024 * 1024 + 1
     vi.mocked(stat).mockResolvedValue({ size: oversize } as Awaited<ReturnType<typeof stat>>)
 
-    await expect(readMemoryFile('notes.md')).rejects.toThrow(
-      /File too large.*exceeds.*limit/
-    )
+    await expect(readMemoryFile('notes.md')).rejects.toThrow(/File too large.*exceeds.*limit/)
   })
 
   it('reads file within size limit', async () => {

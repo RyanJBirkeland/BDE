@@ -10,7 +10,7 @@ import { useAgentHistoryStore } from '../agentHistory'
 const initialState = {
   agents: [],
   selectedId: null,
-  loading: false,
+  loading: false
 }
 
 beforeEach(() => {
@@ -21,14 +21,14 @@ beforeEach(() => {
     collapsed: false,
     selectedLocalAgentPid: null,
     logContent: '',
-    logNextByte: 0,
+    logNextByte: 0
   })
   useAgentHistoryStore.setState({
     agents: [],
     selectedId: null,
     loading: false,
     logContent: '',
-    logNextByte: 0,
+    logNextByte: 0
   })
   vi.clearAllMocks()
 })
@@ -50,7 +50,15 @@ describe('fetchAll', () => {
 
   it('populates agents from local processes', async () => {
     vi.mocked(window.api.getAgentProcesses).mockResolvedValue([
-      { pid: 100, bin: 'claude', args: '', cwd: '/repo/bde', startedAt: Date.now(), cpuPct: 0, memMb: 0 },
+      {
+        pid: 100,
+        bin: 'claude',
+        args: '',
+        cwd: '/repo/bde',
+        startedAt: Date.now(),
+        cpuPct: 0,
+        memMb: 0
+      }
     ])
     vi.mocked(window.api.agents.list).mockResolvedValue([])
 
@@ -72,8 +80,10 @@ describe('fetchAll', () => {
         source: 'external',
         status: 'done',
         startedAt: new Date().toISOString(),
-        finishedAt: new Date().toISOString(),
-      } as Parameters<typeof window.api.agents.list>[0] extends { limit: number } ? Awaited<ReturnType<typeof window.api.agents.list>>[number] : never,
+        finishedAt: new Date().toISOString()
+      } as Parameters<typeof window.api.agents.list>[0] extends { limit: number }
+        ? Awaited<ReturnType<typeof window.api.agents.list>>[number]
+        : never
     ])
 
     await useUnifiedAgentsStore.getState().fetchAll()
@@ -108,7 +118,9 @@ describe('select', () => {
 
   it('routes local: prefix to localAgents selectLocalAgent', () => {
     const selectLocalAgent = vi.fn()
-    useLocalAgentsStore.setState({ selectLocalAgent } as unknown as Parameters<typeof useLocalAgentsStore.setState>[0])
+    useLocalAgentsStore.setState({ selectLocalAgent } as unknown as Parameters<
+      typeof useLocalAgentsStore.setState
+    >[0])
 
     useUnifiedAgentsStore.getState().select('local:42')
 
@@ -117,7 +129,9 @@ describe('select', () => {
 
   it('routes history: prefix to agentHistory selectAgent', () => {
     const selectAgent = vi.fn()
-    useAgentHistoryStore.setState({ selectAgent } as unknown as Parameters<typeof useAgentHistoryStore.setState>[0])
+    useAgentHistoryStore.setState({ selectAgent } as unknown as Parameters<
+      typeof useAgentHistoryStore.setState
+    >[0])
 
     useUnifiedAgentsStore.getState().select('history:xyz')
 
@@ -131,7 +145,7 @@ describe('spawn', () => {
       pid: 999,
       logPath: '/tmp/log',
       id: 'agent-x',
-      interactive: false,
+      interactive: false
     })
     vi.mocked(window.api.getAgentProcesses).mockResolvedValue([])
     vi.mocked(window.api.agents.list).mockResolvedValue([])
@@ -148,7 +162,7 @@ describe('spawn', () => {
       pid: 111,
       logPath: '/tmp/log',
       id: 'plan-1',
-      interactive: false,
+      interactive: false
     })
     vi.mocked(window.api.getAgentProcesses).mockResolvedValue([])
     vi.mocked(window.api.agents.list).mockResolvedValue([])
@@ -156,7 +170,7 @@ describe('spawn', () => {
     await useUnifiedAgentsStore.getState().spawn({
       task: 'plan new feature',
       repoPath: '/repo',
-      planning: true,
+      planning: true
     })
 
     const call = vi.mocked(window.api.spawnLocalAgent).mock.calls[0][0]
@@ -169,10 +183,10 @@ describe('spawn', () => {
       pid: 222,
       logPath: '/tmp/log',
       id: 'ok-1',
-      interactive: false,
+      interactive: false
     })
     vi.mocked(window.api.getAgentProcesses).mockResolvedValue([
-      { pid: 222, bin: 'claude', args: '', cwd: null, startedAt: Date.now(), cpuPct: 0, memMb: 0 },
+      { pid: 222, bin: 'claude', args: '', cwd: null, startedAt: Date.now(), cpuPct: 0, memMb: 0 }
     ])
     vi.mocked(window.api.agents.list).mockResolvedValue([])
 
@@ -198,9 +212,9 @@ describe('steer', () => {
           startedAt: 0,
           canSteer: true,
           canKill: true,
-          isBlocked: false,
-        },
-      ],
+          isBlocked: false
+        }
+      ]
     })
     vi.mocked(window.api.sendToAgent).mockResolvedValue({ ok: true })
 
@@ -225,9 +239,9 @@ describe('steer', () => {
           model: '',
           updatedAt: 0,
           startedAt: 0,
-          historyId: 'abc',
-        },
-      ],
+          historyId: 'abc'
+        }
+      ]
     })
 
     await useUnifiedAgentsStore.getState().steer('history:abc', 'msg')
@@ -250,7 +264,7 @@ describe('kill', () => {
       startedAt: 0,
       canSteer: false,
       canKill: true,
-      isBlocked: false,
+      isBlocked: false
     }
 
     await useUnifiedAgentsStore.getState().kill(agent)
@@ -267,7 +281,7 @@ describe('kill', () => {
       model: '',
       updatedAt: 0,
       startedAt: 0,
-      historyId: 'abc',
+      historyId: 'abc'
     }
 
     await useUnifiedAgentsStore.getState().kill(agent)

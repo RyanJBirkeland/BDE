@@ -28,21 +28,21 @@ export const tokens = {
     warningDim: 'var(--bde-warning-dim)',
     info: 'var(--bde-info)',
     infoDim: 'var(--bde-info-dim)',
-    success: 'var(--bde-success)',
+    success: 'var(--bde-success)'
   },
   /** Font stacks */
   font: {
     ui: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', // UI text
-    code: '"JetBrains Mono", "Fira Code", "Cascadia Code", monospace', // Code / monospace
+    code: '"JetBrains Mono", "Fira Code", "Cascadia Code", monospace' // Code / monospace
   },
   /** Font sizes — use semantic names, not raw px */
   size: {
-    xs: '11px',   // Badges, fine print
-    sm: '12px',   // Secondary labels
-    md: '13px',   // Default body text
-    lg: '14px',   // Headings, emphasis
-    xl: '16px',   // Section titles
-    xxl: '20px',  // Page titles
+    xs: '11px', // Badges, fine print
+    sm: '12px', // Secondary labels
+    md: '13px', // Default body text
+    lg: '14px', // Headings, emphasis
+    xl: '16px', // Section titles
+    xxl: '20px' // Page titles
   },
   /** Spacing scale (4px base) */
   space: {
@@ -52,27 +52,27 @@ export const tokens = {
     4: '16px',
     5: '20px',
     6: '24px',
-    8: '32px',
+    8: '32px'
   },
   /** Border radius */
   radius: {
-    sm: '4px',    // Buttons, inputs
-    md: '6px',    // Cards
-    lg: '8px',    // Panels
-    xl: '12px',   // Modals
-    full: '9999px', // Pills, avatars
+    sm: '4px', // Buttons, inputs
+    md: '6px', // Cards
+    lg: '8px', // Panels
+    xl: '12px', // Modals
+    full: '9999px' // Pills, avatars
   },
   /** Box shadows — increasing elevation (theme-aware via CSS variables) */
   shadow: {
     sm: 'var(--bde-shadow-sm)',
     md: 'var(--bde-shadow-md)',
-    lg: 'var(--bde-shadow-lg)',
+    lg: 'var(--bde-shadow-lg)'
   },
   /** Transition durations */
   transition: {
-    fast: '100ms ease',   // Hover states, toggles
-    base: '150ms ease',   // General interactions
-    slow: '200ms ease',   // Panel slides, fades
+    fast: '100ms ease', // Hover states, toggles
+    base: '150ms ease', // General interactions
+    slow: '200ms ease' // Panel slides, fades
   },
   neon: {
     cyan: 'var(--neon-cyan)',
@@ -90,6 +90,6 @@ export const tokens = {
     textDim: 'var(--neon-text-dim)',
     surfaceDim: 'var(--neon-surface-dim)',
     surfaceSubtle: 'var(--neon-surface-subtle)',
-    surfaceDeep: 'var(--neon-surface-deep)',
-  },
+    surfaceDeep: 'var(--neon-surface-deep)'
+  }
 }

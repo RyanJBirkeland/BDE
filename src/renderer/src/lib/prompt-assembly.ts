@@ -13,10 +13,7 @@ import type { PromptTemplate, RecentTask } from './launchpad-types'
  * - Collapses triple+ newlines (left by empty optionals) into double newlines.
  * - Trims leading/trailing whitespace.
  */
-export function assemblePrompt(
-  template: PromptTemplate,
-  answers: Record<string, string>,
-): string {
+export function assemblePrompt(template: PromptTemplate, answers: Record<string, string>): string {
   let prompt = template.promptTemplate
 
   // Replace all {{variable}} placeholders
@@ -61,6 +58,6 @@ export function migrateHistory(data: unknown): RecentTask[] {
       prompt,
       repo: '',
       model: '',
-      timestamp: 0,
+      timestamp: 0
     }))
 }

@@ -16,21 +16,13 @@ export function appendEvent(
   ).run(agentId, eventType, payload, timestamp)
 }
 
-export function getEventHistory(
-  db: Database.Database,
-  agentId: string
-): { payload: string }[] {
+export function getEventHistory(db: Database.Database, agentId: string): { payload: string }[] {
   return db
-    .prepare(
-      'SELECT payload FROM agent_events WHERE agent_id = ? ORDER BY timestamp ASC'
-    )
+    .prepare('SELECT payload FROM agent_events WHERE agent_id = ? ORDER BY timestamp ASC')
     .all(agentId) as { payload: string }[]
 }
 
-export function pruneOldEvents(
-  db: Database.Database,
-  retentionDays: number
-): void {
+export function pruneOldEvents(db: Database.Database, retentionDays: number): void {
   const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000
   db.prepare('DELETE FROM agent_events WHERE timestamp < ?').run(cutoff)
 }
@@ -46,10 +38,7 @@ export interface EventBatchItem {
   timestamp: number
 }
 
-export function insertEventBatch(
-  db: Database.Database,
-  events: EventBatchItem[]
-): void {
+export function insertEventBatch(db: Database.Database, events: EventBatchItem[]): void {
   if (events.length === 0) return
 
   const insert = db.prepare(
@@ -89,10 +78,7 @@ export interface QueryEventsResult {
   hasMore: boolean
 }
 
-export function queryEvents(
-  db: Database.Database,
-  opts: QueryEventsOptions
-): QueryEventsResult {
+export function queryEvents(db: Database.Database, opts: QueryEventsOptions): QueryEventsResult {
   const conditions: string[] = []
   const params: unknown[] = []
   const limit = opts.limit ?? 200
@@ -132,14 +118,9 @@ export function queryEvents(
 // Prune events by agent IDs
 // ---------------------------------------------------------------------------
 
-export function pruneEventsByAgentIds(
-  db: Database.Database,
-  agentIds: string[]
-): void {
+export function pruneEventsByAgentIds(db: Database.Database, agentIds: string[]): void {
   if (agentIds.length === 0) return
 
   const placeholders = agentIds.map(() => '?').join(', ')
-  db.prepare(`DELETE FROM agent_events WHERE agent_id IN (${placeholders})`).run(
-    ...agentIds
-  )
+  db.prepare(`DELETE FROM agent_events WHERE agent_id IN (${placeholders})`).run(...agentIds)
 }

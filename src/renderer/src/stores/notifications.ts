@@ -53,25 +53,23 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
       message: input.message,
       timestamp: new Date().toISOString(),
       read: false,
-      viewLink: input.viewLink,
+      viewLink: input.viewLink
     }
 
     set((state) => ({
-      notifications: [notification, ...state.notifications].slice(0, MAX_NOTIFICATIONS),
+      notifications: [notification, ...state.notifications].slice(0, MAX_NOTIFICATIONS)
     }))
   },
 
   markAsRead: (id): void => {
     set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, read: true } : n
-      ),
+      notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
     }))
   },
 
   markAllAsRead: (): void => {
     set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
+      notifications: state.notifications.map((n) => ({ ...n, read: true }))
     }))
   },
 
@@ -81,5 +79,5 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
 
   clearAll: (): void => {
     set({ notifications: [] })
-  },
+  }
 }))

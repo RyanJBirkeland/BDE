@@ -14,7 +14,7 @@ vi.mock('../../../lib/github-api', () => ({
   getCheckRunsList: (...args: unknown[]) => mockGetCheckRunsList(...args),
   getReviews: (...args: unknown[]) => mockGetReviews(...args),
   getReviewComments: (...args: unknown[]) => mockGetReviewComments(...args),
-  getIssueComments: (...args: unknown[]) => mockGetIssueComments(...args),
+  getIssueComments: (...args: unknown[]) => mockGetIssueComments(...args)
 }))
 
 vi.mock('../../../lib/github-cache', () => ({
@@ -23,22 +23,22 @@ vi.mock('../../../lib/github-cache', () => ({
   cachedGetReviews: (...args: unknown[]) => mockGetReviews(...args),
   cachedGetReviewComments: (...args: unknown[]) => mockGetReviewComments(...args),
   cachedGetIssueComments: (...args: unknown[]) => mockGetIssueComments(...args),
-  invalidateCache: vi.fn(),
+  invalidateCache: vi.fn()
 }))
 
 vi.mock('../../../lib/render-markdown', () => ({ renderMarkdown: (s: string) => s ?? '' }))
 
 vi.mock('../PRStationChecks', () => ({
-  PRStationChecks: () => <div data-testid="checks" />,
+  PRStationChecks: () => <div data-testid="checks" />
 }))
 vi.mock('../PRStationReviews', () => ({
-  PRStationReviews: () => <div data-testid="reviews" />,
+  PRStationReviews: () => <div data-testid="reviews" />
 }))
 vi.mock('../PRStationConversation', () => ({
-  PRStationConversation: () => <div data-testid="conversation" />,
+  PRStationConversation: () => <div data-testid="conversation" />
 }))
 vi.mock('../PRStationConflictBanner', () => ({
-  PRStationConflictBanner: () => null,
+  PRStationConflictBanner: () => null
 }))
 
 import { PRStationDetail } from '../PRStationDetail'
@@ -57,7 +57,7 @@ const mockPr: OpenPr = {
   user: { login: 'alice' },
   merged: false,
   merged_at: null,
-  repo: 'BDE',
+  repo: 'BDE'
 }
 
 const mockDetail = {
@@ -72,12 +72,12 @@ const mockDetail = {
   additions: 10,
   deletions: 3,
   mergeable: true,
-  mergeable_state: 'clean',
+  mergeable_state: 'clean'
 }
 
 const mockFiles = [
   { filename: 'src/foo.ts', status: 'modified', additions: 5, deletions: 2 },
-  { filename: 'src/bar.ts', status: 'added', additions: 10, deletions: 0 },
+  { filename: 'src/bar.ts', status: 'added', additions: 10, deletions: 0 }
 ]
 
 describe('PRStationDetail', () => {

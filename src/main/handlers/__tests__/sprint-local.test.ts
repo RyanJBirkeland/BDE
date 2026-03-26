@@ -6,7 +6,7 @@ import type { IpcMainInvokeEvent } from 'electron'
 
 // Mock ipc-utils — must come before handler import
 vi.mock('../../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 // Mock sprint-queries (Supabase data layer)
@@ -26,32 +26,32 @@ vi.mock('../../data/sprint-queries', () => ({
   listTasksWithOpenPrs: vi.fn(),
   updateTaskMergeableState: vi.fn(),
   clearSprintTaskFk: vi.fn(),
-  getHealthCheckTasks: vi.fn(),
+  getHealthCheckTasks: vi.fn()
 }))
 
 // Mock sprint-listeners (SSE broadcaster)
 vi.mock('../sprint-listeners', () => ({
   notifySprintMutation: vi.fn(),
   onSprintMutation: vi.fn(),
-  sseBroadcaster: { broadcast: vi.fn() },
+  sseBroadcaster: { broadcast: vi.fn() }
 }))
 
 // Mock sprint-spec
 vi.mock('../sprint-spec', () => ({
   generatePrompt: vi.fn(),
   buildQuickSpecPrompt: vi.fn(),
-  getTemplateScaffold: vi.fn(),
+  getTemplateScaffold: vi.fn()
 }))
 
 // Mock settings
 vi.mock('../../settings', () => ({
   getSettingJson: vi.fn(),
-  getSetting: vi.fn(),
+  getSetting: vi.fn()
 }))
 
 // Mock db
 vi.mock('../../db', () => ({
-  getDb: vi.fn().mockReturnValue({}),
+  getDb: vi.fn().mockReturnValue({})
 }))
 
 // Mock paths
@@ -59,37 +59,37 @@ vi.mock('../../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue('/tmp/specs'),
   BDE_DIR: '/tmp/bde',
   BDE_AGENTS_INDEX: '/tmp/agents-index.json',
-  BDE_AGENT_LOGS_DIR: '/tmp/agent-logs',
+  BDE_AGENT_LOGS_DIR: '/tmp/agent-logs'
 }))
 
 // Mock agent-queries
 vi.mock('../../data/agent-queries', () => ({
   getAgentLogInfo: vi.fn(),
-  getAgentLogPath: vi.fn(),
+  getAgentLogPath: vi.fn()
 }))
 
 // Mock agent-history (readLog uses file handles internally, mock at module level)
 vi.mock('../../agent-history', () => ({
   readLog: vi.fn(),
-  initAgentHistory: vi.fn(),
+  initAgentHistory: vi.fn()
 }))
 
 // Mock fs/promises (used in sprint:readLog)
 vi.mock('fs/promises', () => ({
-  readFile: vi.fn(),
+  readFile: vi.fn()
 }))
 
 // Mock dependency-index (used lazily inside sprint:update and sprint:validateDependencies)
 vi.mock('../../agent-manager/dependency-index', () => ({
   createDependencyIndex: vi.fn().mockReturnValue({
-    areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true }),
+    areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true })
   }),
-  detectCycle: vi.fn().mockReturnValue(null),
+  detectCycle: vi.fn().mockReturnValue(null)
 }))
 
 // Mock queue-api/router (needed by sprint-listeners)
 vi.mock('../../queue-api/router', () => ({
-  sseBroadcaster: { broadcast: vi.fn() },
+  sseBroadcaster: { broadcast: vi.fn() }
 }))
 
 // Mock spec-semantic-check
@@ -99,10 +99,10 @@ const mockCheckSpecSemantic = vi.fn().mockResolvedValue({
   hasWarns: false,
   results: {},
   failMessages: [],
-  warnMessages: [],
+  warnMessages: []
 })
 vi.mock('../../spec-semantic-check', () => ({
-  checkSpecSemantic: (...args: unknown[]) => mockCheckSpecSemantic(...args),
+  checkSpecSemantic: (...args: unknown[]) => mockCheckSpecSemantic(...args)
 }))
 
 import { registerSprintLocalHandlers } from '../sprint-local'
@@ -114,7 +114,7 @@ import {
   deleteTask as _deleteTask,
   getTask as _getTask,
   claimTask as _claimTask,
-  getHealthCheckTasks as _getHealthCheckTasks,
+  getHealthCheckTasks as _getHealthCheckTasks
 } from '../../data/sprint-queries'
 import { notifySprintMutation } from '../sprint-listeners'
 import { getSettingJson } from '../../settings'
@@ -218,7 +218,12 @@ describe('sprint:update handler', () => {
 
   it('updates a task and returns the updated row', async () => {
     const updated = { id: '1', title: 'Updated', status: 'backlog' }
-    vi.mocked(_getTask).mockResolvedValue({ id: '1', title: 'Original', status: 'backlog', depends_on: null } as any)
+    vi.mocked(_getTask).mockResolvedValue({
+      id: '1',
+      title: 'Original',
+      status: 'backlog',
+      depends_on: null
+    } as any)
     vi.mocked(_updateTask).mockResolvedValue(updated as any)
 
     const handler = captureHandler('sprint:update')
@@ -233,7 +238,7 @@ describe('sprint:update handler', () => {
     const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const { createDependencyIndex } = await import('../../agent-manager/dependency-index')
     vi.mocked(createDependencyIndex).mockReturnValue({
-      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true }),
+      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true })
     } as any)
 
     vi.mocked(_getTask).mockResolvedValue({
@@ -242,11 +247,11 @@ describe('sprint:update handler', () => {
       repo: 'bde',
       spec: validSpec,
       status: 'backlog',
-      depends_on: [{ id: 'dep1', type: 'hard' }],
+      depends_on: [{ id: 'dep1', type: 'hard' }]
     } as any)
     vi.mocked(_listTasks).mockResolvedValue([
       { id: '1', status: 'backlog', depends_on: [] },
-      { id: 'dep1', status: 'done', depends_on: [] },
+      { id: 'dep1', status: 'done', depends_on: [] }
     ] as any)
     vi.mocked(_updateTask).mockResolvedValue({ id: '1', status: 'queued' } as any)
 
@@ -261,7 +266,7 @@ describe('sprint:update handler', () => {
     const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const { createDependencyIndex } = await import('../../agent-manager/dependency-index')
     vi.mocked(createDependencyIndex).mockReturnValue({
-      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['dep1'] }),
+      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['dep1'] })
     } as any)
 
     vi.mocked(_getTask).mockResolvedValue({
@@ -270,11 +275,11 @@ describe('sprint:update handler', () => {
       repo: 'bde',
       spec: validSpec,
       status: 'backlog',
-      depends_on: [{ id: 'dep1', type: 'hard' }],
+      depends_on: [{ id: 'dep1', type: 'hard' }]
     } as any)
     vi.mocked(_listTasks).mockResolvedValue([
       { id: '1', status: 'backlog', depends_on: [] },
-      { id: 'dep1', status: 'queued', depends_on: [] },
+      { id: 'dep1', status: 'queued', depends_on: [] }
     ] as any)
     vi.mocked(_updateTask).mockResolvedValue({ id: '1', status: 'blocked' } as any)
 
@@ -345,7 +350,7 @@ describe('sprint:claimTask handler', () => {
     vi.mocked(_getTask).mockResolvedValue(task as any)
     vi.mocked(getSettingJson).mockReturnValue([
       { name: 'bugfix', promptPrefix: 'Fix the bug:' },
-      { name: 'feature', promptPrefix: 'Add feature:' },
+      { name: 'feature', promptPrefix: 'Add feature:' }
     ] as any)
 
     const handler = captureHandler('sprint:claimTask')
@@ -358,7 +363,7 @@ describe('sprint:claimTask handler', () => {
     const task = { id: '1', title: 'Task', status: 'queued', template_name: 'unknown' }
     vi.mocked(_getTask).mockResolvedValue(task as any)
     vi.mocked(getSettingJson).mockReturnValue([
-      { name: 'bugfix', promptPrefix: 'Fix the bug:' },
+      { name: 'bugfix', promptPrefix: 'Fix the bug:' }
     ] as any)
 
     const handler = captureHandler('sprint:claimTask')
@@ -402,13 +407,13 @@ describe('sprint:readLog handler', () => {
   it('returns log content from file when agent exists', async () => {
     vi.mocked(getAgentLogInfo).mockReturnValue({
       logPath: '/tmp/agent-1/output.log',
-      status: 'active',
+      status: 'active'
     } as any)
     const logContent = 'log line 1\nlog line 2\n'
     vi.mocked(readLog).mockResolvedValue({
       content: logContent,
       nextByte: logContent.length,
-      totalBytes: logContent.length,
+      totalBytes: logContent.length
     })
 
     const handler = captureHandler('sprint:readLog')
@@ -422,12 +427,12 @@ describe('sprint:readLog handler', () => {
   it('returns empty content when fromByte >= log length', async () => {
     vi.mocked(getAgentLogInfo).mockReturnValue({
       logPath: '/tmp/agent-1/output.log',
-      status: 'done',
+      status: 'done'
     } as any)
     vi.mocked(readLog).mockResolvedValue({
       content: '',
       nextByte: 9999,
-      totalBytes: 5,
+      totalBytes: 5
     })
 
     const handler = captureHandler('sprint:readLog')
@@ -439,12 +444,12 @@ describe('sprint:readLog handler', () => {
   it('returns empty content on file read error', async () => {
     vi.mocked(getAgentLogInfo).mockReturnValue({
       logPath: '/tmp/agent-1/output.log',
-      status: 'failed',
+      status: 'failed'
     } as any)
     vi.mocked(readLog).mockResolvedValue({
       content: '',
       nextByte: 0,
-      totalBytes: 0,
+      totalBytes: 0
     })
 
     const handler = captureHandler('sprint:readLog')
@@ -464,13 +469,22 @@ describe('sprint:create spec validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockCheckSpecSemantic.mockResolvedValue({
-      passed: true, hasFails: false, hasWarns: false,
-      results: {}, failMessages: [], warnMessages: [],
+      passed: true,
+      hasFails: false,
+      hasWarns: false,
+      results: {},
+      failMessages: [],
+      warnMessages: []
     })
   })
 
   it('succeeds for backlog task with empty spec', async () => {
-    vi.mocked(_createTask).mockResolvedValue({ id: 'new-1', title: 'Fix', repo: 'bde', status: 'backlog' } as any)
+    vi.mocked(_createTask).mockResolvedValue({
+      id: 'new-1',
+      title: 'Fix',
+      repo: 'bde',
+      status: 'backlog'
+    } as any)
 
     const handler = captureHandler('sprint:create')
     const result = await handler(mockEvent, { title: 'Fix', repo: 'bde' })
@@ -479,7 +493,12 @@ describe('sprint:create spec validation', () => {
   })
 
   it('succeeds for backlog task with title and repo', async () => {
-    vi.mocked(_createTask).mockResolvedValue({ id: 'new-1', title: 'Fix', repo: 'bde', status: 'backlog' } as any)
+    vi.mocked(_createTask).mockResolvedValue({
+      id: 'new-1',
+      title: 'Fix',
+      repo: 'bde',
+      status: 'backlog'
+    } as any)
 
     const handler = captureHandler('sprint:create')
     const result = await handler(mockEvent, { title: 'Fix', repo: 'bde', status: 'backlog' })
@@ -490,15 +509,17 @@ describe('sprint:create spec validation', () => {
   it('rejects non-backlog task with no spec', async () => {
     const handler = captureHandler('sprint:create')
 
-    await expect(handler(mockEvent, { title: 'Fix', repo: 'bde', status: 'queued' }))
-      .rejects.toThrow(/spec is required/)
+    await expect(
+      handler(mockEvent, { title: 'Fix', repo: 'bde', status: 'queued' })
+    ).rejects.toThrow(/spec is required/)
   })
 
   it('rejects task with empty title', async () => {
     const handler = captureHandler('sprint:create')
 
-    await expect(handler(mockEvent, { title: '', repo: 'bde', spec: validSpec }))
-      .rejects.toThrow(/title is required/)
+    await expect(handler(mockEvent, { title: '', repo: 'bde', spec: validSpec })).rejects.toThrow(
+      /title is required/
+    )
   })
 })
 
@@ -508,24 +529,37 @@ describe('sprint:update spec validation on queue transition', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockCheckSpecSemantic.mockResolvedValue({
-      passed: true, hasFails: false, hasWarns: false,
-      results: {}, failMessages: [], warnMessages: [],
+      passed: true,
+      hasFails: false,
+      hasWarns: false,
+      results: {},
+      failMessages: [],
+      warnMessages: []
     })
   })
 
   it('throws when transitioning to queued with bad spec', async () => {
     vi.mocked(_getTask).mockResolvedValue({
-      id: 'abc', title: 'Test', repo: 'bde', spec: 'too short', status: 'backlog',
+      id: 'abc',
+      title: 'Test',
+      repo: 'bde',
+      spec: 'too short',
+      status: 'backlog'
     } as any)
 
     const handler = captureHandler('sprint:update')
-    await expect(handler(mockEvent, 'abc', { status: 'queued' }))
-      .rejects.toThrow(/spec quality checks failed/)
+    await expect(handler(mockEvent, 'abc', { status: 'queued' })).rejects.toThrow(
+      /spec quality checks failed/
+    )
   })
 
   it('succeeds when transitioning to queued with valid spec and semantic pass', async () => {
     vi.mocked(_getTask).mockResolvedValue({
-      id: 'abc', title: 'Test', repo: 'bde', spec: validSpec, status: 'backlog',
+      id: 'abc',
+      title: 'Test',
+      repo: 'bde',
+      spec: validSpec,
+      status: 'backlog'
     } as any)
     vi.mocked(_updateTask).mockResolvedValue({ id: 'abc', status: 'queued' } as any)
 
@@ -546,15 +580,24 @@ describe('sprint:update spec validation on queue transition', () => {
 
   it('throws when semantic check fails', async () => {
     vi.mocked(_getTask).mockResolvedValue({
-      id: 'abc', title: 'Test', repo: 'bde', spec: validSpec, status: 'backlog',
+      id: 'abc',
+      title: 'Test',
+      repo: 'bde',
+      spec: validSpec,
+      status: 'backlog'
     } as any)
     mockCheckSpecSemantic.mockResolvedValue({
-      passed: false, hasFails: true, hasWarns: false,
-      results: {}, failMessages: ['clarity: Too vague'], warnMessages: [],
+      passed: false,
+      hasFails: true,
+      hasWarns: false,
+      results: {},
+      failMessages: ['clarity: Too vague'],
+      warnMessages: []
     })
 
     const handler = captureHandler('sprint:update')
-    await expect(handler(mockEvent, 'abc', { status: 'queued' }))
-      .rejects.toThrow(/semantic checks failed/)
+    await expect(handler(mockEvent, 'abc', { status: 'queued' })).rejects.toThrow(
+      /semantic checks failed/
+    )
   })
 })

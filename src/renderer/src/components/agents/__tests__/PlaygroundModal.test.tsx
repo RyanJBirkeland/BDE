@@ -10,7 +10,7 @@ describe('PlaygroundModal', () => {
     html: SAMPLE_HTML,
     filename: 'preview.html',
     sizeBytes: 1234,
-    onClose,
+    onClose
   }
 
   beforeEach(() => {

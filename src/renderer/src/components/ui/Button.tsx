@@ -30,9 +30,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     'aria-label': ariaLabel,
     'aria-pressed': ariaPressed,
     'aria-expanded': ariaExpanded,
-    'aria-controls': ariaControls,
+    'aria-controls': ariaControls
   },
-  ref,
+  ref
 ) {
   const classes = [
     'bde-btn',
@@ -41,7 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     loading && 'bde-btn--loading',
     variant === 'primary' && 'btn-primary',
     variant === 'ghost' && 'btn-glass',
-    className,
+    className
   ]
     .filter(Boolean)
     .join(' ')

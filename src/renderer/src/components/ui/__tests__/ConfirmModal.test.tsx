@@ -9,17 +9,17 @@ vi.mock('framer-motion', () => ({
     div: ({ children, onKeyDown, role, ...rest }: any) => {
       const { createElement } = require('react')
       return createElement('div', { onKeyDown, role, ...rest }, children)
-    },
+    }
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useReducedMotion: () => false,
+  useReducedMotion: () => false
 }))
 
 vi.mock('../../lib/motion', () => ({
   VARIANTS: { scaleIn: {} },
   SPRINGS: { snappy: {} },
   REDUCED_TRANSITION: { duration: 0 },
-  useReducedMotion: () => false,
+  useReducedMotion: () => false
 }))
 
 describe('ConfirmModal', () => {
@@ -44,12 +44,7 @@ describe('ConfirmModal', () => {
 
   it('renders message when open is true', () => {
     render(
-      <ConfirmModal
-        open={true}
-        message="Are you sure?"
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />
+      <ConfirmModal open={true} message="Are you sure?" onConfirm={onConfirm} onCancel={onCancel} />
     )
     expect(screen.getByText('Are you sure?')).toBeInTheDocument()
   })
@@ -83,12 +78,7 @@ describe('ConfirmModal', () => {
 
   it('uses default confirm/cancel labels', () => {
     render(
-      <ConfirmModal
-        open={true}
-        message="Are you sure?"
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />
+      <ConfirmModal open={true} message="Are you sure?" onConfirm={onConfirm} onCancel={onCancel} />
     )
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
@@ -112,12 +102,7 @@ describe('ConfirmModal', () => {
   it('calls onConfirm when confirm button is clicked', async () => {
     const user = userEvent.setup()
     render(
-      <ConfirmModal
-        open={true}
-        message="Are you sure?"
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />
+      <ConfirmModal open={true} message="Are you sure?" onConfirm={onConfirm} onCancel={onCancel} />
     )
     await user.click(screen.getByRole('button', { name: 'Confirm' }))
     expect(onConfirm).toHaveBeenCalledTimes(1)
@@ -127,12 +112,7 @@ describe('ConfirmModal', () => {
   it('calls onCancel when cancel button is clicked', async () => {
     const user = userEvent.setup()
     render(
-      <ConfirmModal
-        open={true}
-        message="Are you sure?"
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />
+      <ConfirmModal open={true} message="Are you sure?" onConfirm={onConfirm} onCancel={onCancel} />
     )
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(onCancel).toHaveBeenCalledTimes(1)
@@ -142,12 +122,7 @@ describe('ConfirmModal', () => {
   it('calls onCancel when overlay is clicked', async () => {
     const user = userEvent.setup()
     const { container } = render(
-      <ConfirmModal
-        open={true}
-        message="Are you sure?"
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />
+      <ConfirmModal open={true} message="Are you sure?" onConfirm={onConfirm} onCancel={onCancel} />
     )
     const overlay = container.querySelector('.confirm-modal__overlay')!
     await user.click(overlay)
@@ -156,12 +131,7 @@ describe('ConfirmModal', () => {
 
   it('calls onCancel when Escape key is pressed inside modal', async () => {
     render(
-      <ConfirmModal
-        open={true}
-        message="Are you sure?"
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />
+      <ConfirmModal open={true} message="Are you sure?" onConfirm={onConfirm} onCancel={onCancel} />
     )
     const dialog = screen.getByRole('alertdialog')
     fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape' })
@@ -170,12 +140,7 @@ describe('ConfirmModal', () => {
 
   it('has aria-modal="true" attribute', () => {
     render(
-      <ConfirmModal
-        open={true}
-        message="Confirm?"
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />
+      <ConfirmModal open={true} message="Confirm?" onConfirm={onConfirm} onCancel={onCancel} />
     )
     const dialog = screen.getByRole('alertdialog')
     expect(dialog).toHaveAttribute('aria-modal', 'true')
@@ -224,7 +189,9 @@ describe('useConfirm', () => {
 
     let resolved: boolean | undefined
     act(() => {
-      result.current.confirm({ message: 'Continue?' }).then((v) => { resolved = v })
+      result.current.confirm({ message: 'Continue?' }).then((v) => {
+        resolved = v
+      })
     })
 
     act(() => {
@@ -240,7 +207,9 @@ describe('useConfirm', () => {
 
     let resolved: boolean | undefined
     act(() => {
-      result.current.confirm({ message: 'Continue?' }).then((v) => { resolved = v })
+      result.current.confirm({ message: 'Continue?' }).then((v) => {
+        resolved = v
+      })
     })
 
     act(() => {
@@ -259,7 +228,7 @@ describe('useConfirm', () => {
         message: 'Delete this?',
         title: 'Delete Task',
         confirmLabel: 'Delete',
-        variant: 'danger',
+        variant: 'danger'
       })
     })
 

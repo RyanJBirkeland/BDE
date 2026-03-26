@@ -57,7 +57,9 @@ test.describe('Cost View — export', () => {
     await expect(costView).toBeVisible({ timeout: 5_000 })
 
     // Verify the Export CSV button exists in the header actions
-    const exportBtn = costView.locator('.cost-view__header-actions button', { hasText: 'Export CSV' })
+    const exportBtn = costView.locator('.cost-view__header-actions button', {
+      hasText: 'Export CSV'
+    })
     await expect(exportBtn).toBeVisible({ timeout: 5_000 })
 
     // Click the Export CSV button

@@ -16,10 +16,12 @@ export async function resolveDependents(
   completedStatus: string,
   index: DependencyIndex,
   getTask: (
-    id: string,
-  ) => Promise<(Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }) | null>,
+    id: string
+  ) => Promise<
+    (Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }) | null
+  >,
   updateTask: (id: string, patch: Record<string, unknown>) => Promise<unknown>,
-  logger?: Logger,
+  logger?: Logger
 ): Promise<void> {
   const dependents = index.getDependents(completedTaskId)
   if (dependents.size === 0) return
@@ -45,7 +47,7 @@ export async function resolveDependents(
       const { satisfied, blockedBy } = index.areDependenciesSatisfied(
         depId,
         task.depends_on,
-        (id) => statusCache.get(id),
+        (id) => statusCache.get(id)
       )
 
       if (satisfied) {

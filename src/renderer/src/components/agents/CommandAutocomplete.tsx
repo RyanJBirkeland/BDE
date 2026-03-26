@@ -10,7 +10,7 @@ const COMMANDS: Command[] = [
   { name: '/retry', description: 'Requeue the sprint task' },
   { name: '/focus', description: 'Steer to focus on a topic' },
   { name: '/approve', description: 'Approve pending action' },
-  { name: '/files', description: 'List files the agent touched' },
+  { name: '/files', description: 'List files the agent touched' }
 ]
 
 interface CommandAutocompleteProps {
@@ -22,7 +22,7 @@ interface CommandAutocompleteProps {
 export function CommandAutocomplete({
   query,
   onSelect,
-  onClose,
+  onClose
 }: CommandAutocompleteProps): React.JSX.Element | null {
   const [selectedIndex, setSelectedIndex] = useState(0)
 

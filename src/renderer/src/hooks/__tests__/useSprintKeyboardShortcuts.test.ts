@@ -10,12 +10,12 @@ vi.mock('../../stores/sprintUI', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({
       selectedTaskId: mockSelectedTaskId,
-      setLogDrawerTaskId: mockSetLogDrawerTaskId,
+      setLogDrawerTaskId: mockSetLogDrawerTaskId
     })
   )
   ;(store as any).getState = () => ({
     selectedTaskId: mockSelectedTaskId,
-    setLogDrawerTaskId: mockSetLogDrawerTaskId,
+    setLogDrawerTaskId: mockSetLogDrawerTaskId
   })
   return { useSprintUI: store }
 })
@@ -36,9 +36,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing n opens the modal when no input is focused', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('n')
 
@@ -46,9 +44,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing n does nothing when an INPUT is focused', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     const input = document.createElement('input')
     document.body.appendChild(input)
@@ -61,9 +57,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing n does nothing when a TEXTAREA is focused', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     const textarea = document.createElement('textarea')
     document.body.appendChild(textarea)
@@ -76,9 +70,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing n does nothing when a SELECT is focused', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     const select = document.createElement('select')
     document.body.appendChild(select)
@@ -91,9 +83,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing n with metaKey does nothing', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('n', { metaKey: true })
 
@@ -101,9 +91,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing n with ctrlKey does nothing', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('n', { ctrlKey: true })
 
@@ -111,9 +99,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing n with altKey does nothing', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('n', { altKey: true })
 
@@ -121,9 +107,7 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing Escape closes conflict drawer when no task is selected', () => {
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('Escape')
 
@@ -134,9 +118,7 @@ describe('useSprintKeyboardShortcuts', () => {
   it('pressing Escape does nothing to modal/drawer when a task is selected (SpecDrawer handles it)', () => {
     mockSelectedTaskId = 'task-123'
 
-    renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('Escape')
 

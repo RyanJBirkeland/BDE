@@ -36,7 +36,12 @@ function statusBadgeVariant(status: string): 'default' | 'success' | 'danger' | 
   }
 }
 
-export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitorPanelProps): React.JSX.Element {
+export function TaskMonitorPanel({
+  task,
+  onClose,
+  onStop,
+  onRerun
+}: TaskMonitorPanelProps): React.JSX.Element {
   const [logContent, setLogContent] = useState('')
   const [agentStatus, setAgentStatus] = useState('unknown')
   const [exitCode, setExitCode] = useState<number | null>(null)
@@ -80,7 +85,10 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
 
     catchUp()
 
-    if (!isActive) return () => { cancelled = true }
+    if (!isActive)
+      return () => {
+        cancelled = true
+      }
 
     const interval = setInterval(catchUp, 2000)
     return () => {
@@ -100,7 +108,11 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
     const events: AnyTaskEvent[] = storeEvents ?? []
     const result: AnyTaskEvent[] = []
     for (const ev of events) {
-      if (ev.type === 'agent:thinking' && result.length > 0 && result[result.length - 1].type === 'agent:thinking') {
+      if (
+        ev.type === 'agent:thinking' &&
+        result.length > 0 &&
+        result[result.length - 1].type === 'agent:thinking'
+      ) {
         result[result.length - 1] = ev
       } else {
         result.push(ev)
@@ -116,7 +128,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
     if (!task.agent_run_id) return
     window.dispatchEvent(
       new CustomEvent('bde:navigate', {
-        detail: { view: 'agents', sessionId: task.agent_run_id },
+        detail: { view: 'agents', sessionId: task.agent_run_id }
       })
     )
     onClose()
@@ -145,7 +157,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
         background: tokens.color.surface,
         borderLeft: `1px solid ${tokens.color.border}`,
         fontFamily: tokens.font.ui,
-        overflow: 'hidden',
+        overflow: 'hidden'
       }}
     >
       {/* Header */}
@@ -156,7 +168,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
           gap: tokens.space[2],
           padding: `${tokens.space[2]} ${tokens.space[3]}`,
           borderBottom: `1px solid ${tokens.color.border}`,
-          flexShrink: 0,
+          flexShrink: 0
         }}
       >
         <span
@@ -167,7 +179,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
             flex: 1,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'nowrap'
           }}
           title={task.title}
         >
@@ -192,7 +204,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
             borderBottom: `1px solid ${tokens.color.border}`,
             fontSize: tokens.size.xs,
             color: tokens.color.textMuted,
-            flexShrink: 0,
+            flexShrink: 0
           }}
         >
           <span>agent/{task.agent_run_id.slice(0, 8)}</span>
@@ -214,7 +226,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
                   gap: '4px',
                   padding: 0,
                   fontSize: tokens.size.xs,
-                  fontFamily: tokens.font.ui,
+                  fontFamily: tokens.font.ui
                 }}
               >
                 <ExternalLink size={10} aria-hidden="true" />
@@ -234,7 +246,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
                 display: 'flex',
                 flexDirection: 'column',
                 gap: tokens.space[1],
-                padding: tokens.space[2],
+                padding: tokens.space[2]
               }}
             >
               {displayEvents.map((ev, i) => (
@@ -252,7 +264,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
                 color: tokens.color.text,
                 margin: 0,
                 whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
+                wordBreak: 'break-all'
               }}
             >
               {logContent}
@@ -262,7 +274,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
               style={{
                 padding: tokens.space[4],
                 color: tokens.color.textMuted,
-                fontSize: tokens.size.sm,
+                fontSize: tokens.size.sm
               }}
             >
               Agent is starting up…
@@ -273,7 +285,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
             style={{
               padding: tokens.space[4],
               color: tokens.color.textMuted,
-              fontSize: tokens.size.sm,
+              fontSize: tokens.size.sm
             }}
           >
             No agent session linked to this task.
@@ -290,7 +302,7 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
           padding: `${tokens.space[2]} ${tokens.space[3]}`,
           borderTop: `1px solid ${tokens.color.border}`,
           flexShrink: 0,
-          flexWrap: 'wrap',
+          flexWrap: 'wrap'
         }}
       >
         {task.status === TASK_STATUS.ACTIVE && onStop && (
@@ -298,11 +310,13 @@ export function TaskMonitorPanel({ task, onClose, onStop, onRerun }: TaskMonitor
             Stop Agent
           </Button>
         )}
-        {onRerun && (agentStatus === AGENT_STATUS.FAILED || (task.status === TASK_STATUS.DONE && !task.pr_url)) && (
-          <Button variant="ghost" size="sm" onClick={() => onRerun(task)}>
-            <RefreshCw size={14} aria-hidden="true" /> Re-run
-          </Button>
-        )}
+        {onRerun &&
+          (agentStatus === AGENT_STATUS.FAILED ||
+            (task.status === TASK_STATUS.DONE && !task.pr_url)) && (
+            <Button variant="ghost" size="sm" onClick={() => onRerun(task)}>
+              <RefreshCw size={14} aria-hidden="true" /> Re-run
+            </Button>
+          )}
         {task.agent_run_id && (
           <Button variant="ghost" size="sm" onClick={handleOpenInAgents}>
             Open in Agents

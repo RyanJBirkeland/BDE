@@ -17,7 +17,7 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
         border: '1px solid var(--bde-purple)',
         borderRadius: tokens.radius.md,
         backgroundColor: 'var(--bde-purple-dim)',
-        overflow: 'hidden',
+        overflow: 'hidden'
       }}
     >
       <button
@@ -34,7 +34,7 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
           fontFamily: tokens.font.ui,
           fontSize: tokens.size.sm,
           color: 'var(--bde-purple)',
-          textAlign: 'left',
+          textAlign: 'left'
         }}
       >
         <ChevronRight
@@ -42,7 +42,7 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
           style={{
             transition: tokens.transition.fast,
             transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-            flexShrink: 0,
+            flexShrink: 0
           }}
         />
         <span style={{ fontWeight: 600, letterSpacing: '0.05em' }}>THINKING</span>
@@ -54,7 +54,7 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
             backgroundColor: tokens.color.surfaceHigh,
             padding: `${tokens.space[1]} ${tokens.space[2]}`,
             borderRadius: tokens.radius.full,
-            fontFamily: tokens.font.code,
+            fontFamily: tokens.font.code
           }}
         >
           {tokenCount.toLocaleString()} tokens
@@ -72,7 +72,7 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps) {
             whiteSpace: 'pre-wrap',
             lineHeight: 1.5,
             maxHeight: '300px',
-            overflowY: 'auto',
+            overflowY: 'auto'
           }}
         >
           {text}

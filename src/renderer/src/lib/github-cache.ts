@@ -9,7 +9,7 @@ import {
   getReviewComments,
   getIssueComments,
   type PRDetail,
-  type PRFile,
+  type PRFile
 } from './github-api'
 import type { PrReview, PrComment, PrIssueComment } from '../../../shared/types'
 

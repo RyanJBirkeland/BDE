@@ -6,21 +6,19 @@ import { CommandPalette } from '../CommandPalette'
 vi.mock('../../../stores/ui', () => ({
   useUIStore: vi.fn((selector: (s: { setView: () => void }) => unknown) =>
     selector({ setView: vi.fn() })
-  ),
+  )
 }))
 
 vi.mock('../../../stores/localAgents', () => ({
   useLocalAgentsStore: Object.assign(
-    vi.fn((selector: (s: { processes: [] }) => unknown) =>
-      selector({ processes: [] })
-    ),
+    vi.fn((selector: (s: { processes: [] }) => unknown) => selector({ processes: [] })),
     {
       getState: () => ({
         processes: [],
-        killLocalAgent: vi.fn().mockResolvedValue(undefined),
-      }),
+        killLocalAgent: vi.fn().mockResolvedValue(undefined)
+      })
     }
-  ),
+  )
 }))
 
 vi.mock('../../../stores/agentHistory', () => ({
@@ -31,14 +29,14 @@ vi.mock('../../../stores/agentHistory', () => ({
     {
       getState: () => ({
         agents: [],
-        fetchAgents: vi.fn().mockResolvedValue(undefined),
-      }),
+        fetchAgents: vi.fn().mockResolvedValue(undefined)
+      })
     }
-  ),
+  )
 }))
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 // jsdom doesn't implement scrollIntoView

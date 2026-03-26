@@ -2,13 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock the settings module (config.ts now delegates to settings.ts)
 vi.mock('../settings', () => ({
-  getSetting: vi.fn().mockReturnValue(null),
+  getSetting: vi.fn().mockReturnValue(null)
 }))
 
 import { getSetting } from '../settings'
-import {
-  getGitHubToken,
-} from '../config'
+import { getGitHubToken } from '../config'
 
 describe('config.ts', () => {
   beforeEach(() => {
