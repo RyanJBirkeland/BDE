@@ -116,7 +116,6 @@ describe('SprintTaskList', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
-    expect(screen.getByText('Tasks')).toBeInTheDocument()
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.getByText('Fix navbar styling bug')).toBeInTheDocument()
     expect(screen.getByText('Update documentation')).toBeInTheDocument()
@@ -127,13 +126,12 @@ describe('SprintTaskList', () => {
     expect(screen.getByText('Refactor API endpoints')).toBeInTheDocument()
   })
 
-  it('displays correct task count', () => {
+  it('renders all status groups', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
-    // Should show total count of 4 tasks
-    const countBadges = screen.getAllByText('4')
-    expect(countBadges.length).toBeGreaterThan(0)
+    expect(screen.getByText('Awaiting Review')).toBeInTheDocument()
+    expect(screen.getByText('Queued')).toBeInTheDocument()
   })
 
   it('filters tasks by search query (after debounce)', () => {
@@ -150,27 +148,21 @@ describe('SprintTaskList', () => {
     expect(screen.queryByText('Fix navbar styling bug')).not.toBeInTheDocument()
   })
 
-  it('filters tasks by status', () => {
+  it('filters tasks by status via store', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
-    // Use getAllByText since both filter chip and task badge may contain "Backlog"
-    const backlogElements = screen.getAllByText('Backlog')
-    const backlogFilter = backlogElements.find((el) => el.closest('.sprint-task-list__filter-chip'))!
-    fireEvent.click(backlogFilter)
+    useSprintUI.setState({ statusFilter: 'backlog' })
 
     expect(screen.getByText('Fix navbar styling bug')).toBeInTheDocument()
     expect(screen.queryByText('Implement user authentication')).not.toBeInTheDocument()
   })
 
-  it('filters tasks by done status', () => {
+  it('filters tasks by done status via store', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
-    // Use getAllByText since both the filter chip and task badge may contain "Done"
-    const doneElements = screen.getAllByText('Done')
-    const doneFilter = doneElements.find((el) => el.closest('.sprint-task-list__filter-chip'))!
-    fireEvent.click(doneFilter)
+    useSprintUI.setState({ statusFilter: 'done' })
 
     expect(screen.getByText('Refactor API endpoints')).toBeInTheDocument()
     expect(screen.queryByText('Implement user authentication')).not.toBeInTheDocument()
@@ -247,13 +239,13 @@ describe('SprintTaskList', () => {
     expect(screen.queryByText('Refactor API endpoints')).not.toBeInTheDocument()
   })
 
-  it('disables filter chips with zero count', () => {
+  it('shows colored accent dots on group headers', () => {
     const onSelectTask = vi.fn()
-    const tasksWithNoFailed = mockTasks.filter((t) => t.status !== 'failed')
-    render(<SprintTaskList tasks={tasksWithNoFailed} selectedTaskId={null} onSelectTask={onSelectTask} />)
+    
+    render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
-    const failedFilter = screen.getByText('Failed')
-    expect(failedFilter).toBeDisabled()
+    const groupDots = document.querySelectorAll('.sprint-task-list__group-dot')
+    expect(groupDots.length).toBeGreaterThan(0)
   })
 
   it('displays priority badge for high priority tasks', () => {

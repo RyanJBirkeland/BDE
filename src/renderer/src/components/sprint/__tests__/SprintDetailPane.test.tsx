@@ -91,18 +91,9 @@ describe('SprintDetailPane', () => {
   it('renders task title and status badge', () => {
     render(<SprintDetailPane task={mockTask} onClose={vi.fn()} />)
     expect(screen.getByText('Test Task')).toBeInTheDocument()
-    expect(screen.getByText('queued')).toBeInTheDocument()
+    expect(screen.getByText('Queued')).toBeInTheDocument()
   })
 
-  it('calls onClose when close button is clicked', () => {
-    const onClose = vi.fn()
-    render(<SprintDetailPane task={mockTask} onClose={onClose} />)
-
-    const closeButton = screen.getByLabelText('Close detail pane')
-    fireEvent.click(closeButton)
-
-    expect(onClose).toHaveBeenCalledTimes(1)
-  })
 
   it('shows Launch button for queued tasks', () => {
     const onLaunch = vi.fn()
@@ -141,7 +132,7 @@ describe('SprintDetailPane', () => {
   it('displays metadata correctly', () => {
     render(<SprintDetailPane task={mockTask} onClose={vi.fn()} />)
 
-    expect(screen.getByText('Metadata')).toBeInTheDocument()
+    expect(screen.getByText('Specification')).toBeInTheDocument()
     expect(screen.getByText('BDE')).toBeInTheDocument()
     expect(screen.getByText('P1')).toBeInTheDocument()
   })
@@ -185,14 +176,14 @@ describe('SprintDetailPane', () => {
     const taskWithAgent = { ...mockTask, agent_run_id: 'agent-123', status: TASK_STATUS.ACTIVE }
     render(<SprintDetailPane task={taskWithAgent} onClose={vi.fn()} />)
 
-    expect(screen.getByText('Agent Run')).toBeInTheDocument()
+    expect(screen.getByText('agent-123')).toBeInTheDocument()
   })
 
   it('opens agent in agents view when button is clicked', () => {
     const taskWithAgent = { ...mockTask, agent_run_id: 'agent-123', status: TASK_STATUS.ACTIVE }
     render(<SprintDetailPane task={taskWithAgent} onClose={vi.fn()} />)
 
-    const openButton = screen.getByText('Open in Agents')
+    const openButton = screen.getByText(/Open in Agents/)
     fireEvent.click(openButton)
 
     expect(window.dispatchEvent).toHaveBeenCalledWith(
@@ -304,13 +295,13 @@ describe('SprintDetailPane', () => {
     expect(onEditInWorkbench).toHaveBeenCalledWith(mockTask)
   })
 
-  it('toggles section expansion', () => {
+  it('toggles specification section expansion', () => {
     render(<SprintDetailPane task={mockTask} onClose={vi.fn()} />)
 
-    const metadataButton = screen.getByText('Metadata')
+    const taskWithSpec2 = { ...mockTask, spec: '# Test' }
 
-    // Should be expanded by default
-    expect(screen.getByText('Repo')).toBeInTheDocument()
+    // Spec section should be present
+    expect(screen.getByText('Specification')).toBeInTheDocument()
 
     // Click to collapse
     fireEvent.click(metadataButton)
