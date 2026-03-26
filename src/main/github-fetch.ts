@@ -12,6 +12,9 @@
  */
 
 import { broadcast } from './broadcast'
+import { createLogger } from './logger'
+
+const logger = createLogger('github-fetch')
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -106,8 +109,8 @@ function checkRateLimitThreshold(): void {
   if (warningEmitted) return
 
   state.warningEmitted = true
-  console.warn(
-    `[github-fetch] Rate limit low: ${remaining}/${limit} remaining. Resets at ${new Date(resetEpoch * 1_000).toISOString()}`
+  logger.warn(
+    `Rate limit low: ${remaining}/${limit} remaining. Resets at ${new Date(resetEpoch * 1_000).toISOString()}`
   )
   broadcastRateLimitWarning(remaining, limit, resetEpoch)
 }
@@ -172,7 +175,7 @@ export async function githubFetch(url: string, options?: GithubFetchOptions): Pr
 
     // --- 401 Unauthorized → token expired or invalid, fail fast (no retry) ---
     if (lastResponse.status === 401) {
-      console.error('[github-fetch] 401 Unauthorized — GitHub token is invalid or expired')
+      logger.error('401 Unauthorized — GitHub token is invalid or expired')
       broadcastTokenExpired()
       return lastResponse
     }
@@ -180,8 +183,8 @@ export async function githubFetch(url: string, options?: GithubFetchOptions): Pr
     // --- (b) 403 rate-limit → honour Retry-After or fall back to backoff ---
     if (isRateLimitExhausted(lastResponse.status, rl.remaining) && attempt < MAX_RETRIES) {
       const waitMs = rl.retryAfterMs ?? computeBackoffMs(attempt)
-      console.warn(
-        `[github-fetch] Rate limited (${rl.remaining} remaining). Retrying in ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+      logger.warn(
+        `Rate limited (${rl.remaining} remaining). Retrying in ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
       )
       await sleep(waitMs)
       continue
@@ -190,8 +193,8 @@ export async function githubFetch(url: string, options?: GithubFetchOptions): Pr
     // --- (c) 5xx server errors → exponential backoff ---
     if (isRetryableServerError(lastResponse.status) && attempt < MAX_RETRIES) {
       const waitMs = computeBackoffMs(attempt)
-      console.warn(
-        `[github-fetch] Server error ${lastResponse.status}. Retrying in ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+      logger.warn(
+        `Server error ${lastResponse.status}. Retrying in ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
       )
       await sleep(waitMs)
       continue

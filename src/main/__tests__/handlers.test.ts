@@ -221,8 +221,8 @@ describe('IPC handler registration', () => {
       vi.mocked(agentHistory.readLog).mockRejectedValueOnce(new Error('test error'))
       await expect(invoke('agents:readLog', { id: 'bad' })).rejects.toThrow()
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[IPC:agents:readLog]'),
-        expect.any(Error)
+        expect.stringContaining('[ipc]'),
+        expect.stringContaining('[agents:readLog] unhandled error')
       )
       consoleSpy.mockRestore()
     })

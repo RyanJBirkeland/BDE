@@ -5,6 +5,9 @@
  */
 import type { SprintTask } from '../../shared/types'
 import { sseBroadcaster } from '../queue-api/router'
+import { createLogger } from '../logger'
+
+const logger = createLogger('sprint-listeners')
 
 export type SprintMutationEvent = {
   type: 'created' | 'updated' | 'deleted'
@@ -30,7 +33,7 @@ export function notifySprintMutation(
     try {
       cb(event)
     } catch (err) {
-      console.error('[sprint-listeners]', err)
+      logger.error(`${err}`)
     }
   }
 
