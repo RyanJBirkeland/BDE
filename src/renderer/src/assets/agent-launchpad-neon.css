@@ -1,0 +1,617 @@
+/* src/renderer/src/assets/agent-launchpad-neon.css */
+/* ═══════════════════════════════════════════════════════
+   Agent Launchpad — Tile Grid, Configure Chat, Review
+   Uses var(--neon-*) tokens from neon.css
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Launchpad Container ── */
+.launchpad {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  overflow-y: auto;
+  background: var(--neon-bg);
+}
+
+.launchpad__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.launchpad__header-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+  animation: neon-breathe 2s ease-in-out infinite;
+}
+
+.launchpad__header-title {
+  color: var(--neon-cyan);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+
+.launchpad__back {
+  background: none;
+  border: none;
+  color: var(--neon-text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.launchpad__back:hover {
+  color: var(--neon-cyan);
+  background: var(--neon-cyan-surface);
+}
+
+/* ── Section Labels ── */
+.launchpad__section-label {
+  color: var(--neon-text-dim);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ── Tile Grid ── */
+.launchpad__tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.launchpad__tile {
+  background: linear-gradient(135deg, var(--tile-bg), transparent);
+  border: 1px solid var(--tile-border);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.launchpad__tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--tile-glow);
+  border-color: var(--tile-hover-border);
+}
+
+.launchpad__tile:active {
+  transform: translateY(0);
+}
+
+.launchpad__tile-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.launchpad__tile-name {
+  color: var(--tile-color);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.launchpad__tile-desc {
+  color: var(--neon-text-dim);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.launchpad__tile--add {
+  border-style: dashed;
+  border-color: var(--neon-surface-subtle);
+}
+
+.launchpad__tile--add:hover {
+  border-color: var(--neon-text-dim);
+}
+
+.launchpad__tile--add .launchpad__tile-icon {
+  color: var(--neon-text-dim);
+}
+
+.launchpad__tile--add .launchpad__tile-name {
+  color: var(--neon-text-dim);
+}
+
+/* ── Recent List ── */
+.launchpad__recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.launchpad__recent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--neon-surface-dim);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.launchpad__recent-item:hover {
+  background: var(--neon-surface-subtle);
+  border-color: var(--neon-surface-subtle);
+}
+
+.launchpad__recent-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--neon-text-dim);
+  flex-shrink: 0;
+}
+
+.launchpad__recent-text {
+  color: var(--neon-text-muted);
+  font-size: 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launchpad__recent-time {
+  color: var(--neon-text-dim);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Bottom Prompt Bar ── */
+.launchpad__prompt-bar {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--neon-surface-dim);
+}
+
+.launchpad__prompt-input {
+  flex: 1;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--neon-surface-subtle);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--neon-text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 200ms ease;
+  font-family: inherit;
+}
+
+.launchpad__prompt-input::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.launchpad__prompt-input:focus {
+  border-color: var(--neon-cyan-border);
+}
+
+/* ── Repo Chip ── */
+.launchpad__repo-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--neon-text-dim);
+  font-size: 11px;
+  padding: 6px 10px;
+  border: 1px solid var(--neon-surface-dim);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: none;
+  transition: border-color 150ms ease;
+}
+
+.launchpad__repo-chip:hover {
+  border-color: var(--neon-surface-subtle);
+}
+
+.launchpad__repo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  opacity: 0.5;
+}
+
+/* ── Model Pills ── */
+.launchpad__model-pills {
+  display: flex;
+  gap: 3px;
+}
+
+.launchpad__model-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid var(--neon-surface-dim);
+  color: var(--neon-text-dim);
+  background: var(--neon-surface-dim);
+}
+
+.launchpad__model-pill:hover {
+  border-color: var(--neon-surface-subtle);
+  color: var(--neon-text-muted);
+}
+
+.launchpad__model-pill--active {
+  border-color: var(--neon-cyan-border);
+  color: var(--neon-cyan);
+  background: var(--neon-cyan-surface);
+}
+
+/* ── Configure Chat ── */
+.launchpad__chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.launchpad__chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.launchpad__chat-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
+.launchpad__chat-badge-icon {
+  font-size: 16px;
+}
+
+.launchpad__chat-badge-name {
+  color: var(--neon-cyan);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.launchpad__chat-step {
+  margin-left: auto;
+  color: var(--neon-text-dim);
+  font-size: 10px;
+}
+
+.launchpad__chat-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+
+/* ── Chat Message Bubbles ── */
+.launchpad__msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.launchpad__msg--system {
+  align-self: flex-start;
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan-border);
+  color: var(--neon-text-muted);
+}
+
+.launchpad__msg-label {
+  color: var(--neon-cyan);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.launchpad__msg--user {
+  align-self: flex-end;
+  background: var(--neon-purple-surface);
+  border: 1px solid var(--neon-purple-border);
+  color: var(--neon-text);
+}
+
+/* ── Choice Chips ── */
+.launchpad__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.launchpad__choice {
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  border: 1px solid var(--neon-cyan-border);
+  color: var(--neon-cyan);
+  cursor: pointer;
+  transition: all 150ms ease;
+  background: var(--neon-surface-dim);
+}
+
+.launchpad__choice:hover {
+  background: var(--neon-cyan-surface);
+}
+
+.launchpad__choice--selected {
+  background: var(--neon-cyan-surface);
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan-glow);
+}
+
+/* ── Chat Input Bar ── */
+.launchpad__chat-input-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--neon-surface-dim);
+  margin-top: auto;
+}
+
+.launchpad__chat-input {
+  flex: 1;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--neon-surface-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--neon-text);
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+
+.launchpad__chat-input::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.launchpad__chat-input:focus {
+  border-color: var(--neon-cyan-border);
+}
+
+.launchpad__chat-send {
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--neon-cyan);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.launchpad__chat-send:hover {
+  background: var(--neon-cyan-border);
+}
+
+.launchpad__chat-send:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Review Screen ── */
+.launchpad__review {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.launchpad__review-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.launchpad__review-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--neon-cyan);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Param Grid ── */
+.launchpad__param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.launchpad__param-card {
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--neon-surface-subtle);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.launchpad__param-label {
+  color: var(--neon-text-dim);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.launchpad__param-value {
+  color: var(--neon-text-muted);
+  font-size: 13px;
+}
+
+/* ── Spec Block ── */
+.launchpad__spec-block {
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.launchpad__spec-label {
+  color: var(--neon-cyan);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.launchpad__spec-content {
+  color: var(--neon-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.launchpad__spec-textarea {
+  width: 100%;
+  min-height: 200px;
+  background: transparent;
+  border: none;
+  color: var(--neon-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.launchpad__spec-edit {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--neon-text-dim);
+  font-size: 10px;
+  border: 1px solid var(--neon-surface-subtle);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  background: none;
+}
+
+.launchpad__spec-edit:hover {
+  color: var(--neon-cyan);
+  border-color: var(--neon-cyan-border);
+}
+
+/* ── Review Actions ── */
+.launchpad__review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--neon-surface-dim);
+  justify-content: flex-end;
+}
+
+.launchpad__btn-ghost {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid var(--neon-surface-subtle);
+  color: var(--neon-text-muted);
+  background: transparent;
+}
+
+.launchpad__btn-ghost:hover {
+  border-color: var(--neon-text-dim);
+  color: var(--neon-text);
+}
+
+.launchpad__btn-spawn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+  border: 1px solid var(--neon-cyan-border);
+  color: var(--neon-cyan);
+  background: linear-gradient(135deg, var(--neon-cyan-surface), var(--neon-surface-deep));
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px var(--neon-cyan-glow);
+}
+
+.launchpad__btn-spawn:hover {
+  box-shadow: 0 0 30px var(--neon-cyan-glow);
+  background: linear-gradient(135deg, var(--neon-cyan-border), var(--neon-cyan-surface));
+}
+
+.launchpad__btn-spawn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .launchpad__tile:hover {
+    transform: none;
+  }
+
+  .launchpad__header-dot {
+    animation: none;
+  }
+}
