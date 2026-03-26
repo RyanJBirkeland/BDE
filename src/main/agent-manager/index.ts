@@ -6,6 +6,7 @@ import {
   WORKTREE_PRUNE_INTERVAL_MS,
   QUEUE_TIMEOUT_MS,
   INITIAL_DRAIN_DEFER_MS,
+  NOTES_MAX_LENGTH,
 } from './types'
 import {
   makeConcurrencyState,
@@ -18,10 +19,12 @@ import { checkAgent } from './watchdog'
 import { setupWorktree, pruneStaleWorktrees } from './worktree'
 import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex } from './dependency-index'
+import { formatBlockedNote } from './dependency-helpers'
 import { resolveDependents } from './resolve-dependents'
 import { runAgent as _runAgent, type RunAgentDeps } from './run-agent'
 import { updateTask, getTask, getTasksWithDependencies } from '../data/sprint-queries'
 import { getRepoPaths } from '../paths'
+import { refreshOAuthTokenFromKeychain } from '../env-utils'
 
 // Use sprint-queries directly but with a wrapper that catches hangs.
 // Electron's main process fetch/Supabase can hang, so we import the functions
@@ -49,7 +52,9 @@ async function claimTaskViaApi(taskId: string): Promise<boolean> {
 // Logger helper — callers can supply their own or fall back to console
 // ---------------------------------------------------------------------------
 
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, readFileSync } from 'node:fs'
+import { join as joinPath } from 'node:path'
+import { homedir as home } from 'node:os'
 import { BDE_AGENT_LOG_PATH } from '../paths'
 const LOG_PATH = BDE_AGENT_LOG_PATH
 function fileLog(level: string, m: string): void {
@@ -72,13 +77,9 @@ const defaultLogger: Logger = {
  */
 export async function checkOAuthToken(logger: Logger): Promise<boolean> {
   try {
-    const { join: joinPath } = await import('node:path')
-    const { homedir: home } = await import('node:os')
-    const { readFileSync } = await import('node:fs')
     const tokenPath = joinPath(home(), '.bde', 'oauth-token')
     const token = readFileSync(tokenPath, 'utf-8').trim()
     if (!token || token.length < 20) {
-      const { refreshOAuthTokenFromKeychain } = await import('../env-utils')
       const refreshed = await refreshOAuthTokenFromKeychain()
       if (refreshed) {
         logger.info('[agent-manager] OAuth token auto-refreshed from Keychain')
@@ -199,6 +200,95 @@ export function createAgentManager(
     return repoPaths[repoSlug.toLowerCase()] ?? null
   }
 
+  // ---- processQueuedTask ----
+
+  async function processQueuedTask(
+    raw: Record<string, unknown>,
+    taskStatusMap: Map<string, string>,
+  ): Promise<void> {
+    // Map Queue API camelCase response to local task shape
+    // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
+    const task = {
+      id: raw.id as string,
+      title: raw.title as string,
+      prompt: (raw.prompt as string) ?? null,
+      spec: (raw.spec as string) ?? null,
+      repo: raw.repo as string,
+      retry_count: Number(raw.retryCount) || 0,
+      fast_fail_count: Number(raw.fastFailCount) || 0,
+      playground_enabled: Boolean(raw.playgroundEnabled),
+    }
+
+    // Defense-in-depth: check dependencies before claiming.
+    // Tasks created via direct API may be 'queued' with unsatisfied deps.
+    const rawDeps = raw.dependsOn ?? raw.depends_on
+    if (rawDeps) {
+      try {
+        const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
+        if (Array.isArray(deps) && deps.length > 0) {
+          const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
+            task.id,
+            deps,
+            (depId: string) => taskStatusMap.get(depId),
+          )
+          if (!satisfied) {
+            logger.info(`[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`)
+            await updateTask(task.id, {
+              status: 'blocked',
+              notes: formatBlockedNote(blockedBy),
+            }).catch(() => {})
+            return
+          }
+        }
+      } catch {
+        // If dep parsing fails, proceed without blocking
+      }
+    }
+
+    // Resolve repo path
+    const repoPath = resolveRepoPath(task.repo)
+    if (!repoPath) {
+      logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
+      return
+    }
+
+    // Claim task
+    const claimed = await claimTaskViaApi(task.id)
+    if (!claimed) {
+      logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
+      return
+    }
+
+    // Setup worktree
+    let wt: { worktreePath: string; branch: string }
+    try {
+      wt = await setupWorktree({
+        repoPath,
+        worktreeBase: config.worktreeBase,
+        taskId: task.id,
+        title: task.title,
+        logger,
+      })
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
+      await updateTask(task.id, {
+        status: 'error',
+        completed_at: new Date().toISOString(),
+        notes: `Worktree setup failed: ${errMsg}`.slice(0, NOTES_MAX_LENGTH),
+        claimed_by: null,
+      })
+      await onTaskTerminal(task.id, 'error')
+      return
+    }
+
+    // Fire-and-forget — errors logged inside runAgent
+    const p = _runAgent(task, wt, repoPath, runAgentDeps).catch((err) => {
+      logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
+    }).finally(() => { agentPromises.delete(p) })
+    agentPromises.add(p)
+  }
+
   // ---- drainLoop ----
 
   async function drainLoop(): Promise<void> {
@@ -234,89 +324,10 @@ export function createAgentManager(
         logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
         for (const raw of queued) {
           if (shuttingDown) break
-
           try {
-            // Map Queue API camelCase response to local task shape
-            // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
-            const task = {
-              id: raw.id as string,
-              title: raw.title as string,
-              prompt: (raw.prompt as string) ?? null,
-              spec: (raw.spec as string) ?? null,
-              repo: raw.repo as string,
-              retry_count: Number(raw.retryCount) || 0,
-              fast_fail_count: Number(raw.fastFailCount) || 0,
-              playground_enabled: Boolean(raw.playgroundEnabled),
-            }
-
-            // Defense-in-depth: check dependencies before claiming.
-            // Tasks created via direct API may be 'queued' with unsatisfied deps.
-            const rawDeps = (raw as Record<string, unknown>).dependsOn ?? (raw as Record<string, unknown>).depends_on
-            if (rawDeps) {
-              try {
-                const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
-                if (Array.isArray(deps) && deps.length > 0) {
-                  const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
-                    task.id,
-                    deps,
-                    (depId: string) => taskStatusMap.get(depId),
-                  )
-                  if (!satisfied) {
-                    logger.info(`[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`)
-                    await updateTask(task.id, {
-                      status: 'blocked',
-                      notes: `[auto-block] Blocked by: ${blockedBy.join(', ')}`,
-                    }).catch(() => {})
-                    continue
-                  }
-                }
-              } catch {
-                // If dep parsing fails, proceed without blocking
-              }
-            }
-
-            const repoPath = resolveRepoPath(task.repo)
-            if (!repoPath) {
-              logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
-              continue
-            }
-
-            const claimed = await claimTaskViaApi(task.id)
-            if (!claimed) {
-              logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
-              continue
-            }
-
-            let wt: { worktreePath: string; branch: string }
-            try {
-              wt = await setupWorktree({
-                repoPath,
-                worktreeBase: config.worktreeBase,
-                taskId: task.id,
-                title: task.title,
-                logger,
-              })
-            } catch (err) {
-              const errMsg = err instanceof Error ? err.message : String(err)
-              logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
-              await updateTask(task.id, {
-                status: 'error',
-                completed_at: new Date().toISOString(),
-                notes: `Worktree setup failed: ${errMsg}`.slice(0, 500),
-                claimed_by: null,
-              })
-              await onTaskTerminal(task.id, 'error')
-              continue
-            }
-
-            // Fire-and-forget — errors logged inside runAgent
-            const p = _runAgent(task, wt, repoPath, runAgentDeps).catch((err) => {
-              logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
-            }).finally(() => { agentPromises.delete(p) })
-            agentPromises.add(p)
+            await processQueuedTask(raw, taskStatusMap)
           } catch (err) {
-            logger.error(`[agent-manager] Failed to process task ${raw.id}: ${err}`)
-            continue
+            logger.error(`[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`)
           }
         }
       } catch (err) {

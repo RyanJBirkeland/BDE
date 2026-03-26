@@ -3,11 +3,6 @@ import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { buildAgentEnv, getOAuthToken } from '../env-utils'
 
-/** @deprecated Use getOAuthToken() from env-utils instead. Kept for API compat. */
-export function preloadOAuthToken(): void {
-  getOAuthToken()
-}
-
 export async function spawnAgent(opts: {
   prompt: string
   cwd: string

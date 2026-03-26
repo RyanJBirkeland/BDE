@@ -3,6 +3,7 @@ import { mkdirSync, existsSync, readdirSync, writeFileSync, readFileSync, rmSync
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { buildAgentEnv } from '../env-utils'
+import { BRANCH_SLUG_MAX_LENGTH } from './types'
 import type { Logger } from './types'
 
 const execFileAsync = promisify(execFile)
@@ -12,7 +13,7 @@ export function branchNameForTask(title: string, taskId?: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
+    .slice(0, BRANCH_SLUG_MAX_LENGTH)
   const suffix = taskId ? `-${taskId.slice(0, 8)}` : ''
   return `agent/${slug}${suffix}`
 }
@@ -70,8 +71,8 @@ function releaseLock(worktreeBase: string, repoPath: string): void {
   const lockFile = lockPath(worktreeBase, repoPath)
   try {
     rmSync(lockFile)
-  } catch {
-    // best-effort
+  } catch (err) {
+    console.warn(`[worktree] Failed to remove lock file: ${err}`)
   }
 }
 
@@ -117,12 +118,12 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
                 { cwd: repoPath, env: buildAgentEnv() }
               ).catch(() => {
                 // If git worktree remove fails, try rm -rf + prune
-                try { rmSync(stalePath, { recursive: true, force: true }) } catch { /* best-effort */ }
+                try { rmSync(stalePath, { recursive: true, force: true }) } catch (rmErr) { ;(logger ?? console).warn(`[worktree] Failed to rm stale worktree path: ${rmErr}`) }
               })
             }
           }
-        } catch {
-          // Fallback: just prune
+        } catch (listErr) {
+          ;(logger ?? console).warn(`[worktree] Failed to list worktrees for stale branch cleanup: ${listErr}`)
         }
 
         await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env: buildAgentEnv() })
@@ -134,7 +135,8 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
               'git', ['worktree', 'remove', '--force', worktreePath],
               { cwd: repoPath, env: buildAgentEnv() }
             )
-          } catch {
+          } catch (removeErr) {
+            ;(logger ?? console).warn(`[worktree] Failed to remove existing worktree path: ${removeErr}`)
             rmSync(worktreePath, { recursive: true, force: true })
           }
           await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env: buildAgentEnv() })
@@ -156,20 +158,20 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
               ;(logger ?? console).warn(`[worktree] Failed to push ${branch}: ${pushErr} — proceeding with delete`)
             }
           }
-        } catch {
-          // Branch may not have commits relative to main — proceed
+        } catch (checkErr) {
+          ;(logger ?? console).warn(`[worktree] Failed to check unpushed commits: ${checkErr}`)
         }
         try {
           await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env: buildAgentEnv() })
-        } catch {
-          // Branch delete can fail if a stale worktree still references it — prune and retry
+        } catch (branchErr) {
+          ;(logger ?? console).warn(`[worktree] Failed to delete branch (will prune and retry): ${branchErr}`)
           await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env: buildAgentEnv() })
           await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env: buildAgentEnv() })
         }
         await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: buildAgentEnv() })
       } catch (retryErr) {
         // Retry failed — clean up and throw
-        try { rmSync(worktreePath, { recursive: true, force: true }) } catch { /* best-effort */ }
+        try { rmSync(worktreePath, { recursive: true, force: true }) } catch (cleanupErr) { ;(logger ?? console).warn(`[worktree] Failed to cleanup worktree path after retry failure: ${cleanupErr}`) }
         releaseLock(worktreeBase, repoPath)
         throw retryErr
       }
@@ -177,13 +179,13 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
       // Non-branch-exists error — clean up and throw
       try {
         await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: buildAgentEnv() })
-      } catch {
-        // best-effort
+      } catch (removeErr) {
+        ;(logger ?? console).warn(`[worktree] Failed to remove worktree after non-branch error: ${removeErr}`)
       }
       try {
         rmSync(worktreePath, { recursive: true, force: true })
-      } catch {
-        // best-effort
+      } catch (rmErr) {
+        ;(logger ?? console).warn(`[worktree] Failed to remove worktree directory after non-branch error: ${rmErr}`)
       }
       releaseLock(worktreeBase, repoPath)
       throw err
@@ -232,7 +234,8 @@ export async function pruneStaleWorktrees(
       taskDirs = readdirSync(repoDir, { withFileTypes: true })
         .filter((d) => d.isDirectory())
         .map((d) => d.name)
-    } catch {
+    } catch (err) {
+      console.warn(`[worktree] Failed to read repo directory during prune: ${err}`)
       continue
     }
 
@@ -242,8 +245,8 @@ export async function pruneStaleWorktrees(
         try {
           rmSync(worktreePath, { recursive: true, force: true })
           pruned++
-        } catch {
-          // best-effort
+        } catch (err) {
+          console.warn(`[worktree] Failed to remove stale worktree directory: ${err}`)
         }
       }
     }

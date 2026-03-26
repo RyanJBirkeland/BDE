@@ -22,7 +22,7 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: (...args: unknown[]) => mockQuery(...args),
 }))
 
-import { spawnAgent, preloadOAuthToken } from '../sdk-adapter'
+import { spawnAgent } from '../sdk-adapter'
 import { getOAuthToken } from '../../env-utils'
 
 // ---------- helpers ----------
@@ -166,13 +166,5 @@ describe('spawnAgent (SDK path)', () => {
 
     const callArgs = mockQuery.mock.calls[0][0]
     expect(callArgs.options.env.ANTHROPIC_API_KEY).toBe('mock-oauth-token')
-  })
-})
-
-describe('preloadOAuthToken', () => {
-  it('calls getOAuthToken()', () => {
-    vi.mocked(getOAuthToken).mockClear()
-    preloadOAuthToken()
-    expect(getOAuthToken).toHaveBeenCalled()
   })
 })

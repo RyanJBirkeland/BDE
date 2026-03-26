@@ -27,7 +27,7 @@ import { startQueueApi, stopQueueApi } from './queue-api'
 import { pruneOldEvents } from './data/event-queries'
 import { getEventRetentionDays } from './config'
 import { createAgentManager } from './agent-manager'
-import { preloadOAuthToken } from './agent-manager/sdk-adapter'
+import { getOAuthToken } from './env-utils'
 import { getSetting, getSettingJson } from './settings'
 
 function createWindow(): void {
@@ -115,7 +115,7 @@ app.whenReady().then(() => {
 
   // Start agent manager immediately — auth is checked inside the drain loop
   if (autoStart) {
-    preloadOAuthToken()
+    getOAuthToken()
 
     const am = createAgentManager(amConfig)
     am.start()

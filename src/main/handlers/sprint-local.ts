@@ -6,6 +6,8 @@ import { validateStructural } from '../../shared/spec-validation'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
 import { notifySprintMutation } from './sprint-listeners'
+import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
+import { detectCycle } from '../agent-manager/dependency-index'
 import {
   generatePrompt,
   validateSpecPath,
@@ -62,8 +64,8 @@ export async function updateTask(id: string, patch: Record<string, unknown>): Pr
   return result
 }
 
-export async function releaseTask(id: string): Promise<SprintTask | null> {
-  const result = await _releaseTask(id)
+export async function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
+  const result = await _releaseTask(id, claimedBy)
   if (result) notifySprintMutation('updated', result)
   return result
 }
@@ -113,24 +115,21 @@ export function registerSprintLocalHandlers(): void {
 
     // Check if task has dependencies and should be auto-blocked
     if (task.depends_on && task.depends_on.length > 0 && (task.status === 'queued' || !task.status)) {
-      const { createDependencyIndex } = await import('../agent-manager/dependency-index')
-      const idx = createDependencyIndex()
-      const allTasks = await _listTasks()
-      const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-      const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
+      const { shouldBlock, blockedBy } = await checkTaskDependencies(
         'new-task',
         task.depends_on,
-        (depId) => statusMap.get(depId),
+        console,
       )
-      if (!satisfied && blockedBy.length > 0) {
+      if (shouldBlock) {
         task = {
           ...task,
           status: 'blocked',
-          notes: `[auto-block] Blocked by: ${blockedBy.join(', ')}${task.notes ? `\n${task.notes}` : ''}`
+          notes: buildBlockedNotes(blockedBy, task.notes as string | null)
         }
       }
     }
     const row = await _createTask(task)
+    if (!row) throw new Error('Failed to create task')
     notifySprintMutation('created', row)
     return row
   })
@@ -167,25 +166,17 @@ export function registerSprintLocalHandlers(): void {
       // Dependency check (existing logic)
       const taskDeps = task.depends_on
       if (taskDeps && taskDeps.length > 0) {
-        const { createDependencyIndex } = await import(
-          '../agent-manager/dependency-index'
-        )
-        const idx = createDependencyIndex()
-        const allTasks = await _listTasks()
-        const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-        const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
+        const { shouldBlock, blockedBy } = await checkTaskDependencies(
           id,
           taskDeps,
-          (depId) => statusMap.get(depId),
+          console,
         )
-        if (!satisfied && blockedBy.length > 0) {
+        if (shouldBlock) {
           // Auto-block and record which dependencies are blocking, preserving user notes
-          const existingNotes = (task.notes || '').replace(/^\[auto-block\] .*\n?/, '').trim()
-          const blockNote = `[auto-block] Blocked by: ${blockedBy.join(', ')}`
           patch = {
             ...patch,
             status: 'blocked',
-            notes: existingNotes ? `${blockNote}\n${existingNotes}` : blockNote
+            notes: buildBlockedNotes(blockedBy, task.notes as string | null)
           }
         }
       }
@@ -253,10 +244,6 @@ export function registerSprintLocalHandlers(): void {
       taskId: string,
       proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>,
     ) => {
-      const { detectCycle } = await import(
-        '../agent-manager/dependency-index'
-      )
-
       // Validate all dep targets exist
       for (const dep of proposedDeps) {
         const target = await _getTask(dep.id)

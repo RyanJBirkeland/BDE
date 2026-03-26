@@ -31,6 +31,10 @@ export const WORKTREE_PRUNE_INTERVAL_MS = 5 * 60 * 1000
 export const SPAWN_TIMEOUT_MS = 60_000
 export const QUEUE_TIMEOUT_MS = 10_000
 export const INITIAL_DRAIN_DEFER_MS = 5_000
+export const BRANCH_SLUG_MAX_LENGTH = 40
+export const LAST_OUTPUT_MAX_LENGTH = 500
+export const AGENT_SUMMARY_MAX_LENGTH = 300
+export const NOTES_MAX_LENGTH = 500
 
 export interface AgentHandle {
   messages: AsyncIterable<unknown>

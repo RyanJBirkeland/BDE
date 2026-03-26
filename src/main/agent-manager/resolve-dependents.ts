@@ -1,6 +1,7 @@
 import type { DependencyIndex } from './dependency-index'
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import type { Logger } from './types'
+import { buildBlockedNotes } from './dependency-helpers'
 
 /**
  * When a task reaches a terminal status, check all tasks that depend on it.
@@ -52,14 +53,8 @@ export async function resolveDependents(
         await updateTask(depId, { status: 'queued' })
       } else if (blockedBy.length > 0) {
         // Update blocking notes with current blocking dependencies, preserving user notes
-        const BLOCK_PREFIX = '[auto-block] '
         const currentTask = await getTask(depId)
-        const existingNotes = currentTask?.notes ?? ''
-        // Strip any existing auto-block line
-        const userNotes = existingNotes.replace(/^\[auto-block\] .*\n?/, '').trim()
-        const blockNote = `${BLOCK_PREFIX}Blocked by: ${blockedBy.join(', ')}`
-        const newNotes = userNotes ? `${blockNote}\n${userNotes}` : blockNote
-        await updateTask(depId, { notes: newNotes })
+        await updateTask(depId, { notes: buildBlockedNotes(blockedBy, currentTask?.notes ?? null) })
       }
     } catch (err) {
       ;(logger ?? console).warn(`[resolve-dependents] Error resolving dependent ${depId}: ${err}`)
