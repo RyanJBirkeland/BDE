@@ -1,4 +1,5 @@
 import { type NeonAccent, neonVar } from './types';
+import { tokens } from '../../design-system/tokens';
 
 interface NeonProgressProps {
   value: number;
@@ -14,16 +15,16 @@ export function NeonProgress({ value, accent, label }: NeonProgressProps) {
       {label && (
         <div style={{
           color: neonVar(accent, 'color'),
-          fontSize: '10px',
+          fontSize: tokens.size.xs,
           textTransform: 'uppercase',
           letterSpacing: '1px',
-          marginBottom: '6px',
+          marginBottom: tokens.space[1],
           fontWeight: 600,
         }}>{label}</div>
       )}
       <div style={{
         height: '4px',
-        background: 'rgba(255, 255, 255, 0.06)',
+        background: tokens.neon.surfaceDim,
         borderRadius: '2px',
         overflow: 'hidden',
       }}>
