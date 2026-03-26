@@ -16,7 +16,7 @@ import { AgentList } from '../components/agents/AgentList'
 import { AgentConsole } from '../components/agents/AgentConsole'
 import { LiveActivityStrip } from '../components/agents/LiveActivityStrip'
 import { AgentTimeline } from '../components/agents/AgentTimeline'
-import { SpawnModal } from '../components/agents/SpawnModal'
+import { AgentLaunchpad } from '../components/agents/AgentLaunchpad'
 import { tokens } from '../design-system/tokens'
 import { toast } from '../stores/toasts'
 import { POLL_SESSIONS_INTERVAL } from '../lib/constants'
@@ -32,7 +32,7 @@ export function AgentsView() {
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [spawnOpen, setSpawnOpen] = useState(false)
+  const [showLaunchpad, setShowLaunchpad] = useState(false)
   const cleanupRef = useRef<(() => void) | null>(null)
 
   // Initialize event listener once
@@ -64,7 +64,10 @@ export function AgentsView() {
 
   // Listen for spawn modal trigger from CommandPalette
   useEffect(() => {
-    const handler = (): void => setSpawnOpen(true)
+    const handler = (): void => {
+      setSelectedId(null)
+      setShowLaunchpad(true)
+    }
     window.addEventListener('bde:open-spawn-modal', handler)
     return () => window.removeEventListener('bde:open-spawn-modal', handler)
   }, [])
@@ -103,6 +106,7 @@ export function AgentsView() {
 
   const handleSelectAgent = useCallback((id: string) => {
     setSelectedId(id)
+    setShowLaunchpad(false)
   }, [])
 
   return (
@@ -150,7 +154,10 @@ export function AgentsView() {
               Fleet
             </span>
             <button
-              onClick={() => setSpawnOpen(true)}
+              onClick={() => {
+                setSelectedId(null)
+                setShowLaunchpad(true)
+              }}
               title="Spawn Agent"
               style={{
                 width: 24,
@@ -173,14 +180,21 @@ export function AgentsView() {
           <AgentList
             agents={agents}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelectAgent}
             loading={agentsLoading}
           />
         </div>
 
         {/* Agent Console */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          {selectedAgent ? (
+          {showLaunchpad || (!selectedAgent && agents.length === 0) ? (
+            <AgentLaunchpad
+              onAgentSpawned={() => {
+                setShowLaunchpad(false)
+                fetchAgents()
+              }}
+            />
+          ) : selectedAgent ? (
             <AgentConsole
               agentId={selectedAgent.id}
               onSteer={handleSteer}
@@ -196,9 +210,7 @@ export function AgentsView() {
               fontSize: tokens.size.md,
               fontFamily: 'var(--bde-font-code)',
             }}>
-              {agents.length === 0
-                ? '> No agents yet. Spawn one to get started.'
-                : '> Select an agent to view console.'}
+              {'> Select an agent to view console.'}
             </div>
           )}
         </div>
@@ -206,9 +218,6 @@ export function AgentsView() {
 
       {/* Zone 3: Timeline Waterfall */}
       <AgentTimeline agents={agents} onSelectAgent={handleSelectAgent} />
-
-      {/* Spawn Modal */}
-      <SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />
     </motion.div>
   )
 }
