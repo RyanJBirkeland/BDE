@@ -137,7 +137,9 @@ describe('SprintTaskList', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
-    const backlogFilter = screen.getByText('Backlog')
+    // Use getAllByText since both filter chip and task badge may contain "Backlog"
+    const backlogElements = screen.getAllByText('Backlog')
+    const backlogFilter = backlogElements.find((el) => el.closest('.sprint-task-list__filter-chip'))!
     fireEvent.click(backlogFilter)
 
     expect(screen.getByText('Fix navbar styling bug')).toBeInTheDocument()
@@ -148,7 +150,9 @@ describe('SprintTaskList', () => {
     const onSelectTask = vi.fn()
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
-    const doneFilter = screen.getByText('Done')
+    // Use getAllByText since both the filter chip and task badge may contain "Done"
+    const doneElements = screen.getAllByText('Done')
+    const doneFilter = doneElements.find((el) => el.closest('.sprint-task-list__filter-chip'))!
     fireEvent.click(doneFilter)
 
     expect(screen.getByText('Refactor API endpoints')).toBeInTheDocument()
