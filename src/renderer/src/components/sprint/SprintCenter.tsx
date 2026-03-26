@@ -46,14 +46,16 @@ export function SprintCenter() {
   )
   const loadData = useSprintTasks((s) => s.loadData)
 
-  const { repoFilter, logDrawerTaskId } = useSprintUI(
+  const { repoFilter, logDrawerTaskId, statusFilter } = useSprintUI(
     useShallow((s) => ({
       repoFilter: s.repoFilter,
       logDrawerTaskId: s.logDrawerTaskId,
+      statusFilter: s.statusFilter,
     }))
   )
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
+  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
 
   // --- Extracted hooks ---
   const {
@@ -134,7 +136,7 @@ export function SprintCenter() {
         <div className="sprint-center__sidebar">
           {/* Pipeline */}
           <ErrorBoundary name="CircuitPipeline">
-            <CircuitPipeline tasks={tasks} />
+            <CircuitPipeline tasks={tasks} statusFilter={statusFilter} onStageClick={setStatusFilter} />
           </ErrorBoundary>
 
           {/* Header */}

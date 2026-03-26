@@ -36,7 +36,7 @@ export const VIEW_LABELS: Record<View, string> = {
   dashboard: 'Dashboard',
   agents: 'Agents',
   ide: 'IDE',
-  sprint: 'Sprint',
+  sprint: 'Task Pipeline',
   'pr-station': 'PR Station',
   memory: 'Memory',
   cost: 'Cost',
