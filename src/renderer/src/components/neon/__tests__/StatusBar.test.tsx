@@ -24,4 +24,22 @@ describe('StatusBar', () => {
     const dot = container.querySelector('[data-role="status-dot"]') as HTMLElement;
     expect(dot.style.background).toBe('var(--neon-red)');
   });
+
+  it('accepts accent prop for title color', () => {
+    render(<StatusBar title="Test" status="ok" accent="cyan" />);
+    const titleSpan = screen.getByText('Test');
+    expect(titleSpan.style.color).toBe('var(--neon-cyan)');
+  });
+
+  it('defaults accent to purple', () => {
+    render(<StatusBar title="Test" status="ok" />);
+    const titleSpan = screen.getByText('Test');
+    expect(titleSpan.style.color).toBe('var(--neon-purple)');
+  });
+
+  it('uses neon border token for bottom border', () => {
+    const { container } = render(<StatusBar title="Test" status="ok" accent="cyan" />);
+    const bar = container.firstChild as HTMLElement;
+    expect(bar.style.borderBottom).toContain('var(--neon-cyan-border)');
+  });
 });

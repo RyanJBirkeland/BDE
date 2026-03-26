@@ -1,8 +1,11 @@
 import { type ReactNode } from 'react';
+import { type NeonAccent, neonVar } from './types';
+import { tokens } from '../../design-system/tokens';
 
 interface StatusBarProps {
   title: string;
   status: 'ok' | 'error' | 'warning';
+  accent?: NeonAccent;
   children?: ReactNode;
 }
 
@@ -18,14 +21,14 @@ const STATUS_GLOWS = {
   warning: '0 0 8px var(--neon-orange)',
 } as const;
 
-export function StatusBar({ title, status, children }: StatusBarProps) {
+export function StatusBar({ title, status, accent = 'purple', children }: StatusBarProps) {
   return (
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
-      padding: '8px 16px',
-      borderBottom: '1px solid var(--neon-purple-border)',
+      gap: tokens.space[2],
+      padding: `${tokens.space[2]} ${tokens.space[4]}`,
+      borderBottom: `1px solid ${neonVar(accent, 'border')}`,
     }}>
       <div
         data-role="status-dot"
@@ -39,8 +42,8 @@ export function StatusBar({ title, status, children }: StatusBarProps) {
         }}
       />
       <span style={{
-        color: 'var(--neon-purple)',
-        fontSize: '11px',
+        color: neonVar(accent, 'color'),
+        fontSize: tokens.size.xs,
         textTransform: 'uppercase',
         letterSpacing: '2px',
         fontWeight: 600,
@@ -48,9 +51,9 @@ export function StatusBar({ title, status, children }: StatusBarProps) {
       {children && (
         <span style={{
           marginLeft: 'auto',
-          color: 'rgba(255, 255, 255, 0.3)',
-          fontSize: '10px',
-          fontFamily: 'var(--font-code)',
+          color: tokens.neon.textDim,
+          fontSize: tokens.size.xs,
+          fontFamily: tokens.font.code,
         }}>{children}</span>
       )}
     </div>
