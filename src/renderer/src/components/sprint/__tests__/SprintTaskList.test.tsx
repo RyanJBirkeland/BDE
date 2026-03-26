@@ -119,8 +119,12 @@ describe('SprintTaskList', () => {
     expect(screen.getByText('Tasks')).toBeInTheDocument()
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.getByText('Fix navbar styling bug')).toBeInTheDocument()
-    expect(screen.getByText('Refactor API endpoints')).toBeInTheDocument()
     expect(screen.getByText('Update documentation')).toBeInTheDocument()
+    // Done tasks are collapsed by default — expand to verify
+    const doneEls = screen.getAllByText('Done')
+    const doneGroup = doneEls.find((el) => el.closest('.sprint-task-list__group-header'))!.closest('button')!
+    fireEvent.click(doneGroup)
+    expect(screen.getByText('Refactor API endpoints')).toBeInTheDocument()
   })
 
   it('displays correct task count', () => {
@@ -226,6 +230,10 @@ describe('SprintTaskList', () => {
     render(<SprintTaskList tasks={mockTasks} selectedTaskId={null} onSelectTask={onSelectTask} />)
 
     expect(screen.getByText('#123')).toBeInTheDocument()
+    // #456 is on a done task — expand Done group
+    const doneEls = screen.getAllByText('Done')
+    const doneGroup = doneEls.find((el) => el.closest('.sprint-task-list__group-header'))!.closest('button')!
+    fireEvent.click(doneGroup)
     expect(screen.getByText('#456')).toBeInTheDocument()
   })
 
@@ -254,7 +262,10 @@ describe('SprintTaskList', () => {
 
     // Task 1 has priority 1, should show P1 badge
     expect(screen.getByText('P1')).toBeInTheDocument()
-    // Task 3 has priority 2, should show P2 badge
+    // Task 3 has priority 2 and is done — expand Done group
+    const doneEls = screen.getAllByText('Done')
+    const doneGroup = doneEls.find((el) => el.closest('.sprint-task-list__group-header'))!.closest('button')!
+    fireEvent.click(doneGroup)
     expect(screen.getByText('P2')).toBeInTheDocument()
   })
 })

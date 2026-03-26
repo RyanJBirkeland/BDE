@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Badge } from '../ui/Badge'
 import { Input } from '../ui/Input'
-import { Search, X } from 'lucide-react'
+import { Search, X, ChevronRight } from 'lucide-react'
 import { repoColor, repoBadgeVariant, timeAgo } from '../../lib/format'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { useSprintUI, type StatusFilter } from '../../stores/sprintUI'
@@ -102,12 +102,38 @@ export function matchesSearch(task: SprintTask, query: string): boolean {
   )
 }
 
+/** Status groups config: order, label, and whether collapsed by default */
+const STATUS_GROUPS = [
+  { key: 'inProgress', label: 'In Progress', defaultCollapsed: false },
+  { key: 'awaitingReview', label: 'Awaiting Review', defaultCollapsed: false },
+  { key: 'todo', label: 'Queued', defaultCollapsed: false },
+  { key: 'blocked', label: 'Blocked', defaultCollapsed: false },
+  { key: 'backlog', label: 'Backlog', defaultCollapsed: false },
+  { key: 'done', label: 'Done', defaultCollapsed: true },
+  { key: 'failed', label: 'Failed', defaultCollapsed: true },
+] as const
+
+type GroupKey = typeof STATUS_GROUPS[number]['key']
+
 export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter }: SprintTaskListProps) {
   // Store-backed search & status filter (allows programmatic navigation from Dashboard)
   const searchQuery = useSprintUI((s) => s.searchQuery)
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
   const statusFilter = useSprintUI((s) => s.statusFilter)
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
+
+  // Collapsed state for status groups (when viewing "all")
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    for (const g of STATUS_GROUPS) {
+      initial[g.key] = g.defaultCollapsed
+    }
+    return initial
+  })
+
+  const toggleGroup = useCallback((key: string) => {
+    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
 
   // Local input state for debounced search
   const [localSearch, setLocalSearch] = useState(searchQuery)
@@ -268,52 +294,99 @@ export function SprintTaskList({ tasks, selectedTaskId, onSelectTask, repoFilter
           <div className="sprint-task-list__empty">
             {localSearch ? 'No tasks match your search' : 'No tasks in this category'}
           </div>
-        ) : (
-          sortedTasks.map((task, index) => {
-            const isSelected = task.id === selectedTaskId
+        ) : statusFilter === 'all' && !searchQuery.trim() ? (
+          STATUS_GROUPS.map((group) => {
+            const groupKey = group.key as GroupKey
+            const groupTasks = partition[groupKey] || []
+            if (groupTasks.length === 0) return null
+            const isCollapsed = collapsedGroups[groupKey] ?? group.defaultCollapsed
             return (
-              <button
-                key={task.id}
-                className={`sprint-task-list-item ${isSelected ? 'sprint-task-list-item--selected' : ''}`}
-                onClick={() => onSelectTask(task)}
-                style={{ '--stagger-index': index } as React.CSSProperties}
-              >
-                <div className="sprint-task-list-item__header">
-                  <span
-                    className="sprint-task-list-item__repo-dot"
-                    style={{ background: repoColor(task.repo) }}
-                    title={task.repo}
+              <div key={groupKey} className="sprint-task-list__status-group">
+                <button
+                  className="sprint-task-list__group-header"
+                  onClick={() => toggleGroup(groupKey)}
+                >
+                  <ChevronRight
+                    size={12}
+                    className={`sprint-task-list__group-chevron ${!isCollapsed ? 'sprint-task-list__group-chevron--open' : ''}`}
                   />
-                  <span className="sprint-task-list-item__title">{task.title}</span>
-                </div>
-
-                <div className="sprint-task-list-item__meta">
-                  <Badge variant={getStatusBadgeVariant(task)} size="sm">
-                    {getStatusDisplay(task)}
-                  </Badge>
-                  <Badge variant={repoBadgeVariant(task.repo)} size="sm">
-                    {task.repo}
-                  </Badge>
-                  {task.priority <= 2 && (
-                    <Badge variant="danger" size="sm">
-                      P{task.priority}
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="sprint-task-list-item__footer">
-                  <span className="sprint-task-list-item__time">{timeAgo(task.updated_at)}</span>
-                  {task.pr_number && (
-                    <span className="sprint-task-list-item__pr" title={`PR #${task.pr_number}`}>
-                      #{task.pr_number}
-                    </span>
-                  )}
-                </div>
-              </button>
+                  <span>{group.label}</span>
+                  <span className="sprint-task-list__group-count">{groupTasks.length}</span>
+                </button>
+                {!isCollapsed && groupTasks.map((task, index) => (
+                  <TaskListItem
+                    key={task.id}
+                    task={task}
+                    isSelected={task.id === selectedTaskId}
+                    onSelect={onSelectTask}
+                    index={index}
+                  />
+                ))}
+              </div>
             )
           })
+        ) : (
+          sortedTasks.map((task, index) => (
+            <TaskListItem
+              key={task.id}
+              task={task}
+              isSelected={task.id === selectedTaskId}
+              onSelect={onSelectTask}
+              index={index}
+            />
+          ))
         )}
       </div>
     </div>
+  )
+}
+
+function TaskListItem({
+  task,
+  isSelected,
+  onSelect,
+  index,
+}: {
+  task: SprintTask
+  isSelected: boolean
+  onSelect: (task: SprintTask) => void
+  index: number
+}) {
+  return (
+    <button
+      className={`sprint-task-list-item ${isSelected ? 'sprint-task-list-item--selected' : ''}`}
+      onClick={() => onSelect(task)}
+      style={{ '--stagger-index': index } as React.CSSProperties}
+    >
+      <div className="sprint-task-list-item__header">
+        <span
+          className="sprint-task-list-item__repo-dot"
+          style={{ background: repoColor(task.repo) }}
+          title={task.repo}
+        />
+        <span className="sprint-task-list-item__title">{task.title}</span>
+      </div>
+      <div className="sprint-task-list-item__meta">
+        <Badge variant={getStatusBadgeVariant(task)} size="sm">
+          {getStatusDisplay(task)}
+        </Badge>
+        <Badge variant={repoBadgeVariant(task.repo)} size="sm">
+          {task.repo}
+        </Badge>
+        {task.priority <= 2 && (
+          <Badge variant="danger" size="sm">
+            P{task.priority}
+          </Badge>
+        )}
+      </div>
+      <div className="sprint-task-list-item__footer">
+        <span className="sprint-task-list-item__time">{timeAgo(task.updated_at)}</span>
+        {task.pr_number && (
+          <span className="sprint-task-list-item__pr" title={`PR #${task.pr_number}`}>
+            #{task.pr_number}
+          </span>
+        )}
+      </div>
+    </button>
   )
 }
