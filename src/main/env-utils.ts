@@ -25,9 +25,9 @@ export function buildAgentEnv(): Record<string, string | undefined> {
 
 let _cachedOAuthToken: string | null = null
 let _tokenLoadedAt = 0
-const TOKEN_TTL_MS = 30 * 60 * 1000 // 30 minutes
+const TOKEN_TTL_MS = 5 * 60 * 1000 // 5 minutes — re-read from disk frequently for pipeline runs
 
-/** Reads OAuth token from ~/.bde/oauth-token. Cached for 30 minutes. */
+/** Reads OAuth token from ~/.bde/oauth-token. Cached for 5 minutes. */
 export function getOAuthToken(): string | null {
   const now = Date.now()
   if (_tokenLoadedAt > 0 && now - _tokenLoadedAt < TOKEN_TTL_MS) return _cachedOAuthToken

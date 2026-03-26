@@ -25,13 +25,13 @@ import { runAgent as _runAgent, type RunAgentDeps } from './run-agent'
 import { setSprintQueriesLogger } from '../data/sprint-queries'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoPaths } from '../paths'
-import { refreshOAuthTokenFromKeychain } from '../env-utils'
+import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../env-utils'
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to console
 // ---------------------------------------------------------------------------
 
-import { appendFileSync, readFileSync } from 'node:fs'
+import { appendFileSync, readFileSync, statSync } from 'node:fs'
 import { join as joinPath } from 'node:path'
 import { homedir as home } from 'node:os'
 import { BDE_AGENT_LOG_PATH } from '../paths'
@@ -68,6 +68,22 @@ export async function checkOAuthToken(logger: Logger): Promise<boolean> {
         return false
       }
     }
+
+    // Proactively refresh if token file is older than 45 minutes
+    // (Claude OAuth tokens expire after ~1 hour)
+    try {
+      const stat = statSync(tokenPath)
+      const ageMs = Date.now() - stat.mtimeMs
+      if (ageMs > 45 * 60 * 1000) {
+        logger.info('[agent-manager] Token file older than 45min — proactively refreshing')
+        const refreshed = await refreshOAuthTokenFromKeychain()
+        if (refreshed) {
+          invalidateOAuthToken()
+          logger.info('[agent-manager] OAuth token proactively refreshed from Keychain')
+        }
+      }
+    } catch { /* stat failed — continue with existing token */ }
+
     return true
   } catch {
     logger.warn('[agent-manager] Cannot read OAuth token file — skipping drain cycle')

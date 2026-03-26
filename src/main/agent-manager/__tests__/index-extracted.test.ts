@@ -7,27 +7,33 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('node:fs', async () => {
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
-  return { ...actual, readFileSync: vi.fn() }
+  return { ...actual, readFileSync: vi.fn(), statSync: vi.fn() }
 })
 
 vi.mock('../../env-utils', () => ({
   refreshOAuthTokenFromKeychain: vi.fn(),
+  invalidateOAuthToken: vi.fn(),
 }))
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { checkOAuthToken, handleWatchdogVerdict } from '../index'
 import { makeConcurrencyState, type ConcurrencyState } from '../concurrency'
-import { refreshOAuthTokenFromKeychain } from '../../env-utils'
+import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../../env-utils'
 import type { Logger } from '../types'
 
 const readFileMock = vi.mocked(readFileSync)
+const statSyncMock = vi.mocked(statSync)
 
 function makeLogger(): Logger & { info: ReturnType<typeof vi.fn>; warn: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> } {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }
 
 describe('checkOAuthToken', () => {
-  beforeEach(() => { vi.clearAllMocks() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Default: token file is recent (1 minute old) — no age-based refresh
+    statSyncMock.mockReturnValue({ mtimeMs: Date.now() - 60_000 } as ReturnType<typeof statSync>)
+  })
 
   it('returns true when token file has valid content (>= 20 chars)', async () => {
     readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
@@ -70,6 +76,33 @@ describe('checkOAuthToken', () => {
     readFileMock.mockReturnValue('                    ')
     vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(false)
     expect(await checkOAuthToken(makeLogger())).toBe(false)
+  })
+
+  it('proactively refreshes when token file is older than 45 minutes', async () => {
+    readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
+    statSyncMock.mockReturnValue({ mtimeMs: Date.now() - 46 * 60_000 } as ReturnType<typeof statSync>)
+    vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(true)
+    const logger = makeLogger()
+    expect(await checkOAuthToken(logger)).toBe(true)
+    expect(refreshOAuthTokenFromKeychain).toHaveBeenCalled()
+    expect(invalidateOAuthToken).toHaveBeenCalled()
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('proactively refreshed'))
+  })
+
+  it('does not proactively refresh when token file is recent (< 45 minutes)', async () => {
+    readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
+    statSyncMock.mockReturnValue({ mtimeMs: Date.now() - 10 * 60_000 } as ReturnType<typeof statSync>)
+    const logger = makeLogger()
+    expect(await checkOAuthToken(logger)).toBe(true)
+    expect(refreshOAuthTokenFromKeychain).not.toHaveBeenCalled()
+  })
+
+  it('continues with existing token when stat fails during age check', async () => {
+    readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
+    statSyncMock.mockImplementation(() => { throw new Error('stat failed') })
+    const logger = makeLogger()
+    expect(await checkOAuthToken(logger)).toBe(true)
+    expect(logger.warn).not.toHaveBeenCalled()
   })
 })
 

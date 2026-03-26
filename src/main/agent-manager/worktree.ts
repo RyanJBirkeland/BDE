@@ -76,11 +76,66 @@ function releaseLock(worktreeBase: string, repoPath: string): void {
   }
 }
 
+/**
+ * Unconditionally removes any stale worktree path and branch.
+ * Idempotent — safe to call even if nothing stale exists.
+ * Agent branches are throwaway — never tries to push before deleting.
+ */
+async function nukeStaleState(
+  repoPath: string,
+  worktreePath: string,
+  branch: string,
+  env: Record<string, string | undefined>,
+  log: Logger | Console,
+): Promise<void> {
+  // Remove any worktree that references this branch (may be at a different path)
+  try {
+    const { stdout: wtList } = await execFileAsync(
+      'git', ['worktree', 'list', '--porcelain'], { cwd: repoPath, env }
+    )
+    for (const block of wtList.split('\n\n')) {
+      if (block.includes(`branch refs/heads/${branch}`)) {
+        const pathLine = block.split('\n').find(l => l.startsWith('worktree '))
+        if (pathLine) {
+          const stalePath = pathLine.replace('worktree ', '')
+          log.warn(`[worktree] Removing stale worktree at ${stalePath} for branch ${branch}`)
+          try {
+            await execFileAsync('git', ['worktree', 'remove', '--force', stalePath], { cwd: repoPath, env })
+          } catch {
+            try { rmSync(stalePath, { recursive: true, force: true }) } catch { /* best effort */ }
+          }
+        }
+      }
+    }
+  } catch { /* worktree list failed — continue */ }
+
+  // Remove the target worktree path if it exists (from a previous run at this exact path)
+  if (existsSync(worktreePath)) {
+    try {
+      await execFileAsync('git', ['worktree', 'remove', '--force', worktreePath], { cwd: repoPath, env })
+    } catch {
+      rmSync(worktreePath, { recursive: true, force: true })
+    }
+  }
+
+  // Prune stale worktree references from git's tracking
+  try {
+    await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env })
+  } catch { /* best effort */ }
+
+  // Delete the branch if it exists (no push — agent branches are throwaway)
+  try {
+    await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
+  } catch { /* branch doesn't exist — fine */ }
+}
+
 export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger }): Promise<SetupWorktreeResult> {
   const { repoPath, worktreeBase, taskId, title, logger } = opts
   const branch = branchNameForTask(title, taskId)
   const repoDir = path.join(worktreeBase, repoSlug(repoPath))
   const worktreePath = path.join(repoDir, taskId)
+  const env = buildAgentEnv()
+  const log = logger ?? console
 
   mkdirSync(repoDir, { recursive: true })
 
@@ -93,68 +148,18 @@ export async function setupWorktree(opts: SetupWorktreeOpts & { logger?: Logger 
   }
 
   try {
-    await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: buildAgentEnv() })
+    // Step 1: Unconditionally clean any stale state for this task/branch.
+    // This runs BEFORE attempting creation — not in an error handler.
+    // Agent branches are throwaway; never try to preserve commits.
+    await nukeStaleState(repoPath, worktreePath, branch, env, log)
+
+    // Step 2: Create fresh worktree + branch
+    await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env })
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err)
-    if (!errMsg.includes('already exists')) {
-      // Non-recoverable error — clean up and throw
-      try { await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env: buildAgentEnv() }) } catch { /* best effort */ }
-      try { rmSync(worktreePath, { recursive: true, force: true }) } catch { /* best effort */ }
-      releaseLock(worktreeBase, repoPath)
-      throw err
-    }
-
-    // Stale worktree or branch from a previous failed run — force-clean everything and retry.
-    // Agent branches are throwaway — never try to push before deleting.
-    ;(logger ?? console).warn(`[worktree] Stale worktree/branch "${branch}" — force-cleaning and retrying`)
-
-    try {
-      // Step 1: Force-remove any worktree referencing this branch (may be at a different path)
-      try {
-        const { stdout: wtList } = await execFileAsync(
-          'git', ['worktree', 'list', '--porcelain'],
-          { cwd: repoPath, env: buildAgentEnv() }
-        )
-        const lines = wtList.split('\n')
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].startsWith('worktree ') && lines[i + 1]?.includes(branch)) {
-            const stalePath = lines[i].replace('worktree ', '')
-            ;(logger ?? console).warn(`[worktree] Force-removing stale worktree at ${stalePath}`)
-            try {
-              await execFileAsync('git', ['worktree', 'remove', '--force', stalePath], { cwd: repoPath, env: buildAgentEnv() })
-            } catch {
-              try { rmSync(stalePath, { recursive: true, force: true }) } catch { /* best effort */ }
-            }
-          }
-        }
-      } catch { /* list failed — continue with other cleanup */ }
-
-      // Step 2: Force-remove the target worktree path if it exists
-      if (existsSync(worktreePath)) {
-        try {
-          await execFileAsync('git', ['worktree', 'remove', '--force', worktreePath], { cwd: repoPath, env: buildAgentEnv() })
-        } catch {
-          rmSync(worktreePath, { recursive: true, force: true })
-        }
-      }
-
-      // Step 3: Prune all stale worktree references
-      await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env: buildAgentEnv() })
-
-      // Step 4: Delete the stale branch (no push — agent branches are throwaway)
-      try {
-        await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env: buildAgentEnv() })
-      } catch {
-        // Branch may not exist (only path was stale) — that's fine
-      }
-
-      // Step 5: Retry the worktree creation
-      await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], { cwd: repoPath, env: buildAgentEnv() })
-    } catch (retryErr) {
-      try { rmSync(worktreePath, { recursive: true, force: true }) } catch { /* best effort */ }
-      releaseLock(worktreeBase, repoPath)
-      throw retryErr
-    }
+    // Clean up on failure
+    try { rmSync(worktreePath, { recursive: true, force: true }) } catch { /* best effort */ }
+    releaseLock(worktreeBase, repoPath)
+    throw err
   }
 
   releaseLock(worktreeBase, repoPath)

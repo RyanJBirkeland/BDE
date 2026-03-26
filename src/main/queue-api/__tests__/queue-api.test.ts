@@ -76,6 +76,14 @@ vi.mock('../../spec-semantic-check', () => ({
 }))
 
 // ---------------------------------------------------------------------------
+// Mock resolve-dependents — dependency resolution after terminal transitions
+// ---------------------------------------------------------------------------
+const mockResolveDependents = vi.fn().mockResolvedValue(undefined)
+vi.mock('../../agent-manager/resolve-dependents', () => ({
+  resolveDependents: (...args: unknown[]) => mockResolveDependents(...args),
+}))
+
+// ---------------------------------------------------------------------------
 // Start server on a random port for tests
 // ---------------------------------------------------------------------------
 import { startQueueApi, stopQueueApi } from '../server'
@@ -415,6 +423,46 @@ describe('Queue API', () => {
         status: 'done',
       })
       expect(status).toBe(404)
+    })
+
+    it('calls resolveDependents after transitioning to done', async () => {
+      mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'done' })
+      mockGetTasksWithDependencies.mockResolvedValue([])
+
+      const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'done' })
+      expect(status).toBe(200)
+
+      // Give the async post-response work time to complete
+      await new Promise((r) => setTimeout(r, 50))
+      expect(mockResolveDependents).toHaveBeenCalledWith(
+        'abc', 'done', expect.anything(), expect.anything(), expect.anything(), console
+      )
+    })
+
+    it('calls resolveDependents for all terminal statuses', async () => {
+      for (const terminalStatus of ['done', 'failed', 'error', 'cancelled']) {
+        mockResolveDependents.mockClear()
+        mockUpdateTask.mockResolvedValue({ id: 'abc', status: terminalStatus })
+        mockGetTasksWithDependencies.mockResolvedValue([])
+
+        const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: terminalStatus })
+        expect(status).toBe(200)
+
+        await new Promise((r) => setTimeout(r, 50))
+        expect(mockResolveDependents).toHaveBeenCalledWith(
+          'abc', terminalStatus, expect.anything(), expect.anything(), expect.anything(), console
+        )
+      }
+    })
+
+    it('does not call resolveDependents for non-terminal status transitions', async () => {
+      mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'active' })
+
+      const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'active' })
+      expect(status).toBe(200)
+
+      await new Promise((r) => setTimeout(r, 50))
+      expect(mockResolveDependents).not.toHaveBeenCalled()
     })
   })
 
