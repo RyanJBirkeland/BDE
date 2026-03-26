@@ -1,6 +1,6 @@
-// src/renderer/src/components/neon/NeonCard.tsx
 import { type ReactNode } from 'react';
 import { type NeonAccent, neonVar } from './types';
+import { tokens } from '../../design-system/tokens';
 
 interface NeonCardProps {
   accent?: NeonAccent;
@@ -26,15 +26,15 @@ export function NeonCard({
     '--card-accent-border': neonVar(accent, 'border'),
     '--card-accent-surface': neonVar(accent, 'surface'),
     '--card-accent-glow': neonVar(accent, 'glow'),
-    background: `linear-gradient(135deg, ${neonVar(accent, 'surface')}, rgba(10, 0, 21, 0.6))`,
+    background: `linear-gradient(135deg, ${neonVar(accent, 'surface')}, ${tokens.neon.surfaceDeep})`,
     border: `1px solid ${neonVar(accent, 'border')}`,
-    borderRadius: '14px',
+    borderRadius: tokens.radius.xl,
     backdropFilter: 'var(--neon-glass-blur)',
     WebkitBackdropFilter: 'var(--neon-glass-blur)',
     boxShadow: `var(--neon-glass-shadow), var(--neon-glass-edge)`,
-    padding: title ? '0' : '14px',
+    padding: title ? '0' : tokens.space[3],
     overflow: 'hidden',
-    transition: 'box-shadow 150ms ease, transform 150ms ease',
+    transition: `box-shadow ${tokens.transition.base}, transform ${tokens.transition.base}`,
     ...style,
   } as React.CSSProperties;
 
@@ -44,14 +44,14 @@ export function NeonCard({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          padding: '10px 14px',
+          gap: tokens.space[2],
+          padding: `${tokens.space[2]} ${tokens.space[3]}`,
           borderBottom: `1px solid ${neonVar(accent, 'border')}`,
         }}>
           {icon && <span style={{ color: neonVar(accent, 'color'), display: 'flex' }}>{icon}</span>}
           <span style={{
             color: neonVar(accent, 'color'),
-            fontSize: '10px',
+            fontSize: tokens.size.xs,
             textTransform: 'uppercase',
             letterSpacing: '1px',
             fontWeight: 600,
@@ -59,7 +59,7 @@ export function NeonCard({
           {action && <span style={{ marginLeft: 'auto' }}>{action}</span>}
         </div>
       )}
-      <div style={{ padding: title ? '14px' : '0' }}>
+      <div style={{ padding: title ? tokens.space[3] : '0' }}>
         {children}
       </div>
     </div>
