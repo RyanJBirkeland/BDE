@@ -27,6 +27,7 @@ export interface RunAgentTask {
   retry_count: number
   fast_fail_count: number
   playground_enabled?: boolean
+  max_runtime_ms?: number | null
 }
 
 export interface RunAgentDeps {
@@ -189,6 +190,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     costUsd: 0,
     tokensIn: 0,
     tokensOut: 0,
+    maxRuntimeMs: task.max_runtime_ms ?? null,
   }
   activeAgents.set(task.id, agent)
   let lastAgentOutput = ''
