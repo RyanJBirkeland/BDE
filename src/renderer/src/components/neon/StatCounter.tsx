@@ -1,4 +1,5 @@
 import { type NeonAccent, neonVar } from './types';
+import { tokens } from '../../design-system/tokens';
 
 interface StatCounterProps {
   label: string;
@@ -17,18 +18,18 @@ export function StatCounter({ label, value, accent, suffix, trend, icon }: StatC
     <div style={{
       background: neonVar(accent, 'surface'),
       border: `1px solid ${neonVar(accent, 'border')}`,
-      borderRadius: '10px',
-      padding: '12px',
+      borderRadius: tokens.radius.lg,
+      padding: tokens.space[3],
     }}>
       <div data-role="stat-label" style={{
         color: neonVar(accent, 'color'),
-        fontSize: '9px',
+        fontSize: tokens.size.xs,
         textTransform: 'uppercase',
         letterSpacing: '1.5px',
         fontWeight: 600,
         display: 'flex',
         alignItems: 'center',
-        gap: '4px',
+        gap: tokens.space[1],
       }}>
         {icon}
         {label}
@@ -36,19 +37,19 @@ export function StatCounter({ label, value, accent, suffix, trend, icon }: StatC
       <div style={{
         display: 'flex',
         alignItems: 'baseline',
-        gap: '4px',
-        marginTop: '4px',
+        gap: tokens.space[1],
+        marginTop: tokens.space[1],
       }}>
         <span style={{
-          color: '#fff',
-          fontSize: '22px',
+          color: tokens.neon.text,
+          fontSize: tokens.size.xxl,
           fontWeight: 800,
           textShadow: neonVar(accent, 'glow'),
         }}>{value}</span>
         {suffix && (
           <span style={{
             color: neonVar(accent, 'color'),
-            fontSize: '10px',
+            fontSize: tokens.size.xs,
             opacity: 0.6,
           }}>{suffix}</span>
         )}
@@ -56,8 +57,8 @@ export function StatCounter({ label, value, accent, suffix, trend, icon }: StatC
       {trend && (
         <div style={{
           color: trend.direction === 'down' ? 'var(--neon-cyan)' : 'var(--neon-red)',
-          fontSize: '10px',
-          marginTop: '4px',
+          fontSize: tokens.size.xs,
+          marginTop: tokens.space[1],
           opacity: 0.7,
         }}>
           {trend.direction === 'down' ? '↓' : '↑'} {trend.label}
