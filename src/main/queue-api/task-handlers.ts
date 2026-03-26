@@ -18,7 +18,7 @@ import type { StatusUpdateRequest, ClaimRequest } from '../../shared/queue-api-c
 import { STATUS_UPDATE_FIELDS, RUNNER_WRITABLE_STATUSES, GENERAL_PATCH_FIELDS } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
 import { detectCycle } from '../agent-manager/dependency-index'
-import { buildBlockedNotes } from '../agent-manager/dependency-helpers'
+import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
 import type { TaskDependency } from '../../shared/types'
 import { validateStructural } from '../../shared/spec-validation'
 import { checkSpecSemantic } from '../spec-semantic-check'
@@ -203,26 +203,16 @@ export async function handleCreateTask(
   // Auto-block tasks with unsatisfied hard dependencies before creation
   // (matches sprint:create IPC behavior — check deps, set status=blocked if needed)
   const createInput = body as Record<string, unknown>
-  const dependsOn = createInput.depends_on as Array<{ id: string; type: string }> | undefined
+  const dependsOn = createInput.depends_on as Array<{ id: string; type: 'hard' | 'soft' }> | undefined
   if (dependsOn && dependsOn.length > 0 && (createInput.status === 'queued' || !createInput.status)) {
-    try {
-      const { createDependencyIndex } = await import('../agent-manager/dependency-index')
-      const { listTasks } = await import('../data/sprint-queries')
-      const idx = createDependencyIndex()
-      const allTasks = await listTasks()
-      const statusMap = new Map(allTasks.map((t: { id: string; status: string }) => [t.id, t.status]))
-      const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
-        'new-task',
-        dependsOn as Array<{ id: string; type: 'hard' | 'soft' }>,
-        (depId: string) => statusMap.get(depId),
-      )
-      if (!satisfied && blockedBy.length > 0) {
-        createInput.status = 'blocked'
-        createInput.notes = buildBlockedNotes(blockedBy, createInput.notes as string | null)
-      }
-    } catch (err) {
-      console.warn(`[queue-api] Auto-block check failed:`, err)
-      // Non-fatal — drain loop has defense-in-depth auto-blocking
+    const { shouldBlock, blockedBy } = await checkTaskDependencies(
+      'new-task',
+      dependsOn,
+      console,
+    )
+    if (shouldBlock) {
+      createInput.status = 'blocked'
+      createInput.notes = buildBlockedNotes(blockedBy, createInput.notes as string | null)
     }
   }
 

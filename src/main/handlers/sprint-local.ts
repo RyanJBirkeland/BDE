@@ -6,7 +6,7 @@ import { validateStructural } from '../../shared/spec-validation'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
 import { notifySprintMutation } from './sprint-listeners'
-import { buildBlockedNotes } from '../agent-manager/dependency-helpers'
+import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
 import {
   generatePrompt,
   validateSpecPath,
@@ -114,16 +114,12 @@ export function registerSprintLocalHandlers(): void {
 
     // Check if task has dependencies and should be auto-blocked
     if (task.depends_on && task.depends_on.length > 0 && (task.status === 'queued' || !task.status)) {
-      const { createDependencyIndex } = await import('../agent-manager/dependency-index')
-      const idx = createDependencyIndex()
-      const allTasks = await _listTasks()
-      const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-      const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
+      const { shouldBlock, blockedBy } = await checkTaskDependencies(
         'new-task',
         task.depends_on,
-        (depId) => statusMap.get(depId),
+        console,
       )
-      if (!satisfied && blockedBy.length > 0) {
+      if (shouldBlock) {
         task = {
           ...task,
           status: 'blocked',
@@ -169,18 +165,12 @@ export function registerSprintLocalHandlers(): void {
       // Dependency check (existing logic)
       const taskDeps = task.depends_on
       if (taskDeps && taskDeps.length > 0) {
-        const { createDependencyIndex } = await import(
-          '../agent-manager/dependency-index'
-        )
-        const idx = createDependencyIndex()
-        const allTasks = await _listTasks()
-        const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-        const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
+        const { shouldBlock, blockedBy } = await checkTaskDependencies(
           id,
           taskDeps,
-          (depId) => statusMap.get(depId),
+          console,
         )
-        if (!satisfied && blockedBy.length > 0) {
+        if (shouldBlock) {
           // Auto-block and record which dependencies are blocking, preserving user notes
           patch = {
             ...patch,
