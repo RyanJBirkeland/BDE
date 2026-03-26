@@ -64,32 +64,19 @@ describe('pairEvents', () => {
     })
   })
 
-  it('passes text events through as text blocks', () => {
+  it('merges consecutive text events into single text block', () => {
     const events: AgentEvent[] = [
-      {
-        type: 'agent:text',
-        text: 'Hello from agent',
-        timestamp: 3000
-      },
-      {
-        type: 'agent:text',
-        text: 'Another message',
-        timestamp: 3100
-      }
+      { type: 'agent:text', text: 'Hello from agent', timestamp: 3000 },
+      { type: 'agent:text', text: 'Another message', timestamp: 3100 }
     ]
 
     const blocks = pairEvents(events)
 
-    expect(blocks).toHaveLength(2)
+    expect(blocks).toHaveLength(1)
     expect(blocks[0]).toEqual({
       type: 'text',
-      text: 'Hello from agent',
+      text: 'Hello from agent\nAnother message',
       timestamp: 3000
-    })
-    expect(blocks[1]).toEqual({
-      type: 'text',
-      text: 'Another message',
-      timestamp: 3100
     })
   })
 
@@ -177,6 +164,48 @@ describe('pairEvents', () => {
     expect(blocks[1].type).toBe('stderr')
     expect(blocks[2].type).toBe('text')
     expect(blocks[3].type).toBe('stderr')
+  })
+
+  it('merges consecutive text blocks into single block', () => {
+    const events: AgentEvent[] = [
+      { type: 'agent:text', text: 'First line', timestamp: 3000 },
+      { type: 'agent:text', text: 'Second line', timestamp: 3100 },
+      { type: 'agent:text', text: 'Third line', timestamp: 3200 },
+    ]
+
+    const blocks = pairEvents(events)
+
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0]).toEqual({
+      type: 'text',
+      text: 'First line\nSecond line\nThird line',
+      timestamp: 3000,
+    })
+  })
+
+  it('does not merge text blocks separated by other event types', () => {
+    const events: AgentEvent[] = [
+      { type: 'agent:text', text: 'Before', timestamp: 3000 },
+      { type: 'agent:tool_call', tool: 'Bash', summary: 'Run ls', timestamp: 3100 },
+      { type: 'agent:text', text: 'After', timestamp: 3200 },
+    ]
+
+    const blocks = pairEvents(events)
+
+    expect(blocks).toHaveLength(3)
+    expect(blocks[0]).toEqual({ type: 'text', text: 'Before', timestamp: 3000 })
+    expect(blocks[2]).toEqual({ type: 'text', text: 'After', timestamp: 3200 })
+  })
+
+  it('preserves single text block without modification', () => {
+    const events: AgentEvent[] = [
+      { type: 'agent:text', text: 'Only one', timestamp: 3000 },
+    ]
+
+    const blocks = pairEvents(events)
+
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0]).toEqual({ type: 'text', text: 'Only one', timestamp: 3000 })
   })
 
   it('handles mixed event types correctly', () => {

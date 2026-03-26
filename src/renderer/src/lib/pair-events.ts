@@ -140,5 +140,16 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
     }
   }
 
-  return blocks
+  // Merge consecutive text blocks into single grouped blocks
+  const merged: ChatBlock[] = []
+  for (const block of blocks) {
+    const prev = merged[merged.length - 1]
+    if (block.type === 'text' && prev?.type === 'text') {
+      prev.text += '\n' + block.text
+    } else {
+      merged.push(block)
+    }
+  }
+
+  return merged
 }
