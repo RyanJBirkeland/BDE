@@ -7,6 +7,7 @@ import { ReadinessChecks } from './ReadinessChecks'
 import { WorkbenchActions } from './WorkbenchActions'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { REPO_OPTIONS } from '../../lib/constants'
+import { toast } from '../../stores/toasts'
 
 const PRIORITY_OPTIONS = [
   { label: 'P1 Critical', value: 1 },
@@ -202,6 +203,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
           }
         }
         resetForm()
+        toast.success(mode === 'edit' && taskId ? 'Task updated' : 'Task created')
       } finally {
         setSubmitting(false)
       }
@@ -281,6 +283,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
         templateHint: 'feature'
       })
       if (result.spec) setField('spec', result.spec)
+    } catch {
+      toast.error('Failed to generate spec')
     } finally {
       setGenerating(false)
     }
