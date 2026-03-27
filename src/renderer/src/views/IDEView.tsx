@@ -14,6 +14,7 @@ import { IDEEmptyState } from '../components/ide/IDEEmptyState'
 import { useUnsavedDialog, UnsavedDialogModal } from '../components/ide/UnsavedDialog'
 import { clearTerminal } from '../components/terminal/TerminalPane'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { toast } from '../stores/toasts'
 import '../assets/ide-neon.css'
 
 export function IDEView(): React.JSX.Element {
@@ -117,8 +118,12 @@ export function IDEView(): React.JSX.Element {
     if (!activeTab) return
     const content = fileContents[activeTab.filePath]
     if (content === undefined) return
-    await window.api.writeFile(activeTab.filePath, content)
-    setDirty(activeTab.id, false)
+    try {
+      await window.api.writeFile(activeTab.filePath, content)
+      setDirty(activeTab.id, false)
+    } catch (err) {
+      toast.error(`Save failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }, [activeTab, fileContents, setDirty])
 
   const handleContentChange = useCallback(
