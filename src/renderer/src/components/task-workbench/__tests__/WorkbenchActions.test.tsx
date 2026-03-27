@@ -219,4 +219,31 @@ describe('WorkbenchActions', () => {
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Launch')).toBeDisabled()
   })
+
+  it('Queue Now enabled when advisory checks are warn status (test profile)', () => {
+    useTaskWorkbenchStore.setState({
+      specType: 'test',
+      structuralChecks: [
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'spec-present', label: 'Spec', tier: 1, status: 'warn', message: 'Short spec (advisory)' },
+        { id: 'spec-structure', label: 'Structure', tier: 1, status: 'warn', message: 'No headings (advisory)' }
+      ]
+    })
+    render(<WorkbenchActions {...defaultProps} />)
+    expect(screen.getByText('Queue Now')).not.toBeDisabled()
+  })
+
+  it('Queue Now disabled when required checks fail (feature profile)', () => {
+    useTaskWorkbenchStore.setState({
+      specType: 'feature',
+      structuralChecks: [
+        { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'repo-selected', label: 'Repo', tier: 1, status: 'pass', message: 'OK' },
+        { id: 'spec-present', label: 'Spec', tier: 1, status: 'fail', message: 'Too short' }
+      ]
+    })
+    render(<WorkbenchActions {...defaultProps} />)
+    expect(screen.getByText('Queue Now')).toBeDisabled()
+  })
 })

@@ -468,7 +468,7 @@ export interface WorkbenchChannels {
     result: { spec: string }
   }
   'workbench:checkSpec': {
-    args: [input: { title: string; repo: string; spec: string }]
+    args: [input: { title: string; repo: string; spec: string; specType?: string | null }]
     result: {
       clarity: { status: 'pass' | 'warn' | 'fail'; message: string }
       scope: { status: 'pass' | 'warn' | 'fail'; message: string }

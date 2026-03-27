@@ -64,7 +64,8 @@ export const UPDATE_ALLOWLIST = new Set([
   'depends_on',
   'playground_enabled',
   'needs_review',
-  'max_runtime_ms'
+  'max_runtime_ms',
+  'spec_type'
 ])
 
 export interface QueueStats {

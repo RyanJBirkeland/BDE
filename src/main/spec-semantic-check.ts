@@ -3,6 +3,7 @@
  * Uses the Agent SDK for reliable Claude API access.
  */
 import { buildAgentEnv } from './env-utils'
+import { getValidationProfile, type SpecType } from '../shared/spec-validation'
 
 export interface SemanticCheckResult {
   clarity: { status: 'pass' | 'warn' | 'fail'; message: string }
@@ -63,13 +64,23 @@ export async function checkSpecSemantic(input: {
   title: string
   repo: string
   spec: string
+  specType?: SpecType | null
 }): Promise<SemanticCheckSummary> {
+  const profile = getValidationProfile(input.specType ?? null)
+  const runClarity = profile.clarity.behavior !== 'skip'
+  const runScope = profile.scope.behavior !== 'skip'
+  const runFiles = profile.filesExist.behavior !== 'skip'
+
+  const typeContext = input.specType
+    ? `\nTask type: ${input.specType}. Adjust expectations accordingly — ${input.specType} tasks may have different structure/scope requirements than feature tasks.`
+    : ''
+
   const prompt = `You are reviewing a coding agent spec for quality. Return ONLY valid JSON (no markdown fencing).
 
 Title: "${input.title}"
 Repo: ${input.repo}
 Spec:
-${input.spec}
+${input.spec}${typeContext}
 
 Assess the spec on three dimensions. For each, return status ("pass", "warn", or "fail") and a brief message.
 
@@ -90,6 +101,15 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
         status: 'warn',
         message: 'Unable to assess'
       }
+    }
+    if (!runClarity) {
+      results.clarity = { status: 'pass', message: 'Skipped (not required for this task type)' }
+    }
+    if (!runScope) {
+      results.scope = { status: 'pass', message: 'Skipped (not required for this task type)' }
+    }
+    if (!runFiles) {
+      results.filesExist = { status: 'pass', message: 'Skipped (not required for this task type)' }
     }
   } catch {
     // If SDK is unavailable, degrade to pass-through (don't block queuing)

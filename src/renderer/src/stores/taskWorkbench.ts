@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { SprintTask, TaskDependency } from '../../../shared/types'
+import type { SpecType } from '../../../shared/spec-validation'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,6 +34,7 @@ interface TaskWorkbenchState {
   advancedOpen: boolean
   dependsOn: TaskDependency[]
   playgroundEnabled: boolean
+  specType: SpecType | null
 
   // --- Copilot ---
   copilotVisible: boolean
@@ -51,6 +53,7 @@ interface TaskWorkbenchState {
 
   // --- Actions ---
   setField: (field: string, value: unknown) => void
+  setSpecType: (type: SpecType | null) => void
   resetForm: () => void
   loadTask: (task: SprintTask) => void
   toggleCopilot: () => void
@@ -89,6 +92,7 @@ function defaults(): Pick<
   | 'advancedOpen'
   | 'dependsOn'
   | 'playgroundEnabled'
+  | 'specType'
   | 'copilotVisible'
   | 'copilotMessages'
   | 'copilotLoading'
@@ -112,6 +116,7 @@ function defaults(): Pick<
     advancedOpen: false,
     dependsOn: [],
     playgroundEnabled: false,
+    specType: null,
     copilotVisible: true,
     copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
     copilotLoading: false,
@@ -135,6 +140,8 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
 
   setField: (field, value) => set({ [field]: value } as Partial<TaskWorkbenchState>),
 
+  setSpecType: (type) => set({ specType: type }),
+
   resetForm: () => set(defaults()),
 
   loadTask: (task) =>
@@ -148,6 +155,7 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       taskTemplateName: task.template_name ?? '',
       dependsOn: task.depends_on ?? [],
       playgroundEnabled: task.playground_enabled ?? false,
+      specType: (task.spec_type as SpecType) ?? null,
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
       streamingMessageId: null,
       activeStreamId: null,

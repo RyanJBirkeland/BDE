@@ -243,7 +243,7 @@ const api = {
     }) => typedInvoke('workbench:chat', input),
     generateSpec: (input: { title: string; repo: string; templateHint: string }) =>
       typedInvoke('workbench:generateSpec', input),
-    checkSpec: (input: { title: string; repo: string; spec: string }) =>
+    checkSpec: (input: { title: string; repo: string; spec: string; specType?: string | null }) =>
       typedInvoke('workbench:checkSpec', input),
     checkOperational: (input: { repo: string }) => typedInvoke('workbench:checkOperational', input),
     researchRepo: (input: { query: string; repo: string }) =>

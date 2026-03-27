@@ -28,6 +28,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   const mode = useTaskWorkbenchStore((s) => s.mode)
   const taskId = useTaskWorkbenchStore((s) => s.taskId)
   const spec = useTaskWorkbenchStore((s) => s.spec)
+  const specType = useTaskWorkbenchStore((s) => s.specType)
   const dependsOn = useTaskWorkbenchStore((s) => s.dependsOn)
   const playgroundEnabled = useTaskWorkbenchStore((s) => s.playgroundEnabled)
   const setField = useTaskWorkbenchStore((s) => s.setField)
@@ -39,6 +40,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [showQueueConfirm, setShowQueueConfirm] = useState(false)
+  const [queueConfirmMessage, setQueueConfirmMessage] = useState('')
   const titleRef = useRef<HTMLInputElement>(null)
 
   useReadinessChecks()
@@ -54,7 +56,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
 
     const timer = setTimeout(async () => {
       try {
-        const result = await window.api.workbench.checkSpec({ title, repo, spec })
+        const result = await window.api.workbench.checkSpec({ title, repo, spec, specType })
         setSemanticChecks([
           {
             id: 'clarity',
@@ -88,7 +90,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     }, 2000)
 
     return () => clearTimeout(timer)
-  }, [spec, title, repo, setSemanticChecks])
+  }, [spec, title, repo, specType, setSemanticChecks])
 
   useEffect(() => {
     const t = setTimeout(() => titleRef.current?.focus(), 100)
@@ -149,9 +151,17 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
             return
           }
 
-          // Warn if any operational check has warnings
-          const hasWarnings = opChecks.some((c) => c.status === 'warn')
-          if (hasWarnings) {
+          // Collect ALL warnings: operational + advisory structural/semantic
+          const allStructural = useTaskWorkbenchStore.getState().structuralChecks
+          const allSemantic = useTaskWorkbenchStore.getState().semanticChecks
+          const advisoryWarnings = [...allStructural, ...allSemantic].filter((c) => c.status === 'warn')
+          const opWarnings = opChecks.filter((c) => c.status === 'warn')
+          const allWarnings = [...advisoryWarnings, ...opWarnings]
+          if (allWarnings.length > 0) {
+            const lines = allWarnings.map((c) => `• ${c.label}: ${c.message}`)
+            setQueueConfirmMessage(
+              `The following checks have warnings:\n\n${lines.join('\n')}\n\nQueue anyway?`
+            )
             useTaskWorkbenchStore.setState({ checksExpanded: true })
             setShowQueueConfirm(true)
             setSubmitting(false)
@@ -160,6 +170,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
         }
 
         // Proceed with create/update
+        const specType = useTaskWorkbenchStore.getState().specType
         if (mode === 'edit' && taskId) {
           await updateTask(taskId, {
             title,
@@ -168,7 +179,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
             spec,
             depends_on: dependsOn.length > 0 ? dependsOn : null,
             playground_enabled: playgroundEnabled || undefined,
-            status: action === 'queue' ? 'queued' : 'backlog'
+            status: action === 'queue' ? 'queued' : 'backlog',
+            spec_type: specType ?? undefined
           })
         } else {
           const input: CreateTicketInput = {
@@ -178,7 +190,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
             spec,
             priority,
             depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-            playground_enabled: playgroundEnabled || undefined
+            playground_enabled: playgroundEnabled || undefined,
+            spec_type: specType ?? undefined
           }
           await createTask(input)
           // createTask hardcodes status=backlog. If queuing, find and update.
@@ -213,6 +226,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
     setShowQueueConfirm(false)
     setSubmitting(true)
     try {
+      const specType = useTaskWorkbenchStore.getState().specType
       if (mode === 'edit' && taskId) {
         await updateTask(taskId, {
           title,
@@ -221,7 +235,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
           spec,
           depends_on: dependsOn.length > 0 ? dependsOn : null,
           playground_enabled: playgroundEnabled || undefined,
-          status: 'queued'
+          status: 'queued',
+          spec_type: specType ?? undefined
         })
       } else {
         const input: CreateTicketInput = {
@@ -231,7 +246,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
           spec,
           priority,
           depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-          playground_enabled: playgroundEnabled || undefined
+          playground_enabled: playgroundEnabled || undefined,
+          spec_type: specType ?? undefined
         }
         await createTask(input)
         const tasks = useSprintTasks.getState().tasks
@@ -389,7 +405,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
       <ConfirmModal
         open={showQueueConfirm}
         title="Queue with warnings?"
-        message="Some operational checks have warnings. The task may encounter issues. Queue anyway?"
+        message={queueConfirmMessage || 'Some checks have warnings. Queue anyway?'}
         confirmLabel="Queue Anyway"
         onConfirm={handleConfirmedQueue}
         onCancel={() => setShowQueueConfirm(false)}

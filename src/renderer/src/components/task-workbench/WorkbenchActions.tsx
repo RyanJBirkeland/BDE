@@ -18,13 +18,13 @@ export function WorkbenchActions({
   const semantic = useTaskWorkbenchStore((s) => s.semanticChecks)
 
   const titlePasses = structural.some((c) => c.id === 'title-present' && c.status === 'pass')
-  const allTier1Pass = structural.every((c) => c.status === 'pass')
+  const noTier1Fails = structural.every((c) => c.status !== 'fail')
   const tier3HasFails = operational.some((c) => c.status === 'fail')
   const semanticNoFails = semantic.length === 0 || semantic.every((c) => c.status !== 'fail')
 
   const canSave = titlePasses
-  const canQueue = allTier1Pass && !tier3HasFails
-  const canLaunch = allTier1Pass && semanticNoFails && !tier3HasFails
+  const canQueue = noTier1Fails && !tier3HasFails
+  const canLaunch = noTier1Fails && semanticNoFails && !tier3HasFails
 
   return (
     <div className="wb-actions">

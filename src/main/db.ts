@@ -399,6 +399,16 @@ export const migrations: Migration[] = [
           END;
       `)
     }
+  },
+  {
+    version: 16,
+    description: 'Add spec_type column to sprint_tasks',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('spec_type')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN spec_type TEXT')
+      }
+    }
   }
 ]
 

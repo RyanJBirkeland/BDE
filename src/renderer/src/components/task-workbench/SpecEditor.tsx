@@ -1,21 +1,26 @@
 import { useCallback } from 'react'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
+import type { SpecType } from '../../../../shared/spec-validation'
 
-const SPEC_TEMPLATES: Record<string, { label: string; spec: string }> = {
+const SPEC_TEMPLATES: Record<string, { label: string; spec: string; specType: SpecType }> = {
   feature: {
     label: 'Feature',
+    specType: 'feature',
     spec: '## Problem\n\n## Solution\n\n## Files to Change\n\n## Out of Scope\n'
   },
   bugfix: {
     label: 'Bug Fix',
+    specType: 'bugfix',
     spec: '## Bug Description\n\n## Root Cause\n\n## Fix\n\n## Files to Change\n\n## How to Test\n'
   },
   refactor: {
     label: 'Refactor',
+    specType: 'refactor',
     spec: "## What's Being Refactored\n\n## Target State\n\n## Files to Change\n\n## Out of Scope\n"
   },
   test: {
     label: 'Test',
+    specType: 'test',
     spec: '## What to Test\n\n## Test Strategy\n\n## Files to Create\n\n## Coverage Target\n'
   }
 }
@@ -29,6 +34,7 @@ interface SpecEditorProps {
 export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }: SpecEditorProps) {
   const spec = useTaskWorkbenchStore((s) => s.spec)
   const setField = useTaskWorkbenchStore((s) => s.setField)
+  const setSpecType = useTaskWorkbenchStore((s) => s.setSpecType)
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -60,7 +66,10 @@ export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }:
         {Object.entries(SPEC_TEMPLATES).map(([key, tmpl]) => (
           <button
             key={key}
-            onClick={() => setField('spec', tmpl.spec)}
+            onClick={() => {
+              setField('spec', tmpl.spec)
+              setSpecType(tmpl.specType)
+            }}
             className="wb-spec__btn"
           >
             {tmpl.label}
