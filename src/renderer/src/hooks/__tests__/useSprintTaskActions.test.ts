@@ -340,7 +340,7 @@ describe('useSprintTaskActions', () => {
 
   it('handleStop shows error when killAgent returns not ok', async () => {
     const { toast } = await import('../../stores/toasts')
-    vi.mocked(window.api.agentManager.kill).mockResolvedValue({ ok: false, error: 'Process not found' })
+    vi.mocked(window.api.agentManager.kill).mockResolvedValue({ ok: false })
 
     const { result } = renderHook(() => useSprintTaskActions())
     const task = makeTask({ agent_run_id: 'run-abc', status: 'active' })
@@ -359,7 +359,7 @@ describe('useSprintTaskActions', () => {
     })
 
     expect(mockUpdateTask).not.toHaveBeenCalled()
-    expect(toast.error).toHaveBeenCalledWith('Process not found')
+    expect(toast.error).toHaveBeenCalledWith('Failed to stop agent')
   })
 
   it('handleStop shows error when killAgent throws', async () => {

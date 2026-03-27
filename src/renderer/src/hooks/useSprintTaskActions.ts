@@ -114,7 +114,7 @@ export function useSprintTaskActions() {
           updateTask(task.id, { status: TASK_STATUS.CANCELLED })
           toast.success('Agent stopped')
         } else {
-          toast.error(result.error ?? 'Failed to stop agent')
+          toast.error('Failed to stop agent')
         }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to stop agent')
