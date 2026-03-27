@@ -160,7 +160,16 @@ export function SprintPipeline() {
         </div>
       </header>
 
-      <div className="sprint-pipeline__body">
+      {tasks.length === 0 && (
+        <div className="pipeline-empty-state">
+          <p className="pipeline-empty-state__title">No tasks yet</p>
+          <p className="pipeline-empty-state__hint">
+            Open Task Workbench (Cmd+0) to create your first task
+          </p>
+        </div>
+      )}
+
+      <div className="sprint-pipeline__body" style={{ display: tasks.length === 0 ? 'none' : undefined }}>
         <PipelineBacklog
           backlog={partition.backlog}
           failed={partition.failed}
