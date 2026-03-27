@@ -12,6 +12,7 @@ import {
   deleteTask,
   claimTask,
   releaseTask,
+  getAllTaskIds,
   getTasksWithDependencies,
   getActiveTaskCount
 } from '../data/sprint-queries'
@@ -47,11 +48,8 @@ function validateDependencies(
     return null
   }
 
-  // Fetch all existing tasks for validation
-  const allTasks = getTasksWithDependencies()
-  const existingTaskIds = new Set(allTasks.map((t) => t.id))
-
-  // Add the current task ID to the set for self-reference detection
+  // Fetch all task IDs for existence validation
+  const existingTaskIds = getAllTaskIds()
   existingTaskIds.add(taskId)
 
   // Validate that all referenced task IDs exist
@@ -67,8 +65,9 @@ function validateDependencies(
   }
 
   // Build dependency lookup for cycle detection
+  const tasksWithDeps = getTasksWithDependencies()
   const depsMap = new Map<string, TaskDependency[]>()
-  for (const task of allTasks) {
+  for (const task of tasksWithDeps) {
     if (task.depends_on) {
       depsMap.set(task.id, task.depends_on)
     }

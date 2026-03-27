@@ -27,9 +27,6 @@
 | `src/renderer/src/components/task-workbench/WorkbenchForm.tsx` | Modify | Thread `specType` through semantic checks, confirmation dialog, task creation |
 | `src/main/spec-semantic-check.ts` | Modify | Accept `specType`, skip/contextualize checks |
 | `src/main/handlers/workbench.ts` | Modify | Thread `specType` through `workbench:checkSpec` |
-| `src/preload/index.ts` | Modify | Add `specType` to `checkSpec` input type |
-| `src/preload/index.d.ts` | Modify | Update `checkSpec` type declaration |
-| `src/renderer/src/stores/sprintTasks.ts` | Modify | Add `spec_type` to `CreateTicketInput` |
 | `src/shared/__tests__/spec-validation.test.ts` | Create | Profile tests |
 | `src/renderer/src/hooks/__tests__/useReadinessChecks.test.ts` | Modify | Profile-aware structural check tests |
 | `src/renderer/src/components/task-workbench/__tests__/WorkbenchActions.test.tsx` | Modify | Advisory vs required button state tests |
@@ -209,31 +206,7 @@ export function getValidationProfile(specType: SpecType | null | undefined): Val
 }
 ```
 
-Then update `validateStructural()`:
-
-1. Add `specType?: SpecType | null` to the input parameter type
-2. At the top of the spec-check block (inside `if (input.status !== 'backlog')`), get the profile:
-   ```typescript
-   const profile = getValidationProfile(input.specType ?? null)
-   const specThreshold = profile.specPresent.threshold ?? MIN_SPEC_LENGTH
-   const headingThreshold = profile.specStructure.threshold ?? MIN_HEADING_COUNT
-   ```
-3. Replace `MIN_SPEC_LENGTH` with `specThreshold` and `MIN_HEADING_COUNT` with `headingThreshold` in the checks
-4. For checks where `profile.*.behavior === 'advisory'`, push to `warnings[]` instead of `errors[]`:
-   ```typescript
-   if (specLen < specThreshold) {
-     const msg = `spec is too short (${specLen} chars, minimum ${specThreshold}).`
-     if (profile.specPresent.behavior === 'advisory') {
-       warnings.push(msg)
-     } else {
-       errors.push(msg)
-     }
-   }
-   ```
-5. Apply the same pattern to the heading count check
-6. Keep existing `status === 'backlog'` relaxation — it takes precedence (backlog skips spec checks entirely regardless of profile)
-
-**Note:** `validateStructural` uses strict `<` for threshold comparison, while `computeStructuralChecks` uses `<=`. Keep this difference — `validateStructural` is the server-side gate (stricter), `computeStructuralChecks` is the UI feedback (shows warning at boundary).
+Then update `validateStructural()` to accept `specType?: SpecType | null` and use profile thresholds/behaviors. Advisory failures go to `warnings[]` instead of `errors[]`. Keep existing `status === 'backlog'` relaxation logic — it takes precedence (backlog skips spec checks entirely regardless of profile).
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -520,33 +493,46 @@ Expected: FAIL — first test fails because current logic treats all tier 1 warn
 
 In `src/renderer/src/components/task-workbench/WorkbenchActions.tsx`:
 
-**Design note:** Task 4 already handles the profile-aware logic — `computeStructuralChecks` downgrades advisory failures from `fail` to `warn` status. So WorkbenchActions does NOT need its own profile lookup. It simply needs to treat `warn` as non-blocking (which the existing `allTier1Pass` logic already treats `warn` as a failure — that's the bug we're fixing).
+1. Add imports:
+   ```typescript
+   import { getValidationProfile, type ValidationProfile } from '../../../../shared/spec-validation'
+   ```
+2. Read `specType` from store:
+   ```typescript
+   const specType = useTaskWorkbenchStore((s) => s.specType)
+   ```
+3. Replace `allTier1Pass` logic with profile-aware version:
+   ```typescript
+   const profile = getValidationProfile(specType)
 
-Replace:
-```typescript
-const allTier1Pass = structural.every((c) => c.status === 'pass')
-```
+   // Map check IDs to profile keys for lookup
+   const PROFILE_KEY_MAP: Record<string, keyof ValidationProfile> = {
+     'spec-present': 'specPresent',
+     'spec-structure': 'specStructure',
+     clarity: 'clarity',
+     scope: 'scope',
+     'files-exist': 'filesExist'
+   }
 
-With:
-```typescript
-const noTier1Fails = structural.every((c) => c.status !== 'fail')
-```
+   // A check blocks queuing only if profile says 'required' AND status is 'fail'
+   const hasRequiredTier1Fail = structural.some((c) => {
+     if (c.status !== 'fail') return false
+     const profileKey = PROFILE_KEY_MAP[c.id]
+     if (!profileKey) return true // title-present, repo-selected — always required
+     return profile[profileKey].behavior === 'required'
+   })
 
-And replace:
-```typescript
-const semanticNoFails = semantic.length === 0 || semantic.every((c) => c.status !== 'fail')
-```
+   const hasRequiredSemanticFail = semantic.some((c) => {
+     if (c.status !== 'fail') return false
+     const profileKey = PROFILE_KEY_MAP[c.id]
+     if (!profileKey) return true
+     return profile[profileKey].behavior === 'required'
+   })
 
-This line stays as-is — it already only blocks on `fail`, not `warn`.
-
-Update the final logic:
-```typescript
-const canSave = titlePasses
-const canQueue = noTier1Fails && !tier3HasFails
-const canLaunch = noTier1Fails && semanticNoFails && !tier3HasFails
-```
-
-No new imports needed — the profile system is the single source of truth in `computeStructuralChecks` (Task 4), and WorkbenchActions stays simple.
+   const canSave = titlePasses
+   const canQueue = !hasRequiredTier1Fail && !tier3HasFails
+   const canLaunch = !hasRequiredTier1Fail && !hasRequiredSemanticFail && !tier3HasFails
+   ```
 
 - [ ] **Step 4: Update WorkbenchForm confirmation dialog**
 
@@ -588,19 +574,11 @@ In `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`:
    />
    ```
 
-4. Add `spec_type` to `CreateTicketInput` in `src/renderer/src/stores/sprintTasks.ts`:
-   ```typescript
-   export interface CreateTicketInput {
-     // ... existing fields ...
-     spec_type?: string | null
-   }
-   ```
-
-5. Include `spec_type` in task creation payload. In the `createTask` input object:
+4. Include `spec_type` in task creation payload. In the `createTask` input object:
    ```typescript
    spec_type: useTaskWorkbenchStore.getState().specType ?? undefined
    ```
-   And similarly in the `updateTask` calls (both in `handleSubmit` and `handleConfirmedQueue`).
+   And similarly in the `updateTask` calls.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
@@ -612,8 +590,7 @@ Expected: PASS
 ```bash
 git add src/renderer/src/components/task-workbench/WorkbenchActions.tsx \
   src/renderer/src/components/task-workbench/WorkbenchForm.tsx \
-  src/renderer/src/components/task-workbench/__tests__/WorkbenchActions.test.tsx \
-  src/renderer/src/stores/sprintTasks.ts
+  src/renderer/src/components/task-workbench/__tests__/WorkbenchActions.test.tsx
 git commit -m "feat: profile-aware button logic + advisory confirmation dialog"
 ```
 
@@ -685,20 +662,7 @@ safeHandle(
 
 The handler just passes through — `specType` is already in the input object.
 
-- [ ] **Step 3: Update preload bridge for checkSpec**
-
-In `src/preload/index.ts`, update the `checkSpec` inline type (line 246):
-
-```typescript
-checkSpec: (input: { title: string; repo: string; spec: string; specType?: string | null }) =>
-  typedInvoke('workbench:checkSpec', input),
-```
-
-In `src/preload/index.d.ts` — the `checkSpec` declaration (line 218-220) uses `IpcArgs<'workbench:checkSpec'>` which references the channel type. Since we're changing the handler's input type, verify typecheck passes. If the `IpcArgs` type is auto-derived from the handler, no change needed. If it uses an explicit interface, add `specType?: string | null` there.
-
-**CLAUDE.md gotcha reminder:** Both `index.ts` AND `index.d.ts` must stay in sync. Forgetting the `.d.ts` causes "Property does not exist on type" errors in the renderer.
-
-- [ ] **Step 4: Update WorkbenchForm to pass specType in semantic check call**
+- [ ] **Step 3: Update WorkbenchForm to pass specType in semantic check call**
 
 In `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`, update the semantic check IPC call (around line 57):
 
@@ -715,16 +679,15 @@ const specType = useTaskWorkbenchStore((s) => s.specType)
 
 And include in the dependency array of the semantic check useEffect.
 
-- [ ] **Step 5: Run all tests**
+- [ ] **Step 4: Run all tests**
 
 Run: `npm test -- --run` and `npm run test:main -- --run`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add src/main/spec-semantic-check.ts src/main/handlers/workbench.ts \
-  src/preload/index.ts src/preload/index.d.ts \
   src/renderer/src/components/task-workbench/WorkbenchForm.tsx
 git commit -m "feat: profile-aware semantic checks with specType context"
 ```

@@ -492,6 +492,18 @@ export function getHealthCheckTasks(): SprintTask[] {
   }
 }
 
+export function getAllTaskIds(): Set<string> {
+  try {
+    const rows = getDb()
+      .prepare('SELECT id FROM sprint_tasks')
+      .all() as Array<{ id: string }>
+    return new Set(rows.map((r) => r.id))
+  } catch (err) {
+    logger.warn(`[sprint-queries] getAllTaskIds failed: ${err}`)
+    return new Set()
+  }
+}
+
 export function getTasksWithDependencies(): Array<{
   id: string
   depends_on: TaskDependency[] | null

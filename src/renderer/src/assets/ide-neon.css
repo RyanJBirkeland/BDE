@@ -1,0 +1,429 @@
+/* ═══════════════════════════════════════════════════════
+   IDE Neon Makeover — Chrome Overrides
+   Applies V2 Neon Design System tokens to IDE view chrome
+   ═══════════════════════════════════════════════════════ */
+
+/* ── IDE View ── */
+.ide-view {
+  background: var(--neon-bg);
+}
+
+/* ── Panel Separators ── */
+.ide-separator {
+  background: var(--neon-purple-border);
+}
+
+.ide-separator:hover,
+.ide-separator:active {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan-glow);
+}
+
+/* ── File Sidebar ── */
+.ide-sidebar {
+  background: rgba(10, 0, 21, 0.6);
+  border-right: 1px solid var(--neon-purple-border);
+}
+
+.ide-sidebar__header {
+  background: linear-gradient(180deg, rgba(138, 43, 226, 0.08) 0%, rgba(10, 0, 21, 0.6) 100%);
+  backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-purple-border);
+}
+
+.ide-sidebar__title {
+  color: var(--neon-purple);
+  text-shadow: 0 0 8px rgba(191, 90, 242, 0.3);
+}
+
+.ide-sidebar__folder-name {
+  color: var(--neon-text);
+}
+
+.ide-sidebar__action-btn {
+  color: var(--neon-text-muted);
+}
+
+.ide-sidebar__action-btn:hover {
+  color: var(--neon-text);
+  background: var(--neon-surface-dim);
+}
+
+.ide-sidebar__body::-webkit-scrollbar-thumb {
+  background: var(--neon-purple-border);
+}
+
+/* ── File Tree ── */
+.ide-file-node {
+  color: var(--neon-text-muted);
+}
+
+.ide-file-node:hover {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text);
+}
+
+.ide-file-node--active {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+  border-left: 2px solid var(--neon-cyan);
+}
+
+.ide-file-node__chevron {
+  color: var(--neon-text-dim);
+}
+
+.ide-file-node__icon {
+  color: var(--neon-text-dim);
+}
+
+/* Folder names: primary white, file names: muted */
+.ide-file-node[data-type="folder"] .ide-file-node__name {
+  color: var(--neon-text);
+}
+
+.ide-file-node[data-type="file"] .ide-file-node__name {
+  color: var(--neon-text-muted);
+}
+
+/* ── Context Menu ── */
+.ide-context-menu {
+  background: var(--neon-surface-deep);
+  backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+}
+
+.ide-context-menu__item {
+  color: var(--neon-text);
+}
+
+.ide-context-menu__item:hover {
+  background: var(--neon-surface-dim);
+}
+
+.ide-context-menu__item--danger {
+  color: var(--neon-red);
+}
+
+.ide-context-menu__item--danger:hover {
+  background: var(--neon-red-surface);
+}
+
+.ide-context-menu__separator {
+  background: var(--neon-purple-border);
+}
+
+/* ── Editor Tab Bar ── */
+.ide-editor-tab-bar {
+  background: rgba(10, 0, 21, 0.6);
+  backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-purple-border);
+}
+
+.ide-editor-tab-bar::-webkit-scrollbar-thumb {
+  background: var(--neon-purple-border);
+}
+
+.ide-editor-tab {
+  color: var(--neon-text-dim);
+  border-right: 1px solid var(--neon-surface-dim);
+}
+
+.ide-editor-tab:hover {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text-muted);
+}
+
+.ide-editor-tab--active {
+  color: var(--neon-text);
+  background: var(--neon-bg);
+  border-top-color: var(--neon-cyan);
+  box-shadow: inset 0 2px 8px var(--neon-cyan-surface);
+}
+
+.ide-editor-tab__dirty {
+  color: var(--neon-cyan);
+}
+
+.ide-editor-tab__close {
+  color: var(--neon-text-dim);
+}
+
+.ide-editor-tab__close:hover {
+  color: var(--neon-text);
+  background: var(--neon-surface-subtle);
+}
+
+/* ── Editor Area ── */
+.ide-editor-empty {
+  color: var(--neon-text-dim);
+  background: var(--neon-bg);
+}
+
+/* ── IDE Empty State ── */
+.ide-empty-state {
+  background: var(--neon-bg);
+}
+
+.ide-empty-state__icon {
+  color: var(--neon-text-dim);
+}
+
+.ide-empty-state__title {
+  color: var(--neon-text);
+  text-shadow: 0 0 12px rgba(191, 90, 242, 0.5);
+}
+
+.ide-empty-state__subtitle {
+  color: var(--neon-text-muted);
+}
+
+.ide-empty-state__open-btn {
+  color: var(--neon-bg);
+  background: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(0, 255, 200, 0.15);
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.ide-empty-state__open-btn:hover {
+  box-shadow: 0 0 16px rgba(0, 255, 200, 0.25);
+}
+
+.ide-empty-state__recent-label {
+  color: var(--neon-text-dim);
+}
+
+.ide-empty-state__recent-item {
+  color: var(--neon-cyan);
+}
+
+.ide-empty-state__recent-item:hover {
+  background: var(--neon-cyan-surface);
+}
+
+/* ── Terminal Panel ── */
+.ide-terminal-panel {
+  background: var(--neon-bg);
+}
+
+/* ── Terminal View Header ── */
+.terminal-view {
+  background: var(--neon-bg);
+}
+
+.terminal-view__header {
+  background: rgba(10, 0, 21, 0.6);
+  backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-purple-border);
+}
+
+.terminal-view__title {
+  color: var(--neon-purple);
+  text-shadow: 0 0 8px rgba(191, 90, 242, 0.3);
+}
+
+/* ── Terminal Tab Bar ── */
+.terminal-tab-bar {
+  background: rgba(10, 0, 21, 0.6);
+  backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-purple-border);
+}
+
+.terminal-tab {
+  color: var(--neon-text-muted);
+}
+
+.terminal-tab:hover {
+  background: var(--neon-surface-subtle);
+  color: var(--neon-text);
+}
+
+.terminal-tab--active {
+  background: var(--neon-cyan-surface);
+  border-color: var(--neon-cyan-border);
+  color: var(--neon-cyan);
+}
+
+.terminal-tab--active::before {
+  background: var(--neon-cyan);
+}
+
+.terminal-tab__close {
+  color: var(--neon-text-dim);
+}
+
+.terminal-tab__close:hover {
+  background: var(--neon-surface-subtle);
+  color: var(--neon-text);
+}
+
+/* ── Terminal Tab Bar Actions ── */
+.terminal-tab-bar__btn {
+  color: var(--neon-text-muted);
+}
+
+.terminal-tab-bar__btn:hover {
+  color: var(--neon-text);
+  background: var(--neon-surface-subtle);
+}
+
+/* ── Terminal Toolbar ── */
+.terminal-toolbar {
+  background: rgba(10, 0, 21, 0.6);
+  backdrop-filter: var(--neon-glass-blur);
+}
+
+.terminal-toolbar__btn {
+  color: var(--neon-text-muted);
+}
+
+.terminal-toolbar__btn:hover {
+  color: var(--neon-text);
+  background: var(--neon-surface-subtle);
+}
+
+.terminal-toolbar__btn--active {
+  background: var(--neon-surface-subtle);
+  color: var(--neon-cyan);
+}
+
+/* ── Terminal Content Separator ── */
+.terminal-content__separator {
+  background: var(--neon-purple-border);
+}
+
+.terminal-content__separator:hover {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan-glow);
+}
+
+/* ── Terminal Find Bar ── */
+.terminal-find {
+  background: var(--neon-surface-deep);
+  backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+}
+
+.terminal-find__input {
+  color: var(--neon-text);
+}
+
+.terminal-find__count {
+  color: var(--neon-text-muted);
+}
+
+.terminal-find__btn {
+  color: var(--neon-text-muted);
+}
+
+.terminal-find__btn:hover {
+  background: var(--neon-surface-subtle);
+  color: var(--neon-text);
+}
+
+/* ── Shell Picker Dropdown ── */
+.shell-picker {
+  background: var(--neon-surface-deep);
+  backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+}
+
+.shell-picker__item {
+  color: var(--neon-text);
+}
+
+.shell-picker__item:hover {
+  background: var(--neon-surface-dim);
+}
+
+.shell-picker__shortcut {
+  color: var(--neon-text-dim);
+}
+
+.shell-picker__divider {
+  background: var(--neon-purple-border);
+}
+
+.shell-picker__custom-input {
+  background: var(--neon-bg);
+  border: 1px solid var(--neon-purple-border);
+  color: var(--neon-text);
+}
+
+.shell-picker__custom-input:focus {
+  border-color: var(--neon-cyan);
+}
+
+/* ── Agent Picker Dropdown ── */
+.agent-picker {
+  background: var(--neon-surface-deep);
+  backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+}
+
+.agent-picker__header {
+  color: var(--neon-text);
+}
+
+.agent-picker__divider {
+  background: var(--neon-purple-border);
+}
+
+.agent-picker__item {
+  color: var(--neon-text);
+}
+
+.agent-picker__item:hover {
+  background: var(--neon-surface-dim);
+}
+
+.agent-picker__repo {
+  color: var(--neon-text);
+}
+
+.agent-picker__task {
+  color: var(--neon-text-muted);
+}
+
+.agent-picker__time {
+  color: var(--neon-text-dim);
+}
+
+.agent-picker__empty {
+  color: var(--neon-text-dim);
+}
+
+/* ── Terminal Agent Tab ── */
+.terminal-agent-tab {
+  background: var(--neon-bg);
+}
+
+.terminal-agent-status-bar {
+  background: rgba(10, 0, 21, 0.6);
+  border-bottom: 1px solid var(--neon-purple-border);
+}
+
+/* ── Sidebar Toggle Button (for collapsed sidebar + no tabs) ── */
+.ide-sidebar-toggle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 6px;
+  background: var(--neon-surface-deep);
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.ide-sidebar-toggle:hover {
+  color: var(--neon-cyan);
+  border-color: var(--neon-cyan-border);
+  box-shadow: 0 0 8px rgba(0, 255, 200, 0.15);
+}

@@ -60,7 +60,7 @@ describe('panelLayout pure functions', () => {
     })
 
     it('assigns correct labels for all views', () => {
-      const views = ['agents', 'ide', 'sprint', 'pr-station', 'memory', 'cost', 'settings'] as const
+      const views = ['agents', 'ide', 'sprint', 'pr-station', 'git', 'settings'] as const
       for (const v of views) {
         _resetIdCounter()
         const leaf = createLeaf(v)

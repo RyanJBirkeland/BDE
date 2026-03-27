@@ -82,9 +82,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       { view: 'ide', label: 'Go to IDE', hint: '\u23182' },
       { view: 'sprint', label: 'Go to Task Pipeline', hint: '\u23183' },
       { view: 'pr-station', label: 'Go to PR Station', hint: '\u23184' },
-      { view: 'memory', label: 'Go to Memory', hint: '\u23185' },
-      { view: 'cost', label: 'Go to Cost', hint: '\u23186' },
-      { view: 'settings', label: 'Go to Settings', hint: '\u23187' }
+      { view: 'git', label: 'Go to Source Control', hint: '\u23185' },
+      { view: 'settings', label: 'Go to Settings', hint: '\u23186' }
     ]
 
     const nav: Command[] = navCommands.map((v) => ({

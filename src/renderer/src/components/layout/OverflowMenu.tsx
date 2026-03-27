@@ -6,8 +6,6 @@ import {
   SquareTerminal,
   GitBranch,
   GitPullRequest,
-  Brain,
-  DollarSign,
   Settings,
   GitCommitHorizontal,
   Pin,
@@ -25,10 +23,8 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   sprint: Workflow,
   'pr-station': GitPullRequest,
   git: GitCommitHorizontal,
-  memory: Brain,
-  cost: DollarSign,
   settings: Settings,
-  'task-workbench': GitBranch // Using GitBranch as fallback for task-workbench
+  'task-workbench': GitBranch
 }
 
 const VIEW_LABELS: Record<View, string> = {
@@ -38,8 +34,6 @@ const VIEW_LABELS: Record<View, string> = {
   sprint: 'Task Pipeline',
   'pr-station': 'PR Station',
   git: 'Source Control',
-  memory: 'Memory',
-  cost: 'Cost Tracker',
   settings: 'Settings',
   'task-workbench': 'Task Workbench'
 }

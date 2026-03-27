@@ -248,5 +248,65 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'patterns and conventions in CLAUDE.md.',
     builtIn: true,
     order: 5
+  },
+  {
+    id: 'builtin-fix-conflicts',
+    name: 'Fix PR Conflicts',
+    icon: '\u{1F500}',
+    accent: 'purple',
+    description: 'Resolve merge conflicts',
+    questions: [
+      {
+        id: 'scope',
+        label: 'Which PRs should I fix?',
+        type: 'choice',
+        choices: [
+          'All open PRs with conflicts',
+          'Specific PR — I\'ll provide the number'
+        ],
+        default: 'All open PRs with conflicts'
+      },
+      {
+        id: 'pr',
+        label: 'Which PR? (number or branch name — leave blank if fixing all)',
+        type: 'text',
+        required: false
+      },
+      {
+        id: 'strategy',
+        label: 'How should conflicts be resolved?',
+        type: 'choice',
+        choices: [
+          'Use judgment — read both sides and pick the best',
+          'Favor the feature branch',
+          'Favor the base branch'
+        ],
+        default: 'Use judgment — read both sides and pick the best'
+      },
+      {
+        id: 'method',
+        label: 'Rebase or merge?',
+        type: 'choice',
+        choices: ['Merge base into branch', 'Rebase onto base'],
+        default: 'Merge base into branch'
+      }
+    ],
+    promptTemplate:
+      'Fix merge conflicts. Scope: {{scope}}. {{pr}}\n\n' +
+      'Resolution strategy: {{strategy}}.\n' +
+      'Method: {{method}}.\n\n' +
+      'Steps:\n' +
+      '1. If fixing all: run `gh pr list --state open` and identify PRs with merge conflicts ' +
+      '(check each with `gh pr view <number> --json mergeable`). If fixing a specific PR, use that one.\n' +
+      '2. For each conflicted PR, check out the branch\n' +
+      '3. Fetch and integrate the base branch using the chosen method\n' +
+      '4. Resolve all conflicts according to the resolution strategy\n' +
+      '5. Run `npm run build` and `npm test` to verify nothing is broken\n' +
+      '6. Commit the resolution and push\n\n' +
+      'When using judgment: read the context of both sides carefully — understand what each change ' +
+      'was trying to achieve, and produce a merged result that preserves both intents. If the changes ' +
+      'are truly incompatible, favor the feature branch version and leave a comment explaining the choice.',
+    builtIn: true,
+    order: 6
   }
 ]

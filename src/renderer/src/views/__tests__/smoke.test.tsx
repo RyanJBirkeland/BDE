@@ -220,8 +220,6 @@ Object.defineProperty(window, 'api', {
 
 import { AgentsView } from '../AgentsView'
 import SprintView from '../SprintView'
-import MemoryView from '../MemoryView'
-import CostView from '../CostView'
 import SettingsView from '../SettingsView'
 import PRStationView from '../PRStationView'
 
@@ -236,18 +234,6 @@ describe('View smoke tests', () => {
 
   it('SprintView renders without crashing', () => {
     const { container } = render(<SprintView />)
-    expect(container.firstChild).toBeInTheDocument()
-    expect(container.innerHTML).not.toBe('')
-  })
-
-  it('MemoryView renders without crashing', () => {
-    const { container } = render(<MemoryView />)
-    expect(container.firstChild).toBeInTheDocument()
-    expect(container.innerHTML).not.toBe('')
-  })
-
-  it('CostView renders without crashing', () => {
-    const { container } = render(<CostView />)
     expect(container.firstChild).toBeInTheDocument()
     expect(container.innerHTML).not.toBe('')
   })

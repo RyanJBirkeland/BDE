@@ -24,7 +24,7 @@ describe('OverflowMenu', () => {
   };
 
   const defaultProps = {
-    unpinnedViews: ['memory', 'cost'] as View[],
+    unpinnedViews: ['git', 'task-workbench'] as View[],
     anchorRect: mockAnchorRect,
     onPin: vi.fn(),
     onActivate: vi.fn(),
@@ -60,15 +60,15 @@ describe('OverflowMenu', () => {
   it('renders unpinned views', () => {
     render(<OverflowMenu {...defaultProps} />);
 
-    expect(screen.getByText('Memory')).toBeInTheDocument();
-    expect(screen.getByText('Cost Tracker')).toBeInTheDocument();
+    expect(screen.getByText('Source Control')).toBeInTheDocument();
+    expect(screen.getByText('Task Workbench')).toBeInTheDocument();
   });
 
   it('renders view items with their labels', () => {
     render(<OverflowMenu {...defaultProps} />);
     // Check that view labels are rendered, which implies icons are present
-    expect(screen.getByText('Memory')).toBeInTheDocument();
-    expect(screen.getByText('Cost Tracker')).toBeInTheDocument();
+    expect(screen.getByText('Source Control')).toBeInTheDocument();
+    expect(screen.getByText('Task Workbench')).toBeInTheDocument();
   });
 
   it('renders pin buttons for each view', () => {
@@ -82,16 +82,16 @@ describe('OverflowMenu', () => {
     const onActivate = vi.fn();
     render(<OverflowMenu {...defaultProps} onActivate={onActivate} />);
 
-    fireEvent.click(screen.getByText('Memory'));
+    fireEvent.click(screen.getByText('Source Control'));
 
-    expect(onActivate).toHaveBeenCalledWith('memory');
+    expect(onActivate).toHaveBeenCalledWith('git');
   });
 
   it('calls onClose when view item is clicked', () => {
     const onClose = vi.fn();
     render(<OverflowMenu {...defaultProps} onClose={onClose} />);
 
-    fireEvent.click(screen.getByText('Memory'));
+    fireEvent.click(screen.getByText('Source Control'));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -100,10 +100,10 @@ describe('OverflowMenu', () => {
     const onPin = vi.fn();
     render(<OverflowMenu {...defaultProps} onPin={onPin} />);
 
-    const pinButton = screen.getByLabelText('Pin Memory to sidebar');
+    const pinButton = screen.getByLabelText('Pin Source Control to sidebar');
     fireEvent.click(pinButton);
 
-    expect(onPin).toHaveBeenCalledWith('memory');
+    expect(onPin).toHaveBeenCalledWith('git');
   });
 
   it('stops propagation when pin button is clicked', () => {
@@ -111,7 +111,7 @@ describe('OverflowMenu', () => {
     const onActivate = vi.fn();
     render(<OverflowMenu {...defaultProps} onPin={onPin} onActivate={onActivate} />);
 
-    const pinButton = screen.getByLabelText('Pin Memory to sidebar');
+    const pinButton = screen.getByLabelText('Pin Source Control to sidebar');
     fireEvent.click(pinButton);
 
     expect(onPin).toHaveBeenCalledTimes(1);
@@ -148,8 +148,8 @@ describe('OverflowMenu', () => {
 
   it('does not render view items when empty', () => {
     render(<OverflowMenu {...defaultProps} unpinnedViews={[]} />);
-    expect(screen.queryByText('Memory')).not.toBeInTheDocument();
-    expect(screen.queryByText('Cost Tracker')).not.toBeInTheDocument();
+    expect(screen.queryByText('Source Control')).not.toBeInTheDocument();
+    expect(screen.queryByText('Task Workbench')).not.toBeInTheDocument();
   });
 
   it('still shows customize button when empty', () => {
@@ -250,7 +250,7 @@ describe('OverflowMenu', () => {
 
   describe('View icon and label mapping', () => {
     it('renders correct labels for all views', () => {
-      const allViews: View[] = ['dashboard', 'agents', 'ide', 'sprint', 'pr-station', 'git', 'memory', 'cost', 'settings'];
+      const allViews: View[] = ['dashboard', 'agents', 'ide', 'sprint', 'pr-station', 'git', 'settings', 'task-workbench'];
       render(<OverflowMenu {...defaultProps} unpinnedViews={allViews} />);
 
       expect(screen.getByText('Dashboard')).toBeInTheDocument();
@@ -259,9 +259,8 @@ describe('OverflowMenu', () => {
       expect(screen.getByText('Task Pipeline')).toBeInTheDocument();
       expect(screen.getByText('PR Station')).toBeInTheDocument();
       expect(screen.getByText('Source Control')).toBeInTheDocument();
-      expect(screen.getByText('Memory')).toBeInTheDocument();
-      expect(screen.getByText('Cost Tracker')).toBeInTheDocument();
       expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(screen.getByText('Task Workbench')).toBeInTheDocument();
     });
   });
 

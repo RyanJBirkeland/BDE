@@ -1,19 +1,17 @@
 /**
- * MemoryView — file browser and editor for agent memory.
+ * MemorySection — file browser and editor for agent memory.
  * Lists memory files from ~/.bde/memory/ via IPC
  * (memory:listFiles, memory:readFile, memory:writeFile). Groups files
  * into pinned (MEMORY.md), daily logs, projects, and other. Keyboard-navigable.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
 import { FileText, Search, X } from 'lucide-react'
-import { toast } from '../stores/toasts'
-import { useUIStore } from '../stores/ui'
-import { Button } from '../components/ui/Button'
-import { EmptyState } from '../components/ui/EmptyState'
-import { ConfirmModal, useConfirm } from '../components/ui/ConfirmModal'
-import * as memoryService from '../services/memory'
-import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { toast } from '../../stores/toasts'
+import { useUIStore } from '../../stores/ui'
+import { Button } from '../ui/Button'
+import { EmptyState } from '../ui/EmptyState'
+import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
+import * as memoryService from '../../services/memory'
 
 interface MemoryFile {
   path: string
@@ -72,8 +70,7 @@ function groupFiles(files: MemoryFile[]): { pinned: MemoryFile | null; groups: F
   return { pinned, groups }
 }
 
-export default function MemoryView(): React.JSX.Element {
-  const reduced = useReducedMotion()
+export function MemorySection(): React.JSX.Element {
   const [files, setFiles] = useState<MemoryFile[]>([])
   const [loadingFiles, setLoadingFiles] = useState(true)
   const [loadingContent, setLoadingContent] = useState(false)
@@ -233,7 +230,7 @@ export default function MemoryView(): React.JSX.Element {
   const activeView = useUIStore((s) => s.activeView)
 
   useEffect(() => {
-    if (activeView !== 'memory') return
+    if (activeView !== 'settings') return
     const handler = (e: KeyboardEvent): void => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'TEXTAREA' || tag === 'INPUT') return
@@ -268,16 +265,7 @@ export default function MemoryView(): React.JSX.Element {
   }, [focusIndex])
 
   return (
-    <motion.div
-      className="memory-view memory-view--column"
-      variants={VARIANTS.fadeIn}
-      initial="initial"
-      animate="animate"
-      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-    >
-      <div className="memory-view__header">
-        <span className="memory-view__title text-gradient-aurora">Memory</span>
-      </div>
+    <div className="memory-view memory-view--column" style={{ height: '100%' }}>
       <div className="memory-view__content">
         <div className="memory-sidebar">
           <div className="memory-sidebar__header">
@@ -481,6 +469,6 @@ export default function MemoryView(): React.JSX.Element {
         </div>
       </div>
       <ConfirmModal {...confirmProps} />
-    </motion.div>
+    </div>
   )
 }

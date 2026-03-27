@@ -19,8 +19,6 @@ vi.mock('react-resizable-panels', () => ({
 vi.mock('../../../views/AgentsView', () => ({ AgentsView: () => <div>Agents</div> }))
 vi.mock('../../../views/TerminalView', () => ({ TerminalView: () => <div>IDE</div> }))
 vi.mock('../../../views/SprintView', () => ({ default: () => <div>Sprint</div> }))
-vi.mock('../../../views/MemoryView', () => ({ default: () => <div>Memory</div> }))
-vi.mock('../../../views/CostView', () => ({ default: () => <div>Cost</div> }))
 vi.mock('../../../views/SettingsView', () => ({ default: () => <div>Settings</div> }))
 vi.mock('../../../views/PRStationView', () => ({ default: () => <div>PRStation</div> }))
 

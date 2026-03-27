@@ -12,8 +12,6 @@ import { AgentsView } from '../../views/AgentsView'
 const DashboardView = React.lazy(() => import('../../views/DashboardView'))
 const IDEView = React.lazy(() => import('../../views/IDEView'))
 const SprintView = React.lazy(() => import('../../views/SprintView'))
-const MemoryView = React.lazy(() => import('../../views/MemoryView'))
-const CostView = React.lazy(() => import('../../views/CostView'))
 const SettingsView = React.lazy(() => import('../../views/SettingsView'))
 const PRStationView = React.lazy(() => import('../../views/PRStationView'))
 const TaskWorkbenchView = React.lazy(() => import('../../views/TaskWorkbenchView'))
@@ -26,8 +24,6 @@ const GitTreeView = React.lazy(() => import('../../views/GitTreeView'))
 export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
   dashboard: () => import('../../views/DashboardView'),
   sprint: () => import('../../views/SprintView'),
-  memory: () => import('../../views/MemoryView'),
-  cost: () => import('../../views/CostView'),
   settings: () => import('../../views/SettingsView'),
   'pr-station': () => import('../../views/PRStationView'),
   'task-workbench': () => import('../../views/TaskWorkbenchView'),
@@ -49,10 +45,6 @@ function resolveView(viewKey: View): React.ReactNode {
       return <IDEView />
     case 'sprint':
       return <SprintView />
-    case 'memory':
-      return <MemoryView />
-    case 'cost':
-      return <CostView />
     case 'settings':
       return <SettingsView />
     case 'pr-station':
