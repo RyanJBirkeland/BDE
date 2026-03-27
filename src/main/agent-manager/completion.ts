@@ -288,10 +288,16 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   } catch (err) {
     logger.error(`[completion] git push failed for task ${taskId} (branch ${branch}): ${err}`)
     try {
-      repo.updateTask(taskId, { notes: `git push failed for branch ${branch}: ${err}` })
+      repo.updateTask(taskId, {
+        status: 'error',
+        notes: `git push failed for branch ${branch}: ${err}`,
+        claimed_by: null,
+        completed_at: new Date().toISOString()
+      })
     } catch (e) {
       logger.warn(`[completion] Failed to update task ${taskId} after push error: ${e}`)
     }
+    await onTaskTerminal(taskId, 'error')
     return
   }
 
