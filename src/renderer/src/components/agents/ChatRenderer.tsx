@@ -3,7 +3,7 @@
  * Pre-processes AgentEvent[] into ChatBlock[] (pairing tool_call + tool_result),
  * then renders via @tanstack/react-virtual for performance with 500+ events.
  */
-import { useRef, useEffect, useMemo } from 'react'
+import { useRef, useEffect, useMemo, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { AgentEvent } from '../../../../shared/types'
 import { pairEvents, type ChatBlock } from '../../lib/pair-events'
@@ -12,6 +12,7 @@ import { ChatBubble } from './ChatBubble'
 import { ThinkingBlock } from './ThinkingBlock'
 import { ToolCallBlock } from './ToolCallBlock'
 import { PlaygroundCard } from './PlaygroundCard'
+import { PlaygroundModal } from './PlaygroundModal'
 
 // --- Block Renderers ---
 
@@ -73,7 +74,12 @@ function RateLimitedBlock({ attempt, retryDelayMs }: { attempt: number; retryDel
   )
 }
 
-function renderBlock(block: ChatBlock) {
+type PlaygroundEvent = { html: string; filename: string; sizeBytes: number }
+
+function renderBlock(
+  block: ChatBlock,
+  onPlaygroundClick: (event: PlaygroundEvent) => void
+) {
   switch (block.type) {
     case 'started':
       return <StartedBlock model={block.model} timestamp={block.timestamp} />
@@ -134,9 +140,9 @@ function renderBlock(block: ChatBlock) {
         <PlaygroundCard
           filename={block.filename}
           sizeBytes={block.sizeBytes}
-          onClick={() => {
-            /* TODO: open PlaygroundModal */
-          }}
+          onClick={() =>
+            onPlaygroundClick({ html: block.html, filename: block.filename, sizeBytes: block.sizeBytes })
+          }
         />
       )
     case 'stderr':
@@ -158,6 +164,7 @@ export function ChatRenderer({ events }: ChatRendererProps) {
   const parentRef = useRef<HTMLDivElement>(null)
   const blocks = useMemo(() => pairEvents(events), [events])
   const isAtBottomRef = useRef(true)
+  const [playgroundEvent, setPlaygroundEvent] = useState<PlaygroundEvent | null>(null)
 
   const virtualizer = useVirtualizer({
     count: blocks.length,
@@ -181,40 +188,50 @@ export function ChatRenderer({ events }: ChatRendererProps) {
   }
 
   return (
-    <div
-      ref={parentRef}
-      onScroll={handleScroll}
-      style={{
-        height: '100%',
-        overflow: 'auto',
-        contain: 'strict'
-      }}
-    >
+    <>
       <div
+        ref={parentRef}
+        onScroll={handleScroll}
         style={{
-          height: virtualizer.getTotalSize(),
-          width: '100%',
-          position: 'relative'
+          height: '100%',
+          overflow: 'auto',
+          contain: 'strict'
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => (
-          <div
-            key={virtualRow.key}
-            data-index={virtualRow.index}
-            ref={virtualizer.measureElement}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualRow.start}px)`,
-              padding: `${tokens.space[1]} ${tokens.space[3]}`
-            }}
-          >
-            {renderBlock(blocks[virtualRow.index])}
-          </div>
-        ))}
+        <div
+          style={{
+            height: virtualizer.getTotalSize(),
+            width: '100%',
+            position: 'relative'
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => (
+            <div
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+                padding: `${tokens.space[1]} ${tokens.space[3]}`
+              }}
+            >
+              {renderBlock(blocks[virtualRow.index], setPlaygroundEvent)}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+      {playgroundEvent && (
+        <PlaygroundModal
+          html={playgroundEvent.html}
+          filename={playgroundEvent.filename}
+          sizeBytes={playgroundEvent.sizeBytes}
+          onClose={() => setPlaygroundEvent(null)}
+        />
+      )}
+    </>
   )
 }
