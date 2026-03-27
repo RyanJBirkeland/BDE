@@ -150,15 +150,18 @@ export function MiniChart({ data, height = 80 }: MiniChartProps) {
             padding: '3px 8px',
             fontSize: tokens.size.xs,
             color: neonVar(accent, 'color'),
+            maxWidth: '280px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
             zIndex: 10
           }}
         >
-          <strong>{data[hover].value}</strong>
+          <strong>{formatValue(data[hover].value)}</strong>
           {data[hover].label && (
             <span style={{ opacity: 0.7, marginLeft: 6 }}>
-              {formatHourLabel(data[hover].label!)}
+              {formatLabel(data[hover].label!)}
             </span>
           )}
         </div>
@@ -167,12 +170,18 @@ export function MiniChart({ data, height = 80 }: MiniChartProps) {
   )
 }
 
-/** Format ISO hour string to readable time. */
-function formatHourLabel(iso: string): string {
-  try {
-    const d = new Date(iso)
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-  } catch {
-    return iso
+/** Format a number for tooltip display — integers stay as-is, floats get 2 decimals. */
+function formatValue(v: number): string {
+  return Number.isInteger(v) ? String(v) : v.toFixed(2)
+}
+
+/** Format a label for tooltip display — ISO dates become readable times, everything else passes through. */
+function formatLabel(label: string): string {
+  if (/^\d{4}-\d{2}-\d{2}T/.test(label)) {
+    const d = new Date(label)
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    }
   }
+  return label
 }

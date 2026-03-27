@@ -94,7 +94,7 @@ export default function DashboardView() {
     return sorted.map((a) => ({
       value: a.costUsd!,
       accent: 'orange' as const,
-      label: `$${a.costUsd!.toFixed(2)} — ${a.taskTitle ?? a.id.slice(0, 8)}`
+      label: `$${a.costUsd!.toFixed(2)} — ${truncate(a.taskTitle ?? a.id.slice(0, 8), 40)}`
     }))
   }, [localAgents])
 
@@ -486,6 +486,11 @@ function formatDuration(ms: number): string {
   if (m < 60) return `${m}m ${rem}s`
   const h = Math.floor(m / 60)
   return `${h}h ${m % 60}m`
+}
+
+/** Truncate a string to maxLen characters, adding ellipsis if needed. */
+function truncate(str: string, maxLen: number): string {
+  return str.length <= maxLen ? str : str.slice(0, maxLen) + '…'
 }
 
 /** Format a timestamp to relative "time ago" string. */
