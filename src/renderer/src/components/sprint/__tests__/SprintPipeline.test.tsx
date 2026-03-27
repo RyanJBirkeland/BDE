@@ -83,8 +83,8 @@ vi.mock('../../../stores/sprintUI', () => ({
   })
 }))
 
-vi.mock('../../../stores/ui', () => ({
-  useUIStore: vi.fn((selector) => {
+vi.mock('../../../stores/panelLayout', () => ({
+  usePanelLayoutStore: vi.fn((selector) => {
     if (typeof selector === 'function') {
       return selector({ setView: mocks.mockSetView })
     }

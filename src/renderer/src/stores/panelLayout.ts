@@ -360,6 +360,7 @@ export const DEFAULT_LAYOUT: PanelNode = createLeaf('dashboard')
 interface PanelLayoutState {
   root: PanelNode
   focusedPanelId: string | null
+  activeView: View
 
   splitPanel: (targetId: string, direction: 'horizontal' | 'vertical', viewKey: View) => void
   closeTab: (targetId: string, tabIndex: number) => void
@@ -376,11 +377,13 @@ interface PanelLayoutState {
   loadSavedLayout: () => Promise<void>
   findPanelByView: (viewKey: View) => PanelLeafNode | null
   getOpenViews: () => View[]
+  setView: (view: View) => void
 }
 
 export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
   root: DEFAULT_LAYOUT,
   focusedPanelId: (DEFAULT_LAYOUT as PanelLeafNode).panelId,
+  activeView: 'agents',
 
   splitPanel: (targetId, direction, viewKey): void => {
     set((s) => {
@@ -410,7 +413,13 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
     set((s) => {
       const newRoot = setActiveTab(s.root, panelId, tabIndex)
       if (newRoot === null) return s
-      return { root: newRoot }
+      const leaf = findLeaf(newRoot, panelId)
+      const activeTab = leaf?.tabs[tabIndex]
+      const isFocused = s.focusedPanelId === panelId
+      return {
+        root: newRoot,
+        ...(isFocused && activeTab ? { activeView: activeTab.viewKey } : {})
+      }
     })
   },
 
@@ -423,13 +432,20 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
   },
 
   focusPanel: (panelId): void => {
-    set({ focusedPanelId: panelId })
+    set((s) => {
+      const focused = findLeaf(s.root, panelId)
+      const activeTab = focused?.tabs[focused.activeTab]
+      return {
+        focusedPanelId: panelId,
+        ...(activeTab ? { activeView: activeTab.viewKey } : {})
+      }
+    })
   },
 
   resetLayout: (): void => {
     _resetIdCounter()
     const fresh = createLeaf('dashboard')
-    set({ root: fresh, focusedPanelId: fresh.panelId })
+    set({ root: fresh, focusedPanelId: fresh.panelId, activeView: 'dashboard' })
     if (typeof window !== 'undefined' && window.api?.settings) {
       window.api.settings.setJson('panel.layout', null).catch(() => {})
     }
@@ -443,7 +459,12 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
         const raw = saved as PanelNode
         const root = migrateLayout(raw)
         const firstLeaf = findFirstLeaf(root)
-        set({ root, focusedPanelId: firstLeaf?.panelId ?? '' })
+        const activeTab = firstLeaf?.tabs[firstLeaf.activeTab]
+        set({
+          root,
+          focusedPanelId: firstLeaf?.panelId ?? '',
+          ...(activeTab ? { activeView: activeTab.viewKey } : {})
+        })
       }
     } catch {
       /* use default */
@@ -466,6 +487,26 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
 
   getOpenViews: (): View[] => {
     return getOpenViews(get().root)
+  },
+
+  setView: (view): void => {
+    const store = get()
+    const existing = store.findPanelByView(view)
+    if (existing) {
+      store.focusPanel(existing.panelId)
+      const leaf = findLeaf(store.root, existing.panelId)
+      if (leaf) {
+        const tabIdx = leaf.tabs.findIndex((t) => t.viewKey === view)
+        if (tabIdx >= 0 && tabIdx !== leaf.activeTab) {
+          store.setActiveTab(existing.panelId, tabIdx)
+        }
+      }
+    } else {
+      const { focusedPanelId, root } = store
+      const targetId = focusedPanelId ?? (root.type === 'leaf' ? root.panelId : '')
+      store.addTab(targetId, view)
+    }
+    set({ activeView: view })
   }
 }))
 

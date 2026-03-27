@@ -16,7 +16,7 @@ import { SprintDetailPane } from './SprintDetailPane'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
 import { usePrConflictsStore } from '../../stores/prConflicts'
-import { useUIStore } from '../../stores/ui'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
 import { useSprintEvents } from '../../stores/sprintEvents'
@@ -70,7 +70,7 @@ export function SprintCenter() {
 
   const { visibleStuckTasks, dismissTask } = useHealthCheck(tasks)
 
-  const setView = useUIStore((s) => s.setView)
+  const setView = usePanelLayoutStore((s) => s.setView)
   const openWorkbench = useCallback(() => setView('task-workbench'), [setView])
 
   // --- Local UI state ---

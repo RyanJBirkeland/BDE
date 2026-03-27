@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NotificationBell } from '../NotificationBell'
 import { useNotificationsStore } from '../../../stores/notifications'
-import { useUIStore } from '../../../stores/ui'
+import { usePanelLayoutStore } from '../../../stores/panelLayout'
 
 describe('NotificationBell', () => {
   beforeEach(() => {
@@ -204,7 +204,7 @@ describe('NotificationBell', () => {
   it('navigates to internal view when notification with path viewLink is clicked', async () => {
     const user = userEvent.setup()
     const setView = vi.fn()
-    useUIStore.setState({ setView })
+    usePanelLayoutStore.setState({ setView })
 
     useNotificationsStore.getState().addNotification({
       type: 'agent_completed',

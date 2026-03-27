@@ -8,7 +8,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
-import { useUIStore, type View } from '../../stores/ui'
+import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
 import { timeAgo } from '../../lib/format'
 
 const NOTIFICATION_ICONS: Record<
@@ -39,7 +39,7 @@ export function NotificationBell(): React.JSX.Element {
   const markAsRead = useNotificationsStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead)
   const getUnreadCount = useNotificationsStore((s) => s.getUnreadCount)
-  const setView = useUIStore((s) => s.setView)
+  const setView = usePanelLayoutStore((s) => s.setView)
 
   const unreadCount = getUnreadCount()
 

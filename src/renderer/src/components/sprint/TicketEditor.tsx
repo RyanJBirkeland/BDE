@@ -8,7 +8,7 @@
  */
 import { useState, useEffect } from 'react'
 import { useSprintTasks } from '../../stores/sprintTasks'
-import { useUIStore } from '../../stores/ui'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { toast } from '../../stores/toasts'
 import { tokens } from '../../design-system/tokens'
 
@@ -129,7 +129,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
           <button
             className="bde-btn bde-btn--sm btn-glass"
             style={styles.viewLink}
-            onClick={() => useUIStore.getState().setView('sprint')}
+            onClick={() => usePanelLayoutStore.getState().setView('sprint')}
           >
             View Sprint Board
           </button>

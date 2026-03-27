@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DiffFile, DiffLine } from '../../lib/diff-parser'
 import { countDiffLines } from '../../lib/diff-parser'
-import { useUIStore } from '../../stores/ui'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { EmptyState } from '../ui/EmptyState'
 import { DIFF_VIRTUALIZE_THRESHOLD } from '../../lib/constants'
 import type { PrComment } from '../../../../shared/types'
@@ -437,7 +437,7 @@ function DiffViewer({
   const hunkRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const [activeFileIndex, setActiveFileIndex] = useState(-1)
   const [activeHunk, setActiveHunk] = useState<HunkAddress | null>(null)
-  const activeView = useUIStore((s) => s.activeView)
+  const activeView = usePanelLayoutStore((s) => s.activeView)
 
   const totalLines = useMemo(() => countDiffLines(files), [files])
   const hasComments = comments.length > 0
