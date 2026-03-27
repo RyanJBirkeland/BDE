@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { GitBranch, RefreshCw } from 'lucide-react'
 import { useGitTreeStore } from '../stores/gitTree'
+import { toast } from '../stores/toasts'
 import { CommitBox } from '../components/git-tree/CommitBox'
 import { FileTreeSection } from '../components/git-tree/FileTreeSection'
 import { BranchSelector } from '../components/git-tree/BranchSelector'
@@ -72,10 +73,15 @@ export default function GitTreeView(): React.ReactElement {
 
   function handleCheckout(branchName: string): void {
     if (!activeRepo) return
-    window.api.gitCheckout(activeRepo, branchName).then(() => {
-      fetchStatus(activeRepo)
-      fetchBranches(activeRepo)
-    })
+    window.api
+      .gitCheckout(activeRepo, branchName)
+      .then(() => {
+        fetchStatus(activeRepo)
+        fetchBranches(activeRepo)
+      })
+      .catch((err) => {
+        toast.error(`Checkout failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      })
   }
 
   function handleSelectFile(path: string, isStaged: boolean): void {

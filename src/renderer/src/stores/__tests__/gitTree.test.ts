@@ -269,7 +269,7 @@ describe('useGitTreeStore', () => {
       mockApi.gitCommit.mockRejectedValue(new Error('fail'))
       await useGitTreeStore.getState().commit('/repo')
 
-      expect(toast.error).toHaveBeenCalledWith('Commit failed')
+      expect(toast.error).toHaveBeenCalledWith('Commit failed: fail')
     })
   })
 
@@ -285,7 +285,7 @@ describe('useGitTreeStore', () => {
     it('shows error toast on failure', async () => {
       mockApi.gitPush.mockRejectedValue(new Error('fail'))
       await useGitTreeStore.getState().push('/repo')
-      expect(toast.error).toHaveBeenCalledWith('Push failed')
+      expect(toast.error).toHaveBeenCalledWith('Push failed: fail')
     })
   })
 

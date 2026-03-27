@@ -160,8 +160,8 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
       set({ commitMessage: '' })
       await get().fetchStatus(cwd)
       toast.success('Committed successfully')
-    } catch {
-      toast.error('Commit failed')
+    } catch (err) {
+      toast.error(`Commit failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   },
 
@@ -169,8 +169,8 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
     try {
       await window.api.gitPush(cwd)
       toast.success('Pushed successfully')
-    } catch {
-      toast.error('Push failed')
+    } catch (err) {
+      toast.error(`Push failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   },
 
