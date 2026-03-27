@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NotificationBell } from '../NotificationBell'
 import { useNotificationsStore } from '../../../stores/notifications'
+import { useUIStore } from '../../../stores/ui'
 
 describe('NotificationBell', () => {
   beforeEach(() => {
@@ -198,5 +199,43 @@ describe('NotificationBell', () => {
     expect(screen.getByText('Completed')).toBeInTheDocument()
     expect(screen.getByText('Failed')).toBeInTheDocument()
     expect(screen.getByText('Merged')).toBeInTheDocument()
+  })
+
+  it('navigates to internal view when notification with path viewLink is clicked', async () => {
+    const user = userEvent.setup()
+    const setView = vi.fn()
+    useUIStore.setState({ setView })
+
+    useNotificationsStore.getState().addNotification({
+      type: 'agent_completed',
+      title: 'Task done',
+      message: 'Completed',
+      viewLink: '/sprint/task-123'
+    })
+
+    render(<NotificationBell />)
+    await user.click(screen.getByRole('button', { name: /notifications/i }))
+    await user.click(screen.getByText('Task done').closest('button')!)
+
+    expect(setView).toHaveBeenCalledWith('sprint')
+  })
+
+  it('opens external URL in new tab when notification has http viewLink', async () => {
+    const user = userEvent.setup()
+    const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    useNotificationsStore.getState().addNotification({
+      type: 'pr_merged',
+      title: 'PR merged',
+      message: 'Merged',
+      viewLink: 'https://github.com/org/repo/pull/42'
+    })
+
+    render(<NotificationBell />)
+    await user.click(screen.getByRole('button', { name: /notifications/i }))
+    await user.click(screen.getByText('PR merged').closest('button')!)
+
+    expect(windowOpenSpy).toHaveBeenCalledWith('https://github.com/org/repo/pull/42', '_blank')
+    windowOpenSpy.mockRestore()
   })
 })

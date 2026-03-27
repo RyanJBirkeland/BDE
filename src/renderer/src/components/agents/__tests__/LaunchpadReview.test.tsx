@@ -67,10 +67,9 @@ describe('LaunchpadReview', () => {
     expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
 
-  it('calls onSaveTemplate when Save as Template is clicked', () => {
+  it('does not render the Save as Template button', () => {
     render(<LaunchpadReview {...defaultProps} />)
-    fireEvent.click(screen.getByText(/Save as Template/i))
-    expect(onSaveTemplate).toHaveBeenCalled()
+    expect(screen.queryByText(/Save as Template/i)).not.toBeInTheDocument()
   })
 
   it('disables spawn button when spawning', () => {

@@ -94,9 +94,11 @@ export function LaunchpadReview({
           <button type="button" className="launchpad__btn-ghost" onClick={onBack}>
             &#x2190; Back
           </button>
-          <button type="button" className="launchpad__btn-ghost" onClick={onSaveTemplate}>
-            Save as Template
-          </button>
+          {false && (
+            <button type="button" className="launchpad__btn-ghost" onClick={onSaveTemplate}>
+              Save as Template
+            </button>
+          )}
           <button
             type="button"
             className="launchpad__btn-spawn"

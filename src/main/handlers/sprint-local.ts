@@ -1,6 +1,7 @@
 import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
 import { readFile } from 'fs/promises'
+import { createLogger } from '../logger'
 import type { SprintTask, TaskTemplate, ClaimedTask } from '../../shared/types'
 import { validateStructural } from '../../shared/spec-validation'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
@@ -34,6 +35,8 @@ import {
 import type { CreateTaskInput, QueueStats } from '../data/sprint-queries'
 import { getAgentLogInfo } from '../data/agent-queries'
 import { readLog } from '../agent-history'
+
+const logger = createLogger('sprint-local')
 
 export { UPDATE_ALLOWLIST }
 export type { CreateTaskInput, QueueStats }
@@ -137,7 +140,7 @@ export function registerSprintLocalHandlers(): void {
       const { shouldBlock, blockedBy } = checkTaskDependencies(
         'new-task',
         task.depends_on,
-        console
+        logger
       )
       if (shouldBlock) {
         task = {
@@ -189,7 +192,7 @@ export function registerSprintLocalHandlers(): void {
       // Dependency check (existing logic)
       const taskDeps = task.depends_on
       if (taskDeps && taskDeps.length > 0) {
-        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, console)
+        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, logger)
         if (shouldBlock) {
           // Auto-block and record which dependencies are blocking, preserving user notes
           patch = {

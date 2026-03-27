@@ -8,6 +8,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
+import { useUIStore, type View } from '../../stores/ui'
 import { timeAgo } from '../../lib/format'
 
 const NOTIFICATION_ICONS: Record<
@@ -38,6 +39,7 @@ export function NotificationBell(): React.JSX.Element {
   const markAsRead = useNotificationsStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead)
   const getUnreadCount = useNotificationsStore((s) => s.getUnreadCount)
+  const setView = useUIStore((s) => s.setView)
 
   const unreadCount = getUnreadCount()
 
@@ -63,8 +65,14 @@ export function NotificationBell(): React.JSX.Element {
   const handleNotificationClick = (id: string, viewLink?: string): void => {
     markAsRead(id)
     if (viewLink) {
-      // TODO: Navigate to viewLink
-      // For now, just mark as read
+      if (viewLink.startsWith('http')) {
+        window.open(viewLink, '_blank')
+      } else {
+        // Internal path like '/sprint/task-id' — extract the view name segment
+        const viewName = viewLink.replace(/^\//, '').split('/')[0] as View
+        setView(viewName)
+        setIsOpen(false)
+      }
     }
   }
 

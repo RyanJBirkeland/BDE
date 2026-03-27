@@ -53,6 +53,26 @@
   font-size: 12px;
 }
 
+.pipeline-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
+  color: var(--neon-text-dim);
+  font-family: var(--bde-font-code);
+}
+
+.pipeline-empty-state__title {
+  font-size: 1.1rem;
+}
+
+.pipeline-empty-state__hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
 .sprint-pipeline__body {
   display: flex;
   flex: 1;

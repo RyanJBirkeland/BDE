@@ -15,12 +15,12 @@ let _cachedEnv: Record<string, string | undefined> | null = null
 
 /** Returns process.env with common tool paths prepended to PATH. Cached after first call. */
 export function buildAgentEnv(): Record<string, string | undefined> {
-  if (_cachedEnv) return _cachedEnv
+  if (_cachedEnv) return { ..._cachedEnv }
   const env = { ...process.env }
   const currentPath = env.PATH ?? ''
   env.PATH = [...EXTRA_PATHS, ...currentPath.split(':')].filter(Boolean).join(':')
   _cachedEnv = env
-  return env
+  return { ..._cachedEnv }
 }
 
 let _cachedOAuthToken: string | null = null

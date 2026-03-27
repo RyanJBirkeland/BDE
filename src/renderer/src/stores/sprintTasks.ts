@@ -123,16 +123,23 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   },
 
   updateTask: async (taskId, patch): Promise<void> => {
-    // Record pending update before optimistic patch
-    set((s) => ({
-      pendingUpdates: {
-        ...s.pendingUpdates,
-        [taskId]: { ts: Date.now(), fields: Object.keys(patch) }
-      },
-      tasks: s.tasks.map((t) =>
-        t.id === taskId ? { ...t, ...patch, updated_at: new Date().toISOString() } : t
-      )
-    }))
+    // Record pending update before optimistic patch, merging fields from prior pending updates
+    set((s) => {
+      const existing = s.pendingUpdates[taskId]
+      const existingFields = existing?.fields ?? []
+      const newFields = Object.keys(patch)
+      const mergedFields = [...new Set([...existingFields, ...newFields])]
+
+      return {
+        pendingUpdates: {
+          ...s.pendingUpdates,
+          [taskId]: { ts: Date.now(), fields: mergedFields }
+        },
+        tasks: s.tasks.map((t) =>
+          t.id === taskId ? { ...t, ...patch, updated_at: new Date().toISOString() } : t
+        )
+      }
+    })
     try {
       await window.api.sprint.update(taskId, patch)
       // DB write committed — remove from pending

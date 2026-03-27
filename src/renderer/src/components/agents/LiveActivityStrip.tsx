@@ -70,8 +70,7 @@ export function LiveActivityStrip({ onSelectAgent }: LiveActivityStripProps) {
             transition: 'all 150ms ease'
           }}
           onClick={() => {
-            // TODO: implement spawn agent dialog
-            console.log('Spawn agent clicked')
+            window.dispatchEvent(new CustomEvent('bde:open-spawn-modal'))
           }}
         >
           Spawn Agent
