@@ -11,6 +11,7 @@ import {
   Settings,
   GitCommitHorizontal,
   Pin,
+  Workflow,
   type LucideIcon
 } from 'lucide-react'
 import { GlassPanel } from '../neon/GlassPanel'
@@ -21,7 +22,7 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   dashboard: LayoutDashboard,
   agents: Terminal,
   ide: SquareTerminal,
-  sprint: GitBranch,
+  sprint: Workflow,
   'pr-station': GitPullRequest,
   git: GitCommitHorizontal,
   memory: Brain,
