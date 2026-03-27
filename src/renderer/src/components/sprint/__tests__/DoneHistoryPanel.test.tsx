@@ -76,7 +76,7 @@ describe('DoneHistoryPanel', () => {
   it('calls onClose when X button clicked', () => {
     const props = makeProps()
     render(<DoneHistoryPanel {...props} />)
-    fireEvent.click(screen.getByText('×'))
+    fireEvent.click(screen.getByLabelText('Close'))
     expect(props.onClose).toHaveBeenCalled()
   })
 
