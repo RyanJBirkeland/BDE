@@ -5,12 +5,12 @@ import {
   SquareTerminal,
   GitBranch,
   GitPullRequest,
-  Brain,
-  DollarSign,
   Settings,
   GitCommitHorizontal,
   MoreHorizontal,
   Workflow,
+  Brain,
+  DollarSign,
   type LucideIcon
 } from 'lucide-react'
 import { SidebarItem } from './SidebarItem'
@@ -30,7 +30,7 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   memory: Brain,
   cost: DollarSign,
   settings: Settings,
-  'task-workbench': GitBranch // Using GitBranch as fallback for task-workbench
+  'task-workbench': GitBranch
 }
 
 const VIEW_LABELS: Record<View, string> = {
@@ -41,7 +41,7 @@ const VIEW_LABELS: Record<View, string> = {
   'pr-station': 'PR Station',
   git: 'Source Control',
   memory: 'Memory',
-  cost: 'Cost Tracker',
+  cost: 'Cost',
   settings: 'Settings',
   'task-workbench': 'Task Workbench'
 }
@@ -53,9 +53,9 @@ const VIEW_SHORTCUTS: Record<View, string> = {
   sprint: '⌘4',
   'pr-station': '⌘5',
   git: '⌘6',
-  memory: '⌘7',
-  cost: '⌘8',
-  settings: '⌘9',
+  memory: '⌘8',
+  cost: '⌘9',
+  settings: '⌘7',
   'task-workbench': '⌘0'
 }
 
