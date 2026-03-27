@@ -71,6 +71,7 @@ export function AppearanceSection(): React.JSX.Element {
               style={{ background: color }}
               onClick={() => setAccent(color)}
               title={label}
+              aria-label={label}
               type="button"
             />
           ))}

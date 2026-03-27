@@ -95,6 +95,7 @@ export function CommandBar({
         placeholder={
           disabled && disabledReason ? disabledReason : 'Type a message or / for commands...'
         }
+        aria-label="Agent command input"
         autoFocus
       />
     </div>

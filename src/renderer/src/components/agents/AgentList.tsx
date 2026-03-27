@@ -166,6 +166,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             placeholder="Filter agents..."
+            aria-label="Filter agents"
             style={{
               flex: 1,
               background: 'none',
