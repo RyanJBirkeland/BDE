@@ -54,13 +54,14 @@ describe('PipelineStage', () => {
     expect(screen.getByText('Queued')).toBeInTheDocument()
   })
 
-  it('renders the task count string', async () => {
+  it('renders the task count string when stage has tasks', async () => {
     const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [makeTask({ id: 't1' }), makeTask({ id: 't2' }), makeTask({ id: 't3' })]
     render(
       <PipelineStage
         name="queued"
         label="Queued"
-        tasks={[]}
+        tasks={tasks}
         count="3 tasks"
         selectedTaskId={null}
         onTaskClick={vi.fn()}
@@ -69,19 +70,19 @@ describe('PipelineStage', () => {
     expect(screen.getByText('3 tasks')).toBeInTheDocument()
   })
 
-  it('renders "2 of 5" count format', async () => {
+  it('hides count when stage is empty', async () => {
     const { PipelineStage } = await import('../PipelineStage')
     render(
       <PipelineStage
-        name="done"
-        label="Done"
+        name="queued"
+        label="Queued"
         tasks={[]}
-        count="2 of 5"
+        count="0 tasks"
         selectedTaskId={null}
         onTaskClick={vi.fn()}
       />
     )
-    expect(screen.getByText('2 of 5')).toBeInTheDocument()
+    expect(screen.queryByText('0 tasks')).not.toBeInTheDocument()
   })
 
   it('applies the correct dot class based on name', async () => {

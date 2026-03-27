@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 
 interface PipelineBacklogProps {
@@ -8,6 +9,8 @@ interface PipelineBacklogProps {
   onRerun: (task: SprintTask) => void
 }
 
+const FAILED_VISIBLE_LIMIT = 3
+
 export function PipelineBacklog({
   backlog,
   failed,
@@ -15,6 +18,9 @@ export function PipelineBacklog({
   onAddToQueue,
   onRerun,
 }: PipelineBacklogProps) {
+  const [failedExpanded, setFailedExpanded] = useState(false)
+  const visibleFailed = failedExpanded ? failed : failed.slice(0, FAILED_VISIBLE_LIMIT)
+  const hiddenCount = failed.length - FAILED_VISIBLE_LIMIT
   return (
     <div className="pipeline-sidebar">
       <div className="pipeline-sidebar__section pipeline-sidebar__section--grow">
@@ -50,7 +56,7 @@ export function PipelineBacklog({
           <div className="pipeline-sidebar__label" style={{ color: 'var(--neon-red)' }}>
             FAILED <span className="pipeline-sidebar__count">{failed.length}</span>
           </div>
-          {failed.map((task) => (
+          {visibleFailed.map((task) => (
             <div key={task.id} className="failed-card" onClick={() => onTaskClick(task.id)}>
               <div className="failed-card__title">{task.title}</div>
               <div className="failed-card__meta">
@@ -68,6 +74,22 @@ export function PipelineBacklog({
               </button>
             </div>
           ))}
+          {!failedExpanded && hiddenCount > 0 && (
+            <button
+              className="pipeline-sidebar__expand"
+              onClick={() => setFailedExpanded(true)}
+            >
+              +{hiddenCount} more...
+            </button>
+          )}
+          {failedExpanded && failed.length > FAILED_VISIBLE_LIMIT && (
+            <button
+              className="pipeline-sidebar__expand"
+              onClick={() => setFailedExpanded(false)}
+            >
+              Show less
+            </button>
+          )}
         </div>
       )}
     </div>
