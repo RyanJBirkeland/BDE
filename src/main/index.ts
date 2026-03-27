@@ -21,6 +21,7 @@ import { registerIdeFsHandlers } from './handlers/ide-fs-handlers'
 import { registerPlaygroundHandlers } from './handlers/playground-handlers'
 import { registerDashboardHandlers } from './handlers/dashboard-handlers'
 import { getDb, closeDb } from './db'
+import { importSprintTasksFromSupabase } from './data/supabase-import'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
 import { startQueueApi, stopQueueApi } from './queue-api'
@@ -88,6 +89,11 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.bde')
 
   getDb()
+
+  // One-time async import from Supabase (no-op if local table already has rows or credentials missing)
+  importSprintTasksFromSupabase(getDb()).catch((err) =>
+    console.warn('[startup] Supabase import skipped:', err)
+  )
 
   const stopDbWatcher = startDbWatcher()
   app.on('will-quit', stopDbWatcher)
