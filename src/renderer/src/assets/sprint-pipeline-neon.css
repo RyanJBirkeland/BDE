@@ -443,8 +443,8 @@
 
 /* ── Detail Drawer ── */
 .task-drawer {
-  width: 300px;
   flex-shrink: 0;
+  position: relative;
   border-left: 1px solid var(--neon-purple-border);
   background: linear-gradient(135deg, rgba(138, 43, 226, 0.04), rgba(10, 0, 21, 0.95));
   display: flex;
@@ -452,26 +452,44 @@
   overflow-y: auto;
 }
 
+/* Resize handle — left edge drag strip */
+.task-drawer__resize-handle {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 150ms ease;
+}
+.task-drawer__resize-handle:hover,
+.task-drawer__resize-handle:active {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px rgba(0, 255, 200, 0.3);
+}
+
 .task-drawer__head {
-  padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: relative;
 }
 
 .task-drawer__title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--neon-text);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   word-break: break-word;
-  padding-right: 28px;
+  padding-right: 32px;
+  line-height: 1.35;
 }
 
 .task-drawer__status {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--neon-text-muted);
 }
 
@@ -484,8 +502,8 @@
 
 .task-drawer__close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 16px;
+  right: 16px;
   background: none;
   border: none;
   color: var(--neon-text-dim);
@@ -503,27 +521,27 @@
 }
 
 .task-drawer__body {
-  padding: 12px 16px;
+  padding: 16px 20px;
   flex: 1;
   overflow-y: auto;
 }
 
 .task-drawer__field {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .task-drawer__label {
   display: block;
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
   color: var(--neon-text-dim);
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 
 .task-drawer__value {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--neon-text-muted);
   line-height: 1.5;
 }
@@ -531,39 +549,39 @@
 /* Prompt block */
 .task-drawer__prompt-label {
   display: block;
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
   color: var(--neon-text-dim);
-  margin-bottom: 4px;
-  margin-top: 16px;
+  margin-bottom: 6px;
+  margin-top: 20px;
 }
 
 .task-drawer__prompt {
   background: var(--neon-surface-dim);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 6px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--neon-text-muted);
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 160px;
+  max-height: 240px;
   overflow-y: auto;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* Spec link */
 .task-drawer__spec-link {
   color: var(--neon-cyan);
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
   background: none;
   border: none;
   font: inherit;
   padding: 0;
-  margin-top: 12px;
+  margin-top: 16px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -576,27 +594,28 @@
 /* Agent link */
 .task-drawer__agent-link {
   color: var(--neon-cyan);
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
   background: none;
   border: none;
   font: inherit;
   padding: 0;
+  margin-top: 8px;
 }
 
 /* Actions bar */
 .task-drawer__actions {
-  padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   gap: 8px;
   flex-shrink: 0;
 }
 
 .task-drawer__btn {
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   border: 1px solid;
   cursor: pointer;

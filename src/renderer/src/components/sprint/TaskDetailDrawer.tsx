@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
+
+const MIN_DRAWER_WIDTH = 280
+const MAX_DRAWER_WIDTH = 700
+const DEFAULT_DRAWER_WIDTH = 380
 
 export interface TaskDetailDrawerProps {
   task: SprintTask
@@ -73,6 +77,10 @@ export function TaskDetailDrawer({
   onViewAgents
 }: TaskDetailDrawerProps) {
   const [elapsed, setElapsed] = useState('')
+  const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
+  const dragging = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(DEFAULT_DRAWER_WIDTH)
 
   useEffect(() => {
     if (task.status !== 'active' || !task.started_at) return
@@ -81,10 +89,39 @@ export function TaskDetailDrawer({
     return () => clearInterval(interval)
   }, [task.status, task.started_at])
 
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    dragging.current = true
+    startX.current = e.clientX
+    startWidth.current = width
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const onMove = (ev: MouseEvent): void => {
+      if (!dragging.current) return
+      const delta = startX.current - ev.clientX
+      const next = Math.min(MAX_DRAWER_WIDTH, Math.max(MIN_DRAWER_WIDTH, startWidth.current + delta))
+      setWidth(next)
+    }
+
+    const onUp = (): void => {
+      dragging.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [width])
+
   const depStats = getDependencyStats(task.depends_on)
 
   return (
-    <aside className="task-drawer" data-testid="task-detail-drawer">
+    <aside className="task-drawer" data-testid="task-detail-drawer" style={{ width }}>
+      {/* Resize handle */}
+      <div className="task-drawer__resize-handle" onMouseDown={handleResizeStart} />
       {/* Header */}
       <div className="task-drawer__head">
         <h2 className="task-drawer__title">{task.title}</h2>
