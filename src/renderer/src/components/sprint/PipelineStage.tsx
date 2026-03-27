@@ -21,26 +21,32 @@ export function PipelineStage({
   onTaskClick,
   doneFooter
 }: PipelineStageProps) {
+  const empty = tasks.length === 0 && !doneFooter
+
   return (
-    <div className="pipeline-stage">
-      <div className={`pipeline-stage__dot pipeline-stage__dot--${name}`}>{tasks.length}</div>
+    <div className={`pipeline-stage${empty ? ' pipeline-stage--empty' : ''}`}>
+      <div className={`pipeline-stage__dot pipeline-stage__dot--${name}${empty ? ' pipeline-stage__dot--dim' : ''}`}>
+        {tasks.length}
+      </div>
       <div className="pipeline-stage__header">
         <div className={`pipeline-stage__name pipeline-stage__name--${name}`}>{label}</div>
-        <div className="pipeline-stage__count">{count}</div>
+        {!empty && <div className="pipeline-stage__count">{count}</div>}
       </div>
-      <div className="pipeline-stage__cards">
-        <AnimatePresence mode="popLayout">
-          {tasks.map((task) => (
-            <TaskPill
-              key={task.id}
-              task={task}
-              selected={task.id === selectedTaskId}
-              onClick={onTaskClick}
-            />
-          ))}
-        </AnimatePresence>
-        {doneFooter}
-      </div>
+      {!empty && (
+        <div className="pipeline-stage__cards">
+          <AnimatePresence mode="popLayout">
+            {tasks.map((task) => (
+              <TaskPill
+                key={task.id}
+                task={task}
+                selected={task.id === selectedTaskId}
+                onClick={onTaskClick}
+              />
+            ))}
+          </AnimatePresence>
+          {doneFooter}
+        </div>
+      )}
     </div>
   )
 }

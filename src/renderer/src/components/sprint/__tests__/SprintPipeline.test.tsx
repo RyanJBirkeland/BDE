@@ -254,10 +254,10 @@ describe('SprintPipeline', () => {
     })
   })
 
-  it('renders pipeline header with "Sprint" title', async () => {
+  it('renders pipeline header with "Task Pipeline" title', async () => {
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
-    expect(screen.getByText('Sprint')).toBeInTheDocument()
+    expect(screen.getByText('Task Pipeline')).toBeInTheDocument()
   })
 
   it('renders 5 pipeline stages (queued, blocked, active, review, done)', async () => {
@@ -311,10 +311,10 @@ describe('SprintPipeline', () => {
     expect(screen.getByTestId('done-history-panel')).toBeInTheDocument()
   })
 
-  it('renders "+ New Task" button', async () => {
+  it('does not render "+ New Task" button (task creation is in Task Workbench)', async () => {
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
-    expect(screen.getByText('+ New Task')).toBeInTheDocument()
+    expect(screen.queryByText('+ New Task')).not.toBeInTheDocument()
   })
 
   it('wraps pipeline stages in LayoutGroup', async () => {
@@ -362,25 +362,24 @@ describe('SprintPipeline - additional scenarios', () => {
 
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
-    expect(screen.getByText('2 active')).toBeInTheDocument()
-    expect(screen.getByText('1 queued')).toBeInTheDocument()
-    expect(screen.getByText('3 done')).toBeInTheDocument()
+    // Stats use <b> tags so text is split across elements — check container
+    const header = document.querySelector('.sprint-pipeline__stats')!
+    expect(header.textContent).toContain('2')
+    expect(header.textContent).toContain('active')
+    expect(header.textContent).toContain('1')
+    expect(header.textContent).toContain('queued')
+    expect(header.textContent).toContain('3')
+    expect(header.textContent).toContain('done')
   })
 
   it('shows 0 active, 0 queued, 0 done when tasks is empty', async () => {
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
-    expect(screen.getByText('0 active')).toBeInTheDocument()
-    expect(screen.getByText('0 queued')).toBeInTheDocument()
-    expect(screen.getByText('0 done')).toBeInTheDocument()
-  })
-
-  it('opens NewTicketModal when "+ New Task" button is clicked', async () => {
-    const { SprintPipeline } = await import('../SprintPipeline')
-    const { fireEvent: fe } = await import('@testing-library/react')
-    render(<SprintPipeline />)
-    fe.click(screen.getByText('+ New Task'))
-    expect(screen.getByTestId('new-ticket-modal')).toBeInTheDocument()
+    const header = document.querySelector('.sprint-pipeline__stats')!
+    expect(header.textContent).toContain('0')
+    expect(header.textContent).toContain('active')
+    expect(header.textContent).toContain('queued')
+    expect(header.textContent).toContain('done')
   })
 
   it('auto-selects first active task when none is selected and active tasks exist', async () => {
@@ -469,34 +468,6 @@ describe('SprintPipeline - additional scenarios', () => {
     fe.click(screen.getByTestId('dhp-close'))
     expect(mocks.mockSetDoneViewOpen).toHaveBeenCalledWith(false)
   })
-
-  it('calls createTask and closes NewTicketModal when onCreate is called', async () => {
-    const { SprintPipeline } = await import('../SprintPipeline')
-    const { fireEvent: fe } = await import('@testing-library/react')
-    render(<SprintPipeline />)
-    // Open modal first
-    fe.click(screen.getByText('+ New Task'))
-    expect(screen.getByTestId('new-ticket-modal')).toBeInTheDocument()
-    // Trigger create
-    fe.click(screen.getByTestId('ntm-create'))
-    expect(mocks.mockCreateTask).toHaveBeenCalled()
-    // Modal should close
-    expect(screen.queryByTestId('new-ticket-modal')).not.toBeInTheDocument()
-  })
-
-  it('closes NewTicketModal when onClose is called', async () => {
-    const { SprintPipeline } = await import('../SprintPipeline')
-    const { fireEvent: fe } = await import('@testing-library/react')
-    render(<SprintPipeline />)
-    // Open modal first
-    fe.click(screen.getByText('+ New Task'))
-    expect(screen.getByTestId('new-ticket-modal')).toBeInTheDocument()
-    // Trigger close
-    fe.click(screen.getByTestId('ntm-close'))
-    // Modal should close
-    expect(screen.queryByTestId('new-ticket-modal')).not.toBeInTheDocument()
-  })
-
 
   it('calls setView("agents") when drawer onViewLogs is triggered', async () => {
     const task = makeTask({ id: 'active-1', status: 'active' })

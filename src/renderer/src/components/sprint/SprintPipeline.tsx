@@ -2,7 +2,7 @@
  * SprintPipeline — Three-zone neon pipeline layout:
  * Left: PipelineBacklog | Center: Pipeline stages | Right: TaskDetailDrawer (conditional)
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { LayoutGroup } from 'framer-motion'
 import { useSprintTasks } from '../../stores/sprintTasks'
@@ -22,7 +22,6 @@ import { PipelineStage } from './PipelineStage'
 import { TaskDetailDrawer } from './TaskDetailDrawer'
 import { SpecPanel } from './SpecPanel'
 import { DoneHistoryPanel } from './DoneHistoryPanel'
-import { NewTicketModal } from './NewTicketModal'
 import type { SprintTask } from '../../../../shared/types'
 
 import '../../assets/sprint-pipeline-neon.css'
@@ -31,7 +30,6 @@ export function SprintPipeline() {
   // --- Store state ---
   const tasks = useSprintTasks((s) => s.tasks)
   const updateTask = useSprintTasks((s) => s.updateTask)
-  const createTask = useSprintTasks((s) => s.createTask)
 
   const { selectedTaskId, drawerOpen, specPanelOpen, doneViewOpen, logDrawerTaskId } = useSprintUI(
     useShallow((s) => ({
@@ -64,7 +62,6 @@ export function SprintPipeline() {
   useHealthCheck(tasks)
 
   // --- Local UI state ---
-  const [showNewTicketModal, setShowNewTicketModal] = useState(false)
 
   // Partition tasks
   const partition = useMemo(() => partitionSprintTasks(tasks), [tasks])
@@ -149,24 +146,18 @@ export function SprintPipeline() {
   return (
     <div className="sprint-pipeline">
       <header className="sprint-pipeline__header">
-        <h1 className="sprint-pipeline__title">Sprint</h1>
+        <h1 className="sprint-pipeline__title">Task Pipeline</h1>
         <div className="sprint-pipeline__stats">
           <span className="sprint-pipeline__stat">
-            {activeCount} active
+            <b>{activeCount}</b> active
           </span>
           <span className="sprint-pipeline__stat">
-            {queuedCount} queued
+            <b>{queuedCount}</b> queued
           </span>
           <span className="sprint-pipeline__stat">
-            {doneCount} done
+            <b>{doneCount}</b> done
           </span>
         </div>
-        <button
-          className="sprint-pipeline__new-btn"
-          onClick={() => setShowNewTicketModal(true)}
-        >
-          + New Task
-        </button>
       </header>
 
       <div className="sprint-pipeline__body">
@@ -272,16 +263,6 @@ export function SprintPipeline() {
 
       <ConfirmModal {...confirmProps} />
 
-      {showNewTicketModal && (
-        <NewTicketModal
-          open={showNewTicketModal}
-          onClose={() => setShowNewTicketModal(false)}
-          onCreate={(data) => {
-            createTask(data)
-            setShowNewTicketModal(false)
-          }}
-        />
-      )}
     </div>
   )
 }
