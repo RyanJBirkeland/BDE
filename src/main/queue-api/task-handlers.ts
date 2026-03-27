@@ -38,17 +38,17 @@ import { checkSpecSemantic } from '../spec-semantic-check'
  * Validates task dependencies for cycle detection and ID existence.
  * Returns error message if validation fails, null if valid.
  */
-async function validateDependencies(
+function validateDependencies(
   taskId: string,
   dependsOn: TaskDependency[]
-): Promise<string | null> {
+): string | null {
   // Check for empty dependencies
   if (dependsOn.length === 0) {
     return null
   }
 
   // Fetch all existing tasks for validation
-  const allTasks = await getTasksWithDependencies()
+  const allTasks = getTasksWithDependencies()
   const existingTaskIds = new Set(allTasks.map((t) => t.id))
 
   // Add the current task ID to the set for self-reference detection
@@ -88,7 +88,7 @@ async function validateDependencies(
 }
 
 export async function handleHealth(res: http.ServerResponse): Promise<void> {
-  const stats = await getQueueStats()
+  const stats = getQueueStats()
   sendJson(res, 200, {
     status: 'ok',
     version: '1.0.0',
@@ -110,12 +110,12 @@ export async function handleListTasks(
   query: URLSearchParams
 ): Promise<void> {
   const status = query.get('status') ?? undefined
-  const tasks = await listTasks(status)
+  const tasks = listTasks(status)
   sendJson(res, 200, tasks.map(toCamelCase))
 }
 
 export async function handleGetTask(res: http.ServerResponse, id: string): Promise<void> {
-  const task = await getTask(id)
+  const task = getTask(id)
   if (!task) {
     sendJson(res, 404, { error: `Task ${id} not found` })
     return
@@ -216,7 +216,7 @@ export async function handleCreateTask(
     | undefined
   const PENDING_TASK_ID = 'pending-new-task'
   if (dependsOn && dependsOn.length > 0) {
-    const validationError = await validateDependencies(
+    const validationError = validateDependencies(
       PENDING_TASK_ID,
       dependsOn as TaskDependency[]
     )
@@ -233,7 +233,7 @@ export async function handleCreateTask(
     dependsOn.length > 0 &&
     (createInput.status === 'queued' || !createInput.status)
   ) {
-    const { shouldBlock, blockedBy } = await checkTaskDependencies(
+    const { shouldBlock, blockedBy } = checkTaskDependencies(
       PENDING_TASK_ID,
       dependsOn,
       console
@@ -245,7 +245,7 @@ export async function handleCreateTask(
   }
 
   // Create the task (with potentially auto-blocked status)
-  const task = await createTask(createInput as unknown as Parameters<typeof createTask>[0])
+  const task = createTask(createInput as unknown as Parameters<typeof createTask>[0])
   if (!task) {
     sendJson(res, 500, { error: 'Failed to create task' })
     return
@@ -289,7 +289,7 @@ export async function handleUpdateTask(
   const snaked = toSnakeCase(filtered)
   let updated: Awaited<ReturnType<typeof updateTask>>
   try {
-    updated = await updateTask(id, snaked)
+    updated = updateTask(id, snaked)
   } catch (err) {
     sendJson(res, 500, {
       error: `Failed to update task ${id}: ${err instanceof Error ? err.message : String(err)}`
@@ -334,7 +334,7 @@ export async function handleUpdateStatus(
 
     if (!skipValidation) {
       // Fetch the task to get its spec
-      const task = await getTask(id)
+      const task = getTask(id)
       if (!task) {
         sendJson(res, 404, { error: `Task ${id} not found` })
         return
@@ -387,7 +387,7 @@ export async function handleUpdateStatus(
 
   let updated: Awaited<ReturnType<typeof updateTask>>
   try {
-    updated = await updateTask(id, toSnakeCase(filtered))
+    updated = updateTask(id, toSnakeCase(filtered))
   } catch (err) {
     sendJson(res, 500, {
       error: `Failed to update task status ${id}: ${err instanceof Error ? err.message : String(err)}`
@@ -406,7 +406,7 @@ export async function handleUpdateStatus(
   const terminalStatuses = new Set(['done', 'failed', 'error', 'cancelled'])
   if (patch.status && terminalStatuses.has(patch.status)) {
     try {
-      const allTasks = await getTasksWithDependencies()
+      const allTasks = getTasksWithDependencies()
       const depIndex = createDependencyIndex()
       depIndex.rebuild(allTasks)
       await resolveDependents(id, patch.status, depIndex, getTask, updateTask, console)
@@ -443,8 +443,8 @@ export async function handleClaim(
   // Enforce WIP limit — prevent more than MAX_ACTIVE_TASKS active tasks.
   // Note: TOCTOU race exists between this check and claimTask() below.
   // Acceptable because BDE's drain loop is the primary caller and runs
-  // sequentially. For true atomicity, this would need a Supabase RPC.
-  const activeCount = await getActiveTaskCount()
+  // sequentially. SQLite transactions could enforce this if needed.
+  const activeCount = getActiveTaskCount()
   if (activeCount >= MAX_ACTIVE_TASKS) {
     sendJson(res, 409, {
       error: `WIP limit reached (${activeCount}/${MAX_ACTIVE_TASKS} active tasks). Complete or cancel an active task first.`
@@ -452,7 +452,7 @@ export async function handleClaim(
     return
   }
 
-  const claimed = await claimTask(id, executorId)
+  const claimed = claimTask(id, executorId)
   if (!claimed) {
     sendJson(res, 409, { error: `Task ${id} is not claimable (not queued or does not exist)` })
     return
@@ -484,7 +484,7 @@ export async function handleRelease(
     return
   }
 
-  const released = await releaseTask(id, claimedBy)
+  const released = releaseTask(id, claimedBy)
   if (!released) {
     sendJson(res, 409, {
       error: `Task ${id} is not releasable (not active, not owned by caller, or does not exist)`
@@ -538,7 +538,7 @@ export async function handleUpdateDependencies(
     }
 
     // Validate dependencies (cycle detection + ID existence)
-    const validationError = await validateDependencies(id, dependsOn as TaskDependency[])
+    const validationError = validateDependencies(id, dependsOn as TaskDependency[])
     if (validationError) {
       sendJson(res, 400, { error: validationError })
       return
@@ -548,7 +548,7 @@ export async function handleUpdateDependencies(
   const snaked = toSnakeCase({ dependsOn })
   let updated: Awaited<ReturnType<typeof updateTask>>
   try {
-    updated = await updateTask(id, snaked)
+    updated = updateTask(id, snaked)
   } catch (err) {
     sendJson(res, 500, {
       error: `Failed to update task dependencies ${id}: ${err instanceof Error ? err.message : String(err)}`
@@ -623,7 +623,7 @@ export async function handleBatchTasks(
           results.push({ id, op: 'update', ok: false, error: 'No valid fields to update' })
           continue
         }
-        const updated = await updateTask(id, toSnakeCase(filtered))
+        const updated = updateTask(id, toSnakeCase(filtered))
         results.push({
           id,
           op: 'update',
@@ -631,7 +631,7 @@ export async function handleBatchTasks(
           error: updated ? undefined : 'Task not found'
         })
       } else if (opType === 'delete') {
-        await deleteTask(id)
+        deleteTask(id)
         results.push({ id, op: 'delete', ok: true })
       } else {
         results.push({

@@ -138,7 +138,7 @@ export async function runAgent(
   let prompt = (task.prompt || task.spec || task.title || '').trim()
   if (!prompt) {
     logger.error(`[agent-manager] Task ${task.id} has no prompt/spec/title — marking error`)
-    await repo.updateTask(task.id, {
+    repo.updateTask(task.id, {
       status: 'error',
       completed_at: new Date().toISOString(),
       notes: 'Empty prompt',
@@ -183,16 +183,16 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     ])
   } catch (err) {
     logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
-    await repo
-      .updateTask(task.id, {
+    try {
+      repo.updateTask(task.id, {
         status: 'error',
         completed_at: new Date().toISOString(),
         notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}`,
         claimed_by: null
       })
-      .catch((err) =>
-        logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${err}`)
-      )
+    } catch (updateErr) {
+      logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${updateErr}`)
+    }
     await onTaskTerminal(task.id, 'error')
     cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch })
     return
@@ -221,11 +221,11 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   activeAgents.set(task.id, agent)
   let lastAgentOutput = ''
   // Persist agent_run_id so LogDrawer can find logs after restart
-  await repo
-    .updateTask(task.id, { agent_run_id: agentRunId })
-    .catch((err) =>
-      logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
-    )
+  try {
+    repo.updateTask(task.id, { agent_run_id: agentRunId })
+  } catch (err) {
+    logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
+  }
   // Persist agent run to local SQLite for log access and history
   createAgentRecord({
     id: agentRunId,
@@ -361,7 +361,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
 
   // NOTE: Do NOT delete from activeAgents until completion handlers finish.
   // Removing early creates a race where orphan recovery re-queues the task
-  // while resolveSuccess is still running (the task is still 'active' in Supabase).
+  // while resolveSuccess is still running (the task is still 'active' in the DB).
 
   // Update agent run record with final state
   updateAgentMeta(agentRunId, {
@@ -380,30 +380,30 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
   const now = new Date().toISOString()
 
   if (ffResult === 'fast-fail-exhausted') {
-    await repo
-      .updateTask(task.id, {
+    try {
+      repo.updateTask(task.id, {
         status: 'error',
         completed_at: now,
         notes: 'Fast-fail exhausted',
         claimed_by: null,
         needs_review: true
       })
-      .catch((err) =>
-        logger.error(
-          `[agent-manager] Failed to update task ${task.id} after fast-fail exhausted: ${err}`
-        )
+    } catch (err) {
+      logger.error(
+        `[agent-manager] Failed to update task ${task.id} after fast-fail exhausted: ${err}`
       )
+    }
     await onTaskTerminal(task.id, 'error')
   } else if (ffResult === 'fast-fail-requeue') {
-    await repo
-      .updateTask(task.id, {
+    try {
+      repo.updateTask(task.id, {
         status: 'queued',
         fast_fail_count: (task.fast_fail_count ?? 0) + 1,
         claimed_by: null
       })
-      .catch((err) =>
-        logger.error(`[agent-manager] Failed to requeue fast-fail task ${task.id}: ${err}`)
-      )
+    } catch (err) {
+      logger.error(`[agent-manager] Failed to requeue fast-fail task ${task.id}: ${err}`)
+    }
   } else {
     // Normal exit — attempt success resolution
     try {
@@ -424,7 +424,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
       )
     } catch (err) {
       logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)
-      const isTerminal = await resolveFailure(
+      const isTerminal = resolveFailure(
         { taskId: task.id, retryCount: task.retry_count ?? 0, repo },
         logger
       )
@@ -434,7 +434,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
     }
   }
 
-  // Safe to remove from active map now — completion handler has updated Supabase
+  // Safe to remove from active map now — completion handler has updated the DB
   activeAgents.delete(task.id)
 
   // Cleanup worktree (fire-and-forget)

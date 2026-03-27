@@ -30,13 +30,13 @@ export function buildBlockedNotes(blockedBy: string[], existingNotes?: string | 
  * Creates a temporary dependency index from the current task list.
  * Returns { shouldBlock: true, blockedBy: [...] } if deps are unsatisfied.
  */
-export async function checkTaskDependencies(
+export function checkTaskDependencies(
   taskId: string,
   deps: TaskDependency[],
   logger: Logger
-): Promise<{ shouldBlock: boolean; blockedBy: string[] }> {
+): { shouldBlock: boolean; blockedBy: string[] } {
   try {
-    const allTasks = await listTasks()
+    const allTasks = listTasks()
     const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
     const idx = createDependencyIndex()
     const { satisfied, blockedBy } = idx.areDependenciesSatisfied(taskId, deps, (depId: string) =>

@@ -143,13 +143,13 @@ describe('field-mapper', () => {
     expect(result.dependsOn).toBeNull()
   })
 
-  it('toSnakeCase preserves dependsOn array structure', () => {
+  it('toSnakeCase serializes dependsOn array to JSON string for SQLite', () => {
     const camelRow = {
       dependsOn: [{ id: 'task-1', type: 'hard' }],
       prUrl: 'https://github.com/org/repo/pull/1'
     }
     const result = toSnakeCase(camelRow)
-    expect(result.depends_on).toEqual([{ id: 'task-1', type: 'hard' }])
+    expect(result.depends_on).toBe(JSON.stringify([{ id: 'task-1', type: 'hard' }]))
     expect(result.pr_url).toBe('https://github.com/org/repo/pull/1')
   })
 })

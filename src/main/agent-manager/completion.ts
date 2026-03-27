@@ -187,16 +187,16 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   // 0. Guard: worktree must still exist (macOS /tmp can evict it)
   if (!existsSync(worktreePath)) {
     logger.error(`[completion] Worktree path no longer exists for task ${taskId}: ${worktreePath}`)
-    await repo
-      .updateTask(taskId, {
+    try {
+      repo.updateTask(taskId, {
         status: 'error',
         completed_at: new Date().toISOString(),
         notes: `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
         claimed_by: null
       })
-      .catch((e) =>
-        logger.warn(`[completion] Failed to update task ${taskId} after worktree eviction: ${e}`)
-      )
+    } catch (e) {
+      logger.warn(`[completion] Failed to update task ${taskId} after worktree eviction: ${e}`)
+    }
     await onTaskTerminal(taskId, 'error')
     return
   }
@@ -207,34 +207,34 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     branch = await detectBranch(worktreePath)
   } catch (err) {
     logger.error(`[completion] Failed to detect branch for task ${taskId}: ${err}`)
-    await repo
-      .updateTask(taskId, {
+    try {
+      repo.updateTask(taskId, {
         status: 'error',
         completed_at: new Date().toISOString(),
         notes: 'Failed to detect branch',
         claimed_by: null
       })
-      .catch((e) =>
-        logger.warn(
-          `[completion] Failed to update task ${taskId} after branch detection error: ${e}`
-        )
+    } catch (e) {
+      logger.warn(
+        `[completion] Failed to update task ${taskId} after branch detection error: ${e}`
       )
+    }
     await onTaskTerminal(taskId, 'error')
     return
   }
 
   if (!branch) {
     logger.error(`[completion] Empty branch name for task ${taskId}`)
-    await repo
-      .updateTask(taskId, {
+    try {
+      repo.updateTask(taskId, {
         status: 'error',
         completed_at: new Date().toISOString(),
         notes: 'Empty branch name',
         claimed_by: null
       })
-      .catch((e) =>
-        logger.warn(`[completion] Failed to update task ${taskId} after empty branch: ${e}`)
-      )
+    } catch (e) {
+      logger.warn(`[completion] Failed to update task ${taskId} after empty branch: ${e}`)
+    }
     await onTaskTerminal(taskId, 'error')
     return
   }
@@ -258,7 +258,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       const summaryNote = agentSummary
         ? `Agent produced no commits. Last output: ${agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)}`
         : 'Agent produced no commits (no output captured)'
-      const isTerminal = await resolveFailure(
+      const isTerminal = resolveFailure(
         { taskId, retryCount, notes: summaryNote, repo },
         logger
       )
@@ -287,11 +287,11 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     })
   } catch (err) {
     logger.error(`[completion] git push failed for task ${taskId} (branch ${branch}): ${err}`)
-    await repo
-      .updateTask(taskId, { notes: `git push failed for branch ${branch}: ${err}` })
-      .catch((e) =>
-        logger.warn(`[completion] Failed to update task ${taskId} after push error: ${e}`)
-      )
+    try {
+      repo.updateTask(taskId, { notes: `git push failed for branch ${branch}: ${err}` })
+    } catch (e) {
+      logger.warn(`[completion] Failed to update task ${taskId} after push error: ${e}`)
+    }
     return
   }
 
@@ -301,22 +301,22 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   // 6. Update task with PR info (task stays active; SprintPrPoller handles done on merge)
   try {
     if (prUrl !== null && prNumber !== null) {
-      await repo.updateTask(taskId, { pr_status: 'open', pr_url: prUrl, pr_number: prNumber })
+      repo.updateTask(taskId, { pr_status: 'open', pr_url: prUrl, pr_number: prNumber })
     } else {
       // Push succeeded but PR creation failed — record branch name so user can create PR manually
-      await repo.updateTask(taskId, { notes: `Branch ${branch} pushed but PR creation failed` })
+      repo.updateTask(taskId, { notes: `Branch ${branch} pushed but PR creation failed` })
     }
   } catch (err) {
     logger.error(`[completion] Failed to update task ${taskId} with PR info: ${err}`)
   }
 }
 
-export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): Promise<boolean> {
+export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boolean {
   const { taskId, retryCount, notes, repo } = opts
 
   try {
     if (retryCount < MAX_RETRIES) {
-      await repo.updateTask(taskId, {
+      repo.updateTask(taskId, {
         status: 'queued',
         retry_count: retryCount + 1,
         claimed_by: null,
@@ -324,7 +324,7 @@ export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger):
       })
       return false // not terminal
     } else {
-      await repo.updateTask(taskId, {
+      repo.updateTask(taskId, {
         status: 'failed',
         completed_at: new Date().toISOString(),
         claimed_by: null,

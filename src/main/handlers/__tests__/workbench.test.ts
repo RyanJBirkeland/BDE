@@ -96,18 +96,6 @@ vi.mock('child_process', () => ({
   })
 }))
 
-vi.mock('../../data/supabase-client', () => ({
-  getSupabaseClient: vi.fn().mockReturnValue({
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          in: vi.fn().mockResolvedValue({ data: [], error: null })
-        })
-      })
-    })
-  })
-}))
-
 vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn()
 }))

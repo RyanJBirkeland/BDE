@@ -7,15 +7,13 @@ import type { SprintTask, TaskDependency } from '../../shared/types'
 import * as queries from './sprint-queries'
 
 export interface ISprintTaskRepository {
-  getTask(id: string): Promise<SprintTask | null>
-  updateTask(id: string, patch: Record<string, unknown>): Promise<SprintTask | null>
-  getQueuedTasks(limit: number): Promise<SprintTask[]>
-  getTasksWithDependencies(): Promise<
-    Array<{ id: string; depends_on: TaskDependency[] | null; status: string }>
-  >
-  getOrphanedTasks(claimedBy: string): Promise<SprintTask[]>
-  getActiveTaskCount(): Promise<number>
-  claimTask(id: string, claimedBy: string): Promise<SprintTask | null>
+  getTask(id: string): SprintTask | null
+  updateTask(id: string, patch: Record<string, unknown>): SprintTask | null
+  getQueuedTasks(limit: number): SprintTask[]
+  getTasksWithDependencies(): Array<{ id: string; depends_on: TaskDependency[] | null; status: string }>
+  getOrphanedTasks(claimedBy: string): SprintTask[]
+  getActiveTaskCount(): number
+  claimTask(id: string, claimedBy: string): SprintTask | null
 }
 
 /**

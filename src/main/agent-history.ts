@@ -210,9 +210,9 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
   const toRemove = getAgentsToRemove(db, maxCount)
   if (toRemove.length === 0) return
 
-  // Clear Supabase sprint task FKs first (async)
+  // Clear sprint task FK references first
   for (const row of toRemove) {
-    await clearSprintTaskFk(row.id)
+    clearSprintTaskFk(row.id)
   }
 
   // Prune associated events before removing agent records

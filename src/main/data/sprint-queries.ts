@@ -1,10 +1,11 @@
 /**
- * Sprint task query functions — Supabase edition.
- * All functions are async and use the Supabase client singleton.
+ * Sprint task query functions — SQLite edition.
+ * All functions are synchronous and use the local SQLite database via getDb().
  */
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
-import { getSupabaseClient } from './supabase-client'
+import { getDb } from '../db'
+import { recordTaskChanges } from './task-changes'
 import type { Logger } from '../agent-manager/types'
 
 // Module-level logger — defaults to console, injectable for testing/structured logging
@@ -19,20 +20,24 @@ export function setSprintQueriesLogger(l: Logger): void {
 }
 
 /**
- * Sanitize a single task object to ensure depends_on is valid.
+ * Sanitize a single task row from SQLite.
+ * - Coerces INTEGER 0/1 to boolean for playground_enabled, needs_review
+ * - Deserializes depends_on from JSON string
  */
-function sanitizeTask(task: any): SprintTask {
+function sanitizeTask(row: Record<string, unknown>): SprintTask {
   return {
-    ...task,
-    depends_on: sanitizeDependsOn(task.depends_on)
-  }
+    ...row,
+    depends_on: sanitizeDependsOn(row.depends_on),
+    playground_enabled: !!row.playground_enabled,
+    needs_review: !!row.needs_review
+  } as SprintTask
 }
 
 /**
- * Sanitize an array of tasks to ensure all depends_on fields are valid.
+ * Sanitize an array of task rows.
  */
-function sanitizeTasks(tasks: any[]): SprintTask[] {
-  return tasks.map(sanitizeTask)
+function sanitizeTasks(rows: Record<string, unknown>[]): SprintTask[] {
+  return rows.map(sanitizeTask)
 }
 
 // --- Field allowlist for updates ---
@@ -74,39 +79,6 @@ export interface QueueStats {
   blocked: number
 }
 
-export async function getTask(id: string): Promise<SprintTask | null> {
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
-
-  if (error) {
-    logger.warn(`[sprint-queries] getTask failed for id=${id}: ${error}`)
-    return null
-  }
-  return data ? sanitizeTask(data) : null
-}
-
-export async function listTasks(status?: string): Promise<SprintTask[]> {
-  let query = getSupabaseClient()
-    .from('sprint_tasks')
-    .select('*')
-    .order('priority', { ascending: true })
-    .order('created_at', { ascending: true })
-
-  if (status) {
-    query = query.eq('status', status)
-  }
-
-  const { data, error } = await query
-  if (error) {
-    logger.warn(`[sprint-queries] listTasks failed: ${error}`)
-    return []
-  }
-  return sanitizeTasks(data ?? [])
-}
-
 export interface CreateTaskInput {
   title: string
   repo: string
@@ -120,118 +92,191 @@ export interface CreateTaskInput {
   playground_enabled?: boolean
 }
 
-export async function createTask(input: CreateTaskInput): Promise<SprintTask | null> {
-  const row: Record<string, unknown> = {
-    title: input.title,
-    repo: input.repo,
-    prompt: input.prompt ?? input.spec ?? input.title,
-    spec: input.spec ?? null,
-    notes: input.notes ?? null,
-    priority: input.priority ?? 0,
-    status: input.status ?? 'backlog',
-    template_name: input.template_name ?? null,
-    depends_on: sanitizeDependsOn(input.depends_on)
+/**
+ * Serialize a value for SQLite storage:
+ * - depends_on: JSON.stringify
+ * - booleans: 1/0
+ * - null prompt: ''
+ */
+function serializeField(key: string, value: unknown): unknown {
+  if (key === 'depends_on') {
+    const sanitized = sanitizeDependsOn(value)
+    return sanitized ? JSON.stringify(sanitized) : null
   }
-  // Only include playground_enabled when explicitly set — column may not exist yet
-  if (input.playground_enabled) {
-    row.playground_enabled = true
+  if (key === 'playground_enabled' || key === 'needs_review') {
+    return value ? 1 : 0
   }
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .insert(row)
-    .select()
-    .single()
-
-  if (error) {
-    logger.warn(`[sprint-queries] createTask failed: ${error.message}`)
-    return null
+  if (key === 'prompt' && value == null) {
+    return ''
   }
-  return data ? sanitizeTask(data) : null
+  return value
 }
 
-export async function updateTask(
+export function getTask(id: string): SprintTask | null {
+  try {
+    const row = getDb()
+      .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
+      .get(id) as Record<string, unknown> | undefined
+    return row ? sanitizeTask(row) : null
+  } catch (err) {
+    logger.warn(`[sprint-queries] getTask failed for id=${id}: ${err}`)
+    return null
+  }
+}
+
+export function listTasks(status?: string): SprintTask[] {
+  try {
+    const db = getDb()
+    if (status) {
+      const rows = db
+        .prepare(
+          'SELECT * FROM sprint_tasks WHERE status = ? ORDER BY priority ASC, created_at ASC'
+        )
+        .all(status) as Record<string, unknown>[]
+      return sanitizeTasks(rows)
+    }
+    const rows = db
+      .prepare('SELECT * FROM sprint_tasks ORDER BY priority ASC, created_at ASC')
+      .all() as Record<string, unknown>[]
+    return sanitizeTasks(rows)
+  } catch (err) {
+    logger.warn(`[sprint-queries] listTasks failed: ${err}`)
+    return []
+  }
+}
+
+export function createTask(input: CreateTaskInput): SprintTask | null {
+  try {
+    const db = getDb()
+    const dependsOn = sanitizeDependsOn(input.depends_on)
+
+    const result = db
+      .prepare(
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         RETURNING *`
+      )
+      .get(
+        input.title,
+        input.repo,
+        input.prompt ?? input.spec ?? input.title,
+        input.spec ?? null,
+        input.notes ?? null,
+        input.priority ?? 0,
+        input.status ?? 'backlog',
+        input.template_name ?? null,
+        dependsOn ? JSON.stringify(dependsOn) : null,
+        input.playground_enabled ? 1 : 0
+      ) as Record<string, unknown> | undefined
+
+    return result ? sanitizeTask(result) : null
+  } catch (err) {
+    logger.warn(`[sprint-queries] createTask failed: ${err}`)
+    return null
+  }
+}
+
+export function updateTask(
   id: string,
   patch: Record<string, unknown>
-): Promise<SprintTask | null> {
+): SprintTask | null {
   const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
   if (entries.length === 0) return null
 
-  // Fetch current state for change tracking
-  const oldTask = await getTask(id)
+  try {
+    const db = getDb()
 
-  const updateObj: Record<string, unknown> = {}
-  for (const [k, v] of entries) {
-    // Sanitize depends_on if it's being updated
-    updateObj[k] = k === 'depends_on' ? sanitizeDependsOn(v) : v
-  }
+    // Fetch current state for change tracking
+    const oldTask = getTask(id)
+    if (!oldTask) return null
 
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .update(updateObj)
-    .eq('id', id)
-    .select()
-    .single()
+    // Build SET clause with serialized values
+    const setClauses: string[] = []
+    const values: unknown[] = []
+    const auditPatch: Record<string, unknown> = {}
 
-  if (error) {
-    logger.warn(`[sprint-queries] updateTask failed for id=${id}: ${error}`)
-    return null
-  }
+    for (const [key, value] of entries) {
+      setClauses.push(`${key} = ?`)
+      const serialized = serializeField(key, value)
+      values.push(serialized)
+      // For audit, store the serialized form for depends_on but original for others
+      auditPatch[key] = key === 'depends_on' ? sanitizeDependsOn(value) : value
+    }
 
-  // Record changes for audit trail
-  if (oldTask && data) {
+    values.push(id)
+
+    const result = db
+      .prepare(
+        `UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`
+      )
+      .get(...values) as Record<string, unknown> | undefined
+
+    if (!result) return null
+
+    // Record changes for audit trail
     try {
-      const { recordTaskChanges } = await import('./task-changes')
-      recordTaskChanges(id, oldTask as unknown as Record<string, unknown>, updateObj)
+      recordTaskChanges(
+        id,
+        oldTask as unknown as Record<string, unknown>,
+        auditPatch
+      )
     } catch (err) {
       logger.warn(`[sprint-queries] Failed to record task changes: ${err}`)
     }
-  }
 
-  return data ? sanitizeTask(data) : null
-}
-
-export async function deleteTask(id: string): Promise<void> {
-  const { error } = await getSupabaseClient().from('sprint_tasks').delete().eq('id', id)
-
-  if (error) {
-    logger.warn(`[sprint-queries] deleteTask failed for id=${id}: ${error}`)
-  }
-}
-
-export async function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  const now = new Date().toISOString()
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .update({ status: 'active', claimed_by: claimedBy, started_at: now })
-    .eq('id', id)
-    .eq('status', 'queued')
-    .select()
-    .single()
-
-  if (error) {
-    // No matching row (not queued or doesn't exist) is not a real error
+    return sanitizeTask(result)
+  } catch (err) {
+    logger.warn(`[sprint-queries] updateTask failed for id=${id}: ${err}`)
     return null
   }
-  return data ? sanitizeTask(data) : null
 }
 
-export async function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .update({ status: 'queued', claimed_by: null, started_at: null, agent_run_id: null })
-    .eq('id', id)
-    .eq('status', 'active')
-    .eq('claimed_by', claimedBy)
-    .select()
-    .single()
+export function deleteTask(id: string): void {
+  try {
+    getDb().prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
+  } catch (err) {
+    logger.warn(`[sprint-queries] deleteTask failed for id=${id}: ${err}`)
+  }
+}
 
-  if (error) {
+export function claimTask(id: string, claimedBy: string): SprintTask | null {
+  try {
+    const now = new Date().toISOString()
+    const result = getDb()
+      .prepare(
+        `UPDATE sprint_tasks
+         SET status = 'active', claimed_by = ?, started_at = ?
+         WHERE id = ? AND status = 'queued'
+         RETURNING *`
+      )
+      .get(claimedBy, now, id) as Record<string, unknown> | undefined
+
+    return result ? sanitizeTask(result) : null
+  } catch (err) {
+    logger.warn(`[sprint-queries] claimTask failed for id=${id}: ${err}`)
     return null
   }
-  return data ? sanitizeTask(data) : null
 }
 
-export async function getQueueStats(): Promise<QueueStats> {
+export function releaseTask(id: string, claimedBy: string): SprintTask | null {
+  try {
+    const result = getDb()
+      .prepare(
+        `UPDATE sprint_tasks
+         SET status = 'queued', claimed_by = NULL, started_at = NULL, agent_run_id = NULL
+         WHERE id = ? AND status = 'active' AND claimed_by = ?
+         RETURNING *`
+      )
+      .get(id, claimedBy) as Record<string, unknown> | undefined
+
+    return result ? sanitizeTask(result) : null
+  } catch (err) {
+    logger.warn(`[sprint-queries] releaseTask failed for id=${id}: ${err}`)
+    return null
+  }
+}
+
+export function getQueueStats(): QueueStats {
   const stats: QueueStats = {
     backlog: 0,
     queued: 0,
@@ -243,214 +288,227 @@ export async function getQueueStats(): Promise<QueueStats> {
     blocked: 0
   }
 
-  // Supabase doesn't have native GROUP BY in the client — fetch statuses
-  const { data, error } = await getSupabaseClient().from('sprint_tasks').select('status')
+  try {
+    const rows = getDb()
+      .prepare('SELECT status, COUNT(*) as count FROM sprint_tasks GROUP BY status')
+      .all() as Array<{ status: string; count: number }>
 
-  if (error) {
-    logger.warn(`[sprint-queries] getQueueStats failed: ${error}`)
-    return stats
-  }
-
-  for (const row of data ?? []) {
-    const s = (row as { status: string }).status
-    if (s in stats) {
-      stats[s as keyof QueueStats]++
+    for (const row of rows) {
+      if (row.status in stats) {
+        stats[row.status as keyof QueueStats] = row.count
+      }
     }
+  } catch (err) {
+    logger.warn(`[sprint-queries] getQueueStats failed: ${err}`)
   }
+
   return stats
 }
 
-export async function getDoneTodayCount(): Promise<number> {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+export function getDoneTodayCount(): number {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-  const { count, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'done')
-    .gte('completed_at', today.toISOString())
+    const result = getDb()
+      .prepare(
+        'SELECT COUNT(*) as count FROM sprint_tasks WHERE status = ? AND completed_at >= ?'
+      )
+      .get('done', today.toISOString()) as { count: number }
 
-  if (error) {
-    logger.warn(`[sprint-queries] getDoneTodayCount failed: ${error}`)
+    return result.count
+  } catch (err) {
+    logger.warn(`[sprint-queries] getDoneTodayCount failed: ${err}`)
     return 0
   }
-  return count ?? 0
 }
 
-export async function markTaskDoneByPrNumber(prNumber: number): Promise<string[]> {
+export function markTaskDoneByPrNumber(prNumber: number): string[] {
   try {
-    const { data: affected } = await getSupabaseClient()
-      .from('sprint_tasks')
-      .select('id')
-      .eq('pr_number', prNumber)
-      .eq('status', 'active')
+    const db = getDb()
+    return db.transaction(() => {
+      // Get affected task IDs
+      const affected = db
+        .prepare('SELECT id FROM sprint_tasks WHERE pr_number = ? AND status = ?')
+        .all(prNumber, 'active') as Array<{ id: string }>
 
-    const affectedIds = (affected ?? []).map((r: { id: string }) => r.id)
+      const affectedIds = affected.map((r) => r.id)
 
-    const completedAt = new Date().toISOString()
-    await getSupabaseClient()
-      .from('sprint_tasks')
-      .update({ status: 'done', completed_at: completedAt })
-      .eq('pr_number', prNumber)
-      .eq('status', 'active')
+      if (affectedIds.length > 0) {
+        const completedAt = new Date().toISOString()
+        // Transition active tasks to done
+        db.prepare(
+          'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
+        ).run('done', completedAt, prNumber, 'active')
+      }
 
-    await getSupabaseClient()
-      .from('sprint_tasks')
-      .update({ pr_status: 'merged' })
-      .eq('pr_number', prNumber)
-      .eq('status', 'done')
-      .eq('pr_status', 'open')
+      // Set pr_status to merged for done tasks with open PRs
+      db.prepare(
+        "UPDATE sprint_tasks SET pr_status = 'merged' WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'"
+      ).run(prNumber)
 
-    return affectedIds
+      return affectedIds
+    })()
   } catch (err) {
     logger.warn(`[sprint-queries] failed to mark task done for PR #${prNumber}: ${err}`)
     return []
   }
 }
 
-export async function markTaskCancelledByPrNumber(prNumber: number): Promise<string[]> {
+export function markTaskCancelledByPrNumber(prNumber: number): string[] {
   try {
-    const { data: affected } = await getSupabaseClient()
-      .from('sprint_tasks')
-      .select('id')
-      .eq('pr_number', prNumber)
-      .eq('status', 'active')
+    const db = getDb()
+    return db.transaction(() => {
+      // Get affected task IDs
+      const affected = db
+        .prepare('SELECT id FROM sprint_tasks WHERE pr_number = ? AND status = ?')
+        .all(prNumber, 'active') as Array<{ id: string }>
 
-    const affectedIds = (affected ?? []).map((r: { id: string }) => r.id)
+      const affectedIds = affected.map((r) => r.id)
 
-    await getSupabaseClient()
-      .from('sprint_tasks')
-      .update({ status: 'cancelled', completed_at: new Date().toISOString() })
-      .eq('pr_number', prNumber)
-      .eq('status', 'active')
+      if (affectedIds.length > 0) {
+        const completedAt = new Date().toISOString()
+        // Transition active tasks to cancelled
+        db.prepare(
+          'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
+        ).run('cancelled', completedAt, prNumber, 'active')
+      }
 
-    await getSupabaseClient()
-      .from('sprint_tasks')
-      .update({ pr_status: 'closed' })
-      .eq('pr_number', prNumber)
-      .eq('status', 'done')
-      .eq('pr_status', 'open')
+      // Set pr_status to closed for done tasks with open PRs
+      db.prepare(
+        "UPDATE sprint_tasks SET pr_status = 'closed' WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'"
+      ).run(prNumber)
 
-    return affectedIds
+      return affectedIds
+    })()
   } catch (err) {
-    logger.warn(`[sprint-queries] failed to mark task cancelled for PR #${prNumber}: ${err}`)
+    logger.warn(
+      `[sprint-queries] failed to mark task cancelled for PR #${prNumber}: ${err}`
+    )
     return []
   }
 }
 
-export async function listTasksWithOpenPrs(): Promise<SprintTask[]> {
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('*')
-    .not('pr_number', 'is', null)
-    .eq('pr_status', 'open')
-
-  if (error) {
-    logger.warn(`[sprint-queries] listTasksWithOpenPrs failed: ${error}`)
+export function listTasksWithOpenPrs(): SprintTask[] {
+  try {
+    const rows = getDb()
+      .prepare(
+        "SELECT * FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'"
+      )
+      .all() as Record<string, unknown>[]
+    return sanitizeTasks(rows)
+  } catch (err) {
+    logger.warn(`[sprint-queries] listTasksWithOpenPrs failed: ${err}`)
     return []
   }
-  return sanitizeTasks(data ?? [])
 }
 
-export async function updateTaskMergeableState(
+export function updateTaskMergeableState(
   prNumber: number,
   mergeableState: string | null
-): Promise<void> {
+): void {
   if (!mergeableState) return
   try {
-    await getSupabaseClient()
-      .from('sprint_tasks')
-      .update({ pr_mergeable_state: mergeableState })
-      .eq('pr_number', prNumber)
+    getDb()
+      .prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?')
+      .run(mergeableState, prNumber)
   } catch (err) {
-    logger.warn(`[sprint-queries] failed to update mergeable_state for PR #${prNumber}: ${err}`)
+    logger.warn(
+      `[sprint-queries] failed to update mergeable_state for PR #${prNumber}: ${err}`
+    )
   }
 }
 
-export async function getActiveTaskCount(): Promise<number> {
-  const { count, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'active')
-
-  if (error) {
-    // Fail-closed: return MAX to prevent new claims when Supabase is down.
+export function getActiveTaskCount(): number {
+  try {
+    const result = getDb()
+      .prepare("SELECT COUNT(*) as count FROM sprint_tasks WHERE status = 'active'")
+      .get() as { count: number }
+    return result.count
+  } catch (err) {
+    // Fail-closed: return MAX to prevent new claims when DB is broken.
     // This is intentional — better to block claims than to over-saturate.
-    logger.warn(`[sprint-queries] getActiveTaskCount failed: ${error}`)
+    logger.warn(`[sprint-queries] getActiveTaskCount failed: ${err}`)
     return Infinity
   }
-  return count ?? 0
 }
 
-export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('*')
-    .eq('status', 'queued')
-    .is('claimed_by', null)
-    .order('priority', { ascending: true })
-    .order('created_at', { ascending: true })
-    .limit(limit)
-  if (error) {
-    logger.warn(`[sprint-queries] getQueuedTasks failed: ${error.message}`)
-    return []
-  }
-  return sanitizeTasks(data ?? [])
-}
-
-export async function getOrphanedTasks(claimedBy: string): Promise<SprintTask[]> {
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('*')
-    .eq('status', 'active')
-    .eq('claimed_by', claimedBy)
-  if (error) {
-    logger.warn(`[sprint-queries] getOrphanedTasks failed: ${error.message}`)
-    return []
-  }
-  return sanitizeTasks(data ?? [])
-}
-
-export async function clearSprintTaskFk(agentRunId: string): Promise<void> {
+export function getQueuedTasks(limit: number): SprintTask[] {
   try {
-    await getSupabaseClient()
-      .from('sprint_tasks')
-      .update({ agent_run_id: null })
-      .eq('agent_run_id', agentRunId)
+    const rows = getDb()
+      .prepare(
+        `SELECT * FROM sprint_tasks
+         WHERE status = 'queued' AND claimed_by IS NULL
+         ORDER BY priority ASC, created_at ASC
+         LIMIT ?`
+      )
+      .all(limit) as Record<string, unknown>[]
+    return sanitizeTasks(rows)
   } catch (err) {
-    logger.warn(`[sprint-queries] failed to clear FK for agent_run_id=${agentRunId}: ${err}`)
+    logger.warn(`[sprint-queries] getQueuedTasks failed: ${err}`)
+    return []
   }
 }
 
-export async function getHealthCheckTasks(): Promise<SprintTask[]> {
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('*')
-    .eq('status', 'active')
-    .lt('started_at', oneHourAgo)
-
-  if (error) {
-    logger.warn(`[sprint-queries] getHealthCheckTasks failed: ${error}`)
+export function getOrphanedTasks(claimedBy: string): SprintTask[] {
+  try {
+    const rows = getDb()
+      .prepare(
+        "SELECT * FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?"
+      )
+      .all(claimedBy) as Record<string, unknown>[]
+    return sanitizeTasks(rows)
+  } catch (err) {
+    logger.warn(`[sprint-queries] getOrphanedTasks failed: ${err}`)
     return []
   }
-  return sanitizeTasks(data ?? [])
 }
 
-export async function getTasksWithDependencies(): Promise<
-  Array<{ id: string; depends_on: TaskDependency[] | null; status: string }>
-> {
-  const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks')
-    .select('id, depends_on, status')
-    .not('depends_on', 'is', null)
-  if (error) {
-    logger.warn(`[sprint-queries] getTasksWithDependencies failed: ${error.message}`)
+export function clearSprintTaskFk(agentRunId: string): void {
+  try {
+    getDb()
+      .prepare('UPDATE sprint_tasks SET agent_run_id = NULL WHERE agent_run_id = ?')
+      .run(agentRunId)
+  } catch (err) {
+    logger.warn(
+      `[sprint-queries] failed to clear FK for agent_run_id=${agentRunId}: ${err}`
+    )
+  }
+}
+
+export function getHealthCheckTasks(): SprintTask[] {
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const rows = getDb()
+      .prepare(
+        "SELECT * FROM sprint_tasks WHERE status = 'active' AND started_at < ?"
+      )
+      .all(oneHourAgo) as Record<string, unknown>[]
+    return sanitizeTasks(rows)
+  } catch (err) {
+    logger.warn(`[sprint-queries] getHealthCheckTasks failed: ${err}`)
     return []
   }
-  // Sanitize each partial task object
-  return (data ?? []).map((task) => ({
-    ...task,
-    depends_on: sanitizeDependsOn(task.depends_on)
-  }))
+}
+
+export function getTasksWithDependencies(): Array<{
+  id: string
+  depends_on: TaskDependency[] | null
+  status: string
+}> {
+  try {
+    const rows = getDb()
+      .prepare(
+        'SELECT id, depends_on, status FROM sprint_tasks WHERE depends_on IS NOT NULL'
+      )
+      .all() as Array<{ id: string; depends_on: string; status: string }>
+
+    return rows.map((row) => ({
+      ...row,
+      depends_on: sanitizeDependsOn(row.depends_on)
+    }))
+  } catch (err) {
+    logger.warn(`[sprint-queries] getTasksWithDependencies failed: ${err}`)
+    return []
+  }
 }

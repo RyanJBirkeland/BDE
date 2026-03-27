@@ -21,9 +21,9 @@ const mockRepo: ISprintTaskRepository = {
   getTask: vi.fn(),
   updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
   getQueuedTasks: vi.fn(),
-  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getTasksWithDependencies: vi.fn().mockReturnValue([]),
   getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
-  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  getActiveTaskCount: vi.fn().mockReturnValue(0),
   claimTask: vi.fn()
 }
 
@@ -44,13 +44,13 @@ const logger = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  updateTaskMock.mockResolvedValue(null)
+  updateTaskMock.mockReturnValue(null)
 })
 
 describe('recoverOrphans', () => {
   it('re-queues tasks not in the active agent map', async () => {
     const task = makeTask('task-1')
-    getOrphanedTasksMock.mockResolvedValue([task])
+    getOrphanedTasksMock.mockReturnValue([task])
 
     const recovered = await recoverOrphans(() => false, mockRepo, logger)
 
@@ -64,7 +64,7 @@ describe('recoverOrphans', () => {
 
   it('skips tasks still active in the agent map', async () => {
     const task = makeTask('task-2')
-    getOrphanedTasksMock.mockResolvedValue([task])
+    getOrphanedTasksMock.mockReturnValue([task])
 
     const recovered = await recoverOrphans((taskId) => taskId === 'task-2', mockRepo, logger)
 
@@ -76,7 +76,7 @@ describe('recoverOrphans', () => {
     const activeTask = makeTask('task-active')
     const orphan1 = makeTask('task-orphan-1')
     const orphan2 = makeTask('task-orphan-2')
-    getOrphanedTasksMock.mockResolvedValue([activeTask, orphan1, orphan2])
+    getOrphanedTasksMock.mockReturnValue([activeTask, orphan1, orphan2])
 
     const recovered = await recoverOrphans((taskId) => taskId === 'task-active', mockRepo, logger)
 
@@ -85,7 +85,7 @@ describe('recoverOrphans', () => {
   })
 
   it('returns 0 and does nothing when orphan list is empty', async () => {
-    getOrphanedTasksMock.mockResolvedValue([])
+    getOrphanedTasksMock.mockReturnValue([])
 
     const recovered = await recoverOrphans(() => false, mockRepo, logger)
 
@@ -95,7 +95,7 @@ describe('recoverOrphans', () => {
 
   it('clears claimed_by but does not re-queue a task with pr_url', async () => {
     const task = { ...makeTask('task-pr'), pr_url: 'https://github.com/org/repo/pull/42' }
-    getOrphanedTasksMock.mockResolvedValue([task])
+    getOrphanedTasksMock.mockReturnValue([task])
 
     const recovered = await recoverOrphans(() => false, mockRepo, logger)
 
@@ -106,7 +106,7 @@ describe('recoverOrphans', () => {
   })
 
   it('calls finalizeStaleAgentRuns and logs stale count', async () => {
-    getOrphanedTasksMock.mockResolvedValue([])
+    getOrphanedTasksMock.mockReturnValue([])
 
     await recoverOrphans(() => false, mockRepo, logger)
 

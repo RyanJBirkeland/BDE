@@ -73,7 +73,7 @@ describe('checkTaskDependencies', () => {
     const { createDependencyIndex } = await import('../dependency-index')
     const { checkTaskDependencies } = await import('../dependency-helpers')
 
-    vi.mocked(listTasks).mockResolvedValue([
+    vi.mocked(listTasks).mockReturnValue([
       { id: 'task-1', status: 'queued' },
       { id: 'task-2', status: 'done' }
     ] as any)
@@ -83,7 +83,7 @@ describe('checkTaskDependencies', () => {
       areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true, blockedBy: [] })
     })
 
-    const result = await checkTaskDependencies(
+    const result = checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
       mockLogger
@@ -97,7 +97,7 @@ describe('checkTaskDependencies', () => {
     const { createDependencyIndex } = await import('../dependency-index')
     const { checkTaskDependencies } = await import('../dependency-helpers')
 
-    vi.mocked(listTasks).mockResolvedValue([
+    vi.mocked(listTasks).mockReturnValue([
       { id: 'task-1', status: 'queued' },
       { id: 'task-2', status: 'queued' }
     ] as any)
@@ -107,7 +107,7 @@ describe('checkTaskDependencies', () => {
       areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['task-2'] })
     })
 
-    const result = await checkTaskDependencies(
+    const result = checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
       mockLogger
@@ -120,9 +120,9 @@ describe('checkTaskDependencies', () => {
     const { listTasks } = await import('../../data/sprint-queries')
     const { checkTaskDependencies } = await import('../dependency-helpers')
 
-    vi.mocked(listTasks).mockRejectedValue(new Error('Supabase down'))
+    vi.mocked(listTasks).mockImplementation(() => { throw new Error('DB error'); })
 
-    const result = await checkTaskDependencies(
+    const result = checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
       mockLogger

@@ -6,7 +6,7 @@ export async function recoverOrphans(
   repo: ISprintTaskRepository,
   logger: { info: (msg: string) => void; warn: (msg: string) => void }
 ): Promise<number> {
-  const orphans = await repo.getOrphanedTasks(EXECUTOR_ID)
+  const orphans = repo.getOrphanedTasks(EXECUTOR_ID)
   let recovered = 0
 
   for (const task of orphans) {
@@ -18,14 +18,14 @@ export async function recoverOrphans(
       logger.info(
         `[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`
       )
-      await repo.updateTask(task.id, { claimed_by: null })
+      repo.updateTask(task.id, { claimed_by: null })
       continue
     }
 
     logger.warn(`[agent-manager] Orphaned task ${task.id} "${task.title}" — re-queuing`)
 
     // Re-queue: clear claimed_by so drain loop or external runner can pick it up
-    await repo.updateTask(task.id, {
+    repo.updateTask(task.id, {
       status: 'queued',
       claimed_by: null
     })

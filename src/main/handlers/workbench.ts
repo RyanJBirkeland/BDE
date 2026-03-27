@@ -6,7 +6,7 @@ import { checkAuthStatus } from '../auth-guard'
 import { getRepoPaths } from '../git'
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
-import { getSupabaseClient } from '../data/supabase-client'
+import { listTasks } from '../data/sprint-queries'
 import { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
 import { buildAgentEnv } from '../env-utils'
 import type { AgentManager } from '../agent-manager'
@@ -223,22 +223,16 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     // Conflict check: query for other active/queued tasks on same repo
     let noConflictResult: { status: 'pass' | 'warn' | 'fail'; message: string }
     try {
-      const { data, error } = await getSupabaseClient()
-        .from('sprint_tasks')
-        .select('status')
-        .eq('repo', repo)
-        .in('status', ['active', 'queued'])
+      const tasks = listTasks()
+      const conflicting = tasks.filter(
+        (t) => t.repo === repo && ['active', 'queued'].includes(t.status)
+      )
 
-      if (error) {
-        noConflictResult = {
-          status: 'warn',
-          message: `Unable to check for conflicts: ${error.message}`
-        }
-      } else if (!data || data.length === 0) {
+      if (conflicting.length === 0) {
         noConflictResult = { status: 'pass', message: 'No conflicting tasks' }
       } else {
-        const activeCount = data.filter((t) => t.status === 'active').length
-        const queuedCount = data.filter((t) => t.status === 'queued').length
+        const activeCount = conflicting.filter((t) => t.status === 'active').length
+        const queuedCount = conflicting.filter((t) => t.status === 'queued').length
         if (activeCount > 0) {
           noConflictResult = {
             status: 'fail',

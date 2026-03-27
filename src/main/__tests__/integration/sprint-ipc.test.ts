@@ -187,7 +187,7 @@ describe('Sprint IPC handlers — integration', () => {
   describe('sprint:create', () => {
     it('creates a task and returns it with all fields', async () => {
       const created = makeTask({ id: 'task-new', status: 'backlog' })
-      mockCreateTask.mockResolvedValue(created)
+      mockCreateTask.mockReturnValue(created)
 
       const result = await invoke('sprint:create', {
         title: 'Fix login bug',
@@ -219,7 +219,7 @@ describe('Sprint IPC handlers — integration', () => {
   describe('sprint:list', () => {
     it('returns an array of tasks', async () => {
       const tasks = [makeTask({ id: 'task-1' }), makeTask({ id: 'task-2' })]
-      mockListTasks.mockResolvedValue(tasks)
+      mockListTasks.mockReturnValue(tasks)
 
       const result = await invoke('sprint:list')
 
@@ -229,7 +229,7 @@ describe('Sprint IPC handlers — integration', () => {
     })
 
     it('returns empty array when no tasks exist', async () => {
-      mockListTasks.mockResolvedValue([])
+      mockListTasks.mockReturnValue([])
       const result = await invoke('sprint:list')
       expect(result).toEqual([])
     })
@@ -239,7 +239,7 @@ describe('Sprint IPC handlers — integration', () => {
   describe('sprint:update', () => {
     it('updates task fields and returns the updated task', async () => {
       const updated = makeTask({ id: 'task-001', title: 'Updated title', notes: 'New notes' })
-      mockUpdateTask.mockResolvedValue(updated)
+      mockUpdateTask.mockReturnValue(updated)
 
       const result = await invoke('sprint:update', 'task-001', {
         title: 'Updated title',
@@ -267,8 +267,8 @@ describe('Sprint IPC handlers — integration', () => {
 
       const existing = makeTask({ id: 'task-001', status: 'backlog', spec: specText })
       const updated = makeTask({ id: 'task-001', status: 'queued', spec: specText })
-      mockGetTask.mockResolvedValue(existing)
-      mockUpdateTask.mockResolvedValue(updated)
+      mockGetTask.mockReturnValue(existing)
+      mockUpdateTask.mockReturnValue(updated)
 
       const result = await invoke('sprint:update', 'task-001', { status: 'queued' })
 
@@ -277,7 +277,7 @@ describe('Sprint IPC handlers — integration', () => {
 
     it('rejects transition to queued when spec is missing', async () => {
       const existing = makeTask({ id: 'task-001', status: 'backlog', spec: null })
-      mockGetTask.mockResolvedValue(existing)
+      mockGetTask.mockReturnValue(existing)
 
       await expect(invoke('sprint:update', 'task-001', { status: 'queued' })).rejects.toThrow(
         'Cannot queue task'
@@ -289,8 +289,8 @@ describe('Sprint IPC handlers — integration', () => {
   describe('sprint:delete', () => {
     it('deletes a task and returns ok', async () => {
       const task = makeTask({ id: 'task-del' })
-      mockGetTask.mockResolvedValue(task)
-      mockDeleteTask.mockResolvedValue(undefined)
+      mockGetTask.mockReturnValue(task)
+      mockDeleteTask.mockReturnValue(undefined)
 
       const result = await invoke('sprint:delete', 'task-del')
 
@@ -322,7 +322,7 @@ describe('Sprint IPC handlers — integration', () => {
       vi.mocked(createDependencyIndex).mockReturnValue(mockIdx as any)
 
       // listTasks is called to build the status map for dependency checking
-      mockListTasks.mockResolvedValue([makeTask({ id: 'dep-task-1', status: 'backlog' })])
+      mockListTasks.mockReturnValue([makeTask({ id: 'dep-task-1', status: 'backlog' })])
 
       const blockedTask = makeTask({
         id: 'task-blocked',
@@ -331,7 +331,7 @@ describe('Sprint IPC handlers — integration', () => {
         depends_on: [{ id: 'dep-task-1', type: 'hard' }],
         notes: '[auto-block] Blocked by: dep-task-1'
       })
-      mockCreateTask.mockResolvedValue(blockedTask)
+      mockCreateTask.mockReturnValue(blockedTask)
 
       const result = await invoke('sprint:create', {
         title: 'Depends on another',
@@ -358,7 +358,7 @@ describe('Sprint IPC handlers — integration', () => {
       }
       vi.mocked(createDependencyIndex).mockReturnValue(mockIdx as any)
 
-      mockListTasks.mockResolvedValue([makeTask({ id: 'dep-task-1', status: 'done' })])
+      mockListTasks.mockReturnValue([makeTask({ id: 'dep-task-1', status: 'done' })])
 
       const queuedTask = makeTask({
         id: 'task-queued',
@@ -366,7 +366,7 @@ describe('Sprint IPC handlers — integration', () => {
         spec: validSpec,
         depends_on: [{ id: 'dep-task-1', type: 'hard' }]
       })
-      mockCreateTask.mockResolvedValue(queuedTask)
+      mockCreateTask.mockReturnValue(queuedTask)
 
       const result = await invoke('sprint:create', {
         title: 'Depends on done task',
@@ -385,13 +385,13 @@ describe('Sprint IPC handlers — integration', () => {
   // 7. Error handling → handler returns structured error on failure
   describe('error handling', () => {
     it('propagates errors from the data layer through safeHandle', async () => {
-      mockListTasks.mockRejectedValue(new Error('Supabase connection failed'))
+      mockListTasks.mockImplementation(() => { throw new Error('DB connection failed'); })
 
-      await expect(invoke('sprint:list')).rejects.toThrow('Supabase connection failed')
+      await expect(invoke('sprint:list')).rejects.toThrow('DB connection failed')
     })
 
     it('propagates create errors', async () => {
-      mockCreateTask.mockRejectedValue(new Error('Insert failed: duplicate key'))
+      mockCreateTask.mockImplementation(() => { throw new Error('Insert failed: duplicate key'); })
 
       await expect(invoke('sprint:create', { title: 'Dup task', repo: 'BDE' })).rejects.toThrow(
         'Insert failed: duplicate key'
@@ -404,8 +404,8 @@ describe('Sprint IPC handlers — integration', () => {
     it('unblocks a blocked task to queued', async () => {
       const blocked = makeTask({ id: 'task-blk', status: 'blocked' })
       const unblocked = makeTask({ id: 'task-blk', status: 'queued' })
-      mockGetTask.mockResolvedValue(blocked)
-      mockUpdateTask.mockResolvedValue(unblocked)
+      mockGetTask.mockReturnValue(blocked)
+      mockUpdateTask.mockReturnValue(unblocked)
 
       const result = await invoke('sprint:unblockTask', 'task-blk')
 
@@ -415,13 +415,13 @@ describe('Sprint IPC handlers — integration', () => {
 
     it('throws if task is not blocked', async () => {
       const active = makeTask({ id: 'task-act', status: 'active' })
-      mockGetTask.mockResolvedValue(active)
+      mockGetTask.mockReturnValue(active)
 
       await expect(invoke('sprint:unblockTask', 'task-act')).rejects.toThrow('not blocked')
     })
 
     it('throws if task does not exist', async () => {
-      mockGetTask.mockResolvedValue(null)
+      mockGetTask.mockReturnValue(null)
 
       await expect(invoke('sprint:unblockTask', 'task-missing')).rejects.toThrow('not found')
     })
@@ -430,7 +430,7 @@ describe('Sprint IPC handlers — integration', () => {
   describe('sprint:healthCheck', () => {
     it('returns long-running active tasks', async () => {
       const stale = [makeTask({ id: 'task-stale', status: 'active' })]
-      mockGetHealthCheckTasks.mockResolvedValue(stale)
+      mockGetHealthCheckTasks.mockReturnValue(stale)
 
       const result = await invoke('sprint:healthCheck')
 
@@ -441,8 +441,8 @@ describe('Sprint IPC handlers — integration', () => {
 
   describe('sprint:validateDependencies', () => {
     it('returns valid when deps exist and no cycle', async () => {
-      mockGetTask.mockResolvedValue(makeTask({ id: 'dep-1' }))
-      mockListTasks.mockResolvedValue([makeTask({ id: 'dep-1' })])
+      mockGetTask.mockReturnValue(makeTask({ id: 'dep-1' }))
+      mockListTasks.mockReturnValue([makeTask({ id: 'dep-1' })])
 
       const result = await invoke('sprint:validateDependencies', 'task-001', [
         { id: 'dep-1', type: 'hard' }
@@ -452,7 +452,7 @@ describe('Sprint IPC handlers — integration', () => {
     })
 
     it('returns invalid when dep target does not exist', async () => {
-      mockGetTask.mockResolvedValue(null)
+      mockGetTask.mockReturnValue(null)
 
       const result = await invoke('sprint:validateDependencies', 'task-001', [
         { id: 'nonexistent', type: 'hard' }

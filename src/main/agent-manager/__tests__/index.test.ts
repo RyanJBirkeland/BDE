@@ -10,7 +10,7 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
   getTask: vi.fn(),
   getOrphanedTasks: vi.fn(),
-  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getTasksWithDependencies: vi.fn().mockReturnValue([]),
   setSprintQueriesLogger: vi.fn()
 }))
 
@@ -23,7 +23,7 @@ vi.mock('../dependency-index', () => ({
 }))
 
 vi.mock('../resolve-dependents', () => ({
-  resolveDependents: vi.fn().mockResolvedValue(undefined)
+  resolveDependents: vi.fn().mockReturnValue(undefined)
 }))
 
 vi.mock('../../paths', () => ({
@@ -124,9 +124,9 @@ function makeTask(overrides: Record<string, unknown> = {}) {
 
 function setupDefaultMocks(): void {
   vi.mocked(getRepoPaths).mockReturnValue({ myrepo: '/repos/myrepo' })
-  vi.mocked(getQueuedTasks).mockResolvedValue([])
-  vi.mocked(claimTask).mockResolvedValue(null)
-  vi.mocked(updateTask).mockResolvedValue(null)
+  vi.mocked(getQueuedTasks).mockReturnValue([])
+  vi.mocked(claimTask).mockReturnValue(null)
+  vi.mocked(updateTask).mockReturnValue(null)
   vi.mocked(recoverOrphans).mockResolvedValue(0)
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
   vi.mocked(setupWorktree).mockResolvedValue({
@@ -142,7 +142,7 @@ function makeMockRepo(): ISprintTaskRepository {
     getQueuedTasks: (...args: [number]) => (getQueuedTasks as any)(...args),
     getTasksWithDependencies: () => (getTasksWithDependencies as any)(),
     getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
-    getActiveTaskCount: vi.fn().mockResolvedValue(0),
+    getActiveTaskCount: vi.fn().mockReturnValue(0),
     claimTask: (...args: [string, string]) => (claimTask as any)(...args)
   }
 }
@@ -268,8 +268,8 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       const { handle } = makeMockHandle([{ type: 'text', content: 'hello' }])
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
@@ -297,8 +297,8 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       const { handle } = makeMockHandle([{ type: 'text', content: 'hello' }])
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
@@ -322,8 +322,8 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       const { handle } = makeMockHandle([{ type: 'text', content: 'hello' }])
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
       vi.mocked(createAgentRecord).mockResolvedValue({} as any)
@@ -354,8 +354,8 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockRejectedValueOnce(new Error('Authentication failed'))
 
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -379,7 +379,7 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getQueuedTasks).mockRejectedValueOnce(new Error('Supabase down'))
+      vi.mocked(getQueuedTasks).mockImplementationOnce(() => { throw new Error('Supabase down'); })
       const mgr = createAgentManager({ ...baseConfig, pollIntervalMs: 50 }, mockRepo, logger)
       mgr.start()
       // Advance past INITIAL_DRAIN_DEFER_MS (5000ms); use small steps to let promises resolve
@@ -395,8 +395,8 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([makeTask()])
-      vi.mocked(claimTask).mockResolvedValueOnce({ id: 'test-task' } as any)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([makeTask()])
+      vi.mocked(claimTask).mockReturnValueOnce({ id: 'test-task' } as any)
       vi.mocked(spawnAgent).mockRejectedValueOnce(new Error('SDK crash'))
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
@@ -417,8 +417,8 @@ describe('createAgentManager', () => {
       const task = makeTask()
       const { handle } = makeBlockingHandle()
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const mgr = createAgentManager(config, mockRepo, logger)
@@ -445,7 +445,7 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask({ id: 'task-nomatch', repo: 'unknown-repo' })
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
 
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
@@ -464,8 +464,8 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       const task = makeTask()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(setupWorktree).mockRejectedValueOnce(new Error('git worktree failed'))
 
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -489,7 +489,7 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getQueuedTasks).mockRejectedValueOnce(new Error('Supabase down'))
+      vi.mocked(getQueuedTasks).mockImplementationOnce(() => { throw new Error('Supabase down'); })
       const mgr = createAgentManager({ ...baseConfig, pollIntervalMs: 50 }, mockRepo, logger)
       mgr.start()
       // Advance past INITIAL_DRAIN_DEFER_MS (5000ms); use small steps to let promises resolve
@@ -505,8 +505,8 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([makeTask()])
-      vi.mocked(claimTask).mockResolvedValueOnce({ id: 'test-task' } as any)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([makeTask()])
+      vi.mocked(claimTask).mockReturnValueOnce({ id: 'test-task' } as any)
       vi.mocked(spawnAgent).mockRejectedValueOnce(new Error('SDK crash'))
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
@@ -527,8 +527,8 @@ describe('createAgentManager', () => {
       const task = makeTask()
       const { handle } = makeBlockingHandle()
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const mgr = createAgentManager(config, mockRepo, logger)
@@ -568,8 +568,8 @@ describe('createAgentManager', () => {
       // First drain: fill the slot
       const task1 = makeTask({ id: 'task-1' })
       const { handle } = makeBlockingHandle()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task1])
-      vi.mocked(claimTask).mockResolvedValueOnce(task1)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task1])
+      vi.mocked(claimTask).mockReturnValueOnce(task1)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const mgr = createAgentManager(config, mockRepo, logger)
@@ -582,7 +582,7 @@ describe('createAgentManager', () => {
 
       // Second drain: slot full, should not process any new tasks
       const task2 = makeTask({ id: 'task-2' })
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task2])
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task2])
       vi.mocked(claimTask).mockClear()
 
       await vi.advanceTimersByTimeAsync(config.pollIntervalMs + 1_000)
@@ -606,8 +606,8 @@ describe('createAgentManager', () => {
       const task = makeTask()
       const { handle, abortFn } = makeBlockingHandle()
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -662,8 +662,8 @@ describe('createAgentManager', () => {
       const task = makeTask()
       const { handle, abortFn } = makeBlockingHandle()
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const logger = makeLogger()
@@ -711,8 +711,8 @@ describe('createAgentManager', () => {
       const task = makeTask()
       const { handle, abortFn } = makeBlockingHandle()
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const logger = makeLogger()
@@ -748,11 +748,11 @@ describe('createAgentManager', () => {
       }
       const task = makeTask()
       const { handle } = makeBlockingHandle()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
       // Make ALL updateTask calls reject — the watchdog one is not the first call
-      vi.mocked(updateTask).mockRejectedValue(new Error('DB error'))
+      vi.mocked(updateTask).mockImplementation(() => { throw new Error('DB error'); })
       const logger = makeLogger()
       const mgr = createAgentManager(config, mockRepo, logger)
       mgr.start()
@@ -764,7 +764,7 @@ describe('createAgentManager', () => {
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to update task task-1 after max-runtime kill')
       )
-      vi.mocked(updateTask).mockResolvedValue(null) // reset
+      vi.mocked(updateTask).mockReturnValue(null) // reset
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
     })
@@ -778,10 +778,10 @@ describe('createAgentManager', () => {
       }
       const task = makeTask()
       const { handle } = makeBlockingHandle()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
-      vi.mocked(updateTask).mockRejectedValue(new Error('DB error'))
+      vi.mocked(updateTask).mockImplementation(() => { throw new Error('DB error'); })
       const logger = makeLogger()
       const mgr = createAgentManager(config, mockRepo, logger)
       mgr.start()
@@ -793,7 +793,7 @@ describe('createAgentManager', () => {
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to update task task-1 after idle kill')
       )
-      vi.mocked(updateTask).mockResolvedValue(null)
+      vi.mocked(updateTask).mockReturnValue(null)
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
     })
@@ -817,8 +817,8 @@ describe('createAgentManager', () => {
       const steerFn = handle.steer as ReturnType<typeof vi.fn>
       steerFn.mockResolvedValue({ delivered: true })
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -844,8 +844,8 @@ describe('createAgentManager', () => {
       const steerFn = handle.steer as ReturnType<typeof vi.fn>
       steerFn.mockResolvedValue({ delivered: false, error: 'stdin closed' })
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -874,8 +874,8 @@ describe('createAgentManager', () => {
       const task = makeTask()
       const { handle, abortFn } = makeBlockingHandle()
 
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
       const mgr = createAgentManager(baseConfig, mockRepo, makeLogger())
@@ -915,8 +915,8 @@ describe('createAgentManager', () => {
         abort: abortFn,
         steer: vi.fn().mockResolvedValue(undefined)
       } as AgentHandle
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-      vi.mocked(claimTask).mockResolvedValueOnce(task)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
@@ -982,7 +982,7 @@ describe('createAgentManager', () => {
 
     it('logs error when resolveDependents throws', async () => {
       const { resolveDependents } = await import('../resolve-dependents')
-      vi.mocked(resolveDependents).mockRejectedValueOnce(new Error('dep error'))
+      vi.mocked(resolveDependents).mockImplementationOnce(() => { throw new Error('dep error'); })
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       await mgr.onTaskTerminal('task-1', 'done')
@@ -1024,7 +1024,7 @@ describe('createAgentManager', () => {
     it('logs error when initial dependency index build fails', async () => {
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getTasksWithDependencies).mockRejectedValueOnce(new Error('dep index error'))
+      vi.mocked(getTasksWithDependencies).mockImplementationOnce(() => { throw new Error('dep index error'); })
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       await flush(20)
@@ -1097,7 +1097,7 @@ describe('createAgentManager', () => {
         { id: 'dep-1', status: 'done', depends_on: null } as any,
         { id: 'dep-2', status: 'queued', depends_on: null } as any
       ])
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([])
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([])
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
@@ -1127,7 +1127,7 @@ describe('createAgentManager', () => {
         depends_on: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }]),
         dependsOn: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }])
       })
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([taskWithDeps])
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([taskWithDeps])
 
       // Mock depIndex.areDependenciesSatisfied to invoke the getStatus callback AND return unsatisfied
       const { createDependencyIndex } = await import('../dependency-index')
@@ -1156,8 +1156,8 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getQueuedTasks).mockResolvedValueOnce([makeTask()])
-      vi.mocked(claimTask).mockResolvedValueOnce(null)
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([makeTask()])
+      vi.mocked(claimTask).mockReturnValueOnce(null)
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)

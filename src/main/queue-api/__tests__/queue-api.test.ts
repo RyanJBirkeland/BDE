@@ -155,9 +155,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockGetSetting.mockReturnValue(null) // no auth by default
   mockGetDb.mockReturnValue({}) // default db mock
-  mockGetTasksWithDependencies.mockResolvedValue([]) // default empty tasks list
-  mockDeleteTask.mockResolvedValue(undefined) // default delete success
-  mockGetActiveTaskCount.mockResolvedValue(0) // default: no active tasks (WIP limit not hit)
+  mockGetTasksWithDependencies.mockReturnValue([]) // default empty tasks list
+  mockDeleteTask.mockReturnValue(undefined) // default delete success
+  mockGetActiveTaskCount.mockReturnValue(0) // default: no active tasks (WIP limit not hit)
   mockCheckSpecSemantic.mockResolvedValue({
     passed: true,
     hasFails: false,
@@ -179,7 +179,7 @@ beforeEach(() => {
 describe('Queue API', () => {
   describe('GET /queue/health', () => {
     it('returns queue stats', async () => {
-      mockGetQueueStats.mockResolvedValue({
+      mockGetQueueStats.mockReturnValue({
         backlog: 2,
         queued: 3,
         active: 1,
@@ -210,7 +210,7 @@ describe('Queue API', () => {
   describe('GET /queue/tasks', () => {
     it('returns all tasks', async () => {
       const tasks = [{ id: '1', title: 'Test', status: 'queued' }]
-      mockListTasks.mockResolvedValue(tasks)
+      mockListTasks.mockReturnValue(tasks)
 
       const { status, body } = await request('GET', '/queue/tasks')
       expect(status).toBe(200)
@@ -219,7 +219,7 @@ describe('Queue API', () => {
     })
 
     it('passes status filter', async () => {
-      mockListTasks.mockResolvedValue([])
+      mockListTasks.mockReturnValue([])
 
       await request('GET', '/queue/tasks?status=active')
       expect(mockListTasks).toHaveBeenCalledWith('active')
@@ -229,7 +229,7 @@ describe('Queue API', () => {
   describe('GET /queue/tasks/:id', () => {
     it('returns a task by id', async () => {
       const task = { id: 'abc', title: 'Test' }
-      mockGetTask.mockResolvedValue(task)
+      mockGetTask.mockReturnValue(task)
 
       const { status, body } = await request('GET', '/queue/tasks/abc')
       expect(status).toBe(200)
@@ -238,7 +238,7 @@ describe('Queue API', () => {
     })
 
     it('returns 404 for missing task', async () => {
-      mockGetTask.mockResolvedValue(null)
+      mockGetTask.mockReturnValue(null)
 
       const { status } = await request('GET', '/queue/tasks/missing')
       expect(status).toBe(404)
@@ -249,7 +249,7 @@ describe('Queue API', () => {
     it('creates a task', async () => {
       const input = { title: 'New task', repo: 'my-repo' }
       const created = { id: 'new-1', ...input, status: 'backlog' }
-      mockCreateTask.mockResolvedValue(created)
+      mockCreateTask.mockReturnValue(created)
 
       const { status, body } = await request('POST', '/queue/tasks', input)
       expect(status).toBe(201)
@@ -299,7 +299,7 @@ describe('Queue API', () => {
     })
 
     it('rejects dependencies with non-existent task IDs before creating task', async () => {
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'existing-1', depends_on: null, status: 'done' },
         { id: 'existing-2', depends_on: null, status: 'queued' }
       ])
@@ -318,7 +318,7 @@ describe('Queue API', () => {
     })
 
     it('rejects dependencies that would create a cycle before creating task', async () => {
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'task-a', depends_on: [{ id: 'task-b', type: 'hard' }], status: 'queued' },
         { id: 'task-b', depends_on: [{ id: 'pending-new-task', type: 'hard' }], status: 'queued' }
       ])
@@ -338,7 +338,7 @@ describe('Queue API', () => {
     it('rejects self-referencing dependencies before creating task', async () => {
       // With pre-creation validation, the temporary ID is 'pending-new-task'
       // so a self-reference uses that ID
-      mockGetTasksWithDependencies.mockResolvedValue([])
+      mockGetTasksWithDependencies.mockReturnValue([])
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
@@ -359,12 +359,12 @@ describe('Queue API', () => {
         repo: 'my-repo',
         depends_on: [{ id: 'task-a', type: 'hard' }]
       }
-      mockCreateTask.mockResolvedValue(created)
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockCreateTask.mockReturnValue(created)
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'task-a', depends_on: null, status: 'done' }
       ])
       // checkTaskDependencies calls listTasks() for auto-blocking check
-      mockListTasks.mockResolvedValue([{ id: 'task-a', depends_on: null, status: 'done' }])
+      mockListTasks.mockReturnValue([{ id: 'task-a', depends_on: null, status: 'done' }])
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
@@ -385,7 +385,7 @@ describe('Queue API', () => {
   describe('PATCH /queue/tasks/:id/status', () => {
     it('updates task status', async () => {
       const updated = { id: 'abc', status: 'done' }
-      mockUpdateTask.mockResolvedValue(updated)
+      mockUpdateTask.mockReturnValue(updated)
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/status', {
         status: 'done',
@@ -403,7 +403,7 @@ describe('Queue API', () => {
     })
 
     it('filters out disallowed fields', async () => {
-      mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'done' })
+      mockUpdateTask.mockReturnValue({ id: 'abc', status: 'done' })
 
       await request('PATCH', '/queue/tasks/abc/status', {
         status: 'done',
@@ -415,7 +415,7 @@ describe('Queue API', () => {
     })
 
     it('returns 404 when task not found', async () => {
-      mockUpdateTask.mockResolvedValue(null)
+      mockUpdateTask.mockReturnValue(null)
 
       const { status } = await request('PATCH', '/queue/tasks/missing/status', {
         status: 'done'
@@ -424,8 +424,8 @@ describe('Queue API', () => {
     })
 
     it('calls resolveDependents after transitioning to done', async () => {
-      mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'done' })
-      mockGetTasksWithDependencies.mockResolvedValue([])
+      mockUpdateTask.mockReturnValue({ id: 'abc', status: 'done' })
+      mockGetTasksWithDependencies.mockReturnValue([])
 
       const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'done' })
       expect(status).toBe(200)
@@ -445,8 +445,8 @@ describe('Queue API', () => {
     it('calls resolveDependents for all terminal statuses', async () => {
       for (const terminalStatus of ['done', 'failed', 'error', 'cancelled']) {
         mockResolveDependents.mockClear()
-        mockUpdateTask.mockResolvedValue({ id: 'abc', status: terminalStatus })
-        mockGetTasksWithDependencies.mockResolvedValue([])
+        mockUpdateTask.mockReturnValue({ id: 'abc', status: terminalStatus })
+        mockGetTasksWithDependencies.mockReturnValue([])
 
         const { status } = await request('PATCH', '/queue/tasks/abc/status', {
           status: terminalStatus
@@ -466,7 +466,7 @@ describe('Queue API', () => {
     })
 
     it('does not call resolveDependents for non-terminal status transitions', async () => {
-      mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'active' })
+      mockUpdateTask.mockReturnValue({ id: 'abc', status: 'active' })
 
       const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'active' })
       expect(status).toBe(200)
@@ -479,7 +479,7 @@ describe('Queue API', () => {
   describe('POST /queue/tasks/:id/claim', () => {
     it('claims a task', async () => {
       const claimed = { id: 'abc', status: 'active', claimed_by: 'runner-1' }
-      mockClaimTask.mockResolvedValue(claimed)
+      mockClaimTask.mockReturnValue(claimed)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
         executorId: 'runner-1'
@@ -490,7 +490,7 @@ describe('Queue API', () => {
     })
 
     it('returns 409 when task not claimable', async () => {
-      mockClaimTask.mockResolvedValue(null)
+      mockClaimTask.mockReturnValue(null)
 
       const { status } = await request('POST', '/queue/tasks/abc/claim', {
         executorId: 'runner-1'
@@ -504,7 +504,7 @@ describe('Queue API', () => {
     })
 
     it('rejects claim when active task count is at WIP limit', async () => {
-      mockGetActiveTaskCount.mockResolvedValue(5)
+      mockGetActiveTaskCount.mockReturnValue(5)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
         executorId: 'runner-1'
@@ -515,9 +515,9 @@ describe('Queue API', () => {
     })
 
     it('allows claim when active task count is below WIP limit', async () => {
-      mockGetActiveTaskCount.mockResolvedValue(4)
+      mockGetActiveTaskCount.mockReturnValue(4)
       const claimed = { id: 'abc', status: 'active', claimed_by: 'runner-1' }
-      mockClaimTask.mockResolvedValue(claimed)
+      mockClaimTask.mockReturnValue(claimed)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
         executorId: 'runner-1'
@@ -530,7 +530,7 @@ describe('Queue API', () => {
   describe('POST /queue/tasks/:id/release', () => {
     it('releases a task', async () => {
       const released = { id: 'abc', status: 'queued', claimed_by: null }
-      mockReleaseTask.mockResolvedValue(released)
+      mockReleaseTask.mockReturnValue(released)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {
         claimed_by: 'runner-1'
@@ -547,7 +547,7 @@ describe('Queue API', () => {
     })
 
     it('returns 409 when task not releasable', async () => {
-      mockReleaseTask.mockResolvedValue(null)
+      mockReleaseTask.mockReturnValue(null)
 
       const { status } = await request('POST', '/queue/tasks/abc/release', {
         claimed_by: 'runner-1'
@@ -565,12 +565,12 @@ describe('Queue API', () => {
           { id: 'task-2', type: 'soft' }
         ]
       }
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'abc', depends_on: null, status: 'queued' },
         { id: 'task-1', depends_on: null, status: 'done' },
         { id: 'task-2', depends_on: null, status: 'done' }
       ])
-      mockUpdateTask.mockResolvedValue(updated)
+      mockUpdateTask.mockReturnValue(updated)
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
         dependsOn: [
@@ -587,16 +587,16 @@ describe('Queue API', () => {
         ]
       })
       expect(mockUpdateTask).toHaveBeenCalledWith('abc', {
-        depends_on: [
+        depends_on: JSON.stringify([
           { id: 'task-1', type: 'hard' },
           { id: 'task-2', type: 'soft' }
-        ]
+        ])
       })
     })
 
     it('clears dependencies with null', async () => {
       const updated = { id: 'abc', depends_on: null }
-      mockUpdateTask.mockResolvedValue(updated)
+      mockUpdateTask.mockReturnValue(updated)
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
         dependsOn: null
@@ -627,7 +627,7 @@ describe('Queue API', () => {
     })
 
     it('returns 404 when task not found', async () => {
-      mockUpdateTask.mockResolvedValue(null)
+      mockUpdateTask.mockReturnValue(null)
 
       const { status } = await request('PATCH', '/queue/tasks/missing/dependencies', {
         dependsOn: []
@@ -636,7 +636,7 @@ describe('Queue API', () => {
     })
 
     it('rejects dependencies with non-existent task IDs', async () => {
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'abc', depends_on: null, status: 'queued' },
         { id: 'existing-1', depends_on: null, status: 'done' }
       ])
@@ -651,7 +651,7 @@ describe('Queue API', () => {
     })
 
     it('rejects dependencies that would create a cycle', async () => {
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'abc', depends_on: null, status: 'queued' },
         { id: 'task-a', depends_on: [{ id: 'task-b', type: 'hard' }], status: 'queued' },
         { id: 'task-b', depends_on: [{ id: 'abc', type: 'hard' }], status: 'queued' }
@@ -666,7 +666,7 @@ describe('Queue API', () => {
     })
 
     it('rejects self-referencing dependencies', async () => {
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'abc', depends_on: null, status: 'queued' }
       ])
 
@@ -683,11 +683,11 @@ describe('Queue API', () => {
         id: 'abc',
         depends_on: [{ id: 'task-a', type: 'hard' }]
       }
-      mockGetTasksWithDependencies.mockResolvedValue([
+      mockGetTasksWithDependencies.mockReturnValue([
         { id: 'abc', depends_on: null, status: 'queued' },
         { id: 'task-a', depends_on: null, status: 'done' }
       ])
-      mockUpdateTask.mockResolvedValue(updated)
+      mockUpdateTask.mockReturnValue(updated)
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
         dependsOn: [{ id: 'task-a', type: 'hard' }]
@@ -698,7 +698,7 @@ describe('Queue API', () => {
         dependsOn: [{ id: 'task-a', type: 'hard' }]
       })
       expect(mockUpdateTask).toHaveBeenCalledWith('abc', {
-        depends_on: [{ id: 'task-a', type: 'hard' }]
+        depends_on: JSON.stringify([{ id: 'task-a', type: 'hard' }])
       })
     })
   })
@@ -752,7 +752,7 @@ describe('Queue API', () => {
 
     it('allows requests with correct bearer token', async () => {
       mockGetSetting.mockReturnValue('secret-key')
-      mockGetQueueStats.mockResolvedValue({
+      mockGetQueueStats.mockReturnValue({
         backlog: 0,
         queued: 0,
         active: 0,
@@ -770,7 +770,7 @@ describe('Queue API', () => {
 
     it('allows all requests when no API key is configured', async () => {
       mockGetSetting.mockReturnValue(null)
-      mockGetQueueStats.mockResolvedValue({
+      mockGetQueueStats.mockReturnValue({
         backlog: 0,
         queued: 0,
         active: 0,
@@ -881,7 +881,7 @@ describe('Queue API', () => {
 
   describe('Error handling — sprint-queries throws', () => {
     it('returns 500 when getQueueStats throws', async () => {
-      mockGetQueueStats.mockRejectedValue(new Error('Supabase connection failed'))
+      mockGetQueueStats.mockImplementation(() => { throw new Error('Supabase connection failed'); })
 
       const { status, body } = await request('GET', '/queue/health')
       expect(status).toBe(500)
@@ -889,7 +889,7 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when listTasks throws', async () => {
-      mockListTasks.mockRejectedValue(new Error('Supabase timeout'))
+      mockListTasks.mockImplementation(() => { throw new Error('Supabase timeout'); })
 
       const { status, body } = await request('GET', '/queue/tasks')
       expect(status).toBe(500)
@@ -897,7 +897,7 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when getTask throws', async () => {
-      mockGetTask.mockRejectedValue(new Error('network error'))
+      mockGetTask.mockImplementation(() => { throw new Error('network error'); })
 
       const { status, body } = await request('GET', '/queue/tasks/abc')
       expect(status).toBe(500)
@@ -905,7 +905,7 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when createTask throws', async () => {
-      mockCreateTask.mockRejectedValue(new Error('insert failed'))
+      mockCreateTask.mockImplementation(() => { throw new Error('insert failed'); })
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'New task',
@@ -916,7 +916,7 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when claimTask throws', async () => {
-      mockClaimTask.mockRejectedValue(new Error('lock contention'))
+      mockClaimTask.mockImplementation(() => { throw new Error('lock contention'); })
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
         executorId: 'runner-1'
@@ -926,7 +926,7 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when releaseTask throws', async () => {
-      mockReleaseTask.mockRejectedValue(new Error('constraint violation'))
+      mockReleaseTask.mockImplementation(() => { throw new Error('constraint violation'); })
 
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {
         claimed_by: 'runner-1'
@@ -1130,7 +1130,7 @@ describe('Queue API', () => {
       mockUpdateTask
         .mockResolvedValueOnce({ id: 't1', title: 'Updated 1' })
         .mockResolvedValueOnce({ id: 't2', title: 'Updated 2' })
-      mockDeleteTask.mockResolvedValueOnce(undefined)
+      mockDeleteTask.mockReturnValueOnce(undefined)
 
       const { status, body } = await request('POST', '/queue/tasks/batch', {
         operations: [
@@ -1229,7 +1229,7 @@ describe('Queue API', () => {
           status: 'backlog',
           spec: validSpec
         }
-        mockCreateTask.mockResolvedValue(created)
+        mockCreateTask.mockReturnValue(created)
 
         const { status } = await request('POST', '/queue/tasks', {
           title: 'Test task',
@@ -1241,7 +1241,7 @@ describe('Queue API', () => {
 
       it('allows backlog task without spec', async () => {
         const created = { id: 'new-1', title: 'Test task', repo: 'bde', status: 'backlog' }
-        mockCreateTask.mockResolvedValue(created)
+        mockCreateTask.mockReturnValue(created)
 
         const { status } = await request('POST', '/queue/tasks', {
           title: 'Test task',
@@ -1253,7 +1253,7 @@ describe('Queue API', () => {
 
     describe('PATCH /queue/tasks/:id/status to queued', () => {
       it('rejects queue transition on task with bad spec', async () => {
-        mockGetTask.mockResolvedValue({
+        mockGetTask.mockReturnValue({
           id: 'abc',
           title: 'Test',
           repo: 'bde',
@@ -1270,7 +1270,7 @@ describe('Queue API', () => {
       })
 
       it('allows queue transition with skipValidation=true on bad spec', async () => {
-        mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'queued' })
+        mockUpdateTask.mockReturnValue({ id: 'abc', status: 'queued' })
 
         const { status } = await request('PATCH', '/queue/tasks/abc/status?skipValidation=true', {
           status: 'queued'
@@ -1279,7 +1279,7 @@ describe('Queue API', () => {
       })
 
       it('does NOT trigger semantic checks for non-queued status transitions', async () => {
-        mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'active' })
+        mockUpdateTask.mockReturnValue({ id: 'abc', status: 'active' })
 
         await request('PATCH', '/queue/tasks/abc/status', {
           status: 'active'
@@ -1289,7 +1289,7 @@ describe('Queue API', () => {
       })
 
       it('allows queue transition when spec is valid and semantic passes', async () => {
-        mockGetTask.mockResolvedValue({
+        mockGetTask.mockReturnValue({
           id: 'abc',
           title: 'Test',
           repo: 'bde',
@@ -1304,7 +1304,7 @@ describe('Queue API', () => {
           failMessages: [],
           warnMessages: []
         })
-        mockUpdateTask.mockResolvedValue({ id: 'abc', status: 'queued' })
+        mockUpdateTask.mockReturnValue({ id: 'abc', status: 'queued' })
 
         const { status } = await request('PATCH', '/queue/tasks/abc/status', {
           status: 'queued'
@@ -1313,7 +1313,7 @@ describe('Queue API', () => {
       })
 
       it('rejects queue transition when semantic check fails', async () => {
-        mockGetTask.mockResolvedValue({
+        mockGetTask.mockReturnValue({
           id: 'abc',
           title: 'Test',
           repo: 'bde',

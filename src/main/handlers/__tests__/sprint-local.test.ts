@@ -172,7 +172,7 @@ describe('sprint:list handler', () => {
 
   it('returns tasks from listTasks', async () => {
     const tasks = [{ id: '1', title: 'Task A', status: 'queued' }]
-    vi.mocked(_listTasks).mockResolvedValue(tasks as any)
+    vi.mocked(_listTasks).mockReturnValue(tasks as any)
 
     const handler = captureHandler('sprint:list')
     const result = await handler(mockEvent)
@@ -182,7 +182,7 @@ describe('sprint:list handler', () => {
   })
 
   it('returns empty array when no tasks', async () => {
-    vi.mocked(_listTasks).mockResolvedValue([])
+    vi.mocked(_listTasks).mockReturnValue([])
 
     const handler = captureHandler('sprint:list')
     const result = await handler(mockEvent)
@@ -200,7 +200,7 @@ describe('sprint:create handler', () => {
     const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const input = { title: 'New task', repo: 'BDE', status: 'queued', spec: validSpec }
     const created = { id: 'abc', ...input }
-    vi.mocked(_createTask).mockResolvedValue(created as any)
+    vi.mocked(_createTask).mockReturnValue(created as any)
 
     const handler = captureHandler('sprint:create')
     const result = await handler(mockEvent, input)
@@ -218,13 +218,13 @@ describe('sprint:update handler', () => {
 
   it('updates a task and returns the updated row', async () => {
     const updated = { id: '1', title: 'Updated', status: 'backlog' }
-    vi.mocked(_getTask).mockResolvedValue({
+    vi.mocked(_getTask).mockReturnValue({
       id: '1',
       title: 'Original',
       status: 'backlog',
       depends_on: null
     } as any)
-    vi.mocked(_updateTask).mockResolvedValue(updated as any)
+    vi.mocked(_updateTask).mockReturnValue(updated as any)
 
     const handler = captureHandler('sprint:update')
     const result = await handler(mockEvent, '1', { title: 'Updated' })
@@ -241,7 +241,7 @@ describe('sprint:update handler', () => {
       areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true })
     } as any)
 
-    vi.mocked(_getTask).mockResolvedValue({
+    vi.mocked(_getTask).mockReturnValue({
       id: '1',
       title: 'Task 1',
       repo: 'bde',
@@ -249,11 +249,11 @@ describe('sprint:update handler', () => {
       status: 'backlog',
       depends_on: [{ id: 'dep1', type: 'hard' }]
     } as any)
-    vi.mocked(_listTasks).mockResolvedValue([
+    vi.mocked(_listTasks).mockReturnValue([
       { id: '1', status: 'backlog', depends_on: [] },
       { id: 'dep1', status: 'done', depends_on: [] }
     ] as any)
-    vi.mocked(_updateTask).mockResolvedValue({ id: '1', status: 'queued' } as any)
+    vi.mocked(_updateTask).mockReturnValue({ id: '1', status: 'queued' } as any)
 
     const handler = captureHandler('sprint:update')
     await handler(mockEvent, '1', { status: 'queued' })
@@ -269,7 +269,7 @@ describe('sprint:update handler', () => {
       areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['dep1'] })
     } as any)
 
-    vi.mocked(_getTask).mockResolvedValue({
+    vi.mocked(_getTask).mockReturnValue({
       id: '1',
       title: 'Task 1',
       repo: 'bde',
@@ -277,11 +277,11 @@ describe('sprint:update handler', () => {
       status: 'backlog',
       depends_on: [{ id: 'dep1', type: 'hard' }]
     } as any)
-    vi.mocked(_listTasks).mockResolvedValue([
+    vi.mocked(_listTasks).mockReturnValue([
       { id: '1', status: 'backlog', depends_on: [] },
       { id: 'dep1', status: 'queued', depends_on: [] }
     ] as any)
-    vi.mocked(_updateTask).mockResolvedValue({ id: '1', status: 'blocked' } as any)
+    vi.mocked(_updateTask).mockReturnValue({ id: '1', status: 'blocked' } as any)
 
     const handler = captureHandler('sprint:update')
     await handler(mockEvent, '1', { status: 'queued' })
@@ -297,8 +297,8 @@ describe('sprint:delete handler', () => {
 
   it('deletes the task and fires deleted mutation notification', async () => {
     const task = { id: '1', title: 'To delete', status: 'backlog' }
-    vi.mocked(_getTask).mockResolvedValue(task as any)
-    vi.mocked(_deleteTask).mockResolvedValue(undefined)
+    vi.mocked(_getTask).mockReturnValue(task as any)
+    vi.mocked(_deleteTask).mockReturnValue(undefined)
 
     const handler = captureHandler('sprint:delete')
     const result = await handler(mockEvent, '1')
@@ -309,8 +309,8 @@ describe('sprint:delete handler', () => {
   })
 
   it('still returns ok when task not found before delete', async () => {
-    vi.mocked(_getTask).mockResolvedValue(null)
-    vi.mocked(_deleteTask).mockResolvedValue(undefined)
+    vi.mocked(_getTask).mockReturnValue(null)
+    vi.mocked(_deleteTask).mockReturnValue(undefined)
 
     const handler = captureHandler('sprint:delete')
     const result = await handler(mockEvent, 'nonexistent')
@@ -327,7 +327,7 @@ describe('sprint:claimTask handler', () => {
   })
 
   it('returns null when task not found', async () => {
-    vi.mocked(_getTask).mockResolvedValue(null)
+    vi.mocked(_getTask).mockReturnValue(null)
 
     const handler = captureHandler('sprint:claimTask')
     const result = await handler(mockEvent, 'nonexistent')
@@ -337,7 +337,7 @@ describe('sprint:claimTask handler', () => {
 
   it('returns task with null templatePromptPrefix when no template', async () => {
     const task = { id: '1', title: 'Task', status: 'queued', template_name: null }
-    vi.mocked(_getTask).mockResolvedValue(task as any)
+    vi.mocked(_getTask).mockReturnValue(task as any)
 
     const handler = captureHandler('sprint:claimTask')
     const result = await handler(mockEvent, '1')
@@ -347,7 +347,7 @@ describe('sprint:claimTask handler', () => {
 
   it('returns templatePromptPrefix from matching template', async () => {
     const task = { id: '1', title: 'Task', status: 'queued', template_name: 'bugfix' }
-    vi.mocked(_getTask).mockResolvedValue(task as any)
+    vi.mocked(_getTask).mockReturnValue(task as any)
     vi.mocked(getSettingJson).mockReturnValue([
       { name: 'bugfix', promptPrefix: 'Fix the bug:' },
       { name: 'feature', promptPrefix: 'Add feature:' }
@@ -361,7 +361,7 @@ describe('sprint:claimTask handler', () => {
 
   it('returns null prefix when template_name does not match any template', async () => {
     const task = { id: '1', title: 'Task', status: 'queued', template_name: 'unknown' }
-    vi.mocked(_getTask).mockResolvedValue(task as any)
+    vi.mocked(_getTask).mockReturnValue(task as any)
     vi.mocked(getSettingJson).mockReturnValue([
       { name: 'bugfix', promptPrefix: 'Fix the bug:' }
     ] as any)
@@ -479,7 +479,7 @@ describe('sprint:create spec validation', () => {
   })
 
   it('succeeds for backlog task with empty spec', async () => {
-    vi.mocked(_createTask).mockResolvedValue({
+    vi.mocked(_createTask).mockReturnValue({
       id: 'new-1',
       title: 'Fix',
       repo: 'bde',
@@ -493,7 +493,7 @@ describe('sprint:create spec validation', () => {
   })
 
   it('succeeds for backlog task with title and repo', async () => {
-    vi.mocked(_createTask).mockResolvedValue({
+    vi.mocked(_createTask).mockReturnValue({
       id: 'new-1',
       title: 'Fix',
       repo: 'bde',
@@ -539,7 +539,7 @@ describe('sprint:update spec validation on queue transition', () => {
   })
 
   it('throws when transitioning to queued with bad spec', async () => {
-    vi.mocked(_getTask).mockResolvedValue({
+    vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
       title: 'Test',
       repo: 'bde',
@@ -554,14 +554,14 @@ describe('sprint:update spec validation on queue transition', () => {
   })
 
   it('succeeds when transitioning to queued with valid spec and semantic pass', async () => {
-    vi.mocked(_getTask).mockResolvedValue({
+    vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
       title: 'Test',
       repo: 'bde',
       spec: validSpec,
       status: 'backlog'
     } as any)
-    vi.mocked(_updateTask).mockResolvedValue({ id: 'abc', status: 'queued' } as any)
+    vi.mocked(_updateTask).mockReturnValue({ id: 'abc', status: 'queued' } as any)
 
     const handler = captureHandler('sprint:update')
     const result = await handler(mockEvent, 'abc', { status: 'queued' })
@@ -569,7 +569,7 @@ describe('sprint:update spec validation on queue transition', () => {
   })
 
   it('does NOT trigger validation for non-queued transitions', async () => {
-    vi.mocked(_updateTask).mockResolvedValue({ id: 'abc', status: 'done' } as any)
+    vi.mocked(_updateTask).mockReturnValue({ id: 'abc', status: 'done' } as any)
 
     const handler = captureHandler('sprint:update')
     await handler(mockEvent, 'abc', { status: 'done' })
@@ -579,7 +579,7 @@ describe('sprint:update spec validation on queue transition', () => {
   })
 
   it('throws when semantic check fails', async () => {
-    vi.mocked(_getTask).mockResolvedValue({
+    vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
       title: 'Test',
       repo: 'bde',

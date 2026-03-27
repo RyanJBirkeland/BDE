@@ -82,9 +82,9 @@ const mockRepo: ISprintTaskRepository = {
   getTask: (...args: [string]) => (getTask as any)(...args),
   updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
   getQueuedTasks: vi.fn(),
-  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getTasksWithDependencies: vi.fn().mockReturnValue([]),
   getOrphanedTasks: vi.fn(),
-  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  getActiveTaskCount: vi.fn().mockReturnValue(0),
   claimTask: vi.fn()
 }
 const getTaskMock = vi.mocked(getTask)
@@ -131,8 +131,8 @@ describe('Agent completion pipeline integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    updateTaskMock.mockResolvedValue(null)
-    getTaskMock.mockResolvedValue(null)
+    updateTaskMock.mockReturnValue(null)
+    getTaskMock.mockReturnValue(null)
     onTaskTerminal.mockReset().mockResolvedValue(undefined)
   })
 
@@ -399,10 +399,12 @@ describe('Agent completion pipeline integration', () => {
       expect(isTerminal).toBe(true)
     })
 
-    it('returns false (non-terminal) when updateTask throws during failure resolution', async () => {
-      updateTaskMock.mockRejectedValueOnce(new Error('Supabase timeout'))
+    it('returns false (non-terminal) when updateTask throws during failure resolution', () => {
+      updateTaskMock.mockImplementationOnce(() => {
+        throw new Error('DB error')
+      })
 
-      const isTerminal = await resolveFailure(
+      const isTerminal = resolveFailure(
         { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES },
         logger
       )
@@ -424,7 +426,7 @@ describe('Agent completion pipeline integration', () => {
     it('unblocks a blocked dependent when parent completes as done', async () => {
       depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] }])
 
-      getTaskMock.mockImplementation(async (id: string) => {
+      getTaskMock.mockImplementation((id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',
@@ -446,7 +448,7 @@ describe('Agent completion pipeline integration', () => {
     it('does NOT unblock dependent when parent fails and dependency is hard', async () => {
       depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] }])
 
-      getTaskMock.mockImplementation(async (id: string) => {
+      getTaskMock.mockImplementation((id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',
@@ -468,7 +470,7 @@ describe('Agent completion pipeline integration', () => {
     it('unblocks dependent with soft dependency when parent fails', async () => {
       depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'soft' }] }])
 
-      getTaskMock.mockImplementation(async (id: string) => {
+      getTaskMock.mockImplementation((id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',
@@ -498,7 +500,7 @@ describe('Agent completion pipeline integration', () => {
         }
       ])
 
-      getTaskMock.mockImplementation(async (id: string) => {
+      getTaskMock.mockImplementation((id: string) => {
         if (id === 'task-C') {
           return makeTaskRecord({
             id: 'task-C',
@@ -540,7 +542,7 @@ describe('Agent completion pipeline integration', () => {
         }
       ])
 
-      getTaskMock.mockImplementation(async (id: string) => {
+      getTaskMock.mockImplementation((id: string) => {
         if (id === 'task-C') {
           return makeTaskRecord({
             id: 'task-C',
@@ -565,7 +567,7 @@ describe('Agent completion pipeline integration', () => {
     it('wires resolveSuccess onTaskTerminal callback to resolveDependents', async () => {
       depIndex.rebuild([{ id: 'task-dep', depends_on: [{ id: 'task-parent', type: 'hard' }] }])
 
-      getTaskMock.mockImplementation(async (id: string) => {
+      getTaskMock.mockImplementation((id: string) => {
         if (id === 'task-dep') {
           return makeTaskRecord({
             id: 'task-dep',
@@ -614,7 +616,7 @@ describe('Agent completion pipeline integration', () => {
     it('does not modify dependents that are not in blocked status', async () => {
       depIndex.rebuild([{ id: 'task-B', depends_on: [{ id: 'task-A', type: 'hard' }] }])
 
-      getTaskMock.mockImplementation(async (id: string) => {
+      getTaskMock.mockImplementation((id: string) => {
         if (id === 'task-B') {
           return makeTaskRecord({
             id: 'task-B',

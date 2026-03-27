@@ -116,7 +116,7 @@ beforeEach(() => {
 describe('Queue API integration', () => {
   describe('GET /queue/health', () => {
     it('returns queue stats', async () => {
-      mockGetQueueStats.mockResolvedValue({
+      mockGetQueueStats.mockReturnValue({
         backlog: 1,
         queued: 2,
         active: 1,
@@ -139,7 +139,7 @@ describe('Queue API integration', () => {
     })
 
     it('returns 500 when getQueueStats throws', async () => {
-      mockGetQueueStats.mockRejectedValue(new Error('Supabase down'))
+      mockGetQueueStats.mockImplementation(() => { throw new Error('DB error'); })
 
       const { status, body } = await request('GET', '/queue/health')
       expect(status).toBe(500)
@@ -156,7 +156,7 @@ describe('Queue API integration', () => {
         repo: 'frontend',
         status: 'backlog'
       }
-      mockCreateTask.mockResolvedValue(created)
+      mockCreateTask.mockReturnValue(created)
 
       const { status, body } = await request('POST', '/queue/tasks', input)
       expect(status).toBe(201)
@@ -180,7 +180,7 @@ describe('Queue API integration', () => {
   describe('GET /queue/tasks/:id', () => {
     it('retrieves an existing task', async () => {
       const task = { id: 'task-abc', title: 'Fix bug', status: 'queued' }
-      mockGetTask.mockResolvedValue(task)
+      mockGetTask.mockReturnValue(task)
 
       const { status, body } = await request('GET', '/queue/tasks/task-abc')
       expect(status).toBe(200)
@@ -189,14 +189,14 @@ describe('Queue API integration', () => {
     })
 
     it('returns 404 when task does not exist', async () => {
-      mockGetTask.mockResolvedValue(null)
+      mockGetTask.mockReturnValue(null)
 
       const { status } = await request('GET', '/queue/tasks/nonexistent')
       expect(status).toBe(404)
     })
 
     it('returns 500 when getTask throws', async () => {
-      mockGetTask.mockRejectedValue(new Error('network error'))
+      mockGetTask.mockImplementation(() => { throw new Error('network error'); })
 
       const { status, body } = await request('GET', '/queue/tasks/task-abc')
       expect(status).toBe(500)

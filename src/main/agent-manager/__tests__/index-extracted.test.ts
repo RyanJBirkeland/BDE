@@ -128,7 +128,7 @@ describe('handleWatchdogVerdict', () => {
 
   beforeEach(() => {
     logger = makeLogger()
-    mockUpdateTask = vi.fn().mockResolvedValue(null)
+    mockUpdateTask = vi.fn().mockReturnValue(null)
     mockOnTerminal = vi.fn().mockResolvedValue(undefined)
     concurrency = makeConcurrencyState(2)
   })
@@ -211,7 +211,7 @@ describe('handleWatchdogVerdict', () => {
   })
 
   it('logs warning when updateTask rejects for max-runtime', async () => {
-    mockUpdateTask.mockRejectedValue(new Error('DB error'))
+    mockUpdateTask.mockImplementation(() => { throw new Error('DB error'); })
     handleWatchdogVerdict(
       'max-runtime',
       'task-5',
@@ -229,7 +229,7 @@ describe('handleWatchdogVerdict', () => {
   })
 
   it('logs warning when updateTask rejects for idle', async () => {
-    mockUpdateTask.mockRejectedValue(new Error('DB error'))
+    mockUpdateTask.mockImplementation(() => { throw new Error('DB error'); })
     handleWatchdogVerdict('idle', 'task-6', concurrency, '', mockUpdateTask, mockOnTerminal, logger)
     await vi.waitFor(() => {
       expect(logger.warn).toHaveBeenCalledWith(
@@ -239,7 +239,7 @@ describe('handleWatchdogVerdict', () => {
   })
 
   it('logs warning when updateTask rejects for rate-limit-loop', async () => {
-    mockUpdateTask.mockRejectedValue(new Error('DB error'))
+    mockUpdateTask.mockImplementation(() => { throw new Error('DB error'); })
     handleWatchdogVerdict(
       'rate-limit-loop',
       'task-7',

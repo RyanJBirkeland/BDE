@@ -50,7 +50,7 @@ function mockExecFileSequence(responses: Array<{ stdout?: string; error?: Error 
 function resetMocks() {
   getCustomMock().mockReset()
   updateTaskMock.mockReset()
-  updateTaskMock.mockResolvedValue(null)
+  updateTaskMock.mockReturnValue(null)
 }
 
 const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -59,9 +59,9 @@ const mockRepo: ISprintTaskRepository = {
   getTask: vi.fn(),
   updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
   getQueuedTasks: vi.fn(),
-  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getTasksWithDependencies: vi.fn().mockReturnValue([]),
   getOrphanedTasks: vi.fn(),
-  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  getActiveTaskCount: vi.fn().mockReturnValue(0),
   claimTask: vi.fn()
 }
 
@@ -427,7 +427,7 @@ describe('resolveSuccess — catch handler coverage', () => {
         ? Promise.reject(x.error)
         : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' })
     })
-    updateTaskMock.mockRejectedValueOnce(new Error('DB down'))
+    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB down'); })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after push error')
@@ -493,7 +493,7 @@ describe('resolveSuccess — catch handler coverage', () => {
       { stdout: '' },
       { stdout: '{"url":"https://github.com/o/r/pull/1","number":1}\n' }
     ])
-    updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
+    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch with PR info')
@@ -529,7 +529,7 @@ describe('resolveSuccess — catch handler coverage', () => {
 
   it('logs warning when updateTask fails after worktree eviction (line 73)', async () => {
     vi.mocked(existsSync).mockReturnValueOnce(false)
-    updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
+    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after worktree eviction')
@@ -538,7 +538,7 @@ describe('resolveSuccess — catch handler coverage', () => {
 
   it('logs warning when updateTask fails after branch detection error (line 89)', async () => {
     mockExecFileSequence([{ error: new Error('not a git repository') }])
-    updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
+    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after branch detection error')
@@ -547,7 +547,7 @@ describe('resolveSuccess — catch handler coverage', () => {
 
   it('logs warning when updateTask fails after empty branch (line 98)', async () => {
     mockExecFileSequence([{ stdout: '\n' }])
-    updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
+    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after empty branch')
@@ -560,7 +560,7 @@ describe('resolveSuccess — catch handler coverage', () => {
       { stdout: '' }, // git status --porcelain
       { stdout: '0\n' } // git rev-list --count (0 commits)
     ])
-    updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
+    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
     await resolveSuccess({ ...catchOpts, agentSummary: 'some output' }, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after empty branch')
@@ -571,7 +571,7 @@ describe('resolveSuccess — catch handler coverage', () => {
 describe('resolveFailure', () => {
   beforeEach(() => {
     updateTaskMock.mockReset()
-    updateTaskMock.mockResolvedValue(null)
+    updateTaskMock.mockReturnValue(null)
   })
 
   it('re-queues task with incremented retry count when retries remain', async () => {
@@ -652,7 +652,7 @@ describe('resolveFailure', () => {
   })
 
   it('returns false when updateTask throws', async () => {
-    updateTaskMock.mockRejectedValueOnce(new Error('DB error'))
+    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
 
     const result = await resolveFailure({
       taskId: 'task-5',

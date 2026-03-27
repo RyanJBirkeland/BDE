@@ -33,13 +33,13 @@ vi.mock('electron', () => ({
 }))
 
 vi.mock('../data/sprint-queries', () => ({
-  getTask: vi.fn(async (id: string) => {
+  getTask: vi.fn((id: string) => {
     const row = db.prepare('SELECT * FROM sprint_tasks WHERE id = ?').get(id) as
       | Record<string, unknown>
       | undefined
     return row ?? null
   }),
-  listTasks: vi.fn(async () => {
+  listTasks: vi.fn(() => {
     return db.prepare('SELECT * FROM sprint_tasks').all()
   }),
   UPDATE_ALLOWLIST: new Set([

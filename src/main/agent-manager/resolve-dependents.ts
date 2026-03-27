@@ -11,24 +11,22 @@ import { buildBlockedNotes } from './dependency-helpers'
  * All dependency statuses are fetched fresh via `getTask` so fan-in scenarios
  * (multiple deps) are handled correctly without stale data.
  */
-export async function resolveDependents(
+export function resolveDependents(
   completedTaskId: string,
   completedStatus: string,
   index: DependencyIndex,
   getTask: (
     id: string
-  ) => Promise<
-    (Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }) | null
-  >,
-  updateTask: (id: string, patch: Record<string, unknown>) => Promise<unknown>,
+  ) => (Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }) | null,
+  updateTask: (id: string, patch: Record<string, unknown>) => unknown,
   logger?: Logger
-): Promise<void> {
+): void {
   const dependents = index.getDependents(completedTaskId)
   if (dependents.size === 0) return
 
   for (const depId of dependents) {
     try {
-      const task = await getTask(depId)
+      const task = getTask(depId)
       if (!task || task.status !== 'blocked') continue
       if (!task.depends_on || task.depends_on.length === 0) continue
 
@@ -39,7 +37,7 @@ export async function resolveDependents(
 
       for (const dep of task.depends_on) {
         if (!statusCache.has(dep.id)) {
-          const depTask = await getTask(dep.id)
+          const depTask = getTask(dep.id)
           statusCache.set(dep.id, depTask?.status)
         }
       }
@@ -52,11 +50,11 @@ export async function resolveDependents(
 
       if (satisfied) {
         // Unblock the task (keep existing notes as-is)
-        await updateTask(depId, { status: 'queued' })
+        updateTask(depId, { status: 'queued' })
       } else if (blockedBy.length > 0) {
         // Update blocking notes with current blocking dependencies, preserving user notes
-        const currentTask = await getTask(depId)
-        await updateTask(depId, { notes: buildBlockedNotes(blockedBy, currentTask?.notes ?? null) })
+        const currentTask = getTask(depId)
+        updateTask(depId, { notes: buildBlockedNotes(blockedBy, currentTask?.notes ?? null) })
       }
     } catch (err) {
       ;(logger ?? console).warn(`[resolve-dependents] Error resolving dependent ${depId}: ${err}`)

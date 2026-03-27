@@ -26,11 +26,11 @@ vi.mock('../sdk-adapter', () => ({
 
 vi.mock('../completion', () => ({
   resolveSuccess: vi.fn().mockResolvedValue(undefined),
-  resolveFailure: vi.fn().mockResolvedValue(false)
+  resolveFailure: vi.fn().mockReturnValue(false)
 }))
 
 vi.mock('../../data/sprint-queries', () => ({
-  updateTask: vi.fn().mockResolvedValue(undefined)
+  updateTask: vi.fn().mockReturnValue(undefined)
 }))
 
 vi.mock('../../paths', () => ({
@@ -75,11 +75,11 @@ function makeTask(overrides: Partial<RunAgentTask> = {}): RunAgentTask {
 
 const mockRepo: ISprintTaskRepository = {
   getTask: vi.fn(),
-  updateTask: vi.fn().mockResolvedValue(null),
+  updateTask: vi.fn().mockReturnValue(null),
   getQueuedTasks: vi.fn(),
-  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getTasksWithDependencies: vi.fn().mockReturnValue([]),
   getOrphanedTasks: vi.fn(),
-  getActiveTaskCount: vi.fn().mockResolvedValue(0),
+  getActiveTaskCount: vi.fn().mockReturnValue(0),
   claimTask: vi.fn()
 }
 
@@ -330,7 +330,7 @@ describe('runAgent — completion fallback', () => {
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('normal-exit')
     ;(resolveSuccess as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('PR creation failed'))
-    ;(resolveFailure as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+    ;(resolveFailure as ReturnType<typeof vi.fn>).mockReturnValue(true)
 
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
@@ -350,7 +350,7 @@ describe('runAgent — completion fallback', () => {
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('normal-exit')
     ;(resolveSuccess as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('PR creation failed'))
-    ;(resolveFailure as ReturnType<typeof vi.fn>).mockResolvedValue(false)
+    ;(resolveFailure as ReturnType<typeof vi.fn>).mockReturnValue(false)
 
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
@@ -495,7 +495,7 @@ describe('runAgent — updateTask.catch error handlers', () => {
     const { classifyExit } = await import('../fast-fail')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-exhausted')
-    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new Error('DB error'); })
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 3 }), worktree, repoPath, deps)
     expect(deps.logger.error).toHaveBeenCalledWith(
@@ -507,7 +507,7 @@ describe('runAgent — updateTask.catch error handlers', () => {
     const { classifyExit } = await import('../fast-fail')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-requeue')
-    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new Error('DB error'); })
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 1 }), worktree, repoPath, deps)
     expect(deps.logger.error).toHaveBeenCalledWith(
@@ -517,7 +517,7 @@ describe('runAgent — updateTask.catch error handlers', () => {
   it('logs warning when updateTask rejects in spawn failure .catch path', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Spawn failed'))
-    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new Error('DB error'); })
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
     expect(deps.logger.warn).toHaveBeenCalledWith(

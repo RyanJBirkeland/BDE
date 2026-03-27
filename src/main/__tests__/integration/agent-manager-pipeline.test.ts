@@ -17,7 +17,7 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
   getTask: vi.fn(),
   getOrphanedTasks: vi.fn(),
-  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getTasksWithDependencies: vi.fn().mockReturnValue([]),
   setSprintQueriesLogger: vi.fn()
 }))
 
@@ -30,7 +30,7 @@ vi.mock('../../agent-manager/dependency-index', () => ({
 }))
 
 vi.mock('../../agent-manager/resolve-dependents', () => ({
-  resolveDependents: vi.fn().mockResolvedValue(undefined)
+  resolveDependents: vi.fn().mockReturnValue(undefined)
 }))
 
 vi.mock('../../paths', () => ({
@@ -125,9 +125,9 @@ function makeTask(overrides: Record<string, unknown> = {}) {
 
 function setupDefaultMocks(): void {
   vi.mocked(getRepoPaths).mockReturnValue({ myrepo: '/repos/myrepo' })
-  vi.mocked(getQueuedTasks).mockResolvedValue([])
-  vi.mocked(claimTask).mockResolvedValue(null)
-  vi.mocked(updateTask).mockResolvedValue(null)
+  vi.mocked(getQueuedTasks).mockReturnValue([])
+  vi.mocked(claimTask).mockReturnValue(null)
+  vi.mocked(updateTask).mockReturnValue(null)
   vi.mocked(recoverOrphans).mockResolvedValue(0)
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
   vi.mocked(setupWorktree).mockResolvedValue({
@@ -143,7 +143,7 @@ function makeMockRepo(): ISprintTaskRepository {
     getQueuedTasks: (...args: [number]) => (getQueuedTasks as any)(...args),
     getTasksWithDependencies: () => (getTasksWithDependencies as any)(),
     getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as any)(...args),
-    getActiveTaskCount: vi.fn().mockResolvedValue(0),
+    getActiveTaskCount: vi.fn().mockReturnValue(0),
     claimTask: (...args: [string, string]) => (claimTask as any)(...args)
   }
 }
@@ -206,8 +206,8 @@ describe('AgentManager pipeline integration', () => {
     const logger = makeLogger()
     const task = makeTask()
 
-    vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-    vi.mocked(claimTask).mockResolvedValueOnce(task)
+    vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+    vi.mocked(claimTask).mockReturnValueOnce(task)
     const { handle } = makeMockHandle([{ type: 'text', content: 'done' }])
     vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
@@ -237,8 +237,8 @@ describe('AgentManager pipeline integration', () => {
     const logger = makeLogger()
     const task = makeTask()
 
-    vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-    vi.mocked(claimTask).mockResolvedValueOnce(task)
+    vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+    vi.mocked(claimTask).mockReturnValueOnce(task)
     const { handle } = makeMockHandle([])
     vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
@@ -263,7 +263,7 @@ describe('AgentManager pipeline integration', () => {
     const logger = makeLogger()
     const task = makeTask({ repo: 'unknown-repo' })
 
-    vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
+    vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
 
     const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
@@ -285,8 +285,8 @@ describe('AgentManager pipeline integration', () => {
     const logger = makeLogger()
     const task = makeTask()
 
-    vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-    vi.mocked(claimTask).mockResolvedValueOnce(null) // claim returns null = already taken
+    vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+    vi.mocked(claimTask).mockReturnValueOnce(null) // claim returns null = already taken
 
     const mgr = createAgentManager(baseConfig, mockRepo, logger)
     mgr.start()
@@ -307,8 +307,8 @@ describe('AgentManager pipeline integration', () => {
     const logger = makeLogger()
     const task = makeTask()
 
-    vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-    vi.mocked(claimTask).mockResolvedValueOnce(task)
+    vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+    vi.mocked(claimTask).mockReturnValueOnce(task)
     vi.mocked(spawnAgent).mockRejectedValueOnce(new Error('OAuth token expired'))
 
     const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -333,8 +333,8 @@ describe('AgentManager pipeline integration', () => {
     const logger = makeLogger()
     const task = makeTask()
 
-    vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-    vi.mocked(claimTask).mockResolvedValueOnce(task)
+    vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+    vi.mocked(claimTask).mockReturnValueOnce(task)
     vi.mocked(setupWorktree).mockRejectedValueOnce(new Error('git worktree add failed'))
 
     const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -360,8 +360,8 @@ describe('AgentManager pipeline integration', () => {
     const task = makeTask()
     const { handle } = makeBlockingHandle()
 
-    vi.mocked(getQueuedTasks).mockResolvedValueOnce([task])
-    vi.mocked(claimTask).mockResolvedValueOnce(task)
+    vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+    vi.mocked(claimTask).mockReturnValueOnce(task)
     vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
 
     const mgr = createAgentManager(baseConfig, mockRepo, logger)

@@ -42,68 +42,68 @@ export type { CreateTaskInput, QueueStats }
 export { onSprintMutation } from './sprint-listeners'
 export { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
 
-// --- Thin async wrappers that delegate to data layer (Supabase) ---
+// --- Thin wrappers that delegate to data layer (SQLite) ---
 
-export async function getTask(id: string): Promise<SprintTask | null> {
+export function getTask(id: string): SprintTask | null {
   return _getTask(id)
 }
 
-export async function listTasks(status?: string): Promise<SprintTask[]> {
+export function listTasks(status?: string): SprintTask[] {
   return _listTasks(status)
 }
 
-export async function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  const result = await _claimTask(id, claimedBy)
+export function claimTask(id: string, claimedBy: string): SprintTask | null {
+  const result = _claimTask(id, claimedBy)
   if (result) notifySprintMutation('updated', result)
   return result
 }
 
-export async function updateTask(
+export function updateTask(
   id: string,
   patch: Record<string, unknown>
-): Promise<SprintTask | null> {
-  const result = await _updateTask(id, patch)
+): SprintTask | null {
+  const result = _updateTask(id, patch)
   if (result) notifySprintMutation('updated', result)
   return result
 }
 
-export async function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  const result = await _releaseTask(id, claimedBy)
+export function releaseTask(id: string, claimedBy: string): SprintTask | null {
+  const result = _releaseTask(id, claimedBy)
   if (result) notifySprintMutation('updated', result)
   return result
 }
 
-export async function getQueueStats(): Promise<QueueStats> {
+export function getQueueStats(): QueueStats {
   return _getQueueStats()
 }
 
-export async function getDoneTodayCount(): Promise<number> {
+export function getDoneTodayCount(): number {
   return _getDoneTodayCount()
 }
 
-export async function markTaskDoneByPrNumber(prNumber: number): Promise<string[]> {
+export function markTaskDoneByPrNumber(prNumber: number): string[] {
   return _markTaskDoneByPrNumber(prNumber)
 }
 
-export async function markTaskCancelledByPrNumber(prNumber: number): Promise<string[]> {
+export function markTaskCancelledByPrNumber(prNumber: number): string[] {
   return _markTaskCancelledByPrNumber(prNumber)
 }
 
-export async function listTasksWithOpenPrs(): Promise<SprintTask[]> {
+export function listTasksWithOpenPrs(): SprintTask[] {
   return _listTasksWithOpenPrs()
 }
 
-export async function updateTaskMergeableState(
+export function updateTaskMergeableState(
   prNumber: number,
   mergeableState: string | null
-): Promise<void> {
-  await _updateTaskMergeableState(prNumber, mergeableState)
+): void {
+  _updateTaskMergeableState(prNumber, mergeableState)
 }
 
 // --- Handler registration ---
 
 export function registerSprintLocalHandlers(): void {
-  safeHandle('sprint:list', async () => {
+  safeHandle('sprint:list', () => {
     return _listTasks()
   })
 
@@ -125,7 +125,7 @@ export function registerSprintLocalHandlers(): void {
       task.depends_on.length > 0 &&
       (task.status === 'queued' || !task.status)
     ) {
-      const { shouldBlock, blockedBy } = await checkTaskDependencies(
+      const { shouldBlock, blockedBy } = checkTaskDependencies(
         'new-task',
         task.depends_on,
         console
@@ -138,14 +138,14 @@ export function registerSprintLocalHandlers(): void {
         }
       }
     }
-    const row = await _createTask(task)
+    const row = _createTask(task)
     if (!row) throw new Error('Failed to create task')
     notifySprintMutation('created', row)
     return row
   })
 
   safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown>) => {
-    const task = patch.status === 'queued' ? await _getTask(id) : null
+    const task = patch.status === 'queued' ? _getTask(id) : null
 
     // If transitioning to queued, run quality checks
     if (patch.status === 'queued' && task) {
@@ -180,7 +180,7 @@ export function registerSprintLocalHandlers(): void {
       // Dependency check (existing logic)
       const taskDeps = task.depends_on
       if (taskDeps && taskDeps.length > 0) {
-        const { shouldBlock, blockedBy } = await checkTaskDependencies(id, taskDeps, console)
+        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, console)
         if (shouldBlock) {
           // Auto-block and record which dependencies are blocking, preserving user notes
           patch = {
@@ -199,8 +199,8 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:delete', async (_e, id: string) => {
-    const task = await getTask(id)
-    await _deleteTask(id)
+    const task = getTask(id)
+    _deleteTask(id)
     if (task) {
       notifySprintMutation('deleted', task)
     }
@@ -224,7 +224,7 @@ export function registerSprintLocalHandlers(): void {
   )
 
   safeHandle('sprint:claimTask', async (_e, taskId: string): Promise<ClaimedTask | null> => {
-    const task = await _getTask(taskId)
+    const task = _getTask(taskId)
     if (!task) return null
 
     let templatePromptPrefix: string | null = null
@@ -241,13 +241,13 @@ export function registerSprintLocalHandlers(): void {
 
   safeHandle('sprint:healthCheck', async () => {
     try {
-      const allTasks = await _listTasks()
+      const allTasks = _listTasks()
       const oneHourAgo = Date.now() - 3600000
       for (const task of allTasks) {
         if (['error', 'failed'].includes(task.status) && !task.needs_review) {
           const updatedAt = new Date(task.updated_at).getTime()
           if (updatedAt < oneHourAgo) {
-            await _updateTask(task.id, { needs_review: true })
+            _updateTask(task.id, { needs_review: true })
           }
         }
       }
@@ -271,12 +271,12 @@ export function registerSprintLocalHandlers(): void {
     async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
       // Validate all dep targets exist
       for (const dep of proposedDeps) {
-        const target = await _getTask(dep.id)
+        const target = _getTask(dep.id)
         if (!target) return { valid: false, error: `Task ${dep.id} not found` }
       }
 
       // Check for cycles
-      const allTasks = await _listTasks()
+      const allTasks = _listTasks()
       const depsMap = new Map(allTasks.map((t) => [t.id, t.depends_on]))
       const cycle = detectCycle(taskId, proposedDeps, (id) => depsMap.get(id) ?? null)
       if (cycle) return { valid: false, cycle }
@@ -286,11 +286,11 @@ export function registerSprintLocalHandlers(): void {
   )
 
   safeHandle('sprint:unblockTask', async (_e, taskId: string) => {
-    const task = await _getTask(taskId)
+    const task = _getTask(taskId)
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (task.status !== 'blocked')
       throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
-    const updated = await _updateTask(taskId, { status: 'queued' })
+    const updated = _updateTask(taskId, { status: 'queued' })
     if (updated) notifySprintMutation('updated', updated)
     return updated
   })
@@ -340,7 +340,7 @@ export function registerSprintLocalHandlers(): void {
               results.push({ id, op: 'update', ok: false, error: 'No valid fields to update' })
               continue
             }
-            const updated = await updateTask(id, filtered)
+            const updated = updateTask(id, filtered)
             if (updated) notifySprintMutation('updated', updated)
             results.push({
               id,
@@ -349,8 +349,8 @@ export function registerSprintLocalHandlers(): void {
               error: updated ? undefined : 'Task not found'
             })
           } else if (op === 'delete') {
-            const task = await getTask(id)
-            await _deleteTask(id)
+            const task = getTask(id)
+            _deleteTask(id)
             if (task) notifySprintMutation('deleted', task)
             results.push({ id, op: 'delete', ok: true })
           } else {

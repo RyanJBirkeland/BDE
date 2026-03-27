@@ -42,17 +42,17 @@ function makeIndex(dependentsMap: Record<string, string[]>): DependencyIndex {
 }
 
 describe('resolveDependents', () => {
-  let updateTask: (id: string, patch: Record<string, unknown>) => Promise<unknown>
+  let updateTask: (id: string, patch: Record<string, unknown>) => unknown
 
   beforeEach(() => {
-    updateTask = vi.fn().mockResolvedValue(undefined)
+    updateTask = vi.fn().mockReturnValue(undefined)
   })
 
   it('does nothing when task has no dependents', async () => {
     const index = makeIndex({})
     const getTask = vi.fn()
 
-    await resolveDependents('A', 'done', index, getTask, updateTask)
+    resolveDependents('A', 'done', index, getTask, updateTask)
 
     expect(getTask).not.toHaveBeenCalled()
     expect(updateTask).not.toHaveBeenCalled()
@@ -64,9 +64,9 @@ describe('resolveDependents', () => {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
-    await resolveDependents('A', 'done', index, getTask, updateTask)
+    resolveDependents('A', 'done', index, getTask, updateTask)
 
     expect(updateTask).toHaveBeenCalledWith('B', { status: 'queued' })
   })
@@ -77,9 +77,9 @@ describe('resolveDependents', () => {
       A: { id: 'A', status: 'failed', depends_on: null },
       B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
-    await resolveDependents('A', 'failed', index, getTask, updateTask)
+    resolveDependents('A', 'failed', index, getTask, updateTask)
 
     // Task stays blocked but auto-block notes are updated
     expect(updateTask).toHaveBeenCalledWith('B', { notes: '[auto-block] Blocked by: A' })
@@ -91,9 +91,9 @@ describe('resolveDependents', () => {
       A: { id: 'A', status: 'cancelled', depends_on: null },
       B: { id: 'B', status: 'blocked', depends_on: [hardDep('A')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
-    await resolveDependents('A', 'cancelled', index, getTask, updateTask)
+    resolveDependents('A', 'cancelled', index, getTask, updateTask)
 
     // Task stays blocked but auto-block notes are updated
     expect(updateTask).toHaveBeenCalledWith('B', { notes: '[auto-block] Blocked by: A' })
@@ -105,9 +105,9 @@ describe('resolveDependents', () => {
       A: { id: 'A', status: 'failed', depends_on: null },
       B: { id: 'B', status: 'blocked', depends_on: [softDep('A')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
-    await resolveDependents('A', 'failed', index, getTask, updateTask)
+    resolveDependents('A', 'failed', index, getTask, updateTask)
 
     expect(updateTask).toHaveBeenCalledWith('B', { status: 'queued' })
   })
@@ -118,9 +118,9 @@ describe('resolveDependents', () => {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'active', depends_on: [hardDep('A')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
-    await resolveDependents('A', 'done', index, getTask, updateTask)
+    resolveDependents('A', 'done', index, getTask, updateTask)
 
     expect(updateTask).not.toHaveBeenCalled()
   })
@@ -133,9 +133,9 @@ describe('resolveDependents', () => {
       B: { id: 'B', status: 'active', depends_on: null },
       C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
-    await resolveDependents('A', 'done', index, getTask, updateTask)
+    resolveDependents('A', 'done', index, getTask, updateTask)
 
     // C stays blocked but auto-block notes are updated with remaining blocker
     expect(updateTask).toHaveBeenCalledWith('C', { notes: '[auto-block] Blocked by: B' })
@@ -149,9 +149,9 @@ describe('resolveDependents', () => {
       B: { id: 'B', status: 'done', depends_on: null },
       C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
-    await resolveDependents('B', 'done', index, getTask, updateTask)
+    resolveDependents('B', 'done', index, getTask, updateTask)
 
     expect(updateTask).toHaveBeenCalledWith('C', { status: 'queued' })
   })
@@ -163,10 +163,10 @@ describe('resolveDependents', () => {
       B: { id: 'B', status: 'failed', depends_on: null },
       C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), softDep('B')] }
     }
-    const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
+    const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
 
     // Completing B (soft, failed) is the final trigger
-    await resolveDependents('B', 'failed', index, getTask, updateTask)
+    resolveDependents('B', 'failed', index, getTask, updateTask)
 
     expect(updateTask).toHaveBeenCalledWith('C', { status: 'queued' })
   })
@@ -174,9 +174,9 @@ describe('resolveDependents', () => {
   it('handles getTask returning null gracefully', async () => {
     const index = makeIndex({ A: ['B'] })
     // getTask returns null for B (task not found)
-    const getTask = vi.fn().mockResolvedValue(null)
+    const getTask = vi.fn().mockReturnValue(null)
 
-    await expect(resolveDependents('A', 'done', index, getTask, updateTask)).resolves.not.toThrow()
+    expect(() => resolveDependents('A', 'done', index, getTask, updateTask)).not.toThrow()
 
     expect(updateTask).not.toHaveBeenCalled()
   })
@@ -186,20 +186,20 @@ describe('resolveDependents', () => {
     index.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
     const getTask = vi
       .fn()
-      .mockResolvedValue({ id: 'A', status: 'done', depends_on: [{ id: 'B', type: 'hard' }] })
+      .mockReturnValue({ id: 'A', status: 'done', depends_on: [{ id: 'B', type: 'hard' }] })
     const update = vi.fn()
 
-    await resolveDependents('B', 'done', index, getTask, update)
+    resolveDependents('B', 'done', index, getTask, update)
     expect(update).not.toHaveBeenCalled() // A is 'done', not 'blocked'
   })
 
   it('handles getTask throwing without crashing', async () => {
     const index = createDependencyIndex()
     index.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
-    const getTask = vi.fn().mockRejectedValue(new Error('DB error'))
+    const getTask = vi.fn().mockImplementation(() => { throw new Error('DB error'); })
     const update = vi.fn()
 
-    await resolveDependents('B', 'done', index, getTask, update)
+    resolveDependents('B', 'done', index, getTask, update)
     expect(update).not.toHaveBeenCalled()
   })
 
@@ -213,19 +213,19 @@ describe('resolveDependents', () => {
     // getTask is only called once per dependent (A and C), not for B itself.
     const getTask = vi
       .fn()
-      .mockResolvedValueOnce({
+      .mockReturnValueOnce({
         id: 'A',
         status: 'blocked',
         depends_on: [{ id: 'B', type: 'hard' }]
       })
-      .mockResolvedValueOnce({
+      .mockReturnValueOnce({
         id: 'C',
         status: 'blocked',
         depends_on: [{ id: 'B', type: 'soft' }]
       })
-    const update = vi.fn().mockRejectedValueOnce(new Error('DB error')).mockResolvedValueOnce(null)
+    const update = vi.fn().mockRejectedValueOnce(new Error('DB error')).mockReturnValueOnce(null)
 
-    await resolveDependents('B', 'done', index, getTask, update)
+    resolveDependents('B', 'done', index, getTask, update)
     expect(update).toHaveBeenCalledTimes(2)
   })
 
@@ -242,20 +242,20 @@ describe('resolveDependents', () => {
     ])
     const getTask = vi.fn().mockImplementation((id: string) => {
       if (id === 'A')
-        return Promise.resolve({
+        return {
           id: 'A',
           status: 'blocked',
           depends_on: [
             { id: 'B', type: 'hard' },
             { id: 'DELETED', type: 'hard' }
           ]
-        })
-      if (id === 'B') return Promise.resolve({ id: 'B', status: 'done', depends_on: null })
-      return Promise.resolve(null)
+        }
+      if (id === 'B') return { id: 'B', status: 'done', depends_on: null }
+      return null
     })
     const update = vi.fn()
 
-    await resolveDependents('B', 'done', index, getTask, update)
+    resolveDependents('B', 'done', index, getTask, update)
     expect(update).toHaveBeenCalledWith('A', { status: 'queued' })
   })
 })
