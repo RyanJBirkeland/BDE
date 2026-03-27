@@ -13,7 +13,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { GlassPanel } from '../neon/GlassPanel'
-import type { View } from '../../stores/ui'
+import type { View } from '../../stores/panelLayout'
 
 // Icon mapping from ActivityBar NAV_ITEMS
 const VIEW_ICONS: Record<View, LucideIcon> = {

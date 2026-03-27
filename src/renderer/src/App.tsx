@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useUIStore, type View } from './stores/ui'
 import { useCommandPaletteStore } from './stores/commandPalette'
 import { useCostDataStore } from './stores/costData'
 import { CommandPalette } from './components/layout/CommandPalette'
@@ -15,7 +14,7 @@ import { usePendingReviewStore } from './stores/pendingReview'
 import { useGitHubRateLimitWarning } from './hooks/useGitHubRateLimitWarning'
 import { useDesktopNotifications } from './hooks/useDesktopNotifications'
 import { PanelRenderer } from './components/panels/PanelRenderer'
-import { usePanelLayoutStore, findLeaf } from './stores/panelLayout'
+import { usePanelLayoutStore, findLeaf, type View } from './stores/panelLayout'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 import { DEFAULT_MODEL } from '../../shared/models'
 import './assets/neon.css'
@@ -125,8 +124,8 @@ function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Eleme
 function App(): React.JSX.Element {
   const [ready, setReady] = useState(false)
 
-  const activeView = useUIStore((s) => s.activeView)
-  const setView = useUIStore((s) => s.setView)
+  const activeView = usePanelLayoutStore((s) => s.activeView)
+  const setView = usePanelLayoutStore((s) => s.setView)
   const root = usePanelLayoutStore((s) => s.root)
   const fetchLocalAgents = useCostDataStore((s) => s.fetchLocalAgents)
 

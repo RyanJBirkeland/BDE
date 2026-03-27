@@ -14,8 +14,7 @@ import {
 import { SidebarItem } from './SidebarItem'
 import { OverflowMenu } from './OverflowMenu'
 import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar'
-import { usePanelLayoutStore, getOpenViews } from '../../stores/panelLayout'
-import { useUIStore, type View } from '../../stores/ui'
+import { usePanelLayoutStore, getOpenViews, type View } from '../../stores/panelLayout'
 
 // Icon mapping from ActivityBar NAV_ITEMS
 const VIEW_ICONS: Record<View, LucideIcon> = {
@@ -67,8 +66,8 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
   const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
   const { splitPanel, addTab, closeTab, findPanelByView } = usePanelLayoutStore()
 
-  const activeView = useUIStore((s) => s.activeView)
-  const setView = useUIStore((s) => s.setView)
+  const activeView = usePanelLayoutStore((s) => s.activeView)
+  const setView = usePanelLayoutStore((s) => s.setView)
 
   const openViews = getOpenViews(root)
   const unpinnedViews = getUnpinnedViews(pinnedViews)

@@ -29,8 +29,8 @@ vi.mock('../../../stores/pendingReview', () => ({
     })
 }))
 
-vi.mock('../../../stores/ui', () => ({
-  useUIStore: (selector: (s: unknown) => unknown) => selector({ theme: 'dark' })
+vi.mock('../../../stores/panelLayout', () => ({
+  usePanelLayoutStore: (selector: (s: unknown) => unknown) => selector({ theme: 'dark' })
 }))
 
 // Capture the props passed to DiffViewer so we can assert on them

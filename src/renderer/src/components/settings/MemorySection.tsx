@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FileText, Search, X } from 'lucide-react'
 import { toast } from '../../stores/toasts'
-import { useUIStore } from '../../stores/ui'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
@@ -227,7 +227,7 @@ export function MemorySection(): React.JSX.Element {
 
   const [focusIndex, setFocusIndex] = useState(-1)
   const sidebarRef = useRef<HTMLDivElement>(null)
-  const activeView = useUIStore((s) => s.activeView)
+  const activeView = usePanelLayoutStore((s) => s.activeView)
 
   useEffect(() => {
     if (activeView !== 'settings') return

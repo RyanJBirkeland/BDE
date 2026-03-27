@@ -8,7 +8,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import '../assets/agents.css'
-import { useUIStore } from '../stores/ui'
+import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useAgentEventsStore } from '../stores/agentEvents'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
@@ -24,7 +24,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/
 
 export function AgentsView() {
   const reduced = useReducedMotion()
-  const activeView = useUIStore((s) => s.activeView)
+  const activeView = usePanelLayoutStore((s) => s.activeView)
   const agents = useAgentHistoryStore((s) => s.agents)
   const agentsLoading = useAgentHistoryStore((s) => s.loading)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)

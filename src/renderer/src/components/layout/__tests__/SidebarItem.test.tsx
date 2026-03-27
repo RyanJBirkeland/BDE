@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SidebarItem } from '../SidebarItem';
-import type { View } from '../../../stores/ui';
+import type { View } from '../../../stores/panelLayout';
 
 // Mock NeonTooltip to simplify testing
 vi.mock('../../neon/NeonTooltip', () => ({

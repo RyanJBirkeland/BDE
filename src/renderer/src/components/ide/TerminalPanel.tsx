@@ -4,7 +4,7 @@ import { TerminalToolbar } from '../terminal/TerminalToolbar'
 import { TerminalContent } from '../terminal/TerminalContent'
 import { clearTerminal } from '../terminal/TerminalPane'
 import { useTerminalStore } from '../../stores/terminal'
-import { useUIStore } from '../../stores/ui'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 
 export function TerminalPanel(): React.JSX.Element {
   const tabs = useTerminalStore((s) => s.tabs)
@@ -18,7 +18,7 @@ export function TerminalPanel(): React.JSX.Element {
   const toggleSplit = useTerminalStore((s) => s.toggleSplit)
   const showFind = useTerminalStore((s) => s.showFind)
   const createAgentTab = useTerminalStore((s) => s.createAgentTab)
-  const activeView = useUIStore((s) => s.activeView)
+  const activeView = usePanelLayoutStore((s) => s.activeView)
   const activeTab = tabs.find((t) => t.id === activeTabId)
   const isAgentTab = activeTab?.kind === 'agent'
 

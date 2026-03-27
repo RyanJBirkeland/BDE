@@ -51,8 +51,8 @@ const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
 })
 
 vi.mock('../../stores/ide', () => ({ useIDEStore: mockUseIDEStore }))
-vi.mock('../../stores/ui', () => ({
-  useUIStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
+vi.mock('../../stores/panelLayout', () => ({
+  usePanelLayoutStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ activeView: 'ide', setView: vi.fn() })
   )
 }))

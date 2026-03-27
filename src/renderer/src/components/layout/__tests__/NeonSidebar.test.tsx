@@ -29,8 +29,10 @@ vi.mock('../../../stores/panelLayout', () => {
       activeTab: 0
     },
     focusedPanelId: 'p1',
+    activeView: 'dashboard',
     splitPanel: vi.fn(),
-    addTab: vi.fn()
+    addTab: vi.fn(),
+    setView: vi.fn()
   }
 
   return {
@@ -40,13 +42,6 @@ vi.mock('../../../stores/panelLayout', () => {
   }
 })
 
-vi.mock('../../../stores/ui', () => {
-  const mockUIState = { activeView: 'dashboard', setView: vi.fn() }
-
-  return {
-    useUIStore: vi.fn((sel?: any) => (sel ? sel(mockUIState) : mockUIState))
-  }
-})
 
 describe('NeonSidebar', () => {
   it('renders pinned view icons', async () => {

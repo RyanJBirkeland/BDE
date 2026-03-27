@@ -16,16 +16,15 @@ vi.mock('../../../stores/panelLayout', () => ({
     sel({
       root: mockLeaf,
       focusedPanelId: 'p1',
+      activeView: 'dashboard',
       closeTab: vi.fn(),
-      setActiveTab: vi.fn()
+      setActiveTab: vi.fn(),
+      setView: vi.fn()
     })
   ),
   findLeaf: vi.fn((_root: any, panelId: string) => (panelId === 'p1' ? mockLeaf : null))
 }))
 
-vi.mock('../../../stores/ui', () => ({
-  useUIStore: vi.fn((sel: any) => sel({ activeView: 'dashboard', setView: vi.fn() }))
-}))
 
 vi.mock('../../../stores/costData', () => ({
   useCostDataStore: vi.fn((sel: any) => sel({ totalCost: 4.2 }))

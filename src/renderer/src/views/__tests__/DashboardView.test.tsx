@@ -57,7 +57,7 @@ Object.defineProperty(window, 'api', {
 
 import DashboardView from '../DashboardView'
 import { useSprintUI } from '../../stores/sprintUI'
-import { useUIStore } from '../../stores/ui'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -102,7 +102,7 @@ describe('DashboardView', () => {
     fireEvent.click(activeStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('in-progress')
-    expect(useUIStore.getState().activeView).toBe('sprint')
+    expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
   it('clicking Done stat navigates to Sprint with done filter', () => {
@@ -115,7 +115,7 @@ describe('DashboardView', () => {
     fireEvent.click(doneStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('done')
-    expect(useUIStore.getState().activeView).toBe('sprint')
+    expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
   it('clicking Blocked stat navigates to Sprint with blocked filter', () => {
@@ -127,7 +127,7 @@ describe('DashboardView', () => {
     fireEvent.click(blockedStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('blocked')
-    expect(useUIStore.getState().activeView).toBe('sprint')
+    expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
   it('renders chart data from completionsPerHour', async () => {

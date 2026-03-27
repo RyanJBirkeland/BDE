@@ -1,25 +1,25 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useUIStore } from '../ui'
+import { usePanelLayoutStore } from '../panelLayout'
 
 describe('ui store', () => {
   beforeEach(() => {
-    useUIStore.setState({ activeView: 'agents' })
+    usePanelLayoutStore.setState({ activeView: 'agents' })
   })
 
   it('initial state has activeView sessions', () => {
-    expect(useUIStore.getState().activeView).toBe('agents')
+    expect(usePanelLayoutStore.getState().activeView).toBe('agents')
   })
 
   it('setView updates activeView', () => {
-    useUIStore.getState().setView('ide')
-    expect(useUIStore.getState().activeView).toBe('ide')
+    usePanelLayoutStore.getState().setView('ide')
+    expect(usePanelLayoutStore.getState().activeView).toBe('ide')
   })
 
   it('setView to each valid view works', () => {
     const views = ['agents', 'ide', 'sprint', 'pr-station', 'settings'] as const
     for (const v of views) {
-      useUIStore.getState().setView(v)
-      expect(useUIStore.getState().activeView).toBe(v)
+      usePanelLayoutStore.getState().setView(v)
+      expect(usePanelLayoutStore.getState().activeView).toBe(v)
     }
   })
 })

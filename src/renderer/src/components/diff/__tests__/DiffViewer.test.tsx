@@ -4,8 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 // jsdom stubs
 Element.prototype.scrollIntoView = vi.fn()
 
-vi.mock('../../../stores/ui', () => ({
-  useUIStore: (selector: (s: { activeView: string }) => unknown) =>
+vi.mock('../../../stores/panelLayout', () => ({
+  usePanelLayoutStore: (selector: (s: { activeView: string }) => unknown) =>
     selector({ activeView: 'pr-station' })
 }))
 

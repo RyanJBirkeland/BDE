@@ -16,6 +16,7 @@ vi.mock('../../../../shared/template-heuristics', () => ({
 }))
 
 import { useSprintTasks } from '../sprintTasks'
+import { useSprintUI } from '../sprintUI'
 import { toast } from '../toasts'
 
 const makeTask = (id: string, overrides: Partial<SprintTask> = {}): SprintTask => ({
@@ -211,20 +212,15 @@ describe('sprintTasks store', () => {
       expect(toast.error).toHaveBeenCalledWith('delete failed')
     })
 
-    it('dispatches sprint:task-deleted custom event on success', async () => {
+    it('calls clearTaskIfSelected on sprintUI store after delete', async () => {
       useSprintTasks.setState({ tasks: [makeTask('t1')] })
+      useSprintUI.setState({ selectedTaskId: 't1', drawerOpen: true })
       ;(window.api.sprint.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true })
 
-      const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
       await useSprintTasks.getState().deleteTask('t1')
 
-      const deletedEvent = dispatchSpy.mock.calls.find(
-        ([ev]) => ev instanceof CustomEvent && (ev as CustomEvent).type === 'sprint:task-deleted'
-      )
-      expect(deletedEvent).toBeDefined()
-      const evt = deletedEvent![0] as CustomEvent
-      expect(evt.detail).toEqual({ taskId: 't1' })
-      dispatchSpy.mockRestore()
+      expect(useSprintUI.getState().selectedTaskId).toBeNull()
+      expect(useSprintUI.getState().drawerOpen).toBe(false)
     })
   })
 

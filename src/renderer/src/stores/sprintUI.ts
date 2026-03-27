@@ -33,6 +33,9 @@ interface SprintUIState {
   setSearchQuery: (query: string) => void
   setStatusFilter: (filter: StatusFilter) => void
   setGeneratingIds: (updater: (prev: string[]) => string[]) => void
+  addGeneratingId: (id: string) => void
+  removeGeneratingId: (id: string) => void
+  clearTaskIfSelected: (taskId: string) => void
   toggleTaskSelection: (id: string) => void
   selectRange: (fromId: string, toId: string, taskList: string[]) => void
   clearSelection: () => void
@@ -60,6 +63,15 @@ export const useSprintUI = create<SprintUIState>((set) => ({
   setStatusFilter: (filter): void => set({ statusFilter: filter }),
   setGeneratingIds: (updater): void => {
     set((s) => ({ generatingIds: updater(s.generatingIds) }))
+  },
+  addGeneratingId: (id): void => {
+    set((s) => ({ generatingIds: s.generatingIds.includes(id) ? s.generatingIds : [...s.generatingIds, id] }))
+  },
+  removeGeneratingId: (id): void => {
+    set((s) => ({ generatingIds: s.generatingIds.filter((gid) => gid !== id) }))
+  },
+  clearTaskIfSelected: (taskId): void => {
+    set((s) => s.selectedTaskId === taskId ? { selectedTaskId: null, drawerOpen: false } : s)
   },
 
   toggleTaskSelection: (id): void => {

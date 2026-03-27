@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
 import { useSprintUI, type StatusFilter } from '../stores/sprintUI'
-import { useUIStore } from '../stores/ui'
+import { usePanelLayoutStore } from '../stores/panelLayout'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
 import { POLL_DASHBOARD_INTERVAL } from '../lib/constants'
 import { useBackoffInterval } from '../hooks/useBackoffInterval'
@@ -42,7 +42,7 @@ export default function DashboardView() {
   const localAgents = useCostDataStore((s) => s.localAgents)
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
-  const setView = useUIStore((s) => s.setView)
+  const setView = usePanelLayoutStore((s) => s.setView)
 
   /** Navigate to Sprint Center with a pre-applied status filter. */
   const navigateToSprintWithFilter = useCallback(

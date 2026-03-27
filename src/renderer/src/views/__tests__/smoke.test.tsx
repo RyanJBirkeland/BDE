@@ -10,8 +10,8 @@ Element.prototype.scrollIntoView = vi.fn()
 
 // ---------- Shared mocks ----------
 
-vi.mock('../../stores/ui', () => ({
-  useUIStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
+vi.mock('../../stores/panelLayout', () => ({
+  usePanelLayoutStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ activeView: 'agents', setView: vi.fn() })
   )
 }))

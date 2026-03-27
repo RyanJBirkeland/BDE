@@ -7,7 +7,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { LayoutGroup } from 'framer-motion'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
-import { useUIStore } from '../../stores/ui'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useSprintEvents } from '../../stores/sprintEvents'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import { useSprintPolling } from '../../hooks/useSprintPolling'
@@ -46,7 +46,7 @@ export function SprintPipeline() {
   const setDoneViewOpen = useSprintUI((s) => s.setDoneViewOpen)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
 
-  const setView = useUIStore((s) => s.setView)
+  const setView = usePanelLayoutStore((s) => s.setView)
 
   // --- Extracted hooks ---
   const {

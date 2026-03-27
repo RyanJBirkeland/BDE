@@ -1,7 +1,6 @@
 import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../stores/theme'
 import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
-import { useUIStore } from '../../stores/ui'
 import { useCostDataStore } from '../../stores/costData'
 import { NeonBadge } from '../neon/NeonBadge'
 import { NotificationBell } from './NotificationBell'
@@ -11,7 +10,7 @@ export function UnifiedHeader(): React.JSX.Element {
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
   const totalCost = useCostDataStore((s) => s.totalCost)
-  const setView = useUIStore((s) => s.setView)
+  const setView = usePanelLayoutStore((s) => s.setView)
 
   const root = usePanelLayoutStore((s) => s.root)
   const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)

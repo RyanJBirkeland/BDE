@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
-import { useUIStore, type View } from '../../stores/ui'
-import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
+import { usePanelLayoutStore, findLeaf, type View } from '../../stores/panelLayout'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { useAgentHistoryStore, type AgentMeta } from '../../stores/agentHistory'
 import { toast } from '../../stores/toasts'
@@ -51,7 +50,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   const listRef = useRef<HTMLDivElement>(null)
   const paletteRef = useRef<HTMLDivElement>(null)
   useFocusTrap(paletteRef, open)
-  const setView = useUIStore((s) => s.setView)
+  const setView = usePanelLayoutStore((s) => s.setView)
   const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
 
   // Fetch recent agents when palette opens

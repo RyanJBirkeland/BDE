@@ -5,7 +5,7 @@ import { PanelLeftOpen } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../stores/ide'
 import { useTerminalStore } from '../stores/terminal'
-import { useUIStore } from '../stores/ui'
+import { usePanelLayoutStore } from '../stores/panelLayout'
 import { EditorPane } from '../components/ide/EditorPane'
 import { EditorTabBar } from '../components/ide/EditorTabBar'
 import { FileSidebar } from '../components/ide/FileSidebar'
@@ -90,7 +90,7 @@ export function IDEView(): React.JSX.Element {
     }))
   )
 
-  const activeView = useUIStore((s) => s.activeView)
+  const activeView = usePanelLayoutStore((s) => s.activeView)
   const termAddTab = useTerminalStore((s) => s.addTab)
   const termCloseTab = useTerminalStore((s) => s.closeTab)
   const termSetActiveTab = useTerminalStore((s) => s.setActiveTab)

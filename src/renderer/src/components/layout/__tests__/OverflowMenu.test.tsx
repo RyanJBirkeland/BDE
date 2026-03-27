@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OverflowMenu } from '../OverflowMenu';
-import type { View } from '../../../stores/ui';
+import type { View } from '../../../stores/panelLayout';
 
 // Mock GlassPanel to simplify testing
 vi.mock('../../neon/GlassPanel', () => ({

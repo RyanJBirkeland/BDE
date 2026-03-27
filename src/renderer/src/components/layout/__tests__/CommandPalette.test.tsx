@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CommandPalette } from '../CommandPalette'
 
-vi.mock('../../../stores/ui', () => ({
-  useUIStore: vi.fn((selector: (s: { setView: () => void }) => unknown) =>
+vi.mock('../../../stores/panelLayout', () => ({
+  usePanelLayoutStore: vi.fn((selector: (s: { setView: () => void }) => unknown) =>
     selector({ setView: vi.fn() })
   )
 }))
@@ -141,8 +141,8 @@ describe('CommandPalette', () => {
   it('Enter key runs selected command and closes', async () => {
     const user = userEvent.setup()
     const mockSetView = vi.fn()
-    const { useUIStore } = await import('../../../stores/ui')
-    vi.mocked(useUIStore).mockImplementation((selector) =>
+    const { usePanelLayoutStore } = await import('../../../stores/panelLayout')
+    vi.mocked(usePanelLayoutStore).mockImplementation((selector) =>
       selector({ setView: mockSetView, activeView: 'agents' } as any)
     )
 

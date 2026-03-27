@@ -7,7 +7,7 @@ import { TASK_STATUS } from '../../../shared/constants'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
 import type { SprintTask } from '../../../shared/types'
 import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
-import { useUIStore } from '../stores/ui'
+import { usePanelLayoutStore } from '../stores/panelLayout'
 
 /**
  * useSprintTaskActions — all task mutation callbacks for SprintCenter.
@@ -24,7 +24,7 @@ export function useSprintTaskActions() {
   const { confirm, confirmProps } = useConfirm()
 
   const loadTask = useTaskWorkbenchStore((s) => s.loadTask)
-  const setView = useUIStore((s) => s.setView)
+  const setView = usePanelLayoutStore((s) => s.setView)
 
   // --- Drag-and-drop status change (needs current tasks for WIP check) ---
   const handleDragEnd = useCallback(

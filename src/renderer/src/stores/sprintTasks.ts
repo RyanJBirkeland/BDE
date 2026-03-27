@@ -4,6 +4,7 @@ import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 import { toast } from './toasts'
 import { detectTemplate } from '../../../shared/template-heuristics'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
+import { useSprintUI } from './sprintUI'
 
 export interface CreateTicketInput {
   title: string
@@ -164,8 +165,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       set((s) => ({
         tasks: s.tasks.filter((t) => t.id !== taskId)
       }))
-      // Notify UI store to deselect if this task was selected
-      window.dispatchEvent(new CustomEvent('sprint:task-deleted', { detail: { taskId } }))
+      useSprintUI.getState().clearTaskIfSelected(taskId)
       toast.success('Task deleted')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to delete task')
@@ -225,11 +225,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         // Background spec generation for Quick Mode tasks
         if (!data.spec) {
           const templateHint = detectTemplate(data.title)
-          // Use a local Set to track generating state (no cross-store dependency)
-          const generatingEvent = new CustomEvent('sprint:generating', {
-            detail: { taskId: result.id, generating: true }
-          })
-          window.dispatchEvent(generatingEvent)
+          useSprintUI.getState().addGeneratingId(result.id)
 
           window.api.sprint
             .generatePrompt({
@@ -249,10 +245,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
               toast.info(`Spec ready for "${data.title}"`, {
                 action: 'View Spec',
                 onAction: () => {
-                  const selectEvent = new CustomEvent('sprint:select-task', {
-                    detail: { taskId: result.id }
-                  })
-                  window.dispatchEvent(selectEvent)
+                  useSprintUI.getState().setSelectedTaskId(result.id)
+                  useSprintUI.getState().setDrawerOpen(true)
                 },
                 durationMs: 6000
               })
@@ -261,10 +255,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
               toast.error('Spec generation failed: ' + (e instanceof Error ? e.message : String(e)))
             })
             .finally(() => {
-              const doneEvent = new CustomEvent('sprint:generating', {
-                detail: { taskId: result.id, generating: false }
-              })
-              window.dispatchEvent(doneEvent)
+              useSprintUI.getState().removeGeneratingId(result.id)
             })
         }
       }

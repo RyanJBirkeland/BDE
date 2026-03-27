@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { NeonTooltip } from '../neon/NeonTooltip'
-import type { View } from '../../stores/ui'
+import type { View } from '../../stores/panelLayout'
 
 interface SidebarItemProps {
   view: View
