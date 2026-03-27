@@ -10,12 +10,12 @@ import type { PrStatusInput, PrStatusResult } from './github-pr-status'
 const POLL_INTERVAL_MS = 60_000
 
 export interface SprintPrPollerDeps {
-  listTasksWithOpenPrs: () => Promise<SprintTask[]>
+  listTasksWithOpenPrs: () => SprintTask[]
   pollPrStatuses: (prs: PrStatusInput[]) => Promise<PrStatusResult[]>
-  markTaskDoneByPrNumber: (prNumber: number) => Promise<string[]>
-  markTaskCancelledByPrNumber: (prNumber: number) => Promise<string[]>
-  updateTaskMergeableState: (prNumber: number, state: string | null) => Promise<void>
-  onTaskTerminal?: (taskId: string, status: string) => Promise<void>
+  markTaskDoneByPrNumber: (prNumber: number) => string[]
+  markTaskCancelledByPrNumber: (prNumber: number) => string[]
+  updateTaskMergeableState: (prNumber: number, state: string | null) => void
+  onTaskTerminal?: (taskId: string, status: string) => void
 }
 
 export interface SprintPrPollerInstance {
@@ -27,7 +27,7 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
   let timer: ReturnType<typeof setInterval> | null = null
 
   async function poll(): Promise<void> {
-    const tasks = await deps.listTasksWithOpenPrs()
+    const tasks = deps.listTasksWithOpenPrs()
     if (tasks.length === 0) return
 
     const inputs: PrStatusInput[] = tasks
@@ -44,17 +44,17 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
       if (!prNumber) continue
 
       if (result.merged) {
-        const ids = await deps.markTaskDoneByPrNumber(prNumber)
+        const ids = deps.markTaskDoneByPrNumber(prNumber)
         if (deps.onTaskTerminal) {
-          for (const id of ids) await deps.onTaskTerminal(id, 'done')
+          for (const id of ids) deps.onTaskTerminal(id, 'done')
         }
       } else if (result.state === 'CLOSED') {
-        const ids = await deps.markTaskCancelledByPrNumber(prNumber)
+        const ids = deps.markTaskCancelledByPrNumber(prNumber)
         if (deps.onTaskTerminal) {
-          for (const id of ids) await deps.onTaskTerminal(id, 'cancelled')
+          for (const id of ids) deps.onTaskTerminal(id, 'cancelled')
         }
       }
-      await deps.updateTaskMergeableState(prNumber, result.mergeableState)
+      deps.updateTaskMergeableState(prNumber, result.mergeableState)
     }
   }
 
@@ -83,9 +83,9 @@ import {
 } from './handlers/sprint-local'
 
 let _instance: SprintPrPollerInstance | null = null
-let _onTaskTerminal: ((taskId: string, status: string) => Promise<void>) | null = null
+let _onTaskTerminal: ((taskId: string, status: string) => void) | null = null
 
-export function setOnTaskTerminal(fn: (taskId: string, status: string) => Promise<void>): void {
+export function setOnTaskTerminal(fn: (taskId: string, status: string) => void): void {
   _onTaskTerminal = fn
 }
 
