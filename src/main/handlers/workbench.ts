@@ -420,8 +420,8 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
   // --- AI-powered spec checks ---
   safeHandle(
     'workbench:checkSpec',
-    async (_e, input: { title: string; repo: string; spec: string; specType?: string }) => {
-      const summary = await checkSpecSemantic(input)
+    async (_e, input: { title: string; repo: string; spec: string; specType?: string | null }) => {
+      const summary = await checkSpecSemantic({ ...input, specType: (input.specType as import('../../shared/spec-validation').SpecType) ?? null })
       return summary.results // Returns { clarity, scope, filesExist } — same shape as before
     }
   )
