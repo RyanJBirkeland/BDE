@@ -16,3 +16,4 @@ coverage/
 
 # Claude Code internal
 .claude/
+.superpowers/
