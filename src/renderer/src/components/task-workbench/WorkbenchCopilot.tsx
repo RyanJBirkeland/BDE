@@ -50,17 +50,28 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const activeStreamIdRef = useRef<string | null>(null)
 
-  // Subscribe to streaming chunks
+  // Subscribe to streaming chunks — accept any active stream
   useEffect(() => {
     const store = useTaskWorkbenchStore.getState
     const unsub = window.api.workbench.onChatChunk((data) => {
-      if (data.streamId !== activeStreamIdRef.current) return
+      // Accept chunks if: we have a matching streamId, OR we're streaming with a placeholder ID
+      const currentStreamId = activeStreamIdRef.current
+      const storeStreamId = store().activeStreamId
+      const isStreaming = !!store().streamingMessageId
+
+      if (currentStreamId && data.streamId !== currentStreamId) return
+      // If no ref yet but store is streaming (placeholder), accept and set the real ID
+      if (!currentStreamId && isStreaming && storeStreamId === '') {
+        activeStreamIdRef.current = data.streamId
+        useTaskWorkbenchStore.setState({ activeStreamId: data.streamId })
+      } else if (!currentStreamId && !isStreaming) {
+        return // Not streaming at all, ignore
+      }
 
       if (!data.done) {
         store().appendToStreamingMessage(data.chunk)
       } else {
         if (data.error) {
-          // Replace streaming message content with error
           const msgId = store().streamingMessageId
           if (msgId) {
             useTaskWorkbenchStore.setState((s) => ({
@@ -100,26 +111,30 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
       .map((m) => ({ role: m.role, content: m.content }))
     allMessages.push({ role: 'user', content: text })
 
-    // Create empty assistant message for streaming
+    // Create empty assistant message and start streaming state BEFORE the IPC call
+    // to prevent the race condition where chunks arrive before startStreaming is called
     const msgId = `assistant-${Date.now()}`
-    addMessage({ id: msgId, role: 'assistant', content: '', timestamp: Date.now() })
+    addMessage({ id: msgId, role: 'assistant', content: '', timestamp: Date.now(), insertable: true })
+    useTaskWorkbenchStore.getState().startStreaming(msgId, '') // placeholder streamId
 
     try {
       const { streamId } = await window.api.workbench.chatStream({
         messages: allMessages,
         formContext: { title, repo, spec }
       })
+      // Now set the real streamId
       activeStreamIdRef.current = streamId
-      useTaskWorkbenchStore.getState().startStreaming(msgId, streamId)
+      useTaskWorkbenchStore.setState({ activeStreamId: streamId })
     } catch {
-      // If we can't even start the stream, show error
       useTaskWorkbenchStore.setState((s) => ({
         copilotMessages: s.copilotMessages.map((m) =>
           m.id === msgId
             ? { ...m, content: 'Failed to reach Claude. Check your connection and try again.' }
             : m
         ),
-        copilotLoading: false
+        copilotLoading: false,
+        streamingMessageId: null,
+        activeStreamId: null
       }))
     }
   }, [input, loading, title, repo, spec, addMessage])
