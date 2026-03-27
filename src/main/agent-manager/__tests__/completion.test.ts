@@ -485,8 +485,9 @@ describe('resolveSuccess — catch handler coverage', () => {
         : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' })
     })
     await resolveSuccess(catchOpts, noopLogger)
+    // After refactor, the retry goes through checkExistingPr which logs this message
     expect(noopLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to fetch existing PR after creation failure')
+      expect.stringContaining('Failed to check for existing PR on branch')
     )
   })
 

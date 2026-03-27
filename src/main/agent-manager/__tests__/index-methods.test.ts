@@ -345,4 +345,112 @@ describe('AgentManagerImpl — class internals', () => {
       expect(agentB.handle.abort).toHaveBeenCalledOnce()
     })
   })
+
+  // -------------------------------------------------------------------------
+  // 4. _mapQueuedTask
+  // -------------------------------------------------------------------------
+
+  describe('_mapQueuedTask', () => {
+    it('maps camelCase Queue API fields to local snake_case shape', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const raw = {
+        id: 'task-42',
+        title: 'Build feature',
+        prompt: 'Add login page',
+        spec: 'Login spec',
+        repo: 'myrepo',
+        retryCount: 2,
+        fastFailCount: 1,
+        playgroundEnabled: true,
+        maxRuntimeMs: 30000
+      }
+      const result = manager._mapQueuedTask(raw)
+      expect(result).toEqual({
+        id: 'task-42',
+        title: 'Build feature',
+        prompt: 'Add login page',
+        spec: 'Login spec',
+        repo: 'myrepo',
+        retry_count: 2,
+        fast_fail_count: 1,
+        playground_enabled: true,
+        max_runtime_ms: 30000
+      })
+    })
+
+    it('defaults prompt and spec to null when missing', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const raw = {
+        id: 'task-43',
+        title: 'Minimal task',
+        repo: 'myrepo'
+      }
+      const result = manager._mapQueuedTask(raw as Record<string, unknown>)
+      expect(result.prompt).toBeNull()
+      expect(result.spec).toBeNull()
+    })
+
+    it('defaults retry_count and fast_fail_count to 0 for non-numeric values', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const raw = {
+        id: 'task-44',
+        title: 'Bad counts',
+        repo: 'myrepo',
+        retryCount: 'abc',
+        fastFailCount: undefined
+      }
+      const result = manager._mapQueuedTask(raw as Record<string, unknown>)
+      expect(result.retry_count).toBe(0)
+      expect(result.fast_fail_count).toBe(0)
+    })
+
+    it('defaults max_runtime_ms to null for non-numeric values', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const raw = {
+        id: 'task-45',
+        title: 'No runtime',
+        repo: 'myrepo',
+        maxRuntimeMs: 'invalid'
+      }
+      const result = manager._mapQueuedTask(raw as Record<string, unknown>)
+      expect(result.max_runtime_ms).toBeNull()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // 5. _checkAndBlockDeps
+  // -------------------------------------------------------------------------
+
+  describe('_checkAndBlockDeps', () => {
+    it('returns false when deps are satisfied', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      // Default mock: areDependenciesSatisfied returns { satisfied: true, blockedBy: [] }
+      const statusMap = new Map([['dep-1', 'done']])
+      const result = manager._checkAndBlockDeps(
+        'task-1',
+        JSON.stringify([{ taskId: 'dep-1', type: 'hard' }]),
+        statusMap
+      )
+      expect(result).toBe(false)
+    })
+
+    it('returns false and does not block for empty deps array', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const result = manager._checkAndBlockDeps('task-1', '[]', new Map())
+      expect(result).toBe(false)
+      expect(updateTask).not.toHaveBeenCalled()
+    })
+
+    it('returns false when dep parsing fails (invalid JSON)', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const result = manager._checkAndBlockDeps('task-1', '{bad json', new Map())
+      expect(result).toBe(false)
+    })
+
+    it('returns false for non-array deps', () => {
+      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const result = manager._checkAndBlockDeps('task-1', '"just-a-string"', new Map())
+      expect(result).toBe(false)
+    })
+  })
 })
