@@ -24,7 +24,7 @@ import './assets/neon-shell.css'
 import './assets/agents-neon.css'
 
 // Keyboard shortcut order: ⌘1=dashboard, ⌘2=agents, ⌘3=terminal, ⌘4=task-pipeline,
-// ⌘5=pr-station, ⌘6=git, ⌘7=memory, ⌘8=cost, ⌘9=settings
+// ⌘5=pr-station, ⌘6=git, ⌘7=settings
 const VIEW_SHORTCUT_MAP: Partial<Record<string, View>> = {
   '1': 'dashboard',
   '2': 'agents',
@@ -32,9 +32,7 @@ const VIEW_SHORTCUT_MAP: Partial<Record<string, View>> = {
   '4': 'sprint',
   '5': 'pr-station',
   '6': 'git',
-  '7': 'memory',
-  '8': 'cost',
-  '9': 'settings'
+  '7': 'settings'
 }
 
 const VIEW_TITLES: Record<View, string> = {
@@ -44,14 +42,12 @@ const VIEW_TITLES: Record<View, string> = {
   sprint: 'Task Pipeline',
   'pr-station': 'PR Station',
   git: 'Source Control',
-  memory: 'Memory',
-  cost: 'Cost',
   settings: 'Settings',
   'task-workbench': 'Task Workbench'
 }
 
 const SHORTCUTS_LEFT: { keys: string; description: string }[] = [
-  { keys: '\u23181\u20138', description: 'Switch views' },
+  { keys: '\u23181\u20137', description: 'Switch views' },
   { keys: '\u2318P', description: 'Command palette' },
   { keys: '\u2318R', description: 'Refresh current view' },
   { keys: 'Escape', description: 'Close panel / blur input' },
