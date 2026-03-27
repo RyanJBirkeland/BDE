@@ -54,12 +54,6 @@ vi.mock('../../../views/IDEView', () => ({
 vi.mock('../../../views/SprintView', () => ({
   default: () => <div data-testid="sprint-view">Sprint</div>
 }))
-vi.mock('../../../views/MemoryView', () => ({
-  default: () => <div data-testid="memory-view">Memory</div>
-}))
-vi.mock('../../../views/CostView', () => ({
-  default: () => <div data-testid="cost-view">Cost</div>
-}))
 vi.mock('../../../views/SettingsView', () => ({
   default: () => <div data-testid="settings-view">Settings</div>
 }))

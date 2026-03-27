@@ -25,8 +25,6 @@ describe('sidebar store', () => {
         'sprint',
         'pr-station',
         'git',
-        'memory',
-        'cost',
         'settings',
         'task-workbench'
       ]
@@ -36,24 +34,24 @@ describe('sidebar store', () => {
   it('starts with all views pinned', async () => {
     const { useSidebarStore } = await import('../sidebar')
     const state = useSidebarStore.getState()
-    expect(state.pinnedViews).toHaveLength(10)
+    expect(state.pinnedViews).toHaveLength(8)
     expect(state.pinnedViews).toContain('dashboard')
     expect(state.pinnedViews).toContain('task-workbench')
   })
 
   it('unpins a view', async () => {
     const { useSidebarStore } = await import('../sidebar')
-    useSidebarStore.getState().unpinView('cost')
+    useSidebarStore.getState().unpinView('settings')
     const state = useSidebarStore.getState()
-    expect(state.pinnedViews).not.toContain('cost')
-    expect(state.pinnedViews).toHaveLength(9)
+    expect(state.pinnedViews).not.toContain('settings')
+    expect(state.pinnedViews).toHaveLength(7)
   })
 
   it('pins a view back', async () => {
     const { useSidebarStore } = await import('../sidebar')
-    useSidebarStore.getState().unpinView('cost')
-    useSidebarStore.getState().pinView('cost')
-    expect(useSidebarStore.getState().pinnedViews).toContain('cost')
+    useSidebarStore.getState().unpinView('settings')
+    useSidebarStore.getState().pinView('settings')
+    expect(useSidebarStore.getState().pinnedViews).toContain('settings')
   })
 
   it('reorders views', async () => {
@@ -74,24 +72,24 @@ describe('sidebar store', () => {
     const { useSidebarStore } = await import('../sidebar')
     const mockSet = window.api.settings.set as ReturnType<typeof vi.fn>
 
-    useSidebarStore.getState().unpinView('cost')
+    useSidebarStore.getState().unpinView('settings')
 
     expect(mockSet).toHaveBeenCalledWith(
       'sidebar.pinnedViews',
       expect.stringContaining('dashboard')
     )
-    expect(mockSet).toHaveBeenCalledWith('sidebar.pinnedViews', expect.not.stringContaining('cost'))
+    expect(mockSet).toHaveBeenCalledWith('sidebar.pinnedViews', expect.not.stringContaining('settings'))
   })
 
   it('persists pinned views when pinning', async () => {
     const { useSidebarStore } = await import('../sidebar')
     const mockSet = window.api.settings.set as ReturnType<typeof vi.fn>
 
-    useSidebarStore.getState().unpinView('cost')
+    useSidebarStore.getState().unpinView('settings')
     vi.clearAllMocks()
-    useSidebarStore.getState().pinView('cost')
+    useSidebarStore.getState().pinView('settings')
 
-    expect(mockSet).toHaveBeenCalledWith('sidebar.pinnedViews', expect.stringContaining('cost'))
+    expect(mockSet).toHaveBeenCalledWith('sidebar.pinnedViews', expect.stringContaining('settings'))
   })
 
   it('persists pinned views when reordering', async () => {
@@ -175,8 +173,6 @@ describe('getUnpinnedViews', () => {
     expect(unpinned).toContain('sprint')
     expect(unpinned).toContain('pr-station')
     expect(unpinned).toContain('git')
-    expect(unpinned).toContain('memory')
-    expect(unpinned).toContain('cost')
     expect(unpinned).toContain('settings')
     expect(unpinned).toContain('task-workbench')
   })
@@ -190,8 +186,6 @@ describe('getUnpinnedViews', () => {
       'sprint',
       'pr-station',
       'git',
-      'memory',
-      'cost',
       'settings',
       'task-workbench'
     ]
@@ -204,6 +198,6 @@ describe('getUnpinnedViews', () => {
     const { getUnpinnedViews } = await import('../sidebar')
     const unpinned = getUnpinnedViews([])
 
-    expect(unpinned).toHaveLength(10)
+    expect(unpinned).toHaveLength(8)
   })
 })
