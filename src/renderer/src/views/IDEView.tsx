@@ -13,6 +13,7 @@ import { IDEEmptyState } from '../components/ide/IDEEmptyState'
 import { useUnsavedDialog, UnsavedDialogModal } from '../components/ide/UnsavedDialog'
 import { clearTerminal } from '../components/terminal/TerminalPane'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import '../assets/ide-neon.css'
 
 export function IDEView(): React.JSX.Element {
   const reduced = useReducedMotion()
