@@ -11,8 +11,6 @@ export type View =
   | 'sprint'
   | 'pr-station'
   | 'git'
-  | 'memory'
-  | 'cost'
   | 'settings'
   | 'task-workbench'
 export type DropZone = 'top' | 'bottom' | 'left' | 'right' | 'center'
@@ -48,8 +46,6 @@ export const VIEW_LABELS: Record<View, string> = {
   ide: 'IDE',
   sprint: 'Task Pipeline',
   'pr-station': 'PR Station',
-  memory: 'Memory',
-  cost: 'Cost',
   settings: 'Settings',
   'task-workbench': 'Task Workbench',
   git: 'Source Control'
@@ -325,6 +321,30 @@ function findFirstLeaf(node: PanelNode): PanelLeafNode | null {
   return findFirstLeaf(node.children[0])
 }
 
+/**
+ * Migrates stale 'memory' and 'cost' tabs to 'settings'.
+ * Returns a new layout with migrated tabs.
+ */
+function migrateLayout(node: PanelNode): PanelNode {
+  if (node.type === 'leaf') {
+    const migratedTabs = node.tabs.map((tab) => {
+      if (tab.viewKey === 'memory' || tab.viewKey === 'cost') {
+        return { viewKey: 'settings' as View, label: VIEW_LABELS.settings }
+      }
+      return tab
+    })
+    return { ...node, tabs: migratedTabs }
+  }
+
+  return {
+    ...node,
+    children: [migrateLayout(node.children[0]), migrateLayout(node.children[1])] as [
+      PanelNode,
+      PanelNode
+    ]
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Default layout
 // ---------------------------------------------------------------------------
@@ -418,7 +438,8 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
       if (typeof window === 'undefined' || !window.api?.settings) return
       const saved = await window.api.settings.getJson('panel.layout')
       if (saved && isValidLayout(saved)) {
-        const root = saved as PanelNode
+        const raw = saved as PanelNode
+        const root = migrateLayout(raw)
         const firstLeaf = findFirstLeaf(root)
         set({ root, focusedPanelId: firstLeaf?.panelId ?? '' })
       }

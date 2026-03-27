@@ -8,8 +8,6 @@ const ALL_VIEWS: View[] = [
   'sprint',
   'pr-station',
   'git',
-  'memory',
-  'cost',
   'settings',
   'task-workbench'
 ]
