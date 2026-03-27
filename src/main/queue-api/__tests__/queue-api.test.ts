@@ -84,6 +84,12 @@ vi.mock('../../agent-manager/resolve-dependents', () => ({
 }))
 
 // ---------------------------------------------------------------------------
+// Wire onStatusTerminal mock for terminal status resolution
+// ---------------------------------------------------------------------------
+import { setQueueApiOnStatusTerminal } from '../task-handlers'
+const mockOnStatusTerminal = vi.fn()
+
+// ---------------------------------------------------------------------------
 // Start server on a random port for tests
 // ---------------------------------------------------------------------------
 import { startQueueApi, stopQueueApi } from '../server'
@@ -133,6 +139,7 @@ function request(
 }
 
 beforeAll(async () => {
+  setQueueApiOnStatusTerminal(mockOnStatusTerminal)
   // Use port 0 to get a random available port
   const server = startQueueApi({ port: 0, host: '127.0.0.1' })
   // Wait for the server to actually start listening before extracting the port
@@ -423,30 +430,22 @@ describe('Queue API', () => {
       expect(status).toBe(404)
     })
 
-    it('calls resolveDependents after transitioning to done', async () => {
+    it('calls onStatusTerminal after transitioning to done', async () => {
       mockUpdateTask.mockReturnValue({ id: 'abc', status: 'done' })
-      mockGetTasksWithDependencies.mockReturnValue([])
+      mockOnStatusTerminal.mockClear()
 
       const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'done' })
       expect(status).toBe(200)
 
       // Give the async post-response work time to complete
       await new Promise((r) => setTimeout(r, 50))
-      expect(mockResolveDependents).toHaveBeenCalledWith(
-        'abc',
-        'done',
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        console
-      )
+      expect(mockOnStatusTerminal).toHaveBeenCalledWith('abc', 'done')
     })
 
-    it('calls resolveDependents for all terminal statuses', async () => {
+    it('calls onStatusTerminal for all terminal statuses', async () => {
       for (const terminalStatus of ['done', 'failed', 'error', 'cancelled']) {
-        mockResolveDependents.mockClear()
+        mockOnStatusTerminal.mockClear()
         mockUpdateTask.mockReturnValue({ id: 'abc', status: terminalStatus })
-        mockGetTasksWithDependencies.mockReturnValue([])
 
         const { status } = await request('PATCH', '/queue/tasks/abc/status', {
           status: terminalStatus
@@ -454,25 +453,19 @@ describe('Queue API', () => {
         expect(status).toBe(200)
 
         await new Promise((r) => setTimeout(r, 50))
-        expect(mockResolveDependents).toHaveBeenCalledWith(
-          'abc',
-          terminalStatus,
-          expect.anything(),
-          expect.anything(),
-          expect.anything(),
-          console
-        )
+        expect(mockOnStatusTerminal).toHaveBeenCalledWith('abc', terminalStatus)
       }
     })
 
-    it('does not call resolveDependents for non-terminal status transitions', async () => {
+    it('does not call onStatusTerminal for non-terminal status transitions', async () => {
       mockUpdateTask.mockReturnValue({ id: 'abc', status: 'active' })
+      mockOnStatusTerminal.mockClear()
 
       const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'active' })
       expect(status).toBe(200)
 
       await new Promise((r) => setTimeout(r, 50))
-      expect(mockResolveDependents).not.toHaveBeenCalled()
+      expect(mockOnStatusTerminal).not.toHaveBeenCalled()
     })
   })
 

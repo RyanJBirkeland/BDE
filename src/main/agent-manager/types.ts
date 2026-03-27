@@ -7,6 +7,7 @@ export interface AgentManagerConfig {
   idleTimeoutMs: number
   pollIntervalMs: number
   defaultModel: string
+  onStatusTerminal?: (taskId: string, status: string) => void
 }
 
 export const DEFAULT_CONFIG: AgentManagerConfig = {

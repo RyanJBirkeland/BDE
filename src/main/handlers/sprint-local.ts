@@ -100,6 +100,15 @@ export function updateTaskMergeableState(
   _updateTaskMergeableState(prNumber, mergeableState)
 }
 
+// --- Terminal status resolution ---
+
+const TERMINAL_STATUSES = new Set(['done', 'failed', 'error', 'cancelled'])
+let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
+
+export function setOnStatusTerminal(fn: (taskId: string, status: string) => void): void {
+  _onStatusTerminal = fn
+}
+
 // --- Handler registration ---
 
 export function registerSprintLocalHandlers(): void {
@@ -195,7 +204,11 @@ export function registerSprintLocalHandlers(): void {
     if (patch.status === 'queued') {
       patch.needs_review = false
     }
-    return updateTask(id, patch)
+    const result = updateTask(id, patch)
+    if (result && patch.status && TERMINAL_STATUSES.has(patch.status as string)) {
+      _onStatusTerminal?.(id, patch.status as string)
+    }
+    return result
   })
 
   safeHandle('sprint:delete', async (_e, id: string) => {

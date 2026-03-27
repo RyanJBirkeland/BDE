@@ -27,6 +27,14 @@ import { createLogger } from '../logger'
 
 const logger = createLogger('git-handlers')
 
+let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
+
+export function setGitHandlersOnStatusTerminal(
+  fn: (taskId: string, status: string) => void
+): void {
+  _onStatusTerminal = fn
+}
+
 export function registerGitHandlers(): void {
   // --- GitHub API proxy (renderer -> main -> api.github.com) ---
   safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
@@ -103,9 +111,11 @@ export function registerGitHandlers(): void {
       const prNumber = input ? parsePrUrl(input.prUrl)?.number : undefined
       if (!prNumber) continue
       if (result.merged) {
-        await markTaskDoneByPrNumber(prNumber)
+        const ids = markTaskDoneByPrNumber(prNumber)
+        for (const id of ids) _onStatusTerminal?.(id, 'done')
       } else if (result.state === 'CLOSED') {
-        await markTaskCancelledByPrNumber(prNumber)
+        const ids = markTaskCancelledByPrNumber(prNumber)
+        for (const id of ids) _onStatusTerminal?.(id, 'cancelled')
       }
       await updateTaskMergeableState(prNumber, result.mergeableState)
     }
