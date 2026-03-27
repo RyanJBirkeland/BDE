@@ -20,7 +20,7 @@ import { registerMemorySearchHandler } from './handlers/memory-search'
 import { registerIdeFsHandlers } from './handlers/ide-fs-handlers'
 import { registerPlaygroundHandlers } from './handlers/playground-handlers'
 import { registerDashboardHandlers } from './handlers/dashboard-handlers'
-import { getDb, closeDb } from './db'
+import { getDb, closeDb, backupDatabase } from './db'
 import { importSprintTasksFromSupabase } from './data/supabase-import'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
@@ -96,6 +96,11 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.bde')
 
   getDb()
+
+  // Run backup on startup and every 24 hours
+  backupDatabase()
+  const backupInterval = setInterval(backupDatabase, 24 * 60 * 60 * 1000)
+  app.on('will-quit', () => clearInterval(backupInterval))
 
   // One-time async import from Supabase (no-op if local table already has rows or credentials missing)
   importSprintTasksFromSupabase(getDb()).catch((err) =>

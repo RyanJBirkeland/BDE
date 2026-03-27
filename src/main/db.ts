@@ -24,6 +24,16 @@ export function closeDb(): void {
   _db = null
 }
 
+export function backupDatabase(): void {
+  const db = getDb()
+  const backupPath = DB_PATH + '.backup'
+  try {
+    db.exec(`VACUUM INTO '${backupPath}'`)
+  } catch (err) {
+    console.error('[db] Backup failed:', err)
+  }
+}
+
 export interface Migration {
   version: number
   description: string

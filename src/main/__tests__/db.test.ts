@@ -1,6 +1,25 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import Database from 'better-sqlite3'
+import { mkdirSync, existsSync, rmSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
 import { runMigrations, migrations } from '../db'
+
+// Use a fixed (non-pid) temp path for the vi.mock factory, which is hoisted before variable init
+const BACKUP_TEST_DIR = join(tmpdir(), 'bde-db-backup-test')
+const BACKUP_TEST_DB_PATH = join(tmpdir(), 'bde-db-backup-test', 'bde.db')
+
+vi.mock('../paths', async (importOriginal) => {
+  const { join: pathJoin } = await import('path')
+  const { tmpdir: osTmpdir } = await import('os')
+  const original = await importOriginal<typeof import('../paths')>()
+  const testDir = pathJoin(osTmpdir(), 'bde-db-backup-test')
+  return {
+    ...original,
+    BDE_DIR: testDir,
+    BDE_DB_PATH: pathJoin(testDir, 'bde.db')
+  }
+})
 
 describe('db schema migrations', () => {
   let db: Database.Database
@@ -164,5 +183,23 @@ describe('db schema migrations', () => {
     const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map((c) => c.name)
     expect(cols).toContain('sprint_task_id')
     db.close()
+  })
+})
+
+describe('backupDatabase', () => {
+  beforeEach(() => {
+    mkdirSync(BACKUP_TEST_DIR, { recursive: true })
+  })
+
+  afterEach(async () => {
+    const { closeDb } = await import('../db')
+    closeDb()
+    rmSync(BACKUP_TEST_DIR, { recursive: true, force: true })
+  })
+
+  it('creates a backup file at DB_PATH + .backup', async () => {
+    const { backupDatabase } = await import('../db')
+    backupDatabase()
+    expect(existsSync(BACKUP_TEST_DB_PATH + '.backup')).toBe(true)
   })
 })
