@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateStructural, MIN_SPEC_LENGTH, MIN_HEADING_COUNT } from '../spec-validation'
+import { validateStructural, MIN_SPEC_LENGTH, MIN_HEADING_COUNT, getValidationProfile, type SpecType } from '../spec-validation'
 
 describe('validateStructural', () => {
   const validSpec = `${'x'.repeat(60)}\n## Problem\nSomething is broken\n## Solution\nFix it`
@@ -105,5 +105,84 @@ describe('validateStructural', () => {
     for (const msg of result.errors) {
       expect(msg.length).toBeGreaterThan(10)
     }
+  })
+})
+
+describe('getValidationProfile', () => {
+  it('returns feature profile by default (null specType)', () => {
+    const profile = getValidationProfile(null)
+    expect(profile.specPresent.behavior).toBe('required')
+    expect(profile.specPresent.threshold).toBe(50)
+    expect(profile.specStructure.behavior).toBe('required')
+  })
+
+  it('returns feature profile for "feature"', () => {
+    const profile = getValidationProfile('feature')
+    expect(profile.specPresent.behavior).toBe('required')
+    expect(profile.specPresent.threshold).toBe(50)
+  })
+
+  it('returns relaxed profile for "test"', () => {
+    const profile = getValidationProfile('test')
+    expect(profile.specPresent.behavior).toBe('advisory')
+    expect(profile.specPresent.threshold).toBe(20)
+    expect(profile.specStructure.behavior).toBe('advisory')
+    expect(profile.filesExist.behavior).toBe('skip')
+  })
+
+  it('returns relaxed profile for "refactor"', () => {
+    const profile = getValidationProfile('refactor')
+    expect(profile.specPresent.threshold).toBe(30)
+    expect(profile.specStructure.behavior).toBe('advisory')
+    expect(profile.scope.behavior).toBe('advisory')
+  })
+
+  it('returns relaxed profile for "audit"', () => {
+    const profile = getValidationProfile('audit')
+    expect(profile.specPresent.behavior).toBe('advisory')
+    expect(profile.specStructure.behavior).toBe('advisory')
+    expect(profile.filesExist.behavior).toBe('skip')
+  })
+
+  it('performance and ux alias to feature profile', () => {
+    const perf = getValidationProfile('performance')
+    const feat = getValidationProfile('feature')
+    expect(perf).toEqual(feat)
+  })
+})
+
+describe('validateStructural with specType', () => {
+  it('enforces 50-char min for feature', () => {
+    const result = validateStructural({ title: 'Fix', repo: 'BDE', spec: 'Short', status: 'queued' })
+    expect(result.valid).toBe(false)
+  })
+
+  it('uses 20-char threshold for test type', () => {
+    const result = validateStructural({
+      title: 'Fix',
+      repo: 'BDE',
+      spec: 'Run integration tests for auth',
+      status: 'queued',
+      specType: 'test'
+    })
+    expect(result.valid).toBe(true)
+  })
+
+  it('still requires title and repo for all types', () => {
+    const result = validateStructural({ title: '', repo: '', spec: 'x', specType: 'test' })
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContain('title is required')
+  })
+
+  it('treats advisory failures as warnings not errors', () => {
+    const result = validateStructural({
+      title: 'Test',
+      repo: 'BDE',
+      spec: 'Run tests',
+      status: 'queued',
+      specType: 'test'
+    })
+    expect(result.valid).toBe(true)
+    expect(result.warnings.length).toBeGreaterThan(0)
   })
 })
