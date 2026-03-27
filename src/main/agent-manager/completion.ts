@@ -103,17 +103,15 @@ async function autoCommitIfDirty(
   }
 }
 
-async function findOrCreatePR(
+/**
+ * Check if a PR already exists for the given branch.
+ * Returns `{ prUrl, prNumber }` if found, `null` otherwise.
+ */
+async function checkExistingPr(
   worktreePath: string,
   branch: string,
-  title: string,
-  ghRepo: string,
   logger: Logger
-): Promise<{ prUrl: string | null; prNumber: number | null }> {
-  let prUrl: string | null = null
-  let prNumber: number | null = null
-
-  // Check if PR already exists for this branch
+): Promise<{ prUrl: string; prNumber: number } | null> {
   try {
     const { stdout: listOut } = await execFile(
       'gh',
@@ -124,17 +122,31 @@ async function findOrCreatePR(
     if (trimmed && trimmed !== 'null') {
       const existing = JSON.parse(trimmed)
       if (existing && existing.url && existing.number) {
-        prUrl = existing.url
-        prNumber = existing.number
-        logger.info(`[completion] PR already exists for branch ${branch}: ${prUrl}`)
-        return { prUrl, prNumber }
+        logger.info(`[completion] PR already exists for branch ${branch}: ${existing.url}`)
+        return { prUrl: existing.url, prNumber: existing.number }
       }
     }
   } catch (err) {
     logger.warn(`[completion] Failed to check for existing PR on branch ${branch}: ${err}`)
   }
+  return null
+}
 
-  // Open PR via gh CLI if one doesn't exist
+/**
+ * Create a new PR via `gh pr create`. Handles the race condition where a PR
+ * was created between the check and create calls by falling back to a fetch.
+ * Returns `{ prUrl, prNumber }` (either may be null if creation failed).
+ */
+async function createNewPr(
+  worktreePath: string,
+  branch: string,
+  title: string,
+  ghRepo: string,
+  logger: Logger
+): Promise<{ prUrl: string | null; prNumber: number | null }> {
+  let prUrl: string | null = null
+  let prNumber: number | null = null
+
   try {
     const body = await generatePrBody(worktreePath, branch)
     const { stdout: prOut } = await execFile(
@@ -153,23 +165,11 @@ async function findOrCreatePR(
       logger.info(
         `[completion] PR creation failed because one already exists, fetching existing PR`
       )
-      try {
-        const { stdout: retryListOut } = await execFile(
-          'gh',
-          ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
-          { cwd: worktreePath, env: buildAgentEnv() }
-        )
-        const retryTrimmed = retryListOut.trim()
-        if (retryTrimmed && retryTrimmed !== 'null') {
-          const existing = JSON.parse(retryTrimmed)
-          if (existing && existing.url && existing.number) {
-            prUrl = existing.url
-            prNumber = existing.number
-            logger.info(`[completion] found existing PR ${prUrl}`)
-          }
-        }
-      } catch (retryErr) {
-        logger.warn(`[completion] Failed to fetch existing PR after creation failure: ${retryErr}`)
+      const existing = await checkExistingPr(worktreePath, branch, logger)
+      if (existing) {
+        prUrl = existing.prUrl
+        prNumber = existing.prNumber
+        logger.info(`[completion] found existing PR ${prUrl}`)
       }
     } else {
       logger.warn(`[completion] gh pr create failed: ${err}`)
@@ -178,6 +178,19 @@ async function findOrCreatePR(
   }
 
   return { prUrl, prNumber }
+}
+
+async function findOrCreatePR(
+  worktreePath: string,
+  branch: string,
+  title: string,
+  ghRepo: string,
+  logger: Logger
+): Promise<{ prUrl: string | null; prNumber: number | null }> {
+  const existing = await checkExistingPr(worktreePath, branch, logger)
+  if (existing) return existing
+
+  return createNewPr(worktreePath, branch, title, ghRepo, logger)
 }
 
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
