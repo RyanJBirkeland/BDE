@@ -147,14 +147,18 @@ export default function PRStationView() {
                 <span className="pr-station__detail-title">
                   #{selectedPr.number} — {selectedPr.title}
                 </span>
-                <div className="pr-station__tabs">
+                <div className="pr-station__tabs" role="tablist">
                   <button
+                    role="tab"
+                    aria-selected={activeTab === 'info'}
                     className={`pr-station__tab${activeTab === 'info' ? ' pr-station__tab--active' : ''}`}
                     onClick={() => setActiveTab('info')}
                   >
                     Info
                   </button>
                   <button
+                    role="tab"
+                    aria-selected={activeTab === 'diff'}
                     className={`pr-station__tab${activeTab === 'diff' ? ' pr-station__tab--active' : ''}`}
                     onClick={() => setActiveTab('diff')}
                   >

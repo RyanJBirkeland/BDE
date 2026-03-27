@@ -252,7 +252,7 @@ function ActionButtons({
             className="task-drawer__btn task-drawer__btn--primary"
             onClick={() => onLaunch(task)}
           >
-            Add to Queue
+            Launch
           </button>
           <button
             className="task-drawer__btn task-drawer__btn--secondary"

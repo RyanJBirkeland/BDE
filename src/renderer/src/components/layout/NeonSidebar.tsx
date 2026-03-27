@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   Terminal,
   SquareTerminal,
-  GitBranch,
+  ClipboardList,
   GitPullRequest,
   Settings,
   GitCommitHorizontal,
@@ -26,7 +26,7 @@ const VIEW_ICONS: Record<View, LucideIcon> = {
   'pr-station': GitPullRequest,
   git: GitCommitHorizontal,
   settings: Settings,
-  'task-workbench': GitBranch
+  'task-workbench': ClipboardList
 }
 
 const VIEW_LABELS: Record<View, string> = {

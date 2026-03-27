@@ -28,7 +28,15 @@ export function PipelineBacklog({
           BACKLOG <span className="pipeline-sidebar__count">{backlog.length}</span>
         </div>
         {backlog.map((task) => (
-          <div key={task.id} className="backlog-card" onClick={() => onTaskClick(task.id)}>
+          <div
+            key={task.id}
+            className="backlog-card"
+            role="button"
+            aria-label={task.title}
+            tabIndex={0}
+            onClick={() => onTaskClick(task.id)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTaskClick(task.id) } }}
+          >
             <div className="backlog-card__title">{task.title}</div>
             <div className="backlog-card__meta">
               <span>{task.repo}</span>
@@ -57,7 +65,15 @@ export function PipelineBacklog({
             FAILED <span className="pipeline-sidebar__count">{failed.length}</span>
           </div>
           {visibleFailed.map((task) => (
-            <div key={task.id} className="failed-card" onClick={() => onTaskClick(task.id)}>
+            <div
+              key={task.id}
+              className="failed-card"
+              role="button"
+              aria-label={task.title}
+              tabIndex={0}
+              onClick={() => onTaskClick(task.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTaskClick(task.id) } }}
+            >
               <div className="failed-card__title">{task.title}</div>
               <div className="failed-card__meta">
                 {task.notes ? task.notes.slice(0, 40) : 'No details'}

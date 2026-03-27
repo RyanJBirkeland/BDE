@@ -66,7 +66,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
   if (!agent) {
     return (
       <div className="agent-console">
-        <div style={{ padding: '16px', color: 'rgba(255, 255, 255, 0.3)', textAlign: 'center' }}>
+        <div style={{ padding: '16px', color: 'var(--neon-text-dim, rgba(255,255,255,0.3))', textAlign: 'center' }}>
           Agent not found
         </div>
       </div>
@@ -106,7 +106,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
             </div>
           ) : (
             <div
-              style={{ padding: '16px', color: 'rgba(255, 255, 255, 0.3)', textAlign: 'center' }}
+              style={{ padding: '16px', color: 'var(--neon-text-dim, rgba(255,255,255,0.3))', textAlign: 'center' }}
             >
               No events available
             </div>

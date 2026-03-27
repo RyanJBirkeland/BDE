@@ -141,7 +141,7 @@ export function AgentsView() {
             borderRight: `1px solid var(--neon-purple-border)`,
             display: 'flex',
             flexDirection: 'column',
-            background: 'linear-gradient(180deg, rgba(138, 43, 226, 0.04), rgba(10, 0, 21, 0.4))'
+            background: 'linear-gradient(180deg, var(--neon-purple-surface, rgba(138,43,226,0.04)), var(--neon-surface-deep, rgba(10,0,21,0.4)))'
           }}
         >
           {/* Header */}
@@ -219,7 +219,7 @@ export function AgentsView() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '100%',
-                color: 'rgba(255, 255, 255, 0.2)',
+                color: 'var(--neon-text-dim, rgba(255,255,255,0.2))',
                 fontSize: tokens.size.md,
                 fontFamily: 'var(--bde-font-code)'
               }}

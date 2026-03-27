@@ -168,6 +168,7 @@ export function RepositoriesSection(): React.JSX.Element {
                   className={`settings-color ${newColor === c ? 'settings-color--active' : ''}`}
                   style={{ background: c }}
                   onClick={() => setNewColor(c)}
+                  aria-label={`Color ${c}`}
                   type="button"
                 />
               ))}

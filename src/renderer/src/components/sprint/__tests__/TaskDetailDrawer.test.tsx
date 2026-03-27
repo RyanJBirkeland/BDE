@@ -152,10 +152,10 @@ describe('TaskDetailDrawer - additional status combos', () => {
     vi.useRealTimers()
   })
 
-  it('shows correct action buttons for backlog status (Add to Queue, Edit, Delete)', () => {
+  it('shows correct action buttons for backlog status (Launch, Edit, Delete)', () => {
     const task: SprintTask = { ...baseTask, status: 'backlog' }
     render(<TaskDetailDrawer {...makeProps({ task })} />)
-    expect(screen.getByText('Add to Queue')).toBeInTheDocument()
+    expect(screen.getAllByText('Launch')[0]).toBeInTheDocument()
     expect(screen.getByText('Edit')).toBeInTheDocument()
     expect(screen.getByText('Delete')).toBeInTheDocument()
   })
@@ -202,11 +202,11 @@ describe('TaskDetailDrawer - additional status combos', () => {
     expect(screen.getByText('Delete')).toBeInTheDocument()
   })
 
-  it('calls onLaunch when Add to Queue button clicked (backlog)', () => {
+  it('calls onLaunch when Launch button clicked (backlog)', () => {
     const task: SprintTask = { ...baseTask, status: 'backlog' }
     const props = makeProps({ task })
     render(<TaskDetailDrawer {...props} />)
-    fireEvent.click(screen.getByText('Add to Queue'))
+    fireEvent.click(screen.getAllByText('Launch')[0])
     expect(props.onLaunch).toHaveBeenCalledWith(task)
   })
 

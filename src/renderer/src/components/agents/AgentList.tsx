@@ -128,7 +128,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: `linear-gradient(180deg, rgba(88, 28, 135, 0.1) 0%, rgba(10, 0, 21, 0.6) 100%)`,
+        background: `linear-gradient(180deg, var(--neon-purple-surface, rgba(88,28,135,0.1)) 0%, var(--neon-surface-deep, rgba(10,0,21,0.6)) 100%)`,
         backdropFilter: 'var(--neon-glass-blur)',
         WebkitBackdropFilter: 'var(--neon-glass-blur)'
       }}
@@ -146,7 +146,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
             alignItems: 'center',
             gap: tokens.space[2],
             padding: `${tokens.space[1]} ${tokens.space[2]}`,
-            background: 'rgba(10, 0, 21, 0.4)',
+            background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
             borderRadius: tokens.radius.sm,
             border: searchFocused
               ? `1px solid ${neonVar('purple', 'color')}`
@@ -166,6 +166,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             placeholder="Filter agents..."
+            aria-label="Filter agents"
             style={{
               flex: 1,
               background: 'none',

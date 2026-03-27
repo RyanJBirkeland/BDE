@@ -54,7 +54,7 @@ export function LiveActivityStrip({ onSelectAgent }: LiveActivityStripProps) {
   if (runningAgents.length === 0) {
     return (
       <div className="live-strip">
-        <span style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '13px' }}>
+        <span style={{ color: 'var(--neon-text-muted, rgba(255,255,255,0.4))', fontSize: '13px' }}>
           No agents active
         </span>
         <button
