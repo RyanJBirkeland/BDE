@@ -4,8 +4,7 @@
  */
 
 import { createDependencyIndex } from './dependency-index'
-import { listTasks } from '../data/sprint-queries'
-import type { TaskDependency } from '../../shared/types'
+import type { SprintTask, TaskDependency } from '../../shared/types'
 import type { Logger } from './types'
 
 const BLOCK_PREFIX = '[auto-block] '
@@ -33,7 +32,8 @@ export function buildBlockedNotes(blockedBy: string[], existingNotes?: string | 
 export function checkTaskDependencies(
   taskId: string,
   deps: TaskDependency[],
-  logger: Logger
+  logger: Logger,
+  listTasks: () => SprintTask[]
 ): { shouldBlock: boolean; blockedBy: string[] } {
   try {
     const allTasks = listTasks()

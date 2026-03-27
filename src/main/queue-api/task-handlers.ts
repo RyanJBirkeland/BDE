@@ -242,7 +242,8 @@ export async function handleCreateTask(
     const { shouldBlock, blockedBy } = checkTaskDependencies(
       PENDING_TASK_ID,
       dependsOn,
-      console
+      console,
+      listTasks
     )
     if (shouldBlock) {
       createInput.status = 'blocked'

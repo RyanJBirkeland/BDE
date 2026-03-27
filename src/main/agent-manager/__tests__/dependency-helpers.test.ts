@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { formatBlockedNote, stripBlockedNote, buildBlockedNotes } from '../dependency-helpers'
 
-// Mocks for checkTaskDependencies tests — must be declared before dynamic import
-vi.mock('../../data/sprint-queries', () => ({
-  listTasks: vi.fn()
-}))
+// Mock for createDependencyIndex used by checkTaskDependencies
 vi.mock('../dependency-index', () => ({
   createDependencyIndex: vi.fn()
 }))
@@ -69,11 +66,10 @@ describe('checkTaskDependencies', () => {
   })
 
   it('returns shouldBlock: false when deps are satisfied', async () => {
-    const { listTasks } = await import('../../data/sprint-queries')
     const { createDependencyIndex } = await import('../dependency-index')
     const { checkTaskDependencies } = await import('../dependency-helpers')
 
-    vi.mocked(listTasks).mockReturnValue([
+    const mockListTasks = vi.fn().mockReturnValue([
       { id: 'task-1', status: 'queued' },
       { id: 'task-2', status: 'done' }
     ] as any)
@@ -86,18 +82,18 @@ describe('checkTaskDependencies', () => {
     const result = checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
-      mockLogger
+      mockLogger,
+      mockListTasks
     )
 
     expect(result).toEqual({ shouldBlock: false, blockedBy: [] })
   })
 
   it('returns shouldBlock: true when dep is unsatisfied', async () => {
-    const { listTasks } = await import('../../data/sprint-queries')
     const { createDependencyIndex } = await import('../dependency-index')
     const { checkTaskDependencies } = await import('../dependency-helpers')
 
-    vi.mocked(listTasks).mockReturnValue([
+    const mockListTasks = vi.fn().mockReturnValue([
       { id: 'task-1', status: 'queued' },
       { id: 'task-2', status: 'queued' }
     ] as any)
@@ -110,22 +106,23 @@ describe('checkTaskDependencies', () => {
     const result = checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
-      mockLogger
+      mockLogger,
+      mockListTasks
     )
 
     expect(result).toEqual({ shouldBlock: true, blockedBy: ['task-2'] })
   })
 
   it('returns shouldBlock: false when listTasks fails (graceful degradation)', async () => {
-    const { listTasks } = await import('../../data/sprint-queries')
     const { checkTaskDependencies } = await import('../dependency-helpers')
 
-    vi.mocked(listTasks).mockImplementation(() => { throw new Error('DB error'); })
+    const mockListTasks = vi.fn().mockImplementation(() => { throw new Error('DB error') })
 
     const result = checkTaskDependencies(
       'task-1',
       [{ id: 'task-2', type: 'hard' }],
-      mockLogger
+      mockLogger,
+      mockListTasks
     )
 
     expect(result).toEqual({ shouldBlock: false, blockedBy: [] })

@@ -140,7 +140,8 @@ export function registerSprintLocalHandlers(): void {
       const { shouldBlock, blockedBy } = checkTaskDependencies(
         'new-task',
         task.depends_on,
-        logger
+        logger,
+        _listTasks
       )
       if (shouldBlock) {
         task = {
@@ -192,7 +193,7 @@ export function registerSprintLocalHandlers(): void {
       // Dependency check (existing logic)
       const taskDeps = task.depends_on
       if (taskDeps && taskDeps.length > 0) {
-        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, logger)
+        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, logger, _listTasks)
         if (shouldBlock) {
           // Auto-block and record which dependencies are blocking, preserving user notes
           patch = {
