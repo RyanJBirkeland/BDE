@@ -1,9 +1,7 @@
 /**
  * Tier 2 semantic spec validation — AI-powered quality check.
- * Extracts the core logic from workbench.ts checkSpec handler
- * so it can be called from sprint-local.ts and queue-api handlers.
+ * Uses the Agent SDK for reliable Claude API access.
  */
-import { spawn } from 'child_process'
 import { buildAgentEnv } from './env-utils'
 
 export interface SemanticCheckResult {
@@ -21,37 +19,44 @@ export interface SemanticCheckSummary {
   warnMessages: string[]
 }
 
-function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('claude', ['-p', '--output-format', 'text'], {
-      env: buildAgentEnv(),
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-    let stdout = ''
-    let stderr = ''
-    const timer = setTimeout(() => {
-      child.kill()
-      reject(new Error('Claude CLI timed out'))
-    }, timeoutMs)
+async function runSdkQuery(prompt: string): Promise<string> {
+  const sdk = await import('@anthropic-ai/claude-agent-sdk')
+  const env = buildAgentEnv()
 
-    child.stdout.on('data', (d: Buffer) => {
-      stdout += d.toString()
-    })
-    child.stderr.on('data', (d: Buffer) => {
-      stderr += d.toString()
-    })
-    child.on('close', (code) => {
-      clearTimeout(timer)
-      if (code === 0) resolve(stdout.trim())
-      else reject(new Error(stderr.trim() || `claude exited with code ${code}`))
-    })
-    child.on('error', (err) => {
-      clearTimeout(timer)
-      reject(err)
-    })
-    child.stdin.write(prompt)
-    child.stdin.end()
+  const queryHandle = sdk.query({
+    prompt,
+    options: {
+      model: 'claude-haiku-4-5-20251001',
+      maxTurns: 1,
+      env: env as Record<string, string>,
+      permissionMode: 'bypassPermissions' as const,
+      allowDangerouslySkipPermissions: true
+    }
   })
+
+  let fullText = ''
+  try {
+    for await (const msg of queryHandle) {
+      if (typeof msg !== 'object' || msg === null) continue
+      const m = msg as Record<string, unknown>
+      if (m.type === 'assistant') {
+        const message = m.message as Record<string, unknown> | undefined
+        const content = message?.content
+        if (Array.isArray(content)) {
+          for (const block of content) {
+            const b = block as Record<string, unknown>
+            if (b.type === 'text' && typeof b.text === 'string') {
+              fullText += b.text
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    queryHandle.return()
+  }
+
+  return fullText.trim()
 }
 
 export async function checkSpecSemantic(input: {
@@ -76,7 +81,7 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
 
   let results: SemanticCheckResult
   try {
-    const raw = await runClaudePrint(prompt)
+    const raw = await runSdkQuery(prompt)
     const parsed = JSON.parse(raw)
     results = {
       clarity: parsed.clarity ?? { status: 'warn', message: 'Unable to assess' },
@@ -87,7 +92,7 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
       }
     }
   } catch {
-    // If Claude CLI is unavailable, degrade to pass-through (don't block queuing)
+    // If SDK is unavailable, degrade to pass-through (don't block queuing)
     return {
       passed: true,
       hasFails: false,
@@ -98,7 +103,7 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
         filesExist: { status: 'warn', message: 'AI check unavailable — skipped' }
       },
       failMessages: [],
-      warnMessages: ['Semantic checks skipped — Claude CLI unavailable']
+      warnMessages: ['Semantic checks skipped — Claude SDK unavailable']
     }
   }
 

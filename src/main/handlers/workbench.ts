@@ -4,7 +4,7 @@
 import { safeHandle } from '../ipc-utils'
 import { checkAuthStatus } from '../auth-guard'
 import { getRepoPaths } from '../git'
-import { execFile, spawn } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { listTasks } from '../data/sprint-queries'
 import { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
@@ -14,99 +14,72 @@ import { checkSpecSemantic } from '../spec-semantic-check'
 
 const execFileAsync = promisify(execFile)
 
-/** Active streaming processes, keyed by streamId. */
-const activeStreams = new Map<string, import('child_process').ChildProcess>()
+/** Active streaming handles, keyed by streamId. */
+const activeStreams = new Map<string, { close: () => void }>()
 
 /**
- * Run `claude -p` with streaming — pushes stdout chunks to the
+ * Run a single-turn SDK query with streaming — pushes text chunks to the
  * provided callback as they arrive. Returns the full output on completion.
  */
-function runClaudeStreaming(
+async function runSdkStreaming(
   prompt: string,
   onChunk: (chunk: string) => void,
   streamId: string,
   timeoutMs = 180_000
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('claude', ['-p', '--output-format', 'text'], {
-      env: buildAgentEnv(),
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-    activeStreams.set(streamId, child)
+  const sdk = await import('@anthropic-ai/claude-agent-sdk')
+  const env = buildAgentEnv()
 
-    let stdout = ''
-    let stderr = ''
-    const timer = setTimeout(() => {
-      child.kill()
-      activeStreams.delete(streamId)
-      reject(new Error('Claude CLI timed out'))
-    }, timeoutMs)
-
-    child.stdout.on('data', (d: Buffer) => {
-      const chunk = d.toString()
-      stdout += chunk
-      onChunk(chunk)
-    })
-    child.stderr.on('data', (d: Buffer) => {
-      stderr += d.toString()
-    })
-    child.on('close', (code) => {
-      clearTimeout(timer)
-      activeStreams.delete(streamId)
-      if (code === 0) {
-        resolve(stdout.trim())
-      } else {
-        reject(new Error(stderr.trim() || `claude exited with code ${code}`))
-      }
-    })
-    child.on('error', (err) => {
-      clearTimeout(timer)
-      activeStreams.delete(streamId)
-      reject(err)
-    })
-
-    child.stdin.write(prompt)
-    child.stdin.end()
+  const queryHandle = sdk.query({
+    prompt,
+    options: {
+      model: 'claude-sonnet-4-5',
+      maxTurns: 1,
+      env: env as Record<string, string>,
+      permissionMode: 'bypassPermissions' as const,
+      allowDangerouslySkipPermissions: true
+    }
   })
+
+  activeStreams.set(streamId, { close: () => queryHandle.return() })
+
+  let fullText = ''
+  const timer = setTimeout(() => {
+    queryHandle.return()
+    activeStreams.delete(streamId)
+  }, timeoutMs)
+
+  try {
+    for await (const msg of queryHandle) {
+      if (typeof msg !== 'object' || msg === null) continue
+      const m = msg as Record<string, unknown>
+
+      // Extract text from assistant messages
+      if (m.type === 'assistant') {
+        const message = m.message as Record<string, unknown> | undefined
+        const content = message?.content
+        if (Array.isArray(content)) {
+          for (const block of content) {
+            const b = block as Record<string, unknown>
+            if (b.type === 'text' && typeof b.text === 'string') {
+              fullText += b.text
+              onChunk(b.text)
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timer)
+    activeStreams.delete(streamId)
+  }
+
+  return fullText.trim()
 }
 
-/** Run `claude -p` with prompt piped via stdin (execFileAsync doesn't support `input`). */
-function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('claude', ['-p', '--output-format', 'text'], {
-      env: buildAgentEnv(),
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-
-    let stdout = ''
-    let stderr = ''
-    const timer = setTimeout(() => {
-      child.kill()
-      reject(new Error('Claude CLI timed out'))
-    }, timeoutMs)
-
-    child.stdout.on('data', (d: Buffer) => {
-      stdout += d.toString()
-    })
-    child.stderr.on('data', (d: Buffer) => {
-      stderr += d.toString()
-    })
-    child.on('close', (code) => {
-      clearTimeout(timer)
-      if (code === 0) {
-        resolve(stdout.trim())
-      } else {
-        reject(new Error(stderr.trim() || `claude exited with code ${code}`))
-      }
-    })
-    child.on('error', (err) => {
-      clearTimeout(timer)
-      reject(err)
-    })
-
-    child.stdin.write(prompt)
-    child.stdin.end()
-  })
+/** Run a single-turn SDK query (non-streaming). Returns the text response. */
+async function runSdkPrint(prompt: string, timeoutMs = 120_000): Promise<string> {
+  return runSdkStreaming(prompt, () => {}, `print-${Date.now()}`, timeoutMs)
 }
 
 export function buildChatPrompt(
@@ -371,7 +344,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     ) => {
       const prompt = buildChatPrompt(input.messages, input.formContext)
       try {
-        const result = await runClaudePrint(prompt)
+        const result = await runSdkPrint(prompt)
         return { content: result || 'No response received.' }
       } catch (err) {
         return { content: `Error: ${(err as Error).message}` }
@@ -385,7 +358,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     const streamId = `copilot-${Date.now()}`
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer
-    runClaudeStreaming(
+    runSdkStreaming(
       prompt,
       (chunk) => {
         try {
@@ -421,9 +394,9 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
 
   // --- Cancel active stream ---
   safeHandle('workbench:cancelStream', async (_e, streamId) => {
-    const child = activeStreams.get(streamId)
-    if (child) {
-      child.kill()
+    const handle = activeStreams.get(streamId)
+    if (handle) {
+      handle.close()
       activeStreams.delete(streamId)
       return { ok: true }
     }
@@ -436,7 +409,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     async (_e, input: { title: string; repo: string; templateHint: string }) => {
       const prompt = buildSpecGenerationPrompt(input)
       try {
-        const result = await runClaudePrint(prompt)
+        const result = await runSdkPrint(prompt)
         return { spec: result || `# ${input.title}\n\n(No spec generated)` }
       } catch (err) {
         return { spec: `# ${input.title}\n\nError generating spec: ${(err as Error).message}` }
