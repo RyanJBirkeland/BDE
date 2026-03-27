@@ -626,6 +626,40 @@ describe('createAgentManager', () => {
 
       vi.useRealTimers()
     })
+
+    it('re-queues active tasks after shutdown', async () => {
+      vi.useFakeTimers()
+      const logger = makeLogger()
+      setupDefaultMocks()
+      const task = makeTask()
+      const { handle } = makeBlockingHandle()
+
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
+      vi.mocked(claimTask).mockReturnValueOnce(task)
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
+      vi.mocked(updateTask).mockClear()
+
+      const mgr = createAgentManager(baseConfig, mockRepo, logger)
+      mgr.start()
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(mgr.getStatus().activeAgents.length).toBe(1)
+
+      mgr.stop(0).catch(() => {})
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({ status: 'queued', claimed_by: null, started_at: null })
+      )
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining('Re-queued task task-1 during shutdown')
+      )
+
+      vi.useRealTimers()
+    })
   })
 
   describe('getStatus()', () => {

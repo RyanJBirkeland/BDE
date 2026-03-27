@@ -590,6 +590,21 @@ export function createAgentManager(
       await Promise.race([allSettled, timeout])
     }
 
+    // Re-queue any tasks that are still active after agent shutdown
+    for (const agent of activeAgents.values()) {
+      try {
+        repo.updateTask(agent.taskId, {
+          status: 'queued',
+          claimed_by: null,
+          started_at: null
+        })
+        logger.info(`[agent-manager] Re-queued task ${agent.taskId} during shutdown`)
+      } catch (err) {
+        logger.warn(`[agent-manager] Failed to re-queue task ${agent.taskId}: ${err}`)
+      }
+    }
+    activeAgents.clear()
+
     running = false
     logger.info('[agent-manager] Stopped')
   }
