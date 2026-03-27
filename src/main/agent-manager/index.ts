@@ -216,405 +216,426 @@ export interface AgentManager {
 }
 
 // ---------------------------------------------------------------------------
-// Factory
+// Class implementation
 // ---------------------------------------------------------------------------
 
-export function createAgentManager(
-  config: AgentManagerConfig,
-  repo: ISprintTaskRepository,
-  logger: Logger = defaultLogger
-): AgentManager {
-  rotateAmLogIfNeeded()
+import type { DependencyIndex } from './dependency-index'
 
-  // ---- Core state ----
-  let concurrency: ConcurrencyState = makeConcurrencyState(config.maxConcurrent)
-  const activeAgents = new Map<string, ActiveAgent>()
-  let running = false
-  let shuttingDown = false
-  let pollTimer: ReturnType<typeof setInterval> | null = null
-  let watchdogTimer: ReturnType<typeof setInterval> | null = null
-  let orphanTimer: ReturnType<typeof setInterval> | null = null
-  let pruneTimer: ReturnType<typeof setInterval> | null = null
-  let drainInFlight: Promise<void> | null = null
-  let drainRunning = false
-  const agentPromises = new Set<Promise<void>>()
-  const depIndex = createDependencyIndex()
+export class AgentManagerImpl implements AgentManager {
+  // Exposed state (testable via _ prefix)
+  _concurrency: ConcurrencyState
+  readonly _activeAgents = new Map<string, ActiveAgent>()
+  readonly _processingTasks = new Set<string>()
+  _running = false
+  _shuttingDown = false
+  _drainRunning = false
+  _drainInFlight: Promise<void> | null = null
+  readonly _agentPromises = new Set<Promise<void>>()
+  readonly _depIndex: DependencyIndex
 
-  // Wire sprint-queries to use the same structured file logger as the agent manager
-  setSprintQueriesLogger(logger)
+  // Private timers
+  private pollTimer: ReturnType<typeof setInterval> | null = null
+  private watchdogTimer: ReturnType<typeof setInterval> | null = null
+  private orphanTimer: ReturnType<typeof setInterval> | null = null
+  private pruneTimer: ReturnType<typeof setInterval> | null = null
 
-  // Repo methods are now synchronous (SQLite) — no timeout needed
-  function fetchQueuedTasks(limit: number): Array<Record<string, unknown>> {
-    return repo.getQueuedTasks(limit) as unknown as Array<Record<string, unknown>>
-  }
+  // Injected deps
+  private readonly runAgentDeps: RunAgentDeps
 
-  function claimTaskViaApi(taskId: string): boolean {
-    return repo.claimTask(taskId, EXECUTOR_ID) !== null
-  }
+  constructor(
+    readonly config: AgentManagerConfig,
+    readonly repo: ISprintTaskRepository,
+    readonly logger: Logger = defaultLogger
+  ) {
+    rotateAmLogIfNeeded()
 
-  async function onTaskTerminal(taskId: string, status: string): Promise<void> {
-    if (config.onStatusTerminal) {
-      config.onStatusTerminal(taskId, status)
-    } else {
-      try {
-        resolveDependents(taskId, status, depIndex, repo.getTask, repo.updateTask, logger)
-      } catch (err) {
-        logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
-      }
+    this._concurrency = makeConcurrencyState(config.maxConcurrent)
+    this._depIndex = createDependencyIndex()
+
+    // Wire sprint-queries to use the same structured file logger as the agent manager
+    setSprintQueriesLogger(logger)
+
+    // Build runAgentDeps with bound onTaskTerminal
+    this.runAgentDeps = {
+      activeAgents: this._activeAgents,
+      defaultModel: config.defaultModel,
+      logger,
+      onTaskTerminal: this.onTaskTerminal.bind(this),
+      repo
     }
   }
 
   // ---- Helpers ----
 
-  const runAgentDeps: RunAgentDeps = {
-    activeAgents,
-    defaultModel: config.defaultModel,
-    logger,
-    onTaskTerminal,
-    repo
+  private fetchQueuedTasks(limit: number): Array<Record<string, unknown>> {
+    return this.repo.getQueuedTasks(limit) as unknown as Array<Record<string, unknown>>
   }
 
-  function isActive(taskId: string): boolean {
-    return activeAgents.has(taskId)
+  private claimTaskViaApi(taskId: string): boolean {
+    return this.repo.claimTask(taskId, EXECUTOR_ID) !== null
   }
 
-  function resolveRepoPath(repoSlug: string): string | null {
+  async onTaskTerminal(taskId: string, status: string): Promise<void> {
+    if (this.config.onStatusTerminal) {
+      this.config.onStatusTerminal(taskId, status)
+    } else {
+      try {
+        resolveDependents(taskId, status, this._depIndex, this.repo.getTask, this.repo.updateTask, this.logger)
+      } catch (err) {
+        this.logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
+      }
+    }
+  }
+
+  private isActive(taskId: string): boolean {
+    return this._activeAgents.has(taskId)
+  }
+
+  private resolveRepoPath(repoSlug: string): string | null {
     const repoPaths = getRepoPaths()
     return repoPaths[repoSlug.toLowerCase()] ?? null
   }
 
   // ---- processQueuedTask ----
 
-  async function processQueuedTask(
+  async _processQueuedTask(
     raw: Record<string, unknown>,
     taskStatusMap: Map<string, string>
   ): Promise<void> {
-    // Map Queue API camelCase response to local task shape
-    // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
-    const task = {
-      id: raw.id as string,
-      title: raw.title as string,
-      prompt: (raw.prompt as string) ?? null,
-      spec: (raw.spec as string) ?? null,
-      repo: raw.repo as string,
-      retry_count: Number(raw.retryCount) || 0,
-      fast_fail_count: Number(raw.fastFailCount) || 0,
-      playground_enabled: Boolean(raw.playgroundEnabled),
-      max_runtime_ms: Number(raw.maxRuntimeMs) || null
-    }
-
-    // Defense-in-depth: check dependencies before claiming.
-    // Tasks created via direct API may be 'queued' with unsatisfied deps.
-    const rawDeps = raw.dependsOn ?? raw.depends_on
-    if (rawDeps) {
-      try {
-        const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
-        if (Array.isArray(deps) && deps.length > 0) {
-          const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
-            task.id,
-            deps,
-            (depId: string) => taskStatusMap.get(depId)
-          )
-          if (!satisfied) {
-            logger.info(
-              `[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`
-            )
-            try {
-              repo.updateTask(task.id, {
-                status: 'blocked',
-                notes: formatBlockedNote(blockedBy)
-              })
-            } catch { /* best-effort */ }
-            return
-          }
-        }
-      } catch {
-        // If dep parsing fails, proceed without blocking
-      }
-    }
-
-    // Resolve repo path
-    const repoPath = resolveRepoPath(task.repo)
-    if (!repoPath) {
-      logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
-      return
-    }
-
-    // Claim task
-    const claimed = claimTaskViaApi(task.id)
-    if (!claimed) {
-      logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
-      return
-    }
-
-    // Setup worktree
-    let wt: { worktreePath: string; branch: string }
+    const taskId = raw.id as string
+    if (this._processingTasks.has(taskId)) return
+    this._processingTasks.add(taskId)
     try {
-      wt = await setupWorktree({
-        repoPath,
-        worktreeBase: config.worktreeBase,
-        taskId: task.id,
-        title: task.title,
-        logger
-      })
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err)
-      logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
-      repo.updateTask(task.id, {
-        status: 'error',
-        completed_at: new Date().toISOString(),
-        notes: `Worktree setup failed: ${errMsg}`.slice(0, NOTES_MAX_LENGTH),
-        claimed_by: null
-      })
-      await onTaskTerminal(task.id, 'error')
-      return
-    }
+      // Map Queue API camelCase response to local task shape
+      // Ensure retry_count and fast_fail_count default to 0, prompt and spec default to null
+      const task = {
+        id: raw.id as string,
+        title: raw.title as string,
+        prompt: (raw.prompt as string) ?? null,
+        spec: (raw.spec as string) ?? null,
+        repo: raw.repo as string,
+        retry_count: Number(raw.retryCount) || 0,
+        fast_fail_count: Number(raw.fastFailCount) || 0,
+        playground_enabled: Boolean(raw.playgroundEnabled),
+        max_runtime_ms: Number(raw.maxRuntimeMs) || null
+      }
 
-    // Fire-and-forget — errors logged inside runAgent
-    const p = _runAgent(task, wt, repoPath, runAgentDeps)
-      .catch((err) => {
-        logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
-      })
-      .finally(() => {
-        agentPromises.delete(p)
-      })
-    agentPromises.add(p)
+      // Defense-in-depth: check dependencies before claiming.
+      // Tasks created via direct API may be 'queued' with unsatisfied deps.
+      const rawDeps = raw.dependsOn ?? raw.depends_on
+      if (rawDeps) {
+        try {
+          const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
+          if (Array.isArray(deps) && deps.length > 0) {
+            const { satisfied, blockedBy } = this._depIndex.areDependenciesSatisfied(
+              task.id,
+              deps,
+              (depId: string) => taskStatusMap.get(depId)
+            )
+            if (!satisfied) {
+              this.logger.info(
+                `[agent-manager] Task ${task.id} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`
+              )
+              try {
+                this.repo.updateTask(task.id, {
+                  status: 'blocked',
+                  notes: formatBlockedNote(blockedBy)
+                })
+              } catch { /* best-effort */ }
+              return
+            }
+          }
+        } catch {
+          // If dep parsing fails, proceed without blocking
+        }
+      }
+
+      // Resolve repo path
+      const repoPath = this.resolveRepoPath(task.repo)
+      if (!repoPath) {
+        this.logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
+        return
+      }
+
+      // Claim task
+      const claimed = this.claimTaskViaApi(task.id)
+      if (!claimed) {
+        this.logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
+        return
+      }
+
+      // Setup worktree
+      let wt: { worktreePath: string; branch: string }
+      try {
+        wt = await setupWorktree({
+          repoPath,
+          worktreeBase: this.config.worktreeBase,
+          taskId: task.id,
+          title: task.title,
+          logger: this.logger
+        })
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err)
+        this.logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
+        this.repo.updateTask(task.id, {
+          status: 'error',
+          completed_at: new Date().toISOString(),
+          notes: `Worktree setup failed: ${errMsg}`.slice(0, NOTES_MAX_LENGTH),
+          claimed_by: null
+        })
+        await this.onTaskTerminal(task.id, 'error')
+        return
+      }
+
+      // Fire-and-forget — errors logged inside runAgent
+      const p = _runAgent(task, wt, repoPath, this.runAgentDeps)
+        .catch((err) => {
+          this.logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
+        })
+        .finally(() => {
+          this._agentPromises.delete(p)
+        })
+      this._agentPromises.add(p)
+    } finally {
+      this._processingTasks.delete(taskId)
+    }
   }
 
   // ---- drainLoop ----
 
-  async function drainLoop(): Promise<void> {
-    if (drainRunning) {
-      logger.info('[agent-manager] Drain loop already running — skipping')
+  async _drainLoop(): Promise<void> {
+    if (this._drainRunning) {
+      this.logger.info('[agent-manager] Drain loop already running — skipping')
       return
     }
-    drainRunning = true
+    this._drainRunning = true
     try {
-      logger.info(
-        `[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`
+      this.logger.info(
+        `[agent-manager] Drain loop starting (shuttingDown=${this._shuttingDown}, slots=${availableSlots(this._concurrency, this._activeAgents.size)})`
       )
-      if (shuttingDown) return
+      if (this._shuttingDown) return
 
       // Refresh dependency index each drain cycle to pick up tasks created
       // since startup or since the last drain. Rebuild is O(n) and cheap.
       let taskStatusMap = new Map<string, string>()
       try {
-        const allTasks = repo.getTasksWithDependencies()
-        depIndex.rebuild(allTasks)
+        const allTasks = this.repo.getTasksWithDependencies()
+        this._depIndex.rebuild(allTasks)
         taskStatusMap = new Map(allTasks.map((t) => [t.id, t.status]))
       } catch (err) {
-        logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
+        this.logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
       }
 
-      const available = availableSlots(concurrency, activeAgents.size)
+      const available = availableSlots(this._concurrency, this._activeAgents.size)
       if (available <= 0) return
 
       try {
-        const tokenOk = await checkOAuthToken(logger)
+        const tokenOk = await checkOAuthToken(this.logger)
         if (!tokenOk) return
 
-        logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
-        const queued = fetchQueuedTasks(available)
-        logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
+        this.logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
+        const queued = this.fetchQueuedTasks(available)
+        this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
         for (const raw of queued) {
-          if (shuttingDown) break
+          if (this._shuttingDown) break
           // Re-check slots before each task — an earlier iteration may have filled a slot
-          if (availableSlots(concurrency, activeAgents.size) <= 0) {
-            logger.info('[agent-manager] No slots available — stopping drain iteration')
+          if (availableSlots(this._concurrency, this._activeAgents.size) <= 0) {
+            this.logger.info('[agent-manager] No slots available — stopping drain iteration')
             break
           }
           try {
-            await processQueuedTask(raw, taskStatusMap)
+            await this._processQueuedTask(raw, taskStatusMap)
           } catch (err) {
-            logger.error(
+            this.logger.error(
               `[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`
             )
           }
         }
       } catch (err) {
-        logger.error(`[agent-manager] Drain loop error: ${err}`)
+        this.logger.error(`[agent-manager] Drain loop error: ${err}`)
       }
 
-      concurrency = tryRecover(concurrency, Date.now())
+      this._concurrency = tryRecover(this._concurrency, Date.now())
     } finally {
-      drainRunning = false
+      this._drainRunning = false
     }
   }
 
   // ---- watchdogLoop ----
 
-  function watchdogLoop(): void {
-    for (const agent of activeAgents.values()) {
-      const verdict = checkAgent(agent, Date.now(), config)
+  _watchdogLoop(): void {
+    for (const agent of this._activeAgents.values()) {
+      if (this._processingTasks.has(agent.taskId)) continue
+      const verdict = checkAgent(agent, Date.now(), this.config)
       if (verdict === 'ok') continue
 
-      logger.warn(`[agent-manager] Watchdog killing task ${agent.taskId}: ${verdict}`)
+      this.logger.warn(`[agent-manager] Watchdog killing task ${agent.taskId}: ${verdict}`)
       try {
         agent.handle.abort()
       } catch (err) {
-        logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId}: ${err}`)
+        this.logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId}: ${err}`)
       }
 
       // Delete agent — activeCount is derived from activeAgents.size
-      activeAgents.delete(agent.taskId)
+      this._activeAgents.delete(agent.taskId)
 
       // Update task based on verdict
       const now = new Date().toISOString()
-      concurrency = handleWatchdogVerdict(
+      this._concurrency = handleWatchdogVerdict(
         verdict,
         agent.taskId,
-        concurrency,
+        this._concurrency,
         now,
-        repo.updateTask,
-        onTaskTerminal,
-        logger
+        this.repo.updateTask,
+        this.onTaskTerminal.bind(this),
+        this.logger
       )
     }
   }
 
   // ---- orphanLoop ----
 
-  async function orphanLoop(): Promise<void> {
+  private async _orphanLoop(): Promise<void> {
     try {
-      await recoverOrphans(isActive, repo, logger)
+      await recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger)
     } catch (err) {
-      logger.error(`[agent-manager] Orphan recovery error: ${err}`)
+      this.logger.error(`[agent-manager] Orphan recovery error: ${err}`)
     }
   }
 
   // ---- pruneLoop ----
 
-  async function pruneLoop(): Promise<void> {
+  private async _pruneLoop(): Promise<void> {
     try {
-      await pruneStaleWorktrees(config.worktreeBase, isActive)
+      await pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id))
     } catch (err) {
-      logger.error(`[agent-manager] Worktree prune error: ${err}`)
+      this.logger.error(`[agent-manager] Worktree prune error: ${err}`)
     }
   }
 
   // ---- Public methods ----
 
-  function start(): void {
-    if (running) return
-    running = true
-    shuttingDown = false
-    concurrency = makeConcurrencyState(config.maxConcurrent)
+  start(): void {
+    if (this._running) return
+    this._running = true
+    this._shuttingDown = false
+    this._concurrency = makeConcurrencyState(this.config.maxConcurrent)
 
     // Initial orphan recovery (fire-and-forget)
-    recoverOrphans(isActive, repo, logger).catch((err) => {
-      logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
+    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger).catch((err) => {
+      this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
     })
 
     // Build dependency index
     try {
-      const tasks = repo.getTasksWithDependencies()
-      depIndex.rebuild(tasks)
-      logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
+      const tasks = this.repo.getTasksWithDependencies()
+      this._depIndex.rebuild(tasks)
+      this.logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
     } catch (err) {
-      logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
+      this.logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
     }
 
     // Initial worktree prune (fire-and-forget)
-    pruneStaleWorktrees(config.worktreeBase, isActive).catch((err) => {
-      logger.error(`[agent-manager] Initial worktree prune error: ${err}`)
+    pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id)).catch((err) => {
+      this.logger.error(`[agent-manager] Initial worktree prune error: ${err}`)
     })
 
     // Start periodic loops
-    pollTimer = setInterval(() => {
-      if (drainInFlight) return // skip if previous drain still running
-      drainInFlight = drainLoop()
-        .catch((err) => logger.warn(`[agent-manager] Drain loop error: ${err}`))
+    this.pollTimer = setInterval(() => {
+      if (this._drainInFlight) return // skip if previous drain still running
+      this._drainInFlight = this._drainLoop()
+        .catch((err) => this.logger.warn(`[agent-manager] Drain loop error: ${err}`))
         .finally(() => {
-          drainInFlight = null
+          this._drainInFlight = null
         })
-    }, config.pollIntervalMs)
-    watchdogTimer = setInterval(watchdogLoop, WATCHDOG_INTERVAL_MS)
-    orphanTimer = setInterval(() => {
-      orphanLoop().catch((err) => logger.warn(`[agent-manager] Orphan loop error: ${err}`))
+    }, this.config.pollIntervalMs)
+    this.watchdogTimer = setInterval(() => this._watchdogLoop(), WATCHDOG_INTERVAL_MS)
+    this.orphanTimer = setInterval(() => {
+      this._orphanLoop().catch((err) => this.logger.warn(`[agent-manager] Orphan loop error: ${err}`))
     }, ORPHAN_CHECK_INTERVAL_MS)
-    pruneTimer = setInterval(() => {
-      pruneLoop().catch((err) => logger.warn(`[agent-manager] Prune loop error: ${err}`))
+    this.pruneTimer = setInterval(() => {
+      this._pruneLoop().catch((err) => this.logger.warn(`[agent-manager] Prune loop error: ${err}`))
     }, WORKTREE_PRUNE_INTERVAL_MS)
 
     // Defer initial drain to let the event loop settle
     setTimeout(() => {
-      drainInFlight = drainLoop()
-        .catch((err) => logger.warn(`[agent-manager] Initial drain error: ${err}`))
+      this._drainInFlight = this._drainLoop()
+        .catch((err) => this.logger.warn(`[agent-manager] Initial drain error: ${err}`))
         .finally(() => {
-          drainInFlight = null
+          this._drainInFlight = null
         })
     }, INITIAL_DRAIN_DEFER_MS)
 
-    logger.info('[agent-manager] Started')
+    this.logger.info('[agent-manager] Started')
   }
 
-  async function stop(timeoutMs = 10_000): Promise<void> {
-    shuttingDown = true
+  async stop(timeoutMs = 10_000): Promise<void> {
+    this._shuttingDown = true
 
-    if (pollTimer) {
-      clearInterval(pollTimer)
-      pollTimer = null
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer)
+      this.pollTimer = null
     }
-    if (watchdogTimer) {
-      clearInterval(watchdogTimer)
-      watchdogTimer = null
+    if (this.watchdogTimer) {
+      clearInterval(this.watchdogTimer)
+      this.watchdogTimer = null
     }
-    if (orphanTimer) {
-      clearInterval(orphanTimer)
-      orphanTimer = null
+    if (this.orphanTimer) {
+      clearInterval(this.orphanTimer)
+      this.orphanTimer = null
     }
-    if (pruneTimer) {
-      clearInterval(pruneTimer)
-      pruneTimer = null
+    if (this.pruneTimer) {
+      clearInterval(this.pruneTimer)
+      this.pruneTimer = null
     }
 
     // Wait for any in-flight drain to complete before aborting agents
-    if (drainInFlight) {
-      await drainInFlight.catch(() => {})
-      drainInFlight = null
+    if (this._drainInFlight) {
+      await this._drainInFlight.catch(() => {})
+      this._drainInFlight = null
     }
 
     // Abort all active agents
-    for (const agent of activeAgents.values()) {
+    for (const agent of this._activeAgents.values()) {
       try {
         agent.handle.abort()
       } catch (err) {
-        logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId} during shutdown: ${err}`)
+        this.logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId} during shutdown: ${err}`)
       }
     }
 
     // Wait for all agent promises to settle (with timeout)
-    if (agentPromises.size > 0) {
-      const allSettled = Promise.allSettled([...agentPromises])
+    if (this._agentPromises.size > 0) {
+      const allSettled = Promise.allSettled([...this._agentPromises])
       const timeout = new Promise<void>((r) => setTimeout(r, timeoutMs))
       await Promise.race([allSettled, timeout])
     }
 
     // Re-queue any tasks that are still active after agent shutdown
-    for (const agent of activeAgents.values()) {
+    for (const agent of this._activeAgents.values()) {
       try {
-        repo.updateTask(agent.taskId, {
+        this.repo.updateTask(agent.taskId, {
           status: 'queued',
           claimed_by: null,
           started_at: null
         })
-        logger.info(`[agent-manager] Re-queued task ${agent.taskId} during shutdown`)
+        this.logger.info(`[agent-manager] Re-queued task ${agent.taskId} during shutdown`)
       } catch (err) {
-        logger.warn(`[agent-manager] Failed to re-queue task ${agent.taskId}: ${err}`)
+        this.logger.warn(`[agent-manager] Failed to re-queue task ${agent.taskId}: ${err}`)
       }
     }
-    activeAgents.clear()
+    this._activeAgents.clear()
 
-    running = false
-    logger.info('[agent-manager] Stopped')
+    this._running = false
+    this.logger.info('[agent-manager] Stopped')
   }
 
-  function getStatus(): AgentManagerStatus {
+  getStatus(): AgentManagerStatus {
     return {
-      running,
-      shuttingDown,
-      concurrency: { ...concurrency, activeCount: activeAgents.size },
-      activeAgents: [...activeAgents.values()].map((a) => ({
+      running: this._running,
+      shuttingDown: this._shuttingDown,
+      concurrency: { ...this._concurrency, activeCount: this._activeAgents.size },
+      activeAgents: [...this._activeAgents.values()].map((a) => ({
         taskId: a.taskId,
         agentRunId: a.agentRunId,
         model: a.model,
@@ -628,17 +649,27 @@ export function createAgentManager(
     }
   }
 
-  async function steerAgent(taskId: string, message: string): Promise<SteerResult> {
-    const agent = activeAgents.get(taskId)
+  async steerAgent(taskId: string, message: string): Promise<SteerResult> {
+    const agent = this._activeAgents.get(taskId)
     if (!agent) return { delivered: false, error: 'Agent not found' }
     return agent.handle.steer(message)
   }
 
-  function killAgent(taskId: string): void {
-    const agent = activeAgents.get(taskId)
+  killAgent(taskId: string): void {
+    const agent = this._activeAgents.get(taskId)
     if (!agent) throw new Error(`No active agent for task ${taskId}`)
     agent.handle.abort()
   }
+}
 
-  return { start, stop, getStatus, steerAgent, killAgent, onTaskTerminal }
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+
+export function createAgentManager(
+  config: AgentManagerConfig,
+  repo: ISprintTaskRepository,
+  logger: Logger = defaultLogger
+): AgentManager {
+  return new AgentManagerImpl(config, repo, logger)
 }
