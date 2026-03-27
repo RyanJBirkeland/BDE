@@ -44,27 +44,43 @@ function acquireLock(worktreeBase: string, repoPath: string, logger?: Logger): v
 
   const lockFile = lockPath(worktreeBase, repoPath)
 
-  if (existsSync(lockFile)) {
-    const raw = readFileSync(lockFile, 'utf-8').trim()
-    const pid = parseInt(raw, 10)
-    if (isNaN(pid)) {
-      ;(logger ?? console).warn(`[worktree] Corrupted lock file for ${repoPath} — removing`)
-      rmSync(lockFile)
-    } else {
-      let alive = false
-      try {
-        process.kill(pid, 0)
-        alive = true
-      } catch {
-        alive = false
-      }
-      if (alive) {
-        throw new Error(`Worktree lock held by PID ${pid} for repo ${repoPath}`)
-      }
-    }
+  // Try atomic create — fails if file already exists
+  try {
+    writeFileSync(lockFile, String(process.pid), { flag: 'wx' })
+    return // Lock acquired
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err
+    // Lock file exists — check if holder is alive
   }
 
-  writeFileSync(lockFile, String(process.pid), 'utf-8')
+  // Lock file exists — read PID and check liveness
+  const raw = readFileSync(lockFile, 'utf-8').trim()
+  const pid = parseInt(raw, 10)
+
+  if (isNaN(pid)) {
+    ;(logger ?? console).warn(`[worktree] Corrupted lock file for ${repoPath} — removing`)
+    rmSync(lockFile)
+  } else {
+    let alive = false
+    try {
+      process.kill(pid, 0)
+      alive = true
+    } catch {
+      alive = false
+    }
+    if (alive) {
+      throw new Error(`Worktree lock held by PID ${pid} for repo ${repoPath}`)
+    }
+    // Stale lock — PID is dead
+  }
+
+  // Re-acquire atomically after cleaning stale lock
+  try {
+    rmSync(lockFile)
+  } catch {
+    /* already gone */
+  }
+  writeFileSync(lockFile, String(process.pid), { flag: 'wx' })
 }
 
 function releaseLock(worktreeBase: string, repoPath: string): void {
