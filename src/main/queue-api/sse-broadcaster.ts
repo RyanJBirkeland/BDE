@@ -1,5 +1,6 @@
 // src/main/queue-api/sse-broadcaster.ts
 import type { ServerResponse } from 'node:http'
+import { CORS_HEADERS } from './helpers'
 
 export interface SseBroadcaster {
   addClient(res: ServerResponse): void
@@ -26,7 +27,8 @@ export function createSseBroadcaster(): SseBroadcaster {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        Connection: 'keep-alive'
+        Connection: 'keep-alive',
+        ...CORS_HEADERS
       })
       clients.add(res)
       res.on('close', () => clients.delete(res))

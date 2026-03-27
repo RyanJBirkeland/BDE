@@ -1,23 +1,24 @@
 /**
  * Queue API shared helpers: auth, JSON parsing, URL/route matching.
  */
+import { randomBytes } from 'node:crypto'
 import type http from 'node:http'
-import { getSetting } from '../settings'
+import { getSetting, setSetting } from '../settings'
 
 // ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------
 
-function getApiKey(): string | null {
-  return getSetting('taskRunner.apiKey') ?? process.env['SPRINT_API_KEY'] ?? null
+function getApiKey(): string {
+  const existing = getSetting('taskRunner.apiKey') ?? process.env['SPRINT_API_KEY']
+  if (existing) return existing
+  const generated = randomBytes(32).toString('hex')
+  setSetting('taskRunner.apiKey', generated)
+  return generated
 }
 
 export function checkAuth(req: http.IncomingMessage, res: http.ServerResponse): boolean {
   const apiKey = getApiKey()
-  if (!apiKey) {
-    // No key configured — allow all requests (dev/testing convenience)
-    return true
-  }
 
   // Accept token from Authorization header or ?token= query parameter
   const authHeader = req.headers['authorization']
@@ -51,8 +52,14 @@ export function checkAuth(req: http.IncomingMessage, res: http.ServerResponse): 
 // Response / body helpers
 // ---------------------------------------------------------------------------
 
+export const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type'
+}
+
 export function sendJson(res: http.ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { 'Content-Type': 'application/json' })
+  res.writeHead(status, { 'Content-Type': 'application/json', ...CORS_HEADERS })
   res.end(JSON.stringify(body))
 }
 
