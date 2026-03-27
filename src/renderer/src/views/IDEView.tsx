@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Group, Panel, Separator } from 'react-resizable-panels'
+import { PanelLeftOpen } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../stores/ide'
 import { useTerminalStore } from '../stores/terminal'
@@ -13,6 +14,7 @@ import { IDEEmptyState } from '../components/ide/IDEEmptyState'
 import { useUnsavedDialog, UnsavedDialogModal } from '../components/ide/UnsavedDialog'
 import { clearTerminal } from '../components/terminal/TerminalPane'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import '../assets/ide-neon.css'
 
 export function IDEView(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -325,6 +327,11 @@ export function IDEView(): React.JSX.Element {
                   setFocusedPanel('editor')
                 }}
               >
+                {sidebarCollapsed && !activeTab && (
+                  <button className="ide-sidebar-toggle" onClick={toggleSidebar}>
+                    <PanelLeftOpen size={16} />
+                  </button>
+                )}
                 <EditorTabBar onCloseTab={(id, dirty) => void handleCloseTab(id, dirty)} />
                 <div className="ide-editor-content">
                   <EditorPane
