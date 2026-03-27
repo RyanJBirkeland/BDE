@@ -28,12 +28,19 @@ import {
   MAX_ACTIVE_TASKS
 } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
-import { detectCycle, createDependencyIndex } from '../agent-manager/dependency-index'
+import { detectCycle } from '../agent-manager/dependency-index'
 import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
-import { resolveDependents } from '../agent-manager/resolve-dependents'
 import type { TaskDependency } from '../../shared/types'
 import { validateStructural } from '../../shared/spec-validation'
 import { checkSpecSemantic } from '../spec-semantic-check'
+
+let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
+
+export function setQueueApiOnStatusTerminal(
+  fn: (taskId: string, status: string) => void
+): void {
+  _onStatusTerminal = fn
+}
 
 /**
  * Validates task dependencies for cycle detection and ID existence.
@@ -400,18 +407,9 @@ export async function handleUpdateStatus(
   sendJson(res, 200, toCamelCase(updated))
 
   // Trigger dependency resolution when transitioning to a terminal status.
-  // This ensures blocked dependents get unblocked even when status is changed
-  // via Queue API (not just via agent manager or IPC handler).
   const terminalStatuses = new Set(['done', 'failed', 'error', 'cancelled'])
   if (patch.status && terminalStatuses.has(patch.status)) {
-    try {
-      const allTasks = getTasksWithDependencies()
-      const depIndex = createDependencyIndex()
-      depIndex.rebuild(allTasks)
-      await resolveDependents(id, patch.status, depIndex, getTask, updateTask, console)
-    } catch (resolveErr) {
-      console.warn(`[queue-api] resolveDependents failed for ${id}: ${resolveErr}`)
-    }
+    _onStatusTerminal?.(id, patch.status)
   }
 }
 

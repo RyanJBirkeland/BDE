@@ -3,7 +3,7 @@
  * Handler logic lives in task-handlers, agent-handlers, and event-handlers.
  */
 import type http from 'node:http'
-import { checkAuth, parseUrl, matchRoute, sendJson } from './helpers'
+import { checkAuth, parseUrl, matchRoute, sendJson, CORS_HEADERS } from './helpers'
 import * as tasks from './task-handlers'
 import * as agents from './agent-handlers'
 import * as events from './event-handlers'
@@ -17,11 +17,7 @@ export { sseBroadcaster } from './event-handlers'
 export async function route(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   // CORS preflight
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Authorization, Content-Type'
-    })
+    res.writeHead(204, CORS_HEADERS)
     res.end()
     return
   }

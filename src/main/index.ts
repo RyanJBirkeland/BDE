@@ -32,6 +32,13 @@ import { createAgentManager } from './agent-manager'
 import { createSprintTaskRepository } from './data/sprint-task-repository'
 import { getOAuthToken } from './env-utils'
 import { getSetting, getSettingJson } from './settings'
+import { createTaskTerminalService } from './services/task-terminal-service'
+import { getTask, updateTask, getTasksWithDependencies } from './data/sprint-queries'
+import { setOnStatusTerminal } from './handlers/sprint-local'
+import { setQueueApiOnStatusTerminal } from './queue-api/task-handlers'
+import { setGitHandlersOnStatusTerminal } from './handlers/git-handlers'
+import { setOnTaskTerminal } from './sprint-pr-poller'
+import { createLogger } from './logger'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -98,6 +105,18 @@ app.whenReady().then(() => {
   const stopDbWatcher = startDbWatcher()
   app.on('will-quit', stopDbWatcher)
 
+  // --- Task terminal service (unified dependency resolution) ---
+  const terminalService = createTaskTerminalService({
+    getTask,
+    updateTask,
+    getTasksWithDependencies,
+    logger: createLogger('task-terminal')
+  })
+  setOnStatusTerminal(terminalService.onStatusTerminal)
+  setQueueApiOnStatusTerminal(terminalService.onStatusTerminal)
+  setGitHandlersOnStatusTerminal(terminalService.onStatusTerminal)
+  setOnTaskTerminal(terminalService.onStatusTerminal)
+
   startPrPoller()
   app.on('will-quit', stopPrPoller)
 
@@ -133,7 +152,10 @@ app.whenReady().then(() => {
     getOAuthToken()
 
     const repo = createSprintTaskRepository()
-    const am = createAgentManager(amConfig, repo)
+    const am = createAgentManager(
+      { ...amConfig, onStatusTerminal: terminalService.onStatusTerminal },
+      repo
+    )
     am.start()
     app.on('will-quit', () => am.stop(10_000))
 

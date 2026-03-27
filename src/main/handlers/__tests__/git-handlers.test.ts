@@ -343,7 +343,7 @@ describe('pr:pollStatuses handler', () => {
 
     vi.mocked(pollPrStatuses).mockResolvedValue(results as any)
     vi.mocked(parsePrUrl).mockReturnValue({ owner: 'owner', repo: 'repo', number: 42 } as any)
-    vi.mocked(markTaskDoneByPrNumber).mockResolvedValue([])
+    vi.mocked(markTaskDoneByPrNumber).mockReturnValue([])
     vi.mocked(updateTaskMergeableState).mockResolvedValue(undefined)
 
     const handler = captureHandler('pr:pollStatuses')
@@ -360,7 +360,7 @@ describe('pr:pollStatuses handler', () => {
 
     vi.mocked(pollPrStatuses).mockResolvedValue(results as any)
     vi.mocked(parsePrUrl).mockReturnValue({ owner: 'owner', repo: 'repo', number: 99 } as any)
-    vi.mocked(markTaskCancelledByPrNumber).mockResolvedValue([])
+    vi.mocked(markTaskCancelledByPrNumber).mockReturnValue([])
     vi.mocked(updateTaskMergeableState).mockResolvedValue(undefined)
 
     const handler = captureHandler('pr:pollStatuses')

@@ -58,10 +58,14 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
     }
   }
 
+  function safePoll(): void {
+    poll().catch(err => console.error('[sprint-pr-poller] poll error:', err))
+  }
+
   return {
     start() {
-      poll()
-      timer = setInterval(poll, POLL_INTERVAL_MS)
+      safePoll()
+      timer = setInterval(safePoll, POLL_INTERVAL_MS)
     },
     stop() {
       if (timer) {

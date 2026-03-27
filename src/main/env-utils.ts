@@ -80,7 +80,7 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
     if (!token || typeof token !== 'string') return false
 
     const tokenPath = join(homedir(), '.bde', 'oauth-token')
-    writeFileSync(tokenPath, token, 'utf8')
+    writeFileSync(tokenPath, token, { encoding: 'utf8', mode: 0o600 })
     invalidateOAuthToken() // Force re-read on next call
     return true
   } catch {

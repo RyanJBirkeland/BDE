@@ -14,6 +14,7 @@ const mockReleaseTask = vi.fn()
 const mockGetTasksWithDependencies = vi.fn()
 const mockDeleteTask = vi.fn()
 const mockGetActiveTaskCount = vi.fn()
+const mockGetAllTaskIds = vi.fn()
 
 vi.mock('../../data/sprint-queries', () => ({
   getQueueStats: (...args: unknown[]) => mockGetQueueStats(...args),
@@ -25,7 +26,8 @@ vi.mock('../../data/sprint-queries', () => ({
   releaseTask: (...args: unknown[]) => mockReleaseTask(...args),
   getTasksWithDependencies: (...args: unknown[]) => mockGetTasksWithDependencies(...args),
   deleteTask: (...args: unknown[]) => mockDeleteTask(...args),
-  getActiveTaskCount: (...args: unknown[]) => mockGetActiveTaskCount(...args)
+  getActiveTaskCount: (...args: unknown[]) => mockGetActiveTaskCount(...args),
+  getAllTaskIds: (...args: unknown[]) => mockGetAllTaskIds(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -61,10 +63,12 @@ vi.mock('../../db', () => ({
   getDb: (...args: unknown[]) => mockGetDb(...args)
 }))
 
-// Mock settings — no API key by default (auth disabled)
+// Mock settings — no API key by default; setSetting captures auto-generated keys
 const mockGetSetting = vi.fn().mockReturnValue(null)
+const mockSetSetting = vi.fn()
 vi.mock('../../settings', () => ({
-  getSetting: (...args: unknown[]) => mockGetSetting(...args)
+  getSetting: (...args: unknown[]) => mockGetSetting(...args),
+  setSetting: (...args: unknown[]) => mockSetSetting(...args)
 }))
 
 // ---------------------------------------------------------------------------
@@ -84,11 +88,21 @@ vi.mock('../../agent-manager/resolve-dependents', () => ({
 }))
 
 // ---------------------------------------------------------------------------
+// Wire onStatusTerminal mock for terminal status resolution
+// ---------------------------------------------------------------------------
+import { setQueueApiOnStatusTerminal } from '../task-handlers'
+const mockOnStatusTerminal = vi.fn()
+
+// ---------------------------------------------------------------------------
 // Start server on a random port for tests
 // ---------------------------------------------------------------------------
 import { startQueueApi, stopQueueApi } from '../server'
 
 let port: number
+
+// Default key used in tests — set as the mock return value in beforeEach so all
+// requests are authenticated by default without touching individual test cases.
+const TEST_API_KEY = 'test-api-key-default'
 
 function request(
   method: string,
@@ -104,6 +118,8 @@ function request(
       method,
       headers: {
         'Content-Type': 'application/json',
+        // Include the default key unless the caller explicitly provides Authorization
+        Authorization: `Bearer ${TEST_API_KEY}`,
         ...headers
       }
     }
@@ -133,6 +149,7 @@ function request(
 }
 
 beforeAll(async () => {
+  setQueueApiOnStatusTerminal(mockOnStatusTerminal)
   // Use port 0 to get a random available port
   const server = startQueueApi({ port: 0, host: '127.0.0.1' })
   // Wait for the server to actually start listening before extracting the port
@@ -153,9 +170,11 @@ afterAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockGetSetting.mockReturnValue(null) // no auth by default
+  mockGetSetting.mockReturnValue(TEST_API_KEY) // return known key so all requests are authenticated
+  mockSetSetting.mockImplementation(() => {}) // capture auto-generated key writes
   mockGetDb.mockReturnValue({}) // default db mock
   mockGetTasksWithDependencies.mockReturnValue([]) // default empty tasks list
+  mockGetAllTaskIds.mockReturnValue(new Set<string>()) // default: no existing task IDs
   mockDeleteTask.mockReturnValue(undefined) // default delete success
   mockGetActiveTaskCount.mockReturnValue(0) // default: no active tasks (WIP limit not hit)
   mockCheckSpecSemantic.mockResolvedValue({
@@ -303,6 +322,7 @@ describe('Queue API', () => {
         { id: 'existing-1', depends_on: null, status: 'done' },
         { id: 'existing-2', depends_on: null, status: 'queued' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['existing-1', 'existing-2']))
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
@@ -322,6 +342,7 @@ describe('Queue API', () => {
         { id: 'task-a', depends_on: [{ id: 'task-b', type: 'hard' }], status: 'queued' },
         { id: 'task-b', depends_on: [{ id: 'pending-new-task', type: 'hard' }], status: 'queued' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['task-a', 'task-b']))
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'Task with deps',
@@ -363,6 +384,7 @@ describe('Queue API', () => {
       mockGetTasksWithDependencies.mockReturnValue([
         { id: 'task-a', depends_on: null, status: 'done' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['task-a']))
       // checkTaskDependencies calls listTasks() for auto-blocking check
       mockListTasks.mockReturnValue([{ id: 'task-a', depends_on: null, status: 'done' }])
 
@@ -423,30 +445,22 @@ describe('Queue API', () => {
       expect(status).toBe(404)
     })
 
-    it('calls resolveDependents after transitioning to done', async () => {
+    it('calls onStatusTerminal after transitioning to done', async () => {
       mockUpdateTask.mockReturnValue({ id: 'abc', status: 'done' })
-      mockGetTasksWithDependencies.mockReturnValue([])
+      mockOnStatusTerminal.mockClear()
 
       const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'done' })
       expect(status).toBe(200)
 
       // Give the async post-response work time to complete
       await new Promise((r) => setTimeout(r, 50))
-      expect(mockResolveDependents).toHaveBeenCalledWith(
-        'abc',
-        'done',
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        console
-      )
+      expect(mockOnStatusTerminal).toHaveBeenCalledWith('abc', 'done')
     })
 
-    it('calls resolveDependents for all terminal statuses', async () => {
+    it('calls onStatusTerminal for all terminal statuses', async () => {
       for (const terminalStatus of ['done', 'failed', 'error', 'cancelled']) {
-        mockResolveDependents.mockClear()
+        mockOnStatusTerminal.mockClear()
         mockUpdateTask.mockReturnValue({ id: 'abc', status: terminalStatus })
-        mockGetTasksWithDependencies.mockReturnValue([])
 
         const { status } = await request('PATCH', '/queue/tasks/abc/status', {
           status: terminalStatus
@@ -454,25 +468,19 @@ describe('Queue API', () => {
         expect(status).toBe(200)
 
         await new Promise((r) => setTimeout(r, 50))
-        expect(mockResolveDependents).toHaveBeenCalledWith(
-          'abc',
-          terminalStatus,
-          expect.anything(),
-          expect.anything(),
-          expect.anything(),
-          console
-        )
+        expect(mockOnStatusTerminal).toHaveBeenCalledWith('abc', terminalStatus)
       }
     })
 
-    it('does not call resolveDependents for non-terminal status transitions', async () => {
+    it('does not call onStatusTerminal for non-terminal status transitions', async () => {
       mockUpdateTask.mockReturnValue({ id: 'abc', status: 'active' })
+      mockOnStatusTerminal.mockClear()
 
       const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'active' })
       expect(status).toBe(200)
 
       await new Promise((r) => setTimeout(r, 50))
-      expect(mockResolveDependents).not.toHaveBeenCalled()
+      expect(mockOnStatusTerminal).not.toHaveBeenCalled()
     })
   })
 
@@ -570,6 +578,7 @@ describe('Queue API', () => {
         { id: 'task-1', depends_on: null, status: 'done' },
         { id: 'task-2', depends_on: null, status: 'done' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['abc', 'task-1', 'task-2']))
       mockUpdateTask.mockReturnValue(updated)
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
@@ -640,6 +649,7 @@ describe('Queue API', () => {
         { id: 'abc', depends_on: null, status: 'queued' },
         { id: 'existing-1', depends_on: null, status: 'done' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['abc', 'existing-1']))
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
         dependsOn: [{ id: 'missing-task', type: 'hard' }]
@@ -656,6 +666,7 @@ describe('Queue API', () => {
         { id: 'task-a', depends_on: [{ id: 'task-b', type: 'hard' }], status: 'queued' },
         { id: 'task-b', depends_on: [{ id: 'abc', type: 'hard' }], status: 'queued' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['abc', 'task-a', 'task-b']))
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
         dependsOn: [{ id: 'task-a', type: 'hard' }]
@@ -669,6 +680,7 @@ describe('Queue API', () => {
       mockGetTasksWithDependencies.mockReturnValue([
         { id: 'abc', depends_on: null, status: 'queued' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['abc']))
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
         dependsOn: [{ id: 'abc', type: 'hard' }]
@@ -687,6 +699,7 @@ describe('Queue API', () => {
         { id: 'abc', depends_on: null, status: 'queued' },
         { id: 'task-a', depends_on: null, status: 'done' }
       ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['abc', 'task-a']))
       mockUpdateTask.mockReturnValue(updated)
 
       const { status, body } = await request('PATCH', '/queue/tasks/abc/dependencies', {
@@ -709,7 +722,13 @@ describe('Queue API', () => {
       // headers alone and then destroy the connection immediately.
       const status = await new Promise<number>((resolve, reject) => {
         const req = http.request(
-          { hostname: '127.0.0.1', port, path: '/queue/events', method: 'GET' },
+          {
+            hostname: '127.0.0.1',
+            port,
+            path: '/queue/events',
+            method: 'GET',
+            headers: { Authorization: `Bearer ${TEST_API_KEY}` }
+          },
           (res) => {
             resolve(res.statusCode ?? 0)
             res.destroy()
@@ -737,7 +756,10 @@ describe('Queue API', () => {
     it('rejects requests without bearer token when API key is set', async () => {
       mockGetSetting.mockReturnValue('secret-key')
 
-      const { status } = await request('GET', '/queue/health')
+      // Pass empty Authorization to simulate a truly unauthenticated request
+      const { status } = await request('GET', '/queue/health', undefined, {
+        Authorization: ''
+      })
       expect(status).toBe(401)
     })
 
@@ -768,7 +790,7 @@ describe('Queue API', () => {
       expect(status).toBe(200)
     })
 
-    it('allows all requests when no API key is configured', async () => {
+    it('auto-generates a key when none is configured and rejects unauthenticated requests', async () => {
       mockGetSetting.mockReturnValue(null)
       mockGetQueueStats.mockReturnValue({
         backlog: 0,
@@ -780,8 +802,43 @@ describe('Queue API', () => {
         error: 0
       })
 
-      const { status } = await request('GET', '/queue/health')
-      expect(status).toBe(200)
+      // Without a token, the request is rejected even though no key was pre-configured
+      const { status } = await request('GET', '/queue/health', undefined, {
+        Authorization: ''
+      })
+      expect(status).toBe(401)
+
+      // setSetting should have been called to persist the auto-generated key
+      expect(mockSetSetting).toHaveBeenCalledWith('taskRunner.apiKey', expect.any(String))
+    })
+
+    it('allows requests using the auto-generated key', async () => {
+      // Simulate: no pre-existing key, but setSetting stores it for subsequent calls
+      let capturedKey: string | null = null
+      mockGetSetting.mockImplementation(() => capturedKey)
+      mockSetSetting.mockImplementation((_key: string, value: string) => {
+        capturedKey = value
+      })
+      mockGetQueueStats.mockReturnValue({
+        backlog: 0,
+        queued: 0,
+        active: 0,
+        done: 0,
+        failed: 0,
+        cancelled: 0,
+        error: 0
+      })
+
+      // First request without token: triggers key generation, returns 401
+      const first = await request('GET', '/queue/health', undefined, { Authorization: '' })
+      expect(first.status).toBe(401)
+      expect(capturedKey).not.toBeNull()
+
+      // Second request with the generated key should succeed
+      const second = await request('GET', '/queue/health', undefined, {
+        Authorization: `Bearer ${capturedKey}`
+      })
+      expect(second.status).toBe(200)
     })
   })
 

@@ -101,7 +101,7 @@ export function useSprintTaskActions() {
   // --- Stop running agent (with confirm) ---
   const handleStop = useCallback(
     async (task: SprintTask) => {
-      if (!task.agent_run_id) return
+      if (task.status !== 'active') return
       const ok = await confirm({
         message: 'Stop this agent? The task will be marked cancelled.',
         confirmLabel: 'Stop Agent',
@@ -109,12 +109,12 @@ export function useSprintTaskActions() {
       })
       if (!ok) return
       try {
-        const result = await window.api.killAgent(task.agent_run_id)
+        const result = await window.api.agentManager.kill(task.id)
         if (result.ok) {
           updateTask(task.id, { status: TASK_STATUS.CANCELLED })
           toast.success('Agent stopped')
         } else {
-          toast.error(result.error ?? 'Failed to stop agent')
+          toast.error('Failed to stop agent')
         }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to stop agent')

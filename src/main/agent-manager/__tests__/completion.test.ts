@@ -360,7 +360,7 @@ describe('resolveSuccess', () => {
     expect(addCall![1]).not.toContain('-u')
   })
 
-  it('records push failure in notes but does not call onTaskTerminal', async () => {
+  it('transitions task to error and calls onTaskTerminal when git push fails', async () => {
     mockExecFileSequence([
       { stdout: 'agent/add-login-page\n' }, // git rev-parse
       { stdout: '' }, // git status --porcelain
@@ -371,9 +371,12 @@ describe('resolveSuccess', () => {
     await resolveSuccess(opts, noopLogger)
 
     expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
-      notes: expect.stringContaining('git push failed')
+      status: 'error',
+      notes: expect.stringContaining('git push failed'),
+      claimed_by: null,
+      completed_at: expect.any(String)
     })
-    expect(mockOnTaskTerminal).not.toHaveBeenCalled()
+    expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'error')
   })
   it('sets task to error and calls onTaskTerminal when branch name is empty', async () => {
     mockExecFileSequence([
@@ -412,7 +415,7 @@ describe('resolveSuccess — catch handler coverage', () => {
     vi.mocked(existsSync).mockReturnValue(true)
   })
 
-  it('logs warning when updateTask fails after push error (line 152)', async () => {
+  it('logs warning when updateTask fails after push error and still calls onTaskTerminal', async () => {
     let i = 0
     const r = [
       { stdout: 'agent/b\n' },
@@ -432,6 +435,8 @@ describe('resolveSuccess — catch handler coverage', () => {
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after push error')
     )
+    // onTaskTerminal should still be called even when updateTask throws
+    expect(mockOnTaskTerminal2).toHaveBeenCalledWith('task-catch', 'error')
   })
 
   it('logs warning when gh pr list fails during existing PR check (line 176)', async () => {

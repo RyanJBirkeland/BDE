@@ -233,10 +233,14 @@ export function createAgentManager(
   }
 
   async function onTaskTerminal(taskId: string, status: string): Promise<void> {
-    try {
-      resolveDependents(taskId, status, depIndex, repo.getTask, repo.updateTask, logger)
-    } catch (err) {
-      logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
+    if (config.onStatusTerminal) {
+      config.onStatusTerminal(taskId, status)
+    } else {
+      try {
+        resolveDependents(taskId, status, depIndex, repo.getTask, repo.updateTask, logger)
+      } catch (err) {
+        logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
+      }
     }
   }
 

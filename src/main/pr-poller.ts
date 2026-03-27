@@ -93,9 +93,13 @@ function broadcastPrList(payload: PrListPayload): void {
   broadcastEvent('pr:listUpdated', payload)
 }
 
+function safePoll(): void {
+  poll().catch(err => console.error('[pr-poller] poll error:', err))
+}
+
 export function startPrPoller(): void {
-  poll()
-  timer = setInterval(poll, POLL_INTERVAL_MS)
+  safePoll()
+  timer = setInterval(safePoll, POLL_INTERVAL_MS)
 }
 
 export function stopPrPoller(): void {
