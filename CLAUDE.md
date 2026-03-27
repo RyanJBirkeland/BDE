@@ -113,6 +113,8 @@ These files are edited frequently across branches. Take extra care when modifyin
 
 ## Gotchas
 
+- **Queue API endpoints**: All task endpoints use `/queue/tasks` prefix (not `/tasks`). Dependency endpoint: `PATCH /queue/tasks/:id/dependencies`. Task creation with `status=queued` requires a `spec` field (or `?skipValidation=true`).
+- **View type sync**: When adding/removing views from the `View` union in `panelLayout.ts`, you MUST update ALL maps in `NeonSidebar.tsx` (`VIEW_ICONS`, `VIEW_LABELS`, `VIEW_SHORTCUTS`), `CommandPalette.tsx`, `OverflowMenu.tsx`, and `App.tsx` (`VIEW_SHORTCUT_MAP`). Missing entries cause runtime crashes (undefined component render), not build errors.
 - **Preload type declarations**: When adding new methods to `src/preload/index.ts`, you MUST also update `src/preload/index.d.ts` — the renderer's `window.api` types come from the `.d.ts` file, not the `.ts` implementation. Typecheck will fail with "Property does not exist on type" if you forget.
 - **Handler count tests**: `src/main/handlers/__tests__/workbench.test.ts` (and similar per-module tests) assert the exact number of `safeHandle()` calls. Adding new IPC handlers to a module requires updating the corresponding handler count test.
 - **Monaco teardown in pre-push**: The husky pre-push hook may fail with `EnvironmentTeardownError` from Monaco editor even when all tests pass. This is a pre-existing flaky teardown issue, not a code problem. Use `--no-verify` if all tests pass individually via `npm test` and `npm run test:main`.
