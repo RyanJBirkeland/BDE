@@ -57,6 +57,8 @@ export default function DashboardView() {
   const [chartData, setChartData] = useState<ChartBar[]>([])
   const [feedEvents, setFeedEvents] = useState<FeedEvent[]>([])
   const [prCount, setPrCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   // Derived stats
   const stats = useMemo(() => {
@@ -129,6 +131,10 @@ export default function DashboardView() {
   // Fetch all dashboard data — errors are caught per-fetch so backoff only
   // triggers on total failure. Jitter prevents thundering herd across views.
   const fetchDashboardData = useCallback(async (): Promise<void> => {
+    setLoading(true)
+    setFetchError(false)
+    let anyError = false
+
     try {
       const data = await window.api.dashboard?.completionsPerHour()
       if (cancelledRef.current || !data) return
@@ -148,6 +154,7 @@ export default function DashboardView() {
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch completions:', err)
+      anyError = true
     }
 
     try {
@@ -168,6 +175,7 @@ export default function DashboardView() {
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch events:', err)
+      anyError = true
     }
 
     try {
@@ -176,6 +184,12 @@ export default function DashboardView() {
       setPrCount(prs?.prs?.length ?? 0)
     } catch (err) {
       console.error('[Dashboard] Failed to fetch PR list:', err)
+      anyError = true
+    }
+
+    if (!cancelledRef.current) {
+      setFetchError(anyError)
+      setLoading(false)
     }
   }, [])
 
@@ -233,7 +247,37 @@ export default function DashboardView() {
         }}
       >
         <StatusBar title="BDE Command Center" status="ok">
-          SYS.OK
+          {loading && !chartData.length ? (
+            <span style={{ opacity: 0.5 }}>Loading...</span>
+          ) : fetchError ? (
+            <span
+              style={{
+                color: neonVar('red', 'color'),
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              Failed to load dashboard data
+              <button
+                onClick={() => fetchDashboardData()}
+                style={{
+                  background: 'none',
+                  border: `1px solid ${neonVar('red', 'color')}`,
+                  color: neonVar('red', 'color'),
+                  borderRadius: '3px',
+                  padding: '1px 6px',
+                  fontSize: '9px',
+                  cursor: 'pointer',
+                  lineHeight: '14px'
+                }}
+              >
+                Retry
+              </button>
+            </span>
+          ) : (
+            'SYS.OK'
+          )}
         </StatusBar>
 
         {/* 3-column Ops Deck grid */}
