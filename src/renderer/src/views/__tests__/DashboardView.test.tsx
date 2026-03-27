@@ -93,7 +93,7 @@ describe('DashboardView', () => {
   it('renders pipeline and cost sections', () => {
     render(<DashboardView />)
     expect(screen.getByText('Pipeline')).toBeInTheDocument()
-    expect(screen.getByText(/Cost/)).toBeInTheDocument()
+    expect(screen.getByText('Cost 24h')).toBeInTheDocument()
   })
 
   it('clicking Active stat navigates to Sprint with in-progress filter', () => {

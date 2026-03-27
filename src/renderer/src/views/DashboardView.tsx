@@ -21,12 +21,25 @@ import {
   type PipelineStage,
   type ChartBar
 } from '../components/neon'
-import { Activity, GitPullRequest, CheckCircle, DollarSign, Zap, AlertTriangle } from 'lucide-react'
+import { neonVar } from '../components/neon/types'
+import { tokens } from '../design-system/tokens'
+import {
+  Activity,
+  GitPullRequest,
+  CheckCircle,
+  DollarSign,
+  Zap,
+  AlertTriangle,
+  Clock,
+  TrendingUp,
+  Target
+} from 'lucide-react'
 
 export default function DashboardView() {
   const reduced = useReducedMotion()
   const tasks = useSprintTasks((s) => s.tasks)
   const totalCost = useCostDataStore((s) => s.totalCost)
+  const localAgents = useCostDataStore((s) => s.localAgents)
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
   const setView = useUIStore((s) => s.setView)
@@ -51,7 +64,46 @@ export default function DashboardView() {
     const queued = tasks.filter((t) => t.status === 'queued').length
     const blocked = tasks.filter((t) => t.status === 'blocked').length
     const done = tasks.filter((t) => t.status === 'done').length
-    return { active, queued, blocked, done }
+    const failed = tasks.filter((t) =>
+      ['failed', 'error', 'cancelled'].includes(t.status)
+    ).length
+    return { active, queued, blocked, done, failed }
+  }, [tasks])
+
+  // Success rate
+  const successRate = useMemo(() => {
+    const terminal = stats.done + stats.failed
+    if (terminal === 0) return null
+    return Math.round((stats.done / terminal) * 100)
+  }, [stats])
+
+  // Average duration from agent cost records
+  const avgDuration = useMemo(() => {
+    const withDuration = localAgents.filter((a) => a.durationMs != null && a.durationMs > 0)
+    if (withDuration.length === 0) return null
+    const avg = withDuration.reduce((sum, a) => sum + a.durationMs!, 0) / withDuration.length
+    return avg
+  }, [localAgents])
+
+  // Cost trend sparkline — last 20 agent runs sorted by start time
+  const costTrendData = useMemo((): ChartBar[] => {
+    const sorted = [...localAgents]
+      .filter((a) => a.costUsd != null && a.costUsd > 0)
+      .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
+      .slice(-20)
+    return sorted.map((a) => ({
+      value: a.costUsd!,
+      accent: 'orange' as const,
+      label: `$${a.costUsd!.toFixed(2)} — ${a.taskTitle ?? a.id.slice(0, 8)}`
+    }))
+  }, [localAgents])
+
+  // Recent completions — last 5 done tasks
+  const recentCompletions = useMemo(() => {
+    return tasks
+      .filter((t) => t.status === 'done' && t.completed_at)
+      .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
+      .slice(0, 5)
   }, [tasks])
 
   // Pipeline stages
@@ -242,23 +294,97 @@ export default function DashboardView() {
             </NeonCard>
 
             <NeonCard
-              accent="purple"
+              accent="cyan"
               title="Completions / Hour"
               icon={<Zap size={12} />}
-              style={{ flex: 1 }}
             >
               <MiniChart data={chartData} height={120} />
               <div style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '9px', marginTop: '6px' }}>
                 last 24 hours
               </div>
             </NeonCard>
+
+            {/* Stats row: Success Rate + Avg Duration */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <NeonCard accent="cyan" title="Success Rate" icon={<Target size={12} />}>
+                <SuccessRing rate={successRate} done={stats.done} failed={stats.failed} />
+              </NeonCard>
+
+              <NeonCard accent="blue" title="Avg Duration" icon={<Clock size={12} />}>
+                <div
+                  style={{
+                    color: tokens.neon.text,
+                    fontSize: '20px',
+                    fontWeight: 800,
+                    textShadow: 'var(--neon-blue-glow)'
+                  }}
+                >
+                  {avgDuration != null ? formatDuration(avgDuration) : '—'}
+                </div>
+                <div style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '10px', marginTop: '4px' }}>
+                  {localAgents.filter((a) => a.durationMs != null).length} runs tracked
+                </div>
+              </NeonCard>
+            </div>
+
+            <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
+              <MiniChart data={costTrendData} height={80} />
+              <div style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '9px', marginTop: '6px' }}>
+                last {costTrendData.length} runs
+              </div>
+            </NeonCard>
           </div>
 
-          {/* Right: Feed + Cost */}
+          {/* Right: Feed + Recent + Cost */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <NeonCard accent="purple" title="Feed" style={{ flex: 1, minHeight: 0 }}>
-              <div style={{ overflow: 'auto', maxHeight: '300px' }}>
+              <div style={{ overflow: 'auto', maxHeight: '240px' }}>
                 <ActivityFeed events={feedEvents} />
+              </div>
+            </NeonCard>
+
+            <NeonCard accent="cyan" title="Recent Completions" icon={<CheckCircle size={12} />}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {recentCompletions.length === 0 ? (
+                  <div style={{ color: tokens.neon.textDim, fontSize: tokens.size.xs }}>
+                    No completions yet
+                  </div>
+                ) : (
+                  recentCompletions.map((t) => (
+                    <div
+                      key={t.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: tokens.neon.text,
+                          fontSize: '11px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flex: 1
+                        }}
+                      >
+                        {t.title}
+                      </span>
+                      <span
+                        style={{
+                          color: 'rgba(255, 255, 255, 0.35)',
+                          fontSize: '9px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0
+                        }}
+                      >
+                        {timeAgo(t.completed_at!)}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </NeonCard>
 
@@ -279,4 +405,99 @@ export default function DashboardView() {
       </div>
     </motion.div>
   )
+}
+
+/** SVG donut ring showing success rate. */
+function SuccessRing({
+  rate,
+  done,
+  failed
+}: {
+  rate: number | null
+  done: number
+  failed: number
+}) {
+  if (rate === null) {
+    return (
+      <div style={{ color: tokens.neon.textDim, fontSize: tokens.size.xs }}>
+        No terminal tasks
+      </div>
+    )
+  }
+
+  const size = 64
+  const stroke = 6
+  const r = (size - stroke) / 2
+  const circ = 2 * Math.PI * r
+  const filled = (rate / 100) * circ
+  const accent = rate >= 80 ? 'cyan' : rate >= 50 ? 'orange' : 'red'
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.08)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={neonVar(accent, 'color')}
+          strokeWidth={stroke}
+          strokeDasharray={`${filled} ${circ - filled}`}
+          strokeLinecap="round"
+          style={{
+            filter: `drop-shadow(0 0 4px ${neonVar(accent, 'color')})`,
+            transition: 'stroke-dasharray 500ms ease'
+          }}
+        />
+      </svg>
+      <div>
+        <div
+          style={{
+            color: neonVar(accent, 'color'),
+            fontSize: '20px',
+            fontWeight: 800,
+            textShadow: neonVar(accent, 'glow')
+          }}
+        >
+          {rate}%
+        </div>
+        <div style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '9px' }}>
+          {done}✓ {failed}✗
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Format milliseconds to human-readable duration. */
+function formatDuration(ms: number): string {
+  const s = Math.round(ms / 1000)
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60)
+  const rem = s % 60
+  if (m < 60) return `${m}m ${rem}s`
+  const h = Math.floor(m / 60)
+  return `${h}h ${m % 60}m`
+}
+
+/** Format a timestamp to relative "time ago" string. */
+function timeAgo(dateStr: string): string {
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diff = Math.max(0, now - then)
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
