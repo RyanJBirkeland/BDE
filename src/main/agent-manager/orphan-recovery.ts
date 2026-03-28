@@ -14,7 +14,7 @@ export async function recoverOrphans(
 
     // Skip tasks that already have a PR — they completed successfully and are
     // waiting for SprintPrPoller to mark them done on merge.
-    if (task.pr_url) {
+    if (task.pr_url || task.pr_status === 'branch_only') {
       logger.info(
         `[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`
       )
