@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { FolderOpen, PanelLeftClose } from 'lucide-react'
 import { useIDEStore } from '../../stores/ide'
+import { toast } from '../../stores/toasts'
 import { FileTree } from './FileTree'
 import { FileContextMenu, ContextMenuTarget } from './FileContextMenu'
 
@@ -25,13 +26,21 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   async function handleNewFile(parentPath: string): Promise<void> {
     const name = window.prompt('New file name:')
     if (!name) return
-    await window.api.createFile(`${parentPath}/${name}`)
+    try {
+      await window.api.createFile(`${parentPath}/${name}`)
+    } catch (err) {
+      toast.error(`Failed to create file: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   async function handleNewFolder(parentPath: string): Promise<void> {
     const name = window.prompt('New folder name:')
     if (!name) return
-    await window.api.createDir(`${parentPath}/${name}`)
+    try {
+      await window.api.createDir(`${parentPath}/${name}`)
+    } catch (err) {
+      toast.error(`Failed to create folder: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   async function handleRename(path: string): Promise<void> {
@@ -39,21 +48,48 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
     const oldName = parts[parts.length - 1]
     const newName = window.prompt('Rename to:', oldName)
     if (!newName || newName === oldName) return
-    await window.api.rename(path, [...parts.slice(0, -1), newName].join('/'))
+    try {
+      await window.api.rename(path, [...parts.slice(0, -1), newName].join('/'))
+    } catch (err) {
+      toast.error(`Rename failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   async function handleDelete(path: string): Promise<void> {
     const name = path.split('/').pop() ?? path
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
-    await window.api.deletePath(path)
+    try {
+      await window.api.deletePath(path)
+    } catch (err) {
+      toast.error(`Delete failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   function handleCopyPath(path: string): void {
     void navigator.clipboard.writeText(path)
   }
 
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      let el = e.target as HTMLElement | null
+      while (el && !el.dataset.path) {
+        if (el.classList.contains('ide-sidebar')) break
+        el = el.parentElement
+      }
+      if (!el?.dataset.path) return
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        path: el.dataset.path,
+        type: el.dataset.type === 'folder' ? 'directory' : 'file'
+      })
+    },
+    []
+  )
+
   return (
-    <div className="ide-sidebar" onContextMenu={(e) => e.preventDefault()}>
+    <div className="ide-sidebar" onContextMenu={handleContextMenu}>
       <div className="ide-sidebar__header">
         <span className="ide-sidebar__title">EXPLORER</span>
         <div className="ide-sidebar__actions">

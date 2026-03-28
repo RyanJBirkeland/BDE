@@ -43,6 +43,7 @@ export function FileTreeNode({
   const activeTabId = useIDEStore((s) => s.activeTabId)
   const openTabs = useIDEStore((s) => s.openTabs)
   const [children, setChildren] = useState<DirEntry[]>([])
+  const [loadError, setLoadError] = useState(false)
   const isExpanded = expandedDirs[fullPath] ?? false
   const activeTab = openTabs.find((t) => t.id === activeTabId)
   const isActive = activeTab?.filePath === fullPath
@@ -52,6 +53,7 @@ export function FileTreeNode({
       window.api
         .readDir(fullPath)
         .then((entries) => {
+          setLoadError(false)
           setChildren(
             entries
               .filter((e) => !HIDDEN_DIRS.has(e.name))
@@ -61,7 +63,7 @@ export function FileTreeNode({
               })
           )
         })
-        .catch(() => {})
+        .catch(() => setLoadError(true))
     }
   }, [type, fullPath, isExpanded])
 
@@ -74,6 +76,8 @@ export function FileTreeNode({
         aria-expanded={type === 'directory' ? isExpanded : undefined}
         aria-selected={isActive}
         className={`ide-file-node${isActive ? ' ide-file-node--active' : ''}`}
+        data-type={type === 'directory' ? 'folder' : 'file'}
+        data-path={fullPath}
         style={{ paddingLeft }}
         onClick={() => (type === 'directory' ? toggleDir(fullPath) : onOpenFile(fullPath))}
         title={fullPath}
@@ -102,16 +106,22 @@ export function FileTreeNode({
       </div>
       {type === 'directory' && isExpanded && (
         <div className="ide-file-node__children">
-          {children.map((child) => (
-            <FileTreeNode
-              key={child.name}
-              name={child.name}
-              type={child.type}
-              fullPath={`${fullPath}/${child.name}`}
-              depth={depth + 1}
-              onOpenFile={onOpenFile}
-            />
-          ))}
+          {loadError ? (
+            <div className="ide-file-node__error" style={{ paddingLeft: 8 + (depth + 1) * 16 }}>
+              Failed to read directory
+            </div>
+          ) : (
+            children.map((child) => (
+              <FileTreeNode
+                key={child.name}
+                name={child.name}
+                type={child.type}
+                fullPath={`${fullPath}/${child.name}`}
+                depth={depth + 1}
+                onOpenFile={onOpenFile}
+              />
+            ))
+          )}
         </div>
       )}
     </div>

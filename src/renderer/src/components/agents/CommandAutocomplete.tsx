@@ -75,13 +75,13 @@ export function CommandAutocomplete({
         <div
           key={cmd.name}
           className={`command-autocomplete__item ${
-            index === selectedIndex ? 'command-autocomplete__item--selected' : ''
+            index === selectedIndex ? 'command-autocomplete__item--active' : ''
           }`}
           onClick={() => onSelect(cmd.name)}
           onMouseEnter={() => setSelectedIndex(index)}
         >
           <span className="command-autocomplete__item-command">{cmd.name}</span>
-          <span className="command-autocomplete__item-desc">— {cmd.description}</span>
+          <span className="command-autocomplete__item-description">— {cmd.description}</span>
         </div>
       ))}
     </div>

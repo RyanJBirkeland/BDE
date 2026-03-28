@@ -77,12 +77,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
 
   const commands = useMemo<Command[]>(() => {
     const navCommands: { view: View; label: string; hint: string }[] = [
-      { view: 'agents', label: 'Go to Agents', hint: '\u23181' },
-      { view: 'ide', label: 'Go to IDE', hint: '\u23182' },
-      { view: 'sprint', label: 'Go to Task Pipeline', hint: '\u23183' },
-      { view: 'pr-station', label: 'Go to PR Station', hint: '\u23184' },
-      { view: 'git', label: 'Go to Source Control', hint: '\u23185' },
-      { view: 'settings', label: 'Go to Settings', hint: '\u23186' }
+      { view: 'dashboard', label: 'Go to Dashboard', hint: '\u23181' },
+      { view: 'agents', label: 'Go to Agents', hint: '\u23182' },
+      { view: 'ide', label: 'Go to IDE', hint: '\u23183' },
+      { view: 'sprint', label: 'Go to Task Pipeline', hint: '\u23184' },
+      { view: 'pr-station', label: 'Go to PR Station', hint: '\u23185' },
+      { view: 'git', label: 'Go to Source Control', hint: '\u23186' },
+      { view: 'settings', label: 'Go to Settings', hint: '\u23187' },
+      { view: 'task-workbench', label: 'Go to Task Workbench', hint: '\u23180' }
     ]
 
     const nav: Command[] = navCommands.map((v) => ({
