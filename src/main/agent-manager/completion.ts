@@ -8,6 +8,13 @@ import type { Logger } from './types'
 
 const execFile = promisify(execFileCb)
 
+const PR_CREATE_MAX_ATTEMPTS = 3
+const PR_CREATE_BACKOFF_MS = [3000, 8000]
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export interface ResolveSuccessOpts {
   taskId: string
   worktreePath: string
@@ -146,38 +153,57 @@ async function createNewPr(
 ): Promise<{ prUrl: string | null; prNumber: number | null }> {
   let prUrl: string | null = null
   let prNumber: number | null = null
+  let lastError: unknown = null
 
-  try {
-    const body = await generatePrBody(worktreePath, branch)
-    const { stdout: prOut } = await execFile(
-      'gh',
-      ['pr', 'create', '--title', title, '--body', body, '--head', branch, '--repo', ghRepo],
-      { cwd: worktreePath, env: buildAgentEnv() }
-    )
-    const parsed = parsePrOutput(prOut)
-    prUrl = parsed.prUrl
-    prNumber = parsed.prNumber
-    logger.info(`[completion] created new PR ${prUrl}`)
-  } catch (err) {
-    const errMsg = String(err)
-    // If PR creation failed because one already exists (race condition), try to fetch it
-    if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
+  const body = await generatePrBody(worktreePath, branch)
+
+  for (let attempt = 0; attempt < PR_CREATE_MAX_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+      const delayMs =
+        PR_CREATE_BACKOFF_MS[attempt - 1] ??
+        PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1]
       logger.info(
-        `[completion] PR creation failed because one already exists, fetching existing PR`
+        `[completion] Retrying PR creation for branch ${branch} (attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS}) after ${delayMs}ms`
       )
-      const existing = await checkExistingPr(worktreePath, branch, logger)
-      if (existing) {
-        prUrl = existing.prUrl
-        prNumber = existing.prNumber
-        logger.info(`[completion] found existing PR ${prUrl}`)
-      }
-    } else {
-      logger.warn(`[completion] gh pr create failed: ${err}`)
+      await sleep(delayMs)
     }
-    // User can create PR manually from the pushed branch — do not throw
+
+    try {
+      const { stdout: prOut } = await execFile(
+        'gh',
+        ['pr', 'create', '--title', title, '--body', body, '--head', branch, '--repo', ghRepo],
+        { cwd: worktreePath, env: buildAgentEnv() }
+      )
+      const parsed = parsePrOutput(prOut)
+      prUrl = parsed.prUrl
+      prNumber = parsed.prNumber
+      logger.info(`[completion] created new PR ${prUrl}`)
+      return { prUrl, prNumber }
+    } catch (err) {
+      lastError = err
+      const errMsg = String(err)
+
+      // If PR creation failed because one already exists (race condition), fetch it immediately — no retry needed
+      if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
+        logger.info(
+          `[completion] PR creation failed because one already exists, fetching existing PR`
+        )
+        const existing = await checkExistingPr(worktreePath, branch, logger)
+        if (existing) {
+          return { prUrl: existing.prUrl, prNumber: existing.prNumber }
+        }
+      }
+
+      logger.warn(
+        `[completion] gh pr create attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS} failed: ${err}`
+      )
+    }
   }
 
-  return { prUrl, prNumber }
+  logger.warn(
+    `[completion] PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}: ${lastError}`
+  )
+  return { prUrl: null, prNumber: null }
 }
 
 async function findOrCreatePR(
@@ -322,8 +348,15 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     if (prUrl !== null && prNumber !== null) {
       repo.updateTask(taskId, { pr_status: 'open', pr_url: prUrl, pr_number: prNumber })
     } else {
-      // Push succeeded but PR creation failed — record branch name so user can create PR manually
-      repo.updateTask(taskId, { notes: `Branch ${branch} pushed but PR creation failed` })
+      // Branch pushed but PR creation exhausted retries — mark as branch_only
+      // so the UI shows a "Create PR" link instead of silently orphaning
+      repo.updateTask(taskId, {
+        pr_status: 'branch_only',
+        notes: `Branch ${branch} pushed to ${ghRepo} but PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts`
+      })
+      logger.warn(
+        `[completion] Task ${taskId}: branch ${branch} pushed, PR creation failed — set pr_status=branch_only`
+      )
     }
   } catch (err) {
     logger.error(`[completion] Failed to update task ${taskId} with PR info: ${err}`)
@@ -357,3 +390,5 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
     return false
   }
 }
+
+export { PR_CREATE_MAX_ATTEMPTS }
