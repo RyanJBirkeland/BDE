@@ -241,10 +241,9 @@ describe('IPC handler registration', () => {
         'local:getAgentProcesses',
         'local:spawnClaudeAgent',
         'local:tailAgentLog',
-        'local:sendToAgent',
-        'local:isInteractive',
-        'config:getAgentConfig',
-        'config:saveAgentConfig',
+        'agent:steer',
+        'agent:kill',
+        'agent:history',
         'agents:list',
         'agents:readLog',
         'agents:import'
@@ -267,26 +266,11 @@ describe('IPC handler registration', () => {
       expect(result).toEqual({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true })
     })
 
-    it('"config:getAgentConfig" returns null for binary and permissionMode (now managed by task-runner)', async () => {
-      const result = await invoke('config:getAgentConfig')
-      expect(result).toEqual({ binary: null, permissionMode: null })
-    })
-
     it('"local:tailAgentLog" calls tailAgentLog with args', async () => {
       const args = { logPath: '/tmp/log.txt', fromByte: 0 }
       const result = await invoke('local:tailAgentLog', args)
       expect(agentLogManager.tailAgentLog).toHaveBeenCalledWith(args)
       expect(result).toEqual({ content: 'log data', nextByte: 42 })
-    })
-
-    it('"local:sendToAgent" returns error (PID-based messaging removed)', async () => {
-      const result = await invoke('local:sendToAgent', { pid: 123, message: 'hello' })
-      expect(result).toEqual(expect.objectContaining({ ok: false }))
-    })
-
-    it('"local:isInteractive" always returns false (local agents removed)', async () => {
-      const result = await invoke('local:isInteractive', 999)
-      expect(result).toBe(false)
     })
 
     it('"agents:readLog" calls readLog with (id, fromByte)', async () => {
@@ -424,7 +408,6 @@ describe('IPC handler registration', () => {
   describe('window-handlers', () => {
     it('registers expected channel names', () => {
       expect(handlers.has('window:openExternal')).toBe(true)
-      expect(handlers.has('agent:killLocal')).toBe(true)
       expect(onListeners.has('window:setTitle')).toBe(true)
     })
 
@@ -440,11 +423,6 @@ describe('IPC handler registration', () => {
       await expect(invoke('window:openExternal', 'javascript:alert(1)')).rejects.toThrow(
         'Blocked URL scheme'
       )
-    })
-
-    it('"agent:killLocal" returns error (local PID kill removed)', async () => {
-      const result = await invoke('agent:killLocal', 12345)
-      expect(result).toEqual(expect.objectContaining({ ok: false }))
     })
 
     it('"window:setTitle" sets window title via ipcMain.on listener', () => {

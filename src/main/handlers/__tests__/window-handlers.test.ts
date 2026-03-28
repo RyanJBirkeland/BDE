@@ -27,12 +27,11 @@ describe('Window handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers 2 safeHandle channels and 1 ipcMain.on listener', () => {
+  it('registers 1 safeHandle channel and 1 ipcMain.on listener', () => {
     registerWindowHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(2)
+    expect(safeHandle).toHaveBeenCalledTimes(1)
     expect(safeHandle).toHaveBeenCalledWith('window:openExternal', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('agent:killLocal', expect.any(Function))
     expect(ipcMain.on).toHaveBeenCalledWith('window:setTitle', expect.any(Function))
   })
 
@@ -94,17 +93,5 @@ describe('Window handlers', () => {
       })
     })
 
-    describe('agent:killLocal', () => {
-      it('returns ok:false with deprecation error message', async () => {
-        const handlers = captureHandlers()
-
-        const result = await handlers['agent:killLocal'](mockEvent, 12345)
-
-        expect(result).toEqual({
-          ok: false,
-          error: 'Local PID-based agent kill removed. Use agent:kill with an agent ID instead.'
-        })
-      })
-    })
   })
 })
