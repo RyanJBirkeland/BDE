@@ -5,6 +5,7 @@ import { toast } from '../../stores/toasts'
 import { FileTree } from './FileTree'
 import { FileContextMenu, ContextMenuTarget } from './FileContextMenu'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
+import { PromptModal, usePrompt } from '../ui/PromptModal'
 
 export interface FileSidebarProps {
   onOpenFile: (filePath: string) => void
@@ -16,6 +17,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   const toggleSidebar = useIDEStore((s) => s.toggleSidebar)
   const [contextMenu, setContextMenu] = useState<ContextMenuTarget | null>(null)
   const { confirm, confirmProps } = useConfirm()
+  const { prompt, promptProps } = usePrompt()
 
   async function handleOpenFolder(): Promise<void> {
     const dir = await window.api.openDirectoryDialog()
@@ -26,7 +28,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   }
 
   async function handleNewFile(parentPath: string): Promise<void> {
-    const name = window.prompt('New file name:')
+    const name = await prompt({ message: 'New file name:', placeholder: 'filename.txt' })
     if (!name) return
     try {
       await window.api.createFile(`${parentPath}/${name}`)
@@ -36,7 +38,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   }
 
   async function handleNewFolder(parentPath: string): Promise<void> {
-    const name = window.prompt('New folder name:')
+    const name = await prompt({ message: 'New folder name:', placeholder: 'folder' })
     if (!name) return
     try {
       await window.api.createDir(`${parentPath}/${name}`)
@@ -48,7 +50,11 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   async function handleRename(path: string): Promise<void> {
     const parts = path.split('/')
     const oldName = parts[parts.length - 1]
-    const newName = window.prompt('Rename to:', oldName)
+    const newName = await prompt({
+      message: 'Rename to:',
+      defaultValue: oldName,
+      placeholder: oldName
+    })
     if (!newName || newName === oldName) return
     try {
       await window.api.rename(path, [...parts.slice(0, -1), newName].join('/'))
@@ -145,6 +151,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
         />
       )}
       <ConfirmModal {...confirmProps} />
+      <PromptModal {...promptProps} />
     </div>
   )
 }
