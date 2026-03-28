@@ -58,7 +58,11 @@ export function validateTaskCreation(
     const { shouldBlock, blockedBy } = checkTaskDependencies(
       'new-task',
       dependsOn,
-      opts.logger,
+      {
+        warn: opts.logger.warn,
+        info: (..._args: unknown[]) => {},
+        error: (..._args: unknown[]) => {}
+      },
       listTasks
     )
     if (shouldBlock) {

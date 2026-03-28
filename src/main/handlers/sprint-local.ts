@@ -2,7 +2,7 @@ import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
 import { readFile } from 'fs/promises'
 import { createLogger } from '../logger'
-import type { SprintTask, TaskTemplate, ClaimedTask } from '../../shared/types'
+import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import { validateStructural } from '../../shared/spec-validation'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
@@ -82,7 +82,10 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
-    const validation = validateTaskCreation(task, { logger, listTasks: _listTasks })
+    const validation = validateTaskCreation(task, {
+      logger: { warn: (...args: unknown[]) => logger.warn(String(args[0])) },
+      listTasks: _listTasks
+    })
     if (!validation.valid) {
       throw new Error(`Spec quality checks failed: ${validation.errors.join('; ')}`)
     }

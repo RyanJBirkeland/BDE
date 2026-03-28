@@ -66,6 +66,12 @@ export function renderAgentMarkdown(text: string): React.ReactNode {
       continue
     }
 
+    // Empty line = paragraph break (render spacer with margin)
+    if (line.trim() === '') {
+      elements.push(<div key={`br-${i}`} className="console-md-paragraph-break" />)
+      continue
+    }
+
     // Regular line with inline markdown
     if (i > 0) {
       elements.push('\n')

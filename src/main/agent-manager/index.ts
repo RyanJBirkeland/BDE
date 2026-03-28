@@ -20,7 +20,7 @@ import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex } from './dependency-index'
 import { formatBlockedNote } from './dependency-helpers'
 import { resolveDependents } from './resolve-dependents'
-import { runAgent as _runAgent, type RunAgentDeps } from './run-agent'
+import { runAgent as _runAgent, type RunAgentDeps, type RunAgentTask } from './run-agent'
 import { setSprintQueriesLogger } from '../data/sprint-queries'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoPaths } from '../paths'
@@ -287,10 +287,6 @@ export class AgentManagerImpl implements AgentManager {
     }
   }
 
-  private isActive(taskId: string): boolean {
-    return this._activeAgents.has(taskId)
-  }
-
   private resolveRepoPath(repoSlug: string): string | null {
     const repoPaths = getRepoPaths()
     return repoPaths[repoSlug.toLowerCase()] ?? null
@@ -357,7 +353,7 @@ export class AgentManagerImpl implements AgentManager {
    * Fire-and-forget agent spawn — errors logged inside runAgent.
    */
   _spawnAgent(
-    task: { id: string; [key: string]: unknown },
+    task: RunAgentTask,
     wt: { worktreePath: string; branch: string },
     repoPath: string
   ): void {

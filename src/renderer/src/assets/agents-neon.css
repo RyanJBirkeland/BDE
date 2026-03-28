@@ -560,7 +560,8 @@
   color: var(--neon-text);
   font-size: 13px;
   display: block;
-  margin-top: 4px;
+  margin-top: 8px;
+  margin-bottom: 2px;
 }
 
 /* ── Tool-Specific Icons ── */
@@ -661,6 +662,11 @@
 .console-line__content--grouped {
   border-left: 2px solid var(--neon-cyan-border);
   padding-left: 8px;
+}
+
+/* ── Paragraph Break Spacer ── */
+.console-md-paragraph-break {
+  height: 8px;
 }
 
 /* ── Console Badge ── */
