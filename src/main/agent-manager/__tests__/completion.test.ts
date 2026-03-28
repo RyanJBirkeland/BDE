@@ -24,7 +24,7 @@ vi.mock('../../data/sprint-queries', () => ({
 import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'
-import { resolveSuccess, resolveFailure } from '../completion'
+import { resolveSuccess, resolveFailure, PR_CREATE_MAX_ATTEMPTS } from '../completion'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { MAX_RETRIES } from '../types'
 
@@ -178,7 +178,7 @@ describe('resolveSuccess', () => {
     })
   })
 
-  it('recovers PR info from "already exists" error in gh pr create catch block', async () => {
+  it('recovers PR info from "already exists" error without retrying (short-circuit)', async () => {
     // Use implementation-based mock to track calls by command
     let callIndex = 0
     const responses = [
@@ -201,7 +201,7 @@ describe('resolveSuccess', () => {
 
     await resolveSuccess(opts, noopLogger)
 
-    // Verify total call count matches our expectations
+    // Verify total call count: 9 calls, no extra retry attempts (short-circuits on "already exists")
     expect(callIndex).toBe(9)
 
     // Should recover and set PR info from the retry fetch
@@ -212,29 +212,72 @@ describe('resolveSuccess', () => {
     })
   })
 
-  it('pushes branch and records notes when gh pr create fails (does not set pr_status=open)', async () => {
-    mockExecFileSequence([
+  it('sets pr_status=branch_only when gh pr create fails after retries', async () => {
+    vi.useFakeTimers()
+    let callIndex = 0
+    const responses: Array<{ stdout?: string; error?: Error }> = [
       { stdout: 'agent/add-login-page\n' }, // git rev-parse
-      { stdout: '' }, // git status --porcelain
-      { stdout: '1\n' }, // git rev-list --count
-      { stdout: '' }, // git push
-      { stdout: '' }, // gh pr list (no existing PR)
-      { stdout: '' }, // git log (generatePrBody)
-      { stdout: '' }, // git diff --stat (generatePrBody)
-      { error: new Error('gh: authentication error') } // gh pr create fails
-    ])
+      { stdout: '' },                        // git status --porcelain
+      { stdout: '1\n' },                     // git rev-list --count
+      { stdout: '' },                        // git push
+      { stdout: '' },                        // gh pr list (no existing PR)
+      { stdout: '' },                        // git log (generatePrBody)
+      { stdout: '' },                        // git diff --stat (generatePrBody)
+      { error: new Error('gh: authentication error') }, // attempt 1
+      { error: new Error('gh: authentication error') }, // attempt 2
+      { error: new Error('gh: authentication error') }, // attempt 3
+    ]
+    getCustomMock().mockImplementation((..._args: unknown[]) => {
+      const resp = responses[callIndex] ?? { stdout: '' }
+      callIndex++
+      if (resp.error) return Promise.reject(resp.error)
+      return Promise.resolve({ stdout: resp.stdout ?? '', stderr: '' })
+    })
 
-    // Should not throw — user can create PR manually
-    await resolveSuccess(opts, noopLogger)
+    const promise = resolveSuccess(opts, noopLogger)
+    await vi.advanceTimersByTimeAsync(3000) // first retry backoff
+    await vi.advanceTimersByTimeAsync(8000) // second retry backoff
+    await promise
 
-    // Should NOT set pr_status=open when PR creation failed
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
-    expect(patch.pr_status).toBeUndefined()
-    expect(patch.pr_url).toBeUndefined()
-    expect(patch.pr_number).toBeUndefined()
+    expect(patch.pr_status).toBe('branch_only')
+    expect(patch.notes).toContain('Branch agent/add-login-page pushed to owner/repo but PR creation failed')
 
-    // Should record branch name in notes so user can create PR manually
-    expect(patch.notes).toBe('Branch agent/add-login-page pushed but PR creation failed')
+    vi.useRealTimers()
+  })
+
+  it('retries PR creation and succeeds on second attempt', async () => {
+    vi.useFakeTimers()
+    let callIndex = 0
+    const responses: Array<{ stdout?: string; error?: Error }> = [
+      { stdout: 'agent/add-login-page\n' }, // git rev-parse
+      { stdout: '' },                        // git status --porcelain
+      { stdout: '1\n' },                     // git rev-list --count
+      { stdout: '' },                        // git push
+      { stdout: '' },                        // gh pr list (no existing PR)
+      { stdout: '' },                        // git log (generatePrBody)
+      { stdout: '' },                        // git diff --stat (generatePrBody)
+      { error: new Error('gh: rate limit') }, // attempt 1 fails
+      { stdout: 'https://github.com/owner/repo/pull/50\n' }, // attempt 2 succeeds
+    ]
+    getCustomMock().mockImplementation((..._args: unknown[]) => {
+      const resp = responses[callIndex] ?? { stdout: '' }
+      callIndex++
+      if (resp.error) return Promise.reject(resp.error)
+      return Promise.resolve({ stdout: resp.stdout ?? '', stderr: '' })
+    })
+
+    const promise = resolveSuccess(opts, noopLogger)
+    await vi.advanceTimersByTimeAsync(3000) // first retry backoff
+    await promise
+
+    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
+      pr_status: 'open',
+      pr_url: 'https://github.com/owner/repo/pull/50',
+      pr_number: 50
+    })
+
+    vi.useRealTimers()
   })
 
   it('sets task to error and calls onTaskTerminal when branch detection fails', async () => {
