@@ -172,7 +172,7 @@ describe('WorkbenchForm', () => {
   })
 
   it('calls createTask on save to backlog', async () => {
-    const mockCreate = vi.fn().mockResolvedValue(undefined)
+    const mockCreate = vi.fn().mockResolvedValue('new-task-id')
     useSprintTasks.setState({ createTask: mockCreate, tasks: [] })
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE', spec: 'Some spec' })
 
@@ -268,12 +268,12 @@ describe('WorkbenchForm', () => {
   })
 
   it('handleConfirmedQueue creates and queues task in create mode', async () => {
-    const mockCreate = vi.fn().mockResolvedValue(undefined)
+    const mockCreate = vi.fn().mockResolvedValue('new-1')
     const mockUpdate = vi.fn().mockResolvedValue(undefined)
     useSprintTasks.setState({
       createTask: mockCreate,
       updateTask: mockUpdate,
-      tasks: [{ id: 'new-1', title: 'Test task', status: 'backlog' }] as any
+      tasks: []
     })
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
 
@@ -297,6 +297,7 @@ describe('WorkbenchForm', () => {
 
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalled()
+      expect(mockUpdate).toHaveBeenCalledWith('new-1', expect.objectContaining({ status: 'queued' }))
     })
   })
 
@@ -335,7 +336,7 @@ describe('WorkbenchForm', () => {
   })
 
   it('includes dependsOn when non-empty', async () => {
-    const mockCreate = vi.fn().mockResolvedValue(undefined)
+    const mockCreate = vi.fn().mockResolvedValue('new-task-id')
     useSprintTasks.setState({ createTask: mockCreate, tasks: [] })
     useTaskWorkbenchStore.setState({
       title: 'With deps',

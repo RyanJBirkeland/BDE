@@ -49,7 +49,7 @@ interface SprintTasksState {
   loadData: () => Promise<void>
   updateTask: (taskId: string, patch: Partial<SprintTask>) => Promise<void>
   deleteTask: (taskId: string) => Promise<void>
-  createTask: (data: CreateTicketInput) => Promise<void>
+  createTask: (data: CreateTicketInput) => Promise<string | null>
   launchTask: (task: SprintTask) => Promise<void>
   mergeSseUpdate: (update: { taskId: string; [key: string]: unknown }) => void
   setPrMergedMap: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void
@@ -177,7 +177,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     }
   },
 
-  createTask: async (data): Promise<void> => {
+  createTask: async (data): Promise<string | null> => {
     const repoEnum = data.repo.toLowerCase()
     const optimistic: SprintTask = {
       id: `temp-${Date.now()}`,
@@ -263,14 +263,18 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
               useSprintUI.getState().removeGeneratingId(result.id)
             })
         }
+        toast.success('Ticket created — saved to Backlog')
+        return result.id
       }
       toast.success('Ticket created — saved to Backlog')
+      return null
     } catch (e) {
       set((s) => ({
         tasks: s.tasks.filter((t) => t.id !== optimistic.id),
         pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id)
       }))
       toast.error(e instanceof Error ? e.message : 'Failed to create task')
+      return null
     }
   },
 
