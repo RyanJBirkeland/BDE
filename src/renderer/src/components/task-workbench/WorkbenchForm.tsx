@@ -312,7 +312,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   }, [submitting, handleSubmit])
 
   return (
-    <div className="wb-form">
+    <div className="wb-form" aria-label="Task creation form">
       <div className="wb-form__heading">
         {mode === 'edit' ? `Edit: ${title || 'Untitled'}` : 'New Task'}
       </div>
@@ -327,6 +327,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
             onChange={(e) => setField('title', e.target.value)}
             placeholder='e.g. "Add recipe search to Feast onboarding"'
             className="wb-form__input"
+            aria-label="Task title"
           />
         </div>
         <div className="wb-form__field">
@@ -335,6 +336,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
             value={repo}
             onChange={(e) => setField('repo', e.target.value)}
             className="wb-form__select"
+            aria-label="Repository"
           >
             {REPO_OPTIONS.map((r) => (
               <option key={r.label} value={r.label}>
@@ -361,6 +363,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
                   value={priority}
                   onChange={(e) => setField('priority', Number(e.target.value))}
                   className="wb-form__select"
+                  aria-label="Task priority"
                 >
                   {PRIORITY_OPTIONS.map((p) => (
                     <option key={p.value} value={p.value}>

@@ -32,6 +32,7 @@ export function WorkbenchActions({
         onClick={onSaveBacklog}
         disabled={!canSave || submitting}
         className="wb-actions__btn wb-actions__btn--secondary"
+        aria-label="Save task to backlog"
       >
         Save to Backlog
       </button>
@@ -39,6 +40,7 @@ export function WorkbenchActions({
         onClick={onQueueNow}
         disabled={!canQueue || submitting}
         className="wb-actions__btn wb-actions__btn--primary"
+        aria-label="Add task to queue"
       >
         {submitting ? 'Creating...' : 'Queue Now'}
       </button>
@@ -46,6 +48,7 @@ export function WorkbenchActions({
         onClick={onLaunch}
         disabled={!canLaunch || submitting}
         className="wb-actions__btn wb-actions__btn--launch"
+        aria-label="Launch task immediately"
       >
         {submitting ? 'Launching...' : 'Launch'}
       </button>

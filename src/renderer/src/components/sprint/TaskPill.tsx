@@ -60,6 +60,15 @@ export function TaskPill({ task, selected, onClick }: TaskPillProps) {
       layoutId={task.id}
       className={classes}
       onClick={() => onClick(task.id)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Task: ${task.title}, status: ${task.status}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick(task.id)
+        }
+      }}
       transition={SPRINGS.default}
       data-testid="task-pill"
     >

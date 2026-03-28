@@ -165,13 +165,13 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps) {
       {/* Header */}
       <div className="wb-copilot__header">
         <span className="wb-copilot__title">AI Copilot</span>
-        <button onClick={onClose} className="wb-copilot__close" title="Close copilot">
+        <button onClick={onClose} className="wb-copilot__close" title="Close copilot" aria-label="Close AI Copilot">
           ×
         </button>
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="wb-copilot__messages">
+      <div ref={scrollRef} className="wb-copilot__messages" aria-live="polite">
         {messages.map((msg) => (
           <MessageBubble
             key={msg.id}

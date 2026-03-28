@@ -66,8 +66,8 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
 
   return (
     <div className="review-dialog-backdrop" onClick={onClose}>
-      <div className="review-dialog" onClick={(e) => e.stopPropagation()}>
-        <h3 className="review-dialog__title">Submit Review</h3>
+      <div className="review-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="review-dialog-title">
+        <h3 className="review-dialog__title" id="review-dialog-title">Submit Review</h3>
 
         <textarea
           className="review-dialog__body"

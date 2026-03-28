@@ -23,7 +23,7 @@ export function ReadinessChecks() {
 
   return (
     <div className={`wb-checks${hasFailures ? ' wb-checks--has-fail' : ''}`}>
-      <button onClick={toggleExpanded} className="wb-checks__summary">
+      <button onClick={toggleExpanded} className="wb-checks__summary" aria-expanded={expanded} aria-label="Toggle readiness checks">
         <span>{expanded ? '\u25be' : '\u25b8'}</span>
         <span className="wb-checks__icons">
           {allChecks.map((c) => (

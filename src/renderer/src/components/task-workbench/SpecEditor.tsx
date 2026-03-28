@@ -60,6 +60,7 @@ export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }:
           onClick={onRequestGenerate}
           disabled={generating}
           className="wb-spec__btn wb-spec__btn--primary"
+          aria-label="Generate spec automatically"
         >
           {generating ? 'Generating...' : 'Generate Spec'}
         </button>
@@ -71,6 +72,7 @@ export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }:
               setSpecType(tmpl.specType)
             }}
             className="wb-spec__btn"
+            aria-label={`Insert ${tmpl.label} template`}
           >
             {tmpl.label}
           </button>
@@ -78,6 +80,7 @@ export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }:
         <button
           onClick={onRequestResearch}
           className="wb-spec__btn wb-spec__btn--research"
+          aria-label="Ask AI to research codebase"
         >
           Research Codebase
         </button>
@@ -88,6 +91,7 @@ export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }:
         onKeyDown={handleKeyDown}
         placeholder="Describe what the agent should do. The more specific, the better the results."
         className="wb-spec__textarea"
+        aria-label="Task specification"
       />
     </div>
   )
