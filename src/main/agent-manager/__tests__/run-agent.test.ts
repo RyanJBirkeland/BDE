@@ -295,7 +295,7 @@ describe('runAgent — fast-fail paths', () => {
       'task-1',
       expect.objectContaining({
         status: 'error',
-        notes: 'Fast-fail exhausted',
+        notes: 'Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to \'queued\' and clear claimed_by.',
         needs_review: true,
         claimed_by: null
       })
