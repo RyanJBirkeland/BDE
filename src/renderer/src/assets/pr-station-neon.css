@@ -1,7 +1,17 @@
-/* PR Station — Neon Design Token Overrides */
-/* Pure color/surface token swap — all layouts preserved */
+/* ────────────────────────────────────────────────────────
+   PR Station - Neon Design Token Migration
 
-/* ── PR Station: View header ───────────────────────────── */
+   This file overrides color/surface tokens in pr-station.css,
+   migrating from BDE tokens to neon tokens.
+
+   SCOPE: PR Station only (.pr-station*, .pr-detail*,
+   .pr-actions*, .pr-review*, .pr-conversation*, etc.)
+
+   Dynamic inline colors (REPO_COLORS, label.color) are
+   preserved in components — not overridden here.
+──────────────────────────────────────────────────────── */
+
+/* ── PR Station: View Header ───────────────────────────── */
 
 .pr-station__view-header {
   border-bottom: 1px solid var(--neon-cyan-border);
@@ -12,9 +22,11 @@
 }
 
 .pr-station__view-title {
-  /* Neon enhancement: subtle cyan glow on section headers */
+  color: var(--neon-text);
   text-shadow: 0 0 8px var(--neon-cyan);
 }
+
+/* ── PR Station: Panels ────────────────────────────────── */
 
 .pr-station__list-panel {
   border-right: 1px solid var(--neon-cyan-border);
@@ -24,6 +36,8 @@
   border-bottom: 1px solid var(--neon-cyan-border);
   background: var(--neon-bg);
 }
+
+/* ── PR Station: Tabs ──────────────────────────────────── */
 
 .pr-station__tab {
   color: var(--neon-text-muted);
@@ -35,9 +49,10 @@
 
 .pr-station__tab--active {
   color: var(--neon-cyan);
-  /* Neon enhancement: active tab with cyan border and color */
   border-bottom-color: var(--neon-cyan);
 }
+
+/* ── PR Station: Empty State ───────────────────────────── */
 
 .pr-station__empty-detail {
   color: var(--neon-text-dim);
@@ -47,7 +62,7 @@
   color: var(--neon-text);
 }
 
-/* PR Station list */
+/* ── PR Station List ───────────────────────────────────── */
 
 .pr-station-list__header {
   border-bottom: 1px solid var(--neon-cyan-border);
@@ -57,16 +72,14 @@
   color: var(--neon-text);
 }
 
-/* Individual PR row */
+/* ── PR Station List Row ───────────────────────────────── */
 
 .pr-station-list__row:hover {
-  /* Neon enhancement: hover rows use cyan surface instead of flat surface */
   background: var(--neon-cyan-surface);
 }
 
 .pr-station-list__row--selected {
   background: var(--neon-cyan-surface);
-  /* Neon enhancement: selected row with cyan border + subtle glow */
   border-left-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
 }
@@ -100,7 +113,7 @@
   color: var(--neon-text-dim);
 }
 
-/* CI status badges */
+/* ── CI Status Badges ──────────────────────────────────── */
 
 .pr-station__ci--pass {
   color: var(--neon-cyan);
@@ -118,7 +131,7 @@
   color: var(--neon-text-dim);
 }
 
-/* PR Actions */
+/* ── PR Actions ────────────────────────────────────────── */
 
 .pr-actions__confirm-text {
   color: var(--neon-text);
@@ -131,7 +144,7 @@
 }
 
 .pr-actions__dropdown {
-  background: var(--neon-surface-subtle);
+  background: var(--neon-surface-deep);
   border: 1px solid var(--neon-cyan-border);
   box-shadow: var(--neon-glass-shadow);
 }
@@ -153,13 +166,13 @@
   background: var(--neon-purple-surface);
 }
 
-/* ── PR Detail panel ── */
+/* ── PR Detail Panel ───────────────────────────────────── */
 
 .pr-detail--error {
   color: var(--neon-text-dim);
 }
 
-/* Header */
+/* ── PR Detail: Header ─────────────────────────────────── */
 
 .pr-detail__header {
   border-bottom: 1px solid var(--neon-cyan-border);
@@ -194,6 +207,12 @@
   color: var(--neon-text-dim);
 }
 
+/* Keep label colors dynamic (from GitHub API) */
+
+.pr-detail__stats {
+  color: var(--neon-text);
+}
+
 .pr-detail__stat--add {
   color: var(--neon-cyan);
 }
@@ -202,7 +221,7 @@
   color: var(--neon-red);
 }
 
-/* Sections */
+/* ── PR Detail: Sections ───────────────────────────────── */
 
 .pr-detail__section-title {
   color: var(--neon-text);
@@ -212,7 +231,7 @@
   color: var(--neon-text-dim);
 }
 
-/* PR Body / markdown */
+/* ── PR Detail: Body / Markdown ────────────────────────── */
 
 .pr-detail__body {
   color: var(--neon-text);
@@ -226,14 +245,14 @@
 }
 
 .pr-detail__body code {
-  background: var(--neon-surface-subtle);
+  background: var(--neon-surface-deep);
 }
 
 .pr-detail__body strong {
   color: var(--neon-text);
 }
 
-/* CI Checks */
+/* ── PR Detail: CI Checks ──────────────────────────────── */
 
 .pr-detail__check {
   color: var(--neon-text);
@@ -264,7 +283,7 @@
   color: var(--neon-text);
 }
 
-/* Changed Files */
+/* ── PR Detail: Changed Files ──────────────────────────── */
 
 .pr-detail__file {
   background: var(--neon-cyan-surface);
@@ -309,7 +328,7 @@
   color: var(--neon-red);
 }
 
-/* -- Conflict Banner -- */
+/* ── Conflict Banner ───────────────────────────────────── */
 
 .pr-conflict-banner {
   background: var(--neon-orange-surface);
@@ -329,7 +348,7 @@
   background: var(--neon-cyan-surface);
 }
 
-/* -- Reviews -- */
+/* ── Reviews ───────────────────────────────────────────── */
 
 .pr-review {
   background: var(--neon-cyan-surface);
@@ -355,12 +374,12 @@
 
 .pr-review__badge--commented {
   color: var(--neon-text-muted);
-  background: var(--neon-surface-subtle);
+  background: var(--neon-surface-deep);
 }
 
 .pr-review__badge--dismissed {
   color: var(--neon-text-dim);
-  background: var(--neon-surface-subtle);
+  background: var(--neon-surface-deep);
 }
 
 .pr-review__body {
@@ -368,10 +387,10 @@
 }
 
 .pr-review__body code {
-  background: var(--neon-surface-subtle);
+  background: var(--neon-surface-deep);
 }
 
-/* -- Conversation -- */
+/* ── Conversation ──────────────────────────────────────── */
 
 .pr-conversation__comment {
   background: var(--neon-cyan-surface);
@@ -390,7 +409,7 @@
 }
 
 .pr-conversation__body code {
-  background: var(--neon-surface-subtle);
+  background: var(--neon-surface-deep);
 }
 
 .pr-conversation__thread {
@@ -398,7 +417,7 @@
 }
 
 .pr-conversation__thread-file {
-  background: var(--neon-surface-subtle);
+  background: var(--neon-surface-deep);
   color: var(--neon-text-muted);
   border-bottom: 1px solid var(--neon-cyan-border);
 }
@@ -411,7 +430,7 @@
   border-top: 1px solid var(--neon-cyan-border);
 }
 
-/* -- Review Banner -- */
+/* ── Review Banner ─────────────────────────────────────── */
 
 .pr-review-banner {
   background: var(--neon-cyan-surface);
@@ -423,18 +442,16 @@
   color: var(--neon-cyan);
 }
 
-/* -- Review Submit Dialog -- */
+/* ── Review Submit Dialog ──────────────────────────────── */
 
 .review-dialog-backdrop {
-  background: rgba(10, 0, 21, 0.7);
-  /* Neon enhancement: glass blur on backdrop */
+  background: var(--neon-overlay);
   backdrop-filter: var(--neon-glass-blur);
 }
 
 .review-dialog {
   background: var(--neon-bg);
   border: 1px solid var(--neon-cyan-border);
-  /* Neon enhancement: purple glow on dialog */
   box-shadow: var(--neon-purple-glow);
 }
 
@@ -453,7 +470,7 @@
 }
 
 .review-dialog__event:hover {
-  background: var(--neon-surface-dim);
+  background: var(--neon-cyan-surface);
 }
 
 .review-dialog__event input[type="radio"] {
@@ -471,4 +488,12 @@
 .review-dialog__pending-count {
   color: var(--neon-text-muted);
   background: var(--neon-cyan-surface);
+}
+
+/* ── Skeleton Loaders ──────────────────────────────────── */
+
+.pr-detail__skeleton-header,
+.pr-detail__skeleton-body {
+  /* Pulse animation looks correct against neon void background */
+  /* Uses .skeleton class from design-system.css */
 }

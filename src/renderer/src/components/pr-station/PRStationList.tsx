@@ -136,7 +136,7 @@ export function PRStationList({
                   <div className="pr-station-list__row-top">
                     <span
                       className="pr-station-list__repo-badge"
-                      style={{ background: REPO_COLOR[pr.repo] ?? 'var(--bde-text-dim)' }}
+                      style={{ background: REPO_COLOR[pr.repo] ?? 'var(--neon-text-dim)' }}
                     >
                       {pr.repo}
                     </span>
