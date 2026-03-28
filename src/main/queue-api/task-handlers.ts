@@ -29,10 +29,10 @@ import {
 } from '../../shared/queue-api-contract'
 import { toCamelCase, toSnakeCase } from './field-mapper'
 import { detectCycle } from '../agent-manager/dependency-index'
-import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
 import type { TaskDependency } from '../../shared/types'
 import { validateStructural } from '../../shared/spec-validation'
 import { checkSpecSemantic } from '../spec-semantic-check'
+import { validateTaskCreation } from '../services/task-validation'
 
 let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
 
@@ -156,21 +156,19 @@ export async function handleCreateTask(
     return
   }
 
-  // Structural spec validation
+  // Shared structural validation + dependency auto-blocking
   const bodyObj = body as Record<string, unknown>
   const { spec } = bodyObj
-  const structural = validateStructural({
-    title: title as string,
-    repo: repo as string,
-    spec: typeof spec === 'string' ? spec : null,
-    status: typeof bodyObj.status === 'string' ? bodyObj.status : 'backlog'
-  })
-  if (!structural.valid) {
-    sendJson(res, 400, { error: 'Spec quality checks failed', details: structural.errors })
+  const validation = validateTaskCreation(
+    body as Parameters<typeof createTask>[0],
+    { logger: console }
+  )
+  if (!validation.valid) {
+    sendJson(res, 400, { error: 'Spec quality checks failed', details: validation.errors })
     return
   }
 
-  // If creating with status=queued, also run semantic checks
+  // Queue API-specific: semantic checks when creating with status=queued
   if (bodyObj.status === 'queued' && typeof spec === 'string') {
     const url = new URL(req.url ?? '', 'http://localhost')
     const skipValidation = url.searchParams.get('skipValidation') === 'true'
@@ -190,7 +188,7 @@ export async function handleCreateTask(
     }
   }
 
-  // Validate depends_on if provided
+  // Queue API-specific: validate depends_on shape
   if (depends_on !== null && depends_on !== undefined) {
     if (!Array.isArray(depends_on)) {
       sendJson(res, 400, { error: 'depends_on must be an array or null' })
@@ -214,10 +212,8 @@ export async function handleCreateTask(
     }
   }
 
-  // Validate dependencies for cycles and non-existent IDs BEFORE creating the task
-  // (eliminates the need for rollback if validation fails)
-  const createInput = body as Record<string, unknown>
-  const dependsOn = createInput.depends_on as
+  // Queue API-specific: validate dependencies for cycles and non-existent IDs
+  const dependsOn = (body as Record<string, unknown>).depends_on as
     | Array<{ id: string; type: 'hard' | 'soft' }>
     | undefined
   const PENDING_TASK_ID = 'pending-new-task'
@@ -232,27 +228,8 @@ export async function handleCreateTask(
     }
   }
 
-  // Auto-block tasks with unsatisfied hard dependencies before creation
-  // (matches sprint:create IPC behavior — check deps, set status=blocked if needed)
-  if (
-    dependsOn &&
-    dependsOn.length > 0 &&
-    (createInput.status === 'queued' || !createInput.status)
-  ) {
-    const { shouldBlock, blockedBy } = checkTaskDependencies(
-      PENDING_TASK_ID,
-      dependsOn,
-      console,
-      listTasks
-    )
-    if (shouldBlock) {
-      createInput.status = 'blocked'
-      createInput.notes = buildBlockedNotes(blockedBy, createInput.notes as string | null)
-    }
-  }
-
-  // Create the task (with potentially auto-blocked status)
-  const task = createTask(createInput as unknown as Parameters<typeof createTask>[0])
+  // Create the task (with potentially auto-blocked status from shared validation)
+  const task = createTask(validation.task as unknown as Parameters<typeof createTask>[0])
   if (!task) {
     sendJson(res, 500, { error: 'Failed to create task' })
     return

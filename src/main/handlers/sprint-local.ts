@@ -15,6 +15,7 @@ import {
   type GeneratePromptRequest,
   type GeneratePromptResponse
 } from './sprint-spec'
+import { validateTaskCreation } from '../services/task-validation'
 import {
   getTask as _getTask,
   listTasks as _listTasks,
@@ -81,38 +82,11 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
-    // Structural validation — relaxed for backlog (only title + repo required)
-    const structural = validateStructural({
-      title: task.title,
-      repo: task.repo,
-      spec: task.spec ?? null,
-      status: task.status ?? 'backlog'
-    })
-    if (!structural.valid) {
-      throw new Error(`Spec quality checks failed: ${structural.errors.join('; ')}`)
+    const validation = validateTaskCreation(task, { logger, listTasks: _listTasks })
+    if (!validation.valid) {
+      throw new Error(`Spec quality checks failed: ${validation.errors.join('; ')}`)
     }
-
-    // Check if task has dependencies and should be auto-blocked
-    if (
-      task.depends_on &&
-      task.depends_on.length > 0 &&
-      (task.status === 'queued' || !task.status)
-    ) {
-      const { shouldBlock, blockedBy } = checkTaskDependencies(
-        'new-task',
-        task.depends_on,
-        logger,
-        _listTasks
-      )
-      if (shouldBlock) {
-        task = {
-          ...task,
-          status: 'blocked',
-          notes: buildBlockedNotes(blockedBy, task.notes as string | null)
-        }
-      }
-    }
-    const row = _createTask(task)
+    const row = _createTask(validation.task)
     if (!row) throw new Error('Failed to create task')
     notifySprintMutation('created', row)
     return row
