@@ -49,6 +49,42 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
   const setSemanticChecks = useTaskWorkbenchStore((s) => s.setSemanticChecks)
   const setOperationalChecks = useTaskWorkbenchStore((s) => s.setOperationalChecks)
 
+  // Shared helper to create or update a task with the given status
+  const createOrUpdateTask = useCallback(
+    async (targetStatus: 'backlog' | 'queued') => {
+      const specType = useTaskWorkbenchStore.getState().specType
+      if (mode === 'edit' && taskId) {
+        await updateTask(taskId, {
+          title,
+          repo,
+          priority,
+          spec,
+          depends_on: dependsOn.length > 0 ? dependsOn : null,
+          playground_enabled: playgroundEnabled || undefined,
+          status: targetStatus,
+          spec_type: specType ?? undefined
+        })
+      } else {
+        const input: CreateTicketInput = {
+          title,
+          repo,
+          prompt: title,
+          spec,
+          priority,
+          depends_on: dependsOn.length > 0 ? dependsOn : undefined,
+          playground_enabled: playgroundEnabled || undefined,
+          spec_type: specType ?? undefined
+        }
+        const createdId = await createTask(input)
+        // createTask hardcodes status=backlog. If queuing, promote to queued.
+        if (targetStatus === 'queued' && createdId) {
+          await updateTask(createdId, { status: 'queued' })
+        }
+      }
+    },
+    [mode, taskId, title, repo, priority, spec, dependsOn, playgroundEnabled, createTask, updateTask]
+  )
+
   // Debounced semantic checks (Tier 2) — runs 2s after spec stops changing
   useEffect(() => {
     if (!spec.trim() || spec.length < 50) return
@@ -171,108 +207,26 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps) {
         }
 
         // Proceed with create/update
-        const specType = useTaskWorkbenchStore.getState().specType
-        if (mode === 'edit' && taskId) {
-          await updateTask(taskId, {
-            title,
-            repo,
-            priority,
-            spec,
-            depends_on: dependsOn.length > 0 ? dependsOn : null,
-            playground_enabled: playgroundEnabled || undefined,
-            status: action === 'queue' ? 'queued' : 'backlog',
-            spec_type: specType ?? undefined
-          })
-        } else {
-          const input: CreateTicketInput = {
-            title,
-            repo,
-            prompt: title,
-            spec,
-            priority,
-            depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-            playground_enabled: playgroundEnabled || undefined,
-            spec_type: specType ?? undefined
-          }
-          await createTask(input)
-          // createTask hardcodes status=backlog. If queuing, find and update.
-          if (action === 'queue') {
-            const tasks = useSprintTasks.getState().tasks
-            const created = tasks.find((t) => t.title === title && t.status === 'backlog')
-            if (created) await updateTask(created.id, { status: 'queued' })
-          }
-        }
+        await createOrUpdateTask(action === 'queue' ? 'queued' : 'backlog')
         resetForm()
         toast.success(mode === 'edit' && taskId ? 'Task updated' : 'Task created')
       } finally {
         setSubmitting(false)
       }
     },
-    [
-      mode,
-      taskId,
-      title,
-      repo,
-      priority,
-      spec,
-      dependsOn,
-      playgroundEnabled,
-      createTask,
-      updateTask,
-      resetForm,
-      setOperationalChecks
-    ]
+    [createOrUpdateTask, resetForm, setOperationalChecks, repo]
   )
 
   const handleConfirmedQueue = useCallback(async () => {
     setShowQueueConfirm(false)
     setSubmitting(true)
     try {
-      const specType = useTaskWorkbenchStore.getState().specType
-      if (mode === 'edit' && taskId) {
-        await updateTask(taskId, {
-          title,
-          repo,
-          priority,
-          spec,
-          depends_on: dependsOn.length > 0 ? dependsOn : null,
-          playground_enabled: playgroundEnabled || undefined,
-          status: 'queued',
-          spec_type: specType ?? undefined
-        })
-      } else {
-        const input: CreateTicketInput = {
-          title,
-          repo,
-          prompt: title,
-          spec,
-          priority,
-          depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-          playground_enabled: playgroundEnabled || undefined,
-          spec_type: specType ?? undefined
-        }
-        await createTask(input)
-        const tasks = useSprintTasks.getState().tasks
-        const created = tasks.find((t) => t.title === title && t.status === 'backlog')
-        if (created) await updateTask(created.id, { status: 'queued' })
-      }
+      await createOrUpdateTask('queued')
       resetForm()
     } finally {
       setSubmitting(false)
     }
-  }, [
-    mode,
-    taskId,
-    title,
-    repo,
-    priority,
-    spec,
-    dependsOn,
-    playgroundEnabled,
-    createTask,
-    updateTask,
-    resetForm
-  ])
+  }, [createOrUpdateTask, resetForm])
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true)
