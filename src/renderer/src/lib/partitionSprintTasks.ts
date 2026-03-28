@@ -20,7 +20,7 @@ export interface SprintPartition {
  *   queued               → Todo
  *   blocked              → Blocked
  *   active               → In Progress (max 5 enforced at UI layer)
- *   done + pr_status=open → Awaiting Review
+ *   active/done + pr_status=open|branch_only → Awaiting Review
  *   done + pr_status=merged|closed|null|draft → Done
  *   cancelled            → Failed (dimmed at bottom of Done column)
  */
@@ -45,14 +45,14 @@ export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
         blocked.push(task)
         break
       case TASK_STATUS.ACTIVE:
-        if (task.pr_status === PR_STATUS.OPEN) {
+        if (task.pr_status === PR_STATUS.OPEN || task.pr_status === PR_STATUS.BRANCH_ONLY) {
           awaitingReview.push(task)
         } else {
           inProgress.push(task)
         }
         break
       case TASK_STATUS.DONE:
-        if (task.pr_status === PR_STATUS.OPEN) {
+        if (task.pr_status === PR_STATUS.OPEN || task.pr_status === PR_STATUS.BRANCH_ONLY) {
           awaitingReview.push(task)
         } else {
           done.push(task)

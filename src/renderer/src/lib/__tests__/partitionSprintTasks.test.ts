@@ -100,6 +100,20 @@ describe('partitionSprintTasks', () => {
     expect(result.done).toEqual([t])
   })
 
+  it('routes active task with pr_status=branch_only to awaitingReview', () => {
+    const t = makeTask({ status: 'active', pr_status: 'branch_only' })
+    const result = partitionSprintTasks([t])
+    expect(result.awaitingReview).toHaveLength(1)
+    expect(result.inProgress).toHaveLength(0)
+  })
+
+  it('routes done task with pr_status=branch_only to awaitingReview', () => {
+    const t = makeTask({ status: 'done', pr_status: 'branch_only' })
+    const result = partitionSprintTasks([t])
+    expect(result.awaitingReview).toHaveLength(1)
+    expect(result.done).toHaveLength(0)
+  })
+
   it('puts blocked tasks into blocked bucket', () => {
     const tasks = [makeTask({ status: 'blocked' })]
     const result = partitionSprintTasks(tasks)

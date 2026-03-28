@@ -405,6 +405,16 @@
   background: var(--neon-blue-surface);
 }
 
+.task-pill--branch-only {
+  border-color: var(--neon-orange-border);
+  background: var(--neon-orange-surface);
+}
+
+.task-pill--branch-only:hover {
+  border-color: rgba(255, 159, 10, 0.5);
+  box-shadow: 0 0 12px rgba(255, 159, 10, 0.15);
+}
+
 .task-pill--done {
   opacity: 0.5;
   border-color: var(--neon-pink-border);
@@ -682,6 +692,15 @@
 
 .task-drawer__btn--danger:hover {
   background: rgba(255, 50, 100, 0.15);
+}
+
+.task-drawer__value--warning {
+  color: var(--neon-orange);
+}
+
+.task-drawer__branch-only {
+  padding: 8px 0;
+  border-top: 1px solid var(--neon-orange-border);
 }
 
 /* ── Spec Panel (wide overlay) ── */

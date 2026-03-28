@@ -41,7 +41,7 @@ export interface SprintTask {
   fast_fail_count: number
   agent_run_id: string | null
   pr_number: number | null
-  pr_status: 'open' | 'merged' | 'closed' | 'draft' | null
+  pr_status: 'open' | 'merged' | 'closed' | 'draft' | 'branch_only' | null
   pr_mergeable_state?: 'clean' | 'dirty' | 'blocked' | 'behind' | 'unstable' | 'unknown' | null
   pr_url: string | null
   claimed_by: string | null

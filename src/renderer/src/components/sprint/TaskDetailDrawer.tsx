@@ -211,6 +211,32 @@ export function TaskDetailDrawer({
             </span>
           </div>
         )}
+
+        {/* Branch-only: PR creation failed */}
+        {task.pr_status === 'branch_only' && (
+          <div className="task-drawer__branch-only" data-testid="branch-only-section">
+            <span className="task-drawer__label">Branch pushed</span>
+            <span className="task-drawer__value task-drawer__value--warning">
+              PR creation failed after retries
+            </span>
+            {task.notes && (() => {
+              const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
+              if (!match) return null
+              const [, branch, ghRepo] = match
+              return (
+                <a
+                  className="task-drawer__btn task-drawer__btn--primary"
+                  href={`https://github.com/${ghRepo}/pull/new/${branch}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ marginTop: '8px', display: 'inline-block' }}
+                >
+                  Create PR →
+                </a>
+              )
+            })()}
+          </div>
+        )}
       </div>
 
       {/* Actions bar */}

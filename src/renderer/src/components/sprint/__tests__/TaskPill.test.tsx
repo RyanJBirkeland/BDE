@@ -158,6 +158,14 @@ describe('TaskPill - additional status classes', () => {
     expect(pill.className).toContain('task-pill--review')
   })
 
+  it('applies branch-only class for tasks with pr_status=branch_only', async () => {
+    const { TaskPill } = await import('../TaskPill')
+    const branchOnlyTask: SprintTask = { ...baseTask, status: 'active', pr_status: 'branch_only' }
+    render(<TaskPill task={branchOnlyTask} selected={false} onClick={vi.fn()} />)
+    const pill = screen.getByTestId('task-pill')
+    expect(pill.className).toContain('task-pill--branch-only')
+  })
+
   it('shows elapsed time under 60 minutes correctly (e.g. 30m)', async () => {
     const { TaskPill } = await import('../TaskPill')
     const now = new Date('2026-03-01T10:00:00Z').getTime()

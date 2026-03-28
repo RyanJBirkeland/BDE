@@ -105,6 +105,18 @@ describe('recoverOrphans', () => {
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('has PR'))
   })
 
+  it('does not requeue task with pr_status=branch_only (treats like has-PR)', async () => {
+    const branchOnlyTask = makeTask('task-branch-only')
+    branchOnlyTask.pr_status = 'branch_only' as any
+    branchOnlyTask.pr_url = null
+    getOrphanedTasksMock.mockReturnValue([branchOnlyTask])
+
+    const count = await recoverOrphans(() => false, mockRepo, logger)
+
+    expect(count).toBe(0)
+    expect(updateTaskMock).toHaveBeenCalledWith('task-branch-only', { claimed_by: null })
+  })
+
   it('calls finalizeStaleAgentRuns and logs stale count', async () => {
     getOrphanedTasksMock.mockReturnValue([])
 

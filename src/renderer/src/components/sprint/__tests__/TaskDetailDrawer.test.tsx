@@ -324,4 +324,37 @@ describe('TaskDetailDrawer - additional status combos', () => {
     render(<TaskDetailDrawer {...makeProps({ task })} />)
     expect(screen.getByText(/1 dep —/)).toBeInTheDocument()
   })
+
+  it('shows branch-only section with Create PR link when pr_status is branch_only', () => {
+    const task: SprintTask = {
+      ...baseTask,
+      status: 'done',
+      pr_status: 'branch_only',
+      notes: 'Branch agent/fix-foo pushed to RyanBirkeland/BDE but PR creation failed after 3 attempts'
+    }
+    render(<TaskDetailDrawer {...makeProps({ task })} />)
+    const section = screen.getByTestId('branch-only-section')
+    expect(section).toBeInTheDocument()
+    expect(screen.getByText(/PR creation failed/)).toBeInTheDocument()
+    const link = screen.getByText('Create PR →')
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute(
+      'href',
+      'https://github.com/RyanBirkeland/BDE/pull/new/agent/fix-foo'
+    )
+  })
+
+  it('shows branch-only section without link when notes do not match pattern', () => {
+    const task: SprintTask = {
+      ...baseTask,
+      status: 'done',
+      pr_status: 'branch_only',
+      notes: 'Some other note without branch info'
+    }
+    render(<TaskDetailDrawer {...makeProps({ task })} />)
+    const section = screen.getByTestId('branch-only-section')
+    expect(section).toBeInTheDocument()
+    expect(screen.getByText(/PR creation failed/)).toBeInTheDocument()
+    expect(screen.queryByText('Create PR →')).not.toBeInTheDocument()
+  })
 })

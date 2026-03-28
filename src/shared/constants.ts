@@ -20,7 +20,8 @@ export const PR_STATUS = {
   OPEN: 'open',
   MERGED: 'merged',
   CLOSED: 'closed',
-  DRAFT: 'draft'
+  DRAFT: 'draft',
+  BRANCH_ONLY: 'branch_only'
 } as const
 
 export type PrStatusValue = (typeof PR_STATUS)[keyof typeof PR_STATUS]

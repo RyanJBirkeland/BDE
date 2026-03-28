@@ -10,6 +10,7 @@ interface TaskPillProps {
 }
 
 function getStatusClass(status: string, prStatus?: string | null): string {
+  if (prStatus === 'branch_only') return 'task-pill--branch-only'
   if (status === 'active' && prStatus !== 'open') return 'task-pill--active'
   if (status === 'blocked') return 'task-pill--blocked'
   if ((status === 'active' || status === 'done') && prStatus === 'open') return 'task-pill--review'
