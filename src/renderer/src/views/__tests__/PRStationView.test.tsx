@@ -55,31 +55,6 @@ vi.mock('../../components/pr-station/PRStationDetail', () => ({
   )
 }))
 
-vi.mock('../../components/pr-station/PRStationActions', () => ({
-  PRStationActions: ({
-    onRemovePr
-  }: {
-    pr: unknown
-    mergeability: unknown
-    onRemovePr: (pr: unknown) => void
-  }) => (
-    <div data-testid="pr-station-actions">
-      <button
-        data-testid="remove-pr-btn"
-        onClick={() =>
-          onRemovePr({
-            number: 42,
-            title: 'Test PR Title',
-            repo: 'BDE'
-          })
-        }
-      >
-        Remove
-      </button>
-    </div>
-  )
-}))
-
 vi.mock('../../components/pr-station/PRStationDiff', () => ({
   PRStationDiff: () => <div data-testid="pr-station-diff" />
 }))
@@ -155,7 +130,7 @@ describe('PRStationView', () => {
     expect(screen.getByText('Diff')).toBeInTheDocument()
   })
 
-  it('starts on Info tab showing detail and actions', async () => {
+  it('starts on Info tab showing detail', async () => {
     render(<PRStationView />)
 
     await act(async () => {
@@ -163,7 +138,6 @@ describe('PRStationView', () => {
     })
 
     expect(screen.getByTestId('pr-station-detail')).toBeInTheDocument()
-    expect(screen.getByTestId('pr-station-actions')).toBeInTheDocument()
     expect(screen.queryByTestId('pr-station-diff')).not.toBeInTheDocument()
   })
 
@@ -194,22 +168,8 @@ describe('PRStationView', () => {
     expect(screen.queryByTestId('pr-station-diff')).not.toBeInTheDocument()
   })
 
-  it('clears selected PR and returns to empty state when removed', async () => {
-    render(<PRStationView />)
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('select-pr-btn'))
-    })
-
-    expect(screen.getByTestId('pr-station-detail')).toBeInTheDocument()
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('remove-pr-btn'))
-    })
-
-    expect(screen.getByText(/Select a PR to view details/i)).toBeInTheDocument()
-    expect(screen.queryByTestId('pr-station-detail')).not.toBeInTheDocument()
-  })
+  // Note: PR removal test removed since PRStationActions component was deleted.
+  // PR removal functionality is now handled by MergeButton and CloseButton in PRStationDetail.
 
   it('shows pending review banner when pendingComments exist', async () => {
     const { usePendingReviewStore } = await import('../../stores/pendingReview')

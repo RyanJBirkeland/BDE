@@ -21,6 +21,7 @@ import { PRStationConflictBanner } from './PRStationConflictBanner'
 import { PRStationReviews } from './PRStationReviews'
 import { PRStationConversation } from './PRStationConversation'
 import { MergeButton } from './MergeButton'
+import { CloseButton } from './CloseButton'
 import type { PrMergeability } from '../../lib/github-api'
 
 interface PRStationDetailProps {
@@ -210,6 +211,7 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
         {mergeability !== undefined && mergeability !== null && (
           <div className="pr-detail__actions">
             <MergeButton pr={pr} mergeability={mergeability} onMerged={onMerged} />
+            <CloseButton pr={pr} onClosed={onMerged} />
           </div>
         )}
       </div>

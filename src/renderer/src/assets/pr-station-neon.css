@@ -5,7 +5,7 @@
    migrating from BDE tokens to neon tokens.
 
    SCOPE: PR Station only (.pr-station*, .pr-detail*,
-   .pr-actions*, .pr-review*, .pr-conversation*, etc.)
+   .pr-review*, .pr-conversation*, etc.)
 
    Dynamic inline colors (REPO_COLORS, label.color) are
    preserved in components — not overridden here.
@@ -129,41 +129,6 @@
 
 .pr-station__ci--none {
   color: var(--neon-text-dim);
-}
-
-/* ── PR Actions ────────────────────────────────────────── */
-
-.pr-actions__confirm-text {
-  color: var(--neon-text);
-}
-
-.pr-actions__dropdown-trigger {
-  background: var(--neon-cyan);
-  color: var(--neon-bg);
-  border-left: 1px solid var(--neon-cyan-border);
-}
-
-.pr-actions__dropdown {
-  background: var(--neon-surface-deep);
-  border: 1px solid var(--neon-cyan-border);
-  box-shadow: var(--neon-glass-shadow);
-}
-
-.pr-actions__dropdown-item {
-  color: var(--neon-text);
-}
-
-.pr-actions__dropdown-item:hover {
-  background: var(--neon-cyan-surface);
-}
-
-.pr-actions__dropdown-item--active {
-  color: var(--neon-cyan);
-}
-
-.pr-actions__merged-badge {
-  color: var(--neon-purple);
-  background: var(--neon-purple-surface);
 }
 
 /* ── PR Detail Panel ───────────────────────────────────── */
