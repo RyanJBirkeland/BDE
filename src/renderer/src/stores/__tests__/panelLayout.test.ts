@@ -10,10 +10,10 @@ import {
   moveTab,
   DEFAULT_LAYOUT,
   _resetIdCounter,
-  usePanelLayoutStore,
-  VIEW_LABELS
+  usePanelLayoutStore
 } from '../panelLayout'
 import type { PanelLeafNode, PanelSplitNode, PanelNode } from '../panelLayout'
+import { VIEW_LABELS } from '../../lib/view-registry'
 
 // ---------------------------------------------------------------------------
 // Helpers

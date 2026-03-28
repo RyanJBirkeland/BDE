@@ -8,7 +8,8 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
-import { usePanelLayoutStore, type View, VIEW_LABELS } from '../../stores/panelLayout'
+import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
+import { VIEW_LABELS } from '../../lib/view-registry'
 import { timeAgo } from '../../lib/format'
 
 const NOTIFICATION_ICONS: Record<

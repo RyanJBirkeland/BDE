@@ -1,55 +1,11 @@
 import React, { useState, useRef } from 'react'
-import {
-  LayoutDashboard,
-  Terminal,
-  SquareTerminal,
-  ClipboardList,
-  GitPullRequest,
-  Settings,
-  GitCommitHorizontal,
-  MoreHorizontal,
-  Workflow,
-  type LucideIcon
-} from 'lucide-react'
+import { MoreHorizontal } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { SidebarItem } from './SidebarItem'
 import { OverflowMenu } from './OverflowMenu'
 import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar'
 import { usePanelLayoutStore, getOpenViews, type View } from '../../stores/panelLayout'
-
-// Icon mapping from ActivityBar NAV_ITEMS
-const VIEW_ICONS: Record<View, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  agents: Terminal,
-  ide: SquareTerminal,
-  sprint: Workflow,
-  'pr-station': GitPullRequest,
-  git: GitCommitHorizontal,
-  settings: Settings,
-  'task-workbench': ClipboardList
-}
-
-const VIEW_LABELS: Record<View, string> = {
-  dashboard: 'Dashboard',
-  agents: 'Agents',
-  ide: 'IDE',
-  sprint: 'Task Pipeline',
-  'pr-station': 'PR Station',
-  git: 'Source Control',
-  settings: 'Settings',
-  'task-workbench': 'Task Workbench'
-}
-
-const VIEW_SHORTCUTS: Record<View, string> = {
-  dashboard: '⌘1',
-  agents: '⌘2',
-  ide: '⌘3',
-  sprint: '⌘4',
-  'pr-station': '⌘5',
-  git: '⌘6',
-  settings: '⌘7',
-  'task-workbench': '⌘0'
-}
+import { VIEW_ICONS, VIEW_LABELS, VIEW_SHORTCUTS } from '../../lib/view-registry'
 
 interface NeonSidebarProps {
   model?: string

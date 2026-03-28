@@ -14,36 +14,13 @@ import { usePendingReviewStore } from './stores/pendingReview'
 import { useGitHubRateLimitWarning } from './hooks/useGitHubRateLimitWarning'
 import { useDesktopNotifications } from './hooks/useDesktopNotifications'
 import { PanelRenderer } from './components/panels/PanelRenderer'
-import { usePanelLayoutStore, findLeaf, type View } from './stores/panelLayout'
+import { usePanelLayoutStore, findLeaf } from './stores/panelLayout'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 import { DEFAULT_MODEL } from '../../shared/models'
+import { VIEW_SHORTCUT_MAP, VIEW_LABELS } from './lib/view-registry'
 import './assets/neon.css'
 import './assets/neon-shell.css'
 import './assets/agents-neon.css'
-
-// Keyboard shortcut order: ⌘1=dashboard, ⌘2=agents, ⌘3=terminal, ⌘4=task-pipeline,
-// ⌘5=pr-station, ⌘6=git, ⌘7=settings, ⌘0=task-workbench
-const VIEW_SHORTCUT_MAP: Partial<Record<string, View>> = {
-  '1': 'dashboard',
-  '2': 'agents',
-  '3': 'ide',
-  '4': 'sprint',
-  '5': 'pr-station',
-  '6': 'git',
-  '7': 'settings',
-  '0': 'task-workbench'
-}
-
-const VIEW_TITLES: Record<View, string> = {
-  dashboard: 'Dashboard',
-  agents: 'Agents',
-  ide: 'IDE',
-  sprint: 'Task Pipeline',
-  'pr-station': 'PR Station',
-  git: 'Source Control',
-  settings: 'Settings',
-  'task-workbench': 'Task Workbench'
-}
 
 const SHORTCUTS_LEFT: { keys: string; description: string }[] = [
   { keys: '\u23181\u20137', description: 'Switch views' },
@@ -153,7 +130,7 @@ function App(): React.JSX.Element {
   useDesktopNotifications()
 
   useEffect(() => {
-    const title = 'BDE \u2014 ' + VIEW_TITLES[activeView]
+    const title = 'BDE \u2014 ' + VIEW_LABELS[activeView]
     document.title = title
     window.api.setTitle(title)
   }, [activeView])
