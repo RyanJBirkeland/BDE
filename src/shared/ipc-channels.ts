@@ -76,7 +76,7 @@ export interface SettingsChannels {
 export interface GitChannels {
   'git:status': {
     args: [cwd: string]
-    result: { files: { path: string; status: string; staged: boolean }[] }
+    result: { files: { path: string; status: string; staged: boolean }[]; branch: string }
   }
   'git:diff': {
     args: [cwd: string, file?: string]
