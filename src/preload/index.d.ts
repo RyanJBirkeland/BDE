@@ -4,7 +4,9 @@ import type {
   PrListPayload,
   SpawnLocalAgentArgs,
   SpawnLocalAgentResult,
-  SprintTask
+  SprintTask,
+  SynthesizeRequest,
+  ReviseRequest
 } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 import type { AgentEvent } from '../shared/types'
@@ -235,6 +237,25 @@ declare global {
         onData: (id: number, cb: (data: string) => void) => () => void
         onExit: (id: number, cb: () => void) => void
       }
+
+      // Spec Synthesizer
+      synthesizeSpec: (
+        ...args: IpcArgs<'synthesizer:generate'>
+      ) => Promise<IpcResult<'synthesizer:generate'>>
+      reviseSpec: (...args: IpcArgs<'synthesizer:revise'>) => Promise<IpcResult<'synthesizer:revise'>>
+      cancelSynthesis: (
+        ...args: IpcArgs<'synthesizer:cancel'>
+      ) => Promise<IpcResult<'synthesizer:cancel'>>
+      onSynthesizerChunk: (
+        cb: (data: {
+          streamId: string
+          chunk: string
+          done: boolean
+          fullText?: string
+          filesAnalyzed?: string[]
+          error?: string
+        }) => void
+      ) => () => void
     }
   }
 }

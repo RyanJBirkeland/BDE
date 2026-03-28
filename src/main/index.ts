@@ -20,6 +20,7 @@ import { registerMemorySearchHandler } from './handlers/memory-search'
 import { registerIdeFsHandlers } from './handlers/ide-fs-handlers'
 import { registerPlaygroundHandlers } from './handlers/playground-handlers'
 import { registerDashboardHandlers } from './handlers/dashboard-handlers'
+import { registerSynthesizerHandlers } from './handlers/synthesizer-handlers'
 import { getDb, closeDb, backupDatabase } from './db'
 import { importSprintTasksFromSupabase } from './data/supabase-import'
 import { startPrPoller, stopPrPoller } from './pr-poller'
@@ -177,10 +178,12 @@ app.whenReady().then(() => {
     registerAgentHandlers(am)
     registerAgentManagerHandlers(am)
     registerWorkbenchHandlers(am)
+    registerSynthesizerHandlers()
   } else {
     registerAgentHandlers()
     registerAgentManagerHandlers(undefined)
     registerWorkbenchHandlers()
+    registerSynthesizerHandlers()
   }
 
   app.on('browser-window-created', (_, window) => {

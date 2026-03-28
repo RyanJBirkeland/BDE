@@ -21,7 +21,9 @@ import type {
   ClaimedTask,
   PrListPayload,
   TaskTemplate,
-  AgentManagerStatus
+  AgentManagerStatus,
+  SynthesizeRequest,
+  ReviseRequest
 } from './types'
 import type { AgentEvent } from './types'
 import type { BatchOperation, BatchResult } from './queue-api-contract'
@@ -522,6 +524,22 @@ export interface DashboardChannels {
   'agent:recentEvents': { args: [limit?: number]; result: DashboardEvent[] }
 }
 
+/** Spec synthesizer AI-powered generation */
+export interface SynthesizerChannels {
+  'synthesizer:generate': {
+    args: [request: SynthesizeRequest]
+    result: { streamId: string }
+  }
+  'synthesizer:revise': {
+    args: [request: ReviseRequest]
+    result: { streamId: string }
+  }
+  'synthesizer:cancel': {
+    args: [streamId: string]
+    result: { ok: boolean }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Composite channel map — intersection of all domain maps
 // ---------------------------------------------------------------------------
@@ -544,4 +562,5 @@ export type IpcChannelMap = SettingsChannels &
   TerminalChannels &
   WorkbenchChannels &
   PlaygroundChannels &
-  DashboardChannels
+  DashboardChannels &
+  SynthesizerChannels

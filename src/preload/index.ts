@@ -266,6 +266,27 @@ const api = {
       ipcRenderer.on('workbench:chatChunk', listener)
       return () => ipcRenderer.removeListener('workbench:chatChunk', listener)
     }
+  },
+
+  // Spec Synthesizer
+  synthesizeSpec: (args: import('../shared/types').SynthesizeRequest) =>
+    typedInvoke('synthesizer:generate', args),
+  reviseSpec: (args: import('../shared/types').ReviseRequest) =>
+    typedInvoke('synthesizer:revise', args),
+  cancelSynthesis: (streamId: string) => typedInvoke('synthesizer:cancel', streamId),
+  onSynthesizerChunk: (
+    cb: (data: {
+      streamId: string
+      chunk: string
+      done: boolean
+      fullText?: string
+      filesAnalyzed?: string[]
+      error?: string
+    }) => void
+  ): (() => void) => {
+    const listener = (_e: unknown, data: any): void => cb(data)
+    ipcRenderer.on('synthesizer:chunk', listener)
+    return () => ipcRenderer.removeListener('synthesizer:chunk', listener)
   }
 }
 

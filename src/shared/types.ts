@@ -351,3 +351,22 @@ export interface AgentHandle {
 export interface AgentProvider {
   spawn(opts: AgentSpawnOptions): Promise<AgentHandle>
 }
+
+// --- Spec Synthesizer ---
+
+export interface SynthesizeRequest {
+  templateId: string | null
+  templateName: string
+  answers: Record<string, string>
+  repo: string
+  repoPath: string
+  customPrompt?: string
+}
+
+export interface ReviseRequest {
+  currentSpec: string
+  instruction: string
+  stepIndex?: number
+  repo: string
+  repoPath: string
+}

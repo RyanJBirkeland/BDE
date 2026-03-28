@@ -6,28 +6,12 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { buildAgentEnv } from '../env-utils'
 import { createLogger } from '../logger'
+import type { SynthesizeRequest, ReviseRequest } from '../../shared/types'
 
 const execFileAsync = promisify(execFile)
 const log = createLogger('spec-synthesizer')
 
 // --- Types ---
-
-export interface SynthesizeRequest {
-  templateId: string | null
-  templateName: string
-  answers: Record<string, string>
-  repo: string
-  repoPath: string
-  customPrompt?: string
-}
-
-export interface ReviseRequest {
-  currentSpec: string
-  instruction: string
-  stepIndex?: number
-  repo: string
-  repoPath: string
-}
 
 export interface SynthesizeResult {
   spec: string
