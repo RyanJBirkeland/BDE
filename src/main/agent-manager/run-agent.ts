@@ -141,7 +141,7 @@ export async function runAgent(
     repo.updateTask(task.id, {
       status: 'error',
       completed_at: new Date().toISOString(),
-      notes: 'Empty prompt',
+      notes: 'Agent failed to start: task has no prompt, spec, or title. To fix: edit the task and provide a prompt or spec describing what the agent should do.',
       claimed_by: null
     })
     await onTaskTerminal(task.id, 'error')
@@ -384,7 +384,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
       repo.updateTask(task.id, {
         status: 'error',
         completed_at: now,
-        notes: 'Fast-fail exhausted',
+        notes: 'Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to \'queued\' and clear claimed_by.',
         claimed_by: null,
         needs_review: true
       })

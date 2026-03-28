@@ -27,7 +27,8 @@ export async function recoverOrphans(
     // Re-queue: clear claimed_by so drain loop or external runner can pick it up
     repo.updateTask(task.id, {
       status: 'queued',
-      claimed_by: null
+      claimed_by: null,
+      notes: 'Task was re-queued by orphan recovery (was claimed but agent is no longer running).'
     })
     recovered++
   }

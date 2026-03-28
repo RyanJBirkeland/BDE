@@ -57,7 +57,8 @@ describe('recoverOrphans', () => {
     expect(updateTaskMock).toHaveBeenCalledOnce()
     expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
       status: 'queued',
-      claimed_by: null
+      claimed_by: null,
+      notes: 'Task was re-queued by orphan recovery (was claimed but agent is no longer running).'
     })
     expect(recovered).toBe(1)
   })

@@ -652,7 +652,12 @@ describe('createAgentManager', () => {
 
       expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
         'task-1',
-        expect.objectContaining({ status: 'queued', claimed_by: null, started_at: null })
+        expect.objectContaining({
+          status: 'queued',
+          claimed_by: null,
+          started_at: null,
+          notes: 'Task was re-queued due to BDE shutdown while agent was running.'
+        })
       )
       expect(logger.info).toHaveBeenCalledWith(
         expect.stringContaining('Re-queued task task-1 during shutdown')
@@ -690,7 +695,7 @@ describe('createAgentManager', () => {
 
       const config: AgentManagerConfig = {
         ...baseConfig,
-        maxRuntimeMs: 100,
+        maxRuntimeMs: 60_000, // 1 minute
         pollIntervalMs: 999_999
       }
       const task = makeTask()
@@ -711,8 +716,8 @@ describe('createAgentManager', () => {
 
       expect(mgr.getStatus().activeAgents.length).toBe(1)
 
-      // Advance past watchdog check interval (10_000ms) — maxRuntimeMs (100ms) is well exceeded
-      await vi.advanceTimersByTimeAsync(10_100)
+      // Advance past watchdog check interval (10_000ms) + maxRuntimeMs (60_000ms)
+      await vi.advanceTimersByTimeAsync(70_100)
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
 
       expect(abortFn).toHaveBeenCalled()
@@ -721,7 +726,10 @@ describe('createAgentManager', () => {
       )
       expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
         'task-1',
-        expect.objectContaining({ status: 'error', notes: 'Max runtime exceeded' })
+        expect.objectContaining({
+          status: 'error',
+          notes: 'Agent exceeded the maximum runtime of 1 minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.'
+        })
       )
 
       mgr.stop(0).catch(() => {})
