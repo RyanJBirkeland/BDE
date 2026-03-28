@@ -1,0 +1,247 @@
+/* ────────────────────────────────────────────────────────
+   Diff Viewer - Neon Design Token Migration
+
+   This file overrides color/surface tokens in diff.css,
+   migrating from BDE tokens to neon tokens.
+
+   SCOPE: Diff viewer only (.diff-view*, .diff-sidebar*,
+   .diff-file*, .diff-hunk*, .diff-line*, .diff-comment-*)
+
+   GIT CLIENT CLASSES (.git-*) are NOT modified here.
+──────────────────────────────────────────────────────── */
+
+/* ── Diff View Header ──────────────────────────────────── */
+
+.diff-view__header {
+  border-bottom: 1px solid var(--neon-cyan-border);
+  background: var(--neon-surface-deep);
+}
+
+.diff-view__header::before {
+  /* DIFF label gradient */
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+}
+
+.diff-view__header::after {
+  /* Bottom gradient line */
+  background: linear-gradient(90deg, transparent, var(--neon-cyan-border), transparent);
+}
+
+/* ── Diff View Chips (Repo Selector) ───────────────────── */
+
+.diff-view__chip {
+  border: 1px solid var(--neon-cyan-border);
+  color: var(--neon-text-muted);
+}
+
+.diff-view__chip:hover {
+  color: var(--neon-text);
+  border-color: var(--neon-text-muted);
+}
+
+.diff-view__chip--active {
+  background: var(--neon-cyan);
+  color: var(--neon-bg);
+  border-color: var(--neon-cyan);
+}
+
+/* ── Diff View Meta (Branch, PR Link, Error, Loading) ─── */
+
+.diff-view__branch {
+  color: var(--neon-text-muted);
+  background: var(--neon-cyan-border);
+}
+
+.diff-view__pr-link {
+  color: var(--neon-cyan);
+}
+
+.diff-view__error {
+  background: var(--neon-red-surface);
+  color: var(--neon-red);
+}
+
+.diff-view__loading {
+  color: var(--neon-text-muted);
+}
+
+/* ── Diff Sidebar ──────────────────────────────────────── */
+
+.diff-sidebar {
+  background: var(--neon-cyan-surface);
+  border-right: 1px solid var(--neon-cyan-border);
+}
+
+.diff-sidebar__header {
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.diff-sidebar__title {
+  color: var(--neon-text);
+}
+
+.diff-sidebar__count {
+  color: var(--neon-text-muted);
+  background: var(--neon-cyan-border);
+}
+
+/* ── Diff File Items (Sidebar List) ────────────────────── */
+
+.diff-file-item {
+  color: var(--neon-text);
+}
+
+.diff-file-item:hover {
+  background: var(--neon-surface-dim);
+}
+
+.diff-file-item--active {
+  background: var(--neon-surface-dim);
+  /* Neon enhancement: cyan left indicator */
+  box-shadow: inset 2px 0 0 var(--neon-cyan);
+}
+
+/* Keep diff colors (green/red) as-is */
+/* .diff-file-item__add uses var(--bde-diff-add) */
+/* .diff-file-item__del uses var(--bde-diff-del) */
+
+/* ── Diff Content ──────────────────────────────────────── */
+
+.diff-content {
+  background: var(--neon-bg);
+}
+
+.diff-file {
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.diff-file__header {
+  background: var(--neon-cyan-surface);
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.diff-file__path {
+  color: var(--neon-text);
+}
+
+/* Keep diff stats colors (green/red) as-is */
+/* .diff-file__stats-add uses var(--bde-diff-add) */
+/* .diff-file__stats-del uses var(--bde-diff-del) */
+
+/* ── Diff Hunks ────────────────────────────────────────── */
+
+.diff-hunk--focused {
+  /* Neon enhancement: cyan outline */
+  outline: 1px solid var(--neon-cyan);
+}
+
+.diff-hunk__header {
+  color: var(--neon-text-muted);
+  background: var(--neon-surface-dim);
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+/* ── Diff Lines ────────────────────────────────────────── */
+
+/* Keep add/del backgrounds and colors as-is */
+/* .diff-line--add uses var(--bde-diff-add-bg) and var(--bde-diff-add) */
+/* .diff-line--del uses var(--bde-diff-del-bg) and var(--bde-diff-del) */
+
+.diff-line--ctx {
+  color: var(--neon-text);
+}
+
+.diff-line__gutter {
+  color: var(--neon-text-muted);
+}
+
+/* ── Line Selection ────────────────────────────────────── */
+
+.diff-line--selected {
+  background: var(--neon-cyan-surface) !important;
+}
+
+.diff-line__gutter--selectable:hover {
+  background: rgba(0, 255, 200, 0.12);
+}
+
+.diff-selection-trigger {
+  background: var(--neon-cyan);
+  color: var(--neon-bg);
+}
+
+/* ── Inline Comment Widget ─────────────────────────────── */
+
+.diff-comment-widget {
+  border: 1px solid var(--neon-cyan-border);
+  background: var(--neon-bg);
+}
+
+.diff-comment-widget__toggle {
+  color: var(--neon-text-muted);
+  background: var(--neon-cyan-surface);
+}
+
+.diff-comment-widget__toggle:hover {
+  background: var(--neon-surface-subtle);
+}
+
+.diff-comment-widget__comment {
+  border-top: 1px solid var(--neon-cyan-border);
+}
+
+.diff-comment-widget__author {
+  color: var(--neon-text);
+}
+
+.diff-comment-widget__time {
+  color: var(--neon-text-dim);
+}
+
+.diff-comment-widget__body {
+  color: var(--neon-text);
+}
+
+.diff-comment-widget__body code {
+  background: var(--neon-cyan-surface);
+}
+
+/* ── Comment Composer ──────────────────────────────────── */
+
+.diff-comment-composer {
+  border: 1px solid var(--neon-cyan-border);
+  background: var(--neon-bg);
+  /* Neon enhancement: subtle glow on focus (via border) */
+}
+
+.diff-comment-composer__input {
+  color: var(--neon-text);
+  background: var(--neon-cyan-surface);
+}
+
+.diff-comment-composer__input::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.diff-comment-composer__actions {
+  border-top: 1px solid var(--neon-cyan-border);
+}
+
+/* ── Pending Comment Badge ─────────────────────────────── */
+
+.diff-comment-widget--pending {
+  border-color: var(--neon-orange);
+}
+
+.diff-pending-comment__remove {
+  color: var(--neon-red);
+}
+
+.diff-pending-comment__remove:hover {
+  background: var(--neon-cyan-surface);
+}
+
+.diff-comment-widget__pending-badge {
+  color: var(--neon-orange);
+  background: rgba(255, 165, 0, 0.15);
+}
