@@ -287,6 +287,138 @@ describe('github:fetch handler', () => {
       'github:fetch only allows api.github.com URLs'
     )
   })
+
+  describe('allowlist validation', () => {
+    beforeEach(() => {
+      vi.mocked(getGitHubToken).mockReturnValue('ghp_token')
+      vi.clearAllMocks()
+    })
+
+    it('allows GET requests to /repos/.../pulls endpoints', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: {
+          get: vi.fn((key: string) => {
+            if (key === 'content-type') return 'application/json'
+            return null
+          })
+        },
+        json: vi.fn().mockResolvedValue([])
+      }
+      vi.mocked(githubFetch).mockResolvedValue(mockResponse as any)
+
+      const handler = captureHandler('github:fetch')
+      await handler(mockEvent, '/repos/owner/repo/pulls')
+
+      expect(githubFetch).toHaveBeenCalled()
+    })
+
+    it('allows GET requests to /repos/.../issues endpoints', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: {
+          get: vi.fn((key: string) => {
+            if (key === 'content-type') return 'application/json'
+            return null
+          })
+        },
+        json: vi.fn().mockResolvedValue([])
+      }
+      vi.mocked(githubFetch).mockResolvedValue(mockResponse as any)
+
+      const handler = captureHandler('github:fetch')
+      await handler(mockEvent, '/repos/owner/repo/issues/123')
+
+      expect(githubFetch).toHaveBeenCalled()
+    })
+
+    it('allows POST requests to PR review endpoints', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 201,
+        headers: {
+          get: vi.fn((key: string) => {
+            if (key === 'content-type') return 'application/json'
+            return null
+          })
+        },
+        json: vi.fn().mockResolvedValue({})
+      }
+      vi.mocked(githubFetch).mockResolvedValue(mockResponse as any)
+
+      const handler = captureHandler('github:fetch')
+      await handler(mockEvent, '/repos/owner/repo/pulls/42/reviews', { method: 'POST' })
+
+      expect(githubFetch).toHaveBeenCalled()
+    })
+
+    it('allows PUT requests to PR merge endpoints', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: {
+          get: vi.fn((key: string) => {
+            if (key === 'content-type') return 'application/json'
+            return null
+          })
+        },
+        json: vi.fn().mockResolvedValue({})
+      }
+      vi.mocked(githubFetch).mockResolvedValue(mockResponse as any)
+
+      const handler = captureHandler('github:fetch')
+      await handler(mockEvent, '/repos/owner/repo/pulls/42/merge', { method: 'PUT' })
+
+      expect(githubFetch).toHaveBeenCalled()
+    })
+
+    it('rejects DELETE requests', async () => {
+      const handler = captureHandler('github:fetch')
+      await expect(
+        handler(mockEvent, '/repos/owner/repo', { method: 'DELETE' })
+      ).rejects.toThrow('GitHub API request not allowed')
+
+      expect(githubFetch).not.toHaveBeenCalled()
+    })
+
+    it('rejects POST to non-allowlisted endpoints', async () => {
+      const handler = captureHandler('github:fetch')
+      await expect(
+        handler(mockEvent, '/repos/owner/repo/collaborators', { method: 'POST' })
+      ).rejects.toThrow('GitHub API request not allowed')
+
+      expect(githubFetch).not.toHaveBeenCalled()
+    })
+
+    it('rejects requests to admin endpoints', async () => {
+      const handler = captureHandler('github:fetch')
+      await expect(
+        handler(mockEvent, '/admin/users', { method: 'GET' })
+      ).rejects.toThrow('GitHub API request not allowed')
+
+      expect(githubFetch).not.toHaveBeenCalled()
+    })
+
+    it('rejects requests to delete repo endpoints', async () => {
+      const handler = captureHandler('github:fetch')
+      await expect(
+        handler(mockEvent, '/repos/owner/repo', { method: 'DELETE' })
+      ).rejects.toThrow('GitHub API request not allowed')
+
+      expect(githubFetch).not.toHaveBeenCalled()
+    })
+
+    it('provides descriptive error message for rejected requests', async () => {
+      const handler = captureHandler('github:fetch')
+      await expect(
+        handler(mockEvent, '/repos/owner/repo/collaborators', { method: 'POST' })
+      ).rejects.toThrow(/POST.*\/repos\/owner\/repo\/collaborators/)
+
+      expect(githubFetch).not.toHaveBeenCalled()
+    })
+  })
 })
 
 describe('pr:getList handler', () => {

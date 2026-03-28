@@ -27,6 +27,27 @@ import { createLogger } from '../logger'
 
 const logger = createLogger('git-handlers')
 
+// GitHub API endpoint + method allowlist for security
+const GITHUB_API_ALLOWLIST: Array<{ method: string; pattern: RegExp }> = [
+  { method: 'GET', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls/ },
+  { method: 'GET', pattern: /^\/repos\/[^/]+\/[^/]+\/issues/ },
+  { method: 'GET', pattern: /^\/repos\/[^/]+\/[^/]+\/commits/ },
+  { method: 'GET', pattern: /^\/repos\/[^/]+\/[^/]+\/branches/ },
+  { method: 'GET', pattern: /^\/repos\/[^/]+\/[^/]+\/check-runs/ },
+  { method: 'POST', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+\/reviews/ },
+  { method: 'POST', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+\/comments/ },
+  { method: 'PUT', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+\/merge/ },
+  { method: 'PATCH', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+/ },
+  // Add more as needed — but NO DELETE, no admin endpoints
+]
+
+function isGitHubRequestAllowed(method: string, path: string): boolean {
+  const normalizedMethod = method.toUpperCase()
+  return GITHUB_API_ALLOWLIST.some(
+    (entry) => entry.method === normalizedMethod && entry.pattern.test(path)
+  )
+}
+
 let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
 
 export function setGitHandlersOnStatusTerminal(
@@ -43,14 +64,27 @@ export function registerGitHandlers(): void {
       throw new Error('GitHub token not configured. Set it in Settings \u2192 Connections.')
 
     let url: string
+    let apiPath: string
     if (path.startsWith('https://')) {
       const parsed = new URL(path)
       if (parsed.hostname !== 'api.github.com') {
         throw new Error('github:fetch only allows api.github.com URLs')
       }
       url = path
+      apiPath = parsed.pathname
     } else {
       url = `https://api.github.com${path}`
+      apiPath = path
+    }
+
+    // Validate request against allowlist
+    const method = init?.method ?? 'GET'
+    if (!isGitHubRequestAllowed(method, apiPath)) {
+      logger.warn(`github:fetch rejected: ${method} ${apiPath}`)
+      throw new Error(
+        `GitHub API request not allowed: ${method} ${apiPath}. ` +
+          'Only specific read and PR-related operations are permitted.'
+      )
     }
 
     // Strip caller Authorization -- token is injected server-side only
