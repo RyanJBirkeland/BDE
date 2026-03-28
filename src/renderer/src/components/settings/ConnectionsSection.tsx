@@ -1,5 +1,5 @@
 /**
- * ConnectionsSection — auth status, agent-manager settings, and GitHub credential management.
+ * ConnectionsSection — auth status and GitHub credential management.
  */
 import { useCallback, useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
@@ -14,19 +14,6 @@ interface AuthStatus {
   tokenFound: boolean
   tokenExpired: boolean
   expiresAt?: string
-}
-
-// --- Agent Manager settings ---
-interface AgentManagerSettings {
-  maxConcurrent: string
-  worktreeBase: string
-  maxRuntimeMinutes: string
-}
-
-const DEFAULTS: AgentManagerSettings = {
-  maxConcurrent: '3',
-  worktreeBase: '/tmp/worktrees/bde',
-  maxRuntimeMinutes: '60'
 }
 
 const GITHUB_FIELDS: CredentialField[] = [
@@ -67,47 +54,6 @@ export function ConnectionsSection(): React.JSX.Element {
   useEffect(() => {
     refreshAuth()
   }, [refreshAuth])
-
-  // --- Agent Manager settings state ---
-  const [amSettings, setAmSettings] = useState<AgentManagerSettings>(DEFAULTS)
-  const [amDirty, setAmDirty] = useState(false)
-  const [amSaving, setAmSaving] = useState(false)
-
-  useEffect(() => {
-    Promise.all([
-      window.api.settings.get('agentManager.maxConcurrent'),
-      window.api.settings.get('agentManager.worktreeBase'),
-      window.api.settings.get('agentManager.maxRuntimeMinutes')
-    ]).then(([maxConcurrent, worktreeBase, maxRuntimeMinutes]) => {
-      setAmSettings({
-        maxConcurrent: maxConcurrent || DEFAULTS.maxConcurrent,
-        worktreeBase: worktreeBase || DEFAULTS.worktreeBase,
-        maxRuntimeMinutes: maxRuntimeMinutes || DEFAULTS.maxRuntimeMinutes
-      })
-    })
-  }, [])
-
-  const handleAmChange = useCallback((key: keyof AgentManagerSettings, value: string) => {
-    setAmSettings((prev) => ({ ...prev, [key]: value }))
-    setAmDirty(true)
-  }, [])
-
-  const handleAmSave = useCallback(async () => {
-    setAmSaving(true)
-    try {
-      await Promise.all([
-        window.api.settings.set('agentManager.maxConcurrent', amSettings.maxConcurrent),
-        window.api.settings.set('agentManager.worktreeBase', amSettings.worktreeBase),
-        window.api.settings.set('agentManager.maxRuntimeMinutes', amSettings.maxRuntimeMinutes)
-      ])
-      setAmDirty(false)
-      toast.success('Agent manager settings saved')
-    } catch {
-      toast.error('Failed to save agent manager settings')
-    } finally {
-      setAmSaving(false)
-    }
-  }, [amSettings])
 
   // --- GitHub token state ---
   const [ghToken, setGhToken] = useState('')
@@ -199,62 +145,6 @@ export function ConnectionsSection(): React.JSX.Element {
             >
               <RefreshCw size={12} style={{ marginRight: 4 }} />
               Refresh
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Agent Manager Settings */}
-      <div className="settings-connection" style={{ marginTop: 8 }}>
-        <span className="settings-connection__label">Agent Manager</span>
-
-        <label className="settings-field">
-          <span className="settings-field__label">Max Concurrent Agents</span>
-          <input
-            className="settings-field__input"
-            type="number"
-            min={1}
-            max={10}
-            value={amSettings.maxConcurrent}
-            onChange={(e) => handleAmChange('maxConcurrent', e.target.value)}
-          />
-        </label>
-
-        <label className="settings-field">
-          <span className="settings-field__label">Worktree Base Path</span>
-          <input
-            className="settings-field__input"
-            type="text"
-            value={amSettings.worktreeBase}
-            onChange={(e) => handleAmChange('worktreeBase', e.target.value)}
-            placeholder="/tmp/worktrees/bde"
-          />
-        </label>
-
-        <label className="settings-field">
-          <span className="settings-field__label">Max Runtime (minutes)</span>
-          <input
-            className="settings-field__input"
-            type="number"
-            min={1}
-            max={480}
-            value={amSettings.maxRuntimeMinutes}
-            onChange={(e) => handleAmChange('maxRuntimeMinutes', e.target.value)}
-          />
-        </label>
-
-        <div className="settings-field__row">
-          <div className="settings-field__status" />
-          <div className="settings-field__actions">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleAmSave}
-              disabled={!amDirty || amSaving}
-              loading={amSaving}
-              type="button"
-            >
-              {amSaving ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </div>

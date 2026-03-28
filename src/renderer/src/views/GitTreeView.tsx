@@ -51,6 +51,7 @@ export default function GitTreeView(): React.ReactElement {
 
   useEffect(() => {
     if (!activeRepo) return
+    clearSelection()
     fetchStatus(activeRepo)
     fetchBranches(activeRepo)
   }, [activeRepo])

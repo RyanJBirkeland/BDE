@@ -1,5 +1,5 @@
 /**
- * ConnectionsSection — auth status, agent manager settings, and GitHub credential tests.
+ * ConnectionsSection — auth status and GitHub credential tests.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
@@ -38,14 +38,6 @@ describe('ConnectionsSection', () => {
     })
   })
 
-  it('renders agent manager settings fields', async () => {
-    render(<ConnectionsSection />)
-    expect(screen.getByText('Agent Manager')).toBeInTheDocument()
-    expect(screen.getByText('Max Concurrent Agents')).toBeInTheDocument()
-    expect(screen.getByText('Worktree Base Path')).toBeInTheDocument()
-    expect(screen.getByText('Max Runtime (minutes)')).toBeInTheDocument()
-  })
-
   it('renders GitHub credential form', async () => {
     render(<ConnectionsSection />)
     expect(screen.getByText('GitHub')).toBeInTheDocument()
@@ -55,61 +47,6 @@ describe('ConnectionsSection', () => {
   it('renders Refresh button for auth status', async () => {
     render(<ConnectionsSection />)
     expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument()
-  })
-
-  it('fills agent manager fields and Save calls settings.set with correct values', async () => {
-    vi.mocked(window.api.settings.get).mockResolvedValue(null)
-    const user = userEvent.setup()
-    render(<ConnectionsSection />)
-
-    // Wait for initial load to finish
-    await waitFor(() => {
-      expect(screen.getByText('Connected')).toBeInTheDocument()
-    })
-
-    // Change Max Concurrent Agents (number input)
-    const maxConcurrentInput = screen.getByDisplayValue('3') as HTMLInputElement
-    await user.clear(maxConcurrentInput)
-    await user.type(maxConcurrentInput, '5')
-
-    // The Save button (inside Agent Manager section, before GitHub Save)
-    const saveButtons = screen.getAllByRole('button', { name: /^save$/i })
-    // First Save button belongs to Agent Manager section
-    const agentManagerSave = saveButtons[0]
-    await user.click(agentManagerSave)
-
-    await waitFor(() => {
-      expect(window.api.settings.set).toHaveBeenCalledWith('agentManager.maxConcurrent', '5')
-      expect(window.api.settings.set).toHaveBeenCalledWith(
-        'agentManager.worktreeBase',
-        '/tmp/worktrees/bde'
-      )
-      expect(window.api.settings.set).toHaveBeenCalledWith('agentManager.maxRuntimeMinutes', '60')
-    })
-  })
-
-  it('changes worktree base path and saves it correctly', async () => {
-    vi.mocked(window.api.settings.get).mockResolvedValue(null)
-    const user = userEvent.setup()
-    render(<ConnectionsSection />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Connected')).toBeInTheDocument()
-    })
-
-    const worktreeInput = screen.getByPlaceholderText('/tmp/worktrees/bde') as HTMLInputElement
-    await user.clear(worktreeInput)
-    await user.type(worktreeInput, '/custom/path')
-
-    const saveButtons = screen.getAllByRole('button', { name: /^save$/i })
-    await user.click(saveButtons[0])
-
-    await waitFor(() => {
-      expect(window.api.settings.set).toHaveBeenCalledWith(
-        'agentManager.worktreeBase',
-        '/custom/path'
-      )
-    })
   })
 
   it('GitHub Test button calls github.fetch(/user) and shows OK badge on success', async () => {

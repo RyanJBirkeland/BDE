@@ -90,11 +90,20 @@ export function AgentsView() {
       if (!selectedId || !selectedAgent) return
       switch (cmd) {
         case '/stop':
-          await window.api.killAgent(selectedId)
+          try {
+            await window.api.killAgent(selectedId)
+          } catch (err) {
+            toast.error(`Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`)
+          }
           break
         case '/retry':
           if (selectedAgent.sprintTaskId) {
-            await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' })
+            try {
+              await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' })
+              toast.success('Task re-queued')
+            } catch (err) {
+              toast.error(`Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+            }
           }
           break
         case '/focus':

@@ -6,6 +6,7 @@ import { Terminal, StopCircle, Copy } from 'lucide-react'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
 import { NeonBadge, type NeonAccent } from '../neon'
 import { useTerminalStore } from '../../stores/terminal'
+import { toast } from '../../stores/toasts'
 
 interface ConsoleHeaderProps {
   agent: AgentMeta
@@ -64,7 +65,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps) {
     try {
       await window.api.killAgent(agent.id)
     } catch (err) {
-      console.error('Failed to stop agent:', err)
+      toast.error(`Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -72,8 +73,9 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps) {
     try {
       const result = await window.api.tailAgentLog({ logPath: agent.logPath, fromByte: 0 })
       await navigator.clipboard.writeText(result.content)
+      toast.success('Log copied to clipboard')
     } catch (err) {
-      console.error('Failed to copy log:', err)
+      toast.error(`Failed to copy log: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
