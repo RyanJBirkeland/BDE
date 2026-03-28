@@ -4,6 +4,7 @@ import { closePR } from '../../lib/github-api'
 import type { OpenPr } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
 import { REPO_OPTIONS } from '../../lib/constants'
+import { invalidatePRCache } from '../../lib/github-cache'
 
 interface CloseButtonProps {
   pr: OpenPr
@@ -21,6 +22,7 @@ export function CloseButton({ pr, onClosed }: CloseButtonProps) {
     setClosing(true)
     try {
       await closePR(repo.owner, repo.label, pr.number)
+      invalidatePRCache(repo.owner, repo.label, pr.number)
       toast.success(`Closed: ${pr.title}`)
       onClosed?.(pr)
     } catch (e) {

@@ -5,6 +5,7 @@ import { usePendingReviewStore } from '../../stores/pendingReview'
 import { toast } from '../../stores/toasts'
 import { REPO_OPTIONS } from '../../lib/constants'
 import type { OpenPr } from '../../../../shared/types'
+import { invalidatePRCache } from '../../lib/github-cache'
 
 interface ReviewSubmitDialogProps {
   pr: OpenPr
@@ -43,6 +44,7 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
         }))
       }
       await createReview(repo.owner, repo.label, pr.number, review)
+      invalidatePRCache(repo.owner, repo.label, pr.number)
       clearPending(prKey)
       toast.success('Review submitted')
       onSubmitted()

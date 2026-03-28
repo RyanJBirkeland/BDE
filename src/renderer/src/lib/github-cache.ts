@@ -16,12 +16,14 @@ import type { PrReview, PrComment, PrIssueComment } from '../../../shared/types'
 interface CacheEntry {
   data: unknown
   expiry: number
+  lastAccessed: number
 }
 
 const cache = new Map<string, CacheEntry>()
 
 const TTL_DETAIL = 30_000 // 30s for detail, files, reviews
 const TTL_COMMENTS = 30_000 // 30s for comments
+const MAX_CACHE_ENTRIES = 200 // LRU eviction threshold
 
 function get<T>(key: string): T | undefined {
   const entry = cache.get(key)
@@ -30,11 +32,27 @@ function get<T>(key: string): T | undefined {
     cache.delete(key)
     return undefined
   }
+  // Update access time for LRU
+  entry.lastAccessed = Date.now()
   return entry.data as T
 }
 
 function set(key: string, data: unknown, ttl: number): void {
-  cache.set(key, { data, expiry: Date.now() + ttl })
+  // Evict least recently used entries if cache is full
+  if (cache.size >= MAX_CACHE_ENTRIES) {
+    let oldestKey: string | null = null
+    let oldestTime = Infinity
+    for (const [k, v] of cache.entries()) {
+      if (v.lastAccessed < oldestTime) {
+        oldestTime = v.lastAccessed
+        oldestKey = k
+      }
+    }
+    if (oldestKey) cache.delete(oldestKey)
+  }
+
+  const now = Date.now()
+  cache.set(key, { data, expiry: now + ttl, lastAccessed: now })
 }
 
 /**
@@ -45,6 +63,20 @@ export function invalidateCache(key?: string): void {
     cache.delete(key)
   } else {
     cache.clear()
+  }
+}
+
+/**
+ * Invalidate all cache entries for a specific PR.
+ * Call this after mutations like merge, close, or review submission.
+ */
+export function invalidatePRCache(owner: string, repo: string, number: number): void {
+  const prefix = `${owner}/${repo}#${number}`
+  // Delete all keys matching this PR
+  for (const key of cache.keys()) {
+    if (key.includes(prefix)) {
+      cache.delete(key)
+    }
   }
 }
 

@@ -4,6 +4,7 @@ import { mergePR, type MergeMethod, type PrMergeability } from '../../lib/github
 import type { OpenPr } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
 import { REPO_OPTIONS } from '../../lib/constants'
+import { invalidatePRCache } from '../../lib/github-cache'
 
 interface MergeButtonProps {
   pr: OpenPr
@@ -52,6 +53,7 @@ export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
     setMerging(true)
     try {
       await mergePR(repo.owner, repo.label, pr.number, method)
+      invalidatePRCache(repo.owner, repo.label, pr.number)
       toast.success(`Merged: ${pr.title}`)
       onMerged?.(pr)
     } catch (e) {
