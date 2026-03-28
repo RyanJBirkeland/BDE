@@ -17,6 +17,7 @@ import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useHealthCheck } from '../../hooks/useHealthCheck'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { ConfirmModal } from '../ui/ConfirmModal'
+import { Button } from '../ui/Button'
 import { PipelineBacklog } from './PipelineBacklog'
 import { PipelineStage } from './PipelineStage'
 import { TaskDetailDrawer } from './TaskDetailDrawer'
@@ -28,8 +29,15 @@ import '../../assets/sprint-pipeline-neon.css'
 
 export function SprintPipeline() {
   // --- Store state ---
-  const tasks = useSprintTasks((s) => s.tasks)
+  const { tasks, loading, loadError } = useSprintTasks(
+    useShallow((s) => ({
+      tasks: s.tasks,
+      loading: s.loading,
+      loadError: s.loadError
+    }))
+  )
   const updateTask = useSprintTasks((s) => s.updateTask)
+  const loadData = useSprintTasks((s) => s.loadData)
 
   const { selectedTaskId, drawerOpen, specPanelOpen, doneViewOpen, logDrawerTaskId } = useSprintUI(
     useShallow((s) => ({
@@ -160,7 +168,25 @@ export function SprintPipeline() {
         </div>
       </header>
 
-      {tasks.length === 0 && (
+      {loading && tasks.length === 0 && (
+        <div className="pipeline-empty-state">
+          <p className="pipeline-empty-state__title">Loading tasks...</p>
+        </div>
+      )}
+
+      {loadError && (
+        <div className="pipeline-empty-state">
+          <p className="pipeline-empty-state__title">Error loading tasks</p>
+          <p className="pipeline-empty-state__hint" style={{ marginBottom: '12px' }}>
+            {loadError}
+          </p>
+          <Button variant="primary" size="sm" onClick={loadData} disabled={loading}>
+            {loading ? 'Retrying…' : 'Retry'}
+          </Button>
+        </div>
+      )}
+
+      {!loading && !loadError && tasks.length === 0 && (
         <div className="pipeline-empty-state">
           <p className="pipeline-empty-state__title">No tasks yet</p>
           <p className="pipeline-empty-state__hint">
