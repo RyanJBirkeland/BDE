@@ -197,7 +197,7 @@ function App(): React.JSX.Element {
 
       if (inInput && !e.metaKey) return
 
-      if (e.metaKey && e.key >= '1' && e.key <= '9') {
+      if (e.metaKey && e.key >= '0' && e.key <= '9') {
         const target = VIEW_SHORTCUT_MAP[e.key]
         if (target) {
           e.preventDefault()
