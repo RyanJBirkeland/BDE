@@ -1,7 +1,7 @@
 /**
  * Tests that pendingReview store persists to and restores from localStorage.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest'
 import { usePendingReviewStore } from '../pendingReview'
 import type { PendingComment } from '../pendingReview'
 
@@ -19,8 +19,13 @@ function makeComment(id: string): PendingComment {
 
 describe('pendingReview store — localStorage persistence', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     localStorage.clear()
     usePendingReviewStore.setState({ pendingComments: {} })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('restoreFromStorage is a no-op when localStorage is empty', () => {
@@ -46,6 +51,7 @@ describe('pendingReview store — localStorage persistence', () => {
 
   it('auto-persists when a comment is added', () => {
     usePendingReviewStore.getState().addComment('repo#2', makeComment('c2'))
+    vi.advanceTimersByTime(500)
     const raw = localStorage.getItem(STORAGE_KEY)
     expect(raw).not.toBeNull()
     const parsed = JSON.parse(raw!) as Record<string, PendingComment[]>
@@ -57,6 +63,7 @@ describe('pendingReview store — localStorage persistence', () => {
     usePendingReviewStore.getState().addComment('repo#3', makeComment('c3a'))
     usePendingReviewStore.getState().addComment('repo#3', makeComment('c3b'))
     usePendingReviewStore.getState().removeComment('repo#3', 'c3a')
+    vi.advanceTimersByTime(500)
 
     const raw = localStorage.getItem(STORAGE_KEY)!
     const parsed = JSON.parse(raw) as Record<string, PendingComment[]>
@@ -67,6 +74,7 @@ describe('pendingReview store — localStorage persistence', () => {
   it('auto-persists when pending is cleared', () => {
     usePendingReviewStore.getState().addComment('repo#4', makeComment('c4'))
     usePendingReviewStore.getState().clearPending('repo#4')
+    vi.advanceTimersByTime(500)
 
     const raw = localStorage.getItem(STORAGE_KEY)!
     const parsed = JSON.parse(raw) as Record<string, PendingComment[]>
@@ -84,10 +92,10 @@ describe('pendingReview store — localStorage persistence', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
       throw new Error('QuotaExceededError')
     })
-    // Should not throw
-    expect(() => {
-      usePendingReviewStore.getState().addComment('repo#5', makeComment('c5'))
-    }).not.toThrow()
+    // addComment itself should not throw
+    usePendingReviewStore.getState().addComment('repo#5', makeComment('c5'))
+    // Debounced persist fires and hits the throwing mock — should not propagate
+    expect(() => vi.advanceTimersByTime(500)).not.toThrow()
     vi.restoreAllMocks()
   })
 })
