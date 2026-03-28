@@ -139,10 +139,6 @@ vi.mock('../../components/pr-station/PRStationDetail', () => ({
   PRStationDetail: () => <div data-testid="pr-station-detail" />
 }))
 
-vi.mock('../../components/pr-station/PRStationActions', () => ({
-  PRStationActions: () => <div data-testid="pr-station-actions" />
-}))
-
 vi.mock('../../components/pr-station/PRStationDiff', () => ({
   PRStationDiff: () => <div data-testid="pr-station-diff" />
 }))

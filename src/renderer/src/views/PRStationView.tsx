@@ -4,7 +4,6 @@ import { FileCode2 } from 'lucide-react'
 import { EmptyState } from '../components/ui/EmptyState'
 import { PRStationList } from '../components/pr-station/PRStationList'
 import { PRStationDetail } from '../components/pr-station/PRStationDetail'
-import { PRStationActions } from '../components/pr-station/PRStationActions'
 import { PRStationDiff } from '../components/pr-station/PRStationDiff'
 import { PRStationFilters, type PRFilters } from '../components/pr-station/PRStationFilters'
 import { ReviewSubmitDialog } from '../components/pr-station/ReviewSubmitDialog'
@@ -187,11 +186,6 @@ export default function PRStationView() {
                     pr={selectedPr}
                     mergeability={mergeability}
                     onMerged={handleRemovePr}
-                  />
-                  <PRStationActions
-                    pr={selectedPr}
-                    mergeability={mergeability}
-                    onRemovePr={handleRemovePr}
                   />
                 </div>
               ) : (
