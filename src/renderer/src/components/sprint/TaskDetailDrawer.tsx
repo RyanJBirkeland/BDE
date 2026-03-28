@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
+import { useSprintTasks } from '../../stores/sprintTasks'
 
 const MIN_DRAWER_WIDTH = 280
 const MAX_DRAWER_WIDTH = 700
@@ -57,10 +58,13 @@ function getDotColor(status: string): string {
 }
 
 function getDependencyStats(
-  deps: SprintTask['depends_on']
+  deps: SprintTask['depends_on'],
+  allTasks: SprintTask[]
 ): { count: number; complete: number } | null {
   if (!deps || deps.length === 0) return null
-  return { count: deps.length, complete: 0 }
+  const depIds = new Set(deps.map((d) => d.id))
+  const complete = allTasks.filter((t) => depIds.has(t.id) && t.status === 'done').length
+  return { count: deps.length, complete }
 }
 
 export function TaskDetailDrawer({
@@ -116,7 +120,8 @@ export function TaskDetailDrawer({
     document.addEventListener('mouseup', onUp)
   }, [width])
 
-  const depStats = getDependencyStats(task.depends_on)
+  const allTasks = useSprintTasks((s) => s.tasks)
+  const depStats = getDependencyStats(task.depends_on, allTasks)
 
   return (
     <aside className="task-drawer" data-testid="task-detail-drawer" style={{ width }}>
