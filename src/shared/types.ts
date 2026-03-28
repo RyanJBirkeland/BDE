@@ -3,6 +3,8 @@
  * Single source of truth — do not redefine these elsewhere.
  */
 
+export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer'
+
 export interface AgentMeta {
   id: string
   pid: number | null
