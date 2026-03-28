@@ -52,9 +52,9 @@ test.describe('Keyboard navigation — full cycle', () => {
 
     await window.keyboard.press('Meta+4')
 
-    // SprintCenter title rendered inside SprintView
-    await expect(window.locator('.sprint-center__title')).toBeVisible({ timeout: 5_000 })
-    await expect(window.locator('.sprint-center__title')).toContainText('SPRINT CENTER')
+    // SprintPipeline title rendered inside SprintView
+    await expect(window.locator('.sprint-pipeline__title')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.sprint-pipeline__title')).toContainText('Task Pipeline')
   })
 
   test('Cmd+5 → PR Station view', async ({ bde }) => {
