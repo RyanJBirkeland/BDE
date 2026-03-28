@@ -11,6 +11,7 @@ import { importAgent, updateAgentMeta } from './agent-history'
 import { buildAgentEnvWithAuth } from './env-utils'
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
+import { buildAgentPrompt } from './agent-manager/prompt-composer'
 
 /** Wrapper around an SDK Query for ad-hoc agent management */
 interface AdhocSession {
@@ -29,6 +30,7 @@ export async function spawnAdhocAgent(args: {
   task: string
   repoPath: string
   model?: string
+  assistant?: boolean
 }): Promise<SpawnLocalAgentResult> {
   const model = args.model || 'claude-sonnet-4-5'
 
@@ -39,10 +41,16 @@ export async function spawnAdhocAgent(args: {
   const sdk = await import('@anthropic-ai/claude-agent-sdk')
   const sessionId = randomUUID()
 
+  // Build composed prompt with preamble
+  const prompt = buildAgentPrompt({
+    agentType: args.assistant ? 'assistant' : 'adhoc',
+    taskContent: args.task
+  })
+
   // Create the initial user message
   const initialMessage: import('@anthropic-ai/claude-agent-sdk').SDKUserMessage = {
     type: 'user',
-    message: { role: 'user', content: args.task },
+    message: { role: 'user', content: prompt },
     parent_tool_use_id: null,
     session_id: sessionId
   }

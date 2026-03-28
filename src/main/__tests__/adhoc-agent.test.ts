@@ -22,10 +22,18 @@ vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
   return { ...actual, existsSync: vi.fn(() => false), readFileSync: vi.fn() }
 })
+vi.mock('../agent-manager/prompt-composer', () => ({
+  buildAgentPrompt: vi.fn((input) => {
+    // Mock that returns a composed prompt with preamble
+    const preamble = input.agentType === 'assistant' ? '[ASSISTANT PREAMBLE]' : '[ADHOC PREAMBLE]'
+    return `${preamble}\n\n${input.taskContent}`
+  })
+}))
 
 import { spawnAdhocAgent } from '../adhoc-agent'
 import { importAgent, updateAgentMeta } from '../agent-history'
 import { broadcast } from '../broadcast'
+import { buildAgentPrompt } from '../agent-manager/prompt-composer'
 
 function createMockQueryHandle(messages: unknown[] = []) {
   const handle = {
@@ -177,5 +185,89 @@ describe('spawnAdhocAgent', () => {
       agentId: 'agent-1',
       event: expect.objectContaining({ type: 'agent:error', message: 'SDK crash' })
     })
+  })
+})
+
+describe('spawnAdhocAgent — prompt composer integration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(importAgent).mockResolvedValue({
+      id: 'agent-1',
+      logPath: '/tmp/logs/agent-1/log.jsonl'
+    } as any)
+  })
+
+  it('calls buildAgentPrompt with adhoc agentType when assistant flag is not set', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({
+      task: 'fix the bug',
+      repoPath: '/tmp/test-repo',
+      model: 'sonnet'
+    })
+
+    expect(buildAgentPrompt).toHaveBeenCalledWith({
+      agentType: 'adhoc',
+      taskContent: 'fix the bug'
+    })
+  })
+
+  it('calls buildAgentPrompt with assistant agentType when assistant flag is true', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({
+      task: 'help me understand the codebase',
+      repoPath: '/tmp/test-repo',
+      model: 'sonnet',
+      assistant: true
+    })
+
+    expect(buildAgentPrompt).toHaveBeenCalledWith({
+      agentType: 'assistant',
+      taskContent: 'help me understand the codebase'
+    })
+  })
+
+  it('passes composed prompt to sdk.query initial message', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+    vi.mocked(buildAgentPrompt).mockReturnValue('[PREAMBLE]\n\nuser task')
+
+    await spawnAdhocAgent({
+      task: 'user task',
+      repoPath: '/tmp/r'
+    })
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.anything()
+      })
+    )
+
+    // Verify the prompt generator yields a message with the composed prompt
+    const call = mockQuery.mock.calls[0][0]
+    const promptGen = call.prompt
+    const firstMessage = await promptGen.next()
+    expect(firstMessage.value.message.content).toBe('[PREAMBLE]\n\nuser task')
+  })
+
+  it('includes settingSources in SDK options', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({
+      task: 'test',
+      repoPath: '/tmp/r'
+    })
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          settingSources: ['user', 'project', 'local']
+        })
+      })
+    )
   })
 })

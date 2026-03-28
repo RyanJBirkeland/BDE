@@ -13,6 +13,7 @@ import { extname, basename, join } from 'node:path'
 import { broadcast } from '../broadcast'
 import { mapRawMessage, emitAgentEvent } from '../agent-event-mapper'
 import type { AgentEvent } from '../../shared/types'
+import { buildAgentPrompt } from './prompt-composer'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -135,8 +136,8 @@ export async function runAgent(
 ): Promise<void> {
   const { activeAgents, defaultModel, logger, onTaskTerminal, repo } = deps
 
-  let prompt = (task.prompt || task.spec || task.title || '').trim()
-  if (!prompt) {
+  const taskContent = (task.prompt || task.spec || task.title || '').trim()
+  if (!taskContent) {
     logger.error(`[agent-manager] Task ${task.id} has no prompt/spec/title — marking error`)
     repo.updateTask(task.id, {
       status: 'error',
@@ -149,21 +150,12 @@ export async function runAgent(
     return
   }
 
-  // CRITICAL: Tell the agent which branch it is on so it does not push to main.
-  prompt += `\n\n## Setup\nBefore starting, run \`npm install\` if node_modules/ is missing or incomplete.\n\n## Git Branch\nYou are working on branch \`${worktree.branch}\`. Commit and push ONLY to this branch.\nDo NOT checkout, merge to, or push to \`main\`. The CI/PR system handles integration.\nIf you need to push, use: \`git push origin ${worktree.branch}\``
-  // Conditionally augment prompt with playground instructions
-  if (task.playground_enabled) {
-    prompt += `\n\n## Dev Playground
-
-You have access to a Dev Playground for previewing frontend UI natively in BDE.
-When you want to show a visual preview:
-
-1. Write a self-contained HTML file (inline all CSS and JS, no external dependencies)
-2. The preview will automatically appear inline in the BDE chat when you write .html files
-
-Keep playgrounds focused on one component or layout at a time. Do NOT run
-\`open\` or start a localhost server — BDE renders the HTML natively.`
-  }
+  const prompt = buildAgentPrompt({
+    agentType: 'pipeline',
+    taskContent,
+    branch: worktree.branch,
+    playgroundEnabled: task.playground_enabled
+  })
 
   let handle: AgentHandle
   try {

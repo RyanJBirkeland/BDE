@@ -24,6 +24,13 @@ vi.mock('../sdk-adapter', () => ({
   spawnAgent: vi.fn()
 }))
 
+vi.mock('../prompt-composer', () => ({
+  buildAgentPrompt: vi.fn((input) => {
+    // Simple mock that concatenates taskContent with branch info
+    return input.taskContent + (input.branch ? `\n\nBranch: ${input.branch}` : '')
+  })
+}))
+
 vi.mock('../completion', () => ({
   resolveSuccess: vi.fn().mockResolvedValue(undefined),
   resolveFailure: vi.fn().mockReturnValue(false)
@@ -522,6 +529,46 @@ describe('runAgent — updateTask.catch error handlers', () => {
     await runAgent(makeTask(), worktree, repoPath, deps)
     expect(deps.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-1 after spawn failure')
+    )
+  })
+})
+
+describe('runAgent — prompt composer integration', () => {
+  beforeEach(() => vi.clearAllMocks())
+  it('calls buildAgentPrompt with pipeline agentType, taskContent, branch, and playground flag', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+    const { buildAgentPrompt } = await import('../prompt-composer')
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
+
+    const deps = makeDeps()
+    await runAgent(
+      makeTask({ prompt: 'Fix the bug', playground_enabled: true }),
+      worktree,
+      repoPath,
+      deps
+    )
+
+    expect(buildAgentPrompt).toHaveBeenCalledWith({
+      agentType: 'pipeline',
+      taskContent: 'Fix the bug',
+      branch: 'agent/test',
+      playgroundEnabled: true
+    })
+  })
+
+  it('calls spawnAgent with the composed prompt', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+    const { buildAgentPrompt } = await import('../prompt-composer')
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
+    ;(buildAgentPrompt as ReturnType<typeof vi.fn>).mockReturnValue('COMPOSED_PROMPT')
+
+    const deps = makeDeps()
+    await runAgent(makeTask({ prompt: 'Test task' }), worktree, repoPath, deps)
+
+    expect(spawnAgent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: 'COMPOSED_PROMPT'
+      })
     )
   })
 })
