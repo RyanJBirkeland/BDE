@@ -8,6 +8,7 @@ import { toast } from '../../stores/toasts'
 import { Kbd } from '../ui/Kbd'
 import { timeAgo } from '../../lib/format'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
+import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 
 type CommandCategory = 'navigation' | 'action' | 'panel' | 'session'
 
@@ -52,6 +53,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   useFocusTrap(paletteRef, open)
   const setView = usePanelLayoutStore((s) => s.setView)
   const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
+  const { confirm, confirmProps } = useConfirm()
 
   // Fetch recent agents when palette opens
   useEffect(() => {
@@ -150,11 +152,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
             return
           }
 
-          if (
-            !window.confirm(
-              `Kill ${processes.length} running agent${processes.length > 1 ? 's' : ''}?`
-            )
-          ) {
+          const confirmed = await confirm({
+            message: `Kill ${processes.length} running agent${processes.length > 1 ? 's' : ''}?`,
+            variant: 'danger'
+          })
+
+          if (!confirmed) {
             return
           }
 
@@ -357,6 +360,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
           </motion.div>
         </div>
       )}
+      <ConfirmModal {...confirmProps} />
     </AnimatePresence>
   )
 }

@@ -17,7 +17,7 @@ export function TerminalToolbar({
     <div className="terminal-toolbar">
       {!isAgentTab && (
         <button className="terminal-toolbar__btn" onClick={onClear} title="Clear terminal">
-          <span className="terminal-toolbar__kbd">⌘K</span>
+          <span className="terminal-toolbar__kbd">⌃L</span>
         </button>
       )}
 

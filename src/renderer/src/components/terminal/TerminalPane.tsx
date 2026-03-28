@@ -33,6 +33,7 @@ export function TerminalPane({ tabId, shell, cwd, visible }: TerminalPaneProps):
   const cleanupRef = useRef<(() => void) | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
   const termRef = useRef<Terminal | null>(null)
+  const fontSize = useTerminalStore((s) => s.fontSize)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -40,7 +41,7 @@ export function TerminalPane({ tabId, shell, cwd, visible }: TerminalPaneProps):
     const term = new Terminal({
       theme: getTerminalTheme(),
       fontFamily: tokens.font.code,
-      fontSize: 13,
+      fontSize,
       lineHeight: 1.5,
       cursorBlink: true
     })
@@ -114,6 +115,15 @@ export function TerminalPane({ tabId, shell, cwd, visible }: TerminalPaneProps):
     })
     return unsub
   }, [])
+
+  // React to fontSize changes
+  useEffect(() => {
+    const term = termRef.current
+    if (term && term.options.fontSize !== fontSize) {
+      term.options.fontSize = fontSize
+      fitAddonRef.current?.fit()
+    }
+  }, [fontSize])
 
   return (
     <div

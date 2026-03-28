@@ -8,6 +8,7 @@ import { LayoutGroup } from 'framer-motion'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
+import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { useSprintEvents } from '../../stores/sprintEvents'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import { useSprintPolling } from '../../hooks/useSprintPolling'
@@ -273,7 +274,10 @@ export function SprintPipeline() {
             onDelete={handleDeleteTask}
             onViewLogs={() => setView('agents')}
             onOpenSpec={() => setSpecPanelOpen(true)}
-            onEdit={() => setView('task-workbench')}
+            onEdit={() => {
+              useTaskWorkbenchStore.getState().loadTask(selectedTask)
+              setView('task-workbench')
+            }}
             onViewAgents={() => setView('agents')}
           />
         )}

@@ -61,6 +61,7 @@ export function PRStationList({
   const [internalPrs, setInternalPrs] = useState<OpenPr[]>([])
   const [checks, setChecks] = useState<Record<string, CheckRunSummary>>({})
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const prs = externalPrs ?? internalPrs
 
@@ -75,6 +76,7 @@ export function PRStationList({
       onPrsChange?.(payload.prs)
       setChecks(payload.checks)
       setLoading(false)
+      setError(null)
     },
     [onPrsChange]
   )
@@ -82,14 +84,27 @@ export function PRStationList({
   // Subscribe to main-process push events
   useEffect(() => {
     // Seed with latest cached data
-    window.api.getPrList().then(applyPayload)
+    window.api
+      .getPrList()
+      .then(applyPayload)
+      .catch(() => {
+        setLoading(false)
+        setError('Failed to fetch PRs. Check your connection and GitHub token.')
+      })
     // Listen for future updates
     return window.api.onPrListUpdated(applyPayload)
   }, [applyPayload])
 
   const handleRefresh = useCallback(() => {
     setLoading(true)
-    window.api.refreshPrList().then(applyPayload)
+    setError(null)
+    window.api
+      .refreshPrList()
+      .then(applyPayload)
+      .catch(() => {
+        setLoading(false)
+        setError('Failed to refresh PRs. Check your connection and GitHub token.')
+      })
   }, [applyPayload])
 
   return (
@@ -112,7 +127,13 @@ export function PRStationList({
       </div>
 
       <div className="pr-station-list__rows">
-        {loading && prs.length === 0 ? (
+        {error ? (
+          <EmptyState
+            icon={<CircleX size={24} />}
+            title="Failed to load PRs"
+            description={error}
+          />
+        ) : loading && prs.length === 0 ? (
           <div className="pr-station-list__loading">
             <div className="sprint-board__skeleton" />
             <div className="sprint-board__skeleton" />

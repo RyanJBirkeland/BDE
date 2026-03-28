@@ -74,9 +74,15 @@ vi.mock('xterm-addon-web-links', () => ({
 vi.mock('xterm/css/xterm.css', () => ({}))
 
 vi.mock('../../../stores/terminal', () => ({
-  useTerminalStore: {
-    getState: () => ({ setPtyId: mocks.mockSetPtyId })
-  }
+  useTerminalStore: Object.assign(
+    (selector?: any) => {
+      const state = { setPtyId: mocks.mockSetPtyId, fontSize: 13 }
+      return selector ? selector(state) : state
+    },
+    {
+      getState: () => ({ setPtyId: mocks.mockSetPtyId, fontSize: 13 })
+    }
+  )
 }))
 
 vi.mock('../../../stores/theme', () => ({

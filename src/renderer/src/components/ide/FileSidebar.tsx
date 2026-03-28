@@ -4,6 +4,7 @@ import { useIDEStore } from '../../stores/ide'
 import { toast } from '../../stores/toasts'
 import { FileTree } from './FileTree'
 import { FileContextMenu, ContextMenuTarget } from './FileContextMenu'
+import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 
 export interface FileSidebarProps {
   onOpenFile: (filePath: string) => void
@@ -14,6 +15,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   const setRootPath = useIDEStore((s) => s.setRootPath)
   const toggleSidebar = useIDEStore((s) => s.toggleSidebar)
   const [contextMenu, setContextMenu] = useState<ContextMenuTarget | null>(null)
+  const { confirm, confirmProps } = useConfirm()
 
   async function handleOpenFolder(): Promise<void> {
     const dir = await window.api.openDirectoryDialog()
@@ -57,7 +59,11 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
 
   async function handleDelete(path: string): Promise<void> {
     const name = path.split('/').pop() ?? path
-    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return
+    const confirmed = await confirm({
+      message: `Delete "${name}"? This cannot be undone.`,
+      variant: 'danger'
+    })
+    if (!confirmed) return
     try {
       await window.api.deletePath(path)
     } catch (err) {
@@ -138,6 +144,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
           onClose={() => setContextMenu(null)}
         />
       )}
+      <ConfirmModal {...confirmProps} />
     </div>
   )
 }

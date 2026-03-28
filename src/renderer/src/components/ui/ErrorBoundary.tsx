@@ -22,6 +22,10 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error(`[ErrorBoundary:${this.props.name ?? 'unknown'}]`, error, info)
   }
 
+  handleReset = (): void => {
+    this.setState({ error: null })
+  }
+
   render(): ReactNode {
     if (this.state.error) {
       return (
@@ -37,7 +41,24 @@ export class ErrorBoundary extends Component<Props, State> {
             <div style={{ fontWeight: 600, marginBottom: tokens.space[1] }}>
               {this.props.name ? `${this.props.name} crashed` : 'Something went wrong'}
             </div>
-            <div style={{ opacity: 0.7 }}>{this.state.error.message}</div>
+            <div style={{ opacity: 0.7, marginBottom: tokens.space[3] }}>
+              {this.state.error.message}
+            </div>
+            <button
+              onClick={this.handleReset}
+              style={{
+                padding: `${tokens.space[1]} ${tokens.space[3]}`,
+                backgroundColor: tokens.color.accent,
+                color: tokens.color.bg,
+                border: 'none',
+                borderRadius: tokens.radius.sm,
+                cursor: 'pointer',
+                fontFamily: tokens.font.ui,
+                fontSize: tokens.size.sm
+              }}
+            >
+              Try Again
+            </button>
           </div>
         )
       )
