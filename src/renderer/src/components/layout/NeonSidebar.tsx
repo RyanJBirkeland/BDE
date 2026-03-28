@@ -11,6 +11,7 @@ import {
   Workflow,
   type LucideIcon
 } from 'lucide-react'
+import { useShallow } from 'zustand/react/shallow'
 import { SidebarItem } from './SidebarItem'
 import { OverflowMenu } from './OverflowMenu'
 import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar'
@@ -62,12 +63,19 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
   const pinnedViews = useSidebarStore((s) => s.pinnedViews)
   const { pinView, unpinView } = useSidebarStore()
 
-  const root = usePanelLayoutStore((s) => s.root)
-  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
-  const { splitPanel, addTab, closeTab, findPanelByView } = usePanelLayoutStore()
-
-  const activeView = usePanelLayoutStore((s) => s.activeView)
-  const setView = usePanelLayoutStore((s) => s.setView)
+  const { root, focusedPanelId, activeView, setView, splitPanel, addTab, closeTab, findPanelByView } =
+    usePanelLayoutStore(
+      useShallow((s) => ({
+        root: s.root,
+        focusedPanelId: s.focusedPanelId,
+        activeView: s.activeView,
+        setView: s.setView,
+        splitPanel: s.splitPanel,
+        addTab: s.addTab,
+        closeTab: s.closeTab,
+        findPanelByView: s.findPanelByView
+      }))
+    )
 
   const openViews = getOpenViews(root)
   const unpinnedViews = getUnpinnedViews(pinnedViews)

@@ -492,21 +492,41 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
   setView: (view): void => {
     const store = get()
     const existing = store.findPanelByView(view)
+
     if (existing) {
-      store.focusPanel(existing.panelId)
+      // Panel with this view already exists - focus it and activate the tab
       const leaf = findLeaf(store.root, existing.panelId)
       if (leaf) {
         const tabIdx = leaf.tabs.findIndex((t) => t.viewKey === view)
         if (tabIdx >= 0 && tabIdx !== leaf.activeTab) {
-          store.setActiveTab(existing.panelId, tabIdx)
+          // Need to update root and focus
+          const newRoot = setActiveTab(store.root, existing.panelId, tabIdx)
+          set({
+            root: newRoot ?? store.root,
+            focusedPanelId: existing.panelId,
+            activeView: view
+          })
+        } else {
+          // Just need to focus (tab already active)
+          set({
+            focusedPanelId: existing.panelId,
+            activeView: view
+          })
         }
+      } else {
+        // Leaf not found, just update activeView
+        set({ activeView: view })
       }
     } else {
+      // View doesn't exist - add it as a new tab
       const { focusedPanelId, root } = store
       const targetId = focusedPanelId ?? (root.type === 'leaf' ? root.panelId : '')
-      store.addTab(targetId, view)
+      const newRoot = addTab(root, targetId, view)
+      set({
+        root: newRoot ?? root,
+        activeView: view
+      })
     }
-    set({ activeView: view })
   }
 }))
 
