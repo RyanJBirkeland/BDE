@@ -11,6 +11,7 @@
 @import './terminal.css';
 @import './ide.css';
 @import './pr-station.css';
+@import './pr-station-neon.css';
 @import './diff.css';
 @import './command-palette.css';
 @import './toasts.css';
