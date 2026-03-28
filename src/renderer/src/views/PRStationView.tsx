@@ -12,13 +12,14 @@ import { ConfirmModal, useConfirm } from '../components/ui/ConfirmModal'
 import { getPrMergeability, type PrMergeability } from '../lib/github-api'
 import { usePendingReviewStore } from '../stores/pendingReview'
 import type { OpenPr } from '../../../shared/types'
-import { REPO_OPTIONS } from '../lib/constants'
+import { useRepoOptions } from '../hooks/useRepoOptions'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 type DetailTab = 'info' | 'diff'
 
 export default function PRStationView() {
   const reduced = useReducedMotion()
+  const repoOptions = useRepoOptions()
   const [selectedPr, setSelectedPr] = useState<OpenPr | null>(null)
   const [removedKeys, setRemovedKeys] = useState<Set<string>>(new Set())
   const [mergeability, setMergeability] = useState<PrMergeability | null>(null)
@@ -100,7 +101,7 @@ export default function PRStationView() {
       return
     }
     setMergeability(null)
-    const repo = REPO_OPTIONS.find((r) => r.label === selectedPr.repo)
+    const repo = repoOptions.find((r) => r.label === selectedPr.repo)
     if (!repo) return
     const controller = new AbortController()
     getPrMergeability(repo.owner, repo.label, selectedPr.number, controller.signal)
@@ -114,7 +115,7 @@ export default function PRStationView() {
       controller.abort()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prKey])
+  }, [prKey, repoOptions])
 
   return (
     <motion.div

@@ -3,7 +3,7 @@ import { X } from 'lucide-react'
 import { closePR } from '../../lib/github-api'
 import type { OpenPr } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { invalidatePRCache } from '../../lib/github-cache'
 
 interface CloseButtonProps {
@@ -12,12 +12,13 @@ interface CloseButtonProps {
 }
 
 export function CloseButton({ pr, onClosed }: CloseButtonProps) {
+  const repoOptions = useRepoOptions()
   const [closing, setClosing] = useState(false)
 
   const disabled = closing || pr.merged === true
 
   async function handleClose() {
-    const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
+    const repo = repoOptions.find((r) => r.label === pr.repo)
     if (!repo) return
     setClosing(true)
     try {

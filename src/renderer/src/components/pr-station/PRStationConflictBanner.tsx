@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import type { OpenPr } from '../../../../shared/types'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 
 interface ConflictBannerProps {
   pr: OpenPr
@@ -9,6 +9,7 @@ interface ConflictBannerProps {
 }
 
 export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerProps) {
+  const repoOptions = useRepoOptions()
   const [conflictFiles, setConflictFiles] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -18,7 +19,7 @@ export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerPr
       return
     }
 
-    const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
+    const repo = repoOptions.find((r) => r.label === pr.repo)
     if (!repo) return
 
     setLoading(true)
@@ -31,7 +32,7 @@ export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerPr
         setConflictFiles([])
       })
       .finally(() => setLoading(false))
-  }, [pr.repo, pr.number, mergeableState])
+  }, [pr.repo, pr.number, mergeableState, repoOptions])
 
   if (mergeableState !== 'dirty') return null
 

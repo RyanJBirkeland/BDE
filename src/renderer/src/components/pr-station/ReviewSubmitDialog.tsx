@@ -3,7 +3,7 @@ import { Button } from '../ui/Button'
 import { createReview, type CreateReviewBody } from '../../lib/github-api'
 import { usePendingReviewStore } from '../../stores/pendingReview'
 import { toast } from '../../stores/toasts'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import type { OpenPr } from '../../../../shared/types'
 import { invalidatePRCache } from '../../lib/github-cache'
 
@@ -19,13 +19,14 @@ type ReviewEvent = 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES'
 const EMPTY_COMMENTS: [] = []
 
 export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSubmitDialogProps) {
+  const repoOptions = useRepoOptions()
   const [body, setBody] = useState('')
   const [event, setEvent] = useState<ReviewEvent>('COMMENT')
   const [submitting, setSubmitting] = useState(false)
   const pendingComments = usePendingReviewStore((s) => s.pendingComments[prKey] ?? EMPTY_COMMENTS)
   const clearPending = usePendingReviewStore((s) => s.clearPending)
 
-  const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
+  const repo = repoOptions.find((r) => r.label === pr.repo)
 
   const handleSubmit = async () => {
     if (!repo) return

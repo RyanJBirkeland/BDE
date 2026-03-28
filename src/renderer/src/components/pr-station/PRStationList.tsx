@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { CircleCheck, CircleX, Clock, FileCode2 } from 'lucide-react'
 import type { OpenPr, CheckRunSummary, PrListPayload } from '../../../../shared/types'
 import { EmptyState } from '../ui/EmptyState'
 import { Button } from '../ui/Button'
 import { timeAgo } from '../../lib/format'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 
 interface PRStationListProps {
   selectedPr: OpenPr | null
@@ -14,10 +14,6 @@ interface PRStationListProps {
   prs?: OpenPr[]
   onPrsChange?: (prs: OpenPr[]) => void
 }
-
-const REPO_COLOR: Record<string, string> = Object.fromEntries(
-  REPO_OPTIONS.map((r) => [r.label, r.color])
-)
 
 function CIBadge({ summary }: { summary: CheckRunSummary | undefined }) {
   if (!summary || summary.total === 0) {
@@ -61,11 +57,17 @@ export function PRStationList({
   prs: externalPrs,
   onPrsChange
 }: PRStationListProps) {
+  const repoOptions = useRepoOptions()
   const [internalPrs, setInternalPrs] = useState<OpenPr[]>([])
   const [checks, setChecks] = useState<Record<string, CheckRunSummary>>({})
   const [loading, setLoading] = useState(true)
 
   const prs = externalPrs ?? internalPrs
+
+  const repoColorMap = useMemo(
+    () => Object.fromEntries(repoOptions.map((r) => [r.label, r.color])),
+    [repoOptions]
+  )
 
   const applyPayload = useCallback(
     (payload: PrListPayload) => {
@@ -136,7 +138,7 @@ export function PRStationList({
                   <div className="pr-station-list__row-top">
                     <span
                       className="pr-station-list__repo-badge"
-                      style={{ background: REPO_COLOR[pr.repo] ?? 'var(--neon-text-dim)' }}
+                      style={{ background: repoColorMap[pr.repo] ?? 'var(--neon-text-dim)' }}
                     >
                       {pr.repo}
                     </span>

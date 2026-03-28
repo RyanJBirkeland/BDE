@@ -2,17 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import { getPRDiff, getReviewComments } from '../../lib/github-api'
 import type { OpenPr, PrComment } from '../../../../shared/types'
 import { parseDiffChunked, type DiffFile } from '../../lib/diff-parser'
-import { REPO_OPTIONS, DIFF_SIZE_WARN_BYTES } from '../../lib/constants'
+import { DIFF_SIZE_WARN_BYTES } from '../../lib/constants'
 import { ErrorBanner } from '../ui/ErrorBanner'
 import { DiffViewer } from '../diff/DiffViewer'
 import type { LineRange } from '../diff/DiffViewer'
 import { usePendingReviewStore } from '../../stores/pendingReview'
 import type { PendingComment } from '../../stores/pendingReview'
 import { DiffSizeWarning } from '../diff/DiffSizeWarning'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 
 const EMPTY_PENDING: PendingComment[] = []
 
 export function PRStationDiff({ pr }: { pr: OpenPr }) {
+  const repoOptions = useRepoOptions()
   const [files, setFiles] = useState<DiffFile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -55,7 +57,7 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
   }
 
   useEffect(() => {
-    const repoOption = REPO_OPTIONS.find((r) => r.label === pr.repo)
+    const repoOption = repoOptions.find((r) => r.label === pr.repo)
     if (!repoOption) {
       setError('Unknown repo')
       setLoading(false)
@@ -100,7 +102,7 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
       cancelled = true
       abortRef.current?.abort()
     }
-  }, [pr.repo, pr.number])
+  }, [pr.repo, pr.number, repoOptions])
 
   const handleLoadAnyway = (): void => {
     setSizeWarning(null)

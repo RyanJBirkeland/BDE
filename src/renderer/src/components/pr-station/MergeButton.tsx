@@ -3,7 +3,7 @@ import { ChevronDown, GitMerge } from 'lucide-react'
 import { mergePR, type MergeMethod, type PrMergeability } from '../../lib/github-api'
 import type { OpenPr } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { invalidatePRCache } from '../../lib/github-cache'
 
 interface MergeButtonProps {
@@ -19,6 +19,7 @@ const MERGE_STRATEGIES: { value: MergeMethod; label: string }[] = [
 ]
 
 export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
+  const repoOptions = useRepoOptions()
   const [method, setMethod] = useState<MergeMethod>('squash')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [merging, setMerging] = useState(false)
@@ -48,7 +49,7 @@ export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
   }, [pr.number, pr.repo])
 
   async function handleMerge() {
-    const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
+    const repo = repoOptions.find((r) => r.label === pr.repo)
     if (!repo) return
     setMerging(true)
     try {

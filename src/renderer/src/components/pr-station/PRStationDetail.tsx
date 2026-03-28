@@ -14,7 +14,7 @@ import {
   cachedGetIssueComments
 } from '../../lib/github-cache'
 import type { OpenPr, PrReview, PrComment, PrIssueComment } from '../../../../shared/types'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { renderMarkdown } from '../../lib/render-markdown'
 import { PRStationChecks } from './PRStationChecks'
 import { PRStationConflictBanner } from './PRStationConflictBanner'
@@ -66,6 +66,7 @@ function fileStatusBadgeClass(status: string): string {
 }
 
 export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailProps) {
+  const repoOptions = useRepoOptions()
   const [detail, setDetail] = useState<PRDetailData | null>(null)
   const [files, setFiles] = useState<PRFile[]>([])
   const [checks, setChecks] = useState<CheckRun[]>([])
@@ -81,7 +82,7 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
     const controller = new AbortController()
 
     async function fetchAll() {
-      const repo = REPO_OPTIONS.find((r) => r.label === pr.repo)
+      const repo = repoOptions.find((r) => r.label === pr.repo)
       if (!repo) return
 
       setLoading(true)
@@ -141,7 +142,7 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
     return () => {
       controller.abort()
     }
-  }, [pr.repo, pr.number])
+  }, [pr.repo, pr.number, repoOptions])
 
   if (loading) {
     return (
