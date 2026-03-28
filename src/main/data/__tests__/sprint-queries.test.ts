@@ -594,15 +594,17 @@ describe('getHealthCheckTasks', () => {
 })
 
 describe('getTasksWithDependencies', () => {
-  it('returns tasks that have non-null depends_on', () => {
+  it('returns all tasks with depends_on parsed or null', () => {
     const deps = JSON.stringify([{ id: 'dep-1', type: 'hard' }])
     insertTask({ id: 'with-deps', depends_on: deps, status: 'blocked' })
     insertTask({ id: 'no-deps', status: 'backlog' })
 
     const result = getTasksWithDependencies()
-    expect(result.length).toBe(1)
-    expect(result[0].id).toBe('with-deps')
-    expect(result[0].depends_on).toEqual([{ id: 'dep-1', type: 'hard' }])
+    expect(result.length).toBe(2)
+    const withDeps = result.find((t) => t.id === 'with-deps')!
+    const noDeps = result.find((t) => t.id === 'no-deps')!
+    expect(withDeps.depends_on).toEqual([{ id: 'dep-1', type: 'hard' }])
+    expect(noDeps.depends_on).toBeNull()
   })
 })
 

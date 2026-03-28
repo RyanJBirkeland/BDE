@@ -517,15 +517,12 @@ export function getHealthCheckTasks(): SprintTask[] {
 }
 
 export function getAllTaskIds(): Set<string> {
-  try {
-    const rows = getDb()
-      .prepare('SELECT id FROM sprint_tasks')
-      .all() as Array<{ id: string }>
-    return new Set(rows.map((r) => r.id))
-  } catch (err) {
-    logger.warn(`[sprint-queries] getAllTaskIds failed: ${err}`)
-    return new Set()
-  }
+  // No try/catch: DB errors must propagate so callers get a 500,
+  // not a misleading 400 "task IDs do not exist" from an empty Set.
+  const rows = getDb()
+    .prepare('SELECT id FROM sprint_tasks')
+    .all() as Array<{ id: string }>
+  return new Set(rows.map((r) => r.id))
 }
 
 export function getTasksWithDependencies(): Array<{
@@ -533,19 +530,15 @@ export function getTasksWithDependencies(): Array<{
   depends_on: TaskDependency[] | null
   status: string
 }> {
-  try {
-    const rows = getDb()
-      .prepare(
-        'SELECT id, depends_on, status FROM sprint_tasks WHERE depends_on IS NOT NULL'
-      )
-      .all() as Array<{ id: string; depends_on: string; status: string }>
+  // No try/catch: DB errors must propagate (same rationale as getAllTaskIds).
+  // Query ALL tasks, not just those with depends_on — cycle detection needs
+  // the full graph to catch cycles involving tasks receiving their first dependency.
+  const rows = getDb()
+    .prepare('SELECT id, depends_on, status FROM sprint_tasks')
+    .all() as Array<{ id: string; depends_on: string | null; status: string }>
 
-    return rows.map((row) => ({
-      ...row,
-      depends_on: sanitizeDependsOn(row.depends_on)
-    }))
-  } catch (err) {
-    logger.warn(`[sprint-queries] getTasksWithDependencies failed: ${err}`)
-    return []
-  }
+  return rows.map((row) => ({
+    ...row,
+    depends_on: row.depends_on ? sanitizeDependsOn(row.depends_on) : null
+  }))
 }
