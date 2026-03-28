@@ -67,7 +67,8 @@ export async function spawnAdhocAgent(args: {
       cwd: args.repoPath,
       env: env as Record<string, string>,
       permissionMode: 'bypassPermissions',
-      allowDangerouslySkipPermissions: true
+      allowDangerouslySkipPermissions: true,
+      settingSources: ['user', 'project', 'local']
     }
   })
 

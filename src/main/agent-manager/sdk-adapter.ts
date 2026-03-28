@@ -45,7 +45,8 @@ function spawnViaSdk(
       env: env as Record<string, string | undefined>,
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
-      abortController
+      abortController,
+      settingSources: ['user', 'project', 'local']
     }
   })
 

@@ -256,7 +256,8 @@ async function runSdkStreaming(
       maxTurns: 1,
       env: env as Record<string, string>,
       permissionMode: 'bypassPermissions' as const,
-      allowDangerouslySkipPermissions: true
+      allowDangerouslySkipPermissions: true,
+      settingSources: ['user', 'project', 'local']
     }
   })
 
