@@ -80,7 +80,6 @@ export function ConnectionsSection(): React.JSX.Element {
     setHasExistingGhToken(true)
     setGhToken('')
     setGhDirty(false)
-    toast.success('GitHub token saved')
   }, [ghToken])
 
   const handleGhTest = useCallback(async () => {

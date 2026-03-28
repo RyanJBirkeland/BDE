@@ -8,7 +8,7 @@ import { Button } from '../ui/Button'
 
 const DEFAULT_MAX_CONCURRENT = 2
 const DEFAULT_MODEL = 'claude-sonnet-4-5'
-const DEFAULT_WORKTREE_BASE = '/tmp/worktrees/bde'
+const DEFAULT_WORKTREE_BASE = '~/worktrees/bde'
 const DEFAULT_MAX_RUNTIME_MINUTES = 60
 const DEFAULT_AUTO_START = true
 
@@ -105,7 +105,7 @@ export function AgentManagerSection(): React.JSX.Element {
             setWorktreeBase(e.target.value)
             markDirty()
           }}
-          placeholder="/tmp/worktrees/bde"
+          placeholder="~/worktrees/bde"
         />
       </label>
 
