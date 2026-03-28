@@ -73,16 +73,12 @@ export async function route(req: http.IncomingMessage, res: http.ServerResponse)
     return events.handleTaskEvents(res, params['id'], query)
   }
 
-  // GET /queue/tasks/:id
+  // /queue/tasks/:id routes
   params = matchRoute('/queue/tasks/:id', path)
-  if (method === 'GET' && params) {
-    return tasks.handleGetTask(res, params['id'])
-  }
-
-  // PATCH /queue/tasks/:id — general field update
-  params = matchRoute('/queue/tasks/:id', path)
-  if (method === 'PATCH' && params) {
-    return tasks.handleUpdateTask(req, res, params['id'])
+  if (params) {
+    const id = params['id']
+    if (method === 'GET') return tasks.handleGetTask(res, id)
+    if (method === 'PATCH') return tasks.handleUpdateTask(req, res, id)
   }
 
   // PATCH /queue/tasks/:id/status
