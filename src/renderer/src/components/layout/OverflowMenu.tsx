@@ -1,42 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  LayoutDashboard,
-  Terminal,
-  SquareTerminal,
-  ClipboardList,
-  GitPullRequest,
-  Settings,
-  GitCommitHorizontal,
-  Pin,
-  Workflow,
-  type LucideIcon
-} from 'lucide-react'
+import { Pin, Settings } from 'lucide-react'
 import { GlassPanel } from '../neon/GlassPanel'
 import type { View } from '../../stores/panelLayout'
-
-// Icon mapping from ActivityBar NAV_ITEMS
-const VIEW_ICONS: Record<View, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  agents: Terminal,
-  ide: SquareTerminal,
-  sprint: Workflow,
-  'pr-station': GitPullRequest,
-  git: GitCommitHorizontal,
-  settings: Settings,
-  'task-workbench': ClipboardList
-}
-
-const VIEW_LABELS: Record<View, string> = {
-  dashboard: 'Dashboard',
-  agents: 'Agents',
-  ide: 'IDE',
-  sprint: 'Task Pipeline',
-  'pr-station': 'PR Station',
-  git: 'Source Control',
-  settings: 'Settings',
-  'task-workbench': 'Task Workbench'
-}
+import { VIEW_ICONS, VIEW_LABELS } from '../../lib/view-registry'
 
 interface OverflowMenuProps {
   unpinnedViews: View[]

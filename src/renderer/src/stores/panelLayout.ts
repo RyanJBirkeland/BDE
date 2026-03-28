@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { VIEW_LABELS } from '../lib/view-registry'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,21 +36,6 @@ export interface PanelSplitNode {
 }
 
 export type PanelNode = PanelLeafNode | PanelSplitNode
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-export const VIEW_LABELS: Record<View, string> = {
-  dashboard: 'Dashboard',
-  agents: 'Agents',
-  ide: 'IDE',
-  sprint: 'Task Pipeline',
-  'pr-station': 'PR Station',
-  settings: 'Settings',
-  'task-workbench': 'Task Workbench',
-  git: 'Source Control'
-}
 
 // ---------------------------------------------------------------------------
 // ID counter (deterministic for tests)
