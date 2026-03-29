@@ -23,9 +23,11 @@ vi.mock('../../data/sprint-queries', () => ({
   releaseTask: vi.fn()
 }))
 
-// Mock settings — no API key (auth disabled for SSE tests)
+// Mock settings — provide a known API key for auth
+const SSE_TEST_KEY = 'sse-test-key'
 vi.mock('../../settings', () => ({
-  getSetting: vi.fn().mockReturnValue(null)
+  getSetting: vi.fn().mockReturnValue(SSE_TEST_KEY),
+  setSetting: vi.fn()
 }))
 
 // Mock event-queries and db (needed by event-handlers)
@@ -88,7 +90,7 @@ function connectSse(
       reject(new Error('SSE connection timed out'))
     }, timeoutMs)
 
-    const req = http.get({ hostname: '127.0.0.1', port, path }, (res) => {
+    const req = http.get({ hostname: '127.0.0.1', port, path, headers: { Authorization: `Bearer ${SSE_TEST_KEY}` } }, (res) => {
       const chunks: string[] = []
       res.setEncoding('utf8')
       res.on('data', (chunk: string) => chunks.push(chunk))

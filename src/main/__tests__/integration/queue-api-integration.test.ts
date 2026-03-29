@@ -31,10 +31,12 @@ vi.mock('../../data/sprint-queries', () => ({
   releaseTask: (...args: unknown[]) => mockReleaseTask(...args)
 }))
 
-// Mock settings — no API key by default (auth disabled)
-const mockGetSetting = vi.fn().mockReturnValue(null)
+// Mock settings — provide a known API key for auth
+const INTEGRATION_TEST_KEY = 'integration-test-key'
+const mockGetSetting = vi.fn().mockReturnValue(INTEGRATION_TEST_KEY)
 vi.mock('../../settings', () => ({
-  getSetting: (...args: unknown[]) => mockGetSetting(...args)
+  getSetting: (...args: unknown[]) => mockGetSetting(...args),
+  setSetting: vi.fn()
 }))
 
 // ---------------------------------------------------------------------------
@@ -59,6 +61,7 @@ function request(
       method,
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${INTEGRATION_TEST_KEY}`,
         ...headers
       }
     }
@@ -106,7 +109,7 @@ afterAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockGetSetting.mockReturnValue(null) // no auth by default
+  mockGetSetting.mockReturnValue(INTEGRATION_TEST_KEY)
 })
 
 // ---------------------------------------------------------------------------

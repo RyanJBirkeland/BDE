@@ -29,7 +29,8 @@ const API_KEY = 'test-secret-key-123'
 const mockGetSetting = vi.fn()
 
 vi.mock('../../settings', () => ({
-  getSetting: (...args: unknown[]) => mockGetSetting(...args)
+  getSetting: (...args: unknown[]) => mockGetSetting(...args),
+  setSetting: vi.fn()
 }))
 
 // Mock event-queries and db (needed by event-handlers)
@@ -196,12 +197,14 @@ describe('Queue API auth — query param and Bearer header', () => {
     })
   })
 
-  describe('auth disabled (no key configured)', () => {
-    it('allows all requests when no API key is set', async () => {
+  describe('auth with auto-generated key', () => {
+    it('auto-generates a key when none configured and enforces auth', async () => {
       mockGetSetting.mockReturnValue(null)
 
       const { status } = await request('GET', '/queue/health')
-      expect(status).toBe(200)
+      // Auth is always enforced — no key configured means a key is auto-generated
+      // and requests without it are rejected
+      expect(status).toBe(401)
     })
   })
 })

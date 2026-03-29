@@ -111,6 +111,7 @@ vi.mock('../../agent-history', () => ({
 // Mock settings (used by sprint:claimTask)
 vi.mock('../../settings', () => ({
   getSetting: vi.fn().mockReturnValue(null),
+  setSetting: vi.fn(),
   getSettingJson: vi.fn().mockReturnValue(null)
 }))
 
