@@ -86,17 +86,24 @@ describe('IPC Registration Completeness', () => {
   const registeredChannels = extractRegisteredChannels()
 
   it('extracts a non-trivial number of expected channels from IpcChannelMap', () => {
-    // Sanity check: we should find 60+ channels. If this drops, the regex broke.
-    expect(expectedChannels.size).toBeGreaterThanOrEqual(60)
+    // Sanity check: we should find 85+ channels. If this drops, the regex broke.
+    // Current count: 88 (as of PR #528)
+    expect(expectedChannels.size).toBeGreaterThanOrEqual(85)
   })
 
   it('extracts a non-trivial number of registered channels from handler files', () => {
-    expect(registeredChannels.size).toBeGreaterThanOrEqual(50)
+    // Current count: 89 (87 safeHandle/ipcMain.handle + 2 ipcMain.on fire-and-forget)
+    // As of PR #528 (removed 5 channels) and PR #520 (added agent:spawnAssistant)
+    expect(registeredChannels.size).toBeGreaterThanOrEqual(85)
   })
 
   it('every IpcChannelMap channel has a registered handler', () => {
     // agent:event is a broadcast-only channel (main -> renderer via webContents.send),
     // not an invokable handler, so it is excluded from the check.
+    //
+    // Note: Some channels are server-side only and not exposed in preload:
+    // - sprint:getChanges, sprint:batchUpdate (Queue API internal)
+    // - playground:show (dev-only IPC)
     const broadcastOnly = new Set(['agent:event'])
 
     const missing = [...expectedChannels]
