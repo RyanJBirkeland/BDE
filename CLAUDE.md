@@ -177,6 +177,9 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **Cancelling completed tasks orphans PR data**: If a task has already opened a PR and you cancel it, sibling/duplicate tasks doing the same work won't inherit the PR info. The orphaned task stays `active` with no PR data. Fix by manually setting `pr_url`/`pr_status` on the surviving task via SQLite.
 - **Pre-push hook runs full test suite**: Includes both `npm test` (renderer) and `npm run test:main` (integration). Known pre-existing failures: `queue-api-sse.test.ts` (missing `setSetting` mock), `workbench.test.ts` (SDK stub timeouts). If renderer tests and typecheck pass, use `--no-verify` to push.
 - **Cherry-picking agent work to main**: Agent branches often contain the same changes as uncommitted modifications in the main working tree (agents apply changes directly). To cherry-pick: check `git diff` for matching changes, commit them directly, then `git push`. Remaining agent PRs with the same content will show "patch contents already upstream" during rebase — this is expected.
+- **Subagent concurrency limit**: Dispatching 15+ background subagents simultaneously causes API rate limits. Practical limit is ~9 concurrent agents. Dispatch in batches of 6-8, retry rate-limited agents after others complete.
+- **Audit reports**: `docs/superpowers/audits/` contains 15 audit reports + synthesis from March 2026 full-app audit (3 personas × 5 domain groups). Findings are being remediated through the task pipeline. Check `synthesis-final-report.md` for prioritized issues. Reports may reference files that have since been refactored.
+- **Queue API auth bootstrapping**: If `taskRunner.apiKey` setting doesn't exist, the API accepts unauthenticated requests. The key is auto-generated on first access via the `getOrCreateApiKey()` helper. Scripts creating tasks before BDE has generated a key can skip auth headers.
 
 ## Packaging
 
