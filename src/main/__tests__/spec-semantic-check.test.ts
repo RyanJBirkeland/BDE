@@ -1,28 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { EventEmitter } from 'events'
 
 // Mock env-utils
 vi.mock('../env-utils', () => ({
   buildAgentEnv: () => ({ ...process.env })
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MockChild = any
+// Mock the SDK with an async iterable that can be controlled per test
+let mockSdkResponse: string | Error = ''
 
-// Create mock child process factory
-function createMockChild(): MockChild {
-  const child = new EventEmitter()
-  ;(child as MockChild).stdin = { write: vi.fn(), end: vi.fn() }
-  ;(child as MockChild).stdout = new EventEmitter()
-  ;(child as MockChild).stderr = new EventEmitter()
-  ;(child as MockChild).kill = vi.fn()
-  return child
-}
-
-let mockChild: MockChild
-
-vi.mock('child_process', () => ({
-  spawn: () => mockChild
+vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
+  query: vi.fn(() => {
+    // Return an async iterable
+    return {
+      async *[Symbol.asyncIterator]() {
+        if (mockSdkResponse instanceof Error) {
+          throw mockSdkResponse
+        }
+        // Yield an assistant message with the mock response
+        yield {
+          type: 'assistant',
+          message: {
+            content: [
+              {
+                type: 'text',
+                text: mockSdkResponse
+              }
+            ]
+          }
+        }
+      },
+      return: vi.fn()
+    }
+  })
 }))
 
 // Import after mocks
@@ -37,79 +46,63 @@ const validInput = {
 describe('checkSpecSemantic', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockChild = createMockChild()
+    mockSdkResponse = ''
   })
 
   it('returns passed: true when all checks pass', async () => {
-    const promise = checkSpecSemantic(validInput)
-
-    // Simulate successful Claude CLI response
-    const response = JSON.stringify({
+    // Set mock SDK response
+    mockSdkResponse = JSON.stringify({
       clarity: { status: 'pass', message: 'Clear and actionable' },
       scope: { status: 'pass', message: 'Good scope' },
       filesExist: { status: 'pass', message: 'Paths look valid' }
     })
-    mockChild.stdout.emit('data', Buffer.from(response))
-    mockChild.emit('close', 0)
 
-    const result = await promise
+    const result = await checkSpecSemantic(validInput)
     expect(result.passed).toBe(true)
     expect(result.hasFails).toBe(false)
     expect(result.failMessages).toEqual([])
   })
 
   it('returns passed: false when a check fails', async () => {
-    const promise = checkSpecSemantic(validInput)
-
-    const response = JSON.stringify({
+    mockSdkResponse = JSON.stringify({
       clarity: { status: 'fail', message: 'Too vague' },
       scope: { status: 'pass', message: 'Good scope' },
       filesExist: { status: 'pass', message: 'Paths look valid' }
     })
-    mockChild.stdout.emit('data', Buffer.from(response))
-    mockChild.emit('close', 0)
 
-    const result = await promise
+    const result = await checkSpecSemantic(validInput)
     expect(result.passed).toBe(false)
     expect(result.hasFails).toBe(true)
     expect(result.failMessages).toContainEqual(expect.stringContaining('clarity'))
   })
 
   it('returns passed: true with warnings when only warns present', async () => {
-    const promise = checkSpecSemantic(validInput)
-
-    const response = JSON.stringify({
+    mockSdkResponse = JSON.stringify({
       clarity: { status: 'warn', message: 'Could be clearer' },
       scope: { status: 'warn', message: 'Might be broad' },
       filesExist: { status: 'warn', message: 'No specific paths' }
     })
-    mockChild.stdout.emit('data', Buffer.from(response))
-    mockChild.emit('close', 0)
 
-    const result = await promise
+    const result = await checkSpecSemantic(validInput)
     expect(result.passed).toBe(true)
     expect(result.hasWarns).toBe(true)
     expect(result.warnMessages.length).toBe(3)
   })
 
   it('degrades gracefully when Claude CLI is unavailable (spawn error)', async () => {
-    const promise = checkSpecSemantic(validInput)
+    // Mock SDK throwing an error
+    mockSdkResponse = new Error('SDK unavailable')
 
-    mockChild.emit('error', new Error('spawn ENOENT'))
-
-    const result = await promise
+    const result = await checkSpecSemantic(validInput)
     expect(result.passed).toBe(true)
     expect(result.hasWarns).toBe(true)
-    expect(result.warnMessages).toContainEqual(expect.stringContaining('Claude CLI unavailable'))
+    expect(result.warnMessages).toContainEqual(expect.stringContaining('Claude SDK unavailable'))
   })
 
   it('degrades gracefully when Claude CLI returns invalid JSON', async () => {
-    const promise = checkSpecSemantic(validInput)
+    mockSdkResponse = 'not valid json at all'
 
-    mockChild.stdout.emit('data', Buffer.from('not valid json at all'))
-    mockChild.emit('close', 0)
-
-    const result = await promise
+    const result = await checkSpecSemantic(validInput)
     // Invalid JSON should be caught and degrade gracefully
     expect(result.passed).toBe(true)
     expect(result.hasWarns).toBe(true)
