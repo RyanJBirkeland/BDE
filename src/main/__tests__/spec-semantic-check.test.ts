@@ -10,26 +10,28 @@ let mockSdkResponse: string | Error = ''
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: vi.fn(() => {
-    // Return an async iterable
+    const generator = (async function* () {
+      if (mockSdkResponse instanceof Error) {
+        throw mockSdkResponse
+      }
+      yield {
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'text',
+              text: mockSdkResponse
+            }
+          ]
+        }
+      }
+    })()
+
     return {
-      async *[Symbol.asyncIterator]() {
-        if (mockSdkResponse instanceof Error) {
-          throw mockSdkResponse
-        }
-        // Yield an assistant message with the mock response
-        yield {
-          type: 'assistant',
-          message: {
-            content: [
-              {
-                type: 'text',
-                text: mockSdkResponse
-              }
-            ]
-          }
-        }
+      [Symbol.asyncIterator]() {
+        return generator
       },
-      return: vi.fn()
+      return: () => generator.return()
     }
   })
 }))
@@ -89,8 +91,7 @@ describe('checkSpecSemantic', () => {
     expect(result.warnMessages.length).toBe(3)
   })
 
-  it('degrades gracefully when Claude CLI is unavailable (spawn error)', async () => {
-    // Mock SDK throwing an error
+  it('degrades gracefully when Claude SDK is unavailable', async () => {
     mockSdkResponse = new Error('SDK unavailable')
 
     const result = await checkSpecSemantic(validInput)
@@ -99,7 +100,7 @@ describe('checkSpecSemantic', () => {
     expect(result.warnMessages).toContainEqual(expect.stringContaining('Claude SDK unavailable'))
   })
 
-  it('degrades gracefully when Claude CLI returns invalid JSON', async () => {
+  it('degrades gracefully when Claude SDK returns invalid JSON', async () => {
     mockSdkResponse = 'not valid json at all'
 
     const result = await checkSpecSemantic(validInput)

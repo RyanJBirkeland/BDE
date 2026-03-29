@@ -6,12 +6,12 @@ import { EventEmitter } from 'events'
 import type { IpcMainInvokeEvent } from 'electron'
 
 // Mock SDK response (can be controlled per test)
-let mockSdkResponse = 'Placeholder response'
+let mockSdkResponse: string | Error = 'Placeholder response'
 
 // Mock the Agent SDK
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
-  query: vi.fn(() => ({
-    async *[Symbol.asyncIterator]() {
+  query: vi.fn(() => {
+    const generator = (async function* () {
       if (mockSdkResponse instanceof Error) {
         throw mockSdkResponse
       }
@@ -21,10 +21,17 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
           content: [{ type: 'text', text: mockSdkResponse }]
         }
       }
-    },
-    return: vi.fn()
-  }))
+    })()
+
+    return {
+      [Symbol.asyncIterator]() {
+        return generator
+      },
+      return: () => generator.return()
+    }
+  })
 }))
+
 
 // Mock dependencies
 vi.mock('../../auth-guard', () => ({
