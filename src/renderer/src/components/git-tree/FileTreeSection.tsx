@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { tokens } from '../../design-system/tokens'
 import { GitFileRow } from './GitFileRow'
 import type { GitFileEntry } from '../../stores/gitTree'
 
@@ -44,59 +43,20 @@ export function FileTreeSection({
   }
 
   return (
-    <div style={{ marginBottom: tokens.space[2] }}>
+    <div className="git-section">
       {/* Section header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: `${tokens.space[1]} ${tokens.space[3]}`,
-          gap: tokens.space[1],
-          userSelect: 'none'
-        }}
-      >
+      <div className="git-section__header">
         {/* Collapse toggle */}
         <button
           onClick={toggleCollapsed}
           aria-expanded={!collapsed}
           aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: tokens.space[1],
-            flex: 1,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: tokens.color.textMuted,
-            fontSize: tokens.size.xs,
-            fontFamily: tokens.font.ui,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            padding: 0,
-            textAlign: 'left'
-          }}
+          className="git-section__toggle"
         >
           {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
           <span>{title}</span>
           {/* File count badge */}
-          <span
-            aria-label={`${files.length} files`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: '16px',
-              height: '16px',
-              padding: `0 ${tokens.space[1]}`,
-              backgroundColor: tokens.color.surfaceHigh,
-              borderRadius: tokens.radius.full,
-              fontSize: tokens.size.xs,
-              color: tokens.color.textMuted,
-              fontWeight: 400
-            }}
-          >
+          <span aria-label={`${files.length} files`} className="git-section__count-badge">
             {files.length}
           </span>
         </button>
@@ -107,25 +67,7 @@ export function FileTreeSection({
             onClick={onUnstageAll}
             aria-label="Unstage all"
             title="Unstage all"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: tokens.color.textMuted,
-              fontSize: tokens.size.xs,
-              fontFamily: tokens.font.ui,
-              padding: `2px ${tokens.space[1]}`,
-              borderRadius: tokens.radius.sm
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
-              ;(e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                tokens.color.surfaceHigh
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.textMuted
-              ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
-            }}
+            className="git-section__action-btn"
           >
             Unstage All
           </button>
@@ -135,25 +77,7 @@ export function FileTreeSection({
             onClick={onStageAll}
             aria-label="Stage all"
             title="Stage all"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: tokens.color.textMuted,
-              fontSize: tokens.size.xs,
-              fontFamily: tokens.font.ui,
-              padding: `2px ${tokens.space[1]}`,
-              borderRadius: tokens.radius.sm
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
-              ;(e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                tokens.color.surfaceHigh
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.textMuted
-              ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
-            }}
+            className="git-section__action-btn"
           >
             Stage All
           </button>

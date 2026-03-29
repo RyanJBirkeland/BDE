@@ -7,7 +7,6 @@ import { CommitBox } from '../components/git-tree/CommitBox'
 import { FileTreeSection } from '../components/git-tree/FileTreeSection'
 import { BranchSelector } from '../components/git-tree/BranchSelector'
 import { InlineDiffDrawer } from '../components/git-tree/InlineDiffDrawer'
-import { tokens } from '../design-system/tokens'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
@@ -122,50 +121,22 @@ export default function GitTreeView(): React.ReactElement {
 
   return (
     <motion.div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        backgroundColor: tokens.color.surface,
-        overflow: 'hidden'
-      }}
+      className="git-tree-view"
       variants={VARIANTS.fadeIn}
       initial="initial"
       animate="animate"
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: tokens.space[2],
-          padding: `${tokens.space[2]} ${tokens.space[3]}`,
-          borderBottom: `1px solid ${tokens.color.border}`,
-          flexShrink: 0,
-          flexWrap: 'wrap'
-        }}
-      >
+      <div className="git-tree-view__header">
         {/* Title */}
-        <div
-          className="text-gradient-aurora"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: tokens.space[1],
-            fontSize: tokens.size.xs,
-            fontFamily: tokens.font.ui,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}
-        >
+        <div className="git-tree-view__title text-gradient-aurora">
           <GitBranch size={14} />
           Source Control
         </div>
 
         {/* Spacer */}
-        <div style={{ flex: 1 }} />
+        <div className="git-tree-view__spacer" />
 
         {/* Repo selector */}
         {repoPaths.length > 1 && (
@@ -173,16 +144,7 @@ export default function GitTreeView(): React.ReactElement {
             value={activeRepo ?? ''}
             onChange={handleRepoChange}
             aria-label="Select repository"
-            style={{
-              backgroundColor: tokens.color.surfaceHigh,
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.sm,
-              color: tokens.color.text,
-              fontSize: tokens.size.sm,
-              fontFamily: tokens.font.ui,
-              padding: `2px ${tokens.space[2]}`,
-              cursor: 'pointer'
-            }}
+            className="git-tree-view__repo-select"
           >
             {repoPaths.map((p) => (
               <option key={p} value={p}>
@@ -206,25 +168,7 @@ export default function GitTreeView(): React.ReactElement {
           aria-label="Refresh git status"
           title="Refresh"
           disabled={loading}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '24px',
-            height: '24px',
-            background: 'none',
-            border: 'none',
-            cursor: loading ? 'wait' : 'pointer',
-            color: tokens.color.textMuted,
-            borderRadius: tokens.radius.sm,
-            padding: 0
-          }}
-          onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
-          }}
-          onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.textMuted
-          }}
+          className={`git-tree-view__refresh-btn ${loading ? 'git-tree-view__refresh-btn--loading' : ''}`}
         >
           <RefreshCw
             size={14}
@@ -245,14 +189,7 @@ export default function GitTreeView(): React.ReactElement {
       />
 
       {/* File sections — scrollable */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: `${tokens.space[2]} 0`,
-          minHeight: 0
-        }}
-      >
+      <div className="git-tree-view__body">
         {/* Staged changes */}
         <FileTreeSection
           title="Staged Changes"
@@ -279,17 +216,7 @@ export default function GitTreeView(): React.ReactElement {
 
         {/* Empty state */}
         {staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && !loading && (
-          <div
-            style={{
-              padding: tokens.space[6],
-              textAlign: 'center',
-              color: tokens.color.textMuted,
-              fontSize: tokens.size.sm,
-              fontFamily: tokens.font.ui
-            }}
-          >
-            No changes
-          </div>
+          <div className="git-tree-view__empty">No changes</div>
         )}
       </div>
 

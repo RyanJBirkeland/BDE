@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { GitBranch, ChevronDown } from 'lucide-react'
-import { tokens } from '../../design-system/tokens'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,10 +45,7 @@ export function BranchSelector({
   }
 
   return (
-    <div
-      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
-      onKeyDown={handleKeyDown}
-    >
+    <div className="git-branch-selector" onKeyDown={handleKeyDown}>
       {/* Trigger button */}
       <button
         onClick={toggleDropdown}
@@ -62,31 +58,10 @@ export function BranchSelector({
             ? 'Commit or stash changes before switching branches'
             : `Switch branch (current: ${currentBranch})`
         }
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: tokens.space[1],
-          padding: `2px ${tokens.space[2]}`,
-          backgroundColor: tokens.color.surfaceHigh,
-          border: `1px solid ${tokens.color.border}`,
-          borderRadius: tokens.radius.sm,
-          color: isDisabled ? tokens.color.textDim : tokens.color.text,
-          fontSize: tokens.size.sm,
-          fontFamily: tokens.font.ui,
-          cursor: isDisabled ? 'not-allowed' : 'pointer'
-        }}
+        className={`git-branch-selector__trigger ${isDisabled ? 'git-branch-selector__trigger--disabled' : 'git-branch-selector__trigger--enabled'}`}
       >
         <GitBranch size={14} />
-        <span
-          style={{
-            maxWidth: '160px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {currentBranch || 'unknown'}
-        </span>
+        <span className="git-branch-selector__current">{currentBranch || 'unknown'}</span>
         <ChevronDown size={12} />
       </button>
 
@@ -94,39 +69,10 @@ export function BranchSelector({
       {isOpen && (
         <>
           {/* Backdrop to close on outside click */}
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 999 }}
-            onClick={() => setIsOpen(false)}
-          />
-          <div
-            role="listbox"
-            aria-label="Branches"
-            style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              zIndex: 1000,
-              minWidth: '180px',
-              maxHeight: '240px',
-              overflowY: 'auto',
-              backgroundColor: tokens.color.surfaceHigh,
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.md,
-              boxShadow: tokens.shadow.md,
-              marginTop: tokens.space[1]
-            }}
-          >
+          <div className="git-branch-selector__backdrop" onClick={() => setIsOpen(false)} />
+          <div role="listbox" aria-label="Branches" className="git-branch-selector__dropdown">
             {branches.length === 0 ? (
-              <div
-                style={{
-                  padding: tokens.space[3],
-                  color: tokens.color.textMuted,
-                  fontSize: tokens.size.sm,
-                  textAlign: 'center'
-                }}
-              >
-                No branches found
-              </div>
+              <div className="git-branch-selector__empty">No branches found</div>
             ) : (
               branches.map((branch) => (
                 <button
@@ -134,38 +80,10 @@ export function BranchSelector({
                   role="option"
                   aria-selected={branch === currentBranch}
                   onClick={() => handleSelect(branch)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: tokens.space[2],
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: `${tokens.space[1]} ${tokens.space[3]}`,
-                    background: branch === currentBranch ? tokens.color.accentDim : 'none',
-                    border: 'none',
-                    color: branch === currentBranch ? tokens.color.accent : tokens.color.text,
-                    fontSize: tokens.size.sm,
-                    fontFamily: tokens.font.ui,
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (branch !== currentBranch) {
-                      ;(e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                        tokens.color.surfaceHigh
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (branch !== currentBranch) {
-                      ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
-                    }
-                  }}
+                  className={`git-branch-selector__option ${branch === currentBranch ? 'git-branch-selector__option--current' : ''}`}
                 >
                   <GitBranch size={12} />
-                  <span
-                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                  >
-                    {branch}
-                  </span>
+                  <span className="git-branch-selector__option-name">{branch}</span>
                 </button>
               ))
             )}

@@ -1,6 +1,5 @@
 import React from 'react'
 import { Plus, Minus } from 'lucide-react'
-import { tokens } from '../../design-system/tokens'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,18 +19,18 @@ export interface GitFileRowProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function statusColor(status: string): string {
+function statusClassName(status: string): string {
   switch (status) {
     case 'M':
-      return tokens.color.warning
+      return 'git-file-row__status--modified'
     case 'A':
-      return tokens.color.success
+      return 'git-file-row__status--added'
     case 'D':
-      return tokens.color.danger
+      return 'git-file-row__status--deleted'
     case '?':
-      return tokens.color.textMuted
+      return 'git-file-row__status--untracked'
     default:
-      return tokens.color.text
+      return ''
   }
 }
 
@@ -78,48 +77,20 @@ export function GitFileRow({
       role="row"
       aria-selected={selected}
       onClick={handleRowClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: tokens.space[2],
-        padding: `${tokens.space[1]} ${tokens.space[3]}`,
-        cursor: 'pointer',
-        backgroundColor: selected ? tokens.color.accentDim : 'transparent',
-        borderRadius: tokens.radius.sm,
-        fontSize: tokens.size.sm,
-        fontFamily: tokens.font.ui
-      }}
-      onMouseEnter={(e) => {
-        if (!selected) {
-          ;(e.currentTarget as HTMLDivElement).style.backgroundColor = tokens.color.surfaceHigh
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!selected) {
-          ;(e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'
-        }
-      }}
+      className={`git-file-row ${selected ? 'git-file-row--selected' : ''}`}
     >
       {/* Status letter */}
       <span
-        style={{
-          color: statusColor(status),
-          fontWeight: 600,
-          fontFamily: tokens.font.code,
-          fontSize: tokens.size.xs,
-          width: '12px',
-          flexShrink: 0,
-          textAlign: 'center'
-        }}
+        className={`git-file-row__status ${statusClassName(status)}`}
         aria-label={`status: ${status}`}
       >
         {status}
       </span>
 
       {/* File path */}
-      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {dir && <span style={{ color: tokens.color.textMuted }}>{dir}</span>}
-        <span style={{ color: tokens.color.text }}>{name}</span>
+      <span className="git-file-row__path">
+        {dir && <span className="git-file-row__path-dir">{dir}</span>}
+        <span className="git-file-row__path-name">{name}</span>
       </span>
 
       {/* Stage / Unstage button */}
@@ -127,28 +98,7 @@ export function GitFileRow({
         onClick={handleStageClick}
         aria-label={isStaged ? `Unstage ${name}` : `Stage ${name}`}
         title={isStaged ? 'Unstage file' : 'Stage file'}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '20px',
-          height: '20px',
-          borderRadius: tokens.radius.sm,
-          border: 'none',
-          background: 'none',
-          cursor: 'pointer',
-          color: tokens.color.textMuted,
-          flexShrink: 0,
-          padding: 0
-        }}
-        onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.text
-          ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = tokens.color.surfaceHigh
-        }}
-        onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.color = tokens.color.textMuted
-          ;(e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
-        }}
+        className="git-file-row__stage-btn"
       >
         {isStaged ? <Minus size={12} /> : <Plus size={12} />}
       </button>

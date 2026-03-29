@@ -1,6 +1,5 @@
 import React from 'react'
 import { GitCommitHorizontal, Upload } from 'lucide-react'
-import { tokens } from '../../design-system/tokens'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,15 +34,7 @@ export function CommitBox({
   }
 
   return (
-    <div
-      style={{
-        padding: tokens.space[3],
-        borderBottom: `1px solid ${tokens.color.border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: tokens.space[2]
-      }}
-    >
+    <div className="git-commit-box">
       {/* Commit message textarea */}
       <textarea
         value={commitMessage}
@@ -52,30 +43,11 @@ export function CommitBox({
         placeholder="Commit message (⌘↵ to commit)"
         aria-label="Commit message"
         rows={3}
-        style={{
-          width: '100%',
-          resize: 'vertical',
-          backgroundColor: tokens.color.surfaceHigh,
-          border: `1px solid ${tokens.color.border}`,
-          borderRadius: tokens.radius.sm,
-          color: tokens.color.text,
-          fontSize: tokens.size.sm,
-          fontFamily: tokens.font.ui,
-          padding: tokens.space[2],
-          boxSizing: 'border-box',
-          outline: 'none',
-          lineHeight: '1.5'
-        }}
-        onFocus={(e) => {
-          ;(e.currentTarget as HTMLTextAreaElement).style.borderColor = tokens.color.accent
-        }}
-        onBlur={(e) => {
-          ;(e.currentTarget as HTMLTextAreaElement).style.borderColor = tokens.color.border
-        }}
+        className="git-commit-box__textarea"
       />
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', gap: tokens.space[2] }}>
+      <div className="git-commit-box__actions">
         {/* Commit button */}
         <button
           onClick={onCommit}
@@ -88,28 +60,11 @@ export function CommitBox({
                 : 'Enter a commit message'
               : 'Commit staged changes (⌘↵)'
           }
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: tokens.space[1],
-            padding: `${tokens.space[1]} ${tokens.space[2]}`,
-            backgroundColor: canCommit ? tokens.color.accent : tokens.color.surfaceHigh,
-            color: canCommit ? 'var(--bde-btn-primary-text)' : tokens.color.textDim,
-            border: 'none',
-            borderRadius: tokens.radius.sm,
-            fontSize: tokens.size.sm,
-            fontFamily: tokens.font.ui,
-            fontWeight: 600,
-            cursor: canCommit ? 'pointer' : 'not-allowed'
-          }}
+          className={`git-commit-box__commit-btn ${canCommit ? 'git-commit-box__commit-btn--enabled' : 'git-commit-box__commit-btn--disabled'}`}
         >
           <GitCommitHorizontal size={14} />
           Commit
-          {stagedCount > 0 && (
-            <span style={{ fontSize: tokens.size.xs, opacity: 0.8 }}>({stagedCount})</span>
-          )}
+          {stagedCount > 0 && <span className="git-commit-box__count">({stagedCount})</span>}
         </button>
 
         {/* Push button */}
@@ -117,26 +72,7 @@ export function CommitBox({
           onClick={onPush}
           aria-label="Push to remote"
           title="Push to remote"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: tokens.space[1],
-            padding: `${tokens.space[1]} ${tokens.space[3]}`,
-            backgroundColor: tokens.color.surfaceHigh,
-            color: tokens.color.text,
-            border: `1px solid ${tokens.color.border}`,
-            borderRadius: tokens.radius.sm,
-            fontSize: tokens.size.sm,
-            fontFamily: tokens.font.ui,
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.borderColor = tokens.color.borderHover
-          }}
-          onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.borderColor = tokens.color.border
-          }}
+          className="git-commit-box__push-btn"
         >
           <Upload size={14} />
           Push
