@@ -290,7 +290,7 @@ This ensures priority ordering while allowing Medium/Low tasks to proceed even i
 
 ### 5.4 Execution
 
-Phase 3 is executed by a **Task Creation Agent** (19th agent) that:
+Phase 3 is executed by a **Task Creation Agent** (20th agent) that:
 1. Reads `docs/superpowers/audits/prod-audit/synthesis.md`
 2. Parses the Remediation Task Map table
 3. For each row, creates a sprint task via `sprint:create` IPC with status `queued`, a full spec (per Section 5.2 template), and dependency wiring (per Section 5.3)
@@ -377,7 +377,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 - `src/main/__tests__/integration/queue-api-integration.test.ts`
 - `src/main/__tests__/integration/queue-api-sse.test.ts`
 
-### 7.3 Sprint Pipeline (15 source + 15 test files)
+### 7.3 Sprint Pipeline (15 source + 14 test files)
 
 **Source:**
 - `src/main/handlers/sprint-local.ts`
@@ -399,7 +399,6 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 **Tests:**
 - `src/main/handlers/__tests__/sprint-local.test.ts`
 - `src/main/handlers/__tests__/sprint-listeners.test.ts`
-- `src/main/data/__tests__/sprint-queries.test.ts`
 - `src/main/__tests__/sprint.test.ts`
 - `src/main/__tests__/sprint-pr-poller.test.ts`
 - `src/main/__tests__/integration/sprint-ipc.test.ts`
