@@ -63,7 +63,7 @@ export function _resetForTest(): void {
   for (const timer of resizeTimers.values()) clearTimeout(timer)
   resizeTimers.clear()
   if (activeDrag) {
-    clearInterval(activeDrag.pollInterval)
+    if (activeDrag.pollInterval !== null) clearInterval(activeDrag.pollInterval)
     clearTimeout(activeDrag.timeout)
     activeDrag = null
   }
@@ -150,6 +150,36 @@ function getDefaultBounds(): { x: number; y: number; width: number; height: numb
   }
 }
 
+/** Shared setup for tear-off windows: external link handler, bounds persistence, close flow. */
+function setupTearoffWindow(win: BrowserWindow, windowId: string): void {
+  win.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+
+  win.on('resize', () => persistBoundsDebounced(windowId, win))
+  win.on('move', () => persistBoundsDebounced(windowId, win))
+
+  win.on('close', (event) => {
+    if (isQuitting) {
+      tearoffWindows.delete(windowId)
+      clearResizeTimer(windowId)
+      return
+    }
+    event.preventDefault()
+    handleCloseRequest(windowId, win).catch((err) => {
+      logger.error(`[tearoff] close flow error for ${windowId}: ${err}`)
+      tearoffWindows.delete(windowId)
+      clearResizeTimer(windowId)
+      try {
+        win.destroy()
+      } catch {
+        /* already destroyed */
+      }
+    })
+  })
+}
+
 async function handleCloseRequest(windowId: string, win: BrowserWindow): Promise<void> {
   // Check persisted preference
   const closeAction = getSetting('tearoff.closeAction') as 'return' | 'close' | null
@@ -233,32 +263,7 @@ export function restoreTearoffWindows(): void {
       webPreferences: SHARED_WEB_PREFERENCES
     })
 
-    win.webContents.setWindowOpenHandler((details) => {
-      shell.openExternal(details.url)
-      return { action: 'deny' }
-    })
-
-    win.on('resize', () => persistBoundsDebounced(windowId, win))
-    win.on('move', () => persistBoundsDebounced(windowId, win))
-
-    win.on('close', (event) => {
-      if (isQuitting) {
-        tearoffWindows.delete(windowId)
-        clearResizeTimer(windowId)
-        return
-      }
-      event.preventDefault()
-      handleCloseRequest(windowId, win).catch((err) => {
-        logger.error(`[tearoff] close flow error for ${windowId}: ${err}`)
-        tearoffWindows.delete(windowId)
-        clearResizeTimer(windowId)
-        try {
-          win.destroy()
-        } catch {
-          /* already destroyed */
-        }
-      })
-    })
+    setupTearoffWindow(win, windowId)
 
     tearoffWindows.set(windowId, {
       win,
@@ -290,7 +295,7 @@ interface ActiveDrag {
   sourceWindowId: string
   sourceWin: BrowserWindow
   viewKey: string
-  pollInterval: ReturnType<typeof setInterval>
+  pollInterval: ReturnType<typeof setInterval> | null
   targetWinId: number | null
   lastSentX: number
   lastSentY: number
@@ -382,7 +387,7 @@ export function handleStartCrossWindowDrag(
     sourceWindowId: windowId,
     sourceWin,
     viewKey,
-    pollInterval: undefined as unknown as ReturnType<typeof setInterval>,
+    pollInterval: null,
     targetWinId: null,
     lastSentX: -1,
     lastSentY: -1,
@@ -422,7 +427,7 @@ function handleDropComplete(payload: {
   const { sourceWin } = activeDrag
   const targetWinId = activeDrag.targetWinId
 
-  clearInterval(activeDrag.pollInterval)
+  if (activeDrag.pollInterval !== null) clearInterval(activeDrag.pollInterval)
   clearTimeout(activeDrag.timeout)
   activeDrag = null
 
@@ -443,7 +448,7 @@ function handleDropComplete(payload: {
 export function cancelActiveDrag(): void {
   if (!activeDrag) return
 
-  clearInterval(activeDrag.pollInterval)
+  if (activeDrag.pollInterval !== null) clearInterval(activeDrag.pollInterval)
   clearTimeout(activeDrag.timeout)
 
   // Notify all windows of cancellation
@@ -501,42 +506,7 @@ export function registerTearoffHandlers(): void {
         win.show()
       })
 
-      win.webContents.setWindowOpenHandler((details) => {
-        shell.openExternal(details.url)
-        return { action: 'deny' }
-      })
-
-      win.on('resize', () => {
-        persistBoundsDebounced(windowId, win)
-      })
-
-      win.on('move', () => {
-        persistBoundsDebounced(windowId, win)
-      })
-
-      win.on('close', (event) => {
-        if (isQuitting) {
-          // App is quitting — let it proceed immediately
-          tearoffWindows.delete(windowId)
-          clearResizeTimer(windowId)
-          return
-        }
-
-        // Prevent default and run the async two-phase close flow
-        event.preventDefault()
-
-        handleCloseRequest(windowId, win).catch((err) => {
-          logger.error(`[tearoff] close flow error for ${windowId}: ${err}`)
-          // Force-close as fallback
-          tearoffWindows.delete(windowId)
-          clearResizeTimer(windowId)
-          try {
-            win.destroy()
-          } catch {
-            /* already destroyed */
-          }
-        })
-      })
+      setupTearoffWindow(win, windowId)
 
       tearoffWindows.set(windowId, { win, view, views: [view], windowId })
 

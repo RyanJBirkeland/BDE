@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect } from 'react'
+import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { Undo2 } from 'lucide-react'
 import {
   usePanelLayoutStore,
@@ -14,6 +14,7 @@ import { resolveView } from '../../lib/view-resolver'
 import { PanelRenderer } from '../panels/PanelRenderer'
 import { TearoffTabBar } from './TearoffTabBar'
 import { useCrossWindowDrop } from '../../hooks/useCrossWindowDrop'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { CrossWindowDropOverlay } from '../panels/CrossWindowDropOverlay'
 import '../../assets/tearoff-shell.css'
 
@@ -27,11 +28,37 @@ interface CloseDialogProps {
 
 function CloseDialog({ onClose }: CloseDialogProps): React.ReactElement {
   const [remember, setRemember] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const returnBtnRef = useRef<HTMLButtonElement>(null)
+
+  useFocusTrap(dialogRef, true)
+
+  // Auto-focus the Return button on mount
+  useEffect(() => {
+    returnBtnRef.current?.focus()
+  }, [])
+
+  const handleClose = useCallback(
+    (action: 'return' | 'close') => onClose(action, remember),
+    [onClose, remember]
+  )
+
+  // Escape key dismisses the dialog
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        handleClose('close')
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [handleClose])
 
   return (
-    <div className="tearoff-shell__dialog-overlay" role="dialog" aria-modal aria-label="Close window">
+    <div ref={dialogRef} className="tearoff-shell__dialog-overlay" role="dialog" aria-modal aria-labelledby="tearoff-close-dialog-heading">
       <div className="tearoff-shell__dialog">
-        <p>Return this tab to the main window?</p>
+        <p id="tearoff-close-dialog-heading">Return this tab to the main window?</p>
         <label className="tearoff-shell__dialog-remember">
           <input
             type="checkbox"
@@ -41,10 +68,10 @@ function CloseDialog({ onClose }: CloseDialogProps): React.ReactElement {
           Remember my choice
         </label>
         <div className="tearoff-shell__dialog-actions">
-          <button className="bde-btn bde-btn--ghost" onClick={() => onClose('close', remember)}>
+          <button className="bde-btn bde-btn--ghost" onClick={() => handleClose('close')}>
             Close
           </button>
-          <button className="bde-btn bde-btn--primary" onClick={() => onClose('return', remember)}>
+          <button ref={returnBtnRef} className="bde-btn bde-btn--primary" onClick={() => handleClose('return')}>
             Return
           </button>
         </div>
@@ -231,7 +258,6 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
         active={crossDrop.active}
         localX={crossDrop.localX}
         localY={crossDrop.localY}
-        viewKey={crossDrop.viewKey ?? ''}
         onDrop={crossDrop.handleDrop}
       />
       {showDialog && <CloseDialog onClose={handleDialogClose} />}

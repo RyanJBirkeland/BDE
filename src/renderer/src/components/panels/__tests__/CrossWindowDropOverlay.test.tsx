@@ -43,7 +43,7 @@ describe('CrossWindowDropOverlay', () => {
         active={false}
         localX={100}
         localY={100}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -56,7 +56,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={100}
         localY={100}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -69,7 +69,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={0}
         localY={0}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -87,7 +87,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={200}
         localY={150}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -110,7 +110,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={200}
         localY={150}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -130,7 +130,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={200}
         localY={150}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -150,7 +150,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={200}
         localY={150}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -164,7 +164,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={9999}
         localY={9999}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -180,7 +180,7 @@ describe('CrossWindowDropOverlay', () => {
         active={true}
         localX={100}
         localY={100}
-        viewKey="agents"
+
         onDrop={onDrop}
       />
     )
@@ -194,7 +194,7 @@ describe('CrossWindowDropOverlay', () => {
           active={true}
           localX={700}
           localY={650}
-          viewKey="agents"
+  
           onDrop={onDrop}
         />
       )

@@ -106,7 +106,7 @@
   gap: 6px;
   padding: 6px 12px;
   font-size: 12px;
-  color: var(--neon-text-dim);
+  color: var(--neon-text-muted);
   cursor: pointer;
   border-right: 1px solid var(--neon-surface-dim);
   transition: color 100ms ease, background 100ms ease;
@@ -121,3 +121,16 @@
 }
 .tearoff-tab:hover .tearoff-tab__close { opacity: 0.6; }
 .tearoff-tab__close:hover { opacity: 1; background: var(--neon-surface-subtle); }
+.tearoff-tab__close:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tearoff-shell__btn,
+  .tearoff-tab,
+  .tearoff-tab__close {
+    transition: none;
+  }
+}

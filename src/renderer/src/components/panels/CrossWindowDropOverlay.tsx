@@ -10,7 +10,6 @@ interface CrossWindowDropOverlayProps {
   active: boolean
   localX: number
   localY: number
-  viewKey: string
   onDrop: (targetPanelId: string, zone: string) => void
 }
 
@@ -80,18 +79,21 @@ export function CrossWindowDropOverlay({
   active,
   localX,
   localY,
-  viewKey: _viewKey,
   onDrop
 }: CrossWindowDropOverlayProps): React.ReactElement | null {
   const [hitInfo, setHitInfo] = useState<HitInfo | null>(null)
+  const [announcement, setAnnouncement] = useState('')
 
   // Recompute hit info whenever cursor position changes
   useEffect(() => {
     if (!active) {
       setHitInfo(null)
+      setAnnouncement('')
       return
     }
-    setHitInfo(findPanelUnderCursor(localX, localY))
+    const info = findPanelUnderCursor(localX, localY)
+    setHitInfo(info)
+    setAnnouncement(info ? `Drop zone: ${info.zone}` : 'Drag in progress')
   }, [active, localX, localY])
 
   if (!active) return null
@@ -116,6 +118,7 @@ export function CrossWindowDropOverlay({
         }}
       />
       {hitInfo && <div data-testid="drop-zone-highlight" style={zoneStyle(hitInfo.zone, hitInfo.rect)} />}
+      <div className="sr-only" aria-live="polite" role="status">{announcement}</div>
     </>
   )
 }

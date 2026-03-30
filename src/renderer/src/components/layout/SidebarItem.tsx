@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import { NeonTooltip } from '../neon/NeonTooltip'
 import type { View } from '../../stores/panelLayout'
 
@@ -18,6 +18,15 @@ interface ContextMenuState {
   y: number
 }
 
+const MENU_ITEMS = [
+  { label: 'Unpin from sidebar', action: 'unpin' },
+  { label: 'Open to Right', action: 'open-right' },
+  { label: 'Open Below', action: 'open-below' },
+  { label: 'Open in New Tab', action: 'open-tab' },
+  { label: 'Open in New Window', action: 'open-window' },
+  { label: 'Close All', action: 'close-all' }
+]
+
 export function SidebarItem({
   view,
   icon,
@@ -29,6 +38,8 @@ export function SidebarItem({
   onContextAction
 }: SidebarItemProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const triggerId = `sidebar-trigger-${view}`
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -46,19 +57,74 @@ export function SidebarItem({
     }
   }
 
-  const closeContextMenu = () => {
+  const closeContextMenu = useCallback(() => {
     setContextMenu(null)
-  }
+  }, [])
 
-  const handleMenuAction = (action: string) => {
+  const handleMenuAction = useCallback((action: string) => {
     onContextAction(action, view)
-    closeContextMenu()
-  }
+    setContextMenu(null)
+  }, [onContextAction, view])
+
+  // Auto-focus first menu item when menu opens
+  useEffect(() => {
+    if (contextMenu && menuRef.current) {
+      const first = menuRef.current.querySelector<HTMLElement>('[role="menuitem"]')
+      first?.focus()
+    }
+  }, [contextMenu])
+
+  const handleMenuKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const menu = menuRef.current
+    if (!menu) return
+    const items = Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]'))
+    const currentIndex = items.indexOf(e.target as HTMLElement)
+
+    switch (e.key) {
+      case 'ArrowDown': {
+        e.preventDefault()
+        const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0
+        items[next]?.focus()
+        break
+      }
+      case 'ArrowUp': {
+        e.preventDefault()
+        const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1
+        items[prev]?.focus()
+        break
+      }
+      case 'Home':
+        e.preventDefault()
+        items[0]?.focus()
+        break
+      case 'End':
+        e.preventDefault()
+        items[items.length - 1]?.focus()
+        break
+      case 'Enter':
+      case ' ':
+        e.preventDefault()
+        if (currentIndex >= 0) handleMenuAction(MENU_ITEMS[currentIndex].action)
+        break
+      case 'Escape':
+        e.preventDefault()
+        closeContextMenu()
+        break
+    }
+  }, [handleMenuAction, closeContextMenu])
+
+  const handleMenuBlur = useCallback((e: React.FocusEvent) => {
+    // Close if focus leaves the menu entirely
+    if (menuRef.current && !menuRef.current.contains(e.relatedTarget as Node)) {
+      setContextMenu(null)
+    }
+  }, [])
 
   return (
     <>
       <NeonTooltip label={label} shortcut={shortcut}>
         <button
+          id={triggerId}
           draggable
           onDragStart={(e) => {
             e.dataTransfer.effectAllowed = 'move'
@@ -74,6 +140,7 @@ export function SidebarItem({
           onKeyDown={handleKeyDown}
           aria-label={label}
           aria-haspopup="menu"
+          aria-expanded={contextMenu !== null}
           aria-current={isActive ? 'page' : undefined}
         >
           {icon}
@@ -97,8 +164,11 @@ export function SidebarItem({
             }}
           />
           <div
+            ref={menuRef}
             role="menu"
-            aria-label="Sidebar item options"
+            aria-labelledby={triggerId}
+            onKeyDown={handleMenuKeyDown}
+            onBlur={handleMenuBlur}
             style={{
               position: 'fixed',
               top: contextMenu.y,
@@ -112,17 +182,11 @@ export function SidebarItem({
               minWidth: '200px'
             }}
           >
-            {[
-              { label: 'Unpin from sidebar', action: 'unpin' },
-              { label: 'Open to Right', action: 'open-right' },
-              { label: 'Open Below', action: 'open-below' },
-              { label: 'Open in New Tab', action: 'open-tab' },
-              { label: 'Open in New Window', action: 'open-window' },
-              { label: 'Close All', action: 'close-all' }
-            ].map(({ label: menuLabel, action }) => (
+            {MENU_ITEMS.map(({ label: menuLabel, action }) => (
               <button
                 key={action}
                 role="menuitem"
+                tabIndex={-1}
                 onClick={(e) => {
                   e.stopPropagation()
                   handleMenuAction(action)

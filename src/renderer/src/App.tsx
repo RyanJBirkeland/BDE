@@ -344,7 +344,6 @@ function App(): React.JSX.Element {
         active={crossDrop.active}
         localX={crossDrop.localX}
         localY={crossDrop.localY}
-        viewKey={crossDrop.viewKey ?? ''}
         onDrop={crossDrop.handleDrop}
       />
     </div>
