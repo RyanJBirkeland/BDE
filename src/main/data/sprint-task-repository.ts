@@ -2,6 +2,11 @@
  * Abstract interface for sprint task data access.
  * Allows the agent manager to be tested with mock implementations
  * instead of module-level vi.mock() on sprint-queries.
+ *
+ * DL-31: This interface covers only the 7 operations needed by agent-manager.
+ * Other query functions (listTasks, createTask, deleteTask, etc.) are called
+ * directly by IPC handlers and Queue API. Future work: expand this interface
+ * to cover all sprint-queries functions for full repository pattern coverage.
  */
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import * as queries from './sprint-queries'

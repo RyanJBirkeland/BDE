@@ -8,7 +8,6 @@ import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { getDb } from '../db'
 import { recordTaskChanges } from './task-changes'
 import type { Logger } from '../agent-manager/types'
-import type Database from 'better-sqlite3'
 
 // Module-level logger — defaults to console, injectable for testing/structured logging
 let logger: Logger = {

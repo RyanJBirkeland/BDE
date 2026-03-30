@@ -11,7 +11,6 @@ import { getDb } from './db'
 import { BDE_AGENTS_INDEX as AGENTS_INDEX, BDE_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
 import { clearSprintTaskFk } from './data/sprint-queries'
 import {
-  rowToMeta,
   listAgents as _listAgents,
   getAgentMeta as _getAgentMeta,
   insertAgentRecord,
@@ -24,7 +23,6 @@ import {
   getAgentLogPath,
   listAgentRunsByTaskId as _listAgentRunsByTaskId
 } from './data/agent-queries'
-import type { AgentRunRow } from './data/agent-queries'
 import { pruneEventsByAgentIds } from './data/event-queries'
 import type { AgentMeta } from '../shared/types'
 import { createLogger } from './logger'
@@ -159,13 +157,14 @@ export async function getAgentMeta(id: string): Promise<AgentMeta | null> {
 
 export async function updateAgentMeta(id: string, patch: Partial<AgentMeta>): Promise<void> {
   initAgentHistory()
-  const row = _updateAgentMeta(getDb(), id, patch)
+  const meta = _updateAgentMeta(getDb(), id, patch)
 
   // Also update per-agent meta.json on disk
-  if (row?.log_path) {
-    const metaPath = join(LOGS_DIR, datePrefix(row.started_at), row.id, 'meta.json')
+  // DL-33: updateAgentMeta now returns AgentMeta (not AgentRunRow), so use camelCase properties
+  if (meta?.logPath) {
+    const metaPath = join(LOGS_DIR, datePrefix(meta.startedAt), meta.id, 'meta.json')
     try {
-      await writeFile(metaPath, JSON.stringify(rowToMeta(row as AgentRunRow), null, 2), 'utf-8')
+      await writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf-8')
     } catch {
       // Log dir may not exist for imported agents
     }

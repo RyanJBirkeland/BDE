@@ -121,6 +121,17 @@ export function queryEvents(db: Database.Database, opts: QueryEventsOptions): Qu
 export function pruneEventsByAgentIds(db: Database.Database, agentIds: string[]): void {
   if (agentIds.length === 0) return
 
-  const placeholders = agentIds.map(() => '?').join(', ')
-  db.prepare(`DELETE FROM agent_events WHERE agent_id IN (${placeholders})`).run(...agentIds)
+  // DL-27: Batch large arrays to avoid SQLite variable limit (default 999)
+  const BATCH_SIZE = 500
+  if (agentIds.length > BATCH_SIZE) {
+    // Process in batches
+    for (let i = 0; i < agentIds.length; i += BATCH_SIZE) {
+      const batch = agentIds.slice(i, i + BATCH_SIZE)
+      const placeholders = batch.map(() => '?').join(', ')
+      db.prepare(`DELETE FROM agent_events WHERE agent_id IN (${placeholders})`).run(...batch)
+    }
+  } else {
+    const placeholders = agentIds.map(() => '?').join(', ')
+    db.prepare(`DELETE FROM agent_events WHERE agent_id IN (${placeholders})`).run(...agentIds)
+  }
 }

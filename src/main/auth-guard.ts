@@ -37,8 +37,20 @@ export interface CredentialStore {
 
 const CLI_SEARCH_PATHS = ['/usr/local/bin', '/opt/homebrew/bin', join(homedir(), '.local', 'bin')]
 
+// DL-22: Rate limiting for keychain reads to prevent abuse
+const KEYCHAIN_RATE_LIMIT_MS = 1000 // 1 second between reads
+let lastKeychainRead = 0
+
 export class MacOSCredentialStore implements CredentialStore {
   async readToken(): Promise<KeychainPayload | null> {
+    // DL-22: Enforce rate limit
+    const now = Date.now()
+    const timeSinceLastRead = now - lastKeychainRead
+    if (timeSinceLastRead < KEYCHAIN_RATE_LIMIT_MS) {
+      throw new Error(`Keychain read rate limit exceeded. Please wait ${Math.ceil((KEYCHAIN_RATE_LIMIT_MS - timeSinceLastRead) / 1000)}s`)
+    }
+    lastKeychainRead = now
+
     try {
       const { stdout } = await execFileAsync('security', [
         'find-generic-password',

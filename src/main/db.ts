@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { mkdirSync } from 'fs'
+import { mkdirSync, existsSync, chmodSync, statSync } from 'fs'
 import path from 'path'
 import { BDE_DIR as DB_DIR, BDE_DB_PATH as DB_PATH } from './paths'
 
@@ -8,7 +8,17 @@ let _db: Database.Database | null = null
 export function getDb(): Database.Database {
   if (!_db) {
     mkdirSync(DB_DIR, { recursive: true })
+    const dbExists = existsSync(DB_PATH)
     _db = new Database(DB_PATH)
+
+    // DL-23: Set explicit file permissions (0600 = owner read/write only)
+    if (!dbExists) {
+      try {
+        chmodSync(DB_PATH, 0o600)
+      } catch (err) {
+        console.error('[db] Failed to set database file permissions:', err)
+      }
+    }
     _db.pragma('journal_mode = WAL')
     _db.pragma('foreign_keys = ON')
     _db.pragma('synchronous = NORMAL')
@@ -46,6 +56,17 @@ export function backupDatabase(): void {
 
   // DL-11: Propagate VACUUM INTO failures instead of swallowing
   db.exec(`VACUUM INTO '${backupPath}'`)
+
+  // DL-24: Verify backup integrity - check file exists and has reasonable size
+  if (!existsSync(backupPath)) {
+    throw new Error('Backup file was not created')
+  }
+  const backupSize = statSync(backupPath).size
+  const originalSize = statSync(DB_PATH).size
+  // Backup should be at least 10% of original size (VACUUM compresses)
+  if (backupSize < originalSize * 0.1) {
+    console.warn(`[db] Backup may be incomplete: ${backupSize} bytes (original: ${originalSize} bytes)`)
+  }
 }
 
 export interface Migration {

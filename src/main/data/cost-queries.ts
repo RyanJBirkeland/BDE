@@ -76,6 +76,8 @@ function rowToRecord(row: AgentCostRow): AgentCostRecord {
   }
 }
 
+// DL-34: pr_url not in agent_runs table - would require join with sprint_tasks.
+// For now, left as NULL since not all agent runs are associated with sprint tasks.
 const GET_AGENT_HISTORY_SQL = `
   SELECT ar.id, ar.model, ar.started_at, ar.finished_at,
          ar.cost_usd, ar.tokens_in, ar.tokens_out,
@@ -150,6 +152,7 @@ export function getCostSummary(db: Database.Database): CostSummary {
 }
 
 export function getRecentAgentRunsWithCost(db: Database.Database, limit = 20): AgentRunCostRow[] {
+  // DL-34: pr_url not in agent_runs - would require join with sprint_tasks
   const rows = db
     .prepare(
       `

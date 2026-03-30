@@ -117,11 +117,12 @@ const AGENT_COLUMN_MAP: Record<string, string> = {
   sprintTaskId: 'sprint_task_id'
 }
 
+// DL-33: Return mapped AgentMeta for consistency with other query functions
 export function updateAgentMeta(
   db: Database.Database,
   id: string,
   patch: Partial<AgentMeta>
-): AgentRunRow | null {
+): AgentMeta | null {
   const setClauses: string[] = []
   const values: unknown[] = []
 
@@ -142,8 +143,9 @@ export function updateAgentMeta(
 
   db.prepare(`UPDATE agent_runs SET ${setClauses.join(', ')} WHERE id = ?`).run(...values)
 
-  // Return the updated row for callers that need to write meta.json
-  return db.prepare('SELECT * FROM agent_runs WHERE id = ?').get(id) as AgentRunRow | null
+  // Return the updated row mapped to AgentMeta (consistent with getAgentMeta)
+  const row = db.prepare('SELECT * FROM agent_runs WHERE id = ?').get(id) as AgentRunRow | null
+  return row ? rowToMeta(row) : null
 }
 
 export function findAgentByPid(db: Database.Database, pid: number): AgentMeta | null {
