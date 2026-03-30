@@ -148,6 +148,7 @@ describe('handleWatchdogVerdict', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', {
       status: 'error',
       completed_at: now,
+      claimed_by: null, // AM-4 fix
       notes: 'Agent exceeded the maximum runtime of 60 minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.',
       needs_review: true
     })
@@ -170,6 +171,7 @@ describe('handleWatchdogVerdict', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-2', {
       status: 'error',
       completed_at: now,
+      claimed_by: null, // AM-4 fix
       notes: 'Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to \'queued\'.',
       needs_review: true
     })

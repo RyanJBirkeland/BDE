@@ -409,7 +409,8 @@ describe('Agent completion pipeline integration', () => {
         logger
       )
 
-      expect(isTerminal).toBe(false)
+      // AM-5 fix: resolveFailure returns true when retries exhausted, even on DB error
+      expect(isTerminal).toBe(true)
     })
   })
 

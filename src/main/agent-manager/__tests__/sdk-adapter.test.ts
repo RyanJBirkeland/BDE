@@ -80,12 +80,15 @@ describe('spawnAgent (CLI fallback)', () => {
     expect(parsed.message.content).toBe('Do the thing')
   })
 
-  it('spawns claude CLI with correct flags', async () => {
+  it('spawns claude CLI with correct flags (AM-1: no bypassPermissions)', async () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/my/project',
       model: 'claude-opus-4-5'
     })
+
+    const callArgs = mockSpawn.mock.calls[0]
+    const flags = callArgs[1] as string[]
 
     expect(mockSpawn).toHaveBeenCalledWith(
       'claude',
@@ -95,19 +98,22 @@ describe('spawnAgent (CLI fallback)', () => {
         '--input-format',
         'stream-json',
         '--model',
-        'claude-opus-4-5',
-        '--permission-mode',
-        'bypassPermissions'
+        'claude-opus-4-5'
       ]),
       expect.objectContaining({ cwd: '/my/project' })
     )
+
+    // AM-1: Verify bypassPermissions is NOT present
+    expect(flags).not.toContain('bypassPermissions')
+    expect(flags).not.toContain('--permission-mode')
   })
 
-  it('sets ANTHROPIC_API_KEY from OAuth token in env', async () => {
+  it('sets ANTHROPIC_API_KEY from OAuth token in env for CLI (AM-2)', async () => {
     await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5' })
 
     const spawnEnv = (mockSpawn as unknown as MockInstance).mock.calls[0][2].env
-    // OAuth token is set as ANTHROPIC_API_KEY for agent auth
+    // AM-2: For CLI fallback, OAuth token is set as ANTHROPIC_API_KEY
+    // (CLI doesn't support apiKey parameter)
     expect(spawnEnv).toHaveProperty('ANTHROPIC_API_KEY')
   })
 

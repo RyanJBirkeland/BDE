@@ -700,7 +700,7 @@ describe('resolveFailure', () => {
     expect(result).toBe(true)
   })
 
-  it('returns false when updateTask throws', async () => {
+  it('returns true when retries exhausted even if updateTask throws (AM-5)', async () => {
     updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
 
     const result = await resolveFailure({
@@ -709,6 +709,7 @@ describe('resolveFailure', () => {
       repo: mockRepo
     })
 
-    expect(result).toBe(false) // not terminal because the update failed
+    // AM-5 fix: should return true (terminal) even though DB update failed
+    expect(result).toBe(true)
   })
 })

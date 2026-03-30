@@ -11,28 +11,25 @@ export async function spawnAgent(opts: {
 }): Promise<AgentHandle> {
   const env = { ...buildAgentEnv() }
 
-  // Use the cached OAuth token as ANTHROPIC_API_KEY.
-  // This avoids the Keychain access hang inside Electron.
+  // Get OAuth token for SDK auth (not passed via env)
   const token = getOAuthToken()
-  if (token) {
-    env.ANTHROPIC_API_KEY = token
-  }
 
   // Try SDK first, fall back to CLI
   try {
     const sdk = await import('@anthropic-ai/claude-agent-sdk')
-    return spawnViaSdk(sdk, opts, env, opts.logger)
+    return spawnViaSdk(sdk, opts, env, token, opts.logger)
   } catch {
     // SDK not available — use CLI fallback
   }
 
-  return spawnViaCli(opts, env, opts.logger)
+  return spawnViaCli(opts, env, token, opts.logger)
 }
 
 function spawnViaSdk(
   sdk: typeof import('@anthropic-ai/claude-agent-sdk'),
   opts: { prompt: string; cwd: string; model: string },
   env: NodeJS.ProcessEnv,
+  token: string | null,
   logger?: Logger
 ): AgentHandle {
   const abortController = new AbortController()
@@ -43,8 +40,7 @@ function spawnViaSdk(
       model: opts.model,
       cwd: opts.cwd,
       env: env as Record<string, string | undefined>,
-      permissionMode: 'bypassPermissions',
-      allowDangerouslySkipPermissions: true,
+      ...(token ? { apiKey: token } : {}),
       abortController,
       settingSources: ['user', 'project', 'local']
     }
@@ -74,18 +70,10 @@ function spawnViaSdk(
       abortController.abort()
     },
     async steer(message: string): Promise<SteerResult> {
-      try {
-        ;(logger ?? console).warn(
-          `[agent-manager] Steer in SDK mode is limited — message may not reach agent: "${message.slice(0, 100)}"`
-        )
-        await queryResult.interrupt()
-        // Re-send via streamInput is not straightforward for a single query.
-        // The interrupt signals the agent, then we log the steer message intention.
-        // Full steer support requires streaming input mode; this is best-effort.
-        return { delivered: true }
-      } catch (err) {
-        return { delivered: false, error: String(err) }
-      }
+      ;(logger ?? console).warn(
+        `[agent-manager] Steer not supported in SDK mode: "${message.slice(0, 100)}"`
+      )
+      return { delivered: false, error: 'SDK mode does not support steering' }
     }
   }
 }
@@ -93,8 +81,14 @@ function spawnViaSdk(
 function spawnViaCli(
   opts: { prompt: string; cwd: string; model: string },
   env: NodeJS.ProcessEnv,
+  token: string | null,
   _logger?: Logger
 ): AgentHandle {
+  // Set ANTHROPIC_API_KEY in env for CLI (CLI doesn't support auth parameter)
+  if (token) {
+    env = { ...env, ANTHROPIC_API_KEY: token }
+  }
+
   const child = spawn(
     'claude',
     [
@@ -104,9 +98,7 @@ function spawnViaCli(
       'stream-json',
       '--verbose',
       '--model',
-      opts.model,
-      '--permission-mode',
-      'bypassPermissions'
+      opts.model
     ],
     {
       cwd: opts.cwd,
