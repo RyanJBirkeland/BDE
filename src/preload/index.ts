@@ -269,7 +269,7 @@ const api = {
     closeConfirmed: (payload: { action: 'return' | 'close'; remember: boolean }) =>
       typedInvoke('tearoff:closeConfirmed', payload),
     returnToMain: (windowId: string) =>
-      ipcRenderer.send('tearoff:returnToMain', windowId),
+      ipcRenderer.send('tearoff:returnToMain', { windowId }),
     onTabRemoved: (cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void) => {
       const handler = (_e: IpcRendererEvent, payload: { sourcePanelId: string; sourceTabIndex: number }) => cb(payload)
       ipcRenderer.on('tearoff:tabRemoved', handler)

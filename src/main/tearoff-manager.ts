@@ -113,8 +113,9 @@ async function handleCloseRequest(windowId: string, win: BrowserWindow): Promise
 
   if (action === 'return') {
     const mainWin = getMainWindow()
-    if (mainWin && !mainWin.isDestroyed()) {
-      mainWin.webContents.send('tearoff:tabReturned', { windowId })
+    const entry = tearoffWindows.get(windowId)
+    if (mainWin && !mainWin.isDestroyed() && entry) {
+      mainWin.webContents.send('tearoff:tabReturned', { windowId, view: entry.view })
     }
   }
 
