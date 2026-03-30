@@ -316,6 +316,8 @@ const api = {
       return () => { ipcRenderer.removeListener('tearoff:dragDone', handler) }
     },
     sendDragCancel: () => ipcRenderer.send('tearoff:dragCancelFromRenderer'),
+    returnAll: (payload: { windowId: string; views: string[] }) =>
+      ipcRenderer.send('tearoff:returnAll', payload),
   },
 
   // Spec Synthesizer

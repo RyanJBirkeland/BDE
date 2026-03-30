@@ -247,6 +247,7 @@ declare global {
         onCrossWindowDrop: (cb: (payload: { view: string; targetPanelId: string; zone: string }) => void) => () => void
         onDragDone: (cb: () => void) => () => void
         sendDragCancel: () => void
+        returnAll: (payload: { windowId: string; views: string[] }) => void
       }
 
       // Spec Synthesizer
