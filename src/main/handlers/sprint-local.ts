@@ -96,10 +96,26 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown>) => {
-    const task = patch.status === 'queued' ? _getTask(id) : null
+    // SP-6: Filter patch fields through UPDATE_ALLOWLIST
+    const filteredPatch: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(patch)) {
+      if (UPDATE_ALLOWLIST.has(key)) {
+        filteredPatch[key] = value
+      }
+    }
+    if (Object.keys(filteredPatch).length === 0) {
+      throw new Error('No valid fields to update')
+    }
+    patch = filteredPatch
 
+    // SP-1: Read task inside validation block to reduce TOCTOU window
     // If transitioning to queued, run quality checks
-    if (patch.status === 'queued' && task) {
+    if (patch.status === 'queued') {
+      const task = _getTask(id)
+      if (!task) {
+        throw new Error(`Task ${id} not found`)
+      }
+
       // Structural check
       const structural = validateStructural({
         title: task.title,
@@ -141,14 +157,21 @@ export function registerSprintLocalHandlers(): void {
           }
         }
       }
-    }
 
-    if (patch.status === 'queued') {
+      // Auto-set needs_review to false when queueing
       patch.needs_review = false
     }
+
     const result = updateTask(id, patch)
+    // SP-2: Throw error if _onStatusTerminal is not set when reaching terminal status
     if (result && patch.status && TERMINAL_STATUSES.has(patch.status as string)) {
-      _onStatusTerminal?.(id, patch.status as string)
+      if (!_onStatusTerminal) {
+        logger.error(
+          `[sprint:update] Task ${id} reached terminal status "${patch.status}" but _onStatusTerminal is not set — dependency resolution will not fire`
+        )
+      } else {
+        _onStatusTerminal(id, patch.status as string)
+      }
     }
     return result
   })
@@ -291,6 +314,21 @@ export function registerSprintLocalHandlers(): void {
             }
             const updated = updateTask(id, filtered)
             if (updated) notifySprintMutation('updated', updated)
+            // SP-4: Call onStatusTerminal for terminal status changes in batch updates
+            if (
+              updated &&
+              filtered.status &&
+              typeof filtered.status === 'string' &&
+              TERMINAL_STATUSES.has(filtered.status)
+            ) {
+              if (!_onStatusTerminal) {
+                logger.warn(
+                  `[sprint:batchUpdate] Task ${id} reached terminal status "${filtered.status}" but _onStatusTerminal is not set`
+                )
+              } else {
+                _onStatusTerminal(id, filtered.status)
+              }
+            }
             results.push({
               id,
               op: 'update',

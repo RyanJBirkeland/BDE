@@ -105,13 +105,20 @@ export function setOnTaskTerminal(fn: (taskId: string, status: string) => void):
 
 export function startSprintPrPoller(): void {
   const pollerLogger = createLogger('sprint-pr-poller')
+  // SP-3: Use late binding via getter function to avoid stale reference
   _instance = createSprintPrPoller({
     listTasksWithOpenPrs,
     pollPrStatuses,
     markTaskDoneByPrNumber,
     markTaskCancelledByPrNumber,
     updateTaskMergeableState,
-    onTaskTerminal: _onTaskTerminal ?? undefined,
+    onTaskTerminal: (taskId: string, status: string) => {
+      if (_onTaskTerminal) {
+        _onTaskTerminal(taskId, status)
+      } else {
+        pollerLogger.warn(`[sprint-pr-poller] onTaskTerminal not set — dependency resolution will not fire for task ${taskId}`)
+      }
+    },
     logger: pollerLogger
   })
   _instance.start()

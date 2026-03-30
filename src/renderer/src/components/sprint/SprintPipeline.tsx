@@ -24,6 +24,8 @@ import { PipelineStage } from './PipelineStage'
 import { TaskDetailDrawer } from './TaskDetailDrawer'
 import { SpecPanel } from './SpecPanel'
 import { DoneHistoryPanel } from './DoneHistoryPanel'
+import { ConflictDrawer } from './ConflictDrawer'
+import { HealthCheckDrawer } from './HealthCheckDrawer'
 import type { SprintTask } from '../../../../shared/types'
 
 import '../../assets/sprint-pipeline-neon.css'
@@ -40,13 +42,23 @@ export function SprintPipeline() {
   const updateTask = useSprintTasks((s) => s.updateTask)
   const loadData = useSprintTasks((s) => s.loadData)
 
-  const { selectedTaskId, drawerOpen, specPanelOpen, doneViewOpen, logDrawerTaskId } = useSprintUI(
+  const {
+    selectedTaskId,
+    drawerOpen,
+    specPanelOpen,
+    doneViewOpen,
+    logDrawerTaskId,
+    conflictDrawerOpen,
+    healthCheckDrawerOpen
+  } = useSprintUI(
     useShallow((s) => ({
       selectedTaskId: s.selectedTaskId,
       drawerOpen: s.drawerOpen,
       specPanelOpen: s.specPanelOpen,
       doneViewOpen: s.doneViewOpen,
-      logDrawerTaskId: s.logDrawerTaskId
+      logDrawerTaskId: s.logDrawerTaskId,
+      conflictDrawerOpen: s.conflictDrawerOpen,
+      healthCheckDrawerOpen: s.healthCheckDrawerOpen
     }))
   )
   const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
@@ -54,6 +66,8 @@ export function SprintPipeline() {
   const setSpecPanelOpen = useSprintUI((s) => s.setSpecPanelOpen)
   const setDoneViewOpen = useSprintUI((s) => s.setDoneViewOpen)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
+  const setConflictDrawerOpen = useSprintUI((s) => s.setConflictDrawerOpen)
+  const setHealthCheckDrawerOpen = useSprintUI((s) => s.setHealthCheckDrawerOpen)
 
   const setView = usePanelLayoutStore((s) => s.setView)
 
@@ -68,7 +82,8 @@ export function SprintPipeline() {
     confirmProps
   } = useSprintTaskActions()
 
-  useHealthCheck(tasks)
+  // SP-7: Extract health check results for HealthCheckDrawer
+  const { visibleStuckTasks, dismissTask } = useHealthCheck(tasks)
 
   // --- Local UI state ---
 
@@ -105,10 +120,26 @@ export function SprintPipeline() {
   // Polling hooks
   useSprintPolling()
   usePrStatusPolling()
+  // SP-7: Wire setConflictDrawerOpen to actual function (wrapped to match Dispatch<SetStateAction> signature)
   useSprintKeyboardShortcuts({
     openWorkbench: () => setView('task-workbench'),
-    setConflictDrawerOpen: () => {}
+    setConflictDrawerOpen: (value) => {
+      setConflictDrawerOpen(typeof value === 'function' ? value(conflictDrawerOpen) : value)
+    }
   })
+
+  // SP-7: Filter tasks with merge conflicts for ConflictDrawer
+  const conflictingTasks = useMemo(
+    () =>
+      tasks.filter(
+        (t) =>
+          t.pr_url &&
+          t.pr_number &&
+          t.pr_mergeable_state === 'dirty' &&
+          ['awaiting-review', 'in-progress'].includes(t.status)
+      ),
+    [tasks]
+  )
 
   // Auto-select first active or queued task on load
   useEffect(() => {
@@ -302,6 +333,19 @@ export function SprintPipeline() {
 
       <ConfirmModal {...confirmProps} />
 
+      {/* SP-7: Wire ConflictDrawer and HealthCheckDrawer */}
+      <ConflictDrawer
+        open={conflictDrawerOpen}
+        tasks={conflictingTasks}
+        onClose={() => setConflictDrawerOpen(false)}
+      />
+
+      <HealthCheckDrawer
+        open={healthCheckDrawerOpen}
+        tasks={visibleStuckTasks}
+        onClose={() => setHealthCheckDrawerOpen(false)}
+        onDismiss={dismissTask}
+      />
     </div>
   )
 }

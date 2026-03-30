@@ -4,6 +4,7 @@
  * concerns from CRUD handler registration.
  */
 import { readFile } from 'fs/promises'
+import { realpathSync } from 'fs'
 import { resolve } from 'path'
 import { getSpecsRoot } from '../paths'
 
@@ -30,7 +31,17 @@ export function validateSpecPath(relativePath: string): string {
     throw new Error('Cannot resolve spec path: BDE repo not configured')
   }
   const resolved = resolve(specsRoot, relativePath)
-  if (!resolved.startsWith(specsRoot + '/') && resolved !== specsRoot) {
+  // SP-5: Resolve symlinks before checking path containment
+  let realPath: string
+  try {
+    realPath = realpathSync(resolved)
+  } catch (err) {
+    // File doesn't exist yet or can't be accessed - use resolved path for validation
+    // This allows creating new files while still blocking traversal attempts
+    realPath = resolved
+  }
+  const realSpecsRoot = realpathSync(specsRoot)
+  if (!realPath.startsWith(realSpecsRoot + '/') && realPath !== realSpecsRoot) {
     throw new Error(`Path traversal blocked: "${relativePath}" resolves outside ${specsRoot}`)
   }
   return resolved
