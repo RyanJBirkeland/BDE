@@ -75,7 +75,7 @@ function validatePatchBody(body: string | undefined): boolean {
 
   try {
     const parsed = JSON.parse(body)
-    const allowedFields = new Set(['title', 'body'])
+    const allowedFields = new Set(['title', 'body', 'state'])
     const actualFields = Object.keys(parsed)
 
     // Check if all fields are allowed

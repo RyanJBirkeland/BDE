@@ -486,13 +486,28 @@ export const migrations: Migration[] = [
             completed_at        TEXT,
             claimed_by          TEXT,
             template_name       TEXT,
+            playground_enabled  INTEGER NOT NULL DEFAULT 0,
+            needs_review        INTEGER NOT NULL DEFAULT 0,
+            max_runtime_ms      INTEGER,
             spec_type           TEXT,
             created_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
             updated_at          TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
           );
 
-          INSERT INTO sprint_tasks_v17
-          SELECT * FROM sprint_tasks;
+          INSERT INTO sprint_tasks_v17 (
+            id, title, prompt, repo, status, priority, depends_on, spec, notes,
+            pr_url, pr_number, pr_status, pr_mergeable_state, agent_run_id,
+            retry_count, fast_fail_count, started_at, completed_at, claimed_by,
+            template_name, playground_enabled, needs_review, max_runtime_ms,
+            spec_type, created_at, updated_at
+          )
+          SELECT
+            id, title, prompt, repo, status, priority, depends_on, spec, notes,
+            pr_url, pr_number, pr_status, pr_mergeable_state, agent_run_id,
+            retry_count, fast_fail_count, started_at, completed_at, claimed_by,
+            template_name, playground_enabled, needs_review, max_runtime_ms,
+            spec_type, created_at, updated_at
+          FROM sprint_tasks;
 
           DROP TABLE sprint_tasks;
           ALTER TABLE sprint_tasks_v17 RENAME TO sprint_tasks;
