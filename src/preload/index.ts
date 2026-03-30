@@ -318,6 +318,8 @@ const api = {
     sendDragCancel: () => ipcRenderer.send('tearoff:dragCancelFromRenderer'),
     returnAll: (payload: { windowId: string; views: string[] }) =>
       ipcRenderer.send('tearoff:returnAll', payload),
+    viewsChanged: (payload: { windowId: string; views: string[] }) =>
+      ipcRenderer.send('tearoff:viewsChanged', payload),
   },
 
   // Spec Synthesizer

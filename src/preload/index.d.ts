@@ -248,6 +248,7 @@ declare global {
         onDragDone: (cb: () => void) => () => void
         sendDragCancel: () => void
         returnAll: (payload: { windowId: string; views: string[] }) => void
+        viewsChanged: (payload: { windowId: string; views: string[] }) => void
       }
 
       // Spec Synthesizer
