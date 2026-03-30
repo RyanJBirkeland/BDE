@@ -63,14 +63,14 @@ describe('IDEEmptyState', () => {
 
   it('clicking a recent folder calls setRootPath and watchDir', async () => {
     mockRecentFolders = ['/home/user/my-project']
-    mockWatchDir.mockResolvedValue(undefined)
+    mockWatchDir.mockResolvedValue({ success: true })
     render(<IDEEmptyState onOpenFolder={onOpenFolder} />)
 
     fireEvent.click(screen.getByText('/home/user/my-project'))
 
-    expect(mockSetRootPath).toHaveBeenCalledWith('/home/user/my-project')
     await waitFor(() => {
       expect(mockWatchDir).toHaveBeenCalledWith('/home/user/my-project')
+      expect(mockSetRootPath).toHaveBeenCalledWith('/home/user/my-project')
     })
   })
 

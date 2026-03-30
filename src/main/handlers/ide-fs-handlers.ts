@@ -44,6 +44,12 @@ async function validateIdeRoot(dirPath: string): Promise<string> {
   return resolved
 }
 
+
+/** Returns the current IDE root path, or null if none is set. */
+export function getIdeRootPath(): string | null {
+  return ideRootPath
+}
+
 /** Validates that targetPath is within allowedRoot. Returns the resolved absolute path. */
 export function validateIdePath(targetPath: string, allowedRoot: string): string {
   const root = resolve(allowedRoot)
@@ -128,10 +134,32 @@ export async function readFileContent(filePath: string): Promise<string> {
     throw new Error(`File too large: ${(info.size / 1024 / 1024).toFixed(1)} MB exceeds 5 MB limit`)
   }
 
+  // For files larger than BINARY_DETECT_BYTES, check the header first to avoid
+  // reading the entire file if it's binary
+  if (info.size > BINARY_DETECT_BYTES) {
+    const handle = await fs.promises.open(filePath, 'r')
+    try {
+      const probe = Buffer.allocUnsafe(BINARY_DETECT_BYTES)
+      await handle.read(probe, 0, BINARY_DETECT_BYTES, 0)
+      for (let i = 0; i < probe.length; i++) {
+        if (probe[i] === 0) {
+          throw new Error(`File appears to be binary and cannot be opened as text`)
+        }
+      }
+    } finally {
+      await handle.close()
+    }
+  }
+
   const buf = await readFile(filePath)
 
-  // Detect binary by looking for null bytes in the first 8 KB
-  const probe = buf.subarray(0, BINARY_DETECT_BYTES)
+  // For small files, still check for null bytes
+  // Detect binary by looking for null bytes in the first 8 KB.
+  // Limitation: This simple heuristic may yield false negatives for some binary
+  // formats that don't contain null bytes in their header (e.g., some image formats,
+  // minified JS with high-entropy data). For production use, consider libmagic or
+  // a more sophisticated content-type detector.
+  const probe = buf.subarray(0, Math.min(BINARY_DETECT_BYTES, buf.length))
   for (let i = 0; i < probe.length; i++) {
     if (probe[i] === 0) {
       throw new Error(`File appears to be binary and cannot be opened as text`)
@@ -144,7 +172,9 @@ export async function readFileContent(filePath: string): Promise<string> {
 /** Atomic write: write to a temp file then rename into place. */
 export async function writeFileContent(filePath: string, content: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true })
-  const tmpPath = `${filePath}.bde-tmp-${Date.now()}`
+  // Use timestamp + random component to prevent collisions on rapid saves
+  const random = Math.random().toString(36).substring(2, 8)
+  const tmpPath = `${filePath}.bde-tmp-${Date.now()}-${random}`
   try {
     await writeFile(tmpPath, content, 'utf-8')
     await rename(tmpPath, filePath)

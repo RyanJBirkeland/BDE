@@ -14,8 +14,6 @@ function resetStore(): void {
     focusedPanel: 'editor',
     sidebarCollapsed: false,
     terminalCollapsed: false,
-    sidebarWidth: 240,
-    terminalHeight: 200,
     recentFolders: []
   })
 }
@@ -54,14 +52,6 @@ describe('IDEStore', () => {
 
     it('has terminal not collapsed by default', () => {
       expect(useIDEStore.getState().terminalCollapsed).toBe(false)
-    })
-
-    it('has default sidebarWidth of 240', () => {
-      expect(useIDEStore.getState().sidebarWidth).toBe(240)
-    })
-
-    it('has default terminalHeight of 200', () => {
-      expect(useIDEStore.getState().terminalHeight).toBe(200)
     })
 
     it('has empty recentFolders', () => {

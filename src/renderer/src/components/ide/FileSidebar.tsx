@@ -96,7 +96,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   async function handleDelete(path: string): Promise<void> {
     const name = path.split('/').pop() ?? path
     const confirmed = await confirm({
-      message: `Delete "${name}"? This cannot be undone.`,
+      message: `Move "${name}" to Trash?`,
       variant: 'danger'
     })
     if (!confirmed) return
@@ -108,7 +108,12 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   }
 
   function handleCopyPath(path: string): void {
-    void navigator.clipboard.writeText(path)
+    navigator.clipboard
+      .writeText(path)
+      .then(() => toast.success('Path copied to clipboard'))
+      .catch((err) =>
+        toast.error(`Failed to copy: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      )
   }
 
   const handleContextMenu = useCallback(

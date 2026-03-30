@@ -140,10 +140,12 @@ async function openFileDialog(opts?: {
   return result.canceled ? null : result.filePaths
 }
 
+/** Read file as base64. When ideRoot is provided, enforces path is within that root. */
 async function readFileAsBase64(
-  filePath: string
+  filePath: string,
+  ideRoot?: string
 ): Promise<{ data: string; mimeType: string; name: string }> {
-  const safe = validateSafePath(filePath)
+  const safe = ideRoot ? validateIdePathForAttachment(filePath, ideRoot) : validateSafePath(filePath)
   const info = await stat(safe)
   if (info.size > MAX_IMAGE_BYTES) {
     throw new Error(
@@ -159,8 +161,12 @@ async function readFileAsBase64(
   }
 }
 
-async function readFileAsText(filePath: string): Promise<{ content: string; name: string }> {
-  const safe = validateSafePath(filePath)
+/** Read file as text. When ideRoot is provided, enforces path is within that root. */
+async function readFileAsText(
+  filePath: string,
+  ideRoot?: string
+): Promise<{ content: string; name: string }> {
+  const safe = ideRoot ? validateIdePathForAttachment(filePath, ideRoot) : validateSafePath(filePath)
   const info = await stat(safe)
   if (info.size > MAX_TEXT_BYTES) {
     throw new Error(
@@ -169,6 +175,16 @@ async function readFileAsText(filePath: string): Promise<{ content: string; name
   }
   const content = await readFile(safe, 'utf-8')
   return { content, name: basename(safe) }
+}
+
+/** Validates path for IDE-attached files: must be within IDE root. */
+function validateIdePathForAttachment(filePath: string, ideRoot: string): string {
+  const resolvedRoot = resolve(ideRoot)
+  const resolvedPath = resolve(filePath)
+  if (!resolvedPath.startsWith(resolvedRoot + '/') && resolvedPath !== resolvedRoot) {
+    throw new Error(`Path blocked: "${filePath}" is outside IDE root "${ideRoot}"`)
+  }
+  return resolvedPath
 }
 
 async function openDirectoryDialog(): Promise<string | null> {
@@ -185,11 +201,17 @@ export function registerFsHandlers(): void {
     writeMemoryFile(path, content)
   )
 
-  // Attachment file handlers
+  // Attachment file handlers - scope to IDE root when available
   safeHandle('fs:openFileDialog', (_e, opts?: { filters?: Electron.FileFilter[] }) =>
     openFileDialog(opts)
   )
-  safeHandle('fs:readFileAsBase64', (_e, filePath: string) => readFileAsBase64(filePath))
-  safeHandle('fs:readFileAsText', (_e, filePath: string) => readFileAsText(filePath))
+  safeHandle('fs:readFileAsBase64', async (_e, filePath: string) => {
+    const { getIdeRootPath } = await import('./handlers/ide-fs-handlers')
+    return readFileAsBase64(filePath, getIdeRootPath() ?? undefined)
+  })
+  safeHandle('fs:readFileAsText', async (_e, filePath: string) => {
+    const { getIdeRootPath } = await import('./handlers/ide-fs-handlers')
+    return readFileAsText(filePath, getIdeRootPath() ?? undefined)
+  })
   safeHandle('fs:openDirectoryDialog', () => openDirectoryDialog())
 }

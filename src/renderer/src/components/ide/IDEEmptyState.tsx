@@ -1,5 +1,6 @@
 import { Code, FolderOpen } from 'lucide-react'
 import { useIDEStore } from '../../stores/ide'
+import { toast } from '../../stores/toasts'
 
 export interface IDEEmptyStateProps {
   onOpenFolder: () => void
@@ -10,8 +11,17 @@ export function IDEEmptyState({ onOpenFolder }: IDEEmptyStateProps): React.JSX.E
   const setRootPath = useIDEStore((s) => s.setRootPath)
 
   async function handleRecentFolder(folderPath: string): Promise<void> {
-    setRootPath(folderPath)
-    await window.api.watchDir(folderPath)
+    try {
+      const result = await window.api.watchDir(folderPath)
+      if (result && 'success' in result && !result.success) {
+        throw new Error(result.error || 'Failed to watch directory')
+      }
+      setRootPath(folderPath)
+    } catch (err) {
+      toast.error(
+        `Failed to open "${folderPath}": ${err instanceof Error ? err.message : 'Unknown error'}`
+      )
+    }
   }
 
   return (

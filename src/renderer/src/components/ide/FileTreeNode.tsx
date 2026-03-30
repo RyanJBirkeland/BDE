@@ -83,10 +83,30 @@ export function FileTreeNode({
 
   const paddingLeft = 8 + depth * 16
 
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      if (type === 'directory') {
+        toggleDir(fullPath)
+      } else {
+        onOpenFile(fullPath)
+      }
+    } else if (type === 'directory') {
+      if (e.key === 'ArrowRight' && !isExpanded) {
+        e.preventDefault()
+        toggleDir(fullPath)
+      } else if (e.key === 'ArrowLeft' && isExpanded) {
+        e.preventDefault()
+        toggleDir(fullPath)
+      }
+    }
+  }
+
   return (
     <div className="ide-file-node-wrapper" role="none">
       <div
         role="treeitem"
+        tabIndex={0}
         aria-expanded={type === 'directory' ? isExpanded : undefined}
         aria-selected={isActive}
         className={`ide-file-node${isActive ? ' ide-file-node--active' : ''}`}
@@ -94,6 +114,7 @@ export function FileTreeNode({
         data-path={fullPath}
         style={{ paddingLeft }}
         onClick={() => (type === 'directory' ? toggleDir(fullPath) : onOpenFile(fullPath))}
+        onKeyDown={handleKeyDown}
         title={fullPath}
       >
         <span className="ide-file-node__chevron">

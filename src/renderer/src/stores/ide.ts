@@ -58,9 +58,22 @@ function detectLanguage(filePath: string): string {
   return EXTENSION_MAP[ext] ?? 'plaintext'
 }
 
-function getDisplayName(filePath: string): string {
+function getDisplayName(filePath: string, allTabs: EditorTab[]): string {
   const parts = filePath.split('/')
-  return parts[parts.length - 1] || filePath
+  const filename = parts[parts.length - 1] || filePath
+
+  // Check if any other tab has the same filename
+  const hasDuplicate = allTabs.some(
+    (tab) => tab.filePath !== filePath && tab.filePath.split('/').pop() === filename
+  )
+
+  // If duplicate exists, include parent directory for disambiguation
+  if (hasDuplicate && parts.length >= 2) {
+    const parent = parts[parts.length - 2]
+    return `${filename} (${parent})`
+  }
+
+  return filename
 }
 
 // ---------------------------------------------------------------------------
@@ -75,8 +88,6 @@ interface IDEState {
   focusedPanel: 'editor' | 'terminal'
   sidebarCollapsed: boolean
   terminalCollapsed: boolean
-  sidebarWidth: number
-  terminalHeight: number
   recentFolders: string[]
   fileContents: Record<string, string> // IDE-5: Move from component state to store
   fileLoadingStates: Record<string, boolean> // IDE-9: Track loading state per file
@@ -88,7 +99,6 @@ interface IDEState {
   closeTab: (tabId: string) => void
   setActiveTab: (tabId: string) => void
   setDirty: (tabId: string, isDirty: boolean) => void
-  reorderTabs: (tabs: EditorTab[]) => void
   toggleSidebar: () => void
   toggleTerminal: () => void
   setFocusedPanel: (panel: 'editor' | 'terminal') => void
@@ -111,8 +121,6 @@ export const useIDEStore = create<IDEState>((set) => ({
   focusedPanel: 'editor',
   sidebarCollapsed: false,
   terminalCollapsed: false,
-  sidebarWidth: 240,
-  terminalHeight: 200,
   recentFolders: [],
   fileContents: {}, // IDE-5
   fileLoadingStates: {}, // IDE-9
@@ -154,12 +162,21 @@ export const useIDEStore = create<IDEState>((set) => ({
       const tab: EditorTab = {
         id: crypto.randomUUID(),
         filePath,
-        displayName: getDisplayName(filePath),
+        displayName: getDisplayName(filePath, s.openTabs),
         language: detectLanguage(filePath),
         isDirty: false
       }
+
+      const newTabs = [...s.openTabs, tab]
+
+      // Update display names for all tabs to handle duplicates
+      const updatedTabs = newTabs.map((t) => ({
+        ...t,
+        displayName: getDisplayName(t.filePath, newTabs)
+      }))
+
       return {
-        openTabs: [...s.openTabs, tab],
+        openTabs: updatedTabs,
         activeTabId: tab.id
       }
     })
@@ -172,18 +189,24 @@ export const useIDEStore = create<IDEState>((set) => ({
 
       const newTabs = s.openTabs.filter((t) => t.id !== tabId)
 
+      // Update display names for remaining tabs (handles duplicate resolution)
+      const updatedTabs = newTabs.map((t) => ({
+        ...t,
+        displayName: getDisplayName(t.filePath, newTabs)
+      }))
+
       let newActiveTabId = s.activeTabId
       if (s.activeTabId === tabId) {
-        if (newTabs.length === 0) {
+        if (updatedTabs.length === 0) {
           newActiveTabId = null
         } else {
           // Activate adjacent tab: prefer the one at same position, else previous
-          const nextIdx = Math.min(idx, newTabs.length - 1)
-          newActiveTabId = newTabs[nextIdx].id
+          const nextIdx = Math.min(idx, updatedTabs.length - 1)
+          newActiveTabId = updatedTabs[nextIdx].id
         }
       }
 
-      return { openTabs: newTabs, activeTabId: newActiveTabId }
+      return { openTabs: updatedTabs, activeTabId: newActiveTabId }
     })
   },
 
@@ -195,10 +218,6 @@ export const useIDEStore = create<IDEState>((set) => ({
     set((s) => ({
       openTabs: s.openTabs.map((t) => (t.id === tabId ? { ...t, isDirty } : t))
     }))
-  },
-
-  reorderTabs: (tabs: EditorTab[]): void => {
-    set({ openTabs: tabs })
   },
 
   toggleSidebar: (): void => {
@@ -249,7 +268,20 @@ export const useIDEStore = create<IDEState>((set) => ({
 
 let persistTimer: ReturnType<typeof setTimeout> | null = null
 let lastSerialized = ''
+let lastToSave: any = null
 
+function flushPersistence(): void {
+  if (persistTimer) {
+    clearTimeout(persistTimer)
+    persistTimer = null
+  }
+  if (lastToSave) {
+    window.api.settings.setJson('ide.state', lastToSave)
+  }
+}
+
+// Subscribe only to fields we care about persisting
+// We check if the serialized state changed to avoid unnecessary writes
 useIDEStore.subscribe((state) => {
   const toSave = {
     rootPath: state.rootPath,
@@ -263,9 +295,15 @@ useIDEStore.subscribe((state) => {
   const serialized = JSON.stringify(toSave)
   if (serialized === lastSerialized) return // Skip — nothing changed
   lastSerialized = serialized
+  lastToSave = toSave
 
   if (persistTimer) clearTimeout(persistTimer)
   persistTimer = setTimeout(() => {
     window.api.settings.setJson('ide.state', toSave)
   }, 2000)
 })
+
+// Flush pending persistence on window close/reload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', flushPersistence)
+}
