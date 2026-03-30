@@ -40,7 +40,7 @@ import { setQueueApiOnStatusTerminal } from './queue-api/task-handlers'
 import { setGitHandlersOnStatusTerminal } from './handlers/git-handlers'
 import { setOnTaskTerminal } from './sprint-pr-poller'
 import { createLogger } from './logger'
-import { registerTearoffHandlers, closeTearoffWindows, setQuitting, SHARED_WEB_PREFERENCES } from './tearoff-manager'
+import { registerTearoffHandlers, closeTearoffWindows, setQuitting, SHARED_WEB_PREFERENCES, restoreTearoffWindows } from './tearoff-manager'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -229,6 +229,7 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+  restoreTearoffWindows()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
