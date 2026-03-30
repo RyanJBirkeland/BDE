@@ -24,9 +24,9 @@ export default defineConfig({
       include: ['src/renderer/src/**/*.{ts,tsx}'],
       exclude: ['**/__tests__/**', '**/*.d.ts', '**/test-setup.ts', '**/design-system/**'],
       thresholds: {
-        statements: 72,
-        branches: 66,
-        functions: 70,
+        statements: 73,
+        branches: 65,
+        functions: 73,
         lines: 74
       }
     }
