@@ -295,6 +295,18 @@ export interface WindowChannels {
   }
 }
 
+/** Tear-off window management */
+export interface TearoffChannels {
+  'tearoff:create': {
+    args: [{ view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }]
+    result: { windowId: string }
+  }
+  'tearoff:closeConfirmed': {
+    args: [{ action: 'return' | 'close'; remember: boolean }]
+    result: void
+  }
+}
+
 /** Memory file operations */
 export interface MemoryChannels {
   'memory:listFiles': {
@@ -543,4 +555,5 @@ export type IpcChannelMap = SettingsChannels &
   WorkbenchChannels &
   PlaygroundChannels &
   DashboardChannels &
-  SynthesizerChannels
+  SynthesizerChannels &
+  TearoffChannels
