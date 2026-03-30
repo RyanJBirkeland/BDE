@@ -5,6 +5,8 @@ import {
   createLeaf,
   findLeaf,
   getOpenViews,
+  addTab,
+  type PanelNode,
   type View
 } from '../../stores/panelLayout'
 import { VIEW_LABELS } from '../../lib/view-registry'
@@ -64,18 +66,46 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
   const [showDialog, setShowDialog] = useState(false)
   const crossDrop = useCrossWindowDrop()
 
+  const restoreParam = new URLSearchParams(window.location.search).get('restore')
+  const initialViews: View[] = restoreParam
+    ? (JSON.parse(decodeURIComponent(restoreParam)) as View[])
+    : [view]
+
   const label = VIEW_LABELS[view] ?? view
 
   // Initialize panel store for this tear-off window
   useEffect(() => {
     usePanelLayoutStore.getState().setPersistable(false)
-    const leaf = createLeaf(view)
-    usePanelLayoutStore.setState({
-      root: leaf,
-      focusedPanelId: leaf.panelId,
-      activeView: view
-    })
+    if (initialViews.length <= 1) {
+      const leaf = createLeaf(initialViews[0] || view)
+      usePanelLayoutStore.setState({ root: leaf, focusedPanelId: leaf.panelId, activeView: initialViews[0] || view })
+    } else {
+      // Restore multiple views as tabs in a single leaf
+      const leaf = createLeaf(initialViews[0])
+      let current: PanelNode = leaf
+      for (let i = 1; i < initialViews.length; i++) {
+        const updated = addTab(current, leaf.panelId, initialViews[i])
+        if (updated) current = updated
+      }
+      usePanelLayoutStore.setState({ root: current, focusedPanelId: leaf.panelId, activeView: initialViews[0] })
+    }
   }, []) // only on mount — view is static from query params
+
+  // Subscribe to store changes and notify main of open views (debounced)
+  useEffect(() => {
+    let debounce: ReturnType<typeof setTimeout> | null = null
+    const unsub = usePanelLayoutStore.subscribe((state) => {
+      if (debounce) clearTimeout(debounce)
+      debounce = setTimeout(() => {
+        const views = getOpenViews(state.root) as string[]
+        window.api?.tearoff?.viewsChanged({ windowId, views })
+      }, 500)
+    })
+    return () => {
+      unsub()
+      if (debounce) clearTimeout(debounce)
+    }
+  }, [windowId])
 
   // Derive mode from store
   const root = usePanelLayoutStore((s) => s.root)

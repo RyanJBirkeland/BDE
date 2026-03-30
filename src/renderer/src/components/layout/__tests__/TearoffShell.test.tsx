@@ -119,6 +119,7 @@ vi.mock('../../../stores/panelLayout', async (importOriginal) => {
     closeTab: vi.fn()
   })
   store.setState = mockSetState
+  store.subscribe = vi.fn(() => vi.fn()) // returns unsubscribe fn
 
   return {
     ...actual,
@@ -142,6 +143,7 @@ const mockCloseConfirmed = vi.fn()
 const mockOnConfirmClose = vi.fn(() => vi.fn())
 const mockOnDragDone = vi.fn(() => vi.fn())
 const mockOnCrossWindowDrop = vi.fn(() => vi.fn())
+const mockViewsChanged = vi.fn()
 
 Object.defineProperty(window, 'api', {
   value: {
@@ -151,7 +153,8 @@ Object.defineProperty(window, 'api', {
       closeConfirmed: mockCloseConfirmed,
       onConfirmClose: mockOnConfirmClose,
       onDragDone: mockOnDragDone,
-      onCrossWindowDrop: mockOnCrossWindowDrop
+      onCrossWindowDrop: mockOnCrossWindowDrop,
+      viewsChanged: mockViewsChanged
     }
   },
   writable: true,
