@@ -124,6 +124,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   },
 
   updateTask: async (taskId, patch): Promise<void> => {
+    const updateId = Date.now() // Unique ID for this update operation
+
     // Record pending update before optimistic patch, merging fields from prior pending updates
     set((s) => {
       const existing = s.pendingUpdates[taskId]
@@ -134,7 +136,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       return {
         pendingUpdates: {
           ...s.pendingUpdates,
-          [taskId]: { ts: Date.now(), fields: mergedFields }
+          [taskId]: { ts: updateId, fields: mergedFields }
         },
         tasks: s.tasks.map((t) =>
           t.id === taskId ? { ...t, ...patch, updated_at: new Date().toISOString() } : t
@@ -144,20 +146,37 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     try {
       const serverTask = (await window.api.sprint.update(taskId, patch)) as SprintTask | null
       // Apply server response (may differ from optimistic — e.g. auto-blocked) and clear pending
+      // Only clear if this is still the most recent update for this task
       set((s) => {
-        const { [taskId]: _, ...rest } = s.pendingUpdates
+        const current = s.pendingUpdates[taskId]
+        const shouldClear = !current || current.ts === updateId
+
         return {
-          pendingUpdates: rest,
+          pendingUpdates: shouldClear
+            ? (() => {
+                const { [taskId]: _, ...rest } = s.pendingUpdates
+                return rest
+              })()
+            : s.pendingUpdates,
           tasks: serverTask?.id
             ? s.tasks.map((t) => (t.id === taskId ? sanitizeDeps(serverTask) : t))
             : s.tasks
         }
       })
     } catch (e) {
-      // Remove from pending on failure too
+      // Remove from pending on failure only if this is still the most recent update
       set((s) => {
-        const { [taskId]: _, ...rest } = s.pendingUpdates
-        return { pendingUpdates: rest }
+        const current = s.pendingUpdates[taskId]
+        const shouldClear = !current || current.ts === updateId
+
+        return {
+          pendingUpdates: shouldClear
+            ? (() => {
+                const { [taskId]: _, ...rest } = s.pendingUpdates
+                return rest
+              })()
+            : s.pendingUpdates
+        }
       })
       toast.error(e instanceof Error ? e.message : 'Failed to update task')
       get().loadData() // revert optimistic on failure

@@ -213,15 +213,23 @@ export function registerSprintLocalHandlers(): void {
 
   safeHandle('sprint:healthCheck', async () => {
     try {
+      const db = getDb()
       const allTasks = _listTasks()
       const oneHourAgo = Date.now() - 3600000
-      for (const task of allTasks) {
-        if (['error', 'failed'].includes(task.status) && !task.needs_review) {
-          const updatedAt = new Date(task.updated_at).getTime()
-          if (updatedAt < oneHourAgo) {
+      const tasksToUpdate = allTasks.filter(
+        (task) =>
+          ['error', 'failed'].includes(task.status) &&
+          !task.needs_review &&
+          new Date(task.updated_at).getTime() < oneHourAgo
+      )
+
+      // Use transaction to ensure all-or-nothing update
+      if (tasksToUpdate.length > 0) {
+        db.transaction(() => {
+          for (const task of tasksToUpdate) {
             _updateTask(task.id, { needs_review: true })
           }
-        }
+        })()
       }
     } catch (err) {
       console.warn('[sprint:healthCheck] Failed to flag stuck tasks:', err)
@@ -230,6 +238,11 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
+    // Validate agentId to prevent path traversal (must be a valid UUID-like string)
+    if (!agentId || typeof agentId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(agentId)) {
+      throw new Error('Invalid agent ID format')
+    }
+
     const fromByte = typeof rawFromByte === 'number' ? rawFromByte : 0
     const info = getAgentLogInfo(getDb(), agentId)
     if (!info) return { content: '', status: 'unknown', nextByte: fromByte }
@@ -262,6 +275,34 @@ export function registerSprintLocalHandlers(): void {
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (task.status !== 'blocked')
       throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
+
+    // Validate spec before unblocking (same checks as sprint:update when transitioning to queued)
+    const structural = validateStructural({
+      title: task.title,
+      repo: task.repo,
+      spec: task.spec ?? null
+    })
+    if (!structural.valid) {
+      throw new Error(
+        `Cannot unblock task — spec quality checks failed: ${structural.errors.join('; ')}`
+      )
+    }
+
+    // Semantic check if spec exists
+    if (task.spec) {
+      const { checkSpecSemantic } = await import('../spec-semantic-check')
+      const semantic = await checkSpecSemantic({
+        title: task.title,
+        repo: task.repo,
+        spec: task.spec
+      })
+      if (!semantic.passed) {
+        throw new Error(
+          `Cannot unblock task — semantic checks failed: ${semantic.failMessages.join('; ')}`
+        )
+      }
+    }
+
     const updated = _updateTask(taskId, { status: 'queued' })
     if (updated) notifySprintMutation('updated', updated)
     return updated
@@ -312,6 +353,47 @@ export function registerSprintLocalHandlers(): void {
               results.push({ id, op: 'update', ok: false, error: 'No valid fields to update' })
               continue
             }
+
+            // If transitioning to queued, validate spec quality
+            if (filtered.status === 'queued') {
+              const task = _getTask(id)
+              if (task) {
+                const structural = validateStructural({
+                  title: task.title,
+                  repo: task.repo,
+                  spec: (filtered.spec as string) ?? task.spec ?? null
+                })
+                if (!structural.valid) {
+                  results.push({
+                    id,
+                    op: 'update',
+                    ok: false,
+                    error: `Spec quality checks failed: ${structural.errors.join('; ')}`
+                  })
+                  continue
+                }
+
+                const specText = (filtered.spec as string) ?? task.spec
+                if (specText) {
+                  const { checkSpecSemantic } = await import('../spec-semantic-check')
+                  const semantic = await checkSpecSemantic({
+                    title: task.title,
+                    repo: task.repo,
+                    spec: specText
+                  })
+                  if (!semantic.passed) {
+                    results.push({
+                      id,
+                      op: 'update',
+                      ok: false,
+                      error: `Semantic checks failed: ${semantic.failMessages.join('; ')}`
+                    })
+                    continue
+                  }
+                }
+              }
+            }
+
             const updated = updateTask(id, filtered)
             if (updated) notifySprintMutation('updated', updated)
             // SP-4: Call onStatusTerminal for terminal status changes in batch updates

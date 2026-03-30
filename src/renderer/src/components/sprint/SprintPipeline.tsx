@@ -19,6 +19,7 @@ import { useHealthCheck } from '../../hooks/useHealthCheck'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { Button } from '../ui/Button'
+import { toast } from '../../stores/toasts'
 import { PipelineBacklog } from './PipelineBacklog'
 import { PipelineStage } from './PipelineStage'
 import { TaskDetailDrawer } from './TaskDetailDrawer'
@@ -74,7 +75,6 @@ export function SprintPipeline() {
   // --- Extracted hooks ---
   const {
     handleSaveSpec,
-    handleMarkDone,
     handleStop,
     handleRerun,
     launchTask,
@@ -160,8 +160,13 @@ export function SprintPipeline() {
   )
 
   const handleAddToQueue = useCallback(
-    (task: SprintTask) => {
-      updateTask(task.id, { status: 'queued' })
+    async (task: SprintTask) => {
+      try {
+        await updateTask(task.id, { status: 'queued' })
+      } catch (err) {
+        // Error already shown by updateTask, no need to show again
+        // The store will revert the optimistic update
+      }
     },
     [updateTask]
   )
@@ -176,6 +181,18 @@ export function SprintPipeline() {
       void deleteTask(task.id)
     },
     [deleteTask]
+  )
+
+  const handleUnblock = useCallback(
+    async (task: SprintTask) => {
+      try {
+        await window.api.sprint.unblockTask(task.id)
+        toast.success(`Task unblocked - dependencies will be re-checked`)
+      } catch (err) {
+        toast.error(`Failed to unblock: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    },
+    []
   )
 
   // Stats
@@ -300,7 +317,6 @@ export function SprintPipeline() {
             onClose={handleCloseDrawer}
             onLaunch={launchTask}
             onStop={handleStop}
-            onMarkDone={handleMarkDone}
             onRerun={handleRerun}
             onDelete={handleDeleteTask}
             onViewLogs={() => setView('agents')}
@@ -310,6 +326,7 @@ export function SprintPipeline() {
               setView('task-workbench')
             }}
             onViewAgents={() => setView('agents')}
+            onUnblock={handleUnblock}
           />
         )}
       </div>

@@ -338,9 +338,10 @@ describe('TaskDetailDrawer - additional status combos', () => {
     expect(screen.getByText(/PR creation failed/)).toBeInTheDocument()
     const link = screen.getByText('Create PR →')
     expect(link).toBeInTheDocument()
+    // URL components are encoded for security (SP-10 fix)
     expect(link).toHaveAttribute(
       'href',
-      'https://github.com/RyanBirkeland/BDE/pull/new/agent/fix-foo'
+      'https://github.com/RyanBirkeland%2FBDE/pull/new/agent%2Ffix-foo'
     )
   })
 

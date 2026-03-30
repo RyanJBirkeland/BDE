@@ -21,6 +21,7 @@ export interface TicketDraft {
 
 interface TicketWithId extends TicketDraft {
   _id: string
+  created?: boolean // Track if ticket was successfully created
 }
 
 interface TicketEditorProps {
@@ -87,20 +88,47 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
 
   const createAll = async (): Promise<void> => {
     setState('creating')
-    try {
-      for (const { _id: _, ...ticket } of tickets) {
+    const results: Array<{ id: string; success: boolean; error?: string }> = []
+    let successCount = 0
+
+    for (const ticket of tickets) {
+      // Skip already created tickets
+      if (ticket.created) {
+        successCount++
+        continue
+      }
+
+      try {
+        const { _id, created: _, ...ticketData } = ticket
         await useSprintTasks.getState().createTask({
-          title: ticket.title,
-          repo: ticket.repo,
-          prompt: ticket.prompt,
-          priority: ticket.priority,
-          spec: ticket.prompt
+          title: ticketData.title,
+          repo: ticketData.repo,
+          prompt: ticketData.prompt,
+          priority: ticketData.priority,
+          spec: ticketData.prompt
+        })
+
+        // Mark as created
+        setTickets((prev) =>
+          prev.map((t) => (t._id === _id ? { ...t, created: true } : t))
+        )
+        successCount++
+        results.push({ id: _id, success: true })
+      } catch (err) {
+        results.push({
+          id: ticket._id,
+          success: false,
+          error: err instanceof Error ? err.message : String(err)
         })
       }
-      toast.success(`${tickets.length} tickets created in backlog`)
+    }
+
+    const failCount = tickets.length - successCount
+    if (failCount === 0) {
+      toast.success(`${tickets.length} ticket${tickets.length !== 1 ? 's' : ''} created in backlog`)
       setState('done')
-    } catch (err) {
-      toast.error(`Failed to create tickets: ${err instanceof Error ? err.message : String(err)}`)
+    } else {
+      toast.error(`${successCount} succeeded, ${failCount} failed. Fix errors and retry.`)
       setState('editing')
     }
   }

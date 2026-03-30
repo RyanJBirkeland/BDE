@@ -14,8 +14,8 @@ export function sanitizeDependsOn(value: unknown): TaskDependency[] | null {
     try {
       const parsed = JSON.parse(value)
       return sanitizeDependsOn(parsed) // Recursive call
-    } catch {
-      console.warn('[sanitizeDependsOn] Failed to parse depends_on string:', value)
+    } catch (err) {
+      console.error('[sanitizeDependsOn] Failed to parse depends_on string:', value, err)
       return null
     }
   }
@@ -36,6 +36,6 @@ export function sanitizeDependsOn(value: unknown): TaskDependency[] | null {
   }
 
   // Invalid type
-  console.warn('[sanitizeDependsOn] Invalid depends_on type:', typeof value, value)
+  console.error('[sanitizeDependsOn] Invalid depends_on type:', typeof value, value)
   return null
 }

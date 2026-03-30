@@ -11,13 +11,13 @@ export interface TaskDetailDrawerProps {
   onClose: () => void
   onLaunch: (task: SprintTask) => void
   onStop: (task: SprintTask) => void
-  onMarkDone: (task: SprintTask) => void
   onRerun: (task: SprintTask) => void
   onDelete: (task: SprintTask) => void
   onViewLogs: (task: SprintTask) => void
   onOpenSpec: () => void
   onEdit: (task: SprintTask) => void
   onViewAgents: (agentId: string) => void
+  onUnblock?: (task: SprintTask) => void
 }
 
 function formatElapsed(startedAt: string): string {
@@ -72,13 +72,13 @@ export function TaskDetailDrawer({
   onClose,
   onLaunch,
   onStop,
-  onMarkDone,
   onRerun,
   onDelete,
   onViewLogs,
   onOpenSpec,
   onEdit,
-  onViewAgents
+  onViewAgents,
+  onUnblock
 }: TaskDetailDrawerProps) {
   const [elapsed, setElapsed] = useState('')
   const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
@@ -92,6 +92,17 @@ export function TaskDetailDrawer({
     const interval = setInterval(() => setElapsed(formatElapsed(task.started_at!)), 10000)
     return () => clearInterval(interval)
   }, [task.status, task.started_at])
+
+  const cleanupRef = useRef<(() => void) | null>(null)
+
+  // Cleanup listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current()
+      }
+    }
+  }, [])
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -114,10 +125,19 @@ export function TaskDetailDrawer({
       document.body.style.userSelect = ''
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
+      cleanupRef.current = null
     }
 
     document.addEventListener('mousemove', onMove)
     document.addEventListener('mouseup', onUp)
+
+    // Store cleanup function for unmount
+    cleanupRef.current = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
   }, [width])
 
   const allTasks = useSprintTasks((s) => s.tasks)
@@ -223,10 +243,14 @@ export function TaskDetailDrawer({
               const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
               if (!match) return null
               const [, branch, ghRepo] = match
+              // Validate ghRepo format (owner/repo) to prevent XSS
+              if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(ghRepo)) return null
+              // Validate branch name doesn't contain dangerous characters
+              if (!/^[a-zA-Z0-9/_.-]+$/.test(branch)) return null
               return (
                 <a
                   className="task-drawer__btn task-drawer__btn--primary"
-                  href={`https://github.com/${ghRepo}/pull/new/${branch}`}
+                  href={`https://github.com/${encodeURIComponent(ghRepo)}/pull/new/${encodeURIComponent(branch)}`}
                   target="_blank"
                   rel="noreferrer"
                   style={{ marginTop: '8px', display: 'inline-block' }}
@@ -245,11 +269,11 @@ export function TaskDetailDrawer({
           task={task}
           onLaunch={onLaunch}
           onStop={onStop}
-          onMarkDone={onMarkDone}
           onRerun={onRerun}
           onDelete={onDelete}
           onViewLogs={onViewLogs}
           onEdit={onEdit}
+          onUnblock={onUnblock}
         />
       </div>
     </aside>
@@ -260,20 +284,20 @@ function ActionButtons({
   task,
   onLaunch,
   onStop,
-  onMarkDone: _onMarkDone,
   onRerun,
   onDelete,
   onViewLogs,
-  onEdit
+  onEdit,
+  onUnblock
 }: {
   task: SprintTask
   onLaunch: (t: SprintTask) => void
   onStop: (t: SprintTask) => void
-  onMarkDone: (t: SprintTask) => void
   onRerun: (t: SprintTask) => void
   onDelete: (t: SprintTask) => void
   onViewLogs: (t: SprintTask) => void
   onEdit: (t: SprintTask) => void
+  onUnblock?: (t: SprintTask) => void
 }) {
   switch (task.status) {
     case 'backlog':
@@ -327,7 +351,7 @@ function ActionButtons({
         <>
           <button
             className="task-drawer__btn task-drawer__btn--primary"
-            onClick={() => onLaunch(task)}
+            onClick={() => onUnblock ? onUnblock(task) : onLaunch(task)}
           >
             Unblock
           </button>
@@ -365,16 +389,25 @@ function ActionButtons({
     case 'done':
       return (
         <>
-          {task.pr_url && (
-            <a
-              className="task-drawer__btn task-drawer__btn--primary"
-              href={task.pr_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              View PR
-            </a>
-          )}
+          {task.pr_url && (() => {
+            // Validate pr_url is a GitHub URL to prevent XSS
+            try {
+              const url = new URL(task.pr_url)
+              if (url.hostname !== 'github.com') return null
+              return (
+                <a
+                  className="task-drawer__btn task-drawer__btn--primary"
+                  href={task.pr_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View PR
+                </a>
+              )
+            } catch {
+              return null
+            }
+          })()}
           <button
             className="task-drawer__btn task-drawer__btn--secondary"
             onClick={() => onRerun(task)}

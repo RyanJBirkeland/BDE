@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from '../../stores/toasts'
 
 export interface SpecPanelProps {
   taskTitle: string
@@ -11,10 +12,26 @@ export interface SpecPanelProps {
 export function SpecPanel({ taskTitle, spec, onClose, onSave }: SpecPanelProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(spec)
+  const [saving, setSaving] = useState(false)
 
-  const handleSave = () => {
-    onSave(draft)
-    setEditing(false)
+  // Sync draft when spec prop changes externally
+  useEffect(() => {
+    if (!editing) {
+      setDraft(spec)
+    }
+  }, [spec, editing])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await onSave(draft)
+      setEditing(false)
+      toast.success('Spec saved')
+    } catch (err) {
+      toast.error(`Failed to save spec: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -60,8 +77,12 @@ export function SpecPanel({ taskTitle, spec, onClose, onSave }: SpecPanelProps) 
           <div className="spec-panel__actions">
             {editing ? (
               <>
-                <button className="task-drawer__btn task-drawer__btn--primary" onClick={handleSave}>
-                  Save
+                <button
+                  className="task-drawer__btn task-drawer__btn--primary"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   className="task-drawer__btn task-drawer__btn--secondary"
@@ -69,6 +90,7 @@ export function SpecPanel({ taskTitle, spec, onClose, onSave }: SpecPanelProps) 
                     setEditing(false)
                     setDraft(spec)
                   }}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
