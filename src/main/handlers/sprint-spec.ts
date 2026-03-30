@@ -4,6 +4,7 @@
  * concerns from CRUD handler registration.
  */
 import { readFile } from 'fs/promises'
+import { realpathSync } from 'fs'
 import { resolve } from 'path'
 import { getSpecsRoot } from '../paths'
 
