@@ -136,6 +136,25 @@ function App(): React.JSX.Element {
 
   useGitHubRateLimitWarning()
   useDesktopNotifications()
+  // Listen for tab removal from tear-off
+  useEffect(() => {
+    if (!window.api?.tearoff) return
+    return window.api.tearoff.onTabRemoved((payload) => {
+      usePanelLayoutStore.getState().closeTab(payload.sourcePanelId, payload.sourceTabIndex)
+    })
+  }, [])
+
+  // Listen for tab return from tear-off
+  useEffect(() => {
+    if (!window.api?.tearoff) return
+    return window.api.tearoff.onTabReturned((payload) => {
+      const store = usePanelLayoutStore.getState()
+      const targetId = store.focusedPanelId ?? ''
+      if (targetId) {
+        store.addTab(targetId, payload.view as View)
+      }
+    })
+  }, [])
 
   useEffect(() => {
     const title = 'BDE \u2014 ' + VIEW_LABELS[activeView]

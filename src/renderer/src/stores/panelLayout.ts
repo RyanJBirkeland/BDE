@@ -382,7 +382,11 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
   closeTab: (targetId, tabIndex): void => {
     set((s) => {
       const newRoot = closeTab(s.root, targetId, tabIndex)
-      if (newRoot === null) return s // root itself was the only leaf — keep it
+      if (newRoot === null) {
+        // Last tab removed — replace with dashboard
+        const fresh = createLeaf('dashboard')
+        return { root: fresh, focusedPanelId: fresh.panelId, activeView: 'dashboard' }
+      }
       return { root: newRoot }
     })
   },
