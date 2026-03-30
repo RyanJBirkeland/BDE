@@ -120,10 +120,12 @@ export function SprintPipeline() {
   // Polling hooks
   useSprintPolling()
   usePrStatusPolling()
-  // SP-7: Wire setConflictDrawerOpen to actual function
+  // SP-7: Wire setConflictDrawerOpen to actual function (wrapped to match Dispatch<SetStateAction> signature)
   useSprintKeyboardShortcuts({
     openWorkbench: () => setView('task-workbench'),
-    setConflictDrawerOpen
+    setConflictDrawerOpen: (value) => {
+      setConflictDrawerOpen(typeof value === 'function' ? value(conflictDrawerOpen) : value)
+    }
   })
 
   // SP-7: Filter tasks with merge conflicts for ConflictDrawer
