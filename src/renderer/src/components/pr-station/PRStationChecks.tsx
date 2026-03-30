@@ -52,7 +52,7 @@ export function PRStationChecks({ checks, loading }: PRStationChecksProps) {
           <li key={run.name} className={`pr-detail__check ${checkStatusClass(run)}`}>
             <CheckIcon run={run} />
             <span className="pr-detail__check-name">{run.name}</span>
-            {run.html_url && (
+            {run.html_url && run.html_url.startsWith('https://github.com/') && (
               <a
                 href={run.html_url}
                 target="_blank"

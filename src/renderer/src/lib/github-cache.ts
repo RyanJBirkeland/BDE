@@ -72,9 +72,10 @@ export function invalidateCache(key?: string): void {
  */
 export function invalidatePRCache(owner: string, repo: string, number: number): void {
   const prefix = `${owner}/${repo}#${number}`
-  // Delete all keys matching this PR
+  // Delete all keys matching this PR (use startsWith after first colon to avoid over-matching)
   for (const key of cache.keys()) {
-    if (key.includes(prefix)) {
+    const colonIndex = key.indexOf(':')
+    if (colonIndex !== -1 && key.substring(colonIndex + 1) === prefix) {
       cache.delete(key)
     }
   }

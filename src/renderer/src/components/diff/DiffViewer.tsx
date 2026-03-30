@@ -309,7 +309,41 @@ function PlainDiffContent({
                     <div
                       className={`diff-line diff-line--${line.type}${selected ? ' diff-line--selected' : ''}`}
                     >
-                      <span className="diff-line__gutter diff-line__gutter--old">
+                      <span
+                        className={`diff-line__gutter diff-line__gutter--old${onSelectRange ? ' diff-line__gutter--selectable' : ''}`}
+                        onMouseDown={() => {
+                          if (!onSelectRange || line.lineNo.old == null) return
+                          setSelectionStart({
+                            file: file.path,
+                            line: line.lineNo.old,
+                            side: 'LEFT'
+                          })
+                          setIsSelecting(true)
+                          onSelectRange({
+                            file: file.path,
+                            startLine: line.lineNo.old,
+                            endLine: line.lineNo.old,
+                            side: 'LEFT'
+                          })
+                        }}
+                        onMouseEnter={() => {
+                          if (
+                            !isSelecting ||
+                            !selectionStart ||
+                            selectionStart.file !== file.path ||
+                            selectionStart.side !== 'LEFT' ||
+                            !onSelectRange
+                          )
+                            return
+                          if (line.lineNo.old == null) return
+                          onSelectRange({
+                            file: file.path,
+                            startLine: Math.min(selectionStart.line, line.lineNo.old),
+                            endLine: Math.max(selectionStart.line, line.lineNo.old),
+                            side: 'LEFT'
+                          })
+                        }}
+                      >
                         {line.lineNo.old ?? ''}
                       </span>
                       <span
@@ -334,6 +368,7 @@ function PlainDiffContent({
                             !isSelecting ||
                             !selectionStart ||
                             selectionStart.file !== file.path ||
+                            selectionStart.side !== 'RIGHT' ||
                             !onSelectRange
                           )
                             return
@@ -626,8 +661,11 @@ function DiffViewer({
     if (files.length === 0) return
 
     const handler = (e: KeyboardEvent): void => {
-      const tag = (e.target as HTMLElement).tagName
+      const target = e.target as HTMLElement
+      const tag = target.tagName
+      // Don't fire in input fields, textareas, or contentEditable elements
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (target.isContentEditable) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
 
       // ] / [ — next/prev file

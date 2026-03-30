@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { getPRDiff, getReviewComments } from '../../lib/github-api'
+import { getPRDiff } from '../../lib/github-api'
+import { cachedGetReviewComments } from '../../lib/github-cache'
 import type { OpenPr, PrComment } from '../../../../shared/types'
 import { parseDiffChunked, type DiffFile } from '../../lib/diff-parser'
 import { DIFF_SIZE_WARN_BYTES } from '../../lib/constants'
@@ -75,8 +76,8 @@ export function PRStationDiff({ pr }: { pr: OpenPr }) {
         if (cancelled) return
         rawRef.current = raw
 
-        // Fetch review comments in parallel
-        getReviewComments(repoOption.owner, repoOption.label, pr.number)
+        // Fetch review comments in parallel (using cached version)
+        cachedGetReviewComments(repoOption.owner, repoOption.label, pr.number)
           .then((c) => {
             if (!cancelled) setComments(c)
           })

@@ -19,7 +19,10 @@ export function DiffSizeWarning({
   return (
     <div className="bde-warning-banner">
       <AlertTriangle size={16} />
-      <span>Large diff ({formatBytes(sizeBytes)}) may slow down the editor.</span>
+      <span>
+        Large diff ({formatBytes(sizeBytes)}) may slow down the editor. Line commenting will be
+        disabled.
+      </span>
       <Button variant="ghost" size="sm" onClick={onLoadAnyway}>
         Load anyway
       </Button>

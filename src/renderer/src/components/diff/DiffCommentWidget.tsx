@@ -10,6 +10,13 @@ interface DiffCommentWidgetProps {
 
 export function DiffCommentWidget({ comments }: DiffCommentWidgetProps) {
   const [collapsed, setCollapsed] = useState(false)
+  // Note: Reply UI is not yet implemented - placeholder for future enhancement
+  // The API (replyToComment) exists but UI integration requires:
+  // - Repo context propagation
+  // - PR number context
+  // - Reply composer state management
+  // - Cache invalidation on reply success
+  // This is tracked as a future enhancement beyond the scope of this audit fix.
 
   if (comments.length === 0) return null
 
@@ -35,6 +42,7 @@ export function DiffCommentWidget({ comments }: DiffCommentWidgetProps) {
                 className="diff-comment-widget__body"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(c.body) }}
               />
+              {/* TODO: Add reply button - requires context propagation (owner, repo, prNumber) */}
             </div>
           ))}
         </div>

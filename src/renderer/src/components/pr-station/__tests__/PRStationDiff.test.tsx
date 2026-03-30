@@ -4,11 +4,14 @@ import type { LineRange } from '../../diff/DiffViewer'
 import type { PendingComment } from '../../../stores/pendingReview'
 
 const mockGetPRDiff = vi.fn()
-const mockGetReviewComments = vi.fn()
+const mockCachedGetReviewComments = vi.fn()
 
 vi.mock('../../../lib/github-api', () => ({
-  getPRDiff: (...args: unknown[]) => mockGetPRDiff(...args),
-  getReviewComments: (...args: unknown[]) => mockGetReviewComments(...args)
+  getPRDiff: (...args: unknown[]) => mockGetPRDiff(...args)
+}))
+
+vi.mock('../../../lib/github-cache', () => ({
+  cachedGetReviewComments: (...args: unknown[]) => mockCachedGetReviewComments(...args)
 }))
 
 vi.mock('../../../lib/diff-parser', () => ({
@@ -73,7 +76,7 @@ describe('PRStationDiff', () => {
     pendingCommentsRecord = {}
     capturedDiffViewerProps = {}
     mockGetPRDiff.mockResolvedValue('diff --git a/foo.ts b/foo.ts\n')
-    mockGetReviewComments.mockResolvedValue([])
+    mockCachedGetReviewComments.mockResolvedValue([])
   })
 
   it('fetches the diff from GitHub API', async () => {
@@ -92,10 +95,10 @@ describe('PRStationDiff', () => {
     await waitFor(() => expect(screen.getByText(/network error/i)).toBeInTheDocument())
   })
 
-  it('fetches review comments in parallel with diff', async () => {
+  it('fetches review comments in parallel with diff (using cache)', async () => {
     render(<PRStationDiff pr={mockPr} />)
     await waitFor(() =>
-      expect(mockGetReviewComments).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42)
+      expect(mockCachedGetReviewComments).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 42)
     )
   })
 

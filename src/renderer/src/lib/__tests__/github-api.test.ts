@@ -483,7 +483,7 @@ describe('createReview', () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({ message: 'Validation failed' }, 422))
 
     await expect(createReview('owner', 'repo', 42, { event: 'COMMENT' })).rejects.toThrow(
-      'Review failed: 422 — Validation failed'
+      'Review failed: unable to submit review (status 422)'
     )
   })
 
@@ -491,7 +491,7 @@ describe('createReview', () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({}, 500))
 
     await expect(createReview('owner', 'repo', 42, { event: 'COMMENT' })).rejects.toThrow(
-      'Review failed: 500 — unknown'
+      'Review failed: unable to submit review (status 500)'
     )
   })
 })
@@ -527,13 +527,13 @@ describe('mergePR', () => {
   it('throws on merge failure with message', async () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({ message: 'Merge conflict' }, 405))
 
-    await expect(mergePR('owner', 'repo', 42)).rejects.toThrow('Merge failed: 405 — Merge conflict')
+    await expect(mergePR('owner', 'repo', 42)).rejects.toThrow('Merge failed: unable to merge pull request (status 405)')
   })
 
   it('throws with unknown when body has no message', async () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({}, 500))
 
-    await expect(mergePR('owner', 'repo', 42)).rejects.toThrow('Merge failed: 500 — unknown')
+    await expect(mergePR('owner', 'repo', 42)).rejects.toThrow('Merge failed: unable to merge pull request (status 500)')
   })
 })
 
@@ -556,13 +556,13 @@ describe('closePR', () => {
   it('throws on non-ok response with message', async () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({ message: 'Not Found' }, 404))
 
-    await expect(closePR('owner', 'repo', 42)).rejects.toThrow('Close failed: 404 — Not Found')
+    await expect(closePR('owner', 'repo', 42)).rejects.toThrow('Close failed: unable to close pull request (status 404)')
   })
 
   it('throws with unknown when body has no message', async () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({}, 422))
 
-    await expect(closePR('owner', 'repo', 42)).rejects.toThrow('Close failed: 422 — unknown')
+    await expect(closePR('owner', 'repo', 42)).rejects.toThrow('Close failed: unable to close pull request (status 422)')
   })
 })
 
@@ -668,7 +668,7 @@ describe('replyToComment', () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({ message: 'Comment not found' }, 404))
 
     await expect(replyToComment('owner', 'repo', 42, 55, 'reply')).rejects.toThrow(
-      'Reply failed: 404 — Comment not found'
+      'Reply failed: unable to post comment (status 404)'
     )
   })
 
@@ -676,7 +676,7 @@ describe('replyToComment', () => {
     mockGithubFetch.mockResolvedValue(ipcResponse({}, 500))
 
     await expect(replyToComment('owner', 'repo', 42, 55, 'reply')).rejects.toThrow(
-      'Reply failed: 500 — unknown'
+      'Reply failed: unable to post comment (status 500)'
     )
   })
 })

@@ -12,10 +12,12 @@ export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerPr
   const repoOptions = useRepoOptions()
   const [conflictFiles, setConflictFiles] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (mergeableState !== 'dirty') {
       setConflictFiles([])
+      setError(null)
       return
     }
 
@@ -23,13 +25,16 @@ export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerPr
     if (!repo) return
 
     setLoading(true)
+    setError(null)
     window.api
       .checkConflictFiles({ owner: repo.owner, repo: repo.label, prNumber: pr.number })
       .then((result) => {
         setConflictFiles(result.files)
+        setError(null)
       })
-      .catch(() => {
+      .catch((err) => {
         setConflictFiles([])
+        setError(err instanceof Error ? err.message : 'Failed to fetch conflict files')
       })
       .finally(() => setLoading(false))
   }, [pr.repo, pr.number, mergeableState, repoOptions])
@@ -44,6 +49,10 @@ export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerPr
       </div>
       {loading ? (
         <span className="pr-conflict-banner__loading">Checking conflicting files...</span>
+      ) : error ? (
+        <span className="pr-conflict-banner__error" style={{ color: 'var(--color-text-tertiary)' }}>
+          {error}
+        </span>
       ) : conflictFiles.length > 0 ? (
         <ul className="pr-conflict-banner__files">
           {conflictFiles.map((f) => (

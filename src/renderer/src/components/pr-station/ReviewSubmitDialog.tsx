@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '../ui/Button'
 import { createReview, type CreateReviewBody } from '../../lib/github-api'
 import { usePendingReviewStore } from '../../stores/pendingReview'
@@ -25,8 +25,50 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
   const [submitting, setSubmitting] = useState(false)
   const pendingComments = usePendingReviewStore((s) => s.pendingComments[prKey] ?? EMPTY_COMMENTS)
   const clearPending = usePendingReviewStore((s) => s.clearPending)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   const repo = repoOptions.find((r) => r.label === pr.repo)
+
+  // Focus trap: keep focus within dialog
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const focusableElements = Array.from(
+      dialog.querySelectorAll(focusableSelector)
+    ) as HTMLElement[]
+
+    if (focusableElements.length === 0) return
+
+    // Focus first element
+    focusableElements[0]?.focus()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+
+      if (e.shiftKey) {
+        // Shift+Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement?.focus()
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement?.focus()
+        }
+      }
+    }
+
+    dialog.addEventListener('keydown', handleKeyDown)
+    return () => dialog.removeEventListener('keydown', handleKeyDown)
+  }, [submitting]) // Re-run when submitting state changes (may disable buttons)
 
   const handleSubmit = async () => {
     if (!repo) return
@@ -69,7 +111,14 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
 
   return (
     <div className="review-dialog-backdrop" onClick={onClose}>
-      <div className="review-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="review-dialog-title">
+      <div
+        ref={dialogRef}
+        className="review-dialog"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="review-dialog-title"
+      >
         <h3 className="review-dialog__title" id="review-dialog-title">Submit Review</h3>
 
         <textarea

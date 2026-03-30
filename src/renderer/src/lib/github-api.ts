@@ -12,17 +12,20 @@ async function githubFetchRaw(path: string, init?: GitHubFetchInit): Promise<Git
 
 async function fetchAllPages<T>(path: string): Promise<T[]> {
   const items: T[] = []
+  const MAX_PAGES = 100 // Limit pagination depth to prevent infinite loops
 
   let res = await githubFetchRaw(path)
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
   items.push(...(res.body as T[]))
 
   let nextUrl = res.linkNext
-  while (nextUrl) {
+  let pageCount = 1
+  while (nextUrl && pageCount < MAX_PAGES) {
     res = await githubFetchRaw(nextUrl)
     if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
     items.push(...(res.body as T[]))
     nextUrl = res.linkNext
+    pageCount++
   }
 
   return items
@@ -191,8 +194,8 @@ export async function mergePR(
     body: JSON.stringify(body)
   })
   if (!res.ok) {
-    const err = (res.body ?? {}) as { message?: string }
-    throw new Error(`Merge failed: ${res.status} — ${err.message ?? 'unknown'}`)
+    // Don't leak GitHub's raw error messages; provide generic user-friendly message
+    throw new Error(`Merge failed: unable to merge pull request (status ${res.status})`)
   }
 }
 
@@ -243,8 +246,8 @@ export async function createReview(
     body: JSON.stringify(review)
   })
   if (!res.ok) {
-    const err = (res.body ?? {}) as { message?: string }
-    throw new Error(`Review failed: ${res.status} — ${err.message ?? 'unknown'}`)
+    // Don't leak GitHub's raw error messages; provide generic user-friendly message
+    throw new Error(`Review failed: unable to submit review (status ${res.status})`)
   }
 }
 
@@ -264,8 +267,8 @@ export async function replyToComment(
     }
   )
   if (!res.ok) {
-    const err = (res.body ?? {}) as { message?: string }
-    throw new Error(`Reply failed: ${res.status} — ${err.message ?? 'unknown'}`)
+    // Don't leak GitHub's raw error messages; provide generic user-friendly message
+    throw new Error(`Reply failed: unable to post comment (status ${res.status})`)
   }
   return res.body as PrComment
 }
@@ -277,7 +280,7 @@ export async function closePR(owner: string, repo: string, number: number): Prom
     body: JSON.stringify({ state: 'closed' })
   })
   if (!res.ok) {
-    const err = (res.body ?? {}) as { message?: string }
-    throw new Error(`Close failed: ${res.status} — ${err.message ?? 'unknown'}`)
+    // Don't leak GitHub's raw error messages; provide generic user-friendly message
+    throw new Error(`Close failed: unable to close pull request (status ${res.status})`)
   }
 }

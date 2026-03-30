@@ -2,10 +2,12 @@ import { broadcast as broadcastEvent } from './broadcast'
 import { getGitHubToken } from './config'
 import { githubFetch, fetchAllGitHubPages } from './github-fetch'
 import { getConfiguredRepos } from './paths'
+import { createLogger } from './logger'
 import type { OpenPr, CheckRunSummary, PrListPayload } from '../shared/types'
 
 const POLL_INTERVAL_MS = 60_000
 const REQUEST_TIMEOUT_MS = 10_000
+const logger = createLogger('pr-poller')
 
 function getGitHubRepos(): { owner: string; repo: string }[] {
   return getConfiguredRepos()
@@ -15,6 +17,8 @@ function getGitHubRepos(): { owner: string; repo: string }[] {
 
 let timer: ReturnType<typeof setInterval> | null = null
 let latestPayload: PrListPayload | null = null
+let errorCount = 0
+let backoffDelay = POLL_INTERVAL_MS
 
 async function fetchOpenPrs(owner: string, repo: string, token: string): Promise<OpenPr[]> {
   try {
@@ -23,7 +27,8 @@ async function fetchOpenPrs(owner: string, repo: string, token: string): Promise
       { token, timeoutMs: REQUEST_TIMEOUT_MS }
     )
     return data.map((pr) => ({ ...pr, repo }))
-  } catch {
+  } catch (err) {
+    logger.warn(`Failed to fetch PRs for ${owner}/${repo}: ${err instanceof Error ? err.message : String(err)}`)
     return []
   }
 }
@@ -94,12 +99,29 @@ function broadcastPrList(payload: PrListPayload): void {
 }
 
 function safePoll(): void {
-  poll().catch(err => console.error('[pr-poller] poll error:', err))
+  poll()
+    .then(() => {
+      // Reset error count and backoff on success
+      errorCount = 0
+      backoffDelay = POLL_INTERVAL_MS
+    })
+    .catch((err) => {
+      logger.error(`PR poller error: ${err instanceof Error ? err.message : String(err)}`)
+      errorCount++
+      // Exponential backoff with max 5 minutes
+      backoffDelay = Math.min(POLL_INTERVAL_MS * Math.pow(2, errorCount - 1), 300_000)
+      logger.warn(`PR poller backing off for ${backoffDelay}ms after ${errorCount} consecutive errors`)
+    })
 }
 
 export function startPrPoller(): void {
   safePoll()
-  timer = setInterval(safePoll, POLL_INTERVAL_MS)
+  timer = setInterval(() => {
+    // Use dynamic backoff delay
+    clearInterval(timer!)
+    timer = setInterval(safePoll, backoffDelay)
+    safePoll()
+  }, backoffDelay)
 }
 
 export function stopPrPoller(): void {
