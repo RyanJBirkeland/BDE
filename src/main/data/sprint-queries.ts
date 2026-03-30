@@ -2,6 +2,7 @@
  * Sprint task query functions — SQLite edition.
  * All functions are synchronous and use the local SQLite database via getDb().
  */
+import type Database from 'better-sqlite3'
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { getDb } from '../db'
@@ -113,9 +114,10 @@ function serializeField(key: string, value: unknown): unknown {
   return value
 }
 
-export function getTask(id: string): SprintTask | null {
+export function getTask(id: string, db?: Database.Database): SprintTask | null {
   try {
-    const row = getDb()
+    const conn = db ?? getDb()
+    const row = conn
       .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
       .get(id) as Record<string, unknown> | undefined
     return row ? sanitizeTask(row) : null
@@ -187,49 +189,56 @@ export function updateTask(
   try {
     const db = getDb()
 
-    // Fetch current state for change tracking
-    const oldTask = getTask(id)
-    if (!oldTask) return null
+    // Wrap read, update, and audit in a single transaction
+    return db.transaction(() => {
+      // Fetch current state for change tracking
+      const oldTask = getTask(id, db)
+      if (!oldTask) return null
 
-    // Build SET clause with serialized values
-    const setClauses: string[] = []
-    const values: unknown[] = []
-    const auditPatch: Record<string, unknown> = {}
+      // Build SET clause with serialized values
+      const setClauses: string[] = []
+      const values: unknown[] = []
+      const auditPatch: Record<string, unknown> = {}
 
-    for (const [key, value] of entries) {
-      // QA-18: Defense-in-depth regex assertion for SQL column names
-      if (!/^[a-z_]+$/.test(key)) {
-        throw new Error(`Invalid column name: ${key}`)
+      for (const [key, value] of entries) {
+        // QA-18: Defense-in-depth regex assertion for SQL column names
+        if (!/^[a-z_]+$/.test(key)) {
+          throw new Error(`Invalid column name: ${key}`)
+        }
+        setClauses.push(`${key} = ?`)
+        const serialized = serializeField(key, value)
+        values.push(serialized)
+        // For audit, store the serialized form for depends_on but original for others
+        auditPatch[key] = key === 'depends_on' ? sanitizeDependsOn(value) : value
       }
-      setClauses.push(`${key} = ?`)
-      const serialized = serializeField(key, value)
-      values.push(serialized)
-      // For audit, store the serialized form for depends_on but original for others
-      auditPatch[key] = key === 'depends_on' ? sanitizeDependsOn(value) : value
-    }
 
-    values.push(id)
+      values.push(id)
 
-    const result = db
-      .prepare(
-        `UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`
-      )
-      .get(...values) as Record<string, unknown> | undefined
+      const result = db
+        .prepare(
+          `UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`
+        )
+        .get(...values) as Record<string, unknown> | undefined
 
-    if (!result) return null
+      if (!result) return null
 
-    // Record changes for audit trail
-    try {
-      recordTaskChanges(
-        id,
-        oldTask as unknown as Record<string, unknown>,
-        auditPatch
-      )
-    } catch (err) {
-      logger.warn(`[sprint-queries] Failed to record task changes: ${err}`)
-    }
+      // Record changes for audit trail (within transaction)
+      try {
+        recordTaskChanges(
+          id,
+          oldTask as unknown as Record<string, unknown>,
+          auditPatch,
+          'unknown',
+          db
+        )
+      } catch (err) {
+        logger.warn(`[sprint-queries] Failed to record task changes: ${err}`)
+        // Re-throw to abort transaction
+        throw err
+      }
 
-    return sanitizeTask(result)
+      return sanitizeTask(result)
+    })()
   } catch (err) {
     logger.warn(`[sprint-queries] updateTask failed for id=${id}: ${err}`)
     return null
@@ -356,19 +365,61 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
   try {
     const db = getDb()
     return db.transaction(() => {
-      // Get affected task IDs
+      // Get affected tasks with full state for audit trail
       const affected = db
-        .prepare('SELECT id FROM sprint_tasks WHERE pr_number = ? AND status = ?')
-        .all(prNumber, 'active') as Array<{ id: string }>
+        .prepare('SELECT * FROM sprint_tasks WHERE pr_number = ? AND status = ?')
+        .all(prNumber, 'active') as Array<Record<string, unknown>>
 
-      const affectedIds = affected.map((r) => r.id)
+      const affectedIds = affected.map((r) => r.id as string)
 
       if (affectedIds.length > 0) {
         const completedAt = new Date().toISOString()
+
+        // Record audit trail for each affected task
+        for (const oldTask of affected) {
+          try {
+            recordTaskChanges(
+              oldTask.id as string,
+              oldTask,
+              { status: 'done', completed_at: completedAt },
+              'pr-poller',
+              db
+            )
+          } catch (err) {
+            logger.warn(
+              `[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`
+            )
+          }
+        }
+
         // Transition active tasks to done
         db.prepare(
           'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
         ).run('done', completedAt, prNumber, 'active')
+      }
+
+      // Get tasks where pr_status will change for audit
+      const prStatusAffected = db
+        .prepare(
+          "SELECT * FROM sprint_tasks WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'"
+        )
+        .all(prNumber) as Array<Record<string, unknown>>
+
+      // Record audit trail for pr_status changes
+      for (const oldTask of prStatusAffected) {
+        try {
+          recordTaskChanges(
+            oldTask.id as string,
+            oldTask,
+            { pr_status: 'merged' },
+            'pr-poller',
+            db
+          )
+        } catch (err) {
+          logger.warn(
+            `[sprint-queries] Failed to record pr_status change for task ${oldTask.id}: ${err}`
+          )
+        }
       }
 
       // Set pr_status to merged for done tasks with open PRs
@@ -388,19 +439,61 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
   try {
     const db = getDb()
     return db.transaction(() => {
-      // Get affected task IDs
+      // Get affected tasks with full state for audit trail
       const affected = db
-        .prepare('SELECT id FROM sprint_tasks WHERE pr_number = ? AND status = ?')
-        .all(prNumber, 'active') as Array<{ id: string }>
+        .prepare('SELECT * FROM sprint_tasks WHERE pr_number = ? AND status = ?')
+        .all(prNumber, 'active') as Array<Record<string, unknown>>
 
-      const affectedIds = affected.map((r) => r.id)
+      const affectedIds = affected.map((r) => r.id as string)
 
       if (affectedIds.length > 0) {
         const completedAt = new Date().toISOString()
+
+        // Record audit trail for each affected task
+        for (const oldTask of affected) {
+          try {
+            recordTaskChanges(
+              oldTask.id as string,
+              oldTask,
+              { status: 'cancelled', completed_at: completedAt },
+              'pr-poller',
+              db
+            )
+          } catch (err) {
+            logger.warn(
+              `[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`
+            )
+          }
+        }
+
         // Transition active tasks to cancelled
         db.prepare(
           'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
         ).run('cancelled', completedAt, prNumber, 'active')
+      }
+
+      // Get tasks where pr_status will change for audit
+      const prStatusAffected = db
+        .prepare(
+          "SELECT * FROM sprint_tasks WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'"
+        )
+        .all(prNumber) as Array<Record<string, unknown>>
+
+      // Record audit trail for pr_status changes
+      for (const oldTask of prStatusAffected) {
+        try {
+          recordTaskChanges(
+            oldTask.id as string,
+            oldTask,
+            { pr_status: 'closed' },
+            'pr-poller',
+            db
+          )
+        } catch (err) {
+          logger.warn(
+            `[sprint-queries] Failed to record pr_status change for task ${oldTask.id}: ${err}`
+          )
+        }
       }
 
       // Set pr_status to closed for done tasks with open PRs
