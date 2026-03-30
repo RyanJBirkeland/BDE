@@ -1,8 +1,16 @@
 import React, { Suspense, useState, useEffect } from 'react'
 import { Undo2 } from 'lucide-react'
-import { View } from '../../stores/panelLayout'
+import {
+  usePanelLayoutStore,
+  createLeaf,
+  findLeaf,
+  getOpenViews,
+  type View
+} from '../../stores/panelLayout'
 import { VIEW_LABELS } from '../../lib/view-registry'
 import { resolveView } from '../../lib/view-resolver'
+import { PanelRenderer } from '../panels/PanelRenderer'
+import { TearoffTabBar } from './TearoffTabBar'
 import { useCrossWindowDrop } from '../../hooks/useCrossWindowDrop'
 import { CrossWindowDropOverlay } from '../panels/CrossWindowDropOverlay'
 import '../../assets/tearoff-shell.css'
@@ -58,6 +66,23 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
 
   const label = VIEW_LABELS[view] ?? view
 
+  // Initialize panel store for this tear-off window
+  useEffect(() => {
+    usePanelLayoutStore.getState().setPersistable(false)
+    const leaf = createLeaf(view)
+    usePanelLayoutStore.setState({
+      root: leaf,
+      focusedPanelId: leaf.panelId,
+      activeView: view
+    })
+  }, []) // only on mount — view is static from query params
+
+  // Derive mode from store
+  const root = usePanelLayoutStore((s) => s.root)
+  const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
+  const isMultiTab = root.type === 'split' || (root.type === 'leaf' && root.tabs.length > 1)
+  const focusedLeaf = focusedPanelId ? findLeaf(root, focusedPanelId) : null
+
   useEffect(() => {
     const unsub = window.api.tearoff.onConfirmClose(() => {
       setShowDialog(true)
@@ -73,12 +98,19 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
     })
   }, [])
 
-  // Wire crossWindowDrop for forward compatibility (Phase 2.1: no-op for single-view tear-offs)
+  // Handle cross-window tab drops — add tab or split panel
   useEffect(() => {
     if (!window.api?.tearoff?.onCrossWindowDrop) return
-    return window.api.tearoff.onCrossWindowDrop((_payload) => {
-      // Single-view tear-offs don't have a panel layout to add tabs into.
-      // This listener exists for forward compatibility.
+    return window.api.tearoff.onCrossWindowDrop((payload) => {
+      const store = usePanelLayoutStore.getState()
+      const targetId = payload.targetPanelId || store.focusedPanelId || ''
+      if (payload.zone === 'center') {
+        store.addTab(targetId, payload.view as View)
+      } else {
+        const direction =
+          payload.zone === 'left' || payload.zone === 'right' ? 'horizontal' : 'vertical'
+        store.splitPanel(targetId, direction, payload.view as View)
+      }
     })
   }, [])
 
@@ -92,8 +124,28 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
     return () => window.removeEventListener('keydown', handler)
   }, [crossDrop.active])
 
+  // Cmd+W closes the active tab in panel mode
+  useEffect(() => {
+    if (!isMultiTab) return
+    const handler = (e: KeyboardEvent): void => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+        e.preventDefault()
+        if (focusedLeaf && focusedLeaf.tabs.length > 0) {
+          usePanelLayoutStore.getState().closeTab(focusedLeaf.panelId, focusedLeaf.activeTab)
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isMultiTab, focusedLeaf])
+
   function handleReturn(): void {
     window.api.tearoff.returnToMain(windowId)
+  }
+
+  function handleReturnAll(): void {
+    const views = getOpenViews(usePanelLayoutStore.getState().root)
+    window.api?.tearoff?.returnAll({ windowId, views: views as string[] })
   }
 
   function handleDialogClose(action: 'return' | 'close', remember: boolean): void {
@@ -104,21 +156,47 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
   return (
     <div className="tearoff-shell">
       <header className="tearoff-shell__header">
-        <span className="tearoff-shell__title">{label}</span>
+        <span className="tearoff-shell__title">{isMultiTab ? '' : label}</span>
         <div className="tearoff-shell__actions">
-          <button
-            className="tearoff-shell__btn"
-            aria-label="Return to main window"
-            onClick={handleReturn}
-          >
-            <Undo2 size={14} />
-          </button>
+          {isMultiTab ? (
+            <button
+              className="tearoff-shell__btn"
+              onClick={handleReturnAll}
+              aria-label="Return all tabs to main window"
+              title="Return all"
+            >
+              <Undo2 size={14} />
+            </button>
+          ) : (
+            <button
+              className="tearoff-shell__btn"
+              onClick={handleReturn}
+              aria-label="Return to main window"
+              title="Return to main window"
+            >
+              <Undo2 size={14} />
+            </button>
+          )}
         </div>
       </header>
+
+      {isMultiTab && focusedLeaf && (
+        <TearoffTabBar
+          tabs={focusedLeaf.tabs}
+          activeTab={focusedLeaf.activeTab}
+          onSelectTab={(i) => usePanelLayoutStore.getState().setActiveTab(focusedLeaf.panelId, i)}
+          onCloseTab={(i) => usePanelLayoutStore.getState().closeTab(focusedLeaf.panelId, i)}
+        />
+      )}
+
       <main className="tearoff-shell__content">
-        <Suspense fallback={null}>{resolveView(view)}</Suspense>
+        {isMultiTab ? (
+          <PanelRenderer node={root} />
+        ) : (
+          <Suspense fallback={null}>{resolveView(view)}</Suspense>
+        )}
       </main>
-      {showDialog && <CloseDialog onClose={handleDialogClose} />}
+
       <CrossWindowDropOverlay
         active={crossDrop.active}
         localX={crossDrop.localX}
@@ -126,6 +204,7 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
         viewKey={crossDrop.viewKey ?? ''}
         onDrop={crossDrop.handleDrop}
       />
+      {showDialog && <CloseDialog onClose={handleDialogClose} />}
     </div>
   )
 }
