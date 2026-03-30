@@ -75,12 +75,31 @@ function acquireLock(worktreeBase: string, repoPath: string, logger?: Logger): v
   }
 
   // Re-acquire atomically after cleaning stale lock
-  try {
-    rmSync(lockFile)
-  } catch {
-    /* already gone */
+  // Use a loop with retry to handle race conditions
+  let acquired = false
+  for (let attempt = 0; attempt < 3 && !acquired; attempt++) {
+    try {
+      rmSync(lockFile)
+    } catch {
+      /* already gone or being removed by another process */
+    }
+    try {
+      writeFileSync(lockFile, String(process.pid), { flag: 'wx' })
+      acquired = true
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err
+      // Another process acquired the lock between rmSync and writeFileSync — retry
+      if (attempt < 2) {
+        // Brief sleep to avoid tight spin
+        const sleepMs = 10 + Math.random() * 20
+        const now = Date.now()
+        while (Date.now() - now < sleepMs) { /* busy wait */ }
+      }
+    }
   }
-  writeFileSync(lockFile, String(process.pid), { flag: 'wx' })
+  if (!acquired) {
+    throw new Error(`Failed to acquire lock for ${repoPath} after cleaning stale lock`)
+  }
 }
 
 function releaseLock(worktreeBase: string, repoPath: string): void {
@@ -218,11 +237,19 @@ export function cleanupWorktree(opts: CleanupWorktreeOpts): void {
   const { repoPath, worktreePath, branch } = opts
   const env = buildAgentEnv()
 
-  execFile('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env }, () => {
+  execFile('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env }, (err1) => {
+    if (err1) {
+      console.error(`[worktree] Failed to remove worktree ${worktreePath}: ${err1}`)
+    }
     // After worktree removed, delete branch and prune
-    execFile('git', ['worktree', 'prune'], { cwd: repoPath, env }, () => {
-      execFile('git', ['branch', '-D', branch], { cwd: repoPath, env }, () => {
-        // best-effort
+    execFile('git', ['worktree', 'prune'], { cwd: repoPath, env }, (err2) => {
+      if (err2) {
+        console.error(`[worktree] Failed to prune worktrees: ${err2}`)
+      }
+      execFile('git', ['branch', '-D', branch], { cwd: repoPath, env }, (err3) => {
+        if (err3) {
+          console.error(`[worktree] Failed to delete branch ${branch}: ${err3}`)
+        }
       })
     })
   })

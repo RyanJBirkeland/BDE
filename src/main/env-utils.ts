@@ -11,14 +11,52 @@ import { homedir } from 'node:os'
 
 const EXTRA_PATHS = ['/usr/local/bin', '/opt/homebrew/bin', `${homedir()}/.local/bin`]
 
+// Allowlist of safe environment variables to pass to agent processes.
+// Excludes credentials, tokens, and other sensitive data.
+const SAFE_ENV_VARS = new Set([
+  'PATH',
+  'HOME',
+  'USER',
+  'SHELL',
+  'LANG',
+  'LC_ALL',
+  'LC_CTYPE',
+  'TMPDIR',
+  'TERM',
+  'COLORTERM',
+  'NODE_ENV',
+  'NODE_OPTIONS',
+  'npm_config_user_agent',
+  'EDITOR',
+  'VISUAL',
+  'PAGER',
+  // Git-related
+  'GIT_AUTHOR_NAME',
+  'GIT_AUTHOR_EMAIL',
+  'GIT_COMMITTER_NAME',
+  'GIT_COMMITTER_EMAIL',
+  // Intentionally excluded: AWS_*, GITHUB_TOKEN, ANTHROPIC_API_KEY, etc.
+  // These are passed explicitly when needed, not inherited from process.env
+])
+
 let _cachedEnv: Record<string, string | undefined> | null = null
 
-/** Returns process.env with common tool paths prepended to PATH. Cached after first call. */
+/** Returns a filtered process.env with only safe variables, plus augmented PATH. Cached after first call. */
 export function buildAgentEnv(): Record<string, string | undefined> {
   if (_cachedEnv) return { ..._cachedEnv }
-  const env = { ...process.env }
+
+  // Start with empty env and only add allowlisted variables
+  const env: Record<string, string | undefined> = {}
+  for (const key of SAFE_ENV_VARS) {
+    if (key in process.env) {
+      env[key] = process.env[key]
+    }
+  }
+
+  // Augment PATH with common tool paths
   const currentPath = env.PATH ?? ''
   env.PATH = [...EXTRA_PATHS, ...currentPath.split(':')].filter(Boolean).join(':')
+
   _cachedEnv = env
   return { ..._cachedEnv }
 }

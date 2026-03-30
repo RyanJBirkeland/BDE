@@ -665,6 +665,40 @@ describe('createAgentManager', () => {
 
       vi.useRealTimers()
     })
+
+    it('clears activeAgents map after re-queuing during shutdown', async () => {
+      vi.useFakeTimers()
+      const logger = makeLogger()
+      setupDefaultMocks()
+      const task1 = makeTask({ id: 'task-1' })
+      const task2 = makeTask({ id: 'task-2' })
+      const { handle: handle1 } = makeBlockingHandle()
+      const { handle: handle2 } = makeBlockingHandle()
+
+      vi.mocked(getQueuedTasks).mockReturnValueOnce([task1, task2])
+      vi.mocked(claimTask).mockReturnValueOnce(task1).mockReturnValueOnce(task2)
+      vi.mocked(spawnAgent).mockResolvedValueOnce(handle1).mockResolvedValueOnce(handle2)
+
+      const mgr = createAgentManager(baseConfig, mockRepo, logger)
+      mgr.start()
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(6_000)
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      expect(mgr.getStatus().activeAgents.length).toBe(2)
+
+      mgr.stop(0).catch(() => {})
+      for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+      // Both tasks should be re-queued
+      expect(vi.mocked(updateTask)).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'queued' }))
+      expect(vi.mocked(updateTask)).toHaveBeenCalledWith('task-2', expect.objectContaining({ status: 'queued' }))
+
+      // Active agents map should be cleared
+      expect(mgr.getStatus().activeAgents.length).toBe(0)
+
+      vi.useRealTimers()
+    })
   })
 
   describe('getStatus()', () => {

@@ -102,6 +102,8 @@ async function autoCommitIfDirty(
     logger.info(`[completion] auto-committing uncommitted changes`)
     // Use -A to capture new (untracked) files created by agents, not just modifications.
     // The repo's .gitignore excludes node_modules, .env, etc.
+    // WARNING: This may capture sensitive files if .gitignore is incomplete. Agents should
+    // commit explicitly and avoid creating .env, credentials, API keys, etc.
     await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
     await execFile('git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`], {
       cwd: worktreePath,
@@ -226,6 +228,15 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   // 0. Guard: worktree must still exist (macOS /tmp can evict it)
   if (!existsSync(worktreePath)) {
     logger.error(`[completion] Worktree path no longer exists for task ${taskId}: ${worktreePath}`)
+
+    // Emit agent event for visibility
+    const { emitAgentEvent } = await import('../agent-event-mapper')
+    emitAgentEvent(taskId, {
+      type: 'agent:error',
+      message: `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
+      timestamp: Date.now()
+    } as any)
+
     try {
       repo.updateTask(taskId, {
         status: 'error',
@@ -317,10 +328,10 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     // If rev-list fails, try pushing anyway
   }
 
-  // 4. Push branch to origin (skip pre-push hooks — agent code is reviewed via PR)
+  // 4. Push branch to origin (run pre-push hooks for security validation)
   logger.info(`[completion] Task ${taskId}: pushing branch ${branch}`)
   try {
-    await execFile('git', ['push', '--no-verify', 'origin', branch], {
+    await execFile('git', ['push', 'origin', branch], {
       cwd: worktreePath,
       env: buildAgentEnv()
     })
@@ -352,7 +363,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       // so the UI shows a "Create PR" link instead of silently orphaning
       repo.updateTask(taskId, {
         pr_status: 'branch_only',
-        notes: `Branch ${branch} pushed to ${ghRepo} but PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts`
+        notes: `Branch ${branch} pushed to ${ghRepo} but PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts. To create PR manually: gh pr create --head ${branch} --repo ${ghRepo}`
       })
       logger.warn(
         `[completion] Task ${taskId}: branch ${branch} pushed, PR creation failed — set pr_status=branch_only`

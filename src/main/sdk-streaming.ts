@@ -39,7 +39,9 @@ export async function runSdkStreaming(
   activeStreams.set(streamId, { close: () => queryHandle.return() })
 
   let fullText = ''
+  let timedOut = false
   const timer = setTimeout(() => {
+    timedOut = true
     queryHandle.return()
     activeStreams.delete(streamId)
   }, timeoutMs)
@@ -69,5 +71,9 @@ export async function runSdkStreaming(
     activeStreams.delete(streamId)
   }
 
-  return fullText.trim()
+  const trimmed = fullText.trim()
+  if (timedOut && trimmed) {
+    return trimmed + '\n\n[Response truncated due to timeout]'
+  }
+  return trimmed
 }

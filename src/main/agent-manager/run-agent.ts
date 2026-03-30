@@ -14,6 +14,8 @@ import { broadcast } from '../broadcast'
 import { mapRawMessage, emitAgentEvent } from '../agent-event-mapper'
 import type { AgentEvent } from '../../shared/types'
 import { buildAgentPrompt } from './prompt-composer'
+import * as DOMPurifyModule from 'dompurify'
+import { JSDOM } from 'jsdom'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -104,8 +106,23 @@ export async function tryEmitPlaygroundEvent(
     }
 
     // Read file content
-    const html = await readFile(absolutePath, 'utf-8')
+    const rawHtml = await readFile(absolutePath, 'utf-8')
     const filename = basename(absolutePath)
+
+    // Sanitize HTML to prevent XSS from agent-generated content
+    const window = new JSDOM('').window
+    const DOMPurify = DOMPurifyModule.default || DOMPurifyModule
+    const purify = DOMPurify(window as unknown as Window)
+    const html = purify.sanitize(rawHtml, {
+      ALLOWED_TAGS: [
+        'div', 'span', 'p', 'a', 'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li', 'br', 'hr', 'table', 'tr', 'td', 'th', 'thead', 'tbody',
+        'strong', 'em', 'code', 'pre', 'blockquote', 'canvas', 'svg', 'path',
+        'button', 'input', 'label', 'form', 'select', 'option'
+      ],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style', 'width', 'height', 'type', 'value', 'name'],
+      ALLOW_DATA_ATTR: false
+    })
 
     // Emit playground event
     const event: AgentEvent = {
@@ -158,6 +175,7 @@ export async function runAgent(
   })
 
   let handle: AgentHandle
+  let spawnTimeoutId: ReturnType<typeof setTimeout> | null = null
   try {
     handle = await Promise.race([
       spawnAgent({
@@ -166,15 +184,33 @@ export async function runAgent(
         model: defaultModel,
         logger
       }),
-      new Promise<never>((_, reject) =>
-        setTimeout(
+      new Promise<never>((_, reject) => {
+        spawnTimeoutId = setTimeout(
           () => reject(new Error(`Spawn timed out after ${SPAWN_TIMEOUT_MS / 1000}s`)),
           SPAWN_TIMEOUT_MS
         )
-      )
+      })
     ])
+    // Clear timeout on successful spawn
+    if (spawnTimeoutId !== null) {
+      clearTimeout(spawnTimeoutId)
+      spawnTimeoutId = null
+    }
   } catch (err) {
+    // Clear timeout on error
+    if (spawnTimeoutId !== null) {
+      clearTimeout(spawnTimeoutId)
+      spawnTimeoutId = null
+    }
     logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
+
+    // Emit agent:error event for spawn failure visibility
+    emitAgentEvent(task.id, {
+      type: 'agent:error',
+      message: `Agent spawn failed: ${err instanceof Error ? err.message : String(err)}`,
+      timestamp: Date.now()
+    } as any)
+
     try {
       repo.updateTask(task.id, {
         status: 'error',

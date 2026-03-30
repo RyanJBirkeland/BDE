@@ -30,7 +30,8 @@ import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../env-util
 // Logger helper — callers can supply their own or fall back to console
 // ---------------------------------------------------------------------------
 
-import { appendFileSync, readFileSync, statSync, renameSync, rmSync } from 'node:fs'
+import { appendFileSync, statSync, renameSync, rmSync } from 'node:fs'
+import { readFile as readFileAsync, stat as statAsync } from 'node:fs/promises'
 import { join as joinPath } from 'node:path'
 import { homedir as home } from 'node:os'
 import { BDE_AGENT_LOG_PATH } from '../paths'
@@ -81,11 +82,12 @@ const defaultLogger: Logger = {
 /**
  * Check whether the OAuth token file exists and contains a valid token.
  * Returns true if the drain loop should proceed, false if it should skip.
+ * Uses async file I/O to avoid blocking the main thread.
  */
 export async function checkOAuthToken(logger: Logger): Promise<boolean> {
   try {
     const tokenPath = joinPath(home(), '.bde', 'oauth-token')
-    const token = readFileSync(tokenPath, 'utf-8').trim()
+    const token = (await readFileAsync(tokenPath, 'utf-8')).trim()
     if (!token || token.length < 20) {
       const refreshed = await refreshOAuthTokenFromKeychain()
       if (refreshed) {
@@ -102,7 +104,7 @@ export async function checkOAuthToken(logger: Logger): Promise<boolean> {
     // Proactively refresh if token file is older than 45 minutes
     // (Claude OAuth tokens expire after ~1 hour)
     try {
-      const stat = statSync(tokenPath)
+      const stat = await statAsync(tokenPath)
       const ageMs = Date.now() - stat.mtimeMs
       if (ageMs > 45 * 60 * 1000) {
         logger.info('[agent-manager] Token file older than 45min — proactively refreshing')
@@ -178,7 +180,7 @@ export function handleWatchdogVerdict(
       updateTaskFn(taskId, {
         status: 'queued',
         claimed_by: null,
-        notes: 'Rate-limit loop — re-queued'
+        notes: 'Agent hit Claude API rate limit repeatedly. Task re-queued — will retry automatically after backoff period. If this persists, check your Anthropic API usage tier or wait for rate limit to reset.'
       })
     } catch (err) {
       logger.warn(`[agent-manager] Failed to requeue rate-limited task ${taskId}: ${err}`)
@@ -299,14 +301,25 @@ export class AgentManagerImpl implements AgentManager {
   /**
    * Map Queue API camelCase response to local task shape.
    * Ensures retry_count and fast_fail_count default to 0, prompt and spec default to null.
+   * Validates required fields and throws if missing.
    */
   _mapQueuedTask(raw: Record<string, unknown>) {
+    if (!raw.id || typeof raw.id !== 'string') {
+      throw new Error(`Task missing or invalid 'id' field: ${JSON.stringify(raw)}`)
+    }
+    if (!raw.title || typeof raw.title !== 'string') {
+      throw new Error(`Task ${raw.id} missing or invalid 'title' field`)
+    }
+    if (!raw.repo || typeof raw.repo !== 'string') {
+      throw new Error(`Task ${raw.id} missing or invalid 'repo' field`)
+    }
+
     return {
-      id: raw.id as string,
-      title: raw.title as string,
+      id: raw.id,
+      title: raw.title,
       prompt: (raw.prompt as string) ?? null,
       spec: (raw.spec as string) ?? null,
-      repo: raw.repo as string,
+      repo: raw.repo,
       retry_count: Number(raw.retryCount) || 0,
       fast_fail_count: Number(raw.fastFailCount) || 0,
       playground_enabled: Boolean(raw.playgroundEnabled),
@@ -345,8 +358,12 @@ export class AgentManagerImpl implements AgentManager {
           return true
         }
       }
-    } catch {
-      // If dep parsing fails, proceed without blocking
+    } catch (err) {
+      // If dep parsing fails, log the error but proceed without blocking
+      // (Better to run a task than to silently skip it due to malformed deps)
+      this.logger.warn(
+        `[agent-manager] Failed to parse dependencies for task ${taskId}: ${err}. Raw value: ${JSON.stringify(rawDeps)}`
+      )
     }
     return false
   }
@@ -387,6 +404,18 @@ export class AgentManagerImpl implements AgentManager {
       const repoPath = this.resolveRepoPath(task.repo)
       if (!repoPath) {
         this.logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
+        // Update task with user-visible error
+        try {
+          this.repo.updateTask(task.id, {
+            status: 'error',
+            completed_at: new Date().toISOString(),
+            claimed_by: null,
+            notes: `Repository "${task.repo}" not found in BDE configuration. Add it via Settings → Repositories or check the repo slug spelling.`
+          })
+          await this.onTaskTerminal(task.id, 'error')
+        } catch (err) {
+          this.logger.warn(`[agent-manager] Failed to update task ${task.id} after repo path resolution failure: ${err}`)
+        }
         return
       }
 
@@ -487,8 +516,14 @@ export class AgentManagerImpl implements AgentManager {
   // ---- watchdogLoop ----
 
   _watchdogLoop(): void {
-    for (const agent of this._activeAgents.values()) {
+    // Snapshot agent taskIds to avoid iteration-during-modification
+    const agentTaskIds = Array.from(this._activeAgents.keys())
+
+    for (const taskId of agentTaskIds) {
+      const agent = this._activeAgents.get(taskId)
+      if (!agent) continue // Already deleted by another path
       if (this._processingTasks.has(agent.taskId)) continue
+
       const verdict = checkAgent(agent, Date.now(), this.config)
       if (verdict === 'ok') continue
 
@@ -546,12 +581,7 @@ export class AgentManagerImpl implements AgentManager {
     this._shuttingDown = false
     this._concurrency = makeConcurrencyState(this.config.maxConcurrent)
 
-    // Initial orphan recovery (fire-and-forget)
-    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger).catch((err) => {
-      this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
-    })
-
-    // Build dependency index
+    // Build dependency index first (synchronous)
     try {
       const tasks = this.repo.getTasksWithDependencies()
       this._depIndex.rebuild(tasks)
@@ -560,7 +590,17 @@ export class AgentManagerImpl implements AgentManager {
       this.logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
     }
 
-    // Initial worktree prune (fire-and-forget)
+    // Run orphan recovery before first drain to avoid race conditions.
+    // This ensures orphaned tasks are re-queued before we start claiming new tasks.
+    const orphanRecoveryPromise = recoverOrphans(
+      (id: string) => this._activeAgents.has(id),
+      this.repo,
+      this.logger
+    ).catch((err) => {
+      this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
+    })
+
+    // Initial worktree prune (fire-and-forget, does not block drain)
     pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id)).catch((err) => {
       this.logger.error(`[agent-manager] Initial worktree prune error: ${err}`)
     })
@@ -582,14 +622,16 @@ export class AgentManagerImpl implements AgentManager {
       this._pruneLoop().catch((err) => this.logger.warn(`[agent-manager] Prune loop error: ${err}`))
     }, WORKTREE_PRUNE_INTERVAL_MS)
 
-    // Defer initial drain to let the event loop settle
-    setTimeout(() => {
-      this._drainInFlight = this._drainLoop()
-        .catch((err) => this.logger.warn(`[agent-manager] Initial drain error: ${err}`))
-        .finally(() => {
-          this._drainInFlight = null
-        })
-    }, INITIAL_DRAIN_DEFER_MS)
+    // Defer initial drain until orphan recovery completes
+    orphanRecoveryPromise.finally(() => {
+      setTimeout(() => {
+        this._drainInFlight = this._drainLoop()
+          .catch((err) => this.logger.warn(`[agent-manager] Initial drain error: ${err}`))
+          .finally(() => {
+            this._drainInFlight = null
+          })
+      }, INITIAL_DRAIN_DEFER_MS)
+    })
 
     this.logger.info('[agent-manager] Started')
   }
@@ -683,8 +725,15 @@ export class AgentManagerImpl implements AgentManager {
 
   killAgent(taskId: string): void {
     const agent = this._activeAgents.get(taskId)
-    if (!agent) throw new Error(`No active agent for task ${taskId}`)
-    agent.handle.abort()
+    if (!agent) {
+      this.logger.warn(`[agent-manager] killAgent called for non-existent task ${taskId}`)
+      return
+    }
+    try {
+      agent.handle.abort()
+    } catch (err) {
+      this.logger.warn(`[agent-manager] Failed to abort agent ${taskId}: ${err}`)
+    }
   }
 }
 

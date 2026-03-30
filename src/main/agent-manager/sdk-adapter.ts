@@ -150,17 +150,28 @@ function spawnViaCli(
 
   async function* parseMessages(): AsyncIterable<unknown> {
     let buffer = ''
-    for await (const chunk of child.stdout) {
-      buffer += (chunk as Buffer).toString()
-      const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''
-      for (const line of lines) {
-        if (!line.trim()) continue
-        try {
-          yield JSON.parse(line)
-        } catch {
-          /* skip non-JSON */
+    try {
+      for await (const chunk of child.stdout) {
+        buffer += (chunk as Buffer).toString()
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            yield JSON.parse(line)
+          } catch {
+            /* skip non-JSON */
+          }
         }
+      }
+    } catch (err) {
+      // Child process crashed or stdout closed unexpectedly
+      const logger = _logger ?? console
+      logger.error(`[sdk-adapter] Child process stream error: ${err}`)
+      // Emit error event so the agent manager knows something went wrong
+      yield {
+        type: 'error',
+        error: `Child process crashed: ${err instanceof Error ? err.message : String(err)}`
       }
     }
   }
