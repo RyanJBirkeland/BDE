@@ -256,6 +256,34 @@ export function registerTearoffHandlers(): void {
     }
   )
 
+  // tearoff:closeConfirmed — tear-off window sends its close-dialog action back to the
+  // main process. Routes to the per-window dynamic response channel that handleCloseRequest
+  // is listening on via ipcMain.once.
+  ipcMain.handle(
+    'tearoff:closeConfirmed',
+    (event, payload: { action: 'return' | 'close'; remember: boolean }) => {
+      // Identify which tear-off window sent this response
+      const senderWin = BrowserWindow.fromWebContents(event.sender)
+      const entry = senderWin
+        ? Array.from(tearoffWindows.values()).find((e) => e.win.id === senderWin.id)
+        : undefined
+
+      if (!entry) {
+        logger.warn('[tearoff] closeConfirmed: could not identify sender window')
+        return
+      }
+
+      if (payload?.remember) {
+        setSettingJson('tearoff.closeAction', payload.action)
+      }
+
+      // Emit on the per-window dynamic channel that askRendererForAction is waiting on
+      ipcMain.emit(`tearoff:closeResponse:${entry.windowId}`, event, {
+        action: payload?.action ?? 'close'
+      })
+    }
+  )
+
   // tearoff:returnToMain — tear-off window requests to be returned to the main window
   ipcMain.on('tearoff:returnToMain', (_event, payload: { windowId: string }) => {
     const { windowId } = payload ?? {}
