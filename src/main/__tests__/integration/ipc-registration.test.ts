@@ -123,7 +123,9 @@ describe('IPC Registration Completeness', () => {
     const allowedExtras = new Set([
       'window:setTitle', // ipcMain.on, fire-and-forget
       'terminal:write', // ipcMain.on, fire-and-forget
-      'tearoff:returnToMain' // ipcMain.on, fire-and-forget (no typed result)
+      'tearoff:returnToMain', // ipcMain.on, fire-and-forget (no typed result)
+      'tearoff:dropComplete', // ipcMain.on, fire-and-forget (cross-window drag)
+      'tearoff:dragCancelFromRenderer' // ipcMain.on, fire-and-forget (cross-window drag)
     ])
 
     const extras = [...registeredChannels]

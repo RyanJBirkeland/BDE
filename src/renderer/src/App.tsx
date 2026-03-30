@@ -14,6 +14,8 @@ import { usePendingReviewStore } from './stores/pendingReview'
 import { useGitHubRateLimitWarning } from './hooks/useGitHubRateLimitWarning'
 import { useDesktopNotifications } from './hooks/useDesktopNotifications'
 import { PanelRenderer } from './components/panels/PanelRenderer'
+import { useCrossWindowDrop } from './hooks/useCrossWindowDrop'
+import { CrossWindowDropOverlay } from './components/panels/CrossWindowDropOverlay'
 import { usePanelLayoutStore, findLeaf } from './stores/panelLayout'
 import type { View } from './stores/panelLayout'
 import { TearoffShell } from './components/layout/TearoffShell'
@@ -136,6 +138,7 @@ function App(): React.JSX.Element {
 
   useGitHubRateLimitWarning()
   useDesktopNotifications()
+  const crossDrop = useCrossWindowDrop()
   // Listen for tab removal from tear-off
   useEffect(() => {
     if (!window.api?.tearoff) return
@@ -155,6 +158,32 @@ function App(): React.JSX.Element {
       }
     })
   }, [])
+
+  // Execute tab add/split when cross-window drop completes
+  useEffect(() => {
+    if (!window.api?.tearoff?.onCrossWindowDrop) return
+    return window.api.tearoff.onCrossWindowDrop((payload) => {
+      const store = usePanelLayoutStore.getState()
+      if (payload.zone === 'center') {
+        store.addTab(payload.targetPanelId, payload.view as View)
+      } else {
+        const direction = (payload.zone === 'left' || payload.zone === 'right') ? 'horizontal' : 'vertical'
+        store.splitPanel(payload.targetPanelId, direction, payload.view as View)
+      }
+    })
+  }, [])
+
+  // Escape key cancels cross-window drag when overlay is active
+  useEffect(() => {
+    if (!crossDrop.active) return
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        window.api?.tearoff?.sendDragCancel()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [crossDrop.active])
 
   useEffect(() => {
     const title = 'BDE \u2014 ' + VIEW_LABELS[activeView]
@@ -311,6 +340,13 @@ function App(): React.JSX.Element {
         {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
       </AnimatePresence>
       <ToastContainer />
+      <CrossWindowDropOverlay
+        active={crossDrop.active}
+        localX={crossDrop.localX}
+        localY={crossDrop.localY}
+        viewKey={crossDrop.viewKey ?? ''}
+        onDrop={crossDrop.handleDrop}
+      />
     </div>
   )
 }

@@ -147,6 +147,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
   return (
     <div
       ref={containerRef}
+      data-panel-id={node.panelId}
       onClick={handlePanelClick}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}

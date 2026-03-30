@@ -305,6 +305,10 @@ export interface TearoffChannels {
     args: [{ action: 'return' | 'close'; remember: boolean }]
     result: void
   }
+  'tearoff:startCrossWindowDrag': {
+    args: [{ windowId: string; viewKey: string }]
+    result: { targetFound: boolean }
+  }
 }
 
 /** Memory file operations */

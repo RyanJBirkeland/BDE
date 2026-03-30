@@ -5,7 +5,7 @@
  * persistence, and cleanup of tear-off BrowserWindows.
  */
 
-import { BrowserWindow, ipcMain, shell } from 'electron'
+import { BrowserWindow, ipcMain, shell, screen } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { randomUUID } from 'crypto'
@@ -55,6 +55,11 @@ export function _resetForTest(): void {
   isQuitting = false
   for (const timer of resizeTimers.values()) clearTimeout(timer)
   resizeTimers.clear()
+  if (activeDrag) {
+    clearInterval(activeDrag.pollInterval)
+    clearTimeout(activeDrag.timeout)
+    activeDrag = null
+  }
 }
 
 /** Destroys all tear-off windows (call on app quit). */
@@ -157,6 +162,180 @@ function clearResizeTimer(windowId: string): void {
     clearTimeout(timer)
     resizeTimers.delete(windowId)
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cross-window drag coordinator
+// ---------------------------------------------------------------------------
+
+interface ActiveDrag {
+  sourceWindowId: string
+  sourceWin: BrowserWindow
+  viewKey: string
+  pollInterval: ReturnType<typeof setInterval>
+  targetWinId: number | null
+  lastSentX: number
+  lastSentY: number
+  timeout: ReturnType<typeof setTimeout>
+}
+
+let activeDrag: ActiveDrag | null = null
+
+function findWindowAtPoint(x: number, y: number, excludeId?: number): BrowserWindow | null {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (excludeId !== undefined && win.id === excludeId) continue
+    const b = win.getContentBounds()
+    if (x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height) {
+      return win
+    }
+  }
+  return null
+}
+
+function startCursorPolling(): void {
+  if (!activeDrag) return
+
+  activeDrag.pollInterval = setInterval(() => {
+    if (!activeDrag) return
+
+    const cursor = screen.getCursorScreenPoint()
+    const targetWin = findWindowAtPoint(cursor.x, cursor.y, activeDrag.sourceWin.id)
+
+    if (targetWin) {
+      const bounds = targetWin.getContentBounds()
+      const localX = cursor.x - bounds.x
+      const localY = cursor.y - bounds.y
+
+      if (activeDrag.targetWinId !== targetWin.id) {
+        // Entered a new window — cancel old target if any
+        if (activeDrag.targetWinId !== null) {
+          const oldWin = BrowserWindow.getAllWindows().find((w) => w.id === activeDrag!.targetWinId)
+          oldWin?.webContents.send('tearoff:dragCancel')
+        }
+        activeDrag.targetWinId = targetWin.id
+        activeDrag.lastSentX = localX
+        activeDrag.lastSentY = localY
+        targetWin.webContents.send('tearoff:dragIn', {
+          viewKey: activeDrag.viewKey,
+          x: localX,
+          y: localY
+        })
+      } else if (localX !== activeDrag.lastSentX || localY !== activeDrag.lastSentY) {
+        activeDrag.lastSentX = localX
+        activeDrag.lastSentY = localY
+        targetWin.webContents.send('tearoff:dragMove', { x: localX, y: localY })
+      }
+    } else {
+      // Cursor is not over any tracked window
+      if (activeDrag.targetWinId !== null) {
+        const oldWin = BrowserWindow.getAllWindows().find((w) => w.id === activeDrag!.targetWinId)
+        oldWin?.webContents.send('tearoff:dragCancel')
+        activeDrag.targetWinId = null
+      }
+    }
+  }, 32)
+}
+
+export function handleStartCrossWindowDrag(
+  windowId: string,
+  viewKey: string
+): { targetFound: boolean } {
+  // Clean up any existing drag
+  cancelActiveDrag()
+
+  // Find source window
+  const entry = tearoffWindows.get(windowId)
+  const sourceWin = entry ? entry.win : getMainWindow()
+  if (!sourceWin) {
+    logger.warn(`[tearoff] startCrossWindowDrag: cannot find source window for ${windowId}`)
+    return { targetFound: false }
+  }
+
+  // Check if cursor is currently over another window
+  const cursor = screen.getCursorScreenPoint()
+  const targetWin = findWindowAtPoint(cursor.x, cursor.y, sourceWin.id)
+
+  const timeout = setTimeout(() => {
+    logger.info('[tearoff] cross-window drag timed out after 10s')
+    cancelActiveDrag()
+  }, 10_000)
+
+  activeDrag = {
+    sourceWindowId: windowId,
+    sourceWin,
+    viewKey,
+    pollInterval: undefined as unknown as ReturnType<typeof setInterval>,
+    targetWinId: null,
+    lastSentX: -1,
+    lastSentY: -1,
+    timeout
+  }
+
+  // Listen for source window close to auto-cancel
+  sourceWin.once('closed', () => {
+    if (activeDrag && activeDrag.sourceWin === sourceWin) {
+      cancelActiveDrag()
+    }
+  })
+
+  startCursorPolling()
+
+  if (targetWin) {
+    const bounds = targetWin.getContentBounds()
+    const localX = cursor.x - bounds.x
+    const localY = cursor.y - bounds.y
+    activeDrag.targetWinId = targetWin.id
+    activeDrag.lastSentX = localX
+    activeDrag.lastSentY = localY
+    targetWin.webContents.send('tearoff:dragIn', { viewKey, x: localX, y: localY })
+    return { targetFound: true }
+  }
+
+  return { targetFound: false }
+}
+
+function handleDropComplete(payload: {
+  view: string
+  targetPanelId: string
+  zone: string
+}): void {
+  if (!activeDrag) return
+
+  const { sourceWin } = activeDrag
+  const targetWinId = activeDrag.targetWinId
+
+  clearInterval(activeDrag.pollInterval)
+  clearTimeout(activeDrag.timeout)
+  activeDrag = null
+
+  if (!sourceWin.isDestroyed()) {
+    sourceWin.webContents.send('tearoff:dragDone')
+  }
+
+  if (targetWinId !== null) {
+    const targetWin = BrowserWindow.getAllWindows().find((w) => w.id === targetWinId)
+    targetWin?.webContents.send('tearoff:crossWindowDrop', {
+      view: payload.view,
+      targetPanelId: payload.targetPanelId,
+      zone: payload.zone
+    })
+  }
+}
+
+export function cancelActiveDrag(): void {
+  if (!activeDrag) return
+
+  clearInterval(activeDrag.pollInterval)
+  clearTimeout(activeDrag.timeout)
+
+  // Notify all windows of cancellation
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) {
+      win.webContents.send('tearoff:dragCancel')
+    }
+  }
+
+  activeDrag = null
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +463,24 @@ export function registerTearoffHandlers(): void {
       })
     }
   )
+
+  // tearoff:startCrossWindowDrag — renderer initiates a cross-window drag
+  ipcMain.handle('tearoff:startCrossWindowDrag', (_event, payload: { windowId: string; viewKey: string }) => {
+    return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
+  })
+
+  // tearoff:dropComplete — target window signals a drop was accepted
+  ipcMain.on(
+    'tearoff:dropComplete',
+    (_event, payload: { view: string; targetPanelId: string; zone: string }) => {
+      handleDropComplete(payload)
+    }
+  )
+
+  // tearoff:dragCancelFromRenderer — renderer requests drag cancellation
+  ipcMain.on('tearoff:dragCancelFromRenderer', () => {
+    cancelActiveDrag()
+  })
 
   // tearoff:returnToMain — tear-off window requests to be returned to the main window
   ipcMain.on('tearoff:returnToMain', (_event, payload: { windowId: string }) => {

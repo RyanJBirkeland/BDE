@@ -284,7 +284,38 @@ const api = {
       const handler = () => cb()
       ipcRenderer.on('tearoff:confirmClose', handler)
       return () => { ipcRenderer.removeListener('tearoff:confirmClose', handler) }
-    }
+    },
+    // Cross-window drag
+    startCrossWindowDrag: (payload: { windowId: string; viewKey: string }) =>
+      typedInvoke('tearoff:startCrossWindowDrag', payload),
+    onDragIn: (cb: (payload: { viewKey: string; localX: number; localY: number }) => void) => {
+      const handler = (_e: IpcRendererEvent, payload: { viewKey: string; localX: number; localY: number }) => cb(payload)
+      ipcRenderer.on('tearoff:dragIn', handler)
+      return () => { ipcRenderer.removeListener('tearoff:dragIn', handler) }
+    },
+    onDragMove: (cb: (payload: { localX: number; localY: number }) => void) => {
+      const handler = (_e: IpcRendererEvent, payload: { localX: number; localY: number }) => cb(payload)
+      ipcRenderer.on('tearoff:dragMove', handler)
+      return () => { ipcRenderer.removeListener('tearoff:dragMove', handler) }
+    },
+    onDragCancel: (cb: () => void) => {
+      const handler = () => cb()
+      ipcRenderer.on('tearoff:dragCancel', handler)
+      return () => { ipcRenderer.removeListener('tearoff:dragCancel', handler) }
+    },
+    sendDropComplete: (payload: { viewKey: string; targetPanelId: string; zone: string }) =>
+      ipcRenderer.send('tearoff:dropComplete', payload),
+    onCrossWindowDrop: (cb: (payload: { view: string; targetPanelId: string; zone: string }) => void) => {
+      const handler = (_e: IpcRendererEvent, payload: { view: string; targetPanelId: string; zone: string }) => cb(payload)
+      ipcRenderer.on('tearoff:crossWindowDrop', handler)
+      return () => { ipcRenderer.removeListener('tearoff:crossWindowDrop', handler) }
+    },
+    onDragDone: (cb: () => void) => {
+      const handler = () => cb()
+      ipcRenderer.on('tearoff:dragDone', handler)
+      return () => { ipcRenderer.removeListener('tearoff:dragDone', handler) }
+    },
+    sendDragCancel: () => ipcRenderer.send('tearoff:dragCancelFromRenderer'),
   },
 
   // Spec Synthesizer

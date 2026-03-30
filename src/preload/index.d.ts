@@ -238,6 +238,15 @@ declare global {
         onTabRemoved: (cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void) => () => void
         onTabReturned: (cb: (payload: { view: string }) => void) => () => void
         onConfirmClose: (cb: () => void) => () => void
+        // Cross-window drag
+        startCrossWindowDrag: (payload: { windowId: string; viewKey: string }) => Promise<{ targetFound: boolean }>
+        onDragIn: (cb: (payload: { viewKey: string; localX: number; localY: number }) => void) => () => void
+        onDragMove: (cb: (payload: { localX: number; localY: number }) => void) => () => void
+        onDragCancel: (cb: () => void) => () => void
+        sendDropComplete: (payload: { viewKey: string; targetPanelId: string; zone: string }) => void
+        onCrossWindowDrop: (cb: (payload: { view: string; targetPanelId: string; zone: string }) => void) => () => void
+        onDragDone: (cb: () => void) => () => void
+        sendDragCancel: () => void
       }
 
       // Spec Synthesizer

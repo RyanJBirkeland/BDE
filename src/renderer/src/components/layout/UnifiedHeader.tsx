@@ -23,7 +23,8 @@ export function UnifiedHeader(): React.JSX.Element {
   const tabs = focusedPanel?.tabs ?? []
   const activeTabIndex = focusedPanel?.activeTab ?? 0
 
-  const { startDrag } = useTearoffDrag()
+  const tearoffWindowId = new URLSearchParams(window.location.search).get('windowId')
+  const { startDrag } = useTearoffDrag(tearoffWindowId ?? undefined)
 
   const handleLogoClick = (): void => {
     setView('dashboard')

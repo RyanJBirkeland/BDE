@@ -2,6 +2,8 @@ import React, { Suspense, useState, useEffect } from 'react'
 import { Undo2 } from 'lucide-react'
 import { View } from '../../stores/panelLayout'
 import { VIEW_LABELS } from '../../lib/view-registry'
+import { useCrossWindowDrop } from '../../hooks/useCrossWindowDrop'
+import { CrossWindowDropOverlay } from '../panels/CrossWindowDropOverlay'
 import '../../assets/tearoff-shell.css'
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,7 @@ interface TearoffShellProps {
 
 export function TearoffShell({ view, windowId }: TearoffShellProps): React.ReactElement {
   const [showDialog, setShowDialog] = useState(false)
+  const crossDrop = useCrossWindowDrop()
 
   const label = VIEW_LABELS[view] ?? view
 
@@ -100,6 +103,33 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
     })
     return unsub
   }, [])
+
+  // Close this tear-off window when drag completes to another window
+  useEffect(() => {
+    if (!window.api?.tearoff?.onDragDone) return
+    return window.api.tearoff.onDragDone(() => {
+      window.close()
+    })
+  }, [])
+
+  // Wire crossWindowDrop for forward compatibility (Phase 2.1: no-op for single-view tear-offs)
+  useEffect(() => {
+    if (!window.api?.tearoff?.onCrossWindowDrop) return
+    return window.api.tearoff.onCrossWindowDrop((_payload) => {
+      // Single-view tear-offs don't have a panel layout to add tabs into.
+      // This listener exists for forward compatibility.
+    })
+  }, [])
+
+  // Escape key cancels cross-window drag when overlay is active
+  useEffect(() => {
+    if (!crossDrop.active) return
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') window.api?.tearoff?.sendDragCancel()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [crossDrop.active])
 
   function handleReturn(): void {
     window.api.tearoff.returnToMain(windowId)
@@ -128,6 +158,13 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
         <Suspense fallback={null}>{resolveView(view)}</Suspense>
       </main>
       {showDialog && <CloseDialog onClose={handleDialogClose} />}
+      <CrossWindowDropOverlay
+        active={crossDrop.active}
+        localX={crossDrop.localX}
+        localY={crossDrop.localY}
+        viewKey={crossDrop.viewKey ?? ''}
+        onDrop={crossDrop.handleDrop}
+      />
     </div>
   )
 }

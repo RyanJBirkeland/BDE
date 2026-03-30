@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 export interface DragPayload {
   sourcePanelId: string
@@ -18,23 +18,31 @@ export interface TearoffDragApi {
  * - Call startDrag(payload) on dragstart of a tab
  * - Call endDrag() on dragend (also called automatically via the dragend listener)
  *
- * When the drag cursor leaves the window for 200ms (debounce), window.api.tearoff.create
- * is called with the drag payload and last known screen coordinates.
+ * When the drag cursor leaves the window for 200ms (debounce):
+ * 1. Attempts cross-window drag first (startCrossWindowDrag IPC) — if a target window
+ *    is found, the drag enters cross-window mode and no new tear-off window is created.
+ * 2. If no target window responds, falls back to Phase 1 behavior: window.api.tearoff.create.
+ *
+ * @param windowId - Optional window ID for this window (from URL query params in tear-offs).
  */
-export function useTearoffDrag(): TearoffDragApi {
+export function useTearoffDrag(windowId?: string): TearoffDragApi {
   const dragData = useRef<DragPayload | null>(null)
   const lastScreen = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const tearoffTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tearoffCreated = useRef<boolean>(false)
+  const crossWindowActive = useRef<boolean>(false)
+  const currentWindowId = useRef(windowId)
+  currentWindowId.current = windowId
 
-  function endDrag(): void {
+  const endDrag = useCallback((): void => {
     if (tearoffTimer.current !== null) {
       clearTimeout(tearoffTimer.current)
       tearoffTimer.current = null
     }
     dragData.current = null
     tearoffCreated.current = false
-  }
+    crossWindowActive.current = false
+  }, [])
 
   function startDrag(payload: DragPayload): void {
     endDrag()
@@ -56,11 +64,28 @@ export function useTearoffDrag(): TearoffDragApi {
 
       // Start 200ms debounce timer (skip if one is already pending)
       if (tearoffTimer.current !== null) return
-      tearoffTimer.current = setTimeout(() => {
+      tearoffTimer.current = setTimeout(async () => {
         tearoffTimer.current = null
-        if (dragData.current === null) return
-        if (tearoffCreated.current) return
+        if (dragData.current === null || tearoffCreated.current) return
 
+        // Try cross-window drag first
+        if (window.api?.tearoff?.startCrossWindowDrag) {
+          try {
+            const result = await window.api.tearoff.startCrossWindowDrag({
+              windowId: currentWindowId.current ?? '',
+              viewKey: dragData.current.viewKey
+            })
+            if (result.targetFound) {
+              tearoffCreated.current = true
+              crossWindowActive.current = true
+              return
+            }
+          } catch {
+            // Fall through to Phase 1 behavior
+          }
+        }
+
+        // No target window — create new tear-off (Phase 1 behavior)
         tearoffCreated.current = true
         const { viewKey, sourcePanelId, sourceTabIndex } = dragData.current
         window.api.tearoff.create({
@@ -83,6 +108,11 @@ export function useTearoffDrag(): TearoffDragApi {
     }
 
     function onDragEnd(): void {
+      if (crossWindowActive.current) {
+        crossWindowActive.current = false
+        dragData.current = null
+        return
+      }
       endDrag()
     }
 
