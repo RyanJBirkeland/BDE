@@ -34,7 +34,6 @@ export default function GitTreeView(): React.ReactElement {
     clearSelection,
     stageFile,
     unstageFile,
-    stageAll,
     unstageAll,
     setCommitMessage,
     commit,
@@ -101,11 +100,6 @@ export default function GitTreeView(): React.ReactElement {
   function handleUnstageFile(path: string): void {
     if (!activeRepo) return
     unstageFile(activeRepo, path)
-  }
-
-  function handleStageAll(): void {
-    if (!activeRepo) return
-    stageAll(activeRepo)
   }
 
   function handleUnstageAll(): void {
@@ -234,17 +228,41 @@ export default function GitTreeView(): React.ReactElement {
           onSelectFile={(path) => handleSelectFile(path, true)}
         />
 
-        {/* Changes (unstaged + untracked merged) */}
-        <FileTreeSection
-          title="Changes"
-          files={[...unstaged, ...untracked]}
-          isStaged={false}
-          selectedPath={selectedFile?.path}
-          onStageAll={handleStageAll}
-          onStageFile={handleStageFile}
-          onUnstageFile={handleUnstageFile}
-          onSelectFile={(path) => handleSelectFile(path, false)}
-        />
+        {/* Modified (unstaged tracked files) */}
+        {unstaged.length > 0 && (
+          <FileTreeSection
+            title="Modified"
+            files={unstaged}
+            isStaged={false}
+            selectedPath={selectedFile?.path}
+            onStageAll={unstaged.length > 0 ? () => {
+              if (!activeRepo) return
+              const paths = unstaged.map((f) => f.path)
+              window.api.gitStage(activeRepo, paths).then(() => fetchStatus(activeRepo))
+            } : undefined}
+            onStageFile={handleStageFile}
+            onUnstageFile={handleUnstageFile}
+            onSelectFile={(path) => handleSelectFile(path, false)}
+          />
+        )}
+
+        {/* Untracked (new files not yet in git) */}
+        {untracked.length > 0 && (
+          <FileTreeSection
+            title="Untracked"
+            files={untracked}
+            isStaged={false}
+            selectedPath={selectedFile?.path}
+            onStageAll={untracked.length > 0 ? () => {
+              if (!activeRepo) return
+              const paths = untracked.map((f) => f.path)
+              window.api.gitStage(activeRepo, paths).then(() => fetchStatus(activeRepo))
+            } : undefined}
+            onStageFile={handleStageFile}
+            onUnstageFile={handleUnstageFile}
+            onSelectFile={(path) => handleSelectFile(path, false)}
+          />
+        )}
 
         {/* Empty state */}
         {staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && !loading && (

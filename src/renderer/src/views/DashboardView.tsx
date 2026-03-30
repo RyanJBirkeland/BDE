@@ -59,6 +59,7 @@ export default function DashboardView() {
   const [prCount, setPrCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
+  const [cardErrors, setCardErrors] = useState<{ chart?: string; feed?: string; prs?: string }>({})
 
   // Derived stats
   const stats = useMemo(() => {
@@ -133,7 +134,7 @@ export default function DashboardView() {
   const fetchDashboardData = useCallback(async (): Promise<void> => {
     setLoading(true)
     setFetchError(false)
-    let anyError = false
+    const errors: { chart?: string; feed?: string; prs?: string } = {}
 
     try {
       const data = await window.api.dashboard?.completionsPerHour()
@@ -154,7 +155,7 @@ export default function DashboardView() {
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch completions:', err)
-      anyError = true
+      errors.chart = 'Failed to load completions'
     }
 
     try {
@@ -175,7 +176,7 @@ export default function DashboardView() {
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch events:', err)
-      anyError = true
+      errors.feed = 'Failed to load activity feed'
     }
 
     try {
@@ -184,10 +185,12 @@ export default function DashboardView() {
       setPrCount(prs?.prs?.length ?? 0)
     } catch (err) {
       console.error('[Dashboard] Failed to fetch PR list:', err)
-      anyError = true
+      errors.prs = 'Failed to load PR data'
     }
 
     if (!cancelledRef.current) {
+      const anyError = Object.keys(errors).length > 0
+      setCardErrors(errors)
       setFetchError(anyError)
       setLoading(false)
     }
@@ -258,7 +261,7 @@ export default function DashboardView() {
                 gap: '6px'
               }}
             >
-              Failed to load dashboard data
+              {Object.values(cardErrors).join(' · ') || 'Failed to load dashboard data'}
               <button
                 onClick={() => fetchDashboardData()}
                 style={{

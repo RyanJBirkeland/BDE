@@ -88,7 +88,7 @@ export function GitFileRow({
       </span>
 
       {/* File path */}
-      <span className="git-file-row__path">
+      <span className="git-file-row__path" title={path}>
         {dir && <span className="git-file-row__path-dir">{dir}</span>}
         <span className="git-file-row__path-name">{name}</span>
       </span>

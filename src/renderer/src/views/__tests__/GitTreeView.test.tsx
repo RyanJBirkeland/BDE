@@ -275,7 +275,7 @@ describe('GitTreeView', () => {
       expect(screen.getByTestId('section-staged-changes')).toBeInTheDocument()
     })
 
-    it('renders changes section when unstaged files exist', () => {
+    it('renders modified section when unstaged files exist', () => {
       vi.mocked(useGitTreeStore).mockImplementation((selector) => {
         if (typeof selector === 'function') {
           return selector({
@@ -287,10 +287,10 @@ describe('GitTreeView', () => {
       })
 
       render(<GitTreeView />)
-      expect(screen.getByTestId('section-changes')).toBeInTheDocument()
+      expect(screen.getByTestId('section-modified')).toBeInTheDocument()
     })
 
-    it('renders changes section when only untracked files exist', () => {
+    it('renders untracked section when only untracked files exist', () => {
       vi.mocked(useGitTreeStore).mockImplementation((selector) => {
         if (typeof selector === 'function') {
           return selector({
@@ -302,10 +302,10 @@ describe('GitTreeView', () => {
       })
 
       render(<GitTreeView />)
-      expect(screen.getByTestId('section-changes')).toBeInTheDocument()
+      expect(screen.getByTestId('section-untracked')).toBeInTheDocument()
     })
 
-    it('merges unstaged and untracked files in changes section', () => {
+    it('renders separate modified and untracked sections', () => {
       vi.mocked(useGitTreeStore).mockImplementation((selector) => {
         if (typeof selector === 'function') {
           return selector({
@@ -322,11 +322,11 @@ describe('GitTreeView', () => {
       })
 
       render(<GitTreeView />)
-      const changesSection = screen.getByTestId('section-changes')
-      expect(changesSection).toHaveTextContent('Changes: 2')
+      expect(screen.getByTestId('section-modified')).toHaveTextContent('Modified: 1')
+      expect(screen.getByTestId('section-untracked')).toHaveTextContent('Untracked: 1')
     })
 
-    it('renders both staged and unstaged sections when both exist', () => {
+    it('renders both staged and modified sections when both exist', () => {
       vi.mocked(useGitTreeStore).mockImplementation((selector) => {
         if (typeof selector === 'function') {
           return selector({
@@ -344,7 +344,7 @@ describe('GitTreeView', () => {
 
       render(<GitTreeView />)
       expect(screen.getByTestId('section-staged-changes')).toBeInTheDocument()
-      expect(screen.getByTestId('section-changes')).toBeInTheDocument()
+      expect(screen.getByTestId('section-modified')).toBeInTheDocument()
     })
   })
 

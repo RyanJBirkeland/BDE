@@ -114,6 +114,17 @@
   border-color: var(--bde-accent);
 }
 
+.git-commit-box__char-count {
+  font-size: 10px;
+  color: var(--bde-text-dim);
+  text-align: right;
+  margin-top: -4px;
+}
+
+.git-commit-box__char-count--over {
+  color: var(--bde-warning, #ffa500);
+}
+
 .git-commit-box__actions {
   display: flex;
   gap: var(--bde-space-2);
@@ -413,6 +424,14 @@
   max-height: 40%;
   min-height: 120px;
   background-color: var(--bde-surface);
+  transition: max-height 200ms ease;
+}
+
+.git-diff-drawer--expanded {
+  max-height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
 }
 
 .git-diff-drawer__header {
@@ -421,6 +440,13 @@
   justify-content: space-between;
   padding: var(--bde-space-1) var(--bde-space-3);
   border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.git-diff-drawer__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   flex-shrink: 0;
 }
 

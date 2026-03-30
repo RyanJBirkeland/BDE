@@ -37,6 +37,10 @@ export function CommitBox({
     }
   }
 
+  const firstLine = commitMessage.split('\n')[0]
+  const charCount = firstLine.length
+  const isOverLimit = charCount > 72
+
   return (
     <div className="git-commit-box">
       {/* Commit message textarea */}
@@ -49,6 +53,11 @@ export function CommitBox({
         rows={3}
         className="git-commit-box__textarea"
       />
+      {commitMessage.length > 0 && (
+        <div className={`git-commit-box__char-count${isOverLimit ? ' git-commit-box__char-count--over' : ''}`}>
+          {charCount}/72
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="git-commit-box__actions">
