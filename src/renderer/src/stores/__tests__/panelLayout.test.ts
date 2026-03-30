@@ -973,4 +973,32 @@ describe('usePanelLayoutStore', () => {
       vi.unstubAllGlobals()
     })
   })
+
+  // --- persistable flag ---
+
+  describe('persistable flag', () => {
+    it('defaults to true', () => {
+      expect(usePanelLayoutStore.getState().persistable).toBe(true)
+    })
+
+    it('setPersistable sets the flag', () => {
+      usePanelLayoutStore.getState().setPersistable(false)
+      expect(usePanelLayoutStore.getState().persistable).toBe(false)
+      usePanelLayoutStore.getState().setPersistable(true)
+      expect(usePanelLayoutStore.getState().persistable).toBe(true)
+    })
+
+    it('does not persist layout when persistable is false', () => {
+      const setJson = vi.fn().mockResolvedValue(undefined)
+      vi.stubGlobal('window', { api: { settings: { setJson } } })
+      usePanelLayoutStore.getState().setPersistable(false)
+      // Trigger a mutation that would normally persist
+      const { root } = usePanelLayoutStore.getState()
+      usePanelLayoutStore.getState().addTab((root as PanelLeafNode).panelId, 'ide')
+      // setJson should NOT have been called (persistable is false)
+      expect(setJson).not.toHaveBeenCalled()
+      usePanelLayoutStore.getState().setPersistable(true)
+      vi.unstubAllGlobals()
+    })
+  })
 })

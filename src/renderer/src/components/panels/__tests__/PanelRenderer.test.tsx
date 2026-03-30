@@ -16,6 +16,22 @@ vi.mock('react-resizable-panels', () => ({
   Separator: () => <div data-testid="resize-handle" />
 }))
 
+vi.mock('../../../lib/view-resolver', () => ({
+  resolveView: (viewKey: string) => {
+    const labels: Record<string, string> = {
+      agents: 'Agents',
+      ide: 'IDE',
+      sprint: 'Sprint',
+      settings: 'Settings',
+      'pr-station': 'PRStation',
+      dashboard: 'Dashboard',
+      'task-workbench': 'TaskWorkbench',
+      git: 'Git'
+    }
+    return <div>{labels[viewKey] ?? viewKey}</div>
+  }
+}))
+
 vi.mock('../../../views/AgentsView', () => ({ AgentsView: () => <div>Agents</div> }))
 vi.mock('../../../views/TerminalView', () => ({ TerminalView: () => <div>IDE</div> }))
 vi.mock('../../../views/SprintView', () => ({ default: () => <div>Sprint</div> }))

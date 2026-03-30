@@ -3,19 +3,7 @@ import { PanelLeafNode, View, DropZone, usePanelLayoutStore } from '../../stores
 import { ErrorBoundary } from '../ui/ErrorBoundary'
 import { tokens } from '../../design-system/tokens'
 import { PanelDropOverlay } from './PanelDropOverlay'
-import { AgentsView } from '../../views/AgentsView'
-
-// ---------------------------------------------------------------------------
-// Lazy-loaded views
-// ---------------------------------------------------------------------------
-
-const DashboardView = React.lazy(() => import('../../views/DashboardView'))
-const IDEView = React.lazy(() => import('../../views/IDEView'))
-const SprintView = React.lazy(() => import('../../views/SprintView'))
-const SettingsView = React.lazy(() => import('../../views/SettingsView'))
-const PRStationView = React.lazy(() => import('../../views/PRStationView'))
-const TaskWorkbenchView = React.lazy(() => import('../../views/TaskWorkbenchView'))
-const GitTreeView = React.lazy(() => import('../../views/GitTreeView'))
+import { resolveView } from '../../lib/view-resolver'
 
 // ---------------------------------------------------------------------------
 // Lazy view preloading map — trigger on hover in ActivityBar
@@ -29,31 +17,6 @@ export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
   'task-workbench': () => import('../../views/TaskWorkbenchView'),
   git: () => import('../../views/GitTreeView'),
   ide: () => import('../../views/IDEView')
-}
-
-// ---------------------------------------------------------------------------
-// View registry
-// ---------------------------------------------------------------------------
-
-function resolveView(viewKey: View): React.ReactNode {
-  switch (viewKey) {
-    case 'dashboard':
-      return <DashboardView />
-    case 'agents':
-      return <AgentsView />
-    case 'ide':
-      return <IDEView />
-    case 'sprint':
-      return <SprintView />
-    case 'settings':
-      return <SettingsView />
-    case 'pr-station':
-      return <PRStationView />
-    case 'task-workbench':
-      return <TaskWorkbenchView />
-    case 'git':
-      return <GitTreeView />
-  }
 }
 
 // ---------------------------------------------------------------------------

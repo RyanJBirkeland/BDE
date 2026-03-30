@@ -482,6 +482,26 @@ export function registerTearoffHandlers(): void {
     cancelActiveDrag()
   })
 
+  // tearoff:returnAll — bulk return all tabs from a tear-off window to the main window
+  ipcMain.on('tearoff:returnAll', (_event, payload: { windowId: string; views: string[] }) => {
+    const { windowId, views } = payload ?? {}
+    const entry = tearoffWindows.get(windowId)
+    if (!entry) {
+      logger.warn(`[tearoff] returnAll: unknown windowId ${windowId}`)
+      return
+    }
+    const mainWin = getMainWindow()
+    if (mainWin && !mainWin.isDestroyed()) {
+      for (const view of views) {
+        mainWin.webContents.send('tearoff:tabReturned', { windowId, view })
+      }
+    }
+    tearoffWindows.delete(windowId)
+    clearResizeTimer(windowId)
+    try { entry.win.destroy() } catch { /* already destroyed */ }
+    logger.info(`[tearoff] returnAll: returned ${views.length} views from ${windowId}`)
+  })
+
   // tearoff:returnToMain — tear-off window requests to be returned to the main window
   ipcMain.on('tearoff:returnToMain', (_event, payload: { windowId: string }) => {
     const { windowId } = payload ?? {}

@@ -302,7 +302,7 @@ function isValidLayout(node: unknown): boolean {
   return false
 }
 
-function findFirstLeaf(node: PanelNode): PanelLeafNode | null {
+export function findFirstLeaf(node: PanelNode): PanelLeafNode | null {
   if (node.type === 'leaf') return node
   return findFirstLeaf(node.children[0])
 }
@@ -364,12 +364,16 @@ interface PanelLayoutState {
   findPanelByView: (viewKey: View) => PanelLeafNode | null
   getOpenViews: () => View[]
   setView: (view: View) => void
+  persistable: boolean
+  setPersistable: (value: boolean) => void
 }
 
 export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
   root: DEFAULT_LAYOUT,
   focusedPanelId: (DEFAULT_LAYOUT as PanelLeafNode).panelId,
   activeView: 'agents',
+  persistable: true,
+  setPersistable: (value) => set({ persistable: value }),
 
   splitPanel: (targetId, direction, viewKey): void => {
     set((s) => {
@@ -527,6 +531,7 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
 let _saveTimeout: ReturnType<typeof setTimeout> | null = null
 
 usePanelLayoutStore.subscribe((state) => {
+  if (!state.persistable) return
   if (typeof window === 'undefined' || !window.api?.settings) return
   if (_saveTimeout) clearTimeout(_saveTimeout)
   _saveTimeout = setTimeout(() => {
