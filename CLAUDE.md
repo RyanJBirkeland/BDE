@@ -192,6 +192,11 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **gitTree operation states**: `commitLoading`, `pushLoading`, `lastError`, `clearError` in `gitTree.ts` store. CommitBox accepts these as props. GitTreeView renders an error banner when `lastError` is set.
 - **IDE shortcuts overlay**: `Cmd+/` toggles a keyboard shortcuts help panel in IDEView. The `IDE_SHORTCUTS` array and overlay JSX live in `IDEView.tsx`.
 - **Settings tab keyboard nav**: SettingsView tabs support Left/Right/Home/End arrow keys with `tabIndex` roving (active tab = 0, others = -1).
+- **Electron ASAR interception on fs**: Node's `rmSync`/`readdirSync` fail on paths containing `.asar` files (e.g., `node_modules/electron/dist/*.asar`) because Electron patches `fs` to treat `.asar` as directories. Use shell `rm -rf` via `execFileAsync` for recursive deletion of directories that may contain `.asar` files (e.g., worktree cleanup).
+- **Auth rate limit returns cache**: `MacOSCredentialStore.readToken()` returns cached `KeychainPayload` when rate-limited (1s cooldown) instead of throwing. Multiple renderer components call `auth:status` on mount — throwing causes error spam in logs.
+- **Test event system mixing**: Never combine async `userEvent.type()` with sync `fireEvent.keyDown()` — the async state updates from `userEvent` may not have settled when the sync event fires, causing stale closure reads. Use either all-sync (`fireEvent.change` + `fireEvent.keyDown`) or all-async (`userEvent.type` + `userEvent.keyboard`).
+- **Light mode CSS tokens**: All `*-neon.css` files use `var(--neon-*)` and `var(--bde-*)` tokens instead of hardcoded `rgba()`. Light theme works via `html.theme-light` class (toggled in Settings > Appearance) which overrides tokens in `base.css` and `neon.css`. No view-specific `html.theme-light` blocks needed.
+- **Dashboard uses CSS classes**: `DashboardView.tsx` uses `dashboard-neon.css` classes (`.dashboard-*` prefix) — no inline styles. Don't reintroduce `style={{}}` props; add CSS classes instead.
 
 ## Packaging
 
