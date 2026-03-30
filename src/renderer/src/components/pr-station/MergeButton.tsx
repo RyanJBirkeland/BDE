@@ -5,6 +5,7 @@ import type { OpenPr } from '../../../../shared/types'
 import { toast } from '../../stores/toasts'
 import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { invalidatePRCache } from '../../lib/github-cache'
+import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 
 interface MergeButtonProps {
   pr: OpenPr
@@ -20,6 +21,7 @@ const MERGE_STRATEGIES: { value: MergeMethod; label: string }[] = [
 
 export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
   const repoOptions = useRepoOptions()
+  const { confirm, confirmProps } = useConfirm()
   const [method, setMethod] = useState<MergeMethod>('squash')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [merging, setMerging] = useState(false)
@@ -51,6 +53,17 @@ export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
   async function handleMerge() {
     const repo = repoOptions.find((r) => r.label === pr.repo)
     if (!repo) return
+
+    const strategyLabel = MERGE_STRATEGIES.find((s) => s.value === method)!.label
+    const confirmed = await confirm({
+      title: 'Confirm Merge',
+      message: `Merge PR #${pr.number} using ${strategyLabel}? This cannot be undone.`,
+      confirmLabel: 'Merge',
+      variant: 'danger'
+    })
+
+    if (!confirmed) return
+
     setMerging(true)
     try {
       await mergePR(repo.owner, repo.label, pr.number, method)
@@ -72,46 +85,49 @@ export function MergeButton({ pr, mergeability, onMerged }: MergeButtonProps) {
       : `${strategyLabel} merge`
 
   return (
-    <div className="merge-button" ref={dropdownRef}>
-      <button
-        className="merge-button__action bde-btn bde-btn--sm bde-btn--primary"
-        onClick={handleMerge}
-        disabled={disabled}
-        title={mergeTitle}
-        aria-label={mergeTitle}
-      >
-        <GitMerge size={13} aria-hidden="true" />
-        {merging ? 'Merging…' : strategyLabel}
-      </button>
-      <button
-        className="merge-button__dropdown-trigger bde-btn bde-btn--sm bde-btn--primary"
-        onClick={() => setDropdownOpen((o) => !o)}
-        disabled={disabled}
-        title="Pick merge strategy"
-        aria-label="Pick merge strategy"
-        aria-expanded={dropdownOpen}
-        aria-haspopup="listbox"
-      >
-        <ChevronDown size={13} aria-hidden="true" />
-      </button>
-      {dropdownOpen && (
-        <div className="merge-button__dropdown" role="listbox" aria-label="Merge strategy">
-          {MERGE_STRATEGIES.map((s) => (
-            <button
-              key={s.value}
-              role="option"
-              aria-selected={s.value === method}
-              className={`merge-button__dropdown-item${s.value === method ? ' merge-button__dropdown-item--active' : ''}`}
-              onClick={() => {
-                setMethod(s.value)
-                setDropdownOpen(false)
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <>
+      <div className="merge-button" ref={dropdownRef}>
+        <button
+          className="merge-button__action bde-btn bde-btn--sm bde-btn--primary"
+          onClick={handleMerge}
+          disabled={disabled}
+          title={mergeTitle}
+          aria-label={mergeTitle}
+        >
+          <GitMerge size={13} aria-hidden="true" />
+          {merging ? 'Merging…' : strategyLabel}
+        </button>
+        <button
+          className="merge-button__dropdown-trigger bde-btn bde-btn--sm bde-btn--primary"
+          onClick={() => setDropdownOpen((o) => !o)}
+          disabled={disabled}
+          title="Pick merge strategy"
+          aria-label="Pick merge strategy"
+          aria-expanded={dropdownOpen}
+          aria-haspopup="listbox"
+        >
+          <ChevronDown size={13} aria-hidden="true" />
+        </button>
+        {dropdownOpen && (
+          <div className="merge-button__dropdown" role="listbox" aria-label="Merge strategy">
+            {MERGE_STRATEGIES.map((s) => (
+              <button
+                key={s.value}
+                role="option"
+                aria-selected={s.value === method}
+                className={`merge-button__dropdown-item${s.value === method ? ' merge-button__dropdown-item--active' : ''}`}
+                onClick={() => {
+                  setMethod(s.value)
+                  setDropdownOpen(false)
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <ConfirmModal {...confirmProps} />
+    </>
   )
 }

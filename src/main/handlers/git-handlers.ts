@@ -24,8 +24,67 @@ import {
 } from './sprint-local'
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
 import { createLogger } from '../logger'
+import { getSettingJson } from '../settings'
 
 const logger = createLogger('git-handlers')
+
+interface RepoConfig {
+  name: string
+  localPath: string
+  githubOwner?: string
+  githubRepo?: string
+  color?: string
+}
+
+/**
+ * Get configured repos from settings.
+ * Returns a Set of "owner/repo" strings for fast lookup.
+ */
+function getConfiguredRepos(): Set<string> {
+  const repos = getSettingJson<RepoConfig[]>('repos')
+  if (!repos) return new Set()
+
+  const repoSet = new Set<string>()
+  for (const repo of repos) {
+    if (repo.githubOwner && repo.githubRepo) {
+      repoSet.add(`${repo.githubOwner}/${repo.githubRepo}`)
+    } else if (repo.githubOwner && repo.name) {
+      // Use name as repo if githubRepo not specified
+      repoSet.add(`${repo.githubOwner}/${repo.name}`)
+    }
+  }
+  return repoSet
+}
+
+/**
+ * Extract owner/repo from GitHub API path.
+ * Returns null if path doesn't match expected format.
+ */
+function extractRepoFromPath(path: string): { owner: string; repo: string } | null {
+  const match = path.match(/^\/repos\/([^/]+)\/([^/]+)/)
+  if (!match) return null
+  return { owner: match[1], repo: match[2] }
+}
+
+/**
+ * Validate that PATCH body only contains allowed fields (title, body).
+ * Returns true if valid, false otherwise.
+ */
+function validatePatchBody(body: string | undefined): boolean {
+  if (!body) return true // Empty body is OK
+
+  try {
+    const parsed = JSON.parse(body)
+    const allowedFields = new Set(['title', 'body'])
+    const actualFields = Object.keys(parsed)
+
+    // Check if all fields are allowed
+    return actualFields.every((field) => allowedFields.has(field))
+  } catch {
+    // If we can't parse it, reject it
+    return false
+  }
+}
 
 // GitHub API endpoint + method allowlist for security
 const GITHUB_API_ALLOWLIST: Array<{ method: string; pattern: RegExp }> = [
@@ -41,11 +100,35 @@ const GITHUB_API_ALLOWLIST: Array<{ method: string; pattern: RegExp }> = [
   // Add more as needed — but NO DELETE, no admin endpoints
 ]
 
-function isGitHubRequestAllowed(method: string, path: string): boolean {
+function isGitHubRequestAllowed(method: string, path: string, body?: string): boolean {
   const normalizedMethod = method.toUpperCase()
-  return GITHUB_API_ALLOWLIST.some(
+
+  // First check if method/path match the allowlist pattern
+  const matchesPattern = GITHUB_API_ALLOWLIST.some(
     (entry) => entry.method === normalizedMethod && entry.pattern.test(path)
   )
+  if (!matchesPattern) return false
+
+  // PR-3: Validate repo is in configured repos
+  const repoInfo = extractRepoFromPath(path)
+  if (repoInfo) {
+    const configuredRepos = getConfiguredRepos()
+    const repoKey = `${repoInfo.owner}/${repoInfo.repo}`
+    if (!configuredRepos.has(repoKey)) {
+      logger.warn(`github:fetch rejected: repo ${repoKey} not in configured repos`)
+      return false
+    }
+  }
+
+  // PR-4: For PATCH requests on PRs, only allow title/body fields
+  if (normalizedMethod === 'PATCH' && /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+$/.test(path)) {
+    if (!validatePatchBody(body)) {
+      logger.warn(`github:fetch rejected: PATCH body contains disallowed fields`)
+      return false
+    }
+  }
+
+  return true
 }
 
 let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
@@ -79,7 +162,7 @@ export function registerGitHandlers(): void {
 
     // Validate request against allowlist
     const method = init?.method ?? 'GET'
-    if (!isGitHubRequestAllowed(method, apiPath)) {
+    if (!isGitHubRequestAllowed(method, apiPath, init?.body)) {
       logger.warn(`github:fetch rejected: ${method} ${apiPath}`)
       throw new Error(
         `GitHub API request not allowed: ${method} ${apiPath}. ` +

@@ -53,6 +53,9 @@ describe('MergeButton', () => {
     const onMerged = vi.fn()
     render(<MergeButton pr={mockPr} mergeability={mergeability} onMerged={onMerged} />)
     await userEvent.click(screen.getByTitle('Squash merge'))
+    // Confirm the merge in the dialog
+    await waitFor(() => expect(screen.getByText('Confirm Merge')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
     await waitFor(() =>
       expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 7, 'squash')
     )
@@ -64,6 +67,9 @@ describe('MergeButton', () => {
     mockMergePR.mockRejectedValue(new Error('conflict'))
     render(<MergeButton pr={mockPr} mergeability={mergeability} />)
     await userEvent.click(screen.getByTitle('Squash merge'))
+    // Confirm the merge in the dialog
+    await waitFor(() => expect(screen.getByText('Confirm Merge')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
     await waitFor(() => expect(mockToastError).toHaveBeenCalledWith('conflict'))
   })
 
@@ -97,6 +103,9 @@ describe('MergeButton', () => {
     expect(screen.queryByRole('option', { name: 'Squash' })).not.toBeInTheDocument()
     // New strategy used on merge
     await userEvent.click(screen.getByTitle('Rebase merge'))
+    // Confirm the merge in the dialog
+    await waitFor(() => expect(screen.getByText('Confirm Merge')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
     await waitFor(() =>
       expect(mockMergePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 7, 'rebase')
     )
@@ -107,7 +116,21 @@ describe('MergeButton', () => {
     const onMerged = vi.fn()
     render(<MergeButton pr={mockPr} mergeability={mergeability} onMerged={onMerged} />)
     await userEvent.click(screen.getByTitle('Squash merge'))
+    // Confirm the merge in the dialog
+    await waitFor(() => expect(screen.getByText('Confirm Merge')).toBeInTheDocument())
+    await userEvent.click(screen.getByRole('button', { name: 'Merge' }))
     await waitFor(() => expect(mockToastError).toHaveBeenCalled())
     expect(onMerged).not.toHaveBeenCalled()
+  })
+
+  it('does not call mergePR when user cancels confirmation', async () => {
+    render(<MergeButton pr={mockPr} mergeability={mergeability} />)
+    await userEvent.click(screen.getByTitle('Squash merge'))
+    // Wait for confirmation dialog
+    await waitFor(() => expect(screen.getByText('Confirm Merge')).toBeInTheDocument())
+    // Click cancel
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    // mergePR should not be called
+    expect(mockMergePR).not.toHaveBeenCalled()
   })
 })
