@@ -10,9 +10,11 @@ export interface SseBroadcaster {
   close(): void
 }
 
+const MAX_SSE_CLIENTS = 100
+
 export function createSseBroadcaster(): SseBroadcaster {
   const clients = new Set<ServerResponse>()
-  const heartbeat = setInterval(() => {
+  let heartbeatInterval: NodeJS.Timeout | null = setInterval(() => {
     for (const c of clients) {
       try {
         c.write(':heartbeat\n\n')
@@ -24,6 +26,13 @@ export function createSseBroadcaster(): SseBroadcaster {
 
   return {
     addClient(res) {
+      // QA-20: Enforce connection limit to prevent resource exhaustion
+      if (clients.size >= MAX_SSE_CLIENTS) {
+        res.writeHead(503, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Too many SSE connections' }))
+        return
+      }
+
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
@@ -56,7 +65,11 @@ export function createSseBroadcaster(): SseBroadcaster {
     },
     clientCount: () => clients.size,
     close() {
-      clearInterval(heartbeat)
+      // QA-22: Clear interval to prevent leak on module reload
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval)
+        heartbeatInterval = null
+      }
       for (const c of clients) {
         try {
           c.end()

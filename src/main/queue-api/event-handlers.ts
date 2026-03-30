@@ -67,9 +67,14 @@ export async function handleTaskOutput(
     return
   }
 
+  let persistedCount = 0
+
   // Broadcast each event to connected SSE clients
   for (const event of events) {
-    sseBroadcaster.broadcast('task:output', { taskId, ...(event as Record<string, unknown>) })
+    // QA-28: Use actual event type from the event instead of hardcoded 'task:output'
+    const eventObj = event as Record<string, unknown>
+    const eventType = typeof eventObj['type'] === 'string' ? eventObj['type'] : 'task:output'
+    sseBroadcaster.broadcast(eventType, { taskId, ...eventObj })
   }
 
   // Persist curated event types to SQLite (best-effort)
@@ -95,6 +100,7 @@ export async function handleTaskOutput(
       }))
     if (batch.length > 0) {
       insertEventBatch(getDb(), batch)
+      persistedCount = batch.length
     }
   } catch (err) {
     // QA-17: Log event persistence errors for debugging
@@ -102,7 +108,12 @@ export async function handleTaskOutput(
     // Best-effort — do not fail the request
   }
 
-  sendJson(res, 200, { ok: true })
+  // QA-29: Return resource information instead of just {ok: true}
+  sendJson(res, 200, {
+    taskId,
+    eventsReceived: events.length,
+    eventsPersisted: persistedCount
+  })
 }
 
 export async function handleTaskEvents(
