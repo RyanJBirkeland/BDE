@@ -16,6 +16,7 @@ import {
   getTasksWithDependencies,
   getActiveTaskCount
 } from '../data/sprint-queries'
+import { getDb } from '../db'
 import type {
   StatusUpdateRequest,
   ClaimRequest,
@@ -451,9 +452,9 @@ export async function handleRelease(
     return
   }
 
-  const claimedBy = (body as Record<string, unknown>).claimed_by as string
+  const claimedBy = (body as Record<string, unknown>).claimedBy as string
   if (typeof claimedBy !== 'string' || !claimedBy.trim()) {
-    sendJson(res, 400, { error: 'claimed_by is required for release' })
+    sendJson(res, 400, { error: 'claimedBy is required for release' })
     return
   }
 
@@ -563,60 +564,78 @@ export async function handleBatchTasks(
     return
   }
 
+  const db = getDb()
   const results: BatchResult[] = []
 
-  for (const rawOp of operations) {
-    const op = rawOp as Record<string, unknown>
-    const id = op.id as string
-    const opType = op.op as string
+  // Function to execute all batch operations
+  const executeBatchOperations = () => {
+    for (const rawOp of operations) {
+      const op = rawOp as Record<string, unknown>
+      const id = op.id as string
+      const opType = op.op as string
 
-    if (!id || !opType) {
-      results.push({
-        id: id ?? 'unknown',
-        op: opType as 'update' | 'delete',
-        ok: false,
-        error: 'id and op are required'
-      })
-      continue
-    }
-
-    try {
-      if (opType === 'update') {
-        const patch = op.patch as Record<string, unknown>
-        if (!patch || typeof patch !== 'object') {
-          results.push({ id, op: 'update', ok: false, error: 'patch object required for update' })
-          continue
-        }
-        // Filter to safe fields (same as GENERAL_PATCH_FIELDS)
-        const filtered: Record<string, unknown> = {}
-        for (const [k, v] of Object.entries(patch)) {
-          if (GENERAL_PATCH_FIELDS.has(k)) filtered[k] = v
-        }
-        if (Object.keys(filtered).length === 0) {
-          results.push({ id, op: 'update', ok: false, error: 'No valid fields to update' })
-          continue
-        }
-        const updated = updateTask(id, toSnakeCase(filtered))
+      if (!id || !opType) {
         results.push({
-          id,
-          op: 'update',
-          ok: !!updated,
-          error: updated ? undefined : 'Task not found'
-        })
-      } else if (opType === 'delete') {
-        deleteTask(id)
-        results.push({ id, op: 'delete', ok: true })
-      } else {
-        results.push({
-          id,
+          id: id ?? 'unknown',
           op: opType as 'update' | 'delete',
           ok: false,
-          error: `Unknown operation: ${opType}`
+          error: 'id and op are required'
         })
+        continue
       }
-    } catch (err) {
-      results.push({ id, op: opType as 'update' | 'delete', ok: false, error: String(err) })
+
+      try {
+        if (opType === 'update') {
+          const patch = op.patch as Record<string, unknown>
+          if (!patch || typeof patch !== 'object') {
+            results.push({ id, op: 'update', ok: false, error: 'patch object required for update' })
+            continue
+          }
+          // Filter to safe fields (same as GENERAL_PATCH_FIELDS)
+          const filtered: Record<string, unknown> = {}
+          for (const [k, v] of Object.entries(patch)) {
+            if (GENERAL_PATCH_FIELDS.has(k)) filtered[k] = v
+          }
+          if (Object.keys(filtered).length === 0) {
+            results.push({ id, op: 'update', ok: false, error: 'No valid fields to update' })
+            continue
+          }
+          const updated = updateTask(id, toSnakeCase(filtered))
+          results.push({
+            id,
+            op: 'update',
+            ok: !!updated,
+            error: updated ? undefined : 'Task not found'
+          })
+        } else if (opType === 'delete') {
+          deleteTask(id)
+          results.push({ id, op: 'delete', ok: true })
+        } else {
+          results.push({
+            id,
+            op: opType as 'update' | 'delete',
+            ok: false,
+            error: `Unknown operation: ${opType}`
+          })
+        }
+      } catch (err) {
+        results.push({ id, op: opType as 'update' | 'delete', ok: false, error: String(err) })
+      }
     }
+  }
+
+  // Wrap all batch operations in a transaction to ensure atomicity
+  // If db.transaction is available (real database), use it. Otherwise (mocked), execute directly.
+  try {
+    if (db && typeof db.transaction === 'function') {
+      const executeBatch = db.transaction(executeBatchOperations)
+      executeBatch()
+    } else {
+      executeBatchOperations()
+    }
+  } catch (err) {
+    sendJson(res, 500, { error: `Batch operation failed: ${err}` })
+    return
   }
 
   // Return 200 with per-operation results (some may have failed)

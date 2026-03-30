@@ -548,24 +548,24 @@ describe('Queue API', () => {
       mockReleaseTask.mockReturnValue(released)
 
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {
-        claimed_by: 'runner-1'
+        claimedBy: 'runner-1'
       })
       expect(status).toBe(200)
       expect(body).toEqual({ id: 'abc', status: 'queued', claimedBy: null })
       expect(mockReleaseTask).toHaveBeenCalledWith('abc', 'runner-1')
     })
 
-    it('returns 400 when claimed_by is missing', async () => {
+    it('returns 400 when claimedBy is missing', async () => {
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {})
       expect(status).toBe(400)
-      expect((body as { error: string }).error).toMatch(/claimed_by is required/)
+      expect((body as { error: string }).error).toMatch(/claimedBy is required/)
     })
 
     it('returns 409 when task not releasable', async () => {
       mockReleaseTask.mockReturnValue(null)
 
       const { status } = await request('POST', '/queue/tasks/abc/release', {
-        claimed_by: 'runner-1'
+        claimedBy: 'runner-1'
       })
       expect(status).toBe(409)
     })
@@ -993,7 +993,7 @@ describe('Queue API', () => {
       mockReleaseTask.mockImplementation(() => { throw new Error('constraint violation'); })
 
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {
-        claimed_by: 'runner-1'
+        claimedBy: 'runner-1'
       })
       expect(status).toBe(500)
       expect((body as { error: string }).error).toMatch(/internal server error/i)
