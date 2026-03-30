@@ -4,9 +4,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import type http from 'node:http'
 import { getSetting, setSetting } from '../settings'
-import { createLogger } from '../logger'
-
-const logger = createLogger('queue-api')
 
 // ---------------------------------------------------------------------------
 // Auth
