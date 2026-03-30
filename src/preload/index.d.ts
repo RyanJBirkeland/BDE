@@ -230,6 +230,16 @@ declare global {
         onExit: (id: number, cb: () => void) => void
       }
 
+      // Tear-off window management
+      tearoff: {
+        create: (payload: { view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }) => Promise<{ windowId: string }>
+        closeConfirmed: (payload: { action: 'return' | 'close'; remember: boolean }) => Promise<void>
+        returnToMain: (windowId: string) => void
+        onTabRemoved: (cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void) => () => void
+        onTabReturned: (cb: (payload: { view: string }) => void) => () => void
+        onConfirmClose: (cb: () => void) => () => void
+      }
+
       // Spec Synthesizer
       synthesizeSpec: (
         ...args: IpcArgs<'synthesizer:generate'>

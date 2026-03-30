@@ -262,6 +262,31 @@ const api = {
     }
   },
 
+  // Tear-off window management
+  tearoff: {
+    create: (payload: { view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }) =>
+      typedInvoke('tearoff:create', payload),
+    closeConfirmed: (payload: { action: 'return' | 'close'; remember: boolean }) =>
+      typedInvoke('tearoff:closeConfirmed', payload),
+    returnToMain: (windowId: string) =>
+      ipcRenderer.send('tearoff:returnToMain', windowId),
+    onTabRemoved: (cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void) => {
+      const handler = (_e: IpcRendererEvent, payload: { sourcePanelId: string; sourceTabIndex: number }) => cb(payload)
+      ipcRenderer.on('tearoff:tabRemoved', handler)
+      return () => { ipcRenderer.removeListener('tearoff:tabRemoved', handler) }
+    },
+    onTabReturned: (cb: (payload: { view: string }) => void) => {
+      const handler = (_e: IpcRendererEvent, payload: { view: string }) => cb(payload)
+      ipcRenderer.on('tearoff:tabReturned', handler)
+      return () => { ipcRenderer.removeListener('tearoff:tabReturned', handler) }
+    },
+    onConfirmClose: (cb: () => void) => {
+      const handler = () => cb()
+      ipcRenderer.on('tearoff:confirmClose', handler)
+      return () => { ipcRenderer.removeListener('tearoff:confirmClose', handler) }
+    }
+  },
+
   // Spec Synthesizer
   synthesizeSpec: (args: import('../shared/types').SynthesizeRequest) =>
     typedInvoke('synthesizer:generate', args),
