@@ -1,8 +1,9 @@
 /**
- * AppearanceSection — theme toggle and accent color picker.
+ * AppearanceSection — theme toggle, accent color picker, and window behavior.
  */
 import { useCallback, useEffect, useState } from 'react'
 import { useThemeStore } from '../../stores/theme'
+import { toast } from '../../stores/toasts'
 
 const ACCENT_PRESETS = [
   { color: '#00D37F', label: 'Green' },
@@ -34,10 +35,30 @@ function useAccentColor(): [string, (color: string) => void] {
   return [accent, setAccent]
 }
 
+function useTearoffClosePreference(): [string | null, () => void] {
+  const [pref, setPrefState] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.api?.settings?.get('tearoff.closeAction').then((val) => {
+      setPrefState(val ?? null)
+    }).catch(() => {})
+  }, [])
+
+  const reset = useCallback(() => {
+    window.api?.settings?.delete('tearoff.closeAction').then(() => {
+      setPrefState(null)
+      toast.success('Tear-off close preference reset — you\'ll be asked next time')
+    }).catch(() => {})
+  }, [])
+
+  return [pref, reset]
+}
+
 export function AppearanceSection(): React.JSX.Element {
   const [accent, setAccent] = useAccentColor()
   const theme = useThemeStore((s) => s.theme)
   const setTheme = useThemeStore((s) => s.setTheme)
+  const [tearoffPref, resetTearoffPref] = useTearoffClosePreference()
 
   return (
     <section className="settings-section">
@@ -75,6 +96,29 @@ export function AppearanceSection(): React.JSX.Element {
               type="button"
             />
           ))}
+        </div>
+      </div>
+
+      {/* Tear-off window behavior */}
+      <div className="settings-field">
+        <span className="settings-field__label">Tear-Off Window Close</span>
+        <div className="settings-theme-buttons">
+          {tearoffPref ? (
+            <>
+              <span style={{ fontSize: 12, color: 'var(--bde-text-muted)' }}>
+                Always {tearoffPref === 'return' ? 'return to main' : 'close'}
+              </span>
+              <button
+                className="bde-btn bde-btn--sm bde-btn--ghost"
+                onClick={resetTearoffPref}
+                type="button"
+              >
+                Reset
+              </button>
+            </>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--bde-text-dim)' }}>Ask each time</span>
+          )}
         </div>
       </div>
     </section>

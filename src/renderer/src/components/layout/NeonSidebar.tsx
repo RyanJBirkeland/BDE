@@ -60,21 +60,23 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
           addTab(focusedPanelId, view)
         }
         break
-      case 'open-window':
+      case 'open-window': {
         // Tear off view into a new window
-        if (window.api?.tearoff) {
-          // Use center of screen as default position
-          const x = window.screenX + Math.round(window.innerWidth / 2)
-          const y = window.screenY + Math.round(window.innerHeight / 2)
-          window.api.tearoff.create({
-            view,
-            screenX: x,
-            screenY: y,
-            sourcePanelId: '',
-            sourceTabIndex: -1
-          })
-        }
+        if (!window.api?.tearoff) break
+        // Find the panel containing this view so it can be removed from main
+        const panel = findPanelByView(view)
+        const tabIdx = panel?.tabs.findIndex((t) => t.viewKey === view) ?? -1
+        const x = window.screenX + Math.round(window.innerWidth / 2)
+        const y = window.screenY + Math.round(window.innerHeight / 2)
+        window.api.tearoff.create({
+          view,
+          screenX: x,
+          screenY: y,
+          sourcePanelId: panel?.panelId ?? '',
+          sourceTabIndex: tabIdx
+        })
         break
+      }
       case 'close-all': {
         // Repeatedly close any panel containing this view until none remain
         let leaf = findPanelByView(view)
