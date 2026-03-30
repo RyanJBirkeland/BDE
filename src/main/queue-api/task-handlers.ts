@@ -196,7 +196,7 @@ export async function handleCreateTask(
   const { spec } = bodyObj
   const validation = validateTaskCreation(
     body as Parameters<typeof createTask>[0],
-    { logger }
+    { logger: { warn: (...args: unknown[]) => logger.warn(String(args[0])) } }
   )
   if (!validation.valid) {
     sendJson(res, 400, { error: 'Spec quality checks failed', details: validation.errors })

@@ -5,7 +5,6 @@ import type http from 'node:http'
 import { sendJson, parseBody } from './helpers'
 import { createSseBroadcaster } from './sse-broadcaster'
 import { insertEventBatch, queryEvents } from '../data/event-queries'
-import { getTask } from '../data/sprint-queries'
 import { getDb } from '../db'
 import { createLogger } from '../logger'
 
