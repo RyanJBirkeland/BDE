@@ -86,7 +86,7 @@ describe('BranchSelector', () => {
     expect(screen.getByRole('listbox')).toBeInTheDocument()
 
     // Click the backdrop (fixed overlay)
-    const backdrop = document.querySelector('[style*="position: fixed"]') as HTMLElement
+    const backdrop = document.querySelector('.git-branch-selector__backdrop') as HTMLElement
     fireEvent.click(backdrop)
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })

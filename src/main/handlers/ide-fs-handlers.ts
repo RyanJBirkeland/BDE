@@ -1,6 +1,7 @@
 import fs from 'fs'
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { dirname, join, resolve } from 'path'
+import { homedir } from 'os'
 import { shell, BrowserWindow } from 'electron'
 import { safeHandle } from '../ipc-utils'
 
@@ -10,6 +11,38 @@ const BINARY_DETECT_BYTES = 8 * 1024 // 8 KB
 let ideRootPath: string | null = null
 let watcher: fs.FSWatcher | null = null
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Validates that a directory path is safe to use as an IDE root.
+ * The path must:
+ * 1. Exist and be a directory
+ * 2. Be within the user's home directory
+ */
+async function validateIdeRoot(dirPath: string): Promise<string> {
+  const resolved = resolve(dirPath)
+  const homeDir = resolve(homedir())
+
+  // Ensure path is within user's home directory
+  if (!resolved.startsWith(homeDir + '/') && resolved !== homeDir) {
+    throw new Error(
+      `IDE root path rejected: "${dirPath}" is outside user home directory "${homeDir}"`
+    )
+  }
+
+  // Verify path exists and is a directory
+  let dirStat
+  try {
+    dirStat = await stat(resolved)
+  } catch (err) {
+    throw new Error(`IDE root path rejected: "${dirPath}" does not exist or is not accessible`)
+  }
+
+  if (!dirStat.isDirectory()) {
+    throw new Error(`IDE root path rejected: "${dirPath}" is not a directory`)
+  }
+
+  return resolved
+}
 
 /** Validates that targetPath is within allowedRoot. Returns the resolved absolute path. */
 export function validateIdePath(targetPath: string, allowedRoot: string): string {
@@ -137,14 +170,16 @@ function stopWatcher(): void {
 }
 
 export function registerIdeFsHandlers(): void {
-  safeHandle('fs:watchDir', (_e, dirPath: string) => {
-    stopWatcher()
-    ideRootPath = dirPath
+  safeHandle('fs:watchDir', async (_e, dirPath: string) => {
+    const validatedPath = await validateIdeRoot(dirPath)
 
-    watcher = fs.watch(dirPath, { recursive: true }, () => {
+    stopWatcher()
+    ideRootPath = validatedPath
+
+    watcher = fs.watch(validatedPath, { recursive: true }, () => {
       if (debounceTimer !== null) clearTimeout(debounceTimer)
       debounceTimer = setTimeout(() => {
-        broadcastDirChanged(dirPath)
+        broadcastDirChanged(validatedPath)
         debounceTimer = null
       }, 500)
     })
