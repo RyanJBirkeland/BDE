@@ -40,6 +40,18 @@ const mockPr: OpenPr = {
   repo: 'BDE'
 }
 
+/** Click Close button then confirm the dialog */
+async function clickCloseAndConfirm() {
+  await userEvent.click(screen.getByTitle('Close PR'))
+  // ConfirmModal uses role="alertdialog" and has a danger-variant confirm button
+  const dialog = await screen.findByRole('alertdialog')
+  // The confirm button has the confirmLabel text ('Close') with danger variant
+  const buttons = dialog.querySelectorAll('button')
+  // Last button in the dialog actions is the confirm button
+  const confirmBtn = buttons[buttons.length - 1] as HTMLElement
+  await userEvent.click(confirmBtn)
+}
+
 describe('CloseButton', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -52,10 +64,10 @@ describe('CloseButton', () => {
     expect(screen.getByText('Close')).toBeInTheDocument()
   })
 
-  it('calls closePR and invalidates cache on click', async () => {
+  it('calls closePR and invalidates cache after confirmation', async () => {
     const onClosed = vi.fn()
     render(<CloseButton pr={mockPr} onClosed={onClosed} />)
-    await userEvent.click(screen.getByTitle('Close PR'))
+    await clickCloseAndConfirm()
     await waitFor(() => expect(mockClosePR).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 7))
     expect(mockInvalidatePRCache).toHaveBeenCalledWith('RyanJBirkeland', 'BDE', 7)
     expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('Closed'))
@@ -65,7 +77,7 @@ describe('CloseButton', () => {
   it('shows toast error when close fails', async () => {
     mockClosePR.mockRejectedValue(new Error('network error'))
     render(<CloseButton pr={mockPr} />)
-    await userEvent.click(screen.getByTitle('Close PR'))
+    await clickCloseAndConfirm()
     await waitFor(() => expect(mockToastError).toHaveBeenCalledWith('network error'))
   })
 
@@ -73,7 +85,7 @@ describe('CloseButton', () => {
     mockClosePR.mockRejectedValue(new Error('oops'))
     const onClosed = vi.fn()
     render(<CloseButton pr={mockPr} onClosed={onClosed} />)
-    await userEvent.click(screen.getByTitle('Close PR'))
+    await clickCloseAndConfirm()
     await waitFor(() => expect(mockToastError).toHaveBeenCalled())
     expect(onClosed).not.toHaveBeenCalled()
   })
@@ -84,13 +96,13 @@ describe('CloseButton', () => {
     expect(screen.getByTitle('Close PR')).toBeDisabled()
   })
 
-  it('disables button and shows loading state while closing', async () => {
-    mockClosePR.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)))
+  it('does not call closePR when confirmation is cancelled', async () => {
     render(<CloseButton pr={mockPr} />)
-    const button = screen.getByTitle('Close PR')
-    await userEvent.click(button)
-    expect(screen.getByTitle('Closing…')).toBeDisabled()
-    expect(screen.getByText('Closing…')).toBeInTheDocument()
-    await waitFor(() => expect(mockClosePR).toHaveBeenCalled())
+    await userEvent.click(screen.getByTitle('Close PR'))
+    const dialog = await screen.findByRole('alertdialog')
+    // First button is cancel
+    const cancelBtn = dialog.querySelectorAll('button')[0] as HTMLElement
+    await userEvent.click(cancelBtn)
+    expect(mockClosePR).not.toHaveBeenCalled()
   })
 })

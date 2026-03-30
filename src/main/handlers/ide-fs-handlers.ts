@@ -231,6 +231,8 @@ export function registerIdeFsHandlers(): void {
         win.webContents.send('fs:watchError', err.message)
       }
     })
+
+    return { success: true }
   })
 
   safeHandle('fs:unwatchDir', () => {

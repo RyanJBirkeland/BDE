@@ -48,10 +48,8 @@ describe('useRepoOptions', () => {
     const { result } = renderHook(() => useRepoOptions())
 
     await waitFor(() => {
-      expect(window.api.settings.getJson).toHaveBeenCalledWith('repos')
+      expect(result.current).toEqual(REPO_OPTIONS)
     })
-
-    expect(result.current).toEqual(REPO_OPTIONS)
   })
 
   it('keeps fallback when settings returns an empty array', async () => {

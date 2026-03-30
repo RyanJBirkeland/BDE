@@ -23,9 +23,6 @@ import type {
   ClaimRequest,
   BatchResult
 } from '../../shared/queue-api-contract'
-import { createLogger } from '../logger'
-
-const logger = createLogger('queue-api:tasks')
 import {
   STATUS_UPDATE_FIELDS,
   RUNNER_WRITABLE_STATUSES,

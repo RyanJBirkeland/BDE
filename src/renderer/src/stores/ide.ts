@@ -102,8 +102,6 @@ interface IDEState {
   toggleSidebar: () => void
   toggleTerminal: () => void
   setFocusedPanel: (panel: 'editor' | 'terminal') => void
-  setSidebarWidth: (width: number) => void
-  setTerminalHeight: (height: number) => void
   setFileContent: (filePath: string, content: string) => void // IDE-5
   setFileLoading: (filePath: string, loading: boolean) => void // IDE-9
   clearFileContent: (filePath: string) => void // IDE-5
@@ -230,14 +228,6 @@ export const useIDEStore = create<IDEState>((set) => ({
 
   setFocusedPanel: (panel: 'editor' | 'terminal'): void => {
     set({ focusedPanel: panel })
-  },
-
-  setSidebarWidth: (width: number): void => {
-    set({ sidebarWidth: width })
-  },
-
-  setTerminalHeight: (height: number): void => {
-    set({ terminalHeight: height })
   },
 
   // IDE-5: File content management actions
