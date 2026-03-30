@@ -31,7 +31,14 @@ export const SHARED_WEB_PREFERENCES = {
 interface TearoffEntry {
   win: BrowserWindow
   view: string
+  views: string[]
   windowId: string
+}
+
+interface PersistedTearoff {
+  windowId: string
+  views: string[]
+  bounds: { x: number; y: number; width: number; height: number }
 }
 
 const tearoffWindows = new Map<string, TearoffEntry>()
@@ -64,6 +71,7 @@ export function _resetForTest(): void {
 
 /** Destroys all tear-off windows (call on app quit). */
 export function closeTearoffWindows(): void {
+  persistTearoffState()
   for (const entry of tearoffWindows.values()) {
     try {
       entry.win.destroy()
@@ -97,17 +105,49 @@ function loadTearoffUrl(win: BrowserWindow, view: string, windowId: string): voi
   }
 }
 
-function persistBoundsDebounced(windowId: string, win: BrowserWindow): void {
+function persistTearoffState(): void {
+  const state = Array.from(tearoffWindows.values())
+    .filter((e) => !e.win.isDestroyed())
+    .map((e) => ({
+      windowId: e.windowId,
+      views: e.views.length > 0 ? e.views : [e.view],
+      bounds: e.win.getBounds()
+    }))
+  setSettingJson('tearoff.windows', state)
+}
+
+function persistBoundsDebounced(windowId: string, _win: BrowserWindow): void {
   const existing = resizeTimers.get(windowId)
   if (existing) clearTimeout(existing)
 
   const timer = setTimeout(() => {
     resizeTimers.delete(windowId)
-    const { width, height } = win.getBounds()
-    setSettingJson('tearoff.lastSize', { width, height })
+    persistTearoffState()
   }, 500)
 
   resizeTimers.set(windowId, timer)
+}
+
+function isOnScreen(bounds: { x: number; y: number; width: number; height: number }): boolean {
+  return screen.getAllDisplays().some((d) => {
+    const db = d.bounds
+    return (
+      bounds.x < db.x + db.width &&
+      bounds.x + bounds.width > db.x &&
+      bounds.y < db.y + db.height &&
+      bounds.y + bounds.height > db.y
+    )
+  })
+}
+
+function getDefaultBounds(): { x: number; y: number; width: number; height: number } {
+  const primary = screen.getPrimaryDisplay()
+  return {
+    x: Math.round(primary.bounds.x + primary.bounds.width / 2 - 400),
+    y: Math.round(primary.bounds.y + primary.bounds.height / 2 - 300),
+    width: 800,
+    height: 600
+  }
 }
 
 async function handleCloseRequest(windowId: string, win: BrowserWindow): Promise<void> {
@@ -127,6 +167,7 @@ async function handleCloseRequest(windowId: string, win: BrowserWindow): Promise
   // Remove from map and destroy
   tearoffWindows.delete(windowId)
   clearResizeTimer(windowId)
+  persistTearoffState()
 
   try {
     win.destroy()
@@ -161,6 +202,83 @@ function clearResizeTimer(windowId: string): void {
   if (timer) {
     clearTimeout(timer)
     resizeTimers.delete(windowId)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Restore persisted tear-off windows on startup
+// ---------------------------------------------------------------------------
+
+/** Recreates tear-off windows from persisted state (call after app is ready). */
+export function restoreTearoffWindows(): void {
+  const saved = getSettingJson('tearoff.windows') as PersistedTearoff[] | null
+  if (!saved || !Array.isArray(saved) || saved.length === 0) return
+
+  for (const entry of saved) {
+    if (!entry.views || entry.views.length === 0) continue
+
+    const bounds =
+      entry.bounds && isOnScreen(entry.bounds) ? entry.bounds : getDefaultBounds()
+    const windowId = randomUUID()
+
+    const win = new BrowserWindow({
+      width: bounds.width,
+      height: bounds.height,
+      x: bounds.x,
+      y: bounds.y,
+      show: false,
+      backgroundColor: '#0A0A0A',
+      titleBarStyle: 'hiddenInset',
+      autoHideMenuBar: true,
+      webPreferences: SHARED_WEB_PREFERENCES
+    })
+
+    win.webContents.setWindowOpenHandler((details) => {
+      shell.openExternal(details.url)
+      return { action: 'deny' }
+    })
+
+    win.on('resize', () => persistBoundsDebounced(windowId, win))
+    win.on('move', () => persistBoundsDebounced(windowId, win))
+
+    win.on('close', (event) => {
+      if (isQuitting) {
+        tearoffWindows.delete(windowId)
+        clearResizeTimer(windowId)
+        return
+      }
+      event.preventDefault()
+      handleCloseRequest(windowId, win).catch((err) => {
+        logger.error(`[tearoff] close flow error for ${windowId}: ${err}`)
+        tearoffWindows.delete(windowId)
+        clearResizeTimer(windowId)
+        try {
+          win.destroy()
+        } catch {
+          /* already destroyed */
+        }
+      })
+    })
+
+    tearoffWindows.set(windowId, {
+      win,
+      view: entry.views[0],
+      views: [...entry.views],
+      windowId
+    })
+
+    // Load with restore param so renderer knows to restore multi-tab state
+    const restoreParam = encodeURIComponent(JSON.stringify(entry.views))
+    const query = `?view=${encodeURIComponent(entry.views[0])}&windowId=${encodeURIComponent(windowId)}&restore=${restoreParam}`
+
+    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+      win.loadURL(process.env['ELECTRON_RENDERER_URL'] + query)
+    } else {
+      win.loadFile(join(__dirname, '../renderer/index.html'), { search: query })
+    }
+
+    win.once('ready-to-show', () => win.show())
+    logger.info(`[tearoff] restored window ${windowId} with views: ${entry.views.join(', ')}`)
   }
 }
 
@@ -392,6 +510,10 @@ export function registerTearoffHandlers(): void {
         persistBoundsDebounced(windowId, win)
       })
 
+      win.on('move', () => {
+        persistBoundsDebounced(windowId, win)
+      })
+
       win.on('close', (event) => {
         if (isQuitting) {
           // App is quitting — let it proceed immediately
@@ -416,9 +538,11 @@ export function registerTearoffHandlers(): void {
         })
       })
 
-      tearoffWindows.set(windowId, { win, view, windowId })
+      tearoffWindows.set(windowId, { win, view, views: [view], windowId })
 
       loadTearoffUrl(win, view, windowId)
+
+      persistTearoffState()
 
       // Notify main window that a tab was removed from the panel
       const mainWin = getMainWindow()
@@ -482,6 +606,15 @@ export function registerTearoffHandlers(): void {
     cancelActiveDrag()
   })
 
+  // tearoff:viewsChanged — tear-off window reports its current set of views
+  ipcMain.on('tearoff:viewsChanged', (_event, payload: { windowId: string; views: string[] }) => {
+    const entry = tearoffWindows.get(payload.windowId)
+    if (entry) {
+      entry.views = payload.views
+      persistTearoffState()
+    }
+  })
+
   // tearoff:returnAll — bulk return all tabs from a tear-off window to the main window
   ipcMain.on('tearoff:returnAll', (_event, payload: { windowId: string; views: string[] }) => {
     const { windowId, views } = payload ?? {}
@@ -498,6 +631,7 @@ export function registerTearoffHandlers(): void {
     }
     tearoffWindows.delete(windowId)
     clearResizeTimer(windowId)
+    persistTearoffState()
     try { entry.win.destroy() } catch { /* already destroyed */ }
     logger.info(`[tearoff] returnAll: returned ${views.length} views from ${windowId}`)
   })
@@ -518,6 +652,7 @@ export function registerTearoffHandlers(): void {
 
     tearoffWindows.delete(windowId)
     clearResizeTimer(windowId)
+    persistTearoffState()
 
     try {
       entry.win.destroy()
