@@ -5,6 +5,7 @@ import { useCostDataStore } from '../../stores/costData'
 import { NeonBadge } from '../neon/NeonBadge'
 import { NotificationBell } from './NotificationBell'
 import { HeaderTab } from './HeaderTab'
+import { useTearoffDrag } from '../../hooks/useTearoffDrag'
 
 export function UnifiedHeader(): React.JSX.Element {
   const theme = useThemeStore((s) => s.theme)
@@ -21,6 +22,8 @@ export function UnifiedHeader(): React.JSX.Element {
   const focusedPanel = focusedPanelId ? findLeaf(root, focusedPanelId) : null
   const tabs = focusedPanel?.tabs ?? []
   const activeTabIndex = focusedPanel?.activeTab ?? 0
+
+  const { startDrag } = useTearoffDrag()
 
   const handleLogoClick = (): void => {
     setView('dashboard')
@@ -55,6 +58,15 @@ export function UnifiedHeader(): React.JSX.Element {
             onClick={() => handleTabClick(index)}
             onClose={() => handleTabClose(index)}
             showClose={tabs.length > 1}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('application/bde-panel', JSON.stringify({ sourcePanelId: focusedPanelId ?? '', sourceTabIndex: index }))
+              startDrag({
+                sourcePanelId: focusedPanelId ?? '',
+                sourceTabIndex: index,
+                viewKey: tab.viewKey
+              })
+            }}
           />
         ))}
       </div>

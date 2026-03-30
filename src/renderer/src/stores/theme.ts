@@ -40,3 +40,14 @@ export const useThemeStore = create<ThemeStore>((set) => ({
       return { theme: t }
     })
 }))
+
+// Cross-window theme sync via localStorage storage event
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'bde-theme' && e.newValue) {
+      const next = e.newValue as Theme
+      applyTheme(next)
+      useThemeStore.setState({ theme: next })
+    }
+  })
+}

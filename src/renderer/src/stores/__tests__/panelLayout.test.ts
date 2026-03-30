@@ -737,13 +737,15 @@ describe('usePanelLayoutStore', () => {
       expect(newRoot.tabs[0].viewKey).toBe('ide')
     })
 
-    it('keeps root intact when closing the only tab', () => {
+    it('replaces root with dashboard when closing the only tab', () => {
       const { root, closeTab: storeCloseTab } = usePanelLayoutStore.getState()
       const leafId = (root as PanelLeafNode).panelId
       storeCloseTab(leafId, 0)
-      // Root should be unchanged (closeTab returns null for last tab of root)
-      const newRoot = usePanelLayoutStore.getState().root
-      expect(newRoot).toBe(root)
+      // Last tab removed — root should be replaced with a fresh dashboard leaf
+      const newRoot = usePanelLayoutStore.getState().root as PanelLeafNode
+      expect(newRoot.type).toBe('leaf')
+      expect(newRoot.tabs[0].viewKey).toBe('dashboard')
+      expect(usePanelLayoutStore.getState().activeView).toBe('dashboard')
     })
 
     it('collapses split when last tab of a leaf is closed', () => {

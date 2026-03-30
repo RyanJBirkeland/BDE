@@ -40,6 +40,7 @@ import { setQueueApiOnStatusTerminal } from './queue-api/task-handlers'
 import { setGitHandlersOnStatusTerminal } from './handlers/git-handlers'
 import { setOnTaskTerminal } from './sprint-pr-poller'
 import { createLogger } from './logger'
+import { registerTearoffHandlers, closeTearoffWindows, setQuitting, SHARED_WEB_PREFERENCES } from './tearoff-manager'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -52,14 +53,7 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset',
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      // TODO(security): sandbox:false is required because the preload script uses
-      // Node.js APIs (fs, child_process) via contextBridge. Migrate preload to
-      // message-port IPC to re-enable sandbox. Reviewed 2026-03-18.
-      sandbox: false,
-      contextIsolation: true
-    }
+    webPreferences: SHARED_WEB_PREFERENCES
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -90,6 +84,8 @@ function createWindow(): void {
 }
 
 app.on('before-quit', () => {
+  setQuitting()
+  closeTearoffWindows()
   closeDb()
 })
 
@@ -203,6 +199,7 @@ app.whenReady().then(() => {
   registerAuthHandlers()
   registerPlaygroundHandlers()
   registerDashboardHandlers()
+  registerTearoffHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const connectSrc = buildConnectSrc()

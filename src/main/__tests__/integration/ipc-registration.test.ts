@@ -54,7 +54,9 @@ function extractRegisteredChannels(): Set<string> {
     .map((f) => join(handlerDir, f))
 
   // Also include top-level files that register handlers
-  const topLevelFiles = ['fs.ts', 'index.ts'].map((f) => join(srcRoot, 'main', f))
+  const topLevelFiles = ['fs.ts', 'index.ts', 'tearoff-manager.ts'].map((f) =>
+    join(srcRoot, 'main', f)
+  )
 
   const allFiles = [...handlerFiles, ...topLevelFiles]
 
@@ -120,7 +122,8 @@ describe('IPC Registration Completeness', () => {
     // We allow those but flag safeHandle channels that drift from the type map.
     const allowedExtras = new Set([
       'window:setTitle', // ipcMain.on, fire-and-forget
-      'terminal:write' // ipcMain.on, fire-and-forget
+      'terminal:write', // ipcMain.on, fire-and-forget
+      'tearoff:returnToMain' // ipcMain.on, fire-and-forget (no typed result)
     ])
 
     const extras = [...registeredChannels]
