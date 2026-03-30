@@ -99,7 +99,6 @@ const mockStoreState = {
   clearSelection: vi.fn(),
   stageFile: vi.fn(),
   unstageFile: vi.fn(),
-  stageAll: vi.fn(),
   unstageAll: vi.fn(),
   setCommitMessage: vi.fn(),
   commit: vi.fn(),

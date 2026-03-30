@@ -36,6 +36,8 @@ export function PromptModal({
   const [value, setValue] = useState(defaultValue)
   const inputRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const valueRef = useRef(value)
+  valueRef.current = value
   useFocusTrap(dialogRef, open)
 
   useEffect(() => {
@@ -50,10 +52,12 @@ export function PromptModal({
   }, [open, defaultValue])
 
   const handleConfirm = useCallback(() => {
-    if (value.trim()) {
-      onConfirm(value)
+    // Read from the input DOM element to avoid stale closure issues
+    const current = inputRef.current?.value ?? valueRef.current
+    if (current.trim()) {
+      onConfirm(current)
     }
-  }, [value, onConfirm])
+  }, [onConfirm])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

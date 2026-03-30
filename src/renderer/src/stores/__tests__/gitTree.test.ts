@@ -179,27 +179,6 @@ describe('useGitTreeStore', () => {
     })
   })
 
-  describe('stageAll', () => {
-    it('stages all unstaged and untracked files', async () => {
-      useGitTreeStore.setState({
-        unstaged: [{ path: 'a.ts', status: 'M' }],
-        untracked: [{ path: 'b.ts', status: '?' }]
-      })
-      mockApi.gitStage.mockResolvedValue(undefined)
-      mockApi.gitStatus.mockResolvedValue({ files: [] })
-
-      await useGitTreeStore.getState().stageAll('/repo')
-
-      expect(mockApi.gitStage).toHaveBeenCalledWith('/repo', ['a.ts', 'b.ts'])
-    })
-
-    it('does nothing when no files to stage', async () => {
-      useGitTreeStore.setState({ unstaged: [], untracked: [] })
-      await useGitTreeStore.getState().stageAll('/repo')
-      expect(mockApi.gitStage).not.toHaveBeenCalled()
-    })
-  })
-
   describe('unstageAll', () => {
     it('unstages all staged files', async () => {
       useGitTreeStore.setState({

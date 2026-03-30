@@ -178,13 +178,13 @@ describe('PromptModal', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('calls onConfirm when Enter key is pressed with valid input', async () => {
-    const user = userEvent.setup()
+  it('calls onConfirm when Enter key is pressed with valid input', () => {
     render(
       <PromptModal open={true} message="Enter name:" onConfirm={onConfirm} onCancel={onCancel} />
     )
     const input = screen.getByRole('textbox')
-    await user.type(input, 'test.txt')
+    // Use fireEvent for both typing and Enter to keep everything synchronous
+    fireEvent.change(input, { target: { value: 'test.txt' } })
     const dialog = screen.getByRole('dialog')
     fireEvent.keyDown(dialog, { key: 'Enter', code: 'Enter' })
     expect(onConfirm).toHaveBeenCalledWith('test.txt')

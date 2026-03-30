@@ -34,7 +34,6 @@ interface GitTreeState {
   clearSelection: () => void
   stageFile: (cwd: string, path: string) => Promise<void>
   unstageFile: (cwd: string, path: string) => Promise<void>
-  stageAll: (cwd: string) => Promise<void>
   unstageAll: (cwd: string) => Promise<void>
   setCommitMessage: (msg: string) => void
   commit: (cwd: string) => Promise<void>
@@ -129,18 +128,6 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
       await get().fetchStatus(cwd)
     } catch {
       toast.error(`Failed to unstage ${path}`)
-    }
-  },
-
-  stageAll: async (cwd: string): Promise<void> => {
-    const { unstaged, untracked } = get()
-    const paths = [...unstaged, ...untracked].map((f) => f.path)
-    if (paths.length === 0) return
-    try {
-      await window.api.gitStage(cwd, paths)
-      await get().fetchStatus(cwd)
-    } catch {
-      toast.error('Failed to stage all files')
     }
   },
 
