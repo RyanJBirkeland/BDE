@@ -2,8 +2,14 @@
 import type { ServerResponse } from 'node:http'
 import { CORS_HEADERS } from './helpers'
 
+// QA-7: Client metadata for filtering
+interface ClientInfo {
+  res: ServerResponse
+  taskFilter?: string // If set, only broadcast events for this task
+}
+
 export interface SseBroadcaster {
-  addClient(res: ServerResponse): void
+  addClient(res: ServerResponse, taskFilter?: string): void
   removeClient(res: ServerResponse): void
   broadcast(event: string, data: unknown): void
   clientCount(): number
@@ -11,26 +17,27 @@ export interface SseBroadcaster {
 }
 
 export function createSseBroadcaster(): SseBroadcaster {
-  const clients = new Set<ServerResponse>()
+  const clients = new Map<ServerResponse, ClientInfo>()
   const heartbeat = setInterval(() => {
-    for (const c of clients) {
+    for (const [res] of clients) {
       try {
-        c.write(':heartbeat\n\n')
+        res.write(':heartbeat\n\n')
       } catch {
-        clients.delete(c)
+        clients.delete(res)
       }
     }
   }, 30_000)
 
   return {
-    addClient(res) {
+    addClient(res, taskFilter) {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
         ...CORS_HEADERS
       })
-      clients.add(res)
+      // QA-7: Store client with optional task filter
+      clients.set(res, { res, taskFilter })
       res.on('close', () => clients.delete(res))
       try {
         res.write(':connected\n\n')
@@ -43,20 +50,28 @@ export function createSseBroadcaster(): SseBroadcaster {
     },
     broadcast(event, data) {
       const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
-      for (const c of clients) {
+      const dataObj = data as Record<string, unknown>
+      const taskId = dataObj?.taskId as string | undefined
+
+      // QA-7: Filter broadcasts based on client task subscriptions
+      for (const [res, clientInfo] of clients) {
+        // If client has a task filter, only send events for that task
+        if (clientInfo.taskFilter && taskId && clientInfo.taskFilter !== taskId) {
+          continue
+        }
         try {
-          c.write(payload)
+          res.write(payload)
         } catch {
-          clients.delete(c)
+          clients.delete(res)
         }
       }
     },
     clientCount: () => clients.size,
     close() {
       clearInterval(heartbeat)
-      for (const c of clients) {
+      for (const [res] of clients) {
         try {
-          c.end()
+          res.end()
         } catch {}
       }
       clients.clear()

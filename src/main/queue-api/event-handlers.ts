@@ -31,10 +31,13 @@ const CURATED_EVENT_TYPES = new Set([
 // ---------------------------------------------------------------------------
 
 export async function handleEvents(
-  _req: http.IncomingMessage,
+  req: http.IncomingMessage,
   res: http.ServerResponse
 ): Promise<void> {
-  sseBroadcaster.addClient(res)
+  // QA-7: Allow clients to filter events by task ID
+  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
+  const taskFilter = url.searchParams.get('taskId') ?? undefined
+  sseBroadcaster.addClient(res, taskFilter)
 }
 
 export async function handleTaskOutput(
@@ -93,7 +96,9 @@ export async function handleTaskOutput(
     if (batch.length > 0) {
       insertEventBatch(getDb(), batch)
     }
-  } catch {
+  } catch (err) {
+    // QA-17: Log errors instead of silently swallowing
+    console.error('[Queue API] Failed to persist events:', err)
     // Best-effort — do not fail the request
   }
 

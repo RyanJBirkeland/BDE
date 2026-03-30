@@ -3,7 +3,8 @@
  */
 import type http from 'node:http'
 import { sendJson } from './helpers'
-import { listAgentRunsByTaskId, readLog, hasAgent } from '../agent-history'
+import { listAgentRunsByTaskId, readLog, getAgentMeta } from '../agent-history'
+import { getTask } from '../data/sprint-queries'
 
 const MAX_LOG_BYTES = 204800 // 200KB
 const DEFAULT_LOG_BYTES = 50000
@@ -40,11 +41,20 @@ export async function handleAgentLog(
   agentId: string,
   query: URLSearchParams
 ): Promise<void> {
-  // Check if agent exists before trying to read its log
-  const exists = await hasAgent(agentId)
-  if (!exists) {
+  // QA-6: Validate agent exists and has a valid task reference
+  const agent = await getAgentMeta(agentId)
+  if (!agent) {
     sendJson(res, 404, { error: `Agent ${agentId} not found` })
     return
+  }
+
+  // QA-6: Verify the agent's task exists (task-level authorization)
+  if (agent.task) {
+    const task = getTask(agent.task)
+    if (!task) {
+      sendJson(res, 404, { error: `Agent ${agentId} references non-existent task ${agent.task}` })
+      return
+    }
   }
 
   const maxBytes = Math.min(

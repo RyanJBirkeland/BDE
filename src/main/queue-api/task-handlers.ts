@@ -172,6 +172,10 @@ export async function handleCreateTask(
   if (bodyObj.status === 'queued' && typeof spec === 'string') {
     const url = new URL(req.url ?? '', 'http://localhost')
     const skipValidation = url.searchParams.get('skipValidation') === 'true'
+    // QA-8: Log skipValidation usage for audit trail
+    if (skipValidation) {
+      console.warn(`[Queue API] skipValidation=true used for task creation: ${title}`)
+    }
     if (!skipValidation) {
       const semantic = await checkSpecSemantic({
         title: title as string,
@@ -259,10 +263,24 @@ export async function handleUpdateTask(
   // Filter to safe fields only — status, claimed_by, depends_on must use dedicated endpoints
   const raw = body as Record<string, unknown>
   const filtered: Record<string, unknown> = {}
+  const dropped: string[] = [] // QA-14: Track dropped fields
+
   for (const [k, v] of Object.entries(raw)) {
     if (GENERAL_PATCH_FIELDS.has(k)) {
       filtered[k] = v
+    } else {
+      dropped.push(k) // QA-14: Track disallowed fields
     }
+  }
+
+  // QA-14: Return 400 if any fields were dropped
+  if (dropped.length > 0) {
+    sendJson(res, 400, {
+      error: 'Disallowed fields cannot be updated via this endpoint',
+      droppedFields: dropped,
+      hint: 'Use dedicated endpoints for status, claimed_by, or depends_on'
+    })
+    return
   }
 
   if (Object.keys(filtered).length === 0) {
@@ -306,7 +324,14 @@ export async function handleUpdateStatus(
   }
 
   const patch = body as StatusUpdateRequest
-  if (patch.status && !RUNNER_WRITABLE_STATUSES.has(patch.status)) {
+
+  // QA-10: Validate that status field is present
+  if (!patch.status) {
+    sendJson(res, 400, { error: 'status field is required' })
+    return
+  }
+
+  if (!RUNNER_WRITABLE_STATUSES.has(patch.status)) {
     sendJson(res, 400, { error: `Invalid status: ${patch.status}` })
     return
   }
@@ -315,6 +340,11 @@ export async function handleUpdateStatus(
   if (patch.status === 'queued') {
     const url = new URL(req.url ?? '', 'http://localhost')
     const skipValidation = url.searchParams.get('skipValidation') === 'true'
+
+    // QA-8: Log skipValidation usage for audit trail
+    if (skipValidation) {
+      console.warn(`[Queue API] skipValidation=true used for task status update: ${id}`)
+    }
 
     if (!skipValidation) {
       // Fetch the task to get its spec
@@ -535,6 +565,24 @@ export async function handleUpdateDependencies(
   sendJson(res, 200, toCamelCase(updated))
 }
 
+// QA-15: Add individual DELETE endpoint
+export async function handleDeleteTask(res: http.ServerResponse, id: string): Promise<void> {
+  const task = getTask(id)
+  if (!task) {
+    sendJson(res, 404, { error: `Task ${id} not found` })
+    return
+  }
+
+  try {
+    deleteTask(id)
+    sendJson(res, 200, { ok: true, id })
+  } catch (err) {
+    sendJson(res, 500, {
+      error: `Failed to delete task ${id}: ${err instanceof Error ? err.message : String(err)}`
+    })
+  }
+}
+
 export async function handleBatchTasks(
   req: http.IncomingMessage,
   res: http.ServerResponse
@@ -604,6 +652,22 @@ export async function handleBatchTasks(
           error: updated ? undefined : 'Task not found'
         })
       } else if (opType === 'delete') {
+        // QA-5: Add authorization granularity - check task status before deletion
+        const task = getTask(id)
+        if (!task) {
+          results.push({ id, op: 'delete', ok: false, error: 'Task not found' })
+          continue
+        }
+        // Prevent deletion of active tasks (potential data loss)
+        if (task.status === 'active') {
+          results.push({
+            id,
+            op: 'delete',
+            ok: false,
+            error: 'Cannot delete active task. Release or wait for completion first.'
+          })
+          continue
+        }
         deleteTask(id)
         results.push({ id, op: 'delete', ok: true })
       } else {

@@ -79,6 +79,7 @@ export async function route(req: http.IncomingMessage, res: http.ServerResponse)
     const id = params['id']
     if (method === 'GET') return tasks.handleGetTask(res, id)
     if (method === 'PATCH') return tasks.handleUpdateTask(req, res, id)
+    if (method === 'DELETE') return tasks.handleDeleteTask(res, id) // QA-15: Add individual DELETE endpoint
   }
 
   // PATCH /queue/tasks/:id/status

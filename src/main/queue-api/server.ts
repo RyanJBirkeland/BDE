@@ -37,6 +37,9 @@ export function startQueueApi(opts: QueueApiOptions = {}): http.Server {
     }
   })
 
+  // QA-13: Set server-wide request timeout (60 seconds)
+  server.timeout = 60_000
+
   server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       logger.error(`Port ${port} is already in use — Queue API not started. Is another BDE instance running?`)

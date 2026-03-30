@@ -42,6 +42,7 @@ export interface StatusUpdateRequest {
 /** Runner-writable status values for PATCH /queue/tasks/:id/status */
 export const RUNNER_WRITABLE_STATUSES = new Set([
   'queued',
+  'blocked', // QA-11: Allow runners to mark tasks as blocked
   'active',
   'done',
   'failed',
