@@ -57,20 +57,32 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
       output: content,
       timestamp: now
     })
+  } else if (msgType && msgType !== 'assistant' && msgType !== 'tool_result' && msgType !== 'result') {
+    // Log unrecognized message types for debugging
+    console.debug(`[agent-event-mapper] Unrecognized message type: ${msgType}`)
   }
 
   return events
 }
 
+// Rate-limited error logging for SQLite failures
+let _lastSqliteErrorLog = 0
+const SQLITE_ERROR_LOG_INTERVAL_MS = 60_000 // Log at most once per minute
+
 /**
  * Broadcasts an AgentEvent via IPC and persists it to SQLite.
- * SQLite write failures are swallowed — the real-time broadcast is the priority.
+ * SQLite write failures are logged (rate-limited) but non-fatal — the real-time broadcast is the priority.
  */
 export function emitAgentEvent(agentId: string, event: AgentEvent): void {
   broadcast('agent:event', { agentId, event })
   try {
     appendEvent(getDb(), agentId, event.type, JSON.stringify(event), event.timestamp)
-  } catch {
-    // SQLite write failure is non-fatal
+  } catch (err) {
+    // SQLite write failure is non-fatal, but log it (rate-limited)
+    const now = Date.now()
+    if (now - _lastSqliteErrorLog > SQLITE_ERROR_LOG_INTERVAL_MS) {
+      console.warn(`[agent-event-mapper] SQLite write failed (will retry next event): ${err}`)
+      _lastSqliteErrorLog = now
+    }
   }
 }

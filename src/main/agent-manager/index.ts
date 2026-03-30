@@ -37,6 +37,7 @@ import { BDE_AGENT_LOG_PATH } from '../paths'
 const LOG_PATH = BDE_AGENT_LOG_PATH
 const AM_MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
 let amWriteCount = 0
+let fileLogFailureCount = 0
 
 function rotateAmLogIfNeeded(): void {
   try {
@@ -52,11 +53,19 @@ function rotateAmLogIfNeeded(): void {
 function fileLog(level: string, m: string): void {
   try {
     appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [${level}] ${m}\n`)
+    fileLogFailureCount = 0 // Reset on successful write
     if (++amWriteCount >= 500) {
       amWriteCount = 0
       rotateAmLogIfNeeded()
     }
-  } catch {}
+  } catch (err) {
+    // Count consecutive failures and log to stderr after threshold
+    fileLogFailureCount++
+    if (fileLogFailureCount === 5) {
+      console.error(`[agent-manager] File logging failed 5 times consecutively: ${err}`)
+      console.error(`[agent-manager] Log path: ${LOG_PATH} — check disk space and permissions`)
+    }
+  }
 }
 
 const defaultLogger: Logger = {
@@ -230,7 +239,6 @@ export class AgentManagerImpl implements AgentManager {
   readonly _processingTasks = new Set<string>()
   _running = false
   _shuttingDown = false
-  _drainRunning = false
   _drainInFlight: Promise<void> | null = null
   readonly _agentPromises = new Set<Promise<void>>()
   readonly _depIndex: DependencyIndex
@@ -408,10 +416,15 @@ export class AgentManagerImpl implements AgentManager {
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err)
         this.logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
+        // For git errors, keep the tail of the message (contains key diagnostic info)
+        const fullNote = `Worktree setup failed: ${errMsg}`
+        const notes = fullNote.length > NOTES_MAX_LENGTH
+          ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
+          : fullNote
         this.repo.updateTask(task.id, {
           status: 'error',
           completed_at: new Date().toISOString(),
-          notes: `Worktree setup failed: ${errMsg}`.slice(0, NOTES_MAX_LENGTH),
+          notes,
           claimed_by: null
         })
         await this.onTaskTerminal(task.id, 'error')
@@ -427,61 +440,53 @@ export class AgentManagerImpl implements AgentManager {
   // ---- drainLoop ----
 
   async _drainLoop(): Promise<void> {
-    if (this._drainRunning) {
-      this.logger.info('[agent-manager] Drain loop already running — skipping')
-      return
-    }
-    this._drainRunning = true
+    // Note: concurrency guard is handled by caller via _drainInFlight check
+    this.logger.info(
+      `[agent-manager] Drain loop starting (shuttingDown=${this._shuttingDown}, slots=${availableSlots(this._concurrency, this._activeAgents.size)})`
+    )
+    if (this._shuttingDown) return
+
+    // Refresh dependency index each drain cycle to pick up tasks created
+    // since startup or since the last drain. Rebuild is O(n) and cheap.
+    let taskStatusMap = new Map<string, string>()
     try {
-      this.logger.info(
-        `[agent-manager] Drain loop starting (shuttingDown=${this._shuttingDown}, slots=${availableSlots(this._concurrency, this._activeAgents.size)})`
-      )
-      if (this._shuttingDown) return
-
-      // Refresh dependency index each drain cycle to pick up tasks created
-      // since startup or since the last drain. Rebuild is O(n) and cheap.
-      let taskStatusMap = new Map<string, string>()
-      try {
-        const allTasks = this.repo.getTasksWithDependencies()
-        this._depIndex.rebuild(allTasks)
-        taskStatusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-      } catch (err) {
-        this.logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
-      }
-
-      const available = availableSlots(this._concurrency, this._activeAgents.size)
-      if (available <= 0) return
-
-      try {
-        const tokenOk = await checkOAuthToken(this.logger)
-        if (!tokenOk) return
-
-        this.logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
-        const queued = this.fetchQueuedTasks(available)
-        this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
-        for (const raw of queued) {
-          if (this._shuttingDown) break
-          // Re-check slots before each task — an earlier iteration may have filled a slot
-          if (availableSlots(this._concurrency, this._activeAgents.size) <= 0) {
-            this.logger.info('[agent-manager] No slots available — stopping drain iteration')
-            break
-          }
-          try {
-            await this._processQueuedTask(raw, taskStatusMap)
-          } catch (err) {
-            this.logger.error(
-              `[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`
-            )
-          }
-        }
-      } catch (err) {
-        this.logger.error(`[agent-manager] Drain loop error: ${err}`)
-      }
-
-      this._concurrency = tryRecover(this._concurrency, Date.now())
-    } finally {
-      this._drainRunning = false
+      const allTasks = this.repo.getTasksWithDependencies()
+      this._depIndex.rebuild(allTasks)
+      taskStatusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+    } catch (err) {
+      this.logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
     }
+
+    const available = availableSlots(this._concurrency, this._activeAgents.size)
+    if (available <= 0) return
+
+    try {
+      const tokenOk = await checkOAuthToken(this.logger)
+      if (!tokenOk) return
+
+      this.logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
+      const queued = this.fetchQueuedTasks(available)
+      this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
+      for (const raw of queued) {
+        if (this._shuttingDown) break
+        // Re-check slots before each task — an earlier iteration may have filled a slot
+        if (availableSlots(this._concurrency, this._activeAgents.size) <= 0) {
+          this.logger.info('[agent-manager] No slots available — stopping drain iteration')
+          break
+        }
+        try {
+          await this._processQueuedTask(raw, taskStatusMap)
+        } catch (err) {
+          this.logger.error(
+            `[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`
+          )
+        }
+      }
+    } catch (err) {
+      this.logger.error(`[agent-manager] Drain loop error: ${err}`)
+    }
+
+    this._concurrency = tryRecover(this._concurrency, Date.now())
   }
 
   // ---- watchdogLoop ----
@@ -532,7 +537,7 @@ export class AgentManagerImpl implements AgentManager {
 
   private async _pruneLoop(): Promise<void> {
     try {
-      await pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id))
+      await pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id), this.logger)
     } catch (err) {
       this.logger.error(`[agent-manager] Worktree prune error: ${err}`)
     }
@@ -561,7 +566,7 @@ export class AgentManagerImpl implements AgentManager {
     }
 
     // Initial worktree prune (fire-and-forget)
-    pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id)).catch((err) => {
+    pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id), this.logger).catch((err) => {
       this.logger.error(`[agent-manager] Initial worktree prune error: ${err}`)
     })
 
@@ -676,6 +681,11 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   async steerAgent(taskId: string, message: string): Promise<SteerResult> {
+    // Validate message size (max 10KB)
+    if (message.length > 10_000) {
+      return { delivered: false, error: 'Message exceeds 10KB limit' }
+    }
+
     const agent = this._activeAgents.get(taskId)
     if (!agent) return { delivered: false, error: 'Agent not found' }
     return agent.handle.steer(message)

@@ -1,7 +1,7 @@
 /**
  * Shared SDK streaming utilities for Claude Agent SDK.
  */
-import { buildAgentEnv } from './env-utils'
+import { buildAgentEnvWithAuth } from './env-utils'
 
 /**
  * Run a single-turn SDK query with streaming — pushes text chunks to the
@@ -22,7 +22,7 @@ export async function runSdkStreaming(
   timeoutMs = 180_000
 ): Promise<string> {
   const sdk = await import('@anthropic-ai/claude-agent-sdk')
-  const env = buildAgentEnv()
+  const env = buildAgentEnvWithAuth()
 
   const queryHandle = sdk.query({
     prompt,

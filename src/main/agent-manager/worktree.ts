@@ -14,8 +14,10 @@ export function branchNameForTask(title: string, taskId?: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, BRANCH_SLUG_MAX_LENGTH)
+  // Fallback to 'unnamed-task' if slug is empty (all special chars)
+  const finalSlug = slug || 'unnamed-task'
   const suffix = taskId ? `-${taskId.slice(0, 8)}` : ''
-  return `agent/${slug}${suffix}`
+  return `agent/${finalSlug}${suffix}`
 }
 
 export interface SetupWorktreeOpts {
@@ -230,7 +232,8 @@ export function cleanupWorktree(opts: CleanupWorktreeOpts): void {
 
 export async function pruneStaleWorktrees(
   worktreeBase: string,
-  isActive: (taskId: string) => boolean
+  isActive: (taskId: string) => boolean,
+  logger?: Logger
 ): Promise<number> {
   let pruned = 0
 
@@ -240,6 +243,7 @@ export async function pruneStaleWorktrees(
     .filter((d) => d.isDirectory() && d.name !== '.locks')
     .map((d) => path.join(worktreeBase, d.name))
 
+  const log = logger ?? console
   for (const repoDir of repoDirs) {
     let taskDirs: string[]
     try {
@@ -247,7 +251,7 @@ export async function pruneStaleWorktrees(
         .filter((d) => d.isDirectory())
         .map((d) => d.name)
     } catch (err) {
-      console.warn(`[worktree] Failed to read repo directory during prune: ${err}`)
+      log.warn(`[worktree] Failed to read repo directory during prune: ${err}`)
       continue
     }
 
@@ -258,7 +262,7 @@ export async function pruneStaleWorktrees(
           rmSync(worktreePath, { recursive: true, force: true })
           pruned++
         } catch (err) {
-          console.warn(`[worktree] Failed to remove stale worktree directory: ${err}`)
+          log.warn(`[worktree] Failed to remove stale worktree directory: ${err}`)
         }
       }
     }

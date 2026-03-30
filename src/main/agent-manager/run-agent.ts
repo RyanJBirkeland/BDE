@@ -96,6 +96,15 @@ export async function tryEmitPlaygroundEvent(
     // Resolve absolute path
     const absolutePath = filePath.startsWith('/') ? filePath : join(worktreePath, filePath)
 
+    // Validate path is within worktree (prevent traversal)
+    const { resolve } = await import('node:path')
+    const resolvedPath = resolve(absolutePath)
+    const resolvedWorktree = resolve(worktreePath)
+    if (!resolvedPath.startsWith(resolvedWorktree)) {
+      logger.warn(`[playground] Path traversal blocked: ${filePath} (resolved to ${resolvedPath})`)
+      return
+    }
+
     // Check file size
     const stats = await stat(absolutePath)
     if (stats.size > MAX_PLAYGROUND_SIZE) {
