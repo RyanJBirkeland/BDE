@@ -197,6 +197,10 @@ export function updateTask(
     const auditPatch: Record<string, unknown> = {}
 
     for (const [key, value] of entries) {
+      // QA-18: Defense-in-depth regex assertion for SQL column names
+      if (!/^[a-z_]+$/.test(key)) {
+        throw new Error(`Invalid column name: ${key}`)
+      }
       setClauses.push(`${key} = ?`)
       const serialized = serializeField(key, value)
       values.push(serialized)

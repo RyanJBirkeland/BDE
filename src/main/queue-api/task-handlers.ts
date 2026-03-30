@@ -3,6 +3,7 @@
  */
 import type http from 'node:http'
 import { sendJson, parseBody } from './helpers'
+import { createLogger } from '../logger'
 import {
   getQueueStats,
   listTasks,
@@ -37,6 +38,8 @@ import type { TaskDependency } from '../../shared/types'
 import { validateStructural } from '../../shared/spec-validation'
 import { checkSpecSemantic } from '../spec-semantic-check'
 import { validateTaskCreation } from '../services/task-validation'
+
+const logger = createLogger('queue-api:tasks')
 
 let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
 
@@ -127,7 +130,27 @@ export async function handleListTasks(
   res: http.ServerResponse,
   query: URLSearchParams
 ): Promise<void> {
-  const status = query.get('status') ?? undefined
+  const statusParam = query.get('status')
+  const status = statusParam ?? undefined
+
+  // QA-19: Validate status parameter if provided
+  if (statusParam !== null) {
+    const validStatuses = new Set([
+      'backlog',
+      'queued',
+      'blocked',
+      'active',
+      'done',
+      'failed',
+      'error',
+      'cancelled'
+    ])
+    if (!validStatuses.has(statusParam)) {
+      sendJson(res, 400, { error: `Invalid status: ${statusParam}` })
+      return
+    }
+  }
+
   const tasks = listTasks(status)
   sendJson(res, 200, tasks.map(toCamelCase))
 }
@@ -173,7 +196,7 @@ export async function handleCreateTask(
   const { spec } = bodyObj
   const validation = validateTaskCreation(
     body as Parameters<typeof createTask>[0],
-    { logger: console }
+    { logger }
   )
   if (!validation.valid) {
     sendJson(res, 400, { error: 'Spec quality checks failed', details: validation.errors })
@@ -527,8 +550,14 @@ export async function handleUpdateDependencies(
 
   const { dependsOn } = body as { dependsOn?: unknown }
 
+  // QA-23: Reject undefined dependsOn (must be null or array)
+  if (dependsOn === undefined) {
+    sendJson(res, 400, { error: 'dependsOn field is required (use null or array)' })
+    return
+  }
+
   // Validate dependsOn structure
-  if (dependsOn !== null && dependsOn !== undefined) {
+  if (dependsOn !== null) {
     if (!Array.isArray(dependsOn)) {
       sendJson(res, 400, { error: 'dependsOn must be an array or null' })
       return
@@ -692,6 +721,6 @@ export async function handleBatchTasks(
     return
   }
 
-  // Return 200 with per-operation results (some may have failed)
+  // QA-31: Returns 200 with per-operation status — clients inspect individual result.ok fields
   sendJson(res, 200, { results })
 }

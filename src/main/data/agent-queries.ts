@@ -128,6 +128,10 @@ export function updateAgentMeta(
   for (const [key, value] of Object.entries(patch)) {
     const col = AGENT_COLUMN_MAP[key]
     if (col) {
+      // QA-18: Defense-in-depth regex assertion for SQL column names
+      if (!/^[a-z_]+$/.test(col)) {
+        throw new Error(`Invalid column name: ${col}`)
+      }
       setClauses.push(`${col} = ?`)
       values.push(value)
     }

@@ -15,7 +15,7 @@ export { sseBroadcaster } from './event-handlers'
 // ---------------------------------------------------------------------------
 
 export async function route(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
-  // CORS preflight
+  // QA-21: CORS preflight handler (retained for API compatibility despite empty CORS_HEADERS)
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS_HEADERS)
     res.end()
@@ -59,6 +59,11 @@ export async function route(req: http.IncomingMessage, res: http.ServerResponse)
   }
 
   // --- Routes with :id ---
+  // QA-24: Route matching is order-dependent. More specific routes (with path segments
+  // after :id) MUST be checked before generic /tasks/:id to prevent incorrect matches.
+  // Current order: /agents/:id/log, /tasks/:id/events, /tasks/:id/status,
+  // /tasks/:id/dependencies, /tasks/:id/claim, /tasks/:id/release, /tasks/:id/output,
+  // and finally generic /tasks/:id. DO NOT reorder without careful testing.
   let params: Record<string, string> | null
 
   // GET /queue/agents/:id/log
@@ -73,43 +78,43 @@ export async function route(req: http.IncomingMessage, res: http.ServerResponse)
     return events.handleTaskEvents(res, params['id'], query)
   }
 
-  // /queue/tasks/:id routes
+  // PATCH /queue/tasks/:id/status (must come before generic /tasks/:id)
+  params = matchRoute('/queue/tasks/:id/status', path)
+  if (method === 'PATCH' && params) {
+    return tasks.handleUpdateStatus(req, res, params['id'])
+  }
+
+  // PATCH /queue/tasks/:id/dependencies (must come before generic /tasks/:id)
+  params = matchRoute('/queue/tasks/:id/dependencies', path)
+  if (method === 'PATCH' && params) {
+    return tasks.handleUpdateDependencies(req, res, params['id'])
+  }
+
+  // POST /queue/tasks/:id/claim (must come before generic /tasks/:id)
+  params = matchRoute('/queue/tasks/:id/claim', path)
+  if (method === 'POST' && params) {
+    return tasks.handleClaim(req, res, params['id'])
+  }
+
+  // POST /queue/tasks/:id/release (must come before generic /tasks/:id)
+  params = matchRoute('/queue/tasks/:id/release', path)
+  if (method === 'POST' && params) {
+    return tasks.handleRelease(req, res, params['id'])
+  }
+
+  // POST /queue/tasks/:id/output (must come before generic /tasks/:id)
+  params = matchRoute('/queue/tasks/:id/output', path)
+  if (method === 'POST' && params) {
+    return events.handleTaskOutput(req, res, params['id'])
+  }
+
+  // Generic /queue/tasks/:id routes (GET and PATCH)
   params = matchRoute('/queue/tasks/:id', path)
   if (params) {
     const id = params['id']
     if (method === 'GET') return tasks.handleGetTask(res, id)
     if (method === 'PATCH') return tasks.handleUpdateTask(req, res, id)
     if (method === 'DELETE') return tasks.handleDeleteTask(res, id) // QA-15: Individual DELETE endpoint
-  }
-
-  // PATCH /queue/tasks/:id/status
-  params = matchRoute('/queue/tasks/:id/status', path)
-  if (method === 'PATCH' && params) {
-    return tasks.handleUpdateStatus(req, res, params['id'])
-  }
-
-  // PATCH /queue/tasks/:id/dependencies
-  params = matchRoute('/queue/tasks/:id/dependencies', path)
-  if (method === 'PATCH' && params) {
-    return tasks.handleUpdateDependencies(req, res, params['id'])
-  }
-
-  // POST /queue/tasks/:id/claim
-  params = matchRoute('/queue/tasks/:id/claim', path)
-  if (method === 'POST' && params) {
-    return tasks.handleClaim(req, res, params['id'])
-  }
-
-  // POST /queue/tasks/:id/release
-  params = matchRoute('/queue/tasks/:id/release', path)
-  if (method === 'POST' && params) {
-    return tasks.handleRelease(req, res, params['id'])
-  }
-
-  // POST /queue/tasks/:id/output
-  params = matchRoute('/queue/tasks/:id/output', path)
-  if (method === 'POST' && params) {
-    return events.handleTaskOutput(req, res, params['id'])
   }
 
   // 404

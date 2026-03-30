@@ -1,7 +1,6 @@
 /**
- * Queue API HTTP server — lightweight Supabase proxy on port 18790.
- * Allows external runners (without Supabase credentials) to consume
- * the sprint task queue via a simple REST interface.
+ * Queue API HTTP server on port 18790.
+ * Allows external runners to consume the sprint task queue via a simple REST interface.
  */
 import http from 'node:http'
 import { route } from './router'
