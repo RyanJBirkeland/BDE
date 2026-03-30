@@ -399,7 +399,7 @@ describe('Agent completion pipeline integration', () => {
       expect(isTerminal).toBe(true)
     })
 
-    it('returns false (non-terminal) when updateTask throws during failure resolution', () => {
+    it('returns true (terminal) when updateTask throws but retry count exhausted (AM-5 fix)', () => {
       updateTaskMock.mockImplementationOnce(() => {
         throw new Error('DB error')
       })
@@ -409,7 +409,8 @@ describe('Agent completion pipeline integration', () => {
         logger
       )
 
-      expect(isTerminal).toBe(false)
+      // AM-5: Should still return true (terminal) so onStatusTerminal gets called
+      expect(isTerminal).toBe(true)
     })
   })
 

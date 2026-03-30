@@ -133,7 +133,7 @@ describe('handleWatchdogVerdict', () => {
     concurrency = makeConcurrencyState(2)
   })
 
-  it('marks task as error with "Max runtime exceeded" on max-runtime', async () => {
+  it('marks task as error with "Max runtime exceeded" on max-runtime and clears claimed_by (AM-4 fix)', async () => {
     const now = '2026-03-25T12:00:00.000Z'
     handleWatchdogVerdict(
       'max-runtime',
@@ -148,6 +148,7 @@ describe('handleWatchdogVerdict', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-1', {
       status: 'error',
       completed_at: now,
+      claimed_by: null,
       notes: 'Agent exceeded the maximum runtime of 60 minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.',
       needs_review: true
     })
@@ -156,7 +157,7 @@ describe('handleWatchdogVerdict', () => {
     })
   })
 
-  it('marks task as error with "Idle timeout" on idle', async () => {
+  it('marks task as error with "Idle timeout" on idle and clears claimed_by (AM-4 fix)', async () => {
     const now = '2026-03-25T12:00:00.000Z'
     handleWatchdogVerdict(
       'idle',
@@ -170,6 +171,7 @@ describe('handleWatchdogVerdict', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-2', {
       status: 'error',
       completed_at: now,
+      claimed_by: null,
       notes: 'Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to \'queued\'.',
       needs_review: true
     })

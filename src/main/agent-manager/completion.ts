@@ -15,6 +15,18 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+/**
+ * Sanitize a task title for safe use in git commands (commit messages, PR titles, branch names).
+ * Strips backticks, $(), and markdown links to prevent command injection.
+ */
+export function sanitizeForGit(title: string): string {
+  return title
+    .replace(/`/g, "'") // Replace backticks with single quotes
+    .replace(/\$\([^)]*\)/g, '') // Remove $(...) command substitution
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // Convert [text](url) to text
+    .trim()
+}
+
 export interface ResolveSuccessOpts {
   taskId: string
   worktreePath: string
@@ -103,7 +115,8 @@ async function autoCommitIfDirty(
     // Use -A to capture new (untracked) files created by agents, not just modifications.
     // The repo's .gitignore excludes node_modules, .env, etc.
     await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
-    await execFile('git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`], {
+    const sanitizedTitle = sanitizeForGit(title)
+    await execFile('git', ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`], {
       cwd: worktreePath,
       env: buildAgentEnv()
     })
@@ -169,9 +182,10 @@ async function createNewPr(
     }
 
     try {
+      const sanitizedTitle = sanitizeForGit(title)
       const { stdout: prOut } = await execFile(
         'gh',
-        ['pr', 'create', '--title', title, '--body', body, '--head', branch, '--repo', ghRepo],
+        ['pr', 'create', '--title', sanitizedTitle, '--body', body, '--head', branch, '--repo', ghRepo],
         { cwd: worktreePath, env: buildAgentEnv() }
       )
       const parsed = parsePrOutput(prOut)
@@ -366,15 +380,16 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
 export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boolean {
   const { taskId, retryCount, notes, repo } = opts
 
+  const isTerminal = retryCount >= MAX_RETRIES
+
   try {
-    if (retryCount < MAX_RETRIES) {
+    if (!isTerminal) {
       repo.updateTask(taskId, {
         status: 'queued',
         retry_count: retryCount + 1,
         claimed_by: null,
         ...(notes ? { notes } : {})
       })
-      return false // not terminal
     } else {
       repo.updateTask(taskId, {
         status: 'failed',
@@ -383,12 +398,12 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
         needs_review: true,
         ...(notes ? { notes } : {})
       })
-      return true // terminal
     }
   } catch (err) {
     logger?.error(`[completion] Failed to update task ${taskId} during failure resolution: ${err}`)
-    return false
   }
+
+  return isTerminal
 }
 
 export { PR_CREATE_MAX_ATTEMPTS }

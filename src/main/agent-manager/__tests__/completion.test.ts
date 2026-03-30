@@ -24,7 +24,7 @@ vi.mock('../../data/sprint-queries', () => ({
 import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'
-import { resolveSuccess, resolveFailure, PR_CREATE_MAX_ATTEMPTS } from '../completion'
+import { resolveSuccess, resolveFailure, PR_CREATE_MAX_ATTEMPTS, sanitizeForGit } from '../completion'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { MAX_RETRIES } from '../types'
 
@@ -421,6 +421,68 @@ describe('resolveSuccess', () => {
     })
     expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'error')
   })
+
+  it('sanitizes title in git commit message (AM-3 fix)', async () => {
+    mockExecFileSequence([
+      { stdout: 'agent/branch\n' }, // git rev-parse
+      { stdout: ' M src/file.ts\n' }, // git status --porcelain (dirty)
+      { stdout: '' }, // git add -A
+      { stdout: '' }, // git commit
+      { stdout: '1\n' }, // git rev-list --count
+      { stdout: '' }, // git push
+      { stdout: '' }, // gh pr list
+      { stdout: '' }, // git log
+      { stdout: '' }, // git diff --stat
+      { stdout: 'https://github.com/owner/repo/pull/42\n' } // gh pr create
+    ])
+
+    const dangerousOpts = {
+      ...opts,
+      title: 'Add `feature` with $(rm -rf /) and [link](https://evil.com)'
+    }
+
+    await resolveSuccess(dangerousOpts, noopLogger)
+
+    const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
+    const commitCall = calls.find((c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('commit'))
+    expect(commitCall).toBeDefined()
+    const commitMsg = commitCall![1][2] as string
+    // Verify sanitized: backticks → quotes, $() removed, link text only
+    expect(commitMsg).toContain("Add 'feature' with  and link")
+    expect(commitMsg).not.toContain('$(')
+    expect(commitMsg).not.toContain('https://evil.com')
+  })
+
+  it('sanitizes title in PR creation (AM-3 fix)', async () => {
+    mockExecFileSequence([
+      { stdout: 'agent/branch\n' }, // git rev-parse
+      { stdout: '' }, // git status --porcelain
+      { stdout: '1\n' }, // git rev-list --count
+      { stdout: '' }, // git push
+      { stdout: '' }, // gh pr list
+      { stdout: '' }, // git log
+      { stdout: '' }, // git diff --stat
+      { stdout: 'https://github.com/owner/repo/pull/42\n' } // gh pr create
+    ])
+
+    const dangerousOpts = {
+      ...opts,
+      title: 'Fix bug via `script` and $(whoami)'
+    }
+
+    await resolveSuccess(dangerousOpts, noopLogger)
+
+    const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
+    const prCall = calls.find((c) => c[0] === 'gh' && Array.isArray(c[1]) && c[1].includes('create'))
+    expect(prCall).toBeDefined()
+    const prArgs = prCall![1] as string[]
+    const titleIdx = prArgs.indexOf('--title')
+    expect(titleIdx).toBeGreaterThan(-1)
+    const prTitle = prArgs[titleIdx + 1]
+    // Verify sanitized
+    expect(prTitle).toBe("Fix bug via 'script' and")
+    expect(prTitle).not.toContain('$(')
+  })
   it('sets task to error and calls onTaskTerminal when branch name is empty', async () => {
     mockExecFileSequence([
       { stdout: '' } // git rev-parse returns empty string
@@ -700,15 +762,53 @@ describe('resolveFailure', () => {
     expect(result).toBe(true)
   })
 
-  it('returns false when updateTask throws', async () => {
+  it('returns true (terminal) even when updateTask throws (AM-5 fix)', async () => {
     updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
 
     const result = await resolveFailure({
       taskId: 'task-5',
       retryCount: MAX_RETRIES,
       repo: mockRepo
-    })
+    }, noopLogger)
 
-    expect(result).toBe(false) // not terminal because the update failed
+    // AM-5: Should still return true (terminal) even when DB fails
+    expect(result).toBe(true)
+    expect(noopLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-5 during failure resolution')
+    )
+  })
+})
+
+describe('sanitizeForGit (AM-3 fix)', () => {
+  it('removes backticks', () => {
+    expect(sanitizeForGit('Add `feature` to codebase')).toBe("Add 'feature' to codebase")
+    expect(sanitizeForGit('Run `rm -rf /`')).toBe("Run 'rm -rf /'")
+  })
+
+  it('removes $() command substitution', () => {
+    expect(sanitizeForGit('Fix bug $(rm -rf /)')).toBe('Fix bug')
+    expect(sanitizeForGit('Add feature $(whoami)')).toBe('Add feature')
+  })
+
+  it('converts markdown links to plain text', () => {
+    expect(sanitizeForGit('See [docs](https://example.com) for details')).toBe('See docs for details')
+    expect(sanitizeForGit('[Click here](javascript:alert(1))')).toBe('Click here')
+  })
+
+  it('handles multiple issues in one title', () => {
+    expect(sanitizeForGit('Add `login` via [OAuth](url) and run $(cmd)')).toBe("Add 'login' via OAuth and run")
+  })
+
+  it('trims whitespace', () => {
+    expect(sanitizeForGit('  Fix bug  ')).toBe('Fix bug')
+    expect(sanitizeForGit('Remove $(cmd)   ')).toBe('Remove')
+  })
+
+  it('handles empty string', () => {
+    expect(sanitizeForGit('')).toBe('')
+  })
+
+  it('handles normal text without special characters', () => {
+    expect(sanitizeForGit('Add login page')).toBe('Add login page')
   })
 })

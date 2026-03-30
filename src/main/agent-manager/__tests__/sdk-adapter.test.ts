@@ -80,13 +80,14 @@ describe('spawnAgent (CLI fallback)', () => {
     expect(parsed.message.content).toBe('Do the thing')
   })
 
-  it('spawns claude CLI with correct flags', async () => {
+  it('spawns claude CLI with correct flags (no bypassPermissions)', async () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/my/project',
       model: 'claude-opus-4-5'
     })
 
+    const spawnArgs = mockSpawn.mock.calls[0][1] as string[]
     expect(mockSpawn).toHaveBeenCalledWith(
       'claude',
       expect.arrayContaining([
@@ -95,12 +96,13 @@ describe('spawnAgent (CLI fallback)', () => {
         '--input-format',
         'stream-json',
         '--model',
-        'claude-opus-4-5',
-        '--permission-mode',
-        'bypassPermissions'
+        'claude-opus-4-5'
       ]),
       expect.objectContaining({ cwd: '/my/project' })
     )
+    // Verify bypassPermissions is NOT present
+    expect(spawnArgs).not.toContain('bypassPermissions')
+    expect(spawnArgs).not.toContain('--permission-mode')
   })
 
   it('sets ANTHROPIC_API_KEY from OAuth token in env', async () => {

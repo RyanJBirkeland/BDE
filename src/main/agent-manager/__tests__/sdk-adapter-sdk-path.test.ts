@@ -121,7 +121,7 @@ describe('spawnAgent (SDK path)', () => {
     )
   })
 
-  it('steer() calls interrupt and logs a warning about limited steer', async () => {
+  it('steer() returns delivered:false and logs warning (AM-6 fix)', async () => {
     const mockWarn = vi.fn()
     const logger = { info: vi.fn(), warn: mockWarn, error: vi.fn() }
 
@@ -132,13 +132,17 @@ describe('spawnAgent (SDK path)', () => {
       logger
     })
 
-    await handle.steer('please do something else')
+    const result = await handle.steer('please do something else')
 
-    expect(mockInterrupt).toHaveBeenCalledOnce()
-    expect(mockWarn).toHaveBeenCalledWith(expect.stringContaining('Steer in SDK mode is limited'))
+    expect(result).toEqual({
+      delivered: false,
+      reason: 'SDK mode does not support steering'
+    })
+    expect(mockInterrupt).not.toHaveBeenCalled()
+    expect(mockWarn).toHaveBeenCalledWith(expect.stringContaining('Steer not supported in SDK mode'))
   })
 
-  it('does not set ANTHROPIC_API_KEY when getOAuthToken returns null', async () => {
+  it('does not set apiKey when getOAuthToken returns null (AM-2 fix)', async () => {
     vi.mocked(getOAuthToken).mockReturnValueOnce(null as unknown as string)
 
     await spawnAgent({
@@ -147,12 +151,14 @@ describe('spawnAgent (SDK path)', () => {
       model: 'claude-sonnet-4-5'
     })
 
-    // Verify SDK query was called with env that does NOT contain ANTHROPIC_API_KEY
+    // Verify SDK query was called without apiKey parameter
     const callArgs = mockQuery.mock.calls[0][0]
+    expect(callArgs.options).not.toHaveProperty('apiKey')
+    // Also verify env doesn't have ANTHROPIC_API_KEY (AM-2: pass via SDK param, not env)
     expect(callArgs.options.env).not.toHaveProperty('ANTHROPIC_API_KEY')
   })
 
-  it('sets ANTHROPIC_API_KEY when getOAuthToken returns a token', async () => {
+  it('passes token via apiKey parameter, not env (AM-1 & AM-2 fix)', async () => {
     // Default mock returns 'mock-oauth-token'
     await spawnAgent({
       prompt: 'test',
@@ -161,6 +167,21 @@ describe('spawnAgent (SDK path)', () => {
     })
 
     const callArgs = mockQuery.mock.calls[0][0]
-    expect(callArgs.options.env.ANTHROPIC_API_KEY).toBe('mock-oauth-token')
+    // AM-2: Token passed via SDK apiKey parameter
+    expect(callArgs.options.apiKey).toBe('mock-oauth-token')
+    // AM-2: NOT passed via env
+    expect(callArgs.options.env).not.toHaveProperty('ANTHROPIC_API_KEY')
+  })
+
+  it('does not use bypassPermissions (AM-1 fix)', async () => {
+    await spawnAgent({
+      prompt: 'test',
+      cwd: '/tmp',
+      model: 'claude-sonnet-4-5'
+    })
+
+    const callArgs = mockQuery.mock.calls[0][0]
+    expect(callArgs.options).not.toHaveProperty('permissionMode')
+    expect(callArgs.options).not.toHaveProperty('allowDangerouslySkipPermissions')
   })
 })
