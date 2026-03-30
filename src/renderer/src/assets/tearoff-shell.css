@@ -1,0 +1,94 @@
+.tearoff-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--neon-bg);
+}
+
+.tearoff-shell__header {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px 0 80px;
+  background: var(--neon-surface-deep);
+  border-bottom: 1px solid var(--neon-purple-border);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+}
+
+.tearoff-shell__title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tearoff-shell__actions {
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
+}
+
+.tearoff-shell__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  transition: color 100ms ease, background 100ms ease;
+}
+
+.tearoff-shell__btn:hover {
+  color: var(--neon-text);
+  background: var(--neon-surface-subtle);
+}
+
+.tearoff-shell__content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.tearoff-shell__dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bde-overlay);
+}
+
+.tearoff-shell__dialog {
+  background: var(--neon-surface-deep);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  min-width: 300px;
+  text-align: center;
+  color: var(--neon-text);
+  font-size: 14px;
+}
+
+.tearoff-shell__dialog-remember {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 12px 0;
+  font-size: 12px;
+  color: var(--neon-text-dim);
+}
+
+.tearoff-shell__dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
