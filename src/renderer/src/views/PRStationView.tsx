@@ -27,6 +27,7 @@ export default function PRStationView() {
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const [allPrs, setAllPrs] = useState<OpenPr[]>([])
   const [filters, setFilters] = useState<PRFilters>({ repo: null, sort: 'updated' })
+  const [refreshKey, setRefreshKey] = useState(0)
   const prKey = selectedPr ? `${selectedPr.repo}#${selectedPr.number}` : ''
   const pendingCount = usePendingReviewStore((s) =>
     prKey ? (s.pendingComments[prKey] ?? []).length : 0
@@ -104,7 +105,7 @@ export default function PRStationView() {
     const repo = repoOptions.find((r) => r.label === selectedPr.repo)
     if (!repo) return
     const controller = new AbortController()
-    getPrMergeability(repo.owner, repo.label, selectedPr.number, controller.signal)
+    getPrMergeability(repo.owner, repo.label, selectedPr.number)
       .then((m) => {
         if (!controller.signal.aborted) setMergeability(m)
       })
@@ -183,14 +184,14 @@ export default function PRStationView() {
               {activeTab === 'info' ? (
                 <div className="pr-station__detail-content">
                   <PRStationDetail
-                    key={`${selectedPr.repo}-${selectedPr.number}`}
+                    key={`${selectedPr.repo}-${selectedPr.number}-${refreshKey}`}
                     pr={selectedPr}
                     mergeability={mergeability}
                     onMerged={handleRemovePr}
                   />
                 </div>
               ) : (
-                <PRStationDiff pr={selectedPr} />
+                <PRStationDiff key={`${selectedPr.repo}-${selectedPr.number}-${refreshKey}`} pr={selectedPr} />
               )}
             </>
           ) : (
@@ -206,9 +207,8 @@ export default function PRStationView() {
             prKey={prKey}
             onClose={() => setShowReviewDialog(false)}
             onSubmitted={() => {
-              const pr = selectedPr
-              setSelectedPr(null)
-              setTimeout(() => setSelectedPr(pr), 0)
+              setShowReviewDialog(false)
+              setRefreshKey((k) => k + 1)
             }}
           />
         )}

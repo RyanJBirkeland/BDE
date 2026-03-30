@@ -17,7 +17,26 @@ function markdownToHtml(md: string): string {
 
 /** Sanitize HTML to prevent XSS from untrusted content. */
 function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html)
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p',
+      'h1',
+      'h2',
+      'h3',
+      'strong',
+      'em',
+      'code',
+      'pre',
+      'ul',
+      'ol',
+      'li',
+      'a',
+      'br',
+      'blockquote'
+    ],
+    ALLOWED_ATTR: ['href', 'title', 'class'],
+    ALLOW_DATA_ATTR: false
+  })
 }
 
 /** Render markdown as sanitized HTML safe for dangerouslySetInnerHTML. */

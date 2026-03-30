@@ -65,6 +65,11 @@ function fileStatusBadgeClass(status: string): string {
   }
 }
 
+function safeLabelColor(color: string): string {
+  // Validate that color is a 6-character hex string
+  return /^[0-9a-fA-F]{6}$/.test(color) ? `#${color}` : 'var(--neon-text-dim)'
+}
+
 export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailProps) {
   const repoOptions = useRepoOptions()
   const [detail, setDetail] = useState<PRDetailData | null>(null)
@@ -77,6 +82,11 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
   const [checksLoading, setChecksLoading] = useState(true)
   const [reviewsLoading, setReviewsLoading] = useState(true)
   const [commentsLoading, setCommentsLoading] = useState(true)
+  const [retryKey, setRetryKey] = useState(0)
+
+  const handleRetry = () => {
+    setRetryKey((k) => k + 1)
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -142,7 +152,7 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
     return () => {
       controller.abort()
     }
-  }, [pr.repo, pr.number, repoOptions])
+  }, [pr.repo, pr.number, repoOptions, retryKey])
 
   if (loading) {
     return (
@@ -168,6 +178,9 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
       <div className="pr-detail pr-detail--error">
         <FileCode2 size={24} />
         <span>Failed to load PR details</span>
+        <button className="pr-detail__retry-button" onClick={handleRetry}>
+          Retry
+        </button>
       </div>
     )
   }
@@ -198,7 +211,7 @@ export function PRStationDetail({ pr, mergeability, onMerged }: PRStationDetailP
               <span
                 key={label.name}
                 className="pr-detail__label"
-                style={{ background: `#${label.color}` }}
+                style={{ background: safeLabelColor(label.color) }}
               >
                 {label.name}
               </span>

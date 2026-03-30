@@ -65,7 +65,21 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
       if (!raw) return
       const parsed = JSON.parse(raw) as Record<string, PendingComment[]>
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        set({ pendingComments: parsed })
+        // Validate structure of individual PendingComment entries
+        const validated: Record<string, PendingComment[]> = {}
+        for (const [key, comments] of Object.entries(parsed)) {
+          if (Array.isArray(comments)) {
+            validated[key] = comments.filter(
+              (c) =>
+                typeof c.id === 'string' &&
+                typeof c.path === 'string' &&
+                typeof c.body === 'string' &&
+                typeof c.line === 'number' &&
+                (c.side === 'LEFT' || c.side === 'RIGHT')
+            )
+          }
+        }
+        set({ pendingComments: validated })
       }
     } catch {
       // Corrupt localStorage — ignore and start fresh
@@ -75,6 +89,16 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
 
 // Auto-persist to localStorage whenever pendingComments changes (debounced 500ms)
 let persistTimer: ReturnType<typeof setTimeout> | null = null
+
+function flushToStorage() {
+  if (persistTimer) clearTimeout(persistTimer)
+  try {
+    const state = usePendingReviewStore.getState()
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.pendingComments))
+  } catch {
+    // Storage quota exceeded or unavailable — ignore
+  }
+}
 
 usePendingReviewStore.subscribe((state) => {
   if (persistTimer) clearTimeout(persistTimer)
@@ -86,3 +110,6 @@ usePendingReviewStore.subscribe((state) => {
     }
   }, 500)
 })
+
+// Flush immediately on window close to prevent data loss
+window.addEventListener('beforeunload', flushToStorage)

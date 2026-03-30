@@ -413,6 +413,22 @@ function PlainDiffContent({
 
 // ─── Main DiffViewer ─────────────────────────────────────
 
+function VirtualizedDiffBanner({ onForceFullDiff }: { onForceFullDiff: () => void }) {
+  return (
+    <div className="diff-virtualized-banner">
+      <span className="diff-virtualized-banner__text">
+        Large diff — commenting disabled in virtualized mode.
+      </span>
+      <button
+        className="diff-virtualized-banner__button bde-btn bde-btn--sm"
+        onClick={onForceFullDiff}
+      >
+        Load full diff to enable comments
+      </button>
+    </div>
+  )
+}
+
 interface DiffViewerProps {
   files: DiffFile[]
   comments?: PrComment[]
@@ -437,11 +453,12 @@ function DiffViewer({
   const hunkRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const [activeFileIndex, setActiveFileIndex] = useState(-1)
   const [activeHunk, setActiveHunk] = useState<HunkAddress | null>(null)
+  const [forceFullDiff, setForceFullDiff] = useState(false)
   const activeView = usePanelLayoutStore((s) => s.activeView)
 
   const totalLines = useMemo(() => countDiffLines(files), [files])
   const hasComments = comments.length > 0
-  const useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments
+  const useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments && !forceFullDiff
 
   // Build comments-by-position map
   const commentsByPosition = useMemo(() => {
@@ -660,10 +677,13 @@ function DiffViewer({
     )
   }
 
+  const shouldShowBanner = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments && !forceFullDiff
+
   return (
     <div className="diff-view-container">
       <FileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
       <div className="diff-content" ref={containerRef}>
+        {shouldShowBanner && <VirtualizedDiffBanner onForceFullDiff={() => setForceFullDiff(true)} />}
         {useVirtualization ? (
           <VirtualizedDiffContent
             rows={flatRows}
