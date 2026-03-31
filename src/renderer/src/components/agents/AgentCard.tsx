@@ -3,11 +3,12 @@
  * Used in the AgentList sidebar.
  */
 import { useState, useEffect } from 'react'
-import { Bot, Cpu, Clock } from 'lucide-react'
+import { Bot, Cpu, Clock, X } from 'lucide-react'
 import type { AgentMeta } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
 import { NeonCard } from '../neon/NeonCard'
 import { type NeonAccent, neonVar } from '../neon/types'
+import { toast } from '../../stores/toasts'
 
 interface AgentCardProps {
   agent: AgentMeta
@@ -45,6 +46,18 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
     return () => clearInterval(id)
   }, [isRunning])
 
+  const handleKill = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      // Pipeline agents are keyed by sprintTaskId in AgentManager, adhoc agents by id
+      const killId = agent.sprintTaskId ?? agent.id
+      await window.api.killAgent(killId)
+      toast.success('Agent stopped')
+    } catch (err) {
+      toast.error(`Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }
+
   return (
     <button
       onClick={onClick}
@@ -69,7 +82,7 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
-          {/* Top row: status dot + task title */}
+          {/* Top row: status dot + task title + kill button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
             <span
               style={{
@@ -94,6 +107,38 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
             >
               {agent.task.slice(0, 80)}
             </span>
+            {isRunning && (
+              <button
+                onClick={handleKill}
+                title="Stop agent"
+                aria-label="Stop agent"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 18,
+                  height: 18,
+                  padding: 0,
+                  background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
+                  border: `1px solid ${neonVar('red', 'border')}`,
+                  borderRadius: tokens.radius.sm,
+                  cursor: 'pointer',
+                  color: neonVar('red', 'color'),
+                  flexShrink: 0,
+                  transition: tokens.transition.fast
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = neonVar('red', 'surface')
+                  e.currentTarget.style.boxShadow = `0 0 8px ${neonVar('red', 'glow')}`
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--neon-surface-deep, rgba(10,0,21,0.4))'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
           {/* Bottom row: meta info */}
           <div

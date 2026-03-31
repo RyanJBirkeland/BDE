@@ -3,6 +3,14 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AgentCard } from '../AgentCard'
 import type { AgentMeta } from '../../../../../shared/types'
+import { toast } from '../../../stores/toasts'
+
+vi.mock('../../../stores/toasts', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn()
+  }
+}))
 
 function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
   return {
@@ -35,6 +43,9 @@ describe('AgentCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    window.api = {
+      killAgent: vi.fn().mockResolvedValue({ ok: true })
+    } as any
   })
 
   it('renders agent task name', () => {
@@ -60,7 +71,8 @@ describe('AgentCard', () => {
     const onClick = vi.fn()
     const agent = makeAgent()
     render(<AgentCard {...defaultProps} agent={agent} onClick={onClick} />)
-    await user.click(screen.getByRole('button'))
+    // Click on the task text (part of the outer button) to avoid clicking the kill button
+    await user.click(screen.getByText('Fix the login bug'))
     expect(onClick).toHaveBeenCalledOnce()
   })
 
@@ -158,5 +170,80 @@ describe('AgentCard', () => {
     const agent = makeAgent({ status: 'cancelled', finishedAt: new Date().toISOString() })
     render(<AgentCard {...defaultProps} agent={agent} />)
     expect(screen.getByText('Fix the login bug')).toBeInTheDocument()
+  })
+
+  it('shows kill button for running agents', () => {
+    const agent = makeAgent({ status: 'running' })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByLabelText('Stop agent')).toBeInTheDocument()
+  })
+
+  it('does not show kill button for done agents', () => {
+    const agent = makeAgent({ status: 'done', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.queryByLabelText('Stop agent')).not.toBeInTheDocument()
+  })
+
+  it('does not show kill button for failed agents', () => {
+    const agent = makeAgent({ status: 'failed', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.queryByLabelText('Stop agent')).not.toBeInTheDocument()
+  })
+
+  it('calls window.api.killAgent with agent.id for adhoc agents', async () => {
+    const user = userEvent.setup()
+    const agent = makeAgent({ status: 'running', id: 'agent-123', sprintTaskId: null })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+
+    const killButton = screen.getByLabelText('Stop agent')
+    await user.click(killButton)
+
+    expect(window.api.killAgent).toHaveBeenCalledWith('agent-123')
+  })
+
+  it('calls window.api.killAgent with sprintTaskId for pipeline agents', async () => {
+    const user = userEvent.setup()
+    const agent = makeAgent({ status: 'running', id: 'agent-123', sprintTaskId: 'task-456' })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+
+    const killButton = screen.getByLabelText('Stop agent')
+    await user.click(killButton)
+
+    expect(window.api.killAgent).toHaveBeenCalledWith('task-456')
+  })
+
+  it('shows success toast when agent is stopped successfully', async () => {
+    const user = userEvent.setup()
+    const agent = makeAgent({ status: 'running' })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+
+    const killButton = screen.getByLabelText('Stop agent')
+    await user.click(killButton)
+
+    expect(toast.success).toHaveBeenCalledWith('Agent stopped')
+  })
+
+  it('shows error toast when stopping agent fails', async () => {
+    const user = userEvent.setup()
+    window.api.killAgent = vi.fn().mockRejectedValue(new Error('Agent not found'))
+    const agent = makeAgent({ status: 'running' })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+
+    const killButton = screen.getByLabelText('Stop agent')
+    await user.click(killButton)
+
+    expect(toast.error).toHaveBeenCalledWith('Failed to stop agent: Agent not found')
+  })
+
+  it('does not call onClick when kill button is clicked', async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    const agent = makeAgent({ status: 'running' })
+    render(<AgentCard {...defaultProps} agent={agent} onClick={onClick} />)
+
+    const killButton = screen.getByLabelText('Stop agent')
+    await user.click(killButton)
+
+    expect(onClick).not.toHaveBeenCalled()
   })
 })
