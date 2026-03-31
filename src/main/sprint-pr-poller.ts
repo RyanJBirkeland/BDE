@@ -58,9 +58,11 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
         }
       } else if (result.state === 'CLOSED') {
         const ids = deps.markTaskCancelledByPrNumber(prNumber)
-        log.info(`[sprint-pr-poller] PR #${prNumber} closed — cancelled ${ids.length} task(s): ${ids.join(', ') || '(none)'}`)
-        if (deps.onTaskTerminal) {
-          for (const id of ids) deps.onTaskTerminal(id, 'cancelled')
+        if (ids.length > 0) {
+          log.info(`[sprint-pr-poller] PR #${prNumber} closed — cancelled ${ids.length} task(s): ${ids.join(', ')}`)
+          if (deps.onTaskTerminal) {
+            for (const id of ids) deps.onTaskTerminal(id, 'cancelled')
+          }
         }
       }
       deps.updateTaskMergeableState(prNumber, result.mergeableState)

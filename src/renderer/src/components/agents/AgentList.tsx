@@ -14,6 +14,7 @@ interface AgentListProps {
   agents: AgentMeta[]
   selectedId: string | null
   onSelect: (id: string) => void
+  onKill?: () => void
   filter?: string
   loading?: boolean
 }
@@ -104,7 +105,7 @@ function GroupHeader({
   )
 }
 
-export function AgentList({ agents, selectedId, onSelect, filter, loading }: AgentListProps) {
+export function AgentList({ agents, selectedId, onSelect, onKill, filter, loading }: AgentListProps) {
   const [searchText, setSearchText] = useState(filter ?? '')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -212,6 +213,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
                 agent={a}
                 selected={a.id === selectedId}
                 onClick={() => onSelect(a.id)}
+                onKill={onKill}
               />
             ))}
           </div>
@@ -232,6 +234,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
                 agent={a}
                 selected={a.id === selectedId}
                 onClick={() => onSelect(a.id)}
+                onKill={onKill}
               />
             ))}
           </div>
@@ -252,6 +255,7 @@ export function AgentList({ agents, selectedId, onSelect, filter, loading }: Age
                   agent={a}
                   selected={a.id === selectedId}
                   onClick={() => onSelect(a.id)}
+                  onKill={onKill}
                 />
               ))}
           </div>
