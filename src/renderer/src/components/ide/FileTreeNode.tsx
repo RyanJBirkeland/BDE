@@ -52,7 +52,9 @@ export function FileTreeNode({
   const isActive = activeFilePath === fullPath
 
   // IDE-13: Listen for filesystem changes and refresh expanded directories
+  // Only subscribe when this is an expanded directory to avoid listener leak
   useEffect(() => {
+    if (type !== 'directory' || !isExpanded) return
     const cleanup = window.api.onDirChanged((changedPath: string) => {
       // Refresh if this directory or a parent directory changed
       if (fullPath === changedPath || fullPath.startsWith(changedPath + '/')) {
@@ -60,7 +62,7 @@ export function FileTreeNode({
       }
     })
     return cleanup
-  }, [fullPath])
+  }, [fullPath, type, isExpanded])
 
   useEffect(() => {
     if (type === 'directory' && isExpanded) {

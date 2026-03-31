@@ -57,10 +57,9 @@ export function registerAgentHandlers(am?: AgentManager): void {
       if (am) {
         const result = await am.steerAgent(agentId, message)
         if (result.delivered) return { ok: true }
-        // If agent not found in AM, fall through to runner-client
-        if (result.error !== 'Agent not found') return { ok: false, error: result.error }
+        return { ok: false, error: result.error }
       }
-      // Fall back to runner-client
+      // Fall back to runner-client only when no local AgentManager
       return steerAgent(agentId, message)
     }
   )
