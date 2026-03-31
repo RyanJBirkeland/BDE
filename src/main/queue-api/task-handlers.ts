@@ -178,7 +178,8 @@ export async function handleCreateTask(
     return
   }
 
-  const { title, repo, depends_on } = body as Record<string, unknown>
+  const { title, repo, depends_on, dependsOn: dependsOnCamel } = body as Record<string, unknown>
+  const resolvedDeps = depends_on ?? dependsOnCamel
   if (typeof title !== 'string' || !title.trim()) {
     sendJson(res, 400, { error: 'title is required' })
     return
@@ -188,11 +189,11 @@ export async function handleCreateTask(
     return
   }
 
-  // Shared structural validation + dependency auto-blocking
-  const bodyObj = body as Record<string, unknown>
+  // Normalize body so depends_on is always set (supports both snake_case and camelCase from callers)
+  const bodyObj: Record<string, unknown> = { ...(body as Record<string, unknown>), depends_on: resolvedDeps }
   const { spec } = bodyObj
   const validation = validateTaskCreation(
-    body as Parameters<typeof createTask>[0],
+    bodyObj as unknown as Parameters<typeof createTask>[0],
     { logger: { warn: (...args: unknown[]) => logger.warn(String(args[0])) } }
   )
   if (!validation.valid) {
@@ -225,13 +226,13 @@ export async function handleCreateTask(
   }
 
   // Queue API-specific: validate depends_on shape
-  if (depends_on !== null && depends_on !== undefined) {
-    if (!Array.isArray(depends_on)) {
+  if (resolvedDeps !== null && resolvedDeps !== undefined) {
+    if (!Array.isArray(resolvedDeps)) {
       sendJson(res, 400, { error: 'depends_on must be an array or null' })
       return
     }
 
-    for (const dep of depends_on) {
+    for (const dep of resolvedDeps) {
       if (!dep || typeof dep !== 'object') {
         sendJson(res, 400, { error: 'Each dependency must be an object' })
         return
@@ -249,14 +250,14 @@ export async function handleCreateTask(
   }
 
   // Queue API-specific: validate dependencies for cycles and non-existent IDs
-  const dependsOn = (body as Record<string, unknown>).depends_on as
+  const resolvedDepsTyped = resolvedDeps as
     | Array<{ id: string; type: 'hard' | 'soft' }>
     | undefined
   const PENDING_TASK_ID = 'pending-new-task'
-  if (dependsOn && dependsOn.length > 0) {
+  if (resolvedDepsTyped && resolvedDepsTyped.length > 0) {
     const validationError = validateDependencies(
       PENDING_TASK_ID,
-      dependsOn as TaskDependency[]
+      resolvedDepsTyped as TaskDependency[]
     )
     if (validationError) {
       sendJson(res, 400, { error: validationError })
