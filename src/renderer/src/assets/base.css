@@ -417,6 +417,131 @@ html.theme-light {
   --glass-tint-ultra:  rgba(255, 255, 255, 0.50);
 }
 
+/* ── Warm Theme (Cream Palette) ─────────────────────── */
+
+html.theme-warm {
+  /* ── Core palette ───────────────────────────────────── */
+  --bde-bg: #EAE4DB;
+  --bde-surface: #F5F1EA;
+  --bde-surface-high: #FFFBF5;
+  --bde-border: #D4CBBF;
+  --bde-border-hover: #BFB5A9;
+  --bde-accent: #D4915C;
+  --bde-accent-dim: rgba(212, 145, 92, 0.15);
+  --bde-text: #3E3832;
+  --bde-text-muted: #6B6459;
+  --bde-text-dim: #9B9489;
+  --bde-danger: #C44A3D;
+  --bde-danger-dim: rgba(196, 74, 61, 0.15);
+
+  /* ── Interaction states ─────────────────────────────── */
+  --bde-hover: rgba(62, 56, 50, 0.04);
+  --bde-hover-strong: rgba(62, 56, 50, 0.06);
+  --bde-selected: rgba(62, 56, 50, 0.08);
+  --bde-hover-subtle: rgba(62, 56, 50, 0.03);
+  --bde-accent-hover: rgba(212, 145, 92, 0.10);
+  --bde-danger-hover: rgba(196, 74, 61, 0.10);
+  --bde-warning-hover: rgba(216, 155, 74, 0.12);
+  --bde-error-bg: rgba(196, 74, 61, 0.10);
+  --bde-overlay: rgba(62, 56, 50, 0.30);
+  --bde-header-gradient: linear-gradient(90deg, rgba(212, 145, 92, 0.3) 0%, rgba(212, 145, 92, 0.1) 60%, transparent 100%);
+  --bde-danger-gradient: linear-gradient(90deg, rgba(196, 74, 61, 0.3) 0%, rgba(196, 74, 61, 0.1) 60%, transparent 100%);
+  --bde-warning-gradient: linear-gradient(90deg, rgba(216, 155, 74, 0.3) 0%, rgba(216, 155, 74, 0.1) 60%, transparent 100%);
+
+  /* ── Semantic colors ────────────────────────────────── */
+  --bde-danger-text: #C44A3D;
+  --bde-warning: #D89B4A;
+  --bde-warning-dim: rgba(216, 155, 74, 0.15);
+  --bde-info: #D4915C;
+  --bde-info-dim: rgba(212, 145, 92, 0.15);
+  --bde-success: #D4915C;
+  --bde-subagent: #D4915C;
+  --bde-purple: #D4915C;
+  --bde-purple-dim: rgba(212, 145, 92, 0.15);
+
+  /* ── Diff colors ────────────────────────────────────── */
+  --bde-diff-add: #A87448;
+  --bde-diff-del: #C44A3D;
+  --bde-diff-mod: #D89B4A;
+  --bde-diff-add-bg: rgba(212, 145, 92, 0.15);
+  --bde-diff-del-bg: rgba(196, 74, 61, 0.12);
+
+  /* ── Shadows ────────────────────────────────────────── */
+  --bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.15);
+  --bde-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.17);
+  --bde-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.20);
+
+  /* ── Button & glass ───────────────────────────────── */
+  --bde-btn-primary-text: #FFFFFF;
+  --bde-glass-bg: rgba(62, 56, 50, 0.04);
+  --bde-glass-bg-hover: rgba(62, 56, 50, 0.08);
+  --bde-glass-bg-active: rgba(62, 56, 50, 0.06);
+
+  /* ── Visual Identity v2 — Backgrounds ───────────────── */
+  --bg-void:    #E0DAD1;
+  --bg-base:    #EAE4DB;
+  --bg-surface: #F5F1EA;
+  --bg-card:    #FFFBF5;
+  --bg-hover:   rgba(62, 56, 50, 0.04);
+  --bg-active:  rgba(62, 56, 50, 0.06);
+
+  /* ── v2 — Borders ───────────────────────────────────── */
+  --border:       #D4CBBF;
+  --border-light: #BFB5A9;
+  --border-glow:  #D4915C;
+
+  /* ── v2 — Text ──────────────────────────────────────── */
+  --text-primary:   #3E3832;
+  --text-secondary: #6B6459;
+  --text-muted:     #9B9489;
+  --text-ghost:     rgba(62, 56, 50, 0.4);
+
+  /* ── v2 — Accent ────────────────────────────────────── */
+  --accent:         #D4915C;
+  --accent-bright:  #E4A16C;
+  --accent-dim:     #A87448;
+  --accent-subtle:  rgba(212, 145, 92, 0.08);
+  --accent-muted:   rgba(212, 145, 92, 0.15);
+  --accent-glow:    rgba(212, 145, 92, 0.25);
+  --accent-flare:   rgba(212, 145, 92, 0.40);
+
+  /* ── v2 — Semantic ──────────────────────────────────── */
+  --color-running: #D4915C;
+  --color-warning: #D89B4A;
+  --color-error:   #C44A3D;
+  --color-info:    #D4915C;
+  --color-ai:      #D4915C;
+  --color-queued:  #D4915C;
+
+  /* ── v2 — Gradients ─────────────────────────────────── */
+  --gradient-aurora:    linear-gradient(135deg, #D4915C 0%, #C88050 100%);
+  --gradient-electric:  linear-gradient(135deg, #D4915C 0%, #C88050 50%, #B87044 100%);
+  --gradient-solar:     linear-gradient(135deg, #D89B4A 0%, #CC8F3E 100%);
+  --gradient-ember:     linear-gradient(135deg, #C44A3D 0%, #B84437 100%);
+  --gradient-frost: linear-gradient(
+    180deg,
+    rgba(212, 145, 92, 0.06) 0%,
+    rgba(212, 145, 92, 0.02) 100%
+  );
+  --gradient-midnight: linear-gradient(
+    180deg,
+    rgba(234, 228, 219, 0.95) 0%,
+    rgba(245, 241, 234, 0.98) 100%
+  );
+  --gradient-scanline: linear-gradient(
+    180deg,
+    rgba(62, 56, 50, 0.02) 0%,
+    rgba(62, 56, 50, 0.02) 50%,
+    rgba(62, 56, 50, 0.0) 100%
+  );
+
+  /* ── v2 — Glass tints ───────────────────────────────── */
+  --glass-tint-dark:   rgba(245, 241, 234, 0.75);
+  --glass-tint-mid:    rgba(245, 241, 234, 0.70);
+  --glass-tint-light:  rgba(245, 241, 234, 0.60);
+  --glass-tint-ultra:  rgba(245, 241, 234, 0.50);
+}
+
 /* ── Scrollbars ──────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

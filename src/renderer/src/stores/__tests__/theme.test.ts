@@ -5,7 +5,7 @@ describe('theme store', () => {
   beforeEach(() => {
     useThemeStore.setState({ theme: 'dark' })
     localStorage.clear()
-    document.documentElement.classList.remove('theme-light')
+    document.documentElement.classList.remove('theme-light', 'theme-warm')
   })
 
   it('setTheme to dark updates state', () => {
@@ -40,9 +40,31 @@ describe('theme store', () => {
     expect(useThemeStore.getState().theme).toBe('light')
   })
 
-  it('toggleTheme flips light to dark', () => {
+  it('toggleTheme cycles light to warm', () => {
     useThemeStore.setState({ theme: 'light' })
     useThemeStore.getState().toggleTheme()
+    expect(useThemeStore.getState().theme).toBe('warm')
+  })
+
+  it('toggleTheme cycles warm to dark', () => {
+    useThemeStore.setState({ theme: 'warm' })
+    useThemeStore.getState().toggleTheme()
     expect(useThemeStore.getState().theme).toBe('dark')
+  })
+
+  it('setTheme to warm updates state', () => {
+    useThemeStore.getState().setTheme('warm')
+    expect(useThemeStore.getState().theme).toBe('warm')
+  })
+
+  it('setTheme warm adds theme-warm class to document', () => {
+    useThemeStore.getState().setTheme('warm')
+    expect(document.documentElement.classList.contains('theme-warm')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+  })
+
+  it('setTheme warm persists to localStorage', () => {
+    useThemeStore.getState().setTheme('warm')
+    expect(localStorage.getItem('bde-theme')).toBe('warm')
   })
 })

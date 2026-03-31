@@ -319,7 +319,7 @@ export function AgentsView() {
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              color: 'rgba(255, 255, 255, 0.3)',
+              color: 'var(--neon-text-dim)',
               fontSize: '9px',
               marginTop: '4px',
               fontFamily: 'var(--bde-font-code)'

@@ -45,7 +45,7 @@ export function AgentPill({ agent, currentAction, accent, onClick }: AgentPillPr
       <span className="agent-pill__name">{truncate(agent.task, 20)}</span>
       {currentAction && (
         <>
-          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>·</span>
+          <span style={{ color: 'var(--neon-text-dim)' }}>·</span>
           <span className="agent-pill__action">{truncate(currentAction, 30)}</span>
         </>
       )}

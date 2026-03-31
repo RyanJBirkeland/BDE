@@ -104,7 +104,7 @@
 .agent-pill__name {
   font-weight: 600;
   font-size: 12px;
-  color: #fff;
+  color: var(--neon-text);
 }
 
 .agent-pill__action {
@@ -373,7 +373,7 @@
   flex: 1;
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--neon-text);
   font-family: var(--bde-font-code);
   font-size: 13px;
   outline: none;
@@ -420,7 +420,7 @@
 .command-autocomplete__item:hover,
 .command-autocomplete__item--active {
   background: var(--neon-purple-surface);
-  color: #fff;
+  color: var(--neon-text);
 }
 
 .command-autocomplete__item-command {

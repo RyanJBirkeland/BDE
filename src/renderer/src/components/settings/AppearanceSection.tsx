@@ -80,6 +80,13 @@ export function AppearanceSection(): React.JSX.Element {
           >
             Light
           </button>
+          <button
+            className={`bde-btn bde-btn--sm ${theme === 'warm' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+            onClick={() => setTheme('warm')}
+            type="button"
+          >
+            Warm
+          </button>
         </div>
       </div>
       <div className="settings-field">
