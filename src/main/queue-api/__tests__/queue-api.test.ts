@@ -404,6 +404,34 @@ describe('Queue API', () => {
       })
       expect(mockDeleteTask).not.toHaveBeenCalled()
     })
+
+    it('accepts camelCase dependsOn as alias for depends_on', async () => {
+      const created = {
+        id: 'new-2',
+        title: 'Task with camel deps',
+        repo: 'my-repo',
+        depends_on: [{ id: 'task-a', type: 'hard' }]
+      }
+      mockCreateTask.mockReturnValue(created)
+      mockGetTasksWithDependencies.mockReturnValue([
+        { id: 'task-a', depends_on: null, status: 'done' }
+      ])
+      mockGetAllTaskIds.mockReturnValue(new Set(['task-a']))
+      mockListTasks.mockReturnValue([{ id: 'task-a', depends_on: null, status: 'done' }])
+
+      const { status, body } = await request('POST', '/queue/tasks', {
+        title: 'Task with camel deps',
+        repo: 'my-repo',
+        dependsOn: [{ id: 'task-a', type: 'hard' }]
+      })
+      expect(status).toBe(201)
+      expect(body).toEqual({
+        id: 'new-2',
+        title: 'Task with camel deps',
+        repo: 'my-repo',
+        dependsOn: [{ id: 'task-a', type: 'hard' }]
+      })
+    })
   })
 
   describe('PATCH /queue/tasks/:id/status', () => {

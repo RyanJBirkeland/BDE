@@ -162,7 +162,11 @@ export async function runAgent(
       claimed_by: null
     })
     await onTaskTerminal(task.id, 'error')
-    await cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch, logger })
+    try {
+      await cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch, logger })
+    } catch (cleanupErr) {
+      logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
+    }
     return
   }
 
@@ -211,7 +215,11 @@ export async function runAgent(
       logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${updateErr}`)
     }
     await onTaskTerminal(task.id, 'error')
-    await cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch, logger })
+    try {
+      await cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch, logger })
+    } catch (cleanupErr) {
+      logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
+    }
     return
   }
 
@@ -372,6 +380,8 @@ export async function runAgent(
       repoPath,
       worktreePath: worktree.worktreePath,
       branch: worktree.branch
+    }).catch((cleanupErr: unknown) => {
+      logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
     })
     return
   }
@@ -459,6 +469,8 @@ export async function runAgent(
     repoPath,
     worktreePath: worktree.worktreePath,
     branch: worktree.branch
+  }).catch((cleanupErr: unknown) => {
+    logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
   })
 
   logger.info(`[agent-manager] Agent completed for task ${task.id} (${ffResult})`)

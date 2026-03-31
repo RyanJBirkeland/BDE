@@ -18,7 +18,7 @@ vi.mock('../fast-fail', () => ({
 }))
 
 vi.mock('../worktree', () => ({
-  cleanupWorktree: vi.fn()
+  cleanupWorktree: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../sdk-adapter', () => ({

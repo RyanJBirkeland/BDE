@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { PanelLeftOpen } from 'lucide-react'
@@ -128,6 +128,7 @@ export function IDEView(): React.JSX.Element {
 
   const activeTab = openTabs.find((t) => t.id === activeTabId) ?? null
   const { confirmUnsaved, confirmProps } = useUnsavedDialog()
+  const savingPaths = useRef(new Set<string>())
 
   // IDE-5, IDE-7, IDE-8, IDE-9: Load file content from store with proper error handling and loading states
   useEffect(() => {
@@ -156,12 +157,15 @@ export function IDEView(): React.JSX.Element {
     const content = fileContents[activeTab.filePath]
     if (content === undefined) return
     const { filePath, id } = activeTab
-
+    if (savingPaths.current.has(filePath)) return // Already saving this file
+    savingPaths.current.add(filePath)
     try {
       await window.api.writeFile(filePath, content)
       setDirty(id, false)
     } catch (err) {
       toast.error(`Save failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      savingPaths.current.delete(filePath)
     }
   }, [activeTab, fileContents, setDirty])
 

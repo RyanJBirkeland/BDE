@@ -71,8 +71,8 @@ export async function runSdkStreaming(
     activeStreams.delete(streamId)
   }
 
-  if (timedOut) {
-    throw new Error(`SDK streaming timed out after ${timeoutMs / 1000}s`)
+  if (timedOut && !fullText.trim()) {
+    throw new Error(`SDK streaming timed out after ${timeoutMs / 1000}s with no output`)
   }
 
   return fullText.trim()

@@ -26,7 +26,7 @@ export interface ClaimRequest {
 }
 
 export interface StatusUpdateRequest {
-  status: 'queued' | 'active' | 'done' | 'failed' | 'cancelled' | 'error'
+  status: 'queued' | 'blocked' | 'active' | 'done' | 'failed' | 'cancelled' | 'error'
   prUrl?: string
   prNumber?: number
   prStatus?: 'open' | 'merged' | 'closed' | 'draft'

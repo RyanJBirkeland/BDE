@@ -78,4 +78,11 @@ describe('SpecPanel', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.getByText(/Initial spec content/)).toBeInTheDocument()
   })
+
+  it('overlay has dialog role and aria-modal', () => {
+    render(<SpecPanel {...makeProps()} />)
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toHaveAttribute('aria-label', 'Spec — My Task Title')
+  })
 })

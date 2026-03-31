@@ -185,6 +185,9 @@ export const useIDEStore = create<IDEState>((set) => ({
       const idx = s.openTabs.findIndex((t) => t.id === tabId)
       if (idx === -1) return s
 
+      // Capture the closed tab's path before filtering
+      const closedPath = s.openTabs[idx].filePath
+
       const newTabs = s.openTabs.filter((t) => t.id !== tabId)
 
       // Update display names for remaining tabs (handles duplicate resolution)
@@ -204,7 +207,27 @@ export const useIDEStore = create<IDEState>((set) => ({
         }
       }
 
-      return { openTabs: updatedTabs, activeTabId: newActiveTabId }
+      // Evict file content if no other tab references the same file
+      const stillOpen = updatedTabs.some((t) => t.filePath === closedPath)
+      const newContents = stillOpen
+        ? s.fileContents
+        : (() => {
+            const { [closedPath]: _, ...rest } = s.fileContents
+            return rest
+          })()
+      const newLoading = stillOpen
+        ? s.fileLoadingStates
+        : (() => {
+            const { [closedPath]: _, ...rest } = s.fileLoadingStates
+            return rest
+          })()
+
+      return {
+        openTabs: updatedTabs,
+        activeTabId: newActiveTabId,
+        fileContents: newContents,
+        fileLoadingStates: newLoading
+      }
     })
   },
 

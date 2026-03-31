@@ -40,16 +40,14 @@ export function FileTreeNode({
 }: FileTreeNodeProps): React.JSX.Element {
   const expandedDirs = useIDEStore((s) => s.expandedDirs)
   const toggleDir = useIDEStore((s) => s.toggleDir)
-  // Derive activeFilePath instead of subscribing to full openTabs array
-  const activeFilePath = useIDEStore((s) => {
+  const isActive = useIDEStore((s) => {
     const activeTab = s.openTabs.find((t) => t.id === s.activeTabId)
-    return activeTab?.filePath ?? null
+    return activeTab?.filePath === fullPath
   })
   const [children, setChildren] = useState<DirEntry[]>([])
   const [loadError, setLoadError] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const isExpanded = expandedDirs[fullPath] ?? false
-  const isActive = activeFilePath === fullPath
 
   // IDE-13: Listen for filesystem changes and refresh expanded directories
   // Only subscribe when this is an expanded directory to avoid listener leak
