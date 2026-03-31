@@ -554,10 +554,10 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
         ).run('cancelled', completedAt, prNumber, 'active')
       }
 
-      // Get tasks where pr_status will change for audit
+      // Get ALL tasks where pr_status will change for audit (any status, not just done)
       const prStatusAffected = db
         .prepare(
-          "SELECT * FROM sprint_tasks WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'"
+          "SELECT * FROM sprint_tasks WHERE pr_number = ? AND pr_status = 'open'"
         )
         .all(prNumber) as Array<Record<string, unknown>>
 
@@ -578,9 +578,9 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
         }
       }
 
-      // Set pr_status to closed for done tasks with open PRs
+      // Set pr_status to closed for ALL tasks with this PR number that still show open
       db.prepare(
-        "UPDATE sprint_tasks SET pr_status = 'closed' WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'"
+        "UPDATE sprint_tasks SET pr_status = 'closed' WHERE pr_number = ? AND pr_status = 'open'"
       ).run(prNumber)
 
       return affectedIds

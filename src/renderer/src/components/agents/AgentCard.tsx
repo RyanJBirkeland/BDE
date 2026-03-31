@@ -14,6 +14,7 @@ interface AgentCardProps {
   agent: AgentMeta
   selected: boolean
   onClick: () => void
+  onKill?: () => void
 }
 
 const STATUS_ACCENTS: Record<string, NeonAccent> = {
@@ -33,7 +34,7 @@ function formatDuration(startedAt: string, finishedAt: string | null): string {
   return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`
 }
 
-export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
+export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps) {
   const accent = STATUS_ACCENTS[agent.status] ?? 'purple'
   const isRunning = agent.status === 'running'
   const SourceIcon = agent.source === 'bde' ? Bot : Cpu
@@ -53,6 +54,8 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
       const killId = agent.sprintTaskId ?? agent.id
       await window.api.killAgent(killId)
       toast.success('Agent stopped')
+      // Give the backend a moment to update DB status, then refresh the list
+      setTimeout(() => onKill?.(), 500)
     } catch (err) {
       toast.error(`Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }

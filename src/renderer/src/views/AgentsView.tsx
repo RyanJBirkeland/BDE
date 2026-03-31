@@ -274,6 +274,7 @@ export function AgentsView() {
             agents={agents}
             selectedId={selectedId}
             onSelect={handleSelectAgent}
+            onKill={fetchAgents}
             loading={agentsLoading}
           />
         </div>
