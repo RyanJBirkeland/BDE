@@ -43,6 +43,12 @@ declare global {
         delete: (...args: IpcArgs<'settings:delete'>) => Promise<IpcResult<'settings:delete'>>
       }
 
+      // Claude CLI config (~/.claude/settings.json)
+      claudeConfig: {
+        get: () => Promise<IpcResult<'claude:getConfig'>>
+        setPermissions: (permissions: { allow: string[]; deny: string[] }) => Promise<IpcResult<'claude:setPermissions'>>
+      }
+
       // GitHub API proxy — all GitHub REST calls routed through main process
       github: {
         fetch: (path: string, init?: GitHubFetchInit) => Promise<IpcResult<'github:fetch'>>
