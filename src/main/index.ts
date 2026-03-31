@@ -21,6 +21,7 @@ import { registerIdeFsHandlers } from './handlers/ide-fs-handlers'
 import { registerPlaygroundHandlers } from './handlers/playground-handlers'
 import { registerDashboardHandlers } from './handlers/dashboard-handlers'
 import { registerSynthesizerHandlers } from './handlers/synthesizer-handlers'
+import { registerClaudeConfigHandlers } from './handlers/claude-config-handlers'
 import { getDb, closeDb, backupDatabase } from './db'
 import { importSprintTasksFromSupabase } from './data/supabase-import'
 import { startPrPoller, stopPrPoller } from './pr-poller'
@@ -203,6 +204,7 @@ app.whenReady().then(() => {
   registerPlaygroundHandlers()
   registerDashboardHandlers()
   registerTearoffHandlers()
+  registerClaudeConfigHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const connectSrc = buildConnectSrc()

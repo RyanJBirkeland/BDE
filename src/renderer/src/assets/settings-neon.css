@@ -196,3 +196,91 @@
 .settings-field__status {
   color: var(--neon-text-muted);
 }
+
+/* ── Agent Permissions ─────────────────────────────── */
+.permissions-banner {
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  color: var(--neon-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.permissions-banner p {
+  margin: 0 0 8px;
+}
+
+.permissions-banner__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.permissions-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.permissions-tool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.permissions-tool__name {
+  font-weight: 600;
+  color: var(--neon-text);
+  min-width: 100px;
+}
+
+.permissions-tool__desc {
+  color: var(--neon-text-muted);
+  font-size: 12px;
+}
+
+.permissions-deny-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.permissions-deny-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.permissions-deny-rule code {
+  color: var(--neon-red);
+  font-family: var(--bde-font-code);
+}
+
+.permissions-deny-rule button {
+  background: none;
+  border: none;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+}
+
+.permissions-deny-rule button:hover {
+  color: var(--neon-red);
+}
+
+.permissions-info {
+  font-size: 11px;
+  color: var(--neon-text-dim);
+  line-height: 1.5;
+}

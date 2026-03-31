@@ -4,12 +4,13 @@
  */
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Palette, Plug, GitBranch, FileText, Bot, Info, Cpu, DollarSign, Brain } from 'lucide-react'
+import { Palette, Plug, GitBranch, FileText, Bot, Info, Cpu, DollarSign, Brain, Shield } from 'lucide-react'
 import { AppearanceSection } from '../components/settings/AppearanceSection'
 import { ConnectionsSection } from '../components/settings/ConnectionsSection'
 import { RepositoriesSection } from '../components/settings/RepositoriesSection'
 import { TaskTemplatesSection } from '../components/settings/TaskTemplatesSection'
 import { AgentRuntimeSection } from '../components/settings/AgentRuntimeSection'
+import { AgentPermissionsSection } from '../components/settings/AgentPermissionsSection'
 import { AgentManagerSection } from '../components/settings/AgentManagerSection'
 import { CostSection } from '../components/settings/CostSection'
 import { MemorySection } from '../components/settings/MemorySection'
@@ -21,6 +22,7 @@ const TABS = [
   { id: 'repositories', label: 'Repositories', icon: GitBranch },
   { id: 'templates', label: 'Templates', icon: FileText },
   { id: 'agent', label: 'Agent', icon: Bot },
+  { id: 'permissions', label: 'Permissions', icon: Shield },
   { id: 'agentManager', label: 'Agent Manager', icon: Cpu },
   { id: 'cost', label: 'Cost', icon: DollarSign },
   { id: 'memory', label: 'Memory', icon: Brain },
@@ -35,6 +37,7 @@ const SECTION_MAP: Record<TabId, () => React.JSX.Element> = {
   repositories: RepositoriesSection,
   templates: TaskTemplatesSection,
   agent: AgentRuntimeSection,
+  permissions: AgentPermissionsSection,
   agentManager: AgentManagerSection,
   cost: CostSection,
   memory: MemorySection,

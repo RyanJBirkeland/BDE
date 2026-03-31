@@ -34,6 +34,9 @@ vi.mock('../../components/settings/TaskTemplatesSection', () => ({
 vi.mock('../../components/settings/AgentRuntimeSection', () => ({
   AgentRuntimeSection: () => <div data-testid="section-agent">Agent</div>
 }))
+vi.mock('../../components/settings/AgentPermissionsSection', () => ({
+  AgentPermissionsSection: () => <div data-testid="section-permissions">Permissions</div>
+}))
 vi.mock('../../components/settings/AgentManagerSection', () => ({
   AgentManagerSection: () => <div data-testid="section-agentManager">Agent Manager</div>
 }))
@@ -215,5 +218,11 @@ describe('SettingsView', () => {
     render(<SettingsView />)
     fireEvent.click(screen.getByRole('tab', { name: /Memory/ }))
     expect(screen.getByTestId('section-memory')).toBeInTheDocument()
+  })
+
+  it('renders Permissions section when tab clicked', () => {
+    render(<SettingsView />)
+    fireEvent.click(screen.getByRole('tab', { name: /Permissions/ }))
+    expect(screen.getByTestId('section-permissions')).toBeInTheDocument()
   })
 })

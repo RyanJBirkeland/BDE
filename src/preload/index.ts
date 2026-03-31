@@ -37,6 +37,13 @@ const api = {
     delete: (key: string) => typedInvoke('settings:delete', key)
   },
 
+  // Claude CLI config (~/.claude/settings.json)
+  claudeConfig: {
+    get: () => typedInvoke('claude:getConfig'),
+    setPermissions: (permissions: { allow: string[]; deny: string[] }) =>
+      typedInvoke('claude:setPermissions', permissions)
+  },
+
   // GitHub API proxy — all GitHub REST calls routed through main process
   github: {
     fetch: (path: string, init?: GitHubFetchInit) => typedInvoke('github:fetch', path, init)

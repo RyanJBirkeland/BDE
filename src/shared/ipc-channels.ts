@@ -502,6 +502,18 @@ export interface PlaygroundChannels {
   }
 }
 
+/** Claude CLI config (~/.claude/settings.json) */
+export interface ClaudeConfigChannels {
+  'claude:getConfig': {
+    args: []
+    result: { permissions?: { allow?: string[]; deny?: string[] }; [key: string]: unknown }
+  }
+  'claude:setPermissions': {
+    args: [{ allow: string[]; deny: string[] }]
+    result: void
+  }
+}
+
 /** Dashboard analytics */
 export interface CompletionBucket {
   hour: string
@@ -560,4 +572,5 @@ export type IpcChannelMap = SettingsChannels &
   PlaygroundChannels &
   DashboardChannels &
   SynthesizerChannels &
-  TearoffChannels
+  TearoffChannels &
+  ClaudeConfigChannels

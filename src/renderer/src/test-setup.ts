@@ -148,5 +148,9 @@ vi.stubGlobal('api', {
   dashboard: {
     completionsPerHour: vi.fn().mockResolvedValue([]),
     recentEvents: vi.fn().mockResolvedValue([])
+  },
+  claudeConfig: {
+    get: vi.fn().mockResolvedValue({}),
+    setPermissions: vi.fn().mockResolvedValue(undefined)
   }
 })
