@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Bash",
+      "Agent",
+      "WebFetch",
+      "WebSearch",
+      "NotebookEdit"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(sudo rm *)",
+      "Bash(sudo dd *)",
+      "Bash(mkfs*)",
+      "Bash(dd if=*)",
+      "Bash(chmod -R 777 /*)",
+      "Bash(:(){ :|:& };:)"
+    ]
+  }
+}

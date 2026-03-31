@@ -52,12 +52,12 @@ export async function spawnAdhocAgent(args: {
   })
 
   // Shared options for all turns (v1 Options — has cwd + settingSources)
+  // Uses settingSources to inherit user's permissions from ~/.claude/settings.json
+  // instead of bypassPermissions — agents respect the user's configured guardrails
   const baseOptions = {
     model,
     cwd: args.repoPath,
     env: env as Record<string, string>,
-    permissionMode: 'bypassPermissions' as const,
-    allowDangerouslySkipPermissions: true,
     settingSources: ['user' as const, 'project' as const, 'local' as const]
   }
 

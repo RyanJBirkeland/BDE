@@ -94,6 +94,9 @@ app.whenReady().then(() => {
 
   getDb()
 
+  // Ensure Claude Code has sensible default permissions for BDE agents
+  import('./claude-settings-bootstrap').then((m) => m.ensureClaudeSettings()).catch(() => {})
+
   // Run backup on startup and every 24 hours
   backupDatabase()
   const backupInterval = setInterval(backupDatabase, 24 * 60 * 60 * 1000)
