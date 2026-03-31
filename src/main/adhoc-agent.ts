@@ -77,9 +77,13 @@ export async function spawnAdhocAgent(args: {
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
       settingSources: ['user', 'project', 'local'],
-      // Keep session alive for multi-turn conversation — don't exit after
-      // the model's first response. Session ends via close() or abort.
-      maxTurns: Infinity
+      maxTurns: Infinity,
+      // Keep the SDK's stdin open for multi-turn conversation. The SDK calls
+      // transport.endInput() after streamInput() unless hasBidirectionalNeeds()
+      // is true. Providing canUseTool makes it return true, keeping the session
+      // alive for follow-up messages via streamInput(). Always returns true
+      // since we're in bypassPermissions mode.
+      canUseTool: async () => ({ behavior: 'allow' as const })
     }
   })
 
