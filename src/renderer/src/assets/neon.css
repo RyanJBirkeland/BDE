@@ -127,6 +127,62 @@ html.theme-light {
   --neon-surface-deep: rgba(200, 200, 220, 0.3);
 }
 
+/* ── Warm theme overrides (cream palette) ── */
+html.theme-warm {
+  /* Earthy, muted tones that complement the cream background */
+  --neon-cyan: #6b9d88;
+  --neon-cyan-glow: 0 0 6px rgba(107, 157, 136, 0.25);
+  --neon-cyan-surface: rgba(107, 157, 136, 0.1);
+  --neon-cyan-border: rgba(107, 157, 136, 0.25);
+
+  --neon-pink: #c88199;
+  --neon-pink-glow: 0 0 6px rgba(200, 129, 153, 0.25);
+  --neon-pink-surface: rgba(200, 129, 153, 0.1);
+  --neon-pink-border: rgba(200, 129, 153, 0.25);
+
+  --neon-blue: #7a9dbd;
+  --neon-blue-glow: 0 0 6px rgba(122, 157, 189, 0.25);
+  --neon-blue-surface: rgba(122, 157, 189, 0.1);
+  --neon-blue-border: rgba(122, 157, 189, 0.25);
+
+  --neon-purple: #a88bac;
+  --neon-purple-glow: 0 0 6px rgba(168, 139, 172, 0.25);
+  --neon-purple-surface: rgba(168, 139, 172, 0.1);
+  --neon-purple-border: rgba(168, 139, 172, 0.25);
+
+  --neon-orange: #d4915c;
+  --neon-orange-glow: 0 0 6px rgba(212, 145, 92, 0.25);
+  --neon-orange-surface: rgba(212, 145, 92, 0.1);
+  --neon-orange-border: rgba(212, 145, 92, 0.25);
+
+  --neon-red: #c44a3d;
+  --neon-red-glow: 0 0 6px rgba(196, 74, 61, 0.25);
+  --neon-red-surface: rgba(196, 74, 61, 0.1);
+  --neon-red-border: rgba(196, 74, 61, 0.25);
+
+  --neon-bg: #eae4db;
+  --neon-bg-gradient: radial-gradient(
+      ellipse at 30% 20%, rgba(212, 145, 92, 0.04) 0%, transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 80%, rgba(168, 139, 172, 0.03) 0%, transparent 50%
+    );
+
+  --neon-glass-blur: blur(16px) saturate(110%);
+  --neon-glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  --neon-glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+
+  --neon-scanline-opacity: 0;
+  --neon-particle-count: 0;
+
+  --neon-text: #3e3832;
+  --neon-text-muted: rgba(62, 56, 50, 0.6);
+  --neon-text-dim: rgba(62, 56, 50, 0.3);
+  --neon-surface-dim: rgba(62, 56, 50, 0.04);
+  --neon-surface-subtle: rgba(62, 56, 50, 0.08);
+  --neon-surface-deep: rgba(212, 145, 92, 0.2);
+}
+
 /* ═══════════════════════════════════════════════════════
    Keyframe Animations
    ═══════════════════════════════════════════════════════ */
