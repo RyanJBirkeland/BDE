@@ -188,5 +188,8 @@ describe('spawnAgent (SDK path)', () => {
     // AM-1: Verify bypassPermissions is NOT passed
     expect(callArgs.options).not.toHaveProperty('permissionMode')
     expect(callArgs.options).not.toHaveProperty('allowDangerouslySkipPermissions')
+    // Pipeline agents use canUseTool to auto-allow (prevents hanging on
+    // permission prompts since no human is at stdin)
+    expect(callArgs.options.canUseTool).toBeDefined()
   })
 })

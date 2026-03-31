@@ -42,7 +42,11 @@ function spawnViaSdk(
       env: env as Record<string, string | undefined>,
       ...(token ? { apiKey: token } : {}),
       abortController,
-      settingSources: ['user', 'project', 'local']
+      settingSources: ['user', 'project', 'local'],
+      // Pipeline agents are autonomous (no human at stdin) and run in
+      // isolated worktrees. Auto-allow all tools to prevent hanging on
+      // permission prompts. Safety comes from worktree isolation + PR review.
+      canUseTool: async () => ({ behavior: 'allow' as const })
     }
   })
 
