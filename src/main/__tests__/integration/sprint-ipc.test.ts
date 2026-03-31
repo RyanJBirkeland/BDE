@@ -403,8 +403,15 @@ describe('Sprint IPC handlers — integration', () => {
   // Additional handler coverage
   describe('sprint:unblockTask', () => {
     it('unblocks a blocked task to queued', async () => {
-      const blocked = makeTask({ id: 'task-blk', status: 'blocked' })
-      const unblocked = makeTask({ id: 'task-blk', status: 'queued' })
+      const validSpec = [
+        '## Problem',
+        'The blocked task needs to be unblocked manually.',
+        '',
+        '## Solution',
+        'Transition the task from blocked to queued status.'
+      ].join('\n')
+      const blocked = makeTask({ id: 'task-blk', status: 'blocked', spec: validSpec })
+      const unblocked = makeTask({ id: 'task-blk', status: 'queued', spec: validSpec })
       mockGetTask.mockReturnValue(blocked)
       mockUpdateTask.mockReturnValue(unblocked)
 

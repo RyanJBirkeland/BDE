@@ -5,9 +5,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('node:fs', async () => {
-  const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
-  return { ...actual, readFileSync: vi.fn(), statSync: vi.fn() }
+vi.mock('node:fs/promises', async () => {
+  const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
+  return { ...actual, readFile: vi.fn(), stat: vi.fn() }
 })
 
 vi.mock('../../env-utils', () => ({
@@ -15,14 +15,14 @@ vi.mock('../../env-utils', () => ({
   invalidateOAuthToken: vi.fn()
 }))
 
-import { readFileSync, statSync } from 'node:fs'
+import { readFile, stat } from 'node:fs/promises'
 import { checkOAuthToken, handleWatchdogVerdict } from '../index'
 import { makeConcurrencyState, type ConcurrencyState } from '../concurrency'
 import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../../env-utils'
 import type { Logger } from '../types'
 
-const readFileMock = vi.mocked(readFileSync)
-const statSyncMock = vi.mocked(statSync)
+const readFileMock = vi.mocked(readFile)
+const statMock = vi.mocked(stat)
 
 function makeLogger(): Logger & {
   info: ReturnType<typeof vi.fn>
@@ -36,20 +36,18 @@ describe('checkOAuthToken', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Default: token file is recent (1 minute old) — no age-based refresh
-    statSyncMock.mockReturnValue({ mtimeMs: Date.now() - 60_000 } as ReturnType<typeof statSync>)
+    statMock.mockResolvedValue({ mtimeMs: Date.now() - 60_000 } as Awaited<ReturnType<typeof stat>>)
   })
 
   it('returns true when token file has valid content (>= 20 chars)', async () => {
-    readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
+    readFileMock.mockResolvedValue('a-valid-oauth-token-that-is-long-enough')
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(true)
     expect(logger.warn).not.toHaveBeenCalled()
   })
 
   it('returns false and logs warning when token file cannot be read', async () => {
-    readFileMock.mockImplementation(() => {
-      throw new Error('ENOENT')
-    })
+    readFileMock.mockRejectedValue(new Error('ENOENT'))
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(false)
     expect(logger.warn).toHaveBeenCalledWith(
@@ -58,7 +56,7 @@ describe('checkOAuthToken', () => {
   })
 
   it('attempts keychain refresh when token is too short and succeeds', async () => {
-    readFileMock.mockReturnValue('short')
+    readFileMock.mockResolvedValue('short')
     vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(true)
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(true)
@@ -67,7 +65,7 @@ describe('checkOAuthToken', () => {
   })
 
   it('returns false when token is too short and keychain refresh fails', async () => {
-    readFileMock.mockReturnValue('short')
+    readFileMock.mockResolvedValue('short')
     vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(false)
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(false)
@@ -75,22 +73,20 @@ describe('checkOAuthToken', () => {
   })
 
   it('returns false when token file is empty', async () => {
-    readFileMock.mockReturnValue('')
+    readFileMock.mockResolvedValue('')
     vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(false)
     expect(await checkOAuthToken(makeLogger())).toBe(false)
   })
 
   it('trims whitespace from token before checking length', async () => {
-    readFileMock.mockReturnValue('                    ')
+    readFileMock.mockResolvedValue('                    ')
     vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(false)
     expect(await checkOAuthToken(makeLogger())).toBe(false)
   })
 
   it('proactively refreshes when token file is older than 45 minutes', async () => {
-    readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
-    statSyncMock.mockReturnValue({ mtimeMs: Date.now() - 46 * 60_000 } as ReturnType<
-      typeof statSync
-    >)
+    readFileMock.mockResolvedValue('a-valid-oauth-token-that-is-long-enough')
+    statMock.mockResolvedValue({ mtimeMs: Date.now() - 46 * 60_000 } as Awaited<ReturnType<typeof stat>>)
     vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(true)
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(true)
@@ -100,20 +96,16 @@ describe('checkOAuthToken', () => {
   })
 
   it('does not proactively refresh when token file is recent (< 45 minutes)', async () => {
-    readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
-    statSyncMock.mockReturnValue({ mtimeMs: Date.now() - 10 * 60_000 } as ReturnType<
-      typeof statSync
-    >)
+    readFileMock.mockResolvedValue('a-valid-oauth-token-that-is-long-enough')
+    statMock.mockResolvedValue({ mtimeMs: Date.now() - 10 * 60_000 } as Awaited<ReturnType<typeof stat>>)
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(true)
     expect(refreshOAuthTokenFromKeychain).not.toHaveBeenCalled()
   })
 
   it('continues with existing token when stat fails during age check', async () => {
-    readFileMock.mockReturnValue('a-valid-oauth-token-that-is-long-enough')
-    statSyncMock.mockImplementation(() => {
-      throw new Error('stat failed')
-    })
+    readFileMock.mockResolvedValue('a-valid-oauth-token-that-is-long-enough')
+    statMock.mockRejectedValue(new Error('stat failed'))
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(true)
     expect(logger.warn).not.toHaveBeenCalled()
@@ -193,7 +185,7 @@ describe('handleWatchdogVerdict', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-3', {
       status: 'queued',
       claimed_by: null,
-      notes: 'Rate-limit loop — re-queued'
+      notes: 'Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown.'
     })
     expect(result.effectiveSlots).toBeLessThan(concurrency.effectiveSlots)
     expect(mockOnTerminal).not.toHaveBeenCalled()

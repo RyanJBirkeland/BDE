@@ -228,7 +228,9 @@ describe('updateTask', () => {
     expect(mockRecordTaskChanges).toHaveBeenCalledWith(
       created.id,
       expect.objectContaining({ title: 'Audit me' }),
-      expect.objectContaining({ title: 'Audited' })
+      expect.objectContaining({ title: 'Audited' }),
+      'unknown',
+      expect.anything()
     )
   })
 

@@ -51,7 +51,8 @@ vi.mock('../../git', () => ({
 }))
 
 vi.mock('../../env-utils', () => ({
-  buildAgentEnv: () => ({ ...process.env })
+  buildAgentEnv: () => ({ ...process.env }),
+  buildAgentEnvWithAuth: () => ({ ...process.env })
 }))
 
 /** Helper: create a fake spawn child that writes `output` to stdout and exits 0. */

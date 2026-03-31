@@ -59,6 +59,23 @@ vi.mock('../../agent-manager/orphan-recovery', () => ({
   recoverOrphans: vi.fn()
 }))
 
+vi.mock('../../broadcast', () => ({
+  broadcast: vi.fn()
+}))
+
+vi.mock('../../data/event-queries', () => ({
+  appendEvent: vi.fn()
+}))
+
+vi.mock('../../db', () => ({
+  getDb: vi.fn(() => ({}))
+}))
+
+vi.mock('../../agent-history', () => ({
+  createAgentRecord: vi.fn().mockResolvedValue({}),
+  updateAgentMeta: vi.fn().mockResolvedValue(undefined)
+}))
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------

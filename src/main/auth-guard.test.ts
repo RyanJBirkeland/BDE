@@ -11,11 +11,10 @@ vi.mock('node:fs', () => ({
 
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { checkAuthStatus, ensureSubscriptionAuth } from './auth-guard'
+import { checkAuthStatus, ensureSubscriptionAuth, MacOSCredentialStore } from './auth-guard'
 import type { CredentialStore } from './auth-guard'
 
 // Helper: find the callback in execFile's variadic args.
-// promisify calls execFile(cmd, args, cb) or execFile(cmd, args, opts, cb).
 type ExecFileCallback = (err: Error | null, stdout: string, stderr: string) => void
 
 function findCallback(...args: unknown[]): ExecFileCallback {
@@ -25,7 +24,7 @@ function findCallback(...args: unknown[]): ExecFileCallback {
   throw new Error('No callback found in execFile args')
 }
 
-// Helper to make the mocked execFile resolve with a value
+// Helper to make the mocked execFile resolve with a value (used by MacOSCredentialStore tests)
 function mockExecFileResult(stdout: string): void {
   vi.mocked(execFile).mockImplementation(((...args: unknown[]) => {
     const cb = findCallback(...args)
@@ -33,7 +32,7 @@ function mockExecFileResult(stdout: string): void {
   }) as typeof execFile)
 }
 
-// Helper to make the mocked execFile reject with an error
+// Helper to make the mocked execFile reject with an error (used by MacOSCredentialStore tests)
 function mockExecFileError(message: string): void {
   vi.mocked(execFile).mockImplementation(((...args: unknown[]) => {
     const cb = findCallback(...args)
@@ -50,13 +49,29 @@ function makeKeychainJson(overrides: Partial<{ accessToken: string; expiresAt: s
   return JSON.stringify({ claudeAiOauth: oauth })
 }
 
+// Build an injected CredentialStore from a keychain JSON string.
+// Using injected stores avoids the module-level rate-limit cache on MacOSCredentialStore.
+function makeStore(keychainJson: string, cliFound = true): CredentialStore {
+  return {
+    readToken: async () => JSON.parse(keychainJson) as ReturnType<typeof JSON.parse>,
+    detectCli: () => cliFound
+  }
+}
+
+// Build an injected CredentialStore that returns null (token not found)
+function makeFailingStore(): CredentialStore {
+  return {
+    readToken: async () => null,
+    detectCli: () => true
+  }
+}
+
 describe('auth-guard', () => {
   let savedEnv: NodeJS.ProcessEnv
 
   beforeEach(() => {
     vi.clearAllMocks()
     savedEnv = { ...process.env }
-    // By default, CLI binary is found
     vi.mocked(existsSync).mockReturnValue(true)
   })
 
@@ -67,9 +82,9 @@ describe('auth-guard', () => {
   describe('checkAuthStatus', () => {
     it('returns all checks passing with valid token', async () => {
       const futureMs = Date.now() + 3600_000
-      mockExecFileResult(makeKeychainJson({ expiresAt: String(futureMs) }))
+      const store = makeStore(makeKeychainJson({ expiresAt: String(futureMs) }))
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.cliFound).toBe(true)
       expect(status.tokenFound).toBe(true)
@@ -80,9 +95,9 @@ describe('auth-guard', () => {
 
     it('returns tokenExpired: true when expiresAt is in the past', async () => {
       const pastMs = Date.now() - 3600_000
-      mockExecFileResult(makeKeychainJson({ expiresAt: String(pastMs) }))
+      const store = makeStore(makeKeychainJson({ expiresAt: String(pastMs) }))
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.tokenFound).toBe(true)
       expect(status.tokenExpired).toBe(true)
@@ -91,11 +106,9 @@ describe('auth-guard', () => {
     })
 
     it('returns tokenFound: false when keychain has no entry', async () => {
-      mockExecFileError(
-        'security: SecKeychainSearchCopyNext: The specified item could not be found'
-      )
+      const store = makeFailingStore()
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.tokenFound).toBe(false)
       expect(status.tokenExpired).toBe(false)
@@ -103,27 +116,33 @@ describe('auth-guard', () => {
     })
 
     it('returns cliFound: false when no CLI binary exists', async () => {
-      vi.mocked(existsSync).mockReturnValue(false)
-      mockExecFileResult(makeKeychainJson())
+      const futureMs = Date.now() + 3600_000
+      const store = makeStore(makeKeychainJson({ expiresAt: String(futureMs) }), false)
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.cliFound).toBe(false)
     })
 
     it('returns tokenFound: false when JSON has no claudeAiOauth', async () => {
-      mockExecFileResult(JSON.stringify({ someOtherKey: {} }))
+      const store: CredentialStore = {
+        readToken: async () => ({ someOtherKey: {} } as never),
+        detectCli: () => true
+      }
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.tokenFound).toBe(false)
       expect(status.tokenExpired).toBe(false)
     })
 
     it('returns tokenFound: false when claudeAiOauth has no accessToken', async () => {
-      mockExecFileResult(JSON.stringify({ claudeAiOauth: { expiresAt: '9999999999999' } }))
+      const store: CredentialStore = {
+        readToken: async () => ({ claudeAiOauth: { expiresAt: '9999999999999' } }),
+        detectCli: () => true
+      }
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.tokenFound).toBe(false)
     })
@@ -140,33 +159,77 @@ describe('auth-guard', () => {
 
   describe('ensureSubscriptionAuth', () => {
     it('throws when no token found', async () => {
-      mockExecFileError('security: item not found')
+      const store = makeFailingStore()
 
-      await expect(ensureSubscriptionAuth()).rejects.toThrow()
+      await expect(ensureSubscriptionAuth(store)).rejects.toThrow()
     })
 
     it('throws when token is expired', async () => {
       const pastMs = Date.now() - 3600_000
-      mockExecFileResult(makeKeychainJson({ expiresAt: String(pastMs) }))
+      const store = makeStore(makeKeychainJson({ expiresAt: String(pastMs) }))
 
-      await expect(ensureSubscriptionAuth()).rejects.toThrow()
+      await expect(ensureSubscriptionAuth(store)).rejects.toThrow()
     })
 
     it('clears ANTHROPIC_API_KEY from env', async () => {
       process.env['ANTHROPIC_API_KEY'] = 'should-be-removed'
       process.env['ANTHROPIC_AUTH_TOKEN'] = 'also-removed'
-      mockExecFileResult(makeKeychainJson())
+      const store = makeStore(makeKeychainJson())
 
-      await ensureSubscriptionAuth()
+      await ensureSubscriptionAuth(store)
 
       expect(process.env['ANTHROPIC_API_KEY']).toBeUndefined()
       expect(process.env['ANTHROPIC_AUTH_TOKEN']).toBeUndefined()
     })
 
     it('does not throw when token is valid', async () => {
-      mockExecFileResult(makeKeychainJson())
+      const store = makeStore(makeKeychainJson())
 
-      await expect(ensureSubscriptionAuth()).resolves.not.toThrow()
+      await expect(ensureSubscriptionAuth(store)).resolves.not.toThrow()
+    })
+  })
+
+  describe('MacOSCredentialStore', () => {
+    let fakeNow: number
+
+    beforeEach(() => {
+      // Each test advances time by 2s to bypass the 1s rate-limit cache on readToken()
+      fakeNow = (fakeNow ?? Date.now()) + 2000
+      vi.setSystemTime(fakeNow)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('reads token via execFile (security command)', async () => {
+      vi.useFakeTimers()
+      mockExecFileResult(makeKeychainJson())
+      const store = new MacOSCredentialStore()
+      const payload = await store.readToken()
+      expect(payload).not.toBeNull()
+      expect(payload?.claudeAiOauth?.accessToken).toBe('test-token-abc')
+    })
+
+    it('returns null when security command fails', async () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(Date.now() + 5000) // ensure rate limit has expired
+      mockExecFileError('security: item not found')
+      const store = new MacOSCredentialStore()
+      const payload = await store.readToken()
+      expect(payload).toBeNull()
+    })
+
+    it('detects CLI via existsSync', () => {
+      vi.mocked(existsSync).mockReturnValue(true)
+      const store = new MacOSCredentialStore()
+      expect(store.detectCli()).toBe(true)
+    })
+
+    it('returns false when CLI not found', () => {
+      vi.mocked(existsSync).mockReturnValue(false)
+      const store = new MacOSCredentialStore()
+      expect(store.detectCli()).toBe(false)
     })
   })
 })

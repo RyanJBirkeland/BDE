@@ -35,7 +35,8 @@ function makeMockChild() {
     stdout,
     stderr,
     stdin,
-    kill
+    kill,
+    on: vi.fn()
   }
 
   return child

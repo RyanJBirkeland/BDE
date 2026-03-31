@@ -54,7 +54,7 @@ describe('branchNameForTask', () => {
 
   it('handles titles with only special characters', () => {
     const result = branchNameForTask('!!!---###')
-    expect(result).toBe('agent/')
+    expect(result).toBe('agent/unnamed-task')
   })
 
   it('produces correct format for normal title', () => {
@@ -423,8 +423,8 @@ describe('cleanupWorktree', () => {
     mockExecFileSuccess()
   })
 
-  it('calls git worktree remove with --force', () => {
-    cleanupWorktree({
+  it('calls git worktree remove with --force', async () => {
+    await cleanupWorktree({
       repoPath: '/repos/proj',
       worktreePath: '/tmp/worktrees/task-1',
       branch: 'agent/my-task'
@@ -439,8 +439,8 @@ describe('cleanupWorktree', () => {
     expect(args).toContain('--force')
   })
 
-  it('calls git branch -D to delete the branch', () => {
-    cleanupWorktree({
+  it('calls git branch -D to delete the branch', async () => {
+    await cleanupWorktree({
       repoPath: '/repos/proj',
       worktreePath: '/tmp/worktrees/task-1',
       branch: 'agent/my-task'
@@ -455,8 +455,8 @@ describe('cleanupWorktree', () => {
     expect(args).toContain('agent/my-task')
   })
 
-  it('uses repoPath as cwd', () => {
-    cleanupWorktree({
+  it('uses repoPath as cwd', async () => {
+    await cleanupWorktree({
       repoPath: '/repos/proj',
       worktreePath: '/tmp/worktrees/task-1',
       branch: 'agent/my-task'

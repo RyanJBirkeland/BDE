@@ -79,7 +79,7 @@ describe('updateAgentMeta', () => {
     const row = updateAgentMeta(db, 'agent-1', { status: 'done', exitCode: 0 })
     expect(row).not.toBeNull()
     expect(row!.status).toBe('done')
-    expect(row!.exit_code).toBe(0)
+    expect(row!.exitCode).toBe(0)
   })
 
   it('returns null when patch has no recognized fields', () => {

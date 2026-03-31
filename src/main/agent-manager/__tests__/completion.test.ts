@@ -21,6 +21,11 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn()
 }))
 
+// Mock broadcast — completion.ts calls broadcast() which requires Electron's BrowserWindow
+vi.mock('../../broadcast', () => ({
+  broadcast: vi.fn()
+}))
+
 import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'
@@ -603,7 +608,7 @@ describe('resolveSuccess — catch handler coverage', () => {
     )
   })
 
-  it('logs warning when updateTask fails in no-commits path (line 135)', async () => {
+  it('logs error when updateTask fails in no-commits path (resolveFailure catch)', async () => {
     mockExecFileSequence([
       { stdout: 'agent/b\n' }, // git rev-parse
       { stdout: '' }, // git status --porcelain
@@ -611,8 +616,8 @@ describe('resolveSuccess — catch handler coverage', () => {
     ])
     updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
     await resolveSuccess({ ...catchOpts, agentSummary: 'some output' }, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-catch after empty branch')
+    expect(noopLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update task task-catch during failure resolution')
     )
   })
 })

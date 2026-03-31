@@ -71,6 +71,16 @@ vi.mock('../../../shared/github', () => ({
   parsePrUrl: vi.fn()
 }))
 
+// Mock settings so getConfiguredRepos returns owner/repo as a configured repo
+vi.mock('../../settings', () => ({
+  getSettingJson: vi.fn((key: string) => {
+    if (key === 'repos') {
+      return [{ name: 'repo', githubOwner: 'owner', githubRepo: 'repo' }]
+    }
+    return null
+  })
+}))
+
 import { registerGitHandlers } from '../git-handlers'
 import { safeHandle } from '../../ipc-utils'
 import { getRepoPaths, gitStatus, gitDiffFile, gitCommit } from '../../git'

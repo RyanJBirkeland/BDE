@@ -291,7 +291,7 @@ describe('buildAgentPrompt', () => {
       expect(prompt).toContain('You are a BDE')
       expect(prompt).toContain('interactive BDE assistant')
       expect(prompt).not.toContain('## Git Branch')
-      expect(prompt).not.toContain('## Dev Playground')
+      expect(prompt).toContain('## Dev Playground')
     })
   })
 })

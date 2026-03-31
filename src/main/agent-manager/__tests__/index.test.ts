@@ -349,7 +349,7 @@ describe('createAgentManager', () => {
       vi.useRealTimers()
     })
 
-    it('marks task as error when spawnAgent rejects with auth error', async () => {
+    it('re-queues task when spawnAgent rejects with auth error', async () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
@@ -367,7 +367,7 @@ describe('createAgentManager', () => {
       expect(vi.mocked(updateTask)).toHaveBeenCalledWith(
         'task-1',
         expect.objectContaining({
-          status: 'error'
+          status: 'queued'
         })
       )
 
@@ -905,9 +905,10 @@ describe('createAgentManager', () => {
   })
 
   describe('killAgent', () => {
-    it('throws when no active agent', () => {
+    it('returns killed=false when no active agent', () => {
       const mgr = createAgentManager(baseConfig, mockRepo, makeLogger())
-      expect(() => mgr.killAgent('nonexistent')).toThrow('No active agent for task nonexistent')
+      const result = mgr.killAgent('nonexistent')
+      expect(result).toEqual({ killed: false, error: 'No active agent for task nonexistent' })
     })
 
     it('calls handle.abort()', async () => {
@@ -1091,7 +1092,7 @@ describe('createAgentManager', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
       await vi.advanceTimersByTimeAsync(61_000)
       for (let i = 0; i < 30; i++) await vi.advanceTimersByTimeAsync(1)
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Orphan recovery error'))
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Orphan recovery before initial drain error'))
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
     })

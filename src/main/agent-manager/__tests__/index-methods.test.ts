@@ -441,10 +441,10 @@ describe('AgentManagerImpl — class internals', () => {
       expect(updateTask).not.toHaveBeenCalled()
     })
 
-    it('returns false when dep parsing fails (invalid JSON)', () => {
+    it('returns true and sets task to error when dep parsing fails (invalid JSON)', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const result = manager._checkAndBlockDeps('task-1', '{bad json', new Map())
-      expect(result).toBe(false)
+      expect(result).toBe(true)
     })
 
     it('returns false for non-array deps', () => {

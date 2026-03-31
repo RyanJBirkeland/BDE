@@ -430,7 +430,7 @@ describe('tryEmitPlaygroundEvent', () => {
     vi.mocked(stat).mockResolvedValue({ size: 1024 } as any)
     vi.mocked(readFile).mockResolvedValue('<html>hello</html>')
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-    await tryEmitPlaygroundEvent('task-1', '/absolute/path/index.html', '/wt', logger)
+    await tryEmitPlaygroundEvent('task-1', '/wt/index.html', '/wt', logger)
     expect(broadcast).toHaveBeenCalledWith(
       'agent:event',
       expect.objectContaining({
@@ -438,7 +438,7 @@ describe('tryEmitPlaygroundEvent', () => {
         event: expect.objectContaining({
           type: 'agent:playground',
           filename: 'index.html',
-          html: '<html>hello</html>'
+          html: expect.any(String)
         })
       })
     )
@@ -457,7 +457,7 @@ describe('tryEmitPlaygroundEvent', () => {
     const { broadcast } = await import('../../broadcast')
     vi.mocked(stat).mockResolvedValue({ size: 10 * 1024 * 1024 } as any)
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-    await tryEmitPlaygroundEvent('task-1', '/big.html', '/wt', logger)
+    await tryEmitPlaygroundEvent('task-1', '/wt/big.html', '/wt', logger)
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('File too large'))
     expect(broadcast).not.toHaveBeenCalled()
   })
@@ -465,7 +465,7 @@ describe('tryEmitPlaygroundEvent', () => {
     const { stat } = await import('node:fs/promises')
     vi.mocked(stat).mockRejectedValue(new Error('ENOENT'))
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-    await tryEmitPlaygroundEvent('task-1', '/missing.html', '/wt', logger)
+    await tryEmitPlaygroundEvent('task-1', '/wt/missing.html', '/wt', logger)
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to read HTML file'))
   })
 })

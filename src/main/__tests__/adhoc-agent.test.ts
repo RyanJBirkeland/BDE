@@ -30,7 +30,7 @@ vi.mock('../agent-manager/prompt-composer', () => ({
   })
 }))
 
-import { spawnAdhocAgent } from '../adhoc-agent'
+import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { importAgent, updateAgentMeta } from '../agent-history'
 import { broadcast } from '../broadcast'
 import { buildAgentPrompt } from '../agent-manager/prompt-composer'
@@ -68,6 +68,7 @@ describe('spawnAdhocAgent', () => {
       tokensOut: null,
       sprintTaskId: null
     } as any)
+    vi.mocked(updateAgentMeta).mockResolvedValue(undefined as any)
   })
 
   it('calls sdk.query and returns result with agent ID', async () => {
@@ -155,8 +156,11 @@ describe('spawnAdhocAgent', () => {
     const handle = createMockQueryHandle([])
     mockQuery.mockReturnValue(handle)
 
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    // Wait for the first turn to complete, then close the session to trigger completion
     await new Promise((r) => setTimeout(r, 50))
+    getAdhocHandle(result.id)?.close()
+    await new Promise((r) => setTimeout(r, 10))
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
@@ -195,6 +199,7 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
       id: 'agent-1',
       logPath: '/tmp/logs/agent-1/log.jsonl'
     } as any)
+    vi.mocked(updateAgentMeta).mockResolvedValue(undefined as any)
   })
 
   it('calls buildAgentPrompt with adhoc agentType when assistant flag is not set', async () => {
@@ -246,11 +251,9 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
       })
     )
 
-    // Verify the prompt generator yields a message with the composed prompt
+    // Verify the prompt string passed to sdk.query is the composed prompt
     const call = mockQuery.mock.calls[0][0]
-    const promptGen = call.prompt
-    const firstMessage = await promptGen.next()
-    expect(firstMessage.value.message.content).toBe('[PREAMBLE]\n\nuser task')
+    expect(call.prompt).toBe('[PREAMBLE]\n\nuser task')
   })
 
   it('includes settingSources in SDK options', async () => {

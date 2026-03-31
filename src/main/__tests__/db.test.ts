@@ -82,8 +82,6 @@ describe('db schema migrations', () => {
       'idx_agent_runs_pid',
       'idx_agent_runs_sprint_task',
       'idx_agent_runs_status',
-      'idx_sprint_tasks_claimed_by',
-      'idx_sprint_tasks_pr_number',
       'idx_sprint_tasks_status',
       'idx_task_changes_changed_at',
       'idx_task_changes_task_id'

@@ -308,16 +308,15 @@ describe('sprint:delete handler', () => {
     expect(result).toEqual({ ok: true })
   })
 
-  it('still returns ok when task not found before delete', async () => {
+  it('throws when task not found before delete', async () => {
     vi.mocked(_getTask).mockReturnValue(null)
     vi.mocked(_deleteTask).mockReturnValue(undefined)
 
     const handler = captureHandler('sprint:delete')
-    const result = await handler(mockEvent, 'nonexistent')
+    await expect(handler(mockEvent, 'nonexistent')).rejects.toThrow('Task nonexistent not found')
 
-    expect(_deleteTask).toHaveBeenCalledWith('nonexistent')
+    expect(_deleteTask).not.toHaveBeenCalled()
     expect(notifySprintMutation).not.toHaveBeenCalled()
-    expect(result).toEqual({ ok: true })
   })
 })
 

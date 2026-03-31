@@ -10,37 +10,26 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn().mockReturnValue(false)
 }))
 
-import { execFile } from 'node:child_process'
-import { existsSync } from 'node:fs'
 import { checkAuthStatus, ensureSubscriptionAuth } from '../../auth-guard'
+import type { CredentialStore } from '../../auth-guard'
 
 // --- Helpers ---
 
-/** Mock execFile to return a successful Keychain result. */
-function mockKeychainResult(payload: Record<string, unknown>) {
-  vi.mocked(execFile).mockImplementation((...rawArgs: unknown[]) => {
-    const cb = rawArgs[rawArgs.length - 1] as (
-      err: Error | null,
-      stdout?: string,
-      stderr?: string
-    ) => void
-    cb(null, JSON.stringify(payload), '')
-    return {} as ReturnType<typeof execFile>
-  })
+/** Build an injected CredentialStore that returns a successful Keychain result.
+ *  Using injected stores avoids the module-level rate-limit cache on MacOSCredentialStore. */
+function makeKeychainStore(payload: Record<string, unknown>, cliFound = true): CredentialStore {
+  return {
+    readToken: async () => payload as ReturnType<typeof JSON.parse>,
+    detectCli: () => cliFound
+  }
 }
 
-/** Mock execFile to fail (token not found). */
-function mockKeychainFailure() {
-  vi.mocked(execFile).mockImplementation((...rawArgs: unknown[]) => {
-    const cb = rawArgs[rawArgs.length - 1] as (err: Error | null) => void
-    cb(new Error('security: SecKeychainSearchCopyNext: The specified item could not be found'))
-    return {} as ReturnType<typeof execFile>
-  })
-}
-
-/** Set CLI detection: true means at least one path has the claude binary. */
-function mockCliExists(found: boolean) {
-  vi.mocked(existsSync).mockReturnValue(found)
+/** Build an injected CredentialStore that fails (token not found). */
+function makeFailingStore(cliFound = true): CredentialStore {
+  return {
+    readToken: async () => null,
+    detectCli: () => cliFound
+  }
 }
 
 describe('AuthGuard integration', () => {
@@ -58,16 +47,18 @@ describe('AuthGuard integration', () => {
 
   describe('checkAuthStatus', () => {
     it('returns all checks passing with valid token and CLI present', async () => {
-      mockCliExists(true)
       const futureMs = Date.now() + 3_600_000 // 1 hour from now
-      mockKeychainResult({
-        claudeAiOauth: {
-          accessToken: 'valid-token-abc',
-          expiresAt: String(futureMs)
-        }
-      })
+      const store = makeKeychainStore(
+        {
+          claudeAiOauth: {
+            accessToken: 'valid-token-abc',
+            expiresAt: String(futureMs)
+          }
+        },
+        true
+      )
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.cliFound).toBe(true)
       expect(status.tokenFound).toBe(true)
@@ -77,16 +68,18 @@ describe('AuthGuard integration', () => {
     })
 
     it('returns tokenExpired=true when token has expired', async () => {
-      mockCliExists(true)
       const pastMs = Date.now() - 3_600_000 // 1 hour ago
-      mockKeychainResult({
-        claudeAiOauth: {
-          accessToken: 'expired-token',
-          expiresAt: String(pastMs)
-        }
-      })
+      const store = makeKeychainStore(
+        {
+          claudeAiOauth: {
+            accessToken: 'expired-token',
+            expiresAt: String(pastMs)
+          }
+        },
+        true
+      )
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.cliFound).toBe(true)
       expect(status.tokenFound).toBe(true)
@@ -94,25 +87,26 @@ describe('AuthGuard integration', () => {
     })
 
     it('returns cliFound=false when CLI is not installed', async () => {
-      mockCliExists(false)
-      mockKeychainResult({
-        claudeAiOauth: {
-          accessToken: 'token',
-          expiresAt: String(Date.now() + 3_600_000)
-        }
-      })
+      const store = makeKeychainStore(
+        {
+          claudeAiOauth: {
+            accessToken: 'token',
+            expiresAt: String(Date.now() + 3_600_000)
+          }
+        },
+        false
+      )
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.cliFound).toBe(false)
       expect(status.tokenFound).toBe(true)
     })
 
     it('returns tokenFound=false when no Keychain entry exists', async () => {
-      mockCliExists(true)
-      mockKeychainFailure()
+      const store = makeFailingStore(true)
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.cliFound).toBe(true)
       expect(status.tokenFound).toBe(false)
@@ -120,25 +114,26 @@ describe('AuthGuard integration', () => {
     })
 
     it('returns tokenFound=false when Keychain has no accessToken', async () => {
-      mockCliExists(true)
-      mockKeychainResult({
-        claudeAiOauth: {
-          // accessToken is missing
-          expiresAt: String(Date.now() + 3_600_000)
-        }
-      })
+      const store = makeKeychainStore(
+        {
+          claudeAiOauth: {
+            // accessToken is missing
+            expiresAt: String(Date.now() + 3_600_000)
+          }
+        },
+        true
+      )
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.tokenFound).toBe(false)
       expect(status.tokenExpired).toBe(false)
     })
 
     it('returns tokenFound=false when Keychain payload has no claudeAiOauth', async () => {
-      mockCliExists(true)
-      mockKeychainResult({ someOtherKey: 'value' })
+      const store = makeKeychainStore({ someOtherKey: 'value' }, true)
 
-      const status = await checkAuthStatus()
+      const status = await checkAuthStatus(store)
 
       expect(status.tokenFound).toBe(false)
       expect(status.tokenExpired).toBe(false)
@@ -152,37 +147,40 @@ describe('AuthGuard integration', () => {
       process.env['ANTHROPIC_API_KEY'] = 'should-be-cleared'
       process.env['ANTHROPIC_AUTH_TOKEN'] = 'should-also-be-cleared'
 
-      mockCliExists(true)
-      mockKeychainResult({
-        claudeAiOauth: {
-          accessToken: 'valid-token',
-          expiresAt: String(Date.now() + 3_600_000)
-        }
-      })
+      const store = makeKeychainStore(
+        {
+          claudeAiOauth: {
+            accessToken: 'valid-token',
+            expiresAt: String(Date.now() + 3_600_000)
+          }
+        },
+        true
+      )
 
-      await ensureSubscriptionAuth()
+      await ensureSubscriptionAuth(store)
 
       expect(process.env['ANTHROPIC_API_KEY']).toBeUndefined()
       expect(process.env['ANTHROPIC_AUTH_TOKEN']).toBeUndefined()
     })
 
     it('throws when no token is found', async () => {
-      mockCliExists(true)
-      mockKeychainFailure()
+      const store = makeFailingStore(true)
 
-      await expect(ensureSubscriptionAuth()).rejects.toThrow('No Claude subscription token found')
+      await expect(ensureSubscriptionAuth(store)).rejects.toThrow('No Claude subscription token found')
     })
 
     it('throws when token is expired', async () => {
-      mockCliExists(true)
-      mockKeychainResult({
-        claudeAiOauth: {
-          accessToken: 'expired-token',
-          expiresAt: String(Date.now() - 3_600_000)
-        }
-      })
+      const store = makeKeychainStore(
+        {
+          claudeAiOauth: {
+            accessToken: 'expired-token',
+            expiresAt: String(Date.now() - 3_600_000)
+          }
+        },
+        true
+      )
 
-      await expect(ensureSubscriptionAuth()).rejects.toThrow('Claude subscription token expired')
+      await expect(ensureSubscriptionAuth(store)).rejects.toThrow('Claude subscription token expired')
     })
   })
 
@@ -194,8 +192,8 @@ describe('AuthGuard integration', () => {
       // the AgentManager marks the task as error. We test via the
       // AgentManager integration test (agent-manager-integration.test.ts)
       // so here we just confirm the function signatures are correct.
-      mockKeychainFailure()
-      const err = await ensureSubscriptionAuth().catch((e: Error) => e)
+      const store = makeFailingStore(true)
+      const err = await ensureSubscriptionAuth(store).catch((e: Error) => e)
       expect(err).toBeInstanceOf(Error)
       expect((err as Error).message).toContain('No Claude subscription token found')
     })
