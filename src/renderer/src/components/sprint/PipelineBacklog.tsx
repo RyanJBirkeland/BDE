@@ -22,7 +22,7 @@ export function PipelineBacklog({
   const visibleFailed = failedExpanded ? failed : failed.slice(0, FAILED_VISIBLE_LIMIT)
   const hiddenCount = failed.length - FAILED_VISIBLE_LIMIT
   return (
-    <div className="pipeline-sidebar">
+    <div className="pipeline-sidebar" data-testid="pipeline-backlog">
       <div className="pipeline-sidebar__section pipeline-sidebar__section--grow">
         <div className="pipeline-sidebar__label" style={{ color: 'var(--neon-blue)' }}>
           BACKLOG <span className="pipeline-sidebar__count">{backlog.length}</span>

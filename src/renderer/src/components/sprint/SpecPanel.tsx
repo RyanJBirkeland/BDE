@@ -54,6 +54,7 @@ export function SpecPanel({ taskTitle, spec, onClose, onSave }: SpecPanelProps) 
       <div className="spec-panel-overlay" onClick={onClose}>
         <motion.div
           className="spec-panel"
+          data-testid="spec-panel"
           role="dialog"
           aria-modal="true"
           aria-label={`Spec — ${taskTitle}`}

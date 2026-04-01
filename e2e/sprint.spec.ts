@@ -1,213 +1,136 @@
+/**
+ * Sprint Pipeline E2E tests.
+ * Validates the SprintPipeline UI: stage rendering, task placement,
+ * detail drawer interaction, and dependency blocking.
+ *
+ * Uses `data-testid` selectors for structural elements and
+ * `.pipeline-stage__name--{status}` for stage columns.
+ * Test tasks are prefixed with `e2e-sprint-` and cleaned up after each test.
+ */
 import { test, expect } from './fixtures'
-import { seedTask, cleanupTask } from './helpers/seed-data'
+import { seedTask, cleanupTestTasks } from './helpers/seed-data'
 
-test.describe('Sprint board', () => {
-  test('Kanban columns visible with correct labels', async ({ bde }) => {
-    const { window } = bde
+const TEST_PREFIX = 'e2e-sprint-'
 
-    // Wait for app to load
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+/** Navigate to Sprint view and wait for pipeline to render. */
+async function navigateToSprint(window: import('@playwright/test').Page): Promise<void> {
+  await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+  await window.keyboard.press('Meta+4')
+  await expect(window.locator('[data-testid="sprint-pipeline"]')).toBeVisible({ timeout: 5_000 })
+}
 
-    // Navigate to Sprint view via Cmd+3
-    await window.keyboard.press('Meta+4')
-
-    // Assert Sprint center renders
-    const sprintCenter = window.locator('.sprint-center')
-    await expect(sprintCenter).toBeVisible({ timeout: 5_000 })
-
-    // Assert the Kanban board with 3 active columns is visible: To Do, In Progress, Awaiting Review
-    const kanbanBoard = window.locator('.kanban-board')
-    await expect(kanbanBoard).toBeVisible()
-
-    const columns = kanbanBoard.locator('.kanban-col')
-    await expect(columns).toHaveCount(3)
-
-    // Verify column headers
-    const headers = kanbanBoard.locator('.kanban-col__header')
-    await expect(headers.nth(0)).toContainText('To Do')
-    await expect(headers.nth(1)).toContainText('In Progress')
-    await expect(headers.nth(2)).toContainText('Awaiting Review')
+test.describe('Sprint Pipeline — stage rendering', () => {
+  test.afterEach(async ({ bde }) => {
+    await cleanupTestTasks(bde.window, TEST_PREFIX)
   })
 
-  test('NewTicketModal opens and accepts input', async ({ bde }) => {
+  test('Pipeline view renders with queued, active, and done stage columns', async ({ bde }) => {
     const { window } = bde
+    await navigateToSprint(window)
 
-    // Navigate to Sprint view
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
+    // Verify the three primary stages exist via data-testid
+    await expect(window.locator('[data-testid="pipeline-stage-queued"]')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('[data-testid="pipeline-stage-active"]')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('[data-testid="pipeline-stage-done"]')).toBeVisible({ timeout: 5_000 })
 
-    // Click "+ New Ticket" button
-    const newTicketBtn = window.locator('button', { hasText: '+ New Ticket' })
-    await expect(newTicketBtn).toBeVisible()
-    await newTicketBtn.click()
-
-    // Assert NewTicketModal opens
-    const modal = window.locator('.new-ticket-modal')
-    await expect(modal).toBeVisible({ timeout: 3_000 })
-
-    // Fill the title field (quick mode placeholder)
-    const titleInput = modal.locator('input.sprint-tasks__input')
-    await expect(titleInput).toBeVisible()
-    await titleInput.fill('Test ticket from E2E')
-
-    // Assert submit button is enabled when title is filled (quick mode label)
-    const submitBtn = modal.locator('button', { hasText: 'Save — Paul writes the spec' })
-    await expect(submitBtn).toBeEnabled()
-  })
-
-  test('Create task flow — task card appears in Backlog after saving', async ({ bde }) => {
-    const { window } = bde
-
-    // Navigate to Sprint view
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
-
-    // Open modal and fill in a unique title
-    const newTicketBtn = window.locator('button', { hasText: '+ New Ticket' })
-    await newTicketBtn.click()
-    const modal = window.locator('.new-ticket-modal')
-    await expect(modal).toBeVisible({ timeout: 3_000 })
-
-    const taskTitle = `E2E Task ${Date.now()}`
-    const titleInput = modal.locator('input.sprint-tasks__input')
-    await titleInput.fill(taskTitle)
-
-    // Submit — quick mode saves to backlog
-    const submitBtn = modal.locator('button', { hasText: 'Save — Paul writes the spec' })
-    await submitBtn.click()
-
-    // Modal should close
-    await expect(modal).not.toBeVisible({ timeout: 3_000 })
-
-    // Task title should appear in the backlog table
-    const backlogTable = window.locator('.bde-task-table').first()
-    await expect(
-      backlogTable.locator('.bde-task-table__title-btn', { hasText: taskTitle })
-    ).toBeVisible({ timeout: 5_000 })
-  })
-
-  test('Task card details — created task shows title text', async ({ bde }) => {
-    const { window } = bde
-
-    // Navigate to Sprint view
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
-
-    // Create a task
-    const newTicketBtn = window.locator('button', { hasText: '+ New Ticket' })
-    await newTicketBtn.click()
-    const modal = window.locator('.new-ticket-modal')
-    await expect(modal).toBeVisible({ timeout: 3_000 })
-
-    const taskTitle = `Detail Check ${Date.now()}`
-    const titleInput = modal.locator('input.sprint-tasks__input')
-    await titleInput.fill(taskTitle)
-    await modal.locator('button', { hasText: 'Save — Paul writes the spec' }).click()
-    await expect(modal).not.toBeVisible({ timeout: 3_000 })
-
-    // The backlog title button should contain the exact task title
-    const titleCell = window.locator('.bde-task-table__title-btn', { hasText: taskTitle })
-    await expect(titleCell).toBeVisible({ timeout: 5_000 })
-    await expect(titleCell).toContainText(taskTitle)
-  })
-
-  test('Keyboard shortcut N opens the new ticket modal', async ({ bde }) => {
-    const { window } = bde
-
-    // Navigate to Sprint view
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
-
-    // Ensure focus is not on an input element so the shortcut fires
-    await window.locator('.sprint-center').click()
-
-    // Press bare 'n' to trigger the sprint keyboard shortcut
-    await window.keyboard.press('n')
-
-    // Modal should open
-    const modal = window.locator('.new-ticket-modal')
-    await expect(modal).toBeVisible({ timeout: 3_000 })
+    // Verify stage labels via CSS class selectors
+    await expect(window.locator('.pipeline-stage__name--queued')).toContainText('Queued')
+    await expect(window.locator('.pipeline-stage__name--active')).toContainText('Active')
+    await expect(window.locator('.pipeline-stage__name--done')).toContainText('Done')
   })
 })
 
-test.describe('Sprint — SpecDrawer', () => {
-  let taskId: string
-
+test.describe('Sprint Pipeline — task placement', () => {
   test.afterEach(async ({ bde }) => {
-    if (taskId) {
-      await cleanupTask(bde.window, taskId)
-    }
+    await cleanupTestTasks(bde.window, TEST_PREFIX)
   })
 
-  test('Clicking a task title opens the SpecDrawer', async ({ bde }) => {
+  test('Seeded backlog task appears in the backlog sidebar', async ({ bde }) => {
     const { window } = bde
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
 
-    // Seed a backlog task via IPC
-    const task = await seedTask(window, { title: `E2E SpecDrawer ${Date.now()}` })
-    taskId = task.id
-
-    // Navigate to Sprint view
-    await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
-
-    // Find and click the seeded task's title button in the backlog table
-    const titleBtn = window.locator('.bde-task-table__title-btn', {
-      hasText: task.title as string
+    const task = await seedTask(window, {
+      title: `${TEST_PREFIX}backlog-${Date.now()}`,
+      status: 'backlog'
     })
-    await expect(titleBtn).toBeVisible({ timeout: 5_000 })
-    await titleBtn.click()
 
-    // SpecDrawer should slide open
-    const drawer = window.locator('.spec-drawer--open')
-    await expect(drawer).toBeVisible({ timeout: 5_000 })
+    await navigateToSprint(window)
 
-    // Drawer should display the task title in the editable input
-    const titleInput = drawer.locator('.spec-drawer__title-input')
-    await expect(titleInput).toHaveValue(task.title as string)
+    // Backlog sidebar should contain the task title
+    const backlog = window.locator('[data-testid="pipeline-backlog"]')
+    await expect(backlog).toBeVisible({ timeout: 5_000 })
+    await expect(backlog.locator('text=' + task.title)).toBeVisible({ timeout: 5_000 })
+  })
 
-    // Drawer header meta should contain status
-    const meta = drawer.locator('.spec-drawer__header-meta')
-    await expect(meta).toContainText('backlog')
+  test('Seeded queued task appears in the queued stage', async ({ bde }) => {
+    const { window } = bde
+
+    const task = await seedTask(window, {
+      title: `${TEST_PREFIX}queued-${Date.now()}`,
+      status: 'queued',
+      spec: '## Overview\nTest task\n\n## Details\nFor E2E testing'
+    })
+
+    await navigateToSprint(window)
+
+    // Queued stage should contain the task
+    const queuedStage = window.locator('[data-testid="pipeline-stage-queued"]')
+    await expect(queuedStage.locator('text=' + task.title)).toBeVisible({ timeout: 5_000 })
   })
 })
 
-test.describe('Sprint — dependency blocked badge', () => {
-  let parentId: string
-  let childId: string
-
+test.describe('Sprint Pipeline — detail drawer', () => {
   test.afterEach(async ({ bde }) => {
-    // Clean up both tasks
-    if (childId) await cleanupTask(bde.window, childId)
-    if (parentId) await cleanupTask(bde.window, parentId)
+    await cleanupTestTasks(bde.window, TEST_PREFIX)
   })
 
-  test('Adding a dependency marks the child task as blocked', async ({ bde }) => {
+  test('Clicking a task pill opens the detail drawer', async ({ bde }) => {
     const { window } = bde
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
 
+    const task = await seedTask(window, {
+      title: `${TEST_PREFIX}drawer-${Date.now()}`,
+      status: 'queued',
+      spec: '## Overview\nDrawer test\n\n## Details\nFor E2E testing'
+    })
+
+    await navigateToSprint(window)
+
+    // Click the task pill in the queued stage
+    const queuedStage = window.locator('[data-testid="pipeline-stage-queued"]')
+    const pill = queuedStage.locator('text=' + task.title)
+    await expect(pill).toBeVisible({ timeout: 5_000 })
+    await pill.click()
+
+    // Detail drawer should open and show the task title
+    const drawer = window.locator('[data-testid="task-detail-drawer"]')
+    await expect(drawer).toBeVisible({ timeout: 5_000 })
+    await expect(drawer).toContainText(task.title as string)
+  })
+})
+
+test.describe('Sprint Pipeline — blocked tasks', () => {
+  test.afterEach(async ({ bde }) => {
+    await cleanupTestTasks(bde.window, TEST_PREFIX)
+  })
+
+  test('Blocked task with hard dependency shows in blocked stage', async ({ bde }) => {
+    const { window } = bde
     const ts = Date.now()
 
-    // Seed parent task (queued so it appears on the kanban board)
+    // Seed a parent task (queued)
     const parent = await seedTask(window, {
-      title: `E2E Parent ${ts}`,
-      status: 'queued'
+      title: `${TEST_PREFIX}parent-${ts}`,
+      status: 'queued',
+      spec: '## Overview\nParent task\n\n## Details\nFor E2E testing'
     })
-    parentId = parent.id
 
-    // Seed child task (also queued initially)
+    // Seed a child task (queued initially)
     const child = await seedTask(window, {
-      title: `E2E Child ${ts}`,
-      status: 'queued'
+      title: `${TEST_PREFIX}child-${ts}`,
+      status: 'queued',
+      spec: '## Overview\nChild task\n\n## Details\nFor E2E testing'
     })
-    childId = child.id
 
-    // Add a hard dependency: child depends on parent.
-    // Update the child task's depends_on field and set status to blocked via IPC.
+    // Add hard dependency and set child to blocked
     await window.evaluate(
       async ({ childId, parentId }) => {
         await (window as any).api.sprint.update(childId, {
@@ -218,20 +141,11 @@ test.describe('Sprint — dependency blocked badge', () => {
       { childId: child.id, parentId: parent.id }
     )
 
-    // Navigate to Sprint view
-    await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center')).toBeVisible({ timeout: 5_000 })
+    await navigateToSprint(window)
 
-    // The child task should now appear in the Blocked section with a BLOCKED badge.
-    // In TaskTable's BlockedRow, the title button contains a Badge with text "BLOCKED".
-    const blockedTitle = window.locator('.bde-task-table__title-btn', {
-      hasText: `E2E Child ${ts}`
-    })
-    await expect(blockedTitle).toBeVisible({ timeout: 5_000 })
-
-    // Verify the BLOCKED badge is rendered alongside the task
-    const blockedBadge = blockedTitle.locator('.bde-badge--warning')
-    await expect(blockedBadge).toBeVisible()
-    await expect(blockedBadge).toContainText('BLOCKED')
+    // The child task should appear in the blocked stage
+    const blockedStage = window.locator('[data-testid="pipeline-stage-blocked"]')
+    await expect(blockedStage).toBeVisible({ timeout: 5_000 })
+    await expect(blockedStage.locator('text=' + child.title)).toBeVisible({ timeout: 5_000 })
   })
 })

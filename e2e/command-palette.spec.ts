@@ -25,8 +25,8 @@ test.describe('Command palette navigation', () => {
     // Press Enter to select
     await window.keyboard.press('Enter')
 
-    // Assert Sprint view is now active — sprint-center component renders
-    const sprintView = window.locator('.sprint-center')
+    // Assert Sprint view is now active — sprint-pipeline component renders
+    const sprintView = window.locator('[data-testid="sprint-pipeline"]')
     await expect(sprintView).toBeVisible({ timeout: 5_000 })
 
     // Assert command palette closes (AnimatePresence exit animation may take a moment)

@@ -199,7 +199,7 @@ export function SprintPipeline() {
   const doneCount = partition.done.length
 
   return (
-    <div className="sprint-pipeline">
+    <div className="sprint-pipeline" data-testid="sprint-pipeline">
       <header className="sprint-pipeline__header">
         <h1 className="sprint-pipeline__title">Task Pipeline</h1>
         <div className="sprint-pipeline__stats">
