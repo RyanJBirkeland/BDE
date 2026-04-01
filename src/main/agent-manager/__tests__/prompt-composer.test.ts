@@ -295,3 +295,97 @@ describe('buildAgentPrompt', () => {
     })
   })
 })
+
+describe('buildAgentPrompt - Native System', () => {
+  it('should inject personality for pipeline agents', () => {
+    const prompt = buildAgentPrompt({
+      agentType: 'pipeline',
+      taskContent: 'Fix bug in IPC handler',
+      useNativeSystem: true
+    })
+
+    expect(prompt).toContain('You are a BDE pipeline agent')
+    expect(prompt).toContain('Be concise and action-oriented')
+    expect(prompt).toContain('NEVER push to main')
+  })
+
+  it('should inject personality for assistant agents', () => {
+    const prompt = buildAgentPrompt({
+      agentType: 'assistant',
+      taskContent: 'Help debug queue',
+      useNativeSystem: true
+    })
+
+    expect(prompt).toContain('interactive BDE assistant')
+    expect(prompt).toContain('conversational but concise')
+    expect(prompt).toContain('Full tool access')
+  })
+
+  it('should inject memory for all agents', () => {
+    const prompt = buildAgentPrompt({
+      agentType: 'pipeline',
+      taskContent: 'Task',
+      useNativeSystem: true
+    })
+
+    expect(prompt).toContain('BDE Conventions')
+    expect(prompt).toContain('IPC Conventions')
+    expect(prompt).toContain('Testing Patterns')
+    expect(prompt).toContain('Architecture Rules')
+  })
+
+  it('should inject skills for assistant agents only', () => {
+    const assistantPrompt = buildAgentPrompt({
+      agentType: 'assistant',
+      taskContent: 'Help',
+      useNativeSystem: true
+    })
+
+    expect(assistantPrompt).toContain('Available Skills')
+    expect(assistantPrompt).toContain('System Introspection')
+    expect(assistantPrompt).toContain('Task Orchestration')
+    expect(assistantPrompt).toContain('BDE Code Patterns')
+
+    const pipelinePrompt = buildAgentPrompt({
+      agentType: 'pipeline',
+      taskContent: 'Fix',
+      useNativeSystem: true
+    })
+
+    expect(pipelinePrompt).not.toContain('Available Skills')
+  })
+
+  it('should include plugin disable note', () => {
+    const prompt = buildAgentPrompt({
+      agentType: 'assistant',
+      taskContent: 'Task',
+      useNativeSystem: true
+    })
+
+    expect(prompt).toContain('BDE-native skills and conventions')
+    expect(prompt).toContain('third-party plugin guidance may not apply')
+  })
+
+  it('should use existing behavior when useNativeSystem is false', () => {
+    const prompt = buildAgentPrompt({
+      agentType: 'pipeline',
+      taskContent: 'Task',
+      useNativeSystem: false
+    })
+
+    expect(prompt).not.toContain('BDE Conventions')
+    expect(prompt).not.toContain('Available Skills')
+    expect(prompt).toContain('Your Mission')
+  })
+
+  it('should default to existing behavior when useNativeSystem is undefined', () => {
+    const prompt = buildAgentPrompt({
+      agentType: 'assistant',
+      taskContent: 'Task'
+      // useNativeSystem omitted
+    })
+
+    expect(prompt).not.toContain('BDE Conventions')
+    expect(prompt).toContain('Your Mission')
+  })
+})
