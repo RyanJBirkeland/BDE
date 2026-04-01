@@ -206,10 +206,10 @@ export default function DashboardView() {
             />
             <StatCounter
               label="PRs"
-              value={cardErrors.prs ? 0 : prCount}
+              value={cardErrors.prs ? '—' : prCount}
               accent={cardErrors.prs ? 'red' : 'blue'}
               icon={<GitPullRequest size={10} />}
-              onClick={() => cardErrors.prs ? useDashboardDataStore.getState().fetchAll() : navigateToSprintWithFilter('awaiting-review')}
+              onClick={() => navigateToSprintWithFilter('awaiting-review')}
             />
             <StatCounter
               label="Done"
