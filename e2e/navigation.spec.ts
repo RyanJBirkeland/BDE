@@ -131,7 +131,7 @@ test.describe('Keyboard navigation — sequential cycle', () => {
 
     // 4 → Sprint
     await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center__title')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.sprint-pipeline__title')).toBeVisible({ timeout: 5_000 })
 
     // 5 → PR Station
     await window.keyboard.press('Meta+5')
@@ -201,7 +201,7 @@ test.describe('Command palette navigation', () => {
     await window.keyboard.press('Enter')
 
     await expect(palette).not.toBeVisible({ timeout: 5_000 })
-    await expect(window.locator('.sprint-center__title')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.sprint-pipeline__title')).toBeVisible({ timeout: 5_000 })
   })
 
   test('Cmd+P → type "Settings" → Enter → Settings view', async ({ bde }) => {
@@ -229,7 +229,7 @@ test.describe('Command palette navigation', () => {
 
     // Navigate to a known view first
     await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center__title')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.sprint-pipeline__title')).toBeVisible({ timeout: 5_000 })
 
     // Open and close palette without selecting anything
     await window.keyboard.press('Meta+p')
@@ -240,7 +240,7 @@ test.describe('Command palette navigation', () => {
     await expect(palette).not.toBeVisible({ timeout: 2_000 })
 
     // Sprint view should still be visible — palette close did not navigate away
-    await expect(window.locator('.sprint-center__title')).toBeVisible({ timeout: 3_000 })
+    await expect(window.locator('.sprint-pipeline__title')).toBeVisible({ timeout: 3_000 })
   })
 })
 
@@ -251,14 +251,14 @@ test.describe('Return to previous view', () => {
 
     // Go to Sprint first
     await window.keyboard.press('Meta+4')
-    await expect(window.locator('.sprint-center__title')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.sprint-pipeline__title')).toBeVisible({ timeout: 5_000 })
 
     // Now switch to Settings
     await window.keyboard.press('Meta+9')
     await expect(window.locator('.settings-view')).toBeVisible({ timeout: 5_000 })
 
     // Sprint view should no longer be visible
-    await expect(window.locator('.sprint-center__title')).not.toBeVisible({ timeout: 3_000 })
+    await expect(window.locator('.sprint-pipeline__title')).not.toBeVisible({ timeout: 3_000 })
   })
 
   test('Navigate Settings → Agents → Settings restores each view', async ({ bde }) => {
