@@ -97,12 +97,13 @@ export default function DashboardView() {
     return { active, queued, blocked, done, failed }
   }, [tasks])
 
-  // Success rate
+  // Success rate — excludes cancelled tasks (intentional user action, not system failure)
   const successRate = useMemo(() => {
-    const terminal = stats.done + stats.failed
+    const actualFailed = tasks.filter((t) => ['failed', 'error'].includes(t.status)).length
+    const terminal = stats.done + actualFailed
     if (terminal === 0) return null
     return Math.round((stats.done / terminal) * 100)
-  }, [stats])
+  }, [tasks, stats])
 
   // Average duration from agent cost records
   const avgDuration = useMemo(() => {
@@ -258,7 +259,7 @@ export default function DashboardView() {
               ) : (
                 <>
                   <MiniChart data={chartData} height={120} />
-                  <div className="dashboard-chart-caption">last 24 hours</div>
+                  <div className="dashboard-chart-caption">completions per hour, last 24h</div>
                 </>
               )}
             </NeonCard>
@@ -340,7 +341,7 @@ export default function DashboardView() {
             <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
               <MiniChart data={costTrendData} height={80} />
               <div className="dashboard-chart-caption">
-                last {costTrendData.length} runs
+                {costTrendData.length} runs{costTrendData.length > 0 && ` · avg $${(costTrendData.reduce((s, d) => s + d.value, 0) / costTrendData.length).toFixed(2)}`}
               </div>
             </NeonCard>
 
