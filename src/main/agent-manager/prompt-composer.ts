@@ -7,6 +7,9 @@
 
 import { pipelinePersonality } from '../agent-system/personality/pipeline-personality'
 import { assistantPersonality } from '../agent-system/personality/assistant-personality'
+import { copilotPersonality } from '../agent-system/personality/copilot-personality'
+import { synthesizerPersonality } from '../agent-system/personality/synthesizer-personality'
+import { adhocPersonality } from '../agent-system/personality/adhoc-personality'
 import type { AgentPersonality } from '../agent-system/personality/types'
 import { getAllMemory } from '../agent-system/memory'
 import { getAllSkills } from '../agent-system/skills'
@@ -21,9 +24,6 @@ export interface BuildPromptInput {
   messages?: Array<{ role: string; content: string }> // for copilot chat
   formContext?: { title: string; repo: string; spec: string } // for copilot
   codebaseContext?: string // for synthesizer (file tree, relevant files)
-
-  // NEW: native system control
-  useNativeSystem?: boolean  // Default false during migration
 }
 
 // ---------------------------------------------------------------------------
@@ -45,33 +45,6 @@ const UNIVERSAL_PREAMBLE = `You are a BDE (Birkeland Development Environment) ag
 - Use the project's commit format: \`{type}: {description}\` (feat:, fix:, chore:)
 - Prefer editing existing files over creating new ones
 - Use TypeScript strict mode conventions`
-
-// ---------------------------------------------------------------------------
-// Role-Specific Sections
-// ---------------------------------------------------------------------------
-
-const ROLE_INSTRUCTIONS: Record<AgentType, string> = {
-  pipeline: `## Your Mission
-You are executing a sprint task. Your goal is to complete the spec fully. Commit all changes, run tests, and push to your assigned branch. If tests fail, fix them before pushing.`,
-
-  assistant: `## Your Mission
-You are an interactive BDE assistant. Help the user understand the codebase, debug issues, explore code, and answer questions. You have full tool access. Be concise and action-oriented.
-
-## Dev Playground
-BDE has a built-in Dev Playground that renders interactive HTML previews natively in the app. When the user asks about anything visual (themes, UI design, layouts, components), proactively suggest using the Playground to brainstorm visually. Use the playground:playground skill to create interactive explorers with controls, live previews, and copy-friendly output. This is much better than describing colors in text.`,
-
-  adhoc: `## Your Mission
-You are executing a user-requested task. Complete it fully, commit all changes, and push to your assigned branch.
-
-## Dev Playground
-BDE has a built-in Dev Playground for visual previews. For UI/frontend tasks, suggest using the playground:playground skill to create interactive HTML explorers the user can see directly in BDE.`,
-
-  copilot: `## Your Mission
-You are a text-only assistant helping craft task specs. You cannot open URLs, render previews, or use tools. Keep responses focused and under 500 words. Use markdown for structure.`,
-
-  synthesizer: `## Your Mission
-You are generating a task specification from codebase context and user answers. Output well-structured markdown with ## headings.`
-}
 
 // ---------------------------------------------------------------------------
 // Operational Appendix (conditional sections)
@@ -108,20 +81,11 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
  */
 function getPersonality(agentType: AgentType): AgentPersonality {
   switch (agentType) {
-    case 'pipeline':
-      return pipelinePersonality
-    case 'assistant':
-    case 'adhoc':
-      return assistantPersonality
-    case 'copilot':
-    case 'synthesizer':
-      // Minimal personality for text-only agents
-      return {
-        voice: 'Be concise. Keep responses under 500 words. Use markdown for structure.',
-        roleFrame: 'You are a text-only assistant. You cannot use tools or open URLs.',
-        constraints: ['No tool access', 'Text responses only'],
-        patterns: ['Focus on clarity', 'Use examples']
-      }
+    case 'pipeline': return pipelinePersonality
+    case 'assistant': return assistantPersonality
+    case 'adhoc': return adhocPersonality
+    case 'copilot': return copilotPersonality
+    case 'synthesizer': return synthesizerPersonality
   }
 }
 
@@ -130,20 +94,17 @@ function getPersonality(agentType: AgentType): AgentPersonality {
 // ---------------------------------------------------------------------------
 
 /**
- * Build agent prompt with universal preamble, role-specific instructions, and task content.
+ * Build agent prompt with universal preamble, personality, memory, skills, and task content.
  *
  * This is the universal prompt builder for all BDE agents (pipeline, assistant, adhoc,
  * copilot, synthesizer). All agent spawning paths must use this function instead of
  * inline prompt assembly.
  *
- * **Native System Integration:**
- * When `useNativeSystem` is true, injects:
+ * **Native System:**
+ * Injects for every agent type:
  * - Personality (voice, roleFrame, constraints) specific to the agent type
  * - Memory modules (IPC conventions, testing patterns, architecture rules)
  * - Skills (ONLY for assistant/adhoc agents — pipeline agents do not get skills)
- *
- * When `useNativeSystem` is false/undefined, uses legacy `ROLE_INSTRUCTIONS` for
- * backward compatibility.
  *
  * **Conditional Sections:**
  * - Branch info appended if `branch` is provided
@@ -159,40 +120,34 @@ function getPersonality(agentType: AgentType): AgentPersonality {
  * @param input.messages - Copilot chat message history (optional)
  * @param input.formContext - Copilot form context (title, repo, spec) (optional)
  * @param input.codebaseContext - Synthesizer codebase context (file tree, relevant files) (optional)
- * @param input.useNativeSystem - Enable BDE-native personality, memory, and skills (default: false)
  * @returns Complete prompt string ready for agent spawning
  */
 export function buildAgentPrompt(input: BuildPromptInput): string {
-  const { agentType, taskContent, branch, playgroundEnabled, messages, codebaseContext, useNativeSystem } = input
+  const { agentType, taskContent, branch, playgroundEnabled, messages, codebaseContext } = input
 
   // Start with universal preamble
   let prompt = UNIVERSAL_PREAMBLE
 
-  if (useNativeSystem) {
-    // NEW: Inject personality
-    const personality = getPersonality(agentType)
-    prompt += '\n\n## Voice\n' + personality.voice
-    prompt += '\n\n## Your Role\n' + personality.roleFrame
-    prompt += '\n\n## Constraints\n' + personality.constraints.map(c => `- ${c}`).join('\n')
+  // Inject personality
+  const personality = getPersonality(agentType)
+  prompt += '\n\n## Voice\n' + personality.voice
+  prompt += '\n\n## Your Role\n' + personality.roleFrame
+  prompt += '\n\n## Constraints\n' + personality.constraints.map(c => `- ${c}`).join('\n')
 
-    // NEW: Inject memory (all agents get this)
-    prompt += '\n\n## BDE Conventions\n'
-    prompt += getAllMemory()
+  // Inject memory (all agents get this)
+  prompt += '\n\n## BDE Conventions\n'
+  prompt += getAllMemory()
 
-    // NEW: Inject skills (interactive agents only)
-    if (agentType === 'assistant' || agentType === 'adhoc') {
-      prompt += '\n\n## Available Skills\n'
-      prompt += getAllSkills()
-    }
-
-    // NEW: Plugin disable note
-    prompt += '\n\n## Note\n'
-    prompt += 'You have BDE-native skills and conventions loaded. '
-    prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
-  } else {
-    // Existing behavior (use role instructions)
-    prompt += '\n\n' + ROLE_INSTRUCTIONS[agentType]
+  // Inject skills (interactive agents only)
+  if (agentType === 'assistant' || agentType === 'adhoc') {
+    prompt += '\n\n## Available Skills\n'
+    prompt += getAllSkills()
   }
+
+  // Plugin disable note
+  prompt += '\n\n## Note\n'
+  prompt += 'You have BDE-native skills and conventions loaded. '
+  prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
 
   // Add conditional operational appendices
   if (branch) {
