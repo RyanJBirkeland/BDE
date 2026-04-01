@@ -28,6 +28,7 @@ import {
   DollarSign,
   Zap,
   AlertTriangle,
+  XCircle,
   Clock,
   TrendingUp,
   Target
@@ -170,6 +171,13 @@ export default function DashboardView() {
               accent="red"
               icon={<AlertTriangle size={10} />}
               onClick={() => navigateToSprintWithFilter('blocked')}
+            />
+            <StatCounter
+              label="Failed"
+              value={stats.failed}
+              accent="red"
+              icon={<XCircle size={10} />}
+              onClick={() => navigateToSprintWithFilter('failed')}
             />
             <StatCounter
               label="PRs"
