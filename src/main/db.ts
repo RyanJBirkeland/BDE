@@ -530,6 +530,17 @@ export const migrations: Migration[] = [
         db.exec('PRAGMA foreign_keys = ON;')
       }
     }
+  },
+  {
+    version: 18,
+    description: 'Add agentManager.useNativeSystem setting',
+    up: (db) => {
+      // Add useNativeSystem setting (default false for gradual rollout)
+      db.prepare(`
+        INSERT OR IGNORE INTO settings (key, value)
+        VALUES ('agentManager.useNativeSystem', 'false')
+      `).run()
+    }
   }
 ]
 
