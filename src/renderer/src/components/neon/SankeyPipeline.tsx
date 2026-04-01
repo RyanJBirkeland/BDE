@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import type { StatusFilter } from '../../stores/sprintUI'
+import type { NeonAccent } from './types'
 import { neonVar } from './types'
 import { formatCount, STAGE_CONFIG, STAGE_TO_FILTER, type SankeyStageKey } from './sankey-utils'
 import '../../assets/sankey-pipeline-neon.css'
@@ -91,6 +93,49 @@ export function SankeyPipeline({
 }: SankeyPipelineProps) {
   const reduced = useReducedMotion()
   const showParticles = animated !== false && !reduced
+
+  // --- Transition detection ---
+  const prevStagesRef = useRef(stages)
+  const [transitions, setTransitions] = useState<Array<{
+    id: string
+    to: SankeyStageKey
+    accent: NeonAccent
+    startTime: number
+  }>>([])
+
+  useEffect(() => {
+    const prev = prevStagesRef.current
+    prevStagesRef.current = stages
+
+    if (reduced || animated === false) return
+
+    const newTransitions: typeof transitions = []
+
+    // Find stages where count increased — these are transition destinations
+    for (const key of STAGE_ORDER) {
+      if (stages[key] > prev[key]) {
+        newTransitions.push({
+          id: `${key}-${Date.now()}`,
+          to: key as SankeyStageKey,
+          accent: STAGE_CONFIG[key as SankeyStageKey].accent,
+          startTime: Date.now(),
+        })
+      }
+    }
+
+    if (newTransitions.length > 0) {
+      setTransitions(t => [...t, ...newTransitions])
+      // Clean up after animation duration (800ms)
+      setTimeout(() => {
+        setTransitions(t =>
+          t.filter(tr => !newTransitions.some(n => n.id === tr.id))
+        )
+      }, 800)
+    }
+  }, [stages, reduced, animated])
+
+  // Set of stage keys with active transitions (for count flash)
+  const flashingStages = new Set(transitions.map(t => t.to))
 
   function handleClick(key: SankeyStageKey) {
     onStageClick?.(STAGE_TO_FILTER[key])
@@ -214,6 +259,7 @@ export function SankeyPipeline({
 
             {/* Count text */}
             <text
+              className={flashingStages.has(key) ? 'sankey-count-flash' : undefined}
               x={pos.x + pos.w / 2}
               y={pos.y + (config.problem ? pos.h / 2 - 1 : pos.h / 2 - 4)}
               textAnchor="middle"
@@ -264,6 +310,25 @@ export function SankeyPipeline({
           </circle>
         </>
       )}
+
+      {/* Layer 4 — Transition ripple effects */}
+      {transitions.map(t => {
+        const pos = NODE_POS[t.to]
+        return (
+          <rect
+            key={t.id}
+            className="sankey-ripple"
+            x={pos.x - 4}
+            y={pos.y - 4}
+            width={pos.w + 8}
+            height={pos.h + 8}
+            rx={10}
+            fill="none"
+            stroke={neonVar(t.accent, 'color')}
+            strokeWidth={2}
+          />
+        )
+      })}
     </svg>
   )
 }

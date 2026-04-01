@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { formatCount, STAGE_CONFIG, STAGE_TO_FILTER } from '../sankey-utils'
 import { SankeyPipeline } from '../SankeyPipeline'
 
@@ -95,6 +95,35 @@ describe('SankeyPipeline particles', () => {
     )
     const particles = container.querySelectorAll('.sankey-particle')
     expect(particles).toHaveLength(0)
+  })
+})
+
+describe('SankeyPipeline transitions', () => {
+  it('detects count changes between renders', () => {
+    const { container, rerender } = render(
+      <SankeyPipeline stages={{ ...defaultStages, queued: 5 }} />
+    )
+    act(() => {
+      rerender(
+        <SankeyPipeline stages={{ ...defaultStages, queued: 4, active: 4 }} />
+      )
+    })
+    // Active stage node should now show count 4
+    const activeNode = container.querySelector('[data-stage="active"]')
+    expect(activeNode?.textContent).toContain('4')
+  })
+
+  it('adds ripple element to destination node on count increase', () => {
+    const { container, rerender } = render(
+      <SankeyPipeline stages={defaultStages} />
+    )
+    act(() => {
+      rerender(
+        <SankeyPipeline stages={{ ...defaultStages, active: 4 }} />
+      )
+    })
+    const ripple = container.querySelector('.sankey-ripple')
+    expect(ripple).toBeInTheDocument()
   })
 })
 
