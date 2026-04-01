@@ -56,17 +56,20 @@ function GroupHeader({
   count,
   open,
   onToggle,
-  showPulse
+  showPulse,
+  collapsible = true
 }: {
   label: string
   count: number
   open: boolean
   onToggle: () => void
   showPulse?: boolean
+  collapsible?: boolean
 }) {
+  const Tag = collapsible ? 'button' : 'div'
   return (
-    <button
-      onClick={onToggle}
+    <Tag
+      {...(collapsible ? { onClick: onToggle } : {})}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -75,20 +78,22 @@ function GroupHeader({
         padding: `${tokens.space[1]} ${tokens.space[3]}`,
         background: 'none',
         border: 'none',
-        cursor: 'pointer',
+        cursor: collapsible ? 'pointer' : 'default',
         color: neonVar('purple', 'color'),
         fontSize: tokens.size.xs,
         textTransform: 'uppercase',
         letterSpacing: '0.05em'
       }}
     >
-      <ChevronRight
-        size={12}
-        style={{
-          transform: open ? 'rotate(90deg)' : undefined,
-          transition: tokens.transition.fast
-        }}
-      />
+      {collapsible && (
+        <ChevronRight
+          size={12}
+          style={{
+            transform: open ? 'rotate(90deg)' : undefined,
+            transition: tokens.transition.fast
+          }}
+        />
+      )}
       {showPulse && (
         <span
           style={{
@@ -103,7 +108,7 @@ function GroupHeader({
       )}
       {label}
       <span style={{ color: tokens.color.textDim }}>({count})</span>
-    </button>
+    </Tag>
   )
 }
 
@@ -274,6 +279,7 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
               open
               onToggle={() => {}}
               showPulse
+              collapsible={false}
             />
             {groups.running.map((a) => (
               <AgentCard
@@ -295,6 +301,7 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
               open
               onToggle={() => {}}
               showPulse={false}
+              collapsible={false}
             />
             {groups.recent.map((a) => (
               <AgentCard
