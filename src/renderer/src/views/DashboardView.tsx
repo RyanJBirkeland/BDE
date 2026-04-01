@@ -14,7 +14,6 @@ import {
   SankeyPipeline,
   MiniChart,
   ActivityFeed,
-  ScanlineOverlay,
   ParticleField,
   type ChartBar
 } from '../components/neon'
@@ -123,8 +122,7 @@ export default function DashboardView() {
       animate="animate"
       transition={transition}
     >
-      {/* Background effects */}
-      {!reduced && <ScanlineOverlay />}
+      {/* Background effects (ScanlineOverlay removed for data readability) */}
       {!reduced && <ParticleField />}
       <div className="dashboard-bg-gradient" />
 
