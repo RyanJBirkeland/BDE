@@ -16,11 +16,16 @@ export function createLogPollerActions(
   stopLogPolling: () => void
 } {
   let logInterval: ReturnType<typeof setInterval> | null = null
+  let visibilityHandler: (() => void) | null = null
 
   const stop = (): void => {
     if (logInterval) {
       clearInterval(logInterval)
       logInterval = null
+    }
+    if (visibilityHandler) {
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      visibilityHandler = null
     }
   }
 
@@ -53,10 +58,26 @@ export function createLogPollerActions(
         }
       }
 
+      function startInterval(): void {
+        if (logInterval) clearInterval(logInterval)
+        logInterval = setInterval(poll, POLL_LOG_INTERVAL)
+      }
+
+      visibilityHandler = () => {
+        if (document.hidden) {
+          if (logInterval) {
+            clearInterval(logInterval)
+            logInterval = null
+          }
+        } else {
+          poll()
+          startInterval()
+        }
+      }
+
+      document.addEventListener('visibilitychange', visibilityHandler)
       poll()
-      logInterval = setInterval(() => {
-        if (!document.hidden) poll()
-      }, POLL_LOG_INTERVAL)
+      startInterval()
       return stop
     },
 
