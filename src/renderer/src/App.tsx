@@ -22,6 +22,7 @@ import { TearoffShell } from './components/layout/TearoffShell'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 import { DEFAULT_MODEL } from '../../shared/models'
 import { VIEW_SHORTCUT_MAP, VIEW_LABELS } from './lib/view-registry'
+import { PollingProvider } from './components/PollingProvider'
 import './assets/neon.css'
 import './assets/neon-shell.css'
 import './assets/agents-neon.css'
@@ -305,6 +306,7 @@ function App(): React.JSX.Element {
   }
 
   return (
+    <PollingProvider>
     <div className="app-shell elevation-0">
       <a
         href="#main-content"
@@ -347,6 +349,7 @@ function App(): React.JSX.Element {
         onDrop={crossDrop.handleDrop}
       />
     </div>
+    </PollingProvider>
   )
 }
 

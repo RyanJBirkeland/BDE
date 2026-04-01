@@ -11,11 +11,10 @@ import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { useSprintEvents } from '../../stores/sprintEvents'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
-import { useSprintPolling } from '../../hooks/useSprintPolling'
-import { usePrStatusPolling } from '../../hooks/usePrStatusPolling'
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
 import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
-import { useHealthCheck } from '../../hooks/useHealthCheck'
+import { useHealthCheckPolling } from '../../hooks/useHealthCheck'
+import { useVisibleStuckTasks } from '../../stores/healthCheck'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { Button } from '../ui/Button'
@@ -84,7 +83,8 @@ export function SprintPipeline() {
   } = useSprintTaskActions()
 
   // SP-7: Extract health check results for HealthCheckDrawer
-  const { visibleStuckTasks, dismissTask } = useHealthCheck(tasks)
+  useHealthCheckPolling()
+  const { visibleStuckTasks, dismissTask } = useVisibleStuckTasks()
 
   // --- Local UI state ---
 
@@ -118,9 +118,6 @@ export function SprintPipeline() {
   )
   useTaskToasts(tasks, logDrawerTaskId, handleViewOutput)
 
-  // Polling hooks
-  useSprintPolling()
-  usePrStatusPolling()
   // SP-7: Wire setConflictDrawerOpen to actual function (wrapped to match Dispatch<SetStateAction> signature)
   useSprintKeyboardShortcuts({
     openWorkbench: () => setView('task-workbench'),

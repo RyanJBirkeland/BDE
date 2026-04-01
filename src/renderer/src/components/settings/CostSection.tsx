@@ -4,12 +4,11 @@
  * Task table shows per-run cost, duration, and cache efficiency.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import type { AgentRunCostRow, CostSummary } from '../../../../shared/types'
 import { EmptyState } from '../ui/EmptyState'
 import { Button } from '../ui/Button'
 import { Download, RefreshCw, BarChart, ExternalLink } from 'lucide-react'
-import { POLL_COST_INTERVAL, AGENT_HISTORY_LIMIT, FLASH_DURATION_MS } from '../../lib/constants'
+import { AGENT_HISTORY_LIMIT, FLASH_DURATION_MS } from '../../lib/constants'
 import { useCostDataStore } from '../../stores/costData'
 
 // ── Formatting helpers ──────────────────────────────────
@@ -250,7 +249,6 @@ export function CostSection(): React.JSX.Element {
   useEffect(() => {
     fetchData()
   }, [fetchData])
-  useVisibilityAwareInterval(fetchData, POLL_COST_INTERVAL)
 
   const sortedRuns = useMemo(() => {
     return [...runs].sort((a, b) => {

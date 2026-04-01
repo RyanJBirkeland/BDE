@@ -1,5 +1,41 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { useHealthCheckStore } from '../healthCheck'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { renderHook } from '@testing-library/react'
+import { useHealthCheckStore, useVisibleStuckTasks } from '../healthCheck'
+import { useSprintTasks } from '../sprintTasks'
+import type { SprintTask } from '../../../../shared/types'
+
+vi.mock('../sprintTasks', () => {
+  const { create } = require('zustand')
+  const store = create(() => ({ tasks: [] as SprintTask[] }))
+  return { useSprintTasks: store }
+})
+
+function makeTask(id: string, status: SprintTask['status'] = 'active'): SprintTask {
+  return {
+    id,
+    title: `Task ${id}`,
+    repo: 'bde',
+    priority: 5,
+    status,
+    notes: null,
+    spec: null,
+    prompt: null,
+    agent_run_id: null,
+    pr_number: null,
+    pr_status: null,
+    pr_mergeable_state: null,
+    pr_url: null,
+    claimed_by: null,
+    started_at: null,
+    completed_at: null,
+    retry_count: 0,
+    fast_fail_count: 0,
+    template_name: null,
+    depends_on: null,
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  }
+}
 
 const initialState = {
   stuckTaskIds: [] as string[],
@@ -70,5 +106,39 @@ describe('healthCheck store', () => {
     useHealthCheckStore.getState().dismiss('task-1')
     useHealthCheckStore.getState().clearDismissed()
     expect(useHealthCheckStore.getState().stuckTaskIds.includes('task-1')).toBe(true)
+  })
+})
+
+describe('useVisibleStuckTasks', () => {
+  beforeEach(() => {
+    useHealthCheckStore.setState({ stuckTaskIds: [], dismissedIds: [] })
+    ;(useSprintTasks as any).setState({ tasks: [] })
+  })
+
+  it('returns empty array when no tasks are stuck', () => {
+    ;(useSprintTasks as any).setState({ tasks: [makeTask('task-1')] })
+    const { result } = renderHook(() => useVisibleStuckTasks())
+    expect(result.current.visibleStuckTasks).toHaveLength(0)
+  })
+
+  it('returns stuck tasks that are in the task list', () => {
+    ;(useSprintTasks as any).setState({ tasks: [makeTask('task-1'), makeTask('task-2')] })
+    useHealthCheckStore.setState({ stuckTaskIds: ['task-1'] })
+    const { result } = renderHook(() => useVisibleStuckTasks())
+    expect(result.current.visibleStuckTasks).toHaveLength(1)
+    expect(result.current.visibleStuckTasks[0].id).toBe('task-1')
+  })
+
+  it('excludes dismissed tasks', () => {
+    ;(useSprintTasks as any).setState({ tasks: [makeTask('task-1'), makeTask('task-2')] })
+    useHealthCheckStore.setState({ stuckTaskIds: ['task-1', 'task-2'], dismissedIds: ['task-1'] })
+    const { result } = renderHook(() => useVisibleStuckTasks())
+    expect(result.current.visibleStuckTasks).toHaveLength(1)
+    expect(result.current.visibleStuckTasks[0].id).toBe('task-2')
+  })
+
+  it('returns dismissTask function', () => {
+    const { result } = renderHook(() => useVisibleStuckTasks())
+    expect(typeof result.current.dismissTask).toBe('function')
   })
 })

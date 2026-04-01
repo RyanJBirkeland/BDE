@@ -47,10 +47,6 @@ vi.mock('../../stores/toasts', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }))
 
-vi.mock('../../hooks/useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn()
-}))
-
 // Mock child components
 vi.mock('../../components/agents/AgentList', () => ({
   AgentList: ({ agents, onSelect, loading }: any) => (

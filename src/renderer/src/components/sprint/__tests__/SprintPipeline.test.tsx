@@ -107,8 +107,6 @@ vi.mock('../../../hooks/useTaskNotifications', () => ({
   useTaskToasts: vi.fn()
 }))
 
-vi.mock('../../../hooks/useSprintPolling', () => ({ useSprintPolling: vi.fn() }))
-vi.mock('../../../hooks/usePrStatusPolling', () => ({ usePrStatusPolling: vi.fn() }))
 vi.mock('../../../hooks/useSprintKeyboardShortcuts', () => ({
   useSprintKeyboardShortcuts: vi.fn()
 }))
@@ -126,7 +124,14 @@ vi.mock('../../../hooks/useSprintTaskActions', () => ({
 }))
 
 vi.mock('../../../hooks/useHealthCheck', () => ({
-  useHealthCheck: vi.fn(() => ({
+  useHealthCheckPolling: vi.fn()
+}))
+
+vi.mock('../../../stores/healthCheck', () => ({
+  useHealthCheckStore: vi.fn((sel: (s: unknown) => unknown) =>
+    sel({ stuckTaskIds: [], dismissedIds: [], setStuckTasks: vi.fn(), dismiss: vi.fn(), clearDismissed: vi.fn() })
+  ),
+  useVisibleStuckTasks: vi.fn(() => ({
     visibleStuckTasks: [],
     dismissTask: vi.fn()
   }))

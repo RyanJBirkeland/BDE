@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { GitBranch, RefreshCw, AlertCircle, X } from 'lucide-react'
 import { useGitTreeStore } from '../stores/gitTree'
@@ -7,8 +7,6 @@ import { CommitBox } from '../components/git-tree/CommitBox'
 import { FileTreeSection } from '../components/git-tree/FileTreeSection'
 import { BranchSelector } from '../components/git-tree/BranchSelector'
 import { InlineDiffDrawer } from '../components/git-tree/InlineDiffDrawer'
-import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
-import { POLL_GIT_STATUS_INTERVAL } from '../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 export default function GitTreeView(): React.ReactElement {
@@ -57,13 +55,6 @@ export default function GitTreeView(): React.ReactElement {
     fetchStatus(activeRepo)
     fetchBranches(activeRepo)
   }, [activeRepo])
-
-  // Poll git status while view is visible
-  const poll = useCallback(() => {
-    if (activeRepo) fetchStatus(activeRepo)
-  }, [activeRepo])
-
-  useVisibilityAwareInterval(poll, activeRepo ? POLL_GIT_STATUS_INTERVAL : null)
 
   function handleRefresh(): void {
     if (!activeRepo) return

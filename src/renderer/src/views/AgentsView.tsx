@@ -11,7 +11,6 @@ import '../assets/agents.css'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useAgentEventsStore } from '../stores/agentEvents'
-import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { AgentList } from '../components/agents/AgentList'
 import { AgentConsole } from '../components/agents/AgentConsole'
 import { LiveActivityStrip } from '../components/agents/LiveActivityStrip'
@@ -19,7 +18,6 @@ import { AgentLaunchpad } from '../components/agents/AgentLaunchpad'
 import { NeonCard, MiniChart, type ChartBar } from '../components/neon'
 import { tokens } from '../design-system/tokens'
 import { toast } from '../stores/toasts'
-import { POLL_SESSIONS_INTERVAL } from '../lib/constants'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 export function AgentsView() {
@@ -50,12 +48,11 @@ export function AgentsView() {
     return () => cleanupRef.current?.()
   }, [initEvents])
 
-  // Poll agent history while view is active
+  // Fetch agent history when view becomes active
   useEffect(() => {
     if (activeView !== 'agents') return
     fetchAgents()
   }, [fetchAgents, activeView])
-  useVisibilityAwareInterval(fetchAgents, activeView === 'agents' ? POLL_SESSIONS_INTERVAL : null)
 
   // Auto-select first agent if none selected
   useEffect(() => {

@@ -1,13 +1,12 @@
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
+import { useDashboardDataStore } from '../stores/dashboardData'
 import { useSprintUI, type StatusFilter } from '../stores/sprintUI'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
-import { POLL_DASHBOARD_INTERVAL } from '../lib/constants'
-import { useBackoffInterval } from '../hooks/useBackoffInterval'
-import { useSprintPolling } from '../hooks/useSprintPolling'
 import {
   StatusBar,
   StatCounter,
@@ -17,7 +16,6 @@ import {
   ActivityFeed,
   ScanlineOverlay,
   ParticleField,
-  type FeedEvent,
   type PipelineStage,
   type ChartBar
 } from '../components/neon'
@@ -44,6 +42,17 @@ export default function DashboardView() {
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
   const setView = usePanelLayoutStore((s) => s.setView)
 
+  // Dashboard data from centralized polling
+  const { chartData, feedEvents, prCount, loading, cardErrors } = useDashboardDataStore(
+    useShallow((s) => ({
+      chartData: s.chartData,
+      feedEvents: s.feedEvents,
+      prCount: s.prCount,
+      loading: s.loading,
+      cardErrors: s.cardErrors
+    }))
+  )
+
   /** Navigate to Sprint Center with a pre-applied status filter. */
   const navigateToSprintWithFilter = useCallback(
     (status: StatusFilter) => {
@@ -53,12 +62,6 @@ export default function DashboardView() {
     },
     [setStatusFilter, setSearchQuery, setView]
   )
-
-  const [chartData, setChartData] = useState<ChartBar[]>([])
-  const [feedEvents, setFeedEvents] = useState<FeedEvent[]>([])
-  const [prCount, setPrCount] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [cardErrors, setCardErrors] = useState<{ chart?: string; feed?: string; prs?: string }>({})
 
   // Derived stats
   const stats = useMemo(() => {
@@ -118,101 +121,6 @@ export default function DashboardView() {
     ],
     [stats]
   )
-
-  // Unmount guard for async fetches
-  const cancelledRef = useRef(false)
-  useEffect(() => {
-    cancelledRef.current = false
-    return () => {
-      cancelledRef.current = true
-    }
-  }, [])
-
-  const fetchCompletionsChart = useCallback(async (): Promise<void> => {
-    try {
-      const data = await window.api.dashboard?.completionsPerHour()
-      if (cancelledRef.current || !data) return
-      const accents: Array<'cyan' | 'pink' | 'blue' | 'orange' | 'purple'> = [
-        'cyan',
-        'pink',
-        'blue',
-        'orange',
-        'purple'
-      ]
-      setChartData(
-        data.map((d, i) => ({
-          value: d.count,
-          accent: accents[i % accents.length],
-          label: d.hour
-        }))
-      )
-      setCardErrors((prev) => ({ ...prev, chart: undefined }))
-    } catch (err) {
-      console.error('[Dashboard] Failed to fetch completions:', err)
-      setCardErrors((prev) => ({ ...prev, chart: 'Failed to load completions' }))
-    }
-  }, [])
-
-  const fetchActivityFeed = useCallback(async (): Promise<void> => {
-    try {
-      const events = await window.api.dashboard?.recentEvents(30)
-      if (cancelledRef.current || !events) return
-      setFeedEvents(
-        events.map((e) => ({
-          id: String(e.id),
-          label: `${e.event_type}: ${e.agent_id}`,
-          accent:
-            e.event_type === 'error'
-              ? ('red' as const)
-              : e.event_type === 'complete'
-                ? ('cyan' as const)
-                : ('purple' as const),
-          timestamp: e.timestamp
-        }))
-      )
-      setCardErrors((prev) => ({ ...prev, feed: undefined }))
-    } catch (err) {
-      console.error('[Dashboard] Failed to fetch events:', err)
-      setCardErrors((prev) => ({ ...prev, feed: 'Failed to load activity feed' }))
-    }
-  }, [])
-
-  const fetchPRCount = useCallback(async (): Promise<void> => {
-    try {
-      const prs = await window.api.getPrList()
-      if (cancelledRef.current) return
-      setPrCount(prs?.prs?.length ?? 0)
-      setCardErrors((prev) => ({ ...prev, prs: undefined }))
-    } catch (err) {
-      console.error('[Dashboard] Failed to fetch PR list:', err)
-      setCardErrors((prev) => ({ ...prev, prs: 'Failed to load PR data' }))
-    }
-  }, [])
-
-  // Fetch all dashboard data — errors are caught per-fetch so backoff only
-  // triggers on total failure. Jitter prevents thundering herd across views.
-  const fetchDashboardData = useCallback(async (): Promise<void> => {
-    setLoading(true)
-
-    await Promise.all([fetchCompletionsChart(), fetchActivityFeed(), fetchPRCount()])
-
-    if (!cancelledRef.current) {
-      setLoading(false)
-    }
-  }, [fetchCompletionsChart, fetchActivityFeed, fetchPRCount])
-
-  // Keep sprint task stats fresh — polls + reacts to sprint:externalChange IPC
-  useSprintPolling()
-
-  // Poll with jitter to prevent thundering herd; backoff on total failure
-  useBackoffInterval(fetchDashboardData, POLL_DASHBOARD_INTERVAL)
-
-  // Refresh chart/feed immediately on sprint mutations (not just every 60s)
-  useEffect(() => {
-    return window.api.onExternalSprintChange(() => {
-      fetchDashboardData()
-    })
-  }, [fetchDashboardData])
 
   const transition = reduced ? REDUCED_TRANSITION : SPRINGS.snappy
 
@@ -277,7 +185,7 @@ export default function DashboardView() {
               value={cardErrors.prs ? 0 : prCount}
               accent={cardErrors.prs ? 'red' : 'blue'}
               icon={<GitPullRequest size={10} />}
-              onClick={() => cardErrors.prs ? fetchPRCount() : navigateToSprintWithFilter('awaiting-review')}
+              onClick={() => cardErrors.prs ? useDashboardDataStore.getState().fetchAll() : navigateToSprintWithFilter('awaiting-review')}
             />
             <StatCounter
               label="Done"
@@ -304,7 +212,7 @@ export default function DashboardView() {
                   <div className="dashboard-card-error__message">{cardErrors.chart}</div>
                   <button
                     className="dashboard-card-error__retry"
-                    onClick={() => fetchCompletionsChart()}
+                    onClick={() => useDashboardDataStore.getState().fetchAll()}
                     style={{
                       border: `1px solid ${neonVar('red', 'color')}`,
                       color: neonVar('red', 'color')
@@ -353,7 +261,7 @@ export default function DashboardView() {
                   <div className="dashboard-card-error__message">{cardErrors.feed}</div>
                   <button
                     className="dashboard-card-error__retry"
-                    onClick={() => fetchActivityFeed()}
+                    onClick={() => useDashboardDataStore.getState().fetchAll()}
                     style={{
                       border: `1px solid ${neonVar('red', 'color')}`,
                       color: neonVar('red', 'color')
