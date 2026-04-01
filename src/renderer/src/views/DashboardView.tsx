@@ -138,9 +138,9 @@ export default function DashboardView() {
   return (
     <motion.div
       className="dashboard-root"
-      variants={VARIANTS.fadeIn}
-      initial="initial"
-      animate="animate"
+      variants={reduced ? undefined : VARIANTS.fadeIn}
+      initial={reduced ? undefined : 'initial'}
+      animate={reduced ? undefined : 'animate'}
       transition={transition}
     >
       {/* Background effects (ScanlineOverlay removed for data readability) */}
