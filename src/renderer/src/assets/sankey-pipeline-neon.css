@@ -1,0 +1,73 @@
+/* src/renderer/src/assets/sankey-pipeline-neon.css */
+/* ═══════════════════════════════════════════════════════
+   Sankey Pipeline — Keyframes, Hover, Focus, Reduced Motion
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Ripple effect on destination node ── */
+@keyframes sankey-ripple {
+  from { transform: scale(1); opacity: 0.4; }
+  to   { transform: scale(1.3); opacity: 0; }
+}
+
+/* ── Count number flash on change ── */
+@keyframes sankey-count-flash {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* ── Active node pulse ring ── */
+@keyframes sankey-pulse {
+  0%, 100% { stroke-opacity: 0.15; }
+  50%      { stroke-opacity: 0.4; }
+}
+
+/* ── SVG transform origin fix for Electron/Chromium ── */
+.sankey-ripple,
+.sankey-count-flash {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.sankey-ripple {
+  animation: sankey-ripple 600ms ease-out forwards;
+}
+
+.sankey-count-flash {
+  animation: sankey-count-flash 400ms ease-out;
+}
+
+.sankey-pulse-ring {
+  animation: sankey-pulse 2.5s ease-in-out infinite;
+}
+
+/* ── Node interactivity ── */
+.sankey-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.sankey-node:hover .sankey-node__bg {
+  filter: brightness(1.3);
+}
+
+.sankey-node:focus-visible .sankey-node__focus-ring {
+  stroke-opacity: 0.6;
+}
+
+.sankey-node__focus-ring {
+  stroke-opacity: 0;
+  transition: stroke-opacity 150ms ease;
+}
+
+.sankey-node__bg {
+  transition: filter 150ms ease;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .sankey-particle { display: none; }
+  .sankey-pulse-ring { animation: none; }
+  .sankey-ripple { animation: none; }
+  .sankey-count-flash { animation: none; }
+}
