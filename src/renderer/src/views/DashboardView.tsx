@@ -28,6 +28,7 @@ import {
   Zap,
   AlertTriangle,
   XCircle,
+  Plus,
   Clock,
   TrendingUp,
   Target
@@ -218,6 +219,12 @@ export default function DashboardView() {
               icon={<CheckCircle size={10} />}
               onClick={() => navigateToSprintWithFilter('done')}
             />
+            <button
+              className="dashboard-new-task-btn"
+              onClick={() => setView('task-workbench')}
+            >
+              <Plus size={12} /> New Task
+            </button>
           </div>
 
           {/* Center: Main Stage */}
