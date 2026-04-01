@@ -25,6 +25,7 @@ export function AgentsView() {
   const activeView = usePanelLayoutStore((s) => s.activeView)
   const agents = useAgentHistoryStore((s) => s.agents)
   const agentsLoading = useAgentHistoryStore((s) => s.loading)
+  const fetchError = useAgentHistoryStore((s) => s.fetchError)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
   const initEvents = useAgentEventsStore((s) => s.init)
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
@@ -273,6 +274,8 @@ export function AgentsView() {
             onSelect={handleSelectAgent}
             onKill={fetchAgents}
             loading={agentsLoading}
+            fetchError={fetchError}
+            onRetry={fetchAgents}
           />
         </div>
 

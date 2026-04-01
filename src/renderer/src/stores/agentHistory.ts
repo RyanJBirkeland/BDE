@@ -7,6 +7,7 @@ interface AgentHistoryState extends LogPollerState {
   agents: AgentMeta[]
   selectedId: string | null
   loading: boolean
+  fetchError: string | null
 
   fetchAgents: () => Promise<void>
   selectAgent: (id: string | null) => void
@@ -28,14 +29,15 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
     logNextByte: 0,
     logTrimmedLines: 0,
     loading: false,
+    fetchError: null,
 
     fetchAgents: async (): Promise<void> => {
-      set({ loading: true })
+      set({ loading: true, fetchError: null })
       try {
         const agents = await window.api.agents.list({ limit: AGENT_LIST_FETCH_LIMIT })
         set({ agents })
       } catch {
-        // Non-critical
+        set({ fetchError: 'Failed to load agent list' })
       } finally {
         set({ loading: false })
       }
