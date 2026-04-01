@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
@@ -14,7 +14,6 @@ import {
   SankeyPipeline,
   MiniChart,
   ActivityFeed,
-  ScanlineOverlay,
   ParticleField,
   type ChartBar
 } from '../components/neon'
@@ -28,6 +27,7 @@ import {
   DollarSign,
   Zap,
   AlertTriangle,
+  XCircle,
   Clock,
   TrendingUp,
   Target
@@ -43,15 +43,31 @@ export default function DashboardView() {
   const setView = usePanelLayoutStore((s) => s.setView)
 
   // Dashboard data from centralized polling
-  const { chartData, feedEvents, prCount, loading, cardErrors } = useDashboardDataStore(
+  const { chartData, feedEvents, prCount, loading, cardErrors, lastFetchedAt } = useDashboardDataStore(
     useShallow((s) => ({
       chartData: s.chartData,
       feedEvents: s.feedEvents,
       prCount: s.prCount,
       loading: s.loading,
-      cardErrors: s.cardErrors
+      cardErrors: s.cardErrors,
+      lastFetchedAt: s.lastFetchedAt,
     }))
   )
+
+  // Tick counter to re-evaluate freshness every 10s
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const interval = setInterval(() => setTick(n => n + 1), 10_000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Freshness: how long ago data was last fetched, and whether it's stale (>2min)
+  const freshness = useMemo(() => {
+    if (!lastFetchedAt) return { text: '', stale: false }
+    const ago = Math.floor((Date.now() - lastFetchedAt) / 1000)
+    const text = ago < 10 ? 'just now' : ago < 60 ? `${ago}s ago` : `${Math.floor(ago / 60)}m ago`
+    return { text, stale: ago > 120 }
+  }, [lastFetchedAt, tick])
 
   /** Navigate to Sprint Center with a pre-applied status filter. */
   const navigateToSprintWithFilter = useCallback(
@@ -62,6 +78,10 @@ export default function DashboardView() {
     },
     [setStatusFilter, setSearchQuery, setView]
   )
+
+  const handleCompletionClick = useCallback((_task: typeof recentCompletions[number]) => {
+    navigateToSprintWithFilter('done')
+  }, [navigateToSprintWithFilter])
 
   const partitions = useMemo(() => partitionSprintTasks(tasks), [tasks])
 
@@ -123,14 +143,13 @@ export default function DashboardView() {
       animate="animate"
       transition={transition}
     >
-      {/* Background effects */}
-      {!reduced && <ScanlineOverlay />}
+      {/* Background effects (ScanlineOverlay removed for data readability) */}
       {!reduced && <ParticleField />}
       <div className="dashboard-bg-gradient" />
 
       {/* Content (above effects) */}
       <div className="dashboard-content">
-        <StatusBar title="BDE Command Center" status="ok">
+        <StatusBar title="BDE Command Center" status={freshness.stale ? 'warning' : 'ok'}>
           {loading && !chartData.length ? (
             <span className="dashboard-status-loading">Loading...</span>
           ) : Object.values(cardErrors).filter(Boolean).length > 0 ? (
@@ -141,7 +160,14 @@ export default function DashboardView() {
               {Object.values(cardErrors).filter(Boolean).length} card{Object.values(cardErrors).filter(Boolean).length !== 1 ? 's' : ''} failed
             </span>
           ) : (
-            'SYS.OK'
+            <span className="dashboard-status-ok">
+              SYS.OK
+              {freshness.text && (
+                <span className={`dashboard-status-freshness${freshness.stale ? ' dashboard-status-freshness--stale' : ''}`}>
+                  {' · '}{freshness.text}
+                </span>
+              )}
+            </span>
           )}
         </StatusBar>
 
@@ -170,6 +196,13 @@ export default function DashboardView() {
               accent="red"
               icon={<AlertTriangle size={10} />}
               onClick={() => navigateToSprintWithFilter('blocked')}
+            />
+            <StatCounter
+              label="Failed"
+              value={stats.failed}
+              accent="red"
+              icon={<XCircle size={10} />}
+              onClick={() => navigateToSprintWithFilter('failed')}
             />
             <StatCounter
               label="PRs"
@@ -245,13 +278,6 @@ export default function DashboardView() {
                 </div>
               </NeonCard>
             </div>
-
-            <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
-              <MiniChart data={costTrendData} height={80} />
-              <div className="dashboard-chart-caption">
-                last {costTrendData.length} runs
-              </div>
-            </NeonCard>
           </div>
 
           {/* Right: Feed + Recent + Cost */}
@@ -273,7 +299,7 @@ export default function DashboardView() {
                 </div>
               ) : (
                 <div className="dashboard-feed-scroll">
-                  <ActivityFeed events={feedEvents} />
+                  <ActivityFeed events={feedEvents} onEventClick={() => setView('agents')} />
                 </div>
               )}
             </NeonCard>
@@ -286,7 +312,19 @@ export default function DashboardView() {
                   </div>
                 ) : (
                   recentCompletions.map((t) => (
-                    <div key={t.id} className="dashboard-completion-row">
+                    <div
+                      key={t.id}
+                      className="dashboard-completion-row"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleCompletionClick(t)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleCompletionClick(t)
+                        }
+                      }}
+                    >
                       <span className="dashboard-completion-title">
                         {t.title}
                       </span>
@@ -296,6 +334,13 @@ export default function DashboardView() {
                     </div>
                   ))
                 )}
+              </div>
+            </NeonCard>
+
+            <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
+              <MiniChart data={costTrendData} height={80} />
+              <div className="dashboard-chart-caption">
+                last {costTrendData.length} runs
               </div>
             </NeonCard>
 

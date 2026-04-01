@@ -58,7 +58,8 @@
   grid-template-columns: 200px 1fr 240px;
   gap: 12px;
   padding: 12px;
-  overflow: auto;
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* ── Column Stacks ── */
@@ -66,6 +67,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .dashboard-col--center {
@@ -82,7 +85,7 @@
 /* ── Chart Subtitle / Muted Captions ── */
 .dashboard-chart-caption {
   color: var(--neon-text-dim);
-  font-size: 9px;
+  font-size: 11px;
   margin-top: 6px;
 }
 
@@ -104,7 +107,8 @@
 /* ── Feed Container ── */
 .dashboard-feed-scroll {
   overflow: auto;
-  max-height: 240px;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ── Recent Completions ── */
@@ -126,6 +130,17 @@
   gap: 8px;
 }
 
+.dashboard-completion-row[role="button"] {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.dashboard-completion-row[role="button"]:hover {
+  background: var(--neon-surface-dim);
+}
+
 .dashboard-completion-title {
   color: var(--neon-text);
   font-size: 11px;
@@ -137,7 +152,7 @@
 
 .dashboard-completion-time {
   color: var(--neon-text-dim);
-  font-size: 9px;
+  font-size: 11px;
   white-space: nowrap;
   flex-shrink: 0;
   opacity: 0.85;
@@ -175,7 +190,7 @@
 
 .dashboard-ring__breakdown {
   color: var(--neon-text-dim);
-  font-size: 9px;
+  font-size: 11px;
   opacity: 0.85;
 }
 
@@ -213,4 +228,44 @@
 
 .dashboard-card-error__retry:hover {
   background: rgba(255, 50, 50, 0.2);
+}
+
+/* ── Status Bar Freshness Indicator ── */
+.dashboard-status-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dashboard-status-freshness {
+  color: var(--neon-text-dim);
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.dashboard-status-freshness--stale {
+  color: var(--neon-orange);
+  opacity: 1;
+}
+
+/* ── Responsive Breakpoints ── */
+
+/* Collapse to 2 columns at narrow widths */
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 180px 1fr;
+  }
+  .dashboard-col:nth-child(3) {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+/* Single column for very narrow */
+@media (max-width: 600px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 }

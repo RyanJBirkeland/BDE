@@ -51,7 +51,8 @@ export function StatCounter({
         padding: tokens.space[3],
         cursor: isClickable ? 'pointer' : undefined,
         opacity: isClickable && hovered ? 0.85 : 1,
-        transition: 'opacity 0.15s ease'
+        transform: isClickable && hovered ? 'translateY(-1px)' : undefined,
+        transition: 'opacity 0.15s ease, transform 0.15s ease'
       }}
     >
       <div

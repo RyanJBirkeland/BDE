@@ -11,6 +11,7 @@ export interface FeedEvent {
 interface ActivityFeedProps {
   events: FeedEvent[]
   maxItems?: number
+  onEventClick?: (event: FeedEvent) => void
 }
 
 function formatRelativeTime(timestamp: number): string {
@@ -24,7 +25,7 @@ function formatRelativeTime(timestamp: number): string {
   return `${Math.floor(hours / 24)}d ago`
 }
 
-export function ActivityFeed({ events, maxItems }: ActivityFeedProps) {
+export function ActivityFeed({ events, maxItems, onEventClick }: ActivityFeedProps) {
   const displayed = maxItems ? events.slice(0, maxItems) : events
 
   if (displayed.length === 0) {
@@ -46,11 +47,37 @@ export function ActivityFeed({ events, maxItems }: ActivityFeedProps) {
       {displayed.map((event) => (
         <div
           key={event.id}
+          onClick={onEventClick ? () => onEventClick(event) : undefined}
+          onKeyDown={
+            onEventClick
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onEventClick(event)
+                  }
+                }
+              : undefined
+          }
+          role={onEventClick ? 'button' : undefined}
+          tabIndex={onEventClick ? 0 : undefined}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: tokens.space[1]
+            gap: tokens.space[1],
+            ...(onEventClick
+              ? {
+                  cursor: 'pointer',
+                  opacity: 1,
+                  transition: 'opacity 0.15s'
+                }
+              : {})
           }}
+          onMouseEnter={
+            onEventClick ? (e) => ((e.currentTarget as HTMLDivElement).style.opacity = '0.75') : undefined
+          }
+          onMouseLeave={
+            onEventClick ? (e) => ((e.currentTarget as HTMLDivElement).style.opacity = '1') : undefined
+          }
         >
           <div
             style={{
