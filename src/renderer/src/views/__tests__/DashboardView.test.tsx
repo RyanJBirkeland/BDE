@@ -147,7 +147,7 @@ describe('DashboardView', () => {
       loading: false
     })
     render(<DashboardView />)
-    expect(screen.getByText('Completions / Hour')).toBeInTheDocument()
+    expect(screen.getByText('Completions by Hour')).toBeInTheDocument()
   })
 
   it('renders feed events from recentEvents', () => {

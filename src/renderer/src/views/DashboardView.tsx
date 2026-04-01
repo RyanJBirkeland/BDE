@@ -190,9 +190,9 @@ export default function DashboardView() {
             </NeonCard>
           </div>
         ) : (
-        <div className="dashboard-grid">
+        <div className="dashboard-grid" role="region" aria-label="Dashboard overview">
           {/* Left: Stats Stack */}
-          <div className="dashboard-col">
+          <div className="dashboard-col" role="region" aria-label="Task statistics">
             <StatCounter
               label="Active"
               value={stats.active}
@@ -291,7 +291,7 @@ export default function DashboardView() {
 
             <NeonCard
               accent="cyan"
-              title="Completions / Hour"
+              title="Completions by Hour"
               icon={<Zap size={12} />}
             >
               {cardErrors.chart ? (
