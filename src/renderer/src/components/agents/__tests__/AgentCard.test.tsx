@@ -198,6 +198,10 @@ describe('AgentCard', () => {
     const killButton = screen.getByLabelText('Stop agent')
     await user.click(killButton)
 
+    // Confirm the dialog
+    const confirmButton = screen.getByRole('button', { name: 'Stop' })
+    await user.click(confirmButton)
+
     expect(window.api.killAgent).toHaveBeenCalledWith('agent-123')
   })
 
@@ -208,6 +212,10 @@ describe('AgentCard', () => {
 
     const killButton = screen.getByLabelText('Stop agent')
     await user.click(killButton)
+
+    // Confirm the dialog
+    const confirmButton = screen.getByRole('button', { name: 'Stop' })
+    await user.click(confirmButton)
 
     expect(window.api.killAgent).toHaveBeenCalledWith('task-456')
   })
@@ -220,6 +228,10 @@ describe('AgentCard', () => {
     const killButton = screen.getByLabelText('Stop agent')
     await user.click(killButton)
 
+    // Confirm the dialog
+    const confirmButton = screen.getByRole('button', { name: 'Stop' })
+    await user.click(confirmButton)
+
     expect(toast.success).toHaveBeenCalledWith('Agent stopped')
   })
 
@@ -231,6 +243,10 @@ describe('AgentCard', () => {
 
     const killButton = screen.getByLabelText('Stop agent')
     await user.click(killButton)
+
+    // Confirm the dialog
+    const confirmButton = screen.getByRole('button', { name: 'Stop' })
+    await user.click(confirmButton)
 
     expect(toast.error).toHaveBeenCalledWith('Failed to stop agent: Agent not found')
   })
