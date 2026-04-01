@@ -245,13 +245,6 @@ export default function DashboardView() {
                 </div>
               </NeonCard>
             </div>
-
-            <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
-              <MiniChart data={costTrendData} height={80} />
-              <div className="dashboard-chart-caption">
-                last {costTrendData.length} runs
-              </div>
-            </NeonCard>
           </div>
 
           {/* Right: Feed + Recent + Cost */}
@@ -296,6 +289,13 @@ export default function DashboardView() {
                     </div>
                   ))
                 )}
+              </div>
+            </NeonCard>
+
+            <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
+              <MiniChart data={costTrendData} height={80} />
+              <div className="dashboard-chart-caption">
+                last {costTrendData.length} runs
               </div>
             </NeonCard>
 
