@@ -271,6 +271,23 @@
   border-style: solid;
 }
 
+/* ── Attention Card ── */
+.dashboard-attention-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  color: var(--neon-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dashboard-attention-item:hover {
+  background: var(--neon-surface-dim);
+}
+
 /* ── Responsive Breakpoints ── */
 
 /* Collapse to 2 columns at narrow widths */

@@ -229,6 +229,35 @@ export default function DashboardView() {
 
           {/* Center: Main Stage */}
           <div className="dashboard-col dashboard-col--center">
+            {(stats.failed > 0 || partitions.awaitingReview.length > 0 || stats.blocked > 0) && (
+              <NeonCard accent="red" title="Attention">
+                {stats.failed > 0 && (
+                  <div className="dashboard-attention-item" role="button" tabIndex={0}
+                    onClick={() => navigateToSprintWithFilter('failed')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigateToSprintWithFilter('failed') } }}>
+                    <XCircle size={12} />
+                    <span>{stats.failed} failed task{stats.failed !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
+                {partitions.awaitingReview.length > 0 && (
+                  <div className="dashboard-attention-item" role="button" tabIndex={0}
+                    onClick={() => navigateToSprintWithFilter('awaiting-review')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigateToSprintWithFilter('awaiting-review') } }}>
+                    <GitPullRequest size={12} />
+                    <span>{partitions.awaitingReview.length} PR{partitions.awaitingReview.length !== 1 ? 's' : ''} awaiting review</span>
+                  </div>
+                )}
+                {stats.blocked > 0 && (
+                  <div className="dashboard-attention-item" role="button" tabIndex={0}
+                    onClick={() => navigateToSprintWithFilter('blocked')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigateToSprintWithFilter('blocked') } }}>
+                    <AlertTriangle size={12} />
+                    <span>{stats.blocked} blocked task{stats.blocked !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
+              </NeonCard>
+            )}
+
             <NeonCard accent="cyan" title="Pipeline" icon={<Activity size={12} />}>
               <SankeyPipeline
                 stages={{
