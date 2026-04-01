@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, act, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
+
+const { mockFetchAll } = vi.hoisted(() => ({ mockFetchAll: vi.fn() }))
 
 vi.mock('../../stores/sprintTasks', () => ({
   useSprintTasks: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
@@ -25,7 +27,18 @@ vi.mock('../../stores/costData', () => ({
   )
 }))
 
-vi.mock('../../hooks/useSprintPolling', () => ({ useSprintPolling: vi.fn() }))
+vi.mock('../../stores/dashboardData', () => {
+  const { create } = require('zustand')
+  const store = create(() => ({
+    chartData: [],
+    feedEvents: [],
+    prCount: 0,
+    cardErrors: {},
+    loading: false,
+    fetchAll: mockFetchAll
+  }))
+  return { useDashboardDataStore: store }
+})
 
 vi.mock('../../components/neon', async () => {
   const actual =
@@ -37,25 +50,12 @@ vi.mock('../../components/neon', async () => {
   }
 })
 
-Object.defineProperty(window, 'api', {
-  value: {
-    getPrList: vi.fn().mockResolvedValue([]),
-    openExternal: vi.fn(),
-    onExternalSprintChange: vi.fn().mockReturnValue(() => {}),
-    dashboard: {
-      completionsPerHour: vi.fn().mockResolvedValue([]),
-      recentEvents: vi.fn().mockResolvedValue([])
-    }
-  },
-  writable: true,
-  configurable: true
-})
-
 // ---------------------------------------------------------------------------
 // Subject + stores
 // ---------------------------------------------------------------------------
 
 import DashboardView from '../DashboardView'
+import { useDashboardDataStore } from '../../stores/dashboardData'
 import { useSprintUI } from '../../stores/sprintUI'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useSprintTasks } from '../../stores/sprintTasks'
@@ -68,13 +68,19 @@ import { useCostDataStore } from '../../stores/costData'
 describe('DashboardView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)
     useSprintUI.setState({ searchQuery: '', statusFilter: 'all' })
+    useDashboardDataStore.setState({
+      chartData: [],
+      feedEvents: [],
+      prCount: 0,
+      cardErrors: {},
+      loading: false,
+      fetchAll: mockFetchAll
+    })
   })
 
   afterEach(() => {
-    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
@@ -132,147 +138,50 @@ describe('DashboardView', () => {
     expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
-  it('renders chart data from completionsPerHour', async () => {
-    vi.mocked(window.api.dashboard.completionsPerHour).mockResolvedValue([
-      { hour: '10:00', count: 5 },
-      { hour: '11:00', count: 3 }
-    ])
-    render(<DashboardView />)
-    // Flush initial useBackoffInterval tick (setTimeout 0ms with jitter=0)
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1)
+  it('renders chart data from completionsPerHour', () => {
+    useDashboardDataStore.setState({
+      chartData: [
+        { value: 5, accent: 'cyan', label: '10:00' },
+        { value: 3, accent: 'pink', label: '11:00' }
+      ],
+      loading: false
     })
+    render(<DashboardView />)
     expect(screen.getByText('Completions / Hour')).toBeInTheDocument()
   })
 
-  it('renders feed events from recentEvents', async () => {
-    vi.mocked(window.api.dashboard.recentEvents).mockResolvedValue([
-      {
-        id: 1,
-        event_type: 'complete',
-        agent_id: 'agent-1',
-        payload: '',
-        timestamp: Date.now() - 5000
-      },
-      {
-        id: 2,
-        event_type: 'error',
-        agent_id: 'agent-2',
-        payload: '',
-        timestamp: Date.now() - 10000
-      },
-      {
-        id: 3,
-        event_type: 'spawn',
-        agent_id: 'agent-3',
-        payload: '',
-        timestamp: Date.now() - 20000
-      }
-    ])
-    render(<DashboardView />)
-    // Flush initial useBackoffInterval tick
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1)
+  it('renders feed events from recentEvents', () => {
+    useDashboardDataStore.setState({
+      feedEvents: [
+        { id: '1', label: 'complete: agent-1', accent: 'cyan', timestamp: Date.now() - 5000 },
+        { id: '2', label: 'error: agent-2', accent: 'red', timestamp: Date.now() - 10000 },
+        { id: '3', label: 'spawn: agent-3', accent: 'purple', timestamp: Date.now() - 20000 }
+      ],
+      loading: false
     })
+    render(<DashboardView />)
     expect(screen.getByText('complete: agent-1')).toBeInTheDocument()
     expect(screen.getByText('error: agent-2')).toBeInTheDocument()
     expect(screen.getByText('spawn: agent-3')).toBeInTheDocument()
   })
 
-  it('re-fetches dashboard data on polling interval', async () => {
-    render(<DashboardView />)
-
-    // Flush the initial useBackoffInterval tick
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1)
-    })
-
-    expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(1)
-
-    // Advance past the 60s polling interval
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(60_000)
-    })
-
-    expect(window.api.dashboard.completionsPerHour).toHaveBeenCalledTimes(2)
-    expect(window.api.dashboard.recentEvents).toHaveBeenCalledTimes(2)
-    expect(window.api.getPrList).toHaveBeenCalledTimes(2)
-  })
-
-  it('logs errors instead of swallowing them', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.mocked(window.api.dashboard.completionsPerHour).mockRejectedValueOnce(
-      new Error('Network error')
-    )
-
-    render(<DashboardView />)
-
-    // Flush initial useBackoffInterval tick to trigger the rejected promise
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1)
-    })
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[Dashboard] Failed to fetch completions:',
-      expect.any(Error)
-    )
-
-    consoleSpy.mockRestore()
-  })
-
-  it('renders correct PR count from getPrList payload', async () => {
-    vi.mocked(window.api.getPrList).mockResolvedValue({
-      prs: [
-        {
-          number: 1,
-          title: 'PR1',
-          html_url: '',
-          state: 'open',
-          draft: false,
-          created_at: '',
-          updated_at: '',
-          head: { ref: 'a', sha: 'b' },
-          base: { ref: 'main' },
-          user: { login: 'u' },
-          merged: false,
-          merged_at: null,
-          repo: 'r'
-        },
-        {
-          number: 2,
-          title: 'PR2',
-          html_url: '',
-          state: 'open',
-          draft: false,
-          created_at: '',
-          updated_at: '',
-          head: { ref: 'c', sha: 'd' },
-          base: { ref: 'main' },
-          user: { login: 'u' },
-          merged: false,
-          merged_at: null,
-          repo: 'r'
-        }
-      ],
-      checks: {}
+  it('renders correct PR count from store', () => {
+    useDashboardDataStore.setState({
+      prCount: 2,
+      loading: false
     })
     render(<DashboardView />)
-    // Flush initial useBackoffInterval tick
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1)
-    })
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 
   // ---------- Branch coverage: SuccessRing (rate null vs values) ----------
 
-  it('shows "No terminal tasks" when no done/failed tasks', async () => {
+  it('shows "No terminal tasks" when no done/failed tasks', () => {
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     expect(screen.getByText('No terminal tasks')).toBeInTheDocument()
   })
 
-  it('shows success ring with percentage when done tasks exist', async () => {
+  it('shows success ring with percentage when done tasks exist', () => {
     vi.mocked(useSprintTasks).mockImplementation((selector: any) =>
       selector({
         tasks: [
@@ -285,14 +194,13 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     // 2 done, 1 failed = 67%
     expect(screen.getByText('67%')).toBeInTheDocument()
     expect(screen.getByText(/2✓/)).toBeInTheDocument()
     expect(screen.getByText(/1✗/)).toBeInTheDocument()
   })
 
-  it('shows success ring with high rate (>=80) cyan accent', async () => {
+  it('shows success ring with high rate (>=80) cyan accent', () => {
     vi.mocked(useSprintTasks).mockImplementation((selector: any) =>
       selector({
         tasks: [
@@ -307,20 +215,18 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     expect(screen.getByText('80%')).toBeInTheDocument()
   })
 
   // ---------- Branch coverage: avgDuration (null vs value) ----------
 
-  it('shows dash when no agent durations available', async () => {
+  it('shows dash when no agent durations available', () => {
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     // avgDuration is null, should show '—'
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
-  it('shows formatted duration when agent runs have duration', async () => {
+  it('shows formatted duration when agent runs have duration', () => {
     vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
       selector({
         localAgents: [
@@ -332,13 +238,12 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     // avg = 150000ms = 150s = 2m 30s
     expect(screen.getByText('2m 30s')).toBeInTheDocument()
     expect(screen.getByText('2 runs tracked')).toBeInTheDocument()
   })
 
-  it('shows hours in duration for long runs', async () => {
+  it('shows hours in duration for long runs', () => {
     vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
       selector({
         localAgents: [
@@ -349,12 +254,11 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     // 7200000ms = 2h 0m
     expect(screen.getByText('2h 0m')).toBeInTheDocument()
   })
 
-  it('shows seconds for short durations', async () => {
+  it('shows seconds for short durations', () => {
     vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
       selector({
         localAgents: [
@@ -365,7 +269,6 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     expect(screen.getByText('45s')).toBeInTheDocument()
   })
 
@@ -376,7 +279,7 @@ describe('DashboardView', () => {
     expect(screen.getByText('Recent Completions')).toBeInTheDocument()
   })
 
-  it('shows recent completions when done tasks exist', async () => {
+  it('shows recent completions when done tasks exist', () => {
     vi.mocked(useSprintTasks).mockImplementation((selector: any) =>
       selector({
         tasks: [
@@ -387,48 +290,54 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     expect(screen.getByText('Implement feature X')).toBeInTheDocument()
     expect(screen.getByText('just now')).toBeInTheDocument()
   })
 
   // ---------- Branch coverage: error states with retry ----------
 
-  it('shows error state with retry button when all fetches fail', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.mocked(window.api.dashboard.completionsPerHour).mockRejectedValue(new Error('fail'))
-    vi.mocked(window.api.dashboard.recentEvents).mockRejectedValue(new Error('fail'))
-    vi.mocked(window.api.getPrList).mockRejectedValue(new Error('fail'))
+  it('shows error state with retry button when all fetches fail', () => {
+    useDashboardDataStore.setState({
+      cardErrors: {
+        chart: 'Failed to load completions',
+        feed: 'Failed to load activity feed',
+        prs: 'Failed to load PR data'
+      },
+      loading: false
+    })
 
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
 
     const retryBtns = screen.getAllByText('Retry')
     expect(retryBtns.length).toBeGreaterThanOrEqual(1)
-    consoleSpy.mockRestore()
   })
 
-  it('retries fetching data when Retry button clicked', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.mocked(window.api.dashboard.completionsPerHour).mockRejectedValue(new Error('fail'))
-    vi.mocked(window.api.dashboard.recentEvents).mockRejectedValue(new Error('fail'))
-    vi.mocked(window.api.getPrList).mockRejectedValue(new Error('fail'))
+  it('retries fetching data when Retry button clicked', () => {
+    useDashboardDataStore.setState({
+      cardErrors: {
+        chart: 'Failed to load completions',
+        feed: 'Failed to load activity feed',
+        prs: 'Failed to load PR data'
+      },
+      loading: false
+    })
 
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
 
-    const callCountBefore = vi.mocked(window.api.dashboard.completionsPerHour).mock.calls.length
     // Click the first retry button (chart card)
     const retryBtns = screen.getAllByText('Retry')
-    await act(async () => { fireEvent.click(retryBtns[0]) })
+    fireEvent.click(retryBtns[0])
 
-    expect(vi.mocked(window.api.dashboard.completionsPerHour).mock.calls.length).toBeGreaterThan(callCountBefore)
-    consoleSpy.mockRestore()
+    expect(mockFetchAll).toHaveBeenCalled()
   })
 
   // ---------- Branch coverage: loading state ----------
 
   it('shows Loading... text during initial load with no chart data', () => {
+    useDashboardDataStore.setState({
+      loading: true,
+      chartData: []
+    })
     render(<DashboardView />)
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
@@ -461,7 +370,7 @@ describe('DashboardView', () => {
 
   // ---------- Branch coverage: cost trend data ----------
 
-  it('renders cost trend chart with agent data', async () => {
+  it('renders cost trend chart with agent data', () => {
     vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
       selector({
         localAgents: [
@@ -473,7 +382,6 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
     expect(screen.getByText(/last 2 runs/)).toBeInTheDocument()
     expect(screen.getByText('$1.70')).toBeInTheDocument()
   })

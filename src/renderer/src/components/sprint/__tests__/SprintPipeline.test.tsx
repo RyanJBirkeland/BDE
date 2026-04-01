@@ -107,8 +107,6 @@ vi.mock('../../../hooks/useTaskNotifications', () => ({
   useTaskToasts: vi.fn()
 }))
 
-vi.mock('../../../hooks/useSprintPolling', () => ({ useSprintPolling: vi.fn() }))
-vi.mock('../../../hooks/usePrStatusPolling', () => ({ usePrStatusPolling: vi.fn() }))
 vi.mock('../../../hooks/useSprintKeyboardShortcuts', () => ({
   useSprintKeyboardShortcuts: vi.fn()
 }))

@@ -6,10 +6,6 @@ vi.mock('../../stores/gitTree', () => ({
   useGitTreeStore: vi.fn()
 }))
 
-vi.mock('../../hooks/useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn()
-}))
-
 // Mock sub-components to isolate GitTreeView
 vi.mock('../../components/git-tree/CommitBox', () => ({
   CommitBox: ({
