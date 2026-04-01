@@ -8,6 +8,7 @@ interface DashboardDataState {
   prCount: number
   cardErrors: Record<string, string | undefined>
   loading: boolean
+  lastFetchedAt: number | null
   fetchAll: () => Promise<void>
 }
 
@@ -23,6 +24,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
   prCount: 0,
   cardErrors: {},
   loading: true,
+  lastFetchedAt: null,
 
   fetchAll: async () => {
     const errors: Record<string, string> = {}
@@ -69,7 +71,8 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
       feedEvents,
       prCount,
       cardErrors: Object.keys(errors).length > 0 ? errors : {},
-      loading: false
+      loading: false,
+      lastFetchedAt: Date.now()
     })
   }
 }))
