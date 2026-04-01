@@ -1,4 +1,7 @@
 import { create } from 'zustand'
+import { useMemo } from 'react'
+import { useSprintTasks } from './sprintTasks'
+import type { SprintTask } from '../../../shared/types'
 
 interface HealthCheckStore {
   stuckTaskIds: string[]
@@ -28,3 +31,20 @@ export const useHealthCheckStore = create<HealthCheckStore>((set) => ({
     }),
   clearDismissed: () => set({ dismissedIds: [] })
 }))
+
+export function useVisibleStuckTasks(): {
+  visibleStuckTasks: SprintTask[]
+  dismissTask: (id: string) => void
+} {
+  const tasks = useSprintTasks((s) => s.tasks)
+  const stuckTaskIds = useHealthCheckStore((s) => s.stuckTaskIds)
+  const dismissedIds = useHealthCheckStore((s) => s.dismissedIds)
+  const dismissTask = useHealthCheckStore((s) => s.dismiss)
+
+  const visibleStuckTasks = useMemo(
+    () => tasks.filter((t) => stuckTaskIds.includes(t.id) && !dismissedIds.includes(t.id)),
+    [tasks, stuckTaskIds, dismissedIds]
+  )
+
+  return { visibleStuckTasks, dismissTask }
+}

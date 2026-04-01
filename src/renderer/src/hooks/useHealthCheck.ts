@@ -1,18 +1,14 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useHealthCheckStore } from '../stores/healthCheck'
 import { useVisibilityAwareInterval } from './useVisibilityAwareInterval'
 import { POLL_HEALTH_CHECK_MS } from '../lib/constants'
-import type { SprintTask } from '../../../shared/types'
 
 /**
- * useHealthCheck — detects stuck active tasks and surfaces them for the UI.
- * Polls on a visibility-aware interval and allows per-task dismissal.
+ * useHealthCheckPolling — polls for stuck tasks on a visibility-aware interval.
+ * Writes results to the healthCheck store. No return value.
  */
-export function useHealthCheck(tasks: SprintTask[]) {
+export function useHealthCheckPolling(): void {
   const setStuckTasks = useHealthCheckStore((s) => s.setStuckTasks)
-  const stuckTaskIds = useHealthCheckStore((s) => s.stuckTaskIds)
-  const dismissedIds = useHealthCheckStore((s) => s.dismissedIds)
-  const dismissTask = useHealthCheckStore((s) => s.dismiss)
 
   const runHealthCheck = useCallback(async () => {
     try {
@@ -27,11 +23,4 @@ export function useHealthCheck(tasks: SprintTask[]) {
     runHealthCheck()
   }, [runHealthCheck])
   useVisibilityAwareInterval(runHealthCheck, POLL_HEALTH_CHECK_MS)
-
-  const visibleStuckTasks = useMemo(
-    () => tasks.filter((t) => stuckTaskIds.includes(t.id) && !dismissedIds.includes(t.id)),
-    [tasks, stuckTaskIds, dismissedIds]
-  )
-
-  return { visibleStuckTasks, dismissTask }
 }

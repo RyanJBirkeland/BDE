@@ -15,7 +15,8 @@ import { useSprintPolling } from '../../hooks/useSprintPolling'
 import { usePrStatusPolling } from '../../hooks/usePrStatusPolling'
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
 import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
-import { useHealthCheck } from '../../hooks/useHealthCheck'
+import { useHealthCheckPolling } from '../../hooks/useHealthCheck'
+import { useVisibleStuckTasks } from '../../stores/healthCheck'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { Button } from '../ui/Button'
@@ -84,7 +85,8 @@ export function SprintPipeline() {
   } = useSprintTaskActions()
 
   // SP-7: Extract health check results for HealthCheckDrawer
-  const { visibleStuckTasks, dismissTask } = useHealthCheck(tasks)
+  useHealthCheckPolling()
+  const { visibleStuckTasks, dismissTask } = useVisibleStuckTasks()
 
   // --- Local UI state ---
 
