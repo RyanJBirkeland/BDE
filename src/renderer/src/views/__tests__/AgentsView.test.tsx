@@ -188,4 +188,29 @@ describe('AgentsView', () => {
     })
     expect(screen.getByTestId('agent-launchpad')).toBeInTheDocument()
   })
+
+  // ---------- Branch coverage: collapsible chart ----------
+
+  it('renders chart toggle button with aria-label', () => {
+    render(<AgentsView />)
+    const toggle = screen.getByLabelText('Collapse activity chart')
+    expect(toggle).toBeInTheDocument()
+  })
+
+  it('toggles chart visibility when toggle button clicked', () => {
+    render(<AgentsView />)
+    const toggle = screen.getByLabelText('Collapse activity chart')
+
+    // Chart should be visible initially
+    expect(screen.getByTestId('neon-card')).toBeInTheDocument()
+
+    // Click to collapse
+    fireEvent.click(toggle)
+    expect(screen.queryByTestId('neon-card')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Expand activity chart')).toBeInTheDocument()
+
+    // Click to expand
+    fireEvent.click(screen.getByLabelText('Expand activity chart'))
+    expect(screen.getByTestId('neon-card')).toBeInTheDocument()
+  })
 })

@@ -3,7 +3,7 @@
  * Running agents appear first with live pulse, followed by recent (24h)
  * and history (older).
  */
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { Search, ChevronRight } from 'lucide-react'
 import type { AgentMeta } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
@@ -116,6 +116,7 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
   const [searchText, setSearchText] = useState(filter ?? '')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
+  const selectedRef = useRef<HTMLDivElement>(null)
 
   const filtered = useMemo(() => {
     if (!searchText) return agents
@@ -129,6 +130,13 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
   }, [agents, searchText])
 
   const groups = useMemo(() => groupAgents(filtered), [filtered])
+
+  // Scroll selected agent into view
+  useEffect(() => {
+    if (selectedRef.current) {
+      selectedRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [selectedId])
 
   return (
     <div
@@ -282,13 +290,14 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
               collapsible={false}
             />
             {groups.running.map((a) => (
-              <AgentCard
-                key={a.id}
-                agent={a}
-                selected={a.id === selectedId}
-                onClick={() => onSelect(a.id)}
-                onKill={onKill}
-              />
+              <div key={a.id} ref={a.id === selectedId ? selectedRef : null}>
+                <AgentCard
+                  agent={a}
+                  selected={a.id === selectedId}
+                  onClick={() => onSelect(a.id)}
+                  onKill={onKill}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -304,13 +313,14 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
               collapsible={false}
             />
             {groups.recent.map((a) => (
-              <AgentCard
-                key={a.id}
-                agent={a}
-                selected={a.id === selectedId}
-                onClick={() => onSelect(a.id)}
-                onKill={onKill}
-              />
+              <div key={a.id} ref={a.id === selectedId ? selectedRef : null}>
+                <AgentCard
+                  agent={a}
+                  selected={a.id === selectedId}
+                  onClick={() => onSelect(a.id)}
+                  onKill={onKill}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -325,13 +335,14 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
             />
             {historyOpen &&
               groups.history.map((a) => (
-                <AgentCard
-                  key={a.id}
-                  agent={a}
-                  selected={a.id === selectedId}
-                  onClick={() => onSelect(a.id)}
-                  onKill={onKill}
-                />
+                <div key={a.id} ref={a.id === selectedId ? selectedRef : null}>
+                  <AgentCard
+                    agent={a}
+                    selected={a.id === selectedId}
+                    onClick={() => onSelect(a.id)}
+                    onKill={onKill}
+                  />
+                </div>
               ))}
           </div>
         )}

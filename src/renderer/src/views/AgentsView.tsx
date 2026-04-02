@@ -6,7 +6,7 @@
  */
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Activity } from 'lucide-react'
+import { Plus, Activity, ChevronRight } from 'lucide-react'
 import '../assets/agents.css'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useAgentHistoryStore } from '../stores/agentHistory'
@@ -32,6 +32,7 @@ export function AgentsView() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showLaunchpad, setShowLaunchpad] = useState(false)
+  const [chartCollapsed, setChartCollapsed] = useState(false)
   const cleanupRef = useRef<(() => void) | null>(null)
 
   // Initialize event listener once
@@ -157,6 +158,7 @@ export function AgentsView() {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
+        minWidth: 600,
         background: 'var(--neon-bg)'
       }}
       variants={VARIANTS.fadeIn}
@@ -271,26 +273,55 @@ export function AgentsView() {
 
       {/* Zone 3: Agent Activity Chart */}
       <div style={{ padding: '0 12px 12px' }}>
-        <NeonCard accent="cyan" title="Agent Activity — Last 6 Hours" icon={<Activity size={12} />}>
-          <MiniChart data={activityChartData} height={80} />
-          <div
+        <button
+          onClick={() => setChartCollapsed(!chartCollapsed)}
+          aria-label={chartCollapsed ? 'Expand activity chart' : 'Collapse activity chart'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'none',
+            border: 'none',
+            color: 'var(--neon-cyan)',
+            fontSize: '11px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            padding: '6px 0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}
+        >
+          <ChevronRight
+            size={12}
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              color: 'var(--neon-text-dim)',
-              fontSize: '9px',
-              marginTop: '4px',
-              fontFamily: 'var(--bde-font-code)'
+              transform: chartCollapsed ? 'rotate(0deg)' : 'rotate(90deg)',
+              transition: 'transform 150ms ease'
             }}
-          >
-            {activityChartData.length > 0 && (
-              <>
-                <span>{activityChartData[0].label}</span>
-                <span>{activityChartData[activityChartData.length - 1].label}</span>
-              </>
-            )}
-          </div>
-        </NeonCard>
+          />
+          Activity
+        </button>
+        {!chartCollapsed && (
+          <NeonCard accent="cyan" title="Agent Activity — Last 6 Hours" icon={<Activity size={12} />}>
+            <MiniChart data={activityChartData} height={80} />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                color: 'var(--neon-text-dim)',
+                fontSize: '9px',
+                marginTop: '4px',
+                fontFamily: 'var(--bde-font-code)'
+              }}
+            >
+              {activityChartData.length > 0 && (
+                <>
+                  <span>{activityChartData[0].label}</span>
+                  <span>{activityChartData[activityChartData.length - 1].label}</span>
+                </>
+              )}
+            </div>
+          </NeonCard>
+        )}
       </div>
     </motion.div>
   )

@@ -1,7 +1,6 @@
 import { useAgentHistoryStore } from '../../stores/agentHistory'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { useShallow } from 'zustand/react/shallow'
-import { NEON_ACCENTS } from '../neon/types'
 import type { NeonAccent } from '../neon/types'
 import { AgentPill } from './AgentPill'
 
@@ -57,8 +56,19 @@ export function LiveActivityStrip({ onSelectAgent }: LiveActivityStripProps) {
     }
   }
 
-  const getAccent = (index: number): NeonAccent => {
-    return NEON_ACCENTS[index % NEON_ACCENTS.length]
+  const getAccent = (status: string): NeonAccent => {
+    switch (status) {
+      case 'running':
+        return 'cyan'
+      case 'done':
+        return 'purple'
+      case 'failed':
+        return 'red'
+      case 'cancelled':
+        return 'orange'
+      default:
+        return 'cyan'
+    }
   }
 
   if (runningAgents.length === 0) {
@@ -91,12 +101,12 @@ export function LiveActivityStrip({ onSelectAgent }: LiveActivityStripProps) {
 
   return (
     <div className="live-strip">
-      {runningAgents.map((agent, index) => (
+      {runningAgents.map((agent) => (
         <AgentPill
           key={agent.id}
           agent={agent}
           currentAction={getLatestAction(agent.id)}
-          accent={getAccent(index)}
+          accent={getAccent(agent.status)}
           onClick={() => onSelectAgent(agent.id)}
         />
       ))}
