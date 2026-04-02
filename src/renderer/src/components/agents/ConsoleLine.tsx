@@ -11,6 +11,7 @@ import { formatToolSummary } from '../../lib/tool-summaries'
 interface ConsoleLineProps {
   block: ChatBlock
   onPlaygroundClick?: (block: { filename: string; html: string; sizeBytes: number }) => void
+  searchHighlight?: 'match' | 'active'
 }
 
 function formatTime(ts: number): string {
@@ -58,13 +59,18 @@ function getToolMeta(toolName: string): ToolMeta {
   return TOOL_MAP[toolName.toLowerCase()] ?? { letter: '\u2022', iconClass: 'console-tool-icon--default' }
 }
 
-export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): React.JSX.Element {
+export function ConsoleLine({ block, onPlaygroundClick, searchHighlight }: ConsoleLineProps): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
+
+  const getSearchClass = () => {
+    if (!searchHighlight) return ''
+    return searchHighlight === 'active' ? ' console-line--search-active' : ' console-line--search-match'
+  }
 
   switch (block.type) {
     case 'started':
       return (
-        <div className="console-line" data-testid="console-line-started">
+        <div className={`console-line${getSearchClass()}`} data-testid="console-line-started">
           <span className="console-prefix console-prefix--agent">[agent]</span>
           <span className="console-line__content">Started with model {block.model}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
@@ -74,7 +80,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
     case 'text': {
       const isGrouped = block.text.includes('\n')
       return (
-        <div className="console-line" data-testid="console-line-text">
+        <div className={`console-line${getSearchClass()}`} data-testid="console-line-text">
           <span className="console-prefix console-prefix--agent">[agent]</span>
           <span className={`console-line__content${isGrouped ? ' console-line__content--grouped' : ''}`}>
             {renderAgentMarkdown(block.text)}
@@ -86,7 +92,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
 
     case 'user_message':
       return (
-        <div className={`console-line${block.pending ? ' console-line--pending' : ''}`} data-testid="console-line-user">
+        <div className={`console-line${block.pending ? ' console-line--pending' : ''}${getSearchClass()}`} data-testid="console-line-user">
           <span className="console-prefix console-prefix--user">[user]</span>
           <span className="console-line__content">{block.text}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
@@ -96,7 +102,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
     case 'thinking': {
       return (
         <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}`}
+          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
           data-testid="console-line-thinking"
         >
           <button
@@ -141,7 +147,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
       const meta = getToolMeta(block.tool)
       return (
         <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}`}
+          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
           data-testid="console-line-tool-call"
         >
           <button
@@ -195,7 +201,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
       const meta = getToolMeta(block.tool)
       return (
         <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}`}
+          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
           data-testid="console-line-tool-pair"
         >
           <button
@@ -262,7 +268,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
 
     case 'stderr':
       return (
-        <div className="console-line" data-testid="console-line-stderr">
+        <div className={`console-line${getSearchClass()}`} data-testid="console-line-stderr">
           <span className="console-prefix console-prefix--rate">[stderr]</span>
           <span className="console-line__content console-line__content--stderr">{block.text}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
@@ -271,7 +277,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
 
     case 'error':
       return (
-        <div className="console-line console-line--error" data-testid="console-line-error">
+        <div className={`console-line console-line--error${getSearchClass()}`} data-testid="console-line-error">
           <span className="console-prefix console-prefix--error">[error]</span>
           <span className="console-line__content">{block.message}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
@@ -280,7 +286,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
 
     case 'rate_limited':
       return (
-        <div className="console-line" data-testid="console-line-rate-limited">
+        <div className={`console-line${getSearchClass()}`} data-testid="console-line-rate-limited">
           <span className="console-prefix console-prefix--rate">[rate]</span>
           <span className="console-line__content">
             Rate limited, retry in {Math.ceil(block.retryDelayMs / 1000)}s (attempt {block.attempt})
@@ -335,7 +341,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
     case 'tool_group': {
       const total = block.tools.length
       if (total === 1) {
-        return <ConsoleLine block={block.tools[0]} onPlaygroundClick={onPlaygroundClick} />
+        return <ConsoleLine block={block.tools[0]} onPlaygroundClick={onPlaygroundClick} searchHighlight={searchHighlight} />
       }
       const counts: Record<string, number> = {}
       for (const t of block.tools) {
@@ -347,7 +353,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
         .join(', ')
       return (
         <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}`}
+          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
           data-testid="console-line-tool-group"
         >
           <button
@@ -381,7 +387,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
           {expanded && (
             <div className="console-tool-group__items">
               {block.tools.map((tool, i) => (
-                <ConsoleLine key={i} block={tool} onPlaygroundClick={onPlaygroundClick} />
+                <ConsoleLine key={i} block={tool} onPlaygroundClick={onPlaygroundClick} searchHighlight={searchHighlight} />
               ))}
             </div>
           )}
@@ -392,7 +398,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
     case 'playground':
       return (
         <div
-          className="console-line console-line--playground"
+          className={`console-line console-line--playground${getSearchClass()}`}
           data-testid="console-line-playground"
           role="button"
           tabIndex={0}

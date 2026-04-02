@@ -513,6 +513,109 @@
   color: var(--neon-text-dim);
 }
 
+/* ── Console Search Bar ── */
+.console-search-bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, var(--neon-cyan-surface) 0%, var(--neon-surface-dim) 100%);
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-cyan-border);
+  flex-shrink: 0;
+}
+
+.console-search-bar__icon {
+  color: var(--neon-cyan);
+  flex-shrink: 0;
+}
+
+.console-search-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--neon-text);
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  outline: none;
+}
+
+.console-search-bar__input::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.console-search-bar__count {
+  font-size: 11px;
+  color: var(--neon-text-muted);
+  font-family: var(--bde-font-code);
+  flex-shrink: 0;
+}
+
+.console-search-bar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.console-search-bar__nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.console-search-bar__nav-btn:hover:not(:disabled) {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+}
+
+.console-search-bar__nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.console-search-bar__close-btn {
+  background: transparent;
+  border: none;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms ease, color 100ms ease;
+  flex-shrink: 0;
+}
+
+.console-search-bar__close-btn:hover {
+  background: var(--neon-red-surface);
+  color: var(--neon-red);
+}
+
+/* ── Console Search Highlighting ── */
+.console-line--search-match {
+  background: var(--neon-orange-surface);
+  border-left: 2px solid var(--neon-orange);
+  padding-left: 10px;
+}
+
+.console-line--search-active {
+  background: var(--neon-cyan-surface);
+  border-left: 2px solid var(--neon-cyan);
+  padding-left: 10px;
+  box-shadow: var(--neon-cyan-glow);
+}
+
 /* ── Markdown Rendering in Agent Text ── */
 .console-md-bold {
   font-weight: 700;
