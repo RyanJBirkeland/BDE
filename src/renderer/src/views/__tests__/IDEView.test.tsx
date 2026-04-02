@@ -821,7 +821,6 @@ describe('IDEView', () => {
 
     it('restores open tabs and active file from saved state', async () => {
       const mockOpenTab = vi.fn()
-      const mockSetActiveTab = vi.fn()
       const savedState = {
         rootPath: '/saved/project',
         openTabs: [{ filePath: '/saved/project/foo.ts' }],
@@ -867,6 +866,7 @@ describe('IDEView', () => {
         toggleTerminal: vi.fn(),
         setFileContent: vi.fn(),
         setFileLoading: vi.fn(),
+        setActiveTab: vi.fn(),
         recentFolders: []
       }
       mockUseIDEStore.getState = () => stateForRestore
