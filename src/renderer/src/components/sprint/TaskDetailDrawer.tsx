@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { formatElapsed, getDotColor } from '../../lib/task-format'
@@ -31,15 +31,6 @@ function formatTimestamp(iso: string): string {
   })
 }
 
-function getDependencyStats(
-  deps: SprintTask['depends_on'],
-  allTasks: SprintTask[]
-): { count: number; complete: number } | null {
-  if (!deps || deps.length === 0) return null
-  const depIds = new Set(deps.map((d) => d.id))
-  const complete = allTasks.filter((t) => depIds.has(t.id) && t.status === 'done').length
-  return { count: deps.length, complete }
-}
 
 export function TaskDetailDrawer({
   task,
@@ -114,8 +105,21 @@ export function TaskDetailDrawer({
     }
   }, [width])
 
-  const allTasks = useSprintTasks((s) => s.tasks)
-  const depStats = getDependencyStats(task.depends_on, allTasks)
+  const depIds = useMemo(
+    () => task?.depends_on?.map((d) => d.id) ?? [],
+    [task?.depends_on]
+  )
+  const depsCompleted = useSprintTasks(
+    useCallback(
+      (s) =>
+        depIds.length === 0
+          ? 0
+          : s.tasks.filter((t) => depIds.includes(t.id) && t.status === 'done').length,
+      [depIds]
+    )
+  )
+  const depStats =
+    depIds.length > 0 ? { count: depIds.length, complete: depsCompleted } : null
 
   return (
     <aside className="task-drawer" data-testid="task-detail-drawer" style={{ width }}>
