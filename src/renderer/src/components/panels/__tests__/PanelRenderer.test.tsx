@@ -23,7 +23,7 @@ vi.mock('../../../lib/view-resolver', () => ({
       ide: 'IDE',
       sprint: 'Sprint',
       settings: 'Settings',
-      'pr-station': 'PRStation',
+      'code-review': 'CodeReview',
       dashboard: 'Dashboard',
       'task-workbench': 'TaskWorkbench',
       git: 'Git'

@@ -16,7 +16,7 @@ describe('ui store', () => {
   })
 
   it('setView to each valid view works', () => {
-    const views = ['agents', 'ide', 'sprint', 'pr-station', 'settings'] as const
+    const views = ['agents', 'ide', 'sprint', 'code-review', 'settings'] as const
     for (const v of views) {
       usePanelLayoutStore.getState().setView(v)
       expect(usePanelLayoutStore.getState().activeView).toBe(v)

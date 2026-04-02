@@ -10,7 +10,7 @@ export type View =
   | 'agents'
   | 'ide'
   | 'sprint'
-  | 'pr-station'
+  | 'code-review'
   | 'git'
   | 'settings'
   | 'task-workbench'
@@ -318,6 +318,9 @@ function migrateLayout(node: PanelNode): PanelNode {
       const viewKey = tab.viewKey as string
       if (viewKey === 'memory' || viewKey === 'cost') {
         return { viewKey: 'settings' as View, label: VIEW_LABELS.settings }
+      }
+      if (viewKey === 'pr-station') {
+        return { viewKey: 'code-review' as View, label: VIEW_LABELS['code-review'] }
       }
       return tab
     })

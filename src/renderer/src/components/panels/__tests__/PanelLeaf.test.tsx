@@ -57,8 +57,8 @@ vi.mock('../../../views/SprintView', () => ({
 vi.mock('../../../views/SettingsView', () => ({
   default: () => <div data-testid="settings-view">Settings</div>
 }))
-vi.mock('../../../views/PRStationView', () => ({
-  default: () => <div data-testid="pr-station-view">PRStation</div>
+vi.mock('../../../views/CodeReviewView', () => ({
+  default: () => <div data-testid="code-review-view">CodeReview</div>
 }))
 
 // Mock PanelDropOverlay to avoid complex drag logic in these tests
@@ -239,9 +239,9 @@ describe('PanelLeaf', () => {
     expect(await screen.findByTestId('sprint-view')).toBeInTheDocument()
   })
 
-  it('renders pr-station view when tab viewKey is pr-station', async () => {
-    const node = makeLeaf({ tabs: [{ viewKey: 'pr-station', label: 'PR Station' }] })
+  it('renders code-review view when tab viewKey is code-review', async () => {
+    const node = makeLeaf({ tabs: [{ viewKey: 'code-review', label: 'Code Review' }] })
     render(<PanelLeaf node={node} />)
-    expect(await screen.findByTestId('pr-station-view')).toBeInTheDocument()
+    expect(await screen.findByTestId('code-review-view')).toBeInTheDocument()
   })
 })

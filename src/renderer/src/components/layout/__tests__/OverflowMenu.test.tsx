@@ -257,7 +257,7 @@ describe('OverflowMenu', () => {
         'agents',
         'ide',
         'sprint',
-        'pr-station',
+        'code-review',
         'git',
         'settings',
         'task-workbench'
@@ -268,7 +268,7 @@ describe('OverflowMenu', () => {
       expect(screen.getByText('Agents')).toBeInTheDocument()
       expect(screen.getByText('IDE')).toBeInTheDocument()
       expect(screen.getByText('Task Pipeline')).toBeInTheDocument()
-      expect(screen.getByText('PR Station')).toBeInTheDocument()
+      expect(screen.getByText('Code Review')).toBeInTheDocument()
       expect(screen.getByText('Source Control')).toBeInTheDocument()
       expect(screen.getByText('Settings')).toBeInTheDocument()
       expect(screen.getByText('Task Workbench')).toBeInTheDocument()

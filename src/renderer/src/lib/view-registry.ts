@@ -47,8 +47,8 @@ export const VIEW_REGISTRY: Record<View, ViewMetadata> = {
     shortcut: '⌘4',
     shortcutKey: '4'
   },
-  'pr-station': {
-    label: 'PR Station',
+  'code-review': {
+    label: 'Code Review',
     icon: GitPullRequest,
     shortcut: '⌘5',
     shortcutKey: '5'

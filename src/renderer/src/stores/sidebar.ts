@@ -6,7 +6,7 @@ const ALL_VIEWS: View[] = [
   'agents',
   'ide',
   'sprint',
-  'pr-station',
+  'code-review',
   'git',
   'settings',
   'task-workbench'

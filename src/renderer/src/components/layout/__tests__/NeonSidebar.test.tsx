@@ -16,7 +16,7 @@ vi.mock('../../../stores/sidebar', () => {
 
   return {
     useSidebarStore: vi.fn((sel?: any) => (sel ? sel(mockState) : mockState)),
-    getUnpinnedViews: vi.fn(() => ['sprint', 'pr-station'])
+    getUnpinnedViews: vi.fn(() => ['sprint', 'code-review'])
   }
 })
 

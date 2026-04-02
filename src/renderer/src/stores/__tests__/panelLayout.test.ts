@@ -55,12 +55,12 @@ describe('panelLayout pure functions', () => {
     })
 
     it('uses correct label for each view', () => {
-      const leaf = createLeaf('pr-station')
-      expect(leaf.tabs[0].label).toBe('PR Station')
+      const leaf = createLeaf('code-review')
+      expect(leaf.tabs[0].label).toBe('Code Review')
     })
 
     it('assigns correct labels for all views', () => {
-      const views = ['agents', 'ide', 'sprint', 'pr-station', 'git', 'settings'] as const
+      const views = ['agents', 'ide', 'sprint', 'code-review', 'git', 'settings'] as const
       for (const v of views) {
         _resetIdCounter()
         const leaf = createLeaf(v)

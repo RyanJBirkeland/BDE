@@ -657,7 +657,7 @@ function DiffViewer({
 
   // Keyboard navigation
   useEffect(() => {
-    if (activeView !== 'pr-station') return
+    if (activeView !== 'code-review') return
     if (files.length === 0) return
 
     const handler = (e: KeyboardEvent): void => {

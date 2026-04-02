@@ -63,8 +63,8 @@ vi.mock('../../../views/SettingsView', () => ({
   default: () => <div data-testid="view-settings">Settings</div>
 }))
 
-vi.mock('../../../views/PRStationView', () => ({
-  default: () => <div data-testid="view-pr-station">PR Station</div>
+vi.mock('../../../views/CodeReviewView', () => ({
+  default: () => <div data-testid="view-code-review">Code Review</div>
 }))
 
 vi.mock('../../../views/TaskWorkbenchView', () => ({
@@ -171,7 +171,7 @@ Object.defineProperty(window, 'api', {
   configurable: true
 })
 
-function makeSingleLeaf(view: 'agents' | 'ide' | 'pr-station' = 'agents'): PanelNode {
+function makeSingleLeaf(view: 'agents' | 'ide' | 'code-review' = 'agents'): PanelNode {
   return createLeaf(view)
 }
 
@@ -212,12 +212,12 @@ describe('TearoffShell', () => {
   })
 
   it('renders the correct view label for different views', async () => {
-    const leaf = makeSingleLeaf('pr-station')
+    const leaf = makeSingleLeaf('code-review')
     setRoot(leaf)
     setFocusedPanelId((leaf as any).panelId)
     const { TearoffShell } = await import('../TearoffShell')
-    render(<TearoffShell view="pr-station" windowId="tw2" />)
-    expect(screen.getByText('PR Station')).toBeInTheDocument()
+    render(<TearoffShell view="code-review" windowId="tw2" />)
+    expect(screen.getByText('Code Review')).toBeInTheDocument()
   })
 
   it('subscribes to onConfirmClose on mount', async () => {

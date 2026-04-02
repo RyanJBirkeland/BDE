@@ -23,7 +23,7 @@ describe('sidebar store', () => {
         'agents',
         'ide',
         'sprint',
-        'pr-station',
+        'code-review',
         'git',
         'settings',
         'task-workbench'
@@ -174,7 +174,7 @@ describe('getUnpinnedViews', () => {
     expect(unpinned).not.toContain('agents')
     expect(unpinned).not.toContain('ide')
     expect(unpinned).toContain('sprint')
-    expect(unpinned).toContain('pr-station')
+    expect(unpinned).toContain('code-review')
     expect(unpinned).toContain('git')
     expect(unpinned).toContain('settings')
     expect(unpinned).toContain('task-workbench')
@@ -187,7 +187,7 @@ describe('getUnpinnedViews', () => {
       'agents',
       'ide',
       'sprint',
-      'pr-station',
+      'code-review',
       'git',
       'settings',
       'task-workbench'

@@ -39,8 +39,8 @@ describe('panelLayout pure functions', () => {
     })
 
     it('uses correct label for each view', () => {
-      const leaf = createLeaf('pr-station')
-      expect(leaf.tabs[0].label).toBe('PR Station')
+      const leaf = createLeaf('code-review')
+      expect(leaf.tabs[0].label).toBe('Code Review')
     })
   })
 

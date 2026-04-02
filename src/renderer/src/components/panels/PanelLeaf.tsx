@@ -14,7 +14,7 @@ export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
   dashboard: () => import('../../views/DashboardView'),
   sprint: () => import('../../views/SprintView'),
   settings: () => import('../../views/SettingsView'),
-  'pr-station': () => import('../../views/PRStationView'),
+  'code-review': () => import('../../views/CodeReviewView'),
   'task-workbench': () => import('../../views/TaskWorkbenchView'),
   git: () => import('../../views/GitTreeView'),
   ide: () => import('../../views/IDEView')

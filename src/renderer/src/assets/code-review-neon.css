@@ -1,0 +1,6 @@
+/* Code Review Station — neon styles (.cr-* BEM prefix) */
+.cr-view {
+  display: flex;
+  height: 100%;
+  background: var(--neon-bg);
+}

@@ -6,7 +6,7 @@ Element.prototype.scrollIntoView = vi.fn()
 
 vi.mock('../../../stores/panelLayout', () => ({
   usePanelLayoutStore: (selector: (s: { activeView: string }) => unknown) =>
-    selector({ activeView: 'pr-station' })
+    selector({ activeView: 'code-review' })
 }))
 
 vi.mock('../../../lib/render-markdown', () => ({

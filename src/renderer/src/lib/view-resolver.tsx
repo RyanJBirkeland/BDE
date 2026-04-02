@@ -8,7 +8,7 @@ const AgentsView = lazy(() =>
 const IDEView = lazy(() => import('../views/IDEView'))
 const SprintView = lazy(() => import('../views/SprintView'))
 const SettingsView = lazy(() => import('../views/SettingsView'))
-const PRStationView = lazy(() => import('../views/PRStationView'))
+const CodeReviewView = lazy(() => import('../views/CodeReviewView'))
 const TaskWorkbenchView = lazy(() => import('../views/TaskWorkbenchView'))
 const GitTreeView = lazy(() => import('../views/GitTreeView'))
 
@@ -24,8 +24,8 @@ export function resolveView(viewKey: View): React.ReactNode {
       return <SprintView />
     case 'settings':
       return <SettingsView />
-    case 'pr-station':
-      return <PRStationView />
+    case 'code-review':
+      return <CodeReviewView />
     case 'task-workbench':
       return <TaskWorkbenchView />
     case 'git':
