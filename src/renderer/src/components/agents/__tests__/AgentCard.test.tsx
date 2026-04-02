@@ -96,12 +96,11 @@ describe('AgentCard', () => {
     expect(cardStyle.transform).not.toBe('scale(1.02)')
   })
 
-  it('shows status dot for running agent', () => {
+  it('shows status icon for running agent', () => {
     const agent = makeAgent({ status: 'running' })
-    const { container } = render(<AgentCard {...defaultProps} agent={agent} />)
-    // Running agents have a pulsing status dot
-    const dot = container.querySelector('span[style*="border-radius"]')
-    expect(dot).toBeInTheDocument()
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    // Running agents have a spinning Loader icon
+    expect(screen.getByLabelText('Running')).toBeInTheDocument()
   })
 
   it('truncates long task names at 80 characters', () => {
@@ -261,5 +260,53 @@ describe('AgentCard', () => {
     await user.click(killButton)
 
     expect(onClick).not.toHaveBeenCalled()
+  })
+
+  it('renders CheckCircle icon for done agents', () => {
+    const agent = makeAgent({ status: 'done', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByLabelText('Done')).toBeInTheDocument()
+  })
+
+  it('renders XCircle icon for failed agents', () => {
+    const agent = makeAgent({ status: 'failed', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByLabelText('Failed')).toBeInTheDocument()
+  })
+
+  it('renders Ban icon for cancelled agents', () => {
+    const agent = makeAgent({ status: 'cancelled', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByLabelText('Cancelled')).toBeInTheDocument()
+  })
+
+  it('renders Loader icon for running agents', () => {
+    const agent = makeAgent({ status: 'running' })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByLabelText('Running')).toBeInTheDocument()
+  })
+
+  it('shows "Done" status label for done agents', () => {
+    const agent = makeAgent({ status: 'done', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByText('Done')).toBeInTheDocument()
+  })
+
+  it('shows "Failed" status label for failed agents', () => {
+    const agent = makeAgent({ status: 'failed', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByText('Failed')).toBeInTheDocument()
+  })
+
+  it('shows "Cancelled" status label for cancelled agents', () => {
+    const agent = makeAgent({ status: 'cancelled', finishedAt: new Date().toISOString() })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.getByText('Cancelled')).toBeInTheDocument()
+  })
+
+  it('does not show status label for running agents', () => {
+    const agent = makeAgent({ status: 'running' })
+    render(<AgentCard {...defaultProps} agent={agent} />)
+    expect(screen.queryByText('Running')).not.toBeInTheDocument()
   })
 })

@@ -3,7 +3,7 @@
  * Used in the AgentList sidebar.
  */
 import { useState, useEffect } from 'react'
-import { Bot, Cpu, Clock, X } from 'lucide-react'
+import { Bot, Cpu, Clock, X, CheckCircle, XCircle, Loader, Ban } from 'lucide-react'
 import type { AgentMeta } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
 import { NeonCard } from '../neon/NeonCard'
@@ -33,6 +33,42 @@ function formatDuration(startedAt: string, finishedAt: string | null): string {
   if (sec < 60) return `${sec}s`
   if (sec < 3600) return `${Math.floor(sec / 60)}m`
   return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`
+}
+
+interface StatusIndicatorProps {
+  status: string
+  accent: NeonAccent
+}
+
+function StatusIndicator({ status, accent }: StatusIndicatorProps) {
+  const iconColor = neonVar(accent, 'color')
+  const iconSize = 14
+
+  switch (status) {
+    case 'running':
+      return <Loader size={iconSize} className="agent-card__status-spinner" aria-label="Running" style={{ color: iconColor }} />
+    case 'done':
+      return <CheckCircle size={iconSize} aria-label="Done" style={{ color: iconColor }} />
+    case 'failed':
+      return <XCircle size={iconSize} aria-label="Failed" style={{ color: iconColor }} />
+    case 'cancelled':
+      return <Ban size={iconSize} aria-label="Cancelled" style={{ color: iconColor }} />
+    default:
+      // Fallback: colored dot
+      return (
+        <span
+          aria-label={status}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: tokens.radius.full,
+            background: iconColor,
+            boxShadow: `0 0 8px ${neonVar(accent, 'glow')}`,
+            flexShrink: 0
+          }}
+        />
+      )
+  }
 }
 
 export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps) {
@@ -96,19 +132,9 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps) 
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
-          {/* Top row: status dot + task title + kill button */}
+          {/* Top row: status icon + task title + kill button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: tokens.radius.full,
-                background: neonVar(accent, 'color'),
-                boxShadow: `0 0 8px ${neonVar(accent, 'glow')}`,
-                flexShrink: 0,
-                animation: isRunning ? 'pulse 2s infinite' : undefined
-              }}
-            />
+            <StatusIndicator status={agent.status} accent={accent} />
             <span
               style={{
                 fontSize: tokens.size.md,
@@ -167,6 +193,15 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps) 
             <span style={{ fontSize: tokens.size.xs, color: neonVar(accent, 'color') }}>
               {formatDuration(agent.startedAt, agent.finishedAt)}
             </span>
+            {/* Status label for terminal statuses */}
+            {(agent.status === 'done' || agent.status === 'failed' || agent.status === 'cancelled') && (
+              <>
+                <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
+                <span style={{ fontSize: tokens.size.xs, color: neonVar(accent, 'color'), fontWeight: 700 }}>
+                  {agent.status === 'done' ? 'Done' : agent.status === 'failed' ? 'Failed' : 'Cancelled'}
+                </span>
+              </>
+            )}
             <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
             <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
               {agent.repo}
