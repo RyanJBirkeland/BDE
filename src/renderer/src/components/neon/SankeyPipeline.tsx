@@ -87,7 +87,7 @@ export function SankeyPipeline({
   onStageClick,
   animated,
   className = ''
-}: SankeyPipelineProps): JSX.Element {
+}: SankeyPipelineProps): React.JSX.Element {
   const reduced = useReducedMotion()
   const showParticles = animated !== false && !reduced
 

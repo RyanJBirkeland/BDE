@@ -25,7 +25,7 @@ function formatRelativeTime(timestamp: number): string {
   return `${Math.floor(hours / 24)}d ago`
 }
 
-export function ActivityFeed({ events, maxItems, onEventClick }: ActivityFeedProps): JSX.Element {
+export function ActivityFeed({ events, maxItems, onEventClick }: ActivityFeedProps): React.JSX.Element {
   const displayed = maxItems ? events.slice(0, maxItems) : events
 
   if (displayed.length === 0) {

@@ -34,7 +34,7 @@ import {
   Target
 } from 'lucide-react'
 
-export default function DashboardView(): JSX.Element {
+export default function DashboardView(): React.JSX.Element {
   const reduced = useReducedMotion()
   const tasks = useSprintTasks((s) => s.tasks)
   const totalCost = useCostDataStore((s) => s.totalCost)
@@ -448,7 +448,7 @@ function SuccessRing({
   rate: number | null
   done: number
   failed: number
-}): JSX.Element {
+}): React.JSX.Element {
   if (rate === null) {
     return <div className="dashboard-ring-empty">No terminal tasks</div>
   }

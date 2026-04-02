@@ -23,7 +23,7 @@ export function StatCounter({
   trend,
   icon,
   onClick
-}: StatCounterProps): JSX.Element {
+}: StatCounterProps): React.JSX.Element {
   const [hovered, setHovered] = useState(false)
   const isClickable = !!onClick
 
