@@ -82,7 +82,14 @@ const {
     }
   }
 
-  return { ipcHandlers, ipcOnListeners, ipcOnceListeners, createdWindows, mockIpcMain, MockBrowserWindow }
+  return {
+    ipcHandlers,
+    ipcOnListeners,
+    ipcOnceListeners,
+    createdWindows,
+    mockIpcMain,
+    MockBrowserWindow
+  }
 })
 
 // ---------------------------------------------------------------------------
@@ -434,10 +441,7 @@ describe('setQuitting', () => {
 
     // Should NOT preventDefault — just delete from map and return
     expect(closeEvent.preventDefault).not.toHaveBeenCalled()
-    expect(win.webContents.send).not.toHaveBeenCalledWith(
-      'tearoff:confirmClose',
-      expect.anything()
-    )
+    expect(win.webContents.send).not.toHaveBeenCalledWith('tearoff:confirmClose', expect.anything())
   })
 })
 

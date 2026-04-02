@@ -3,6 +3,7 @@ import { taskOrchestrationSkill } from './task-orchestration'
 import { codePatternsSkill } from './code-patterns'
 import { prReviewSkill } from './pr-review'
 import { debuggingSkill } from './debugging'
+import type { BDESkill } from './types'
 
 /**
  * Consolidate all skill guidance into a single markdown string for interactive agents.
@@ -25,7 +26,7 @@ export function getAllSkills(): string {
     debuggingSkill
   ]
 
-  return skills.map(s => s.guidance).join('\n\n---\n\n')
+  return skills.map((s) => s.guidance).join('\n\n---\n\n')
 }
 
 /**
@@ -43,7 +44,7 @@ export function getAllSkills(): string {
  *
  * @returns Array of BDESkill objects
  */
-export function getSkillList() {
+export function getSkillList(): BDESkill[] {
   return [
     systemIntrospectionSkill,
     taskOrchestrationSkill,

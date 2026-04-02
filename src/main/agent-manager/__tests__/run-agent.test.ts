@@ -295,7 +295,8 @@ describe('runAgent — fast-fail paths', () => {
       'task-1',
       expect.objectContaining({
         status: 'error',
-        notes: 'Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to \'queued\' and clear claimed_by.',
+        notes:
+          "Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to 'queued' and clear claimed_by.",
         needs_review: true,
         claimed_by: null
       })
@@ -502,7 +503,9 @@ describe('runAgent — updateTask.catch error handlers', () => {
     const { classifyExit } = await import('../fast-fail')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-exhausted')
-    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new Error('DB error'); })
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error('DB error')
+    })
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 3 }), worktree, repoPath, deps)
     expect(deps.logger.error).toHaveBeenCalledWith(
@@ -514,7 +517,9 @@ describe('runAgent — updateTask.catch error handlers', () => {
     const { classifyExit } = await import('../fast-fail')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 1 }]))
     ;(classifyExit as ReturnType<typeof vi.fn>).mockReturnValue('fast-fail-requeue')
-    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new Error('DB error'); })
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error('DB error')
+    })
     const deps = makeDeps()
     await runAgent(makeTask({ fast_fail_count: 1 }), worktree, repoPath, deps)
     expect(deps.logger.error).toHaveBeenCalledWith(
@@ -524,7 +529,9 @@ describe('runAgent — updateTask.catch error handlers', () => {
   it('logs warning when updateTask rejects in spawn failure .catch path', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Spawn failed'))
-    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => { throw new Error('DB error'); })
+    ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error('DB error')
+    })
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
     expect(deps.logger.warn).toHaveBeenCalledWith(

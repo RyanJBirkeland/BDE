@@ -25,7 +25,7 @@ export function recordTaskChanges(
 ): void {
   const conn = db ?? getDb()
 
-  const recordChanges = () => {
+  const recordChanges = (): void => {
     const stmt = conn.prepare(
       'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)'
     )

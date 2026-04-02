@@ -976,7 +976,9 @@ describe('Queue API', () => {
   describe('Error handling — sprint-queries throws', () => {
     // QA-16: Updated to match standardized error response format
     it('returns 500 when getQueueStats throws', async () => {
-      mockGetQueueStats.mockImplementation(() => { throw new Error('Supabase connection failed'); })
+      mockGetQueueStats.mockImplementation(() => {
+        throw new Error('Supabase connection failed')
+      })
 
       const { status, body } = await request('GET', '/queue/health')
       expect(status).toBe(500)
@@ -985,7 +987,9 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when listTasks throws', async () => {
-      mockListTasks.mockImplementation(() => { throw new Error('Supabase timeout'); })
+      mockListTasks.mockImplementation(() => {
+        throw new Error('Supabase timeout')
+      })
 
       const { status, body } = await request('GET', '/queue/tasks')
       expect(status).toBe(500)
@@ -993,7 +997,9 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when getTask throws', async () => {
-      mockGetTask.mockImplementation(() => { throw new Error('network error'); })
+      mockGetTask.mockImplementation(() => {
+        throw new Error('network error')
+      })
 
       const { status, body } = await request('GET', '/queue/tasks/abc')
       expect(status).toBe(500)
@@ -1001,7 +1007,9 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when createTask throws', async () => {
-      mockCreateTask.mockImplementation(() => { throw new Error('insert failed'); })
+      mockCreateTask.mockImplementation(() => {
+        throw new Error('insert failed')
+      })
 
       const { status, body } = await request('POST', '/queue/tasks', {
         title: 'New task',
@@ -1012,7 +1020,9 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when claimTask throws', async () => {
-      mockClaimTask.mockImplementation(() => { throw new Error('lock contention'); })
+      mockClaimTask.mockImplementation(() => {
+        throw new Error('lock contention')
+      })
 
       const { status, body } = await request('POST', '/queue/tasks/abc/claim', {
         executorId: 'runner-1'
@@ -1022,7 +1032,9 @@ describe('Queue API', () => {
     })
 
     it('returns 500 when releaseTask throws', async () => {
-      mockReleaseTask.mockImplementation(() => { throw new Error('constraint violation'); })
+      mockReleaseTask.mockImplementation(() => {
+        throw new Error('constraint violation')
+      })
 
       const { status, body } = await request('POST', '/queue/tasks/abc/release', {
         claimedBy: 'runner-1'

@@ -92,23 +92,26 @@ function connectSse(
       reject(new Error('SSE connection timed out'))
     }, timeoutMs)
 
-    const req = http.get({ hostname: '127.0.0.1', port, path, headers: { Authorization: `Bearer ${SSE_TEST_KEY}` } }, (res) => {
-      const chunks: string[] = []
-      res.setEncoding('utf8')
-      res.on('data', (chunk: string) => chunks.push(chunk))
+    const req = http.get(
+      { hostname: '127.0.0.1', port, path, headers: { Authorization: `Bearer ${SSE_TEST_KEY}` } },
+      (res) => {
+        const chunks: string[] = []
+        res.setEncoding('utf8')
+        res.on('data', (chunk: string) => chunks.push(chunk))
 
-      // Resolve once we get the initial response headers
-      clearTimeout(timer)
-      resolve({
-        status: res.statusCode ?? 0,
-        headers: res.headers,
-        chunks,
-        close: () => {
-          res.destroy()
-          req.destroy()
-        }
-      })
-    })
+        // Resolve once we get the initial response headers
+        clearTimeout(timer)
+        resolve({
+          status: res.statusCode ?? 0,
+          headers: res.headers,
+          chunks,
+          close: () => {
+            res.destroy()
+            req.destroy()
+          }
+        })
+      }
+    )
     req.on('error', (err) => {
       clearTimeout(timer)
       reject(err)

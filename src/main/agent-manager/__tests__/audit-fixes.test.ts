@@ -92,15 +92,7 @@ describe('handleWatchdogVerdict claimed_by clearing (AM-4)', () => {
     const concurrency = makeConcurrencyState(2)
     const now = new Date().toISOString()
 
-    handleWatchdogVerdict(
-      'idle',
-      'task-456',
-      concurrency,
-      now,
-      updateTaskFn,
-      onTerminal,
-      logger
-    )
+    handleWatchdogVerdict('idle', 'task-456', concurrency, now, updateTaskFn, onTerminal, logger)
 
     expect(updateTaskFn).toHaveBeenCalledWith(
       'task-456',
@@ -159,10 +151,7 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
   })
 
   it('returns false when retries not exhausted (DB success)', () => {
-    const result = resolveFailure(
-      { taskId: 'task-1', retryCount: 0, repo: mockRepo },
-      logger
-    )
+    const result = resolveFailure({ taskId: 'task-1', retryCount: 0, repo: mockRepo }, logger)
 
     expect(result).toBe(false)
     expect(mockRepo.updateTask).toHaveBeenCalledWith(
@@ -197,10 +186,7 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
       throw new Error('DB connection lost')
     })
 
-    const result = resolveFailure(
-      { taskId: 'task-3', retryCount: 1, repo: mockRepo },
-      logger
-    )
+    const result = resolveFailure({ taskId: 'task-3', retryCount: 1, repo: mockRepo }, logger)
 
     expect(result).toBe(false)
     expect(logger.error).toHaveBeenCalledWith(

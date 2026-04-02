@@ -59,9 +59,9 @@ async function searchMemory(query: string): Promise<MemorySearchResult[]> {
       path,
       matches
     }))
-  } catch (err: any) {
+  } catch (err: unknown) {
     // grep exits with code 1 when no matches found
-    if (err.code === 1) {
+    if ((err as { code?: number }).code === 1) {
       return []
     }
     throw err

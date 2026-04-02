@@ -18,12 +18,14 @@ describe('Personality System', () => {
     })
 
     it('should include git constraints', () => {
-      expect(pipelinePersonality.constraints.some(c => c.includes('NEVER push to main'))).toBe(true)
-      expect(pipelinePersonality.constraints.some(c => c.includes('Run tests'))).toBe(true)
+      expect(pipelinePersonality.constraints.some((c) => c.includes('NEVER push to main'))).toBe(
+        true
+      )
+      expect(pipelinePersonality.constraints.some((c) => c.includes('Run tests'))).toBe(true)
     })
 
     it('should include reporting patterns', () => {
-      expect(pipelinePersonality.patterns.some(p => p.includes('what you did'))).toBe(true)
+      expect(pipelinePersonality.patterns.some((p) => p.includes('what you did'))).toBe(true)
     })
   })
 
@@ -39,12 +41,14 @@ describe('Personality System', () => {
     })
 
     it('should include full tool access', () => {
-      expect(assistantPersonality.constraints.some(c => c.includes('Full tool access'))).toBe(true)
+      expect(assistantPersonality.constraints.some((c) => c.includes('Full tool access'))).toBe(
+        true
+      )
     })
 
     it('should include BDE-specific patterns', () => {
-      expect(assistantPersonality.patterns.some(p => p.includes('sprint tasks'))).toBe(true)
-      expect(assistantPersonality.patterns.some(p => p.includes('Dev Playground'))).toBe(true)
+      expect(assistantPersonality.patterns.some((p) => p.includes('sprint tasks'))).toBe(true)
+      expect(assistantPersonality.patterns.some((p) => p.includes('Dev Playground'))).toBe(true)
     })
   })
 
@@ -60,13 +64,15 @@ describe('Personality System', () => {
     })
 
     it('should constrain to text-only responses', () => {
-      expect(copilotPersonality.constraints.some(c => c.includes('text responses only'))).toBe(true)
-      expect(copilotPersonality.constraints.some(c => c.includes('500 words'))).toBe(true)
+      expect(copilotPersonality.constraints.some((c) => c.includes('text responses only'))).toBe(
+        true
+      )
+      expect(copilotPersonality.constraints.some((c) => c.includes('500 words'))).toBe(true)
     })
 
     it('should include spec-drafting patterns', () => {
-      expect(copilotPersonality.patterns.some(p => p.includes('clarifying questions'))).toBe(true)
-      expect(copilotPersonality.patterns.some(p => p.includes('heading structure'))).toBe(true)
+      expect(copilotPersonality.patterns.some((p) => p.includes('clarifying questions'))).toBe(true)
+      expect(copilotPersonality.patterns.some((p) => p.includes('heading structure'))).toBe(true)
     })
   })
 
@@ -82,13 +88,19 @@ describe('Personality System', () => {
     })
 
     it('should constrain to single turn and markdown output', () => {
-      expect(synthesizerPersonality.constraints.some(c => c.includes('Single turn only'))).toBe(true)
-      expect(synthesizerPersonality.constraints.some(c => c.includes('markdown'))).toBe(true)
+      expect(synthesizerPersonality.constraints.some((c) => c.includes('Single turn only'))).toBe(
+        true
+      )
+      expect(synthesizerPersonality.constraints.some((c) => c.includes('markdown'))).toBe(true)
     })
 
     it('should include spec-generation patterns', () => {
-      expect(synthesizerPersonality.patterns.some(p => p.includes('existing patterns'))).toBe(true)
-      expect(synthesizerPersonality.patterns.some(p => p.includes('testing considerations'))).toBe(true)
+      expect(synthesizerPersonality.patterns.some((p) => p.includes('existing patterns'))).toBe(
+        true
+      )
+      expect(
+        synthesizerPersonality.patterns.some((p) => p.includes('testing considerations'))
+      ).toBe(true)
     })
   })
 
@@ -104,13 +116,13 @@ describe('Personality System', () => {
     })
 
     it('should include tool access and branch constraints', () => {
-      expect(adhocPersonality.constraints.some(c => c.includes('Full tool access'))).toBe(true)
-      expect(adhocPersonality.constraints.some(c => c.includes('never to main'))).toBe(true)
+      expect(adhocPersonality.constraints.some((c) => c.includes('Full tool access'))).toBe(true)
+      expect(adhocPersonality.constraints.some((c) => c.includes('never to main'))).toBe(true)
     })
 
     it('should include execution-first patterns', () => {
-      expect(adhocPersonality.patterns.some(p => p.includes('Execute first'))).toBe(true)
-      expect(adhocPersonality.patterns.some(p => p.includes('Commit frequently'))).toBe(true)
+      expect(adhocPersonality.patterns.some((p) => p.includes('Execute first'))).toBe(true)
+      expect(adhocPersonality.patterns.some((p) => p.includes('Commit frequently'))).toBe(true)
     })
   })
 
@@ -129,8 +141,8 @@ describe('Personality System', () => {
 
     it('should have different patterns', () => {
       expect(adhocPersonality.patterns).not.toEqual(assistantPersonality.patterns)
-      expect(adhocPersonality.patterns.some(p => p.includes('Execute first'))).toBe(true)
-      expect(assistantPersonality.patterns.some(p => p.includes('sprint tasks'))).toBe(true)
+      expect(adhocPersonality.patterns.some((p) => p.includes('Execute first'))).toBe(true)
+      expect(assistantPersonality.patterns.some((p) => p.includes('sprint tasks'))).toBe(true)
     })
   })
 })

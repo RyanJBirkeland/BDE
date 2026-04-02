@@ -138,7 +138,6 @@ export interface PrChannels {
   }
 }
 
-
 /** Agent lifecycle and interaction */
 export interface AgentChannels {
   'local:spawnClaudeAgent': {
@@ -298,7 +297,15 @@ export interface WindowChannels {
 /** Tear-off window management */
 export interface TearoffChannels {
   'tearoff:create': {
-    args: [{ view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }]
+    args: [
+      {
+        view: string
+        screenX: number
+        screenY: number
+        sourcePanelId: string
+        sourceTabIndex: number
+      }
+    ]
     result: { windowId: string }
   }
   'tearoff:closeConfirmed': {

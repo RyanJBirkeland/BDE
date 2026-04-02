@@ -379,7 +379,9 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getQueuedTasks).mockImplementationOnce(() => { throw new Error('Supabase down'); })
+      vi.mocked(getQueuedTasks).mockImplementationOnce(() => {
+        throw new Error('Supabase down')
+      })
       const mgr = createAgentManager({ ...baseConfig, pollIntervalMs: 50 }, mockRepo, logger)
       mgr.start()
       // Advance past INITIAL_DRAIN_DEFER_MS (5000ms); use small steps to let promises resolve
@@ -489,7 +491,9 @@ describe('createAgentManager', () => {
       vi.useFakeTimers()
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getQueuedTasks).mockImplementationOnce(() => { throw new Error('Supabase down'); })
+      vi.mocked(getQueuedTasks).mockImplementationOnce(() => {
+        throw new Error('Supabase down')
+      })
       const mgr = createAgentManager({ ...baseConfig, pollIntervalMs: 50 }, mockRepo, logger)
       mgr.start()
       // Advance past INITIAL_DRAIN_DEFER_MS (5000ms); use small steps to let promises resolve
@@ -728,7 +732,8 @@ describe('createAgentManager', () => {
         'task-1',
         expect.objectContaining({
           status: 'error',
-          notes: 'Agent exceeded the maximum runtime of 1 minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.'
+          notes:
+            'Agent exceeded the maximum runtime of 1 minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.'
         })
       )
 
@@ -794,7 +799,9 @@ describe('createAgentManager', () => {
       vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
       // Make ALL updateTask calls reject — the watchdog one is not the first call
-      vi.mocked(updateTask).mockImplementation(() => { throw new Error('DB error'); })
+      vi.mocked(updateTask).mockImplementation(() => {
+        throw new Error('DB error')
+      })
       const logger = makeLogger()
       const mgr = createAgentManager(config, mockRepo, logger)
       mgr.start()
@@ -823,7 +830,9 @@ describe('createAgentManager', () => {
       vi.mocked(getQueuedTasks).mockReturnValueOnce([task])
       vi.mocked(claimTask).mockReturnValueOnce(task)
       vi.mocked(spawnAgent).mockResolvedValueOnce(handle)
-      vi.mocked(updateTask).mockImplementation(() => { throw new Error('DB error'); })
+      vi.mocked(updateTask).mockImplementation(() => {
+        throw new Error('DB error')
+      })
       const logger = makeLogger()
       const mgr = createAgentManager(config, mockRepo, logger)
       mgr.start()
@@ -1025,7 +1034,9 @@ describe('createAgentManager', () => {
 
     it('logs error when resolveDependents throws', async () => {
       const { resolveDependents } = await import('../resolve-dependents')
-      vi.mocked(resolveDependents).mockImplementationOnce(() => { throw new Error('dep error'); })
+      vi.mocked(resolveDependents).mockImplementationOnce(() => {
+        throw new Error('dep error')
+      })
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       await mgr.onTaskTerminal('task-1', 'done')
@@ -1067,7 +1078,9 @@ describe('createAgentManager', () => {
     it('logs error when initial dependency index build fails', async () => {
       const logger = makeLogger()
       setupDefaultMocks()
-      vi.mocked(getTasksWithDependencies).mockImplementationOnce(() => { throw new Error('dep index error'); })
+      vi.mocked(getTasksWithDependencies).mockImplementationOnce(() => {
+        throw new Error('dep index error')
+      })
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
       mgr.start()
       await flush(20)
@@ -1092,7 +1105,9 @@ describe('createAgentManager', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
       await vi.advanceTimersByTimeAsync(61_000)
       for (let i = 0; i < 30; i++) await vi.advanceTimersByTimeAsync(1)
-      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Orphan recovery before initial drain error'))
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Orphan recovery before initial drain error')
+      )
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
     })

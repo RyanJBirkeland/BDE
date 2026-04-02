@@ -33,7 +33,7 @@ async function validateIdeRoot(dirPath: string): Promise<string> {
   let dirStat
   try {
     dirStat = await stat(resolved)
-  } catch (err) {
+  } catch (_err) {
     throw new Error(`IDE root path rejected: "${dirPath}" does not exist or is not accessible`)
   }
 
@@ -43,7 +43,6 @@ async function validateIdeRoot(dirPath: string): Promise<string> {
 
   return resolved
 }
-
 
 /** Returns the current IDE root path, or null if none is set. */
 export function getIdeRootPath(): string | null {

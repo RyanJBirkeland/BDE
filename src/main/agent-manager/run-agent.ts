@@ -17,7 +17,6 @@ import { buildAgentPrompt } from './prompt-composer'
 import DOMPurify from 'dompurify'
 import { JSDOM } from 'jsdom'
 
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -159,14 +158,22 @@ export async function runAgent(
     repo.updateTask(task.id, {
       status: 'error',
       completed_at: new Date().toISOString(),
-      notes: 'Agent failed to start: task has no prompt, spec, or title. To fix: edit the task and provide a prompt or spec describing what the agent should do.',
+      notes:
+        'Agent failed to start: task has no prompt, spec, or title. To fix: edit the task and provide a prompt or spec describing what the agent should do.',
       claimed_by: null
     })
     await onTaskTerminal(task.id, 'error')
     try {
-      await cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch, logger })
+      await cleanupWorktree({
+        repoPath,
+        worktreePath: worktree.worktreePath,
+        branch: worktree.branch,
+        logger
+      })
     } catch (cleanupErr) {
-      logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
+      logger.warn(
+        `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`
+      )
     }
     return
   }
@@ -213,13 +220,22 @@ export async function runAgent(
         claimed_by: null
       })
     } catch (updateErr) {
-      logger.warn(`[agent-manager] Failed to update task ${task.id} after spawn failure: ${updateErr}`)
+      logger.warn(
+        `[agent-manager] Failed to update task ${task.id} after spawn failure: ${updateErr}`
+      )
     }
     await onTaskTerminal(task.id, 'error')
     try {
-      await cleanupWorktree({ repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch, logger })
+      await cleanupWorktree({
+        repoPath,
+        worktreePath: worktree.worktreePath,
+        branch: worktree.branch,
+        logger
+      })
     } catch (cleanupErr) {
-      logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
+      logger.warn(
+        `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`
+      )
     }
     return
   }
@@ -382,7 +398,9 @@ export async function runAgent(
       worktreePath: worktree.worktreePath,
       branch: worktree.branch
     }).catch((cleanupErr: unknown) => {
-      logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
+      logger.warn(
+        `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`
+      )
     })
     return
   }
@@ -412,7 +430,8 @@ export async function runAgent(
       repo.updateTask(task.id, {
         status: 'error',
         completed_at: now,
-        notes: 'Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to \'queued\' and clear claimed_by.',
+        notes:
+          "Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to 'queued' and clear claimed_by.",
         claimed_by: null,
         needs_review: true
       })
@@ -471,7 +490,9 @@ export async function runAgent(
     worktreePath: worktree.worktreePath,
     branch: worktree.branch
   }).catch((cleanupErr: unknown) => {
-    logger.warn(`[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`)
+    logger.warn(
+      `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`
+    )
   })
 
   logger.info(`[agent-manager] Agent completed for task ${task.id} (${ffResult})`)

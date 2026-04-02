@@ -253,7 +253,8 @@ describe('runAgent — playground prompt injection', () => {
       'task-pg-6',
       expect.objectContaining({
         status: 'error',
-        notes: 'Agent failed to start: task has no prompt, spec, or title. To fix: edit the task and provide a prompt or spec describing what the agent should do.'
+        notes:
+          'Agent failed to start: task has no prompt, spec, or title. To fix: edit the task and provide a prompt or spec describing what the agent should do.'
       })
     )
     // spawnAgent should NOT have been called

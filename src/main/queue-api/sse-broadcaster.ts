@@ -73,7 +73,9 @@ export function createSseBroadcaster(): SseBroadcaster {
       for (const c of clients) {
         try {
           c.end()
-        } catch {}
+        } catch {
+          /* client already disconnected */
+        }
       }
       clients.clear()
     }

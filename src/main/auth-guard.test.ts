@@ -126,7 +126,7 @@ describe('auth-guard', () => {
 
     it('returns tokenFound: false when JSON has no claudeAiOauth', async () => {
       const store: CredentialStore = {
-        readToken: async () => ({ someOtherKey: {} } as never),
+        readToken: async () => ({ someOtherKey: {} }) as never,
         detectCli: () => true
       }
 

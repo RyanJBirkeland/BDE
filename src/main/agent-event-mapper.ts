@@ -59,7 +59,12 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
       output: content,
       timestamp: now
     })
-  } else if (msgType && msgType !== 'assistant' && msgType !== 'tool_result' && msgType !== 'result') {
+  } else if (
+    msgType &&
+    msgType !== 'assistant' &&
+    msgType !== 'tool_result' &&
+    msgType !== 'result'
+  ) {
     // Log unrecognized message types for debugging
     console.debug(`[agent-event-mapper] Unrecognized message type: ${msgType}`)
   }

@@ -10,9 +10,7 @@ describe('createDependencyIndex', () => {
 
   it('builds reverse map from task dependencies', () => {
     const index = createDependencyIndex()
-    index.rebuild([
-      { id: 'child', depends_on: [{ id: 'parent', type: 'hard' }] }
-    ])
+    index.rebuild([{ id: 'child', depends_on: [{ id: 'parent', type: 'hard' }] }])
     const deps = index.getDependents('parent')
     expect(deps.has('child')).toBe(true)
   })
@@ -37,9 +35,7 @@ describe('createDependencyIndex', () => {
 
   it('clears previous data on rebuild', () => {
     const index = createDependencyIndex()
-    index.rebuild([
-      { id: 'child', depends_on: [{ id: 'parent', type: 'hard' }] }
-    ])
+    index.rebuild([{ id: 'child', depends_on: [{ id: 'parent', type: 'hard' }] }])
     expect(index.getDependents('parent').size).toBe(1)
 
     index.rebuild([])

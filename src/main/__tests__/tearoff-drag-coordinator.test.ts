@@ -4,95 +4,99 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Hoisted state
 // ---------------------------------------------------------------------------
 
-const {
-  ipcHandlers,
-  ipcOnListeners,
-  createdWindows,
-  mockIpcMain,
-  MockBrowserWindow,
-  mockScreen
-} = vi.hoisted(() => {
-  const ipcHandlers = new Map<string, Function>()
-  const ipcOnListeners = new Map<string, Function[]>()
-  const createdWindows: any[] = []
+const { ipcHandlers, ipcOnListeners, createdWindows, mockIpcMain, MockBrowserWindow, mockScreen } =
+  vi.hoisted(() => {
+    const ipcHandlers = new Map<string, Function>()
+    const ipcOnListeners = new Map<string, Function[]>()
+    const createdWindows: any[] = []
 
-  const mockIpcMain = {
-    handle: vi.fn((channel: string, handler: Function) => {
-      ipcHandlers.set(channel, handler)
-    }),
-    on: vi.fn((channel: string, handler: Function) => {
-      const existing = ipcOnListeners.get(channel) ?? []
-      ipcOnListeners.set(channel, [...existing, handler])
-    }),
-    once: vi.fn(),
-    removeAllListeners: vi.fn(),
-    emit: vi.fn()
-  }
+    const mockIpcMain = {
+      handle: vi.fn((channel: string, handler: Function) => {
+        ipcHandlers.set(channel, handler)
+      }),
+      on: vi.fn((channel: string, handler: Function) => {
+        const existing = ipcOnListeners.get(channel) ?? []
+        ipcOnListeners.set(channel, [...existing, handler])
+      }),
+      once: vi.fn(),
+      removeAllListeners: vi.fn(),
+      emit: vi.fn()
+    }
 
-  const mockScreen = {
-    getCursorScreenPoint: vi.fn().mockReturnValue({ x: 500, y: 300 })
-  }
+    const mockScreen = {
+      getCursorScreenPoint: vi.fn().mockReturnValue({ x: 500, y: 300 })
+    }
 
-  class MockBrowserWindow {
-    id: number
-    webContents: { send: ReturnType<typeof vi.fn>; setWindowOpenHandler: ReturnType<typeof vi.fn> }
-    isDestroyed: ReturnType<typeof vi.fn>
-    show: ReturnType<typeof vi.fn>
-    destroy: ReturnType<typeof vi.fn>
-    getBounds: ReturnType<typeof vi.fn>
-    getContentBounds: ReturnType<typeof vi.fn>
-    loadURL: ReturnType<typeof vi.fn>
-    loadFile: ReturnType<typeof vi.fn>
-    opts: Record<string, unknown>
-
-    _listeners: Map<string, Function[]> = new Map()
-    _destroyed = false
-
-    static nextId = 1
-    static getAllWindows = vi.fn(() => createdWindows.filter((w: any) => !w._destroyed))
-    static fromWebContents = vi.fn()
-
-    constructor(opts: Record<string, unknown> = {}) {
-      this.opts = opts
-      this.id = MockBrowserWindow.nextId++
-      this.webContents = {
-        send: vi.fn(),
-        setWindowOpenHandler: vi.fn()
+    class MockBrowserWindow {
+      id: number
+      webContents: {
+        send: ReturnType<typeof vi.fn>
+        setWindowOpenHandler: ReturnType<typeof vi.fn>
       }
-      this.isDestroyed = vi.fn(() => this._destroyed)
-      this.show = vi.fn()
-      this.destroy = vi.fn(() => {
-        this._destroyed = true
-      })
-      this.getBounds = vi.fn(() => ({ x: 0, y: 0, width: 1200, height: 800 }))
-      this.getContentBounds = vi.fn(() => ({ x: 0, y: 0, width: 1200, height: 800 }))
-      this.loadURL = vi.fn()
-      this.loadFile = vi.fn()
+      isDestroyed: ReturnType<typeof vi.fn>
+      show: ReturnType<typeof vi.fn>
+      destroy: ReturnType<typeof vi.fn>
+      getBounds: ReturnType<typeof vi.fn>
+      getContentBounds: ReturnType<typeof vi.fn>
+      loadURL: ReturnType<typeof vi.fn>
+      loadFile: ReturnType<typeof vi.fn>
+      opts: Record<string, unknown>
 
-      createdWindows.push(this)
-    }
+      _listeners: Map<string, Function[]> = new Map()
+      _destroyed = false
 
-    on(event: string, handler: Function): this {
-      const existing = this._listeners.get(event) ?? []
-      this._listeners.set(event, [...existing, handler])
-      return this
-    }
+      static nextId = 1
+      static getAllWindows = vi.fn(() => createdWindows.filter((w: any) => !w._destroyed))
+      static fromWebContents = vi.fn()
 
-    once(event: string, handler: Function): this {
-      const existing = this._listeners.get(event) ?? []
-      this._listeners.set(event, [...existing, handler])
-      return this
-    }
+      constructor(opts: Record<string, unknown> = {}) {
+        this.opts = opts
+        this.id = MockBrowserWindow.nextId++
+        this.webContents = {
+          send: vi.fn(),
+          setWindowOpenHandler: vi.fn()
+        }
+        this.isDestroyed = vi.fn(() => this._destroyed)
+        this.show = vi.fn()
+        this.destroy = vi.fn(() => {
+          this._destroyed = true
+        })
+        this.getBounds = vi.fn(() => ({ x: 0, y: 0, width: 1200, height: 800 }))
+        this.getContentBounds = vi.fn(() => ({ x: 0, y: 0, width: 1200, height: 800 }))
+        this.loadURL = vi.fn()
+        this.loadFile = vi.fn()
 
-    emit(event: string, ...args: unknown[]): void {
-      for (const handler of this._listeners.get(event) ?? []) {
-        handler(...args)
+        createdWindows.push(this)
+      }
+
+      on(event: string, handler: Function): this {
+        const existing = this._listeners.get(event) ?? []
+        this._listeners.set(event, [...existing, handler])
+        return this
+      }
+
+      once(event: string, handler: Function): this {
+        const existing = this._listeners.get(event) ?? []
+        this._listeners.set(event, [...existing, handler])
+        return this
+      }
+
+      emit(event: string, ...args: unknown[]): void {
+        for (const handler of this._listeners.get(event) ?? []) {
+          handler(...args)
+        }
       }
     }
-  }
 
-  return { ipcHandlers, ipcOnListeners, createdWindows, mockIpcMain, MockBrowserWindow, mockScreen }
-})
+    return {
+      ipcHandlers,
+      ipcOnListeners,
+      createdWindows,
+      mockIpcMain,
+      MockBrowserWindow,
+      mockScreen
+    }
+  })
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -263,7 +267,7 @@ describe('handleStartCrossWindowDrag', () => {
 
     expect(targetWin.webContents.send).toHaveBeenCalledWith('tearoff:dragMove', {
       x: 200, // 600 - 400
-      y: 300  // 300 - 0
+      y: 300 // 300 - 0
     })
   })
 

@@ -92,6 +92,5 @@ describe('Window handlers', () => {
         expect(shell.openExternal).not.toHaveBeenCalled()
       })
     })
-
   })
 })

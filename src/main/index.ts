@@ -41,7 +41,13 @@ import { setQueueApiOnStatusTerminal } from './queue-api/task-handlers'
 import { setGitHandlersOnStatusTerminal } from './handlers/git-handlers'
 import { setOnTaskTerminal } from './sprint-pr-poller'
 import { createLogger } from './logger'
-import { registerTearoffHandlers, closeTearoffWindows, setQuitting, SHARED_WEB_PREFERENCES, restoreTearoffWindows } from './tearoff-manager'
+import {
+  registerTearoffHandlers,
+  closeTearoffWindows,
+  setQuitting,
+  SHARED_WEB_PREFERENCES,
+  restoreTearoffWindows
+} from './tearoff-manager'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -135,13 +141,16 @@ app.whenReady().then(() => {
   pruneOldEvents(getDb(), getEventRetentionDays())
 
   // Prune agent_events periodically (every 24 hours)
-  const pruneEventsInterval = setInterval(() => {
-    try {
-      pruneOldEvents(getDb(), getEventRetentionDays())
-    } catch {
-      /* non-fatal */
-    }
-  }, 24 * 60 * 60 * 1000)
+  const pruneEventsInterval = setInterval(
+    () => {
+      try {
+        pruneOldEvents(getDb(), getEventRetentionDays())
+      } catch {
+        /* non-fatal */
+      }
+    },
+    24 * 60 * 60 * 1000
+  )
   app.on('will-quit', () => clearInterval(pruneEventsInterval))
 
   // Prune old audit trail records (non-fatal)

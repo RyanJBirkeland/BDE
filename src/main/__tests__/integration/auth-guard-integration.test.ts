@@ -166,7 +166,9 @@ describe('AuthGuard integration', () => {
     it('throws when no token is found', async () => {
       const store = makeFailingStore(true)
 
-      await expect(ensureSubscriptionAuth(store)).rejects.toThrow('No Claude subscription token found')
+      await expect(ensureSubscriptionAuth(store)).rejects.toThrow(
+        'No Claude subscription token found'
+      )
     })
 
     it('throws when token is expired', async () => {
@@ -180,7 +182,9 @@ describe('AuthGuard integration', () => {
         true
       )
 
-      await expect(ensureSubscriptionAuth(store)).rejects.toThrow('Claude subscription token expired')
+      await expect(ensureSubscriptionAuth(store)).rejects.toThrow(
+        'Claude subscription token expired'
+      )
     })
   })
 

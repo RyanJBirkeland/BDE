@@ -45,10 +45,16 @@ function rotateAmLogIfNeeded(): void {
     const stats = statSync(LOG_PATH)
     if (stats.size > AM_MAX_LOG_SIZE) {
       const oldPath = LOG_PATH + '.old'
-      try { rmSync(oldPath) } catch { /* may not exist */ }
+      try {
+        rmSync(oldPath)
+      } catch {
+        /* may not exist */
+      }
       renameSync(LOG_PATH, oldPath)
     }
-  } catch { /* file doesn't exist yet */ }
+  } catch {
+    /* file doesn't exist yet */
+  }
 }
 
 function fileLog(level: string, m: string): void {
@@ -165,9 +171,7 @@ export function handleWatchdogVerdict(
         )
       )
     } catch (err) {
-      logger.warn(
-        `[agent-manager] Failed to update task ${taskId} after max-runtime kill: ${err}`
-      )
+      logger.warn(`[agent-manager] Failed to update task ${taskId} after max-runtime kill: ${err}`)
     }
   } else if (verdict === 'idle') {
     try {
@@ -175,7 +179,8 @@ export function handleWatchdogVerdict(
         status: 'error',
         completed_at: now,
         claimed_by: null,
-        notes: 'Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to \'queued\'.',
+        notes:
+          "Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to 'queued'.",
         needs_review: true
       })
       onTerminal(taskId, 'error').catch((err) =>
@@ -190,7 +195,8 @@ export function handleWatchdogVerdict(
       updateTaskFn(taskId, {
         status: 'queued',
         claimed_by: null,
-        notes: 'Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown.'
+        notes:
+          'Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown.'
       })
     } catch (err) {
       logger.warn(`[agent-manager] Failed to requeue rate-limited task ${taskId}: ${err}`)
@@ -293,7 +299,14 @@ export class AgentManagerImpl implements AgentManager {
       this.config.onStatusTerminal(taskId, status)
     } else {
       try {
-        resolveDependents(taskId, status, this._depIndex, this.repo.getTask, this.repo.updateTask, this.logger)
+        resolveDependents(
+          taskId,
+          status,
+          this._depIndex,
+          this.repo.getTask,
+          this.repo.updateTask,
+          this.logger
+        )
       } catch (err) {
         this.logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
       }
@@ -312,7 +325,17 @@ export class AgentManagerImpl implements AgentManager {
    * Ensures retry_count and fast_fail_count default to 0, prompt and spec default to null.
    * Returns null if required fields are missing.
    */
-  _mapQueuedTask(raw: Record<string, unknown>) {
+  _mapQueuedTask(raw: Record<string, unknown>): {
+    id: string
+    title: string
+    prompt: string | null
+    spec: string | null
+    repo: string
+    retry_count: number
+    fast_fail_count: number
+    playground_enabled: boolean
+    max_runtime_ms: number | null
+  } | null {
     // Validate required fields
     if (!raw.id || typeof raw.id !== 'string') {
       this.logger.warn(`[agent-manager] Task missing or invalid 'id' field: ${JSON.stringify(raw)}`)
@@ -367,7 +390,9 @@ export class AgentManagerImpl implements AgentManager {
               status: 'blocked',
               notes: formatBlockedNote(blockedBy)
             })
-          } catch { /* best-effort */ }
+          } catch {
+            /* best-effort */
+          }
           return true
         }
       }
@@ -381,7 +406,9 @@ export class AgentManagerImpl implements AgentManager {
           claimed_by: null
         })
       } catch (updateErr) {
-        this.logger.warn(`[agent-manager] Failed to update task ${taskId} after dep parse error: ${updateErr}`)
+        this.logger.warn(
+          `[agent-manager] Failed to update task ${taskId} after dep parse error: ${updateErr}`
+        )
       }
       return true // Block the task
     }
@@ -424,7 +451,9 @@ export class AgentManagerImpl implements AgentManager {
 
       const repoPath = this.resolveRepoPath(task.repo)
       if (!repoPath) {
-        this.logger.warn(`[agent-manager] No repo path for "${task.repo}" — setting task ${task.id} to error`)
+        this.logger.warn(
+          `[agent-manager] No repo path for "${task.repo}" — setting task ${task.id} to error`
+        )
         try {
           this.repo.updateTask(task.id, {
             status: 'error',
@@ -433,7 +462,9 @@ export class AgentManagerImpl implements AgentManager {
           })
           await this.onTaskTerminal(task.id, 'error')
         } catch (err) {
-          this.logger.warn(`[agent-manager] Failed to update task ${task.id} after repo resolution failure: ${err}`)
+          this.logger.warn(
+            `[agent-manager] Failed to update task ${task.id} after repo resolution failure: ${err}`
+          )
         }
         return
       }
@@ -458,9 +489,10 @@ export class AgentManagerImpl implements AgentManager {
         this.logger.error(`[agent-manager] setupWorktree failed for task ${task.id}: ${errMsg}`)
         // For git errors, keep the tail of the message (contains key diagnostic info)
         const fullNote = `Worktree setup failed: ${errMsg}`
-        const notes = fullNote.length > NOTES_MAX_LENGTH
-          ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
-          : fullNote
+        const notes =
+          fullNote.length > NOTES_MAX_LENGTH
+            ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
+            : fullNote
         this.repo.updateTask(task.id, {
           status: 'error',
           completed_at: new Date().toISOString(),
@@ -504,7 +536,9 @@ export class AgentManagerImpl implements AgentManager {
       const tokenOk = await checkOAuthToken(this.logger)
       if (!tokenOk) return
 
-      this.logger.info(`[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`)
+      this.logger.info(
+        `[agent-manager] Fetching queued tasks via Queue API (limit=${available})...`
+      )
       const queued = this.fetchQueuedTasks(available)
       this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
       for (const raw of queued) {
@@ -584,7 +618,11 @@ export class AgentManagerImpl implements AgentManager {
 
   private async _pruneLoop(): Promise<void> {
     try {
-      await pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id), this.logger)
+      await pruneStaleWorktrees(
+        this.config.worktreeBase,
+        (id: string) => this._activeAgents.has(id),
+        this.logger
+      )
     } catch (err) {
       this.logger.error(`[agent-manager] Worktree prune error: ${err}`)
     }
@@ -599,9 +637,11 @@ export class AgentManagerImpl implements AgentManager {
     this._concurrency = makeConcurrencyState(this.config.maxConcurrent)
 
     // Initial orphan recovery (fire-and-forget)
-    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger).catch((err) => {
-      this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
-    })
+    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger).catch(
+      (err) => {
+        this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
+      }
+    )
 
     // Build dependency index
     try {
@@ -613,7 +653,11 @@ export class AgentManagerImpl implements AgentManager {
     }
 
     // Initial worktree prune (fire-and-forget)
-    pruneStaleWorktrees(this.config.worktreeBase, (id: string) => this._activeAgents.has(id), this.logger).catch((err) => {
+    pruneStaleWorktrees(
+      this.config.worktreeBase,
+      (id: string) => this._activeAgents.has(id),
+      this.logger
+    ).catch((err) => {
       this.logger.error(`[agent-manager] Initial worktree prune error: ${err}`)
     })
 
@@ -628,7 +672,9 @@ export class AgentManagerImpl implements AgentManager {
     }, this.config.pollIntervalMs)
     this.watchdogTimer = setInterval(() => this._watchdogLoop(), WATCHDOG_INTERVAL_MS)
     this.orphanTimer = setInterval(() => {
-      this._orphanLoop().catch((err) => this.logger.warn(`[agent-manager] Orphan loop error: ${err}`))
+      this._orphanLoop().catch((err) =>
+        this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
+      )
     }, ORPHAN_CHECK_INTERVAL_MS)
     this.pruneTimer = setInterval(() => {
       this._pruneLoop().catch((err) => this.logger.warn(`[agent-manager] Prune loop error: ${err}`))
@@ -685,7 +731,9 @@ export class AgentManagerImpl implements AgentManager {
       try {
         agent.handle.abort()
       } catch (err) {
-        this.logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId} during shutdown: ${err}`)
+        this.logger.warn(
+          `[agent-manager] Failed to abort agent ${agent.taskId} during shutdown: ${err}`
+        )
       }
     }
 

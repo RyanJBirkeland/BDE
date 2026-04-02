@@ -386,13 +386,17 @@ describe('Sprint IPC handlers — integration', () => {
   // 7. Error handling → handler returns structured error on failure
   describe('error handling', () => {
     it('propagates errors from the data layer through safeHandle', async () => {
-      mockListTasks.mockImplementation(() => { throw new Error('DB connection failed'); })
+      mockListTasks.mockImplementation(() => {
+        throw new Error('DB connection failed')
+      })
 
       await expect(invoke('sprint:list')).rejects.toThrow('DB connection failed')
     })
 
     it('propagates create errors', async () => {
-      mockCreateTask.mockImplementation(() => { throw new Error('Insert failed: duplicate key'); })
+      mockCreateTask.mockImplementation(() => {
+        throw new Error('Insert failed: duplicate key')
+      })
 
       await expect(invoke('sprint:create', { title: 'Dup task', repo: 'BDE' })).rejects.toThrow(
         'Insert failed: duplicate key'

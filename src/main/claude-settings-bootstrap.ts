@@ -74,7 +74,9 @@ export function ensureClaudeSettings(): boolean {
     // Check if permissions are already configured
     const hasPermissions = settings.permissions?.allow && settings.permissions.allow.length > 0
     if (hasPermissions) {
-      log.info(`[claude-settings] Permissions already configured (${settings.permissions!.allow!.length} allow rules)`)
+      log.info(
+        `[claude-settings] Permissions already configured (${settings.permissions!.allow!.length} allow rules)`
+      )
       return false
     }
 

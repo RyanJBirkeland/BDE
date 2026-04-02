@@ -15,7 +15,11 @@ export interface ISprintTaskRepository {
   getTask(id: string): SprintTask | null
   updateTask(id: string, patch: Record<string, unknown>): SprintTask | null
   getQueuedTasks(limit: number): SprintTask[]
-  getTasksWithDependencies(): Array<{ id: string; depends_on: TaskDependency[] | null; status: string }>
+  getTasksWithDependencies(): Array<{
+    id: string
+    depends_on: TaskDependency[] | null
+    status: string
+  }>
   getOrphanedTasks(claimedBy: string): SprintTask[]
   getActiveTaskCount(): number
   claimTask(id: string, claimedBy: string): SprintTask | null

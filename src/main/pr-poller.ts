@@ -28,7 +28,9 @@ async function fetchOpenPrs(owner: string, repo: string, token: string): Promise
     )
     return data.map((pr) => ({ ...pr, repo }))
   } catch (err) {
-    logger.warn(`Failed to fetch PRs for ${owner}/${repo}: ${err instanceof Error ? err.message : String(err)}`)
+    logger.warn(
+      `Failed to fetch PRs for ${owner}/${repo}: ${err instanceof Error ? err.message : String(err)}`
+    )
     return []
   }
 }
@@ -110,7 +112,9 @@ function safePoll(): void {
       errorCount++
       // Exponential backoff with max 5 minutes
       backoffDelay = Math.min(POLL_INTERVAL_MS * Math.pow(2, errorCount - 1), 300_000)
-      logger.warn(`PR poller backing off for ${backoffDelay}ms after ${errorCount} consecutive errors`)
+      logger.warn(
+        `PR poller backing off for ${backoffDelay}ms after ${errorCount} consecutive errors`
+      )
     })
 }
 

@@ -103,9 +103,7 @@ describe('IDE fs:watchDir path validation', () => {
       throw new Error('watchDir handler not registered')
     }
 
-    await expect(watchDirHandler({} as any, '/etc')).rejects.toThrow(
-      /outside user home directory/
-    )
+    await expect(watchDirHandler({} as any, '/etc')).rejects.toThrow(/outside user home directory/)
   })
 
   it('rejects non-existent path', async () => {

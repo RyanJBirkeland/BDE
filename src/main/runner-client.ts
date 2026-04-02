@@ -18,7 +18,7 @@ function getRunnerConfig(): RunnerConfig {
   return runners[0]
 }
 
-async function runnerFetch(path: string, opts?: RequestInit) {
+async function runnerFetch(path: string, opts?: RequestInit): Promise<Response> {
   const { url, apiKey } = getRunnerConfig()
   return fetch(`${url}${path}`, {
     ...opts,
@@ -30,7 +30,7 @@ async function runnerFetch(path: string, opts?: RequestInit) {
   })
 }
 
-export async function listAgents() {
+export async function listAgents(): Promise<unknown> {
   const res = await runnerFetch('/agents')
   if (!res.ok) {
     throw new Error(`listAgents failed: ${res.status} ${await res.text()}`)
@@ -38,13 +38,16 @@ export async function listAgents() {
   return res.json()
 }
 
-export async function getAgent(id: string) {
+export async function getAgent(id: string): Promise<unknown> {
   const res = await runnerFetch(`/agents/${id}`)
   if (!res.ok) return null
   return res.json()
 }
 
-export async function steerAgent(agentId: string, message: string) {
+export async function steerAgent(
+  agentId: string,
+  message: string
+): Promise<{ ok: boolean; error?: string }> {
   const res = await runnerFetch(`/agents/${agentId}/steer`, {
     method: 'POST',
     body: JSON.stringify({ message })
@@ -55,7 +58,7 @@ export async function steerAgent(agentId: string, message: string) {
   return res.json()
 }
 
-export async function killAgent(agentId: string) {
+export async function killAgent(agentId: string): Promise<{ ok: boolean; error?: string }> {
   const res = await runnerFetch(`/agents/${agentId}/kill`, { method: 'POST' })
   if (!res.ok) {
     throw new Error(`killAgent failed: ${res.status} ${await res.text()}`)

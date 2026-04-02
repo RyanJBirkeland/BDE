@@ -36,9 +36,7 @@ const {
   }
 
   const mockScreen = {
-    getAllDisplays: vi.fn(() => [
-      { bounds: { x: 0, y: 0, width: 1920, height: 1080 } }
-    ]),
+    getAllDisplays: vi.fn(() => [{ bounds: { x: 0, y: 0, width: 1920, height: 1080 } }]),
     getPrimaryDisplay: vi.fn(() => ({
       bounds: { x: 0, y: 0, width: 1920, height: 1080 }
     })),
@@ -206,9 +204,7 @@ function resetState(): void {
   MockBrowserWindow.getAllWindows.mockImplementation(() =>
     createdWindows.filter((w: any) => !w._destroyed)
   )
-  mockScreen.getAllDisplays.mockReturnValue([
-    { bounds: { x: 0, y: 0, width: 1920, height: 1080 } }
-  ])
+  mockScreen.getAllDisplays.mockReturnValue([{ bounds: { x: 0, y: 0, width: 1920, height: 1080 } }])
   mockScreen.getPrimaryDisplay.mockReturnValue({
     bounds: { x: 0, y: 0, width: 1920, height: 1080 }
   })
@@ -240,7 +236,9 @@ describe('persistTearoffState', () => {
     await handler(fakeInvokeEvent, defaultPayload)
 
     // persistTearoffState is called after create
-    const calls = mockSetSettingJson.mock.calls.filter(([key]: [string]) => key === 'tearoff.windows')
+    const calls = mockSetSettingJson.mock.calls.filter(
+      ([key]: [string]) => key === 'tearoff.windows'
+    )
     expect(calls.length).toBeGreaterThan(0)
     const [_key, state] = calls[calls.length - 1]
     expect(Array.isArray(state)).toBe(true)
@@ -254,7 +252,9 @@ describe('persistTearoffState', () => {
   it('writes empty array when no tear-offs exist', () => {
     // Import persistTearoffState indirectly via closeTearoffWindows
     closeTearoffWindows()
-    const calls = mockSetSettingJson.mock.calls.filter(([key]: [string]) => key === 'tearoff.windows')
+    const calls = mockSetSettingJson.mock.calls.filter(
+      ([key]: [string]) => key === 'tearoff.windows'
+    )
     expect(calls.length).toBeGreaterThan(0)
     const [_key, state] = calls[calls.length - 1]
     expect(state).toEqual([])
@@ -474,7 +474,9 @@ describe('tearoff:viewsChanged', () => {
     viewsChangedListeners[0](fakeEvent, { windowId, views: ['agents', 'ide', 'dashboard'] })
 
     // Should have persisted the new state
-    const calls = mockSetSettingJson.mock.calls.filter(([key]: [string]) => key === 'tearoff.windows')
+    const calls = mockSetSettingJson.mock.calls.filter(
+      ([key]: [string]) => key === 'tearoff.windows'
+    )
     expect(calls.length).toBeGreaterThan(0)
     const [_key, state] = calls[calls.length - 1]
     expect(state[0].views).toEqual(['agents', 'ide', 'dashboard'])
@@ -487,7 +489,9 @@ describe('tearoff:viewsChanged', () => {
     viewsChangedListeners[0](fakeEvent, { windowId: 'unknown-id', views: ['agents'] })
 
     // Should not persist
-    const calls = mockSetSettingJson.mock.calls.filter(([key]: [string]) => key === 'tearoff.windows')
+    const calls = mockSetSettingJson.mock.calls.filter(
+      ([key]: [string]) => key === 'tearoff.windows'
+    )
     expect(calls).toHaveLength(0)
   })
 })
@@ -511,7 +515,9 @@ describe('closeTearoffWindows', () => {
     // persistTearoffState should be called before destroy
     // After destroy, isDestroyed() returns true, so the filter excludes them
     // The key call is that setSettingJson('tearoff.windows', ...) was called
-    const calls = mockSetSettingJson.mock.calls.filter(([key]: [string]) => key === 'tearoff.windows')
+    const calls = mockSetSettingJson.mock.calls.filter(
+      ([key]: [string]) => key === 'tearoff.windows'
+    )
     expect(calls.length).toBeGreaterThan(0)
 
     for (const win of createdWindows) {
@@ -536,7 +542,9 @@ describe('returnToMain persists state', () => {
     const returnToMainListeners = ipcOnListeners.get('tearoff:returnToMain')!
     returnToMainListeners[0](fakeEvent, { windowId })
 
-    const calls = mockSetSettingJson.mock.calls.filter(([key]: [string]) => key === 'tearoff.windows')
+    const calls = mockSetSettingJson.mock.calls.filter(
+      ([key]: [string]) => key === 'tearoff.windows'
+    )
     expect(calls.length).toBeGreaterThan(0)
     const [_key, state] = calls[calls.length - 1]
     // Window was removed, so state should be empty
@@ -565,7 +573,9 @@ describe('returnAll persists state', () => {
     const returnAllListeners = ipcOnListeners.get('tearoff:returnAll')!
     returnAllListeners[0](fakeEvent, { windowId, views: ['agents', 'ide'] })
 
-    const calls = mockSetSettingJson.mock.calls.filter(([key]: [string]) => key === 'tearoff.windows')
+    const calls = mockSetSettingJson.mock.calls.filter(
+      ([key]: [string]) => key === 'tearoff.windows'
+    )
     expect(calls.length).toBeGreaterThan(0)
     const [_key, state] = calls[calls.length - 1]
     expect(state).toEqual([])

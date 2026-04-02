@@ -50,11 +50,7 @@ export function validateTaskCreation(
   // 2. Auto-block tasks with unsatisfied hard dependencies
   let task = { ...input }
   const dependsOn = task.depends_on as TaskDependency[] | undefined
-  if (
-    dependsOn &&
-    dependsOn.length > 0 &&
-    (task.status === 'queued' || !task.status)
-  ) {
+  if (dependsOn && dependsOn.length > 0 && (task.status === 'queued' || !task.status)) {
     const { shouldBlock, blockedBy } = checkTaskDependencies(
       'new-task',
       dependsOn,

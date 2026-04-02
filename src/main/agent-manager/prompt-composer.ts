@@ -81,11 +81,16 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
  */
 function getPersonality(agentType: AgentType): AgentPersonality {
   switch (agentType) {
-    case 'pipeline': return pipelinePersonality
-    case 'assistant': return assistantPersonality
-    case 'adhoc': return adhocPersonality
-    case 'copilot': return copilotPersonality
-    case 'synthesizer': return synthesizerPersonality
+    case 'pipeline':
+      return pipelinePersonality
+    case 'assistant':
+      return assistantPersonality
+    case 'adhoc':
+      return adhocPersonality
+    case 'copilot':
+      return copilotPersonality
+    case 'synthesizer':
+      return synthesizerPersonality
   }
 }
 
@@ -132,7 +137,7 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
   const personality = getPersonality(agentType)
   prompt += '\n\n## Voice\n' + personality.voice
   prompt += '\n\n## Your Role\n' + personality.roleFrame
-  prompt += '\n\n## Constraints\n' + personality.constraints.map(c => `- ${c}`).join('\n')
+  prompt += '\n\n## Constraints\n' + personality.constraints.map((c) => `- ${c}`).join('\n')
 
   // Inject memory (all agents get this)
   prompt += '\n\n## BDE Conventions\n'

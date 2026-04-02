@@ -104,7 +104,9 @@ export async function handleTaskOutput(
     }
   } catch (err) {
     // QA-17: Log event persistence errors for debugging
-    logger.error(`Failed to persist events for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`)
+    logger.error(
+      `Failed to persist events for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`
+    )
     // Best-effort — do not fail the request
   }
 

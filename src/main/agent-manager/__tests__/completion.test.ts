@@ -29,7 +29,7 @@ vi.mock('../../broadcast', () => ({
 import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'
-import { resolveSuccess, resolveFailure, PR_CREATE_MAX_ATTEMPTS } from '../completion'
+import { resolveSuccess, resolveFailure } from '../completion'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { MAX_RETRIES } from '../types'
 
@@ -222,15 +222,15 @@ describe('resolveSuccess', () => {
     let callIndex = 0
     const responses: Array<{ stdout?: string; error?: Error }> = [
       { stdout: 'agent/add-login-page\n' }, // git rev-parse
-      { stdout: '' },                        // git status --porcelain
-      { stdout: '1\n' },                     // git rev-list --count
-      { stdout: '' },                        // git push
-      { stdout: '' },                        // gh pr list (no existing PR)
-      { stdout: '' },                        // git log (generatePrBody)
-      { stdout: '' },                        // git diff --stat (generatePrBody)
+      { stdout: '' }, // git status --porcelain
+      { stdout: '1\n' }, // git rev-list --count
+      { stdout: '' }, // git push
+      { stdout: '' }, // gh pr list (no existing PR)
+      { stdout: '' }, // git log (generatePrBody)
+      { stdout: '' }, // git diff --stat (generatePrBody)
       { error: new Error('gh: authentication error') }, // attempt 1
       { error: new Error('gh: authentication error') }, // attempt 2
-      { error: new Error('gh: authentication error') }, // attempt 3
+      { error: new Error('gh: authentication error') } // attempt 3
     ]
     getCustomMock().mockImplementation((..._args: unknown[]) => {
       const resp = responses[callIndex] ?? { stdout: '' }
@@ -246,7 +246,9 @@ describe('resolveSuccess', () => {
 
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     expect(patch.pr_status).toBe('branch_only')
-    expect(patch.notes).toContain('Branch agent/add-login-page pushed to owner/repo but PR creation failed')
+    expect(patch.notes).toContain(
+      'Branch agent/add-login-page pushed to owner/repo but PR creation failed'
+    )
 
     vi.useRealTimers()
   })
@@ -256,14 +258,14 @@ describe('resolveSuccess', () => {
     let callIndex = 0
     const responses: Array<{ stdout?: string; error?: Error }> = [
       { stdout: 'agent/add-login-page\n' }, // git rev-parse
-      { stdout: '' },                        // git status --porcelain
-      { stdout: '1\n' },                     // git rev-list --count
-      { stdout: '' },                        // git push
-      { stdout: '' },                        // gh pr list (no existing PR)
-      { stdout: '' },                        // git log (generatePrBody)
-      { stdout: '' },                        // git diff --stat (generatePrBody)
+      { stdout: '' }, // git status --porcelain
+      { stdout: '1\n' }, // git rev-list --count
+      { stdout: '' }, // git push
+      { stdout: '' }, // gh pr list (no existing PR)
+      { stdout: '' }, // git log (generatePrBody)
+      { stdout: '' }, // git diff --stat (generatePrBody)
       { error: new Error('gh: rate limit') }, // attempt 1 fails
-      { stdout: 'https://github.com/owner/repo/pull/50\n' }, // attempt 2 succeeds
+      { stdout: 'https://github.com/owner/repo/pull/50\n' } // attempt 2 succeeds
     ]
     getCustomMock().mockImplementation((..._args: unknown[]) => {
       const resp = responses[callIndex] ?? { stdout: '' }
@@ -478,7 +480,9 @@ describe('resolveSuccess — catch handler coverage', () => {
         ? Promise.reject(x.error)
         : Promise.resolve({ stdout: x.stdout ?? '', stderr: '' })
     })
-    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB down'); })
+    updateTaskMock.mockImplementationOnce(() => {
+      throw new Error('DB down')
+    })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after push error')
@@ -547,7 +551,9 @@ describe('resolveSuccess — catch handler coverage', () => {
       { stdout: '' },
       { stdout: '{"url":"https://github.com/o/r/pull/1","number":1}\n' }
     ])
-    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
+    updateTaskMock.mockImplementationOnce(() => {
+      throw new Error('DB error')
+    })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch with PR info')
@@ -583,7 +589,9 @@ describe('resolveSuccess — catch handler coverage', () => {
 
   it('logs warning when updateTask fails after worktree eviction (line 73)', async () => {
     vi.mocked(existsSync).mockReturnValueOnce(false)
-    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
+    updateTaskMock.mockImplementationOnce(() => {
+      throw new Error('DB error')
+    })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after worktree eviction')
@@ -592,7 +600,9 @@ describe('resolveSuccess — catch handler coverage', () => {
 
   it('logs warning when updateTask fails after branch detection error (line 89)', async () => {
     mockExecFileSequence([{ error: new Error('not a git repository') }])
-    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
+    updateTaskMock.mockImplementationOnce(() => {
+      throw new Error('DB error')
+    })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after branch detection error')
@@ -601,7 +611,9 @@ describe('resolveSuccess — catch handler coverage', () => {
 
   it('logs warning when updateTask fails after empty branch (line 98)', async () => {
     mockExecFileSequence([{ stdout: '\n' }])
-    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
+    updateTaskMock.mockImplementationOnce(() => {
+      throw new Error('DB error')
+    })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after empty branch')
@@ -614,7 +626,9 @@ describe('resolveSuccess — catch handler coverage', () => {
       { stdout: '' }, // git status --porcelain
       { stdout: '0\n' } // git rev-list --count (0 commits)
     ])
-    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
+    updateTaskMock.mockImplementationOnce(() => {
+      throw new Error('DB error')
+    })
     await resolveSuccess({ ...catchOpts, agentSummary: 'some output' }, noopLogger)
     expect(noopLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch during failure resolution')
@@ -706,7 +720,9 @@ describe('resolveFailure', () => {
   })
 
   it('returns true when retries exhausted even if updateTask throws (AM-5)', async () => {
-    updateTaskMock.mockImplementationOnce(() => { throw new Error('DB error'); })
+    updateTaskMock.mockImplementationOnce(() => {
+      throw new Error('DB error')
+    })
 
     const result = await resolveFailure({
       taskId: 'task-5',

@@ -84,9 +84,7 @@ export function closeTearoffWindows(): void {
 
 /** Returns the main BrowserWindow (the one that is NOT a tear-off). */
 export function getMainWindow(): BrowserWindow | null {
-  const tearoffIds = new Set(
-    Array.from(tearoffWindows.values()).map((e) => e.win.id)
-  )
+  const tearoffIds = new Set(Array.from(tearoffWindows.values()).map((e) => e.win.id))
   const all = BrowserWindow.getAllWindows()
   return all.find((w) => !tearoffIds.has(w.id)) ?? null
 }
@@ -206,10 +204,7 @@ async function handleCloseRequest(windowId: string, win: BrowserWindow): Promise
   }
 }
 
-function askRendererForAction(
-  windowId: string,
-  win: BrowserWindow
-): Promise<'return' | 'close'> {
+function askRendererForAction(windowId: string, win: BrowserWindow): Promise<'return' | 'close'> {
   return new Promise<'return' | 'close'>((resolve) => {
     const responseChannel = `tearoff:closeResponse:${windowId}`
 
@@ -247,8 +242,7 @@ export function restoreTearoffWindows(): void {
   for (const entry of saved) {
     if (!entry.views || entry.views.length === 0) continue
 
-    const bounds =
-      entry.bounds && isOnScreen(entry.bounds) ? entry.bounds : getDefaultBounds()
+    const bounds = entry.bounds && isOnScreen(entry.bounds) ? entry.bounds : getDefaultBounds()
     const windowId = randomUUID()
 
     const win = new BrowserWindow({
@@ -417,11 +411,7 @@ export function handleStartCrossWindowDrag(
   return { targetFound: false }
 }
 
-function handleDropComplete(payload: {
-  view: string
-  targetPanelId: string
-  zone: string
-}): void {
+function handleDropComplete(payload: { view: string; targetPanelId: string; zone: string }): void {
   if (!activeDrag) return
 
   const { sourceWin } = activeDrag
@@ -559,9 +549,12 @@ export function registerTearoffHandlers(): void {
   )
 
   // tearoff:startCrossWindowDrag — renderer initiates a cross-window drag
-  ipcMain.handle('tearoff:startCrossWindowDrag', (_event, payload: { windowId: string; viewKey: string }) => {
-    return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
-  })
+  ipcMain.handle(
+    'tearoff:startCrossWindowDrag',
+    (_event, payload: { windowId: string; viewKey: string }) => {
+      return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
+    }
+  )
 
   // tearoff:dropComplete — target window signals a drop was accepted
   ipcMain.on(
@@ -602,7 +595,11 @@ export function registerTearoffHandlers(): void {
     tearoffWindows.delete(windowId)
     clearResizeTimer(windowId)
     persistTearoffState()
-    try { entry.win.destroy() } catch { /* already destroyed */ }
+    try {
+      entry.win.destroy()
+    } catch {
+      /* already destroyed */
+    }
     logger.info(`[tearoff] returnAll: returned ${views.length} views from ${windowId}`)
   })
 

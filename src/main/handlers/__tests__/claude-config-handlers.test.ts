@@ -25,10 +25,16 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 
 const mockEvent = {} as IpcMainInvokeEvent
 
-function captureHandlers(): Record<string, (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown> {
+function captureHandlers(): Record<
+  string,
+  (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown
+> {
   const handlers: Record<string, (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown> = {}
   vi.mocked(safeHandle).mockImplementation((channel, handler) => {
-    handlers[channel as string] = handler as (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown
+    handlers[channel as string] = handler as (
+      event: IpcMainInvokeEvent,
+      ...args: unknown[]
+    ) => unknown
   })
   registerClaudeConfigHandlers()
   return handlers
@@ -85,7 +91,10 @@ describe('claude-config-handlers', () => {
       vi.mocked(readFileSync).mockReturnValue(JSON.stringify({}))
       const handlers = captureHandlers()
 
-      await handlers['claude:setPermissions'](mockEvent, { allow: ['Bash', 'Read'], deny: ['Write'] })
+      await handlers['claude:setPermissions'](mockEvent, {
+        allow: ['Bash', 'Read'],
+        deny: ['Write']
+      })
 
       expect(writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('settings.json'),
@@ -97,7 +106,7 @@ describe('claude-config-handlers', () => {
     })
 
     it('creates .claude directory if missing', async () => {
-      vi.mocked(existsSync).mockImplementation((p) => {
+      vi.mocked(existsSync).mockImplementation((_p) => {
         // CLAUDE_DIR doesn't exist, SETTINGS_PATH doesn't exist
         return false
       })
@@ -105,10 +114,9 @@ describe('claude-config-handlers', () => {
 
       await handlers['claude:setPermissions'](mockEvent, { allow: [], deny: [] })
 
-      expect(mkdirSync).toHaveBeenCalledWith(
-        expect.stringContaining('.claude'),
-        { recursive: true }
-      )
+      expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining('.claude'), {
+        recursive: true
+      })
     })
 
     it('preserves non-permission settings when updating', async () => {

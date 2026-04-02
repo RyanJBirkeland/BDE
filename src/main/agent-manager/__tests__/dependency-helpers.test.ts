@@ -116,7 +116,9 @@ describe('checkTaskDependencies', () => {
   it('returns shouldBlock: false when listTasks fails (graceful degradation)', async () => {
     const { checkTaskDependencies } = await import('../dependency-helpers')
 
-    const mockListTasks = vi.fn().mockImplementation(() => { throw new Error('DB error') })
+    const mockListTasks = vi.fn().mockImplementation(() => {
+      throw new Error('DB error')
+    })
 
     const result = checkTaskDependencies(
       'task-1',

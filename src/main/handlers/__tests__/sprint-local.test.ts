@@ -118,9 +118,8 @@ import {
 } from '../../data/sprint-queries'
 import { notifySprintMutation } from '../sprint-listeners'
 import { getSettingJson } from '../../settings'
-import { getAgentLogInfo, getAgentLogPath } from '../../data/agent-queries'
+import { getAgentLogInfo } from '../../data/agent-queries'
 import { readLog } from '../../agent-history'
-import { readFile } from 'fs/promises'
 
 const mockEvent = {} as IpcMainInvokeEvent
 

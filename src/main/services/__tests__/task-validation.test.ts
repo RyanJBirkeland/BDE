@@ -43,28 +43,25 @@ describe('validateTaskCreation', () => {
   })
 
   it('rejects task with empty title', () => {
-    const result = validateTaskCreation(
-      { title: '', repo: 'bde', status: 'backlog' } as any,
-      { logger: mockLogger }
-    )
+    const result = validateTaskCreation({ title: '', repo: 'bde', status: 'backlog' } as any, {
+      logger: mockLogger
+    })
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('title is required')
   })
 
   it('rejects task with empty repo', () => {
-    const result = validateTaskCreation(
-      { title: 'Fix', repo: '', status: 'backlog' } as any,
-      { logger: mockLogger }
-    )
+    const result = validateTaskCreation({ title: 'Fix', repo: '', status: 'backlog' } as any, {
+      logger: mockLogger
+    })
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('repo is required')
   })
 
   it('rejects queued task without spec', () => {
-    const result = validateTaskCreation(
-      { title: 'Fix', repo: 'bde', status: 'queued' } as any,
-      { logger: mockLogger }
-    )
+    const result = validateTaskCreation({ title: 'Fix', repo: 'bde', status: 'queued' } as any, {
+      logger: mockLogger
+    })
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('spec is required')
   })

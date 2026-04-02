@@ -96,7 +96,7 @@ const GITHUB_API_ALLOWLIST: Array<{ method: string; pattern: RegExp }> = [
   { method: 'POST', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+\/reviews/ },
   { method: 'POST', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+\/comments/ },
   { method: 'PUT', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+\/merge/ },
-  { method: 'PATCH', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+/ },
+  { method: 'PATCH', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+/ }
   // Add more as needed — but NO DELETE, no admin endpoints
 ]
 
@@ -133,9 +133,7 @@ function isGitHubRequestAllowed(method: string, path: string, body?: string): bo
 
 let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
 
-export function setGitHandlersOnStatusTerminal(
-  fn: (taskId: string, status: string) => void
-): void {
+export function setGitHandlersOnStatusTerminal(fn: (taskId: string, status: string) => void): void {
   _onStatusTerminal = fn
 }
 

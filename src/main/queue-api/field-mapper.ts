@@ -58,7 +58,12 @@ export function toSnakeCase<T extends object>(fields: T): Record<string, unknown
     // SQLite stores JSONB fields as JSON strings — serialize arrays/objects.
     // sprint-queries handles depends_on serialization internally, so if the
     // value is already a string, pass through as-is.
-    if (JSONB_FIELDS.has(snakeKey) && value !== null && value !== undefined && typeof value !== 'string') {
+    if (
+      JSONB_FIELDS.has(snakeKey) &&
+      value !== null &&
+      value !== undefined &&
+      typeof value !== 'string'
+    ) {
       result[snakeKey] = JSON.stringify(value)
     } else {
       result[snakeKey] = value

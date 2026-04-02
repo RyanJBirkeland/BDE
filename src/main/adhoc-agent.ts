@@ -93,9 +93,7 @@ export async function spawnAdhocAgent(args: {
   async function runTurn(message: string): Promise<void> {
     if (closed) return
 
-    const options = sessionId
-      ? { ...baseOptions, resume: sessionId }
-      : baseOptions
+    const options = sessionId ? { ...baseOptions, resume: sessionId } : baseOptions
 
     const queryHandle = sdk.query({ prompt: message, options })
 
@@ -127,7 +125,9 @@ export async function spawnAdhocAgent(args: {
       }
       log.info(`[adhoc] ${meta.id} turn complete, session alive`)
     } catch (err) {
-      log.error(`[adhoc] ${meta.id} turn error: ${err instanceof Error ? err.message : String(err)}`)
+      log.error(
+        `[adhoc] ${meta.id} turn error: ${err instanceof Error ? err.message : String(err)}`
+      )
       emitAgentEvent(meta.id, {
         type: 'agent:error',
         message: err instanceof Error ? err.message : String(err),

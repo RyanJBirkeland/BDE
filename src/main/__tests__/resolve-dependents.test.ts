@@ -51,7 +51,9 @@ describe('resolveDependents', () => {
   it('does not unblock a dependent whose deps are not satisfied', () => {
     const index = mockIndex({
       getDependents: vi.fn().mockReturnValue(new Set(['task-1'])),
-      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['other-dep'] })
+      areDependenciesSatisfied: vi
+        .fn()
+        .mockReturnValue({ satisfied: false, blockedBy: ['other-dep'] })
     })
     const task = mockTask({ id: 'task-1', status: 'blocked' })
     const getTask = vi.fn().mockReturnValue(task)
@@ -69,7 +71,9 @@ describe('resolveDependents', () => {
   it('updates blocking notes when deps are not satisfied', () => {
     const index = mockIndex({
       getDependents: vi.fn().mockReturnValue(new Set(['task-1'])),
-      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['other-dep'] })
+      areDependenciesSatisfied: vi
+        .fn()
+        .mockReturnValue({ satisfied: false, blockedBy: ['other-dep'] })
     })
     const task = mockTask({ id: 'task-1', status: 'blocked' })
     const getTask = vi.fn().mockReturnValue(task)
@@ -139,11 +143,13 @@ describe('resolveDependents', () => {
   it('handles multiple dependents independently', () => {
     const index = mockIndex({
       getDependents: vi.fn().mockReturnValue(new Set(['task-1', 'task-2'])),
-      areDependenciesSatisfied: vi.fn()
+      areDependenciesSatisfied: vi
+        .fn()
         .mockReturnValueOnce({ satisfied: true, blockedBy: [] }) // task-1: satisfied
         .mockReturnValueOnce({ satisfied: false, blockedBy: ['other'] }) // task-2: not satisfied
     })
-    const getTask = vi.fn()
+    const getTask = vi
+      .fn()
       .mockReturnValueOnce(mockTask({ id: 'task-1', status: 'blocked' }))
       .mockReturnValueOnce(mockTask({ id: 'task-2', status: 'blocked' }))
       // Second call for task-2 notes update (getTask called again inside blockedBy branch)

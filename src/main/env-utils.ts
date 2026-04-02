@@ -3,7 +3,7 @@
  * Consolidates PATH augmentation and OAuth token loading that was
  * previously duplicated across adhoc-agent.ts, workbench.ts, and sdk-adapter.ts.
  */
-import { readFileSync, existsSync, writeFileSync } from 'node:fs'
+import { readFileSync, existsSync, writeFileSync, statSync } from 'node:fs'
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
 import { join } from 'node:path'
@@ -72,10 +72,12 @@ export function getOAuthToken(): string | null {
   try {
     if (existsSync(tokenPath)) {
       // DL-7: Verify token file has restrictive permissions (user-only read/write)
-      const stats = require('node:fs').statSync(tokenPath)
+      const stats = statSync(tokenPath)
       const mode = stats.mode & 0o777
       if (mode !== 0o600) {
-        console.warn(`[env-utils] OAuth token file has insecure permissions: ${mode.toString(8)}. Expected: 600`)
+        console.warn(
+          `[env-utils] OAuth token file has insecure permissions: ${mode.toString(8)}. Expected: 600`
+        )
       }
       _cachedOAuthToken = readFileSync(tokenPath, 'utf8').trim()
     } else {

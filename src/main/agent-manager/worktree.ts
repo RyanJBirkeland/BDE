@@ -1,5 +1,13 @@
 import { execFile } from 'node:child_process'
-import { mkdirSync, existsSync, readdirSync, writeFileSync, readFileSync, rmSync, renameSync } from 'node:fs'
+import {
+  mkdirSync,
+  existsSync,
+  readdirSync,
+  writeFileSync,
+  readFileSync,
+  rmSync,
+  renameSync
+} from 'node:fs'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { buildAgentEnv } from '../env-utils'
@@ -89,7 +97,11 @@ function acquireLock(worktreeBase: string, repoPath: string, logger?: Logger): v
     renameSync(tempLockFile, lockFile)
   } catch (err) {
     // If rename fails, clean up temp file and re-throw
-    try { rmSync(tempLockFile) } catch { /* ignore */ }
+    try {
+      rmSync(tempLockFile)
+    } catch {
+      /* ignore */
+    }
     throw err
   }
 }
@@ -232,7 +244,10 @@ export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> 
   const log = logger ?? console
 
   try {
-    await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], { cwd: repoPath, env })
+    await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], {
+      cwd: repoPath,
+      env
+    })
   } catch (err) {
     log.warn(`[worktree] Failed to remove worktree ${worktreePath}: ${err}`)
   }

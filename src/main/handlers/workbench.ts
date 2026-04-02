@@ -236,9 +236,9 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       }
 
       return { content, filesSearched, totalMatches }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // grep exits with code 1 when no matches found
-      if (err.code === 1) {
+      if ((err as { code?: number }).code === 1) {
         return {
           content: `No matches found for "${query}" in repo "${repo}"`,
           filesSearched: [],
@@ -246,7 +246,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
         }
       }
       return {
-        content: `Error searching repo: ${err.message}`,
+        content: `Error searching repo: ${(err as Error).message}`,
         filesSearched: [],
         totalMatches: 0
       }
@@ -343,7 +343,10 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
   safeHandle(
     'workbench:checkSpec',
     async (_e, input: { title: string; repo: string; spec: string; specType?: string | null }) => {
-      const summary = await checkSpecSemantic({ ...input, specType: (input.specType as import('../../shared/spec-validation').SpecType) ?? null })
+      const summary = await checkSpecSemantic({
+        ...input,
+        specType: (input.specType as import('../../shared/spec-validation').SpecType) ?? null
+      })
       return summary.results // Returns { clarity, scope, filesExist } — same shape as before
     }
   )

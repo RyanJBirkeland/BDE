@@ -14,11 +14,11 @@ let capturedHandler: Function | null = null
 vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn((channel: string, handler: Function) => {
     capturedHandler = handler
-  }),
+  })
 }))
 
 vi.mock('../../broadcast', () => ({
-  broadcast: mockBroadcast,
+  broadcast: mockBroadcast
 }))
 
 describe('playground-handlers', () => {
@@ -47,7 +47,9 @@ describe('playground-handlers', () => {
     const filePath = join(testDir, 'test.txt')
     await writeFile(filePath, 'content')
 
-    await expect(capturedHandler!(null, { filePath })).rejects.toThrow('Invalid file type: only .html files are supported')
+    await expect(capturedHandler!(null, { filePath })).rejects.toThrow(
+      'Invalid file type: only .html files are supported'
+    )
   })
 
   it('enforces 5MB file size limit', async () => {
@@ -74,8 +76,8 @@ describe('playground-handlers', () => {
         filename: 'preview.html',
         html: htmlContent,
         sizeBytes: htmlContent.length,
-        timestamp: expect.any(Number),
-      },
+        timestamp: expect.any(Number)
+      }
     })
   })
 

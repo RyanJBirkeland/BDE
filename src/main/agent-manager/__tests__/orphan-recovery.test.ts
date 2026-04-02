@@ -59,7 +59,8 @@ describe('recoverOrphans', () => {
       status: 'queued',
       claimed_by: null,
       retry_count: 1,
-      notes: 'Task was re-queued by orphan recovery (retry 1/3). Agent process terminated without completing the task.'
+      notes:
+        'Task was re-queued by orphan recovery (retry 1/3). Agent process terminated without completing the task.'
     })
     expect(recovered).toBe(1)
   })

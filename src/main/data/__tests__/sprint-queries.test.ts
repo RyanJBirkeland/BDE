@@ -41,9 +41,7 @@ import {
   getHealthCheckTasks,
   getTasksWithDependencies,
   clearSprintTaskFk,
-  UPDATE_ALLOWLIST,
-  type QueueStats,
-  type CreateTaskInput
+  UPDATE_ALLOWLIST
 } from '../sprint-queries'
 
 beforeEach(() => {
@@ -70,12 +68,11 @@ function insertTask(overrides: Record<string, unknown> = {}) {
   const row = { ...defaults, ...overrides }
   const cols = Object.keys(row)
   const placeholders = cols.map(() => '?').join(', ')
-  const stmt = db.prepare(
-    `INSERT INTO sprint_tasks (${cols.join(', ')}) VALUES (${placeholders})`
-  )
+  const stmt = db.prepare(`INSERT INTO sprint_tasks (${cols.join(', ')}) VALUES (${placeholders})`)
   stmt.run(...Object.values(row))
   // Return the last inserted task
-  const lastId = overrides.id ?? db.prepare('SELECT id FROM sprint_tasks ORDER BY rowid DESC LIMIT 1').get()
+  const lastId =
+    overrides.id ?? db.prepare('SELECT id FROM sprint_tasks ORDER BY rowid DESC LIMIT 1').get()
   if (typeof lastId === 'object' && lastId !== null) {
     return (lastId as { id: string }).id
   }
@@ -241,7 +238,9 @@ describe('updateTask', () => {
     expect(updated!.needs_review).toBe(true)
 
     // Verify raw SQLite stores INTEGER
-    const raw = db.prepare('SELECT playground_enabled, needs_review FROM sprint_tasks WHERE id = ?').get(created.id) as { playground_enabled: number; needs_review: number }
+    const raw = db
+      .prepare('SELECT playground_enabled, needs_review FROM sprint_tasks WHERE id = ?')
+      .get(created.id) as { playground_enabled: number; needs_review: number }
     expect(raw.playground_enabled).toBe(1)
     expect(raw.needs_review).toBe(1)
   })
@@ -425,7 +424,9 @@ describe('depends_on serialization', () => {
     const created = createTask({ title: 'T', repo: 'bde', depends_on: deps })!
 
     // Verify raw storage is JSON string
-    const raw = db.prepare('SELECT depends_on FROM sprint_tasks WHERE id = ?').get(created.id) as { depends_on: string }
+    const raw = db.prepare('SELECT depends_on FROM sprint_tasks WHERE id = ?').get(created.id) as {
+      depends_on: string
+    }
     expect(typeof raw.depends_on).toBe('string')
     expect(JSON.parse(raw.depends_on)).toEqual(deps)
 

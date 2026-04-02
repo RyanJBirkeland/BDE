@@ -120,7 +120,8 @@ function makeMockRepo(): ISprintTaskRepository {
       (updateTask as ReturnType<typeof vi.fn>)(...args),
     getQueuedTasks: (...args: [number]) => (getQueuedTasks as ReturnType<typeof vi.fn>)(...args),
     getTasksWithDependencies: () => (getTasksWithDependencies as ReturnType<typeof vi.fn>)(),
-    getOrphanedTasks: (...args: [string]) => (getOrphanedTasks as ReturnType<typeof vi.fn>)(...args),
+    getOrphanedTasks: (...args: [string]) =>
+      (getOrphanedTasks as ReturnType<typeof vi.fn>)(...args),
     getActiveTaskCount: vi.fn().mockReturnValue(0),
     claimTask: (...args: [string, string]) => (claimTask as ReturnType<typeof vi.fn>)(...args)
   }

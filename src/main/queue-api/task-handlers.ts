@@ -40,9 +40,7 @@ const logger = createLogger('queue-api:tasks')
 
 let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null
 
-export function setQueueApiOnStatusTerminal(
-  fn: (taskId: string, status: string) => void
-): void {
+export function setQueueApiOnStatusTerminal(fn: (taskId: string, status: string) => void): void {
   _onStatusTerminal = fn
 }
 
@@ -50,10 +48,7 @@ export function setQueueApiOnStatusTerminal(
  * Validates task dependencies for cycle detection and ID existence.
  * Returns error message if validation fails, null if valid.
  */
-function validateDependencies(
-  taskId: string,
-  dependsOn: TaskDependency[]
-): string | null {
+function validateDependencies(taskId: string, dependsOn: TaskDependency[]): string | null {
   // Check for empty dependencies
   if (dependsOn.length === 0) {
     return null
@@ -190,12 +185,14 @@ export async function handleCreateTask(
   }
 
   // Normalize body so depends_on is always set (supports both snake_case and camelCase from callers)
-  const bodyObj: Record<string, unknown> = { ...(body as Record<string, unknown>), depends_on: resolvedDeps }
+  const bodyObj: Record<string, unknown> = {
+    ...(body as Record<string, unknown>),
+    depends_on: resolvedDeps
+  }
   const { spec } = bodyObj
-  const validation = validateTaskCreation(
-    bodyObj as unknown as Parameters<typeof createTask>[0],
-    { logger: { warn: (...args: unknown[]) => logger.warn(String(args[0])) } }
-  )
+  const validation = validateTaskCreation(bodyObj as unknown as Parameters<typeof createTask>[0], {
+    logger: { warn: (...args: unknown[]) => logger.warn(String(args[0])) }
+  })
   if (!validation.valid) {
     sendJson(res, 400, { error: 'Spec quality checks failed', details: validation.errors })
     return
@@ -250,9 +247,7 @@ export async function handleCreateTask(
   }
 
   // Queue API-specific: validate dependencies for cycles and non-existent IDs
-  const resolvedDepsTyped = resolvedDeps as
-    | Array<{ id: string; type: 'hard' | 'soft' }>
-    | undefined
+  const resolvedDepsTyped = resolvedDeps as Array<{ id: string; type: 'hard' | 'soft' }> | undefined
   const PENDING_TASK_ID = 'pending-new-task'
   if (resolvedDepsTyped && resolvedDepsTyped.length > 0) {
     const validationError = validateDependencies(
@@ -654,7 +649,7 @@ export async function handleBatchTasks(
   const results: BatchResult[] = []
 
   // Function to execute all batch operations
-  const executeBatchOperations = () => {
+  const executeBatchOperations = (): void => {
     for (const rawOp of operations) {
       const op = rawOp as Record<string, unknown>
       const id = op.id as string

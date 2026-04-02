@@ -196,7 +196,9 @@ describe('resolveDependents', () => {
   it('handles getTask throwing without crashing', async () => {
     const index = createDependencyIndex()
     index.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
-    const getTask = vi.fn().mockImplementation(() => { throw new Error('DB error'); })
+    const getTask = vi.fn().mockImplementation(() => {
+      throw new Error('DB error')
+    })
     const update = vi.fn()
 
     resolveDependents('B', 'done', index, getTask, update)

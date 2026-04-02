@@ -48,15 +48,13 @@ async function gatherCodebaseContext(
     const lines = stdout.trim().split('\n')
     context.fileTree = lines.slice(0, 500).join('\n')
     log.info(`File tree: ${lines.length} files (showing first 500)`)
-  } catch (err: any) {
-    log.warn(`Error getting file tree: ${err.message}`)
+  } catch (err: unknown) {
+    log.warn(`Error getting file tree: ${(err as Error).message}`)
   }
 
   // 2. Extract keywords from answer values
   const answerText = Object.values(answers).join(' ')
-  const words = answerText
-    .split(/[\s.,;:!?()[\]{}'"]+/)
-    .filter((w) => w.length >= 3)
+  const words = answerText.split(/[\s.,;:!?()[\]{}'"]+/).filter((w) => w.length >= 3)
   const keywords = Array.from(new Set(words))
     .slice(0, 10)
     .map((k) => k.toLowerCase())
@@ -67,16 +65,12 @@ async function gatherCodebaseContext(
   for (const keyword of keywords) {
     if (matchedFiles.size >= 10) break
     try {
-      const { stdout } = await execFileAsync(
-        'grep',
-        ['-rn', '-i', '-l', '--', keyword, '.'],
-        {
-          cwd: repoPath,
-          encoding: 'utf-8',
-          maxBuffer: 5 * 1024 * 1024,
-          timeout: 5000
-        }
-      )
+      const { stdout } = await execFileAsync('grep', ['-rn', '-i', '-l', '--', keyword, '.'], {
+        cwd: repoPath,
+        encoding: 'utf-8',
+        maxBuffer: 5 * 1024 * 1024,
+        timeout: 5000
+      })
       const files = stdout
         .trim()
         .split('\n')
@@ -86,10 +80,10 @@ async function gatherCodebaseContext(
         if (matchedFiles.size >= 10) break
         matchedFiles.add(file)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // grep exits with code 1 when no matches found
-      if (err.code !== 1) {
-        log.warn(`Error grepping for "${keyword}": ${err.message}`)
+      if ((err as { code?: number }).code !== 1) {
+        log.warn(`Error grepping for "${keyword}": ${(err as Error).message}`)
       }
     }
   }
@@ -114,8 +108,8 @@ async function gatherCodebaseContext(
         content: lines.join('\n')
       })
       log.info(`Read ${file} (${lines.length} lines)`)
-    } catch (err: any) {
-      log.warn(`Error reading ${file}: ${err.message}`)
+    } catch (err: unknown) {
+      log.warn(`Error reading ${file}: ${(err as Error).message}`)
     }
   }
 

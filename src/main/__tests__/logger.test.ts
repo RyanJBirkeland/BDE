@@ -44,7 +44,9 @@ describe('createLogger', () => {
 
   it('renames log to .old when size exceeds MAX_LOG_SIZE', () => {
     const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
-    vi.mocked(statSync).mockReturnValueOnce({ size: MAX_LOG_SIZE + 1 } as ReturnType<typeof statSync>)
+    vi.mocked(statSync).mockReturnValueOnce({ size: MAX_LOG_SIZE + 1 } as ReturnType<
+      typeof statSync
+    >)
     createLogger('test')
     expect(renameSync).toHaveBeenCalledWith(
       expect.stringContaining('bde.log'),
@@ -54,7 +56,9 @@ describe('createLogger', () => {
 
   it('removes existing .old file before renaming', () => {
     const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
-    vi.mocked(statSync).mockReturnValueOnce({ size: MAX_LOG_SIZE + 1 } as ReturnType<typeof statSync>)
+    vi.mocked(statSync).mockReturnValueOnce({ size: MAX_LOG_SIZE + 1 } as ReturnType<
+      typeof statSync
+    >)
     createLogger('test')
     expect(rmSync).toHaveBeenCalledWith(expect.stringContaining('bde.log.old'))
     expect(renameSync).toHaveBeenCalled()

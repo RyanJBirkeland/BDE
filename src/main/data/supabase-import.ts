@@ -148,9 +148,7 @@ export async function importSprintTasksFromSupabase(db: Database.Database): Prom
       const status = row.status ?? 'backlog'
       // DL-15: Validate status before insert to prevent silent drops
       if (!VALID_STATUSES.has(status)) {
-        logger.warn(
-          `Skipping task ${row.id} ("${row.title}") with invalid status: "${status}"`
-        )
+        logger.warn(`Skipping task ${row.id} ("${row.title}") with invalid status: "${status}"`)
         skipped++
         continue
       }
@@ -207,9 +205,13 @@ export async function importSprintTasksFromSupabase(db: Database.Database): Prom
       deleteSetting(db, SETTING_SUPABASE_KEY)
       logger.info('Supabase credentials deleted after successful import')
     } catch (err) {
-      logger.warn(`Failed to delete Supabase credentials: ${err instanceof Error ? err.message : String(err)}`)
+      logger.warn(
+        `Failed to delete Supabase credentials: ${err instanceof Error ? err.message : String(err)}`
+      )
     }
   } catch (err) {
-    logger.error(`Failed to insert imported tasks: ${err instanceof Error ? err.message : String(err)}`)
+    logger.error(
+      `Failed to insert imported tasks: ${err instanceof Error ? err.message : String(err)}`
+    )
   }
 }

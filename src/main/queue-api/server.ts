@@ -40,7 +40,9 @@ export function startQueueApi(opts: QueueApiOptions = {}): http.Server {
 
   server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
-      logger.error(`Port ${port} is already in use — Queue API not started. Is another BDE instance running?`)
+      logger.error(
+        `Port ${port} is already in use — Queue API not started. Is another BDE instance running?`
+      )
     } else {
       logger.error(`Queue API server error: ${err.message}`)
     }

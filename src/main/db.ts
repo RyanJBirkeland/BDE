@@ -70,7 +70,9 @@ export function backupDatabase(): void {
   const originalSize = statSync(DB_PATH).size
   // Backup should be at least 10% of original size (VACUUM compresses)
   if (backupSize < originalSize * 0.1) {
-    console.warn(`[db] Backup may be incomplete: ${backupSize} bytes (original: ${originalSize} bytes)`)
+    console.warn(
+      `[db] Backup may be incomplete: ${backupSize} bytes (original: ${originalSize} bytes)`
+    )
   }
 }
 
@@ -536,10 +538,12 @@ export const migrations: Migration[] = [
     description: 'Add agentManager.useNativeSystem setting',
     up: (db) => {
       // Add useNativeSystem setting (default false for gradual rollout)
-      db.prepare(`
+      db.prepare(
+        `
         INSERT OR IGNORE INTO settings (key, value)
         VALUES ('agentManager.useNativeSystem', 'false')
-      `).run()
+      `
+      ).run()
     }
   },
   {
@@ -570,9 +574,7 @@ export function runMigrations(db: Database.Database): void {
       runSingle()
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      throw new Error(
-        `Migration v${migration.version} ("${migration.description}") failed: ${msg}`
-      )
+      throw new Error(`Migration v${migration.version} ("${migration.description}") failed: ${msg}`)
     }
   }
 }

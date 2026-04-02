@@ -262,7 +262,16 @@ const api = {
         error?: string
       }) => void
     ): (() => void) => {
-      const listener = (_e: unknown, data: any): void => cb(data)
+      const listener = (
+        _e: unknown,
+        data: {
+          streamId: string
+          chunk: string
+          done: boolean
+          fullText?: string
+          error?: string
+        }
+      ): void => cb(data)
       ipcRenderer.on('workbench:chatChunk', listener)
       return () => ipcRenderer.removeListener('workbench:chatChunk', listener)
     }
@@ -270,62 +279,98 @@ const api = {
 
   // Tear-off window management
   tearoff: {
-    create: (payload: { view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }) =>
-      typedInvoke('tearoff:create', payload),
+    create: (payload: {
+      view: string
+      screenX: number
+      screenY: number
+      sourcePanelId: string
+      sourceTabIndex: number
+    }) => typedInvoke('tearoff:create', payload),
     closeConfirmed: (payload: { action: 'return' | 'close'; remember: boolean }) =>
       typedInvoke('tearoff:closeConfirmed', payload),
-    returnToMain: (windowId: string) =>
-      ipcRenderer.send('tearoff:returnToMain', { windowId }),
-    onTabRemoved: (cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { sourcePanelId: string; sourceTabIndex: number }) => cb(payload)
+    returnToMain: (windowId: string) => ipcRenderer.send('tearoff:returnToMain', { windowId }),
+    onTabRemoved: (
+      cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void
+    ): (() => void) => {
+      const handler = (
+        _e: IpcRendererEvent,
+        payload: { sourcePanelId: string; sourceTabIndex: number }
+      ): void => cb(payload)
       ipcRenderer.on('tearoff:tabRemoved', handler)
-      return () => { ipcRenderer.removeListener('tearoff:tabRemoved', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:tabRemoved', handler)
+      }
     },
-    onTabReturned: (cb: (payload: { view: string }) => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { view: string }) => cb(payload)
+    onTabReturned: (cb: (payload: { view: string }) => void): (() => void) => {
+      const handler = (_e: IpcRendererEvent, payload: { view: string }): void => cb(payload)
       ipcRenderer.on('tearoff:tabReturned', handler)
-      return () => { ipcRenderer.removeListener('tearoff:tabReturned', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:tabReturned', handler)
+      }
     },
-    onConfirmClose: (cb: () => void) => {
-      const handler = () => cb()
+    onConfirmClose: (cb: () => void): (() => void) => {
+      const handler = (): void => cb()
       ipcRenderer.on('tearoff:confirmClose', handler)
-      return () => { ipcRenderer.removeListener('tearoff:confirmClose', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:confirmClose', handler)
+      }
     },
     // Cross-window drag
     startCrossWindowDrag: (payload: { windowId: string; viewKey: string }) =>
       typedInvoke('tearoff:startCrossWindowDrag', payload),
-    onDragIn: (cb: (payload: { viewKey: string; localX: number; localY: number }) => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { viewKey: string; localX: number; localY: number }) => cb(payload)
+    onDragIn: (
+      cb: (payload: { viewKey: string; localX: number; localY: number }) => void
+    ): (() => void) => {
+      const handler = (
+        _e: IpcRendererEvent,
+        payload: { viewKey: string; localX: number; localY: number }
+      ): void => cb(payload)
       ipcRenderer.on('tearoff:dragIn', handler)
-      return () => { ipcRenderer.removeListener('tearoff:dragIn', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:dragIn', handler)
+      }
     },
-    onDragMove: (cb: (payload: { localX: number; localY: number }) => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { localX: number; localY: number }) => cb(payload)
+    onDragMove: (cb: (payload: { localX: number; localY: number }) => void): (() => void) => {
+      const handler = (_e: IpcRendererEvent, payload: { localX: number; localY: number }): void =>
+        cb(payload)
       ipcRenderer.on('tearoff:dragMove', handler)
-      return () => { ipcRenderer.removeListener('tearoff:dragMove', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:dragMove', handler)
+      }
     },
-    onDragCancel: (cb: () => void) => {
-      const handler = () => cb()
+    onDragCancel: (cb: () => void): (() => void) => {
+      const handler = (): void => cb()
       ipcRenderer.on('tearoff:dragCancel', handler)
-      return () => { ipcRenderer.removeListener('tearoff:dragCancel', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:dragCancel', handler)
+      }
     },
     sendDropComplete: (payload: { viewKey: string; targetPanelId: string; zone: string }) =>
       ipcRenderer.send('tearoff:dropComplete', payload),
-    onCrossWindowDrop: (cb: (payload: { view: string; targetPanelId: string; zone: string }) => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { view: string; targetPanelId: string; zone: string }) => cb(payload)
+    onCrossWindowDrop: (
+      cb: (payload: { view: string; targetPanelId: string; zone: string }) => void
+    ): (() => void) => {
+      const handler = (
+        _e: IpcRendererEvent,
+        payload: { view: string; targetPanelId: string; zone: string }
+      ): void => cb(payload)
       ipcRenderer.on('tearoff:crossWindowDrop', handler)
-      return () => { ipcRenderer.removeListener('tearoff:crossWindowDrop', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:crossWindowDrop', handler)
+      }
     },
-    onDragDone: (cb: () => void) => {
-      const handler = () => cb()
+    onDragDone: (cb: () => void): (() => void) => {
+      const handler = (): void => cb()
       ipcRenderer.on('tearoff:dragDone', handler)
-      return () => { ipcRenderer.removeListener('tearoff:dragDone', handler) }
+      return () => {
+        ipcRenderer.removeListener('tearoff:dragDone', handler)
+      }
     },
     sendDragCancel: () => ipcRenderer.send('tearoff:dragCancelFromRenderer'),
     returnAll: (payload: { windowId: string; views: string[] }) =>
       ipcRenderer.send('tearoff:returnAll', payload),
     viewsChanged: (payload: { windowId: string; views: string[] }) =>
-      ipcRenderer.send('tearoff:viewsChanged', payload),
+      ipcRenderer.send('tearoff:viewsChanged', payload)
   },
 
   // Spec Synthesizer
@@ -344,7 +389,17 @@ const api = {
       error?: string
     }) => void
   ): (() => void) => {
-    const listener = (_e: unknown, data: any): void => cb(data)
+    const listener = (
+      _e: unknown,
+      data: {
+        streamId: string
+        chunk: string
+        done: boolean
+        fullText?: string
+        filesAnalyzed?: string[]
+        error?: string
+      }
+    ): void => cb(data)
     ipcRenderer.on('synthesizer:chunk', listener)
     return () => ipcRenderer.removeListener('synthesizer:chunk', listener)
   }

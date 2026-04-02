@@ -117,9 +117,9 @@ function serializeField(key: string, value: unknown): unknown {
 export function getTask(id: string, db?: Database.Database): SprintTask | null {
   try {
     const conn = db ?? getDb()
-    const row = conn
-      .prepare('SELECT * FROM sprint_tasks WHERE id = ?')
-      .get(id) as Record<string, unknown> | undefined
+    const row = conn.prepare('SELECT * FROM sprint_tasks WHERE id = ?').get(id) as
+      | Record<string, unknown>
+      | undefined
     return row ? sanitizeTask(row) : null
   } catch (err) {
     // DL-17: Standardize error message format
@@ -185,10 +185,7 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
   }
 }
 
-export function updateTask(
-  id: string,
-  patch: Record<string, unknown>
-): SprintTask | null {
+export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
   const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
   if (entries.length === 0) return null
 
@@ -221,9 +218,7 @@ export function updateTask(
       values.push(id)
 
       const result = db
-        .prepare(
-          `UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`
-        )
+        .prepare(`UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`)
         .get(...values) as Record<string, unknown> | undefined
 
       if (!result) return null
@@ -427,9 +422,7 @@ export function getDoneTodayCount(): number {
     today.setHours(0, 0, 0, 0)
 
     const result = getDb()
-      .prepare(
-        'SELECT COUNT(*) as count FROM sprint_tasks WHERE status = ? AND completed_at >= ?'
-      )
+      .prepare('SELECT COUNT(*) as count FROM sprint_tasks WHERE status = ? AND completed_at >= ?')
       .get('done', today.toISOString()) as { count: number }
 
     return result.count
@@ -466,9 +459,7 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
               db
             )
           } catch (err) {
-            logger.warn(
-              `[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`
-            )
+            logger.warn(`[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`)
           }
         }
 
@@ -488,13 +479,7 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
       // Record audit trail for pr_status changes
       for (const oldTask of prStatusAffected) {
         try {
-          recordTaskChanges(
-            oldTask.id as string,
-            oldTask,
-            { pr_status: 'merged' },
-            'pr-poller',
-            db
-          )
+          recordTaskChanges(oldTask.id as string, oldTask, { pr_status: 'merged' }, 'pr-poller', db)
         } catch (err) {
           logger.warn(
             `[sprint-queries] Failed to record pr_status change for task ${oldTask.id}: ${err}`
@@ -542,9 +527,7 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
               db
             )
           } catch (err) {
-            logger.warn(
-              `[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`
-            )
+            logger.warn(`[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`)
           }
         }
 
@@ -556,21 +539,13 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
 
       // Get ALL tasks where pr_status will change for audit (any status, not just done)
       const prStatusAffected = db
-        .prepare(
-          "SELECT * FROM sprint_tasks WHERE pr_number = ? AND pr_status = 'open'"
-        )
+        .prepare("SELECT * FROM sprint_tasks WHERE pr_number = ? AND pr_status = 'open'")
         .all(prNumber) as Array<Record<string, unknown>>
 
       // Record audit trail for pr_status changes
       for (const oldTask of prStatusAffected) {
         try {
-          recordTaskChanges(
-            oldTask.id as string,
-            oldTask,
-            { pr_status: 'closed' },
-            'pr-poller',
-            db
-          )
+          recordTaskChanges(oldTask.id as string, oldTask, { pr_status: 'closed' }, 'pr-poller', db)
         } catch (err) {
           logger.warn(
             `[sprint-queries] Failed to record pr_status change for task ${oldTask.id}: ${err}`
@@ -596,9 +571,7 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
 export function listTasksWithOpenPrs(): SprintTask[] {
   try {
     const rows = getDb()
-      .prepare(
-        "SELECT * FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'"
-      )
+      .prepare("SELECT * FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'")
       .all() as Record<string, unknown>[]
     return sanitizeTasks(rows)
   } catch (err) {
@@ -609,10 +582,7 @@ export function listTasksWithOpenPrs(): SprintTask[] {
   }
 }
 
-export function updateTaskMergeableState(
-  prNumber: number,
-  mergeableState: string | null
-): void {
+export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): void {
   if (!mergeableState) return
   try {
     getDb()
@@ -663,9 +633,7 @@ export function getQueuedTasks(limit: number): SprintTask[] {
 export function getOrphanedTasks(claimedBy: string): SprintTask[] {
   try {
     const rows = getDb()
-      .prepare(
-        "SELECT * FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?"
-      )
+      .prepare("SELECT * FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?")
       .all(claimedBy) as Record<string, unknown>[]
     return sanitizeTasks(rows)
   } catch (err) {
@@ -692,9 +660,7 @@ export function getHealthCheckTasks(): SprintTask[] {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
     const rows = getDb()
-      .prepare(
-        "SELECT * FROM sprint_tasks WHERE status = 'active' AND started_at < ?"
-      )
+      .prepare("SELECT * FROM sprint_tasks WHERE status = 'active' AND started_at < ?")
       .all(oneHourAgo) as Record<string, unknown>[]
     return sanitizeTasks(rows)
   } catch (err) {
@@ -708,9 +674,7 @@ export function getHealthCheckTasks(): SprintTask[] {
 export function getAllTaskIds(): Set<string> {
   // No try/catch: DB errors must propagate so callers get a 500,
   // not a misleading 400 "task IDs do not exist" from an empty Set.
-  const rows = getDb()
-    .prepare('SELECT id FROM sprint_tasks')
-    .all() as Array<{ id: string }>
+  const rows = getDb().prepare('SELECT id FROM sprint_tasks').all() as Array<{ id: string }>
   return new Set(rows.map((r) => r.id))
 }
 
@@ -722,9 +686,11 @@ export function getTasksWithDependencies(): Array<{
   // No try/catch: DB errors must propagate (same rationale as getAllTaskIds).
   // Query ALL tasks, not just those with depends_on — cycle detection needs
   // the full graph to catch cycles involving tasks receiving their first dependency.
-  const rows = getDb()
-    .prepare('SELECT id, depends_on, status FROM sprint_tasks')
-    .all() as Array<{ id: string; depends_on: string | null; status: string }>
+  const rows = getDb().prepare('SELECT id, depends_on, status FROM sprint_tasks').all() as Array<{
+    id: string
+    depends_on: string | null
+    status: string
+  }>
 
   return rows.map((row) => ({
     ...row,

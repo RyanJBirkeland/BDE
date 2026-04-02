@@ -63,7 +63,7 @@ describe('Playground Integration', () => {
         filename: 'preview.html',
         html: '<html><body>Test</body></html>',
         sizeBytes: 31,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       }
 
       expect(event.type).toBe('agent:playground')
@@ -80,7 +80,7 @@ describe('Playground Integration', () => {
         filename: 'test.html',
         html: originalHtml,
         sizeBytes: originalHtml.length,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       }
 
       expect(event.html).toBe(originalHtml)
@@ -132,7 +132,8 @@ describe('Playground Integration', () => {
 
       let finalPrompt = basePrompt
       if (playgroundEnabled) {
-        finalPrompt += '\n\n## Dev Playground\n\nYou have access to a Dev Playground for previewing frontend UI natively in BDE.'
+        finalPrompt +=
+          '\n\n## Dev Playground\n\nYou have access to a Dev Playground for previewing frontend UI natively in BDE.'
       }
 
       expect(finalPrompt).toContain('Dev Playground')
@@ -170,7 +171,7 @@ describe('Playground Integration', () => {
       const files = [
         { name: 'v1.html', content: '<html><body>Version 1</body></html>' },
         { name: 'v2.html', content: '<html><body>Version 2</body></html>' },
-        { name: 'v3.html', content: '<html><body>Version 3</body></html>' },
+        { name: 'v3.html', content: '<html><body>Version 3</body></html>' }
       ]
 
       for (const file of files) {

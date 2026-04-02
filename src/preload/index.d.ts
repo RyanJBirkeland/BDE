@@ -4,9 +4,7 @@ import type {
   PrListPayload,
   SpawnLocalAgentArgs,
   SpawnLocalAgentResult,
-  SprintTask,
-  SynthesizeRequest,
-  ReviseRequest
+  SprintTask
 } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 import type { AgentEvent } from '../shared/types'
@@ -46,7 +44,10 @@ declare global {
       // Claude CLI config (~/.claude/settings.json)
       claudeConfig: {
         get: () => Promise<IpcResult<'claude:getConfig'>>
-        setPermissions: (permissions: { allow: string[]; deny: string[] }) => Promise<IpcResult<'claude:setPermissions'>>
+        setPermissions: (permissions: {
+          allow: string[]
+          deny: string[]
+        }) => Promise<IpcResult<'claude:setPermissions'>>
       }
 
       // GitHub API proxy — all GitHub REST calls routed through main process
@@ -236,19 +237,41 @@ declare global {
 
       // Tear-off window management
       tearoff: {
-        create: (payload: { view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }) => Promise<{ windowId: string }>
-        closeConfirmed: (payload: { action: 'return' | 'close'; remember: boolean }) => Promise<void>
+        create: (payload: {
+          view: string
+          screenX: number
+          screenY: number
+          sourcePanelId: string
+          sourceTabIndex: number
+        }) => Promise<{ windowId: string }>
+        closeConfirmed: (payload: {
+          action: 'return' | 'close'
+          remember: boolean
+        }) => Promise<void>
         returnToMain: (windowId: string) => void
-        onTabRemoved: (cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void) => () => void
+        onTabRemoved: (
+          cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void
+        ) => () => void
         onTabReturned: (cb: (payload: { view: string }) => void) => () => void
         onConfirmClose: (cb: () => void) => () => void
         // Cross-window drag
-        startCrossWindowDrag: (payload: { windowId: string; viewKey: string }) => Promise<{ targetFound: boolean }>
-        onDragIn: (cb: (payload: { viewKey: string; localX: number; localY: number }) => void) => () => void
+        startCrossWindowDrag: (payload: {
+          windowId: string
+          viewKey: string
+        }) => Promise<{ targetFound: boolean }>
+        onDragIn: (
+          cb: (payload: { viewKey: string; localX: number; localY: number }) => void
+        ) => () => void
         onDragMove: (cb: (payload: { localX: number; localY: number }) => void) => () => void
         onDragCancel: (cb: () => void) => () => void
-        sendDropComplete: (payload: { viewKey: string; targetPanelId: string; zone: string }) => void
-        onCrossWindowDrop: (cb: (payload: { view: string; targetPanelId: string; zone: string }) => void) => () => void
+        sendDropComplete: (payload: {
+          viewKey: string
+          targetPanelId: string
+          zone: string
+        }) => void
+        onCrossWindowDrop: (
+          cb: (payload: { view: string; targetPanelId: string; zone: string }) => void
+        ) => () => void
         onDragDone: (cb: () => void) => () => void
         sendDragCancel: () => void
         returnAll: (payload: { windowId: string; views: string[] }) => void
@@ -259,7 +282,9 @@ declare global {
       synthesizeSpec: (
         ...args: IpcArgs<'synthesizer:generate'>
       ) => Promise<IpcResult<'synthesizer:generate'>>
-      reviseSpec: (...args: IpcArgs<'synthesizer:revise'>) => Promise<IpcResult<'synthesizer:revise'>>
+      reviseSpec: (
+        ...args: IpcArgs<'synthesizer:revise'>
+      ) => Promise<IpcResult<'synthesizer:revise'>>
       cancelSynthesis: (
         ...args: IpcArgs<'synthesizer:cancel'>
       ) => Promise<IpcResult<'synthesizer:cancel'>>

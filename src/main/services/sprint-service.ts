@@ -50,10 +50,7 @@ export function claimTask(id: string, claimedBy: string): SprintTask | null {
   return result
 }
 
-export function updateTask(
-  id: string,
-  patch: Record<string, unknown>
-): SprintTask | null {
+export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
   const result = _updateTask(id, patch)
   if (result) notifySprintMutation('updated', result)
   return result
@@ -91,10 +88,7 @@ export function listTasksWithOpenPrs(): SprintTask[] {
   return _listTasksWithOpenPrs()
 }
 
-export function updateTaskMergeableState(
-  prNumber: number,
-  mergeableState: string | null
-): void {
+export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): void {
   _updateTaskMergeableState(prNumber, mergeableState)
 }
 

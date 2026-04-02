@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { validateStructural, MIN_SPEC_LENGTH, MIN_HEADING_COUNT, getValidationProfile, type SpecType } from '../spec-validation'
+import {
+  validateStructural,
+  MIN_SPEC_LENGTH,
+  MIN_HEADING_COUNT,
+  getValidationProfile
+} from '../spec-validation'
 
 describe('validateStructural', () => {
   const validSpec = `${'x'.repeat(60)}\n## Problem\nSomething is broken\n## Solution\nFix it`
@@ -153,7 +158,12 @@ describe('getValidationProfile', () => {
 
 describe('validateStructural with specType', () => {
   it('enforces 50-char min for feature', () => {
-    const result = validateStructural({ title: 'Fix', repo: 'BDE', spec: 'Short', status: 'queued' })
+    const result = validateStructural({
+      title: 'Fix',
+      repo: 'BDE',
+      spec: 'Short',
+      status: 'queued'
+    })
     expect(result.valid).toBe(false)
   })
 

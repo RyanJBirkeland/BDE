@@ -386,9 +386,9 @@ describe('github:fetch handler', () => {
 
     it('rejects DELETE requests', async () => {
       const handler = captureHandler('github:fetch')
-      await expect(
-        handler(mockEvent, '/repos/owner/repo', { method: 'DELETE' })
-      ).rejects.toThrow('GitHub API request not allowed')
+      await expect(handler(mockEvent, '/repos/owner/repo', { method: 'DELETE' })).rejects.toThrow(
+        'GitHub API request not allowed'
+      )
 
       expect(githubFetch).not.toHaveBeenCalled()
     })
@@ -404,18 +404,18 @@ describe('github:fetch handler', () => {
 
     it('rejects requests to admin endpoints', async () => {
       const handler = captureHandler('github:fetch')
-      await expect(
-        handler(mockEvent, '/admin/users', { method: 'GET' })
-      ).rejects.toThrow('GitHub API request not allowed')
+      await expect(handler(mockEvent, '/admin/users', { method: 'GET' })).rejects.toThrow(
+        'GitHub API request not allowed'
+      )
 
       expect(githubFetch).not.toHaveBeenCalled()
     })
 
     it('rejects requests to delete repo endpoints', async () => {
       const handler = captureHandler('github:fetch')
-      await expect(
-        handler(mockEvent, '/repos/owner/repo', { method: 'DELETE' })
-      ).rejects.toThrow('GitHub API request not allowed')
+      await expect(handler(mockEvent, '/repos/owner/repo', { method: 'DELETE' })).rejects.toThrow(
+        'GitHub API request not allowed'
+      )
 
       expect(githubFetch).not.toHaveBeenCalled()
     })

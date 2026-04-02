@@ -5,7 +5,9 @@ import type { SprintTask, TaskDependency } from '../../shared/types'
 
 const TERMINAL_STATUSES = new Set(['done', 'failed', 'error', 'cancelled'])
 
-type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }
+type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes'> & {
+  depends_on: TaskDependency[] | null
+}
 
 export interface TaskTerminalServiceDeps {
   getTask: (id: string) => TaskSlice | null

@@ -186,14 +186,14 @@ describe('buildAgentPrompt', () => {
         messages: [
           { role: 'user', content: 'I need help writing a spec' },
           { role: 'assistant', content: 'I can help with that' },
-          { role: 'user', content: 'Great, let\'s start' }
+          { role: 'user', content: "Great, let's start" }
         ]
       })
 
       expect(prompt).toContain('## Conversation')
       expect(prompt).toContain('**user**: I need help writing a spec')
       expect(prompt).toContain('**assistant**: I can help with that')
-      expect(prompt).toContain('**user**: Great, let\'s start')
+      expect(prompt).toContain("**user**: Great, let's start")
     })
 
     it('handles copilot with no messages', () => {

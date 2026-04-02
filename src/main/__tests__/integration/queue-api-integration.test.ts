@@ -143,7 +143,9 @@ describe('Queue API integration', () => {
 
     // QA-16: Updated to match standardized error response format
     it('returns 500 when getQueueStats throws', async () => {
-      mockGetQueueStats.mockImplementation(() => { throw new Error('DB error'); })
+      mockGetQueueStats.mockImplementation(() => {
+        throw new Error('DB error')
+      })
 
       const { status, body } = await request('GET', '/queue/health')
       expect(status).toBe(500)
@@ -201,7 +203,9 @@ describe('Queue API integration', () => {
     })
 
     it('returns 500 when getTask throws', async () => {
-      mockGetTask.mockImplementation(() => { throw new Error('network error'); })
+      mockGetTask.mockImplementation(() => {
+        throw new Error('network error')
+      })
 
       const { status, body } = await request('GET', '/queue/tasks/task-abc')
       expect(status).toBe(500)

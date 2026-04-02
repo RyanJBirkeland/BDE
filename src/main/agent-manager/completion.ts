@@ -118,10 +118,14 @@ async function autoCommitIfDirty(
     // The repo's .gitignore excludes node_modules, .env, etc.
     await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
     const sanitizedTitle = sanitizeForGit(title)
-    await execFile('git', ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`], {
-      cwd: worktreePath,
-      env: buildAgentEnv()
-    })
+    await execFile(
+      'git',
+      ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
+      {
+        cwd: worktreePath,
+        env: buildAgentEnv()
+      }
+    )
   }
 }
 
@@ -175,8 +179,7 @@ async function createNewPr(
   for (let attempt = 0; attempt < PR_CREATE_MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) {
       const delayMs =
-        PR_CREATE_BACKOFF_MS[attempt - 1] ??
-        PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1]
+        PR_CREATE_BACKOFF_MS[attempt - 1] ?? PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1]
       logger.info(
         `[completion] Retrying PR creation for branch ${branch} (attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS}) after ${delayMs}ms`
       )
@@ -187,7 +190,18 @@ async function createNewPr(
       const sanitizedTitle = sanitizeForGit(title)
       const { stdout: prOut } = await execFile(
         'gh',
-        ['pr', 'create', '--title', sanitizedTitle, '--body', body, '--head', branch, '--repo', ghRepo],
+        [
+          'pr',
+          'create',
+          '--title',
+          sanitizedTitle,
+          '--body',
+          body,
+          '--head',
+          branch,
+          '--repo',
+          ghRepo
+        ],
         { cwd: worktreePath, env: buildAgentEnv() }
       )
       const parsed = parsePrOutput(prOut)
@@ -283,9 +297,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
         claimed_by: null
       })
     } catch (e) {
-      logger.warn(
-        `[completion] Failed to update task ${taskId} after branch detection error: ${e}`
-      )
+      logger.warn(`[completion] Failed to update task ${taskId} after branch detection error: ${e}`)
     }
     await onTaskTerminal(taskId, 'error')
     return
@@ -332,10 +344,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       const summaryNote = agentSummary
         ? `Agent produced no commits. Last output: ${agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)}`
         : 'Agent produced no commits (no output captured)'
-      const isTerminal = resolveFailure(
-        { taskId, retryCount, notes: summaryNote, repo },
-        logger
-      )
+      const isTerminal = resolveFailure({ taskId, retryCount, notes: summaryNote, repo }, logger)
       if (isTerminal) {
         logger.warn(
           `[completion] Task ${taskId}: no commits to push on branch ${branch} — exhausted retries`

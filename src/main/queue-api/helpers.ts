@@ -111,7 +111,7 @@ export function parseBody(req: http.IncomingMessage, res?: http.ServerResponse):
       }
     }, BODY_PARSE_TIMEOUT_MS)
 
-    const cleanup = () => {
+    const cleanup = (): void => {
       clearTimeout(timeout)
       req.removeAllListeners('data')
       req.removeAllListeners('end')

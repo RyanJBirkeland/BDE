@@ -32,7 +32,6 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   })
 }))
 
-
 // Mock dependencies
 vi.mock('../../auth-guard', () => ({
   checkAuthStatus: vi.fn().mockResolvedValue({
@@ -56,7 +55,7 @@ vi.mock('../../env-utils', () => ({
 }))
 
 /** Helper: create a fake spawn child that writes `output` to stdout and exits 0. */
-function createFakeSpawnChild(output: string) {
+function _createFakeSpawnChild(output: string) {
   const child = new EventEmitter() as any
   child.stdout = new EventEmitter()
   child.stderr = new EventEmitter()

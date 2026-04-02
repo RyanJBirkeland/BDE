@@ -47,19 +47,25 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
 
       if (result.merged) {
         const ids = deps.markTaskDoneByPrNumber(prNumber)
-        log.info(`[sprint-pr-poller] PR #${prNumber} merged — marked ${ids.length} task(s) done: ${ids.join(', ') || '(none)'}`)
+        log.info(
+          `[sprint-pr-poller] PR #${prNumber} merged — marked ${ids.length} task(s) done: ${ids.join(', ') || '(none)'}`
+        )
         if (deps.onTaskTerminal) {
           for (const id of ids) {
             log.info(`[sprint-pr-poller] Calling onTaskTerminal(${id}, 'done')`)
             deps.onTaskTerminal(id, 'done')
           }
         } else {
-          log.warn(`[sprint-pr-poller] onTaskTerminal not wired — dependency resolution will not fire`)
+          log.warn(
+            `[sprint-pr-poller] onTaskTerminal not wired — dependency resolution will not fire`
+          )
         }
       } else if (result.state === 'CLOSED') {
         const ids = deps.markTaskCancelledByPrNumber(prNumber)
         if (ids.length > 0) {
-          log.info(`[sprint-pr-poller] PR #${prNumber} closed — cancelled ${ids.length} task(s): ${ids.join(', ')}`)
+          log.info(
+            `[sprint-pr-poller] PR #${prNumber} closed — cancelled ${ids.length} task(s): ${ids.join(', ')}`
+          )
           if (deps.onTaskTerminal) {
             for (const id of ids) deps.onTaskTerminal(id, 'cancelled')
           }
@@ -70,7 +76,7 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
   }
 
   function safePoll(): void {
-    poll().catch(err => (deps.logger ?? console).warn(`[sprint-pr-poller] poll error: ${err}`))
+    poll().catch((err) => (deps.logger ?? console).warn(`[sprint-pr-poller] poll error: ${err}`))
   }
 
   return {
@@ -118,7 +124,9 @@ export function startSprintPrPoller(): void {
       if (_onTaskTerminal) {
         _onTaskTerminal(taskId, status)
       } else {
-        pollerLogger.warn(`[sprint-pr-poller] onTaskTerminal not set — dependency resolution will not fire for task ${taskId}`)
+        pollerLogger.warn(
+          `[sprint-pr-poller] onTaskTerminal not set — dependency resolution will not fire for task ${taskId}`
+        )
       }
     },
     logger: pollerLogger

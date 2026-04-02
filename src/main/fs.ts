@@ -145,7 +145,9 @@ async function readFileAsBase64(
   filePath: string,
   ideRoot?: string
 ): Promise<{ data: string; mimeType: string; name: string }> {
-  const safe = ideRoot ? validateIdePathForAttachment(filePath, ideRoot) : validateSafePath(filePath)
+  const safe = ideRoot
+    ? validateIdePathForAttachment(filePath, ideRoot)
+    : validateSafePath(filePath)
   const info = await stat(safe)
   if (info.size > MAX_IMAGE_BYTES) {
     throw new Error(
@@ -166,7 +168,9 @@ async function readFileAsText(
   filePath: string,
   ideRoot?: string
 ): Promise<{ content: string; name: string }> {
-  const safe = ideRoot ? validateIdePathForAttachment(filePath, ideRoot) : validateSafePath(filePath)
+  const safe = ideRoot
+    ? validateIdePathForAttachment(filePath, ideRoot)
+    : validateSafePath(filePath)
   const info = await stat(safe)
   if (info.size > MAX_TEXT_BYTES) {
     throw new Error(

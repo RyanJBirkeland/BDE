@@ -12,7 +12,15 @@ export interface StructuralCheckResult {
 export const MIN_SPEC_LENGTH = 50
 export const MIN_HEADING_COUNT = 2
 
-export type SpecType = 'feature' | 'bugfix' | 'refactor' | 'test' | 'performance' | 'ux' | 'audit' | 'infra'
+export type SpecType =
+  | 'feature'
+  | 'bugfix'
+  | 'refactor'
+  | 'test'
+  | 'performance'
+  | 'ux'
+  | 'audit'
+  | 'infra'
 
 export type CheckBehavior = 'required' | 'advisory' | 'skip'
 

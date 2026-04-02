@@ -35,7 +35,7 @@ export function validateSpecPath(relativePath: string): string {
   let realPath: string
   try {
     realPath = realpathSync(resolved)
-  } catch (err) {
+  } catch (_err) {
     // File doesn't exist yet or can't be accessed - use resolved path for validation
     // This allows creating new files while still blocking traversal attempts
     realPath = resolved

@@ -3,6 +3,7 @@ import type { IPty } from 'node-pty'
 // node-pty loaded lazily to avoid crashing main process if native module fails
 let pty: typeof import('node-pty') | null = null
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   pty = require('node-pty')
 } catch {
   /* terminal unavailable */

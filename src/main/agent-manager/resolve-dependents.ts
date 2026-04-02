@@ -17,7 +17,9 @@ export function resolveDependents(
   index: DependencyIndex,
   getTask: (
     id: string
-  ) => (Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }) | null,
+  ) =>
+    | (Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null })
+    | null,
   updateTask: (id: string, patch: Record<string, unknown>) => unknown,
   logger?: Logger
 ): void {

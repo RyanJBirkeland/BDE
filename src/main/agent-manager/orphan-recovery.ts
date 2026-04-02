@@ -27,7 +27,9 @@ export async function recoverOrphans(
     // Increment retry_count and check against MAX_RETRIES
     const retryCount = (task.retry_count ?? 0) + 1
     if (retryCount >= MAX_RETRIES) {
-      logger.warn(`[agent-manager] Task ${task.id} exceeded max retries (${MAX_RETRIES}) via orphan recovery — marking as error`)
+      logger.warn(
+        `[agent-manager] Task ${task.id} exceeded max retries (${MAX_RETRIES}) via orphan recovery — marking as error`
+      )
       repo.updateTask(task.id, {
         status: 'error',
         claimed_by: null,

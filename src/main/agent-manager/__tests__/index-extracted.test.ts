@@ -86,7 +86,9 @@ describe('checkOAuthToken', () => {
 
   it('proactively refreshes when token file is older than 45 minutes', async () => {
     readFileMock.mockResolvedValue('a-valid-oauth-token-that-is-long-enough')
-    statMock.mockResolvedValue({ mtimeMs: Date.now() - 46 * 60_000 } as Awaited<ReturnType<typeof stat>>)
+    statMock.mockResolvedValue({ mtimeMs: Date.now() - 46 * 60_000 } as Awaited<
+      ReturnType<typeof stat>
+    >)
     vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(true)
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(true)
@@ -97,7 +99,9 @@ describe('checkOAuthToken', () => {
 
   it('does not proactively refresh when token file is recent (< 45 minutes)', async () => {
     readFileMock.mockResolvedValue('a-valid-oauth-token-that-is-long-enough')
-    statMock.mockResolvedValue({ mtimeMs: Date.now() - 10 * 60_000 } as Awaited<ReturnType<typeof stat>>)
+    statMock.mockResolvedValue({ mtimeMs: Date.now() - 10 * 60_000 } as Awaited<
+      ReturnType<typeof stat>
+    >)
     const logger = makeLogger()
     expect(await checkOAuthToken(logger)).toBe(true)
     expect(refreshOAuthTokenFromKeychain).not.toHaveBeenCalled()
@@ -141,7 +145,8 @@ describe('handleWatchdogVerdict', () => {
       status: 'error',
       completed_at: now,
       claimed_by: null, // AM-4 fix
-      notes: 'Agent exceeded the maximum runtime of 60 minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.',
+      notes:
+        'Agent exceeded the maximum runtime of 60 minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.',
       needs_review: true
     })
     await vi.waitFor(() => {
@@ -164,7 +169,8 @@ describe('handleWatchdogVerdict', () => {
       status: 'error',
       completed_at: now,
       claimed_by: null, // AM-4 fix
-      notes: 'Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to \'queued\'.',
+      notes:
+        "Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to 'queued'.",
       needs_review: true
     })
     await vi.waitFor(() => {
@@ -185,7 +191,8 @@ describe('handleWatchdogVerdict', () => {
     expect(mockUpdateTask).toHaveBeenCalledWith('task-3', {
       status: 'queued',
       claimed_by: null,
-      notes: 'Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown.'
+      notes:
+        'Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown.'
     })
     expect(result.effectiveSlots).toBeLessThan(concurrency.effectiveSlots)
     expect(mockOnTerminal).not.toHaveBeenCalled()
@@ -206,7 +213,9 @@ describe('handleWatchdogVerdict', () => {
   })
 
   it('logs warning when updateTask rejects for max-runtime', async () => {
-    mockUpdateTask.mockImplementation(() => { throw new Error('DB error'); })
+    mockUpdateTask.mockImplementation(() => {
+      throw new Error('DB error')
+    })
     handleWatchdogVerdict(
       'max-runtime',
       'task-5',
@@ -224,7 +233,9 @@ describe('handleWatchdogVerdict', () => {
   })
 
   it('logs warning when updateTask rejects for idle', async () => {
-    mockUpdateTask.mockImplementation(() => { throw new Error('DB error'); })
+    mockUpdateTask.mockImplementation(() => {
+      throw new Error('DB error')
+    })
     handleWatchdogVerdict('idle', 'task-6', concurrency, '', mockUpdateTask, mockOnTerminal, logger)
     await vi.waitFor(() => {
       expect(logger.warn).toHaveBeenCalledWith(
@@ -234,7 +245,9 @@ describe('handleWatchdogVerdict', () => {
   })
 
   it('logs warning when updateTask rejects for rate-limit-loop', async () => {
-    mockUpdateTask.mockImplementation(() => { throw new Error('DB error'); })
+    mockUpdateTask.mockImplementation(() => {
+      throw new Error('DB error')
+    })
     handleWatchdogVerdict(
       'rate-limit-loop',
       'task-7',

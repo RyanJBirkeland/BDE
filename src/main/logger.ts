@@ -23,7 +23,11 @@ function rotateIfNeeded(): void {
     const stats = statSync(LOG_PATH)
     if (stats.size > MAX_LOG_SIZE) {
       const oldPath = LOG_PATH + '.old'
-      try { rmSync(oldPath) } catch { /* may not exist */ }
+      try {
+        rmSync(oldPath)
+      } catch {
+        /* may not exist */
+      }
       renameSync(LOG_PATH, oldPath)
     }
   } catch {

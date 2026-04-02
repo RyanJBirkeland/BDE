@@ -16,9 +16,5 @@ import { architectureRules } from './architecture-rules'
  * @returns Markdown string with all memory modules concatenated (separated by "---")
  */
 export function getAllMemory(): string {
-  return [
-    ipcConventions,
-    testingPatterns,
-    architectureRules
-  ].join('\n\n---\n\n')
+  return [ipcConventions, testingPatterns, architectureRules].join('\n\n---\n\n')
 }

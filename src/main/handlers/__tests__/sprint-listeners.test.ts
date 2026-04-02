@@ -135,7 +135,12 @@ describe('sprint-listeners', () => {
     })
 
     it('broadcasts additional task:queued event when task status is queued', () => {
-      const task = makeTask({ id: 'task-q', status: 'queued', title: 'Queued Task', priority: 'high' })
+      const task = makeTask({
+        id: 'task-q',
+        status: 'queued',
+        title: 'Queued Task',
+        priority: 'high'
+      })
       notifySprintMutation('updated', task)
 
       expect(mockBroadcast).toHaveBeenCalledWith('task:updated', {
