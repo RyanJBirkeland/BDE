@@ -22,17 +22,24 @@ const mocks = vi.hoisted(() => {
     createTask: mockCreateTask
   }
 
+  const mockSetConflictDrawerOpen = vi.fn()
+  const mockSetHealthCheckDrawerOpen = vi.fn()
+
   const uiState = {
     selectedTaskId: null as string | null,
     drawerOpen: false,
     specPanelOpen: false,
     doneViewOpen: false,
     logDrawerTaskId: null as string | null,
+    conflictDrawerOpen: false,
+    healthCheckDrawerOpen: false,
     setSelectedTaskId: mockSetSelectedTaskId,
     setDrawerOpen: mockSetDrawerOpen,
     setSpecPanelOpen: mockSetSpecPanelOpen,
     setDoneViewOpen: mockSetDoneViewOpen,
-    setLogDrawerTaskId: vi.fn()
+    setLogDrawerTaskId: vi.fn(),
+    setConflictDrawerOpen: mockSetConflictDrawerOpen,
+    setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
   }
 
   return {
@@ -43,6 +50,8 @@ const mocks = vi.hoisted(() => {
     mockSetDrawerOpen,
     mockSetSpecPanelOpen,
     mockSetDoneViewOpen,
+    mockSetConflictDrawerOpen,
+    mockSetHealthCheckDrawerOpen,
     mockSetView,
     storeState,
     uiState
@@ -195,6 +204,16 @@ vi.mock('../DoneHistoryPanel', () => ({
   )
 }))
 
+vi.mock('../ConflictDrawer', () => ({
+  ConflictDrawer: ({ open, tasks }: { open: boolean; tasks: any[]; onClose: () => void }) =>
+    open ? <div data-testid="conflict-drawer">Conflicts: {tasks.length}</div> : null
+}))
+
+vi.mock('../HealthCheckDrawer', () => ({
+  HealthCheckDrawer: ({ open, tasks }: { open: boolean; tasks: any[]; onClose: () => void; onDismiss: (id: string) => void }) =>
+    open ? <div data-testid="health-check-drawer">Stuck: {tasks.length}</div> : null
+}))
+
 vi.mock('../NewTicketModal', () => ({
   NewTicketModal: ({ onClose, onCreate }: { onClose: () => void; onCreate: (data: any) => void; open: boolean }) => (
     <div data-testid="new-ticket-modal">
@@ -252,10 +271,14 @@ describe('SprintPipeline', () => {
       specPanelOpen: false,
       doneViewOpen: false,
       logDrawerTaskId: null,
+      conflictDrawerOpen: false,
+      healthCheckDrawerOpen: false,
       setSelectedTaskId: mocks.mockSetSelectedTaskId,
       setDrawerOpen: mocks.mockSetDrawerOpen,
       setSpecPanelOpen: mocks.mockSetSpecPanelOpen,
-      setDoneViewOpen: mocks.mockSetDoneViewOpen
+      setDoneViewOpen: mocks.mockSetDoneViewOpen,
+      setConflictDrawerOpen: mocks.mockSetConflictDrawerOpen,
+      setHealthCheckDrawerOpen: mocks.mockSetHealthCheckDrawerOpen
     })
   })
 
@@ -345,10 +368,14 @@ describe('SprintPipeline - additional scenarios', () => {
       specPanelOpen: false,
       doneViewOpen: false,
       logDrawerTaskId: null,
+      conflictDrawerOpen: false,
+      healthCheckDrawerOpen: false,
       setSelectedTaskId: mocks.mockSetSelectedTaskId,
       setDrawerOpen: mocks.mockSetDrawerOpen,
       setSpecPanelOpen: mocks.mockSetSpecPanelOpen,
-      setDoneViewOpen: mocks.mockSetDoneViewOpen
+      setDoneViewOpen: mocks.mockSetDoneViewOpen,
+      setConflictDrawerOpen: mocks.mockSetConflictDrawerOpen,
+      setHealthCheckDrawerOpen: mocks.mockSetHealthCheckDrawerOpen
     })
     mocks.mockSetSelectedTaskId.mockClear()
     mocks.mockSetDoneViewOpen.mockClear()

@@ -27,6 +27,7 @@ import { SpecPanel } from './SpecPanel'
 import { DoneHistoryPanel } from './DoneHistoryPanel'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
+import { GitMerge, HeartPulse } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 
 import '../../assets/sprint-pipeline-neon.css'
@@ -134,7 +135,7 @@ export function SprintPipeline() {
           t.pr_url &&
           t.pr_number &&
           t.pr_mergeable_state === 'dirty' &&
-          ['awaiting-review', 'in-progress'].includes(t.status)
+          (t.status === 'active' || t.status === 'done')
       ),
     [tasks]
   )
@@ -213,6 +214,28 @@ export function SprintPipeline() {
             <b>{doneCount}</b> done
           </span>
         </div>
+        {conflictingTasks.length > 0 && (
+          <button
+            className="sprint-pipeline__badge sprint-pipeline__badge--danger"
+            onClick={() => setConflictDrawerOpen(true)}
+            title={`${conflictingTasks.length} PR conflict${conflictingTasks.length > 1 ? 's' : ''}`}
+            aria-label={`${conflictingTasks.length} merge conflict${conflictingTasks.length > 1 ? 's' : ''}`}
+          >
+            <GitMerge size={12} />
+            <span>{conflictingTasks.length}</span>
+          </button>
+        )}
+        {visibleStuckTasks.length > 0 && (
+          <button
+            className="sprint-pipeline__badge sprint-pipeline__badge--warning"
+            onClick={() => setHealthCheckDrawerOpen(true)}
+            title={`${visibleStuckTasks.length} stuck task${visibleStuckTasks.length > 1 ? 's' : ''}`}
+            aria-label={`${visibleStuckTasks.length} stuck task${visibleStuckTasks.length > 1 ? 's' : ''}`}
+          >
+            <HeartPulse size={12} />
+            <span>{visibleStuckTasks.length}</span>
+          </button>
+        )}
       </header>
 
       {loading && tasks.length === 0 && (
