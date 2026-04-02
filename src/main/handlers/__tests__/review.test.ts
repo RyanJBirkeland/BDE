@@ -80,7 +80,7 @@ describe('Review handlers', () => {
       return handlers
     }
 
-    const mockEvent = {} as IpcMainInvokeEvent
+    const _mockEvent = {} as IpcMainInvokeEvent
 
     it('review:getCommits parses git log output', async () => {
       // We need to re-mock the promisified execFileAsync
