@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import type { SprintTask } from '../../../../../shared/types'
 import { TaskDetailDrawer } from '../TaskDetailDrawer'
+import { useSprintTasks } from '../../../stores/sprintTasks'
+import { useSprintUI } from '../../../stores/sprintUI'
 
 const baseTask: SprintTask = {
   id: 'task-1',
@@ -27,6 +29,20 @@ const baseTask: SprintTask = {
   created_at: '2026-03-01T00:00:00Z'
 }
 
+const depTask1: SprintTask = {
+  ...baseTask,
+  id: 'dep-1',
+  title: 'Setup auth module',
+  status: 'done'
+}
+
+const depTask2: SprintTask = {
+  ...baseTask,
+  id: 'dep-2',
+  title: 'Create user model',
+  status: 'active'
+}
+
 function makeProps(overrides: Partial<Parameters<typeof TaskDetailDrawer>[0]> = {}) {
   return {
     task: baseTask,
@@ -48,6 +64,7 @@ describe('TaskDetailDrawer', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-01T12:00:00Z'))
+    useSprintTasks.setState({ tasks: [] })
   })
 
   afterEach(() => {
@@ -146,6 +163,7 @@ describe('TaskDetailDrawer - additional status combos', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-03-01T12:00:00Z'))
+    useSprintTasks.setState({ tasks: [] })
   })
 
   afterEach(() => {
@@ -281,7 +299,8 @@ describe('TaskDetailDrawer - additional status combos', () => {
     expect(screen.getByText('#8 (unknown)')).toBeInTheDocument()
   })
 
-  it('shows dependency count when task has depends_on', () => {
+  it('shows interactive dependency list when task has depends_on', () => {
+    useSprintTasks.setState({ tasks: [depTask1, depTask2] })
     const task: SprintTask = {
       ...baseTask,
       depends_on: [
@@ -291,7 +310,38 @@ describe('TaskDetailDrawer - additional status combos', () => {
     }
     render(<TaskDetailDrawer {...makeProps({ task })} />)
     expect(screen.getByText('Dependencies')).toBeInTheDocument()
-    expect(screen.getByText(/2 deps/)).toBeInTheDocument()
+    expect(screen.getByText('Setup auth module')).toBeInTheDocument()
+    expect(screen.getByText('Create user model')).toBeInTheDocument()
+    expect(screen.getByText('done')).toBeInTheDocument()
+  })
+
+  it('shows "Blocked by" label for blocked task dependencies', () => {
+    useSprintTasks.setState({ tasks: [depTask2] })
+    const task: SprintTask = {
+      ...baseTask,
+      status: 'blocked',
+      depends_on: [{ id: 'dep-2', type: 'hard' }]
+    }
+    render(<TaskDetailDrawer {...makeProps({ task })} />)
+    expect(screen.getByText('Blocked by')).toBeInTheDocument()
+    expect(screen.getByText('Create user model')).toBeInTheDocument()
+  })
+
+  it('navigates to dependency task when clicked', () => {
+    useSprintTasks.setState({ tasks: [depTask1] })
+    const task: SprintTask = {
+      ...baseTask,
+      depends_on: [{ id: 'dep-1', type: 'hard' }]
+    }
+    render(<TaskDetailDrawer {...makeProps({ task })} />)
+    fireEvent.click(screen.getByText('Setup auth module'))
+    expect(useSprintUI.getState().selectedTaskId).toBe('dep-1')
+  })
+
+  it('does not show dependency section when depends_on is null', () => {
+    render(<TaskDetailDrawer {...makeProps()} />)
+    expect(screen.queryByText('Dependencies')).not.toBeInTheDocument()
+    expect(screen.queryByText('Blocked by')).not.toBeInTheDocument()
   })
 
   it('shows Started field when task has started_at', () => {
@@ -314,15 +364,6 @@ describe('TaskDetailDrawer - additional status combos', () => {
     render(<TaskDetailDrawer {...props} />)
     fireEvent.click(screen.getByText(/View in Agents/))
     expect(props.onViewAgents).toHaveBeenCalledWith('agent-99')
-  })
-
-  it('shows singular "dep" label for one dependency', () => {
-    const task: SprintTask = {
-      ...baseTask,
-      depends_on: [{ id: 'dep-1', type: 'hard' }]
-    }
-    render(<TaskDetailDrawer {...makeProps({ task })} />)
-    expect(screen.getByText(/1 dep —/)).toBeInTheDocument()
   })
 
   it('shows branch-only section with Create PR link when pr_status is branch_only', () => {
