@@ -75,7 +75,10 @@ export function CommandBar({
   }, [])
 
   return (
-    <div className="command-bar" style={{ position: 'relative' }}>
+    <div
+      className={`command-bar${disabled ? ' command-bar--disabled' : ''}`}
+      style={{ position: 'relative' }}
+    >
       {showAutocomplete && (
         <CommandAutocomplete
           query={value}

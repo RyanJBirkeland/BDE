@@ -395,6 +395,14 @@
   cursor: not-allowed;
 }
 
+.command-bar--disabled {
+  opacity: 0.5;
+}
+
+.command-bar--disabled .command-bar__prompt {
+  color: var(--neon-text-dim);
+}
+
 /* ── Command Autocomplete ── */
 .command-autocomplete {
   position: absolute;

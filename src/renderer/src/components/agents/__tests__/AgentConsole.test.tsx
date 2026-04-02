@@ -48,7 +48,11 @@ vi.mock('@tanstack/react-virtual', () => ({
 // Mock CommandBar component
 vi.mock('../CommandBar', () => ({
   CommandBar: ({ disabled }: { disabled: boolean }) => (
-    <div data-testid="command-bar" data-disabled={disabled}>
+    <div
+      data-testid="command-bar"
+      className={`command-bar${disabled ? ' command-bar--disabled' : ''}`}
+      data-disabled={disabled}
+    >
       Command Bar
     </div>
   )
@@ -141,5 +145,22 @@ describe('AgentConsole', () => {
     // Should show some duration (exact value depends on timing)
     const header = screen.getByText('Implement feature X').closest('.console-header')
     expect(header).toBeInTheDocument()
+  })
+
+  it('applies disabled class to command bar when agent is not running', () => {
+    const doneAgent = { ...mockAgent, status: 'done' as const }
+    vi.mocked(useAgentHistoryStore).mockImplementation((selector: any) => {
+      const state = { agents: [doneAgent] }
+      return selector(state)
+    })
+    render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
+    const commandBar = screen.getByTestId('command-bar')
+    expect(commandBar).toHaveClass('command-bar--disabled')
+  })
+
+  it('does not apply disabled class to command bar when agent is running', () => {
+    render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
+    const commandBar = screen.getByTestId('command-bar')
+    expect(commandBar).not.toHaveClass('command-bar--disabled')
   })
 })

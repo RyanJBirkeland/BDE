@@ -131,6 +131,8 @@ export function AgentsView() {
             } catch (err) {
               toast.error(`Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
             }
+          } else {
+            toast.info('Adhoc agents cannot be retried — spawn a new agent instead')
           }
           break
         case '/focus':
