@@ -89,6 +89,12 @@ vi.stubGlobal('api', {
   listMemoryFiles: vi.fn().mockResolvedValue([]),
   readMemoryFile: vi.fn().mockResolvedValue(''),
   writeMemoryFile: vi.fn().mockResolvedValue(undefined),
+  searchMemory: vi.fn().mockResolvedValue([]),
+  onGitHubRateLimitWarning: vi.fn().mockReturnValue(() => {}),
+  onGitHubTokenExpired: vi.fn().mockReturnValue(() => {}),
+  openFileDialog: vi.fn().mockResolvedValue([]),
+  readFileAsBase64: vi.fn().mockResolvedValue({ data: '', mimeType: 'image/png' }),
+  readFileAsText: vi.fn().mockResolvedValue({ content: '' }),
   gitStatus: vi.fn().mockResolvedValue({ files: [] }),
   gitDiff: vi.fn().mockResolvedValue(''),
   gitStage: vi.fn().mockResolvedValue(undefined),
@@ -165,5 +171,14 @@ vi.stubGlobal('api', {
   claudeConfig: {
     get: vi.fn().mockResolvedValue({}),
     setPermissions: vi.fn().mockResolvedValue(undefined)
+  },
+  review: {
+    getDiff: vi.fn().mockResolvedValue({ files: [] }),
+    getFileDiff: vi.fn().mockResolvedValue({ diff: '' }),
+    getCommits: vi.fn().mockResolvedValue({ commits: [] }),
+    mergeLocally: vi.fn().mockResolvedValue({ success: true }),
+    createPr: vi.fn().mockResolvedValue({ prUrl: 'https://github.com/test/pr/1' }),
+    requestRevision: vi.fn().mockResolvedValue(undefined),
+    discard: vi.fn().mockResolvedValue(undefined)
   }
 })
