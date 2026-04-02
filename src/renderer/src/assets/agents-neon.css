@@ -321,6 +321,11 @@
   padding-left: 9px;
 }
 
+/* Pending message (optimistic UI) */
+.console-line--pending {
+  opacity: 0.6;
+}
+
 /* Console Line Prefixes */
 .console-prefix {
   font-weight: 600;

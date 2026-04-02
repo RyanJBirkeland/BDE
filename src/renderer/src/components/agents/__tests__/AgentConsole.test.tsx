@@ -1,7 +1,7 @@
 /**
  * AgentConsole.test.tsx — Tests for terminal-style agent console component.
  */
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AgentConsole } from '../AgentConsole'
 import type { AgentMeta, AgentEvent } from '../../../../../shared/types'
@@ -47,13 +47,13 @@ vi.mock('@tanstack/react-virtual', () => ({
 
 // Mock CommandBar component
 vi.mock('../CommandBar', () => ({
-  CommandBar: ({ disabled }: { disabled: boolean }) => (
+  CommandBar: ({ onSend, disabled }: { onSend: (msg: string) => void; disabled: boolean }) => (
     <div
       data-testid="command-bar"
       className={`command-bar${disabled ? ' command-bar--disabled' : ''}`}
       data-disabled={disabled}
     >
-      Command Bar
+      <button onClick={() => onSend('test message')}>Send</button>
     </div>
   )
 }))
@@ -197,5 +197,75 @@ describe('AgentConsole', () => {
     })
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
     expect(screen.queryByText('Older events were trimmed (showing last 2,000)')).not.toBeInTheDocument()
+  })
+
+  it('shows pending message optimistically when steering', () => {
+    const onSteer = vi.fn()
+    render(<AgentConsole agentId="test-agent-1" onSteer={onSteer} onCommand={vi.fn()} />)
+
+    // Send a message via the mocked CommandBar
+    const sendButton = screen.getByText('Send')
+    fireEvent.click(sendButton)
+
+    // Check that onSteer was called
+    expect(onSteer).toHaveBeenCalledWith('test message')
+
+    // Check that pending message appears in the document
+    expect(screen.getByText('test message')).toBeInTheDocument()
+  })
+
+  it('applies pending CSS class to optimistic messages', () => {
+    const onSteer = vi.fn()
+    const { container } = render(<AgentConsole agentId="test-agent-1" onSteer={onSteer} onCommand={vi.fn()} />)
+
+    // Send a message
+    const sendButton = screen.getByText('Send')
+    fireEvent.click(sendButton)
+
+    // Find the user message line and check for pending class
+    const userLine = container.querySelector('.console-line--pending')
+    expect(userLine).toBeInTheDocument()
+    expect(userLine).toHaveTextContent('test message')
+  })
+
+  it('removes pending message when real user_message event arrives', () => {
+    let eventState = { events: { 'test-agent-1': mockEvents } }
+    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
+      return selector(eventState)
+    })
+
+    const onSteer = vi.fn()
+    const { rerender, container } = render(<AgentConsole agentId="test-agent-1" onSteer={onSteer} onCommand={vi.fn()} />)
+
+    // Send a message to create pending state
+    const sendButton = screen.getByText('Send')
+    fireEvent.click(sendButton)
+
+    // Verify pending message is present
+    expect(container.querySelector('.console-line--pending')).toBeInTheDocument()
+
+    // Simulate real user_message event arriving
+    eventState = {
+      events: {
+        'test-agent-1': [
+          ...mockEvents,
+          {
+            type: 'agent:user_message',
+            text: 'test message',
+            timestamp: Date.now()
+          }
+        ]
+      }
+    }
+
+    // Re-mock the store with updated events
+    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
+      return selector(eventState)
+    })
+
+    rerender(<AgentConsole agentId="test-agent-1" onSteer={onSteer} onCommand={vi.fn()} />)
+
+    // Pending message should be removed
+    expect(container.querySelector('.console-line--pending')).not.toBeInTheDocument()
   })
 })

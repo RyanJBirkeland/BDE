@@ -21,7 +21,7 @@ export type ToolBlock =
 export type ChatBlock =
   | { type: 'started'; model: string; timestamp: number }
   | { type: 'text'; text: string; timestamp: number }
-  | { type: 'user_message'; text: string; timestamp: number }
+  | { type: 'user_message'; text: string; timestamp: number; pending?: boolean }
   | { type: 'thinking'; tokenCount: number; text?: string; timestamp: number }
   | ToolBlock
   | { type: 'tool_group'; tools: ToolBlock[]; timestamp: number }

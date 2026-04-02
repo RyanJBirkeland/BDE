@@ -12,6 +12,7 @@ import { ConsoleHeader } from './ConsoleHeader'
 import { ConsoleLine } from './ConsoleLine'
 import { CommandBar } from './CommandBar'
 import { PlaygroundModal } from './PlaygroundModal'
+import type { ChatBlock } from '../../lib/pair-events'
 
 const EMPTY_EVENTS: never[] = []
 
@@ -26,6 +27,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
   const isAtBottomRef = useRef(true)
   const [showJumpButton, setShowJumpButton] = useState(false)
   const [playgroundBlock, setPlaygroundBlock] = useState<{ filename: string; html: string; sizeBytes: number } | null>(null)
+  const [pendingMessages, setPendingMessages] = useState<string[]>([])
 
   // Load agent meta and events
   const agents = useAgentHistoryStore((s) => s.agents)
@@ -33,7 +35,18 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
   const events = useAgentEventsStore((s) => s.events[agentId] ?? EMPTY_EVENTS)
   const wasEvicted = useAgentEventsStore((s) => s.evictedAgents[agentId] ?? false)
 
-  const blocks = useMemo(() => pairEvents(events), [events])
+  const pairedBlocks = useMemo(() => pairEvents(events), [events])
+
+  // Inject pending messages at the end
+  const blocks = useMemo(() => {
+    const pendingBlocks: ChatBlock[] = pendingMessages.map((text) => ({
+      type: 'user_message',
+      text,
+      timestamp: Date.now(),
+      pending: true
+    }))
+    return [...pairedBlocks, ...pendingBlocks]
+  }, [pairedBlocks, pendingMessages])
 
   const virtualizer = useVirtualizer({
     count: blocks.length,
@@ -41,6 +54,14 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
     estimateSize: () => 60,
     overscan: 10
   })
+
+  // Remove pending messages when real user_message events arrive
+  useEffect(() => {
+    const userMessageCount = events.filter((e) => e.type === 'agent:user_message').length
+    if (userMessageCount > 0 && pendingMessages.length > 0) {
+      setPendingMessages((prev) => prev.slice(1))
+    }
+  }, [events, pendingMessages.length])
 
   // Auto-scroll: follow tail when at bottom
   useEffect(() => {
@@ -64,6 +85,11 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
       isAtBottomRef.current = true
       setShowJumpButton(false)
     }
+  }
+
+  const handleSteer = (message: string) => {
+    setPendingMessages((prev) => [...prev, message])
+    onSteer(message)
   }
 
   if (!agent) {
@@ -137,7 +163,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
 
       {/* CommandBar */}
       <CommandBar
-        onSend={onSteer}
+        onSend={handleSteer}
         onCommand={onCommand}
         disabled={agent.status !== 'running'}
         disabledReason={agent.status !== 'running' ? 'Agent not running' : undefined}

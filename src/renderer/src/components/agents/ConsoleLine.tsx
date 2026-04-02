@@ -85,7 +85,7 @@ export function ConsoleLine({ block, onPlaygroundClick }: ConsoleLineProps): Rea
 
     case 'user_message':
       return (
-        <div className="console-line" data-testid="console-line-user">
+        <div className={`console-line${block.pending ? ' console-line--pending' : ''}`} data-testid="console-line-user">
           <span className="console-prefix console-prefix--user">[user]</span>
           <span className="console-line__content">{block.text}</span>
           <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
