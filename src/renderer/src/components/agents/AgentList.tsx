@@ -19,6 +19,9 @@ interface AgentListProps {
   loading?: boolean
   fetchError?: string | null
   onRetry?: () => void
+  displayedCount?: number
+  hasMore?: boolean
+  onLoadMore?: () => void
 }
 
 export interface AgentGroups {
@@ -112,22 +115,45 @@ function GroupHeader({
   )
 }
 
-export function AgentList({ agents, selectedId, onSelect, onKill, filter, loading, fetchError, onRetry }: AgentListProps) {
+export function AgentList({
+  agents,
+  selectedId,
+  onSelect,
+  onKill,
+  filter,
+  loading,
+  fetchError,
+  onRetry,
+  displayedCount,
+  hasMore,
+  onLoadMore
+}: AgentListProps) {
   const [searchText, setSearchText] = useState(filter ?? '')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
   const selectedRef = useRef<HTMLDivElement>(null)
 
   const filtered = useMemo(() => {
-    if (!searchText) return agents
-    const lower = searchText.toLowerCase()
-    return agents.filter(
-      (a) =>
-        a.task.toLowerCase().includes(lower) ||
-        a.repo.toLowerCase().includes(lower) ||
-        a.model.toLowerCase().includes(lower)
-    )
-  }, [agents, searchText])
+    let result = limitedAgents
+
+    // Filter by repo first
+    if (selectedRepo) {
+      result = result.filter((a) => a.repo === selectedRepo)
+    }
+
+    // Then filter by search text
+    if (searchText) {
+      const lower = searchText.toLowerCase()
+      result = result.filter(
+        (a) =>
+          a.task.toLowerCase().includes(lower) ||
+          a.repo.toLowerCase().includes(lower) ||
+          a.model.toLowerCase().includes(lower)
+      )
+    }
+
+    return result
+  }, [limitedAgents, searchText, selectedRepo])
 
   const groups = useMemo(() => groupAgents(filtered), [filtered])
 
@@ -194,6 +220,36 @@ export function AgentList({ agents, selectedId, onSelect, onKill, filter, loadin
           />
         </div>
       </div>
+
+      {/* Repo filter chips */}
+      {repos.length >= 2 && (
+        <div
+          className="agent-list__repo-chips"
+          style={{
+            display: 'flex',
+            gap: tokens.space[1],
+            padding: `${tokens.space[1]} ${tokens.space[2]}`,
+            borderBottom: `1px solid ${neonVar('purple', 'border')}`,
+            overflowX: 'auto'
+          }}
+        >
+          <button
+            className={`agent-list__repo-chip ${!selectedRepo ? 'agent-list__repo-chip--active' : ''}`}
+            onClick={() => setSelectedRepo(null)}
+          >
+            All
+          </button>
+          {repos.map((repo) => (
+            <button
+              key={repo}
+              className={`agent-list__repo-chip ${selectedRepo === repo ? 'agent-list__repo-chip--active' : ''}`}
+              onClick={() => setSelectedRepo(repo)}
+            >
+              {repo}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Agent groups */}
       <div style={{ flex: 1, overflow: 'auto' }}>

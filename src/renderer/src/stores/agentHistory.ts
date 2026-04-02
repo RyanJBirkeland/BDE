@@ -8,6 +8,8 @@ interface AgentHistoryState extends LogPollerState {
   selectedId: string | null
   loading: boolean
   fetchError: string | null
+  hasMore: boolean
+  displayedCount: number
 
   fetchAgents: () => Promise<void>
   selectAgent: (id: string | null) => void
@@ -15,9 +17,13 @@ interface AgentHistoryState extends LogPollerState {
   startLogPolling: (id: string) => () => void
   stopLogPolling: () => void
   importExternal: (meta: Partial<AgentMeta>, content: string) => Promise<void>
+  loadMore: () => void
 }
 
 export type { AgentMeta }
+
+const INITIAL_DISPLAY_COUNT = 30
+const LOAD_MORE_INCREMENT = 20
 
 export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
   const poller = createLogPollerActions(get, set)
@@ -30,12 +36,18 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
     logTrimmedLines: 0,
     loading: false,
     fetchError: null,
+    hasMore: false,
+    displayedCount: INITIAL_DISPLAY_COUNT,
 
     fetchAgents: async (): Promise<void> => {
       set({ loading: true, fetchError: null })
       try {
         const agents = await window.api.agents.list({ limit: AGENT_LIST_FETCH_LIMIT })
-        set({ agents })
+        set({
+          agents,
+          hasMore: agents.length > INITIAL_DISPLAY_COUNT,
+          displayedCount: INITIAL_DISPLAY_COUNT
+        })
       } catch {
         set({ fetchError: 'Failed to load agent list' })
       } finally {
@@ -79,6 +91,15 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
       } catch {
         // Non-critical
       }
+    },
+
+    loadMore: (): void => {
+      const { displayedCount, agents } = get()
+      const newCount = Math.min(displayedCount + LOAD_MORE_INCREMENT, agents.length)
+      set({
+        displayedCount: newCount,
+        hasMore: newCount < agents.length
+      })
     }
   }
 })

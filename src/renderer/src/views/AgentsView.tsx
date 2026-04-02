@@ -27,6 +27,9 @@ export function AgentsView() {
   const agentsLoading = useAgentHistoryStore((s) => s.loading)
   const fetchError = useAgentHistoryStore((s) => s.fetchError)
   const fetchAgents = useAgentHistoryStore((s) => s.fetchAgents)
+  const displayedCount = useAgentHistoryStore((s) => s.displayedCount)
+  const hasMore = useAgentHistoryStore((s) => s.hasMore)
+  const loadMore = useAgentHistoryStore((s) => s.loadMore)
   const initEvents = useAgentEventsStore((s) => s.init)
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 
@@ -228,6 +231,9 @@ export function AgentsView() {
             loading={agentsLoading}
             fetchError={fetchError}
             onRetry={fetchAgents}
+            displayedCount={displayedCount}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
           />
         </div>
 
