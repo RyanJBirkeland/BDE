@@ -22,6 +22,7 @@ import { registerPlaygroundHandlers } from './handlers/playground-handlers'
 import { registerDashboardHandlers } from './handlers/dashboard-handlers'
 import { registerSynthesizerHandlers } from './handlers/synthesizer-handlers'
 import { registerClaudeConfigHandlers } from './handlers/claude-config-handlers'
+import { registerReviewHandlers, setReviewOnStatusTerminal } from './handlers/review'
 import { getDb, closeDb, backupDatabase } from './db'
 import { importSprintTasksFromSupabase } from './data/supabase-import'
 import { startPrPoller, stopPrPoller } from './pr-poller'
@@ -128,6 +129,7 @@ app.whenReady().then(() => {
   setQueueApiOnStatusTerminal(terminalService.onStatusTerminal)
   setGitHandlersOnStatusTerminal(terminalService.onStatusTerminal)
   setOnTaskTerminal(terminalService.onStatusTerminal)
+  setReviewOnStatusTerminal(terminalService.onStatusTerminal)
 
   startPrPoller()
   app.on('will-quit', stopPrPoller)
@@ -214,6 +216,7 @@ app.whenReady().then(() => {
   registerDashboardHandlers()
   registerTearoffHandlers()
   registerClaudeConfigHandlers()
+  registerReviewHandlers()
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const connectSrc = buildConnectSrc()
