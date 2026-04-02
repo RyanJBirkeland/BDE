@@ -121,13 +121,30 @@ describe('AgentConsole', () => {
     expect(screen.getByText('Agent not found')).toBeInTheDocument()
   })
 
-  it('shows "No events available" when events array is empty', () => {
+  it('shows loading state when agent is running and has no events', () => {
     vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
       const state = { events: { 'test-agent-1': [] } }
       return selector(state)
     })
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
-    expect(screen.getByText('No events available')).toBeInTheDocument()
+    expect(screen.getByText('Waiting for agent output…')).toBeInTheDocument()
+    // Check for spinner icon
+    const spinner = document.querySelector('.console-empty-state__spinner')
+    expect(spinner).toBeInTheDocument()
+  })
+
+  it('shows "No events recorded" when agent is terminal and has no events', () => {
+    const doneAgent = { ...mockAgent, status: 'done' as const }
+    vi.mocked(useAgentHistoryStore).mockImplementation((selector: any) => {
+      const state = { agents: [doneAgent] }
+      return selector(state)
+    })
+    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
+      const state = { events: { 'test-agent-1': [] } }
+      return selector(state)
+    })
+    render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
+    expect(screen.getByText('No events recorded for this agent')).toBeInTheDocument()
   })
 
   it('renders model badge in header', () => {

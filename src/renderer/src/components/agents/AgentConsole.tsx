@@ -4,7 +4,7 @@
  */
 import { useRef, useEffect, useMemo, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Loader } from 'lucide-react'
 import { pairEvents } from '../../lib/pair-events'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
@@ -107,10 +107,15 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
               ))}
             </div>
           ) : (
-            <div
-              style={{ padding: '16px', color: 'var(--neon-text-dim, rgba(255,255,255,0.3))', textAlign: 'center' }}
-            >
-              No events available
+            <div className="console-empty-state">
+              {agent.status === 'running' ? (
+                <>
+                  <Loader size={20} className="console-empty-state__spinner" />
+                  <span>Waiting for agent output…</span>
+                </>
+              ) : (
+                <span>No events recorded for this agent</span>
+              )}
             </div>
           )}
         </div>

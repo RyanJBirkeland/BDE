@@ -251,6 +251,27 @@
   transform: translateX(-50%) translateY(0px);
 }
 
+/* ── Console Empty State ── */
+.console-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--neon-text-dim);
+  font-size: 13px;
+  font-family: var(--bde-font-code);
+}
+
+.console-empty-state__spinner {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Console Line ── */
 .console-line {
   display: flex;
