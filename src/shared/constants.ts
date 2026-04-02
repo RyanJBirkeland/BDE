@@ -8,6 +8,7 @@ export const TASK_STATUS = {
   QUEUED: 'queued',
   BLOCKED: 'blocked',
   ACTIVE: 'active',
+  REVIEW: 'review',
   DONE: 'done',
   CANCELLED: 'cancelled',
   FAILED: 'failed',

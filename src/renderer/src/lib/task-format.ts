@@ -19,6 +19,8 @@ export function getDotColor(status: string, prStatus?: string | null): string {
       return 'var(--neon-orange)'
     case 'active':
       return 'var(--neon-purple)'
+    case 'review':
+      return 'var(--neon-blue)'
     case 'done':
       return 'var(--neon-pink)'
     case 'failed':

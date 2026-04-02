@@ -14,6 +14,7 @@ export interface QueueHealthResponse {
     queued: number
     blocked: number
     active: number
+    review: number
     done: number
     failed: number
     cancelled: number
@@ -26,7 +27,7 @@ export interface ClaimRequest {
 }
 
 export interface StatusUpdateRequest {
-  status: 'queued' | 'blocked' | 'active' | 'done' | 'failed' | 'cancelled' | 'error'
+  status: 'queued' | 'blocked' | 'active' | 'review' | 'done' | 'failed' | 'cancelled' | 'error'
   prUrl?: string
   prNumber?: number
   prStatus?: 'open' | 'merged' | 'closed' | 'draft'
@@ -44,6 +45,7 @@ export const RUNNER_WRITABLE_STATUSES = new Set([
   'queued',
   'blocked', // QA-11: Allow runners to set blocked status for dependency management
   'active',
+  'review',
   'done',
   'failed',
   'cancelled',

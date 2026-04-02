@@ -51,6 +51,9 @@ export function partitionSprintTasks(tasks: SprintTask[]): SprintPartition {
           inProgress.push(task)
         }
         break
+      case TASK_STATUS.REVIEW:
+        awaitingReview.push(task)
+        break
       case TASK_STATUS.DONE:
         if (task.pr_status === PR_STATUS.OPEN || task.pr_status === PR_STATUS.BRANCH_ONLY) {
           awaitingReview.push(task)
