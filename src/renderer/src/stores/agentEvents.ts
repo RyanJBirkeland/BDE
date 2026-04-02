@@ -2,7 +2,6 @@ import { create } from 'zustand'
 import type { AgentEvent } from '../../../shared/types'
 
 const MAX_EVENTS_PER_AGENT = 2000
-
 interface AgentEventsState {
   events: Record<string, AgentEvent[]>
   evictedAgents: Record<string, boolean>
