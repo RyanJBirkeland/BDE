@@ -137,19 +137,14 @@ describe('Agent completion pipeline integration', () => {
   })
 
   // -------------------------------------------------------------------------
-  // 1. Agent exits 0 with changes: git add/commit/push + PR + task updated
+  // 1. Agent exits 0 with changes: auto-commit, transition to review status
   // -------------------------------------------------------------------------
   describe('agent exits 0 with changes', () => {
-    it('pushes branch, opens PR, and updates task with pr_url and pr_number', async () => {
+    it('transitions task to review status with worktree_path preserved (no push/PR)', async () => {
       mockExecFileSequence([
         { stdout: 'agent/add-login-page\n' }, // git rev-parse --abbrev-ref HEAD
         { stdout: '' }, // git status --porcelain (clean)
-        { stdout: '3\n' }, // git rev-list --count
-        { stdout: '' }, // git push
-        { stdout: '' }, // gh pr list (no existing PR)
-        { stdout: 'abc123 first commit\n' }, // git log (generatePrBody)
-        { stdout: ' src/login.ts | 42 ++++\n' }, // git diff --stat (generatePrBody)
-        { stdout: 'https://github.com/owner/repo/pull/42\n' } // gh pr create
+        { stdout: '3\n' } // git rev-list --count
       ])
 
       await resolveSuccess(
@@ -165,43 +160,37 @@ describe('Agent completion pipeline integration', () => {
         logger
       )
 
-      // Verify git push was called
+      // Verify NO git push was called (push deferred to review approval)
       const calls = getCustomMock().mock.calls as Array<[string, string[], unknown]>
       const pushCall = calls.find(
         (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1].includes('push')
       )
-      expect(pushCall).toBeDefined()
-      expect(pushCall![1]).toContain('origin')
-      expect(pushCall![1]).toContain('agent/add-login-page')
+      expect(pushCall).toBeUndefined()
 
-      // Verify PR was created
+      // Verify NO PR was created
       const prCreateCall = calls.find(
         (c) => c[0] === 'gh' && Array.isArray(c[1]) && c[1].includes('create')
       )
-      expect(prCreateCall).toBeDefined()
-      expect(prCreateCall![1]).toContain('--title')
-      expect(prCreateCall![1]).toContain('Add login page')
+      expect(prCreateCall).toBeUndefined()
 
-      // Verify task updated with PR info
+      // Verify task updated to review status with worktree_path
       expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
-        pr_status: 'open',
-        pr_url: 'https://github.com/owner/repo/pull/42',
-        pr_number: 42
+        status: 'review',
+        worktree_path: '/tmp/wt/task-1',
+        claimed_by: null
       })
+
+      // onTaskTerminal should NOT be called (review is not terminal)
+      expect(onTaskTerminal).not.toHaveBeenCalled()
     })
 
-    it('auto-commits uncommitted changes before pushing', async () => {
+    it('auto-commits uncommitted changes before transitioning to review', async () => {
       mockExecFileSequence([
         { stdout: 'agent/add-login-page\n' }, // git rev-parse
         { stdout: ' M src/file.ts\n' }, // git status --porcelain (dirty)
-        { stdout: '' }, // git add -u
+        { stdout: '' }, // git add -A
         { stdout: '' }, // git commit
-        { stdout: '2\n' }, // git rev-list --count
-        { stdout: '' }, // git push
-        { stdout: '' }, // gh pr list
-        { stdout: '' }, // git log
-        { stdout: '' }, // git diff --stat
-        { stdout: 'https://github.com/owner/repo/pull/10\n' } // gh pr create
+        { stdout: '2\n' } // git rev-list --count
       ])
 
       await resolveSuccess(
@@ -229,14 +218,12 @@ describe('Agent completion pipeline integration', () => {
       )
       expect(commitCall).toBeDefined()
 
-      // Should still update task with PR info
-      expect(updateTaskMock).toHaveBeenCalledWith(
-        'task-1',
-        expect.objectContaining({
-          pr_status: 'open',
-          pr_number: 10
-        })
-      )
+      // Should update task to review status (not PR info)
+      expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
+        status: 'review',
+        worktree_path: '/tmp/wt/task-1',
+        claimed_by: null
+      })
     })
   })
 
