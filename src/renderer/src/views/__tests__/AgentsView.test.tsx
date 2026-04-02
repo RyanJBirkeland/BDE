@@ -124,6 +124,12 @@ describe('AgentsView', () => {
     expect(screen.getByText(/Agent Activity/)).toBeInTheDocument()
   })
 
+  it('renders agents sidebar with correct CSS class', () => {
+    const { container } = render(<AgentsView />)
+    const sidebar = container.querySelector('.agents-sidebar')
+    expect(sidebar).toBeInTheDocument()
+  })
+
   // ---------- Branch coverage: main content area states ----------
 
   it('shows Launchpad when no agents and none selected', () => {

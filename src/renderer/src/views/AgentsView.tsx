@@ -170,16 +170,7 @@ export function AgentsView() {
       {/* Zone 2: Fleet List + Agent Console */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Fleet sidebar */}
-        <div
-          style={{
-            width: 220,
-            minWidth: 180,
-            borderRight: `1px solid var(--neon-purple-border)`,
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'linear-gradient(180deg, var(--neon-purple-surface, rgba(138,43,226,0.04)), var(--neon-surface-deep, rgba(10,0,21,0.4)))'
-          }}
-        >
+        <div className="agents-sidebar">
           {/* Header */}
           <div
             style={{
