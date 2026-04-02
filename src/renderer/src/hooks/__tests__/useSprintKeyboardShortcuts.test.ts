@@ -3,20 +3,26 @@ import { renderHook } from '@testing-library/react'
 import { useSprintKeyboardShortcuts } from '../useSprintKeyboardShortcuts'
 
 // Mock sprintUI store
-let mockSelectedTaskId: string | null = null
+const mockSetSelectedTaskId = vi.fn()
+const mockSetDrawerOpen = vi.fn()
 const mockSetLogDrawerTaskId = vi.fn()
+const mockSetHealthCheckDrawerOpen = vi.fn()
+
+let mockState = {
+  selectedTaskId: null as string | null,
+  drawerOpen: false,
+  specPanelOpen: false,
+  setSelectedTaskId: mockSetSelectedTaskId,
+  setDrawerOpen: mockSetDrawerOpen,
+  setLogDrawerTaskId: mockSetLogDrawerTaskId,
+  setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
+}
 
 vi.mock('../../stores/sprintUI', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
-    sel({
-      selectedTaskId: mockSelectedTaskId,
-      setLogDrawerTaskId: mockSetLogDrawerTaskId
-    })
+    sel(mockState)
   )
-  ;(store as any).getState = () => ({
-    selectedTaskId: mockSelectedTaskId,
-    setLogDrawerTaskId: mockSetLogDrawerTaskId
-  })
+  ;(store as any).getState = () => mockState
   return { useSprintUI: store }
 })
 
@@ -30,7 +36,15 @@ describe('useSprintKeyboardShortcuts', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockSelectedTaskId = null
+    mockState = {
+      selectedTaskId: null,
+      drawerOpen: false,
+      specPanelOpen: false,
+      setSelectedTaskId: mockSetSelectedTaskId,
+      setDrawerOpen: mockSetDrawerOpen,
+      setLogDrawerTaskId: mockSetLogDrawerTaskId,
+      setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
+    }
     // reset active element to body
     ;(document.activeElement as HTMLElement | null)?.blur?.()
   })
@@ -106,22 +120,38 @@ describe('useSprintKeyboardShortcuts', () => {
     expect(openWorkbench).not.toHaveBeenCalled()
   })
 
-  it('pressing Escape closes conflict drawer when no task is selected', () => {
+  it('pressing Escape closes log/conflict/health drawers when no task selected and drawer closed', () => {
     renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('Escape')
 
     expect(mockSetLogDrawerTaskId).toHaveBeenCalledWith(null)
     expect(setConflictDrawerOpen).toHaveBeenCalledWith(false)
+    expect(mockSetHealthCheckDrawerOpen).toHaveBeenCalledWith(false)
   })
 
-  it('pressing Escape does nothing to modal/drawer when a task is selected (SpecDrawer handles it)', () => {
-    mockSelectedTaskId = 'task-123'
+  it('pressing Escape closes drawer and deselects task when task is selected', () => {
+    mockState.selectedTaskId = 'task-123'
+    mockState.drawerOpen = true
 
     renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
     fireKeydown('Escape')
 
+    expect(mockSetSelectedTaskId).toHaveBeenCalledWith(null)
+    expect(mockSetDrawerOpen).toHaveBeenCalledWith(false)
+    // Should NOT close log/conflict drawers in this layer
+    expect(mockSetLogDrawerTaskId).not.toHaveBeenCalled()
+  })
+
+  it('pressing Escape does nothing when spec panel is open (let SpecPanel handle it)', () => {
+    mockState.specPanelOpen = true
+
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
+
+    fireKeydown('Escape')
+
+    expect(mockSetSelectedTaskId).not.toHaveBeenCalled()
     expect(mockSetLogDrawerTaskId).not.toHaveBeenCalled()
     expect(setConflictDrawerOpen).not.toHaveBeenCalled()
   })
@@ -139,20 +169,16 @@ describe('useSprintKeyboardShortcuts', () => {
     removeSpy.mockRestore()
   })
 
-  it('re-registers listener when selectedTaskId changes', () => {
-    const addSpy = vi.spyOn(window, 'addEventListener')
+  it('reads state synchronously via getState() (no re-registration needed)', () => {
+    renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
-    const { rerender } = renderHook(() =>
-      useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
-    )
+    // Change state after hook mounts — handler should see it via getState()
+    mockState.selectedTaskId = 'task-xyz'
+    mockState.drawerOpen = true
 
-    const callsBefore = addSpy.mock.calls.length
+    fireKeydown('Escape')
 
-    // Change selectedTaskId
-    mockSelectedTaskId = 'task-xyz'
-    rerender()
-
-    expect(addSpy.mock.calls.length).toBeGreaterThan(callsBefore)
-    addSpy.mockRestore()
+    expect(mockSetSelectedTaskId).toHaveBeenCalledWith(null)
+    expect(mockSetDrawerOpen).toHaveBeenCalledWith(false)
   })
 })

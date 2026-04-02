@@ -24,13 +24,16 @@ export function PipelineStage({
   const empty = tasks.length === 0 && !doneFooter
 
   return (
-    <div className={`pipeline-stage${empty ? ' pipeline-stage--empty' : ''}`} data-testid={`pipeline-stage-${name}`}>
+    <div className={`pipeline-stage${empty ? ' pipeline-stage--empty' : ''}`} data-testid={`pipeline-stage-${name}`} role="region" aria-label={label}>
       <div className={`pipeline-stage__dot pipeline-stage__dot--${name}${empty ? ' pipeline-stage__dot--dim' : ''}`}>
         {tasks.length}
       </div>
       <div className="pipeline-stage__header">
         <div className={`pipeline-stage__name pipeline-stage__name--${name}`}>{label}</div>
         {!empty && <div className="pipeline-stage__count">{count}</div>}
+        {label === 'Review' && tasks.length > 0 && (
+          <span className="pipeline-stage__subtitle">PRs awaiting merge</span>
+        )}
       </div>
       {!empty && (
         <div className="pipeline-stage__cards">

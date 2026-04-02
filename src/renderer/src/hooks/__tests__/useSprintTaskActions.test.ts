@@ -8,7 +8,6 @@ const mockUpdateTask = vi.fn().mockResolvedValue(undefined)
 const mockDeleteTask = vi.fn().mockResolvedValue(undefined)
 const mockLaunchTask = vi.fn().mockResolvedValue(undefined)
 const mockLoadData = vi.fn().mockResolvedValue(undefined)
-const mockSetTasks = vi.fn()
 const mockTasks: unknown[] = []
 
 vi.mock('../../stores/sprintTasks', () => {
@@ -18,8 +17,7 @@ vi.mock('../../stores/sprintTasks', () => {
       updateTask: mockUpdateTask,
       deleteTask: mockDeleteTask,
       launchTask: mockLaunchTask,
-      loadData: mockLoadData,
-      setTasks: mockSetTasks
+      loadData: mockLoadData
     })
   )
   ;(store as any).getState = () => ({
@@ -27,8 +25,7 @@ vi.mock('../../stores/sprintTasks', () => {
     updateTask: mockUpdateTask,
     deleteTask: mockDeleteTask,
     launchTask: mockLaunchTask,
-    loadData: mockLoadData,
-    setTasks: mockSetTasks
+    loadData: mockLoadData
   })
   return { useSprintTasks: store }
 })
@@ -103,8 +100,6 @@ describe('useSprintTaskActions', () => {
   it('returns all expected action functions', () => {
     const { result } = renderHook(() => useSprintTaskActions())
 
-    expect(typeof result.current.handleDragEnd).toBe('function')
-    expect(typeof result.current.handleReorder).toBe('function')
     expect(typeof result.current.handlePushToSprint).toBe('function')
     expect(typeof result.current.handleViewSpec).toBe('function')
     expect(typeof result.current.handleSaveSpec).toBe('function')
@@ -159,63 +154,6 @@ describe('useSprintTaskActions', () => {
   it('deleteTask is the store deleteTask function', () => {
     const { result } = renderHook(() => useSprintTaskActions())
     expect(result.current.deleteTask).toBe(mockDeleteTask)
-  })
-
-  // --- handleDragEnd ---
-
-  it('handleDragEnd does nothing when task is not found', () => {
-    const { result } = renderHook(() => useSprintTaskActions())
-    result.current.handleDragEnd('nonexistent', 'active', [])
-    expect(mockUpdateTask).not.toHaveBeenCalled()
-  })
-
-  it('handleDragEnd does nothing when status has not changed', () => {
-    const { result } = renderHook(() => useSprintTaskActions())
-    const task = makeTask({ id: 'task-1', status: 'queued' })
-    result.current.handleDragEnd('task-1', 'queued', [task])
-    expect(mockUpdateTask).not.toHaveBeenCalled()
-  })
-
-  it('handleDragEnd calls updateTask when moving to a different non-active status', () => {
-    const { result } = renderHook(() => useSprintTaskActions())
-    const task = makeTask({ id: 'task-1', status: 'queued' })
-    result.current.handleDragEnd('task-1', 'done', [task])
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { status: 'done' })
-  })
-
-  it('handleDragEnd allows moving into active when below WIP limit', () => {
-    const { result } = renderHook(() => useSprintTaskActions())
-    const task = makeTask({ id: 'task-1', status: 'queued' })
-    // Only 1 active task, limit is 5
-    const activeTasks = [makeTask({ id: 'active-1', status: 'active' })]
-    result.current.handleDragEnd('task-1', 'active', [task, ...activeTasks])
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { status: 'active' })
-  })
-
-  it('handleDragEnd blocks move to active when WIP limit (5) is reached', async () => {
-    const { toast } = await import('../../stores/toasts')
-    const { result } = renderHook(() => useSprintTaskActions())
-    const task = makeTask({ id: 'task-1', status: 'queued' })
-    // Exactly 5 active tasks — at the limit
-    const activeTasks = Array.from({ length: 5 }, (_, i) =>
-      makeTask({ id: `active-${i}`, status: 'active' })
-    )
-    result.current.handleDragEnd('task-1', 'active', [task, ...activeTasks])
-    expect(mockUpdateTask).not.toHaveBeenCalled()
-    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('In Progress is full'))
-  })
-
-  it('handleDragEnd does not apply WIP limit when task was already active', () => {
-    const { result } = renderHook(() => useSprintTaskActions())
-    // Task is already active — should not be blocked (but status unchanged guard catches first)
-    const task = makeTask({ id: 'task-1', status: 'queued' })
-    // 5 active tasks but we only check WIP when transitioning from non-active to active
-    const activeTasks = Array.from({ length: 5 }, (_, i) =>
-      makeTask({ id: `active-${i}`, status: 'active' })
-    )
-    // task is queued -> active, WIP is full, should be blocked
-    result.current.handleDragEnd('task-1', 'active', [task, ...activeTasks])
-    expect(mockUpdateTask).not.toHaveBeenCalled()
   })
 
   // --- handlePushToSprint ---

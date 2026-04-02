@@ -9,11 +9,12 @@ import { POLL_SPRINT_INTERVAL, POLL_SPRINT_ACTIVE_MS } from '../lib/constants'
 import { TASK_STATUS } from '../../../shared/constants'
 
 export function useSprintPolling(): void {
-  const tasks = useSprintTasks((s) => s.tasks)
+  const hasActiveTasks = useSprintTasks((s) =>
+    s.tasks.some((t) => t.status === TASK_STATUS.ACTIVE)
+  )
   const loadData = useSprintTasks((s) => s.loadData)
 
   // Adaptive sprint polling — consistency backstop
-  const hasActiveTasks = tasks.some((t) => t.status === TASK_STATUS.ACTIVE)
   const sprintPollMs = hasActiveTasks ? POLL_SPRINT_ACTIVE_MS : POLL_SPRINT_INTERVAL
 
   useEffect(() => {

@@ -143,9 +143,9 @@ describe('registerSprintLocalHandlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers 13 handlers', () => {
+  it('registers 14 handlers', () => {
     registerSprintLocalHandlers()
-    expect(safeHandle).toHaveBeenCalledTimes(13)
+    expect(safeHandle).toHaveBeenCalledTimes(14)
   })
 
   it('registers the expected channel names', () => {
@@ -162,6 +162,7 @@ describe('registerSprintLocalHandlers', () => {
     expect(channels).toContain('sprint:unblockTask')
     expect(channels).toContain('sprint:getChanges')
     expect(channels).toContain('sprint:batchUpdate')
+    expect(channels).toContain('sprint:retry')
   })
 })
 

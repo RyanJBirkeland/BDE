@@ -10,7 +10,8 @@ export function formatElapsed(startedAt: string): string {
   return `${hr}h ${min % 60}m`
 }
 
-export function getDotColor(status: string): string {
+export function getDotColor(status: string, prStatus?: string | null): string {
+  if (prStatus === 'open' || prStatus === 'branch_only') return 'var(--neon-blue)'
   switch (status) {
     case 'queued':
       return 'var(--neon-cyan)'

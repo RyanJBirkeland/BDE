@@ -4,7 +4,8 @@
  */
 import { useEffect, useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { LayoutGroup } from 'framer-motion'
+import { motion, LayoutGroup } from 'framer-motion'
+import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
@@ -19,14 +20,17 @@ import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
-import { Spinner } from '../ui/Spinner'
 import { PipelineBacklog } from './PipelineBacklog'
 import { PipelineStage } from './PipelineStage'
 import { TaskDetailDrawer } from './TaskDetailDrawer'
+import { PipelineErrorBoundary } from './PipelineErrorBoundary'
 import { SpecPanel } from './SpecPanel'
 import { DoneHistoryPanel } from './DoneHistoryPanel'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
+import { PipelineFilterBar } from './PipelineFilterBar'
+import { NeonCard } from '../neon'
+import { GitMerge, HeartPulse } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 
 import '../../assets/sprint-pipeline-neon.css'
@@ -69,14 +73,20 @@ export function SprintPipeline() {
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
   const setConflictDrawerOpen = useSprintUI((s) => s.setConflictDrawerOpen)
   const setHealthCheckDrawerOpen = useSprintUI((s) => s.setHealthCheckDrawerOpen)
+  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
+  const repoFilter = useSprintUI((s) => s.repoFilter)
+  const searchQuery = useSprintUI((s) => s.searchQuery)
 
   const setView = usePanelLayoutStore((s) => s.setView)
+  const reduced = useReducedMotion()
+  const openWorkbench = useCallback(() => setView('task-workbench'), [setView])
 
   // --- Extracted hooks ---
   const {
     handleSaveSpec,
     handleStop,
     handleRerun,
+    handleRetry,
     launchTask,
     deleteTask,
     confirmProps
@@ -88,8 +98,18 @@ export function SprintPipeline() {
 
   // --- Local UI state ---
 
-  // Partition tasks
-  const partition = useMemo(() => partitionSprintTasks(tasks), [tasks])
+  // Filter + partition tasks
+  const filteredTasks = useMemo(() => {
+    let result = tasks
+    if (repoFilter) result = result.filter((t) => t.repo === repoFilter)
+    if (searchQuery) {
+      const lower = searchQuery.toLowerCase()
+      result = result.filter((t) => t.title.toLowerCase().includes(lower))
+    }
+    return result
+  }, [tasks, repoFilter, searchQuery])
+
+  const partition = useMemo(() => partitionSprintTasks(filteredTasks), [filteredTasks])
 
   const selectedTask = useMemo(
     () => (selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null),
@@ -134,7 +154,7 @@ export function SprintPipeline() {
           t.pr_url &&
           t.pr_number &&
           t.pr_mergeable_state === 'dirty' &&
-          ['awaiting-review', 'in-progress'].includes(t.status)
+          (t.status === 'active' || t.status === 'done')
       ),
     [tasks]
   )
@@ -194,38 +214,88 @@ export function SprintPipeline() {
   )
 
   // Stats
-  const activeCount = partition.inProgress.length
-  const queuedCount = partition.todo.length
-  const doneCount = partition.done.length
+  const headerStats = useMemo(
+    () => [
+      { label: 'active', count: partition.inProgress.length, filter: 'in-progress' as const },
+      { label: 'queued', count: partition.todo.length, filter: 'todo' as const },
+      { label: 'blocked', count: partition.blocked.length, filter: 'blocked' as const },
+      { label: 'review', count: partition.awaitingReview.length, filter: 'awaiting-review' as const },
+      { label: 'failed', count: partition.failed.length, filter: 'failed' as const },
+      { label: 'done', count: partition.done.length, filter: 'done' as const }
+    ],
+    [partition]
+  )
 
   return (
-    <div className="sprint-pipeline" data-testid="sprint-pipeline">
+    <motion.div
+      className="sprint-pipeline"
+      data-testid="sprint-pipeline"
+      variants={VARIANTS.fadeIn}
+      initial="initial"
+      animate="animate"
+      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+    >
       <header className="sprint-pipeline__header">
         <h1 className="sprint-pipeline__title">Task Pipeline</h1>
         <div className="sprint-pipeline__stats">
-          <span className="sprint-pipeline__stat">
-            <b>{activeCount}</b> active
-          </span>
-          <span className="sprint-pipeline__stat">
-            <b>{queuedCount}</b> queued
-          </span>
-          <span className="sprint-pipeline__stat">
-            <b>{doneCount}</b> done
-          </span>
+          {headerStats.map((stat) => (
+            <span
+              key={stat.label}
+              className={`sprint-pipeline__stat sprint-pipeline__stat--${stat.label} sprint-pipeline__stat--clickable`}
+              onClick={() => setStatusFilter(stat.filter)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setStatusFilter(stat.filter)
+              }}
+            >
+              <b className="sprint-pipeline__stat-count">{stat.count}</b> {stat.label}
+            </span>
+          ))}
         </div>
+        {conflictingTasks.length > 0 && (
+          <button
+            className="sprint-pipeline__badge sprint-pipeline__badge--danger"
+            onClick={() => setConflictDrawerOpen(true)}
+            title={`${conflictingTasks.length} PR conflict${conflictingTasks.length > 1 ? 's' : ''}`}
+            aria-label={`${conflictingTasks.length} merge conflict${conflictingTasks.length > 1 ? 's' : ''}`}
+          >
+            <GitMerge size={12} />
+            <span>{conflictingTasks.length}</span>
+          </button>
+        )}
+        {visibleStuckTasks.length > 0 && (
+          <button
+            className="sprint-pipeline__badge sprint-pipeline__badge--warning"
+            onClick={() => setHealthCheckDrawerOpen(true)}
+            title={`${visibleStuckTasks.length} stuck task${visibleStuckTasks.length > 1 ? 's' : ''}`}
+            aria-label={`${visibleStuckTasks.length} stuck task${visibleStuckTasks.length > 1 ? 's' : ''}`}
+          >
+            <HeartPulse size={12} />
+            <span>{visibleStuckTasks.length}</span>
+          </button>
+        )}
       </header>
 
+      <PipelineFilterBar tasks={tasks} />
+
       {loading && tasks.length === 0 && (
-        <div className="pipeline-empty-state">
-          <Spinner size="md" />
-          <p className="pipeline-empty-state__title">Loading tasks...</p>
+        <div className="sprint-pipeline__body">
+          <div className="pipeline-sidebar" style={{ opacity: 0.3 }}>
+            <div className="bde-skeleton" style={{ height: 200 }} />
+          </div>
+          <div className="pipeline-center" style={{ opacity: 0.3 }}>
+            <div className="bde-skeleton" style={{ height: 64 }} />
+            <div className="bde-skeleton" style={{ height: 64 }} />
+            <div className="bde-skeleton" style={{ height: 64 }} />
+          </div>
         </div>
       )}
 
       {loadError && (
         <div className="pipeline-empty-state">
           <p className="pipeline-empty-state__title">Error loading tasks</p>
-          <p className="pipeline-empty-state__hint" style={{ marginBottom: '12px' }}>
+          <p className="pipeline-empty-state__hint pipeline-empty-state__hint--spaced">
             {loadError}
           </p>
           <Button variant="primary" size="sm" onClick={loadData} disabled={loading}>
@@ -235,14 +305,19 @@ export function SprintPipeline() {
       )}
 
       {!loading && !loadError && tasks.length === 0 && (
-        <div className="pipeline-empty-state">
-          <p className="pipeline-empty-state__title">No tasks yet</p>
-          <p className="pipeline-empty-state__hint">
-            Open Task Workbench (Cmd+0) to create your first task
-          </p>
+        <div style={{ padding: '40px', display: 'flex', justifyContent: 'center' }}>
+          <NeonCard accent="purple" title="No tasks yet">
+            <p className="sprint-pipeline__empty-text">
+              Create your first task to start the pipeline.
+            </p>
+            <button className="task-drawer__btn task-drawer__btn--primary" onClick={openWorkbench}>
+              New Task
+            </button>
+          </NeonCard>
         </div>
       )}
 
+      <PipelineErrorBoundary fallbackLabel="Pipeline crashed">
       <div className="sprint-pipeline__body" style={{ display: tasks.length === 0 ? 'none' : undefined }}>
         <PipelineBacklog
           backlog={partition.backlog}
@@ -289,21 +364,18 @@ export function SprintPipeline() {
             <PipelineStage
               name="done"
               label="Done"
-              tasks={partition.done.slice(0, 5)}
+              tasks={partition.done.slice(0, 3)}
               count={`${partition.done.length}`}
               selectedTaskId={selectedTaskId}
               onTaskClick={handleTaskClick}
               doneFooter={
-                partition.done.length > 5 ? (
-                  <div className="pipeline-stage__done-footer">
-                    Showing 5 of {partition.done.length} ·{' '}
-                    <button
-                      className="pipeline-stage__done-link"
-                      onClick={() => setDoneViewOpen(true)}
-                    >
-                      View all &rarr;
-                    </button>
-                  </div>
+                partition.done.length > 3 ? (
+                  <button
+                    className="pipeline-stage__done-summary"
+                    onClick={() => setDoneViewOpen(true)}
+                  >
+                    {partition.done.length} completed · View all
+                  </button>
                 ) : undefined
               }
             />
@@ -326,9 +398,11 @@ export function SprintPipeline() {
             }}
             onViewAgents={() => setView('agents')}
             onUnblock={handleUnblock}
+            onRetry={handleRetry}
           />
         )}
       </div>
+      </PipelineErrorBoundary>
 
       {specPanelOpen && selectedTask?.spec && (
         <SpecPanel
@@ -362,6 +436,6 @@ export function SprintPipeline() {
         onClose={() => setHealthCheckDrawerOpen(false)}
         onDismiss={dismissTask}
       />
-    </div>
+    </motion.div>
   )
 }

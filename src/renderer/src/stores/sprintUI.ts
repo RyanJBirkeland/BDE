@@ -45,7 +45,7 @@ interface SprintUIState {
   clearSelection: () => void
 }
 
-export const useSprintUI = create<SprintUIState>((set) => ({
+export const useSprintUI = create<SprintUIState>((set, get) => ({
   selectedTaskId: null,
   logDrawerTaskId: null,
   repoFilter: null,
@@ -59,7 +59,14 @@ export const useSprintUI = create<SprintUIState>((set) => ({
   conflictDrawerOpen: false,
   healthCheckDrawerOpen: false,
 
-  setSelectedTaskId: (id): void => set({ selectedTaskId: id, drawerOpen: id !== null }),
+  setSelectedTaskId: (id): void => {
+    const current = get().selectedTaskId
+    if (id === current) {
+      set({ selectedTaskId: null, drawerOpen: false })
+    } else {
+      set({ selectedTaskId: id, drawerOpen: id !== null })
+    }
+  },
   setLogDrawerTaskId: (id): void => set({ logDrawerTaskId: id }),
   setDrawerOpen: (open): void => set({ drawerOpen: open }),
   setSpecPanelOpen: (open): void => set({ specPanelOpen: open }),

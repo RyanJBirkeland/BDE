@@ -311,6 +311,31 @@ describe('sprintTasks store', () => {
       expect(toast.error).toHaveBeenCalledWith('create failed')
     })
 
+    it('passes depends_on to IPC call when provided', async () => {
+      const deps = [{ id: 'dep-1', type: 'hard' as const }]
+      await useSprintTasks.getState().createTask({
+        title: 'Task with deps',
+        repo: 'BDE',
+        priority: 1,
+        depends_on: deps
+      })
+
+      expect(window.api.sprint.create).toHaveBeenCalledWith(
+        expect.objectContaining({ depends_on: deps })
+      )
+    })
+
+    it('omits depends_on from IPC call when not provided', async () => {
+      await useSprintTasks.getState().createTask({
+        title: 'Task without deps',
+        repo: 'BDE',
+        priority: 1
+      })
+
+      const callArg = (window.api.sprint.create as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      expect(callArg).not.toHaveProperty('depends_on')
+    })
+
     it('skips spec generation when spec is already provided', async () => {
       await useSprintTasks.getState().createTask({
         title: 'Task with spec',
@@ -557,6 +582,90 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().updateTask('t1', { status: 'active' })
 
       expect('t1' in useSprintTasks.getState().pendingUpdates).toBe(false)
+    })
+  })
+
+  describe('mergeSseUpdate — pending update protection', () => {
+    it('respects pending updates within TTL (preserves pending field)', () => {
+      const task = makeTask('t1', { status: 'active', notes: 'local notes' })
+      useSprintTasks.setState({
+        tasks: [task],
+        pendingUpdates: { t1: { ts: Date.now(), fields: ['status'] } },
+        pendingCreates: []
+      })
+
+      useSprintTasks.getState().mergeSseUpdate({ taskId: 't1', status: 'backlog', notes: 'sse notes' })
+
+      const updated = useSprintTasks.getState().tasks[0]
+      // Pending field (status) should be preserved from local
+      expect(updated.status).toBe('active')
+      // Non-pending field (notes) should come from SSE
+      expect(updated.notes).toBe('sse notes')
+    })
+
+    it('overwrites all fields after TTL expires', () => {
+      const task = makeTask('t1', { status: 'active', notes: 'local notes' })
+      // Set a timestamp older than PENDING_UPDATE_TTL (2000ms)
+      useSprintTasks.setState({
+        tasks: [task],
+        pendingUpdates: { t1: { ts: Date.now() - 3000, fields: ['status'] } },
+        pendingCreates: []
+      })
+
+      useSprintTasks.getState().mergeSseUpdate({ taskId: 't1', status: 'done', notes: 'sse notes' })
+
+      const updated = useSprintTasks.getState().tasks[0]
+      // TTL expired — SSE data should win
+      expect(updated.status).toBe('done')
+      expect(updated.notes).toBe('sse notes')
+    })
+  })
+
+  describe('updateTask — pending fields tracking', () => {
+    it('sets pending fields and calls IPC', async () => {
+      const task = makeTask('t1', { status: 'backlog', notes: null })
+      useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeTask('t1', { status: 'active', notes: 'updated' })
+      )
+
+      const updatePromise = useSprintTasks.getState().updateTask('t1', { status: 'active', notes: 'updated' })
+
+      // Pending fields should be tracked immediately (before IPC resolves)
+      const pending = useSprintTasks.getState().pendingUpdates['t1']
+      expect(pending).toBeDefined()
+      expect(pending.fields).toContain('status')
+      expect(pending.fields).toContain('notes')
+
+      // IPC should have been called
+      expect(window.api.sprint.update).toHaveBeenCalledWith('t1', { status: 'active', notes: 'updated' })
+
+      await updatePromise
+    })
+
+    it('merges pending fields from prior pending updates', async () => {
+      const task = makeTask('t1', { status: 'backlog', notes: null, priority: 1 })
+      // Pre-existing pending update for 'priority'
+      useSprintTasks.setState({
+        tasks: [task],
+        pendingUpdates: { t1: { ts: Date.now(), fields: ['priority'] } },
+        pendingCreates: []
+      })
+
+      let resolveUpdate!: (v: SprintTask) => void
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockReturnValue(
+        new Promise<SprintTask>((res) => { resolveUpdate = res })
+      )
+
+      const updatePromise = useSprintTasks.getState().updateTask('t1', { status: 'active' })
+
+      // Pending fields should include both old ('priority') and new ('status')
+      const pending = useSprintTasks.getState().pendingUpdates['t1']
+      expect(pending.fields).toContain('priority')
+      expect(pending.fields).toContain('status')
+
+      resolveUpdate(makeTask('t1', { status: 'active' }))
+      await updatePromise
     })
   })
 

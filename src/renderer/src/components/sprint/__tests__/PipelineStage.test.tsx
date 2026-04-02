@@ -169,6 +169,53 @@ describe('PipelineStage', () => {
     expect(screen.queryByTestId('done-footer')).not.toBeInTheDocument()
   })
 
+  it('shows subtitle for Review stage when tasks exist', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [makeTask({ id: 'r1', status: 'active' })]
+    render(
+      <PipelineStage
+        name="review"
+        label="Review"
+        tasks={tasks}
+        count="1"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    expect(screen.getByText('PRs awaiting merge')).toBeInTheDocument()
+  })
+
+  it('does not show subtitle for Review stage when empty', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    render(
+      <PipelineStage
+        name="review"
+        label="Review"
+        tasks={[]}
+        count="0"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    expect(screen.queryByText('PRs awaiting merge')).not.toBeInTheDocument()
+  })
+
+  it('does not show subtitle for non-Review stages', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [makeTask({ id: 'q1' })]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="1"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    expect(screen.queryByText('PRs awaiting merge')).not.toBeInTheDocument()
+  })
+
   it('shows task count in the dot', async () => {
     const { PipelineStage } = await import('../PipelineStage')
     const tasks = [makeTask({ id: 'task-1' }), makeTask({ id: 'task-2' })]

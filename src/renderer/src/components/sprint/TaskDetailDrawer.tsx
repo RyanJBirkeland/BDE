@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintTasks } from '../../stores/sprintTasks'
+import { useSprintUI } from '../../stores/sprintUI'
 import { formatElapsed, getDotColor } from '../../lib/task-format'
 
 const MIN_DRAWER_WIDTH = 280
@@ -19,6 +21,7 @@ export interface TaskDetailDrawerProps {
   onEdit: (task: SprintTask) => void
   onViewAgents: (agentId: string) => void
   onUnblock?: (task: SprintTask) => void
+  onRetry?: (task: SprintTask) => void
 }
 
 function formatTimestamp(iso: string): string {
@@ -29,16 +32,6 @@ function formatTimestamp(iso: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
-}
-
-function getDependencyStats(
-  deps: SprintTask['depends_on'],
-  allTasks: SprintTask[]
-): { count: number; complete: number } | null {
-  if (!deps || deps.length === 0) return null
-  const depIds = new Set(deps.map((d) => d.id))
-  const complete = allTasks.filter((t) => depIds.has(t.id) && t.status === 'done').length
-  return { count: deps.length, complete }
 }
 
 export function TaskDetailDrawer({
@@ -52,7 +45,8 @@ export function TaskDetailDrawer({
   onOpenSpec,
   onEdit,
   onViewAgents,
-  onUnblock
+  onUnblock,
+  onRetry
 }: TaskDetailDrawerProps) {
   const [elapsed, setElapsed] = useState('')
   const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
@@ -78,44 +72,61 @@ export function TaskDetailDrawer({
     }
   }, [])
 
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    dragging.current = true
-    startX.current = e.clientX
-    startWidth.current = width
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      dragging.current = true
+      startX.current = e.clientX
+      startWidth.current = width
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
 
-    const onMove = (ev: MouseEvent): void => {
-      if (!dragging.current) return
-      const delta = startX.current - ev.clientX
-      const next = Math.min(MAX_DRAWER_WIDTH, Math.max(MIN_DRAWER_WIDTH, startWidth.current + delta))
-      setWidth(next)
-    }
+      const onMove = (ev: MouseEvent): void => {
+        if (!dragging.current) return
+        const delta = startX.current - ev.clientX
+        const next = Math.min(
+          MAX_DRAWER_WIDTH,
+          Math.max(MIN_DRAWER_WIDTH, startWidth.current + delta)
+        )
+        setWidth(next)
+      }
 
-    const onUp = (): void => {
-      dragging.current = false
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      cleanupRef.current = null
-    }
+      const onUp = (): void => {
+        dragging.current = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        cleanupRef.current = null
+      }
 
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
 
-    // Store cleanup function for unmount
-    cleanupRef.current = () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-  }, [width])
+      // Store cleanup function for unmount
+      cleanupRef.current = () => {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+    },
+    [width]
+  )
 
+  const depIds = useMemo(
+    () => task?.depends_on?.map((d) => d.id) ?? [],
+    [task?.depends_on]
+  )
   const allTasks = useSprintTasks((s) => s.tasks)
-  const depStats = getDependencyStats(task.depends_on, allTasks)
+  const depTasks = useMemo(
+    () =>
+      depIds.length === 0
+        ? []
+        : allTasks.filter((t) => depIds.includes(t.id)),
+    [depIds, allTasks]
+  )
+  const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
 
   return (
     <aside className="task-drawer" data-testid="task-detail-drawer" style={{ width }}>
@@ -123,11 +134,22 @@ export function TaskDetailDrawer({
       <div
         className="task-drawer__resize-handle"
         onMouseDown={handleResizeStart}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault()
+            setWidth((w) => Math.max(MIN_DRAWER_WIDTH, w - (e.shiftKey ? 50 : 10)))
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault()
+            setWidth((w) => Math.min(MAX_DRAWER_WIDTH, w + (e.shiftKey ? 50 : 10)))
+          }
+        }}
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize drawer"
+        aria-valuenow={width}
+        aria-valuemin={MIN_DRAWER_WIDTH}
+        aria-valuemax={MAX_DRAWER_WIDTH}
         tabIndex={0}
-        style={{ cursor: 'col-resize' }}
       />
       {/* Header */}
       <div className="task-drawer__head">
@@ -135,7 +157,7 @@ export function TaskDetailDrawer({
         <div className="task-drawer__status">
           <span
             className="task-drawer__status-dot"
-            style={{ background: getDotColor(task.status) }}
+            style={{ background: getDotColor(task.status, task.pr_status) }}
           />
           <span>{task.status}</span>
           {elapsed && <span> — {elapsed}</span>}
@@ -157,13 +179,22 @@ export function TaskDetailDrawer({
           <span className="task-drawer__value">P{task.priority}</span>
         </div>
 
-        {depStats && (
-          <div className="task-drawer__field">
-            <span className="task-drawer__label">Dependencies</span>
-            <span className="task-drawer__value">
-              {depStats.count} dep{depStats.count !== 1 ? 's' : ''} — {depStats.complete}/
-              {depStats.count} complete
-            </span>
+        {depTasks.length > 0 && (
+          <div className="task-drawer__deps">
+            <div className="task-drawer__deps-label">
+              {task.status === 'blocked' ? 'Blocked by' : 'Dependencies'}
+            </div>
+            {depTasks.map((dep) => (
+              <button
+                key={dep.id}
+                className={`task-drawer__dep task-drawer__dep--${dep.status}`}
+                onClick={() => setSelectedTaskId(dep.id)}
+              >
+                <span className="task-drawer__dep-dot" />
+                <span className="task-drawer__dep-title">{dep.title.slice(0, 50)}</span>
+                <span className="task-drawer__dep-status">{dep.status}</span>
+              </button>
+            ))}
           </div>
         )}
 
@@ -221,26 +252,26 @@ export function TaskDetailDrawer({
             <span className="task-drawer__value task-drawer__value--warning">
               PR creation failed after retries
             </span>
-            {task.notes && (() => {
-              const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
-              if (!match) return null
-              const [, branch, ghRepo] = match
-              // Validate ghRepo format (owner/repo) to prevent XSS
-              if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(ghRepo)) return null
-              // Validate branch name doesn't contain dangerous characters
-              if (!/^[a-zA-Z0-9/_.-]+$/.test(branch)) return null
-              return (
-                <a
-                  className="task-drawer__btn task-drawer__btn--primary"
-                  href={`https://github.com/${encodeURIComponent(ghRepo)}/pull/new/${encodeURIComponent(branch)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ marginTop: '8px', display: 'inline-block' }}
-                >
-                  Create PR →
-                </a>
-              )
-            })()}
+            {task.notes &&
+              (() => {
+                const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
+                if (!match) return null
+                const [, branch, ghRepo] = match
+                // Validate ghRepo format (owner/repo) to prevent XSS
+                if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(ghRepo)) return null
+                // Validate branch name doesn't contain dangerous characters
+                if (!/^[a-zA-Z0-9/_.-]+$/.test(branch)) return null
+                return (
+                  <a
+                    className="task-drawer__btn task-drawer__btn--primary task-drawer__branch-only-link"
+                    href={`https://github.com/${encodeURIComponent(ghRepo)}/pull/new/${encodeURIComponent(branch)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Create PR →
+                  </a>
+                )
+              })()}
           </div>
         )}
       </div>
@@ -256,6 +287,7 @@ export function TaskDetailDrawer({
           onViewLogs={onViewLogs}
           onEdit={onEdit}
           onUnblock={onUnblock}
+          onRetry={onRetry}
         />
       </div>
     </aside>
@@ -270,7 +302,8 @@ function ActionButtons({
   onDelete,
   onViewLogs,
   onEdit,
-  onUnblock
+  onUnblock,
+  onRetry
 }: {
   task: SprintTask
   onLaunch: (t: SprintTask) => void
@@ -280,6 +313,7 @@ function ActionButtons({
   onViewLogs: (t: SprintTask) => void
   onEdit: (t: SprintTask) => void
   onUnblock?: (t: SprintTask) => void
+  onRetry?: (t: SprintTask) => void
 }) {
   switch (task.status) {
     case 'backlog':
@@ -333,7 +367,7 @@ function ActionButtons({
         <>
           <button
             className="task-drawer__btn task-drawer__btn--primary"
-            onClick={() => onUnblock ? onUnblock(task) : onLaunch(task)}
+            onClick={() => (onUnblock ? onUnblock(task) : onLaunch(task))}
           >
             Unblock
           </button>
@@ -371,25 +405,26 @@ function ActionButtons({
     case 'done':
       return (
         <>
-          {task.pr_url && (() => {
-            // Validate pr_url is a GitHub URL to prevent XSS
-            try {
-              const url = new URL(task.pr_url)
-              if (url.hostname !== 'github.com') return null
-              return (
-                <a
-                  className="task-drawer__btn task-drawer__btn--primary"
-                  href={task.pr_url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View PR
-                </a>
-              )
-            } catch {
-              return null
-            }
-          })()}
+          {task.pr_url &&
+            (() => {
+              // Validate pr_url is a GitHub URL to prevent XSS
+              try {
+                const url = new URL(task.pr_url)
+                if (url.hostname !== 'github.com') return null
+                return (
+                  <a
+                    className="task-drawer__btn task-drawer__btn--primary"
+                    href={task.pr_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View PR
+                  </a>
+                )
+              } catch {
+                return null
+              }
+            })()}
           <button
             className="task-drawer__btn task-drawer__btn--secondary"
             onClick={() => onRerun(task)}
@@ -403,8 +438,16 @@ function ActionButtons({
     case 'cancelled':
       return (
         <>
+          {(task.status === 'failed' || task.status === 'error') && onRetry && (
+            <button
+              className="task-drawer__btn task-drawer__btn--primary"
+              onClick={() => onRetry(task)}
+            >
+              <RefreshCw size={12} /> Retry
+            </button>
+          )}
           <button
-            className="task-drawer__btn task-drawer__btn--primary"
+            className="task-drawer__btn task-drawer__btn--secondary"
             onClick={() => onRerun(task)}
           >
             Clone & Queue

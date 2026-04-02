@@ -285,6 +285,10 @@ export interface SprintChannels {
     args: [operations: BatchOperation[]]
     result: { results: BatchResult[] }
   }
+  'sprint:retry': {
+    args: [taskId: string]
+    result: SprintTask
+  }
 }
 
 /** Window shell integration */

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { partitionSprintTasks } from '../partitionSprintTasks'
+import { TASK_STATUS, PR_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from '../../../../shared/types'
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -123,10 +124,29 @@ describe('partitionSprintTasks', () => {
   })
 
   it('puts cancelled tasks in failed', () => {
-    const t = makeTask({ status: 'cancelled' })
+    const t = makeTask({ status: TASK_STATUS.CANCELLED })
     const result = partitionSprintTasks([t])
     expect(result.failed).toEqual([t])
     expect(result.done).toHaveLength(0)
+  })
+
+  it('puts failed tasks in failed bucket', () => {
+    const t = makeTask({ status: TASK_STATUS.FAILED })
+    const result = partitionSprintTasks([t])
+    expect(result.failed).toEqual([t])
+  })
+
+  it('puts error tasks in failed bucket', () => {
+    const t = makeTask({ status: TASK_STATUS.ERROR })
+    const result = partitionSprintTasks([t])
+    expect(result.failed).toEqual([t])
+  })
+
+  it('puts active task with pr_status=open in awaitingReview', () => {
+    const t = makeTask({ status: TASK_STATUS.ACTIVE, pr_status: PR_STATUS.OPEN })
+    const result = partitionSprintTasks([t])
+    expect(result.awaitingReview).toEqual([t])
+    expect(result.inProgress).toHaveLength(0)
   })
 
   it('correctly partitions a mixed set of tasks', () => {

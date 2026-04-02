@@ -24,7 +24,7 @@ export function PipelineBacklog({
   return (
     <div className="pipeline-sidebar" data-testid="pipeline-backlog">
       <div className="pipeline-sidebar__section pipeline-sidebar__section--grow">
-        <div className="pipeline-sidebar__label" style={{ color: 'var(--neon-blue)' }}>
+        <div className="pipeline-sidebar__label pipeline-sidebar__label--backlog">
           BACKLOG <span className="pipeline-sidebar__count">{backlog.length}</span>
         </div>
         {backlog.map((task) => (
@@ -54,14 +54,14 @@ export function PipelineBacklog({
           </div>
         ))}
         {backlog.length === 0 && (
-          <div style={{ fontSize: '10px', color: 'var(--neon-text-dim)', padding: '8px 0' }}>
+          <div className="pipeline-sidebar__empty">
             No backlog tasks
           </div>
         )}
       </div>
       {failed.length > 0 && (
         <div className="pipeline-sidebar__section">
-          <div className="pipeline-sidebar__label" style={{ color: 'var(--neon-red)' }}>
+          <div className="pipeline-sidebar__label pipeline-sidebar__label--failed">
             FAILED <span className="pipeline-sidebar__count">{failed.length}</span>
           </div>
           {visibleFailed.map((task) => (
@@ -75,16 +75,15 @@ export function PipelineBacklog({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTaskClick(task.id) } }}
             >
               <div className="failed-card__title">{task.title}</div>
-              <div className="failed-card__meta" title={task.notes || 'No details'} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              <div className="failed-card__meta failed-card__notes" title={task.notes || 'No details'}>
                 {task.notes || 'No details'}
               </div>
               <button
-                className="backlog-card__action"
+                className="backlog-card__action failed-card__action--rerun"
                 onClick={(e) => {
                   e.stopPropagation()
                   onRerun(task)
                 }}
-                style={{ color: 'var(--neon-red)' }}
               >
                 ↻ Re-run
               </button>

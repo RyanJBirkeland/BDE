@@ -118,7 +118,8 @@ const api = {
     healthCheck: () => typedInvoke('sprint:healthCheck'),
     validateDependencies: (taskId: string, deps: Array<{ id: string; type: 'hard' | 'soft' }>) =>
       typedInvoke('sprint:validateDependencies', taskId, deps),
-    unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId)
+    unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId),
+    retry: (taskId: string) => typedInvoke('sprint:retry', taskId)
   },
 
   // File attachments

@@ -157,7 +157,16 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps) {
                 <div key={task.id} className="conflict-row">
                   <div
                     className="conflict-row__header"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
                     onClick={() => setExpandedId(isExpanded ? null : task.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setExpandedId(isExpanded ? null : task.id)
+                      }
+                    }}
                   >
                     <span
                       className="conflict-row__repo-dot"
