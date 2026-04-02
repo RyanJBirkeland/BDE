@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { IDEView } from '../IDEView'
 
 type MockIDEState = {
@@ -20,6 +20,7 @@ type MockIDEState = {
   setRootPath: ReturnType<typeof vi.fn>
   openTab: ReturnType<typeof vi.fn>
   closeTab: ReturnType<typeof vi.fn>
+  setActiveTab: ReturnType<typeof vi.fn>
   setDirty: ReturnType<typeof vi.fn>
   setFocusedPanel: ReturnType<typeof vi.fn>
   toggleSidebar: ReturnType<typeof vi.fn>
@@ -43,6 +44,7 @@ const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
     setRootPath: vi.fn(),
     openTab: vi.fn(),
     closeTab: vi.fn(),
+    setActiveTab: vi.fn(),
     setDirty: vi.fn(),
     setFocusedPanel: mockSetFocusedPanel,
     toggleSidebar: vi.fn(),
@@ -53,8 +55,9 @@ const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
   }
   const mockUseIDEStore = vi.fn((selector: (s: MockIDEState) => unknown) =>
     selector(defaultState)
-  ) as ReturnType<typeof vi.fn> & { getState: () => MockIDEState }
+  ) as ReturnType<typeof vi.fn> & { getState: () => MockIDEState; setState: (partial: Partial<MockIDEState>) => void }
   mockUseIDEStore.getState = () => defaultState
+  mockUseIDEStore.setState = vi.fn()
   return { mockUseIDEStore, mockSetFocusedPanel }
 })
 
@@ -202,6 +205,7 @@ function setIDEState(overrides: Partial<MockIDEState>): void {
     setRootPath: vi.fn(),
     openTab: vi.fn(),
     closeTab: vi.fn(),
+    setActiveTab: vi.fn(),
     setDirty: vi.fn(),
     setFocusedPanel: mockSetFocusedPanel,
     toggleSidebar: vi.fn(),
@@ -213,6 +217,7 @@ function setIDEState(overrides: Partial<MockIDEState>): void {
   }
   mockUseIDEStore.mockImplementation((selector: (s: MockIDEState) => unknown) => selector(state))
   mockUseIDEStore.getState = () => state
+  mockUseIDEStore.setState = vi.fn()
 }
 
 beforeEach(() => {
@@ -426,6 +431,520 @@ describe('IDEView', () => {
       render(<IDEView />)
       const tab = screen.getByRole('tab', { name: /dirty\.ts/ })
       expect(tab).toHaveAttribute('data-dirty', 'true')
+    })
+  })
+
+  describe('File loading indicator', () => {
+    it('shows Loading... text when active file is loading', () => {
+      setIDEState({
+        rootPath: '/project',
+        openTabs: [
+          {
+            id: 'tab-1',
+            filePath: '/project/test.ts',
+            displayName: 'test.ts',
+            language: 'typescript',
+            isDirty: false
+          }
+        ],
+        activeTabId: 'tab-1',
+        fileLoadingStates: { '/project/test.ts': true },
+        fileContents: {}
+      })
+
+      render(<IDEView />)
+      expect(screen.getByText('Loading...')).toBeInTheDocument()
+    })
+
+    it('shows editor pane when file is loaded', () => {
+      setIDEState({
+        rootPath: '/project',
+        openTabs: [
+          {
+            id: 'tab-1',
+            filePath: '/project/test.ts',
+            displayName: 'test.ts',
+            language: 'typescript',
+            isDirty: false
+          }
+        ],
+        activeTabId: 'tab-1',
+        fileLoadingStates: {},
+        fileContents: { '/project/test.ts': 'const x = 1' }
+      })
+
+      render(<IDEView />)
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+      expect(screen.getByTestId('editor-pane')).toBeInTheDocument()
+    })
+  })
+
+  describe('Sidebar toggle button when collapsed', () => {
+    it('shows sidebar toggle button when sidebar is collapsed and no active tab', () => {
+      setIDEState({
+        rootPath: '/project',
+        sidebarCollapsed: true,
+        openTabs: [],
+        activeTabId: null
+      })
+
+      const { container } = render(<IDEView />)
+      const toggleBtn = container.querySelector('.ide-sidebar-toggle')
+      expect(toggleBtn).toBeInTheDocument()
+    })
+
+    it('does not show sidebar toggle button when sidebar is expanded', () => {
+      setIDEState({
+        rootPath: '/project',
+        sidebarCollapsed: false,
+        openTabs: [],
+        activeTabId: null
+      })
+
+      const { container } = render(<IDEView />)
+      const toggleBtn = container.querySelector('.ide-sidebar-toggle')
+      expect(toggleBtn).not.toBeInTheDocument()
+    })
+
+    it('does not show sidebar toggle button when there is an active tab', () => {
+      setIDEState({
+        rootPath: '/project',
+        sidebarCollapsed: true,
+        openTabs: [
+          {
+            id: 'tab-1',
+            filePath: '/project/test.ts',
+            displayName: 'test.ts',
+            language: 'typescript',
+            isDirty: false
+          }
+        ],
+        activeTabId: 'tab-1'
+      })
+
+      const { container } = render(<IDEView />)
+      const toggleBtn = container.querySelector('.ide-sidebar-toggle')
+      expect(toggleBtn).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Keyboard shortcuts', () => {
+    it('toggles sidebar on Cmd+B', () => {
+      const toggleSidebar = vi.fn()
+      setIDEState({ rootPath: '/project', toggleSidebar })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 'b', metaKey: true })
+      expect(toggleSidebar).toHaveBeenCalled()
+    })
+
+    it('toggles terminal on Cmd+J', () => {
+      const toggleTerminal = vi.fn()
+      setIDEState({ rootPath: '/project', toggleTerminal })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 'j', metaKey: true })
+      expect(toggleTerminal).toHaveBeenCalled()
+    })
+
+    it('triggers open folder on Cmd+O', () => {
+      setIDEState({ rootPath: '/project' })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 'o', metaKey: true })
+      expect(window.api.openDirectoryDialog).toHaveBeenCalled()
+    })
+
+    it('triggers save on Cmd+S with active tab', async () => {
+      const setDirty = vi.fn()
+      setIDEState({
+        rootPath: '/project',
+        openTabs: [
+          {
+            id: 'tab-1',
+            filePath: '/project/test.ts',
+            displayName: 'test.ts',
+            language: 'typescript',
+            isDirty: true
+          }
+        ],
+        activeTabId: 'tab-1',
+        fileContents: { '/project/test.ts': 'content' },
+        setDirty
+      })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 's', metaKey: true })
+      expect(window.api.writeFile).toHaveBeenCalledWith('/project/test.ts', 'content')
+    })
+
+    it('does not trigger save on Cmd+S without active tab', () => {
+      setIDEState({ rootPath: '/project', openTabs: [], activeTabId: null })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 's', metaKey: true })
+      expect(window.api.writeFile).not.toHaveBeenCalled()
+    })
+
+    it('toggles shortcuts overlay on Cmd+/', () => {
+      setIDEState({ rootPath: '/project' })
+
+      render(<IDEView />)
+      // No overlay initially
+      expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument()
+
+      fireEvent.keyDown(window, { key: '/', metaKey: true })
+      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
+    })
+
+    it('closes shortcuts overlay on Escape', () => {
+      setIDEState({ rootPath: '/project' })
+
+      render(<IDEView />)
+      // Open overlay
+      fireEvent.keyDown(window, { key: '/', metaKey: true })
+      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
+
+      // Close with Escape
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument()
+    })
+
+    it('closes shortcuts overlay by clicking the overlay background', () => {
+      setIDEState({ rootPath: '/project' })
+
+      render(<IDEView />)
+      // Open overlay
+      fireEvent.keyDown(window, { key: '/', metaKey: true })
+      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
+
+      // Click the overlay background (the dialog element)
+      const overlay = screen.getByRole('dialog')
+      fireEvent.click(overlay)
+      expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument()
+    })
+
+    it('does not close shortcuts overlay when clicking inside the panel', () => {
+      setIDEState({ rootPath: '/project' })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: '/', metaKey: true })
+
+      // Click inside the panel (on the title)
+      const title = screen.getByText('Keyboard Shortcuts')
+      fireEvent.click(title)
+      // Should still be visible
+      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
+    })
+
+    it('does not respond to Cmd+B when ctrlKey is also pressed', () => {
+      const toggleSidebar = vi.fn()
+      setIDEState({ rootPath: '/project', toggleSidebar })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 'b', metaKey: true, ctrlKey: true })
+      expect(toggleSidebar).not.toHaveBeenCalled()
+    })
+
+    it('handles Cmd+W to close editor tab when focused on editor', () => {
+      const closeTab = vi.fn()
+      setIDEState({
+        rootPath: '/project',
+        openTabs: [
+          {
+            id: 'tab-1',
+            filePath: '/project/test.ts',
+            displayName: 'test.ts',
+            language: 'typescript',
+            isDirty: false
+          }
+        ],
+        activeTabId: 'tab-1',
+        focusedPanel: 'editor',
+        closeTab
+      })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 'w', metaKey: true })
+      expect(closeTab).toHaveBeenCalledWith('tab-1')
+    })
+
+    it('ignores Cmd+W when no active tab in editor panel', () => {
+      const closeTab = vi.fn()
+      setIDEState({
+        rootPath: '/project',
+        openTabs: [],
+        activeTabId: null,
+        focusedPanel: 'editor',
+        closeTab
+      })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: 'w', metaKey: true })
+      expect(closeTab).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Shortcuts overlay content', () => {
+    it('renders all IDE shortcut entries', () => {
+      setIDEState({ rootPath: '/project' })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: '/', metaKey: true })
+
+      expect(screen.getByText('Toggle sidebar')).toBeInTheDocument()
+      expect(screen.getByText('Toggle terminal')).toBeInTheDocument()
+      expect(screen.getByText('Open folder')).toBeInTheDocument()
+      expect(screen.getByText('Save file')).toBeInTheDocument()
+      expect(screen.getByText('Close tab')).toBeInTheDocument()
+      expect(screen.getByText('Show this help')).toBeInTheDocument()
+    })
+
+    it('shows close hint in overlay', () => {
+      setIDEState({ rootPath: '/project' })
+
+      render(<IDEView />)
+      fireEvent.keyDown(window, { key: '/', metaKey: true })
+      expect(screen.getByText(/Press.*or Esc to close/)).toBeInTheDocument()
+    })
+  })
+
+  describe('Open folder flow', () => {
+    it('calls setRootPath and watchDir when directory is selected', async () => {
+      const setRootPath = vi.fn()
+      const mockOpenDir = vi.fn().mockResolvedValue('/new/project')
+      const mockWatchDir = vi.fn().mockResolvedValue(undefined)
+
+      Object.defineProperty(window, 'api', {
+        value: {
+          ...window.api,
+          openDirectoryDialog: mockOpenDir,
+          watchDir: mockWatchDir,
+          settings: { getJson: vi.fn().mockResolvedValue(null) }
+        },
+        writable: true,
+        configurable: true
+      })
+
+      setIDEState({ rootPath: null, setRootPath })
+
+      render(<IDEView />)
+      // Click the "Open Folder" button in the empty state
+      fireEvent.click(screen.getByText('Open Folder'))
+
+      await vi.waitFor(() => {
+        expect(mockOpenDir).toHaveBeenCalled()
+      })
+      await vi.waitFor(() => {
+        expect(setRootPath).toHaveBeenCalledWith('/new/project')
+      })
+    })
+
+    it('does not set rootPath when directory dialog is cancelled', async () => {
+      const setRootPath = vi.fn()
+      const mockOpenDir = vi.fn().mockResolvedValue(null)
+
+      Object.defineProperty(window, 'api', {
+        value: {
+          ...window.api,
+          openDirectoryDialog: mockOpenDir,
+          settings: { getJson: vi.fn().mockResolvedValue(null) }
+        },
+        writable: true,
+        configurable: true
+      })
+
+      setIDEState({ rootPath: null, setRootPath })
+
+      render(<IDEView />)
+      fireEvent.click(screen.getByText('Open Folder'))
+
+      await vi.waitFor(() => {
+        expect(mockOpenDir).toHaveBeenCalled()
+      })
+      expect(setRootPath).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('State restoration', () => {
+    it('restores IDE state from saved settings on mount', async () => {
+      const mockGetJson = vi.fn().mockResolvedValue({
+        rootPath: '/saved/project',
+        sidebarCollapsed: true,
+        terminalCollapsed: false,
+        recentFolders: ['/saved/project'],
+        expandedDirs: { '/saved/project/src': true }
+      })
+      const mockWatchDir = vi.fn().mockResolvedValue(undefined)
+
+      Object.defineProperty(window, 'api', {
+        value: {
+          ...window.api,
+          settings: { getJson: mockGetJson },
+          watchDir: mockWatchDir
+        },
+        writable: true,
+        configurable: true
+      })
+
+      render(<IDEView />)
+
+      await vi.waitFor(() => {
+        expect(mockGetJson).toHaveBeenCalledWith('ide.state')
+      })
+      await vi.waitFor(() => {
+        expect(mockWatchDir).toHaveBeenCalledWith('/saved/project')
+      })
+    })
+
+    it('skips restoration when saved state is null', async () => {
+      const mockGetJson = vi.fn().mockResolvedValue(null)
+      const mockWatchDir = vi.fn().mockResolvedValue(undefined)
+
+      Object.defineProperty(window, 'api', {
+        value: {
+          ...window.api,
+          settings: { getJson: mockGetJson },
+          watchDir: mockWatchDir
+        },
+        writable: true,
+        configurable: true
+      })
+
+      render(<IDEView />)
+
+      await vi.waitFor(() => {
+        expect(mockGetJson).toHaveBeenCalledWith('ide.state')
+      })
+      expect(mockWatchDir).not.toHaveBeenCalled()
+    })
+
+    it('restores open tabs and active file from saved state', async () => {
+      const mockOpenTab = vi.fn()
+      const mockSetActiveTab = vi.fn()
+      const savedState = {
+        rootPath: '/saved/project',
+        openTabs: [{ filePath: '/saved/project/foo.ts' }],
+        activeFilePath: '/saved/project/foo.ts'
+      }
+      const mockGetJson = vi.fn().mockResolvedValue(savedState)
+      const mockWatchDir = vi.fn().mockResolvedValue(undefined)
+
+      Object.defineProperty(window, 'api', {
+        value: {
+          ...window.api,
+          settings: { getJson: mockGetJson },
+          watchDir: mockWatchDir
+        },
+        writable: true,
+        configurable: true
+      })
+
+      // Set up the store to have openTab and setActiveTab
+      const stateForRestore: MockIDEState = {
+        rootPath: null,
+        openTabs: [
+          {
+            id: 'tab-restored',
+            filePath: '/saved/project/foo.ts',
+            displayName: 'foo.ts',
+            language: 'typescript',
+            isDirty: false
+          }
+        ],
+        activeTabId: null,
+        sidebarCollapsed: false,
+        terminalCollapsed: false,
+        focusedPanel: 'editor',
+        fileContents: {},
+        fileLoadingStates: {},
+        setRootPath: vi.fn(),
+        openTab: mockOpenTab,
+        closeTab: vi.fn(),
+        setDirty: vi.fn(),
+        setFocusedPanel: mockSetFocusedPanel,
+        toggleSidebar: vi.fn(),
+        toggleTerminal: vi.fn(),
+        setFileContent: vi.fn(),
+        setFileLoading: vi.fn(),
+        recentFolders: []
+      }
+      mockUseIDEStore.getState = () => stateForRestore
+
+      render(<IDEView />)
+
+      await vi.waitFor(() => {
+        expect(mockGetJson).toHaveBeenCalledWith('ide.state')
+      })
+    })
+  })
+
+  describe('Editor area focus handling', () => {
+    it('sets focused panel to editor when clicking editor area', () => {
+      setIDEState({ rootPath: '/project' })
+
+      const { container } = render(<IDEView />)
+      const editorArea = container.querySelector('.ide-editor-area')
+      expect(editorArea).toBeInTheDocument()
+      fireEvent.click(editorArea!)
+      expect(mockSetFocusedPanel).toHaveBeenCalledWith('editor')
+    })
+  })
+
+  describe('File content skips loading when already present', () => {
+    it('does not call readFile when file content already in store', () => {
+      const mockReadFile = vi.fn()
+      Object.defineProperty(window, 'api', {
+        value: { ...window.api, readFile: mockReadFile },
+        writable: true,
+        configurable: true
+      })
+
+      setIDEState({
+        rootPath: '/project',
+        openTabs: [
+          {
+            id: 'tab-1',
+            filePath: '/project/test.ts',
+            displayName: 'test.ts',
+            language: 'typescript',
+            isDirty: false
+          }
+        ],
+        activeTabId: 'tab-1',
+        fileContents: { '/project/test.ts': 'already loaded' }
+      })
+
+      render(<IDEView />)
+      expect(mockReadFile).not.toHaveBeenCalled()
+    })
+
+    it('does not call readFile when file is already loading', () => {
+      const mockReadFile = vi.fn()
+      Object.defineProperty(window, 'api', {
+        value: { ...window.api, readFile: mockReadFile },
+        writable: true,
+        configurable: true
+      })
+
+      setIDEState({
+        rootPath: '/project',
+        openTabs: [
+          {
+            id: 'tab-1',
+            filePath: '/project/test.ts',
+            displayName: 'test.ts',
+            language: 'typescript',
+            isDirty: false
+          }
+        ],
+        activeTabId: 'tab-1',
+        fileContents: {},
+        fileLoadingStates: { '/project/test.ts': true }
+      })
+
+      render(<IDEView />)
+      expect(mockReadFile).not.toHaveBeenCalled()
     })
   })
 })

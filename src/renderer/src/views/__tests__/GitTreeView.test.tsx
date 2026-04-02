@@ -445,6 +445,84 @@ describe('GitTreeView', () => {
     })
   })
 
+  describe('Refresh handler', () => {
+    it('calls fetchStatus on refresh button click', () => {
+      render(<GitTreeView />)
+      fireEvent.click(screen.getByLabelText('Refresh git status'))
+      expect(mockStoreState.fetchStatus).toHaveBeenCalledWith('/repo/bde')
+    })
+
+    it('does not call fetchStatus when activeRepo is null', () => {
+      const state = { ...mockStoreState, activeRepo: null }
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') return selector(state as any)
+        return state as any
+      })
+      ;(useGitTreeStore as any).getState = vi.fn(() => state)
+
+      render(<GitTreeView />)
+      fireEvent.click(screen.getByLabelText('Refresh git status'))
+      expect(mockStoreState.fetchStatus).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Repo change handler', () => {
+    it('calls setActiveRepo when repo selector changes', () => {
+      const state = { ...mockStoreState, repoPaths: ['/repo/bde', '/repo/other'] }
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') return selector(state as any)
+        return state as any
+      })
+      ;(useGitTreeStore as any).getState = vi.fn(() => state)
+
+      render(<GitTreeView />)
+      fireEvent.change(screen.getByLabelText('Select repository'), {
+        target: { value: '/repo/other' }
+      })
+      expect(mockStoreState.setActiveRepo).toHaveBeenCalledWith('/repo/other')
+    })
+  })
+
+  describe('Commit and push handlers', () => {
+    it('calls commit on commit button click', () => {
+      render(<GitTreeView />)
+      fireEvent.click(screen.getByTestId('commit-btn'))
+      expect(mockStoreState.commit).toHaveBeenCalledWith('/repo/bde')
+    })
+
+    it('calls push on push button click', () => {
+      render(<GitTreeView />)
+      fireEvent.click(screen.getByTestId('push-btn'))
+      expect(mockStoreState.push).toHaveBeenCalledWith('/repo/bde')
+    })
+
+    it('does not call commit when activeRepo is null', () => {
+      const state = { ...mockStoreState, activeRepo: null }
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') return selector(state as any)
+        return state as any
+      })
+      ;(useGitTreeStore as any).getState = vi.fn(() => state)
+
+      render(<GitTreeView />)
+      fireEvent.click(screen.getByTestId('commit-btn'))
+      expect(mockStoreState.commit).not.toHaveBeenCalled()
+    })
+
+    it('does not call push when activeRepo is null', () => {
+      const state = { ...mockStoreState, activeRepo: null }
+      vi.mocked(useGitTreeStore).mockImplementation((selector) => {
+        if (typeof selector === 'function') return selector(state as any)
+        return state as any
+      })
+      ;(useGitTreeStore as any).getState = vi.fn(() => state)
+
+      render(<GitTreeView />)
+      fireEvent.click(screen.getByTestId('push-btn'))
+      expect(mockStoreState.push).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Error banner', () => {
     function renderWithError(lastError: string): void {
       const state = { ...mockStoreState, lastError }
