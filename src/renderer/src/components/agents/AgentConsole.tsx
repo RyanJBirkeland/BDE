@@ -31,6 +31,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
   const agents = useAgentHistoryStore((s) => s.agents)
   const agent = agents.find((a) => a.id === agentId)
   const events = useAgentEventsStore((s) => s.events[agentId] ?? EMPTY_EVENTS)
+  const wasEvicted = useAgentEventsStore((s) => s.evictedAgents[agentId] ?? false)
 
   const blocks = useMemo(() => pairEvents(events), [events])
 
@@ -78,6 +79,12 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
   return (
     <div className="agent-console">
       <ConsoleHeader agent={agent} events={events} />
+
+      {wasEvicted && (
+        <div className="console-cap-banner">
+          Older events were trimmed (showing last 2,000)
+        </div>
+      )}
 
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
         <div ref={parentRef} onScroll={handleScroll} className="console-body">

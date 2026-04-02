@@ -225,6 +225,18 @@
   background: var(--neon-surface-subtle);
 }
 
+/* ── Console Cap Banner ── */
+.console-cap-banner {
+  padding: 4px 12px;
+  background: var(--neon-orange-surface);
+  border-bottom: 1px solid var(--neon-orange-border);
+  color: var(--neon-orange);
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  text-align: center;
+  flex-shrink: 0;
+}
+
 /* ── Console Body ── */
 .console-body {
   height: 100%;

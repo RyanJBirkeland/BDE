@@ -100,7 +100,7 @@ describe('AgentConsole', () => {
       return selector(state)
     })
     vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      const state = { events: { 'test-agent-1': mockEvents } }
+      const state = { events: { 'test-agent-1': mockEvents }, evictedAgents: {} }
       return selector(state)
     })
   })
@@ -127,7 +127,7 @@ describe('AgentConsole', () => {
 
   it('shows "No events available" when events array is empty', () => {
     vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      const state = { events: { 'test-agent-1': [] } }
+      const state = { events: { 'test-agent-1': [] }, evictedAgents: {} }
       return selector(state)
     })
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
@@ -162,5 +162,23 @@ describe('AgentConsole', () => {
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
     const commandBar = screen.getByTestId('command-bar')
     expect(commandBar).not.toHaveClass('command-bar--disabled')
+  })
+
+  it('shows trimmed events banner when evictedAgents flag is set', () => {
+    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
+      const state = { events: { 'test-agent-1': mockEvents }, evictedAgents: { 'test-agent-1': true } }
+      return selector(state)
+    })
+    render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
+    expect(screen.getByText('Older events were trimmed (showing last 2,000)')).toBeInTheDocument()
+  })
+
+  it('does not show trimmed events banner when evictedAgents flag is not set', () => {
+    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
+      const state = { events: { 'test-agent-1': mockEvents }, evictedAgents: {} }
+      return selector(state)
+    })
+    render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
+    expect(screen.queryByText('Older events were trimmed (showing last 2,000)')).not.toBeInTheDocument()
   })
 })
