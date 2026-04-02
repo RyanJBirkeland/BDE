@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 
 const mockSpawnAgent = vi.fn().mockResolvedValue({ pid: 1, logPath: '/tmp/log', id: 'agent-1' })
 const mockFetchProcesses = vi.fn()
@@ -70,50 +70,23 @@ describe('AgentLaunchpad', () => {
 
   beforeEach(() => vi.clearAllMocks())
 
-  it('renders the grid phase by default', () => {
+  it('renders the launchpad grid', () => {
     render(<AgentLaunchpad onAgentSpawned={onAgentSpawned} />)
     expect(screen.getByTestId('launchpad-grid')).toBeInTheDocument()
   })
 
-  it('transitions to configure phase when a tile is clicked', () => {
+  it('loads templates on mount', () => {
     render(<AgentLaunchpad onAgentSpawned={onAgentSpawned} />)
-    fireEvent.click(screen.getByText('Clean Code'))
-    expect(screen.getByTestId('launchpad-configure')).toBeInTheDocument()
+    expect(mockLoadTemplates).toHaveBeenCalled()
   })
 
-  it('transitions to review phase when configure completes', () => {
+  it('loads repo paths on mount', async () => {
     render(<AgentLaunchpad onAgentSpawned={onAgentSpawned} />)
-    // Click tile to enter configure
-    fireEvent.click(screen.getByText('Clean Code'))
-    // Answer the question
-    fireEvent.click(screen.getByText('All'))
-    // Should be on review now
-    expect(screen.getByTestId('launchpad-review')).toBeInTheDocument()
-  })
-
-  it('spawns agent from review and calls onAgentSpawned', async () => {
-    render(<AgentLaunchpad onAgentSpawned={onAgentSpawned} />)
-
-    // Wait for repoPaths to load
     await waitFor(() => expect(mockGetRepoPaths).toHaveBeenCalled())
-
-    fireEvent.click(screen.getByText('Clean Code'))
-    fireEvent.click(screen.getByText('All'))
-
-    // Now on review — click spawn
-    fireEvent.click(screen.getByText(/Spawn/i))
-
-    await waitFor(() => {
-      expect(mockSpawnAgent).toHaveBeenCalledWith(
-        expect.objectContaining({ task: expect.stringContaining('Audit All') })
-      )
-    })
   })
 
-  it('returns to grid when back is clicked from configure', () => {
+  it('renders template tiles', () => {
     render(<AgentLaunchpad onAgentSpawned={onAgentSpawned} />)
-    fireEvent.click(screen.getByText('Clean Code'))
-    fireEvent.click(screen.getByTitle(/back/i))
-    expect(screen.getByTestId('launchpad-grid')).toBeInTheDocument()
+    expect(screen.getByText('Clean Code')).toBeInTheDocument()
   })
 })

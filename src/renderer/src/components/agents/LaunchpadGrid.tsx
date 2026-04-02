@@ -1,15 +1,14 @@
 import { useState, useCallback } from 'react'
 import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { CLAUDE_MODELS } from '../../../../shared/models'
-import type { PromptTemplate, RecentTask } from '../../lib/launchpad-types'
+import type { PromptTemplate } from '../../lib/launchpad-types'
 import type { NeonAccent } from '../neon/types'
 
 interface LaunchpadGridProps {
   templates: PromptTemplate[]
-  recents: RecentTask[]
-  onSelectTemplate: (template: PromptTemplate) => void
+  onSelectTemplate: (template: PromptTemplate, repo: string, model: string) => void
   onCustomPrompt: (prompt: string, repo: string, model: string) => void
-  onSelectRecent: (recent: RecentTask) => void
+  spawning: boolean
 }
 
 const ACCENT_VARS: Record<
@@ -60,22 +59,11 @@ const ACCENT_VARS: Record<
   }
 }
 
-function formatRelativeTime(ts: number): string {
-  const seconds = Math.floor((Date.now() - ts) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
-}
-
 export function LaunchpadGrid({
   templates,
-  recents,
   onSelectTemplate,
   onCustomPrompt,
-  onSelectRecent
+  spawning
 }: LaunchpadGridProps) {
   const repos = useRepoOptions()
   const [prompt, setPrompt] = useState('')
@@ -83,8 +71,8 @@ export function LaunchpadGrid({
   const [model, setModel] = useState('sonnet')
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter' && prompt.trim()) {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey && prompt.trim()) {
         e.preventDefault()
         onCustomPrompt(prompt.trim(), repo, model)
       }
@@ -97,7 +85,7 @@ export function LaunchpadGrid({
       {/* Header */}
       <div className="launchpad__header">
         <div className="launchpad__header-dot" />
-        <span className="launchpad__header-title">New Agent Session</span>
+        <span className="launchpad__header-title">New Session</span>
       </div>
 
       {/* Quick Actions */}
@@ -110,6 +98,7 @@ export function LaunchpadGrid({
               key={t.id}
               type="button"
               className="launchpad__tile"
+              disabled={spawning}
               style={
                 {
                   '--tile-bg': vars.bg,
@@ -119,7 +108,7 @@ export function LaunchpadGrid({
                   '--tile-hover-border': vars.hover
                 } as React.CSSProperties
               }
-              onClick={() => onSelectTemplate(t)}
+              onClick={() => onSelectTemplate(t, repo, model)}
             >
               <div className="launchpad__tile-icon">{t.icon}</div>
               <div className="launchpad__tile-name">{t.name}</div>
@@ -129,40 +118,8 @@ export function LaunchpadGrid({
         })}
       </div>
 
-      {/* Recent */}
-      {recents.length > 0 && (
-        <>
-          <div className="launchpad__section-label">Recent</div>
-          <div className="launchpad__recent-list">
-            {recents.map((r, i) => (
-              <button
-                key={`${r.timestamp}-${i}`}
-                type="button"
-                className="launchpad__recent-item"
-                onClick={() => onSelectRecent(r)}
-              >
-                <div className="launchpad__recent-dot" />
-                <span className="launchpad__recent-text">
-                  {r.prompt.length > 80 ? `${r.prompt.slice(0, 80)}...` : r.prompt}
-                </span>
-                {r.timestamp > 0 && (
-                  <span className="launchpad__recent-time">{formatRelativeTime(r.timestamp)}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Bottom Prompt Bar */}
-      <div className="launchpad__prompt-bar">
-        <input
-          className="launchpad__prompt-input"
-          placeholder="Or describe a custom task..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
+      {/* Repo / Model defaults */}
+      <div className="launchpad__defaults-row">
         <button
           type="button"
           className="launchpad__repo-chip"
@@ -186,6 +143,19 @@ export function LaunchpadGrid({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Chat Input */}
+      <div className="launchpad__prompt-bar">
+        <textarea
+          className="launchpad__prompt-input"
+          placeholder="What would you like to work on?"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={2}
+          disabled={spawning}
+        />
       </div>
     </div>
   )
