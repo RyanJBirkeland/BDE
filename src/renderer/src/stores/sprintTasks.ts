@@ -207,7 +207,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       retry_count: 0,
       fast_fail_count: 0,
       template_name: data.template_name ?? null,
-      depends_on: null,
+      depends_on: data.depends_on ?? null,
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString()
     }
@@ -226,7 +226,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         priority: data.priority,
         status: TASK_STATUS.BACKLOG,
         template_name: data.template_name || undefined,
-        playground_enabled: data.playground_enabled || undefined
+        playground_enabled: data.playground_enabled || undefined,
+        depends_on: data.depends_on || undefined
       })) as SprintTask
 
       if (result?.id) {
@@ -330,6 +331,13 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         const merged = { ...t, ...update, depends_on: sanitizeDependsOn((update as any).depends_on ?? t.depends_on) } as SprintTask
         if (merged.status === TASK_STATUS.DONE && merged.pr_url && !merged.pr_status) {
           merged.pr_status = PR_STATUS.OPEN
+        }
+        // Protect pending optimistic fields (same logic as loadData)
+        const pending = s.pendingUpdates[t.id]
+        if (pending && Date.now() - pending.ts <= PENDING_UPDATE_TTL) {
+          for (const field of pending.fields) {
+            ;(merged as any)[field] = (t as any)[field]
+          }
         }
         return merged
       })
