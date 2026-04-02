@@ -1,0 +1,123 @@
+import { useEffect, useRef } from 'react'
+import { toast } from '../stores/toasts'
+import type { SprintTask } from '../../../shared/types'
+
+/** Tracks which LogDrawer is currently open so OS notifications can be suppressed. */
+let openLogDrawerTaskId: string | null = null
+
+export function setOpenLogDrawerTaskId(id: string | null): void {
+  openLogDrawerTaskId = id
+}
+
+// --- Shared dedup — single source of truth across all notification sources ---
+
+const MAX_SEEN_IDS = 500
+
+const notifiedTaskIds = new Set<string>()
+
+function boundSet(set: Set<string>, maxSize: number): void {
+  if (set.size <= maxSize) return
+  const excess = set.size - maxSize
+  let removed = 0
+  for (const key of set) {
+    if (removed >= excess) break
+    set.delete(key)
+    removed++
+  }
+}
+
+/** @internal — exported for testing only */
+export function _resetNotifiedTaskIds(): void {
+  notifiedTaskIds.clear()
+}
+
+export function notifyOnce(taskId: string, title: string, body: string): boolean {
+  if (notifiedTaskIds.has(taskId)) return false
+  // Suppress OS notification when user is already watching this task's LogDrawer
+  if (openLogDrawerTaskId === taskId) return false
+  notifiedTaskIds.add(taskId)
+  boundSet(notifiedTaskIds, MAX_SEEN_IDS)
+  notify(title, body)
+  return true
+}
+
+// --- Helpers ---
+
+function notify(title: string, body: string): void {
+  if (!('Notification' in window)) return
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, silent: false })
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then((perm) => {
+      if (perm === 'granted') new Notification(title, { body })
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
+// useTaskToasts — in-app toast notifications for task state transitions
+// ---------------------------------------------------------------------------
+
+const TOAST_DURATION = 6000
+
+/**
+ * Fires in-app toasts when:
+ * 1. A task transitions to done (from any non-done status)
+ * 2. A task gains a pr_url (was null, now populated)
+ *
+ * Skips the initial render (seeding) and tasks whose LogDrawer is open.
+ */
+export function useTaskToasts(
+  tasks: SprintTask[],
+  logDrawerTaskId: string | null,
+  onViewOutput: (task: SprintTask) => void
+): void {
+  const prevMapRef = useRef<Map<string, SprintTask>>(new Map())
+  const initializedRef = useRef(false)
+  // Stable ref so the effect doesn't re-run when the callback identity changes
+  const onViewOutputRef = useRef(onViewOutput)
+  onViewOutputRef.current = onViewOutput
+
+  useEffect(() => {
+    const prevMap = prevMapRef.current
+    const currentMap = new Map(tasks.map((t) => [t.id, t]))
+
+    // Seed on first render — don't fire toasts for pre-existing state
+    if (!initializedRef.current) {
+      prevMapRef.current = currentMap
+      initializedRef.current = true
+      return
+    }
+
+    for (const task of tasks) {
+      const prev = prevMap.get(task.id)
+      if (!prev) continue
+
+      // Skip if the user is already watching this task's output
+      if (logDrawerTaskId === task.id) continue
+
+      // 1. Agent finished: non-done → done
+      if (prev.status !== 'done' && task.status === 'done') {
+        if (notifiedTaskIds.has(task.id)) continue // OS notification already fired
+        const captured = task
+        toast.info(`Agent finished: ${task.title}`, {
+          action: 'View Output',
+          onAction: () => onViewOutputRef.current(captured),
+          durationMs: TOAST_DURATION
+        })
+      }
+
+      // 2. PR opened: pr_url went from null → non-null
+      if (!prev.pr_url && task.pr_url) {
+        const url = task.pr_url
+        toast.info(`PR opened: ${task.title}`, {
+          action: 'Open PR',
+          onAction: () => window.open(url, '_blank'),
+          durationMs: TOAST_DURATION
+        })
+      }
+    }
+
+    prevMapRef.current = currentMap
+  }, [tasks, logDrawerTaskId])
+}

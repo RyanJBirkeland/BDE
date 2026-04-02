@@ -1,0 +1,86 @@
+import { MAX_LOG_LINES, POLL_LOG_INTERVAL } from './constants'
+
+export interface LogPollerState {
+  logContent: string
+  logNextByte: number
+  logTrimmedLines: number
+}
+
+export function createLogPollerActions(
+  get: () => LogPollerState,
+  set: (s: Partial<LogPollerState>) => void
+): {
+  startLogPolling: (
+    readFn: (fromByte: number) => Promise<{ content: string; nextByte: number }>
+  ) => () => void
+  stopLogPolling: () => void
+} {
+  let logInterval: ReturnType<typeof setInterval> | null = null
+  let visibilityHandler: (() => void) | null = null
+
+  const stop = (): void => {
+    if (logInterval) {
+      clearInterval(logInterval)
+      logInterval = null
+    }
+    if (visibilityHandler) {
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      visibilityHandler = null
+    }
+  }
+
+  return {
+    startLogPolling: (readFn): (() => void) => {
+      stop()
+
+      const poll = async (): Promise<void> => {
+        try {
+          const result = await readFn(get().logNextByte)
+          if (result.content) {
+            let updated = get().logContent + result.content
+            let trimmedLines = get().logTrimmedLines
+
+            const lines = updated.split('\n')
+            if (lines.length > MAX_LOG_LINES) {
+              const excess = lines.length - MAX_LOG_LINES
+              trimmedLines += excess
+              updated = lines.slice(excess).join('\n')
+            }
+
+            set({
+              logContent: updated,
+              logNextByte: result.nextByte,
+              logTrimmedLines: trimmedLines
+            })
+          }
+        } catch {
+          // Log may not exist yet
+        }
+      }
+
+      function startInterval(): void {
+        if (logInterval) clearInterval(logInterval)
+        logInterval = setInterval(poll, POLL_LOG_INTERVAL)
+      }
+
+      visibilityHandler = () => {
+        if (document.hidden) {
+          if (logInterval) {
+            clearInterval(logInterval)
+            logInterval = null
+          }
+        } else {
+          poll()
+          startInterval()
+        }
+      }
+
+      document.addEventListener('visibilitychange', visibilityHandler)
+      poll()
+      startInterval()
+      return stop
+    },
+
+    stopLogPolling: stop
+  }
+}

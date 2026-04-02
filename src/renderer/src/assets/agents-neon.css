@@ -1,0 +1,886 @@
+/* src/renderer/src/assets/agents-neon.css */
+/* ═══════════════════════════════════════════════════════
+   Neon Agents View — Console, Command Bar, Timeline, Live Strip
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Agents Sidebar ── */
+.agents-sidebar {
+  width: 220px;
+  min-width: 180px;
+  max-width: 400px;
+  border-right: 1px solid var(--neon-purple-border);
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--neon-purple-surface, rgba(138,43,226,0.04)), var(--neon-surface-deep, rgba(10,0,21,0.4)));
+  resize: horizontal;
+  overflow: hidden;
+}
+
+/* ── Live Activity Strip ── */
+.live-strip {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-purple-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+
+.live-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.live-strip::-webkit-scrollbar-thumb {
+  background: var(--neon-purple-surface);
+  border-radius: 2px;
+}
+
+/* ── Agent Pill ── */
+.agent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--neon-surface-deep);
+  border: 1px solid var(--neon-cyan-border);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.agent-pill:hover {
+  background: var(--neon-cyan-surface);
+}
+
+.agent-pill--running {
+  animation: neon-pulse 2s ease-in-out infinite;
+  --pulse-shadow-min: 0 0 8px var(--neon-cyan);
+  --pulse-shadow-max: 0 0 16px var(--neon-cyan);
+}
+
+.agent-pill--cyan {
+  border-color: var(--neon-cyan-border);
+}
+
+.agent-pill--cyan:hover {
+  background: var(--neon-cyan-surface);
+}
+
+.agent-pill--pink {
+  border-color: var(--neon-pink-border);
+}
+
+.agent-pill--pink:hover {
+  background: var(--neon-pink-surface);
+}
+
+.agent-pill--blue {
+  border-color: var(--neon-blue-border);
+}
+
+.agent-pill--blue:hover {
+  background: var(--neon-blue-surface);
+}
+
+.agent-pill--orange {
+  border-color: var(--neon-orange-border);
+}
+
+.agent-pill--orange:hover {
+  background: var(--neon-orange-surface);
+}
+
+.agent-pill--purple {
+  border-color: var(--neon-purple-border);
+}
+
+.agent-pill--purple:hover {
+  background: var(--neon-purple-surface);
+}
+
+/* Agent Pill Subcomponents */
+.agent-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agent-pill__name {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--neon-text);
+}
+
+.agent-pill__action {
+  font-size: 11px;
+  color: var(--neon-text-dim);
+}
+
+/* Agent Card Status Spinner */
+.agent-card__status-spinner {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Agent Console ── */
+.agent-console {
+  display: flex;
+  flex-direction: column;
+  background: var(--neon-surface-deep);
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: var(--bde-font-code);
+  height: 100%;
+}
+
+/* ── Console Header ── */
+.console-header {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-dim) 100%);
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-purple-border);
+  flex-shrink: 0;
+}
+
+.console-header__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.console-header__status-dot--running {
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.console-header__status-dot--done {
+  background: var(--neon-cyan);
+  opacity: 0.4;
+}
+
+.console-header__status-dot--failed {
+  background: var(--neon-red);
+  box-shadow: var(--neon-red-glow);
+}
+
+.console-header__status-dot--cancelled {
+  background: var(--neon-orange);
+  opacity: 0.6;
+}
+
+.console-header__task-name {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--neon-text);
+}
+
+.console-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--neon-text-dim);
+  font-family: var(--bde-font-code);
+}
+
+.console-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.console-header__action-btn {
+  background: transparent;
+  border: none;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.console-header__action-btn:hover {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text-muted);
+}
+
+.console-header__action-btn:active {
+  background: var(--neon-surface-subtle);
+}
+
+/* ── Console Cap Banner ── */
+.console-cap-banner {
+  padding: 4px 12px;
+  background: var(--neon-orange-surface);
+  border-bottom: 1px solid var(--neon-orange-border);
+  color: var(--neon-orange);
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── Console Body ── */
+.console-body {
+  height: 100%;
+  overflow: auto;
+  contain: strict;
+}
+
+.console-jump-to-latest {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, var(--neon-purple-border), var(--neon-surface-deep));
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 8px;
+  color: var(--neon-purple);
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: var(--neon-glass-shadow);
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.console-jump-to-latest:hover {
+  background: linear-gradient(135deg, var(--neon-purple-border), var(--neon-surface-deep));
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.console-jump-to-latest:active {
+  transform: translateX(-50%) translateY(0px);
+}
+
+/* ── Console Empty State ── */
+.console-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--neon-text-dim);
+  font-size: 13px;
+  font-family: var(--bde-font-code);
+}
+
+.console-empty-state__spinner {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Console Line ── */
+.console-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  line-height: 1.5;
+  transition: background 100ms ease;
+}
+
+.console-line:hover {
+  background: var(--neon-surface-dim);
+}
+
+/* Error line emphasis */
+.console-line--error {
+  background: var(--neon-red-surface);
+  border-left: 3px solid var(--neon-red);
+  padding-left: 9px;
+}
+
+/* Pending message (optimistic UI) */
+.console-line--pending {
+  opacity: 0.6;
+}
+
+/* Console Line Prefixes */
+.console-prefix {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.console-prefix--agent {
+  color: var(--neon-cyan);
+}
+
+.console-prefix--user {
+  color: var(--neon-pink);
+}
+
+.console-prefix--tool {
+  color: var(--neon-blue);
+}
+
+.console-prefix--think {
+  color: var(--neon-purple);
+}
+
+.console-prefix--error {
+  color: var(--neon-red);
+  text-shadow: var(--neon-red-glow);
+}
+
+.console-prefix--rate {
+  color: var(--neon-orange);
+}
+
+.console-prefix--done {
+  color: var(--neon-cyan);
+}
+
+.console-prefix--play {
+  color: var(--neon-cyan);
+}
+
+/* ── Console Line Components ── */
+.console-line__timestamp {
+  margin-left: auto;
+  color: var(--neon-text-dim);
+  font-size: 10px;
+  flex-shrink: 0;
+  font-family: var(--bde-font-code);
+}
+
+.console-line__content {
+  flex: 1;
+  overflow: hidden;
+  color: var(--neon-text-muted);
+  word-break: break-word;
+}
+
+/* ── Collapsible Lines ── */
+.console-line--collapsible {
+  cursor: pointer;
+  flex-direction: column;
+}
+
+.console-line--collapsible:hover {
+  background: var(--neon-surface-dim);
+}
+
+.console-line__chevron {
+  flex-shrink: 0;
+  color: var(--neon-text-dim);
+  transition: transform 150ms ease, color 150ms ease;
+  font-size: 10px;
+}
+
+.console-line--collapsible:hover .console-line__chevron {
+  color: var(--neon-text-muted);
+}
+
+.console-line--expanded .console-line__chevron {
+  transform: rotate(90deg);
+}
+
+/* ── Command Bar ── */
+.command-bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, var(--neon-surface-dim) 0%, var(--neon-purple-surface) 100%);
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border-top: 1px solid var(--neon-purple-border);
+  flex-shrink: 0;
+}
+
+.command-bar__prompt {
+  color: var(--neon-purple);
+  font-family: var(--bde-font-code);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.command-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--neon-text);
+  font-family: var(--bde-font-code);
+  font-size: 13px;
+  outline: none;
+}
+
+.command-bar__input::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.command-bar__input:disabled {
+  color: var(--neon-text-dim);
+  cursor: not-allowed;
+}
+
+.command-bar--disabled {
+  opacity: 0.5;
+}
+
+.command-bar--disabled .command-bar__prompt {
+  color: var(--neon-text-dim);
+}
+
+/* ── Command Autocomplete ── */
+.command-autocomplete {
+  position: absolute;
+  bottom: 48px;
+  left: 12px;
+  min-width: 250px;
+  background: linear-gradient(135deg, var(--neon-purple-surface), var(--neon-surface-deep));
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 10px;
+  padding: 6px;
+  z-index: 100;
+  box-shadow: var(--neon-glass-shadow);
+}
+
+.command-autocomplete__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--neon-text-muted);
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.command-autocomplete__item:hover,
+.command-autocomplete__item--active {
+  background: var(--neon-purple-surface);
+  color: var(--neon-text);
+}
+
+.command-autocomplete__item-command {
+  font-weight: 600;
+  color: var(--neon-purple);
+}
+
+.command-autocomplete__item-description {
+  font-size: 11px;
+  color: var(--neon-text-dim);
+}
+
+/* ── Console Search Bar ── */
+.console-search-bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, var(--neon-cyan-surface) 0%, var(--neon-surface-dim) 100%);
+  backdrop-filter: var(--neon-glass-blur);
+  -webkit-backdrop-filter: var(--neon-glass-blur);
+  border-bottom: 1px solid var(--neon-cyan-border);
+  flex-shrink: 0;
+}
+
+.console-search-bar__icon {
+  color: var(--neon-cyan);
+  flex-shrink: 0;
+}
+
+.console-search-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--neon-text);
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  outline: none;
+}
+
+.console-search-bar__input::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.console-search-bar__count {
+  font-size: 11px;
+  color: var(--neon-text-muted);
+  font-family: var(--bde-font-code);
+  flex-shrink: 0;
+}
+
+.console-search-bar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.console-search-bar__nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.console-search-bar__nav-btn:hover:not(:disabled) {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+}
+
+.console-search-bar__nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.console-search-bar__close-btn {
+  background: transparent;
+  border: none;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms ease, color 100ms ease;
+  flex-shrink: 0;
+}
+
+.console-search-bar__close-btn:hover {
+  background: var(--neon-red-surface);
+  color: var(--neon-red);
+}
+
+/* ── Console Search Highlighting ── */
+.console-line--search-match {
+  background: var(--neon-orange-surface);
+  border-left: 2px solid var(--neon-orange);
+  padding-left: 10px;
+}
+
+.console-line--search-active {
+  background: var(--neon-cyan-surface);
+  border-left: 2px solid var(--neon-cyan);
+  padding-left: 10px;
+  box-shadow: var(--neon-cyan-glow);
+}
+
+/* ── Markdown Rendering in Agent Text ── */
+.console-md-bold {
+  font-weight: 700;
+  color: var(--neon-text);
+}
+
+.console-md-code {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.console-md-heading {
+  font-weight: 700;
+  color: var(--neon-text);
+  font-size: 13px;
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+/* ── Tool-Specific Icons ── */
+.console-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 10px;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-family: var(--bde-font-code);
+}
+
+.console-tool-icon--bash { background: var(--neon-orange-surface); color: var(--neon-orange); }
+.console-tool-icon--read { background: var(--neon-blue-surface); color: var(--neon-blue); }
+.console-tool-icon--edit,
+.console-tool-icon--write { background: var(--neon-cyan-surface); color: var(--neon-cyan); }
+.console-tool-icon--grep { background: var(--neon-purple-surface); color: var(--neon-purple); }
+.console-tool-icon--glob { background: var(--neon-orange-surface); color: var(--neon-orange); }
+.console-tool-icon--agent { background: var(--neon-pink-surface); color: var(--neon-pink); }
+.console-tool-icon--default { background: var(--neon-blue-surface); color: var(--neon-blue); }
+
+/* ── Completion Summary Card ── */
+.console-completion-card {
+  margin: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--neon-cyan-surface) 0%, var(--neon-surface-deep) 100%);
+  border: 1px solid var(--neon-cyan-border);
+  font-family: var(--bde-font-code);
+}
+
+.console-completion-card--failed {
+  background: linear-gradient(135deg, var(--neon-red-surface) 0%, var(--neon-surface-deep) 100%);
+  border-color: var(--neon-red-border);
+}
+
+.console-completion-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.console-completion-card__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 12px;
+}
+
+.console-completion-card__stat {
+  text-align: center;
+}
+
+.console-completion-card__stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--bde-font-code);
+}
+
+.console-completion-card__stat-value--cyan { color: var(--neon-cyan); }
+.console-completion-card__stat-value--purple { color: var(--neon-purple); }
+.console-completion-card__stat-value--orange { color: var(--neon-orange); }
+.console-completion-card__stat-value--red { color: var(--neon-red); }
+
+.console-completion-card__stat-label {
+  font-size: 10px;
+  color: var(--neon-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.console-completion-card__header--success { color: var(--neon-cyan); }
+.console-completion-card__header--failed { color: var(--neon-red); }
+
+/* ── Tool Group ── */
+.console-tool-group__items {
+  padding-left: 20px;
+  border-left: 2px solid var(--neon-blue-border);
+  margin-left: 6px;
+  margin-top: 4px;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ── Stderr Content ── */
+.console-line__content--stderr {
+  color: var(--neon-orange);
+}
+
+/* ── Grouped Text Blocks ── */
+.console-line__content--grouped {
+  border-left: 2px solid var(--neon-cyan-border);
+  padding-left: 8px;
+}
+
+/* ── Paragraph Break Spacer ── */
+.console-md-paragraph-break {
+  height: 8px;
+}
+
+/* ── Console Badge ── */
+.console-badge {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-family: var(--bde-font-code);
+}
+
+.console-badge--success {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+}
+
+.console-badge--danger {
+  background: var(--neon-red-surface);
+  color: var(--neon-red);
+}
+
+.console-badge--purple {
+  background: var(--neon-purple-surface);
+  color: var(--neon-purple);
+}
+
+/* ── Expanded Content ── */
+.console-line__expanded-content {
+  padding-left: 24px;
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  color: var(--neon-text-muted);
+  white-space: pre-wrap;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.console-line__show-full {
+  margin-left: 24px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 6px;
+  color: var(--neon-purple);
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease;
+}
+
+.console-line__show-full:hover {
+  background: var(--neon-purple-surface);
+  border-color: var(--neon-purple);
+}
+
+.console-line__detail {
+  padding-left: 24px;
+}
+
+.console-line__detail-group {
+  padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.console-line__detail-label {
+  font-size: 10px;
+  color: var(--neon-text-dim);
+  margin-bottom: 4px;
+}
+
+.console-line__tool-summary {
+  font-size: 12px;
+  color: var(--neon-text);
+  font-family: var(--bde-font-code);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--neon-purple-border);
+  margin-bottom: 4px;
+}
+
+.console-line__json {
+  margin: 0;
+  padding: 8px;
+  background: var(--neon-surface-dim);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  color: var(--neon-text-muted);
+  overflow: auto;
+  max-height: 240px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Agent List Repo Filter Chips ── */
+.agent-list__repo-chips {
+  flex-shrink: 0;
+}
+
+.agent-list__repo-chip {
+  padding: 4px 10px;
+  background: var(--neon-surface-deep);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 6px;
+  color: var(--neon-text-dim);
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease, color 100ms ease;
+  white-space: nowrap;
+}
+
+.agent-list__repo-chip:hover {
+  background: var(--neon-purple-surface);
+  border-color: var(--neon-purple);
+  color: var(--neon-text-muted);
+}
+
+.agent-list__repo-chip--active {
+  background: var(--neon-purple-surface);
+  border-color: var(--neon-purple);
+  color: var(--neon-purple);
+  box-shadow: 0 0 8px var(--neon-purple-glow);
+}
+
+/* ── Reduced Motion Overrides ── */
+@media (prefers-reduced-motion: reduce) {
+  .agent-pill--running {
+    animation: none;
+  }
+
+  .console-line__chevron {
+    transition: none;
+  }
+}

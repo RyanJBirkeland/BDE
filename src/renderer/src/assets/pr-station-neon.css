@@ -1,0 +1,551 @@
+/* ────────────────────────────────────────────────────────
+   PR Station - Neon Design Token Migration
+
+   This file overrides color/surface tokens in pr-station.css,
+   migrating from BDE tokens to neon tokens.
+
+   SCOPE: PR Station only (.pr-station*, .pr-detail*,
+   .pr-review*, .pr-conversation*, etc.)
+
+   Dynamic inline colors (REPO_COLORS, label.color) are
+   preserved in components — not overridden here.
+──────────────────────────────────────────────────────── */
+
+/* ── PR Station: Root ─────────────────────────────────── */
+
+.pr-station {
+  background: var(--neon-bg);
+}
+
+/* ── PR Station: View Header ───────────────────────────── */
+
+.pr-station__view-header {
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.pr-station__view-header::after {
+  background: linear-gradient(90deg, transparent, var(--neon-cyan-border), transparent);
+}
+
+.pr-station__view-title {
+  color: var(--neon-text);
+  text-shadow: 0 0 8px var(--neon-cyan);
+}
+
+/* ── PR Station: Filters ───────────────────────────────── */
+
+.pr-station-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.pr-station-filters__repos {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pr-station-filters__sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pr-station-filters__sort-label {
+  font-size: 10px;
+  color: var(--neon-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+}
+
+.pr-station-filters__sort-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pr-station-filters__sort-select {
+  appearance: none;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 4px;
+  color: var(--neon-text);
+  font-size: 12px;
+  padding: 3px 24px 3px 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.pr-station-filters__sort-select:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 6px var(--neon-cyan-glow);
+}
+
+.pr-station-filters__sort-icon {
+  position: absolute;
+  right: 6px;
+  color: var(--neon-text-muted);
+  pointer-events: none;
+}
+
+/* ── PR Station: Scoped button overrides ───────────────── */
+
+.pr-station-filters .bde-btn--ghost {
+  color: var(--neon-text-muted);
+  border-color: transparent;
+  background: var(--neon-surface-dim);
+}
+
+.pr-station-filters .bde-btn--ghost:hover {
+  color: var(--neon-text);
+  background: var(--neon-surface-subtle);
+}
+
+.pr-station-filters .bde-btn--primary {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+  border-color: var(--neon-cyan);
+}
+
+/* ── PR Station: Panels ────────────────────────────────── */
+
+.pr-station__list-panel {
+  border-right: 1px solid var(--neon-cyan-border);
+}
+
+.pr-station__detail-header {
+  border-bottom: 1px solid var(--neon-cyan-border);
+  background: var(--neon-bg);
+}
+
+/* ── PR Station: Tabs ──────────────────────────────────── */
+
+.pr-station__tab {
+  color: var(--neon-text-muted);
+}
+
+.pr-station__tab:hover {
+  color: var(--neon-text);
+}
+
+.pr-station__tab--active {
+  color: var(--neon-cyan);
+  border-bottom-color: var(--neon-cyan);
+}
+
+/* ── PR Station: Empty State ───────────────────────────── */
+
+.pr-station__empty-detail {
+  color: var(--neon-text-dim);
+}
+
+.pr-station__detail-title {
+  color: var(--neon-text);
+}
+
+/* ── PR Station List ───────────────────────────────────── */
+
+.pr-station-list__header {
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.pr-station-list__title {
+  color: var(--neon-text);
+}
+
+/* ── PR Station List Row ───────────────────────────────── */
+
+.pr-station-list__row:hover {
+  background: var(--neon-cyan-surface);
+}
+
+.pr-station-list__row--selected {
+  background: var(--neon-cyan-surface);
+  border-left-color: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.pr-station-list__number {
+  color: var(--neon-text-muted);
+}
+
+.pr-station-list__draft {
+  color: var(--neon-orange);
+  border: 1px solid var(--neon-orange);
+}
+
+.pr-station-list__title-text {
+  color: var(--neon-text);
+}
+
+.pr-station-list__meta {
+  color: var(--neon-text-dim);
+}
+
+.pr-station-list__additions {
+  color: var(--neon-cyan);
+}
+
+.pr-station-list__deletions {
+  color: var(--neon-red);
+}
+
+.pr-station-list__time {
+  color: var(--neon-text-dim);
+}
+
+/* ── CI Status Badges ──────────────────────────────────── */
+
+.pr-station__ci--pass {
+  color: var(--neon-cyan);
+}
+
+.pr-station__ci--fail {
+  color: var(--neon-red);
+}
+
+.pr-station__ci--pending {
+  color: var(--neon-orange);
+}
+
+.pr-station__ci--none {
+  color: var(--neon-text-dim);
+}
+
+/* ── PR Detail Panel ───────────────────────────────────── */
+
+.pr-detail--error {
+  color: var(--neon-text-dim);
+}
+
+/* ── PR Detail: Header ─────────────────────────────────── */
+
+.pr-detail__header {
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.pr-detail__title {
+  color: var(--neon-text);
+}
+
+.pr-detail__number {
+  color: var(--neon-text-muted);
+}
+
+.pr-detail__meta {
+  color: var(--neon-text-muted);
+}
+
+.pr-detail__author {
+  color: var(--neon-text);
+}
+
+.pr-detail__draft {
+  color: var(--neon-orange);
+  border: 1px solid var(--neon-orange);
+}
+
+.pr-detail__branches {
+  color: var(--neon-text-muted);
+}
+
+.pr-detail__branch-arrow {
+  color: var(--neon-text-dim);
+}
+
+/* Keep label colors dynamic (from GitHub API) */
+
+.pr-detail__stats {
+  color: var(--neon-text);
+}
+
+.pr-detail__stat--add {
+  color: var(--neon-cyan);
+}
+
+.pr-detail__stat--del {
+  color: var(--neon-red);
+}
+
+/* ── PR Detail: Sections ───────────────────────────────── */
+
+.pr-detail__section-title {
+  color: var(--neon-text);
+}
+
+.pr-detail__no-data {
+  color: var(--neon-text-dim);
+}
+
+/* ── PR Detail: Body / Markdown ────────────────────────── */
+
+.pr-detail__body {
+  color: var(--neon-text);
+  background: var(--neon-cyan-surface);
+}
+
+.pr-detail__body h1,
+.pr-detail__body h2,
+.pr-detail__body h3 {
+  color: var(--neon-text);
+}
+
+.pr-detail__body code {
+  background: var(--neon-surface-deep);
+}
+
+.pr-detail__body strong {
+  color: var(--neon-text);
+}
+
+/* ── PR Detail: CI Checks ──────────────────────────────── */
+
+.pr-detail__check {
+  color: var(--neon-text);
+  background: var(--neon-cyan-surface);
+}
+
+.pr-detail__check--pass {
+  color: var(--neon-cyan);
+}
+
+.pr-detail__check--fail {
+  color: var(--neon-red);
+}
+
+.pr-detail__check--pending {
+  color: var(--neon-orange);
+}
+
+.pr-detail__check-name {
+  color: var(--neon-text);
+}
+
+.pr-detail__check-link {
+  color: var(--neon-text-dim);
+}
+
+.pr-detail__check-link:hover {
+  color: var(--neon-text);
+}
+
+/* ── PR Detail: Changed Files ──────────────────────────── */
+
+.pr-detail__file {
+  background: var(--neon-cyan-surface);
+}
+
+.pr-detail__file-icon--added {
+  color: var(--neon-cyan);
+}
+
+.pr-detail__file-icon--removed {
+  color: var(--neon-red);
+}
+
+.pr-detail__file-icon--modified {
+  color: var(--neon-orange);
+}
+
+.pr-detail__filename {
+  color: var(--neon-text);
+}
+
+.pr-detail__file-badge--added {
+  color: var(--neon-cyan);
+  background: var(--neon-cyan-surface);
+}
+
+.pr-detail__file-badge--removed {
+  color: var(--neon-red);
+  background: var(--neon-red-surface);
+}
+
+.pr-detail__file-badge--modified {
+  color: var(--neon-orange);
+  background: var(--neon-orange-surface);
+}
+
+.pr-detail__file-add {
+  color: var(--neon-cyan);
+}
+
+.pr-detail__file-del {
+  color: var(--neon-red);
+}
+
+/* ── Conflict Banner ───────────────────────────────────── */
+
+.pr-conflict-banner {
+  background: var(--neon-orange-surface);
+  border: 1px solid var(--neon-orange-border);
+}
+
+.pr-conflict-banner__header {
+  color: var(--neon-orange);
+}
+
+.pr-conflict-banner__loading {
+  color: var(--neon-text-dim);
+}
+
+.pr-conflict-banner__file {
+  color: var(--neon-text-muted);
+  background: var(--neon-cyan-surface);
+}
+
+/* ── Reviews ───────────────────────────────────────────── */
+
+.pr-review {
+  background: var(--neon-cyan-surface);
+}
+
+.pr-review__author {
+  color: var(--neon-text);
+}
+
+.pr-review__time {
+  color: var(--neon-text-dim);
+}
+
+.pr-review__badge--approved {
+  color: var(--neon-cyan);
+  background: var(--neon-cyan-surface);
+}
+
+.pr-review__badge--changes {
+  color: var(--neon-red);
+  background: var(--neon-red-surface);
+}
+
+.pr-review__badge--commented {
+  color: var(--neon-text-muted);
+  background: var(--neon-surface-deep);
+}
+
+.pr-review__badge--dismissed {
+  color: var(--neon-text-dim);
+  background: var(--neon-surface-deep);
+}
+
+.pr-review__body {
+  color: var(--neon-text);
+}
+
+.pr-review__body code {
+  background: var(--neon-surface-deep);
+}
+
+/* ── Conversation ──────────────────────────────────────── */
+
+.pr-conversation__comment {
+  background: var(--neon-cyan-surface);
+}
+
+.pr-conversation__author {
+  color: var(--neon-text);
+}
+
+.pr-conversation__time {
+  color: var(--neon-text-dim);
+}
+
+.pr-conversation__body {
+  color: var(--neon-text);
+}
+
+.pr-conversation__body code {
+  background: var(--neon-surface-deep);
+}
+
+.pr-conversation__thread {
+  border: 1px solid var(--neon-cyan-border);
+}
+
+.pr-conversation__thread-file {
+  background: var(--neon-surface-deep);
+  color: var(--neon-text-muted);
+  border-bottom: 1px solid var(--neon-cyan-border);
+}
+
+.pr-conversation__thread-line {
+  color: var(--neon-cyan);
+}
+
+.pr-conversation__thread .pr-conversation__comment + .pr-conversation__comment {
+  border-top: 1px solid var(--neon-cyan-border);
+}
+
+/* ── Review Banner ─────────────────────────────────────── */
+
+.pr-review-banner {
+  background: var(--neon-cyan-surface);
+  border-bottom: 1px solid var(--neon-cyan-border);
+  color: var(--neon-text);
+}
+
+.pr-review-banner__count {
+  color: var(--neon-cyan);
+}
+
+/* ── Review Submit Dialog ──────────────────────────────── */
+
+.review-dialog-backdrop {
+  background: var(--bde-overlay);
+  backdrop-filter: var(--neon-glass-blur);
+}
+
+.review-dialog {
+  background: var(--neon-bg);
+  border: 1px solid var(--neon-cyan-border);
+  box-shadow: var(--neon-purple-glow);
+}
+
+.review-dialog__title {
+  color: var(--neon-text);
+}
+
+.review-dialog__body {
+  color: var(--neon-text);
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan-border);
+}
+
+.review-dialog__body:focus {
+  border-color: var(--neon-cyan);
+}
+
+.review-dialog__event:hover {
+  background: var(--neon-cyan-surface);
+}
+
+.review-dialog__event input[type="radio"] {
+  accent-color: var(--neon-cyan);
+}
+
+.review-dialog__event-label {
+  color: var(--neon-text);
+}
+
+.review-dialog__event-desc {
+  color: var(--neon-text-muted);
+}
+
+.review-dialog__pending-count {
+  color: var(--neon-text-muted);
+  background: var(--neon-cyan-surface);
+}
+
+/* ── Skeleton Loaders ──────────────────────────────────── */
+
+.pr-detail__skeleton-header,
+.pr-detail__skeleton-body {
+  /* Pulse animation looks correct against neon void background */
+  /* Uses .skeleton class from design-system.css */
+}

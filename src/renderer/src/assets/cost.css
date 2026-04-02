@@ -1,0 +1,338 @@
+/* ── Cost view ─────────────────────────────────────────── */
+
+.cost-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  overflow-y: auto;
+  gap: 20px;
+}
+
+.cost-view--glass {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cost-view__scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cost-view__header {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bde-border);
+  background: var(--glass-tint-dark);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.cost-view__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: var(--bde-header-gradient);
+}
+
+.cost-view__title {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--color-queued) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.cost-view__header-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.cost-view__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--bde-text-muted);
+  font-size: var(--bde-size-md);
+}
+
+/* ── Two-panel layout ────────────────────────────────── */
+
+.cost-view__panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── Cost panel (shared base) ────────────────────────── */
+
+.cost-panel {
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-lg);
+  background: var(--bde-surface);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cost-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.cost-panel--blue::before {
+  background: var(--bde-info);
+}
+
+.cost-panel--amber::before {
+  background: var(--bde-warning);
+}
+
+.cost-panel__title {
+  font-size: var(--bde-size-lg);
+  font-weight: 700;
+  color: var(--bde-text);
+  margin: 0;
+}
+
+.cost-panel__badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: var(--bde-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cost-panel__badge--blue {
+  background: var(--bde-info-dim);
+  color: var(--bde-info);
+  border: 1px solid var(--bde-info);
+}
+
+.cost-panel__badge--amber {
+  background: var(--bde-warning-dim);
+  color: var(--bde-warning);
+  border: 1px solid var(--bde-warning);
+}
+
+.cost-panel__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cost-panel__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cost-panel__stat--muted {
+  opacity: 0.4;
+}
+
+.cost-panel__stat-label {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cost-panel__stat-value {
+  font-size: var(--bde-size-lg);
+  font-weight: 600;
+  font-family: var(--bde-font-code);
+  color: var(--bde-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cost-panel__stat-note {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  font-style: italic;
+}
+
+.cost-panel__placeholder {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-dim, #555);
+  margin: 0;
+}
+
+/* ── Section title ───────────────────────────────────── */
+
+.cost-section__title {
+  font-size: var(--bde-size-sm);
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px;
+}
+
+/* ── Task table ──────────────────────────────────────── */
+
+.cost-view__table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-lg);
+}
+
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--bde-size-md);
+}
+
+.cost-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bde-surface);
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-muted);
+  border-bottom: 1px solid var(--bde-border);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  user-select: none;
+}
+
+.cost-table__sortable {
+  cursor: pointer;
+}
+
+.cost-table__sortable:hover {
+  color: var(--bde-text);
+}
+
+.cost-table th.cost-table__num:not(.cost-table__sortable) {
+  cursor: default;
+}
+
+.cost-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bde-border);
+  color: var(--bde-text);
+}
+
+.cost-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cost-table tbody tr {
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.cost-table tbody tr:hover {
+  background: var(--bde-hover-subtle);
+}
+
+/* Row cost tiers */
+.cost-table__row--green td:first-child {
+  border-left: 3px solid var(--bde-success);
+}
+
+.cost-table__row--yellow td:first-child {
+  border-left: 3px solid var(--bde-warning);
+}
+
+.cost-table__row--red td:first-child {
+  border-left: 3px solid var(--bde-danger);
+}
+
+.cost-table__row--gray {
+  opacity: 0.45;
+}
+
+.cost-table__row--gray td:first-child {
+  border-left: 3px solid var(--bde-text-dim);
+}
+
+.cost-table__num {
+  text-align: right !important;
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-sm);
+}
+
+.cost-table__session {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cost-table__key {
+  color: var(--bde-text);
+}
+
+.cost-table__model {
+  color: var(--bde-text-muted);
+  font-size: var(--bde-size-sm);
+}
+
+.cost-table__repo-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--bde-border);
+  border-radius: 10px;
+  font-size: var(--bde-size-xs);
+  font-weight: 500;
+  color: var(--bde-text-muted);
+}
+
+.cost-table__cost {
+  color: var(--bde-accent);
+  font-weight: 500;
+}
+
+.cost-table__date {
+  color: var(--bde-text-muted);
+  font-size: var(--bde-size-xs);
+  white-space: nowrap;
+}
+
+.cost-table__pr-link {
+  color: var(--bde-accent);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: background 100ms ease;
+}
+
+.cost-table__pr-link:hover {
+  background: var(--bde-accent-dim);
+}
+
+.cost-table__no-pr {
+  color: var(--bde-text-dim, #555);
+  font-size: var(--bde-size-xs);
+}

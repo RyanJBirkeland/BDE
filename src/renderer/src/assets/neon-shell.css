@@ -1,0 +1,330 @@
+/* src/renderer/src/assets/neon-shell.css */
+/* ═══════════════════════════════════════════════════════
+   Neon App Shell — Header, Sidebar, Tooltips
+   ═══════════════════════════════════════════════════════ */
+
+/* ── App Shell Background ── */
+.app-shell {
+  background: var(--neon-bg);
+}
+
+.app-shell__body {
+  background: var(--neon-bg);
+}
+
+/* ── Unified Header ── */
+.unified-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  border-bottom: 1px solid var(--neon-purple-border);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  /* macOS traffic lights (hiddenInset) need ~80px clearance on the left */
+  padding-left: 80px;
+}
+
+.unified-header__logo {
+  width: 44px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--neon-purple-surface);
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.unified-header__logo:hover {
+  background: var(--neon-purple-surface);
+}
+
+.unified-header__logo-letter {
+  color: var(--neon-purple);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-shadow: var(--neon-purple-glow);
+}
+
+.unified-header__tabs {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding: 0 8px;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.unified-header__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.unified-header__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0 14px;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+/* ── Header Tab ── */
+.header-tab {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  border-radius: 8px 8px 0 0;
+  transition: color 150ms ease, background 150ms ease;
+  white-space: nowrap;
+  position: relative;
+  bottom: -1px;
+  border: 1px solid transparent;
+  border-bottom: none;
+}
+
+.header-tab:hover {
+  color: var(--neon-text-muted);
+  background: var(--neon-surface-dim);
+}
+
+.header-tab--active {
+  height: 34px;
+  color: var(--neon-text);
+  background: var(--neon-surface-deep);
+  border-color: var(--neon-purple-border);
+  border-bottom-color: transparent;
+  font-weight: 500;
+}
+
+.header-tab__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+  flex-shrink: 0;
+}
+
+.header-tab__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  transition: color 100ms ease, background 100ms ease;
+  background: none;
+  border: none;
+  padding: 0;
+  opacity: 0;
+}
+
+.header-tab:hover .header-tab__close {
+  opacity: 1;
+}
+
+.header-tab__close:hover {
+  color: var(--neon-text);
+  background: var(--neon-surface-subtle);
+}
+
+/* ── Neon Sidebar ── */
+.neon-sidebar {
+  width: 52px;
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  border-right: 1px solid var(--neon-purple-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+.neon-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  flex: 1;
+  padding: 0 6px;
+}
+
+.neon-sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 8px;
+}
+
+/* ── Sidebar Item ── */
+.sidebar-item {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background 150ms ease, color 150ms ease;
+  color: var(--neon-text-muted);
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.sidebar-item:hover {
+  background: var(--neon-purple-surface);
+  color: var(--neon-text);
+}
+
+.sidebar-item--active {
+  background: var(--neon-purple-surface);
+  color: var(--neon-purple);
+  box-shadow: inset 3px 0 0 var(--neon-purple);
+}
+
+.sidebar-item__open-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 4px var(--neon-cyan);
+}
+
+/* ── Neon Tooltip ── */
+.neon-tooltip {
+  position: fixed;
+  z-index: 1000;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--neon-purple-surface), var(--neon-surface-deep));
+  border: 1px solid var(--neon-purple-border);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: var(--neon-glass-shadow);
+  color: var(--neon-text);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: neon-tooltip-in 150ms ease forwards;
+}
+
+.neon-tooltip__shortcut {
+  color: var(--neon-purple);
+  margin-left: 8px;
+  font-size: 10px;
+  font-family: var(--bde-font-code);
+}
+
+@keyframes neon-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Overflow Menu ── */
+.overflow-menu {
+  position: fixed;
+  z-index: 100;
+  min-width: 200px;
+}
+
+.overflow-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--neon-text-muted);
+  font-size: 12px;
+  transition: background 100ms ease, color 100ms ease;
+  border-radius: 6px;
+}
+
+.overflow-menu__item:hover {
+  background: var(--neon-purple-surface);
+  color: var(--neon-text);
+}
+
+.overflow-menu__item-pin {
+  margin-left: auto;
+  color: var(--neon-purple);
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.overflow-menu__item:hover .overflow-menu__item-pin {
+  opacity: 1;
+}
+
+/* ── Slim Panel Label (unfocused panels) ── */
+.panel-label-slim {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 10px;
+  color: var(--neon-text-dim);
+  background: var(--neon-surface-deep);
+  border-bottom: 1px solid var(--bde-border);
+  cursor: pointer;
+  transition: color 100ms ease;
+  flex-shrink: 0;
+}
+
+.panel-label-slim:hover {
+  color: var(--neon-text-muted);
+}
+
+/* ── Model Badge ── */
+.sidebar-model-badge {
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: var(--neon-purple-surface);
+  border: 1px solid var(--neon-purple-border);
+  font-size: 8px;
+  color: var(--neon-purple);
+  font-family: var(--bde-font-code);
+  text-align: center;
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .neon-tooltip {
+    animation: none;
+  }
+}

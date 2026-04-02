@@ -1,0 +1,604 @@
+/* src/renderer/src/assets/task-workbench-neon.css */
+/* ═══════════════════════════════════════════════════════
+   Neon Task Workbench — Form, Spec Editor, Checks, Actions, Copilot
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Shell ── */
+.wb {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family: var(--bde-font-code);
+  background: var(--neon-bg);
+}
+
+.wb__copilot-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.wb__copilot-toggle button {
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 6px;
+  color: var(--neon-cyan);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.wb__copilot-toggle button:hover {
+  background: var(--neon-cyan-surface);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb__separator {
+  width: 1px;
+  background: var(--neon-surface-dim);
+  cursor: col-resize;
+}
+
+/* ── Form ── */
+.wb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.wb-form__heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--neon-cyan);
+}
+
+.wb-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wb-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wb-form__field--row {
+  flex-direction: row;
+  gap: 12px;
+}
+
+.wb-form__field--flex {
+  flex: 1;
+}
+
+.wb-form__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neon-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wb-form__input {
+  padding: 10px 12px;
+  background: var(--bde-overlay);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 6px;
+  color: var(--neon-text);
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-form__input::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.wb-form__input:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-form__select {
+  padding: 10px 12px;
+  background: var(--bde-overlay);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 6px;
+  color: var(--neon-text);
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-form__select:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-form__toggle {
+  background: none;
+  border: none;
+  color: var(--neon-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: color 150ms ease;
+}
+
+.wb-form__toggle:hover {
+  color: var(--neon-text);
+}
+
+.wb-form__advanced {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wb-form__checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-form__checkbox-row input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.wb-form__checkbox-label {
+  margin: 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--neon-text);
+}
+
+/* ── Spec Editor ── */
+.wb-spec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-spec__toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wb-spec__btn {
+  background: none;
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  color: var(--neon-text-muted);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.wb-spec__btn:hover {
+  background: var(--neon-surface-dim);
+  border-color: var(--bde-border-hover);
+  color: var(--neon-text);
+}
+
+.wb-spec__btn--primary {
+  background: var(--neon-cyan-surface);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.wb-spec__btn--primary:hover {
+  background: var(--neon-cyan-surface);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-spec__btn--primary:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.wb-spec__btn--research {
+  margin-left: auto;
+}
+
+.wb-spec__textarea {
+  min-height: 200px;
+  max-height: 60vh;
+  resize: vertical;
+  padding: 12px;
+  background: var(--bde-overlay);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 8px;
+  color: var(--neon-text);
+  font-size: 13px;
+  font-family: var(--bde-font-code);
+  line-height: 1.6;
+  outline: none;
+  width: 100%;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-spec__textarea::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.wb-spec__textarea:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+/* ── Readiness Checks ── */
+.wb-checks {
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--bde-overlay);
+}
+
+.wb-checks--has-fail {
+  border-color: var(--neon-red);
+  box-shadow: var(--neon-red-glow);
+}
+
+.wb-checks__summary {
+  background: none;
+  border: none;
+  color: var(--neon-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  font-size: 12px;
+  padding: 0;
+  font-family: inherit;
+}
+
+.wb-checks__icons {
+  display: flex;
+  gap: 4px;
+}
+
+.wb-checks__count {
+  color: var(--neon-text-muted);
+  margin-left: auto;
+}
+
+.wb-checks__list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wb-checks__item {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.wb-checks__item-label {
+  color: var(--neon-text);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.wb-checks__item-msg {
+  color: var(--neon-text-muted);
+}
+
+/* ── Check Icons (Lucide) ── */
+.wb-check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.wb-check-icon--pass { color: var(--neon-cyan); }
+.wb-check-icon--warn { color: var(--bde-warning, #ffa500); }
+.wb-check-icon--fail { color: var(--neon-red); }
+.wb-check-icon--pending {
+  color: var(--neon-text-dim);
+  animation: bde-spin 1.5s linear infinite;
+}
+
+@keyframes bde-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Actions ── */
+.wb-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.wb-actions__btn {
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-actions__btn--secondary {
+  background: none;
+  border: 1px solid var(--neon-purple-border);
+  color: var(--neon-text);
+  cursor: pointer;
+}
+
+.wb-actions__btn--secondary:hover:not(:disabled) {
+  border-color: var(--bde-border-hover);
+  background: var(--neon-surface-dim);
+}
+
+.wb-actions__btn--secondary:disabled {
+  color: var(--neon-text-dim);
+  cursor: not-allowed;
+}
+
+.wb-actions__btn--primary {
+  background: var(--neon-purple);
+  border: none;
+  color: var(--neon-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wb-actions__btn--primary:hover:not(:disabled) {
+  box-shadow: var(--neon-purple-glow);
+}
+
+.wb-actions__btn--primary:disabled {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text-dim);
+  cursor: not-allowed;
+}
+
+.wb-actions__btn--launch {
+  background: var(--neon-cyan);
+  border: none;
+  color: var(--neon-bg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wb-actions__btn--launch:hover:not(:disabled) {
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-actions__btn--launch:disabled {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text-dim);
+  cursor: not-allowed;
+}
+
+.wb-actions__btn--ghost {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+}
+
+.wb-actions__btn--ghost:hover:not(:disabled) {
+  color: var(--neon-text);
+  border-color: var(--neon-purple-border);
+}
+
+/* ── Copilot ── */
+.wb-copilot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-left: 1px solid var(--neon-purple-border);
+  background: var(--neon-surface-deep);
+}
+
+.wb-copilot__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--neon-purple-border);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, transparent 100%);
+}
+
+.wb-copilot__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--neon-purple);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wb-copilot__close {
+  background: none;
+  border: none;
+  color: var(--neon-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: color 150ms ease;
+}
+
+.wb-copilot__close:hover {
+  color: var(--neon-text);
+}
+
+.wb-copilot__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-copilot__bubble {
+  max-width: 90%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--neon-text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wb-copilot__bubble--user {
+  align-self: flex-end;
+  background: var(--neon-purple-surface);
+  border: 1px solid transparent;
+}
+
+.wb-copilot__bubble--assistant {
+  align-self: flex-start;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--bde-border);
+}
+
+.wb-copilot__bubble--system {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--bde-border);
+  font-style: italic;
+  color: var(--neon-text-muted);
+  font-size: 12px;
+}
+
+.wb-copilot__bubble-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.wb-copilot__time {
+  font-size: 11px;
+  color: var(--neon-text-muted);
+}
+
+.wb-copilot__insert-btn {
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 4px;
+  color: var(--neon-cyan);
+  padding: 1px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-copilot__insert-btn:hover {
+  background: var(--neon-cyan-surface);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-copilot__loading {
+  align-self: flex-start;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-copilot__loading-text {
+  color: var(--neon-text-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.wb-copilot__cancel-btn {
+  background: none;
+  border: 1px solid var(--bde-border);
+  border-radius: 4px;
+  color: var(--neon-text-muted);
+  padding: 1px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.wb-copilot__cancel-btn:hover {
+  background: var(--neon-surface-dim);
+  border-color: var(--bde-border-hover);
+}
+
+.wb-copilot__input-row {
+  padding: 8px;
+  border-top: 1px solid var(--bde-border);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wb-copilot__input {
+  flex: 1;
+  resize: none;
+  padding: 8px;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  color: var(--neon-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-copilot__input:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-copilot__send-btn {
+  align-self: flex-end;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.wb-copilot__send-btn--active {
+  background: var(--neon-cyan);
+  color: var(--neon-bg);
+  cursor: pointer;
+}
+
+.wb-copilot__send-btn--active:hover {
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-copilot__send-btn--disabled {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text-muted);
+  cursor: not-allowed;
+}
