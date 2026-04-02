@@ -28,6 +28,7 @@ import { SpecPanel } from './SpecPanel'
 import { DoneHistoryPanel } from './DoneHistoryPanel'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
+import { PipelineFilterBar } from './PipelineFilterBar'
 import { GitMerge, HeartPulse } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 
@@ -72,6 +73,8 @@ export function SprintPipeline() {
   const setConflictDrawerOpen = useSprintUI((s) => s.setConflictDrawerOpen)
   const setHealthCheckDrawerOpen = useSprintUI((s) => s.setHealthCheckDrawerOpen)
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
+  const repoFilter = useSprintUI((s) => s.repoFilter)
+  const searchQuery = useSprintUI((s) => s.searchQuery)
 
   const setView = usePanelLayoutStore((s) => s.setView)
 
@@ -92,8 +95,18 @@ export function SprintPipeline() {
 
   // --- Local UI state ---
 
-  // Partition tasks
-  const partition = useMemo(() => partitionSprintTasks(tasks), [tasks])
+  // Filter + partition tasks
+  const filteredTasks = useMemo(() => {
+    let result = tasks
+    if (repoFilter) result = result.filter((t) => t.repo === repoFilter)
+    if (searchQuery) {
+      const lower = searchQuery.toLowerCase()
+      result = result.filter((t) => t.title.toLowerCase().includes(lower))
+    }
+    return result
+  }, [tasks, repoFilter, searchQuery])
+
+  const partition = useMemo(() => partitionSprintTasks(filteredTasks), [filteredTasks])
 
   const selectedTask = useMemo(
     () => (selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null),
@@ -253,6 +266,8 @@ export function SprintPipeline() {
           </button>
         )}
       </header>
+
+      <PipelineFilterBar tasks={tasks} />
 
       {loading && tasks.length === 0 && (
         <div className="pipeline-empty-state">
