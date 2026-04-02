@@ -887,6 +887,43 @@
   flex-shrink: 0;
 }
 
+/* ── Error Boundary ── */
+.pipeline-error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--neon-text-dim);
+  font-family: var(--bde-font-code);
+}
+
+.pipeline-error-boundary__title {
+  font-size: 14px;
+  color: var(--neon-red);
+}
+
+.pipeline-error-boundary__message {
+  font-size: 11px;
+  max-width: 400px;
+  text-align: center;
+}
+
+.pipeline-error-boundary__retry {
+  padding: 4px 12px;
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--neon-cyan);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.pipeline-error-boundary__retry:hover {
+  background: var(--neon-cyan-surface);
+}
+
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
   .pipeline-stage__dot--active {

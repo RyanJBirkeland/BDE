@@ -23,6 +23,7 @@ import { Spinner } from '../ui/Spinner'
 import { PipelineBacklog } from './PipelineBacklog'
 import { PipelineStage } from './PipelineStage'
 import { TaskDetailDrawer } from './TaskDetailDrawer'
+import { PipelineErrorBoundary } from './PipelineErrorBoundary'
 import { SpecPanel } from './SpecPanel'
 import { DoneHistoryPanel } from './DoneHistoryPanel'
 import { ConflictDrawer } from './ConflictDrawer'
@@ -266,6 +267,7 @@ export function SprintPipeline() {
         </div>
       )}
 
+      <PipelineErrorBoundary fallbackLabel="Pipeline crashed">
       <div className="sprint-pipeline__body" style={{ display: tasks.length === 0 ? 'none' : undefined }}>
         <PipelineBacklog
           backlog={partition.backlog}
@@ -352,6 +354,7 @@ export function SprintPipeline() {
           />
         )}
       </div>
+      </PipelineErrorBoundary>
 
       {specPanelOpen && selectedTask?.spec && (
         <SpecPanel
