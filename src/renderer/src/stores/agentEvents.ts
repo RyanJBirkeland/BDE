@@ -2,39 +2,12 @@ import { create } from 'zustand'
 import type { AgentEvent } from '../../../shared/types'
 
 const MAX_EVENTS_PER_AGENT = 2000
-const MAX_AGENTS_IN_MEMORY = 20
-
 interface AgentEventsState {
   events: Record<string, AgentEvent[]>
   evictedAgents: Record<string, boolean>
   init: () => () => void
   loadHistory: (agentId: string) => Promise<void>
   clear: (agentId: string) => void
-}
-
-function evictOldestAgents(
-  events: Record<string, AgentEvent[]>,
-  accessOrder: string[]
-): { events: Record<string, AgentEvent[]>; accessOrder: string[] } {
-  if (accessOrder.length <= MAX_AGENTS_IN_MEMORY) {
-    return { events, accessOrder }
-  }
-
-  const toRemove = accessOrder.slice(0, accessOrder.length - MAX_AGENTS_IN_MEMORY)
-  const newEvents = { ...events }
-  for (const agentId of toRemove) {
-    delete newEvents[agentId]
-  }
-
-  return {
-    events: newEvents,
-    accessOrder: accessOrder.slice(-MAX_AGENTS_IN_MEMORY)
-  }
-}
-
-function touchAgent(agentId: string, accessOrder: string[]): string[] {
-  const filtered = accessOrder.filter((id) => id !== agentId)
-  return [...filtered, agentId]
 }
 
 export const useAgentEventsStore = create<AgentEventsState>((set) => ({

@@ -2,7 +2,7 @@
  * ConsoleLine — Renders a single agent event as a terminal-style line.
  * Uses neon CSS classes (agents-neon.css) for all styling.
  */
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import type { ChatBlock } from '../../lib/pair-events'
 import { renderAgentMarkdown } from '../../lib/render-agent-markdown'
@@ -134,7 +134,11 @@ export function ConsoleLine({ block, onPlaygroundClick, searchHighlight }: Conso
             </span>
             <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
           </button>
-          {expanded && block.text && <ExpandableContent>{block.text}</ExpandableContent>}
+          {expanded && block.text && (
+            <div className="console-line__expanded-content">
+              {block.text}
+            </div>
+          )}
         </div>
       )
     }

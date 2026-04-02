@@ -125,13 +125,21 @@ export function AgentList({
   fetchError,
   onRetry,
   displayedCount,
-  hasMore,
-  onLoadMore
+  hasMore: _hasMore,
+  onLoadMore: _onLoadMore
 }: AgentListProps) {
   const [searchText, setSearchText] = useState(filter ?? '')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
+  const [selectedRepo, setSelectedRepo] = useState<string | null>(null)
   const selectedRef = useRef<HTMLDivElement>(null)
+
+  const limitedAgents = displayedCount ? agents.slice(0, displayedCount) : agents
+
+  const repos = useMemo(() => {
+    const set = new Set(agents.map((a) => a.repo))
+    return Array.from(set).sort()
+  }, [agents])
 
   const filtered = useMemo(() => {
     let result = limitedAgents
