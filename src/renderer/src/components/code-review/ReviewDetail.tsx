@@ -1,4 +1,7 @@
 import { useCodeReviewStore, type ReviewTab } from '../../stores/codeReview'
+import { ChangesTab } from './ChangesTab'
+import { CommitsTab } from './CommitsTab'
+import { ConversationTab } from './ConversationTab'
 
 const TABS: { key: ReviewTab; label: string }[] = [
   { key: 'changes', label: 'Changes' },
@@ -33,15 +36,9 @@ export function ReviewDetail(): React.JSX.Element {
         ))}
       </div>
       <div className="cr-detail__content" role="tabpanel">
-        {activeTab === 'changes' && (
-          <div className="cr-placeholder">Changes tab — loading diffs...</div>
-        )}
-        {activeTab === 'commits' && (
-          <div className="cr-placeholder">Commits tab — loading history...</div>
-        )}
-        {activeTab === 'conversation' && (
-          <div className="cr-placeholder">Conversation tab — spec + comments...</div>
-        )}
+        {activeTab === 'changes' && <ChangesTab />}
+        {activeTab === 'commits' && <CommitsTab />}
+        {activeTab === 'conversation' && <ConversationTab />}
       </div>
     </div>
   )
