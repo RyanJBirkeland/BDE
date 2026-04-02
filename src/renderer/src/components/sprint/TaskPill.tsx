@@ -31,6 +31,7 @@ export function TaskPill({ task, selected, onClick }: TaskPillProps) {
       const timer = setTimeout(() => setArriving(false), 500)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [task.status])
 
   useEffect(() => {

@@ -227,8 +227,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         status: TASK_STATUS.BACKLOG,
         template_name: data.template_name || undefined,
         playground_enabled: data.playground_enabled || undefined,
-        depends_on: data.depends_on || undefined
-      })) as SprintTask
+        ...(data.depends_on ? { depends_on: data.depends_on } : {})
+      } as Parameters<typeof window.api.sprint.create>[0])) as SprintTask
 
       if (result?.id) {
         set((s) => ({
