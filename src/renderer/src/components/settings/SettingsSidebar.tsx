@@ -34,7 +34,7 @@ function groupByCategory(sections: SettingsSection[]): Array<{ category: string;
   return seen.map(category => ({ category, items: map[category] }))
 }
 
-export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSidebarProps): JSX.Element {
+export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSidebarProps): React.JSX.Element {
   const navRef = useRef<HTMLElement>(null)
   const groups = groupByCategory(sections)
 
