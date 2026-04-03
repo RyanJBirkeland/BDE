@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { SprintTask } from '../../../../shared/types'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface DoneHistoryPanelProps {
   tasks: SprintTask[]
@@ -23,38 +24,7 @@ export function DoneHistoryPanel({
   }, [onClose])
 
   // Focus trap — keep Tab cycling within the panel
-  useEffect(() => {
-    const panel = panelRef.current
-    if (!panel) return
-
-    const focusable = panel.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-    if (focusable.length === 0) return
-
-    const first = focusable[0]
-    first.focus()
-
-    const handleTab = (e: KeyboardEvent): void => {
-      if (e.key !== 'Tab') return
-      const current = panel.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      )
-      if (current.length === 0) return
-      const f = current[0]
-      const l = current[current.length - 1]
-      if (e.shiftKey && document.activeElement === f) {
-        e.preventDefault()
-        l.focus()
-      } else if (!e.shiftKey && document.activeElement === l) {
-        e.preventDefault()
-        f.focus()
-      }
-    }
-
-    panel.addEventListener('keydown', handleTab)
-    return () => panel.removeEventListener('keydown', handleTab)
-  }, [tasks])
+  useFocusTrap(panelRef, true)
 
   return (
     <div

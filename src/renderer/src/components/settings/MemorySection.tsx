@@ -197,9 +197,12 @@ export function MemorySection(): React.JSX.Element {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent): void {
+      // Only intercept Cmd+S when the memory editor textarea is focused
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault()
-        saveFile()
+        if (document.activeElement === editorRef.current) {
+          e.preventDefault()
+          saveFile()
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown)
