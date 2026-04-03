@@ -222,5 +222,196 @@ describe('Review handlers', () => {
       // Verify ordering: rev-parse → worktree-remove → branch-delete
       expect(gitCommandCalls).toEqual(['rev-parse', 'worktree-remove', 'branch-delete'])
     })
+
+    it('review:requestRevision with mode=fresh clears session_id', async () => {
+      const { getTask, updateTask } = await import('../../data/sprint-queries')
+
+      vi.mocked(getTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'active',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        spec: '## Original Spec\n\nSome content',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      vi.mocked(updateTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'queued',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      const handlers = captureHandlers()
+      await handlers['review:requestRevision'](_mockEvent, {
+        taskId: 'task-1',
+        feedback: 'Please fix the tests',
+        mode: 'fresh'
+      })
+
+      // Verify agent_run_id is set to null in fresh mode
+      expect(updateTask).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          agent_run_id: null,
+          status: 'queued'
+        })
+      )
+    })
+
+    it('review:requestRevision with mode=resume keeps session_id', async () => {
+      const { getTask, updateTask } = await import('../../data/sprint-queries')
+
+      vi.mocked(getTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'active',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        spec: '## Original Spec\n\nSome content',
+        agent_run_id: 'existing-session-123',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      vi.mocked(updateTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'queued',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      const handlers = captureHandlers()
+      await handlers['review:requestRevision'](_mockEvent, {
+        taskId: 'task-1',
+        feedback: 'Please fix the tests',
+        mode: 'resume'
+      })
+
+      // Verify agent_run_id is NOT in the patch (keeps existing value)
+      expect(updateTask).toHaveBeenCalledWith('task-1', expect.any(Object))
+      const patchArg = vi.mocked(updateTask).mock.calls[0][1]
+      expect(patchArg).not.toHaveProperty('agent_run_id')
+    })
+
+    it('review:requestRevision appends feedback to spec', async () => {
+      const { getTask, updateTask } = await import('../../data/sprint-queries')
+
+      vi.mocked(getTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'active',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        spec: '## Original Spec\n\nSome content',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      vi.mocked(updateTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'queued',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      const handlers = captureHandlers()
+      await handlers['review:requestRevision'](_mockEvent, {
+        taskId: 'task-1',
+        feedback: 'Please add more tests',
+        mode: 'resume'
+      })
+
+      // Verify feedback is appended to spec
+      expect(updateTask).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          spec: '## Original Spec\n\nSome content\n\n## Revision Feedback\n\nPlease add more tests'
+        })
+      )
+    })
+
+    it('review:mergeLocally marks task done and fires onStatusTerminal', async () => {
+      const { getTask, updateTask } = await import('../../data/sprint-queries')
+      const { getSettingJson } = await import('../../settings')
+
+      const mockOnStatusTerminal = vi.fn()
+      setReviewOnStatusTerminal(mockOnStatusTerminal)
+
+      vi.mocked(getTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        worktree_path: '/tmp/worktrees/test',
+        status: 'active',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      vi.mocked(getSettingJson).mockReturnValue([
+        { name: 'test-repo', localPath: '/repos/test' }
+      ])
+
+      vi.mocked(updateTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'done',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        completed_at: new Date().toISOString()
+      })
+
+      const handlers = captureHandlers()
+      const result = await handlers['review:mergeLocally'](_mockEvent, {
+        taskId: 'task-1',
+        strategy: 'merge'
+      })
+
+      // Verify task updated to done with completed_at and worktree cleared
+      expect(updateTask).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          status: 'done',
+          completed_at: expect.any(String),
+          worktree_path: null
+        })
+      )
+
+      // Verify onStatusTerminal callback fired for dependency resolution
+      expect(mockOnStatusTerminal).toHaveBeenCalledWith('task-1', 'done')
+
+      // Verify success response
+      expect(result).toEqual({ success: true })
+    })
   })
 })

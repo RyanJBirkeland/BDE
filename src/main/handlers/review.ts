@@ -324,6 +324,13 @@ export function registerReviewHandlers(): void {
   })
 
   // review:requestRevision — send task back for another pass
+  //
+  // INTENTIONAL TRANSITION: review → queued
+  // This is the correct path for requesting revisions. The task returns to the
+  // queue so the agent manager can pick it up and re-execute with the feedback
+  // appended to the spec. The 'review' status is not a valid transition target
+  // (it's a UI-only partition, not a DB status). Tasks awaiting review have
+  // status='active' or 'done' with pr_status='open'.
   safeHandle('review:requestRevision', async (_e, payload) => {
     const { taskId, feedback, mode } = payload
 
