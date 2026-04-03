@@ -24,6 +24,9 @@ declare global {
       openExternal: (
         ...args: IpcArgs<'window:openExternal'>
       ) => Promise<IpcResult<'window:openExternal'>>
+      openPlaygroundInBrowser: (
+        ...args: IpcArgs<'playground:openInBrowser'>
+      ) => Promise<IpcResult<'playground:openInBrowser'>>
       listMemoryFiles: () => Promise<IpcResult<'memory:listFiles'>>
       readMemoryFile: (...args: IpcArgs<'memory:readFile'>) => Promise<IpcResult<'memory:readFile'>>
       writeMemoryFile: (

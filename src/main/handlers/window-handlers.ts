@@ -1,4 +1,7 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
+import { writeFileSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
 import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
 
@@ -22,5 +25,14 @@ export function registerWindowHandlers(): void {
     } catch (err) {
       logger.error(`setTitle: ${err}`)
     }
+  })
+
+  safeHandle('playground:openInBrowser', async (_e, html: string) => {
+    const timestamp = Date.now()
+    const filename = `bde-playground-${timestamp}.html`
+    const filepath = join(tmpdir(), filename)
+    writeFileSync(filepath, html, 'utf-8')
+    await shell.openPath(filepath)
+    return filepath
   })
 }

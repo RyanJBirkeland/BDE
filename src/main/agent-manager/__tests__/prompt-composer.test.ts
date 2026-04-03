@@ -14,7 +14,10 @@ describe('buildAgentPrompt', () => {
         expect(prompt).toContain('## Hard Rules')
         expect(prompt).toContain('NEVER push to, checkout, or merge into `main`')
         expect(prompt).toContain('Run `npm install` if node_modules/ is missing')
-        expect(prompt).toContain('Run tests after changes: `npm test` and `npm run typecheck`')
+        expect(prompt).toContain('## MANDATORY Pre-Commit Verification')
+        expect(prompt).toContain('`npm run typecheck`')
+        expect(prompt).toContain('`npm test`')
+        expect(prompt).toContain('`npm run lint`')
       }
     })
   })

@@ -292,6 +292,10 @@ export interface WindowChannels {
     args: [url: string]
     result: void
   }
+  'playground:openInBrowser': {
+    args: [html: string]
+    result: string
+  }
 }
 
 /** Tear-off window management */

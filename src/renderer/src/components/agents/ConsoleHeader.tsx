@@ -72,7 +72,9 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
 
   const handleStop = async (): Promise<void> => {
     try {
-      await window.api.killAgent(agent.id)
+      // Pipeline agents are keyed by sprintTaskId in AgentManager, adhoc agents by id
+      const killId = agent.sprintTaskId ?? agent.id
+      await window.api.killAgent(killId)
     } catch (err) {
       toast.error(`Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }

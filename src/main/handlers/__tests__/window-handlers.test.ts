@@ -5,13 +5,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 
 vi.mock('electron', () => ({
-  shell: { openExternal: vi.fn().mockResolvedValue(undefined) },
+  shell: {
+    openExternal: vi.fn().mockResolvedValue(undefined),
+    openPath: vi.fn().mockResolvedValue('')
+  },
   BrowserWindow: {
     getFocusedWindow: vi.fn(() => ({ setTitle: vi.fn() }))
   },
   ipcMain: {
     on: vi.fn()
   }
+}))
+
+vi.mock('fs', () => ({
+  writeFileSync: vi.fn(),
+  existsSync: vi.fn().mockReturnValue(true),
+  mkdirSync: vi.fn()
+}))
+
+vi.mock('os', () => ({
+  tmpdir: vi.fn().mockReturnValue('/tmp'),
+  homedir: vi.fn().mockReturnValue('/home/test')
 }))
 
 vi.mock('../../ipc-utils', () => ({
@@ -21,17 +35,20 @@ vi.mock('../../ipc-utils', () => ({
 import { registerWindowHandlers } from '../window-handlers'
 import { safeHandle } from '../../ipc-utils'
 import { ipcMain, shell } from 'electron'
+import { writeFileSync } from 'fs'
+import { tmpdir } from 'os'
 
 describe('Window handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('registers 1 safeHandle channel and 1 ipcMain.on listener', () => {
+  it('registers 2 safeHandle channels and 1 ipcMain.on listener', () => {
     registerWindowHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(1)
+    expect(safeHandle).toHaveBeenCalledTimes(2)
     expect(safeHandle).toHaveBeenCalledWith('window:openExternal', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('playground:openInBrowser', expect.any(Function))
     expect(ipcMain.on).toHaveBeenCalledWith('window:setTitle', expect.any(Function))
   })
 
@@ -90,6 +107,29 @@ describe('Window handlers', () => {
         )
 
         expect(shell.openExternal).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('playground:openInBrowser', () => {
+      it('writes HTML to temp file and opens it', async () => {
+        vi.mocked(tmpdir).mockReturnValue('/tmp')
+
+        const handlers = captureHandlers()
+        const html = '<h1>Test</h1>'
+
+        const result = await handlers['playground:openInBrowser'](mockEvent, html)
+
+        expect(writeFileSync).toHaveBeenCalledOnce()
+        const writeCall = vi.mocked(writeFileSync).mock.calls[0]
+        expect(writeCall[0]).toMatch(/^\/tmp\/bde-playground-\d+\.html$/)
+        expect(writeCall[1]).toBe(html)
+        expect(writeCall[2]).toBe('utf-8')
+
+        expect(shell.openPath).toHaveBeenCalledOnce()
+        const openCall = vi.mocked(shell.openPath).mock.calls[0]
+        expect(openCall[0]).toMatch(/^\/tmp\/bde-playground-\d+\.html$/)
+
+        expect(result).toMatch(/^\/tmp\/bde-playground-\d+\.html$/)
       })
     })
   })

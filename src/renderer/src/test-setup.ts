@@ -82,6 +82,7 @@ vi.stubGlobal('api', {
   tailAgentLog: vi.fn().mockResolvedValue({ content: '', nextByte: 0 }),
   setTitle: vi.fn(),
   openExternal: vi.fn().mockResolvedValue(undefined),
+  openPlaygroundInBrowser: vi.fn().mockResolvedValue('/tmp/bde-playground-123.html'),
   getDiff: vi.fn().mockResolvedValue(''),
   getBranch: vi.fn().mockResolvedValue('main'),
   getLog: vi.fn().mockResolvedValue(''),

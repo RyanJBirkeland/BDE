@@ -21,6 +21,7 @@ function typedInvoke<K extends keyof IpcChannelMap>(
 const api = {
   getRepoPaths: () => typedInvoke('git:getRepoPaths'),
   openExternal: (url: string) => typedInvoke('window:openExternal', url),
+  openPlaygroundInBrowser: (html: string) => typedInvoke('playground:openInBrowser', html),
   listMemoryFiles: () => typedInvoke('memory:listFiles'),
   readMemoryFile: (path: string) => typedInvoke('memory:readFile', path),
   writeMemoryFile: (path: string, content: string) =>

@@ -135,12 +135,10 @@ export function PlaygroundModal({
 
   const handleOpenInBrowser = async (): Promise<void> => {
     try {
-      // Encode HTML as a data URI and attempt to open externally.
-      // Note: data: scheme may be blocked by the window:openExternal handler.
-      const dataUri = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
-      await window.api.openExternal(dataUri)
-    } catch {
-      // data: scheme not in ALLOWED_URL_SCHEMES — silently fail
+      // Write HTML to temp file and open in default browser
+      await window.api.openPlaygroundInBrowser(html)
+    } catch (err) {
+      console.error('Failed to open playground in browser:', err)
     }
   }
 
