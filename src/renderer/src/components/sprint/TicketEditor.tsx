@@ -10,7 +10,6 @@ import { useState, useEffect } from 'react'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { toast } from '../../stores/toasts'
-import { tokens } from '../../design-system/tokens'
 
 export interface TicketDraft {
   title: string
@@ -147,14 +146,13 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
   // Done state — confirmation
   if (state === 'done') {
     return (
-      <div className="ticket-editor ticket-editor--done" style={styles.container}>
-        <div style={styles.doneMessage}>
-          <span style={styles.doneText}>
+      <div className="ticket-editor ticket-editor--done">
+        <div className="ticket-editor__done-message">
+          <span className="ticket-editor__done-text">
             {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} created in backlog
           </span>
           <button
-            className="bde-btn bde-btn--sm btn-glass"
-            style={styles.viewLink}
+            className="bde-btn bde-btn--sm btn-glass ticket-editor__btn-accent"
             onClick={() => usePanelLayoutStore.getState().setView('sprint')}
           >
             View Sprint Board
@@ -166,9 +164,9 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
 
   // Editing / creating state
   return (
-    <div className="ticket-editor" style={styles.container}>
-      <div style={styles.header}>
-        <span style={styles.headerTitle}>
+    <div className="ticket-editor">
+      <div className="ticket-editor__header">
+        <span className="ticket-editor__title">
           {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
         </span>
         <button
@@ -180,12 +178,12 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
         </button>
       </div>
 
-      <div style={styles.ticketList}>
+      <div className="ticket-editor__list">
         {tickets.map((ticket, idx) => (
-          <div key={ticket._id} style={styles.card}>
-            <div style={styles.cardHeader}>
-              <span style={styles.cardNumber}>#{idx + 1}</span>
-              <div style={styles.cardActions}>
+          <div key={ticket._id} className="ticket-editor__card">
+            <div className="ticket-editor__card-header">
+              <span className="ticket-editor__card-number">#{idx + 1}</span>
+              <div className="ticket-editor__card-actions">
                 <button
                   className="bde-btn bde-btn--sm bde-btn--icon btn-glass"
                   onClick={() => moveTicket(idx, -1)}
@@ -203,22 +201,20 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
                   &#9660;
                 </button>
                 <button
-                  className="bde-btn bde-btn--sm bde-btn--icon btn-glass"
+                  className="bde-btn bde-btn--sm bde-btn--icon btn-glass ticket-editor__btn-danger"
                   onClick={() => removeTicket(idx)}
                   disabled={state === 'creating'}
                   title="Remove ticket"
-                  style={{ color: tokens.color.danger }}
                 >
                   &#10005;
                 </button>
               </div>
             </div>
 
-            <div style={styles.field}>
-              <label style={styles.label}>Title</label>
+            <div className="ticket-editor__field">
+              <label className="ticket-editor__label">Title</label>
               <input
-                className="bde-input__field"
-                style={styles.input}
+                className="bde-input__field ticket-editor__input"
                 type="text"
                 value={ticket.title}
                 onChange={(e) => updateTicket(idx, { title: e.target.value })}
@@ -227,16 +223,18 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
               />
             </div>
 
-            <div style={styles.field}>
-              <label style={styles.label}>
-                <button style={styles.promptToggle} onClick={() => togglePrompt(ticket._id)}>
+            <div className="ticket-editor__field">
+              <label className="ticket-editor__label">
+                <button
+                  className="ticket-editor__prompt-toggle"
+                  onClick={() => togglePrompt(ticket._id)}
+                >
                   {expandedPrompts.has(ticket._id) ? '\u25BE' : '\u25B8'} Prompt
                 </button>
               </label>
               {expandedPrompts.has(ticket._id) ? (
                 <textarea
-                  className="bde-textarea"
-                  style={styles.textarea}
+                  className="bde-textarea ticket-editor__textarea"
                   value={ticket.prompt}
                   onChange={(e) => updateTicket(idx, { prompt: e.target.value })}
                   placeholder="Detailed prompt for the coding agent"
@@ -244,18 +242,20 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
                   rows={4}
                 />
               ) : (
-                <span style={styles.promptPreview} onClick={() => togglePrompt(ticket._id)}>
+                <span
+                  className="ticket-editor__prompt-preview"
+                  onClick={() => togglePrompt(ticket._id)}
+                >
                   {ticket.prompt.split('\n')[0] || '(empty)'}
                 </span>
               )}
             </div>
 
-            <div style={styles.fieldRow}>
-              <div style={styles.fieldSmall}>
-                <label style={styles.label}>Repo</label>
+            <div className="ticket-editor__field-row">
+              <div className="ticket-editor__field-small">
+                <label className="ticket-editor__label">Repo</label>
                 <select
-                  className="bde-input__field"
-                  style={styles.select}
+                  className="bde-input__field ticket-editor__select"
                   value={ticket.repo}
                   onChange={(e) => updateTicket(idx, { repo: e.target.value })}
                   disabled={state === 'creating'}
@@ -268,11 +268,10 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
                   ))}
                 </select>
               </div>
-              <div style={styles.fieldSmall}>
-                <label style={styles.label}>Priority</label>
+              <div className="ticket-editor__field-small">
+                <label className="ticket-editor__label">Priority</label>
                 <input
-                  className="bde-input__field"
-                  style={styles.priorityInput}
+                  className="bde-input__field ticket-editor__priority-input"
                   type="number"
                   min={1}
                   max={10}
@@ -290,7 +289,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
         ))}
       </div>
 
-      <div style={styles.footer}>
+      <div className="ticket-editor__footer">
         <button
           className="bde-btn bde-btn--sm btn-glass"
           onClick={addTicket}
@@ -308,149 +307,4 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
       </div>
     </div>
   )
-}
-
-/** Inline styles using design tokens for consistency */
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    margin: '8px 0',
-    padding: tokens.space[3],
-    background: tokens.color.surface,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.md
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: tokens.space[3]
-  },
-  headerTitle: {
-    fontSize: tokens.size.lg,
-    fontWeight: 600,
-    color: tokens.color.text
-  },
-  ticketList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.space[2]
-  },
-  card: {
-    padding: tokens.space[3],
-    background: tokens.color.surfaceHigh,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.sm
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: tokens.space[2]
-  },
-  cardNumber: {
-    fontSize: tokens.size.sm,
-    color: tokens.color.textMuted,
-    fontWeight: 500
-  },
-  cardActions: {
-    display: 'flex',
-    gap: tokens.space[1]
-  },
-  field: {
-    marginBottom: tokens.space[2]
-  },
-  fieldRow: {
-    display: 'flex',
-    gap: tokens.space[3]
-  },
-  fieldSmall: {
-    flex: 1
-  },
-  label: {
-    display: 'block',
-    fontSize: tokens.size.xs,
-    color: tokens.color.textMuted,
-    marginBottom: tokens.space[1],
-    fontWeight: 500
-  },
-  input: {
-    width: '100%',
-    background: tokens.color.bg,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.sm,
-    padding: `${tokens.space[1]} ${tokens.space[2]}`,
-    color: tokens.color.text,
-    fontSize: tokens.size.md,
-    boxSizing: 'border-box' as const
-  },
-  textarea: {
-    width: '100%',
-    background: tokens.color.bg,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.sm,
-    padding: `${tokens.space[1]} ${tokens.space[2]}`,
-    color: tokens.color.text,
-    fontSize: tokens.size.sm,
-    fontFamily: tokens.font.code,
-    resize: 'vertical' as const,
-    boxSizing: 'border-box' as const
-  },
-  select: {
-    width: '100%',
-    background: tokens.color.bg,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.sm,
-    padding: `${tokens.space[1]} ${tokens.space[2]}`,
-    color: tokens.color.text,
-    fontSize: tokens.size.md,
-    boxSizing: 'border-box' as const
-  },
-  priorityInput: {
-    width: '100%',
-    background: tokens.color.bg,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.sm,
-    padding: `${tokens.space[1]} ${tokens.space[2]}`,
-    color: tokens.color.text,
-    fontSize: tokens.size.md,
-    boxSizing: 'border-box' as const
-  },
-  promptToggle: {
-    background: 'none',
-    border: 'none',
-    color: tokens.color.textMuted,
-    fontSize: tokens.size.xs,
-    fontWeight: 500,
-    cursor: 'pointer',
-    padding: 0
-  },
-  promptPreview: {
-    display: 'block',
-    fontSize: tokens.size.sm,
-    color: tokens.color.textDim,
-    cursor: 'pointer',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap' as const
-  },
-  footer: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: tokens.space[3]
-  },
-  doneMessage: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.space[3],
-    padding: tokens.space[2]
-  },
-  doneText: {
-    fontSize: tokens.size.md,
-    color: tokens.color.success,
-    fontWeight: 500
-  },
-  viewLink: {
-    color: tokens.color.accent
-  }
 }

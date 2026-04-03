@@ -6,6 +6,7 @@
 @import './agents-neon.css';
 @import './sprint-neon.css';
 @import './sprint.css';
+@import './sprint-pipeline-neon.css';
 @import './cost.css';
 @import './memory.css';
 @import './settings.css';
@@ -16,6 +17,7 @@
 @import './diff.css';
 @import './diff-neon.css';
 @import './source-control-neon.css';
+@import './onboarding-neon.css';
 @import './command-palette.css';
 @import './toasts.css';
 

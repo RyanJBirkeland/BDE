@@ -1,0 +1,143 @@
+/* ═══════════════════════════════════════════════════════
+   Onboarding — Setup Check Screen
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Backdrop & Card ── */
+.onboarding-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  background: var(--bde-bg);
+  font-family: var(--bde-font-ui);
+}
+
+.onboarding-card {
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-lg);
+  padding: 32px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: var(--bde-shadow-lg);
+}
+
+/* ── Header ── */
+.onboarding-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.onboarding-header__icon {
+  color: var(--bde-accent);
+}
+
+.onboarding-header__title {
+  font-size: var(--bde-size-xxl);
+  font-weight: 600;
+  color: var(--bde-text);
+  margin: 0;
+}
+
+.onboarding-subtitle {
+  font-size: var(--bde-size-md);
+  color: var(--bde-text-muted);
+  margin: 0 0 24px 0;
+}
+
+/* ── Checks Section ── */
+.onboarding-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.onboarding-section-label {
+  font-size: var(--bde-size-xs);
+  font-weight: 600;
+  color: var(--bde-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.onboarding-section-label--spaced {
+  margin-top: 12px;
+}
+
+/* ── Check Row ── */
+.onboarding-check {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.onboarding-check__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboarding-check__label {
+  font-size: var(--bde-size-md);
+  color: var(--bde-text);
+}
+
+.onboarding-check__optional {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  margin-left: 4px;
+}
+
+/* ── Check Help Text ── */
+.onboarding-check__help {
+  margin: 0 0 0 24px;
+  font-size: var(--bde-size-xs);
+}
+
+.onboarding-check__help--fail {
+  color: var(--bde-text-muted);
+}
+
+.onboarding-check__help--warn {
+  color: var(--bde-warning);
+}
+
+/* ── Status Icons ── */
+.onboarding-icon--success {
+  color: var(--bde-success);
+}
+
+.onboarding-icon--danger {
+  color: var(--bde-danger);
+}
+
+.onboarding-icon--warning {
+  color: var(--bde-warning);
+}
+
+/* ── Instruction Box ── */
+.onboarding-instruction {
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.onboarding-instruction__code {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-warning);
+  font-family: var(--bde-font-code);
+}
+
+/* ── Actions ── */
+.onboarding-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}

@@ -1639,3 +1639,188 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Ticket Editor — Inline Agent-Generated Ticket Lists
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Container ── */
+.ticket-editor {
+  margin: 8px 0;
+  padding: 12px;
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+}
+
+.ticket-editor--done {
+  background: var(--bde-surface);
+}
+
+/* ── Header ── */
+.ticket-editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ticket-editor__title {
+  font-size: var(--bde-size-lg);
+  font-weight: 600;
+  color: var(--bde-text);
+}
+
+/* ── Ticket List ── */
+.ticket-editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Card ── */
+.ticket-editor__card {
+  padding: 12px;
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+}
+
+.ticket-editor__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ticket-editor__card-number {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-muted);
+  font-weight: 500;
+}
+
+.ticket-editor__card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* ── Fields ── */
+.ticket-editor__field {
+  margin-bottom: 8px;
+}
+
+.ticket-editor__field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.ticket-editor__field-small {
+  flex: 1;
+}
+
+.ticket-editor__label {
+  display: block;
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+/* ── Inputs ── */
+.ticket-editor__input {
+  width: 100%;
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  padding: 4px 8px;
+  color: var(--bde-text);
+  font-size: var(--bde-size-md);
+  box-sizing: border-box;
+}
+
+.ticket-editor__textarea {
+  width: 100%;
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  padding: 4px 8px;
+  color: var(--bde-text);
+  font-size: var(--bde-size-sm);
+  font-family: var(--bde-font-code);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.ticket-editor__select {
+  width: 100%;
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  padding: 4px 8px;
+  color: var(--bde-text);
+  font-size: var(--bde-size-md);
+  box-sizing: border-box;
+}
+
+.ticket-editor__priority-input {
+  width: 100%;
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  padding: 4px 8px;
+  color: var(--bde-text);
+  font-size: var(--bde-size-md);
+  box-sizing: border-box;
+}
+
+/* ── Prompt Toggle ── */
+.ticket-editor__prompt-toggle {
+  background: none;
+  border: none;
+  color: var(--bde-text-muted);
+  font-size: var(--bde-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ticket-editor__prompt-preview {
+  display: block;
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-dim);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Footer ── */
+.ticket-editor__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+/* ── Done Message ── */
+.ticket-editor__done-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+}
+
+.ticket-editor__done-text {
+  font-size: var(--bde-size-md);
+  color: var(--bde-success);
+  font-weight: 500;
+}
+
+/* ── Button Overrides ── */
+.ticket-editor__btn-danger {
+  color: var(--bde-danger);
+}
+
+.ticket-editor__btn-accent {
+  color: var(--bde-accent);
+}

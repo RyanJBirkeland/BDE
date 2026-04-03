@@ -42,11 +42,11 @@ function StatusIcon({ state }: { state: CheckState }): React.JSX.Element {
     case 'loading':
       return <Spinner size="sm" />
     case 'pass':
-      return <Check size={16} color={tokens.color.success} />
+      return <Check size={16} className="onboarding-icon--success" />
     case 'fail':
-      return <X size={16} color={tokens.color.danger} />
+      return <X size={16} className="onboarding-icon--danger" />
     case 'warn':
-      return <AlertCircle size={16} color={tokens.color.warning} />
+      return <AlertCircle size={16} className="onboarding-icon--warning" />
   }
 }
 
@@ -70,15 +70,15 @@ function CheckRow({
   optional?: boolean
 }): React.JSX.Element {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
-      <div style={styles.checkRow}>
+    <div className="onboarding-check" style={{ gap: tokens.space[1] }}>
+      <div className="onboarding-check__row">
         <StatusIcon state={state} />
-        <span style={styles.checkLabel}>{label}</span>
+        <span className="onboarding-check__label">{label}</span>
         {optional && (
           <span
+            className="onboarding-check__optional"
             style={{
               fontSize: tokens.size.xs,
-              color: tokens.color.textMuted,
               marginLeft: tokens.space[1]
             }}
           >
@@ -88,10 +88,10 @@ function CheckRow({
       </div>
       {helpText && state === 'fail' && (
         <p
+          className="onboarding-check__help onboarding-check__help--fail"
           style={{
             margin: `0 0 0 ${tokens.space[6]}`,
-            fontSize: tokens.size.xs,
-            color: tokens.color.textMuted
+            fontSize: tokens.size.xs
           }}
         >
           {helpText}
@@ -99,10 +99,10 @@ function CheckRow({
       )}
       {helpText && state === 'warn' && (
         <p
+          className="onboarding-check__help onboarding-check__help--warn"
           style={{
             margin: `0 0 0 ${tokens.space[6]}`,
-            fontSize: tokens.size.xs,
-            color: tokens.color.warning
+            fontSize: tokens.size.xs
           }}
         >
           {helpText}
@@ -181,17 +181,17 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
   const allPassed = status?.cliFound && status?.tokenFound && !status?.tokenExpired
 
   return (
-    <div style={styles.backdrop}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <Terminal size={24} color={tokens.color.accent} />
-          <h2 style={styles.title}>Setup Check</h2>
+    <div className="onboarding-backdrop">
+      <div className="onboarding-card">
+        <div className="onboarding-header">
+          <Terminal size={24} className="onboarding-header__icon" />
+          <h2 className="onboarding-header__title">Setup Check</h2>
         </div>
 
-        <p style={styles.subtitle}>Verifying Claude Code CLI and environment</p>
+        <p className="onboarding-subtitle">Verifying Claude Code CLI and environment</p>
 
-        <div style={styles.checks}>
-          <div style={styles.sectionLabel}>Required</div>
+        <div className="onboarding-checks" style={{ gap: tokens.space[3] }}>
+          <div className="onboarding-section-label">Required</div>
           <CheckRow
             state={cliState}
             label="Claude Code CLI installed"
@@ -213,7 +213,7 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
             helpText="Install git and make sure it is on your PATH"
           />
 
-          <div style={{ ...styles.sectionLabel, marginTop: tokens.space[3] }}>Optional</div>
+          <div className="onboarding-section-label onboarding-section-label--spaced">Optional</div>
           <CheckRow
             state={extended.reposConfigured}
             label="Repositories configured"
@@ -229,12 +229,12 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
         </div>
 
         {instruction && !checking && (
-          <div style={styles.instruction}>
-            <code style={styles.instructionCode}>{instruction}</code>
+          <div className="onboarding-instruction">
+            <code className="onboarding-instruction__code">{instruction}</code>
           </div>
         )}
 
-        <div style={styles.actions}>
+        <div className="onboarding-actions">
           {!allPassed && (
             <Button variant="ghost" onClick={runCheck} loading={checking} disabled={checking}>
               <RefreshCw size={14} />
@@ -255,82 +255,4 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
       </div>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  backdrop: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    width: '100%',
-    background: tokens.color.bg,
-    fontFamily: tokens.font.ui
-  },
-  card: {
-    background: tokens.color.surface,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.xl,
-    padding: tokens.space[8],
-    maxWidth: '460px',
-    width: '100%',
-    boxShadow: tokens.shadow.lg
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.space[3],
-    marginBottom: tokens.space[2]
-  },
-  title: {
-    fontSize: tokens.size.xxl,
-    fontWeight: 600,
-    color: tokens.color.text,
-    margin: 0
-  },
-  subtitle: {
-    fontSize: tokens.size.md,
-    color: tokens.color.textMuted,
-    margin: `0 0 ${tokens.space[6]} 0`
-  },
-  checks: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: tokens.space[3],
-    marginBottom: tokens.space[6]
-  },
-  sectionLabel: {
-    fontSize: tokens.size.xs,
-    fontWeight: 600,
-    color: tokens.color.textDim,
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    marginBottom: tokens.space[1]
-  },
-  checkRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.space[3]
-  },
-  checkLabel: {
-    fontSize: tokens.size.md,
-    color: tokens.color.text
-  },
-  instruction: {
-    background: tokens.color.surfaceHigh,
-    border: `1px solid ${tokens.color.border}`,
-    borderRadius: tokens.radius.md,
-    padding: `${tokens.space[3]} ${tokens.space[4]}`,
-    marginBottom: tokens.space[6]
-  },
-  instructionCode: {
-    fontSize: tokens.size.sm,
-    color: tokens.color.warning,
-    fontFamily: tokens.font.code
-  },
-  actions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: tokens.space[3]
-  }
 }
