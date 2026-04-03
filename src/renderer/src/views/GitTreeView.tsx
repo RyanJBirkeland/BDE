@@ -25,6 +25,7 @@ export default function GitTreeView(): React.ReactElement {
   const commitLoading = useGitTreeStore((s) => s.commitLoading)
   const pushLoading = useGitTreeStore((s) => s.pushLoading)
   const lastError = useGitTreeStore((s) => s.lastError)
+  const lastErrorOp = useGitTreeStore((s) => s.lastErrorOp)
 
   const {
     fetchStatus,
@@ -189,8 +190,8 @@ export default function GitTreeView(): React.ReactElement {
             className="git-tree-view__error-retry"
             onClick={() => {
               clearError()
-              if (lastError.startsWith('Push')) handlePush()
-              else handleCommit()
+              if (lastErrorOp === 'push') handlePush()
+              else if (lastErrorOp === 'commit') handleCommit()
             }}
             aria-label="Retry failed operation"
           >
@@ -290,14 +291,6 @@ export default function GitTreeView(): React.ReactElement {
         diffContent={diffContent}
         onClose={clearSelection}
       />
-
-      {/* Keyframe for loading spinner */}
-      <style>{`
-        @keyframes bde-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </motion.div>
   )
 }

@@ -93,6 +93,7 @@ const mockStoreState = {
   commitLoading: false,
   pushLoading: false,
   lastError: null as string | null,
+  lastErrorOp: null as 'push' | 'commit' | null,
   fetchStatus: vi.fn(),
   selectFile: vi.fn(),
   clearSelection: vi.fn(),
@@ -524,8 +525,11 @@ describe('GitTreeView', () => {
   })
 
   describe('Error banner', () => {
-    function renderWithError(lastError: string): void {
-      const state = { ...mockStoreState, lastError }
+    function renderWithError(
+      lastError: string,
+      lastErrorOp: 'push' | 'commit' | null = null
+    ): void {
+      const state = { ...mockStoreState, lastError, lastErrorOp }
       vi.mocked(useGitTreeStore).mockImplementation((selector) => {
         if (typeof selector === 'function') return selector(state as any)
         return state as any
@@ -555,15 +559,15 @@ describe('GitTreeView', () => {
       expect(screen.getByLabelText('Dismiss error')).toBeInTheDocument()
     })
 
-    it('calls clearError and commit on Retry when error starts with non-Push', () => {
-      renderWithError('Commit failed: conflict')
+    it('calls clearError and commit on Retry when lastErrorOp is commit', () => {
+      renderWithError('Commit failed: conflict', 'commit')
       fireEvent.click(screen.getByLabelText('Retry failed operation'))
       expect(mockStoreState.clearError).toHaveBeenCalled()
       expect(mockStoreState.commit).toHaveBeenCalledWith('/repo/bde')
     })
 
-    it('calls clearError and push on Retry when error starts with "Push"', () => {
-      renderWithError('Push failed: auth error')
+    it('calls clearError and push on Retry when lastErrorOp is push', () => {
+      renderWithError('Push failed: auth error', 'push')
       fireEvent.click(screen.getByLabelText('Retry failed operation'))
       expect(mockStoreState.clearError).toHaveBeenCalled()
       expect(mockStoreState.push).toHaveBeenCalledWith('/repo/bde')

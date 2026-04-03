@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { Plus, ChevronDown, X, Bot, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ShellPicker } from './ShellPicker'
 import { AgentPicker } from './AgentPicker'
+import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 import type { TerminalTab } from '../../stores/terminal'
 
 interface TerminalTabBarProps {
@@ -192,6 +193,14 @@ export function TerminalTabBar({
     return 'var(--bde-accent)'
   }
 
+  // Roving tabindex for keyboard navigation
+  const activeTabIdx = tabs.findIndex((t) => t.id === activeTabId)
+  const { getTabProps } = useRovingTabIndex({
+    count: tabs.length,
+    activeIndex: activeTabIdx,
+    onSelect: (index) => onSelectTab(tabs[index].id)
+  })
+
   return (
     <>
       <div className="terminal-tab-bar">
@@ -204,7 +213,13 @@ export function TerminalTabBar({
           </button>
         )}
 
-        <div ref={tabsContainerRef} className="terminal-tab-bar__tabs" onScroll={checkOverflow}>
+        <div
+          ref={tabsContainerRef}
+          className="terminal-tab-bar__tabs"
+          role="tablist"
+          aria-label="Terminal tabs"
+          onScroll={checkOverflow}
+        >
           {tabs.map((tab, idx) => {
             const isActive = tab.id === activeTabId
             const isAgent = tab.kind === 'agent'
@@ -218,14 +233,20 @@ export function TerminalTabBar({
               .filter(Boolean)
               .join(' ')
 
+            const tabProps = getTabProps(idx)
+
             return (
               <div
                 key={tab.id}
                 className={tabClass}
+                role="tab"
+                aria-selected={isActive}
+                tabIndex={tabProps.tabIndex}
                 onClick={() => !isEditing && onSelectTab(tab.id)}
                 onDoubleClick={() => !isEditing && handleDoubleClick(tab)}
                 onContextMenu={(e) => handleContextMenu(e, tab)}
                 onMouseDown={(e) => handleMiddleClick(e, tab.id)}
+                onKeyDown={(e) => !isEditing && tabProps.onKeyDown(e)}
                 draggable={!isEditing}
                 onDragStart={(e) => handleDragStart(e, idx)}
                 onDragOver={handleDragOver}
@@ -252,13 +273,14 @@ export function TerminalTabBar({
                 ) : (
                   <span className="terminal-tab__title">{tab.title}</span>
                 )}
-                {tabs.length > 1 && (isActive || isEditing) && (
+                {tabs.length > 1 && (
                   <button
                     className="terminal-tab__close"
                     onClick={(e) => {
                       e.stopPropagation()
                       onCloseTab(tab.id)
                     }}
+                    aria-label={`Close ${tab.title}`}
                   >
                     <X size={10} />
                   </button>

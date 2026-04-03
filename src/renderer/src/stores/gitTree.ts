@@ -20,6 +20,7 @@ interface GitTreeState {
   commitLoading: boolean
   pushLoading: boolean
   lastError: string | null
+  lastErrorOp: 'push' | 'commit' | null
   selectedFile: GitFileEntry | null
   selectedStaged: boolean
   diffContent: string
@@ -58,6 +59,7 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
   commitLoading: false,
   pushLoading: false,
   lastError: null,
+  lastErrorOp: null,
   selectedFile: null,
   selectedStaged: false,
   diffContent: '',
@@ -151,7 +153,7 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
   commit: async (cwd: string): Promise<void> => {
     const { commitMessage, staged, commitLoading } = get()
     if (!commitMessage.trim() || staged.length === 0 || commitLoading) return
-    set({ commitLoading: true, lastError: null })
+    set({ commitLoading: true, lastError: null, lastErrorOp: null })
     try {
       await window.api.gitCommit(cwd, commitMessage)
       set({ commitMessage: '', commitLoading: false })
@@ -159,27 +161,27 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
       toast.success('Committed successfully')
     } catch (err) {
       const message = `Commit failed: ${err instanceof Error ? err.message : 'Unknown error'}`
-      set({ commitLoading: false, lastError: message })
+      set({ commitLoading: false, lastError: message, lastErrorOp: 'commit' })
       toast.error(message)
     }
   },
 
   push: async (cwd: string): Promise<void> => {
     if (get().pushLoading) return
-    set({ pushLoading: true, lastError: null })
+    set({ pushLoading: true, lastError: null, lastErrorOp: null })
     try {
       await window.api.gitPush(cwd)
       set({ pushLoading: false })
       toast.success('Pushed successfully')
     } catch (err) {
       const message = `Push failed: ${err instanceof Error ? err.message : 'Unknown error'}`
-      set({ pushLoading: false, lastError: message })
+      set({ pushLoading: false, lastError: message, lastErrorOp: 'push' })
       toast.error(message)
     }
   },
 
   clearError: (): void => {
-    set({ lastError: null })
+    set({ lastError: null, lastErrorOp: null })
   },
 
   setLastError: (error: string): void => {
