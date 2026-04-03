@@ -225,6 +225,10 @@ describe('createAgentManager', () => {
     setupDefaultMocks()
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   describe('start()', () => {
     it('sets running = true and runs orphan recovery + prune', async () => {
       const logger = makeLogger()

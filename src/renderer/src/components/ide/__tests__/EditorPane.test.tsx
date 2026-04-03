@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { EditorPane } from '../EditorPane'
 
+vi.mock('monaco-editor', () => ({}))
 vi.mock('@monaco-editor/react', () => ({
   default: ({ value }: { value?: string }) => <div data-testid="monaco-editor">{value}</div>,
   loader: { config: vi.fn() }
