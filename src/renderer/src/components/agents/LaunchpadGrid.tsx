@@ -3,6 +3,7 @@ import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { CLAUDE_MODELS } from '../../../../shared/models'
 import type { PromptTemplate } from '../../lib/launchpad-types'
 import type { NeonAccent } from '../neon/types'
+import { Play } from 'lucide-react'
 
 interface LaunchpadGridProps {
   templates: PromptTemplate[]
@@ -80,6 +81,12 @@ export function LaunchpadGrid({
     [prompt, repo, model, onCustomPrompt]
   )
 
+  const handleSubmit = useCallback(() => {
+    if (prompt.trim()) {
+      onCustomPrompt(prompt.trim(), repo, model)
+    }
+  }, [prompt, repo, model, onCustomPrompt])
+
   return (
     <div className="launchpad" data-testid="launchpad-grid">
       {/* Header */}
@@ -156,6 +163,16 @@ export function LaunchpadGrid({
           rows={2}
           disabled={spawning}
         />
+        <button
+          type="button"
+          className="launchpad__submit-btn"
+          onClick={handleSubmit}
+          disabled={spawning || !prompt.trim()}
+          aria-label="Run agent with prompt"
+        >
+          <Play size={16} />
+          <span>Run</span>
+        </button>
       </div>
     </div>
   )

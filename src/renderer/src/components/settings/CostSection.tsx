@@ -126,18 +126,36 @@ function TaskTable({
 }): React.JSX.Element {
   const sortIndicator = (f: SortField): string => (sortField === f ? ' \u25BE' : '')
 
+  const handleSortKeyDown = (field: SortField) => (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onSort(field)
+    }
+  }
+
   return (
     <div className="cost-view__table-wrap">
       <table className="cost-table">
         <thead>
           <tr>
             <th>Task</th>
-            <th className="cost-table__num cost-table__sortable" onClick={() => onSort('cost_usd')}>
+            <th
+              className="cost-table__num cost-table__sortable"
+              onClick={() => onSort('cost_usd')}
+              onKeyDown={handleSortKeyDown('cost_usd')}
+              tabIndex={0}
+              role="columnheader"
+              aria-sort={sortField === 'cost_usd' ? 'descending' : 'none'}
+            >
               Est. Cost{sortIndicator('cost_usd')}
             </th>
             <th
               className="cost-table__num cost-table__sortable"
               onClick={() => onSort('duration_ms')}
+              onKeyDown={handleSortKeyDown('duration_ms')}
+              tabIndex={0}
+              role="columnheader"
+              aria-sort={sortField === 'duration_ms' ? 'descending' : 'none'}
             >
               Duration{sortIndicator('duration_ms')}
             </th>
@@ -148,6 +166,10 @@ function TaskTable({
             <th
               className="cost-table__num cost-table__sortable"
               onClick={() => onSort('started_at')}
+              onKeyDown={handleSortKeyDown('started_at')}
+              tabIndex={0}
+              role="columnheader"
+              aria-sort={sortField === 'started_at' ? 'descending' : 'none'}
             >
               Date{sortIndicator('started_at')}
             </th>

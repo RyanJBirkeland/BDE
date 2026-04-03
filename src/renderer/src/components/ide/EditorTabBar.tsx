@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import { X } from 'lucide-react'
 import { useIDEStore } from '../../stores/ide'
+import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 
 export interface EditorTabBarProps {
   onCloseTab?: (tabId: string, isDirty: boolean) => void
@@ -11,6 +12,13 @@ export function EditorTabBar({ onCloseTab }: EditorTabBarProps): React.JSX.Eleme
   const activeTabId = useIDEStore((s) => s.activeTabId)
   const setActiveTab = useIDEStore((s) => s.setActiveTab)
   const closeTab = useIDEStore((s) => s.closeTab)
+
+  const activeTabIndex = openTabs.findIndex((t) => t.id === activeTabId)
+  const { getTabProps } = useRovingTabIndex({
+    count: openTabs.length,
+    activeIndex: activeTabIndex >= 0 ? activeTabIndex : 0,
+    onSelect: (index) => setActiveTab(openTabs[index]?.id ?? '')
+  })
 
   function handleClose(e: React.MouseEvent, tabId: string, isDirty: boolean): void {
     e.stopPropagation()
@@ -52,8 +60,9 @@ export function EditorTabBar({ onCloseTab }: EditorTabBarProps): React.JSX.Eleme
 
   return (
     <div ref={barRef} className="ide-editor-tab-bar" role="tablist" aria-label="Editor tabs">
-      {openTabs.map((tab) => {
+      {openTabs.map((tab, index) => {
         const isActive = tab.id === activeTabId
+        const tabProps = getTabProps(index)
         return (
           <div
             key={tab.id}
@@ -63,6 +72,7 @@ export function EditorTabBar({ onCloseTab }: EditorTabBarProps): React.JSX.Eleme
             onClick={() => setActiveTab(tab.id)}
             onMouseDown={(e) => handleMiddleClick(e, tab.id, tab.isDirty)}
             title={tab.filePath}
+            {...tabProps}
           >
             <span className="ide-editor-tab__name">{tab.displayName}</span>
             {tab.isDirty && (

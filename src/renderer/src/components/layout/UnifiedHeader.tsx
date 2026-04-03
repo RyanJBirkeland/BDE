@@ -6,6 +6,7 @@ import { NeonBadge } from '../neon/NeonBadge'
 import { NotificationBell } from './NotificationBell'
 import { HeaderTab } from './HeaderTab'
 import { useTearoffDrag } from '../../hooks/useTearoffDrag'
+import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 
 export function UnifiedHeader(): React.JSX.Element {
   const theme = useThemeStore((s) => s.theme)
@@ -42,37 +43,61 @@ export function UnifiedHeader(): React.JSX.Element {
     }
   }
 
+  const { getTabProps } = useRovingTabIndex({
+    count: tabs.length,
+    activeIndex: activeTabIndex,
+    onSelect: handleTabClick
+  })
+
+  const handleLogoKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleLogoClick()
+    }
+  }
+
   return (
     <div className="unified-header">
       {/* Logo zone - 52px */}
-      <div className="unified-header__logo" onClick={handleLogoClick}>
+      <div
+        className="unified-header__logo"
+        onClick={handleLogoClick}
+        onKeyDown={handleLogoKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-label="Go to Dashboard"
+      >
         <span className="unified-header__logo-letter">B</span>
       </div>
 
       {/* Tab strip - flex:1 */}
-      <div className="unified-header__tabs">
-        {tabs.map((tab, index) => (
-          <HeaderTab
-            key={`${tab.viewKey}-${index}`}
-            label={tab.label}
-            isActive={index === activeTabIndex}
-            onClick={() => handleTabClick(index)}
-            onClose={() => handleTabClose(index)}
-            showClose={tabs.length > 1}
-            draggable
-            onDragStart={(e) => {
-              e.dataTransfer.setData(
-                'application/bde-panel',
-                JSON.stringify({ sourcePanelId: focusedPanelId ?? '', sourceTabIndex: index })
-              )
-              startDrag({
-                sourcePanelId: focusedPanelId ?? '',
-                sourceTabIndex: index,
-                viewKey: tab.viewKey
-              })
-            }}
-          />
-        ))}
+      <div className="unified-header__tabs" role="tablist">
+        {tabs.map((tab, index) => {
+          const tabProps = getTabProps(index)
+          return (
+            <HeaderTab
+              key={`${tab.viewKey}-${index}`}
+              label={tab.label}
+              isActive={index === activeTabIndex}
+              onClick={() => handleTabClick(index)}
+              onClose={() => handleTabClose(index)}
+              showClose={tabs.length > 1}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData(
+                  'application/bde-panel',
+                  JSON.stringify({ sourcePanelId: focusedPanelId ?? '', sourceTabIndex: index })
+                )
+                startDrag({
+                  sourcePanelId: focusedPanelId ?? '',
+                  sourceTabIndex: index,
+                  viewKey: tab.viewKey
+                })
+              }}
+              {...tabProps}
+            />
+          )
+        })}
       </div>
 
       {/* Action buttons */}

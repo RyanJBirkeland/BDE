@@ -161,6 +161,38 @@
   cursor: not-allowed;
 }
 
+.launchpad__submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--neon-cyan-surface);
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  color: var(--neon-cyan);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.launchpad__submit-btn:hover:not(:disabled) {
+  background: var(--neon-cyan);
+  color: var(--neon-bg);
+  box-shadow: 0 0 20px var(--neon-cyan-glow);
+  transform: translateY(-1px);
+}
+
+.launchpad__submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.launchpad__submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ── Repo Chip ── */
 .launchpad__repo-chip {
   display: flex;

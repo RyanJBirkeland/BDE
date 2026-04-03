@@ -14,6 +14,8 @@ interface HeaderTabProps {
   onClose: () => void
   draggable?: boolean
   onDragStart?: (e: React.DragEvent) => void
+  tabIndex?: number
+  onKeyDown?: (e: React.KeyboardEvent) => void
 }
 
 export function HeaderTab({
@@ -24,7 +26,9 @@ export function HeaderTab({
   onClick,
   onClose,
   draggable = false,
-  onDragStart
+  onDragStart,
+  tabIndex,
+  onKeyDown
 }: HeaderTabProps): React.JSX.Element {
   function handleClose(e: React.MouseEvent): void {
     e.stopPropagation()
@@ -43,6 +47,8 @@ export function HeaderTab({
       role="tab"
       aria-selected={isActive}
       title={label}
+      tabIndex={tabIndex}
+      onKeyDown={onKeyDown}
     >
       {showDot && <div className="header-tab__dot" />}
       <span>{label}</span>
