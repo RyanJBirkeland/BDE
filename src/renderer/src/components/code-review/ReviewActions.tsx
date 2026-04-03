@@ -96,6 +96,7 @@ export function ReviewActions(): React.JSX.Element {
         mode: 'fresh'
       })
       toast.success('Task re-queued with revision feedback')
+      selectTask(null)
       loadData()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to request revision')
