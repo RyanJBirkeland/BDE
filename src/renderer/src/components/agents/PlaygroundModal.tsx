@@ -5,7 +5,6 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { X, Columns, Eye, Code, ExternalLink } from 'lucide-react'
-import { tokens } from '../../design-system/tokens'
 
 type ViewMode = 'split' | 'preview' | 'source'
 
@@ -57,7 +56,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
     if (match[1]) {
       // Comment
       parts.push(
-        <span key={key++} style={{ color: tokens.color.textDim, fontStyle: 'italic' }}>
+        <span key={key++} className="playground-modal__syntax-comment">
           {match[1]}
         </span>
       )
@@ -65,7 +64,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
       // Tag bracket + tag name
       parts.push(<span key={key++}>{match[2]}</span>)
       parts.push(
-        <span key={key++} style={{ color: tokens.color.danger }}>
+        <span key={key++} className="playground-modal__syntax-tag">
           {match[3]}
         </span>
       )
@@ -73,7 +72,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
       // Attribute
       parts.push(<span key={key++}>{match[4]}</span>)
       parts.push(
-        <span key={key++} style={{ color: tokens.color.warning }}>
+        <span key={key++} className="playground-modal__syntax-attr">
           {match[5]}
         </span>
       )
@@ -81,7 +80,7 @@ function tokenizeLine(escapedLine: string): React.JSX.Element[] {
     } else if (match[7]) {
       // String
       parts.push(
-        <span key={key++} style={{ color: tokens.color.success }}>
+        <span key={key++} className="playground-modal__syntax-string">
           {match[7]}
         </span>
       )
@@ -156,103 +155,34 @@ export function PlaygroundModal({
       role="dialog"
       aria-modal="true"
       aria-label={`Playground preview: ${filename}`}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--bde-overlay)',
-        animation: 'bde-fade-in 150ms ease'
-      }}
+      className="playground-modal__overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
       data-testid="playground-modal-overlay"
     >
-      <div
-        style={{
-          width: '90vw',
-          height: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          background: tokens.color.surfaceHigh,
-          borderRadius: tokens.radius.xl,
-          boxShadow: 'var(--bde-shadow-lg)',
-          overflow: 'hidden',
-          animation: 'bde-scale-fade-in 150ms ease'
-        }}
-        data-testid="playground-modal"
-      >
+      <div className="playground-modal" data-testid="playground-modal">
         {/* Toolbar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: tokens.space[3],
-            padding: `${tokens.space[2]} ${tokens.space[4]}`,
-            borderBottom: `1px solid ${tokens.color.border}`,
-            flexShrink: 0
-          }}
-        >
+        <div className="playground-modal__toolbar">
           {/* Filename + size */}
-          <Code size={14} style={{ color: tokens.color.accent, flexShrink: 0 }} />
-          <span
-            style={{
-              fontFamily: tokens.font.code,
-              fontSize: tokens.size.sm,
-              color: tokens.color.text,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {filename}
-          </span>
-          <span
-            style={{
-              fontSize: tokens.size.xs,
-              color: tokens.color.textMuted,
-              flexShrink: 0
-            }}
-          >
-            {formatFileSize(sizeBytes)}
-          </span>
+          <Code size={14} className="playground-modal__filename-icon" />
+          <span className="playground-modal__filename">{filename}</span>
+          <span className="playground-modal__filesize">{formatFileSize(sizeBytes)}</span>
 
           {/* Security indicator: scripts enabled */}
           <span
             aria-label="JavaScript execution is enabled in this preview"
             title="Agent-generated HTML can execute JavaScript. Only preview content from trusted agents."
-            style={{
-              fontSize: tokens.size.xs,
-              color: tokens.color.warning,
-              background: 'rgba(255, 193, 7, 0.1)',
-              padding: `2px ${tokens.space[2]}`,
-              borderRadius: tokens.radius.sm,
-              border: `1px solid ${tokens.color.warning}`,
-              flexShrink: 0,
-              whiteSpace: 'nowrap'
-            }}
+            className="playground-modal__security-badge"
           >
             ⚠️ Scripts enabled
           </span>
 
           {/* Spacer */}
-          <div style={{ flex: 1 }} />
+          <div className="playground-modal__spacer" />
 
           {/* View mode toggle */}
-          <div
-            role="tablist"
-            aria-label="View mode"
-            style={{
-              display: 'flex',
-              gap: tokens.space[1],
-              background: tokens.color.surface,
-              padding: tokens.space[1],
-              borderRadius: tokens.radius.sm
-            }}
-          >
+          <div role="tablist" aria-label="View mode" className="playground-modal__view-toggle">
             {(['split', 'preview', 'source'] as ViewMode[]).map((mode) => {
               const Icon = VIEW_MODE_ICONS[mode]
               const isActive = viewMode === mode
@@ -263,20 +193,7 @@ export function PlaygroundModal({
                   aria-selected={isActive}
                   aria-label={VIEW_MODE_LABELS[mode]}
                   onClick={() => setViewMode(mode)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: tokens.space[1],
-                    padding: `${tokens.space[1]} ${tokens.space[2]}`,
-                    background: isActive ? tokens.color.accentDim : 'transparent',
-                    color: isActive ? tokens.color.accent : tokens.color.textMuted,
-                    border: 'none',
-                    borderRadius: tokens.radius.sm,
-                    cursor: 'pointer',
-                    fontSize: tokens.size.xs,
-                    fontFamily: tokens.font.ui,
-                    transition: tokens.transition.fast
-                  }}
+                  className={`playground-modal__view-button ${isActive ? 'playground-modal__view-button--active' : ''}`}
                 >
                   <Icon size={12} />
                   {VIEW_MODE_LABELS[mode]}
@@ -289,20 +206,7 @@ export function PlaygroundModal({
           <button
             onClick={handleOpenInBrowser}
             aria-label="Open in browser"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: tokens.space[1],
-              padding: `${tokens.space[1]} ${tokens.space[2]}`,
-              background: 'transparent',
-              color: tokens.color.textMuted,
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.sm,
-              cursor: 'pointer',
-              fontSize: tokens.size.xs,
-              fontFamily: tokens.font.ui,
-              transition: tokens.transition.fast
-            }}
+            className="playground-modal__browser-button"
           >
             <ExternalLink size={12} />
             Open in Browser
@@ -312,40 +216,18 @@ export function PlaygroundModal({
           <button
             onClick={onClose}
             aria-label="Close playground"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '28px',
-              height: '28px',
-              background: 'transparent',
-              color: tokens.color.textMuted,
-              border: 'none',
-              borderRadius: tokens.radius.sm,
-              cursor: 'pointer',
-              transition: tokens.transition.fast
-            }}
+            className="playground-modal__close-button"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Content area */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            overflow: 'hidden'
-          }}
-        >
+        <div className="playground-modal__content">
           {/* Preview pane */}
           {showPreview && (
             <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                borderRight: showSource ? `1px solid ${tokens.color.border}` : undefined
-              }}
+              className={`playground-modal__preview ${showSource ? 'playground-modal__preview--split' : ''}`}
               data-testid="playground-preview"
             >
               {/*
@@ -365,55 +247,20 @@ export function PlaygroundModal({
                 title={`Preview of ${filename}`}
                 sandbox="allow-scripts"
                 srcDoc={html}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  background: '#ffffff'
-                }}
+                className="playground-modal__iframe"
+                style={{ background: '#ffffff' }}
               />
             </div>
           )}
 
           {/* Source pane */}
           {showSource && (
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                overflow: 'auto',
-                background: tokens.color.surface
-              }}
-              data-testid="playground-source"
-            >
-              <pre
-                style={{
-                  margin: 0,
-                  padding: tokens.space[3],
-                  fontFamily: tokens.font.code,
-                  fontSize: tokens.size.xs,
-                  lineHeight: '20px',
-                  color: tokens.color.text,
-                  whiteSpace: 'pre',
-                  tabSize: 2
-                }}
-              >
+            <div className="playground-modal__source" data-testid="playground-source">
+              <pre className="playground-modal__source-pre">
                 <code>
                   {sourceLines.map((line, i) => (
-                    <div key={i} style={{ display: 'flex', minHeight: '20px' }}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: '48px',
-                          textAlign: 'right',
-                          paddingRight: tokens.space[3],
-                          color: tokens.color.textDim,
-                          userSelect: 'none',
-                          flexShrink: 0
-                        }}
-                      >
-                        {i + 1}
-                      </span>
+                    <div key={i} className="playground-modal__source-line">
+                      <span className="playground-modal__line-number">{i + 1}</span>
                       <span>{tokenizeLine(line)}</span>
                     </div>
                   ))}
