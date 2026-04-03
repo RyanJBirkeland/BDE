@@ -48,6 +48,9 @@ export function useRovingTabIndex({
 
     if (nextIndex !== null) {
       onSelect(nextIndex)
+      // Move DOM focus to the newly active tab
+      const target = e.currentTarget.parentElement?.children[nextIndex] as HTMLElement | undefined
+      target?.focus()
     }
   }
 

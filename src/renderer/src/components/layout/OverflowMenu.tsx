@@ -66,15 +66,11 @@ export function OverflowMenu({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose, unpinnedViews.length])
 
-  // Auto-focus first item on mount
+  // Move focus when focusedIndex changes (including initial mount)
   useEffect(() => {
-    if (unpinnedViews.length > 0) {
-      const firstButton = menuRef.current?.querySelector<HTMLButtonElement>(
-        '[role="menuitem"]'
-      )
-      firstButton?.focus()
-    }
-  }, [])
+    const items = menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]')
+    items?.[focusedIndex]?.focus()
+  }, [focusedIndex])
 
   if (!anchorRect) return null
 
@@ -121,13 +117,18 @@ export function OverflowMenu({
               const label = VIEW_LABELS[view]
 
               return (
-                <button
+                <div
                   key={view}
                   className="overflow-menu__item"
                   onClick={() => handleItemClick(view)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleItemClick(view)
+                    }
+                  }}
                   role="menuitem"
                   tabIndex={index === focusedIndex ? 0 : -1}
-                  type="button"
                 >
                   <Icon size={14} strokeWidth={1.5} />
                   <span>{label}</span>
@@ -140,7 +141,7 @@ export function OverflowMenu({
                   >
                     <Pin size={12} />
                   </button>
-                </button>
+                </div>
               )
             })}
           </div>
