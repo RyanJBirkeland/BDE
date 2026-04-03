@@ -223,7 +223,9 @@ export function AgentList({
         }}
       >
         <div
-          className={searchFocused ? 'agent-list__search-border--focused' : 'agent-list__search-border'}
+          className={
+            searchFocused ? 'agent-list__search-border--focused' : 'agent-list__search-border'
+          }
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -237,7 +239,9 @@ export function AgentList({
         >
           <Search
             size={12}
-            className={searchFocused ? 'agent-list__search-icon--focused' : 'agent-list__search-icon'}
+            className={
+              searchFocused ? 'agent-list__search-icon--focused' : 'agent-list__search-icon'
+            }
           />
           <input
             type="text"

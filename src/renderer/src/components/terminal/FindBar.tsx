@@ -20,9 +20,9 @@ export function FindBar(): React.JSX.Element | null {
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery('')
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setResultIndex(-1)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setResultCount(0)
       if (activeTabId) {
         getSearchAddon(activeTabId)?.clearDecorations()
@@ -55,7 +55,7 @@ export function FindBar(): React.JSX.Element | null {
       addon.clearDecorations()
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResultIndex(-1)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setResultCount(0)
     }
   }, [query, activeTabId])

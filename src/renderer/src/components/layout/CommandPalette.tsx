@@ -59,7 +59,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
     if (!open) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuery('')
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setSelectedIndex(0)
     requestAnimationFrame(() => inputRef.current?.focus())
 
@@ -78,7 +78,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       })
   }, [open])
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const commands = useMemo<Command[]>(() => {
     const navCommands: { view: View; label: string; hint: string }[] = [
       { view: 'dashboard', label: 'Go to Dashboard', hint: '\u23181' },

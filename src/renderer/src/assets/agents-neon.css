@@ -433,6 +433,18 @@
   transform: rotate(90deg);
 }
 
+.console-collapsible-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+}
+
 /* ── Command Bar ── */
 .command-bar {
   height: 44px;
