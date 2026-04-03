@@ -483,7 +483,7 @@ describe('Queue API', () => {
       expect(status).toBe(200)
 
       // Give the async post-response work time to complete
-      await new Promise((r) => setTimeout(r, 50))
+      await vi.waitFor(() => expect(mockOnStatusTerminal).toHaveBeenCalled(), { timeout: 1000 })
       expect(mockOnStatusTerminal).toHaveBeenCalledWith('abc', 'done')
     })
 
@@ -497,7 +497,7 @@ describe('Queue API', () => {
         })
         expect(status).toBe(200)
 
-        await new Promise((r) => setTimeout(r, 50))
+        await vi.waitFor(() => expect(mockOnStatusTerminal).toHaveBeenCalled(), { timeout: 1000 })
         expect(mockOnStatusTerminal).toHaveBeenCalledWith('abc', terminalStatus)
       }
     })
@@ -509,7 +509,8 @@ describe('Queue API', () => {
       const { status } = await request('PATCH', '/queue/tasks/abc/status', { status: 'active' })
       expect(status).toBe(200)
 
-      await new Promise((r) => setTimeout(r, 50))
+      // Wait a tick to ensure no async calls happen
+      await new Promise((r) => setImmediate(r))
       expect(mockOnStatusTerminal).not.toHaveBeenCalled()
     })
   })

@@ -193,6 +193,7 @@ describe('auth-guard', () => {
     let fakeNow: number
 
     beforeEach(() => {
+      vi.useFakeTimers()
       // Each test advances time by 2s to bypass the 1s rate-limit cache on readToken()
       fakeNow = (fakeNow ?? Date.now()) + 2000
       vi.setSystemTime(fakeNow)
@@ -203,7 +204,6 @@ describe('auth-guard', () => {
     })
 
     it('reads token via execFile (security command)', async () => {
-      vi.useFakeTimers()
       mockExecFileResult(makeKeychainJson())
       const store = new MacOSCredentialStore()
       const payload = await store.readToken()
@@ -212,7 +212,6 @@ describe('auth-guard', () => {
     })
 
     it('returns null when security command fails', async () => {
-      vi.useFakeTimers()
       vi.setSystemTime(Date.now() + 5000) // ensure rate limit has expired
       mockExecFileError('security: item not found')
       const store = new MacOSCredentialStore()

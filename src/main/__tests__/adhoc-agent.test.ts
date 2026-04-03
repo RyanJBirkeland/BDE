@@ -111,7 +111,7 @@ describe('spawnAdhocAgent', () => {
     mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(() => expect(broadcast).toHaveBeenCalled(), { timeout: 1000 })
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
@@ -126,7 +126,14 @@ describe('spawnAdhocAgent', () => {
     mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(
+      () =>
+        expect(broadcast).toHaveBeenCalledWith(
+          'agent:event',
+          expect.objectContaining({ event: expect.objectContaining({ type: 'agent:text' }) })
+        ),
+      { timeout: 1000 }
+    )
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
@@ -144,7 +151,14 @@ describe('spawnAdhocAgent', () => {
     mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(
+      () =>
+        expect(broadcast).toHaveBeenCalledWith(
+          'agent:event',
+          expect.objectContaining({ event: expect.objectContaining({ type: 'agent:tool_call' }) })
+        ),
+      { timeout: 1000 }
+    )
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
@@ -158,9 +172,16 @@ describe('spawnAdhocAgent', () => {
 
     const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
     // Wait for the first turn to complete, then close the session to trigger completion
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(() => expect(broadcast).toHaveBeenCalled(), { timeout: 1000 })
     getAdhocHandle(result.id)?.close()
-    await new Promise((r) => setTimeout(r, 10))
+    await vi.waitFor(
+      () =>
+        expect(broadcast).toHaveBeenCalledWith(
+          'agent:event',
+          expect.objectContaining({ event: expect.objectContaining({ type: 'agent:completed' }) })
+        ),
+      { timeout: 1000 }
+    )
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
@@ -183,7 +204,14 @@ describe('spawnAdhocAgent', () => {
     mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(
+      () =>
+        expect(broadcast).toHaveBeenCalledWith(
+          'agent:event',
+          expect.objectContaining({ event: expect.objectContaining({ type: 'agent:error' }) })
+        ),
+      { timeout: 1000 }
+    )
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',

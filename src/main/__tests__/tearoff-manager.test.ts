@@ -330,7 +330,7 @@ describe('close flow', () => {
     win.emit('close', closeEvent)
 
     // wait for async close flow
-    await new Promise((r) => setTimeout(r, 20))
+    await vi.waitFor(() => expect(win.destroy).toHaveBeenCalled(), { timeout: 1000 })
 
     expect(mainWin.webContents.send).toHaveBeenCalledWith(
       'tearoff:tabReturned',
@@ -348,7 +348,7 @@ describe('close flow', () => {
     const closeEvent = { preventDefault: vi.fn() }
     win.emit('close', closeEvent)
 
-    await new Promise((r) => setTimeout(r, 20))
+    await vi.waitFor(() => expect(win.destroy).toHaveBeenCalled(), { timeout: 1000 })
 
     const returnCalls = mainWin.webContents.send.mock.calls.filter(
       ([ch]: [string]) => ch === 'tearoff:tabReturned'
@@ -374,7 +374,7 @@ describe('close flow', () => {
     expect(onceHandler).toBeDefined()
     onceHandler!(fakeEvent, { action: 'return' })
 
-    await new Promise((r) => setTimeout(r, 20))
+    await vi.waitFor(() => expect(win.destroy).toHaveBeenCalled(), { timeout: 1000 })
 
     expect(mainWin.webContents.send).toHaveBeenCalledWith(
       'tearoff:tabReturned',
@@ -397,7 +397,7 @@ describe('close flow', () => {
     const onceHandler = ipcOnceListeners.get(`tearoff:closeResponse:${windowId}`)!
     onceHandler(fakeEvent, { action: 'close' })
 
-    await new Promise((r) => setTimeout(r, 20))
+    await vi.waitFor(() => expect(win.destroy).toHaveBeenCalled(), { timeout: 1000 })
 
     const returnCalls = mainWin.webContents.send.mock.calls.filter(
       ([ch]: [string]) => ch === 'tearoff:tabReturned'

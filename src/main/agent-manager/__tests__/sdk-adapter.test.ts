@@ -199,7 +199,7 @@ describe('spawnAgent (CLI fallback)', () => {
     child.stderr.push(null) // EOF
 
     // Allow event handlers to fire
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(() => expect(stderrLines.length).toBe(2), { timeout: 1000 })
 
     expect(stderrLines).toEqual(['Warning: deprecated API', 'Error: something failed'])
   })
@@ -217,7 +217,7 @@ describe('spawnAgent (CLI fallback)', () => {
     child.stderr.push(Buffer.from('real output\n   \n\n'))
     child.stderr.push(null) // EOF
 
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(() => expect(stderrLines.length).toBe(1), { timeout: 1000 })
 
     expect(stderrLines).toEqual(['real output'])
   })
@@ -237,7 +237,7 @@ describe('spawnAgent (CLI fallback)', () => {
     child.stderr.push(Buffer.from('ne one\nline two\n'))
     child.stderr.push(null) // EOF
 
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(() => expect(stderrLines.length).toBe(2), { timeout: 1000 })
 
     expect(stderrLines).toEqual(['partial line one', 'line two'])
   })
@@ -256,7 +256,7 @@ describe('spawnAgent (CLI fallback)', () => {
     child.stderr.push(Buffer.from('no trailing newline'))
     child.stderr.push(null) // EOF
 
-    await new Promise((r) => setTimeout(r, 50))
+    await vi.waitFor(() => expect(stderrLines.length).toBe(1), { timeout: 1000 })
 
     expect(stderrLines).toEqual(['no trailing newline'])
   })

@@ -506,7 +506,7 @@
     "init_module": "/Users/ryan/.npm-init.js",
     "userconfig": "/Users/ryan/.npmrc",
     "globalconfig": "/opt/homebrew/etc/npmrc",
-    "local_prefix": "/Users/ryan/worktrees/BDE/Users-ryan-projects-BDE/130c4086e68d7d783a704a6f60fdf90d",
+    "local_prefix": "/Users/ryan/worktrees/BDE/Users-ryan-projects-BDE/fd76f27ccb503d6b67c65e1a62a83b11",
     "global_prefix": "/opt/homebrew"
   },
   "target_defaults": {
