@@ -105,7 +105,7 @@ describe('ChangesTab', () => {
     await waitFor(() => {
       expect(window.api.review.getDiff).toHaveBeenCalledWith({
         worktreePath: '/tmp/wt',
-        base: 'main'
+        base: 'origin/main'
       })
     })
   })

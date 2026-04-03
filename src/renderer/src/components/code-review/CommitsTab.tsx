@@ -17,7 +17,7 @@ export function CommitsTab(): React.JSX.Element {
     if (!task?.worktree_path) return
     setLoading('commits', true)
     window.api.review
-      .getCommits({ worktreePath: task.worktree_path, base: 'main' })
+      .getCommits({ worktreePath: task.worktree_path, base: 'origin/main' })
       .then((result) => setCommits(result.commits))
       .catch(() => setCommits([]))
       .finally(() => setLoading('commits', false))

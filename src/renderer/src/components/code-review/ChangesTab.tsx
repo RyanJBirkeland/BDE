@@ -21,7 +21,7 @@ export function ChangesTab(): React.JSX.Element {
     if (!task?.worktree_path) return
     setLoading('diff', true)
     window.api.review
-      .getDiff({ worktreePath: task.worktree_path, base: 'main' })
+      .getDiff({ worktreePath: task.worktree_path, base: 'origin/main' })
       .then((result) => {
         setDiffFiles(result.files)
         if (result.files.length > 0) setSelectedFile(result.files[0].path)
@@ -37,7 +37,7 @@ export function ChangesTab(): React.JSX.Element {
       .getFileDiff({
         worktreePath: task.worktree_path,
         filePath: selectedFile,
-        base: 'main'
+        base: 'origin/main'
       })
       .then((result) => setFileDiff(result.diff))
       .catch(() => setFileDiff('Failed to load diff'))
