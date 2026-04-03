@@ -131,22 +131,6 @@ vi.mock('../../components/terminal/FindBar', () => ({
   FindBar: () => null
 }))
 
-vi.mock('../../components/pr-station/PRStationList', () => ({
-  PRStationList: () => <div data-testid="pr-station-list" />
-}))
-
-vi.mock('../../components/pr-station/PRStationDetail', () => ({
-  PRStationDetail: () => <div data-testid="pr-station-detail" />
-}))
-
-vi.mock('../../components/pr-station/PRStationDiff', () => ({
-  PRStationDiff: () => <div data-testid="pr-station-diff" />
-}))
-
-vi.mock('../../components/pr-station/ReviewSubmitDialog', () => ({
-  ReviewSubmitDialog: () => null
-}))
-
 vi.mock('../../stores/pendingReview', () => ({
   usePendingReviewStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ pendingComments: new Map() })
@@ -229,7 +213,6 @@ Object.defineProperty(window, 'api', {
 import { AgentsView } from '../AgentsView'
 import SprintView from '../SprintView'
 import SettingsView from '../SettingsView'
-import PRStationView from '../PRStationView'
 
 // ---------- Tests ----------
 
@@ -248,12 +231,6 @@ describe('View smoke tests', () => {
 
   it('SettingsView renders without crashing', () => {
     const { container } = render(<SettingsView />)
-    expect(container.firstChild).toBeInTheDocument()
-    expect(container.innerHTML).not.toBe('')
-  })
-
-  it('PRStationView renders without crashing', () => {
-    const { container } = render(<PRStationView />)
     expect(container.firstChild).toBeInTheDocument()
     expect(container.innerHTML).not.toBe('')
   })
