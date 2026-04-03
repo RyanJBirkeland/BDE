@@ -49,6 +49,20 @@ export function formatDuration(
 }
 
 /**
+ * Format milliseconds to human-readable duration: "3m 12s".
+ * Returns "--" for null/undefined/NaN.
+ */
+export function formatDurationMs(ms: number | null | undefined): string {
+  if (ms == null || Number.isNaN(ms)) return '--'
+  const seconds = Math.floor(ms / 1000)
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ${seconds % 60}s`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}h ${minutes % 60}m`
+}
+
+/**
  * Short model badge label: "claude-sonnet-4-5-20250929" → "sonnet".
  */
 export function modelBadgeLabel(model: string): string {

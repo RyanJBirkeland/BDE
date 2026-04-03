@@ -7,6 +7,7 @@ import type { AgentMeta, AgentEvent } from '../../../../shared/types'
 import { NeonBadge, type NeonAccent } from '../neon'
 import { useTerminalStore } from '../../stores/terminal'
 import { toast } from '../../stores/toasts'
+import { formatDuration, formatElapsed } from '../../lib/format'
 
 interface ConsoleHeaderProps {
   agent: AgentMeta
@@ -21,23 +22,6 @@ function getModelAccent(model: string): NeonAccent {
   return 'blue'
 }
 
-function formatDuration(startedAt: string, finishedAt: string | null): string {
-  const start = new Date(startedAt).getTime()
-  const end = finishedAt ? new Date(finishedAt).getTime() : Date.now()
-  const durationMs = end - start
-  const seconds = Math.floor(durationMs / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-
-  if (hours > 0) {
-    return `${hours}h ${minutes % 60}m`
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds % 60}s`
-  }
-  return `${seconds}s`
-}
-
 function estimateCost(events: AgentEvent[], model: string): number {
   const perEventCost = model.toLowerCase().includes('opus') ? 0.003 : 0.001
   return events.length * perEventCost
@@ -45,13 +29,23 @@ function estimateCost(events: AgentEvent[], model: string): number {
 
 export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.Element {
   const isRunning = agent.status === 'running'
-  const [duration, setDuration] = useState(formatDuration(agent.startedAt, agent.finishedAt))
+  const getDuration = (): string => {
+    if (agent.finishedAt) {
+      return formatDuration(agent.startedAt, agent.finishedAt)
+    }
+    return formatElapsed(new Date(agent.startedAt).getTime())
+  }
+  const [duration, setDuration] = useState(() => getDuration())
 
   // Live duration ticker for running agents
   useEffect(() => {
     if (!isRunning) return
     const interval = setInterval(() => {
-      setDuration(formatDuration(agent.startedAt, agent.finishedAt))
+      setDuration(
+        agent.finishedAt
+          ? formatDuration(agent.startedAt, agent.finishedAt)
+          : formatElapsed(new Date(agent.startedAt).getTime())
+      )
     }, 1000)
     return () => clearInterval(interval)
   }, [isRunning, agent.startedAt, agent.finishedAt])

@@ -10,6 +10,7 @@ import { Button } from '../ui/Button'
 import { Download, RefreshCw, BarChart, ExternalLink } from 'lucide-react'
 import { AGENT_HISTORY_LIMIT, FLASH_DURATION_MS } from '../../lib/constants'
 import { useCostDataStore } from '../../stores/costData'
+import { formatDurationMs } from '../../lib/format'
 
 // ── Formatting helpers ──────────────────────────────────
 
@@ -24,15 +25,6 @@ function formatTokens(n: number | null | undefined): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return n.toLocaleString()
-}
-
-function formatDuration(ms: number | null | undefined): string {
-  if (ms == null || Number.isNaN(ms)) return '--'
-  const sec = Math.round(ms / 1000)
-  if (sec < 60) return `${sec}s`
-  const min = Math.floor(sec / 60)
-  const rem = sec % 60
-  return `${min}m ${rem}s`
 }
 
 function formatDate(iso: string): string {
@@ -191,7 +183,7 @@ function TaskTable({
                   </span>
                 </td>
                 <td className="cost-table__num cost-table__cost">{formatCost(r.cost_usd)}</td>
-                <td className="cost-table__num">{formatDuration(r.duration_ms)}</td>
+                <td className="cost-table__num">{formatDurationMs(r.duration_ms)}</td>
                 <td className="cost-table__num">{r.num_turns ?? '--'}</td>
                 <td className="cost-table__num">
                   {cache !== null ? `${cache.toFixed(0)}%` : '--'}

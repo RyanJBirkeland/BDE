@@ -7,6 +7,7 @@ import { ChevronRight } from 'lucide-react'
 import type { ChatBlock } from '../../lib/pair-events'
 import { renderAgentMarkdown } from '../../lib/render-agent-markdown'
 import { formatToolSummary } from '../../lib/tool-summaries'
+import { formatDurationMs } from '../../lib/format'
 
 interface ConsoleLineProps {
   block: ChatBlock
@@ -24,16 +25,6 @@ function formatTime(ts: number): string {
   } catch {
     return ''
   }
-}
-
-function formatDuration(ms: number): string {
-  const totalSec = Math.floor(ms / 1000)
-  const hours = Math.floor(totalSec / 3600)
-  const minutes = Math.floor((totalSec % 3600) / 60)
-  const seconds = totalSec % 60
-  if (hours > 0) return `${hours}h ${minutes}m`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
 }
 
 function formatTokenCount(n: number): string {
@@ -342,7 +333,7 @@ export function ConsoleLine({
           <div className="console-completion-card__stats">
             <div className="console-completion-card__stat">
               <div className="console-completion-card__stat-value console-completion-card__stat-value--cyan">
-                {formatDuration(block.durationMs)}
+                {formatDurationMs(block.durationMs)}
               </div>
               <div className="console-completion-card__stat-label">Duration</div>
             </div>

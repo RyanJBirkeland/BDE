@@ -6,20 +6,13 @@ import type { SprintTask } from '../../../../shared/types'
 import { SPRINGS } from '../../lib/motion'
 import { formatElapsed, getDotColor } from '../../lib/task-format'
 import { useSprintUI } from '../../stores/sprintUI'
+import { formatDuration } from '../../lib/format'
 
 interface TaskPillProps {
   task: SprintTask
   selected: boolean
   multiSelected?: boolean
   onClick: (id: string) => void
-}
-
-function formatDuration(startedAt: string, completedAt: string): string {
-  const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime()
-  const min = Math.floor(ms / 60000)
-  if (min < 60) return `${min}m`
-  const hr = Math.floor(min / 60)
-  return `${hr}h ${min % 60}m`
 }
 
 function getStatusClass(status: string, prStatus?: string | null): string {

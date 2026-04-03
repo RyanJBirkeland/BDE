@@ -124,8 +124,8 @@ describe('AgentCard', () => {
     const finished = new Date('2024-01-01T10:02:30Z').toISOString()
     const agent = makeAgent({ status: 'done', startedAt: started, finishedAt: finished })
     render(<AgentCard {...defaultProps} agent={agent} />)
-    // 150 seconds = 2 minutes
-    expect(screen.getByText('2m')).toBeInTheDocument()
+    // 150 seconds = 2 minutes 30 seconds
+    expect(screen.getByText('2m 30s')).toBeInTheDocument()
   })
 
   it('shows duration in seconds for short runs', () => {

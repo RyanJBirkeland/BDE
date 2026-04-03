@@ -10,6 +10,7 @@ import { NeonCard } from '../neon/NeonCard'
 import { type NeonAccent, neonVar } from '../neon/types'
 import { toast } from '../../stores/toasts'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
+import { formatDuration } from '../../lib/format'
 
 interface AgentCardProps {
   agent: AgentMeta
@@ -24,15 +25,6 @@ const STATUS_ACCENTS: Record<string, NeonAccent> = {
   failed: 'red',
   cancelled: 'orange',
   unknown: 'purple'
-}
-
-function formatDuration(startedAt: string, finishedAt: string | null): string {
-  const start = new Date(startedAt).getTime()
-  const end = finishedAt ? new Date(finishedAt).getTime() : Date.now()
-  const sec = Math.floor((end - start) / 1000)
-  if (sec < 60) return `${sec}s`
-  if (sec < 3600) return `${Math.floor(sec / 60)}m`
-  return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`
 }
 
 interface StatusIndicatorProps {
