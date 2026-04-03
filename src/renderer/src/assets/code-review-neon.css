@@ -61,6 +61,12 @@
   background: var(--neon-purple-surface);
 }
 
+.cr-queue__item:focus-visible {
+  outline: 2px solid var(--neon-blue);
+  outline-offset: -2px;
+  background: var(--neon-purple-surface);
+}
+
 .cr-queue__item--selected {
   background: var(--neon-purple-surface);
   border-left: 3px solid var(--neon-blue);
@@ -130,6 +136,11 @@
 
 .cr-detail__tab:hover {
   color: var(--neon-text);
+}
+
+.cr-detail__tab:focus-visible {
+  outline: 2px solid var(--neon-blue);
+  outline-offset: -2px;
 }
 
 .cr-detail__tab--active {
@@ -231,8 +242,13 @@
   font-family: var(--bde-font-code);
   font-weight: 600;
   cursor: pointer;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
   border: 1px solid;
+}
+
+.cr-actions__btn:focus-visible {
+  outline: 2px solid var(--neon-blue);
+  outline-offset: 2px;
 }
 
 .cr-actions__btn--primary {
@@ -243,7 +259,8 @@
 }
 
 .cr-actions__btn--primary:hover {
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  box-shadow: 0 0 12px var(--neon-cyan-glow);
+  transform: translateY(-1px);
 }
 
 .cr-actions__strategy {
@@ -265,7 +282,8 @@
 }
 
 .cr-actions__btn--secondary:hover {
-  box-shadow: 0 0 8px var(--neon-blue-glow);
+  box-shadow: 0 0 12px var(--neon-blue-glow);
+  transform: translateY(-1px);
 }
 
 .cr-actions__btn--ghost {
@@ -276,6 +294,7 @@
 
 .cr-actions__btn--ghost:hover {
   background: var(--neon-purple-surface);
+  box-shadow: 0 0 8px var(--neon-purple-glow);
 }
 
 .cr-actions__btn--danger {
@@ -286,7 +305,8 @@
 
 .cr-actions__btn--danger:hover {
   background: var(--neon-red-surface);
-  box-shadow: 0 0 8px var(--neon-red-glow);
+  box-shadow: 0 0 12px var(--neon-red-glow);
+  transform: translateY(-1px);
 }
 
 /* Changes tab — file tree + diff viewer */
@@ -321,6 +341,12 @@
 }
 
 .cr-changes__file:hover {
+  background: var(--neon-surface-dim);
+}
+
+.cr-changes__file:focus-visible {
+  outline: 2px solid var(--neon-blue);
+  outline-offset: -2px;
   background: var(--neon-surface-dim);
 }
 
@@ -361,4 +387,58 @@
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.5;
+}
+
+/* ── Responsive Breakpoints ── */
+
+/* Collapse queue sidebar to narrower width for constrained panels */
+@media (max-width: 800px) {
+  .cr-queue {
+    width: 200px;
+    min-width: 160px;
+  }
+
+  .cr-changes__files {
+    width: 200px;
+    min-width: 160px;
+  }
+}
+
+/* Single column layout for very narrow panels */
+@media (max-width: 600px) {
+  .cr-view {
+    flex-direction: column;
+  }
+
+  .cr-queue {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--neon-purple-border);
+    max-height: 200px;
+  }
+
+  .cr-changes {
+    flex-direction: column;
+  }
+
+  .cr-changes__files {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--neon-purple-border);
+    max-height: 150px;
+  }
+}
+
+/* ── Reduced Motion Overrides ── */
+@media (prefers-reduced-motion: reduce) {
+  .cr-queue__item,
+  .cr-detail__tab,
+  .cr-actions__btn,
+  .cr-changes__file {
+    transition: none;
+  }
+
+  .cr-actions__btn:hover {
+    transform: none;
+  }
 }
