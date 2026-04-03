@@ -26,10 +26,18 @@ GitHub Actions runs on every push to `main` and every PR targeting `main`:
 
 - `npm run lint` — must pass
 - `npm run typecheck` — must pass
-- `npm run test:coverage` — must pass (enforces coverage thresholds: 72% stmts, 66% branches, 70% functions, 74% lines)
+- `npm run test:coverage` — must pass (enforces coverage thresholds: 73% stmts, 65% branches, 73% functions, 74% lines)
 - `npm run test:main` — must pass (main process integration tests)
 
 All checks are required before merge.
+
+**MANDATORY: Before EVERY commit, run ALL of these:**
+```bash
+npm run typecheck   # Zero errors required
+npm test            # All tests must pass
+npm run lint        # Zero errors required (warnings OK)
+```
+Do NOT commit with failing checks. Fix issues first. If you cannot fix a failure, do NOT commit — report the issue.
 
 ## Branch Conventions
 

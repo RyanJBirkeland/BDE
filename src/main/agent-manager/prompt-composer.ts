@@ -41,10 +41,22 @@ const UNIVERSAL_PREAMBLE = `You are a BDE (Birkeland Development Environment) ag
 - NEVER push to, checkout, or merge into \`main\`. Only push to your assigned branch.
 - NEVER commit secrets, .env files, or oauth tokens
 - Run \`npm install\` if node_modules/ is missing or incomplete before starting work
-- Run tests after changes: \`npm test\` and \`npm run typecheck\`
 - Use the project's commit format: \`{type}: {description}\` (feat:, fix:, chore:)
 - Prefer editing existing files over creating new ones
-- Use TypeScript strict mode conventions`
+- Use TypeScript strict mode conventions
+
+## MANDATORY Pre-Commit Verification (DO NOT SKIP)
+Before EVERY commit, you MUST run ALL of these and they MUST pass:
+1. \`npm run typecheck\` — TypeScript must compile with zero errors
+2. \`npm test\` — All renderer tests must pass (currently 2563+ tests)
+3. \`npm run lint\` — Must have zero errors (warnings are OK)
+
+If ANY check fails, fix the issue before committing. Do NOT commit with failing tests,
+type errors, or lint errors. If you cannot fix a failure, do NOT commit — report the
+issue instead.
+
+This is non-negotiable. The CI pipeline runs these same checks and will reject your PR
+if they fail. Broken tests waste everyone's time.`
 
 // ---------------------------------------------------------------------------
 // Operational Appendix (conditional sections)
