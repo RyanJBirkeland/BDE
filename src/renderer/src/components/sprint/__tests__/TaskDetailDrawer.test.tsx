@@ -401,3 +401,183 @@ describe('TaskDetailDrawer - additional status combos', () => {
     expect(screen.queryByText('Create PR →')).not.toBeInTheDocument()
   })
 })
+
+describe('TaskDetailDrawer - loading states', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-01T12:00:00Z'))
+    useSprintTasks.setState({ tasks: [] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('disables all buttons while action is loading', async () => {
+    const props = makeProps()
+    let resolveAction: () => void
+    const actionPromise = new Promise<void>((resolve) => {
+      resolveAction = resolve
+    })
+    props.onLaunch = vi.fn(() => actionPromise)
+
+    render(<TaskDetailDrawer {...props} />)
+
+    const launchBtn = screen.getByText('Launch')
+    const editBtn = screen.getByText('Edit')
+    const deleteBtn = screen.getByText('Delete')
+
+    // Before click - all enabled
+    expect(launchBtn).not.toBeDisabled()
+    expect(editBtn).not.toBeDisabled()
+    expect(deleteBtn).not.toBeDisabled()
+
+    // Click launch
+    fireEvent.click(launchBtn)
+
+    // While loading - all disabled
+    await vi.waitFor(() => {
+      expect(launchBtn).toBeDisabled()
+      expect(editBtn).toBeDisabled()
+      expect(deleteBtn).toBeDisabled()
+    })
+
+    // Resolve action
+    resolveAction!()
+    await actionPromise
+
+    // After completion - all enabled again
+    await vi.waitFor(() => {
+      expect(launchBtn).not.toBeDisabled()
+      expect(editBtn).not.toBeDisabled()
+      expect(deleteBtn).not.toBeDisabled()
+    })
+  })
+
+  it('sets aria-busy on the active button', async () => {
+    const props = makeProps()
+    let resolveAction: () => void
+    const actionPromise = new Promise<void>((resolve) => {
+      resolveAction = resolve
+    })
+    props.onDelete = vi.fn(() => actionPromise)
+
+    render(<TaskDetailDrawer {...props} />)
+
+    const deleteBtn = screen.getByText('Delete')
+
+    // Before click
+    expect(deleteBtn).toHaveAttribute('aria-busy', 'false')
+
+    // Click delete
+    fireEvent.click(deleteBtn)
+
+    // While loading
+    await vi.waitFor(() => {
+      expect(deleteBtn).toHaveAttribute('aria-busy', 'true')
+    })
+
+    // Resolve action
+    resolveAction!()
+    await actionPromise
+
+    // After completion
+    await vi.waitFor(() => {
+      expect(deleteBtn).toHaveAttribute('aria-busy', 'false')
+    })
+  })
+
+  it('shows spinner icon on loading button (active status)', async () => {
+    const task: SprintTask = { ...baseTask, status: 'active', started_at: '2026-03-01T11:00:00Z' }
+    const props = makeProps({ task })
+    let resolveAction: () => void
+    const actionPromise = new Promise<void>((resolve) => {
+      resolveAction = resolve
+    })
+    props.onStop = vi.fn(() => actionPromise)
+
+    render(<TaskDetailDrawer {...props} />)
+
+    const stopBtn = screen.getByText('Stop')
+
+    // Click stop
+    fireEvent.click(stopBtn)
+
+    // While loading - spinner should be present
+    await vi.waitFor(() => {
+      const spinner = stopBtn.querySelector('.spinner')
+      expect(spinner).toBeInTheDocument()
+    })
+
+    // Resolve action
+    resolveAction!()
+    await actionPromise
+
+    // After completion - spinner removed
+    await vi.waitFor(() => {
+      const spinner = stopBtn.querySelector('.spinner')
+      expect(spinner).not.toBeInTheDocument()
+    })
+  })
+
+  it('clears loading state on error', async () => {
+    const props = makeProps()
+    // Mock console.error to suppress error output
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    props.onLaunch = vi.fn(async () => {
+      throw new Error('Launch failed')
+    })
+
+    render(<TaskDetailDrawer {...props} />)
+
+    const launchBtn = screen.getByText('Launch')
+    const editBtn = screen.getByText('Edit')
+
+    fireEvent.click(launchBtn)
+
+    // Should become disabled
+    await vi.waitFor(() => {
+      expect(launchBtn).toBeDisabled()
+    })
+
+    // After error - should re-enable
+    await vi.waitFor(() => {
+      expect(launchBtn).not.toBeDisabled()
+      expect(editBtn).not.toBeDisabled()
+    })
+
+    consoleError.mockRestore()
+  })
+
+  it('shows spinner on Clone & Queue button when loading (done status)', async () => {
+    const task: SprintTask = { ...baseTask, status: 'done' }
+    const props = makeProps({ task })
+    let resolveAction: () => void
+    const actionPromise = new Promise<void>((resolve) => {
+      resolveAction = resolve
+    })
+    props.onRerun = vi.fn(() => actionPromise)
+
+    render(<TaskDetailDrawer {...props} />)
+
+    const cloneBtn = screen.getByText('Clone & Queue')
+
+    fireEvent.click(cloneBtn)
+
+    // While loading
+    await vi.waitFor(() => {
+      expect(cloneBtn).toBeDisabled()
+      const spinner = cloneBtn.querySelector('.spinner')
+      expect(spinner).toBeInTheDocument()
+    })
+
+    resolveAction!()
+    await actionPromise
+
+    // After completion
+    await vi.waitFor(() => {
+      expect(cloneBtn).not.toBeDisabled()
+    })
+  })
+})
