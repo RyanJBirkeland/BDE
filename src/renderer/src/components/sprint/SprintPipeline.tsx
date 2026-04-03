@@ -17,20 +17,16 @@ import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useHealthCheckPolling } from '../../hooks/useHealthCheck'
 import { useVisibleStuckTasks } from '../../stores/healthCheck'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
-import { ConfirmModal } from '../ui/ConfirmModal'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
 import { PipelineBacklog } from './PipelineBacklog'
 import { PipelineStage } from './PipelineStage'
 import { TaskDetailDrawer } from './TaskDetailDrawer'
 import { PipelineErrorBoundary } from './PipelineErrorBoundary'
-import { SpecPanel } from './SpecPanel'
-import { DoneHistoryPanel } from './DoneHistoryPanel'
-import { ConflictDrawer } from './ConflictDrawer'
-import { HealthCheckDrawer } from './HealthCheckDrawer'
 import { PipelineFilterBar } from './PipelineFilterBar'
+import { PipelineHeader } from './PipelineHeader'
+import { PipelineOverlays } from './PipelineOverlays'
 import { NeonCard } from '../neon'
-import { GitMerge, HeartPulse } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 
 import '../../assets/sprint-pipeline-neon.css'
@@ -318,47 +314,14 @@ export function SprintPipeline(): React.JSX.Element {
       animate="animate"
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
-      <header className="sprint-pipeline__header">
-        <h1 className="sprint-pipeline__title">Task Pipeline</h1>
-        <div className="sprint-pipeline__stats">
-          {headerStats.map((stat) => (
-            <span
-              key={stat.label}
-              className={`sprint-pipeline__stat sprint-pipeline__stat--${stat.label} sprint-pipeline__stat--clickable`}
-              onClick={() => setStatusFilter(stat.filter)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') setStatusFilter(stat.filter)
-              }}
-            >
-              <b className="sprint-pipeline__stat-count">{stat.count}</b> {stat.label}
-            </span>
-          ))}
-        </div>
-        {conflictingTasks.length > 0 && (
-          <button
-            className="sprint-pipeline__badge sprint-pipeline__badge--danger"
-            onClick={() => setConflictDrawerOpen(true)}
-            title={`${conflictingTasks.length} PR conflict${conflictingTasks.length > 1 ? 's' : ''}`}
-            aria-label={`${conflictingTasks.length} merge conflict${conflictingTasks.length > 1 ? 's' : ''}`}
-          >
-            <GitMerge size={12} />
-            <span>{conflictingTasks.length}</span>
-          </button>
-        )}
-        {visibleStuckTasks.length > 0 && (
-          <button
-            className="sprint-pipeline__badge sprint-pipeline__badge--warning"
-            onClick={() => setHealthCheckDrawerOpen(true)}
-            title={`${visibleStuckTasks.length} stuck task${visibleStuckTasks.length > 1 ? 's' : ''}`}
-            aria-label={`${visibleStuckTasks.length} stuck task${visibleStuckTasks.length > 1 ? 's' : ''}`}
-          >
-            <HeartPulse size={12} />
-            <span>{visibleStuckTasks.length}</span>
-          </button>
-        )}
-      </header>
+      <PipelineHeader
+        stats={headerStats}
+        conflictingTasks={conflictingTasks}
+        visibleStuckTasks={visibleStuckTasks}
+        onFilterClick={setStatusFilter}
+        onConflictClick={() => setConflictDrawerOpen(true)}
+        onHealthCheckClick={() => setHealthCheckDrawerOpen(true)}
+      />
 
       <PipelineFilterBar tasks={tasks} />
 
@@ -490,37 +453,23 @@ export function SprintPipeline(): React.JSX.Element {
         </div>
       </PipelineErrorBoundary>
 
-      {specPanelOpen && selectedTask?.spec && (
-        <SpecPanel
-          taskTitle={selectedTask.title}
-          spec={selectedTask.spec}
-          onClose={() => setSpecPanelOpen(false)}
-          onSave={(newSpec) => handleSaveSpec(selectedTask.id, newSpec)}
-        />
-      )}
-
-      {doneViewOpen && (
-        <DoneHistoryPanel
-          tasks={filteredPartition.done}
-          onTaskClick={handleTaskClick}
-          onClose={() => setDoneViewOpen(false)}
-        />
-      )}
-
-      <ConfirmModal {...confirmProps} />
-
-      {/* SP-7: Wire ConflictDrawer and HealthCheckDrawer */}
-      <ConflictDrawer
-        open={conflictDrawerOpen}
-        tasks={conflictingTasks}
-        onClose={() => setConflictDrawerOpen(false)}
-      />
-
-      <HealthCheckDrawer
-        open={healthCheckDrawerOpen}
-        tasks={visibleStuckTasks}
-        onClose={() => setHealthCheckDrawerOpen(false)}
-        onDismiss={dismissTask}
+      <PipelineOverlays
+        specPanelOpen={specPanelOpen}
+        selectedTask={selectedTask}
+        onCloseSpec={() => setSpecPanelOpen(false)}
+        onSaveSpec={handleSaveSpec}
+        doneViewOpen={doneViewOpen}
+        doneTasks={filteredPartition.done}
+        onCloseDoneView={() => setDoneViewOpen(false)}
+        onTaskClick={handleTaskClick}
+        conflictDrawerOpen={conflictDrawerOpen}
+        conflictingTasks={conflictingTasks}
+        onCloseConflict={() => setConflictDrawerOpen(false)}
+        healthCheckDrawerOpen={healthCheckDrawerOpen}
+        visibleStuckTasks={visibleStuckTasks}
+        onCloseHealthCheck={() => setHealthCheckDrawerOpen(false)}
+        onDismissStuckTask={dismissTask}
+        confirmProps={confirmProps}
       />
     </motion.div>
   )

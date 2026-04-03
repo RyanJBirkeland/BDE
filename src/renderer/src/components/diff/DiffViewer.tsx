@@ -2,52 +2,19 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DiffFile, DiffLine } from '../../lib/diff-parser'
 import { countDiffLines } from '../../lib/diff-parser'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
+import { useDiffSelection } from '../../hooks/useDiffSelection'
 import { EmptyState } from '../ui/EmptyState'
 import { DIFF_VIRTUALIZE_THRESHOLD } from '../../lib/constants'
 import type { PrComment } from '../../../../shared/types'
-import { DiffCommentWidget } from './DiffCommentWidget'
-import { DiffCommentComposer } from './DiffCommentComposer'
 import type { PendingComment } from '../../stores/pendingReview'
+import { DiffFileList } from './DiffFileList'
+import { PlainDiffContent } from './PlainDiffContent'
 
 export interface LineRange {
   file: string
   startLine: number
   endLine: number
   side: 'LEFT' | 'RIGHT'
-}
-
-function FileList({
-  files,
-  activeFileIndex,
-  onSelect
-}: {
-  files: DiffFile[]
-  activeFileIndex: number
-  onSelect: (index: number) => void
-}): React.JSX.Element {
-  return (
-    <div className="diff-sidebar">
-      <div className="diff-sidebar__header">
-        <span className="diff-sidebar__title">Files</span>
-        <span className="diff-sidebar__count bde-count-badge">{files.length}</span>
-      </div>
-      <div className="diff-sidebar__list">
-        {files.map((f, i) => (
-          <button
-            key={f.path}
-            className={`diff-file-item ${activeFileIndex === i ? 'diff-file-item--active' : ''}`}
-            onClick={() => onSelect(i)}
-          >
-            <span className="diff-file-item__name">{f.path.split('/').pop()}</span>
-            <span className="diff-file-item__badge">
-              {f.additions > 0 && <span className="diff-file-item__add">+{f.additions}</span>}
-              {f.deletions > 0 && <span className="diff-file-item__del">-{f.deletions}</span>}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
 }
 
 interface HunkAddress {
@@ -210,242 +177,6 @@ function VirtualizedDiffContent({
   )
 }
 
-// ─── Plain (non-virtualized) diff content ────────────────
-
-function PlainDiffContent({
-  files,
-  activeFileIndex,
-  activeHunk,
-  fileRefs,
-  hunkRefs,
-  commentsByPosition,
-  pendingByPosition,
-  selectedRange,
-  selectionStart,
-  isSelecting,
-  composerRange,
-  setSelectionStart,
-  setIsSelecting,
-  setComposerRange,
-  onSelectRange,
-  onAddComment,
-  onRemovePendingComment,
-  isLineSelected
-}: {
-  files: DiffFile[]
-  activeFileIndex: number
-  activeHunk: HunkAddress | null
-  fileRefs: React.RefObject<Map<string, HTMLDivElement>>
-  hunkRefs: React.RefObject<Map<string, HTMLDivElement>>
-  commentsByPosition: Map<string, PrComment[]>
-  pendingByPosition: Map<string, PendingComment[]>
-  selectedRange: LineRange | null
-  selectionStart: { file: string; line: number; side: 'LEFT' | 'RIGHT' } | null
-  isSelecting: boolean
-  composerRange: LineRange | null
-  setSelectionStart: (v: { file: string; line: number; side: 'LEFT' | 'RIGHT' } | null) => void
-  setIsSelecting: (v: boolean) => void
-  setComposerRange: (v: LineRange | null) => void
-  onSelectRange?: (range: LineRange | null) => void
-  onAddComment?: (range: LineRange, body: string) => void
-  onRemovePendingComment?: (commentId: string) => void
-  isLineSelected: (filePath: string, lineNo: number | undefined) => boolean
-}): React.JSX.Element {
-  return (
-    <>
-      {files.map((file, fi) => (
-        <div
-          key={file.path}
-          className={`diff-file ${activeFileIndex === fi ? 'diff-file--active' : ''}`}
-          ref={(el): void => {
-            if (el) fileRefs.current.set(file.path, el)
-          }}
-        >
-          <div className="diff-file__header">
-            <span className="diff-file__path">{file.path}</span>
-            <span className="diff-file__stats">
-              {file.additions > 0 && (
-                <span className="diff-file__stats-add">+{file.additions}</span>
-              )}
-              {file.deletions > 0 && (
-                <span className="diff-file__stats-del">-{file.deletions}</span>
-              )}
-            </span>
-          </div>
-          {file.hunks.map((hunk, hi) => (
-            <div
-              key={hi}
-              className={`diff-hunk ${activeHunk?.fileIndex === fi && activeHunk?.hunkIndex === hi ? 'diff-hunk--focused' : ''}`}
-              ref={(el): void => {
-                if (el) hunkRefs.current.set(`${fi}-${hi}`, el)
-              }}
-            >
-              <div className="diff-hunk__header">{hunk.header}</div>
-              {hunk.lines.map((line, li) => {
-                const lineNum = line.lineNo.new ?? line.lineNo.old
-                const commentKey = lineNum ? `${file.path}:${lineNum}` : null
-                const lineComments = commentKey ? commentsByPosition.get(commentKey) : undefined
-                const selected = isLineSelected(file.path, line.lineNo.new)
-
-                return (
-                  <React.Fragment key={li}>
-                    {selectedRange &&
-                      selectedRange.file === file.path &&
-                      line.lineNo.new === selectedRange.startLine &&
-                      onAddComment && (
-                        <div style={{ position: 'relative' }}>
-                          <button
-                            className="diff-selection-trigger"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setComposerRange(selectedRange)
-                            }}
-                            title="Add comment"
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
-                    <div
-                      className={`diff-line diff-line--${line.type}${selected ? ' diff-line--selected' : ''}`}
-                    >
-                      <span
-                        className={`diff-line__gutter diff-line__gutter--old${onSelectRange ? ' diff-line__gutter--selectable' : ''}`}
-                        onMouseDown={() => {
-                          if (!onSelectRange || line.lineNo.old == null) return
-                          setSelectionStart({
-                            file: file.path,
-                            line: line.lineNo.old,
-                            side: 'LEFT'
-                          })
-                          setIsSelecting(true)
-                          onSelectRange({
-                            file: file.path,
-                            startLine: line.lineNo.old,
-                            endLine: line.lineNo.old,
-                            side: 'LEFT'
-                          })
-                        }}
-                        onMouseEnter={() => {
-                          if (
-                            !isSelecting ||
-                            !selectionStart ||
-                            selectionStart.file !== file.path ||
-                            selectionStart.side !== 'LEFT' ||
-                            !onSelectRange
-                          )
-                            return
-                          if (line.lineNo.old == null) return
-                          onSelectRange({
-                            file: file.path,
-                            startLine: Math.min(selectionStart.line, line.lineNo.old),
-                            endLine: Math.max(selectionStart.line, line.lineNo.old),
-                            side: 'LEFT'
-                          })
-                        }}
-                      >
-                        {line.lineNo.old ?? ''}
-                      </span>
-                      <span
-                        className={`diff-line__gutter diff-line__gutter--new${onSelectRange ? ' diff-line__gutter--selectable' : ''}`}
-                        onMouseDown={() => {
-                          if (!onSelectRange || line.lineNo.new == null) return
-                          setSelectionStart({
-                            file: file.path,
-                            line: line.lineNo.new,
-                            side: 'RIGHT'
-                          })
-                          setIsSelecting(true)
-                          onSelectRange({
-                            file: file.path,
-                            startLine: line.lineNo.new,
-                            endLine: line.lineNo.new,
-                            side: 'RIGHT'
-                          })
-                        }}
-                        onMouseEnter={() => {
-                          if (
-                            !isSelecting ||
-                            !selectionStart ||
-                            selectionStart.file !== file.path ||
-                            selectionStart.side !== 'RIGHT' ||
-                            !onSelectRange
-                          )
-                            return
-                          if (line.lineNo.new == null) return
-                          onSelectRange({
-                            file: file.path,
-                            startLine: Math.min(selectionStart.line, line.lineNo.new),
-                            endLine: Math.max(selectionStart.line, line.lineNo.new),
-                            side: 'RIGHT'
-                          })
-                        }}
-                      >
-                        {line.lineNo.new ?? ''}
-                      </span>
-                      <span className="diff-line__marker">
-                        {line.type === 'add' ? '+' : line.type === 'del' ? '-' : ' '}
-                      </span>
-                      <span className="diff-line__text">{line.content}</span>
-                    </div>
-                    {lineComments && lineComments.length > 0 && (
-                      <DiffCommentWidget comments={lineComments} />
-                    )}
-                    {composerRange &&
-                      composerRange.file === file.path &&
-                      line.lineNo.new === composerRange.endLine && (
-                        <DiffCommentComposer
-                          onSubmit={(body) => {
-                            onAddComment?.(composerRange, body)
-                            setComposerRange(null)
-                            onSelectRange?.(null)
-                          }}
-                          onCancel={() => {
-                            setComposerRange(null)
-                            onSelectRange?.(null)
-                          }}
-                        />
-                      )}
-                    {(() => {
-                      const pendingKey = lineNum ? `${file.path}:${lineNum}` : null
-                      const pending = pendingKey ? pendingByPosition.get(pendingKey) : undefined
-                      if (!pending || pending.length === 0) return null
-                      return pending.map((pc) => (
-                        <div
-                          key={pc.id}
-                          className="diff-comment-widget diff-comment-widget--pending"
-                        >
-                          <div className="diff-comment-widget__toggle">
-                            <span>Pending comment</span>
-                            <span className="diff-comment-widget__pending-badge">Pending</span>
-                          </div>
-                          <div className="diff-comment-widget__thread">
-                            <div className="diff-comment-widget__comment">
-                              <div className="diff-comment-widget__body">{pc.body}</div>
-                              {onRemovePendingComment && (
-                                <button
-                                  className="diff-pending-comment__remove"
-                                  onClick={() => onRemovePendingComment(pc.id)}
-                                >
-                                  Remove
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    })()}
-                  </React.Fragment>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      ))}
-    </>
-  )
-}
-
 // ─── Main DiffViewer ─────────────────────────────────────
 
 function VirtualizedDiffBanner({
@@ -528,30 +259,8 @@ function DiffViewer({
   }, [pendingComments])
 
   // Selection state for line range picking
-  const [selectionStart, setSelectionStart] = useState<{
-    file: string
-    line: number
-    side: 'LEFT' | 'RIGHT'
-  } | null>(null)
-  const [isSelecting, setIsSelecting] = useState(false)
-
-  useEffect(() => {
-    const handleMouseUp = (): void => setIsSelecting(false)
-    window.addEventListener('mouseup', handleMouseUp)
-    return () => window.removeEventListener('mouseup', handleMouseUp)
-  }, [])
-
-  const isLineSelected = useCallback(
-    (filePath: string, lineNo: number | undefined): boolean => {
-      if (!selectedRange || !lineNo) return false
-      return (
-        selectedRange.file === filePath &&
-        lineNo >= selectedRange.startLine &&
-        lineNo <= selectedRange.endLine
-      )
-    },
-    [selectedRange]
-  )
+  const { selectionStart, isSelecting, setSelectionStart, setIsSelecting, isLineSelected } =
+    useDiffSelection()
 
   // Build flat row list for virtualized mode
   const { flatRows, totalHeight, fileIndexToRow, hunkAddressToRow } = useMemo(() => {
@@ -723,7 +432,7 @@ function DiffViewer({
 
   return (
     <div className="diff-view-container">
-      <FileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
+      <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
       <div className="diff-content" ref={containerRef}>
         {shouldShowBanner && (
           <VirtualizedDiffBanner onForceFullDiff={() => setForceFullDiff(true)} />
@@ -756,7 +465,7 @@ function DiffViewer({
             onSelectRange={onSelectRange}
             onAddComment={onAddComment}
             onRemovePendingComment={onRemovePendingComment}
-            isLineSelected={isLineSelected}
+            isLineSelected={(filePath, lineNo) => isLineSelected(filePath, lineNo, selectedRange)}
           />
         )}
       </div>

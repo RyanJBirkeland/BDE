@@ -2,12 +2,11 @@
  * ConsoleLine — Renders a single agent event as a terminal-style line.
  * Uses neon CSS classes (agents-neon.css) for all styling.
  */
-import { useState } from 'react'
-import { ChevronRight } from 'lucide-react'
 import type { ChatBlock } from '../../lib/pair-events'
 import { renderAgentMarkdown } from '../../lib/render-agent-markdown'
 import { formatToolSummary } from '../../lib/tool-summaries'
 import { formatDurationMs } from '../../lib/format'
+import { CollapsibleBlock } from './CollapsibleBlock'
 
 interface ConsoleLineProps {
   block: ChatBlock
@@ -64,8 +63,6 @@ export function ConsoleLine({
   onPlaygroundClick,
   searchHighlight
 }: ConsoleLineProps): React.JSX.Element {
-  const [expanded, setExpanded] = useState(false)
-
   const getSearchClass = (): string => {
     if (!searchHighlight) return ''
     return searchHighlight === 'active'
@@ -112,144 +109,88 @@ export function ConsoleLine({
 
     case 'thinking': {
       return (
-        <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
-          data-testid="console-line-thinking"
-        >
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              width: '100%',
-              textAlign: 'left'
-            }}
-            aria-label={expanded ? 'Collapse thinking' : 'Expand thinking'}
-          >
-            <ChevronRight
-              size={14}
-              className="console-line__chevron"
-              style={{
-                transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)'
-              }}
-            />
-            <span className="console-prefix console-prefix--think">[think]</span>
-            <span className="console-line__content">Thinking...</span>
-            <span className="console-badge console-badge--purple">
-              {block.tokenCount.toLocaleString()} tokens
-            </span>
-            <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
-          </button>
-          {expanded && block.text && (
-            <div className="console-line__expanded-content">{block.text}</div>
-          )}
-        </div>
+        <CollapsibleBlock
+          testId="console-line-thinking"
+          searchClass={getSearchClass()}
+          header={
+            <>
+              <span className="console-prefix console-prefix--think">[think]</span>
+              <span className="console-line__content">Thinking...</span>
+              <span className="console-badge console-badge--purple">
+                {block.tokenCount.toLocaleString()} tokens
+              </span>
+              <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
+            </>
+          }
+          expandedContent={
+            block.text ? <div className="console-line__expanded-content">{block.text}</div> : null
+          }
+        />
       )
     }
 
     case 'tool_call': {
       const meta = getToolMeta(block.tool)
       return (
-        <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
-          data-testid="console-line-tool-call"
-        >
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              width: '100%',
-              textAlign: 'left'
-            }}
-            aria-label={expanded ? 'Collapse tool call' : 'Expand tool call'}
-          >
-            <ChevronRight
-              size={14}
-              className="console-line__chevron"
-              style={{
-                transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)'
-              }}
-            />
-            <span className={`console-tool-icon ${meta.iconClass}`} title={block.tool}>
-              {meta.letter}
-            </span>
-            <span className="console-prefix console-prefix--tool">[tool]</span>
-            <span className="console-line__content">
-              {block.tool} — {block.summary}
-            </span>
-            <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
-          </button>
-          {expanded && block.input !== undefined && (
-            <div className="console-line__detail">
-              {(() => {
-                const summary = formatToolSummary(block.tool, block.input)
-                return summary ? <div className="console-line__tool-summary">{summary}</div> : null
-              })()}
-              <div className="console-line__detail-label">Input</div>
-              <pre className="console-line__json">
-                <code>{JSON.stringify(block.input, null, 2)}</code>
-              </pre>
-            </div>
-          )}
-        </div>
+        <CollapsibleBlock
+          testId="console-line-tool-call"
+          searchClass={getSearchClass()}
+          header={
+            <>
+              <span className={`console-tool-icon ${meta.iconClass}`} title={block.tool}>
+                {meta.letter}
+              </span>
+              <span className="console-prefix console-prefix--tool">[tool]</span>
+              <span className="console-line__content">
+                {block.tool} — {block.summary}
+              </span>
+              <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
+            </>
+          }
+          expandedContent={
+            block.input !== undefined ? (
+              <div className="console-line__detail">
+                {(() => {
+                  const summary = formatToolSummary(block.tool, block.input)
+                  return summary ? (
+                    <div className="console-line__tool-summary">{summary}</div>
+                  ) : null
+                })()}
+                <div className="console-line__detail-label">Input</div>
+                <pre className="console-line__json">
+                  <code>{JSON.stringify(block.input, null, 2)}</code>
+                </pre>
+              </div>
+            ) : null
+          }
+        />
       )
     }
 
     case 'tool_pair': {
       const meta = getToolMeta(block.tool)
       return (
-        <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
-          data-testid="console-line-tool-pair"
-        >
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              width: '100%',
-              textAlign: 'left'
-            }}
-            aria-label={expanded ? 'Collapse tool pair' : 'Expand tool pair'}
-          >
-            <ChevronRight
-              size={14}
-              className="console-line__chevron"
-              style={{
-                transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)'
-              }}
-            />
-            <span className={`console-tool-icon ${meta.iconClass}`} title={block.tool}>
-              {meta.letter}
-            </span>
-            <span className="console-prefix console-prefix--tool">[tool]</span>
-            <span className="console-line__content">
-              {block.tool} — {block.summary}
-            </span>
-            <span
-              className={`console-badge ${block.result.success ? 'console-badge--success' : 'console-badge--danger'}`}
-            >
-              {block.result.success ? 'success' : 'failed'}
-            </span>
-            <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
-          </button>
-          {expanded && (
+        <CollapsibleBlock
+          testId="console-line-tool-pair"
+          searchClass={getSearchClass()}
+          header={
+            <>
+              <span className={`console-tool-icon ${meta.iconClass}`} title={block.tool}>
+                {meta.letter}
+              </span>
+              <span className="console-prefix console-prefix--tool">[tool]</span>
+              <span className="console-line__content">
+                {block.tool} — {block.summary}
+              </span>
+              <span
+                className={`console-badge ${block.result.success ? 'console-badge--success' : 'console-badge--danger'}`}
+              >
+                {block.result.success ? 'success' : 'failed'}
+              </span>
+              <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
+            </>
+          }
+          expandedContent={
             <div className="console-line__detail-group">
               {(() => {
                 const summary = formatToolSummary(block.tool, block.input)
@@ -276,8 +217,8 @@ export function ConsoleLine({
                 </div>
               )}
             </div>
-          )}
-        </div>
+          }
+        />
       )
     }
 
@@ -382,39 +323,19 @@ export function ConsoleLine({
         .map(([name, count]) => `${count} ${name}`)
         .join(', ')
       return (
-        <div
-          className={`console-line console-line--collapsible${expanded ? ' console-line--expanded' : ''}${getSearchClass()}`}
-          data-testid="console-line-tool-group"
-        >
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              width: '100%',
-              textAlign: 'left'
-            }}
-            aria-label={expanded ? 'Collapse tool group' : 'Expand tool group'}
-          >
-            <ChevronRight
-              size={14}
-              className="console-line__chevron"
-              style={{
-                transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)'
-              }}
-            />
-            <span className="console-prefix console-prefix--tool">[tools]</span>
-            <span className="console-line__content">
-              {total} tool calls ({breakdown})
-            </span>
-            <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
-          </button>
-          {expanded && (
+        <CollapsibleBlock
+          testId="console-line-tool-group"
+          searchClass={getSearchClass()}
+          header={
+            <>
+              <span className="console-prefix console-prefix--tool">[tools]</span>
+              <span className="console-line__content">
+                {total} tool calls ({breakdown})
+              </span>
+              <span className="console-line__timestamp">{formatTime(block.timestamp)}</span>
+            </>
+          }
+          expandedContent={
             <div className="console-tool-group__items">
               {block.tools.map((tool, i) => (
                 <ConsoleLine
@@ -425,8 +346,8 @@ export function ConsoleLine({
                 />
               ))}
             </div>
-          )}
-        </div>
+          }
+        />
       )
     }
 
