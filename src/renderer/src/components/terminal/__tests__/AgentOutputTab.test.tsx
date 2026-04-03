@@ -23,7 +23,7 @@ vi.mock('../../agents/ConsoleLine', () => ({
 // Mock pairEvents
 vi.mock('../../../lib/pair-events', () => ({
   pairEvents: (events: unknown[]) =>
-    events.map((e, i) => ({ type: 'text', text: `event-${i}`, timestamp: Date.now() }))
+    events.map((_e, i) => ({ type: 'text', text: `event-${i}`, timestamp: Date.now() }))
 }))
 
 // Mock design-system tokens
