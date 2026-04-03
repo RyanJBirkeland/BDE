@@ -1138,6 +1138,177 @@
   color: var(--bde-success);
 }
 
+/* ── Agent Card Components ── */
+.agent-card__task-title {
+  color: var(--neon-text);
+}
+
+.agent-card__meta-icon {
+  color: var(--neon-text-dim);
+}
+
+.agent-card__meta-text {
+  color: var(--neon-text-muted);
+}
+
+.agent-card__meta-separator {
+  color: var(--neon-text-muted);
+}
+
+/* ── Agent List Components ── */
+.agent-list__search-border {
+  border: 1px solid var(--bde-border);
+}
+
+.agent-list__search-border--focused {
+  border: 1px solid var(--neon-purple);
+}
+
+.agent-list__search-icon {
+  color: var(--neon-text-dim);
+}
+
+.agent-list__search-icon--focused {
+  color: var(--neon-purple);
+}
+
+.agent-list__search-input {
+  color: var(--neon-text);
+}
+
+.agent-list__count-badge {
+  color: var(--neon-text-dim);
+}
+
+.agent-list__empty-state {
+  color: var(--neon-text-dim);
+}
+
+/* ── Tool Call Block Components ── */
+.tool-block {
+  border-left: 3px solid var(--neon-blue-border);
+}
+
+.tool-block__chevron {
+  color: var(--neon-blue);
+}
+
+.tool-block__badge {
+  background: var(--neon-blue-surface);
+  color: var(--neon-blue);
+}
+
+.tool-block__summary {
+  color: var(--neon-text);
+}
+
+.tool-block__status-badge--success {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+}
+
+.tool-block__status-badge--danger {
+  background: var(--neon-red-surface);
+  color: var(--neon-red);
+}
+
+.tool-block__timestamp {
+  color: var(--neon-text-dim);
+}
+
+.tool-block__label {
+  color: var(--neon-text-dim);
+}
+
+.tool-block__json-block {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text-muted);
+}
+
+/* ── Thinking Block Components ── */
+.thinking-block__token-count {
+  color: var(--neon-text-muted);
+  background: var(--neon-surface-deep);
+}
+
+.thinking-block__content {
+  color: var(--neon-text);
+}
+
+/* ── Chat Bubble Components ── */
+.chat-bubble {
+  color: var(--neon-text);
+}
+
+.chat-bubble--agent {
+  background: var(--neon-surface-deep);
+  border: 1px solid var(--neon-purple-border);
+}
+
+.chat-bubble--user {
+  background: var(--neon-cyan-surface);
+  border: 1px solid transparent;
+}
+
+.chat-bubble--error {
+  background: var(--neon-red-surface);
+  border: 1px solid var(--neon-red);
+}
+
+.chat-bubble__timestamp {
+  color: var(--neon-text-muted);
+}
+
+/* ── Playground Card Components ── */
+.playground-card {
+  background: var(--neon-surface-deep);
+  border: 1px solid var(--neon-purple-border);
+}
+
+.playground-card:hover {
+  border-color: var(--neon-cyan);
+  background: var(--neon-cyan-surface);
+}
+
+.playground-card__icon-box {
+  background: var(--neon-cyan-surface);
+}
+
+.playground-card__icon {
+  color: var(--neon-cyan);
+}
+
+.playground-card__filename {
+  color: var(--neon-text);
+}
+
+.playground-card__filesize {
+  color: var(--neon-text-muted);
+}
+
+.playground-card__preview-hint {
+  background: var(--neon-surface-dim);
+  color: var(--neon-text-muted);
+}
+
+/* ── Chat Renderer Components ── */
+.chat-renderer__started {
+  color: var(--neon-text-muted);
+}
+
+.chat-renderer__completed--success {
+  color: var(--neon-cyan);
+}
+
+.chat-renderer__completed--failed {
+  color: var(--neon-red);
+}
+
+.chat-renderer__rate-limited {
+  color: var(--neon-orange);
+  background: var(--neon-orange-surface);
+}
+
 /* ── Reduced Motion Overrides ── */
 @media (prefers-reduced-motion: reduce) {
   .agent-pill--running {

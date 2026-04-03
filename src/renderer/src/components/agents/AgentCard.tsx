@@ -143,9 +143,9 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
             <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
               <StatusIndicator status={agent.status} accent={accent} />
               <span
+                className="agent-card__task-title"
                 style={{
                   fontSize: tokens.size.md,
-                  color: tokens.color.text,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -196,11 +196,13 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                 paddingLeft: 14
               }}
             >
-              <SourceIcon size={10} color={tokens.color.textDim} />
-              <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
+              <SourceIcon size={10} className="agent-card__meta-icon" />
+              <span className="agent-card__meta-text" style={{ fontSize: tokens.size.xs }}>
                 {agent.model}
               </span>
-              <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
+              <span className="agent-card__meta-separator" style={{ fontSize: tokens.size.xs }}>
+                ·
+              </span>
               <Clock size={10} color={neonVar(accent, 'color')} />
               <span style={{ fontSize: tokens.size.xs, color: neonVar(accent, 'color') }}>
                 {formatDuration(agent.startedAt, agent.finishedAt)}
@@ -210,7 +212,9 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                 agent.status === 'failed' ||
                 agent.status === 'cancelled') && (
                 <>
-                  <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
+                  <span className="agent-card__meta-separator" style={{ fontSize: tokens.size.xs }}>
+                    ·
+                  </span>
                   <span
                     style={{
                       fontSize: tokens.size.xs,
@@ -226,8 +230,10 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                   </span>
                 </>
               )}
-              <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
-              <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>
+              <span className="agent-card__meta-separator" style={{ fontSize: tokens.size.xs }}>
+                ·
+              </span>
+              <span className="agent-card__meta-text" style={{ fontSize: tokens.size.xs }}>
                 {agent.repo}
               </span>
             </div>

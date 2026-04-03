@@ -47,11 +47,10 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps): React.J
         />
         <span style={{ fontWeight: 600, letterSpacing: '0.05em' }}>THINKING</span>
         <span
+          className="thinking-block__token-count"
           style={{
             marginLeft: 'auto',
             fontSize: tokens.size.xs,
-            color: tokens.color.textMuted,
-            backgroundColor: tokens.color.surfaceHigh,
             padding: `${tokens.space[1]} ${tokens.space[2]}`,
             borderRadius: tokens.radius.full,
             fontFamily: tokens.font.code
@@ -63,12 +62,12 @@ export function ThinkingBlock({ tokenCount, text }: ThinkingBlockProps): React.J
 
       {expanded && text && (
         <div
+          className="thinking-block__content"
           style={{
             padding: `${tokens.space[2]} ${tokens.space[3]}`,
             borderTop: '1px solid var(--bde-purple)',
             fontFamily: tokens.font.code,
             fontSize: tokens.size.sm,
-            color: tokens.color.text,
             whiteSpace: 'pre-wrap',
             lineHeight: 1.5,
             maxHeight: '300px',

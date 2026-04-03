@@ -25,9 +25,9 @@ function StartedBlock({
 }): React.JSX.Element {
   return (
     <div
+      className="chat-renderer__started"
       style={{
         padding: tokens.space[2],
-        color: tokens.color.textMuted,
         fontSize: tokens.size.xs,
         textAlign: 'center'
       }}
@@ -47,14 +47,15 @@ function CompletedBlock({
   durationMs: number
 }): React.JSX.Element {
   const durationSec = (durationMs / 1000).toFixed(1)
-  const color = exitCode === 0 ? tokens.color.success : tokens.color.danger
+  const className =
+    exitCode === 0 ? 'chat-renderer__completed--success' : 'chat-renderer__completed--failed'
   return (
     <div
+      className={className}
       style={{
         padding: tokens.space[2],
         fontSize: tokens.size.xs,
-        textAlign: 'center',
-        color
+        textAlign: 'center'
       }}
     >
       {exitCode === 0 ? 'Completed' : `Failed (exit ${exitCode})`}
@@ -72,12 +73,11 @@ function RateLimitedBlock({
 }): React.JSX.Element {
   return (
     <div
+      className="chat-renderer__rate-limited"
       style={{
         padding: tokens.space[2],
         fontSize: tokens.size.xs,
         textAlign: 'center',
-        color: tokens.color.warning,
-        background: tokens.color.warningDim,
         borderRadius: tokens.radius.sm
       }}
     >

@@ -24,8 +24,8 @@ describe('ChatBubble', () => {
     const { container } = render(<ChatBubble variant="error" text="Error msg" />)
     const bubble = container.firstChild as HTMLElement
     expect(bubble.style.alignSelf).toBe('flex-start')
-    // error variant has a danger-colored border
-    expect(bubble.style.border).toContain('solid')
+    // error variant has CSS class for danger-colored border
+    expect(bubble.className).toContain('chat-bubble--error')
   })
 
   it('displays timestamp when provided', () => {

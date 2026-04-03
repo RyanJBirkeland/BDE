@@ -29,11 +29,9 @@ function formatTime(ts: number): string {
 const jsonBlockStyle: React.CSSProperties = {
   margin: 0,
   padding: tokens.space[2],
-  background: tokens.color.surface,
   borderRadius: tokens.radius.sm,
   fontSize: tokens.size.xs,
   fontFamily: tokens.font.code,
-  color: tokens.color.textMuted,
   overflow: 'auto',
   maxHeight: '240px',
   whiteSpace: 'pre-wrap',
@@ -51,14 +49,14 @@ export function ToolCallBlock({
 
   return (
     <div
+      className="tool-block"
       style={{
         display: 'flex',
         flexDirection: 'column',
         gap: tokens.space[1],
         padding: `${tokens.space[2]} ${tokens.space[3]}`,
         borderRadius: tokens.radius.sm,
-        fontSize: tokens.size.sm,
-        borderLeft: `3px solid ${tokens.color.info}`
+        fontSize: tokens.size.sm
       }}
       data-testid="tool-call-block"
     >
@@ -80,17 +78,16 @@ export function ToolCallBlock({
       >
         <ChevronRight
           size={14}
+          className="tool-block__chevron"
           style={{
-            color: tokens.color.info,
             transition: tokens.transition.fast,
             transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
             flexShrink: 0
           }}
         />
         <span
+          className="tool-block__badge"
           style={{
-            background: tokens.color.infoDim,
-            color: tokens.color.info,
             padding: `0 ${tokens.space[1]}`,
             borderRadius: tokens.radius.sm,
             fontSize: tokens.size.xs,
@@ -101,8 +98,8 @@ export function ToolCallBlock({
           {tool}
         </span>
         <span
+          className="tool-block__summary"
           style={{
-            color: tokens.color.text,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -114,9 +111,12 @@ export function ToolCallBlock({
         </span>
         {result && (
           <span
+            className={
+              result.success
+                ? 'tool-block__status-badge--success'
+                : 'tool-block__status-badge--danger'
+            }
             style={{
-              background: result.success ? tokens.color.accentDim : tokens.color.dangerDim,
-              color: result.success ? tokens.color.success : tokens.color.danger,
               padding: `0 ${tokens.space[1]}`,
               borderRadius: tokens.radius.sm,
               fontSize: tokens.size.xs,
@@ -127,8 +127,8 @@ export function ToolCallBlock({
           </span>
         )}
         <span
+          className="tool-block__timestamp"
           style={{
-            color: tokens.color.textDim,
             fontSize: tokens.size.xs,
             flexShrink: 0,
             marginLeft: 'auto'
@@ -151,15 +151,15 @@ export function ToolCallBlock({
           {input !== undefined && (
             <div>
               <div
+                className="tool-block__label"
                 style={{
                   fontSize: tokens.size.xs,
-                  color: tokens.color.textDim,
                   marginBottom: tokens.space[1]
                 }}
               >
                 Input
               </div>
-              <pre style={jsonBlockStyle}>
+              <pre style={jsonBlockStyle} className="tool-block__json-block">
                 <code>{JSON.stringify(input, null, 2)}</code>
               </pre>
             </div>
@@ -167,15 +167,15 @@ export function ToolCallBlock({
           {result?.output !== undefined && (
             <div>
               <div
+                className="tool-block__label"
                 style={{
                   fontSize: tokens.size.xs,
-                  color: tokens.color.textDim,
                   marginBottom: tokens.space[1]
                 }}
               >
                 Output
               </div>
-              <pre style={jsonBlockStyle}>
+              <pre style={jsonBlockStyle} className="tool-block__json-block">
                 <code>{JSON.stringify(result.output, null, 2)}</code>
               </pre>
             </div>

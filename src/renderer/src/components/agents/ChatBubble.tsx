@@ -12,19 +12,13 @@ interface ChatBubbleProps {
 
 const variantStyles: Record<ChatBubbleVariant, CSSProperties> = {
   agent: {
-    alignSelf: 'flex-start',
-    background: tokens.color.surface,
-    border: `1px solid ${tokens.color.border}`
+    alignSelf: 'flex-start'
   },
   user: {
-    alignSelf: 'flex-end',
-    background: tokens.color.accentDim,
-    border: `1px solid transparent`
+    alignSelf: 'flex-end'
   },
   error: {
-    alignSelf: 'flex-start',
-    background: tokens.color.dangerDim,
-    border: `1px solid ${tokens.color.danger}`
+    alignSelf: 'flex-start'
   }
 }
 
@@ -44,7 +38,6 @@ export function ChatBubble({ variant, text, timestamp }: ChatBubbleProps): React
     borderRadius: tokens.radius.md,
     fontFamily: tokens.font.ui,
     fontSize: tokens.size.md,
-    color: tokens.color.text,
     lineHeight: 1.5
   }
 
@@ -57,14 +50,19 @@ export function ChatBubble({ variant, text, timestamp }: ChatBubbleProps): React
   const timestampStyle: CSSProperties = {
     marginTop: tokens.space[1],
     fontSize: tokens.size.xs,
-    color: tokens.color.textMuted,
     textAlign: variant === 'user' ? 'right' : 'left'
   }
 
+  const bubbleClassName = `chat-bubble chat-bubble--${variant}`
+
   return (
-    <div style={bubbleStyle}>
+    <div style={bubbleStyle} className={bubbleClassName}>
       <p style={textStyle}>{text}</p>
-      {timestamp != null && <div style={timestampStyle}>{formatTime(timestamp)}</div>}
+      {timestamp != null && (
+        <div style={timestampStyle} className="chat-bubble__timestamp">
+          {formatTime(timestamp)}
+        </div>
+      )}
     </div>
   )
 }
