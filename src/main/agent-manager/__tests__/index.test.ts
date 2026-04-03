@@ -73,7 +73,9 @@ vi.mock('../../env-utils', () => ({
   invalidateOAuthToken: vi.fn(),
   getOAuthToken: vi.fn().mockReturnValue('test-oauth-token'),
   buildAgentEnv: vi.fn().mockReturnValue({ PATH: '/usr/bin' }),
-  buildAgentEnvWithAuth: vi.fn().mockReturnValue({ PATH: '/usr/bin', ANTHROPIC_API_KEY: 'test-token' })
+  buildAgentEnvWithAuth: vi
+    .fn()
+    .mockReturnValue({ PATH: '/usr/bin', ANTHROPIC_API_KEY: 'test-token' })
 }))
 
 // ---------------------------------------------------------------------------

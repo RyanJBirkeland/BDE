@@ -10,11 +10,11 @@ In the Sprint Kanban board, dragging a task card from one column and dropping it
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/components/sprint/KanbanBoard.tsx` | Fix `handleDragEnd` to resolve the parent column status when `over.id` is a card UUID; add `DragOverlay` for visual feedback |
-| `src/renderer/src/components/sprint/KanbanColumn.tsx` | Potentially pass column status as data attribute on droppable for lookup |
-| `src/renderer/src/components/sprint/TaskCard.tsx` | Attach column status as `useSortable` data so it's available in `handleDragEnd` |
+| File                                                  | Change                                                                                                                       |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/components/sprint/KanbanBoard.tsx`  | Fix `handleDragEnd` to resolve the parent column status when `over.id` is a card UUID; add `DragOverlay` for visual feedback |
+| `src/renderer/src/components/sprint/KanbanColumn.tsx` | Potentially pass column status as data attribute on droppable for lookup                                                     |
+| `src/renderer/src/components/sprint/TaskCard.tsx`     | Attach column status as `useSortable` data so it's available in `handleDragEnd`                                              |
 
 ## Implementation Notes
 
@@ -26,7 +26,7 @@ The cleanest fix is to pass the column status through `useSortable`'s `data` pro
 // TaskCard.tsx
 const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
   id: task.id,
-  data: { status: task.status }  // ← attach column identity
+  data: { status: task.status } // ← attach column identity
 })
 ```
 
@@ -49,7 +49,7 @@ function handleDragEnd(event: DragEndEvent) {
   }
 
   const sourceId = active.id as string
-  const sourceTask = tasks.find(t => t.id === sourceId)
+  const sourceTask = tasks.find((t) => t.id === sourceId)
   if (!sourceTask || sourceTask.status === destinationStatus) return
 
   onMoveTask(sourceId, destinationStatus)

@@ -32,7 +32,7 @@ describe('codeReviewStore', () => {
 
   it('stores diff files', () => {
     const files = [
-      { path: 'src/foo.ts', status: 'modified', additions: 5, deletions: 2, patch: '...' },
+      { path: 'src/foo.ts', status: 'modified', additions: 5, deletions: 2, patch: '...' }
     ]
     useCodeReviewStore.getState().setDiffFiles(files)
     expect(useCodeReviewStore.getState().diffFiles).toEqual(files)

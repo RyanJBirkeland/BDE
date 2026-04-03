@@ -15,6 +15,7 @@
 ## File Structure
 
 ### New files
+
 - `src/renderer/src/stores/dashboardData.ts` — Zustand store for dashboard chart data, feed events, PR count, card errors, loading state
 - `src/renderer/src/hooks/useDashboardPolling.ts` — polls dashboard IPC endpoints, writes to `dashboardData` store
 - `src/renderer/src/hooks/useGitStatusPolling.ts` — polls git status for active repo
@@ -29,6 +30,7 @@
 - `src/renderer/src/components/__tests__/PollingProvider.test.tsx` — integration test
 
 ### Modified files
+
 - `src/renderer/src/stores/healthCheck.ts` — add `useVisibleStuckTasks()` selector hook
 - `src/renderer/src/hooks/useHealthCheck.ts` — read tasks from `useSprintTasks` store instead of param
 - `src/renderer/src/App.tsx` — mount `PollingProvider`
@@ -51,6 +53,7 @@
 ## Task 1: Create `dashboardData` Zustand store
 
 **Files:**
+
 - Create: `src/renderer/src/stores/dashboardData.ts`
 - Create: `src/renderer/src/stores/__tests__/dashboardData.test.ts`
 
@@ -247,6 +250,7 @@ git commit -m "feat: add dashboardData Zustand store for polling consolidation"
 ## Task 2: Refactor `useHealthCheck` to read tasks from store
 
 **Files:**
+
 - Modify: `src/renderer/src/hooks/useHealthCheck.ts`
 - Modify: `src/renderer/src/stores/healthCheck.ts`
 - Modify: `src/renderer/src/stores/__tests__/healthCheck.test.ts`
@@ -263,7 +267,10 @@ import { useSprintTasks } from './sprintTasks'
 import { useMemo } from 'react'
 import type { SprintTask } from '../../../shared/types'
 
-export function useVisibleStuckTasks(): { visibleStuckTasks: SprintTask[]; dismissTask: (id: string) => void } {
+export function useVisibleStuckTasks(): {
+  visibleStuckTasks: SprintTask[]
+  dismissTask: (id: string) => void
+} {
   const tasks = useSprintTasks((s) => s.tasks)
   const stuckTaskIds = useHealthCheckStore((s) => s.stuckTaskIds)
   const dismissedIds = useHealthCheckStore((s) => s.dismissedIds)
@@ -318,6 +325,7 @@ Add tests for `useVisibleStuckTasks` in `src/renderer/src/stores/__tests__/healt
 - [ ] **Step 4: Update useHealthCheck tests**
 
 Update `src/renderer/src/hooks/__tests__/useHealthCheck.test.ts`:
+
 - Change import from `import { useHealthCheck } from '../useHealthCheck'` to `import { useHealthCheckPolling } from '../useHealthCheck'`
 - Replace all `renderHook(() => useHealthCheck(tasks))` calls with `renderHook(() => useHealthCheckPolling())`
 - Remove the `tasks` variable/parameter setup since the hook now reads from the store
@@ -340,6 +348,7 @@ git commit -m "refactor: useHealthCheck reads tasks from store, add useVisibleSt
 ## Task 3: Create new polling hooks
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/useDashboardPolling.ts`
 - Create: `src/renderer/src/hooks/useGitStatusPolling.ts`
 - Create: `src/renderer/src/hooks/useAgentSessionPolling.ts`
@@ -361,9 +370,7 @@ import { useDashboardPolling } from '../useDashboardPolling'
 
 const mockFetchAll = vi.fn()
 vi.mock('../../stores/dashboardData', () => ({
-  useDashboardDataStore: vi.fn((sel: (s: unknown) => unknown) =>
-    sel({ fetchAll: mockFetchAll })
-  )
+  useDashboardDataStore: vi.fn((sel: (s: unknown) => unknown) => sel({ fetchAll: mockFetchAll }))
 }))
 
 vi.mock('../useBackoffInterval', () => ({
@@ -637,6 +644,7 @@ git commit -m "feat: add polling hooks for dashboard, git, agents, and cost"
 ## Task 4: Create `PollingProvider` and mount in App
 
 **Files:**
+
 - Create: `src/renderer/src/components/PollingProvider.tsx`
 - Create: `src/renderer/src/components/__tests__/PollingProvider.test.tsx`
 - Modify: `src/renderer/src/App.tsx`
@@ -677,7 +685,11 @@ describe('PollingProvider', () => {
     const { useAgentSessionPolling } = await import('../../hooks/useAgentSessionPolling')
     const { useCostPolling } = await import('../../hooks/useCostPolling')
 
-    render(<PollingProvider><div /></PollingProvider>)
+    render(
+      <PollingProvider>
+        <div />
+      </PollingProvider>
+    )
 
     expect(useSprintPolling).toHaveBeenCalled()
     expect(usePrStatusPolling).toHaveBeenCalled()
@@ -728,6 +740,7 @@ Expected: PASS
 - [ ] **Step 4: Mount in App.tsx**
 
 In `src/renderer/src/App.tsx`:
+
 - Add import: `import { PollingProvider } from './components/PollingProvider'`
 - Wrap the `<div className="app-shell elevation-0">` return block with `<PollingProvider>...</PollingProvider>`
 
@@ -748,6 +761,7 @@ git commit -m "feat: add PollingProvider and mount in App root"
 ## Task 5: Remove polling from views
 
 **Files:**
+
 - Modify: `src/renderer/src/views/DashboardView.tsx`
 - Modify: `src/renderer/src/views/GitTreeView.tsx`
 - Modify: `src/renderer/src/views/AgentsView.tsx`
@@ -759,6 +773,7 @@ git commit -m "feat: add PollingProvider and mount in App root"
 - [ ] **Step 1: Refactor DashboardView to use `dashboardData` store**
 
 In `src/renderer/src/views/DashboardView.tsx`:
+
 - Remove imports: `useBackoffInterval`, `useSprintPolling`, `POLL_DASHBOARD_INTERVAL`
 - Add import: `import { useShallow } from 'zustand/react/shallow'`
 - Add import: `import { useDashboardDataStore } from '../stores/dashboardData'`
@@ -776,6 +791,7 @@ In `src/renderer/src/views/DashboardView.tsx`:
 - [ ] **Step 2: Remove polling interval from GitTreeView**
 
 In `src/renderer/src/views/GitTreeView.tsx`:
+
 - Remove import: `useVisibilityAwareInterval`, `POLL_GIT_STATUS_INTERVAL`
 - Remove: the `poll` callback and `useVisibilityAwareInterval(poll, activeRepo ? POLL_GIT_STATUS_INTERVAL : null)` call
 - Keep: the `useEffect` that calls `fetchStatus(activeRepo)` on mount/repo change (lines 54-59)
@@ -785,6 +801,7 @@ In `src/renderer/src/views/GitTreeView.tsx`:
 - [ ] **Step 3: Remove polling interval from AgentsView**
 
 In `src/renderer/src/views/AgentsView.tsx`:
+
 - Remove import: `useVisibilityAwareInterval`, `POLL_SESSIONS_INTERVAL`
 - Remove: `useVisibilityAwareInterval(fetchAgents, activeView === 'agents' ? POLL_SESSIONS_INTERVAL : null)` call
 - Keep: the `useEffect` that calls `fetchAgents()` when `activeView === 'agents'` (lines 54-57)
@@ -794,6 +811,7 @@ In `src/renderer/src/views/AgentsView.tsx`:
 - [ ] **Step 4: Remove polling hooks from SprintPipeline**
 
 In `src/renderer/src/components/sprint/SprintPipeline.tsx`:
+
 - Remove imports: `useSprintPolling`, `usePrStatusPolling`, `useHealthCheck`
 - Remove: `useSprintPolling()` call (line 122)
 - Remove: `usePrStatusPolling()` call (line 123)
@@ -806,6 +824,7 @@ In `src/renderer/src/components/sprint/SprintPipeline.tsx`:
 - [ ] **Step 5: Remove polling interval from CostSection**
 
 In `src/renderer/src/components/settings/CostSection.tsx`:
+
 - Remove import: `useVisibilityAwareInterval`, `POLL_COST_INTERVAL`
 - Remove: `useVisibilityAwareInterval(fetchData, POLL_COST_INTERVAL)` call (line 253)
 - Keep: `fetchData` callback and initial `useEffect` (the CostSection still has its own local state for `summary` and `runs` which are settings-page-specific data not needed globally)
@@ -832,6 +851,7 @@ git commit -m "refactor: remove polling from views — now owned by PollingProvi
 ## Task 6: Update existing tests
 
 **Files:**
+
 - Modify: `src/renderer/src/views/__tests__/DashboardView.test.tsx`
 - Modify: `src/renderer/src/views/__tests__/GitTreeView.test.tsx`
 - Modify: `src/renderer/src/views/__tests__/AgentsView.test.tsx`
@@ -842,15 +862,18 @@ git commit -m "refactor: remove polling from views — now owned by PollingProvi
 In `src/renderer/src/views/__tests__/DashboardView.test.tsx`:
 
 **Mock changes:**
+
 - Remove mock for `useSprintPolling` (line 28 — no longer imported by DashboardView)
 - Add mock for `dashboardData` store: `vi.mock('../../stores/dashboardData', ...)` returning `{ chartData: [], feedEvents: [], prCount: 0, cardErrors: {}, loading: false, fetchAll: vi.fn() }`
 - `window.api.dashboard.*` and `window.api.getPrList` mocks can stay (some tests may still set them up) but are no longer called by DashboardView directly
 
 **Tests to delete (they test polling behavior that moved to useDashboardPolling):**
+
 - "re-fetches dashboard data on polling interval" (line ~182) — tests `advanceTimersByTime` triggering refetches; this is now `useDashboardPolling`'s concern
 - "logs errors instead of swallowing them" (line ~202) — error logging moved to `dashboardData` store; move this assertion to `dashboardData.test.ts`
 
 **Tests to rewrite (they depend on `advanceTimersByTimeAsync` to flush DashboardView's own fetch):**
+
 - "renders chart data from completionsPerHour" — instead of flushing a timer, mock `useDashboardDataStore` to return chart data and assert it renders
 - "renders feed events from recentEvents" — same: mock store with feed events
 - "renders correct PR count from getPrList payload" — mock store with `prCount: 2`
@@ -859,6 +882,7 @@ In `src/renderer/src/views/__tests__/DashboardView.test.tsx`:
 - "shows Loading... text during initial load" — mock store with `loading: true`
 
 **Tests that stay unchanged** (they only read from `sprintTasks`/`costData` stores, no timer dependency):
+
 - All stat navigation tests (clicking Active/Done/Blocked/Queued/PRs)
 - Success ring percentage tests
 - Duration formatting tests
@@ -869,16 +893,19 @@ In `src/renderer/src/views/__tests__/DashboardView.test.tsx`:
 - [ ] **Step 2: Update GitTreeView tests**
 
 In `src/renderer/src/views/__tests__/GitTreeView.test.tsx`:
+
 - Remove mock for `useVisibilityAwareInterval` (no longer imported)
 
 - [ ] **Step 3: Update AgentsView tests**
 
 In `src/renderer/src/views/__tests__/AgentsView.test.tsx`:
+
 - Remove mock for `useVisibilityAwareInterval` (no longer imported)
 
 - [ ] **Step 4: Update SprintPipeline tests**
 
 In `src/renderer/src/components/sprint/__tests__/SprintPipeline.test.tsx`:
+
 - Remove mocks for `useSprintPolling`, `usePrStatusPolling`
 - Update mock for `useHealthCheck` → mock `useVisibleStuckTasks` from `../../stores/healthCheck` instead
 
@@ -904,6 +931,7 @@ git commit -m "test: update view tests for polling consolidation"
 ## Task 7: Migrate log poller to visibility-aware pattern
 
 **Files:**
+
 - Modify: `src/renderer/src/lib/logPoller.ts`
 
 - [ ] **Step 1: Refactor logPoller.ts**

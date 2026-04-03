@@ -56,11 +56,13 @@ Each finding from `prod-audit/pr-station-ux.md` was verified against the current
 **Status: FIXED**
 
 `PRStationDetail.tsx` now includes a `retryKey` state (line 85), a `handleRetry` function (lines 87-89), and a retry button in the error state (lines 176-185):
+
 ```tsx
 <button className="pr-detail__retry-button" onClick={handleRetry}>
   Retry
 </button>
 ```
+
 The `retryKey` is included in the `useEffect` dependency array (line 155), triggering a full re-fetch on click.
 
 ### PR-UX-8: Filter state is not persisted -- resets on view switch (Moderate)
@@ -98,11 +100,13 @@ Since the unmount/remount hack was removed, `activeTab` state (line 26) now pers
 **Status: FIXED**
 
 `PRStationDetail.tsx` now includes a `safeLabelColor()` function (lines 68-71):
+
 ```tsx
 function safeLabelColor(color: string): string {
   return /^[0-9a-fA-F]{6}$/.test(color) ? `#${color}` : 'var(--neon-text-dim)'
 }
 ```
+
 This is used at line 214: `style={{ background: safeLabelColor(label.color) }}`. Invalid colors fall back to the neon dim text color.
 
 ### PR-UX-14: Diff comment selection only works on RIGHT (new) side (Moderate)
@@ -151,65 +155,65 @@ This is used at line 214: `style={{ background: safeLabelColor(label.color) }}`.
 
 ## Synthesis Report Cross-References
 
-| Synthesis ID | Title | Status | Notes |
-|---|---|---|---|
-| PR-1 | Merge button confirmation | **Fixed** | `useConfirm()` dialog added |
-| PR-2 | Close button confirmation | **Fixed** | `useConfirm()` dialog added |
-| PR-3 | Allowlist regex repo scope | **Fixed** | `getConfiguredRepos()` validation added in `git-handlers.ts:43-57,113-121` |
-| PR-4 | PATCH allowlist field restriction | **Fixed** | `validatePatchBody()` in `git-handlers.ts:73-87` restricts to `title`/`body` only |
-| PR-5 | DOMPurify config | **Fixed** | `render-markdown.ts` now uses explicit `ALLOWED_TAGS` and `ALLOWED_ATTR` whitelist (no `style`, no `img`) |
-| PR-6 | Label color validation | **Fixed** | `safeLabelColor()` validates hex format |
-| PR-7 | Virtualized diff commenting indicator | **Fixed** | Banner + force-plain-mode button added |
-| PR-8 | Pending review beforeunload flush | **Fixed** | `flushToStorage()` on `beforeunload` |
-| PR-9 | Abort signal in mergeability | **Fixed** | Race handled at call site with AbortController |
-| PR-10 | Cache invalidation detail refetch | **Fixed** | `refreshKey` counter triggers re-fetch after mutations |
-| PR-11 | Review submission unmount flash | **Fixed** | `refreshKey` approach replaces null/restore hack |
-| PR-12 | Detail error retry button | **Fixed** | Retry button added with `retryKey` state |
-| PR-13 | Race between repo settings and API calls | **Fixed** | `useRepoOptions()` hook used consistently; `fetchAll` returns early if no repo found |
-| PR-14 | Pending review localStorage validation | **Fixed** | `restoreFromStorage()` (lines 62-87) validates structure: checks `typeof`, `Array.isArray`, and required fields |
-| PR-15 | `repoOptions` ref instability | **Fixed** | `repoOptions` is now memoized via `useRepoOptions()` hook |
-| PR-16 | GitHub error messages leaked | **Fixed** | All API functions use generic messages: "unable to merge/close/submit" |
-| PR-17 | Check run `html_url` validation | **Fixed** | `PRStationChecks.tsx` line 55 validates `run.html_url.startsWith('https://github.com/')` |
-| PR-18 | `invalidatePRCache` over-invalidation | **Fixed** | Uses `makeKey()` prefix matching with exact `colonIndex` check instead of `includes()` |
-| PR-19 | `fetchAllPages` pagination depth limit | **Fixed** | `MAX_PAGES = 100` limit added at `github-api.ts:15` |
-| PR-20 | PR poller error backoff | **Fixed** | `pr-poller.ts` implements exponential backoff (lines 101-114) with max 5-minute delay, uses `createLogger` |
-| PR-21 | Keyboard handler in contentEditable | **Fixed** | `DiffViewer.tsx` line 668 checks `target.isContentEditable` and returns early |
-| PR-22 | Filter state persistence | **Not Fixed** | Still local `useState` |
-| PR-23 | Conflict banner error handling | **Fixed** | Error state tracked and displayed |
-| PR-24 | LEFT side commenting | **Fixed** | Both gutters have handlers |
-| PR-25 | Reply-to-comment UI | **Not Fixed** | Acknowledged as future enhancement |
-| PR-26 | CloseButton test coverage | Not verified | Test files not in scope of this UX audit |
-| PR-27 | `PRStationDiff` uncached comments | **Fixed** | `PRStationDiff.tsx` line 80 uses `cachedGetReviewComments()` |
-| PR-28 | Focus trap in review dialog | **Fixed** | Manual focus trap implemented |
-| PR-29 | PR poller per-repo error handling | **Fixed** | `fetchOpenPrs()` catches per-repo errors and returns empty array (lines 30-33) |
-| PR-30 | Diff size warning commenting note | **Fixed** | Warning text updated |
+| Synthesis ID | Title                                    | Status        | Notes                                                                                                           |
+| ------------ | ---------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
+| PR-1         | Merge button confirmation                | **Fixed**     | `useConfirm()` dialog added                                                                                     |
+| PR-2         | Close button confirmation                | **Fixed**     | `useConfirm()` dialog added                                                                                     |
+| PR-3         | Allowlist regex repo scope               | **Fixed**     | `getConfiguredRepos()` validation added in `git-handlers.ts:43-57,113-121`                                      |
+| PR-4         | PATCH allowlist field restriction        | **Fixed**     | `validatePatchBody()` in `git-handlers.ts:73-87` restricts to `title`/`body` only                               |
+| PR-5         | DOMPurify config                         | **Fixed**     | `render-markdown.ts` now uses explicit `ALLOWED_TAGS` and `ALLOWED_ATTR` whitelist (no `style`, no `img`)       |
+| PR-6         | Label color validation                   | **Fixed**     | `safeLabelColor()` validates hex format                                                                         |
+| PR-7         | Virtualized diff commenting indicator    | **Fixed**     | Banner + force-plain-mode button added                                                                          |
+| PR-8         | Pending review beforeunload flush        | **Fixed**     | `flushToStorage()` on `beforeunload`                                                                            |
+| PR-9         | Abort signal in mergeability             | **Fixed**     | Race handled at call site with AbortController                                                                  |
+| PR-10        | Cache invalidation detail refetch        | **Fixed**     | `refreshKey` counter triggers re-fetch after mutations                                                          |
+| PR-11        | Review submission unmount flash          | **Fixed**     | `refreshKey` approach replaces null/restore hack                                                                |
+| PR-12        | Detail error retry button                | **Fixed**     | Retry button added with `retryKey` state                                                                        |
+| PR-13        | Race between repo settings and API calls | **Fixed**     | `useRepoOptions()` hook used consistently; `fetchAll` returns early if no repo found                            |
+| PR-14        | Pending review localStorage validation   | **Fixed**     | `restoreFromStorage()` (lines 62-87) validates structure: checks `typeof`, `Array.isArray`, and required fields |
+| PR-15        | `repoOptions` ref instability            | **Fixed**     | `repoOptions` is now memoized via `useRepoOptions()` hook                                                       |
+| PR-16        | GitHub error messages leaked             | **Fixed**     | All API functions use generic messages: "unable to merge/close/submit"                                          |
+| PR-17        | Check run `html_url` validation          | **Fixed**     | `PRStationChecks.tsx` line 55 validates `run.html_url.startsWith('https://github.com/')`                        |
+| PR-18        | `invalidatePRCache` over-invalidation    | **Fixed**     | Uses `makeKey()` prefix matching with exact `colonIndex` check instead of `includes()`                          |
+| PR-19        | `fetchAllPages` pagination depth limit   | **Fixed**     | `MAX_PAGES = 100` limit added at `github-api.ts:15`                                                             |
+| PR-20        | PR poller error backoff                  | **Fixed**     | `pr-poller.ts` implements exponential backoff (lines 101-114) with max 5-minute delay, uses `createLogger`      |
+| PR-21        | Keyboard handler in contentEditable      | **Fixed**     | `DiffViewer.tsx` line 668 checks `target.isContentEditable` and returns early                                   |
+| PR-22        | Filter state persistence                 | **Not Fixed** | Still local `useState`                                                                                          |
+| PR-23        | Conflict banner error handling           | **Fixed**     | Error state tracked and displayed                                                                               |
+| PR-24        | LEFT side commenting                     | **Fixed**     | Both gutters have handlers                                                                                      |
+| PR-25        | Reply-to-comment UI                      | **Not Fixed** | Acknowledged as future enhancement                                                                              |
+| PR-26        | CloseButton test coverage                | Not verified  | Test files not in scope of this UX audit                                                                        |
+| PR-27        | `PRStationDiff` uncached comments        | **Fixed**     | `PRStationDiff.tsx` line 80 uses `cachedGetReviewComments()`                                                    |
+| PR-28        | Focus trap in review dialog              | **Fixed**     | Manual focus trap implemented                                                                                   |
+| PR-29        | PR poller per-repo error handling        | **Fixed**     | `fetchOpenPrs()` catches per-repo errors and returns empty array (lines 30-33)                                  |
+| PR-30        | Diff size warning commenting note        | **Fixed**     | Warning text updated                                                                                            |
 
 ---
 
 ## Summary Table
 
-| ID | Severity | Status | Notes |
-|---|---|---|---|
-| PR-UX-1 | Critical | **Fixed** | Confirmation dialog with `useConfirm()` |
-| PR-UX-2 | Critical | **Fixed** | Confirmation dialog with `useConfirm()` |
-| PR-UX-3 | Significant | **Fixed** | Banner + force-plain-mode button |
-| PR-UX-4 | Significant | **Fixed** | AbortController race prevention at call site |
-| PR-UX-5 | Significant | **Fixed** | `beforeunload` synchronous flush |
-| PR-UX-6 | Significant | **Fixed** | `refreshKey` replaces null/restore hack |
-| PR-UX-7 | Significant | **Fixed** | Retry button + `retryKey` re-fetch |
-| PR-UX-8 | Moderate | **Not Fixed** | Filter state still local useState |
-| PR-UX-9 | Moderate | **Fixed** | Tab no longer resets on review submit |
-| PR-UX-10 | Moderate | **Fixed** | Warning text includes commenting impact |
-| PR-UX-11 | Moderate | **Fixed** | Error state tracked and displayed |
-| PR-UX-12 | Moderate | **Not Fixed** | Keyboard nav hardcoded to pr-station view |
-| PR-UX-13 | Moderate | **Fixed** | Hex validation with fallback color |
-| PR-UX-14 | Moderate | **Fixed** | Both LEFT and RIGHT gutter handlers |
-| PR-UX-15 | Minor | **Not Fixed** | No reply UI; acknowledged as future work |
-| PR-UX-16 | Minor | **Not Fixed** | No visual refresh indicator |
-| PR-UX-17 | Minor | **Not Fixed** | No auto-refresh for check runs |
-| PR-UX-18 | Minor | **Not Fixed** | Backdrop click dismisses without body check |
-| PR-UX-19 | Minor | **Fixed** | Focus trap implemented |
-| PR-UX-20 | Minor | **Not Fixed** | Comment count still inflated by replies |
+| ID       | Severity    | Status        | Notes                                        |
+| -------- | ----------- | ------------- | -------------------------------------------- |
+| PR-UX-1  | Critical    | **Fixed**     | Confirmation dialog with `useConfirm()`      |
+| PR-UX-2  | Critical    | **Fixed**     | Confirmation dialog with `useConfirm()`      |
+| PR-UX-3  | Significant | **Fixed**     | Banner + force-plain-mode button             |
+| PR-UX-4  | Significant | **Fixed**     | AbortController race prevention at call site |
+| PR-UX-5  | Significant | **Fixed**     | `beforeunload` synchronous flush             |
+| PR-UX-6  | Significant | **Fixed**     | `refreshKey` replaces null/restore hack      |
+| PR-UX-7  | Significant | **Fixed**     | Retry button + `retryKey` re-fetch           |
+| PR-UX-8  | Moderate    | **Not Fixed** | Filter state still local useState            |
+| PR-UX-9  | Moderate    | **Fixed**     | Tab no longer resets on review submit        |
+| PR-UX-10 | Moderate    | **Fixed**     | Warning text includes commenting impact      |
+| PR-UX-11 | Moderate    | **Fixed**     | Error state tracked and displayed            |
+| PR-UX-12 | Moderate    | **Not Fixed** | Keyboard nav hardcoded to pr-station view    |
+| PR-UX-13 | Moderate    | **Fixed**     | Hex validation with fallback color           |
+| PR-UX-14 | Moderate    | **Fixed**     | Both LEFT and RIGHT gutter handlers          |
+| PR-UX-15 | Minor       | **Not Fixed** | No reply UI; acknowledged as future work     |
+| PR-UX-16 | Minor       | **Not Fixed** | No visual refresh indicator                  |
+| PR-UX-17 | Minor       | **Not Fixed** | No auto-refresh for check runs               |
+| PR-UX-18 | Minor       | **Not Fixed** | Backdrop click dismisses without body check  |
+| PR-UX-19 | Minor       | **Fixed**     | Focus trap implemented                       |
+| PR-UX-20 | Minor       | **Not Fixed** | Comment count still inflated by replies      |
 
 ---
 

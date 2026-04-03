@@ -10,20 +10,20 @@
 
 ### Previously Reported -- Now Fixed
 
-| # | Original Finding | Evidence of Fix |
-|---|-----------------|-----------------|
-| SEC-5 | CORS `*` on auth-protected localhost API | `helpers.ts:57` now exports `CORS_HEADERS = {}` -- wildcard removed. Comment on line 55-56 confirms intentional removal. |
-| main-process-sd C3 | Same CORS wildcard issue | Same fix as SEC-5. |
-| main-process-sd S1 | Worktree lock TOCTOU race | `claimTask()` in `sprint-queries.ts:248-264` now wraps WIP count check + UPDATE in a single SQLite transaction, eliminating the TOCTOU race. `task-handlers.ts:420` passes `MAX_ACTIVE_TASKS` to `claimTask()` for atomic enforcement. |
+| #                  | Original Finding                         | Evidence of Fix                                                                                                                                                                                                                        |
+| ------------------ | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-5              | CORS `*` on auth-protected localhost API | `helpers.ts:57` now exports `CORS_HEADERS = {}` -- wildcard removed. Comment on line 55-56 confirms intentional removal.                                                                                                               |
+| main-process-sd C3 | Same CORS wildcard issue                 | Same fix as SEC-5.                                                                                                                                                                                                                     |
+| main-process-sd S1 | Worktree lock TOCTOU race                | `claimTask()` in `sprint-queries.ts:248-264` now wraps WIP count check + UPDATE in a single SQLite transaction, eliminating the TOCTOU race. `task-handlers.ts:420` passes `MAX_ACTIVE_TASKS` to `claimTask()` for atomic enforcement. |
 
 ### Previously Reported -- Still Open
 
-| # | Original Finding | Current Status |
-|---|-----------------|----------------|
-| ARCH-2 | Repository pattern inconsistently applied -- Queue API bypasses `ISprintTaskRepository` | Still present. `task-handlers.ts` imports directly from `sprint-queries` (line 6-17). Queue API writes bypass notification channels and any repository-layer side effects. |
-| main-process-ax 3.2 | Queue API notifications gap -- writes don't emit IPC events to renderer | Still present. `handleUpdateTask()`, `handleUpdateStatus()`, `handleUpdateDependencies()` all call `updateTask()` directly but never emit `sprint:externalChange` or any IPC notification. The renderer relies on DB file watcher (500ms debounce) which is an indirect, unreliable coupling. |
-| main-process-ax 4.8 | Stale "Supabase proxy" JSDoc in server.ts | Still present. `server.ts:2` reads: `Queue API HTTP server -- lightweight Supabase proxy on port 18790`. This is misleading -- the API operates on local SQLite, not Supabase. |
-| main-process-sd C4 | SSE token via query-string | Still present. `helpers.ts:30-35` accepts `?token=` query param for SSE clients. Token is visible in server logs, browser history, and proxy logs. Documented as accepted risk but not mitigated. |
+| #                   | Original Finding                                                                        | Current Status                                                                                                                                                                                                                                                                                |
+| ------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ARCH-2              | Repository pattern inconsistently applied -- Queue API bypasses `ISprintTaskRepository` | Still present. `task-handlers.ts` imports directly from `sprint-queries` (line 6-17). Queue API writes bypass notification channels and any repository-layer side effects.                                                                                                                    |
+| main-process-ax 3.2 | Queue API notifications gap -- writes don't emit IPC events to renderer                 | Still present. `handleUpdateTask()`, `handleUpdateStatus()`, `handleUpdateDependencies()` all call `updateTask()` directly but never emit `sprint:externalChange` or any IPC notification. The renderer relies on DB file watcher (500ms debounce) which is an indirect, unreliable coupling. |
+| main-process-ax 4.8 | Stale "Supabase proxy" JSDoc in server.ts                                               | Still present. `server.ts:2` reads: `Queue API HTTP server -- lightweight Supabase proxy on port 18790`. This is misleading -- the API operates on local SQLite, not Supabase.                                                                                                                |
+| main-process-sd C4  | SSE token via query-string                                                              | Still present. `helpers.ts:30-35` accepts `?token=` query param for SSE clients. Token is visible in server logs, browser history, and proxy logs. Documented as accepted risk but not mitigated.                                                                                             |
 
 ---
 
@@ -41,13 +41,16 @@
     totalSize += chunk.length
     if (totalSize > MAX_BODY_SIZE) {
       req.destroy()
-      if (res) { sendJson(res, 413, { error: 'Payload too large' }) }
+      if (res) {
+        sendJson(res, 413, { error: 'Payload too large' })
+      }
       reject(new Error('Payload too large'))
-      return  // but 'end' event may still fire
+      return // but 'end' event may still fire
     }
     chunks.push(chunk)
   })
-  req.on('end', () => {  // may fire after destroy() + reject()
+  req.on('end', () => {
+    // may fire after destroy() + reject()
     // ... JSON.parse → second reject() call
   })
   ```
@@ -63,9 +66,9 @@
   ```typescript
   // task-handlers.ts:136-142
   try {
-    body = await parseBody(req, res)  // may send 413 internally
+    body = await parseBody(req, res) // may send 413 internally
   } catch {
-    sendJson(res, 400, { error: 'Invalid JSON body' })  // second response attempt
+    sendJson(res, 400, { error: 'Invalid JSON body' }) // second response attempt
     return
   }
   ```
@@ -79,6 +82,7 @@
 - **File(s):** `src/main/queue-api/sse-broadcaster.ts:15-23`, `src/main/queue-api/event-handlers.ts:14`
 - **Description:** `event-handlers.ts:14` creates a singleton SSE broadcaster at module scope: `export const sseBroadcaster = createSseBroadcaster()`. The broadcaster starts a 30-second `setInterval` heartbeat (line 15). If the module is ever re-evaluated (HMR, test re-imports), a new interval is created without clearing the old one. Additionally, `stopQueueApi()` in `server.ts` calls `server.closeAllConnections()` but never calls `sseBroadcaster.close()`, so the heartbeat timer keeps running after server shutdown and prevents clean process exit.
 - **Evidence:**
+
   ```typescript
   // event-handlers.ts:14 — module-level singleton
   export const sseBroadcaster = createSseBroadcaster()
@@ -92,6 +96,7 @@
     })
   }
   ```
+
 - **Recommendation:** Call `sseBroadcaster.close()` inside `stopQueueApi()` before `server.close()`. Export `sseBroadcaster` from `server.ts` or pass it as a dependency so the lifecycle is managed.
 
 ### QA-REL-4: `handleUpdateStatus` does not validate that `status` field is present
@@ -103,7 +108,8 @@
 - **Evidence:**
   ```typescript
   const patch = body as StatusUpdateRequest
-  if (patch.status && !RUNNER_WRITABLE_STATUSES.has(patch.status)) {  // skipped if status is undefined
+  if (patch.status && !RUNNER_WRITABLE_STATUSES.has(patch.status)) {
+    // skipped if status is undefined
     sendJson(res, 400, { error: `Invalid status: ${patch.status}` })
     return
   }
@@ -119,7 +125,12 @@
 - **Evidence:**
   ```typescript
   export const RUNNER_WRITABLE_STATUSES = new Set([
-    'queued', 'active', 'done', 'failed', 'cancelled', 'error'
+    'queued',
+    'active',
+    'done',
+    'failed',
+    'cancelled',
+    'error'
     // 'blocked' is absent
   ])
   ```
@@ -233,6 +244,7 @@
 - **File(s):** `src/main/queue-api/helpers.ts:66-96`, `src/main/queue-api/server.ts:28-37`
 - **Description:** `parseBody` waits indefinitely for the request stream to end. A slow or malicious client that sends data one byte at a time (slowloris-style) can hold the connection open indefinitely. The server has no `server.timeout` or `server.requestTimeout` configured, and no per-request timeout wrapping `parseBody`. While this is a localhost API, external services (Life OS, claude-chat-service, claude-task-runner) connect to it, and a hung connection from any of these consumes a file descriptor and an event loop slot.
 - **Evidence:**
+
   ```typescript
   // server.ts — no timeout configuration
   server = http.createServer(async (req, res) => { ... })
@@ -247,6 +259,7 @@
     // no setTimeout
   })
   ```
+
 - **Recommendation:** Set `server.requestTimeout = 30000` (30 seconds) after creating the server in `server.ts`. This automatically closes connections that take too long to send a complete request.
 
 ### QA-REL-13: Route matching is order-dependent and `/queue/tasks/:id` matches before `/queue/tasks/:id/status`
@@ -256,6 +269,7 @@
 - **File(s):** `src/main/queue-api/router.ts:77-88`
 - **Description:** In the router, `/queue/tasks/:id` is matched at line 77 before `/queue/tasks/:id/status` at line 85. This works correctly because `matchRoute` requires exact segment count matching (line 113: `patternParts.length !== pathParts.length`). However, if someone adds a trailing-slash variant (`/queue/tasks/:id/`) or a sub-route without updating the order, routes will silently shadow each other. The code relies on implicit ordering for correctness with no documentation or assertion.
 - **Evidence:**
+
   ```typescript
   // Line 77 — matches /queue/tasks/abc (3 segments after split)
   params = matchRoute('/queue/tasks/:id', path)
@@ -264,6 +278,7 @@
   // Line 85 — matches /queue/tasks/abc/status (4 segments after split)
   params = matchRoute('/queue/tasks/:id/status', path)
   ```
+
 - **Recommendation:** Add a comment block at the top of the route section documenting the ordering constraint. Consider refactoring to match longer routes first (most-specific-first ordering).
 
 ### QA-REL-14: `handleHealth` is not wrapped in try/catch -- `getQueueStats()` exceptions propagate to global handler
@@ -300,7 +315,7 @@
   ```typescript
   const validation = validateTaskCreation(
     body as Parameters<typeof createTask>[0],
-    { logger: console }  // should use createLogger
+    { logger: console } // should use createLogger
   )
   ```
 - **Recommendation:** Import `createLogger` from `../logger` and use `{ logger: createLogger('queue-api') }` or a module-level logger instance.
@@ -318,12 +333,12 @@
 
 ## Summary
 
-| Severity | Count |
-|----------|-------|
+| Severity | Count      |
+| -------- | ---------- |
 | Critical | None found |
-| High | 1 |
-| Medium | 7 |
-| Low | 9 |
+| High     | 1          |
+| Medium   | 7          |
+| Low      | 9          |
 
 **Total findings:** 17
 

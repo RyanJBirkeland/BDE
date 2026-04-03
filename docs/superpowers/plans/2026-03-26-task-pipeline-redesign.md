@@ -15,6 +15,7 @@
 ### Task 1: Rename user-visible labels Sprint → Task Pipeline
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/panelLayout.ts:39`
 - Modify: `src/renderer/src/App.tsx:26,32,44`
 - Modify: `src/renderer/src/components/layout/NeonSidebar.tsx:39`
@@ -53,6 +54,7 @@ git add -A && git commit -m "feat: rename Sprint to Task Pipeline in all user-vi
 ### Task 2: Extract SprintCenter inline styles to CSS classes
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/SprintCenter.tsx`
 - Modify: `src/renderer/src/assets/sprint-neon.css`
 
@@ -82,6 +84,7 @@ git add -A && git commit -m "refactor: extract SprintCenter inline styles to spr
 ### Task 3: Extract CircuitPipeline inline styles + add click-to-filter
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/CircuitPipeline.tsx`
 - Modify: `src/renderer/src/assets/sprint-neon.css`
 
@@ -112,6 +115,7 @@ git add -A && git commit -m "refactor: extract CircuitPipeline styles, add click
 ### Task 4: Migrate SprintTaskList to neon tokens + layout improvements
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/SprintTaskList.tsx`
 - Modify: `src/renderer/src/assets/sprint-neon.css`
 - Modify: `src/renderer/src/assets/sprint.css`
@@ -151,6 +155,7 @@ git add -A && git commit -m "refactor: migrate SprintTaskList to neon design sys
 ### Task 5: Redesign SprintDetailPane layout and polish
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/SprintDetailPane.tsx`
 - Modify: `src/renderer/src/assets/sprint-neon.css`
 

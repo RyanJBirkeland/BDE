@@ -20,6 +20,7 @@ The IDE view is well-structured with strong test coverage for the main view and 
 
 **What:**
 The keyboard shortcuts overlay panel uses font sizes below the 10px minimum requirement:
+
 - `ide-shortcuts-panel__key`: 11px (line 498 in ide-neon.css)
 - `ide-shortcuts-panel__hint`: 11px (line 514 in ide-neon.css)
 
@@ -27,6 +28,7 @@ The keyboard shortcuts overlay panel uses font sizes below the 10px minimum requ
 Poor readability for users, especially those with visual impairments. Fails accessibility guidelines.
 
 **Fix:**
+
 ```css
 .ide-shortcuts-panel__key {
   font-size: 12px; /* was 11px */
@@ -45,15 +47,18 @@ Poor readability for users, especially those with visual impairments. Fails acce
 
 **What:**
 The file loading indicator in IDEView (lines 414-421) uses inline styles instead of CSS classes:
+
 ```tsx
-<div style={{
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100%',
-  color: 'var(--bde-text-dim)',
-  fontSize: 'var(--bde-size-sm)'
-}}>
+<div
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    color: 'var(--bde-text-dim)',
+    fontSize: 'var(--bde-size-sm)'
+  }}
+>
   Loading...
 </div>
 ```
@@ -63,6 +68,7 @@ Violates neon design system conventions. Makes theming harder. Inconsistent with
 
 **Fix:**
 Add CSS class in `ide-neon.css`:
+
 ```css
 .ide-loading-indicator {
   display: flex;
@@ -84,12 +90,15 @@ Then use: `<div className="ide-loading-indicator">Loading...</div>`
 
 **What:**
 The "No folder open" message in FileSidebar (lines 168-172) uses inline styles:
+
 ```tsx
-<div style={{
-  padding: '12px 8px',
-  fontSize: 'var(--bde-size-sm)',
-  color: 'var(--bde-text-dim)'
-}}>
+<div
+  style={{
+    padding: '12px 8px',
+    fontSize: 'var(--bde-size-sm)',
+    color: 'var(--bde-text-dim)'
+  }}
+>
   No folder open
 </div>
 ```
@@ -99,6 +108,7 @@ Same as #2 — violates design system conventions, makes theming harder.
 
 **Fix:**
 Add CSS class:
+
 ```css
 .ide-sidebar__empty {
   padding: 12px 8px;
@@ -115,6 +125,7 @@ Add CSS class:
 
 **What:**
 FileTree error rendering (line 43) uses inline styles:
+
 ```tsx
 <div className="ide-file-tree" style={{ padding: '8px', color: 'var(--bde-danger)', fontSize: 'var(--bde-size-sm)' }}>
 ```
@@ -124,6 +135,7 @@ Minor violation of design system. Less critical since error states are rare.
 
 **Fix:**
 Add CSS class:
+
 ```css
 .ide-file-tree--error {
   padding: 8px;
@@ -146,6 +158,7 @@ Keyboard users have poor visual feedback. Fails WCAG 2.1 SC 2.4.7 (Focus Visible
 
 **Fix:**
 Add focus-visible styles to `ide-neon.css`:
+
 ```css
 .ide-file-node:focus-visible {
   outline: 2px solid var(--neon-cyan);
@@ -176,6 +189,7 @@ Add focus-visible styles to `ide-neon.css`:
 
 **What:**
 FileTreeNode is a significant component (165 lines) with complex logic:
+
 - Keyboard navigation (Enter, Space, Arrow keys)
 - Expansion state management
 - Recursive rendering
@@ -189,6 +203,7 @@ High risk of regressions. Complex component untested. Branch coverage likely aff
 
 **Fix:**
 Create `src/renderer/src/components/ide/__tests__/FileTreeNode.test.tsx` with tests for:
+
 - Rendering file vs. folder icons
 - Keyboard navigation (Enter, Space, Arrow Left/Right)
 - Expansion/collapse behavior
@@ -205,10 +220,12 @@ Create `src/renderer/src/components/ide/__tests__/FileTreeNode.test.tsx` with te
 
 **What:**
 EditorPane only has 4 tests (lines 1-40 of EditorPane.test.tsx):
+
 - Empty state rendering (2 tests)
 - Monaco editor rendering (2 tests)
 
 Missing coverage:
+
 - `onContentChange` callback
 - `onSave` callback
 - Monaco theme switching (light/dark)
@@ -220,6 +237,7 @@ Medium risk of regressions. Core functionality (save, change) not covered.
 
 **Fix:**
 Add tests for:
+
 ```typescript
 it('calls onContentChange when content changes')
 it('calls onSave when Cmd+S is pressed in Monaco')
@@ -241,26 +259,33 @@ Low test coverage for individual keyboard shortcuts. Hard to debug when shortcut
 
 **Fix:**
 Extract to a custom hook:
+
 ```typescript
 // src/renderer/src/hooks/useIDEKeyboardShortcuts.ts
 export function useIDEKeyboardShortcuts({
   activeView,
   focusedPanel,
-  activeTabId,
+  activeTabId
   // ... other deps
 }) {
-  useEffect(() => {
-    // ... handler logic
-  }, [/* deps */])
+  useEffect(
+    () => {
+      // ... handler logic
+    },
+    [
+      /* deps */
+    ]
+  )
 }
 ```
 
 Then in IDEView:
+
 ```typescript
 useIDEKeyboardShortcuts({
   activeView,
   focusedPanel,
-  activeTabId,
+  activeTabId
   // ...
 })
 ```
@@ -273,6 +298,7 @@ useIDEKeyboardShortcuts({
 
 **What:**
 FileTreeNode uses hardcoded magic numbers for indentation (line 84):
+
 ```typescript
 const paddingLeft = 8 + depth * 16
 ```
@@ -282,6 +308,7 @@ Hard to adjust indent spacing. Not clear what 8 and 16 represent.
 
 **Fix:**
 Extract to constants:
+
 ```typescript
 const TREE_BASE_PADDING = 8
 const TREE_INDENT_PER_LEVEL = 16
@@ -290,6 +317,7 @@ const paddingLeft = TREE_BASE_PADDING + depth * TREE_INDENT_PER_LEVEL
 ```
 
 Or add to `file-tree-constants.ts`:
+
 ```typescript
 export const TREE_BASE_PADDING = 8
 export const TREE_INDENT_PER_LEVEL = 16
@@ -309,6 +337,7 @@ Low — only one usage currently. But creates maintenance burden if sanitization
 
 **Fix:**
 Extract to shared utility:
+
 ```typescript
 // src/renderer/src/lib/file-utils.ts
 export function sanitizeFilename(name: string): string | null {
@@ -339,6 +368,7 @@ Users won't know about this feature. Power users expect it (browser tabs pattern
 
 **Fix:**
 Add to keyboard shortcuts overlay (IDE_SHORTCUTS in IDEView.tsx):
+
 ```typescript
 { keys: 'Middle Click', desc: 'Close tab' }
 ```
@@ -359,22 +389,26 @@ Potential performance issue when switching between tabs or when parent re-render
 
 **Fix:**
 Wrap with React.memo and custom comparison:
+
 ```typescript
-export const EditorPane = React.memo(function EditorPane({
-  filePath,
-  content,
-  language,
-  onContentChange,
-  onSave
-}: EditorPaneProps): React.JSX.Element {
-  // ... existing code
-}, (prev, next) => {
-  return (
-    prev.filePath === next.filePath &&
-    prev.content === next.content &&
-    prev.language === next.language
-  )
-})
+export const EditorPane = React.memo(
+  function EditorPane({
+    filePath,
+    content,
+    language,
+    onContentChange,
+    onSave
+  }: EditorPaneProps): React.JSX.Element {
+    // ... existing code
+  },
+  (prev, next) => {
+    return (
+      prev.filePath === next.filePath &&
+      prev.content === next.content &&
+      prev.language === next.language
+    )
+  }
+)
 ```
 
 **Location:** `src/renderer/src/components/ide/EditorPane.tsx`
@@ -391,6 +425,7 @@ A crash in the IDE view could bring down the entire app UI. Poor user experience
 
 **Fix:**
 Add error boundary in IDEView:
+
 ```typescript
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
@@ -416,6 +451,7 @@ Minor accessibility issue. Screen reader users won't know what the button does.
 
 **Fix:**
 Add aria-label in IDEView.tsx (line 405):
+
 ```tsx
 <button
   className="ide-sidebar-toggle"
@@ -440,6 +476,7 @@ Low — symlinks in most codebases are rare. But could cause confusion if a syml
 
 **Fix:**
 Update `DirEntry` type in `file-tree-constants.ts`:
+
 ```typescript
 export interface DirEntry {
   name: string
@@ -449,6 +486,7 @@ export interface DirEntry {
 ```
 
 Add symlink icon to FileTreeNode `getFileIcon()`:
+
 ```typescript
 import { Link } from 'lucide-react'
 
@@ -488,6 +526,7 @@ if (type === 'symlink') return <Link size={14} />
 ## Test Coverage Analysis
 
 ### Well-covered ✅
+
 - IDEView (950 lines of tests, very comprehensive)
 - ide.ts store (349 lines of tests, comprehensive)
 - IDEEmptyState (84 lines)
@@ -495,6 +534,7 @@ if (type === 'symlink') return <Link size={14} />
 - FileTree (63 lines)
 
 ### Under-covered ⚠️
+
 - EditorPane (40 lines, minimal — only rendering, no callbacks)
 - EditorTabBar (no test file found via glob, but listed in ls)
 - FileContextMenu (test file exists but not read)
@@ -502,6 +542,7 @@ if (type === 'symlink') return <Link size={14} />
 - UnsavedDialog (test file exists but not read)
 
 ### Not covered ❌
+
 - **FileTreeNode** (0 tests — significant gap!)
 
 ---
@@ -509,12 +550,14 @@ if (type === 'symlink') return <Link size={14} />
 ## Design System Compliance
 
 ### Compliant ✅
+
 - File tree components use CSS classes consistently
 - Tab bars use neon tokens
 - Sidebar uses neon tokens
 - Keyboard shortcuts overlay mostly uses CSS classes
 
 ### Non-compliant ❌
+
 - IDEView loading indicator (inline styles)
 - FileSidebar empty state (inline styles)
 - FileTree error state (inline styles)
@@ -524,12 +567,14 @@ if (type === 'symlink') return <Link size={14} />
 ## Accessibility Summary
 
 ### Good ✅
+
 - ARIA roles on all interactive elements (tree, tablist, menu, dialog)
 - Keyboard navigation fully implemented
 - Tab management (tabIndex=-1 for non-active tabs)
 - Screen reader labels on buttons
 
 ### Needs improvement ❌
+
 - No `:focus-visible` indicators (#5)
 - Font sizes below 10px (#1)
 - Missing aria-label on sidebar toggle (#14)
@@ -539,12 +584,14 @@ if (type === 'symlink') return <Link size={14} />
 ## Performance Summary
 
 ### Good ✅
+
 - useCallback on event handlers
 - ResizeObserver for overflow detection
 - Lazy loading of file contents
 - Debounced persistence (2s)
 
 ### Could improve ⚠️
+
 - EditorPane lacks memoization (#12)
 - Large keyboard handler could be split (#8)
 - No error boundary to contain crashes (#13)

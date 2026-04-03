@@ -16,30 +16,30 @@
 
 ### New Files
 
-| File | Responsibility |
-|------|----------------|
-| `src/renderer/src/assets/agents-neon.css` | Agent-specific neon CSS — console lines, command bar, timeline, live strip |
-| `src/renderer/src/lib/pair-events.ts` | Extracted `pairEvents()` + `ChatBlock` type from ChatRenderer |
-| `src/renderer/src/components/agents/ConsoleLine.tsx` | Single terminal line — colored prefix, collapsible, timestamp |
-| `src/renderer/src/components/agents/AgentConsole.tsx` | Terminal-style console replacing AgentDetail |
-| `src/renderer/src/components/agents/ConsoleHeader.tsx` | Console header — status, actions, metadata |
-| `src/renderer/src/components/agents/CommandBar.tsx` | Command input with `>` prompt and slash commands |
-| `src/renderer/src/components/agents/CommandAutocomplete.tsx` | Autocomplete popup for slash commands |
-| `src/renderer/src/components/agents/AgentPill.tsx` | Running agent pill for live strip |
-| `src/renderer/src/components/agents/LiveActivityStrip.tsx` | Top zone — running agent pills |
-| `src/renderer/src/components/agents/TimelineBar.tsx` | Single Gantt bar |
-| `src/renderer/src/components/agents/AgentTimeline.tsx` | Bottom zone — Gantt timeline |
+| File                                                         | Responsibility                                                             |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `src/renderer/src/assets/agents-neon.css`                    | Agent-specific neon CSS — console lines, command bar, timeline, live strip |
+| `src/renderer/src/lib/pair-events.ts`                        | Extracted `pairEvents()` + `ChatBlock` type from ChatRenderer              |
+| `src/renderer/src/components/agents/ConsoleLine.tsx`         | Single terminal line — colored prefix, collapsible, timestamp              |
+| `src/renderer/src/components/agents/AgentConsole.tsx`        | Terminal-style console replacing AgentDetail                               |
+| `src/renderer/src/components/agents/ConsoleHeader.tsx`       | Console header — status, actions, metadata                                 |
+| `src/renderer/src/components/agents/CommandBar.tsx`          | Command input with `>` prompt and slash commands                           |
+| `src/renderer/src/components/agents/CommandAutocomplete.tsx` | Autocomplete popup for slash commands                                      |
+| `src/renderer/src/components/agents/AgentPill.tsx`           | Running agent pill for live strip                                          |
+| `src/renderer/src/components/agents/LiveActivityStrip.tsx`   | Top zone — running agent pills                                             |
+| `src/renderer/src/components/agents/TimelineBar.tsx`         | Single Gantt bar                                                           |
+| `src/renderer/src/components/agents/AgentTimeline.tsx`       | Bottom zone — Gantt timeline                                               |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/views/AgentsView.tsx` | Rewrite — three stacked zones |
-| `src/renderer/src/components/agents/AgentCard.tsx` | Neon restyling |
-| `src/renderer/src/components/agents/AgentList.tsx` | Neon restyling |
-| `src/renderer/src/components/agents/SpawnModal.tsx` | Neon restyling |
+| File                                                  | Change                             |
+| ----------------------------------------------------- | ---------------------------------- |
+| `src/renderer/src/views/AgentsView.tsx`               | Rewrite — three stacked zones      |
+| `src/renderer/src/components/agents/AgentCard.tsx`    | Neon restyling                     |
+| `src/renderer/src/components/agents/AgentList.tsx`    | Neon restyling                     |
+| `src/renderer/src/components/agents/SpawnModal.tsx`   | Neon restyling                     |
 | `src/renderer/src/components/agents/ChatRenderer.tsx` | Import pairEvents from shared util |
-| `src/renderer/src/App.tsx` | Import agents-neon.css |
+| `src/renderer/src/App.tsx`                            | Import agents-neon.css             |
 
 ---
 

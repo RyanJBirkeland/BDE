@@ -16,11 +16,13 @@
 ## File Map
 
 ### Foundation (Tasks 1-3)
+
 - **Modify:** `src/renderer/src/assets/base.css` — token values in `:root`
 - **Modify:** `src/renderer/src/design-system/tokens.ts` — matching TypeScript values
 - **Modify:** `src/renderer/src/assets/design-system.css` — new utility classes, button unification
 
 ### Bug Fixes (Task 4)
+
 - **Modify:** `src/renderer/src/components/terminal/TerminalPane.tsx` — fontSize fix
 - **Modify:** `src/renderer/src/components/agents/HealthBar.tsx` — hardcoded data fix
 - **Modify:** `src/renderer/src/assets/settings.css` — missing class definitions
@@ -29,9 +31,11 @@
 - **Modify:** `src/renderer/src/components/panels/PanelLeaf.tsx` — inline→CSS
 
 ### Dead CSS Cleanup (Task 5)
+
 - **Modify:** `src/renderer/src/assets/sprint.css` — remove ~400 dead lines
 
 ### Inline Style Extraction (Tasks 6-8)
+
 - **Create:** `src/renderer/src/assets/dashboard.css`
 - **Modify:** `src/renderer/src/views/DashboardView.tsx`
 - **Modify:** `src/renderer/src/components/dashboard/*.tsx`
@@ -40,10 +44,12 @@
 - **Modify:** `src/renderer/src/components/git-tree/*.tsx`
 
 ### Shell Polish (Task 9)
+
 - **Modify:** `src/renderer/src/assets/main.css` — titlebar, activity bar, status bar, panels
 - **Modify:** `src/renderer/src/components/layout/StatusBar.tsx`
 
 ### Feature View Upgrades (Tasks 10-13)
+
 - **Modify:** `src/renderer/src/assets/sprint.css` — feast-site treatment
 - **Modify:** `src/renderer/src/assets/agents.css` — running agent glow
 - **Modify:** `src/renderer/src/assets/terminal.css` — chrome polish
@@ -54,6 +60,7 @@
 - **Modify:** `src/renderer/src/assets/memory.css` — glass sidebar
 
 ### Token Consolidation (Task 14)
+
 - **Modify:** `src/renderer/src/assets/base.css` — remove v2 duplicates
 - **Modify:** `src/renderer/src/assets/design-system.css` — update references
 
@@ -62,6 +69,7 @@
 ## Task 1: Foundation Token Swap — CSS Variables
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/base.css:34-116` (`:root` token values)
 
 - [ ] **Step 1: Update color tokens in base.css**
@@ -70,16 +78,16 @@ In `base.css`, update the `:root` color block (lines 34-51):
 
 ```css
 /* Colors */
---bde-bg: #050507;                          /* was #0A0A0A */
---bde-surface: #111118;                     /* was #141414 */
---bde-surface-high: #16161F;                /* was #1E1E1E */
---bde-border: #1E1E2A;                      /* was #333333 */
---bde-border-hover: #2A2A3A;                /* was #444444 */
---bde-accent: #00D37F;                      /* unchanged */
+--bde-bg: #050507; /* was #0A0A0A */
+--bde-surface: #111118; /* was #141414 */
+--bde-surface-high: #16161f; /* was #1E1E1E */
+--bde-border: #1e1e2a; /* was #333333 */
+--bde-border-hover: #2a2a3a; /* was #444444 */
+--bde-accent: #00d37f; /* unchanged */
 --bde-accent-dim: rgba(0, 211, 127, 0.15); /* unchanged */
---bde-text: #F5F5F7;                        /* was #E8E8E8 */
---bde-text-muted: #98989F;                  /* was #888888 */
---bde-text-dim: #5C5C63;                    /* was #555555 */
+--bde-text: #f5f5f7; /* was #E8E8E8 */
+--bde-text-muted: #98989f; /* was #888888 */
+--bde-text-dim: #5c5c63; /* was #555555 */
 ```
 
 - [ ] **Step 2: Update radius tokens in base.css**
@@ -88,12 +96,12 @@ Update lines 101-106:
 
 ```css
 /* Radii */
---bde-radius-sm: 8px;    /* was 4px */
---bde-radius-md: 12px;   /* was 6px */
---bde-radius-lg: 16px;   /* was 8px */
---bde-radius-xl: 20px;   /* was 12px */
---bde-radius-2xl: 24px;  /* NEW */
---bde-radius-3xl: 32px;  /* NEW */
+--bde-radius-sm: 8px; /* was 4px */
+--bde-radius-md: 12px; /* was 6px */
+--bde-radius-lg: 16px; /* was 8px */
+--bde-radius-xl: 20px; /* was 12px */
+--bde-radius-2xl: 24px; /* NEW */
+--bde-radius-3xl: 32px; /* NEW */
 --bde-radius-full: 9999px;
 ```
 
@@ -103,9 +111,9 @@ Update lines 108-111:
 
 ```css
 /* Shadows */
---bde-shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
---bde-shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2);
---bde-shadow-lg: 0 8px 32px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+--bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+--bde-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+--bde-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
 ```
 
 - [ ] **Step 4: Add new feast-site tokens after shadows**
@@ -114,15 +122,15 @@ Add after the shadow block:
 
 ```css
 /* Glow shadows */
---bde-shadow-glow: 0 4px 16px rgba(0,211,127,0.3);
---bde-shadow-glow-hover: 0 4px 24px rgba(0,211,127,0.4), 0 0 8px rgba(0,211,127,0.3);
---bde-shadow-elevation: 0 24px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.25);
+--bde-shadow-glow: 0 4px 16px rgba(0, 211, 127, 0.3);
+--bde-shadow-glow-hover: 0 4px 24px rgba(0, 211, 127, 0.4), 0 0 8px rgba(0, 211, 127, 0.3);
+--bde-shadow-elevation: 0 24px 80px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.25);
 
 /* Feast-site additions */
---bde-border-subtle: rgba(255,255,255,0.04);
---bde-text-ghost: #3A3A42;
---bde-gradient-cta: linear-gradient(135deg, #00D37F, #00A863);
---bde-gradient-ambient: radial-gradient(circle, rgba(0,211,127,0.08) 0%, transparent 70%);
+--bde-border-subtle: rgba(255, 255, 255, 0.04);
+--bde-text-ghost: #3a3a42;
+--bde-gradient-cta: linear-gradient(135deg, #00d37f, #00a863);
+--bde-gradient-ambient: radial-gradient(circle, rgba(0, 211, 127, 0.08) 0%, transparent 70%);
 ```
 
 - [ ] **Step 5: Update font-ui to Inter-first**
@@ -150,6 +158,7 @@ git commit -m "feat: update design tokens to feast-site values (colors, radii, s
 ## Task 2: Foundation Token Swap — TypeScript tokens.ts
 
 **Files:**
+
 - Modify: `src/renderer/src/design-system/tokens.ts`
 
 - [ ] **Step 1: Update color values**
@@ -218,6 +227,7 @@ git commit -m "feat: update tokens.ts to match feast-site CSS variable values"
 ## Task 3: Design System Utilities & Button Unification
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/design-system.css` — add utility classes
 - Modify: `src/renderer/src/components/ui/Button.tsx` — remove dual-class application
 
@@ -292,30 +302,55 @@ Append before the `@media (prefers-reduced-motion)` block:
 
 /* Card Hover Lift — subtle elevation on hover */
 .card-hover-lift {
-  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+  transition:
+    transform 200ms ease-out,
+    box-shadow 200ms ease-out;
 }
 .card-hover-lift:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 4px 16px rgba(0,211,127,0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 211, 127, 0.08);
 }
 
 /* Stagger Animation — entrance delay per child */
 .stagger-child {
   animation: bde-slide-up-fade 300ms ease-out both;
 }
-.stagger-child:nth-child(1) { animation-delay: 0ms; }
-.stagger-child:nth-child(2) { animation-delay: 40ms; }
-.stagger-child:nth-child(3) { animation-delay: 80ms; }
-.stagger-child:nth-child(4) { animation-delay: 120ms; }
-.stagger-child:nth-child(5) { animation-delay: 160ms; }
-.stagger-child:nth-child(6) { animation-delay: 200ms; }
-.stagger-child:nth-child(7) { animation-delay: 240ms; }
-.stagger-child:nth-child(8) { animation-delay: 280ms; }
+.stagger-child:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger-child:nth-child(2) {
+  animation-delay: 40ms;
+}
+.stagger-child:nth-child(3) {
+  animation-delay: 80ms;
+}
+.stagger-child:nth-child(4) {
+  animation-delay: 120ms;
+}
+.stagger-child:nth-child(5) {
+  animation-delay: 160ms;
+}
+.stagger-child:nth-child(6) {
+  animation-delay: 200ms;
+}
+.stagger-child:nth-child(7) {
+  animation-delay: 240ms;
+}
+.stagger-child:nth-child(8) {
+  animation-delay: 280ms;
+}
 
 /* Glow Breathe — for running/active indicators */
 @keyframes bde-glow-breathe {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 ```
 
@@ -328,6 +363,7 @@ Read `src/renderer/src/components/ui/Button.tsx` and locate where both `.bde-btn
 Remove the v2 class additions from Button.tsx. The v1 `.bde-btn--*` classes should be the sole classes. Then update `.bde-btn--primary` in design-system.css to include the gradient and glow from the v2 `.btn-primary` styles:
 
 In design-system.css, update `.bde-btn--primary`:
+
 ```css
 .bde-btn--primary {
   background: var(--bde-gradient-cta);
@@ -360,6 +396,7 @@ git commit -m "feat: add feast-site utility classes and unify Button dual-class 
 ## Task 4: Bug Fixes
 
 **Files:**
+
 - Modify: `src/renderer/src/components/terminal/TerminalPane.tsx`
 - Modify: `src/renderer/src/components/agents/HealthBar.tsx`
 - Modify: `src/renderer/src/assets/settings.css`
@@ -429,8 +466,9 @@ Read `src/renderer/src/components/layout/NotificationBell.tsx`. Find the `getUnr
 - [ ] **Step 12: Fix to use a derived selector**
 
 Replace `getUnreadCount()` in render with a stable Zustand selector:
+
 ```typescript
-const unreadCount = useNotificationStore(s => s.notifications.filter(n => !n.read).length)
+const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.read).length)
 ```
 
 Or better, add a `selectUnreadCount` selector to the store that returns a number (stable primitive, no shallow equality issues).
@@ -500,11 +538,13 @@ git commit -m "fix: PanelTabBar/PanelLeaf — extract inline styles to CSS class
 ## Task 5: Dead CSS Cleanup in sprint.css
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/sprint.css`
 
 - [ ] **Step 1: Identify dead CSS sections**
 
 Grep the codebase for references to these CSS class patterns:
+
 - `.design-mode` — should be ~221 lines of unused rules
 - Duplicate `.spec-drawer__prompt-*` rules — ~46 lines
 - `.pr-list`, `.pr-row`, `.pr-confirm` — may be dead (PR components moved to `pr-station/`)
@@ -534,6 +574,7 @@ git commit -m "chore: remove ~400 lines of dead CSS from sprint.css"
 ## Task 6: Dashboard Inline Style Extraction
 
 **Files:**
+
 - Create: `src/renderer/src/assets/dashboard.css`
 - Modify: `src/renderer/src/views/DashboardView.tsx`
 - Modify: `src/renderer/src/components/dashboard/DashboardCard.tsx`
@@ -549,6 +590,7 @@ Read `DashboardView.tsx` and all 5 card components. Catalog every inline `style=
 - [ ] **Step 2: Create dashboard.css with feast-site treatment**
 
 Create `src/renderer/src/assets/dashboard.css`. Define classes for:
+
 - `.dashboard` — grid layout with ambient glow background
 - `.dashboard-card` — glass-surface treatment, 20px radius, hover lift, gradient header accent
 - `.dashboard-card__header` — section label accent style
@@ -583,6 +625,7 @@ git commit -m "feat: extract Dashboard inline styles to CSS with feast-site trea
 ## Task 7: Agent Components Inline Style Extraction
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/agents.css` (expand from 49 lines)
 - Modify: `src/renderer/src/components/agents/AgentCard.tsx`
 - Modify: `src/renderer/src/components/agents/ChatBubble.tsx`
@@ -596,6 +639,7 @@ Catalog all inline styles. Note the current agents.css is only 49 lines.
 - [ ] **Step 2: Expand agents.css with comprehensive styling**
 
 Add CSS classes for:
+
 - `.agent-card` — card container with border-radius 16px, hover border brighten
 - `.agent-card--running` — ambient glow left border, pulse animation
 - `.agent-card--completed` — settled/muted treatment
@@ -626,6 +670,7 @@ git commit -m "feat: extract Agent component inline styles to CSS with feast-sit
 ## Task 8: Git Tree Inline Style Extraction
 
 **Files:**
+
 - Modify: `src/renderer/src/components/git-tree/GitFileRow.tsx`
 - Modify: `src/renderer/src/components/git-tree/FileTreeSection.tsx`
 - Modify: `src/renderer/src/components/git-tree/CommitBox.tsx`
@@ -640,6 +685,7 @@ These use 100% inline styles via `tokens.*`. Also check `InlineDiffDrawer.tsx` f
 - [ ] **Step 2: Add git-tree CSS section to main.css**
 
 Add classes for:
+
 - `.git-file-row` — file row with hover state via CSS (not JS onMouseEnter/onMouseLeave)
 - `.git-file-row__status` — status indicator badge
 - `.git-section` — collapsible section with header
@@ -667,6 +713,7 @@ git commit -m "feat: extract Git Tree inline styles to CSS, replace JS hover wit
 ## Task 9: Shell & Navigation Polish
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/main.css`
 - Modify: `src/renderer/src/components/layout/StatusBar.tsx`
 - Modify: `src/renderer/src/assets/command-palette.css`
@@ -678,8 +725,8 @@ git commit -m "feat: extract Git Tree inline styles to CSS, replace JS hover wit
 
 ```css
 .titlebar {
-  height: 38px;           /* was 32px */
-  padding-right: 16px;    /* was 12px */
+  height: 38px; /* was 32px */
+  padding-right: 16px; /* was 12px */
 }
 /* Add ambient glow behind logo area */
 .titlebar::before {
@@ -689,7 +736,7 @@ git commit -m "feat: extract Git Tree inline styles to CSS, replace JS hover wit
   top: 0;
   width: 200px;
   height: 100%;
-  background: radial-gradient(circle at 10% 50%, rgba(0,211,127,0.06) 0%, transparent 70%);
+  background: radial-gradient(circle at 10% 50%, rgba(0, 211, 127, 0.06) 0%, transparent 70%);
   pointer-events: none;
 }
 ```
@@ -697,19 +744,21 @@ git commit -m "feat: extract Git Tree inline styles to CSS, replace JS hover wit
 - [ ] **Step 3: Update activity bar active indicator**
 
 Add glow effect on active icon:
+
 ```css
 .activity-btn--active::after {
   /* existing active indicator */
-  box-shadow: 0 0 8px rgba(0,211,127,0.3);
+  box-shadow: 0 0 8px rgba(0, 211, 127, 0.3);
 }
 ```
 
 - [ ] **Step 4: Update panel focus and resize handles**
 
 Replace hard outline with glow:
+
 ```css
 .panel-leaf--focused {
-  box-shadow: inset 0 0 0 1px rgba(0,211,127,0.15);
+  box-shadow: inset 0 0 0 1px rgba(0, 211, 127, 0.15);
   /* was: outline: 1px solid var(--bde-accent) */
 }
 ```
@@ -721,6 +770,7 @@ In `command-palette.css`, update border-radius values to use `--bde-radius-lg` (
 - [ ] **Step 6: Update toast styles**
 
 In `toasts.css`, add glass surface and accent border:
+
 ```css
 .toast {
   background: rgba(10, 10, 18, 0.85);
@@ -746,6 +796,7 @@ git commit -m "feat: shell polish — taller titlebar, ambient glow, panel focus
 ## Task 10: Sprint & Kanban Feast-Site Treatment
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/sprint.css`
 
 - [ ] **Step 1: Read sprint.css current state (after Task 5 cleanup)**
@@ -754,14 +805,14 @@ git commit -m "feat: shell polish — taller titlebar, ambient glow, panel focus
 
 ```css
 .kanban-col {
-  border-radius: var(--bde-radius-xl);  /* was --bde-radius-md */
+  border-radius: var(--bde-radius-xl); /* was --bde-radius-md */
   /* Add glass surface treatment */
   background: rgba(10, 10, 18, 0.6);
   backdrop-filter: blur(8px);
   border: 1px solid var(--bde-border-subtle);
 }
 .kanban-col--drop-target {
-  box-shadow: 0 0 20px rgba(0,211,127,0.12);
+  box-shadow: 0 0 20px rgba(0, 211, 127, 0.12);
   border-color: var(--bde-accent);
 }
 ```
@@ -770,13 +821,18 @@ git commit -m "feat: shell polish — taller titlebar, ambient glow, panel focus
 
 ```css
 .sprint-card {
-  border-radius: var(--bde-radius-lg);  /* was 4px/hardcoded */
-  transition: transform 200ms ease-out, box-shadow 200ms ease-out, border-color 200ms ease-out;
+  border-radius: var(--bde-radius-lg); /* was 4px/hardcoded */
+  transition:
+    transform 200ms ease-out,
+    box-shadow 200ms ease-out,
+    border-color 200ms ease-out;
 }
 .sprint-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 4px 16px rgba(0,211,127,0.06);
-  border-color: rgba(255,255,255,0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 211, 127, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 ```
 
@@ -800,6 +856,7 @@ git commit -m "feat: sprint feast-site treatment — glass columns, card hover l
 ## Task 11: Running Agent Glow & Terminal Polish
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/agents.css`
 - Modify: `src/renderer/src/assets/terminal.css`
 
@@ -807,8 +864,9 @@ git commit -m "feat: sprint feast-site treatment — glass columns, card hover l
 
 ```css
 .agent-card--running {
-  background: radial-gradient(circle at 0% 50%, rgba(0,211,127,0.06) 0%, transparent 60%),
-              var(--bde-surface);
+  background:
+    radial-gradient(circle at 0% 50%, rgba(0, 211, 127, 0.06) 0%, transparent 60%),
+    var(--bde-surface);
   border-left: 2px solid var(--bde-accent);
 }
 .agent-card--running .agent-card__status-dot {
@@ -816,7 +874,7 @@ git commit -m "feat: sprint feast-site treatment — glass columns, card hover l
   height: 8px;
   background: var(--bde-accent);
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(0,211,127,0.4);
+  box-shadow: 0 0 8px rgba(0, 211, 127, 0.4);
   animation: bde-glow-breathe 2s ease-in-out infinite;
 }
 ```
@@ -825,7 +883,8 @@ git commit -m "feat: sprint feast-site treatment — glass columns, card hover l
 
 ```css
 .thinking-block--active {
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     var(--bde-surface) 0%,
     var(--bde-surface-high) 50%,
     var(--bde-surface) 100%
@@ -838,10 +897,11 @@ git commit -m "feat: sprint feast-site treatment — glass columns, card hover l
 - [ ] **Step 3: Update terminal chrome**
 
 In `terminal.css`:
+
 ```css
 .terminal-pane {
   border-radius: var(--bde-radius-lg);
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 .terminal-tab--active {
   border-bottom: 2px solid var(--bde-accent);
@@ -867,6 +927,7 @@ git commit -m "feat: running agent glow/breathe animation, terminal chrome polis
 ## Task 12: PR Station & Diff Feast-Site Treatment
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/pr-station.css`
 - Modify: `src/renderer/src/assets/diff.css`
 
@@ -878,10 +939,12 @@ git commit -m "feat: running agent glow/breathe animation, terminal chrome polis
 .pr-station__row {
   border-radius: var(--bde-radius-lg);
   border: 1px solid var(--bde-border-subtle);
-  transition: border-color 200ms ease-out, transform 200ms ease-out;
+  transition:
+    border-color 200ms ease-out,
+    transform 200ms ease-out;
 }
 .pr-station__row:hover {
-  border-color: rgba(255,255,255,0.08);
+  border-color: rgba(255, 255, 255, 0.08);
   transform: translateY(-1px);
 }
 ```
@@ -889,6 +952,7 @@ git commit -m "feat: running agent glow/breathe animation, terminal chrome polis
 - [ ] **Step 3: Upgrade Merge Button to feast-site CTA**
 
 The `.merge-btn` (or `.pr-station__merge-btn`) should use the CTA gradient:
+
 ```css
 .merge-btn {
   background: var(--bde-gradient-cta);
@@ -911,6 +975,7 @@ The `.merge-btn` (or `.pr-station__merge-btn`) should use the CTA gradient:
 - [ ] **Step 4: Update diff viewer styling**
 
 In `diff.css`:
+
 - Soften line highlight backgrounds (reduce opacity)
 - Update hunk headers: glass surface treatment, larger radius
 - Update file headers: sticky glassmorphic bar
@@ -934,6 +999,7 @@ git commit -m "feat: PR Station feast-site — card treatment, merge CTA gradien
 ## Task 13: Dashboard Hero Treatment & Supporting Views
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/dashboard.css` (created in Task 6)
 - Modify: `src/renderer/src/assets/cost.css`
 - Modify: `src/renderer/src/assets/memory.css`
@@ -949,7 +1015,7 @@ git commit -m "feat: PR Station feast-site — card treatment, merge CTA gradien
   left: 30%;
   width: 40%;
   height: 50%;
-  background: radial-gradient(ellipse, rgba(0,211,127,0.06) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(0, 211, 127, 0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -957,17 +1023,25 @@ git commit -m "feat: PR Station feast-site — card treatment, merge CTA gradien
 /* Card gradient header accent */
 .dashboard-card__header {
   border-bottom: 1px solid var(--bde-border-subtle);
-  background: linear-gradient(135deg, rgba(0,211,127,0.04) 0%, transparent 50%);
+  background: linear-gradient(135deg, rgba(0, 211, 127, 0.04) 0%, transparent 50%);
 }
 
 /* Stagger card entrance */
 .dashboard-card {
   animation: bde-slide-up-fade 300ms ease-out both;
 }
-.dashboard-card:nth-child(1) { animation-delay: 0ms; }
-.dashboard-card:nth-child(2) { animation-delay: 60ms; }
-.dashboard-card:nth-child(3) { animation-delay: 120ms; }
-.dashboard-card:nth-child(4) { animation-delay: 180ms; }
+.dashboard-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.dashboard-card:nth-child(2) {
+  animation-delay: 60ms;
+}
+.dashboard-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+.dashboard-card:nth-child(4) {
+  animation-delay: 180ms;
+}
 ```
 
 - [ ] **Step 2: Fix Cost View grid layout**
@@ -985,6 +1059,7 @@ Replace `--text-primary`, `--font-mono` etc. with `--bde-text`, `--bde-font-code
 ```
 
 Add glassmorphic treatment to sidebar:
+
 ```css
 .memory-sidebar {
   background: rgba(10, 10, 18, 0.6);
@@ -1010,12 +1085,14 @@ git commit -m "feat: dashboard hero glow, cost grid fix, memory glass sidebar"
 ## Task 14: V2 Token Consolidation
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/base.css`
 - Modify: `src/renderer/src/assets/design-system.css`
 
 - [ ] **Step 1: Identify all v2 token references**
 
 Grep for v2-only tokens across all CSS files:
+
 ```bash
 grep -rn '\-\-bg-void\|--bg-base\|--bg-surface\|--bg-card\|--bg-hover\|--bg-active\|--text-primary\|--text-secondary\|--text-muted[^)]' src/renderer/src/assets/
 ```
@@ -1025,6 +1102,7 @@ Note: `--text-muted` is tricky because it exists in both v1 (`--bde-text-muted`)
 - [ ] **Step 2: Update v2 references in design-system.css**
 
 Replace each v2 token reference with its `--bde-*` equivalent:
+
 - `--bg-void` → `--bde-bg`
 - `--bg-surface` → `--bde-surface`
 - `--bg-card` → `--bde-surface-high`
@@ -1079,6 +1157,7 @@ Task 8 (git tree extract) ──────────────────
 ```
 
 **Parallelizable groups:**
+
 - Tasks 1+2 are sequential (CSS first, then TS)
 - Tasks 4, 5, 6, 7, 8 can ALL run in parallel after Tasks 1+2
 - Tasks 3, 9, 10, 11, 12, 13 can run in parallel after their extraction dependencies

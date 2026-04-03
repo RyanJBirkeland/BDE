@@ -16,6 +16,7 @@ Both are low-risk refactors with clear success criteria.
 ### Problem
 
 The Source Control view (GitTreeView) has CSS split across two files:
+
 - `src/renderer/src/assets/source-control-neon.css` — Git Tree view styles (lines 1-579)
 - `src/renderer/src/assets/diff.css` — Contains Git Client section (lines 329-589)
 
@@ -85,6 +86,7 @@ Append the removed Git Client CSS rules to the end of this file (after line 579)
 ### Problem
 
 The Dashboard view (`src/renderer/src/views/DashboardView.tsx`) fetches data for multiple cards:
+
 - Completions per hour chart (lines 139-159)
 - Recent events feed (lines 161-180)
 - PR count (lines 182-189)
@@ -132,7 +134,11 @@ const fetchCompletionsChart = useCallback(async (): Promise<void> => {
     const data = await window.api.dashboard?.completionsPerHour()
     if (cancelledRef.current || !data) return
     const accents: Array<'cyan' | 'pink' | 'blue' | 'orange' | 'purple'> = [
-      'cyan', 'pink', 'blue', 'orange', 'purple'
+      'cyan',
+      'pink',
+      'blue',
+      'orange',
+      'purple'
     ]
     setChartData(
       data.map((d, i) => ({
@@ -194,11 +200,7 @@ const fetchDashboardData = useCallback(async (): Promise<void> => {
   setLoading(true)
   setFetchError(false)
 
-  await Promise.all([
-    fetchCompletionsChart(),
-    fetchActivityFeed(),
-    fetchPRCount()
-  ])
+  await Promise.all([fetchCompletionsChart(), fetchActivityFeed(), fetchPRCount()])
 
   if (!cancelledRef.current) {
     const anyError = Object.values(cardErrors).length > 0
@@ -217,11 +219,9 @@ In the StatusBar (lines 229-252), remove the retry button:
   {loading && !chartData.length ? (
     <span className="dashboard-status-loading">Loading...</span>
   ) : fetchError ? (
-    <span
-      className="dashboard-status-error"
-      style={{ color: neonVar('red', 'color') }}
-    >
-      {Object.values(cardErrors).filter(Boolean).length} card{Object.values(cardErrors).filter(Boolean).length !== 1 ? 's' : ''} failed
+    <span className="dashboard-status-error" style={{ color: neonVar('red', 'color') }}>
+      {Object.values(cardErrors).filter(Boolean).length} card
+      {Object.values(cardErrors).filter(Boolean).length !== 1 ? 's' : ''} failed
     </span>
   ) : (
     'SYS.OK'
@@ -234,11 +234,7 @@ In the StatusBar (lines 229-252), remove the retry button:
 Wrap each affected NeonCard with conditional error state. Example for the Completions chart (around line 302):
 
 ```tsx
-<NeonCard
-  accent="cyan"
-  title="Completions / Hour"
-  icon={<Zap size={12} />}
->
+<NeonCard accent="cyan" title="Completions / Hour" icon={<Zap size={12} />}>
   {cardErrors.chart ? (
     <div className="dashboard-card-error">
       <div className="dashboard-card-error__message">{cardErrors.chart}</div>
@@ -270,9 +266,9 @@ For the PR count card (line 284), add error badge inline instead of replacing co
 <StatCounter
   label="PRs"
   value={cardErrors.prs ? 0 : prCount}
-  accent={cardErrors.prs ? "red" : "blue"}
+  accent={cardErrors.prs ? 'red' : 'blue'}
   icon={<GitPullRequest size={10} />}
-  onClick={() => cardErrors.prs ? fetchPRCount() : navigateToSprintWithFilter('awaiting-review')}
+  onClick={() => (cardErrors.prs ? fetchPRCount() : navigateToSprintWithFilter('awaiting-review'))}
 />
 ```
 

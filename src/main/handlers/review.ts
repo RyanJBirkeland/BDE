@@ -6,10 +6,7 @@
  */
 import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
-import {
-  getTask as _getTask,
-  updateTask as _updateTask
-} from '../data/sprint-queries'
+import { getTask as _getTask, updateTask as _updateTask } from '../data/sprint-queries'
 import { notifySprintMutation } from './sprint-listeners'
 import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
@@ -129,15 +126,11 @@ export function registerReviewHandlers(): void {
   safeHandle('review:getFileDiff', async (_e, payload) => {
     const { worktreePath, filePath, base } = payload
 
-    const { stdout } = await execFileAsync(
-      'git',
-      ['diff', `${base}...HEAD`, '--', filePath],
-      {
-        cwd: worktreePath,
-        env,
-        maxBuffer: 10 * 1024 * 1024
-      }
-    )
+    const { stdout } = await execFileAsync('git', ['diff', `${base}...HEAD`, '--', filePath], {
+      cwd: worktreePath,
+      env,
+      maxBuffer: 10 * 1024 * 1024
+    })
 
     return { diff: stdout }
   })
@@ -205,12 +198,7 @@ export function registerReviewHandlers(): void {
           ['diff', '--name-only', '--diff-filter=U'],
           { cwd: repoPath, env }
         )
-        conflicts.push(
-          ...conflictOut
-            .trim()
-            .split('\n')
-            .filter(Boolean)
-        )
+        conflicts.push(...conflictOut.trim().split('\n').filter(Boolean))
       } catch {
         /* best-effort */
       }
@@ -347,9 +335,7 @@ export function registerReviewHandlers(): void {
       fast_fail_count: 0,
       needs_review: false,
       // Append feedback to spec so the agent sees it
-      spec: task.spec
-        ? `${task.spec}\n\n## Revision Feedback\n\n${feedback}`
-        : feedback
+      spec: task.spec ? `${task.spec}\n\n## Revision Feedback\n\n${feedback}` : feedback
     }
 
     // In fresh mode, clear the agent_run_id to start a new session

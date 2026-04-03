@@ -65,7 +65,7 @@ The hook is already tested at `stores/__tests__/unifiedAgents.test.ts`, but that
 const mockNotification = vi.fn()
 Object.defineProperty(window, 'Notification', {
   value: vi.fn().mockImplementation((title, opts) => mockNotification(title, opts)),
-  writable: true,
+  writable: true
 })
 Object.defineProperty(Notification, 'permission', { value: 'granted', writable: true })
 
@@ -126,12 +126,12 @@ window.api = { getSupabaseConfig: vi.fn().mockResolvedValue({ url: '...', anonKe
 
 ## Files to Create
 
-| File | Purpose | Estimated LOC |
-|------|---------|---------------|
-| `src/renderer/src/hooks/__tests__/useUnifiedAgents.test.ts` | Hook merge/group/stale logic | ~120 |
-| `src/renderer/src/hooks/__tests__/useTaskNotifications.test.ts` | Notification lifecycle | ~80 |
-| `src/renderer/src/services/__tests__/settings.test.ts` | Settings service wiring | ~60 |
-| `src/renderer/src/lib/__tests__/github-api.test.ts` | GitHub API wrapper | ~70 |
+| File                                                            | Purpose                      | Estimated LOC |
+| --------------------------------------------------------------- | ---------------------------- | ------------- |
+| `src/renderer/src/hooks/__tests__/useUnifiedAgents.test.ts`     | Hook merge/group/stale logic | ~120          |
+| `src/renderer/src/hooks/__tests__/useTaskNotifications.test.ts` | Notification lifecycle       | ~80           |
+| `src/renderer/src/services/__tests__/settings.test.ts`          | Settings service wiring      | ~60           |
+| `src/renderer/src/lib/__tests__/github-api.test.ts`             | GitHub API wrapper           | ~70           |
 
 ## Files to Modify
 

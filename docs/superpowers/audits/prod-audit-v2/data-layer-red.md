@@ -220,50 +220,51 @@ The March 28 synthesis identified additional findings beyond the Red Team audit.
 
 ## Summary Table
 
-| ID | Original Severity | Status | Notes |
-|---|---|---|---|
-| DL-RED-1 | High | **Fixed** | Regex assertion on column names in `updateTask` |
-| DL-RED-2 | High | **Fixed** | Regex assertion on column names in `updateAgentMeta` |
-| DL-RED-3 | High | **Fixed** | `path.resolve()` + prefix check replaces naive regex |
-| DL-RED-4 | Medium | **Fixed** | Credentials deleted after successful import |
-| DL-RED-5 | Medium | **Fixed** | Permission check on read, explicit mode on write |
-| DL-RED-6 | Medium | **Partially Fixed** | Env cleanup unconditional; fundamental limitation documented |
-| DL-RED-7 | Medium | **Fixed** | Individual migration transactions with error context |
-| DL-RED-8 | Medium | **Partially Fixed** | Validator parameter added but not yet used by callers |
-| DL-RED-9 | Medium | **Accepted Risk** | Documented in code comments |
-| DL-RED-10 | Low | **Not Fixed** | Theoretical only; hardcoded integer array |
-| DL-RED-11 | Low | **Not Fixed** | Theoretical only; practical recursion depth is 1-2 |
-| DL-RED-12 | Low | **Fixed** | Status validation with skip-and-warn |
-| DL-RED-13 | Low | **Fixed** | 1-second rate limit on Keychain reads |
-| DL-RED-14 | Low | **Fixed** | `chmodSync(0o600)` on new DB creation |
-| DL-RED-15 | Low | **Partially Fixed** | Existence + size check (no full integrity check) |
-| DL-RED-NEW-1 | Low | **New** | Migration v10 missing `finally` for FK re-enable |
-| DL-RED-NEW-2 | Low | **New** | `~/.bde/` directory created without explicit mode |
-| DL-RED-NEW-3 | Low | **New** | `getSettingJson` validator infrastructure unused |
+| ID           | Original Severity | Status              | Notes                                                        |
+| ------------ | ----------------- | ------------------- | ------------------------------------------------------------ |
+| DL-RED-1     | High              | **Fixed**           | Regex assertion on column names in `updateTask`              |
+| DL-RED-2     | High              | **Fixed**           | Regex assertion on column names in `updateAgentMeta`         |
+| DL-RED-3     | High              | **Fixed**           | `path.resolve()` + prefix check replaces naive regex         |
+| DL-RED-4     | Medium            | **Fixed**           | Credentials deleted after successful import                  |
+| DL-RED-5     | Medium            | **Fixed**           | Permission check on read, explicit mode on write             |
+| DL-RED-6     | Medium            | **Partially Fixed** | Env cleanup unconditional; fundamental limitation documented |
+| DL-RED-7     | Medium            | **Fixed**           | Individual migration transactions with error context         |
+| DL-RED-8     | Medium            | **Partially Fixed** | Validator parameter added but not yet used by callers        |
+| DL-RED-9     | Medium            | **Accepted Risk**   | Documented in code comments                                  |
+| DL-RED-10    | Low               | **Not Fixed**       | Theoretical only; hardcoded integer array                    |
+| DL-RED-11    | Low               | **Not Fixed**       | Theoretical only; practical recursion depth is 1-2           |
+| DL-RED-12    | Low               | **Fixed**           | Status validation with skip-and-warn                         |
+| DL-RED-13    | Low               | **Fixed**           | 1-second rate limit on Keychain reads                        |
+| DL-RED-14    | Low               | **Fixed**           | `chmodSync(0o600)` on new DB creation                        |
+| DL-RED-15    | Low               | **Partially Fixed** | Existence + size check (no full integrity check)             |
+| DL-RED-NEW-1 | Low               | **New**             | Migration v10 missing `finally` for FK re-enable             |
+| DL-RED-NEW-2 | Low               | **New**             | `~/.bde/` directory created without explicit mode            |
+| DL-RED-NEW-3 | Low               | **New**             | `getSettingJson` validator infrastructure unused             |
 
 ### Synthesis Findings Status
 
-| Synthesis ID | Status | Notes |
-|---|---|---|
-| DL-1 | **Fixed** | `finally` block on v9/v17 (v10 residual, low risk) |
-| DL-2 | **Fixed** | Single transaction for read + update + audit |
-| DL-3 | **Fixed** | Audit trail added to markTaskDone/Cancelled |
-| DL-5 | **Fixed** | Migration v17 adds `branch_only` to CHECK constraint |
-| DL-10 | **Fixed** | TOCTOU race eliminated with transactional credential read |
-| DL-13 | **Fixed** | Audit trail in claim/release with caller attribution |
-| DL-14 | **Fixed** | Deletion audit with task snapshot |
-| DL-20 | **Fixed** | Conditional transaction wrapping |
-| DL-25 | **Fixed** | Parse errors logged |
-| DL-27 | **Fixed** | Batch processing for large IN clauses |
-| DL-30 | **Partially Fixed** | Attribution in claim/release/pr-poller; `updateTask` still `'unknown'` |
-| DL-33 | **Fixed** | Returns mapped AgentMeta |
-| DL-34 | **Not Fixed** | Documented as data model limitation |
+| Synthesis ID | Status              | Notes                                                                  |
+| ------------ | ------------------- | ---------------------------------------------------------------------- |
+| DL-1         | **Fixed**           | `finally` block on v9/v17 (v10 residual, low risk)                     |
+| DL-2         | **Fixed**           | Single transaction for read + update + audit                           |
+| DL-3         | **Fixed**           | Audit trail added to markTaskDone/Cancelled                            |
+| DL-5         | **Fixed**           | Migration v17 adds `branch_only` to CHECK constraint                   |
+| DL-10        | **Fixed**           | TOCTOU race eliminated with transactional credential read              |
+| DL-13        | **Fixed**           | Audit trail in claim/release with caller attribution                   |
+| DL-14        | **Fixed**           | Deletion audit with task snapshot                                      |
+| DL-20        | **Fixed**           | Conditional transaction wrapping                                       |
+| DL-25        | **Fixed**           | Parse errors logged                                                    |
+| DL-27        | **Fixed**           | Batch processing for large IN clauses                                  |
+| DL-30        | **Partially Fixed** | Attribution in claim/release/pr-poller; `updateTask` still `'unknown'` |
+| DL-33        | **Fixed**           | Returns mapped AgentMeta                                               |
+| DL-34        | **Not Fixed**       | Documented as data model limitation                                    |
 
 ---
 
 ## Overall Assessment
 
 **Remediation grade: Strong.** Of the 15 original Red Team findings:
+
 - **9 Fixed** (including all 3 High severity)
 - **3 Partially Fixed** (DL-RED-6, DL-RED-8, DL-RED-15 -- all with reasonable mitigations in place)
 - **1 Accepted Risk** (DL-RED-9 -- correctly documented)

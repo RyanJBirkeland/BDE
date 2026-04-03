@@ -9,7 +9,11 @@ interface AgentOutputTabProps {
   sessionKey?: string
 }
 
-export function AgentOutputTab({ agentId, agentOutput, sessionKey }: AgentOutputTabProps): React.JSX.Element {
+export function AgentOutputTab({
+  agentId,
+  agentOutput,
+  sessionKey
+}: AgentOutputTabProps): React.JSX.Element {
   const events = useAgentEventsStore((s) => s.events[agentId])
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 

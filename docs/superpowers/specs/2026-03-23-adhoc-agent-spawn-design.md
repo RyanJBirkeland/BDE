@@ -14,6 +14,7 @@ When the Embedded Agent Manager was built, the `local:spawnClaudeAgent` IPC hand
 ### Concept
 
 The Agents view serves two purposes:
+
 1. **Monitor sprint agents** — view, steer, and check on agents the Agent Manager spawned from the queue
 2. **Ad-hoc agent sessions** — spawn a one-off agent directly via SpawnModal, like running `claude` in a terminal but with a GUI
 
@@ -107,6 +108,7 @@ The SDK adapter (`agent-manager/types.ts`) yields `AsyncIterable<unknown>`. Raw 
 ```
 
 Best-effort mapping from raw SDK/CLI messages:
+
 - Messages with `type: 'assistant'` and text content → `agent:text`
 - Messages with `type: 'tool_use'` or `tool_name` field → `agent:tool_call` (with `tool`, `summary`, `input`)
 - Messages with `type: 'tool_result'` or `content` after tool_use → `agent:tool_result` (with `tool`, `success`, `summary`, `output`)

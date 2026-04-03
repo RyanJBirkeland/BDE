@@ -16,10 +16,12 @@ The Sprint & Tasks domain has a **dual-layout problem**: `SprintCenter` (legacy 
 ### C1. Dual Orchestrator Duplication -- SprintCenter vs SprintPipeline
 
 **Files:**
+
 - `/Users/ryan/projects/BDE/src/renderer/src/components/sprint/SprintCenter.tsx` (255 lines)
 - `/Users/ryan/projects/BDE/src/renderer/src/components/sprint/SprintPipeline.tsx` (303 lines)
 
 Both components independently:
+
 - Subscribe to `useSprintTasks` (tasks, loading, loadError) -- SprintCenter L40-46, SprintPipeline L32-40
 - Call `useSprintTaskActions()` -- SprintCenter L61-69, SprintPipeline L60-68
 - Call `useHealthCheck(tasks)` -- SprintCenter L71, SprintPipeline L70
@@ -77,6 +79,7 @@ Six components (`TaskCard`, `LogDrawer`, `TaskMonitorPanel`, `KanbanColumn`, `Ka
 **File:** `/Users/ryan/projects/BDE/src/renderer/src/stores/sprintTasks.ts` L180-278
 
 The `createTask` action contains:
+
 - Optimistic UI update (L206-209) -- appropriate for a store
 - IPC call to backend (L212-222) -- appropriate
 - Background spec generation with template detection (L231-264) -- business logic
@@ -92,6 +95,7 @@ A Zustand store action should not orchestrate multi-step business flows with cro
 **File:** `/Users/ryan/projects/BDE/src/renderer/src/components/task-workbench/WorkbenchForm.tsx` (375 lines)
 
 Responsibilities mixed into one component:
+
 1. Form field rendering (title, repo, priority, playground toggle)
 2. Submission logic with create-or-update branching (L53-86)
 3. Debounced semantic check triggering (L89-130)
@@ -119,6 +123,7 @@ Multiple files define identical or near-identical utility functions:
 ### S4. Inconsistent Styling Approaches
 
 The sprint domain mixes three styling patterns:
+
 1. **CSS classes** (neon convention): `PipelineBacklog`, `PipelineStage`, `TaskPill`, `SprintTaskList`
 2. **Inline `tokens.*` styles**: `TaskMonitorPanel` (entire component, ~50 style objects), `SprintTaskRow` (~30 style objects), `EventCard`, `TicketEditor`
 3. **Inline `var(--neon-*)` CSS variables**: `PipelineBacklog` L27, L57, L64 use inline `style={{ color: 'var(--neon-blue)' }}`
@@ -132,6 +137,7 @@ Per CLAUDE.md: "Do NOT use inline `tokens.*` styles for neon views -- use CSS cl
 **File:** `/Users/ryan/projects/BDE/src/renderer/src/components/sprint/NewTicketModal.tsx` (435 lines)
 
 This modal duplicates the task creation flow now handled by `TaskWorkbench`. It has its own:
+
 - Template system (8 templates, L37-69) vs WorkbenchForm's `SpecEditor` (4 templates, SpecEditor.tsx L5-26)
 - Priority options (identical constant, redefined)
 - Repo selector (identical pattern)
@@ -196,6 +202,7 @@ The `createAll()` function uses a sequential `for...of` loop with `await`. For 5
 ### M7. Three Markdown README Files in Sprint Components
 
 **Files:**
+
 - `/Users/ryan/projects/BDE/src/renderer/src/components/sprint/SprintDetailPane.md`
 - `/Users/ryan/projects/BDE/src/renderer/src/components/sprint/SprintTaskList.README.md`
 - `/Users/ryan/projects/BDE/src/renderer/src/components/sprint/SprintTaskRow.md`
@@ -283,15 +290,15 @@ sprintTasks     sprintUI      taskWorkbench
 
 ## Summary of Recommendations by Priority
 
-| Priority | Issue | Effort | Impact |
-|----------|-------|--------|--------|
-| Critical | C1: Extract shared orchestration hook | Medium | Eliminates duplicate side effects |
-| Critical | C2: Deprecate legacy SprintCenter subtree | Large | Removes ~1200 lines of dead weight |
-| Critical | C3: Fix SprintTask import paths | Small | Removes phantom coupling |
-| Significant | S1: Extract createTask business logic from store | Medium | Improves testability |
-| Significant | S2: Split WorkbenchForm | Medium | Single responsibility |
-| Significant | S3: Extract shared task-format utilities | Small | DRY |
-| Significant | S4: Migrate inline tokens to CSS classes | Medium | Style consistency |
-| Significant | S5: Remove NewTicketModal | Small | Dead code removal |
-| Significant | S6: Fix SpecPanel CSS namespace | Small | Decoupling |
-| Minor | M1-M7: Various small fixes | Small each | Polish |
+| Priority    | Issue                                            | Effort     | Impact                             |
+| ----------- | ------------------------------------------------ | ---------- | ---------------------------------- |
+| Critical    | C1: Extract shared orchestration hook            | Medium     | Eliminates duplicate side effects  |
+| Critical    | C2: Deprecate legacy SprintCenter subtree        | Large      | Removes ~1200 lines of dead weight |
+| Critical    | C3: Fix SprintTask import paths                  | Small      | Removes phantom coupling           |
+| Significant | S1: Extract createTask business logic from store | Medium     | Improves testability               |
+| Significant | S2: Split WorkbenchForm                          | Medium     | Single responsibility              |
+| Significant | S3: Extract shared task-format utilities         | Small      | DRY                                |
+| Significant | S4: Migrate inline tokens to CSS classes         | Medium     | Style consistency                  |
+| Significant | S5: Remove NewTicketModal                        | Small      | Dead code removal                  |
+| Significant | S6: Fix SpecPanel CSS namespace                  | Small      | Decoupling                         |
+| Minor       | M1-M7: Various small fixes                       | Small each | Polish                             |

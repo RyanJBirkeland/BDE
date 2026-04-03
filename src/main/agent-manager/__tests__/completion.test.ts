@@ -305,11 +305,7 @@ describe('resolveSuccess — catch handler coverage', () => {
   })
 
   it('logs error when updateTask fails during review transition', async () => {
-    mockExecFileSequence([
-      { stdout: 'agent/b\n' },
-      { stdout: '' },
-      { stdout: '1\n' }
-    ])
+    mockExecFileSequence([{ stdout: 'agent/b\n' }, { stdout: '' }, { stdout: '1\n' }])
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB down')
     })
@@ -322,11 +318,7 @@ describe('resolveSuccess — catch handler coverage', () => {
   })
 
   it('transitions to review with worktree_path preserved', async () => {
-    mockExecFileSequence([
-      { stdout: 'agent/b\n' },
-      { stdout: '' },
-      { stdout: '1\n' }
-    ])
+    mockExecFileSequence([{ stdout: 'agent/b\n' }, { stdout: '' }, { stdout: '1\n' }])
     await resolveSuccess(catchOpts, noopLogger)
     expect(updateTaskMock).toHaveBeenCalledWith(catchOpts.taskId, {
       status: 'review',

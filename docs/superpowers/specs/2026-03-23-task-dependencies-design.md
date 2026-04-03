@@ -32,8 +32,8 @@ BDE's AgentManager drain loop claims any queued task with available slots — th
 ```typescript
 // src/shared/types.ts
 export interface TaskDependency {
-  id: string          // task ID this depends on
-  type: 'hard' | 'soft'  // hard = block on fail, soft = unblock regardless
+  id: string // task ID this depends on
+  type: 'hard' | 'soft' // hard = block on fail, soft = unblock regardless
 }
 ```
 
@@ -117,13 +117,13 @@ export interface DependencyIndex {
 
 A dependency is **satisfied** when the depended-on task reaches a terminal state, subject to the edge type:
 
-| Dependency status | `hard` edge | `soft` edge |
-|-------------------|-------------|-------------|
-| `done`            | Satisfied   | Satisfied   |
-| `cancelled`       | **Not satisfied** (task was abandoned, prerequisite work not done) | Satisfied |
-| `failed`          | **Not satisfied** (prerequisite work failed) | Satisfied |
-| `error`           | **Not satisfied** (same as failed — watchdog kill, spawn timeout, etc.) | Satisfied |
-| Task deleted      | Satisfied (dependency no longer exists — don't block forever) |  Satisfied |
+| Dependency status | `hard` edge                                                             | `soft` edge |
+| ----------------- | ----------------------------------------------------------------------- | ----------- |
+| `done`            | Satisfied                                                               | Satisfied   |
+| `cancelled`       | **Not satisfied** (task was abandoned, prerequisite work not done)      | Satisfied   |
+| `failed`          | **Not satisfied** (prerequisite work failed)                            | Satisfied   |
+| `error`           | **Not satisfied** (same as failed — watchdog kill, spawn timeout, etc.) | Satisfied   |
+| Task deleted      | Satisfied (dependency no longer exists — don't block forever)           | Satisfied   |
 
 **Rationale:** Hard dependencies mean "I need this task's output." If the task was cancelled, failed, or errored, that output doesn't exist. Only `done` satisfies a hard dep. Soft dependencies mean "prefer to run after" — any terminal state unblocks.
 
@@ -155,6 +155,7 @@ Users can manually transition a `blocked` task to `queued` via the UI — this o
 #### Queuing a task with dependencies
 
 When a user moves a task from `backlog` → `queued`:
+
 - If the task has unsatisfied hard dependencies, transition to `blocked` instead of `queued`
 - Show a toast: "Task blocked — waiting on N dependencies"
 
@@ -178,12 +179,12 @@ The dependency logic lives in the **status transition layer**, not the drain loo
 
 The trigger points where `resolveDependents()` must be called:
 
-| Code path | File | Terminal status |
-|-----------|------|----------------|
-| `resolveFailure()` (retries exhausted) | `src/main/agent-manager/completion.ts:80` | `failed` |
-| Watchdog kill (max-runtime, idle-timeout) | `src/main/agent-manager/index.ts` (watchdog loop) | `error` |
-| `markTaskDoneByPrNumber()` | `src/main/data/sprint-queries.ts:227` | `done` |
-| `markTaskCancelledByPrNumber()` | `src/main/data/sprint-queries.ts:249` | `cancelled` |
+| Code path                                 | File                                              | Terminal status |
+| ----------------------------------------- | ------------------------------------------------- | --------------- |
+| `resolveFailure()` (retries exhausted)    | `src/main/agent-manager/completion.ts:80`         | `failed`        |
+| Watchdog kill (max-runtime, idle-timeout) | `src/main/agent-manager/index.ts` (watchdog loop) | `error`         |
+| `markTaskDoneByPrNumber()`                | `src/main/data/sprint-queries.ts:227`             | `done`          |
+| `markTaskCancelledByPrNumber()`           | `src/main/data/sprint-queries.ts:249`             | `cancelled`     |
 
 **PR poller refactoring required:** Both `markTaskDoneByPrNumber()` and `markTaskCancelledByPrNumber()` currently return `void` and perform bulk updates by `pr_number` without revealing which task IDs were affected. To call `resolveDependents(taskId)`, the implementation must refactor these functions to:
 
@@ -210,12 +211,13 @@ export function detectCycle(
   taskId: string,
   proposedDeps: TaskDependency[],
   getDepsForTask: (id: string) => TaskDependency[] | null
-): string[] | null  // returns cycle path or null
+): string[] | null // returns cycle path or null
 ```
 
 Uses depth-first traversal from each proposed dependency, following their `depends_on` chains. If `taskId` is found in any chain, returns the cycle path for error reporting.
 
 Called:
+
 - When creating a task with `depends_on`
 - When updating a task's `depends_on`
 - Returns an error to the caller (API 400 or UI validation error) with the cycle path
@@ -270,7 +272,8 @@ New function to fetch all blocked tasks (for UI):
 ```typescript
 export async function getBlockedTasks(): Promise<SprintTask[]> {
   const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks').select('*')
+    .from('sprint_tasks')
+    .select('*')
     .eq('status', 'blocked')
   if (error) throw error
   return data ?? []
@@ -354,12 +357,12 @@ New handlers registered in `src/main/index.ts`:
 
 ### Error Handling
 
-| Scenario | Behavior |
-|----------|----------|
-| Dependency target doesn't exist | Reject at creation time (API 400: "Task {id} not found") |
-| Dependency target deleted after creation | Treat as satisfied (the work is gone, don't block forever) |
-| Cycle detected | Reject at creation/update time (API 400 with cycle path) |
-| Reverse index out of sync | Rebuild on next startup; log warning |
+| Scenario                                        | Behavior                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Dependency target doesn't exist                 | Reject at creation time (API 400: "Task {id} not found")                             |
+| Dependency target deleted after creation        | Treat as satisfied (the work is gone, don't block forever)                           |
+| Cycle detected                                  | Reject at creation/update time (API 400 with cycle path)                             |
+| Reverse index out of sync                       | Rebuild on next startup; log warning                                                 |
 | Supabase unavailable during `resolveDependents` | Log error; blocked tasks stay blocked until next completion event or startup rebuild |
 
 ### Migration Path
@@ -372,21 +375,21 @@ New handlers registered in `src/main/index.ts`:
 
 ### Files Changed (Complete List)
 
-| File | Change |
-|------|--------|
-| `src/shared/types.ts` | Add `TaskDependency` interface, add `depends_on` to `SprintTask`, add `blocked` to status union |
-| `src/shared/constants.ts` | Add `BLOCKED: 'blocked'` to `TASK_STATUS` |
-| `src/shared/queue-api-contract.ts` | Add `blocked` and `error` to `QueueHealthResponse.queue` type (both currently missing). `RUNNER_WRITABLE_STATUSES` does not need `blocked` (only the system transitions to/from blocked, not external runners) |
-| `src/main/data/sprint-queries.ts` | Add `depends_on` to `UPDATE_ALLOWLIST`, add `depends_on` to `CreateTaskInput` + `createTask()`, add `blocked` to `QueueStats`, add `getBlockedTasks()`, add `getTasksWithDependencies()`, refactor `markTaskDoneByPrNumber` and `markTaskCancelledByPrNumber` to return affected task IDs (`Promise<string[]>`) |
-| `src/main/agent-manager/dependency-index.ts` | **New file** — DependencyIndex implementation + cycle detection |
-| `src/main/agent-manager/index.ts` | Initialize DependencyIndex on startup, call `resolveDependents` from terminal status transitions |
-| `src/main/agent-manager/completion.ts` | Call `resolveDependents` after `resolveFailure` sets `failed` |
-| `src/main/queue-api/router.ts` | Add `PATCH /queue/tasks/:id` route, add `blocked` to health response |
-| `src/main/queue-api/field-mapper.ts` | No change needed (already maps `dependsOn`) |
-| `src/main/handlers/sprint-local.ts` | Update `markTaskDoneByPrNumber` wrapper to consume returned task IDs and call `resolveDependents` for each |
-| `src/main/handlers/git-handlers.ts` | Update PR merge/close handlers to consume returned task IDs and call `resolveDependents` for each |
-| `src/main/sprint-pr-poller.ts` | Update poller's `markTaskDoneByPrNumber`/`markTaskCancelledByPrNumber` calls to consume returned task IDs and call `resolveDependents` |
-| `src/main/index.ts` | Register `sprint:validate-dependencies` and `sprint:unblock-task` IPC handlers |
-| `src/renderer/src/lib/partitionSprintTasks.ts` | Add `case TASK_STATUS.BLOCKED:` → todo bucket |
-| `src/renderer/src/components/sprint/TaskCard.tsx` | Blocked badge, dependency chips, unblock button |
-| `src/renderer/src/components/sprint/SprintCenter.tsx` | Task create/edit form dependency field |
+| File                                                  | Change                                                                                                                                                                                                                                                                                                          |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/types.ts`                                 | Add `TaskDependency` interface, add `depends_on` to `SprintTask`, add `blocked` to status union                                                                                                                                                                                                                 |
+| `src/shared/constants.ts`                             | Add `BLOCKED: 'blocked'` to `TASK_STATUS`                                                                                                                                                                                                                                                                       |
+| `src/shared/queue-api-contract.ts`                    | Add `blocked` and `error` to `QueueHealthResponse.queue` type (both currently missing). `RUNNER_WRITABLE_STATUSES` does not need `blocked` (only the system transitions to/from blocked, not external runners)                                                                                                  |
+| `src/main/data/sprint-queries.ts`                     | Add `depends_on` to `UPDATE_ALLOWLIST`, add `depends_on` to `CreateTaskInput` + `createTask()`, add `blocked` to `QueueStats`, add `getBlockedTasks()`, add `getTasksWithDependencies()`, refactor `markTaskDoneByPrNumber` and `markTaskCancelledByPrNumber` to return affected task IDs (`Promise<string[]>`) |
+| `src/main/agent-manager/dependency-index.ts`          | **New file** — DependencyIndex implementation + cycle detection                                                                                                                                                                                                                                                 |
+| `src/main/agent-manager/index.ts`                     | Initialize DependencyIndex on startup, call `resolveDependents` from terminal status transitions                                                                                                                                                                                                                |
+| `src/main/agent-manager/completion.ts`                | Call `resolveDependents` after `resolveFailure` sets `failed`                                                                                                                                                                                                                                                   |
+| `src/main/queue-api/router.ts`                        | Add `PATCH /queue/tasks/:id` route, add `blocked` to health response                                                                                                                                                                                                                                            |
+| `src/main/queue-api/field-mapper.ts`                  | No change needed (already maps `dependsOn`)                                                                                                                                                                                                                                                                     |
+| `src/main/handlers/sprint-local.ts`                   | Update `markTaskDoneByPrNumber` wrapper to consume returned task IDs and call `resolveDependents` for each                                                                                                                                                                                                      |
+| `src/main/handlers/git-handlers.ts`                   | Update PR merge/close handlers to consume returned task IDs and call `resolveDependents` for each                                                                                                                                                                                                               |
+| `src/main/sprint-pr-poller.ts`                        | Update poller's `markTaskDoneByPrNumber`/`markTaskCancelledByPrNumber` calls to consume returned task IDs and call `resolveDependents`                                                                                                                                                                          |
+| `src/main/index.ts`                                   | Register `sprint:validate-dependencies` and `sprint:unblock-task` IPC handlers                                                                                                                                                                                                                                  |
+| `src/renderer/src/lib/partitionSprintTasks.ts`        | Add `case TASK_STATUS.BLOCKED:` → todo bucket                                                                                                                                                                                                                                                                   |
+| `src/renderer/src/components/sprint/TaskCard.tsx`     | Blocked badge, dependency chips, unblock button                                                                                                                                                                                                                                                                 |
+| `src/renderer/src/components/sprint/SprintCenter.tsx` | Task create/edit form dependency field                                                                                                                                                                                                                                                                          |

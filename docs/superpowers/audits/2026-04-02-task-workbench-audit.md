@@ -1,4 +1,5 @@
 # Task Workbench UX Audit
+
 **Date:** 2026-04-02
 **Auditor:** BDE Pipeline Agent
 **Scope:** Task Workbench view (creation/editing interface with AI copilot)
@@ -8,6 +9,7 @@
 The Task Workbench is a **well-structured, feature-rich interface** for task creation and editing. The implementation demonstrates strong attention to validation, user feedback, and progressive disclosure. The neon design system is applied consistently, and the AI copilot integration is thoughtfully implemented with streaming and persistence.
 
 **Strengths:**
+
 - Three-tier readiness check system (structural/semantic/operational) provides clear feedback
 - Copilot persistence to localStorage with message history
 - Responsive ResizeObserver auto-collapses copilot below 600px width
@@ -49,6 +51,7 @@ When ReadinessChecks expands, the list of 8+ checks can push actions buttons off
 Users with 13" displays or vertical split panes may not see the action buttons without scrolling, making it unclear how to proceed after reviewing checks.
 
 **Recommendation:**
+
 ```css
 .wb-checks__list {
   max-height: 200px;
@@ -67,10 +70,12 @@ Users with 13" displays or vertical split panes may not see the action buttons w
 Semantic checks have a 2-second debounce (line 105 in WorkbenchForm.tsx). During this delay, the structural checks show but semantic slots are empty, creating visual inconsistency.
 
 **Current behavior:**
+
 - User types → 2s silence → semantic checks appear
 
 **Recommendation:**
 Add pending state indicators for semantic checks while `semanticLoading` is true:
+
 ```tsx
 // In ReadinessChecks.tsx, before mapping checks:
 const semantic = useMemo(() => {
@@ -99,10 +104,11 @@ ReadinessChecks also uses unicode for expand/collapse (lines 45, 131 in Readines
 
 **Recommendation:**
 Replace with Lucide icons for consistency:
+
 ```tsx
 import { ChevronRight, ChevronDown } from 'lucide-react'
 
-<button onClick={() => setField('advancedOpen', !advancedOpen)} className="wb-form__toggle">
+;<button onClick={() => setField('advancedOpen', !advancedOpen)} className="wb-form__toggle">
   {advancedOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
   More options
 </button>
@@ -138,16 +144,17 @@ import { ChevronRight, ChevronDown } from 'lucide-react'
 WorkbenchActions uses `.wb-actions__btn--launch` (cyan background, bold), but SpecEditor uses `.wb-spec__btn--primary` (cyan surface, not bold). Both are "primary" actions but styled differently.
 
 **Comparison:**
+
 ```css
 /* Actions - Launch button */
 .wb-actions__btn--launch {
-  background: var(--neon-cyan);  /* solid cyan */
+  background: var(--neon-cyan); /* solid cyan */
   font-weight: 600;
 }
 
 /* SpecEditor - Generate Spec button */
 .wb-spec__btn--primary {
-  background: var(--neon-cyan-surface);  /* transparent cyan */
+  background: var(--neon-cyan-surface); /* transparent cyan */
   color: var(--neon-cyan);
   /* no font-weight */
 }
@@ -155,6 +162,7 @@ WorkbenchActions uses `.wb-actions__btn--launch` (cyan background, bold), but Sp
 
 **Recommendation:**
 Align button hierarchy:
+
 - **Launch/Queue Now** → solid backgrounds (highest emphasis)
 - **Generate Spec** → surface backgrounds (medium emphasis)
 - **Template buttons** → ghost borders (low emphasis)
@@ -171,6 +179,7 @@ Currently correct, but `.wb-spec__btn--primary` name is misleading. Rename to `.
 `.wb-copilot__bubble` has `max-width: 90%` (line 461), which works well in full-width panels but causes bubbles to be only ~200px wide when the copilot panel is at minimum size (20% from line 94 in TaskWorkbench.tsx).
 
 **Math:**
+
 - Minimum panel size: 20% of 800px window = 160px
 - Bubble max-width: 90% of 160px = 144px
 
@@ -178,6 +187,7 @@ This causes heavy word-wrapping and poor readability for code snippets.
 
 **Recommendation:**
 Use absolute min-width with max-width constraint:
+
 ```css
 .wb-copilot__bubble {
   max-width: min(90%, 500px);
@@ -200,6 +210,7 @@ Works correctly because all tokens are theme-aware, but this is implicit behavio
 
 **Recommendation:**
 Add explicit theme variants for clarity (even if empty initially):
+
 ```css
 /* Light theme overrides */
 html.theme-light .wb-form__input {
@@ -241,12 +252,15 @@ Fails SC 2.4.7 (Focus Visible) because the focused element's purpose is not clea
 
 **Recommendation:**
 Add visually-hidden text:
+
 ```tsx
 <button onClick={toggleExpanded} className="wb-checks__summary" aria-expanded={expanded}>
   <span aria-hidden="true">{expanded ? '▾' : '▸'}</span>
   <span className="sr-only">Toggle readiness checks</span>
   <span className="wb-checks__icons">{/* ... */}</span>
-  <span className="wb-checks__count">{passing}/{total} passing</span>
+  <span className="wb-checks__count">
+    {passing}/{total} passing
+  </span>
 </button>
 ```
 
@@ -265,6 +279,7 @@ The copilot messages container has `aria-live="polite"` (line 185 in WorkbenchCo
 `role="log"` indicates a type of live region where new information is added in meaningful order and old information may disappear (chat messages, activity feeds).
 
 **Recommendation:**
+
 ```tsx
 <div ref={scrollRef} className="wb-copilot__messages" role="log" aria-live="polite">
 ```
@@ -279,11 +294,13 @@ The copilot messages container has `aria-live="polite"` (line 185 in WorkbenchCo
 When copilot is open, Tab key cycles through all focusable elements in both form and copilot panels. There's no keyboard shortcut to jump between panels or close the copilot via keyboard (besides tabbing to the close button).
 
 **Not critical** because all controls are reachable, but power users would benefit from:
+
 - `Cmd+B` to toggle copilot (similar to IDE sidebar toggle)
 - `Esc` to close copilot when input is focused
 
 **Recommendation:**
 Add keyboard shortcuts in TaskWorkbench.tsx:
+
 ```tsx
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -325,6 +342,7 @@ useEffect(() => {
 The ResizeObserver in TaskWorkbench (lines 13-27) is recreated on every render because it's inside the component body with no dependency array control. This is wasteful even though the observer itself is stable.
 
 **Current behavior:**
+
 ```tsx
 useEffect(() => {
   const el = containerRef.current
@@ -351,6 +369,7 @@ useEffect(() => {
 Every streaming chunk triggers `appendToStreamingMessage` (line 215 in taskWorkbench.ts), which maps over the entire `copilotMessages` array to find and update the streaming message. For a message with 200 tokens streaming at ~10 tokens/sec, that's 20 full array iterations in 2 seconds.
 
 **Current implementation:**
+
 ```tsx
 appendToStreamingMessage: (chunk) =>
   set((s) => {
@@ -367,15 +386,18 @@ For 50 messages in history, each chunk iterates 50 times. React re-renders Messa
 
 **Recommendation:**
 Optimize with `immer` or a targeted update:
+
 ```tsx
 import produce from 'immer'
 
 appendToStreamingMessage: (chunk) =>
-  set(produce((draft) => {
-    if (!draft.streamingMessageId) return
-    const msg = draft.copilotMessages.find(m => m.id === draft.streamingMessageId)
-    if (msg) msg.content += chunk
-  }))
+  set(
+    produce((draft) => {
+      if (!draft.streamingMessageId) return
+      const msg = draft.copilotMessages.find((m) => m.id === draft.streamingMessageId)
+      if (msg) msg.content += chunk
+    })
+  )
 ```
 
 Or memo-ize MessageBubble if not already (it's not - line 12 in WorkbenchCopilot.tsx).
@@ -394,6 +416,7 @@ Already debounced via React's batching (multiple keystrokes in one render cycle)
 
 **Micro-optimization (optional):**
 Debounce structural checks by 100ms if spec is >1000 chars:
+
 ```tsx
 useEffect(() => {
   if (spec.length < 1000) {
@@ -438,10 +461,17 @@ useEffect(() => {
 
 **Issue:**
 WorkbenchForm hardcodes the 5 operational checks by name (lines 156-192 in WorkbenchForm.tsx):
+
 ```tsx
 const opChecks = [
-  { id: 'auth', label: 'Auth', tier: 3, status: opResult.auth.status, message: opResult.auth.message },
-  { id: 'repo-path', label: 'Repo Path', tier: 3, status: opResult.repoPath.status, /* ... */ },
+  {
+    id: 'auth',
+    label: 'Auth',
+    tier: 3,
+    status: opResult.auth.status,
+    message: opResult.auth.message
+  },
+  { id: 'repo-path', label: 'Repo Path', tier: 3, status: opResult.repoPath.status /* ... */ }
   // ...
 ]
 ```
@@ -450,19 +480,20 @@ If the backend adds a new operational check (e.g., `diskSpace`), the frontend wo
 
 **Recommendation:**
 Have the backend return an array of checks instead of a keyed object:
+
 ```tsx
 // Backend response:
 {
   checks: [
     { id: 'auth', label: 'Authentication', status: 'pass', message: 'Token valid' },
-    { id: 'repo-path', label: 'Repository Path', status: 'pass', message: '/path/exists' },
+    { id: 'repo-path', label: 'Repository Path', status: 'pass', message: '/path/exists' }
     // ...
   ]
 }
 
 // Frontend:
 const opResult = await window.api.workbench.checkOperational({ repo })
-setOperationalChecks(opResult.checks.map(c => ({ ...c, tier: 3 as const })))
+setOperationalChecks(opResult.checks.map((c) => ({ ...c, tier: 3 as const })))
 ```
 
 **File:** `src/renderer/src/components/task-workbench/WorkbenchForm.tsx` line 153-193
@@ -486,6 +517,7 @@ The `queueConfirmMessage` state (line 44 in WorkbenchForm.tsx) is only set when 
 The ResizeObserver auto-collapses copilot at 600px (line 20 in TaskWorkbench.tsx), but this threshold is hardcoded with no constant or comment explaining the value.
 
 **Recommendation:**
+
 ```tsx
 const COPILOT_AUTO_COLLAPSE_THRESHOLD = 600 // px - below this width, copilot auto-hides for mobile UX
 
@@ -547,12 +579,14 @@ Lines 47-76 in useReadinessChecks.ts compute spec length status, then immediatel
 
 **Issue:**
 WorkbenchCopilot handles streaming errors by updating message content to show error text (lines 74-82 in WorkbenchCopilot.tsx), but there's no test coverage for:
+
 - Stream cancellation mid-chunk
 - `data.error` in the done event
 - Chunk arriving after component unmount
 
 **Recommendation:**
 Add test in WorkbenchCopilot.test.tsx:
+
 ```tsx
 it('shows error message when stream fails mid-chunk', async () => {
   // Setup stream that emits chunks then errors
@@ -581,6 +615,7 @@ WorkbenchForm has Cmd+Enter shortcut to submit (line 266-279), with a guard chec
 Nothing happens (no submit call).
 
 **Recommendation:**
+
 ```tsx
 it('does not submit on Cmd+Enter when title is empty', () => {
   const mockSubmit = vi.fn()
@@ -603,6 +638,7 @@ it('does not submit on Cmd+Enter when title is empty', () => {
 The store silently catches localStorage errors (line 102 in taskWorkbench.ts), but there's no test confirming this doesn't crash the app when quota is exceeded.
 
 **Recommendation:**
+
 ```tsx
 it('handles localStorage quota exceeded gracefully', () => {
   const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -634,13 +670,16 @@ it('handles localStorage quota exceeded gracefully', () => {
 ## Summary of Recommendations
 
 ### Critical (0)
+
 None.
 
 ### High Priority (2)
+
 1. **Readiness checks overflow on small displays** → Add `max-height: 200px; overflow-y: auto` to `.wb-checks__list`
 2. **Readiness toggle button has no visible text** → Add visually-hidden label span with `.sr-only` class
 
 ### Medium Priority (5)
+
 1. **No loading placeholder for semantic checks** → Show pending state during 2s debounce
 2. **Inconsistent primary button styling** → Rename `.wb-spec__btn--primary` to `--secondary`
 3. **Copilot bubbles too narrow in small panels** → Add `min-width: 200px` to `.wb-copilot__bubble`
@@ -648,6 +687,7 @@ None.
 5. **Operational checks hardcoded in frontend** → Refactor backend to return array of checks
 
 ### Low Priority (4)
+
 1. **Unicode triangles instead of Lucide icons** → Replace with `<ChevronRight />` / `<ChevronDown />`
 2. **No keyboard shortcut to toggle copilot** → Add Cmd+B shortcut
 3. **Magic number for copilot collapse width** → Extract `COPILOT_AUTO_COLLAPSE_THRESHOLD` constant
@@ -666,6 +706,7 @@ Test coverage is strong (85+ tests), and the code quality is high with proper se
 **Overall Grade: A-**
 
 Recommended next steps:
+
 1. Fix high-priority accessibility issues (readiness overflow, toggle label)
 2. Add loading states for semantic checks
 3. Consider keyboard shortcuts for power users (Cmd+B to toggle copilot)

@@ -10,12 +10,12 @@ Transform the Agents view from a basic two-panel list+detail into a neon cyberpu
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Layout | Stacked Zones (option A) | Maximum information density, all three views always visible |
-| Detail pane | Terminal/console aesthetic | Feels like watching a live session, monospace + colored prefixes |
-| Steering | Command bar with autocomplete | Power-user experience, quick actions via slash commands |
-| Data layer | No new stores | Existing stores cover all data needs — UI-only redesign |
+| Decision    | Choice                        | Rationale                                                        |
+| ----------- | ----------------------------- | ---------------------------------------------------------------- |
+| Layout      | Stacked Zones (option A)      | Maximum information density, all three views always visible      |
+| Detail pane | Terminal/console aesthetic    | Feels like watching a live session, monospace + colored prefixes |
+| Steering    | Command bar with autocomplete | Power-user experience, quick actions via slash commands          |
+| Data layer  | No new stores                 | Existing stores cover all data needs — UI-only redesign          |
 
 ## Section 1: Stacked Zones Layout
 
@@ -55,6 +55,7 @@ Three horizontal zones stacked vertically:
 Two-pane horizontal split:
 
 **Fleet list (~220px, left):**
+
 - Agents grouped: Running → Recent (last 24h) → History (older)
 - Each card: `NeonCard` with status dot (glow for running), task name, model badge, duration, cost
 - Running cards get accent-tinted borders matching their pill color
@@ -63,6 +64,7 @@ Two-pane horizontal split:
 - "+" spawn button in header
 
 **Agent Console (flex: 1, right):**
+
 - See Section 2 for full detail
 
 ### Timeline Strip (~70px, bottom)
@@ -99,16 +101,16 @@ The right pane of the middle zone. Replaces current AgentDetail.
 - Monospace font for all content (`var(--bde-font-code)`)
 - Events rendered as terminal lines with colored prefixes:
 
-| Prefix | Color | Content |
-|--------|-------|---------|
-| `[agent]` | Neon Cyan | Agent text output — primary chat messages |
-| `[user]` | Neon Pink | User steering messages |
-| `[tool]` | Neon Blue | Tool calls — tool name + summary inline. Collapsible: expand for full JSON input/output |
-| `[think]` | Neon Purple | Thinking blocks — collapsible, token count badge inline |
-| `[error]` | Neon Red | Error messages with subtle glow |
-| `[rate]` | Neon Orange | Rate limit warnings with retry countdown |
-| `[done]` | Neon Cyan | Completion summary: exit code, cost, tokens, duration |
-| `[play]` | Neon Cyan | Playground cards — inline clickable preview |
+| Prefix    | Color       | Content                                                                                 |
+| --------- | ----------- | --------------------------------------------------------------------------------------- |
+| `[agent]` | Neon Cyan   | Agent text output — primary chat messages                                               |
+| `[user]`  | Neon Pink   | User steering messages                                                                  |
+| `[tool]`  | Neon Blue   | Tool calls — tool name + summary inline. Collapsible: expand for full JSON input/output |
+| `[think]` | Neon Purple | Thinking blocks — collapsible, token count badge inline                                 |
+| `[error]` | Neon Red    | Error messages with subtle glow                                                         |
+| `[rate]`  | Neon Orange | Rate limit warnings with retry countdown                                                |
+| `[done]`  | Neon Cyan   | Completion summary: exit code, cost, tokens, duration                                   |
+| `[play]`  | Neon Cyan   | Playground cards — inline clickable preview                                             |
 
 - Timestamps in dim monospace on the right margin of each line
 - Collapsible lines: click prefix or chevron to expand/collapse tool I/O, thinking text
@@ -123,13 +125,13 @@ The right pane of the middle zone. Replaces current AgentDetail.
 - Input field: monospace, placeholder "Steer agent or type / for commands"
 - Autocomplete popup (glass popover, appears when typing `/`):
 
-| Command | Description |
-|---------|-------------|
-| `/stop` | Kill the running agent |
-| `/retry` | Requeue the sprint task |
-| `/focus <topic>` | Steer agent to focus on a topic |
-| `/approve` | Approve a pending action |
-| `/files` | List files the agent has touched (parsed from tool events) |
+| Command          | Description                                                |
+| ---------------- | ---------------------------------------------------------- |
+| `/stop`          | Kill the running agent                                     |
+| `/retry`         | Requeue the sprint task                                    |
+| `/focus <topic>` | Steer agent to focus on a topic                            |
+| `/approve`       | Approve a pending action                                   |
+| `/files`         | List files the agent has touched (parsed from tool events) |
 
 - Free text (no `/` prefix) sends as steering message
 - Send on Enter, Shift+Enter for newline
@@ -140,44 +142,45 @@ The right pane of the middle zone. Replaces current AgentDetail.
 
 ### New Components
 
-| Component | File | Responsibility |
-|-----------|------|----------------|
-| `LiveActivityStrip` | `src/renderer/src/components/agents/LiveActivityStrip.tsx` | Top strip — running agent pills with current action |
-| `AgentPill` | `src/renderer/src/components/agents/AgentPill.tsx` | Single running agent pill (dot + name + action text) |
-| `AgentConsole` | `src/renderer/src/components/agents/AgentConsole.tsx` | Terminal-style event viewer replacing AgentDetail |
-| `ConsoleHeader` | `src/renderer/src/components/agents/ConsoleHeader.tsx` | Console header bar with status, actions, metadata |
-| `ConsoleLine` | `src/renderer/src/components/agents/ConsoleLine.tsx` | Single console event line — colored prefix, collapsible content, timestamp |
-| `CommandBar` | `src/renderer/src/components/agents/CommandBar.tsx` | Bottom command input with `>` prompt |
-| `CommandAutocomplete` | `src/renderer/src/components/agents/CommandAutocomplete.tsx` | Autocomplete popup for slash commands |
-| `AgentTimeline` | `src/renderer/src/components/agents/AgentTimeline.tsx` | Bottom Gantt-style timeline strip |
-| `TimelineBar` | `src/renderer/src/components/agents/TimelineBar.tsx` | Single agent bar in the timeline |
+| Component             | File                                                         | Responsibility                                                             |
+| --------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `LiveActivityStrip`   | `src/renderer/src/components/agents/LiveActivityStrip.tsx`   | Top strip — running agent pills with current action                        |
+| `AgentPill`           | `src/renderer/src/components/agents/AgentPill.tsx`           | Single running agent pill (dot + name + action text)                       |
+| `AgentConsole`        | `src/renderer/src/components/agents/AgentConsole.tsx`        | Terminal-style event viewer replacing AgentDetail                          |
+| `ConsoleHeader`       | `src/renderer/src/components/agents/ConsoleHeader.tsx`       | Console header bar with status, actions, metadata                          |
+| `ConsoleLine`         | `src/renderer/src/components/agents/ConsoleLine.tsx`         | Single console event line — colored prefix, collapsible content, timestamp |
+| `CommandBar`          | `src/renderer/src/components/agents/CommandBar.tsx`          | Bottom command input with `>` prompt                                       |
+| `CommandAutocomplete` | `src/renderer/src/components/agents/CommandAutocomplete.tsx` | Autocomplete popup for slash commands                                      |
+| `AgentTimeline`       | `src/renderer/src/components/agents/AgentTimeline.tsx`       | Bottom Gantt-style timeline strip                                          |
+| `TimelineBar`         | `src/renderer/src/components/agents/TimelineBar.tsx`         | Single agent bar in the timeline                                           |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `AgentsView.tsx` | Rewrite — three stacked zones layout |
-| `AgentList.tsx` | Neon treatment — NeonCard cards, glass background, neon status colors |
-| `AgentCard.tsx` | Neon treatment — glass card, neon glow dots, accent borders |
-| `SpawnModal.tsx` | Neon treatment — glass modal, neon chips, purple textarea |
-| `PlaygroundCard.tsx` | Neon treatment — glass card with accent |
-| `PlaygroundModal.tsx` | Neon treatment — glass overlay |
+| File                  | Change                                                                |
+| --------------------- | --------------------------------------------------------------------- |
+| `AgentsView.tsx`      | Rewrite — three stacked zones layout                                  |
+| `AgentList.tsx`       | Neon treatment — NeonCard cards, glass background, neon status colors |
+| `AgentCard.tsx`       | Neon treatment — glass card, neon glow dots, accent borders           |
+| `SpawnModal.tsx`      | Neon treatment — glass modal, neon chips, purple textarea             |
+| `PlaygroundCard.tsx`  | Neon treatment — glass card with accent                               |
+| `PlaygroundModal.tsx` | Neon treatment — glass overlay                                        |
 
 ### Removed/Replaced Components
 
-| Component | Replacement |
-|-----------|------------|
-| `AgentDetail.tsx` | `AgentConsole` (terminal aesthetic) |
-| `ChatRenderer.tsx` | `ConsoleLine` rendering inside `AgentConsole` |
-| `ChatBubble.tsx` | `ConsoleLine` with `[agent]`/`[user]` prefix |
+| Component           | Replacement                                       |
+| ------------------- | ------------------------------------------------- |
+| `AgentDetail.tsx`   | `AgentConsole` (terminal aesthetic)               |
+| `ChatRenderer.tsx`  | `ConsoleLine` rendering inside `AgentConsole`     |
+| `ChatBubble.tsx`    | `ConsoleLine` with `[agent]`/`[user]` prefix      |
 | `ThinkingBlock.tsx` | `ConsoleLine` with `[think]` prefix + collapsible |
-| `ToolCallBlock.tsx` | `ConsoleLine` with `[tool]` prefix + collapsible |
-| `SteerInput.tsx` | `CommandBar` with autocomplete |
-| `HealthBar.tsx` | Info merged into `LiveActivityStrip` |
+| `ToolCallBlock.tsx` | `ConsoleLine` with `[tool]` prefix + collapsible  |
+| `SteerInput.tsx`    | `CommandBar` with autocomplete                    |
+| `HealthBar.tsx`     | Info merged into `LiveActivityStrip`              |
 
 ### New CSS File
 
 `src/renderer/src/assets/agents-neon.css` — agent-specific neon styles:
+
 - `.live-strip`, `.agent-pill` (glowing pills, pulse animation)
 - `.agent-console`, `.console-line`, `.console-prefix--*` (terminal lines, colored prefixes)
 - `.command-bar`, `.command-autocomplete` (command input, popup)
@@ -197,11 +200,11 @@ The right pane of the middle zone. Replaces current AgentDetail.
 
 Existing stores cover all data requirements:
 
-| Store | Usage |
-|-------|-------|
+| Store                  | Usage                              |
+| ---------------------- | ---------------------------------- |
 | `useAgentHistoryStore` | Agent list, selection, log polling |
-| `useAgentEventsStore` | Real-time event stream for console |
-| `useUIStore` | View routing |
+| `useAgentEventsStore`  | Real-time event stream for console |
+| `useUIStore`           | View routing                       |
 
 ### Live Activity Strip
 
@@ -240,22 +243,22 @@ Existing stores cover all data requirements:
 
 ## File Locations
 
-| What | Where |
-|------|-------|
-| View | `src/renderer/src/views/AgentsView.tsx` (rewrite) |
-| Live strip | `src/renderer/src/components/agents/LiveActivityStrip.tsx` |
-| Agent pill | `src/renderer/src/components/agents/AgentPill.tsx` |
-| Console | `src/renderer/src/components/agents/AgentConsole.tsx` |
-| Console header | `src/renderer/src/components/agents/ConsoleHeader.tsx` |
-| Console line | `src/renderer/src/components/agents/ConsoleLine.tsx` |
-| Command bar | `src/renderer/src/components/agents/CommandBar.tsx` |
-| Autocomplete | `src/renderer/src/components/agents/CommandAutocomplete.tsx` |
-| Timeline | `src/renderer/src/components/agents/AgentTimeline.tsx` |
-| Timeline bar | `src/renderer/src/components/agents/TimelineBar.tsx` |
-| CSS | `src/renderer/src/assets/agents-neon.css` |
-| Fleet list | `src/renderer/src/components/agents/AgentList.tsx` (modify) |
-| Fleet card | `src/renderer/src/components/agents/AgentCard.tsx` (modify) |
-| Spawn modal | `src/renderer/src/components/agents/SpawnModal.tsx` (modify) |
+| What           | Where                                                        |
+| -------------- | ------------------------------------------------------------ |
+| View           | `src/renderer/src/views/AgentsView.tsx` (rewrite)            |
+| Live strip     | `src/renderer/src/components/agents/LiveActivityStrip.tsx`   |
+| Agent pill     | `src/renderer/src/components/agents/AgentPill.tsx`           |
+| Console        | `src/renderer/src/components/agents/AgentConsole.tsx`        |
+| Console header | `src/renderer/src/components/agents/ConsoleHeader.tsx`       |
+| Console line   | `src/renderer/src/components/agents/ConsoleLine.tsx`         |
+| Command bar    | `src/renderer/src/components/agents/CommandBar.tsx`          |
+| Autocomplete   | `src/renderer/src/components/agents/CommandAutocomplete.tsx` |
+| Timeline       | `src/renderer/src/components/agents/AgentTimeline.tsx`       |
+| Timeline bar   | `src/renderer/src/components/agents/TimelineBar.tsx`         |
+| CSS            | `src/renderer/src/assets/agents-neon.css`                    |
+| Fleet list     | `src/renderer/src/components/agents/AgentList.tsx` (modify)  |
+| Fleet card     | `src/renderer/src/components/agents/AgentCard.tsx` (modify)  |
+| Spawn modal    | `src/renderer/src/components/agents/SpawnModal.tsx` (modify) |
 
 ## Non-Goals
 

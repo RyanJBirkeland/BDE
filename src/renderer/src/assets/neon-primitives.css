@@ -8,7 +8,9 @@
 .stat-counter {
   border-radius: var(--bde-radius-lg);
   padding: var(--bde-space-3);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .stat-counter--clickable {
@@ -70,7 +72,9 @@
   -webkit-backdrop-filter: var(--neon-glass-blur);
   box-shadow: var(--neon-glass-shadow), var(--neon-glass-edge);
   overflow: hidden;
-  transition: box-shadow var(--bde-transition-base), transform var(--bde-transition-base);
+  transition:
+    box-shadow var(--bde-transition-base),
+    transform var(--bde-transition-base);
 }
 
 .neon-card--with-title {

@@ -7,9 +7,11 @@ Six task specs for hardening the BDE dependency/blocking system. Each is self-co
 ## Task 1 (P0): Sanitize depends_on in main process
 
 ### Problem
+
 Supabase stores `depends_on` as JSONB. When retrieved, it can arrive as a raw JSON **string** (e.g., `"[{\"id\":\"abc\",\"type\":\"hard\"}]"`) instead of a parsed array. Any code calling `.map()`, `.length`, or iterating with `for...of` on this value will crash with `TypeError: task.depends_on.map is not a function`.
 
 ### Root cause
+
 No sanitization layer exists between Supabase responses and consumption sites. The following files iterate `depends_on` unsafely:
 
 - `/Users/ryan/projects/BDE/src/main/agent-manager/resolve-dependents.ts` line 30: `task.depends_on.length` and line 37: `for (const dep of task.depends_on)`
@@ -62,21 +64,25 @@ if (deps.length === 0) continue
 ```
 
 ### Files to modify
+
 - `src/shared/parse-depends-on.ts` — **new file**, ~20 lines
 - `src/main/data/sprint-queries.ts` — add import + `sanitizeTask()` wrapper on `getTask`, `listTasks`, `createTask` returns
 - `src/main/agent-manager/resolve-dependents.ts` — defensive `Array.isArray` check on line 30
 - `src/main/agent-manager/dependency-index.ts` — defensive check in `addEdges` (line 19-20)
 
 ### Test requirements
+
 - Unit test `src/shared/__tests__/parse-depends-on.test.ts`: test null, valid array, JSON string, malformed string, number, nested object
 - Update existing `resolve-dependents` tests to include a case where `depends_on` is a JSON string
 
 ### Edge cases
+
 - `depends_on` could be an empty string `""` — should return `null`
 - `depends_on` could be `"null"` (string literal) — `JSON.parse("null")` returns `null`, not an array; handle correctly
 - Double-encoded JSON (string of a string) — treat as garbage, return `null`
 
 ### Verification
+
 - Write a test that passes `'[{"id":"x","type":"hard"}]'` (string) to `parseDependsOn` and confirms it returns a valid array
 - Run `npm test` — all existing tests pass
 - Run `npm run typecheck` — no type errors
@@ -86,10 +92,13 @@ if (deps.length === 0) continue
 ## Task 2 (P0): Add Blocked section to Sprint Center Kanban
 
 ### Problem
+
 When a task's status is set to `blocked`, `partitionSprintTasks()` puts it into the `todo` bucket (line 41-42 of `partitionSprintTasks.ts`). The KanbanBoard's "To Do" column renders blocked tasks mixed in with queued tasks, with no visual distinction. Users cannot see which tasks are blocked or why.
 
 ### Root cause
+
 `partitionSprintTasks.ts` line 41-42 lumps `blocked` into `todo`:
+
 ```typescript
 case TASK_STATUS.BLOCKED:
   todo.push(task)
@@ -105,7 +114,7 @@ The `KanbanBoard` component receives `todoTasks` as a flat array and has no bloc
 ```typescript
 export interface SprintPartition {
   backlog: SprintTask[]
-  blocked: SprintTask[]  // NEW
+  blocked: SprintTask[] // NEW
   todo: SprintTask[]
   inProgress: SprintTask[]
   awaitingReview: SprintTask[]
@@ -115,6 +124,7 @@ export interface SprintPartition {
 ```
 
 Update the partition function:
+
 ```typescript
 case TASK_STATUS.BLOCKED:
   blocked.push(task)  // was: todo.push(task)
@@ -124,11 +134,13 @@ case TASK_STATUS.BLOCKED:
 2. **Add `blockedTasks` prop to `KanbanBoard`** in `src/renderer/src/components/sprint/KanbanBoard.tsx`:
 
 Add to the props type:
+
 ```typescript
 blockedTasks: SprintTask[]
 ```
 
 Add a new `KanbanColumn` between "To Do" and "In Progress":
+
 ```tsx
 <KanbanColumn
   status="blocked"
@@ -160,21 +172,25 @@ Mark it `readOnly` so users cannot drag tasks into/out of the blocked column (st
 4. **Show blocker info on TaskCard** — when `task.status === 'blocked'` and `task.depends_on` is non-empty, render a small line below the title showing blocked dependency IDs. This can be a simple `<span className="task-card__blocked-info">` with the dep IDs truncated.
 
 ### Files to modify
+
 - `src/renderer/src/lib/partitionSprintTasks.ts` — add `blocked` bucket, change BLOCKED case
 - `src/renderer/src/components/sprint/KanbanBoard.tsx` — add `blockedTasks` prop, render blocked column
 - `src/renderer/src/components/sprint/SprintCenter.tsx` — pass `partition.blocked` to KanbanBoard
 - `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts` — update expected partition shape
 
 ### Test requirements
+
 - Update `partitionSprintTasks.test.ts`: blocked tasks land in `blocked` bucket, not `todo`
 - Add test: blocked task with `depends_on` is in `blocked`, queued task without deps is in `todo`
 
 ### Edge cases
+
 - Task is `blocked` but has empty `depends_on` (manually blocked) — still shows in Blocked column
 - Blocked column should not be a drag target — `readOnly` prop handles this
 - Column count changes from 3 to 4 — verify CSS grid/flex layout accommodates it
 
 ### Verification
+
 - Manually create a task with `status: 'blocked'` — confirm it appears in the Blocked column, not To Do
 - Confirm drag-and-drop still works for To Do and In Progress columns
 - `npm test` passes with updated partition tests
@@ -184,10 +200,13 @@ Mark it `readOnly` so users cannot drag tasks into/out of the blocked column (st
 ## Task 3 (P1): Validate depends_on at Queue API creation
 
 ### Problem
+
 `handleCreateTask` in `src/main/queue-api/task-handlers.ts` (line 58-87) accepts any `depends_on` array without validation. Callers can reference non-existent task IDs or create circular dependency chains. These invalid states cause silent failures when the drain loop tries to resolve dependencies.
 
 ### Root cause
+
 `handleCreateTask` passes the body directly to `createTask()` on line 85:
+
 ```typescript
 const task = await createTask(body as Parameters<typeof createTask>[0])
 ```
@@ -213,7 +232,7 @@ export async function validateDependencies(
   taskId: string,
   proposedDeps: TaskDependency[],
   getTask: (id: string) => Promise<Pick<SprintTask, 'id' | 'depends_on'> | null>,
-  listTasks: () => Promise<Pick<SprintTask, 'id' | 'depends_on'>[]>,
+  listTasks: () => Promise<Pick<SprintTask, 'id' | 'depends_on'>[]>
 ): Promise<ValidateDepsResult> {
   // 1. Check all targets exist
   for (const dep of proposedDeps) {
@@ -251,21 +270,25 @@ if (depends_on && Array.isArray(depends_on) && depends_on.length > 0) {
 4. **Refactor `sprint:validateDependencies` IPC handler** in `sprint-local.ts` to use the shared function.
 
 ### Files to modify
+
 - `src/main/agent-manager/validate-dependencies.ts` — **new file**, shared validation logic
 - `src/main/queue-api/task-handlers.ts` — add validation in `handleCreateTask` and `handleUpdateTask`
 - `src/main/handlers/sprint-local.ts` — refactor `sprint:validateDependencies` to use shared function
 
 ### Test requirements
+
 - Unit test `validate-dependencies.test.ts`: non-existent ID returns error, cycle returns error with path, valid deps return `{ valid: true }`
 - Integration test for Queue API: POST with non-existent dep ID returns 400, POST with cycle returns 400 with cycle path
 
 ### Edge cases
+
 - `depends_on` is present but empty array — skip validation, allow creation
 - `depends_on` is `null` — skip validation
 - Task depends on itself — `detectCycle` already catches this (line 62: `if (dep.id === taskId) return [taskId, taskId]`)
 - For new tasks, cycle detection uses a temp ID — ensure the temp ID doesn't collide with existing tasks (UUID collision is astronomically unlikely)
 
 ### Verification
+
 - `curl -X POST /queue/tasks` with `depends_on: [{id: "nonexistent", type: "hard"}]` returns 400
 - `curl -X POST /queue/tasks` with valid deps succeeds with 201
 - `npm run test:main` passes
@@ -275,10 +298,13 @@ if (depends_on && Array.isArray(depends_on) && depends_on.length > 0) {
 ## Task 4 (P1): Record blocked reason in task notes
 
 ### Problem
+
 When the dependency system auto-blocks a task (in `sprint-local.ts` line 126: `patch = { ...patch, status: 'blocked' }`), no explanation is recorded. The user sees a task in `blocked` status with no indication of which dependencies are unsatisfied. The `notes` field remains unchanged.
 
 ### Root cause
+
 The blocking logic in `sprint-local.ts` line 125-127 only overrides the status:
+
 ```typescript
 if (!satisfied) {
   patch = { ...patch, status: 'blocked' }
@@ -292,10 +318,8 @@ No note is written. Similarly, when `resolveDependents` in `resolve-dependents.t
 1. **Record blocker info when blocking** in `sprint-local.ts`. The `areDependenciesSatisfied` call already returns `blockedBy` (line 120-123). Use it:
 
 ```typescript
-const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
-  id,
-  taskDeps,
-  (depId) => statusMap.get(depId),
+const { satisfied, blockedBy } = idx.areDependenciesSatisfied(id, taskDeps, (depId) =>
+  statusMap.get(depId)
 )
 if (!satisfied) {
   const blockerNote = `[auto-blocked] Waiting on: ${blockedBy.join(', ')}`
@@ -315,7 +339,7 @@ Note: setting `notes: null` clears the auto-blocked note. If the task had user-w
 
 ```typescript
 if (satisfied) {
-  const existingNotes = task.notes ?? ''  // need to fetch notes in getTask
+  const existingNotes = task.notes ?? '' // need to fetch notes in getTask
   const clearedNotes = existingNotes.startsWith('[auto-blocked]') ? null : existingNotes
   await updateTask(depId, { status: 'queued', notes: clearedNotes })
 }
@@ -332,21 +356,25 @@ getTask: (id: string) => Promise<(Pick<SprintTask, 'id' | 'status' | 'notes'> & 
 3. **Also record blocker in drain loop blocking** — check if the drain loop in `agent-manager/index.ts` also blocks tasks, and apply the same note pattern there.
 
 ### Files to modify
+
 - `src/main/handlers/sprint-local.ts` — add `notes: blockerNote` to blocked patch (around line 126)
 - `src/main/agent-manager/resolve-dependents.ts` — clear auto-block notes on unblock, update `getTask` type to include `notes`
 - `src/main/agent-manager/index.ts` — update `getTask` call if needed to include `notes` field
 
 ### Test requirements
+
 - Test in `sprint-local` handler tests: when task is blocked, notes contain the blocker IDs
 - Test in `resolve-dependents` tests: after unblocking, auto-blocked notes are cleared; user notes are preserved
 
 ### Edge cases
+
 - Task has user-written notes AND gets auto-blocked — prepend `[auto-blocked]` line, preserve original notes on a new line
 - Multiple blockers — list all IDs in the note
 - Blocker IDs are UUIDs — long notes are acceptable, no truncation needed
 - `notes` field size limit in Supabase — text type, no practical limit
 
 ### Verification
+
 - Create task A (queued) and task B (depends on A, hard). B should have notes: `[auto-blocked] Waiting on: <A's ID>`
 - Complete task A. B transitions to queued, notes are cleared
 - `npm test` passes
@@ -356,14 +384,28 @@ getTask: (id: string) => Promise<(Pick<SprintTask, 'id' | 'status' | 'notes'> & 
 ## Task 5 (P2): Idempotent PR creation in completion handler
 
 ### Problem
+
 `resolveSuccess()` in `src/main/agent-manager/completion.ts` (line 30-98) always runs `gh pr create` without checking if a PR already exists for the branch. If the agent process exits and the task is retried (or the completion handler runs twice due to race conditions), a duplicate PR is created or `gh pr create` fails with "a pull request already exists".
 
 ### Root cause
+
 `resolveSuccess` at line 74-86 calls `gh pr create` unconditionally:
+
 ```typescript
 const { stdout: prOut } = await execFile(
   'gh',
-  ['pr', 'create', '--title', title, '--body', 'Automated by BDE', '--head', branch, '--repo', ghRepo],
+  [
+    'pr',
+    'create',
+    '--title',
+    title,
+    '--body',
+    'Automated by BDE',
+    '--head',
+    branch,
+    '--repo',
+    ghRepo
+  ],
   { cwd: worktreePath, env: buildAgentEnv() }
 )
 ```
@@ -396,7 +438,11 @@ try {
 
 if (existingPrUrl && existingPrNumber) {
   // PR already exists — just update the task record
-  await updateTask(taskId, { pr_status: 'open', pr_url: existingPrUrl, pr_number: existingPrNumber })
+  await updateTask(taskId, {
+    pr_status: 'open',
+    pr_url: existingPrUrl,
+    pr_number: existingPrNumber
+  })
   return
 }
 ```
@@ -419,20 +465,24 @@ if (existingPrUrl && existingPrNumber) {
 ```
 
 ### Files to modify
+
 - `src/main/agent-manager/completion.ts` — add `gh pr view` check before `gh pr create` (between lines 69 and 71)
 
 ### Test requirements
+
 - Unit test: mock `execFile` to simulate `gh pr view` returning existing PR — verify `gh pr create` is NOT called
 - Unit test: mock `gh pr view` throwing (no PR) — verify `gh pr create` IS called
 - Unit test: mock `gh pr create` throwing with "already exists" message containing URL — verify PR info is extracted
 
 ### Edge cases
+
 - Branch has PR in a different repo (fork) — `--repo ghRepo` scopes the lookup correctly
 - PR was closed (not merged) — `gh pr view` still returns it; this is acceptable since the branch was just pushed with new commits
 - Rate limiting on `gh` CLI — the additional API call is one extra per completion, negligible impact
 - `gh pr view` output format changes — use `--json` flag for stable output
 
 ### Verification
+
 - Run an agent task to completion, let it create a PR. Re-run the same task (or manually call `resolveSuccess` with the same branch). Verify no duplicate PR is created.
 - Check task record has correct `pr_url` and `pr_number` in both first-run and re-run cases
 - `npm run test:main` passes
@@ -442,6 +492,7 @@ if (existingPrUrl && existingPrNumber) {
 ## Task 6 (P2): resolveDependents after fast-fail exhaustion
 
 ### Problem
+
 When a task's `fast_fail_count` reaches 3 (exhausted), `run-agent.ts` line 184-187 sets the task to `error` and calls `onTaskTerminal`:
 
 ```typescript
@@ -453,6 +504,7 @@ if (ffResult === 'fast-fail-exhausted') {
 ```
 
 This path correctly calls `onTaskTerminal(task.id, 'error')`. However, verify that:
+
 1. The `error` status is properly handled by `areDependenciesSatisfied` — it should unblock `soft` deps (since `error` is in `TERMINAL_STATUSES`) but keep `hard` deps blocked (since `error` is NOT in `HARD_SATISFIED_STATUSES`).
 2. The `.catch()` on the `updateTask` call (line 185-186) does not prevent `onTaskTerminal` from running. Currently these are sequential `await` calls, so if `updateTask` throws and is caught, execution continues to `onTaskTerminal`. But the `.catch()` on `updateTask` swallows the error — `onTaskTerminal` is called regardless. This is correct.
 
@@ -461,7 +513,7 @@ The real risk is in `resolveFailure` (completion.ts line 101-120). When `retryCo
 ```typescript
 await updateTask(taskId, {
   status: 'failed',
-  completed_at: new Date().toISOString(),
+  completed_at: new Date().toISOString()
 })
 ```
 
@@ -477,6 +529,7 @@ if ((task.retry_count ?? 0) >= MAX_RETRIES) {
 However, this uses the **stale** `task.retry_count` from the task object at spawn time, while `resolveFailure` uses `retryCount` (same value). If `retry_count` was updated externally between spawn and completion, the condition could be wrong. This is an unlikely but real race.
 
 ### Root cause
+
 The `onTaskTerminal` guard in `run-agent.ts` line 208 duplicates the retry exhaustion check from `resolveFailure` but uses a potentially stale value:
 
 ```typescript
@@ -497,15 +550,15 @@ export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger):
       await updateTask(taskId, {
         status: 'queued',
         retry_count: retryCount + 1,
-        claimed_by: null,
+        claimed_by: null
       })
-      return false  // not terminal
+      return false // not terminal
     } else {
       await updateTask(taskId, {
         status: 'failed',
-        completed_at: new Date().toISOString(),
+        completed_at: new Date().toISOString()
       })
-      return true  // terminal
+      return true // terminal
     }
   } catch (err) {
     logger?.error(`[completion] Failed to update task ${taskId} during failure resolution: ${err}`)
@@ -517,7 +570,10 @@ export async function resolveFailure(opts: ResolveFailureOpts, logger?: Logger):
 2. **Update caller in `run-agent.ts`** (line 206-210):
 
 ```typescript
-const isTerminal = await resolveFailure({ taskId: task.id, retryCount: task.retry_count ?? 0 }, logger)
+const isTerminal = await resolveFailure(
+  { taskId: task.id, retryCount: task.retry_count ?? 0 },
+  logger
+)
 if (isTerminal) {
   await onTaskTerminal(task.id, 'failed')
 }
@@ -530,8 +586,9 @@ This eliminates the duplicated check and ensures `onTaskTerminal` is called exac
    - resolveSuccess error with task set to `error` (line 44, 52) — does NOT call `onTaskTerminal`. **Fix**: add `await onTaskTerminal(task.id, 'error')` after the early returns in resolveSuccess that set status to `error`.
 
 The lines in `completion.ts` that set `error` without triggering `onTaskTerminal`:
-   - Line 44: `await updateTask(taskId, { status: 'error', ... })` then `return` — dependents never notified
-   - Line 52: same pattern
+
+- Line 44: `await updateTask(taskId, { status: 'error', ... })` then `return` — dependents never notified
+- Line 52: same pattern
 
 **Fix in `run-agent.ts`** — the `resolveSuccess` call is wrapped in a try/catch (line 196-211). When `resolveSuccess` throws, `resolveFailure` is called. But when `resolveSuccess` sets `error` and returns normally (no throw), the caller doesn't know the task is terminal. Fix by having `resolveSuccess` return a result indicating terminal status, or by calling `onTaskTerminal` inside `resolveSuccess` (requires passing it as a dependency).
 
@@ -544,6 +601,7 @@ return
 ```
 
 Update `ResolveSuccessOpts`:
+
 ```typescript
 export interface ResolveSuccessOpts {
   taskId: string
@@ -555,21 +613,25 @@ export interface ResolveSuccessOpts {
 ```
 
 ### Files to modify
+
 - `src/main/agent-manager/completion.ts` — change `resolveFailure` return type to `boolean`, add `onTaskTerminal` to `ResolveSuccessOpts`, call it on error early-returns
 - `src/main/agent-manager/run-agent.ts` — use `resolveFailure` return value, pass `onTaskTerminal` to `resolveSuccess`
 
 ### Test requirements
+
 - Test: task with `retry_count === MAX_RETRIES - 1` fails -> `resolveFailure` returns `true`, `onTaskTerminal` called with `'failed'`
 - Test: task with `retry_count === 0` fails -> `resolveFailure` returns `false`, `onTaskTerminal` NOT called
 - Test: `resolveSuccess` branch detection fails -> `onTaskTerminal` called with `'error'`
 - Test: fast-fail exhausted -> `onTaskTerminal` called with `'error'` (existing behavior, add explicit test)
 
 ### Edge cases
+
 - `resolveFailure` throws during `updateTask` — returns `false`, `onTaskTerminal` is not called; the task is stuck. This is acceptable because the DB write failed, so the status didn't actually change.
 - `onTaskTerminal` itself throws — already wrapped in try/catch in `agent-manager/index.ts` line 117-123
 - Multiple concurrent completions for the same task (race) — `activeAgents.delete` on line 165 prevents double-processing
 
 ### Verification
+
 - Create task A (queued). Create task B (depends on A, soft dep). Force A to fast-fail 3 times. Verify B transitions from `blocked` to `queued`.
 - Create the same scenario but with A failing via `resolveFailure` after MAX_RETRIES. Verify B unblocks.
 - `npm run test:main` passes
@@ -591,6 +653,7 @@ The structural checks exist in `useReadinessChecks.ts` as pure functions, and th
 ### Design
 
 **Tier 1 (structural) — enforce at creation time, everywhere:**
+
 - Title present and non-empty
 - Repo present and non-empty
 - Spec present and >= 50 characters
@@ -599,12 +662,14 @@ The structural checks exist in `useReadinessChecks.ts` as pure functions, and th
 These are pure, synchronous checks. They run on every task creation path and reject with descriptive errors if any check fails.
 
 **Tier 2 (semantic) — enforce at queue time (status transition to `queued`):**
+
 - When any path sets `status='queued'`, run the existing AI-powered spec checks (clarity, scope, files_exist) via `claude -p`
 - If any semantic check returns `'fail'`, reject the queue transition
 - If semantic checks return `'warn'`, allow but include warnings in the response
 - Queue API gets a `?skipValidation=true` escape hatch for automated systems
 
 **Tier 3 (operational) — UI-only, no changes:**
+
 - Auth, repo path, git clean, conflict, slots — these remain advisory in the Task Workbench
 
 ### Files to create
@@ -630,7 +695,7 @@ export function validateStructural(input: {
   title?: string | null
   repo?: string | null
   spec?: string | null
-  status?: string | null  // if 'backlog', relax spec requirements
+  status?: string | null // if 'backlog', relax spec requirements
 }): StructuralCheckResult {
   const errors: string[] = []
   const warnings: string[] = []
@@ -702,7 +767,7 @@ function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn('claude', ['-p', '--output-format', 'text'], {
       env: buildAgentEnv(),
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe']
     })
     let stdout = ''
     let stderr = ''
@@ -711,8 +776,12 @@ function runClaudePrint(prompt: string, timeoutMs = 120_000): Promise<string> {
       reject(new Error('Claude CLI timed out'))
     }, timeoutMs)
 
-    child.stdout.on('data', (d: Buffer) => { stdout += d.toString() })
-    child.stderr.on('data', (d: Buffer) => { stderr += d.toString() })
+    child.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString()
+    })
+    child.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString()
+    })
     child.on('close', (code) => {
       clearTimeout(timer)
       if (code === 0) resolve(stdout.trim())
@@ -754,7 +823,7 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
     results = {
       clarity: parsed.clarity ?? { status: 'warn', message: 'Unable to assess' },
       scope: parsed.scope ?? { status: 'warn', message: 'Unable to assess' },
-      filesExist: parsed.filesExist ?? { status: 'warn', message: 'Unable to assess' },
+      filesExist: parsed.filesExist ?? { status: 'warn', message: 'Unable to assess' }
     }
   } catch {
     // If Claude CLI is unavailable, degrade to pass-through (don't block queuing)
@@ -765,10 +834,10 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
       results: {
         clarity: { status: 'warn', message: 'AI check unavailable — skipped' },
         scope: { status: 'warn', message: 'AI check unavailable — skipped' },
-        filesExist: { status: 'warn', message: 'AI check unavailable — skipped' },
+        filesExist: { status: 'warn', message: 'AI check unavailable — skipped' }
       },
       failMessages: [],
-      warnMessages: ['Semantic checks skipped — Claude CLI unavailable'],
+      warnMessages: ['Semantic checks skipped — Claude CLI unavailable']
     }
   }
 
@@ -785,7 +854,7 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
     hasWarns: warnMessages.length > 0,
     results,
     failMessages,
-    warnMessages,
+    warnMessages
   }
 }
 ```
@@ -808,7 +877,7 @@ const { spec } = body as Record<string, unknown>
 const structural = validateStructural({
   title: title as string,
   repo: repo as string,
-  spec: typeof spec === 'string' ? spec : null,
+  spec: typeof spec === 'string' ? spec : null
 })
 if (!structural.valid) {
   sendJson(res, 400, { error: 'Spec quality checks failed', details: structural.errors })
@@ -824,12 +893,12 @@ if (bodyObj.status === 'queued' && typeof spec === 'string') {
     const semantic = await checkSpecSemantic({
       title: title as string,
       repo: repo as string,
-      spec: spec as string,
+      spec: spec as string
     })
     if (!semantic.passed) {
       sendJson(res, 400, {
         error: 'Cannot create task with queued status — semantic checks failed',
-        details: semantic.failMessages,
+        details: semantic.failMessages
       })
       return
     }
@@ -859,12 +928,12 @@ if (patch.status === 'queued') {
     const structural = validateStructural({
       title: task.title,
       repo: task.repo,
-      spec: task.spec,
+      spec: task.spec
     })
     if (!structural.valid) {
       sendJson(res, 400, {
         error: 'Cannot queue task — spec quality checks failed',
-        details: structural.errors,
+        details: structural.errors
       })
       return
     }
@@ -874,12 +943,12 @@ if (patch.status === 'queued') {
       const semantic = await checkSpecSemantic({
         title: task.title,
         repo: task.repo,
-        spec: task.spec,
+        spec: task.spec
       })
       if (!semantic.passed) {
         sendJson(res, 400, {
           error: 'Cannot queue task — semantic spec checks failed',
-          details: semantic.failMessages,
+          details: semantic.failMessages
         })
         return
       }
@@ -903,7 +972,7 @@ safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
     title: task.title,
     repo: task.repo,
     spec: task.spec ?? null,
-    status: task.status ?? 'backlog',
+    status: task.status ?? 'backlog'
   })
   if (!structural.valid) {
     throw new Error(`Spec quality checks failed: ${structural.errors.join('; ')}`)
@@ -928,10 +997,12 @@ safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown
     const structural = validateStructural({
       title: task.title,
       repo: task.repo,
-      spec: (patch.spec as string) ?? task.spec ?? null,
+      spec: (patch.spec as string) ?? task.spec ?? null
     })
     if (!structural.valid) {
-      throw new Error(`Cannot queue task — spec quality checks failed: ${structural.errors.join('; ')}`)
+      throw new Error(
+        `Cannot queue task — spec quality checks failed: ${structural.errors.join('; ')}`
+      )
     }
 
     // Semantic check
@@ -941,10 +1012,12 @@ safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown
       const semantic = await checkSpecSemantic({
         title: task.title,
         repo: task.repo,
-        spec: specText,
+        spec: specText
       })
       if (!semantic.passed) {
-        throw new Error(`Cannot queue task — semantic checks failed: ${semantic.failMessages.join('; ')}`)
+        throw new Error(
+          `Cannot queue task — semantic checks failed: ${semantic.failMessages.join('; ')}`
+        )
       }
     }
 
@@ -955,8 +1028,8 @@ safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown
       const idx = createDependencyIndex()
       const allTasks = await _listTasks()
       const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-      const { satisfied } = idx.areDependenciesSatisfied(
-        id, taskDeps, (depId) => statusMap.get(depId),
+      const { satisfied } = idx.areDependenciesSatisfied(id, taskDeps, (depId) =>
+        statusMap.get(depId)
       )
       if (!satisfied) {
         patch = { ...patch, status: 'blocked' }
@@ -985,28 +1058,32 @@ Replace the inline prompt + parsing logic (lines 274-305) with a call to `checkS
 ```typescript
 import { checkSpecSemantic } from '../spec-semantic-check'
 
-safeHandle('workbench:checkSpec', async (_e, input: { title: string; repo: string; spec: string }) => {
-  const summary = await checkSpecSemantic(input)
-  return summary.results  // Returns { clarity, scope, filesExist } — same shape as before
-})
+safeHandle(
+  'workbench:checkSpec',
+  async (_e, input: { title: string; repo: string; spec: string }) => {
+    const summary = await checkSpecSemantic(input)
+    return summary.results // Returns { clarity, scope, filesExist } — same shape as before
+  }
+)
 ```
 
 This removes the duplicated prompt string and parsing logic. The `runClaudePrint` function in `workbench.ts` is still used by `workbench:chat` and `workbench:generateSpec`, so it stays.
 
 ### Wiring summary
 
-| Path | Tier 1 (structural) | Tier 2 (semantic) |
-|---|---|---|
-| Queue API `POST /queue/tasks` | Validate in `handleCreateTask` | Only if `status: 'queued'` in body |
-| Queue API `PATCH /queue/tasks/:id/status` (to `queued`) | Validate before queue | Validate before queue (skip with `?skipValidation=true`) |
-| `sprint:create` IPC | Validate in handler (relaxed for backlog) | N/A (creation into backlog) |
-| `sprint:update` IPC (to `queued`) | Validate before queue | Validate before queue |
-| `handlePushToSprint` (renderer) | Calls `sprint:update` with `status: 'queued'` — covered | Covered by `sprint:update` handler |
-| Task Workbench "Create & Queue" | Creates via `sprint:create` (title+repo), then updates via `sprint:update` (full check) | Covered by `sprint:update` handler |
+| Path                                                    | Tier 1 (structural)                                                                     | Tier 2 (semantic)                                        |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Queue API `POST /queue/tasks`                           | Validate in `handleCreateTask`                                                          | Only if `status: 'queued'` in body                       |
+| Queue API `PATCH /queue/tasks/:id/status` (to `queued`) | Validate before queue                                                                   | Validate before queue (skip with `?skipValidation=true`) |
+| `sprint:create` IPC                                     | Validate in handler (relaxed for backlog)                                               | N/A (creation into backlog)                              |
+| `sprint:update` IPC (to `queued`)                       | Validate before queue                                                                   | Validate before queue                                    |
+| `handlePushToSprint` (renderer)                         | Calls `sprint:update` with `status: 'queued'` — covered                                 | Covered by `sprint:update` handler                       |
+| Task Workbench "Create & Queue"                         | Creates via `sprint:create` (title+repo), then updates via `sprint:update` (full check) | Covered by `sprint:update` handler                       |
 
 ### Test requirements
 
 #### Unit tests for `src/shared/__tests__/spec-validation.test.ts`:
+
 - `validateStructural` with empty title returns error containing `'title is required'`
 - `validateStructural` with empty repo returns error containing `'repo is required'`
 - `validateStructural` with null spec (no `status: 'backlog'`) returns error containing `'spec is required'`
@@ -1019,6 +1096,7 @@ This removes the duplicated prompt string and parsing logic. The `runClaudePrint
 - All error messages are descriptive (not just "invalid")
 
 #### Unit tests for `src/main/__tests__/spec-semantic-check.test.ts`:
+
 - Mock `spawn` to return valid JSON with all `pass` — verify `passed: true`, empty `failMessages`
 - Mock `spawn` to return JSON with a `fail` status — verify `passed: false` and `failMessages` populated
 - Mock `spawn` to return JSON with only `warn` statuses — verify `passed: true` and `warnMessages` populated
@@ -1026,6 +1104,7 @@ This removes the duplicated prompt string and parsing logic. The `runClaudePrint
 - Mock `spawn` to return invalid JSON — verify graceful degradation, not a hard crash
 
 #### Integration tests for Queue API (`src/main/queue-api/__tests__/queue-api.test.ts`):
+
 - `POST /queue/tasks` with no spec returns 400 with `spec is required` in details
 - `POST /queue/tasks` with 20-char spec returns 400 with minimum length error in details
 - `POST /queue/tasks` with valid spec (50+ chars, 2+ headings) returns 201
@@ -1034,6 +1113,7 @@ This removes the duplicated prompt string and parsing logic. The `runClaudePrint
 - `PATCH /queue/tasks/:id/status` with `{ status: 'active' }` does NOT trigger semantic checks (only `queued` triggers)
 
 #### Handler tests for sprint-local (`src/main/handlers/__tests__/sprint-local.test.ts`):
+
 - `sprint:create` with empty spec and no `status` field succeeds (backlog relaxed mode)
 - `sprint:create` with title and repo succeeds (backlog)
 - `sprint:update` transitioning to `queued` on task with bad spec throws error

@@ -23,22 +23,22 @@ A bug in any of these paths could cause zombie processes, lost agent output, cor
 
 ### Exported Functions (6)
 
-| Function | LOC | Risk | What It Does |
-|----------|-----|------|-------------|
-| `getAgentProcesses()` | 97-173 | High | Parses `ps -eo`, resolves CWDs via `lsof`, reconciles agent history |
-| `spawnClaudeAgent(args)` | 186-251 | High | Spawns detached child process, pipes stdout/stderr to log file |
-| `sendToAgent(pid, message)` | 255-266 | Medium | Writes JSON message to child process stdin |
-| `tailAgentLog(args)` | 280-289 | Medium | Reads log file from byte offset |
-| `cleanupOldLogs()` | 293-309 | Medium | Deletes .log files older than 7 days from /tmp/bde-agents |
-| `isAgentInteractive(pid)` | 313-316 | Low | Checks if PID has active stdin handle |
+| Function                    | LOC     | Risk   | What It Does                                                        |
+| --------------------------- | ------- | ------ | ------------------------------------------------------------------- |
+| `getAgentProcesses()`       | 97-173  | High   | Parses `ps -eo`, resolves CWDs via `lsof`, reconciles agent history |
+| `spawnClaudeAgent(args)`    | 186-251 | High   | Spawns detached child process, pipes stdout/stderr to log file      |
+| `sendToAgent(pid, message)` | 255-266 | Medium | Writes JSON message to child process stdin                          |
+| `tailAgentLog(args)`        | 280-289 | Medium | Reads log file from byte offset                                     |
+| `cleanupOldLogs()`          | 293-309 | Medium | Deletes .log files older than 7 days from /tmp/bde-agents           |
+| `isAgentInteractive(pid)`   | 313-316 | Low    | Checks if PID has active stdin handle                               |
 
 ### Internal Functions (3)
 
-| Function | LOC | What It Does |
-|----------|-----|-------------|
-| `getProcessCwd(pid)` | 50-63 | Resolves CWD via `lsof -p PID` with cache |
-| `parseElapsedToMs(elapsed)` | 65-85 | Parses ps etime format `[[DD-]HH:]MM:SS` to milliseconds |
-| `matchAgentBin(command)` | 87-95 | Extracts agent binary name from command string, excludes .app bundles |
+| Function                    | LOC   | What It Does                                                          |
+| --------------------------- | ----- | --------------------------------------------------------------------- |
+| `getProcessCwd(pid)`        | 50-63 | Resolves CWD via `lsof -p PID` with cache                             |
+| `parseElapsedToMs(elapsed)` | 65-85 | Parses ps etime format `[[DD-]HH:]MM:SS` to milliseconds              |
+| `matchAgentBin(command)`    | 87-95 | Extracts agent binary name from command string, excludes .app bundles |
 
 ---
 
@@ -52,19 +52,19 @@ A bug in any of these paths could cause zombie processes, lost agent output, cor
 ```ts
 vi.mock('child_process', () => ({
   exec: vi.fn(),
-  spawn: vi.fn(),
+  spawn: vi.fn()
 }))
 vi.mock('fs/promises', () => ({
   readdir: vi.fn(),
   stat: vi.fn(),
   unlink: vi.fn(),
-  readFile: vi.fn(),
+  readFile: vi.fn()
 }))
 vi.mock('../agent-history', () => ({
   createAgentRecord: vi.fn(),
   updateAgentMeta: vi.fn(),
   appendLog: vi.fn(),
-  listAgents: vi.fn(),
+  listAgents: vi.fn()
 }))
 ```
 
@@ -165,8 +165,8 @@ vi.mock('../agent-history', () => ({
 
 ## Files to Create
 
-| File | Purpose |
-|------|---------|
+| File                                      | Purpose               |
+| ----------------------------------------- | --------------------- |
 | `src/main/__tests__/local-agents.test.ts` | Unit tests (~200 LOC) |
 
 ## Files to Modify

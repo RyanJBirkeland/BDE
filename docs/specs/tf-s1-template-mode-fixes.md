@@ -1,10 +1,13 @@
 # TF-S1: Template Mode Fixes
+
 **Epic:** Ticket Flow  
 **Phase:** 1 of 3  
 **Status:** Ready to implement
 
 ## Problem
+
 The NewTicketModal has 5 compounding issues that make the current ticket creation experience feel unfinished:
+
 1. No CSS rules exist for any `.new-ticket-modal__*` class — layout is browser defaults + inherited glass styles
 2. "Ask Paul" ignores which template is selected — generates freeform even when Bug Fix is active
 3. "Ask Paul" fails silently — empty `catch {}` at line 121 of NewTicketModal.tsx, user waits 30s and sees nothing
@@ -12,9 +15,11 @@ The NewTicketModal has 5 compounding issues that make the current ticket creatio
 5. Two common task types (Test Coverage, Performance) have no template
 
 ## Solution
+
 Fix all 5 issues in a single focused PR. No new IPC. No new components. All changes in 2 files (NewTicketModal.tsx + CSS).
 
 ## Data / RPC Shapes
+
 No new IPC. Existing `window.api.sprint.create()` and `window.api.invokeTool('sessions_send', ...)` unchanged.
 
 ## Exact Changes
@@ -149,6 +154,7 @@ Add these CSS rules exactly:
 Find the `handleAskPaul` function (currently around line 96-126). Replace the system prompt construction:
 
 **Before (find this code):**
+
 ```typescript
 const message = `You are a senior software engineer writing a precise, agent-executable spec...
 Title: "${title}"
@@ -157,6 +163,7 @@ Repo: ${repo}
 ```
 
 **After (replace with):**
+
 ```typescript
 const selectedTemplateData = selectedTemplate ? TEMPLATES[selectedTemplate] : null
 const templateInstruction = selectedTemplateData
@@ -192,6 +199,7 @@ Output ONLY the spec markdown — no preamble.`
 Find the catch block in `handleAskPaul` (currently `catch { /* silent */ }` or empty `catch {}`).
 
 **Before:**
+
 ```typescript
   } catch {
     // or: } catch (err) {
@@ -199,6 +207,7 @@ Find the catch block in `handleAskPaul` (currently `catch { /* silent */ }` or e
 ```
 
 **After:**
+
 ```typescript
   } catch {
     setSpec('')  // clear "Generating..." placeholder
@@ -220,6 +229,7 @@ Find the catch block in `handleAskPaul` (currently `catch { /* silent */ }` or e
 Find the `handleSelectTemplate` function (or wherever `setSpec(TEMPLATES[key].spec)` is called when clicking a template chip).
 
 **Before (approximately):**
+
 ```typescript
 const handleSelectTemplate = (key: string) => {
   if (selectedTemplate === key) {
@@ -233,6 +243,7 @@ const handleSelectTemplate = (key: string) => {
 ```
 
 **After:**
+
 ```typescript
 const handleSelectTemplate = (key: string) => {
   if (selectedTemplate === key) {
@@ -302,12 +313,13 @@ Find the `TEMPLATES` const (top of file, around line 25-50). Add two new entries
 
 ## Files to Change
 
-| File | What Changes |
-|------|-------------|
-| `src/renderer/src/assets/sprint.css` | Append all `.new-ticket-modal__*` CSS rules |
+| File                                                    | What Changes                                                                         |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `src/renderer/src/assets/sprint.css`                    | Append all `.new-ticket-modal__*` CSS rules                                          |
 | `src/renderer/src/components/sprint/NewTicketModal.tsx` | Template-aware Ask Paul prompt, error toast, overwrite confirmation, 2 new templates |
 
 ## Out of Scope
+
 - Mode tabs (Quick / Design) — that's TF-S2 and TF-S3
 - Markdown preview toggle — separate ticket
 - Draft persistence (localStorage) — separate ticket
@@ -316,7 +328,9 @@ Find the `TEMPLATES` const (top of file, around line 25-50). Add two new entries
 - Any changes to SprintCenter or TaskCard
 
 ## Test Plan
+
 After implementing:
+
 1. Open NewTicketModal, click "Bug Fix" template — spec textarea fills with Bug Fix scaffold
 2. Type "Fix the thing" as title, click "Ask Paul" — verify generated spec follows Bug Fix structure (has "Bug Description", "Root Cause" etc headings)
 3. Click "Feature" template while spec textarea has user-typed content — verify confirm dialog appears
@@ -325,6 +339,7 @@ After implementing:
 6. Verify modal body has correct layout (not browser defaults)
 
 ## PR Command
+
 ```bash
 git add -A && git commit -m "fix: template-aware Ask Paul, error feedback, overwrite confirmation, CSS, new templates" && git push origin HEAD && gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="fix: NewTicketModal — template-aware AI, error handling, CSS, Test+Perf templates" -f body="5 fixes in NewTicketModal:\n- Ask Paul now generates within selected template structure\n- Error toast on Ask Paul failure (was silent catch)\n- Confirm dialog before template chip overwrites user content\n- Full CSS rules for all .new-ticket-modal__* classes\n- Added Test Coverage and Performance template options" -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
 ```

@@ -7,14 +7,14 @@
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Primary experience | Chat-first, sprint agents secondary | Ad-hoc sessions are the exciting use case |
-| Visual style | Claude.ai polish + VS Code density | Rich but compact — development tool, not consumer chat |
-| Chat layout | IDE-Dense — no avatars, grouped tool blocks, tabs | Efficient, developer-focused |
-| Tab structure | Chat (interleaved) / Tools (inspector) / Files (diffs) | Chat is primary, Tools and Files for drilling down |
-| Sidebar | Sessions at top, Queue below, visually separated | Both visible without tab switching |
-| New session | Empty state in chat panel (no modal) | Quick "start chatting" flow like Claude.ai |
+| Decision           | Choice                                                 | Rationale                                              |
+| ------------------ | ------------------------------------------------------ | ------------------------------------------------------ |
+| Primary experience | Chat-first, sprint agents secondary                    | Ad-hoc sessions are the exciting use case              |
+| Visual style       | Claude.ai polish + VS Code density                     | Rich but compact — development tool, not consumer chat |
+| Chat layout        | IDE-Dense — no avatars, grouped tool blocks, tabs      | Efficient, developer-focused                           |
+| Tab structure      | Chat (interleaved) / Tools (inspector) / Files (diffs) | Chat is primary, Tools and Files for drilling down     |
+| Sidebar            | Sessions at top, Queue below, visually separated       | Both visible without tab switching                     |
+| New session        | Empty state in chat panel (no modal)                   | Quick "start chatting" flow like Claude.ai             |
 
 ---
 
@@ -146,38 +146,38 @@ Files touched during the session:
 
 ### New Components
 
-| Component | Purpose |
-|-----------|---------|
-| `NewSessionForm.tsx` | Centered empty-state form replacing SpawnModal for ad-hoc |
-| `SessionList.tsx` | Sidebar section for ad-hoc sessions |
-| `QueueList.tsx` | Sidebar section for sprint queue agents |
-| `ChatTab.tsx` | Interleaved chat stream (replaces ChatRenderer) |
-| `ToolsTab.tsx` | Tool call inspector view |
-| `FilesTab.tsx` | Files touched view with diffs |
-| `ToolBlock.tsx` | Grouped tool calls with collapsible detail (replaces ToolCallBlock) |
-| `UserMessage.tsx` | User message with label + timestamp |
-| `AgentText.tsx` | Agent text with markdown rendering |
-| `SessionHeader.tsx` | Header bar with session info + tabs + stop button |
+| Component            | Purpose                                                             |
+| -------------------- | ------------------------------------------------------------------- |
+| `NewSessionForm.tsx` | Centered empty-state form replacing SpawnModal for ad-hoc           |
+| `SessionList.tsx`    | Sidebar section for ad-hoc sessions                                 |
+| `QueueList.tsx`      | Sidebar section for sprint queue agents                             |
+| `ChatTab.tsx`        | Interleaved chat stream (replaces ChatRenderer)                     |
+| `ToolsTab.tsx`       | Tool call inspector view                                            |
+| `FilesTab.tsx`       | Files touched view with diffs                                       |
+| `ToolBlock.tsx`      | Grouped tool calls with collapsible detail (replaces ToolCallBlock) |
+| `UserMessage.tsx`    | User message with label + timestamp                                 |
+| `AgentText.tsx`      | Agent text with markdown rendering                                  |
+| `SessionHeader.tsx`  | Header bar with session info + tabs + stop button                   |
 
 ### Modified Components
 
-| Component | Changes |
-|-----------|---------|
-| `AgentsView.tsx` | New layout: sidebar sections + main panel with tabs/empty state |
-| `AgentList.tsx` | Split into SessionList + QueueList |
-| `AgentDetail.tsx` | Replaced by tabbed view (ChatTab/ToolsTab/FilesTab) |
-| `AgentCard.tsx` | Simplified — remove source icon, adjust for section context |
-| `SteerInput.tsx` | Polish: rounded input, send button, keyboard hints |
-| `HealthBar.tsx` | Move into sidebar or remove (queue section header shows counts) |
+| Component         | Changes                                                         |
+| ----------------- | --------------------------------------------------------------- |
+| `AgentsView.tsx`  | New layout: sidebar sections + main panel with tabs/empty state |
+| `AgentList.tsx`   | Split into SessionList + QueueList                              |
+| `AgentDetail.tsx` | Replaced by tabbed view (ChatTab/ToolsTab/FilesTab)             |
+| `AgentCard.tsx`   | Simplified — remove source icon, adjust for section context     |
+| `SteerInput.tsx`  | Polish: rounded input, send button, keyboard hints              |
+| `HealthBar.tsx`   | Move into sidebar or remove (queue section header shows counts) |
 
 ### Removed Components
 
-| Component | Reason |
-|-----------|--------|
-| `SpawnModal.tsx` | Replaced by NewSessionForm (inline empty state) |
-| `ChatRenderer.tsx` | Replaced by ChatTab with new rendering |
-| `ChatBubble.tsx` | Replaced by AgentText + UserMessage (no bubble style) |
-| `ThinkingBlock.tsx` | Keep but restyle to match new density |
+| Component           | Reason                                                |
+| ------------------- | ----------------------------------------------------- |
+| `SpawnModal.tsx`    | Replaced by NewSessionForm (inline empty state)       |
+| `ChatRenderer.tsx`  | Replaced by ChatTab with new rendering                |
+| `ChatBubble.tsx`    | Replaced by AgentText + UserMessage (no bubble style) |
+| `ThinkingBlock.tsx` | Keep but restyle to match new density                 |
 
 ### CSS
 

@@ -11,7 +11,11 @@
   border-right: 1px solid var(--neon-purple-border);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, var(--neon-purple-surface, rgba(138,43,226,0.04)), var(--neon-surface-deep, rgba(10,0,21,0.4)));
+  background: linear-gradient(
+    180deg,
+    var(--neon-purple-surface, rgba(138, 43, 226, 0.04)),
+    var(--neon-surface-deep, rgba(10, 0, 21, 0.4))
+  );
   resize: horizontal;
   overflow: hidden;
 }
@@ -51,7 +55,9 @@
   background: var(--neon-surface-deep);
   border: 1px solid var(--neon-cyan-border);
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -226,7 +232,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 100ms ease, color 100ms ease;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
 }
 
 .console-header__action-btn:hover {
@@ -278,7 +286,9 @@
   cursor: pointer;
   z-index: 10;
   box-shadow: var(--neon-glass-shadow);
-  transition: background 150ms ease, transform 150ms ease;
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
 }
 
 .console-jump-to-latest:hover {
@@ -308,7 +318,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Console Line ── */
@@ -407,7 +419,9 @@
 .console-line__chevron {
   flex-shrink: 0;
   color: var(--neon-text-dim);
-  transition: transform 150ms ease, color 150ms ease;
+  transition:
+    transform 150ms ease,
+    color 150ms ease;
   font-size: 10px;
 }
 
@@ -494,7 +508,9 @@
   color: var(--neon-text-muted);
   font-size: 12px;
   font-family: var(--bde-font-code);
-  transition: background 100ms ease, color 100ms ease;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
 }
 
 .command-autocomplete__item:hover,
@@ -570,7 +586,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 100ms ease, color 100ms ease;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
 }
 
 .console-search-bar__nav-btn:hover:not(:disabled) {
@@ -593,7 +611,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 100ms ease, color 100ms ease;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
   flex-shrink: 0;
 }
 
@@ -653,14 +673,35 @@
   font-family: var(--bde-font-code);
 }
 
-.console-tool-icon--bash { background: var(--neon-orange-surface); color: var(--neon-orange); }
-.console-tool-icon--read { background: var(--neon-blue-surface); color: var(--neon-blue); }
+.console-tool-icon--bash {
+  background: var(--neon-orange-surface);
+  color: var(--neon-orange);
+}
+.console-tool-icon--read {
+  background: var(--neon-blue-surface);
+  color: var(--neon-blue);
+}
 .console-tool-icon--edit,
-.console-tool-icon--write { background: var(--neon-cyan-surface); color: var(--neon-cyan); }
-.console-tool-icon--grep { background: var(--neon-purple-surface); color: var(--neon-purple); }
-.console-tool-icon--glob { background: var(--neon-orange-surface); color: var(--neon-orange); }
-.console-tool-icon--agent { background: var(--neon-pink-surface); color: var(--neon-pink); }
-.console-tool-icon--default { background: var(--neon-blue-surface); color: var(--neon-blue); }
+.console-tool-icon--write {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+}
+.console-tool-icon--grep {
+  background: var(--neon-purple-surface);
+  color: var(--neon-purple);
+}
+.console-tool-icon--glob {
+  background: var(--neon-orange-surface);
+  color: var(--neon-orange);
+}
+.console-tool-icon--agent {
+  background: var(--neon-pink-surface);
+  color: var(--neon-pink);
+}
+.console-tool-icon--default {
+  background: var(--neon-blue-surface);
+  color: var(--neon-blue);
+}
 
 /* ── Completion Summary Card ── */
 .console-completion-card {
@@ -702,10 +743,18 @@
   font-family: var(--bde-font-code);
 }
 
-.console-completion-card__stat-value--cyan { color: var(--neon-cyan); }
-.console-completion-card__stat-value--purple { color: var(--neon-purple); }
-.console-completion-card__stat-value--orange { color: var(--neon-orange); }
-.console-completion-card__stat-value--red { color: var(--neon-red); }
+.console-completion-card__stat-value--cyan {
+  color: var(--neon-cyan);
+}
+.console-completion-card__stat-value--purple {
+  color: var(--neon-purple);
+}
+.console-completion-card__stat-value--orange {
+  color: var(--neon-orange);
+}
+.console-completion-card__stat-value--red {
+  color: var(--neon-red);
+}
 
 .console-completion-card__stat-label {
   font-size: 10px;
@@ -715,8 +764,12 @@
   margin-top: 2px;
 }
 
-.console-completion-card__header--success { color: var(--neon-cyan); }
-.console-completion-card__header--failed { color: var(--neon-red); }
+.console-completion-card__header--success {
+  color: var(--neon-cyan);
+}
+.console-completion-card__header--failed {
+  color: var(--neon-red);
+}
 
 /* ── Tool Group ── */
 .console-tool-group__items {
@@ -794,7 +847,9 @@
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 100ms ease, border-color 100ms ease;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease;
 }
 
 .console-line__show-full:hover {
@@ -857,7 +912,10 @@
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 100ms ease, border-color 100ms ease, color 100ms ease;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease;
   white-space: nowrap;
 }
 
@@ -913,7 +971,7 @@
 }
 
 .playground-modal__filename {
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 12px;
   color: var(--bde-text);
   overflow: hidden;
@@ -961,7 +1019,7 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 11px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   transition: 100ms ease;
 }
 
@@ -981,7 +1039,7 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 11px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   transition: 100ms ease;
 }
 
@@ -1030,7 +1088,7 @@
 .playground-modal__source-pre {
   margin: 0;
   padding: 12px;
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 11px;
   line-height: 20px;
   color: var(--bde-text);

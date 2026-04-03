@@ -33,26 +33,27 @@ All hover/mouse-enter effects are done via imperative `e.currentTarget.style.*` 
 
 Map every inline style block to a named CSS class:
 
-| Inline Style Location | New CSS Class |
-|----------------------|---------------|
-| Root container (line 94) | `.terminal-view` (already implied, needs glass) |
-| Tab bar container (line 96-104) | `.terminal-tabbar` |
-| Scrollable tabs region (line 107-117) | `.terminal-tabbar__tabs` |
-| Individual tab (line 131-151) | `.terminal-tab`, `.terminal-tab--active`, `.terminal-tab--agent` |
-| Tab close button (line 164-181) | `.terminal-tab__close` |
-| Add tab / shell picker group (line 198) | `.terminal-tabbar__actions` |
-| Icon buttons (lines 200-225, 227-251, 267-292) | `.terminal-toolbar-btn` |
-| Right toolbar (line 308-316) | `.terminal-tabbar__toolbar` |
-| Clear button (line 320-348) | `.terminal-toolbar-btn--clear` |
-| Split button (line 352-380) | `.terminal-toolbar-btn--split`, `.terminal-toolbar-btn--split-active` |
-| Terminal pane container (line 387) | `.terminal-panes` |
-| Per-tab wrapper (line 391-397) | `.terminal-pane-wrapper`, `.terminal-pane-wrapper--hidden` |
-| Agent tab layout (line 400, 410) | Already uses `.terminal-agent-status-bar` (good) |
-| Split separator (line 419-425) | `.terminal-split-separator` |
+| Inline Style Location                          | New CSS Class                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------------- |
+| Root container (line 94)                       | `.terminal-view` (already implied, needs glass)                       |
+| Tab bar container (line 96-104)                | `.terminal-tabbar`                                                    |
+| Scrollable tabs region (line 107-117)          | `.terminal-tabbar__tabs`                                              |
+| Individual tab (line 131-151)                  | `.terminal-tab`, `.terminal-tab--active`, `.terminal-tab--agent`      |
+| Tab close button (line 164-181)                | `.terminal-tab__close`                                                |
+| Add tab / shell picker group (line 198)        | `.terminal-tabbar__actions`                                           |
+| Icon buttons (lines 200-225, 227-251, 267-292) | `.terminal-toolbar-btn`                                               |
+| Right toolbar (line 308-316)                   | `.terminal-tabbar__toolbar`                                           |
+| Clear button (line 320-348)                    | `.terminal-toolbar-btn--clear`                                        |
+| Split button (line 352-380)                    | `.terminal-toolbar-btn--split`, `.terminal-toolbar-btn--split-active` |
+| Terminal pane container (line 387)             | `.terminal-panes`                                                     |
+| Per-tab wrapper (line 391-397)                 | `.terminal-pane-wrapper`, `.terminal-pane-wrapper--hidden`            |
+| Agent tab layout (line 400, 410)               | Already uses `.terminal-agent-status-bar` (good)                      |
+| Split separator (line 419-425)                 | `.terminal-split-separator`                                           |
 
 ### 2. Replace all `onMouseEnter`/`onMouseLeave` with CSS `:hover`
 
 Every button in TerminalView uses this pattern:
+
 ```tsx
 onMouseEnter={(e) => {
   e.currentTarget.style.color = tokens.color.text
@@ -65,6 +66,7 @@ onMouseLeave={(e) => {
 ```
 
 Replace with:
+
 ```css
 .terminal-toolbar-btn:hover {
   color: var(--text-primary);
@@ -96,11 +98,11 @@ The terminal tab bar should match the Sessions sidebar — use glass tint + back
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/views/TerminalView.tsx` | Replace all 23 `style={{}}` with className, remove all `onMouseEnter`/`onMouseLeave` hover hacks |
-| `src/renderer/src/assets/terminal.css` | Add all new classes listed above |
-| `src/renderer/src/design-system/tokens.ts` | No change needed (will be deprecated in DP-S1) |
+| File                                       | Change                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `src/renderer/src/views/TerminalView.tsx`  | Replace all 23 `style={{}}` with className, remove all `onMouseEnter`/`onMouseLeave` hover hacks |
+| `src/renderer/src/assets/terminal.css`     | Add all new classes listed above                                                                 |
+| `src/renderer/src/design-system/tokens.ts` | No change needed (will be deprecated in DP-S1)                                                   |
 
 ## Acceptance Criteria
 

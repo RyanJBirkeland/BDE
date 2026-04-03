@@ -33,6 +33,7 @@ Three vertically stacked zones replace the current three-phase wizard:
 ### Spawn Behavior
 
 All Launchpad spawns use `spawnAdhocAgent` with `assistant: true`. This means:
+
 - Agent is interactive (multi-turn via session resumption)
 - Agent waits for user direction rather than executing autonomously
 - `source: 'adhoc'` in agent history
@@ -61,18 +62,18 @@ For **custom input**: the user's typed text is sent directly as the opening prom
 
 ### Files Changed
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/components/agents/AgentLaunchpad.tsx` | Rewrite: remove phase machine, single-screen with direct spawn |
-| `src/renderer/src/components/agents/LaunchpadGrid.tsx` | Simplify: remove recents, reposition repo/model, chat-style input |
-| `src/renderer/src/components/agents/LaunchpadConfigure.tsx` | Delete |
-| `src/renderer/src/components/agents/LaunchpadReview.tsx` | Delete |
-| `src/renderer/src/lib/launchpad-types.ts` | Remove `RecentTask`, `RECENT_TASKS_KEY`, `RECENT_TASKS_LIMIT` |
-| `src/renderer/src/lib/prompt-assembly.ts` | Keep `assemblePrompt()` for stripping `{{variables}}`; delete `migrateHistory()` |
-| `src/main/handlers/agent-handlers.ts` | Remove `agent:spawnAssistant` handler (dead code) |
-| `src/renderer/src/stores/localAgents.ts` | Add `assistant?: boolean` to `spawnAgent` args type |
-| `src/renderer/src/assets/agent-launchpad-neon.css` | Clean up unused classes (`.launchpad__review-*`, `.launchpad__chat-*`, `.launchpad__recent-*`) |
-| Tests for deleted components | Delete or update |
+| File                                                        | Change                                                                                         |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/renderer/src/components/agents/AgentLaunchpad.tsx`     | Rewrite: remove phase machine, single-screen with direct spawn                                 |
+| `src/renderer/src/components/agents/LaunchpadGrid.tsx`      | Simplify: remove recents, reposition repo/model, chat-style input                              |
+| `src/renderer/src/components/agents/LaunchpadConfigure.tsx` | Delete                                                                                         |
+| `src/renderer/src/components/agents/LaunchpadReview.tsx`    | Delete                                                                                         |
+| `src/renderer/src/lib/launchpad-types.ts`                   | Remove `RecentTask`, `RECENT_TASKS_KEY`, `RECENT_TASKS_LIMIT`                                  |
+| `src/renderer/src/lib/prompt-assembly.ts`                   | Keep `assemblePrompt()` for stripping `{{variables}}`; delete `migrateHistory()`               |
+| `src/main/handlers/agent-handlers.ts`                       | Remove `agent:spawnAssistant` handler (dead code)                                              |
+| `src/renderer/src/stores/localAgents.ts`                    | Add `assistant?: boolean` to `spawnAgent` args type                                            |
+| `src/renderer/src/assets/agent-launchpad-neon.css`          | Clean up unused classes (`.launchpad__review-*`, `.launchpad__chat-*`, `.launchpad__recent-*`) |
+| Tests for deleted components                                | Delete or update                                                                               |
 
 ### Data Flow
 

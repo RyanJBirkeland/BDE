@@ -65,15 +65,15 @@ Source Window                      Main Process                     Target Windo
 
 ### IPC Channels (7 new)
 
-| Channel | Pattern | Direction | Payload | Return | Purpose |
-|---------|---------|-----------|---------|--------|---------|
-| `tearoff:startCrossWindowDrag` | handle | source → main | `{ windowId, viewKey }` | `{ targetFound: boolean }` | Check if cursor is over another window, start coordinator |
-| `tearoff:dragIn` | send | main → target | `{ viewKey, localX, localY }` | — | Incoming tab — show overlay |
-| `tearoff:dragMove` | send | main → target | `{ localX, localY }` | — | Cursor update (pre-converted to local coords) |
-| `tearoff:dragCancel` | send | main → all | `{}` | — | Drag cancelled — hide overlays |
-| `tearoff:dropComplete` | send | target → main | `{ viewKey, targetPanelId, zone }` | — | Drop executed |
-| `tearoff:dragDone` | send | main → source | `{}` | — | Drop succeeded — source can close |
-| `tearoff:crossWindowDrop` | send | main → target | `{ view, targetPanelId, zone }` | — | Execute the tab add/split in target |
+| Channel                        | Pattern | Direction     | Payload                            | Return                     | Purpose                                                   |
+| ------------------------------ | ------- | ------------- | ---------------------------------- | -------------------------- | --------------------------------------------------------- |
+| `tearoff:startCrossWindowDrag` | handle  | source → main | `{ windowId, viewKey }`            | `{ targetFound: boolean }` | Check if cursor is over another window, start coordinator |
+| `tearoff:dragIn`               | send    | main → target | `{ viewKey, localX, localY }`      | —                          | Incoming tab — show overlay                               |
+| `tearoff:dragMove`             | send    | main → target | `{ localX, localY }`               | —                          | Cursor update (pre-converted to local coords)             |
+| `tearoff:dragCancel`           | send    | main → all    | `{}`                               | —                          | Drag cancelled — hide overlays                            |
+| `tearoff:dropComplete`         | send    | target → main | `{ viewKey, targetPanelId, zone }` | —                          | Drop executed                                             |
+| `tearoff:dragDone`             | send    | main → source | `{}`                               | —                          | Drop succeeded — source can close                         |
+| `tearoff:crossWindowDrop`      | send    | main → target | `{ view, targetPanelId, zone }`    | —                          | Execute the tab add/split in target                       |
 
 ### Component Map
 
@@ -110,6 +110,7 @@ let activeDrag: ActiveDrag | null = null
 ```
 
 **`handleStartCrossWindowDrag(windowId, viewKey)`:**
+
 1. Get cursor position via `screen.getCursorScreenPoint()`
 2. Find which BrowserWindow (if any) contains that point using `win.getContentBounds()`
 3. If no target found → return `{ targetFound: false }` (Phase 1 creates new tearoff)
@@ -119,6 +120,7 @@ let activeDrag: ActiveDrag | null = null
 7. Return `{ targetFound: true }`
 
 **Cursor polling (32ms):**
+
 - `screen.getCursorScreenPoint()` → check against all window content bounds
 - Compute local coords: `localX = cursorX - targetContentBounds.x`, `localY = cursorY - targetContentBounds.y`
 - Only send `tearoff:dragMove` if coords changed (guard: `lastSentX !== localX || lastSentY !== localY`)
@@ -129,12 +131,14 @@ let activeDrag: ActiveDrag | null = null
 Screen coords are converted to window-local coords using `BrowserWindow.getContentBounds()` in the main process. This avoids renderer-side issues with `window.screenX`/`screenY` (which are CSS coords, don't account for title bar insets or Retina scaling).
 
 **`handleDropComplete(viewKey, targetPanelId, zone)`:**
+
 1. Stop polling
 2. Send `tearoff:dragDone` to source window
 3. Send `tearoff:crossWindowDrop` to target window with `{ view: viewKey, targetPanelId, zone }`
 4. Clear `activeDrag`
 
 **`cancelDrag()`:**
+
 1. Stop polling
 2. Send `tearoff:dragCancel` to all windows
 3. Clear `activeDrag`
@@ -166,6 +170,7 @@ if (result.targetFound) {
 ```
 
 In the `dragend` handler:
+
 ```typescript
 if (crossWindowActive.current) {
   // Don't call endDrag — let the cross-window coordinator handle lifecycle
@@ -211,35 +216,39 @@ interface CrossWindowDropState {
 ### Edge Cases
 
 **Cursor returns to source window:**
+
 - Main process detects cursor over source → send `tearoff:dragCancel` to target
 - Cross-window mode deactivates, but HTML5 DnD is still active in source → internal drop zones resume working
 
 **Multi-monitor with different scale factors:**
+
 - `screen.getCursorScreenPoint()` returns physical pixels
 - `BrowserWindow.getContentBounds()` returns physical pixels
 - Conversion is consistent — no DPI adjustment needed
 
 **Rapid window switching (A → B → C):**
+
 1. Send `tearoff:dragCancel` to A
 2. Send `tearoff:dragIn` to B
 3. B shows overlay, A hides overlay
 4. If cursor moves to C: cancel B, activate C
 
 **Source window destroyed mid-drag:**
+
 - `closed` listener fires → `cancelDrag()` → all overlays hidden, polling stopped
 
 ### What Changes in Phase 1 Code
 
-| File | Change |
-|------|--------|
-| `src/main/tearoff-manager.ts` | Add drag coordinator (start, poll, drop, cancel, source-closed listener) |
-| `src/shared/ipc-channels.ts` | Add 7 new channel types to `TearoffChannels` |
-| `src/preload/index.ts` + `.d.ts` | Expose new drag IPC methods + listeners |
-| `src/renderer/src/hooks/useTearoffDrag.ts` | Cross-window branching, `crossWindowActive` ref, dragend suppression |
-| `src/renderer/src/hooks/useCrossWindowDrop.ts` | NEW — receive drags, manage overlay, handle pointerup |
-| `src/renderer/src/components/panels/CrossWindowDropOverlay.tsx` | NEW — full-window overlay with 5-zone hit testing + pointerup capture |
-| `src/renderer/src/App.tsx` | Mount `useCrossWindowDrop`, listen for `tearoff:crossWindowDrop` |
-| `src/renderer/src/components/layout/TearoffShell.tsx` | Mount `useCrossWindowDrop`, handle `tearoff:dragDone` → close |
+| File                                                            | Change                                                                   |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `src/main/tearoff-manager.ts`                                   | Add drag coordinator (start, poll, drop, cancel, source-closed listener) |
+| `src/shared/ipc-channels.ts`                                    | Add 7 new channel types to `TearoffChannels`                             |
+| `src/preload/index.ts` + `.d.ts`                                | Expose new drag IPC methods + listeners                                  |
+| `src/renderer/src/hooks/useTearoffDrag.ts`                      | Cross-window branching, `crossWindowActive` ref, dragend suppression     |
+| `src/renderer/src/hooks/useCrossWindowDrop.ts`                  | NEW — receive drags, manage overlay, handle pointerup                    |
+| `src/renderer/src/components/panels/CrossWindowDropOverlay.tsx` | NEW — full-window overlay with 5-zone hit testing + pointerup capture    |
+| `src/renderer/src/App.tsx`                                      | Mount `useCrossWindowDrop`, listen for `tearoff:crossWindowDrop`         |
+| `src/renderer/src/components/layout/TearoffShell.tsx`           | Mount `useCrossWindowDrop`, handle `tearoff:dragDone` → close            |
 
 ### What Does NOT Change
 
@@ -250,18 +259,21 @@ interface CrossWindowDropState {
 ## Testing Strategy
 
 **Unit tests:**
+
 - Drag coordinator: polling → target detection → coordinate conversion → IPC relay
 - `useCrossWindowDrop`: state transitions (inactive → active → drop/cancel)
 - `CrossWindowDropOverlay`: zone detection from local coordinates, pointerup → dropComplete
 - `useTearoffDrag` modification: cross-window vs new-window branching, dragend suppression
 
 **Integration tests:**
+
 - Full IPC round-trip: startCrossWindowDrag → dragIn → dragMove → dropComplete → crossWindowDrop → dragDone
 - Cancel flow: dragOut → Escape → dragCancel to all windows
 - Timeout: 10s without drop → auto-cancel
 - Source window closed mid-drag → auto-cancel
 
 **Manual tests:**
+
 - Drag tab from tear-off into main window — 5-zone targeting works
 - Drop into center → tab added; drop into edge → panel splits
 - Escape during cross-window drag → cancelled, tab stays in source

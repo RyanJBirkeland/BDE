@@ -17,6 +17,7 @@ A comprehensive 6-team UI/UX audit was conducted across every view and component
 ## Key Findings
 
 ### Bugs (Must Fix)
+
 1. **Terminal zoom broken** — store tracks `fontSize` but TerminalPane hardcodes `fontSize: 13`
 2. **HealthBar shows fake data** — hardcodes `queued: 0` and `doneToday: 0`
 3. **13+ missing CSS class definitions in Settings** — components reference classes with no rules
@@ -26,6 +27,7 @@ A comprehensive 6-team UI/UX audit was conducted across every view and component
 7. **PanelTabBar/PanelLeaf theming bug** — inline styles from static `tokens.ts` ignore CSS variable overrides
 
 ### Systemic Issues
+
 1. **Inline style epidemic** — 356 `style={}` across 58 files. Dashboard (100%), Git Tree (100%), AgentCard, ChatBubble, TaskWorkbench (4 components) all bypass CSS variables entirely.
 2. **Dual token system** — v1 (`--bde-*`) powers components with stale values. v2 (`--bg-*`, `--text-*`) has feast-site-correct values but only drives utility classes. Button.tsx applies BOTH class systems with conflicting values.
 3. **Border radius gap** — Current 4-12px everywhere, target 8-20px. 30+ hardcoded values in CSS + 50+ inline `borderRadius` in TSX.
@@ -40,42 +42,45 @@ A comprehensive 6-team UI/UX audit was conducted across every view and component
 Update `base.css` `:root` and `tokens.ts` to feast-site values:
 
 **Colors:**
+
 ```css
---bde-bg: #050507;              /* was #0A0A0A */
---bde-surface: #111118;         /* was #141414 */
---bde-surface-high: #16161F;    /* was #1E1E1E */
---bde-border: #1E1E2A;          /* was #333333 */
---bde-border-hover: #2A2A3A;    /* was #444444 */
---bde-text: #F5F5F7;            /* was #E8E8E8 */
---bde-text-muted: #98989F;      /* was #888888 */
---bde-text-dim: #5C5C63;        /* was #555555 */
+--bde-bg: #050507; /* was #0A0A0A */
+--bde-surface: #111118; /* was #141414 */
+--bde-surface-high: #16161f; /* was #1E1E1E */
+--bde-border: #1e1e2a; /* was #333333 */
+--bde-border-hover: #2a2a3a; /* was #444444 */
+--bde-text: #f5f5f7; /* was #E8E8E8 */
+--bde-text-muted: #98989f; /* was #888888 */
+--bde-text-dim: #5c5c63; /* was #555555 */
 --bde-font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 ```
 
 **Radii:**
+
 ```css
---bde-radius-sm: 8px;   /* was 4px */
---bde-radius-md: 12px;  /* was 6px */
---bde-radius-lg: 16px;  /* was 8px */
---bde-radius-xl: 20px;  /* was 12px */
+--bde-radius-sm: 8px; /* was 4px */
+--bde-radius-md: 12px; /* was 6px */
+--bde-radius-lg: 16px; /* was 8px */
+--bde-radius-xl: 20px; /* was 12px */
 /* New: */
 --bde-radius-2xl: 24px;
 --bde-radius-3xl: 32px;
 ```
 
 **Shadows:**
+
 ```css
---bde-shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
---bde-shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2);
---bde-shadow-lg: 0 8px 32px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+--bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+--bde-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+--bde-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
 /* New: */
---bde-shadow-glow: 0 4px 16px rgba(0,211,127,0.3);
---bde-shadow-glow-hover: 0 4px 24px rgba(0,211,127,0.4), 0 0 8px rgba(0,211,127,0.3);
---bde-shadow-elevation: 0 24px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.25);
---bde-border-subtle: rgba(255,255,255,0.04);
---bde-text-ghost: #3A3A42;
---bde-gradient-cta: linear-gradient(135deg, #00D37F, #00A863);
---bde-gradient-ambient: radial-gradient(circle, rgba(0,211,127,0.08) 0%, transparent 70%);
+--bde-shadow-glow: 0 4px 16px rgba(0, 211, 127, 0.3);
+--bde-shadow-glow-hover: 0 4px 24px rgba(0, 211, 127, 0.4), 0 0 8px rgba(0, 211, 127, 0.3);
+--bde-shadow-elevation: 0 24px 80px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.25);
+--bde-border-subtle: rgba(255, 255, 255, 0.04);
+--bde-text-ghost: #3a3a42;
+--bde-gradient-cta: linear-gradient(135deg, #00d37f, #00a863);
+--bde-gradient-ambient: radial-gradient(circle, rgba(0, 211, 127, 0.08) 0%, transparent 70%);
 ```
 
 ### Phase 2: Bug Fixes
@@ -85,6 +90,7 @@ All 7 bugs listed above — terminal zoom, HealthBar data, missing CSS classes, 
 ### Phase 3: Design System Utilities & Button Unification
 
 Add to `design-system.css`:
+
 - `.glass-surface` — glass background with blur and subtle border
 - `.ambient-glow` — radial gradient pseudo-element for "lit from within"
 - `.btn-cta` — feast-site gradient CTA with glow shadow
@@ -106,6 +112,7 @@ Unify Button dual-class problem — merge v2 styles into v1 classes, remove dual
 ### Phase 5: Inline Style Extraction (High-Priority Components)
 
 Extract inline styles to CSS classes for the components that block the feast-site migration most:
+
 - **Dashboard** — 100% inline, no CSS file. Create `dashboard.css`.
 - **Git Tree** — 100% inline (5 components). Create git-tree CSS classes.
 - **AgentCard** — 100% inline. Create comprehensive `agents.css`.
@@ -126,11 +133,13 @@ Extract inline styles to CSS classes for the components that block the feast-sit
 ### Phase 7: Feature View Visual Upgrades
 
 **Sprint & Tasks:**
+
 - TaskCard: 16px radius, hover lift, status-colored ambient glow, glassmorphic column headers
 - Kanban columns: 20px radius, glass treatment, drop target glow
 - SprintToolbar: pill-shaped filter chips
 
 **Agents & Terminal:**
+
 - Running agent "breathing" glow — ambient radial gradient + pulse-glow animation
 - AgentCard: card container treatment, status-colored left border glow
 - ChatBubble: 14px asymmetric corners, glass treatment
@@ -138,6 +147,7 @@ Extract inline styles to CSS classes for the components that block the feast-sit
 - Terminal: richer chrome, inner shadow, font zoom fix integration
 
 **Code Review & Git:**
+
 - Merge Button → feast-site gradient CTA (poster child)
 - PR list rows: card treatment with glass, hover border brighten
 - Diff viewer: softer line highlighting, glassmorphic sticky file headers
@@ -145,6 +155,7 @@ Extract inline styles to CSS classes for the components that block the feast-sit
 - Filter bar: pill-shaped chips
 
 **Dashboard (Hero View):**
+
 - Complete visual overhaul — gradient card headers, ambient glow background
 - Stagger entrance animation for cards
 - Glass-surface card treatment
@@ -152,6 +163,7 @@ Extract inline styles to CSS classes for the components that block the feast-sit
 - Hero greeting section (time-of-day context)
 
 **Supporting Views:**
+
 - Cost: fix grid layout, add SVG sparkline trends
 - Memory: glassmorphic sidebar, editor polish
 - Settings: grouped card layout, define missing CSS classes, toggle switches

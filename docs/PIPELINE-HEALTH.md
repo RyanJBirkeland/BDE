@@ -4,4 +4,4 @@ The claude-task-runner Agent SDK pipeline is confirmed working end-to-end as of 
 
 ---
 
-*This document was auto-generated as a smoke test of the task runner pipeline.*
+_This document was auto-generated as a smoke test of the task runner pipeline._

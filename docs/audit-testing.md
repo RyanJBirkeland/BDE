@@ -24,6 +24,7 @@
 **Note:** The task description mentioned `gateway.test.ts`, `theme.test.ts`, `TitleBar.test.tsx`, and `ErrorBoundary.test.tsx` as "pre-existing broken tests" — **these are now passing**. Recent work (2026-03-15 to 2026-03-16) appears to have fixed them.
 
 **Evidence:**
+
 - `src/renderer/src/lib/__tests__/gateway.test.ts`: 8 tests passing (WS mock, auth flow, call queue, timeout)
 - `src/renderer/src/stores/__tests__/theme.test.ts`: 7 tests passing (theme toggle, localStorage persist)
 - `src/renderer/src/components/layout/__tests__/TitleBar.test.tsx`: 5 tests passing (repo filter, cost display, theme toggle)
@@ -77,26 +78,26 @@ These stores have complex state logic and are used across the app:
 
 **Sessions components (0/9 tested):**
 
-| Component | LOC | Why Critical |
-|-----------|-----|-------------|
-| `ChatThread.tsx` | ~150 | Core chat UI — renders message stream, handles polling, auto-scroll |
-| `LiveFeed.tsx` | ~80 | Real-time agent output stream — WebSocket data handling |
-| `AgentHistoryPanel.tsx` | ~120 | Shows agent history, log viewer — table rendering, selection |
-| `AgentList.tsx` | ~100 | Renders unified agent list with grouping |
-| `AgentRow.tsx` | ~80 | Individual agent row — status badges, kill button |
-| `LocalAgentRow.tsx` | ~90 | Local agent row with interactive steering |
-| `LocalAgentLogViewer.tsx` | ~70 | Log tail viewer with polling |
-| `SessionHeader.tsx` | ~60 | Session metadata display |
-| `SessionLogViewer.tsx` | ~80 | Session output log viewer |
+| Component                 | LOC  | Why Critical                                                        |
+| ------------------------- | ---- | ------------------------------------------------------------------- |
+| `ChatThread.tsx`          | ~150 | Core chat UI — renders message stream, handles polling, auto-scroll |
+| `LiveFeed.tsx`            | ~80  | Real-time agent output stream — WebSocket data handling             |
+| `AgentHistoryPanel.tsx`   | ~120 | Shows agent history, log viewer — table rendering, selection        |
+| `AgentList.tsx`           | ~100 | Renders unified agent list with grouping                            |
+| `AgentRow.tsx`            | ~80  | Individual agent row — status badges, kill button                   |
+| `LocalAgentRow.tsx`       | ~90  | Local agent row with interactive steering                           |
+| `LocalAgentLogViewer.tsx` | ~70  | Log tail viewer with polling                                        |
+| `SessionHeader.tsx`       | ~60  | Session metadata display                                            |
+| `SessionLogViewer.tsx`    | ~80  | Session output log viewer                                           |
 
 **Terminal components (0/4 tested):**
 
-| Component | LOC | Why Critical |
-|-----------|-----|-------------|
-| `TerminalPane.tsx` | ~180 | xterm.js integration, PTY lifecycle, find bar |
-| `FindBar.tsx` | ~60 | Terminal search UI — xterm-addon-search |
-| `ShellPicker.tsx` | ~40 | Shell selector dropdown |
-| `AgentOutputTab.tsx` | ~50 | Agent output display in terminal view |
+| Component            | LOC  | Why Critical                                  |
+| -------------------- | ---- | --------------------------------------------- |
+| `TerminalPane.tsx`   | ~180 | xterm.js integration, PTY lifecycle, find bar |
+| `FindBar.tsx`        | ~60  | Terminal search UI — xterm-addon-search       |
+| `ShellPicker.tsx`    | ~40  | Shell selector dropdown                       |
+| `AgentOutputTab.tsx` | ~50  | Agent output display in terminal view         |
 
 **Sprint/Git components (0/2 tested):**
 
@@ -116,6 +117,7 @@ These stores have complex state logic and are used across the app:
 ### Untested Libraries
 
 **`lib/github-api.ts`** (~60 LOC)
+
 - **Why critical:** GitHub PR integration — lists open PRs, merges PRs
 - **Risk:** API auth errors, rate limiting, merge conflicts
 - **Should test:**
@@ -169,6 +171,7 @@ These stores have complex state logic and are used across the app:
 ### Untested Views (smoke tests exist ✅)
 
 **All 7 views have smoke tests** (`views/__tests__/smoke.test.tsx`):
+
 - SessionsView, SprintView, DiffView, MemoryView, CostView, SettingsView, TerminalView
 
 These verify views render without crashing. **No behavioral tests** (user interactions, data fetching).
@@ -176,6 +179,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ### Untested Hooks
 
 **`hooks/useTaskNotifications.ts`** (~40 LOC)
+
 - Desktop notification on task completion
 - **Risk:** Notification permission errors, notification spam
 
@@ -186,6 +190,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ### Stores (Priority: P0)
 
 #### `stores/agentHistory.ts`
+
 ```
 ✓ fetchAgents populates agents list
 ✓ fetchAgents handles API error gracefully
@@ -198,6 +203,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `stores/localAgents.ts`
+
 ```
 ✓ spawnAgent calls window.api.spawnLocalAgent
 ✓ spawnAgent adds to spawnedAgents array
@@ -210,6 +216,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `stores/commandPalette.ts`
+
 ```
 ✓ initial state isOpen: false
 ✓ open() sets isOpen: true
@@ -218,6 +225,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `stores/unifiedAgents.ts`
+
 ```
 ✓ useUnifiedAgents merges sessions into agents list
 ✓ useUnifiedAgents merges subAgents
@@ -234,6 +242,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ### Libraries (Priority: P0)
 
 #### `lib/github-api.ts`
+
 ```
 ✓ listOpenPRs returns PR array
 ✓ listOpenPRs with no token throws
@@ -245,6 +254,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ### Main Process (Priority: P0 — use vitest with Node environment)
 
 #### `main/index.ts` (IPC handlers)
+
 ```
 ✓ terminal:create spawns PTY and returns id
 ✓ terminal:write writes to correct PTY
@@ -257,6 +267,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `main/local-agents.ts`
+
 ```
 ✓ getAgentProcesses parses ps output
 ✓ spawnClaudeAgent spawns child process
@@ -267,6 +278,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `main/agent-history.ts`
+
 ```
 ✓ listAgents reads agent metadata
 ✓ listAgents filters by status
@@ -275,6 +287,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `main/git.ts`
+
 ```
 ✓ gitStatus parses git status output
 ✓ gitDiffFile returns diff for file
@@ -285,6 +298,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ### Components (Priority: P1)
 
 #### `components/sessions/ChatThread.tsx`
+
 ```
 ✓ renders message lines from chat store
 ✓ auto-scrolls on new messages
@@ -293,6 +307,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `components/sessions/LiveFeed.tsx`
+
 ```
 ✓ renders live feed header
 ✓ appends chunks as they arrive
@@ -301,6 +316,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `components/sessions/AgentHistoryPanel.tsx`
+
 ```
 ✓ fetches agents on mount
 ✓ renders agent rows
@@ -309,6 +325,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `components/terminal/TerminalPane.tsx` (mock xterm)
+
 ```
 ✓ creates PTY on mount
 ✓ disposes PTY on unmount
@@ -319,6 +336,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 ```
 
 #### `components/layout/ActivityBar.tsx`
+
 ```
 ✓ renders view buttons
 ✓ clicking view button calls setActiveView
@@ -332,6 +350,7 @@ These verify views render without crashing. **No behavioral tests** (user intera
 **Infrastructure:** Use Playwright with Electron runner (`@playwright/test` + `electron` package).
 
 **Setup:**
+
 ```bash
 npm install -D @playwright/test playwright-electron
 ```
@@ -341,6 +360,7 @@ npm install -D @playwright/test playwright-electron
 ### Critical User Flows (5 tests)
 
 #### E2E-1: Session list loads and shows agents
+
 ```
 Given: Gateway is running
 When: User opens BDE
@@ -350,6 +370,7 @@ Then: Session list fetches from gateway
 ```
 
 #### E2E-2: Spawn agent flow
+
 ```
 Given: User clicks "New Agent" button
 When: Spawn modal opens
@@ -363,6 +384,7 @@ Then: Agent appears in session list
 ```
 
 #### E2E-3: Terminal opens and accepts input
+
 ```
 Given: User clicks Terminal view
 When: Terminal pane loads
@@ -373,6 +395,7 @@ Then: Terminal shows "hello"
 ```
 
 #### E2E-4: Command palette (Cmd+P) navigation
+
 ```
 Given: User presses Cmd+P
 When: Command palette opens
@@ -385,6 +408,7 @@ Then: Switches to Sessions view
 ```
 
 #### E2E-5: Agent log viewer shows output
+
 ```
 Given: User selects a running agent
 When: Chat pane loads
@@ -445,18 +469,20 @@ Then: Shows agent chat messages
 ### Recommended Additions
 
 1. **`vitest.config.main.ts`** (for main process tests)
+
 ```ts
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/main/**/*.test.ts'],
-  },
+    include: ['src/main/**/*.test.ts']
+  }
 })
 ```
 
 2. **`src/renderer/src/test-utils.tsx`** (shared test utilities)
+
 ```ts
 import { render } from '@testing-library/react'
 import { ReactElement } from 'react'
@@ -467,9 +493,9 @@ export const mockWindowApi = (overrides = {}) => ({
   terminal: {
     create: vi.fn().mockResolvedValue(1),
     write: vi.fn(),
-    kill: vi.fn(),
+    kill: vi.fn()
   },
-  ...overrides,
+  ...overrides
 })
 
 // Custom render with providers
@@ -483,23 +509,25 @@ export const makeMockSession = (overrides = {}) => ({
   sessionId: 'sess-1',
   model: 'sonnet',
   displayName: 'Test',
-  ...overrides,
+  ...overrides
 })
 ```
 
 3. **`playwright.config.ts`**
+
 ```ts
 import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
   use: {
-    headless: false,
-  },
+    headless: false
+  }
 })
 ```
 
 4. **`.github/workflows/test.yml`** (CI)
+
 ```yaml
 name: Tests
 on: [push, pull_request]
@@ -527,7 +555,7 @@ jobs:
 it('spawnAgent adds to spawnedAgents and persists', async () => {
   const result = await useLocalAgentsStore.getState().spawnAgent({
     task: 'test task',
-    repoPath: '/path/to/repo',
+    repoPath: '/path/to/repo'
   })
 
   expect(useLocalAgentsStore.getState().spawnedAgents).toHaveLength(1)
@@ -584,19 +612,19 @@ it('Send button is disabled when disabled prop is true', async () => {
 
 ## Test Coverage Summary
 
-| Category | Files | Tested | % | Priority |
-|----------|-------|--------|---|----------|
-| **Stores** | 11 | 7 | 64% | P0 |
-| **Libs** | 4 | 3 | 75% | P0 |
-| **Main Process** | 6 | 0 | 0% | P0 |
-| **UI Components** | 12 | 7 | 58% | P1 |
-| **Layout Components** | 5 | 4 | 80% | P1 |
-| **Session Components** | 13 | 3 | 23% | P0 |
-| **Terminal Components** | 4 | 0 | 0% | P1 |
-| **Sprint/Git Components** | 3 | 0 | 0% | P1 |
-| **Views** | 7 | 7 | 100%* | P1 |
-| **Hooks** | 1 | 0 | 0% | P2 |
-| **Total** | **66** | **31** | **47%** | — |
+| Category                  | Files  | Tested | %       | Priority |
+| ------------------------- | ------ | ------ | ------- | -------- |
+| **Stores**                | 11     | 7      | 64%     | P0       |
+| **Libs**                  | 4      | 3      | 75%     | P0       |
+| **Main Process**          | 6      | 0      | 0%      | P0       |
+| **UI Components**         | 12     | 7      | 58%     | P1       |
+| **Layout Components**     | 5      | 4      | 80%     | P1       |
+| **Session Components**    | 13     | 3      | 23%     | P0       |
+| **Terminal Components**   | 4      | 0      | 0%      | P1       |
+| **Sprint/Git Components** | 3      | 0      | 0%      | P1       |
+| **Views**                 | 7      | 7      | 100%\*  | P1       |
+| **Hooks**                 | 1      | 0      | 0%      | P2       |
+| **Total**                 | **66** | **31** | **47%** | —        |
 
 \* Views have smoke tests only (render without crashing)
 
@@ -629,6 +657,7 @@ it('Send button is disabled when disabled prop is true', async () => {
 ### ✅ Tested (26 files)
 
 **Stores (7):**
+
 - `stores/__tests__/chat.test.ts`
 - `stores/__tests__/gateway.test.ts`
 - `stores/__tests__/sessions.test.ts`
@@ -638,12 +667,14 @@ it('Send button is disabled when disabled prop is true', async () => {
 - `stores/__tests__/ui.test.ts`
 
 **Libs (3):**
+
 - `lib/__tests__/cost.test.ts`
 - `lib/__tests__/diff-parser.test.ts`
 - `lib/__tests__/gateway.test.ts`
 - `lib/__tests__/rpc.test.ts`
 
 **UI Components (7):**
+
 - `components/ui/__tests__/Badge.test.tsx`
 - `components/ui/__tests__/Button.test.tsx`
 - `components/ui/__tests__/EmptyState.test.tsx`
@@ -653,31 +684,37 @@ it('Send button is disabled when disabled prop is true', async () => {
 - `components/ui/__tests__/Textarea.test.tsx`
 
 **Layout (4):**
+
 - `components/layout/__tests__/CommandPalette.test.tsx`
 - `components/layout/__tests__/StatusBar.test.tsx`
 - `components/layout/__tests__/TitleBar.test.tsx`
 - `components/layout/__tests__/ToastContainer.test.tsx`
 
 **Session Components (3):**
+
 - `components/sessions/__tests__/AgentDirector.test.tsx`
 - `components/sessions/__tests__/MessageInput.test.tsx`
 - `components/sessions/__tests__/SessionList.test.tsx`
 
 **Views (1 smoke test file):**
+
 - `views/__tests__/smoke.test.tsx` (7 views)
 
 ### ❌ Untested (40 files)
 
 **Stores (4):**
+
 - `stores/agentHistory.ts`
 - `stores/commandPalette.ts`
 - `stores/localAgents.ts`
 - `stores/unifiedAgents.ts`
 
 **Libs (1):**
+
 - `lib/github-api.ts`
 
 **Main Process (6):**
+
 - `main/index.ts`
 - `main/agent-history.ts`
 - `main/config.ts`
@@ -686,6 +723,7 @@ it('Send button is disabled when disabled prop is true', async () => {
 - `main/local-agents.ts`
 
 **UI Components (5):**
+
 - `components/ui/Card.tsx`
 - `components/ui/Divider.tsx`
 - `components/ui/Kbd.tsx`
@@ -693,9 +731,11 @@ it('Send button is disabled when disabled prop is true', async () => {
 - `components/ui/Tooltip.tsx`
 
 **Layout (1):**
+
 - `components/layout/ActivityBar.tsx`
 
 **Session Components (10):**
+
 - `components/sessions/AgentHistoryPanel.tsx`
 - `components/sessions/AgentList.tsx`
 - `components/sessions/AgentRow.tsx`
@@ -710,17 +750,20 @@ it('Send button is disabled when disabled prop is true', async () => {
 - `components/sessions/TaskComposer.tsx`
 
 **Terminal Components (4):**
+
 - `components/terminal/AgentOutputTab.tsx`
 - `components/terminal/FindBar.tsx`
 - `components/terminal/ShellPicker.tsx`
 - `components/terminal/TerminalPane.tsx`
 
 **Sprint/Git (3):**
+
 - `components/sprint/PRList.tsx`
 - `components/sprint/SprintBoard.tsx`
 - `components/diff/DiffViewer.tsx`
 
 **Hooks (1):**
+
 - `hooks/useTaskNotifications.ts`
 
 ---

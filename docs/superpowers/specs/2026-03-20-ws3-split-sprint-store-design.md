@@ -134,6 +134,7 @@ After all consumers are migrated.
 ### 4. Update consumers (~8-12 files)
 
 Each consumer currently doing:
+
 ```typescript
 const tasks = useSprintStore((s) => s.tasks)
 const selectedTaskId = useSprintStore((s) => s.selectedTaskId)
@@ -141,6 +142,7 @@ const taskEvents = useSprintStore((s) => s.taskEvents)
 ```
 
 Becomes:
+
 ```typescript
 const tasks = useSprintTasks((s) => s.tasks)
 const selectedTaskId = useSprintUI((s) => s.selectedTaskId)
@@ -149,27 +151,28 @@ const taskEvents = useSprintEvents((s) => s.taskEvents)
 
 ### Consumer File Map
 
-| File | Current Selectors | New Store(s) |
-|------|-------------------|-------------|
-| `SprintCenter.tsx` | tasks, selectedTaskId, logDrawerTaskId, updateTask, deleteTask, etc. | All 3 |
-| `KanbanBoard.tsx` | (receives via props from SprintCenter) | None (no change) |
-| `TaskTable.tsx` | (receives via props) | None (no change) |
-| `TaskCard.tsx` | latestEvents | sprintEvents |
-| `TicketEditor.tsx` | createTask, updateTask | sprintTasks |
-| `LogDrawer.tsx` | taskEvents | sprintEvents |
-| `SprintView.tsx` | (routing only) | None |
-| `AgentsView.tsx` | (verify — may use sprint store) | Check and update |
-| `hooks/useSprintPolling.ts` | loadData, tasks (active check) | sprintTasks |
-| `hooks/usePrStatusPolling.ts` | tasks, prMergedMap | sprintTasks |
-| `hooks/useSprintKeyboardShortcuts.ts` | selectedTaskId, tasks | sprintTasks, sprintUI |
-| `App.tsx` | (if any sprint subscriptions) | Check |
-| `StatusBar.tsx` | (if any sprint subscriptions) | Check |
+| File                                  | Current Selectors                                                    | New Store(s)          |
+| ------------------------------------- | -------------------------------------------------------------------- | --------------------- |
+| `SprintCenter.tsx`                    | tasks, selectedTaskId, logDrawerTaskId, updateTask, deleteTask, etc. | All 3                 |
+| `KanbanBoard.tsx`                     | (receives via props from SprintCenter)                               | None (no change)      |
+| `TaskTable.tsx`                       | (receives via props)                                                 | None (no change)      |
+| `TaskCard.tsx`                        | latestEvents                                                         | sprintEvents          |
+| `TicketEditor.tsx`                    | createTask, updateTask                                               | sprintTasks           |
+| `LogDrawer.tsx`                       | taskEvents                                                           | sprintEvents          |
+| `SprintView.tsx`                      | (routing only)                                                       | None                  |
+| `AgentsView.tsx`                      | (verify — may use sprint store)                                      | Check and update      |
+| `hooks/useSprintPolling.ts`           | loadData, tasks (active check)                                       | sprintTasks           |
+| `hooks/usePrStatusPolling.ts`         | tasks, prMergedMap                                                   | sprintTasks           |
+| `hooks/useSprintKeyboardShortcuts.ts` | selectedTaskId, tasks                                                | sprintTasks, sprintUI |
+| `App.tsx`                             | (if any sprint subscriptions)                                        | Check                 |
+| `StatusBar.tsx`                       | (if any sprint subscriptions)                                        | Check                 |
 
 Note: `NewTicketModal.tsx` and `QueueDashboard.tsx` may receive data via props rather than direct store access — verify before migration. The 3 hook files listed above are confirmed direct consumers.
 
 ### 5. Update tests
 
 Existing `sprint.test.ts` splits into:
+
 - `sprintTasks.test.ts`
 - `sprintUI.test.ts`
 - `sprintEvents.test.ts`

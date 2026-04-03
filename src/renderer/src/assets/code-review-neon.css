@@ -131,7 +131,9 @@
   font-size: 12px;
   font-family: var(--bde-font-code);
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .cr-detail__tab:hover {
@@ -162,16 +164,30 @@
 }
 
 /* Commits */
-.cr-commits { padding: 8px 0; }
+.cr-commits {
+  padding: 8px 0;
+}
 .cr-commits__item {
   display: flex;
   gap: 10px;
   padding: 8px 16px;
   border-bottom: 1px solid var(--neon-purple-border);
 }
-.cr-commits__icon { color: var(--neon-purple); flex-shrink: 0; margin-top: 2px; }
-.cr-commits__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.cr-commits__message { font-size: 12px; color: var(--neon-text); }
+.cr-commits__icon {
+  color: var(--neon-purple);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.cr-commits__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cr-commits__message {
+  font-size: 12px;
+  color: var(--neon-text);
+}
 .cr-commits__meta {
   font-size: 10px;
   color: var(--neon-text-dim);
@@ -179,8 +195,17 @@
 }
 
 /* Conversation */
-.cr-conversation { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
-.cr-conversation__section { display: flex; flex-direction: column; gap: 8px; }
+.cr-conversation {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cr-conversation__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .cr-conversation__heading {
   font-size: 10px;
   text-transform: uppercase;
@@ -242,7 +267,10 @@
   font-family: var(--bde-font-code);
   font-weight: 600;
   cursor: pointer;
-  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
   border: 1px solid;
 }
 
@@ -368,9 +396,15 @@
   flex-shrink: 0;
 }
 
-.cr-file-added { color: var(--neon-cyan); }
-.cr-file-deleted { color: var(--neon-red); }
-.cr-file-modified { color: var(--neon-orange); }
+.cr-file-added {
+  color: var(--neon-cyan);
+}
+.cr-file-deleted {
+  color: var(--neon-red);
+}
+.cr-file-modified {
+  color: var(--neon-orange);
+}
 
 .cr-changes__diff {
   flex: 1;

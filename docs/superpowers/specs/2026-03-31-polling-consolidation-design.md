@@ -35,22 +35,22 @@ All pollers run unconditionally (always-on). The overhead of a few extra IPC cal
 
 ### Pollers moving to the provider
 
-| Poller | Hook | Interval | Current location | Notes |
-|--------|------|----------|-----------------|-------|
-| Sprint tasks | `useSprintPolling` | 30s (active tasks) / 120s (idle) | SprintPipeline, DashboardView | Remove duplicate. Keep SSE listener |
-| PR status | `usePrStatusPolling` | 60s | SprintPipeline | No changes to hook internals |
-| Health check | `useHealthCheckPolling` | 600s | SprintPipeline | Refactor: read tasks from store directly instead of accepting as param |
-| Dashboard aggregate | `useDashboardPolling` | 60s (backoff) | DashboardView | Extract fetch logic into new hook |
-| Git status | `useGitStatusPolling` | 30s | GitTreeView | Extract; always poll for first configured repo, or all |
-| Agent sessions | `useAgentSessionPolling` | 10s | AgentsView | Extract fetch logic into new hook |
-| Cost data | `useCostPolling` | 30s | CostSection | Extract fetch logic into new hook |
+| Poller              | Hook                     | Interval                         | Current location              | Notes                                                                  |
+| ------------------- | ------------------------ | -------------------------------- | ----------------------------- | ---------------------------------------------------------------------- |
+| Sprint tasks        | `useSprintPolling`       | 30s (active tasks) / 120s (idle) | SprintPipeline, DashboardView | Remove duplicate. Keep SSE listener                                    |
+| PR status           | `usePrStatusPolling`     | 60s                              | SprintPipeline                | No changes to hook internals                                           |
+| Health check        | `useHealthCheckPolling`  | 600s                             | SprintPipeline                | Refactor: read tasks from store directly instead of accepting as param |
+| Dashboard aggregate | `useDashboardPolling`    | 60s (backoff)                    | DashboardView                 | Extract fetch logic into new hook                                      |
+| Git status          | `useGitStatusPolling`    | 30s                              | GitTreeView                   | Extract; always poll for first configured repo, or all                 |
+| Agent sessions      | `useAgentSessionPolling` | 10s                              | AgentsView                    | Extract fetch logic into new hook                                      |
+| Cost data           | `useCostPolling`         | 30s                              | CostSection                   | Extract fetch logic into new hook                                      |
 
 ### Pollers staying per-component
 
-| Poller | Interval | Location | Reason |
-|--------|----------|----------|--------|
-| Elapsed timers | 1-10s | TaskPill, TaskDetailDrawer, ElapsedTime, AgentCard, ConsoleHeader | Cosmetic tick counters, cheap, mount/unmount with component |
-| Log poller | 1s | logPoller.ts (store action) | Imperative start/stop tied to specific agent session |
+| Poller         | Interval | Location                                                          | Reason                                                      |
+| -------------- | -------- | ----------------------------------------------------------------- | ----------------------------------------------------------- |
+| Elapsed timers | 1-10s    | TaskPill, TaskDetailDrawer, ElapsedTime, AgentCard, ConsoleHeader | Cosmetic tick counters, cheap, mount/unmount with component |
+| Log poller     | 1s       | logPoller.ts (store action)                                       | Imperative start/stop tied to specific agent session        |
 
 ### Hook refactors
 
@@ -86,9 +86,7 @@ Each view removes its polling setup but keeps a one-time `useEffect(() => { load
 // In App.tsx, wrap the app content
 return (
   <PollingProvider>
-    <div className="app-shell elevation-0">
-      {/* existing app content */}
-    </div>
+    <div className="app-shell elevation-0">{/* existing app content */}</div>
   </PollingProvider>
 )
 ```
@@ -97,24 +95,24 @@ The provider mounts before any view, so stores begin warming immediately on app 
 
 ## Files changed
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/components/PollingProvider.tsx` | **New** — root polling orchestrator |
-| `src/renderer/src/hooks/useDashboardPolling.ts` | **New** — extracted from DashboardView |
-| `src/renderer/src/hooks/useGitStatusPolling.ts` | **New** — extracted from GitTreeView |
-| `src/renderer/src/hooks/useAgentSessionPolling.ts` | **New** — extracted from AgentsView |
-| `src/renderer/src/hooks/useCostPolling.ts` | **New** — extracted from CostSection |
-| `src/renderer/src/hooks/useHealthCheck.ts` | **Modified** — read tasks from store, remove tasks param |
-| `src/renderer/src/stores/healthCheck.ts` | **Modified** — add `useVisibleStuckTasks()` selector hook |
-| `src/renderer/src/stores/dashboardData.ts` | **New** — Zustand store for dashboard chart/feed/PR data |
-| `src/renderer/src/App.tsx` | **Modified** — mount PollingProvider |
-| `src/renderer/src/views/DashboardView.tsx` | **Modified** — remove polling hooks |
-| `src/renderer/src/views/GitTreeView.tsx` | **Modified** — remove polling interval |
-| `src/renderer/src/views/AgentsView.tsx` | **Modified** — remove polling interval |
-| `src/renderer/src/components/sprint/SprintPipeline.tsx` | **Modified** — remove polling hooks |
-| `src/renderer/src/components/settings/CostSection.tsx` | **Modified** — remove polling interval |
-| `src/renderer/src/lib/logPoller.ts` | **Modified** — migrate to visibility-aware interval |
-| Tests for all modified/new files | **Modified/New** — update mocks, add coverage |
+| File                                                    | Change                                                    |
+| ------------------------------------------------------- | --------------------------------------------------------- |
+| `src/renderer/src/components/PollingProvider.tsx`       | **New** — root polling orchestrator                       |
+| `src/renderer/src/hooks/useDashboardPolling.ts`         | **New** — extracted from DashboardView                    |
+| `src/renderer/src/hooks/useGitStatusPolling.ts`         | **New** — extracted from GitTreeView                      |
+| `src/renderer/src/hooks/useAgentSessionPolling.ts`      | **New** — extracted from AgentsView                       |
+| `src/renderer/src/hooks/useCostPolling.ts`              | **New** — extracted from CostSection                      |
+| `src/renderer/src/hooks/useHealthCheck.ts`              | **Modified** — read tasks from store, remove tasks param  |
+| `src/renderer/src/stores/healthCheck.ts`                | **Modified** — add `useVisibleStuckTasks()` selector hook |
+| `src/renderer/src/stores/dashboardData.ts`              | **New** — Zustand store for dashboard chart/feed/PR data  |
+| `src/renderer/src/App.tsx`                              | **Modified** — mount PollingProvider                      |
+| `src/renderer/src/views/DashboardView.tsx`              | **Modified** — remove polling hooks                       |
+| `src/renderer/src/views/GitTreeView.tsx`                | **Modified** — remove polling interval                    |
+| `src/renderer/src/views/AgentsView.tsx`                 | **Modified** — remove polling interval                    |
+| `src/renderer/src/components/sprint/SprintPipeline.tsx` | **Modified** — remove polling hooks                       |
+| `src/renderer/src/components/settings/CostSection.tsx`  | **Modified** — remove polling interval                    |
+| `src/renderer/src/lib/logPoller.ts`                     | **Modified** — migrate to visibility-aware interval       |
+| Tests for all modified/new files                        | **Modified/New** — update mocks, add coverage             |
 
 ## Testing
 

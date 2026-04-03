@@ -13,40 +13,40 @@ BDE should feel like piloting a spacecraft designed by Jony Ive — every surfac
 ```css
 :root {
   /* Backgrounds — deeper and more layered than v1 */
-  --bg-void:      #050507;   /* absolute deepest layer, behind everything */
-  --bg-base:      #0A0A0F;   /* primary app background — has a faint blue undertone */
-  --bg-surface:   #111118;   /* first elevation surface (sidebar, panels) */
-  --bg-card:      #16161F;   /* card / interactive element background */
-  --bg-hover:     #1C1C27;   /* hover state for cards */
-  --bg-active:    #222230;   /* active/pressed state */
+  --bg-void: #050507; /* absolute deepest layer, behind everything */
+  --bg-base: #0a0a0f; /* primary app background — has a faint blue undertone */
+  --bg-surface: #111118; /* first elevation surface (sidebar, panels) */
+  --bg-card: #16161f; /* card / interactive element background */
+  --bg-hover: #1c1c27; /* hover state for cards */
+  --bg-active: #222230; /* active/pressed state */
 
   /* Borders — slightly cooler, hint of blue */
-  --border:       #1E1E2A;   /* default dividers, panel edges */
-  --border-light: #2A2A3A;   /* elevated element borders */
-  --border-glow:  #3A3A52;   /* prominent borders on modals, popovers */
+  --border: #1e1e2a; /* default dividers, panel edges */
+  --border-light: #2a2a3a; /* elevated element borders */
+  --border-glow: #3a3a52; /* prominent borders on modals, popovers */
 
   /* Text — unchanged from v1, these were already good */
-  --text-primary:   #F5F5F7;
-  --text-secondary: #98989F;
-  --text-muted:     #5C5C63;
-  --text-ghost:     #3A3A42;  /* new: ultra-dim for watermarks, bg-labels */
+  --text-primary: #f5f5f7;
+  --text-secondary: #98989f;
+  --text-muted: #5c5c63;
+  --text-ghost: #3a3a42; /* new: ultra-dim for watermarks, bg-labels */
 
   /* Accent — Feast green with expanded range */
-  --accent:         #00D37F;
-  --accent-bright:  #33EDAA;  /* hover, emphasis */
-  --accent-dim:     #00A863;  /* pressed, secondary */
-  --accent-subtle:  rgba(0, 211, 127, 0.08);  /* tint for backgrounds */
-  --accent-muted:   rgba(0, 211, 127, 0.15);  /* selection, badge bg */
-  --accent-glow:    rgba(0, 211, 127, 0.25);  /* box-shadow glow */
-  --accent-flare:   rgba(0, 211, 127, 0.40);  /* intense glow, focus rings */
+  --accent: #00d37f;
+  --accent-bright: #33edaa; /* hover, emphasis */
+  --accent-dim: #00a863; /* pressed, secondary */
+  --accent-subtle: rgba(0, 211, 127, 0.08); /* tint for backgrounds */
+  --accent-muted: rgba(0, 211, 127, 0.15); /* selection, badge bg */
+  --accent-glow: rgba(0, 211, 127, 0.25); /* box-shadow glow */
+  --accent-flare: rgba(0, 211, 127, 0.4); /* intense glow, focus rings */
 
   /* Semantic — richer and more saturated */
-  --color-running: #00D37F;
-  --color-warning: #FFAA33;
-  --color-error:   #FF453A;
-  --color-info:    #5B9EFF;
-  --color-ai:      #A78BFA;
-  --color-queued:  #6C8EEF;
+  --color-running: #00d37f;
+  --color-warning: #ffaa33;
+  --color-error: #ff453a;
+  --color-info: #5b9eff;
+  --color-ai: #a78bfa;
+  --color-queued: #6c8eef;
 }
 ```
 
@@ -61,16 +61,16 @@ Each gradient is named and has a specific use case. All gradients are defined as
      ————————————————————————— */
 
   /* Aurora — primary brand gradient. Green to teal. Used on primary CTAs, active tab indicators */
-  --gradient-aurora: linear-gradient(135deg, #00D37F 0%, #00B4D8 100%);
+  --gradient-aurora: linear-gradient(135deg, #00d37f 0%, #00b4d8 100%);
 
   /* Electric — high-energy blue-purple. Used for AI/agent-related accents, thinking state */
-  --gradient-electric: linear-gradient(135deg, #6C8EEF 0%, #A78BFA 50%, #C084FC 100%);
+  --gradient-electric: linear-gradient(135deg, #6c8eef 0%, #a78bfa 50%, #c084fc 100%);
 
   /* Solar — warm amber to orange. Used for warnings, cost indicators, token counters */
-  --gradient-solar: linear-gradient(135deg, #FFAA33 0%, #FF6B35 100%);
+  --gradient-solar: linear-gradient(135deg, #ffaa33 0%, #ff6b35 100%);
 
   /* Ember — red to pink. Used for error states, destructive actions */
-  --gradient-ember: linear-gradient(135deg, #FF453A 0%, #FF6B8A 100%);
+  --gradient-ember: linear-gradient(135deg, #ff453a 0%, #ff6b8a 100%);
 
   /* —————————————————————————
      SURFACE GRADIENTS — used for panel backgrounds, card fills
@@ -95,15 +95,15 @@ Each gradient is named and has a specific use case. All gradients are defined as
     160deg,
     rgba(0, 211, 127, 0.04) 0%,
     rgba(108, 142, 239, 0.03) 50%,
-    rgba(10, 10, 15, 0.0) 100%
+    rgba(10, 10, 15, 0) 100%
   );
 
   /* Shimmer — animated gradient for loading states and skeleton screens */
   --gradient-shimmer: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0) 0%,
     rgba(255, 255, 255, 0.03) 50%,
-    rgba(255, 255, 255, 0.0) 100%
+    rgba(255, 255, 255, 0) 100%
   );
 }
 ```
@@ -166,19 +166,19 @@ Usage: Apply to the "BDE" logotype in the title bar, section headings on setting
 ```css
 :root {
   /* Blur intensities */
-  --glass-blur-sm:    blur(8px);
-  --glass-blur-md:    blur(16px);
-  --glass-blur-lg:    blur(24px);
-  --glass-blur-xl:    blur(40px);
+  --glass-blur-sm: blur(8px);
+  --glass-blur-md: blur(16px);
+  --glass-blur-lg: blur(24px);
+  --glass-blur-xl: blur(40px);
 
   /* Saturation boost — makes colors behind the glass richer */
-  --glass-saturate:   saturate(180%);
+  --glass-saturate: saturate(180%);
 
   /* Glass tints — the background-color of glass panels */
-  --glass-tint-dark:   rgba(10, 10, 18, 0.75);     /* sidebar, nav */
-  --glass-tint-mid:    rgba(16, 16, 26, 0.70);      /* cards, panels */
-  --glass-tint-light:  rgba(22, 22, 34, 0.60);      /* popovers, modals */
-  --glass-tint-ultra:  rgba(30, 30, 48, 0.50);      /* command palette, spotlight */
+  --glass-tint-dark: rgba(10, 10, 18, 0.75); /* sidebar, nav */
+  --glass-tint-mid: rgba(16, 16, 26, 0.7); /* cards, panels */
+  --glass-tint-light: rgba(22, 22, 34, 0.6); /* popovers, modals */
+  --glass-tint-ultra: rgba(30, 30, 48, 0.5); /* command palette, spotlight */
 }
 ```
 
@@ -200,7 +200,7 @@ Usage: Apply to the "BDE" logotype in the title bar, section headings on setting
   -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
   border: 1px solid var(--border-light);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.40),
+    0 8px 32px rgba(0, 0, 0, 0.4),
     0 0 0 0.5px rgba(255, 255, 255, 0.05) inset;
 }
 
@@ -211,7 +211,7 @@ Usage: Apply to the "BDE" logotype in the title bar, section headings on setting
   -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
   border: 1px solid var(--border-glow);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.60),
+    0 24px 80px rgba(0, 0, 0, 0.6),
     0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
     0 0 60px rgba(0, 211, 127, 0.03);
 }
@@ -269,26 +269,26 @@ Apple visionOS uses a very subtle top-edge light reflection on glass elements. R
 
 ```css
 /* UI text — Inter */
---text-2xs:   10px / 14px;   /* status bar, timestamps, token counts */
---text-xs:    11px / 16px;   /* labels, badges, sidebar meta */
---text-sm:    13px / 20px;   /* default body, menu items, descriptions */
---text-base:  14px / 22px;   /* emphasized body, panel titles */
---text-lg:    16px / 24px;   /* section headings */
---text-xl:    20px / 28px;   /* page titles */
---text-2xl:   28px / 36px;   /* onboarding / splash headings */
---text-3xl:   36px / 44px;   /* hero text, marketing-style moments */
+--text-2xs: 10px / 14px; /* status bar, timestamps, token counts */
+--text-xs: 11px / 16px; /* labels, badges, sidebar meta */
+--text-sm: 13px / 20px; /* default body, menu items, descriptions */
+--text-base: 14px / 22px; /* emphasized body, panel titles */
+--text-lg: 16px / 24px; /* section headings */
+--text-xl: 20px / 28px; /* page titles */
+--text-2xl: 28px / 36px; /* onboarding / splash headings */
+--text-3xl: 36px / 44px; /* hero text, marketing-style moments */
 
 /* Mono text — JetBrains Mono (always -1px vs UI equivalent) */
---mono-2xs:   9px / 14px;    /* micro stats */
---mono-xs:    10px / 16px;   /* log lines, CLI output */
---mono-sm:    12px / 18px;   /* primary code / session feed */
---mono-base:  13px / 20px;   /* editor, expanded diffs */
+--mono-2xs: 9px / 14px; /* micro stats */
+--mono-xs: 10px / 16px; /* log lines, CLI output */
+--mono-sm: 12px / 18px; /* primary code / session feed */
+--mono-base: 13px / 20px; /* editor, expanded diffs */
 
 /* Letter-spacing */
---tracking-tight:  -0.02em;  /* headings xl+ */
---tracking-normal:  0;       /* body text */
---tracking-wide:    0.06em;  /* "BDE" logotype, status labels */
---tracking-widest:  0.12em;  /* section divider labels */
+--tracking-tight: -0.02em; /* headings xl+ */
+--tracking-normal: 0; /* body text */
+--tracking-wide: 0.06em; /* "BDE" logotype, status labels */
+--tracking-widest: 0.12em; /* section divider labels */
 ```
 
 ### 4.3 Heading Treatments
@@ -321,7 +321,7 @@ Apple visionOS uses a very subtle top-edge light reflection on glass elements. R
   font-size: 36px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, #F5F5F7 0%, #98989F 100%);
+  background: linear-gradient(135deg, #f5f5f7 0%, #98989f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -373,11 +373,7 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
   /* No blur, no border, no shadow. This is the abyss. */
   /* Optional: radial gradient center glow */
   background:
-    radial-gradient(
-      ellipse 60% 40% at 50% 0%,
-      rgba(0, 211, 127, 0.015) 0%,
-      transparent 100%
-    ),
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 211, 127, 0.015) 0%, transparent 100%),
     var(--bg-void);
 }
 ```
@@ -389,7 +385,7 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
   background: var(--glass-tint-dark);
   backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.20);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 ```
 
@@ -423,7 +419,7 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
 
 /* Overlay backdrop scrim */
 .elevation-3-backdrop {
-  background: rgba(0, 0, 0, 0.50);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px) saturate(120%);
 }
 ```
@@ -434,10 +430,10 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
 .elevation-4 {
   background: var(--glass-tint-ultra);
   backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   box-shadow:
-    0 32px 100px rgba(0, 0, 0, 0.60),
+    0 32px 100px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 255, 255, 0.06) inset,
     0 0 80px rgba(0, 211, 127, 0.05);
 }
@@ -454,15 +450,15 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
 .glow-accent-sm {
   box-shadow:
     0 0 8px rgba(0, 211, 127, 0.15),
-    0 0 0 1px rgba(0, 211, 127, 0.20);
+    0 0 0 1px rgba(0, 211, 127, 0.2);
 }
 
 /* Medium glow — focused inputs, primary buttons */
 .glow-accent-md {
   box-shadow:
-    0 0 16px rgba(0, 211, 127, 0.20),
-    0 0 4px rgba(0, 211, 127, 0.30),
-    0 0 0 1px rgba(0, 211, 127, 0.40);
+    0 0 16px rgba(0, 211, 127, 0.2),
+    0 0 4px rgba(0, 211, 127, 0.3),
+    0 0 0 1px rgba(0, 211, 127, 0.4);
 }
 
 /* Large glow — hero elements, running session card, active agent */
@@ -471,7 +467,7 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
     0 0 40px rgba(0, 211, 127, 0.15),
     0 0 16px rgba(0, 211, 127, 0.25),
     0 0 4px rgba(0, 211, 127, 0.35),
-    0 0 0 1px rgba(0, 211, 127, 0.50);
+    0 0 0 1px rgba(0, 211, 127, 0.5);
 }
 ```
 
@@ -479,27 +475,48 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
 
 ```css
 /* Each status color has its own glow for running indicators */
-.glow-running { box-shadow: 0 0 12px rgba(0, 211, 127, 0.25), 0 0 0 1px rgba(0, 211, 127, 0.30); }
-.glow-error   { box-shadow: 0 0 12px rgba(255, 69, 58, 0.25), 0 0 0 1px rgba(255, 69, 58, 0.30); }
-.glow-warning { box-shadow: 0 0 12px rgba(255, 170, 51, 0.25), 0 0 0 1px rgba(255, 170, 51, 0.30); }
-.glow-info    { box-shadow: 0 0 12px rgba(91, 158, 255, 0.25), 0 0 0 1px rgba(91, 158, 255, 0.30); }
-.glow-ai      { box-shadow: 0 0 12px rgba(167, 139, 250, 0.25), 0 0 0 1px rgba(167, 139, 250, 0.30); }
+.glow-running {
+  box-shadow:
+    0 0 12px rgba(0, 211, 127, 0.25),
+    0 0 0 1px rgba(0, 211, 127, 0.3);
+}
+.glow-error {
+  box-shadow:
+    0 0 12px rgba(255, 69, 58, 0.25),
+    0 0 0 1px rgba(255, 69, 58, 0.3);
+}
+.glow-warning {
+  box-shadow:
+    0 0 12px rgba(255, 170, 51, 0.25),
+    0 0 0 1px rgba(255, 170, 51, 0.3);
+}
+.glow-info {
+  box-shadow:
+    0 0 12px rgba(91, 158, 255, 0.25),
+    0 0 0 1px rgba(91, 158, 255, 0.3);
+}
+.glow-ai {
+  box-shadow:
+    0 0 12px rgba(167, 139, 250, 0.25),
+    0 0 0 1px rgba(167, 139, 250, 0.3);
+}
 ```
 
 ### 6.3 Pulsing Glow (for "running" state)
 
 ```css
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 8px rgba(0, 211, 127, 0.15),
-      0 0 0 1px rgba(0, 211, 127, 0.20);
+      0 0 0 1px rgba(0, 211, 127, 0.2);
   }
   50% {
     box-shadow:
       0 0 20px rgba(0, 211, 127, 0.25),
       0 0 4px rgba(0, 211, 127, 0.35),
-      0 0 0 1px rgba(0, 211, 127, 0.40);
+      0 0 0 1px rgba(0, 211, 127, 0.4);
   }
 }
 
@@ -554,7 +571,7 @@ export const SPRINGS = {
   gentle: { type: 'spring', stiffness: 120, damping: 20, mass: 1.5 },
 
   // Bounce — celebratory moments (PR merged, session complete)
-  bounce: { type: 'spring', stiffness: 400, damping: 15, mass: 0.6 },
+  bounce: { type: 'spring', stiffness: 400, damping: 15, mass: 0.6 }
 } as const
 ```
 
@@ -569,7 +586,7 @@ export const TRANSITIONS = {
   crossfade: { duration: 0.2, ease: [0.25, 0.1, 0.25, 1] },
 
   // Layout — panel resize, sidebar collapse
-  layout: { type: 'spring', stiffness: 300, damping: 30, mass: 1 },
+  layout: { type: 'spring', stiffness: 300, damping: 30, mass: 1 }
 } as const
 ```
 
@@ -581,47 +598,47 @@ export const VARIANTS = {
   fadeIn: {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
-    exit: { opacity: 0 },
+    exit: { opacity: 0 }
   },
 
   // Slide up — cards, list items, feed lines
   slideUp: {
     initial: { opacity: 0, y: 12 },
     animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -8 },
+    exit: { opacity: 0, y: -8 }
   },
 
   // Slide from left — sidebar items, nav entering
   slideLeft: {
     initial: { opacity: 0, x: -16 },
     animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -16 },
+    exit: { opacity: 0, x: -16 }
   },
 
   // Scale in — modals, command palette, dialogs
   scaleIn: {
     initial: { opacity: 0, scale: 0.95, filter: 'blur(4px)' },
     animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
-    exit: { opacity: 0, scale: 0.95, filter: 'blur(4px)' },
+    exit: { opacity: 0, scale: 0.95, filter: 'blur(4px)' }
   },
 
   // Drop in — notifications, toasts (from top)
   dropIn: {
     initial: { opacity: 0, y: -20, scale: 0.97 },
     animate: { opacity: 1, y: 0, scale: 1 },
-    exit: { opacity: 0, y: -10, scale: 0.97 },
+    exit: { opacity: 0, y: -10, scale: 0.97 }
   },
 
   // Stagger container — for lists of items
   staggerContainer: {
-    animate: { transition: { staggerChildren: 0.04, delayChildren: 0.06 } },
+    animate: { transition: { staggerChildren: 0.04, delayChildren: 0.06 } }
   },
 
   // Stagger child — individual items in a staggered list
   staggerChild: {
     initial: { opacity: 0, y: 8 },
-    animate: { opacity: 1, y: 0 },
-  },
+    animate: { opacity: 1, y: 0 }
+  }
 }
 ```
 
@@ -649,7 +666,7 @@ export const VARIANTS = {
   className={cn(
     'glass glass-highlight w-full text-left p-3 rounded-xl transition-colors',
     isSelected && 'gradient-border glow-accent-sm',
-    isRunning && !isSelected && 'glow-pulse',
+    isRunning && !isSelected && 'glow-pulse'
   )}
 >
   {/* Content unchanged from v1 */}
@@ -668,9 +685,7 @@ export const VARIANTS = {
   <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.12)] to-transparent" />
 
   <Command>
-    <Command.Input
-      className="font-mono text-sm bg-transparent border-b border-[--border] px-5 py-4 outline-none text-[--text-primary] placeholder:text-[--text-muted]"
-    />
+    <Command.Input className="font-mono text-sm bg-transparent border-b border-[--border] px-5 py-4 outline-none text-[--text-primary] placeholder:text-[--text-muted]" />
     <Command.List className="max-h-[400px] overflow-y-auto py-2" />
   </Command>
 </motion.div>
@@ -683,7 +698,9 @@ export const VARIANTS = {
   {/* Traffic lights */}
   {/* Logotype with glow */}
   <span className="relative">
-    <span className="logotype-glow" aria-hidden>BDE</span>
+    <span className="logotype-glow" aria-hidden>
+      BDE
+    </span>
     <span className="logotype">BDE</span>
   </span>
 
@@ -708,13 +725,13 @@ export const VARIANTS = {
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-out;
-  box-shadow: 0 0 16px rgba(0, 211, 127, 0.20);
+  box-shadow: 0 0 16px rgba(0, 211, 127, 0.2);
 }
 
 .btn-primary:hover {
   box-shadow:
-    0 0 24px rgba(0, 211, 127, 0.30),
-    0 0 8px rgba(0, 211, 127, 0.40);
+    0 0 24px rgba(0, 211, 127, 0.3),
+    0 0 8px rgba(0, 211, 127, 0.4);
   filter: brightness(1.1);
 }
 
@@ -759,16 +776,16 @@ export const VARIANTS = {
 
 These are the north-star products/interfaces BDE should channel:
 
-| Reference | What to take from it |
-|-----------|---------------------|
-| **Apple visionOS** | Glass panel layering, top-edge highlight, depth through blur intensity, shadow scaling per elevation |
-| **Linear.app** | Keyboard-driven speed, subtle gradients in UI chrome, immaculate typography, command palette UX |
-| **Raycast** | Snappy spring animations, frosted glass popover, smooth list transitions, how a tool feels _fast_ |
-| **Arc Browser** | Sidebar glass morphism, gradient accents, how a dark UI can feel warm and alive, not cold |
-| **Vercel Dashboard** | Restrained elegance, monospace as a design feature not a limitation, status indicators with glow |
-| **Warp Terminal** | AI-native terminal aesthetic, how to make a dev tool feel premium, block-based interaction model |
-| **Apple Music (macOS)** | Background gradient ambient effects reacting to content, smooth crossfade transitions |
-| **Framer** | Canvas-feel precision, how overlapping translucent panels create richness without clutter |
+| Reference               | What to take from it                                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Apple visionOS**      | Glass panel layering, top-edge highlight, depth through blur intensity, shadow scaling per elevation |
+| **Linear.app**          | Keyboard-driven speed, subtle gradients in UI chrome, immaculate typography, command palette UX      |
+| **Raycast**             | Snappy spring animations, frosted glass popover, smooth list transitions, how a tool feels _fast_    |
+| **Arc Browser**         | Sidebar glass morphism, gradient accents, how a dark UI can feel warm and alive, not cold            |
+| **Vercel Dashboard**    | Restrained elegance, monospace as a design feature not a limitation, status indicators with glow     |
+| **Warp Terminal**       | AI-native terminal aesthetic, how to make a dev tool feel premium, block-based interaction model     |
+| **Apple Music (macOS)** | Background gradient ambient effects reacting to content, smooth crossfade transitions                |
+| **Framer**              | Canvas-feel precision, how overlapping translucent panels create richness without clutter            |
 
 ### Mood Keywords
 

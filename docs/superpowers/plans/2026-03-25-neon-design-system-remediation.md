@@ -12,25 +12,25 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/renderer/src/assets/neon.css` | Modify | Add `--neon-text`, `--neon-text-muted`, `--neon-text-dim`, `--neon-surface-dim` semantic vars |
-| `src/renderer/src/design-system/tokens.ts` | Modify | Add neon semantic text tokens |
-| `src/renderer/src/components/neon/types.ts` | Modify | Export new neon semantic tokens type |
-| `src/renderer/src/components/neon/NeonCard.tsx` | Modify | Replace magic px with tokens |
-| `src/renderer/src/components/neon/StatCounter.tsx` | Modify | Replace magic px + `#fff` with tokens |
-| `src/renderer/src/components/neon/NeonBadge.tsx` | Modify | Replace magic px with tokens |
-| `src/renderer/src/components/neon/ActivityFeed.tsx` | Modify | Replace rgba() with CSS vars, px with tokens |
-| `src/renderer/src/components/neon/NeonProgress.tsx` | Modify | Replace rgba() + magic px with tokens |
-| `src/renderer/src/components/neon/PipelineFlow.tsx` | Modify | Replace rgba() + magic px with tokens |
-| `src/renderer/src/components/neon/MiniChart.tsx` | Modify | Replace rgba() + magic px with tokens |
-| `src/renderer/src/components/neon/GlassPanel.tsx` | Modify | Replace rgba() with CSS vars, px with tokens |
-| `src/renderer/src/components/neon/CircuitPipeline.tsx` | Modify | Replace rgba() + magic px with tokens |
-| `src/renderer/src/components/neon/StatusBar.tsx` | Modify | Add `accent` prop, replace hardcoded purple + rgba() |
-| `src/renderer/src/components/neon/ScanlineOverlay.tsx` | Modify | Fix type hack, add `aria-hidden` |
-| `src/renderer/src/components/neon/NeonTooltip.tsx` | Modify | Add keyboard support + `aria-describedby` |
-| `src/renderer/src/components/neon/ParticleField.tsx` | Modify | Extract magic numbers to named constants |
-| Tests (13 files in `__tests__/`) | Modify | Update tests for new props/behavior |
+| File                                                   | Action | Responsibility                                                                                |
+| ------------------------------------------------------ | ------ | --------------------------------------------------------------------------------------------- |
+| `src/renderer/src/assets/neon.css`                     | Modify | Add `--neon-text`, `--neon-text-muted`, `--neon-text-dim`, `--neon-surface-dim` semantic vars |
+| `src/renderer/src/design-system/tokens.ts`             | Modify | Add neon semantic text tokens                                                                 |
+| `src/renderer/src/components/neon/types.ts`            | Modify | Export new neon semantic tokens type                                                          |
+| `src/renderer/src/components/neon/NeonCard.tsx`        | Modify | Replace magic px with tokens                                                                  |
+| `src/renderer/src/components/neon/StatCounter.tsx`     | Modify | Replace magic px + `#fff` with tokens                                                         |
+| `src/renderer/src/components/neon/NeonBadge.tsx`       | Modify | Replace magic px with tokens                                                                  |
+| `src/renderer/src/components/neon/ActivityFeed.tsx`    | Modify | Replace rgba() with CSS vars, px with tokens                                                  |
+| `src/renderer/src/components/neon/NeonProgress.tsx`    | Modify | Replace rgba() + magic px with tokens                                                         |
+| `src/renderer/src/components/neon/PipelineFlow.tsx`    | Modify | Replace rgba() + magic px with tokens                                                         |
+| `src/renderer/src/components/neon/MiniChart.tsx`       | Modify | Replace rgba() + magic px with tokens                                                         |
+| `src/renderer/src/components/neon/GlassPanel.tsx`      | Modify | Replace rgba() with CSS vars, px with tokens                                                  |
+| `src/renderer/src/components/neon/CircuitPipeline.tsx` | Modify | Replace rgba() + magic px with tokens                                                         |
+| `src/renderer/src/components/neon/StatusBar.tsx`       | Modify | Add `accent` prop, replace hardcoded purple + rgba()                                          |
+| `src/renderer/src/components/neon/ScanlineOverlay.tsx` | Modify | Fix type hack, add `aria-hidden`                                                              |
+| `src/renderer/src/components/neon/NeonTooltip.tsx`     | Modify | Add keyboard support + `aria-describedby`                                                     |
+| `src/renderer/src/components/neon/ParticleField.tsx`   | Modify | Extract magic numbers to named constants                                                      |
+| Tests (13 files in `__tests__/`)                       | Modify | Update tests for new props/behavior                                                           |
 
 ---
 
@@ -39,49 +39,53 @@
 Use this mapping when replacing hardcoded values in all tasks below:
 
 ### Spacing (inline `style` → `tokens.space`)
-| Hardcoded | Token | Semantic |
-|-----------|-------|----------|
-| `'2px'` | — | Keep as-is (sub-grid, borders) |
-| `'3px'` | — | Keep as-is (bar gap) |
-| `'4px'` | `tokens.space[1]` | Tight gap |
-| `'6px'` | `tokens.space[1]` | Use 4px (round down to grid) |
-| `'8px'` | `tokens.space[2]` | Standard gap |
-| `'10px'` | `tokens.space[2]` | Use 8px (round down) or `tokens.space[3]` |
-| `'12px'` | `tokens.space[3]` | Standard padding |
-| `'14px'` | `tokens.space[3]` | Use 12px (round down to grid) |
-| `'16px'` | `tokens.space[4]` | Section padding |
-| `'20px'` | `tokens.space[5]` | Large spacing |
-| `'24px'` | `tokens.space[6]` | Section gap |
-| `'32px'` | `tokens.space[8]` | Connector width |
+
+| Hardcoded | Token             | Semantic                                  |
+| --------- | ----------------- | ----------------------------------------- |
+| `'2px'`   | —                 | Keep as-is (sub-grid, borders)            |
+| `'3px'`   | —                 | Keep as-is (bar gap)                      |
+| `'4px'`   | `tokens.space[1]` | Tight gap                                 |
+| `'6px'`   | `tokens.space[1]` | Use 4px (round down to grid)              |
+| `'8px'`   | `tokens.space[2]` | Standard gap                              |
+| `'10px'`  | `tokens.space[2]` | Use 8px (round down) or `tokens.space[3]` |
+| `'12px'`  | `tokens.space[3]` | Standard padding                          |
+| `'14px'`  | `tokens.space[3]` | Use 12px (round down to grid)             |
+| `'16px'`  | `tokens.space[4]` | Section padding                           |
+| `'20px'`  | `tokens.space[5]` | Large spacing                             |
+| `'24px'`  | `tokens.space[6]` | Section gap                               |
+| `'32px'`  | `tokens.space[8]` | Connector width                           |
 
 ### Font Sizes (inline `style` → `tokens.size`)
-| Hardcoded | Token | Usage |
-|-----------|-------|-------|
-| `'8px'`/`'9px'` | `tokens.size.xs` (11px) | Labels — note: rounds UP, visually larger |
-| `'10px'` | `tokens.size.xs` (11px) | Badge text, suffixes |
-| `'11px'` | `tokens.size.xs` | Fine print, timestamps |
-| `'12px'` | `tokens.size.sm` | Secondary text |
-| `'13px'` | `tokens.size.md` | Body |
-| `'14px'` | `tokens.size.lg` | Emphasis |
-| `'16px'` | `tokens.size.xl` | Section titles |
-| `'18px'`/`'20px'` | `tokens.size.xxl` | Icons, counts |
-| `'22px'` | `tokens.size.xxl` (20px) | Stat values — rounds DOWN 2px |
+
+| Hardcoded         | Token                    | Usage                                     |
+| ----------------- | ------------------------ | ----------------------------------------- |
+| `'8px'`/`'9px'`   | `tokens.size.xs` (11px)  | Labels — note: rounds UP, visually larger |
+| `'10px'`          | `tokens.size.xs` (11px)  | Badge text, suffixes                      |
+| `'11px'`          | `tokens.size.xs`         | Fine print, timestamps                    |
+| `'12px'`          | `tokens.size.sm`         | Secondary text                            |
+| `'13px'`          | `tokens.size.md`         | Body                                      |
+| `'14px'`          | `tokens.size.lg`         | Emphasis                                  |
+| `'16px'`          | `tokens.size.xl`         | Section titles                            |
+| `'18px'`/`'20px'` | `tokens.size.xxl`        | Icons, counts                             |
+| `'22px'`          | `tokens.size.xxl` (20px) | Stat values — rounds DOWN 2px             |
 
 ### Colors (hardcoded → CSS var)
-| Hardcoded | New CSS Variable | Used for |
-|-----------|-----------------|----------|
-| `'#fff'` | `tokens.neon.text` → `var(--neon-text)` | High-emphasis text on neon surfaces |
-| `'rgba(255, 255, 255, 0.6)'` | `tokens.neon.textMuted` → `var(--neon-text-muted)` | Event labels, secondary content |
-| `'rgba(255, 255, 255, 0.3)'` | `tokens.neon.textDim` → `var(--neon-text-dim)` | Timestamps, placeholders, arrows |
-| `'rgba(255, 255, 255, 0.06)'` | `tokens.neon.surfaceDim` → `var(--neon-surface-dim)` | Track backgrounds, subtle fills |
-| `'rgba(255, 255, 255, 0.1)'` | `tokens.neon.surfaceSubtle` → `var(--neon-surface-subtle)` | Active-state inset highlights |
-| `'rgba(10, 0, 21, 0.4)'`–`0.6` | `tokens.neon.surfaceDeep` → `var(--neon-surface-deep)` | Gradient endpoints |
+
+| Hardcoded                      | New CSS Variable                                           | Used for                            |
+| ------------------------------ | ---------------------------------------------------------- | ----------------------------------- |
+| `'#fff'`                       | `tokens.neon.text` → `var(--neon-text)`                    | High-emphasis text on neon surfaces |
+| `'rgba(255, 255, 255, 0.6)'`   | `tokens.neon.textMuted` → `var(--neon-text-muted)`         | Event labels, secondary content     |
+| `'rgba(255, 255, 255, 0.3)'`   | `tokens.neon.textDim` → `var(--neon-text-dim)`             | Timestamps, placeholders, arrows    |
+| `'rgba(255, 255, 255, 0.06)'`  | `tokens.neon.surfaceDim` → `var(--neon-surface-dim)`       | Track backgrounds, subtle fills     |
+| `'rgba(255, 255, 255, 0.1)'`   | `tokens.neon.surfaceSubtle` → `var(--neon-surface-subtle)` | Active-state inset highlights       |
+| `'rgba(10, 0, 21, 0.4)'`–`0.6` | `tokens.neon.surfaceDeep` → `var(--neon-surface-deep)`     | Gradient endpoints                  |
 
 ---
 
 ## Task 1: Add Neon Semantic CSS Variables
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/neon.css` (add vars in `:root` block)
 - Modify: `src/renderer/src/design-system/tokens.ts` (add to `neon` object)
 
@@ -90,13 +94,13 @@ Use this mapping when replacing hardcoded values in all tasks below:
 Find the `:root` block in `neon.css` where `--neon-cyan`, `--neon-pink`, etc. are defined. Add these semantic variables at the end of that block:
 
 ```css
-  /* Semantic text/surface colors for neon components */
-  --neon-text: #ffffff;
-  --neon-text-muted: rgba(255, 255, 255, 0.6);
-  --neon-text-dim: rgba(255, 255, 255, 0.3);
-  --neon-surface-dim: rgba(255, 255, 255, 0.06);
-  --neon-surface-subtle: rgba(255, 255, 255, 0.1);
-  --neon-surface-deep: rgba(10, 0, 21, 0.5);
+/* Semantic text/surface colors for neon components */
+--neon-text: #ffffff;
+--neon-text-muted: rgba(255, 255, 255, 0.6);
+--neon-text-dim: rgba(255, 255, 255, 0.3);
+--neon-surface-dim: rgba(255, 255, 255, 0.06);
+--neon-surface-subtle: rgba(255, 255, 255, 0.1);
+--neon-surface-deep: rgba(10, 0, 21, 0.5);
 ```
 
 - [ ] **Step 2: Add light theme overrides**
@@ -104,12 +108,12 @@ Find the `:root` block in `neon.css` where `--neon-cyan`, `--neon-pink`, etc. ar
 Find the light theme override section in `neon.css` (where `--neon-cyan` gets lighter values). Add:
 
 ```css
-  --neon-text: #1a1a2e;
-  --neon-text-muted: rgba(26, 26, 46, 0.6);
-  --neon-text-dim: rgba(26, 26, 46, 0.3);
-  --neon-surface-dim: rgba(0, 0, 0, 0.04);
-  --neon-surface-subtle: rgba(0, 0, 0, 0.08);
-  --neon-surface-deep: rgba(200, 200, 220, 0.3);
+--neon-text: #1a1a2e;
+--neon-text-muted: rgba(26, 26, 46, 0.6);
+--neon-text-dim: rgba(26, 26, 46, 0.3);
+--neon-surface-dim: rgba(0, 0, 0, 0.04);
+--neon-surface-subtle: rgba(0, 0, 0, 0.08);
+--neon-surface-deep: rgba(200, 200, 220, 0.3);
 ```
 
 - [ ] **Step 3: Add tokens to tokens.ts**
@@ -142,6 +146,7 @@ git commit -m "feat: add neon semantic text/surface CSS variables to design syst
 ## Task 2: Remediate NeonCard
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/NeonCard.tsx`
 - Modify: `src/renderer/src/components/neon/__tests__/NeonCard.test.tsx`
 
@@ -150,19 +155,23 @@ git commit -m "feat: add neon semantic text/surface CSS variables to design syst
 Add to `__tests__/NeonCard.test.tsx`:
 
 ```tsx
-  it('uses token-based spacing for header', () => {
-    const { container } = render(<NeonCard accent="cyan" title="Test">Body</NeonCard>);
-    const header = container.querySelector('.neon-card > div:first-child') as HTMLElement;
-    // tokens.space[3] = 12px, tokens.space[2] = 8px
-    expect(header.style.padding).toBe('8px 12px');
-    expect(header.style.gap).toBe('8px');
-  });
+it('uses token-based spacing for header', () => {
+  const { container } = render(
+    <NeonCard accent="cyan" title="Test">
+      Body
+    </NeonCard>
+  )
+  const header = container.querySelector('.neon-card > div:first-child') as HTMLElement
+  // tokens.space[3] = 12px, tokens.space[2] = 8px
+  expect(header.style.padding).toBe('8px 12px')
+  expect(header.style.gap).toBe('8px')
+})
 
-  it('uses semantic neon surface for gradient endpoint', () => {
-    const { container } = render(<NeonCard accent="cyan">Body</NeonCard>);
-    const card = container.firstChild as HTMLElement;
-    expect(card.style.background).toContain('var(--neon-surface-deep)');
-  });
+it('uses semantic neon surface for gradient endpoint', () => {
+  const { container } = render(<NeonCard accent="cyan">Body</NeonCard>)
+  const card = container.firstChild as HTMLElement
+  expect(card.style.background).toContain('var(--neon-surface-deep)')
+})
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -175,18 +184,18 @@ Expected: FAIL — header padding is `10px 14px`, gap is `6px`
 Replace the component with token-based values:
 
 ```tsx
-import { type ReactNode } from 'react';
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type ReactNode } from 'react'
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 interface NeonCardProps {
-  accent?: NeonAccent;
-  title?: string;
-  icon?: ReactNode;
-  action?: ReactNode;
-  children: ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
+  accent?: NeonAccent
+  title?: string
+  icon?: ReactNode
+  action?: ReactNode
+  children: ReactNode
+  className?: string
+  style?: React.CSSProperties
 }
 
 export function NeonCard({
@@ -196,7 +205,7 @@ export function NeonCard({
   action,
   children,
   className = '',
-  style,
+  style
 }: NeonCardProps) {
   const cardStyle: React.CSSProperties = {
     '--card-accent': neonVar(accent, 'color'),
@@ -212,35 +221,39 @@ export function NeonCard({
     padding: title ? '0' : tokens.space[3],
     overflow: 'hidden',
     transition: `box-shadow ${tokens.transition.base}, transform ${tokens.transition.base}`,
-    ...style,
-  } as React.CSSProperties;
+    ...style
+  } as React.CSSProperties
 
   return (
     <div className={`neon-card ${className}`.trim()} style={cardStyle}>
       {title && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: tokens.space[2],
-          padding: `${tokens.space[2]} ${tokens.space[3]}`,
-          borderBottom: `1px solid ${neonVar(accent, 'border')}`,
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.space[2],
+            padding: `${tokens.space[2]} ${tokens.space[3]}`,
+            borderBottom: `1px solid ${neonVar(accent, 'border')}`
+          }}
+        >
           {icon && <span style={{ color: neonVar(accent, 'color'), display: 'flex' }}>{icon}</span>}
-          <span style={{
-            color: neonVar(accent, 'color'),
-            fontSize: tokens.size.xs,
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            fontWeight: 600,
-          }}>{title}</span>
+          <span
+            style={{
+              color: neonVar(accent, 'color'),
+              fontSize: tokens.size.xs,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              fontWeight: 600
+            }}
+          >
+            {title}
+          </span>
           {action && <span style={{ marginLeft: 'auto' }}>{action}</span>}
         </div>
       )}
-      <div style={{ padding: title ? tokens.space[3] : '0' }}>
-        {children}
-      </div>
+      <div style={{ padding: title ? tokens.space[3] : '0' }}>{children}</div>
     </div>
-  );
+  )
 }
 ```
 
@@ -261,6 +274,7 @@ git commit -m "refactor: NeonCard uses design tokens for spacing, sizing, and co
 ## Task 3: Remediate StatCounter
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/StatCounter.tsx`
 - Modify: `src/renderer/src/components/neon/__tests__/StatCounter.test.tsx`
 
@@ -269,14 +283,14 @@ git commit -m "refactor: NeonCard uses design tokens for spacing, sizing, and co
 Add to `__tests__/StatCounter.test.tsx`:
 
 ```tsx
-  it('uses neon text token for value color', () => {
-    const { container } = render(<StatCounter label="Tasks" value={42} accent="cyan" />);
-    const valueEl = container.querySelector('span') as HTMLElement;
-    // Find the span with the large value
-    const spans = container.querySelectorAll('span');
-    const valueSpan = Array.from(spans).find(s => s.textContent === '42') as HTMLElement;
-    expect(valueSpan.style.color).toBe('var(--neon-text)');
-  });
+it('uses neon text token for value color', () => {
+  const { container } = render(<StatCounter label="Tasks" value={42} accent="cyan" />)
+  const valueEl = container.querySelector('span') as HTMLElement
+  // Find the span with the large value
+  const spans = container.querySelectorAll('span')
+  const valueSpan = Array.from(spans).find((s) => s.textContent === '42') as HTMLElement
+  expect(valueSpan.style.color).toBe('var(--neon-text)')
+})
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -287,74 +301,91 @@ Expected: FAIL — color is `#fff`
 - [ ] **Step 3: Update StatCounter.tsx**
 
 ```tsx
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 interface StatCounterProps {
-  label: string;
-  value: number | string;
-  accent: NeonAccent;
-  suffix?: string;
+  label: string
+  value: number | string
+  accent: NeonAccent
+  suffix?: string
   trend?: {
-    direction: 'up' | 'down';
-    label: string;
-  };
-  icon?: React.ReactNode;
+    direction: 'up' | 'down'
+    label: string
+  }
+  icon?: React.ReactNode
 }
 
 export function StatCounter({ label, value, accent, suffix, trend, icon }: StatCounterProps) {
   return (
-    <div style={{
-      background: neonVar(accent, 'surface'),
-      border: `1px solid ${neonVar(accent, 'border')}`,
-      borderRadius: tokens.radius.lg,
-      padding: tokens.space[3],
-    }}>
-      <div data-role="stat-label" style={{
-        color: neonVar(accent, 'color'),
-        fontSize: tokens.size.xs,
-        textTransform: 'uppercase',
-        letterSpacing: '1.5px',
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        gap: tokens.space[1],
-      }}>
+    <div
+      style={{
+        background: neonVar(accent, 'surface'),
+        border: `1px solid ${neonVar(accent, 'border')}`,
+        borderRadius: tokens.radius.lg,
+        padding: tokens.space[3]
+      }}
+    >
+      <div
+        data-role="stat-label"
+        style={{
+          color: neonVar(accent, 'color'),
+          fontSize: tokens.size.xs,
+          textTransform: 'uppercase',
+          letterSpacing: '1.5px',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: tokens.space[1]
+        }}
+      >
         {icon}
         {label}
       </div>
-      <div style={{
-        display: 'flex',
-        alignItems: 'baseline',
-        gap: tokens.space[1],
-        marginTop: tokens.space[1],
-      }}>
-        <span style={{
-          color: tokens.neon.text,
-          fontSize: tokens.size.xxl,
-          fontWeight: 800,
-          textShadow: neonVar(accent, 'glow'),
-        }}>{value}</span>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: tokens.space[1],
+          marginTop: tokens.space[1]
+        }}
+      >
+        <span
+          style={{
+            color: tokens.neon.text,
+            fontSize: tokens.size.xxl,
+            fontWeight: 800,
+            textShadow: neonVar(accent, 'glow')
+          }}
+        >
+          {value}
+        </span>
         {suffix && (
-          <span style={{
-            color: neonVar(accent, 'color'),
-            fontSize: tokens.size.xs,
-            opacity: 0.6,
-          }}>{suffix}</span>
+          <span
+            style={{
+              color: neonVar(accent, 'color'),
+              fontSize: tokens.size.xs,
+              opacity: 0.6
+            }}
+          >
+            {suffix}
+          </span>
         )}
       </div>
       {trend && (
-        <div style={{
-          color: trend.direction === 'down' ? 'var(--neon-cyan)' : 'var(--neon-red)',
-          fontSize: tokens.size.xs,
-          marginTop: tokens.space[1],
-          opacity: 0.7,
-        }}>
+        <div
+          style={{
+            color: trend.direction === 'down' ? 'var(--neon-cyan)' : 'var(--neon-red)',
+            fontSize: tokens.size.xs,
+            marginTop: tokens.space[1],
+            opacity: 0.7
+          }}
+        >
           {trend.direction === 'down' ? '↓' : '↑'} {trend.label}
         </div>
       )}
     </div>
-  );
+  )
 }
 ```
 
@@ -375,45 +406,48 @@ git commit -m "refactor: StatCounter uses design tokens for all spacing and sizi
 ## Task 4: Remediate NeonBadge
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/NeonBadge.tsx`
 
 - [ ] **Step 1: Update NeonBadge.tsx**
 
 ```tsx
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 interface NeonBadgeProps {
-  accent: NeonAccent;
-  label: string;
-  pulse?: boolean;
+  accent: NeonAccent
+  label: string
+  pulse?: boolean
 }
 
 export function NeonBadge({ accent, label, pulse = false }: NeonBadgeProps) {
   return (
     <span
       className={pulse ? 'neon-pulse' : ''}
-      style={{
-        color: neonVar(accent, 'color'),
-        background: neonVar(accent, 'surface'),
-        border: `1px solid ${neonVar(accent, 'border')}`,
-        borderRadius: tokens.radius.full,
-        padding: `2px ${tokens.space[2]}`,
-        fontSize: tokens.size.xs,
-        fontWeight: 600,
-        letterSpacing: '0.5px',
-        textTransform: 'uppercase',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: tokens.space[1],
-        '--pulse-shadow-min': `0 0 6px ${neonVar(accent, 'border')}`,
-        '--pulse-shadow-max': `0 0 16px ${neonVar(accent, 'border')}`,
-        animation: pulse ? 'neon-pulse 3s ease-in-out infinite' : undefined,
-      } as React.CSSProperties}
+      style={
+        {
+          color: neonVar(accent, 'color'),
+          background: neonVar(accent, 'surface'),
+          border: `1px solid ${neonVar(accent, 'border')}`,
+          borderRadius: tokens.radius.full,
+          padding: `2px ${tokens.space[2]}`,
+          fontSize: tokens.size.xs,
+          fontWeight: 600,
+          letterSpacing: '0.5px',
+          textTransform: 'uppercase',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: tokens.space[1],
+          '--pulse-shadow-min': `0 0 6px ${neonVar(accent, 'border')}`,
+          '--pulse-shadow-max': `0 0 16px ${neonVar(accent, 'border')}`,
+          animation: pulse ? 'neon-pulse 3s ease-in-out infinite' : undefined
+        } as React.CSSProperties
+      }
     >
       {label}
     </span>
-  );
+  )
 }
 ```
 
@@ -434,6 +468,7 @@ git commit -m "refactor: NeonBadge uses design tokens for spacing and sizing"
 ## Task 5: Remediate ActivityFeed
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/ActivityFeed.tsx`
 - Modify: `src/renderer/src/components/neon/__tests__/ActivityFeed.test.tsx`
 
@@ -442,18 +477,20 @@ git commit -m "refactor: NeonBadge uses design tokens for spacing and sizing"
 Add to `__tests__/ActivityFeed.test.tsx`:
 
 ```tsx
-  it('uses neon text tokens instead of hardcoded rgba', () => {
-    const events = [{ id: '1', label: 'Deploy', accent: 'cyan' as const, timestamp: Date.now() - 5000 }];
-    const { container } = render(<ActivityFeed events={events} />);
-    const label = container.querySelector('span') as HTMLElement;
-    expect(label.style.color).toBe('var(--neon-text-muted)');
-  });
+it('uses neon text tokens instead of hardcoded rgba', () => {
+  const events = [
+    { id: '1', label: 'Deploy', accent: 'cyan' as const, timestamp: Date.now() - 5000 }
+  ]
+  const { container } = render(<ActivityFeed events={events} />)
+  const label = container.querySelector('span') as HTMLElement
+  expect(label.style.color).toBe('var(--neon-text-muted)')
+})
 
-  it('uses neon text dim for empty state', () => {
-    const { container } = render(<ActivityFeed events={[]} />);
-    const empty = container.firstChild as HTMLElement;
-    expect(empty.style.color).toBe('var(--neon-text-dim)');
-  });
+it('uses neon text dim for empty state', () => {
+  const { container } = render(<ActivityFeed events={[]} />)
+  const empty = container.firstChild as HTMLElement
+  expect(empty.style.color).toBe('var(--neon-text-dim)')
+})
 ```
 
 - [ ] **Step 2: Run test to verify failure**
@@ -464,76 +501,95 @@ Expected: FAIL — color is `rgba(255, 255, 255, 0.6)`
 - [ ] **Step 3: Update ActivityFeed.tsx**
 
 ```tsx
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 export interface FeedEvent {
-  id: string;
-  label: string;
-  accent: NeonAccent;
-  timestamp: number;
+  id: string
+  label: string
+  accent: NeonAccent
+  timestamp: number
 }
 
 interface ActivityFeedProps {
-  events: FeedEvent[];
-  maxItems?: number;
+  events: FeedEvent[]
+  maxItems?: number
 }
 
 function formatRelativeTime(timestamp: number): string {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  if (seconds < 1) return 'just now';
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  const seconds = Math.floor((Date.now() - timestamp) / 1000)
+  if (seconds < 1) return 'just now'
+  if (seconds < 60) return `${seconds}s ago`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 export function ActivityFeed({ events, maxItems }: ActivityFeedProps) {
-  const displayed = maxItems ? events.slice(0, maxItems) : events;
+  const displayed = maxItems ? events.slice(0, maxItems) : events
 
   if (displayed.length === 0) {
     return (
-      <div style={{ color: tokens.neon.textDim, fontSize: tokens.size.xs, padding: `${tokens.space[3]} 0` }}>
+      <div
+        style={{
+          color: tokens.neon.textDim,
+          fontSize: tokens.size.xs,
+          padding: `${tokens.space[3]} 0`
+        }}
+      >
         No recent activity
       </div>
-    );
+    )
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
       {displayed.map((event) => (
-        <div key={event.id} style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: tokens.space[1],
-        }}>
-          <div style={{
-            width: '5px',
-            height: '5px',
-            borderRadius: '50%',
-            background: neonVar(event.accent, 'color'),
-            boxShadow: neonVar(event.accent, 'glow'),
-            flexShrink: 0,
-          }} />
-          <span style={{
-            color: tokens.neon.textMuted,
-            fontSize: tokens.size.xs,
-            flex: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>{event.label}</span>
-          <span style={{
-            color: tokens.neon.textDim,
-            fontSize: tokens.size.xs,
-            flexShrink: 0,
-          }}>{formatRelativeTime(event.timestamp)}</span>
+        <div
+          key={event.id}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.space[1]
+          }}
+        >
+          <div
+            style={{
+              width: '5px',
+              height: '5px',
+              borderRadius: '50%',
+              background: neonVar(event.accent, 'color'),
+              boxShadow: neonVar(event.accent, 'glow'),
+              flexShrink: 0
+            }}
+          />
+          <span
+            style={{
+              color: tokens.neon.textMuted,
+              fontSize: tokens.size.xs,
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {event.label}
+          </span>
+          <span
+            style={{
+              color: tokens.neon.textDim,
+              fontSize: tokens.size.xs,
+              flexShrink: 0
+            }}
+          >
+            {formatRelativeTime(event.timestamp)}
+          </span>
         </div>
       ))}
     </div>
-  );
+  )
 }
 ```
 
@@ -554,41 +610,48 @@ git commit -m "refactor: ActivityFeed uses neon semantic tokens, removes hardcod
 ## Task 6: Remediate NeonProgress
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/NeonProgress.tsx`
 
 - [ ] **Step 1: Update NeonProgress.tsx**
 
 ```tsx
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 interface NeonProgressProps {
-  value: number;
-  accent: NeonAccent;
-  label?: string;
+  value: number
+  accent: NeonAccent
+  label?: string
 }
 
 export function NeonProgress({ value, accent, label }: NeonProgressProps) {
-  const clamped = Math.max(0, Math.min(100, value));
+  const clamped = Math.max(0, Math.min(100, value))
 
   return (
     <div>
       {label && (
-        <div style={{
-          color: neonVar(accent, 'color'),
-          fontSize: tokens.size.xs,
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-          marginBottom: tokens.space[1],
-          fontWeight: 600,
-        }}>{label}</div>
+        <div
+          style={{
+            color: neonVar(accent, 'color'),
+            fontSize: tokens.size.xs,
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            marginBottom: tokens.space[1],
+            fontWeight: 600
+          }}
+        >
+          {label}
+        </div>
       )}
-      <div style={{
-        height: '4px',
-        background: tokens.neon.surfaceDim,
-        borderRadius: '2px',
-        overflow: 'hidden',
-      }}>
+      <div
+        style={{
+          height: '4px',
+          background: tokens.neon.surfaceDim,
+          borderRadius: '2px',
+          overflow: 'hidden'
+        }}
+      >
         <div
           data-role="progress-fill"
           style={{
@@ -597,12 +660,12 @@ export function NeonProgress({ value, accent, label }: NeonProgressProps) {
             background: `linear-gradient(90deg, ${neonVar(accent, 'color')}, var(--neon-blue))`,
             borderRadius: '2px',
             boxShadow: neonVar(accent, 'glow'),
-            transition: 'width 300ms ease',
+            transition: 'width 300ms ease'
           }}
         />
       </div>
     </div>
-  );
+  )
 }
 ```
 
@@ -623,51 +686,62 @@ git commit -m "refactor: NeonProgress uses design tokens for sizing and surface 
 ## Task 7: Remediate PipelineFlow
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/PipelineFlow.tsx`
 
 - [ ] **Step 1: Update PipelineFlow.tsx**
 
 ```tsx
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 export interface PipelineStage {
-  label: string;
-  count: number;
-  accent: NeonAccent;
+  label: string
+  count: number
+  accent: NeonAccent
 }
 
 interface PipelineFlowProps {
-  stages: PipelineStage[];
+  stages: PipelineStage[]
 }
 
 export function PipelineFlow({ stages }: PipelineFlowProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[1], flexWrap: 'wrap' }}>
       {stages.map((stage, i) => (
-        <div key={stage.label} style={{ display: 'flex', alignItems: 'center', gap: tokens.space[1] }}>
-          <div style={{
-            background: neonVar(stage.accent, 'surface'),
-            border: `1px solid ${neonVar(stage.accent, 'border')}`,
-            borderRadius: tokens.radius.md,
-            padding: `${tokens.space[1]} ${tokens.space[2]}`,
-            color: neonVar(stage.accent, 'color'),
-            fontSize: tokens.size.xs,
-            fontWeight: 600,
-            whiteSpace: 'nowrap',
-          }}>
+        <div
+          key={stage.label}
+          style={{ display: 'flex', alignItems: 'center', gap: tokens.space[1] }}
+        >
+          <div
+            style={{
+              background: neonVar(stage.accent, 'surface'),
+              border: `1px solid ${neonVar(stage.accent, 'border')}`,
+              borderRadius: tokens.radius.md,
+              padding: `${tokens.space[1]} ${tokens.space[2]}`,
+              color: neonVar(stage.accent, 'color'),
+              fontSize: tokens.size.xs,
+              fontWeight: 600,
+              whiteSpace: 'nowrap'
+            }}
+          >
             {stage.label}: {stage.count}
           </div>
           {i < stages.length - 1 && (
-            <span data-role="pipeline-arrow" style={{
-              color: tokens.neon.textDim,
-              fontSize: tokens.size.lg,
-            }}>→</span>
+            <span
+              data-role="pipeline-arrow"
+              style={{
+                color: tokens.neon.textDim,
+                fontSize: tokens.size.lg
+              }}
+            >
+              →
+            </span>
           )}
         </div>
       ))}
     </div>
-  );
+  )
 }
 ```
 
@@ -688,46 +762,58 @@ git commit -m "refactor: PipelineFlow uses design tokens for spacing, sizing, an
 ## Task 8: Remediate MiniChart
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/MiniChart.tsx`
 
 - [ ] **Step 1: Update MiniChart.tsx**
 
 ```tsx
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 export interface ChartBar {
-  value: number;
-  accent?: NeonAccent;
-  label?: string;
+  value: number
+  accent?: NeonAccent
+  label?: string
 }
 
 interface MiniChartProps {
-  data: ChartBar[];
-  height?: number;
+  data: ChartBar[]
+  height?: number
 }
 
 export function MiniChart({ data, height = 80 }: MiniChartProps) {
   if (data.length === 0) {
     return (
-      <div style={{ color: tokens.neon.textDim, fontSize: tokens.size.xs, height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          color: tokens.neon.textDim,
+          fontSize: tokens.size.xs,
+          height,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
         No data
       </div>
-    );
+    )
   }
 
-  const maxValue = Math.max(...data.map((d) => d.value), 1);
+  const maxValue = Math.max(...data.map((d) => d.value), 1)
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: '3px',
-      alignItems: 'flex-end',
-      height,
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        gap: '3px',
+        alignItems: 'flex-end',
+        height
+      }}
+    >
       {data.map((bar, i) => {
-        const accent = bar.accent ?? 'purple';
-        const pct = Math.round((bar.value / maxValue) * 100);
+        const accent = bar.accent ?? 'purple'
+        const pct = Math.round((bar.value / maxValue) * 100)
         return (
           <div
             key={i}
@@ -739,13 +825,13 @@ export function MiniChart({ data, height = 80 }: MiniChartProps) {
               background: `linear-gradient(to top, ${neonVar(accent, 'color')}, transparent)`,
               borderRadius: '3px 3px 0 0',
               minHeight: '2px',
-              transition: 'height 300ms ease',
+              transition: 'height 300ms ease'
             }}
           />
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 ```
 
@@ -768,6 +854,7 @@ git commit -m "refactor: MiniChart uses design tokens for text colors and sizing
 ## Task 9: Remediate GlassPanel
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/GlassPanel.tsx`
 
 - [ ] **Step 1: Update GlassPanel.tsx**
@@ -775,26 +862,32 @@ git commit -m "refactor: MiniChart uses design tokens for text colors and sizing
 Replace hardcoded `rgba()` fallbacks with neon tokens:
 
 ```tsx
-import { type ReactNode } from 'react';
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type ReactNode } from 'react'
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 interface GlassPanelProps {
-  accent?: NeonAccent;
-  blur?: 'sm' | 'md' | 'lg';
-  children: ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
+  accent?: NeonAccent
+  blur?: 'sm' | 'md' | 'lg'
+  children: ReactNode
+  className?: string
+  style?: React.CSSProperties
 }
 
 const BLUR_MAP = {
   sm: 'blur(8px) saturate(180%)',
   md: 'blur(16px) saturate(180%)',
-  lg: 'blur(40px) saturate(180%)',
-};
+  lg: 'blur(40px) saturate(180%)'
+}
 
-export function GlassPanel({ accent, blur = 'md', children, className = '', style }: GlassPanelProps) {
-  const borderVal = accent ? neonVar(accent, 'border') : tokens.neon.surfaceDim;
+export function GlassPanel({
+  accent,
+  blur = 'md',
+  children,
+  className = '',
+  style
+}: GlassPanelProps) {
+  const borderVal = accent ? neonVar(accent, 'border') : tokens.neon.surfaceDim
   return (
     <div
       className={`glass-panel ${className}`.trim()}
@@ -807,12 +900,12 @@ export function GlassPanel({ accent, blur = 'md', children, className = '', styl
         border: `1px solid ${borderVal}`,
         borderRadius: tokens.radius.xl,
         boxShadow: 'var(--neon-glass-shadow), var(--neon-glass-edge)',
-        ...style,
+        ...style
       }}
     >
       {children}
     </div>
-  );
+  )
 }
 ```
 
@@ -835,6 +928,7 @@ git commit -m "refactor: GlassPanel uses design tokens, removes duplicate border
 ## Task 10: Remediate CircuitPipeline
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/CircuitPipeline.tsx`
 
 - [ ] **Step 1: Update CircuitPipeline.tsx**
@@ -871,6 +965,7 @@ git commit -m "refactor: CircuitPipeline uses design tokens for spacing, sizing,
 ## Task 11: Remediate StatusBar — Add Accent Prop
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/StatusBar.tsx`
 - Modify: `src/renderer/src/components/neon/__tests__/StatusBar.test.tsx`
 
@@ -879,23 +974,23 @@ git commit -m "refactor: CircuitPipeline uses design tokens for spacing, sizing,
 Add to `__tests__/StatusBar.test.tsx`:
 
 ```tsx
-  it('accepts accent prop for title color', () => {
-    const { container } = render(<StatusBar title="Test" status="ok" accent="cyan" />);
-    const titleSpan = screen.getByText('Test');
-    expect(titleSpan.style.color).toBe('var(--neon-cyan)');
-  });
+it('accepts accent prop for title color', () => {
+  const { container } = render(<StatusBar title="Test" status="ok" accent="cyan" />)
+  const titleSpan = screen.getByText('Test')
+  expect(titleSpan.style.color).toBe('var(--neon-cyan)')
+})
 
-  it('defaults accent to purple', () => {
-    render(<StatusBar title="Test" status="ok" />);
-    const titleSpan = screen.getByText('Test');
-    expect(titleSpan.style.color).toBe('var(--neon-purple)');
-  });
+it('defaults accent to purple', () => {
+  render(<StatusBar title="Test" status="ok" />)
+  const titleSpan = screen.getByText('Test')
+  expect(titleSpan.style.color).toBe('var(--neon-purple)')
+})
 
-  it('uses neon border token for bottom border', () => {
-    const { container } = render(<StatusBar title="Test" status="ok" accent="cyan" />);
-    const bar = container.firstChild as HTMLElement;
-    expect(bar.style.borderBottom).toContain('var(--neon-cyan-border)');
-  });
+it('uses neon border token for bottom border', () => {
+  const { container } = render(<StatusBar title="Test" status="ok" accent="cyan" />)
+  const bar = container.firstChild as HTMLElement
+  expect(bar.style.borderBottom).toContain('var(--neon-cyan-border)')
+})
 ```
 
 - [ ] **Step 2: Run test to verify failure**
@@ -906,38 +1001,40 @@ Expected: FAIL — no `accent` prop exists
 - [ ] **Step 3: Update StatusBar.tsx**
 
 ```tsx
-import { type ReactNode } from 'react';
-import { type NeonAccent, neonVar } from './types';
-import { tokens } from '../../design-system/tokens';
+import { type ReactNode } from 'react'
+import { type NeonAccent, neonVar } from './types'
+import { tokens } from '../../design-system/tokens'
 
 interface StatusBarProps {
-  title: string;
-  status: 'ok' | 'error' | 'warning';
-  accent?: NeonAccent;
-  children?: ReactNode;
+  title: string
+  status: 'ok' | 'error' | 'warning'
+  accent?: NeonAccent
+  children?: ReactNode
 }
 
 const STATUS_COLORS = {
   ok: 'var(--neon-cyan)',
   error: 'var(--neon-red)',
-  warning: 'var(--neon-orange)',
-} as const;
+  warning: 'var(--neon-orange)'
+} as const
 
 const STATUS_GLOWS = {
   ok: '0 0 8px var(--neon-cyan)',
   error: '0 0 8px var(--neon-red)',
-  warning: '0 0 8px var(--neon-orange)',
-} as const;
+  warning: '0 0 8px var(--neon-orange)'
+} as const
 
 export function StatusBar({ title, status, accent = 'purple', children }: StatusBarProps) {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: tokens.space[2],
-      padding: `${tokens.space[2]} ${tokens.space[4]}`,
-      borderBottom: `1px solid ${neonVar(accent, 'border')}`,
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.space[2],
+        padding: `${tokens.space[2]} ${tokens.space[4]}`,
+        borderBottom: `1px solid ${neonVar(accent, 'border')}`
+      }}
+    >
       <div
         data-role="status-dot"
         style={{
@@ -946,26 +1043,34 @@ export function StatusBar({ title, status, accent = 'purple', children }: Status
           borderRadius: '50%',
           background: STATUS_COLORS[status],
           boxShadow: STATUS_GLOWS[status],
-          animation: 'neon-breathe 2s ease-in-out infinite',
+          animation: 'neon-breathe 2s ease-in-out infinite'
         }}
       />
-      <span style={{
-        color: neonVar(accent, 'color'),
-        fontSize: tokens.size.xs,
-        textTransform: 'uppercase',
-        letterSpacing: '2px',
-        fontWeight: 600,
-      }}>{title}</span>
-      {children && (
-        <span style={{
-          marginLeft: 'auto',
-          color: tokens.neon.textDim,
+      <span
+        style={{
+          color: neonVar(accent, 'color'),
           fontSize: tokens.size.xs,
-          fontFamily: tokens.font.code,
-        }}>{children}</span>
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          fontWeight: 600
+        }}
+      >
+        {title}
+      </span>
+      {children && (
+        <span
+          style={{
+            marginLeft: 'auto',
+            color: tokens.neon.textDim,
+            fontSize: tokens.size.xs,
+            fontFamily: tokens.font.code
+          }}
+        >
+          {children}
+        </span>
       )}
     </div>
-  );
+  )
 }
 ```
 
@@ -996,6 +1101,7 @@ git commit -m "feat: StatusBar accepts accent prop, uses design tokens for spaci
 ## Task 12: Fix ScanlineOverlay Type Hack
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/ScanlineOverlay.tsx`
 
 - [ ] **Step 1: Update ScanlineOverlay.tsx**
@@ -1004,7 +1110,7 @@ Fix the `as unknown as number` type hack by making `opacity` a CSS string when u
 
 ```tsx
 interface ScanlineOverlayProps {
-  opacity?: number;
+  opacity?: number
 }
 
 export function ScanlineOverlay({ opacity }: ScanlineOverlayProps) {
@@ -1015,15 +1121,16 @@ export function ScanlineOverlay({ opacity }: ScanlineOverlayProps) {
         position: 'absolute',
         inset: 0,
         pointerEvents: 'none',
-        background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px)',
+        background:
+          'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px)',
         backgroundSize: '100% 200px',
         opacity: opacity ?? undefined,
         animation: 'neon-scanline var(--neon-scanline-speed) linear infinite',
-        zIndex: 0,
+        zIndex: 0
       }}
       className="neon-scanline-overlay"
     />
-  );
+  )
 }
 ```
 
@@ -1056,6 +1163,7 @@ git commit -m "fix: ScanlineOverlay removes type hack, uses CSS class for defaul
 ## Task 13: Fix NeonTooltip Accessibility
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/NeonTooltip.tsx`
 - Modify: `src/renderer/src/components/neon/__tests__/NeonTooltip.test.tsx`
 
@@ -1064,58 +1172,67 @@ git commit -m "fix: ScanlineOverlay removes type hack, uses CSS class for defaul
 Add to `__tests__/NeonTooltip.test.tsx`:
 
 ```tsx
-  it('shows tooltip on focus and hides on blur', async () => {
-    const { container } = render(
-      <NeonTooltip label="Help text">
-        <button>Hover me</button>
-      </NeonTooltip>
-    );
-    const trigger = container.firstChild as HTMLElement;
+it('shows tooltip on focus and hides on blur', async () => {
+  const { container } = render(
+    <NeonTooltip label="Help text">
+      <button>Hover me</button>
+    </NeonTooltip>
+  )
+  const trigger = container.firstChild as HTMLElement
 
-    // Focus should trigger tooltip
-    fireEvent.focus(trigger);
-    await waitFor(() => {
-      expect(screen.getByRole('tooltip')).toBeInTheDocument();
-    }, { timeout: 1000 });
+  // Focus should trigger tooltip
+  fireEvent.focus(trigger)
+  await waitFor(
+    () => {
+      expect(screen.getByRole('tooltip')).toBeInTheDocument()
+    },
+    { timeout: 1000 }
+  )
 
-    // Blur should hide tooltip
-    fireEvent.blur(trigger);
-    await waitFor(() => {
-      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-    });
-  });
+  // Blur should hide tooltip
+  fireEvent.blur(trigger)
+  await waitFor(() => {
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+  })
+})
 
-  it('links tooltip to trigger via aria-describedby', async () => {
-    const { container } = render(
-      <NeonTooltip label="Help text">
-        <button>Hover me</button>
-      </NeonTooltip>
-    );
-    const trigger = container.firstChild as HTMLElement;
-    fireEvent.mouseEnter(trigger);
-    await waitFor(() => {
-      const tooltip = screen.getByRole('tooltip');
-      expect(trigger.getAttribute('aria-describedby')).toBe(tooltip.id);
-    }, { timeout: 1000 });
-  });
+it('links tooltip to trigger via aria-describedby', async () => {
+  const { container } = render(
+    <NeonTooltip label="Help text">
+      <button>Hover me</button>
+    </NeonTooltip>
+  )
+  const trigger = container.firstChild as HTMLElement
+  fireEvent.mouseEnter(trigger)
+  await waitFor(
+    () => {
+      const tooltip = screen.getByRole('tooltip')
+      expect(trigger.getAttribute('aria-describedby')).toBe(tooltip.id)
+    },
+    { timeout: 1000 }
+  )
+})
 
-  it('hides tooltip on Escape key', async () => {
-    const { container } = render(
-      <NeonTooltip label="Help text">
-        <button>Hover me</button>
-      </NeonTooltip>
-    );
-    const trigger = container.firstChild as HTMLElement;
-    fireEvent.mouseEnter(trigger);
-    await waitFor(() => {
-      expect(screen.getByRole('tooltip')).toBeInTheDocument();
-    }, { timeout: 1000 });
+it('hides tooltip on Escape key', async () => {
+  const { container } = render(
+    <NeonTooltip label="Help text">
+      <button>Hover me</button>
+    </NeonTooltip>
+  )
+  const trigger = container.firstChild as HTMLElement
+  fireEvent.mouseEnter(trigger)
+  await waitFor(
+    () => {
+      expect(screen.getByRole('tooltip')).toBeInTheDocument()
+    },
+    { timeout: 1000 }
+  )
 
-    fireEvent.keyDown(trigger, { key: 'Escape' });
-    await waitFor(() => {
-      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-    });
-  });
+  fireEvent.keyDown(trigger, { key: 'Escape' })
+  await waitFor(() => {
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+  })
+})
 ```
 
 - [ ] **Step 2: Run test to verify failure**
@@ -1126,52 +1243,58 @@ Expected: FAIL — no focus/blur handlers, no aria-describedby
 - [ ] **Step 3: Update NeonTooltip.tsx**
 
 ```tsx
-import { useState, useRef, useCallback, useEffect, useId, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef, useCallback, useEffect, useId, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface NeonTooltipProps {
-  label: string;
-  shortcut?: string;
-  delay?: number;
-  children: ReactNode;
+  label: string
+  shortcut?: string
+  delay?: number
+  children: ReactNode
 }
 
 export function NeonTooltip({ label, shortcut, delay = 300, children }: NeonTooltipProps) {
-  const [visible, setVisible] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const tooltipId = useId();
+  const [visible, setVisible] = useState(false)
+  const [position, setPosition] = useState({ top: 0, left: 0 })
+  const triggerRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const tooltipId = useId()
 
   const updatePosition = useCallback(() => {
     if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
+      const rect = triggerRef.current.getBoundingClientRect()
       setPosition({
         top: rect.top + rect.height / 2 - 14,
-        left: rect.right + 8,
-      });
+        left: rect.right + 8
+      })
     }
-  }, []);
+  }, [])
 
   const show = useCallback(() => {
     timerRef.current = setTimeout(() => {
-      updatePosition();
-      setVisible(true);
-    }, delay);
-  }, [delay, updatePosition]);
+      updatePosition()
+      setVisible(true)
+    }, delay)
+  }, [delay, updatePosition])
 
   const hide = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setVisible(false);
-  }, []);
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setVisible(false)
+  }, [])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') hide();
-  }, [hide]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') hide()
+    },
+    [hide]
+  )
 
-  useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    []
+  )
 
   return (
     <>
@@ -1198,14 +1321,15 @@ export function NeonTooltip({ label, shortcut, delay = 300, children }: NeonTool
             {label}
             {shortcut && <span className="neon-tooltip__shortcut">{shortcut}</span>}
           </div>,
-          document.body,
+          document.body
         )}
     </>
-  );
+  )
 }
 ```
 
 Key changes:
+
 - `useId()` generates stable tooltip ID
 - `onFocus`/`onBlur` mirror mouse enter/leave
 - `onKeyDown` handles Escape
@@ -1228,6 +1352,7 @@ git commit -m "fix: NeonTooltip adds keyboard support, aria-describedby, and Esc
 ## Task 14: Remediate ParticleField — Named Constants
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/ParticleField.tsx`
 
 - [ ] **Step 1: Update ParticleField.tsx**
@@ -1235,21 +1360,21 @@ git commit -m "fix: NeonTooltip adds keyboard support, aria-describedby, and Esc
 Extract magic numbers to named constants:
 
 ```tsx
-import { useMemo } from 'react';
-import { NEON_ACCENTS, neonVar } from './types';
+import { useMemo } from 'react'
+import { NEON_ACCENTS, neonVar } from './types'
 
 interface ParticleFieldProps {
-  density?: number;
+  density?: number
 }
 
-const DRIFT_ANIMATIONS = ['neon-particle-drift-1', 'neon-particle-drift-2', 'neon-particle-drift-3'];
-const DURATION_BASE_S = 20;
-const DURATION_RANGE_S = 20;
-const DELAY_RANGE_S = -30;
-const SIZE_MIN_PX = 2;
-const SIZE_RANGE_PX = 2;
-const TOP_OFFSET_PCT = 20;
-const TOP_RANGE_PCT = 80;
+const DRIFT_ANIMATIONS = ['neon-particle-drift-1', 'neon-particle-drift-2', 'neon-particle-drift-3']
+const DURATION_BASE_S = 20
+const DURATION_RANGE_S = 20
+const DELAY_RANGE_S = -30
+const SIZE_MIN_PX = 2
+const SIZE_RANGE_PX = 2
+const TOP_OFFSET_PCT = 20
+const TOP_RANGE_PCT = 80
 
 export function ParticleField({ density = 18 }: ParticleFieldProps) {
   const particles = useMemo(() => {
@@ -1261,9 +1386,9 @@ export function ParticleField({ density = 18 }: ParticleFieldProps) {
       duration: `${DURATION_BASE_S + Math.random() * DURATION_RANGE_S}s`,
       delay: `${Math.random() * DELAY_RANGE_S}s`,
       animation: DRIFT_ANIMATIONS[i % DRIFT_ANIMATIONS.length],
-      size: `${SIZE_MIN_PX + Math.random() * SIZE_RANGE_PX}px`,
-    }));
-  }, [density]);
+      size: `${SIZE_MIN_PX + Math.random() * SIZE_RANGE_PX}px`
+    }))
+  }, [density])
 
   return (
     <div
@@ -1273,7 +1398,7 @@ export function ParticleField({ density = 18 }: ParticleFieldProps) {
         inset: 0,
         pointerEvents: 'none',
         overflow: 'hidden',
-        zIndex: 0,
+        zIndex: 0
       }}
     >
       {particles.map((p) => (
@@ -1290,12 +1415,12 @@ export function ParticleField({ density = 18 }: ParticleFieldProps) {
             background: neonVar(p.accent, 'color'),
             boxShadow: neonVar(p.accent, 'glow'),
             animation: `${p.animation} ${p.duration} ease-in-out ${p.delay} infinite`,
-            willChange: 'transform',
+            willChange: 'transform'
           }}
         />
       ))}
     </div>
-  );
+  )
 }
 ```
 

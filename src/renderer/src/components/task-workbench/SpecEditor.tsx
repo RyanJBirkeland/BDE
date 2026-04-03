@@ -1,6 +1,8 @@
 import { useCallback } from 'react'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import type { SpecType } from '../../../../shared/spec-validation'
+import { useConfirm } from '../ui/ConfirmModal'
+import { ConfirmModal } from '../ui/ConfirmModal'
 
 const SPEC_TEMPLATES: Record<string, { label: string; spec: string; specType: SpecType }> = {
   feature: {
@@ -31,10 +33,39 @@ interface SpecEditorProps {
   generating: boolean
 }
 
-export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }: SpecEditorProps): React.JSX.Element {
+export function SpecEditor({
+  onRequestGenerate,
+  onRequestResearch,
+  generating
+}: SpecEditorProps): React.JSX.Element {
   const spec = useTaskWorkbenchStore((s) => s.spec)
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const setSpecType = useTaskWorkbenchStore((s) => s.setSpecType)
+  const { confirm, confirmProps } = useConfirm()
+
+  const handleTemplateClick = useCallback(
+    async (templateSpec: string, templateType: SpecType) => {
+      // If spec is empty, apply immediately without confirmation
+      if (!spec.trim()) {
+        setField('spec', templateSpec)
+        setSpecType(templateType)
+        return
+      }
+
+      // Otherwise, confirm overwrite
+      const confirmed = await confirm({
+        title: 'Overwrite spec?',
+        message: 'This will replace your current spec content. Continue?',
+        confirmLabel: 'Overwrite'
+      })
+
+      if (confirmed) {
+        setField('spec', templateSpec)
+        setSpecType(templateType)
+      }
+    },
+    [spec, setField, setSpecType, confirm]
+  )
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -67,10 +98,7 @@ export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }:
         {Object.entries(SPEC_TEMPLATES).map(([key, tmpl]) => (
           <button
             key={key}
-            onClick={() => {
-              setField('spec', tmpl.spec)
-              setSpecType(tmpl.specType)
-            }}
+            onClick={() => handleTemplateClick(tmpl.spec, tmpl.specType)}
             className="wb-spec__btn"
             aria-label={`Insert ${tmpl.label} template`}
           >
@@ -93,6 +121,7 @@ export function SpecEditor({ onRequestGenerate, onRequestResearch, generating }:
         className="wb-spec__textarea"
         aria-label="Task specification"
       />
+      <ConfirmModal {...confirmProps} />
     </div>
   )
 }

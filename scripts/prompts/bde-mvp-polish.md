@@ -3,6 +3,7 @@
 You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
 
 ## Task
+
 Polish the app for a clean MVP. Fix rough edges, improve consistency.
 
 ## Specific items to address
@@ -22,6 +23,7 @@ Polish the app for a clean MVP. Fix rough edges, improve consistency.
 7. **Fix any TypeScript errors** — Run `npm run typecheck` and fix any remaining type errors.
 
 ## Rules
+
 - Work on a branch: `git checkout -b feat/mvp-polish`
 - Build must pass: `npm run build`
 - Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE MVP polish — loading states, error states, consistent spacing" -f body="Polish pass for MVP" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`

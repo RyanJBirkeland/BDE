@@ -12,6 +12,7 @@
 PR #105 fixed all `execSync` string interpolation in `src/main/git.ts` by replacing them with `execFileSync` array patterns. However, `src/main/local-agents.ts` still uses `execAsync` (promisified `exec`) with template literal interpolation:
 
 **Line 53:**
+
 ```typescript
 const { stdout } = await execAsync(`lsof -p ${pid} -a -d cwd -F n`)
 ```
@@ -19,6 +20,7 @@ const { stdout } = await execAsync(`lsof -p ${pid} -a -d cwd -F n`)
 While `pid` is typed as `number` and comes from `parseInt()` of `ps` output (making injection unlikely in practice), this pattern is inconsistent with the security standard established in PR #105 and violates defense-in-depth.
 
 **Line 99:**
+
 ```typescript
 const { stdout } = await execAsync('ps -eo pid,%cpu,rss,etime,args')
 ```
@@ -39,11 +41,13 @@ const execFileAsync = promisify(execFile)
 ### Fix 1: `getProcessCwd` (line 53)
 
 Before:
+
 ```typescript
 const { stdout } = await execAsync(`lsof -p ${pid} -a -d cwd -F n`)
 ```
 
 After:
+
 ```typescript
 const { stdout } = await execFileAsync('lsof', ['-p', String(pid), '-a', '-d', 'cwd', '-F', 'n'])
 ```
@@ -51,11 +55,13 @@ const { stdout } = await execFileAsync('lsof', ['-p', String(pid), '-a', '-d', '
 ### Fix 2: `getAgentProcesses` (line 99)
 
 Before:
+
 ```typescript
 const { stdout } = await execAsync('ps -eo pid,%cpu,rss,etime,args')
 ```
 
 After:
+
 ```typescript
 const { stdout } = await execFileAsync('ps', ['-eo', 'pid,%cpu,rss,etime,args'])
 ```
@@ -76,12 +82,12 @@ After both changes, `exec` is no longer needed. Update the import:
 
 ## Files to Change
 
-| File | Line | Change |
-|------|------|--------|
-| `src/main/local-agents.ts` | 6 | Replace `exec` import with `execFile` |
-| `src/main/local-agents.ts` | 18 | `const execFileAsync = promisify(execFile)` |
-| `src/main/local-agents.ts` | 53 | Use `execFileAsync('lsof', [...])` with array args |
-| `src/main/local-agents.ts` | 99 | Use `execFileAsync('ps', [...])` with array args |
+| File                       | Line | Change                                             |
+| -------------------------- | ---- | -------------------------------------------------- |
+| `src/main/local-agents.ts` | 6    | Replace `exec` import with `execFile`              |
+| `src/main/local-agents.ts` | 18   | `const execFileAsync = promisify(execFile)`        |
+| `src/main/local-agents.ts` | 53   | Use `execFileAsync('lsof', [...])` with array args |
+| `src/main/local-agents.ts` | 99   | Use `execFileAsync('ps', [...])` with array args   |
 
 ## Acceptance Criteria
 

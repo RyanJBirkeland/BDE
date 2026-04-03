@@ -37,7 +37,14 @@ describe('ChangesTab', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sprintState.tasks = [
-      { id: 't1', title: 'Task', repo: 'bde', status: 'review', worktree_path: '/tmp/wt', updated_at: '2026-04-01' }
+      {
+        id: 't1',
+        title: 'Task',
+        repo: 'bde',
+        status: 'review',
+        worktree_path: '/tmp/wt',
+        updated_at: '2026-04-01'
+      }
     ]
     useCodeReviewStore.setState({
       selectedTaskId: 't1',
@@ -77,9 +84,7 @@ describe('ChangesTab', () => {
 
   it('shows addition/deletion stats per file', () => {
     useCodeReviewStore.setState({
-      diffFiles: [
-        { path: 'src/index.ts', status: 'M', additions: 10, deletions: 2, patch: '' }
-      ],
+      diffFiles: [{ path: 'src/index.ts', status: 'M', additions: 10, deletions: 2, patch: '' }],
       loading: {}
     })
     render(<ChangesTab />)

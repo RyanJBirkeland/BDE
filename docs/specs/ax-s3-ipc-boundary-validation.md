@@ -18,7 +18,7 @@ IPC is a trust boundary — the renderer process should be treated as potentiall
 ```typescript
 export async function tailAgentLog(args: TailLogArgs): Promise<TailLogResult> {
   const fromByte = args.fromByte ?? 0
-  const buf = await readFile(args.logPath)  // <-- arbitrary path from renderer
+  const buf = await readFile(args.logPath) // <-- arbitrary path from renderer
   // ...
 }
 ```
@@ -44,6 +44,7 @@ function normalizePath(relativePath: string): string {
 ```
 
 This regex-based approach has edge cases:
+
 - Doesn't use `path.resolve()` + prefix check (the robust standard)
 - Doesn't handle URL-encoded sequences
 - A path like `foo/....//bar` after replace becomes `foo///bar` → safe, but fragile
@@ -100,7 +101,7 @@ import { getRepoPaths } from '../git'
 
 function assertValidCwd(cwd: string): void {
   const allowed = Object.values(getRepoPaths())
-  if (!allowed.some(root => cwd === root || cwd.startsWith(root + '/'))) {
+  if (!allowed.some((root) => cwd === root || cwd.startsWith(root + '/'))) {
     throw new Error(`Git CWD not in allowed repos: ${cwd}`)
   }
 }
@@ -129,7 +130,13 @@ async function readMemoryFile(relativePath: string): Promise<string> {
 ### 5. Validate terminal shell path
 
 ```typescript
-const ALLOWED_SHELLS = ['/bin/bash', '/bin/zsh', '/bin/sh', '/usr/bin/fish', '/opt/homebrew/bin/fish']
+const ALLOWED_SHELLS = [
+  '/bin/bash',
+  '/bin/zsh',
+  '/bin/sh',
+  '/usr/bin/fish',
+  '/opt/homebrew/bin/fish'
+]
 
 function assertValidShell(shell?: string): void {
   if (shell && !ALLOWED_SHELLS.includes(shell)) {
@@ -140,13 +147,13 @@ function assertValidShell(shell?: string): void {
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/main/validation.ts` | **New** — `assertPathWithin()`, `assertValidCwd()`, `assertValidShell()` |
-| `src/main/local-agents.ts` | Validate `logPath` in `tailAgentLog()` |
-| `src/main/handlers/git-handlers.ts` | Validate `cwd` in all `git:*` handlers |
-| `src/main/fs.ts` | Replace `normalizePath()` with `assertPathWithin()` |
-| `src/main/handlers/terminal-handlers.ts` | Validate `shell` in `terminal:create` |
+| File                                     | Change                                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------------ |
+| `src/main/validation.ts`                 | **New** — `assertPathWithin()`, `assertValidCwd()`, `assertValidShell()` |
+| `src/main/local-agents.ts`               | Validate `logPath` in `tailAgentLog()`                                   |
+| `src/main/handlers/git-handlers.ts`      | Validate `cwd` in all `git:*` handlers                                   |
+| `src/main/fs.ts`                         | Replace `normalizePath()` with `assertPathWithin()`                      |
+| `src/main/handlers/terminal-handlers.ts` | Validate `shell` in `terminal:create`                                    |
 
 ## Acceptance Criteria
 

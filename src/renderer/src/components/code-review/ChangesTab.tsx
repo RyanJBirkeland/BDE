@@ -52,8 +52,7 @@ export function ChangesTab(): React.JSX.Element {
   }
 
   const statusIcon = (status: string): React.JSX.Element => {
-    if (status === 'A' || status === 'added')
-      return <Plus size={12} className="cr-file-added" />
+    if (status === 'A' || status === 'added') return <Plus size={12} className="cr-file-added" />
     if (status === 'D' || status === 'deleted')
       return <Minus size={12} className="cr-file-deleted" />
     return <Edit2 size={12} className="cr-file-modified" />
@@ -77,9 +76,7 @@ export function ChangesTab(): React.JSX.Element {
         ))}
       </div>
       <div className="cr-changes__diff">
-        <pre className="cr-changes__diff-content">
-          {fileDiff || 'Select a file to view diff'}
-        </pre>
+        <pre className="cr-changes__diff-content">{fileDiff || 'Select a file to view diff'}</pre>
       </div>
     </div>
   )

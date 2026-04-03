@@ -338,7 +338,9 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         const merged = {
           ...t,
           ...update,
-          depends_on: sanitizeDependsOn((update as Record<string, unknown>).depends_on ?? t.depends_on)
+          depends_on: sanitizeDependsOn(
+            (update as Record<string, unknown>).depends_on ?? t.depends_on
+          )
         } as SprintTask
         if (merged.status === TASK_STATUS.DONE && merged.pr_url && !merged.pr_status) {
           merged.pr_status = PR_STATUS.OPEN
@@ -347,7 +349,9 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         const pending = s.pendingUpdates[t.id]
         if (pending && Date.now() - pending.ts <= PENDING_UPDATE_TTL) {
           for (const field of pending.fields) {
-            ;(merged as unknown as Record<string, unknown>)[field] = (t as unknown as Record<string, unknown>)[field]
+            ;(merged as unknown as Record<string, unknown>)[field] = (
+              t as unknown as Record<string, unknown>
+            )[field]
           }
         }
         return merged

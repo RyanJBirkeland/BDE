@@ -38,6 +38,7 @@ A single filterable, scrollable list replacing the Kanban board + 4 separate tab
 **Search bar** at top with neon-styled input.
 
 **Task rows** show rich inline information:
+
 - **Title** — primary text, truncated with ellipsis
 - **Status badge** — colored pill matching the partition bucket: backlog, todo, blocked, in progress, review, done, failed. (Note: the code field is `partition.awaitingReview` for the "review" bucket.)
 - **Repo badge** — colored pill (BDE, life-os, etc.)
@@ -62,6 +63,7 @@ Persistent right pane replacing SpecDrawer, LogDrawer, and TaskMonitorPanel.
 **Detail header:** Task title + status/priority/repo badges.
 
 **Tabs:** `Spec | Output | PR` — auto-selects based on partition bucket with manual override:
+
 - **backlog** or **todo** → **Spec** tab (the thing you need to review before launching)
 - **in progress** → **Output** tab (live agent console via AgentEvents, same as AgentConsole component)
 - **review** → **PR** tab (task has an open PR)
@@ -76,6 +78,7 @@ Persistent right pane replacing SpecDrawer, LogDrawer, and TaskMonitorPanel.
 **PR tab:** Shows PR status, link to open in browser, merge state, CI check status. Reuses existing PR info from the task object (`pr_url`, `pr_number`, `pr_status`, `pr_mergeable_state`).
 
 **Action footer:** Context-aware buttons that change based on partition bucket:
+
 - **backlog** → Sprint, Edit Spec, Done, Delete
 - **todo** (queued) → Launch, Edit Spec, Done, Delete
 - **in progress** (active) → Stop Agent, Open in Agents, Done
@@ -86,15 +89,15 @@ Persistent right pane replacing SpecDrawer, LogDrawer, and TaskMonitorPanel.
 
 ### What Gets Removed
 
-| Component | Replacement |
-|-----------|-------------|
-| `KanbanBoard` + `KanbanColumn` | Circuit pipeline + filterable task list |
-| `TaskCard` (drag-drop) | Task row in list (no drag-drop) |
-| `SpecDrawer` | Detail pane Spec tab |
-| `LogDrawer` | Detail pane Output tab |
-| `TaskMonitorPanel` (resizable split) | Detail pane Output tab |
-| `ConflictDrawer` | Inline "conflict" badge on task rows |
-| `HealthCheckDrawer` | Inline "stuck Xh" warning on task rows |
+| Component                                             | Replacement                                  |
+| ----------------------------------------------------- | -------------------------------------------- |
+| `KanbanBoard` + `KanbanColumn`                        | Circuit pipeline + filterable task list      |
+| `TaskCard` (drag-drop)                                | Task row in list (no drag-drop)              |
+| `SpecDrawer`                                          | Detail pane Spec tab                         |
+| `LogDrawer`                                           | Detail pane Output tab                       |
+| `TaskMonitorPanel` (resizable split)                  | Detail pane Output tab                       |
+| `ConflictDrawer`                                      | Inline "conflict" badge on task rows         |
+| `HealthCheckDrawer`                                   | Inline "stuck Xh" warning on task rows       |
 | `TaskTable` (4 sections: backlog/blocked/done/failed) | Single unified task list with status filters |
 
 ### What Stays (unchanged)

@@ -157,7 +157,8 @@ The remediation work addressed the majority of findings. Several were fixed comp
   ```typescript
   if (!activeAgents.has(task.id)) {
     logger.info(`[agent-manager] Agent ${task.id} already cleaned up by watchdog`)
-    cleanupWorktree({   // <-- no await, no .catch()
+    cleanupWorktree({
+      // <-- no await, no .catch()
       repoPath,
       worktreePath: worktree.worktreePath,
       branch: worktree.branch
@@ -193,30 +194,30 @@ The remediation work addressed the majority of findings. Several were fixed comp
 
 ## Summary Table
 
-| Finding | v1 Severity | Status | Notes |
-|---------|------------|--------|-------|
-| AM-REL-1 (spawn timeout leak) | Medium | **Fixed** | Timer cleared in `.finally()` |
-| AM-REL-2 (cleanupWorktree silent) | Medium | **Fixed** | Async, logged, accepts logger |
-| AM-REL-3 (pruneStaleWorktrees console.warn) | Low | **Fixed** | Injected logger used |
-| AM-REL-4 (worktree lock release) | Low | **Fixed** | All paths release lock |
-| AM-REL-5 (resolveFailure false on DB error) | High | **Fixed** | Returns `isTerminal` in catch |
-| AM-REL-7 (orphan/drain race) | Medium | **Fixed** | Orphan recovery awaited before drain |
-| AM-REL-8 (Map mutation during iteration) | Medium | **Fixed** | Two-pass collect-then-kill |
-| AM-REL-9 (emitAgentEvent silent swallow) | Low | **Fixed** | Rate-limited logging added |
-| AM-REL-10 (fileLog silent swallow) | Low | **Fixed** | Consecutive failure counter + stderr |
-| AM-REL-11 (TaskTerminalService no tests) | Medium | **Fixed** | 3 test cases covering main paths |
-| AM-REL-12 (sdk-streaming timeout silent) | Medium | **Fixed** | Throws TimeoutError after loop |
-| AM-REL-13 (sync file read on main thread) | Medium | **Fixed** | Uses async fs/promises |
-| AM-REL-14 (invalid branch name) | Low | **Fixed** | Fallback slug `unnamed-task` |
-| AM-REL-16 (no field validation) | Medium | **Fixed** | Type checks, returns null on invalid |
-| AM-REL-19 (redundant drain guard) | Low | **Fixed** | `_drainRunning` removed |
-| AM-REL-20 (stop re-queue untested) | Medium | **Fixed** | Test verifies re-queue + notes |
-| AM-REL-22 (CLI crash unhandled) | Medium | **Fixed** | exit handler + exit_code message |
-| AM-REL-23 (dep parse silent proceed) | Low | **Fixed** | Logs error, sets task to error |
-| AM-REL-v2-1 (unawaited cleanup, watchdog path) | Low | **New** | Missing await/catch on async |
-| AM-REL-v2-2 (unawaited cleanup, end of runAgent) | Low | **New** | Missing catch on async |
-| AM-REL-v2-3 (orphan recovery no onTerminal) | Medium | **New** | Blocked deps never unblocked |
-| AM-REL-v2-4 (steer unsanitized) | Low | **New** | Defense-in-depth |
+| Finding                                          | v1 Severity | Status    | Notes                                |
+| ------------------------------------------------ | ----------- | --------- | ------------------------------------ |
+| AM-REL-1 (spawn timeout leak)                    | Medium      | **Fixed** | Timer cleared in `.finally()`        |
+| AM-REL-2 (cleanupWorktree silent)                | Medium      | **Fixed** | Async, logged, accepts logger        |
+| AM-REL-3 (pruneStaleWorktrees console.warn)      | Low         | **Fixed** | Injected logger used                 |
+| AM-REL-4 (worktree lock release)                 | Low         | **Fixed** | All paths release lock               |
+| AM-REL-5 (resolveFailure false on DB error)      | High        | **Fixed** | Returns `isTerminal` in catch        |
+| AM-REL-7 (orphan/drain race)                     | Medium      | **Fixed** | Orphan recovery awaited before drain |
+| AM-REL-8 (Map mutation during iteration)         | Medium      | **Fixed** | Two-pass collect-then-kill           |
+| AM-REL-9 (emitAgentEvent silent swallow)         | Low         | **Fixed** | Rate-limited logging added           |
+| AM-REL-10 (fileLog silent swallow)               | Low         | **Fixed** | Consecutive failure counter + stderr |
+| AM-REL-11 (TaskTerminalService no tests)         | Medium      | **Fixed** | 3 test cases covering main paths     |
+| AM-REL-12 (sdk-streaming timeout silent)         | Medium      | **Fixed** | Throws TimeoutError after loop       |
+| AM-REL-13 (sync file read on main thread)        | Medium      | **Fixed** | Uses async fs/promises               |
+| AM-REL-14 (invalid branch name)                  | Low         | **Fixed** | Fallback slug `unnamed-task`         |
+| AM-REL-16 (no field validation)                  | Medium      | **Fixed** | Type checks, returns null on invalid |
+| AM-REL-19 (redundant drain guard)                | Low         | **Fixed** | `_drainRunning` removed              |
+| AM-REL-20 (stop re-queue untested)               | Medium      | **Fixed** | Test verifies re-queue + notes       |
+| AM-REL-22 (CLI crash unhandled)                  | Medium      | **Fixed** | exit handler + exit_code message     |
+| AM-REL-23 (dep parse silent proceed)             | Low         | **Fixed** | Logs error, sets task to error       |
+| AM-REL-v2-1 (unawaited cleanup, watchdog path)   | Low         | **New**   | Missing await/catch on async         |
+| AM-REL-v2-2 (unawaited cleanup, end of runAgent) | Low         | **New**   | Missing catch on async               |
+| AM-REL-v2-3 (orphan recovery no onTerminal)      | Medium      | **New**   | Blocked deps never unblocked         |
+| AM-REL-v2-4 (steer unsanitized)                  | Low         | **New**   | Defense-in-depth                     |
 
 ---
 
@@ -225,11 +226,13 @@ The remediation work addressed the majority of findings. Several were fixed comp
 **All 16 actionable findings from v1 are fully fixed.** The 2 findings that were withdrawn during v1 review (AM-REL-6 and AM-REL-15/18) were correctly assessed as non-issues.
 
 The remediation quality is high:
+
 - Fixes follow the specific recommendations from v1 (e.g., `.finally(() => clearTimeout(timer!))` for AM-REL-1, `return isTerminal` for AM-REL-5, two-pass collect-then-kill for AM-REL-8).
 - The single high-severity finding (AM-REL-5) is correctly fixed with the exact pattern recommended.
 - Test coverage gaps identified in v1 (AM-REL-11, AM-REL-20) have been addressed with focused tests.
 
 **4 new issues found**, none critical/high:
+
 - 1 Medium (orphan recovery not triggering dependency resolution for max-retry errors)
 - 3 Low (unawaited async cleanups and defense-in-depth steer sanitization)
 

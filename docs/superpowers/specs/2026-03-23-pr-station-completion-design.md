@@ -23,6 +23,7 @@ Gaps: missing tab CSS, dead conflict store, no review/comment display, no inline
 ### 1a. Missing Tab CSS
 
 Add styles to `src/renderer/src/assets/pr-station.css` for:
+
 - `.pr-station__detail-header` — flex row, sticky top, border-bottom, padding
 - `.pr-station__tabs` — flex row, gap
 - `.pr-station__tab` — button reset, padding, font, color muted, border-bottom transparent
@@ -31,6 +32,7 @@ Add styles to `src/renderer/src/assets/pr-station.css` for:
 ### 1b. Conflict Store Wiring
 
 `usePrConflictsStore` exists but is never populated. Wire it:
+
 - In `PRStationList.tsx` (or a parent), when `pr:listUpdated` delivers the PR list, cross-reference with sprint tasks that have `pr_number` set
 - For each PR with `mergeable_state === 'dirty'`, add matching task IDs to the conflict store
 - Show conflict badge in PR detail header when the selected PR has `mergeable_state === 'dirty'`
@@ -38,6 +40,7 @@ Add styles to `src/renderer/src/assets/pr-station.css` for:
 ### 1c. Conflict Files Display
 
 When viewing a PR with `mergeable_state === 'dirty'`:
+
 - Call `window.api.checkConflictFiles()` to fetch conflicting file paths
 - Display conflict warning banner above the changed files list
 - Mark conflicting files with a warning icon in the files list
@@ -227,6 +230,7 @@ replyToComment(owner, repo, number, commentId: number, body: string): Promise<Pr
 ### Review Banner
 
 When pending comments exist, show a persistent banner at the top of the detail panel:
+
 - "You have N pending comments" with a count badge
 - "Submit Review" button → opens review submission dialog
 

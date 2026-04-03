@@ -11,6 +11,7 @@
 **Spec:** `docs/superpowers/specs/2026-03-23-task-workbench-design.md`
 
 **What Already Exists:**
+
 - `src/shared/ipc-channels.ts` — `WorkbenchChannels` interface fully defined (5 channels)
 - `src/preload/index.ts` — `window.api.workbench.*` fully wired (5 methods)
 - `src/main/handlers/workbench.ts` — `checkOperational` and `researchRepo` fully implemented; `chat`, `generateSpec`, `checkSpec` are stubs
@@ -22,35 +23,36 @@
 
 ### New Files (9)
 
-| File | Responsibility |
-|------|---------------|
-| `src/renderer/src/views/TaskWorkbenchView.tsx` | View wrapper (motion fade-in, renders `<TaskWorkbench />`) |
-| `src/renderer/src/components/task-workbench/TaskWorkbench.tsx` | Main layout — resizable two-column split (form + copilot) |
-| `src/renderer/src/components/task-workbench/WorkbenchForm.tsx` | The task form — title, repo, advanced fields, spec editor, readiness checks, actions |
-| `src/renderer/src/components/task-workbench/WorkbenchCopilot.tsx` | AI chat sidebar — message list, input, "Insert into spec" buttons |
-| `src/renderer/src/components/task-workbench/ReadinessChecks.tsx` | Collapsed/expanded readiness check display |
-| `src/renderer/src/components/task-workbench/SpecEditor.tsx` | Markdown textarea with inline AI toolbar (Generate, Template, Research) |
-| `src/renderer/src/components/task-workbench/WorkbenchActions.tsx` | Split action button (Save to Backlog / Queue Now / Launch) |
-| `src/renderer/src/stores/taskWorkbench.ts` | Zustand store — form state, copilot messages, check results |
-| `src/renderer/src/hooks/useReadinessChecks.ts` | Tier 1 structural checks (pure logic, runs on every form change) |
+| File                                                              | Responsibility                                                                       |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `src/renderer/src/views/TaskWorkbenchView.tsx`                    | View wrapper (motion fade-in, renders `<TaskWorkbench />`)                           |
+| `src/renderer/src/components/task-workbench/TaskWorkbench.tsx`    | Main layout — resizable two-column split (form + copilot)                            |
+| `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`    | The task form — title, repo, advanced fields, spec editor, readiness checks, actions |
+| `src/renderer/src/components/task-workbench/WorkbenchCopilot.tsx` | AI chat sidebar — message list, input, "Insert into spec" buttons                    |
+| `src/renderer/src/components/task-workbench/ReadinessChecks.tsx`  | Collapsed/expanded readiness check display                                           |
+| `src/renderer/src/components/task-workbench/SpecEditor.tsx`       | Markdown textarea with inline AI toolbar (Generate, Template, Research)              |
+| `src/renderer/src/components/task-workbench/WorkbenchActions.tsx` | Split action button (Save to Backlog / Queue Now / Launch)                           |
+| `src/renderer/src/stores/taskWorkbench.ts`                        | Zustand store — form state, copilot messages, check results                          |
+| `src/renderer/src/hooks/useReadinessChecks.ts`                    | Tier 1 structural checks (pure logic, runs on every form change)                     |
 
 ### Modified Files (6)
 
-| File | What Changes |
-|------|-------------|
-| `src/renderer/src/stores/panelLayout.ts` | Add `'task-workbench'` to `View` union, add label to `VIEW_LABELS` |
-| `src/renderer/src/components/panels/PanelLeaf.tsx` | Add lazy import + case in `resolveView()` switch |
-| `src/renderer/src/App.tsx` | Add to `VIEW_ORDER` and `VIEW_TITLES` |
-| `src/renderer/src/components/sprint/SprintToolbar.tsx` | Replace `NewTicketModal` open with workbench panel open |
-| `src/renderer/src/components/sprint/SprintCenter.tsx` | Remove `NewTicketModal` rendering and `modalOpen` state |
-| `src/renderer/src/hooks/useSprintKeyboardShortcuts.ts` | `N` key opens workbench panel instead of modal |
-| `src/main/handlers/workbench.ts` | Replace `chat`, `generateSpec`, `checkSpec` stubs with real `claude` CLI invocations |
+| File                                                   | What Changes                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `src/renderer/src/stores/panelLayout.ts`               | Add `'task-workbench'` to `View` union, add label to `VIEW_LABELS`                   |
+| `src/renderer/src/components/panels/PanelLeaf.tsx`     | Add lazy import + case in `resolveView()` switch                                     |
+| `src/renderer/src/App.tsx`                             | Add to `VIEW_ORDER` and `VIEW_TITLES`                                                |
+| `src/renderer/src/components/sprint/SprintToolbar.tsx` | Replace `NewTicketModal` open with workbench panel open                              |
+| `src/renderer/src/components/sprint/SprintCenter.tsx`  | Remove `NewTicketModal` rendering and `modalOpen` state                              |
+| `src/renderer/src/hooks/useSprintKeyboardShortcuts.ts` | `N` key opens workbench panel instead of modal                                       |
+| `src/main/handlers/workbench.ts`                       | Replace `chat`, `generateSpec`, `checkSpec` stubs with real `claude` CLI invocations |
 
 ---
 
 ## Task 1: Zustand Store — `taskWorkbench.ts`
 
 **Files:**
+
 - Create: `src/renderer/src/stores/taskWorkbench.ts`
 - Create: `src/renderer/src/stores/__tests__/taskWorkbench.test.ts`
 - Reference: `src/renderer/src/stores/sprintTasks.ts` (for `CreateTicketInput` type)
@@ -71,12 +73,12 @@ vi.stubGlobal('window', {
       generateSpec: vi.fn(),
       checkSpec: vi.fn(),
       checkOperational: vi.fn(),
-      researchRepo: vi.fn(),
+      researchRepo: vi.fn()
     },
     sprint: {
-      create: vi.fn(),
-    },
-  },
+      create: vi.fn()
+    }
+  }
 })
 
 describe('taskWorkbench store', () => {
@@ -140,7 +142,7 @@ describe('taskWorkbench store', () => {
       template_name: null,
       depends_on: null,
       updated_at: '2026-01-01',
-      created_at: '2026-01-01',
+      created_at: '2026-01-01'
     })
     const s = useTaskWorkbenchStore.getState()
     expect(s.mode).toBe('edit')
@@ -236,17 +238,29 @@ const WELCOME_MESSAGE: CopilotMessage = {
   id: 'welcome',
   role: 'system',
   content:
-    "I can help you craft this task. Try asking me to research the codebase, brainstorm approaches, or review your spec.",
-  timestamp: Date.now(),
+    'I can help you craft this task. Try asking me to research the codebase, brainstorm approaches, or review your spec.',
+  timestamp: Date.now()
 }
 
 function defaults(): Pick<
   TaskWorkbenchState,
-  | 'mode' | 'taskId' | 'title' | 'repo' | 'priority' | 'spec'
-  | 'taskTemplateName' | 'advancedOpen' | 'copilotVisible'
-  | 'copilotMessages' | 'copilotLoading' | 'checksExpanded'
-  | 'structuralChecks' | 'semanticChecks' | 'operationalChecks'
-  | 'semanticLoading' | 'operationalLoading'
+  | 'mode'
+  | 'taskId'
+  | 'title'
+  | 'repo'
+  | 'priority'
+  | 'spec'
+  | 'taskTemplateName'
+  | 'advancedOpen'
+  | 'copilotVisible'
+  | 'copilotMessages'
+  | 'copilotLoading'
+  | 'checksExpanded'
+  | 'structuralChecks'
+  | 'semanticChecks'
+  | 'operationalChecks'
+  | 'semanticLoading'
+  | 'operationalLoading'
 > {
   return {
     mode: 'create',
@@ -265,7 +279,7 @@ function defaults(): Pick<
     semanticChecks: [],
     operationalChecks: [],
     semanticLoading: false,
-    operationalLoading: false,
+    operationalLoading: false
   }
 }
 
@@ -291,7 +305,7 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       taskTemplateName: task.template_name ?? '',
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
       semanticChecks: [],
-      operationalChecks: [],
+      operationalChecks: []
     }),
 
   toggleCopilot: () => set((s) => ({ copilotVisible: !s.copilotVisible })),
@@ -301,10 +315,9 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
   setSemanticChecks: (checks) => set({ semanticChecks: checks, semanticLoading: false }),
   setOperationalChecks: (checks) => set({ operationalChecks: checks, operationalLoading: false }),
 
-  addCopilotMessage: (msg) =>
-    set((s) => ({ copilotMessages: [...s.copilotMessages, msg] })),
+  addCopilotMessage: (msg) => set((s) => ({ copilotMessages: [...s.copilotMessages, msg] })),
 
-  setCopilotLoading: (loading) => set({ copilotLoading: loading }),
+  setCopilotLoading: (loading) => set({ copilotLoading: loading })
 }))
 ```
 
@@ -325,6 +338,7 @@ git commit -m "feat(workbench): add taskWorkbench Zustand store with form, copil
 ## Task 2: Readiness Checks Hook — `useReadinessChecks.ts`
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/useReadinessChecks.ts`
 - Create: `src/renderer/src/hooks/__tests__/useReadinessChecks.test.ts`
 - Reference: `src/renderer/src/stores/taskWorkbench.ts` (for `CheckResult` type)
@@ -428,7 +442,7 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
     label: 'Title',
     tier: 1,
     status: form.title.trim() ? 'pass' : 'fail',
-    message: form.title.trim() ? 'Title provided' : 'Title is required',
+    message: form.title.trim() ? 'Title provided' : 'Title is required'
   })
 
   // Repo selected
@@ -437,7 +451,7 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
     label: 'Repo',
     tier: 1,
     status: form.repo ? 'pass' : 'fail',
-    message: form.repo ? `Repo: ${form.repo}` : 'No repo selected',
+    message: form.repo ? `Repo: ${form.repo}` : 'No repo selected'
   })
 
   // Spec present
@@ -470,7 +484,13 @@ export function computeStructuralChecks(form: FormSnapshot): CheckResult[] {
     structureStatus = 'fail'
     structureMsg = 'No sections — use ## headings to structure the spec'
   }
-  checks.push({ id: 'spec-structure', label: 'Structure', tier: 1, status: structureStatus, message: structureMsg })
+  checks.push({
+    id: 'spec-structure',
+    label: 'Structure',
+    tier: 1,
+    status: structureStatus,
+    message: structureMsg
+  })
 
   return checks
 }
@@ -509,6 +529,7 @@ git commit -m "feat(workbench): add Tier 1 structural readiness checks hook"
 ## Task 3: Register the View — Panel System Integration
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/panelLayout.ts:7,35-43`
 - Modify: `src/renderer/src/components/panels/PanelLeaf.tsx:14-18,24-41`
 - Modify: `src/renderer/src/App.tsx:22-30,32-40`
@@ -517,15 +538,27 @@ git commit -m "feat(workbench): add Tier 1 structural readiness checks hook"
 - [ ] **Step 1: Add `'task-workbench'` to the `View` type**
 
 In `src/renderer/src/stores/panelLayout.ts` line 7, change:
+
 ```typescript
 export type View = 'agents' | 'terminal' | 'sprint' | 'pr-station' | 'memory' | 'cost' | 'settings'
 ```
+
 to:
+
 ```typescript
-export type View = 'agents' | 'terminal' | 'sprint' | 'pr-station' | 'memory' | 'cost' | 'settings' | 'task-workbench'
+export type View =
+  | 'agents'
+  | 'terminal'
+  | 'sprint'
+  | 'pr-station'
+  | 'memory'
+  | 'cost'
+  | 'settings'
+  | 'task-workbench'
 ```
 
 Add to `VIEW_LABELS` (line 35-43):
+
 ```typescript
 'task-workbench': 'Task Workbench',
 ```
@@ -566,11 +599,13 @@ export function TaskWorkbench() {
 - [ ] **Step 3: Add lazy import and case in `PanelLeaf.tsx`**
 
 Add after line 18 (`const PRStationView = ...`):
+
 ```typescript
 const TaskWorkbenchView = React.lazy(() => import('../../views/TaskWorkbenchView'))
 ```
 
 Add case inside `resolveView()` switch, after `case 'pr-station':`:
+
 ```typescript
     case 'task-workbench':
       return <TaskWorkbenchView />
@@ -579,6 +614,7 @@ Add case inside `resolveView()` switch, after `case 'pr-station':`:
 - [ ] **Step 4: Add to `App.tsx` VIEW_ORDER and VIEW_TITLES**
 
 In `VIEW_ORDER` array (line 22-30), add `'task-workbench'` (this gives it `Cmd+8`):
+
 ```typescript
 const VIEW_ORDER: View[] = [
   'agents',
@@ -593,6 +629,7 @@ const VIEW_ORDER: View[] = [
 ```
 
 In `VIEW_TITLES` (line 32-40), add:
+
 ```typescript
   'task-workbench': 'Task Workbench'
 ```
@@ -616,6 +653,7 @@ git commit -m "feat(workbench): register task-workbench as panel view with place
 ## Task 4: Wire Entry Points — Replace Modal with Panel Open
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/SprintToolbar.tsx`
 - Modify: `src/renderer/src/hooks/useSprintKeyboardShortcuts.ts`
 - Reference: `src/renderer/src/stores/panelLayout.ts` (for `usePanelLayoutStore`)
@@ -628,27 +666,33 @@ In `src/renderer/src/components/sprint/SprintToolbar.tsx`:
 Replace the modal state and `NewTicketModal` rendering. The `+ New Ticket` button should open the workbench view in a new panel (or focus it if already open). Use `useUIStore`'s `setView('task-workbench')`.
 
 Remove:
+
 ```typescript
 import { NewTicketModal } from './NewTicketModal'
 ```
+
 ```typescript
 const createTask = useSprintTasks((s) => s.createTask)
 const [modalOpen, setModalOpen] = useState(false)
 ```
+
 ```typescript
 <NewTicketModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={createTask} />
 ```
 
 Add:
+
 ```typescript
 import { useUIStore } from '../../stores/ui'
 ```
+
 ```typescript
 const setView = useUIStore((s) => s.setView)
 const openWorkbench = useCallback(() => setView('task-workbench'), [setView])
 ```
 
 Change the button:
+
 ```typescript
 <Button variant="primary" size="sm" onClick={openWorkbench}>
   + New Task
@@ -669,7 +713,7 @@ interface UseSprintKeyboardShortcutsArgs {
 
 export function useSprintKeyboardShortcuts({
   openWorkbench,
-  setConflictDrawerOpen,
+  setConflictDrawerOpen
 }: UseSprintKeyboardShortcutsArgs): void {
   const selectedTaskId = useSprintUI((s) => s.selectedTaskId)
   const setLogDrawerTaskId = useSprintUI((s) => s.setLogDrawerTaskId)
@@ -705,6 +749,7 @@ export function useSprintKeyboardShortcuts({
 ```
 
 Update the call site in `SprintToolbar.tsx`:
+
 ```typescript
 useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
 ```
@@ -714,6 +759,7 @@ useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen })
 `SprintCenter.tsx` also renders `<NewTicketModal>` with its own `modalOpen` state. Remove this dead code since the modal is no longer the entry point.
 
 In `src/renderer/src/components/sprint/SprintCenter.tsx`:
+
 - Remove the `NewTicketModal` import
 - Remove any `modalOpen` state and the `<NewTicketModal>` JSX
 - Keep the rest of SprintCenter intact (KanbanBoard, SpecDrawer, etc.)
@@ -737,6 +783,7 @@ git commit -m "feat(workbench): wire N key and + New Task button to open workben
 This is the main form panel. Build all four components together since they're tightly coupled.
 
 **Files:**
+
 - Create: `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`
 - Create: `src/renderer/src/components/task-workbench/SpecEditor.tsx`
 - Create: `src/renderer/src/components/task-workbench/ReadinessChecks.tsx`
@@ -1255,6 +1302,7 @@ git commit -m "feat(workbench): add WorkbenchForm, SpecEditor, ReadinessChecks, 
 ## Task 6: WorkbenchCopilot UI
 
 **Files:**
+
 - Create: `src/renderer/src/components/task-workbench/WorkbenchCopilot.tsx`
 - Reference: `src/renderer/src/stores/taskWorkbench.ts`
 - Reference: `src/renderer/src/design-system/tokens.ts`
@@ -1526,6 +1574,7 @@ git commit -m "feat(workbench): add AI Copilot sidebar component"
 ## Task 7: TaskWorkbench Main Layout — Wire It All Together
 
 **Files:**
+
 - Modify: `src/renderer/src/components/task-workbench/TaskWorkbench.tsx` (replace placeholder)
 - Reference: All task-workbench components created in Tasks 5-6
 
@@ -1666,6 +1715,7 @@ git commit -m "feat(workbench): wire TaskWorkbench layout with resizable form + 
 ## Task 8: Implement AI Handlers — Replace Stubs with Claude CLI
 
 **Files:**
+
 - Modify: `src/main/handlers/workbench.ts:178-205` (replace stubs)
 - Reference: `src/main/handlers/sprint-spec.ts` (for `buildQuickSpecPrompt`, `getTemplateScaffold`)
 - Reference: `src/main/agent-manager/sdk-adapter.ts` (for PATH augmentation pattern)
@@ -1679,45 +1729,52 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mock child_process before any imports
 const mockExecFile = vi.fn()
 vi.mock('child_process', () => ({
-  execFile: mockExecFile,
+  execFile: mockExecFile
 }))
 vi.mock('util', () => ({
-  promisify: () => mockExecFile,
+  promisify: () => mockExecFile
 }))
 
 // Mock dependencies
 vi.mock('../auth-guard', () => ({
-  checkAuthStatus: vi.fn().mockResolvedValue({ tokenFound: true, tokenExpired: false }),
+  checkAuthStatus: vi.fn().mockResolvedValue({ tokenFound: true, tokenExpired: false })
 }))
 vi.mock('../git', () => ({
-  getRepoPaths: vi.fn().mockReturnValue({ BDE: '/Users/test/BDE' }),
+  getRepoPaths: vi.fn().mockReturnValue({ BDE: '/Users/test/BDE' })
 }))
 vi.mock('../data/supabase-client', () => ({
   getSupabaseClient: vi.fn().mockReturnValue({
-    from: () => ({ select: () => ({ eq: () => ({ in: () => Promise.resolve({ data: [], error: null }) }) }) }),
-  }),
+    from: () => ({
+      select: () => ({ eq: () => ({ in: () => Promise.resolve({ data: [], error: null }) }) })
+    })
+  })
 }))
 
 // Prevent actual IPC registration
 vi.mock('../ipc-utils', () => ({
-  safeHandle: vi.fn(),
+  safeHandle: vi.fn()
 }))
 
 import { buildChatPrompt, buildSpecGenerationPrompt } from '../handlers/workbench'
 
 describe('workbench AI helpers', () => {
   it('buildChatPrompt includes form context', () => {
-    const prompt = buildChatPrompt(
-      [{ role: 'user', content: 'What files handle auth?' }],
-      { title: 'Fix auth', repo: 'BDE', spec: '' }
-    )
+    const prompt = buildChatPrompt([{ role: 'user', content: 'What files handle auth?' }], {
+      title: 'Fix auth',
+      repo: 'BDE',
+      spec: ''
+    })
     expect(prompt).toContain('Fix auth')
     expect(prompt).toContain('BDE')
     expect(prompt).toContain('What files handle auth?')
   })
 
   it('buildSpecGenerationPrompt uses title and repo', () => {
-    const args = buildSpecGenerationPrompt({ title: 'Add caching', repo: 'BDE', templateHint: 'feature' })
+    const args = buildSpecGenerationPrompt({
+      title: 'Add caching',
+      repo: 'BDE',
+      templateHint: 'feature'
+    })
     expect(args).toContain('Add caching')
     expect(args).toContain('BDE')
   })
@@ -1744,7 +1801,7 @@ export function buildChatPrompt(
 ): string {
   const contextBlock = [
     `[Task Context] Title: "${formContext.title}", Repo: ${formContext.repo}`,
-    formContext.spec ? `Spec draft:\n${formContext.spec}` : '(no spec yet)',
+    formContext.spec ? `Spec draft:\n${formContext.spec}` : '(no spec yet)'
   ].join('\n')
 
   const history = messages
@@ -1762,48 +1819,63 @@ ${history}
 Respond helpfully and concisely. If asked to research, reference specific file paths. If asked to draft spec sections, use markdown with ## headings.`
 }
 
-export function buildSpecGenerationPrompt(input: { title: string; repo: string; templateHint: string }): string {
+export function buildSpecGenerationPrompt(input: {
+  title: string
+  repo: string
+  templateHint: string
+}): string {
   const scaffold = getTemplateScaffold(input.templateHint)
   return buildQuickSpecPrompt(input.title, input.repo, input.templateHint, scaffold)
 }
 
 // --- Inside registerWorkbenchHandlers(), replace the three stubs: ---
 
-  // AI-powered chat via claude CLI
-  safeHandle('workbench:chat', async (_e, input: {
-    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-    formContext: { title: string; repo: string; spec: string }
-  }) => {
+// AI-powered chat via claude CLI
+safeHandle(
+  'workbench:chat',
+  async (
+    _e,
+    input: {
+      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+      formContext: { title: string; repo: string; spec: string }
+    }
+  ) => {
     const prompt = buildChatPrompt(input.messages, input.formContext)
     try {
       const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
         encoding: 'utf-8',
         timeout: 60_000,
-        env: augmentedEnv(),
+        env: augmentedEnv()
       })
       return { content: stdout.trim() || 'No response received.' }
     } catch (err) {
       return { content: `Error: ${(err as Error).message}` }
     }
-  })
+  }
+)
 
-  // AI-powered spec generation via claude CLI
-  safeHandle('workbench:generateSpec', async (_e, input: { title: string; repo: string; templateHint: string }) => {
+// AI-powered spec generation via claude CLI
+safeHandle(
+  'workbench:generateSpec',
+  async (_e, input: { title: string; repo: string; templateHint: string }) => {
     const prompt = buildSpecGenerationPrompt(input)
     try {
       const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
         encoding: 'utf-8',
         timeout: 60_000,
-        env: augmentedEnv(),
+        env: augmentedEnv()
       })
       return { spec: stdout.trim() || `# ${input.title}\n\n(No spec generated)` }
     } catch (err) {
       return { spec: `# ${input.title}\n\nError generating spec: ${(err as Error).message}` }
     }
-  })
+  }
+)
 
-  // AI-powered spec quality check via claude CLI
-  safeHandle('workbench:checkSpec', async (_e, input: { title: string; repo: string; spec: string }) => {
+// AI-powered spec quality check via claude CLI
+safeHandle(
+  'workbench:checkSpec',
+  async (_e, input: { title: string; repo: string; spec: string }) => {
     const prompt = `You are reviewing a coding agent spec for quality. Return ONLY valid JSON (no markdown fencing).
 
 Title: "${input.title}"
@@ -1823,22 +1895,23 @@ Return JSON: {"clarity":{"status":"...","message":"..."},"scope":{"status":"..."
       const { stdout } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'text'], {
         encoding: 'utf-8',
         timeout: 45_000,
-        env: augmentedEnv(),
+        env: augmentedEnv()
       })
       const parsed = JSON.parse(stdout.trim())
       return {
         clarity: parsed.clarity ?? { status: 'warn', message: 'Unable to assess clarity' },
         scope: parsed.scope ?? { status: 'warn', message: 'Unable to assess scope' },
-        filesExist: parsed.filesExist ?? { status: 'warn', message: 'Unable to check files' },
+        filesExist: parsed.filesExist ?? { status: 'warn', message: 'Unable to check files' }
       }
     } catch {
       return {
         clarity: { status: 'warn' as const, message: 'AI check unavailable' },
         scope: { status: 'warn' as const, message: 'AI check unavailable' },
-        filesExist: { status: 'warn' as const, message: 'AI check unavailable' },
+        filesExist: { status: 'warn' as const, message: 'AI check unavailable' }
       }
     }
-  })
+  }
+)
 ```
 
 Also add the helper to augment PATH (same pattern as `sdk-adapter.ts`):
@@ -1874,6 +1947,7 @@ git commit -m "feat(workbench): implement AI handlers — chat, generateSpec, ch
 ## Task 9: Integration — Semantic + Operational Checks in UI
 
 **Files:**
+
 - Modify: `src/renderer/src/components/task-workbench/WorkbenchForm.tsx` (add debounced semantic check, on-demand operational check)
 - Reference: `src/renderer/src/stores/taskWorkbench.ts`
 
@@ -1897,15 +1971,33 @@ useEffect(() => {
     try {
       const result = await window.api.workbench.checkSpec({ title, repo, spec })
       setSemanticChecks([
-        { id: 'clarity', label: 'Clarity', tier: 2, status: result.clarity.status, message: result.clarity.message },
-        { id: 'scope', label: 'Scope', tier: 2, status: result.scope.status, message: result.scope.message },
-        { id: 'files-exist', label: 'Files', tier: 2, status: result.filesExist.status, message: result.filesExist.message },
+        {
+          id: 'clarity',
+          label: 'Clarity',
+          tier: 2,
+          status: result.clarity.status,
+          message: result.clarity.message
+        },
+        {
+          id: 'scope',
+          label: 'Scope',
+          tier: 2,
+          status: result.scope.status,
+          message: result.scope.message
+        },
+        {
+          id: 'files-exist',
+          label: 'Files',
+          tier: 2,
+          status: result.filesExist.status,
+          message: result.filesExist.message
+        }
       ])
     } catch {
       setSemanticChecks([
         { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Unable to check' },
         { id: 'scope', label: 'Scope', tier: 2, status: 'warn', message: 'Unable to check' },
-        { id: 'files-exist', label: 'Files', tier: 2, status: 'warn', message: 'Unable to check' },
+        { id: 'files-exist', label: 'Files', tier: 2, status: 'warn', message: 'Unable to check' }
       ])
     }
   }, 2000)
@@ -1919,59 +2011,103 @@ useEffect(() => {
 Modify the `handleSubmit` callback in `WorkbenchForm.tsx` to run operational checks before queuing:
 
 ```typescript
-const handleSubmit = useCallback(async (action: 'backlog' | 'queue') => {
-  setSubmitting(true)
-  try {
-    // Run operational checks for queue/launch
-    if (action === 'queue') {
-      useTaskWorkbenchStore.setState({ operationalLoading: true })
-      const opResult = await window.api.workbench.checkOperational({ repo })
-      const opChecks = [
-        { id: 'auth', label: 'Auth', tier: 3 as const, status: opResult.auth.status, message: opResult.auth.message },
-        { id: 'repo-path', label: 'Repo Path', tier: 3 as const, status: opResult.repoPath.status, message: opResult.repoPath.message },
-        { id: 'git-clean', label: 'Git Clean', tier: 3 as const, status: opResult.gitClean.status, message: opResult.gitClean.message },
-        { id: 'no-conflict', label: 'No Conflict', tier: 3 as const, status: opResult.noConflict.status, message: opResult.noConflict.message },
-        { id: 'slots', label: 'Agent Slots', tier: 3 as const, status: opResult.slotsAvailable.status, message: opResult.slotsAvailable.message },
-      ]
-      setOperationalChecks(opChecks)
-
-      // Block if any operational check fails
-      if (opChecks.some((c) => c.status === 'fail')) {
-        useTaskWorkbenchStore.setState({ checksExpanded: true })
-        setSubmitting(false)
-        return
-      }
-    }
-
-    if (mode === 'edit' && taskId) {
-      await updateTask(taskId, {
-        title,
-        repo,
-        priority,
-        spec,
-        status: action === 'queue' ? 'queued' : 'backlog',
-      })
-    } else {
-      const input: CreateTicketInput = {
-        title,
-        repo,
-        prompt: title,
-        spec,
-        priority,
-      }
-      await createTask(input)
-      // createTask hardcodes status=backlog. If queuing, find the task and update status.
+const handleSubmit = useCallback(
+  async (action: 'backlog' | 'queue') => {
+    setSubmitting(true)
+    try {
+      // Run operational checks for queue/launch
       if (action === 'queue') {
-        const tasks = useSprintTasks.getState().tasks
-        const created = tasks.find((t) => t.title === title && t.status === 'backlog')
-        if (created) await updateTask(created.id, { status: 'queued' })
+        useTaskWorkbenchStore.setState({ operationalLoading: true })
+        const opResult = await window.api.workbench.checkOperational({ repo })
+        const opChecks = [
+          {
+            id: 'auth',
+            label: 'Auth',
+            tier: 3 as const,
+            status: opResult.auth.status,
+            message: opResult.auth.message
+          },
+          {
+            id: 'repo-path',
+            label: 'Repo Path',
+            tier: 3 as const,
+            status: opResult.repoPath.status,
+            message: opResult.repoPath.message
+          },
+          {
+            id: 'git-clean',
+            label: 'Git Clean',
+            tier: 3 as const,
+            status: opResult.gitClean.status,
+            message: opResult.gitClean.message
+          },
+          {
+            id: 'no-conflict',
+            label: 'No Conflict',
+            tier: 3 as const,
+            status: opResult.noConflict.status,
+            message: opResult.noConflict.message
+          },
+          {
+            id: 'slots',
+            label: 'Agent Slots',
+            tier: 3 as const,
+            status: opResult.slotsAvailable.status,
+            message: opResult.slotsAvailable.message
+          }
+        ]
+        setOperationalChecks(opChecks)
+
+        // Block if any operational check fails
+        if (opChecks.some((c) => c.status === 'fail')) {
+          useTaskWorkbenchStore.setState({ checksExpanded: true })
+          setSubmitting(false)
+          return
+        }
       }
+
+      if (mode === 'edit' && taskId) {
+        await updateTask(taskId, {
+          title,
+          repo,
+          priority,
+          spec,
+          status: action === 'queue' ? 'queued' : 'backlog'
+        })
+      } else {
+        const input: CreateTicketInput = {
+          title,
+          repo,
+          prompt: title,
+          spec,
+          priority
+        }
+        await createTask(input)
+        // createTask hardcodes status=backlog. If queuing, find the task and update status.
+        if (action === 'queue') {
+          const tasks = useSprintTasks.getState().tasks
+          const created = tasks.find((t) => t.title === title && t.status === 'backlog')
+          if (created) await updateTask(created.id, { status: 'queued' })
+        }
+      }
+      resetForm()
+    } finally {
+      setSubmitting(false)
     }
-    resetForm()
-  } finally {
-    setSubmitting(false)
-  }
-}, [mode, taskId, title, repo, priority, spec, createTask, updateTask, resetForm, setOperationalChecks])
+  },
+  [
+    mode,
+    taskId,
+    title,
+    repo,
+    priority,
+    spec,
+    createTask,
+    updateTask,
+    resetForm,
+    setOperationalChecks
+  ]
+)
 ```
 
 - [ ] **Step 3: Verify it compiles and tests pass**
@@ -1991,6 +2127,7 @@ git commit -m "feat(workbench): add debounced semantic checks and on-demand oper
 ## Task 10: Final Polish and Full Verification
 
 **Files:**
+
 - All task-workbench files (review pass)
 
 - [ ] **Step 1: Run full type-check**

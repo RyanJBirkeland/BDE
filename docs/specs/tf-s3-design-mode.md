@@ -1,13 +1,16 @@
 # TF-S3: Design Mode — Conversational Spec Design with Paul
+
 **Epic:** Ticket Flow  
 **Phase:** 3 of 3  
 **Depends on:** TF-S1 + TF-S2 merged  
 **Status:** Ready to implement
 
 ## Problem
+
 Designing a non-trivial feature requires thinking through tradeoffs, edge cases, file impacts, and scope before writing a spec. Today, Ryan does this alone — in his head or in a text file — then pastes the result into the modal. Design Mode makes Paul a product thinking partner, turning ticket creation into a collaborative design conversation that produces an agent-ready spec.
 
 ## Solution
+
 Replace the Design Mode placeholder tab with a split-panel conversational UI. Left panel: chat thread with Paul. Right panel: live spec preview that updates as Paul proposes and refines the spec. Conversation is ephemeral. Output is a `{ title, spec, prompt }` that creates a Backlog task.
 
 ## Component Architecture
@@ -36,9 +39,9 @@ Uses `window.api.invokeTool('sessions_send', ...)` — same as current "Ask Paul
 ```typescript
 // Call shape (matches existing invokeTool usage):
 const result = await window.api.invokeTool('sessions_send', {
-  sessionKey: 'bde-design-mode',  // dedicated session — NOT 'main'
+  sessionKey: 'bde-design-mode', // dedicated session — NOT 'main'
   message: fullConversationPrompt,
-  timeoutSeconds: 45,
+  timeoutSeconds: 45
 })
 const responseText: string = result?.result?.content?.[0]?.text ?? ''
 ```
@@ -74,7 +77,7 @@ function extractTitleFromResponse(text: string): string | null {
 ```typescript
 interface DesignMessage {
   role: 'user' | 'assistant'
-  content: string    // raw markdown/text — rendered in the UI
+  content: string // raw markdown/text — rendered in the UI
   timestamp: number
 }
 
@@ -87,11 +90,13 @@ const [sending, setSending] = useState<boolean>(false)
 ```
 
 **`OPENING_MESSAGE`** — static, no AI call:
+
 ```typescript
 const OPENING_MESSAGE: DesignMessage = {
   role: 'assistant',
-  content: "What are you thinking about building? Describe the feature or problem in your own words — I'll help shape the spec.",
-  timestamp: Date.now(),
+  content:
+    "What are you thinking about building? Describe the feature or problem in your own words — I'll help shape the spec.",
+  timestamp: Date.now()
 }
 ```
 
@@ -368,32 +373,38 @@ export function DesignModeContent({ repo, priority, onSave, onClose }: DesignMod
 Replace the placeholder `{mode === 'design' && (...)}` block from TF-S2 with:
 
 ```tsx
-{mode === 'design' && (
-  <DesignModeContent
-    repo={repo}
-    priority={priority}
-    onSave={(args) => {
-      onCreate(args)
-      onClose()
-    }}
-    onClose={() => {
-      if (window.confirm('Discard this design conversation?')) onClose()
-    }}
-  />
-)}
+{
+  mode === 'design' && (
+    <DesignModeContent
+      repo={repo}
+      priority={priority}
+      onSave={(args) => {
+        onCreate(args)
+        onClose()
+      }}
+      onClose={() => {
+        if (window.confirm('Discard this design conversation?')) onClose()
+      }}
+    />
+  )
+}
 ```
 
 Also update the footer: when `mode === 'design'`, **hide** the Cancel/Save buttons entirely. `DesignModeContent` handles its own save trigger. Add:
 
 ```tsx
-{mode !== 'design' && (
-  <div className="new-ticket-modal__footer">
-    <button className="btn btn--ghost" onClick={handleClose}>Cancel</button>
-    <button className="btn btn--primary" onClick={handleSubmit} disabled={!title.trim()}>
-      {mode === 'quick' ? '⚡ Save — Paul writes the spec' : 'Save to Backlog'}
-    </button>
-  </div>
-)}
+{
+  mode !== 'design' && (
+    <div className="new-ticket-modal__footer">
+      <button className="btn btn--ghost" onClick={handleClose}>
+        Cancel
+      </button>
+      <button className="btn btn--primary" onClick={handleSubmit} disabled={!title.trim()}>
+        {mode === 'quick' ? '⚡ Save — Paul writes the spec' : 'Save to Backlog'}
+      </button>
+    </div>
+  )
+}
 ```
 
 Update the modal close (ESC handler and ✕ button) to check if design mode has a conversation in progress:
@@ -498,12 +509,21 @@ Append to `sprint.css`:
   line-height: 1;
 }
 
-.design-mode__typing span:nth-child(2) { animation-delay: 0.2s; }
-.design-mode__typing span:nth-child(3) { animation-delay: 0.4s; }
+.design-mode__typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.design-mode__typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes typing-dot {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Input bar */
@@ -617,15 +637,16 @@ Append to `sprint.css`:
 
 ## Files to Change
 
-| File | What Changes |
-|------|-------------|
-| `src/renderer/src/components/sprint/DesignModeContent.tsx` | **NEW** — full implementation |
-| `src/renderer/src/components/sprint/NewTicketModal.tsx` | Replace Design placeholder with `<DesignModeContent>`, hide footer in design mode, update close handler |
-| `src/renderer/src/assets/sprint.css` | Design Mode layout CSS |
-| `src/renderer/src/lib/render-markdown.ts` | **NEW** if needed — extract `renderMarkdown()` from SpecDrawer if it's currently inline there |
-| `src/renderer/src/components/sprint/SpecDrawer.tsx` | Update import to use extracted `render-markdown.ts` (if extracting) |
+| File                                                       | What Changes                                                                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/components/sprint/DesignModeContent.tsx` | **NEW** — full implementation                                                                           |
+| `src/renderer/src/components/sprint/NewTicketModal.tsx`    | Replace Design placeholder with `<DesignModeContent>`, hide footer in design mode, update close handler |
+| `src/renderer/src/assets/sprint.css`                       | Design Mode layout CSS                                                                                  |
+| `src/renderer/src/lib/render-markdown.ts`                  | **NEW** if needed — extract `renderMarkdown()` from SpecDrawer if it's currently inline there           |
+| `src/renderer/src/components/sprint/SpecDrawer.tsx`        | Update import to use extracted `render-markdown.ts` (if extracting)                                     |
 
 ## Out of Scope
+
 - Streaming Paul's response text (v2 — requires WebSocket chat path)
 - Repo context injection (file tree in Paul's system prompt) — v2
 - Persisting design conversations — ephemeral by design in v1
@@ -634,6 +655,7 @@ Append to `sprint.css`:
 - Spec quality scoring — v2
 
 ## Test Plan
+
 1. Open modal → click "Design with Paul" tab
 2. Verify Paul's opening message appears without any AI call (static)
 3. Type "I want to add a cost tracking dashboard" → send
@@ -646,6 +668,7 @@ Append to `sprint.css`:
 10. Verify modal widens for Design Mode and normal size for Quick/Template
 
 ## PR Command
+
 ```bash
 git add -A && git commit -m "feat: Design Mode — conversational spec design with Paul (split-panel chat + live spec preview)" && git push origin HEAD && gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: Design Mode — co-design features with Paul in a conversational split-panel UI" -f body="Implements the Design Mode tab in NewTicketModal. Split-panel layout: chat with Paul on the left, live spec preview on the right. Paul asks clarifying questions then proposes a spec. User can refine conversationally. Save creates a Backlog task with the finalized spec. Uses dedicated ephemeral session (bde-design-mode) to avoid polluting main agent history." -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
 ```

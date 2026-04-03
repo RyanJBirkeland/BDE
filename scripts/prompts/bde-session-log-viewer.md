@@ -3,12 +3,14 @@
 You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
 
 ## Context
+
 - `src/renderer/src/components/sessions/SessionList.tsx` — lists sessions, user can select one
 - `src/renderer/src/components/sessions/LiveFeed.tsx` — shows live feed (may already exist)
 - `src/renderer/src/lib/rpc.ts` — RPC client for gateway tool calls
 - Gateway tool: `sessions_history` — fetches message history for a session key
 
 ## Task
+
 Build a Session Log Viewer panel that shows the full message history for a selected session.
 
 ### What to build
@@ -16,6 +18,7 @@ Build a Session Log Viewer panel that shows the full message history for a selec
 1. **SessionLogViewer component** — Create `src/renderer/src/components/sessions/SessionLogViewer.tsx`
 
 2. **Data** — When a session is selected in SessionList, call `sessions_history` via RPC:
+
    ```
    tool: sessions_history
    params: { sessionKey: <selected>, limit: 50 }
@@ -38,6 +41,7 @@ Build a Session Log Viewer panel that shows the full message history for a selec
 7. **Wire into SessionsView** — Update `src/renderer/src/views/SessionsView.tsx` to render `<SessionLogViewer />` in the right panel alongside `LiveFeed`.
 
 ## Rules
+
 - Work on a branch: `git checkout -b feat/session-log-viewer`
 - Build must pass: `npm run build`
 - Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE session log viewer — full message history with tool call expansion" -f body="Session log viewer wired to sessions_history gateway tool" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`

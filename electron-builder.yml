@@ -5,7 +5,7 @@ directories:
   output: release
 files:
   - out/**/*
-  - "!out/**/*.map"
+  - '!out/**/*.map'
 mac:
   category: public.app-category.developer-tools
   target:
@@ -16,7 +16,7 @@ mac:
   gatekeeperAssess: false
   icon: resources/icon.icns
 dmg:
-  title: "BDE ${version}"
+  title: 'BDE ${version}'
   contents:
     - x: 130
       y: 220

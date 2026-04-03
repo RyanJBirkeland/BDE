@@ -223,11 +223,14 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
         await createOrUpdateTask(action === 'queue' ? 'queued' : 'backlog')
         resetForm()
         toast.success(mode === 'edit' && taskId ? 'Task updated' : 'Task created')
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Unknown error'
+        toast.error(`Failed to ${action === 'queue' ? 'queue' : 'save'} task: ${message}`)
       } finally {
         setSubmitting(false)
       }
     },
-    [createOrUpdateTask, resetForm, setOperationalChecks, repo]
+    [createOrUpdateTask, resetForm, setOperationalChecks, repo, mode, taskId]
   )
 
   const handleConfirmedQueue = useCallback(async () => {
@@ -242,6 +245,10 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   }, [createOrUpdateTask, resetForm])
 
   const handleGenerate = useCallback(async () => {
+    if (!title.trim()) {
+      toast.error('Enter a title first')
+      return
+    }
     setGenerating(true)
     try {
       const result = await window.api.workbench.generateSpec({
@@ -258,7 +265,10 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   }, [title, repo, setField])
 
   const handleResearch = useCallback(() => {
-    if (!title.trim()) return
+    if (!title.trim()) {
+      toast.error('Enter a title first')
+      return
+    }
     onSendCopilotMessage(`Research the ${repo} codebase for: ${title}`)
   }, [title, repo, onSendCopilotMessage])
 
@@ -268,8 +278,11 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       if (e.key === 'Enter' && e.metaKey) {
         e.preventDefault()
         const structural = useTaskWorkbenchStore.getState().structuralChecks
-        const titlePasses = structural.some((c) => c.id === 'title-present' && c.status === 'pass')
-        if (titlePasses && !submitting) {
+        const operational = useTaskWorkbenchStore.getState().operationalChecks
+        const noTier1Fails = structural.every((c) => c.status !== 'fail')
+        const tier3HasFails = operational.some((c) => c.status === 'fail')
+        const canQueue = noTier1Fails && !tier3HasFails
+        if (canQueue && !submitting) {
           handleSubmit('queue')
         }
       }
@@ -369,7 +382,6 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       <WorkbenchActions
         onSaveBacklog={() => handleSubmit('backlog')}
         onQueueNow={() => handleSubmit('queue')}
-        onLaunch={() => handleSubmit('queue')}
         onCancel={mode === 'edit' ? resetForm : undefined}
         submitting={submitting}
       />

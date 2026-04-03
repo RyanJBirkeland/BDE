@@ -78,11 +78,11 @@
 }
 
 /* Folder names: primary white, file names: muted */
-.ide-file-node[data-type="folder"] .ide-file-node__name {
+.ide-file-node[data-type='folder'] .ide-file-node__name {
   color: var(--neon-text);
 }
 
-.ide-file-node[data-type="file"] .ide-file-node__name {
+.ide-file-node[data-type='file'] .ide-file-node__name {
   color: var(--neon-text-muted);
 }
 
@@ -204,7 +204,9 @@
   color: var(--neon-bg);
   background: var(--neon-cyan);
   box-shadow: 0 0 12px var(--neon-cyan-glow);
-  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+  transition:
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .ide-empty-state__open-btn:hover {
@@ -441,7 +443,10 @@
   background: var(--neon-surface-deep);
   color: var(--neon-text-dim);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .ide-sidebar-toggle:hover {
@@ -468,7 +473,7 @@
   padding: 20px 24px;
   min-width: 280px;
   backdrop-filter: var(--neon-glass-blur, blur(16px));
-  box-shadow: var(--bde-shadow-lg, 0 8px 32px rgba(0,0,0,0.4));
+  box-shadow: var(--bde-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.4));
 }
 
 .ide-shortcuts-panel__title {

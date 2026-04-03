@@ -31,6 +31,7 @@ BDE has zero end-to-end tests. Unit and component tests verify individual module
 ### Framework Choice: Playwright + Electron
 
 Playwright has first-class Electron support via `electron.launch()`. This gives us:
+
 - Full Chromium DevTools protocol access
 - Real IPC (no mocking needed)
 - Screenshot comparison
@@ -82,14 +83,14 @@ export default defineConfig({
   retries: 1,
   use: {
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
+    screenshot: 'only-on-failure'
   },
   projects: [
     {
       name: 'electron',
-      testMatch: '**/*.spec.ts',
-    },
-  ],
+      testMatch: '**/*.spec.ts'
+    }
+  ]
 })
 ```
 
@@ -132,8 +133,8 @@ export async function launchApp() {
     env: {
       ...process.env,
       BDE_TEST_MODE: '1',
-      HOME: '/tmp/bde-e2e-test', // Isolated home for test config
-    },
+      HOME: '/tmp/bde-e2e-test' // Isolated home for test config
+    }
   })
   const window = await app.firstWindow()
   await window.waitForLoadState('domcontentloaded')
@@ -245,24 +246,24 @@ Teardown: Close app, clean up test log files
 
 ## Files to Create
 
-| File | Purpose | Estimated LOC |
-|------|---------|---------------|
-| `e2e/playwright.config.ts` | Playwright configuration | ~25 |
-| `e2e/fixtures/mock-gateway.ts` | Mock gateway HTTP server | ~80 |
-| `e2e/fixtures/test-config.json` | Mock openclaw.json | ~15 |
-| `e2e/helpers/electron-app.ts` | App launch/teardown helper | ~30 |
-| `e2e/helpers/selectors.ts` | Shared CSS selectors | ~30 |
-| `e2e/flows/session-list.spec.ts` | E2E-1: Session list | ~40 |
-| `e2e/flows/agent-spawn.spec.ts` | E2E-2: Agent spawn | ~50 |
-| `e2e/flows/terminal-io.spec.ts` | E2E-3: Terminal I/O | ~40 |
-| `e2e/flows/command-palette.spec.ts` | E2E-4: Command palette | ~35 |
-| `e2e/flows/agent-log.spec.ts` | E2E-5: Log viewer | ~40 |
+| File                                | Purpose                    | Estimated LOC |
+| ----------------------------------- | -------------------------- | ------------- |
+| `e2e/playwright.config.ts`          | Playwright configuration   | ~25           |
+| `e2e/fixtures/mock-gateway.ts`      | Mock gateway HTTP server   | ~80           |
+| `e2e/fixtures/test-config.json`     | Mock openclaw.json         | ~15           |
+| `e2e/helpers/electron-app.ts`       | App launch/teardown helper | ~30           |
+| `e2e/helpers/selectors.ts`          | Shared CSS selectors       | ~30           |
+| `e2e/flows/session-list.spec.ts`    | E2E-1: Session list        | ~40           |
+| `e2e/flows/agent-spawn.spec.ts`     | E2E-2: Agent spawn         | ~50           |
+| `e2e/flows/terminal-io.spec.ts`     | E2E-3: Terminal I/O        | ~40           |
+| `e2e/flows/command-palette.spec.ts` | E2E-4: Command palette     | ~35           |
+| `e2e/flows/agent-log.spec.ts`       | E2E-5: Log viewer          | ~40           |
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `package.json` | Add `test:e2e` script, add `@playwright/test` to devDependencies |
+| File               | Change                                                                    |
+| ------------------ | ------------------------------------------------------------------------- |
+| `package.json`     | Add `test:e2e` script, add `@playwright/test` to devDependencies          |
 | `vitest.config.ts` | Add `e2e/**` to exclude (prevent vitest from picking up Playwright tests) |
 
 ---
@@ -295,6 +296,7 @@ For this story, use CSS selectors and text content matching. Add `data-testid` i
 ### Environment Isolation
 
 E2E tests should NOT touch the user's real `~/.openclaw/` directory. Use:
+
 - `HOME=/tmp/bde-e2e-test` to isolate config
 - Mock gateway on a random port to avoid conflicts
 - Clean up `/tmp/bde-e2e-test` in `afterAll`

@@ -11,6 +11,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **Current state:** 32px tall, `glass` class gives it `--glass-tint-dark` background with a 1px top-edge shimmer pseudo-element. Left side: "BDE" logotype with gradient text + blur glow. Right side: conflict badge, session badge, cost, notification bell, theme toggle. Clean but cramped and visually flat.
 
 **Feast-site gaps:**
+
 - Height too short at 32px for the premium feel -- should be 38-40px to give breathing room.
 - `padding-left: 80px` for macOS traffic lights is correct, but `padding-right: 12px` is too tight. Should be 16px.
 - The `titlebar__separator` uses a gradient on `--border-light` which is good, but its height (16px) and margin feel VS Code-ish. Should be 20px tall with a softer gradient.
@@ -19,10 +20,11 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 - Gap between right items is `10px` -- should be `8px` for tighter grouping with a visual separator before the theme toggle.
 
 **Specific CSS changes:**
+
 ```css
 .titlebar {
-  height: 38px;           /* was 32px */
-  padding-right: 16px;    /* was 12px */
+  height: 38px; /* was 32px */
+  padding-right: 16px; /* was 12px */
   background: var(--glass-tint-dark);
   border-bottom: 1px solid var(--border);
 }
@@ -35,7 +37,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
   top: 0;
   width: 200px;
   height: 100%;
-  background: radial-gradient(circle at 20% 50%, rgba(0,211,127,0.06) 0%, transparent 70%);
+  background: radial-gradient(circle at 20% 50%, rgba(0, 211, 127, 0.06) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -59,6 +61,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **Current state:** 64px wide vertical nav with 9 items (icon + 10px label). Active item has a 3px left-edge accent bar via `::before`. Items are 56x52px with `--bde-radius-md` (6px) rounding. Open-view indicator is a 4px green dot absolutely positioned. Context menu uses inline styles with token values.
 
 **Feast-site gaps:**
+
 - Border radius on items should be `--bde-radius-lg` (8px) minimum, ideally 10px per Team 0 token `md=12px`.
 - No hover glow effect. Feast-site items would get `box-shadow: 0 0 0 1px var(--border-light)` on hover, creating the "hover-border-brighten" pattern.
 - Active indicator bar (`3px wide, left: -4px`) is too VS Code. Feast-site would use a bottom-aligned accent dot or a filled background tint: `background: var(--accent-subtle); border: 1px solid rgba(0,211,127,0.15)`.
@@ -69,6 +72,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 - Gap between items is only 2px -- too tight. Should be 4px.
 
 **Specific CSS changes:**
+
 ```css
 .activity-bar {
   width: 64px;
@@ -77,15 +81,18 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 }
 
 .activity-bar__nav {
-  gap: 4px;          /* was 2px */
-  padding-top: 8px;  /* was 6px */
+  gap: 4px; /* was 2px */
+  padding-top: 8px; /* was 6px */
 }
 
 .activity-bar__item {
-  width: 52px;        /* was 56px -- slightly narrower for more padding feel */
-  height: 48px;       /* was 52px */
+  width: 52px; /* was 56px -- slightly narrower for more padding feel */
+  height: 48px; /* was 52px */
   border-radius: 10px; /* was var(--bde-radius-md) = 6px */
-  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
 }
 
 .activity-bar__item:hover {
@@ -103,14 +110,14 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 .activity-bar__item--active::before {
   content: '';
   position: absolute;
-  bottom: 4px;        /* was top: 6px */
+  bottom: 4px; /* was top: 6px */
   left: 50%;
   transform: translateX(-50%);
-  width: 16px;        /* was 3px */
-  height: 3px;        /* was auto (top:6px bottom:6px) */
+  width: 16px; /* was 3px */
+  height: 3px; /* was auto (top:6px bottom:6px) */
   border-radius: var(--bde-radius-full);
   background: var(--bde-accent);
-  box-shadow: 0 0 6px rgba(0,211,127,0.3);
+  box-shadow: 0 0 6px rgba(0, 211, 127, 0.3);
 }
 
 .activity-bar__item-label {
@@ -124,6 +131,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **Current state:** 24px tall, extremely minimal -- just a "Local" muted badge on the left and model name on the right. Uses `--bde-surface` background with `--bde-border` top border.
 
 **Feast-site gaps:**
+
 - Height should be 26-28px. 24px is too cramped.
 - Background should use the same `--glass-tint-dark` as the titlebar and activity bar for shell consistency.
 - Missing information: no git branch indicator, no active agent count, no connection status. This is the primary "glanceable info" bar in IntelliJ and it's nearly empty.
@@ -131,9 +139,10 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 - The "Local" badge is using `variant="muted"` which renders as `--bde-surface-high` bg / `--bde-text-dim` color -- nearly invisible. Should be a subtle accent-tinted badge to indicate environment.
 
 **Specific CSS changes:**
+
 ```css
 .statusbar {
-  height: 28px;          /* was 24px */
+  height: 28px; /* was 24px */
   background: var(--glass-tint-dark);
   border-top: 1px solid var(--border);
 }
@@ -144,6 +153,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **Current state:** Framer Motion animated, 560px wide modal with `glass-modal` class (backdrop-filter blur, border glow, layered shadow). Input with 15px font, grouped command list with fuzzy search, keyboard navigation. Well-implemented functionally.
 
 **Feast-site gaps:**
+
 - Width of 560px is good, but `border-radius: 10px` on `.command-palette` class is too small. Should be 16px per Team 0 `lg` token.
 - Input padding `12px 16px` is fine but the input should have a search icon prefix (Search from lucide-react) for discoverability.
 - Item border-radius at `var(--bde-radius-sm)` (4px) is too sharp. Should be 8px.
@@ -153,21 +163,24 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 - The `glass-modal` class already provides good glassmorphism -- this is one of the better-aligned components.
 
 **Specific CSS changes:**
+
 ```css
 .command-palette {
   border-radius: 16px; /* was 10px */
 }
 
 .command-palette__input {
-  padding: 14px 16px;    /* was 12px 16px */
-  font-size: 15px;       /* keep */
+  padding: 14px 16px; /* was 12px 16px */
+  font-size: 15px; /* keep */
   border-bottom: 1px solid var(--border-light); /* was var(--bde-border) */
 }
 
 .command-palette__item {
-  border-radius: 8px;    /* was var(--bde-radius-sm) = 4px */
-  padding: 10px 12px;    /* was 8px 12px */
-  transition: background 0.1s ease, border-color 0.1s ease;
+  border-radius: 8px; /* was var(--bde-radius-sm) = 4px */
+  padding: 10px 12px; /* was 8px 12px */
+  transition:
+    background 0.1s ease,
+    border-color 0.1s ease;
 }
 
 .command-palette__item--selected {
@@ -177,11 +190,11 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 }
 
 .command-palette__group-header {
-  color: var(--bde-accent);   /* was var(--bde-text-muted) */
-  font-weight: 700;           /* was inherited (not set) */
+  color: var(--bde-accent); /* was var(--bde-text-muted) */
+  font-weight: 700; /* was inherited (not set) */
   font-size: var(--text-2xs); /* 10px, slightly smaller */
   letter-spacing: var(--tracking-widest); /* was 0.5px */
-  padding: 8px 12px 4px;      /* was 6px 12px 2px */
+  padding: 8px 12px 4px; /* was 6px 12px 2px */
 }
 
 .command-palette__empty {
@@ -194,6 +207,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **Current state:** 14px Bell icon in a `bde-btn--icon bde-btn--sm` (28x28). Unread badge is a red pill absolutely positioned. Dropdown uses `glass-modal elevation-3` classes -- good glassmorphism. Notification items have type-colored icon circles, title/message/time layout, and an unread dot.
 
 **Feast-site gaps:**
+
 - Badge radius is `8px` -- should be `var(--bde-radius-full)` (already close, 8px on a 14px element is pill-shaped).
 - Dropdown width at 360px is fine. `border-radius: var(--bde-radius-lg)` (8px) should be 16px to match elevation-3.
 - Notification item icon circles use hardcoded `rgba()` for backgrounds (`rgba(34, 197, 94, 0.1)`) which violates the CSS theming rule. Must use CSS variables or the semantic tokens.
@@ -203,25 +217,26 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 - No `max-height` animation on dropdown open/close -- it just pops in.
 
 **Specific CSS changes:**
+
 ```css
 .notification-bell__dropdown {
-  border-radius: 16px;  /* was var(--bde-radius-lg) = 8px */
+  border-radius: 16px; /* was var(--bde-radius-lg) = 8px */
   animation: bde-scale-fade-in 150ms ease;
 }
 
 .notification-item--success .notification-item__icon {
   color: var(--bde-success);
-  background: var(--bde-accent-dim);  /* was rgba(34, 197, 94, 0.1) */
+  background: var(--bde-accent-dim); /* was rgba(34, 197, 94, 0.1) */
 }
 
 .notification-item--error .notification-item__icon {
   color: var(--bde-danger);
-  background: var(--bde-danger-dim);  /* was rgba(239, 68, 68, 0.1) */
+  background: var(--bde-danger-dim); /* was rgba(239, 68, 68, 0.1) */
 }
 
 .notification-item--warning .notification-item__icon {
   color: var(--bde-warning);
-  background: var(--bde-warning-dim);  /* was rgba(251, 191, 36, 0.1) */
+  background: var(--bde-warning-dim); /* was rgba(251, 191, 36, 0.1) */
 }
 
 .notification-item:hover {
@@ -247,6 +262,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **PanelLeaf:** Wraps tab bar + view content. Focused panel gets `1px solid accent` outline. Entirely inline-styled.
 
 **Feast-site gaps:**
+
 - **TabBar:** All inline styles prevent CSS theming. 28px is too short -- should be 32px. No tab hover effect. Active tab indicator is just a background change -- should have a bottom accent border. Tab close button is invisible until hover (opacity: 0.6 always). Font size in `tokens.size.sm` (12px) is fine.
 - **ResizeHandle:** No hover indicator at all -- transparent to transparent. Should show `var(--border-light)` on hover and `var(--bde-accent)` when actively dragging. Width of 4px is fine but should be 5-6px for easier grab target.
 - **DropOverlay:** The highlight color `var(--bde-info-dim)` is blue-tinted -- should be accent-green: `var(--accent-subtle)` with a border. Center zone inset of 10% feels arbitrary.
@@ -254,16 +270,19 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 - All panel components use `tokens.*` (the TS object) for inline styles instead of CSS variables. This means the light theme CSS variable overrides DON'T APPLY to panel styles. This is a critical bug for theming.
 
 **Specific CSS changes (new classes to replace inline styles):**
+
 ```css
 .panel-tab-bar {
-  height: 32px;              /* was 28px */
+  height: 32px; /* was 28px */
   background: var(--bde-surface);
   border-bottom: 1px solid var(--bde-border);
 }
 
 .panel-tab {
   font-size: var(--bde-size-sm);
-  transition: color 0.1s ease, background 0.1s ease;
+  transition:
+    color 0.1s ease,
+    background 0.1s ease;
 }
 
 .panel-tab:hover {
@@ -273,7 +292,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 .panel-tab--active {
   background: var(--bde-surface-high);
   color: var(--bde-text);
-  box-shadow: inset 0 -2px 0 var(--bde-accent);  /* bottom accent line */
+  box-shadow: inset 0 -2px 0 var(--bde-accent); /* bottom accent line */
 }
 
 .panel-tab__close {
@@ -292,7 +311,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 
 /* Resize handle */
 .panel-resize-handle {
-  width: 5px;  /* was 4px */
+  width: 5px; /* was 4px */
 }
 
 .panel-resize-handle:hover {
@@ -306,13 +325,15 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 /* Drop overlay */
 .panel-drop-zone {
   background: var(--accent-subtle);
-  border: 1px dashed rgba(0,211,127,0.3);
+  border: 1px dashed rgba(0, 211, 127, 0.3);
   border-radius: 8px;
 }
 
 /* Focused panel glow */
 .panel-leaf--focused {
-  box-shadow: 0 0 0 1px var(--bde-accent), 0 0 8px rgba(0,211,127,0.08);
+  box-shadow:
+    0 0 0 1px var(--bde-accent),
+    0 0 8px rgba(0, 211, 127, 0.08);
   border-radius: 0;
 }
 ```
@@ -322,6 +343,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **Current state:** Fixed bottom-right positioning with Framer Motion `slideUp` animation. Pill-shaped (`border-radius: 20px`) with solid color backgrounds. Success = accent green, Error = `--color-error`, Info = `--bg-card` with border. Action buttons use `--bde-hover-strong` border. Click-to-dismiss.
 
 **Feast-site gaps:**
+
 - The toast pill shape (20px radius) actually matches feast-site well -- one of the better-aligned components.
 - Missing glassmorphism on info toasts. Info toast should use `backdrop-filter: blur(16px)` with glass-tint background instead of solid `--bg-card`.
 - Success toast uses flat `var(--bde-accent)` -- should use `linear-gradient(135deg, #00D37F, #00A863)` for the feast-site CTA gradient.
@@ -332,14 +354,17 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 - Missing: a close X button. Only click-to-dismiss is not discoverable.
 
 **Specific CSS changes:**
+
 ```css
 .toast-container {
-  bottom: 44px;  /* was 40px, account for taller statusbar */
+  bottom: 44px; /* was 40px, account for taller statusbar */
 }
 
 .toast--success {
-  background: linear-gradient(135deg, #00D37F, #00A863);
-  box-shadow: 0 4px 16px rgba(0,211,127,0.3), var(--bde-shadow-md);
+  background: linear-gradient(135deg, #00d37f, #00a863);
+  box-shadow:
+    0 4px 16px rgba(0, 211, 127, 0.3),
+    var(--bde-shadow-md);
 }
 
 .toast--info {
@@ -350,7 +375,9 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 }
 
 .toast--error {
-  box-shadow: 0 4px 16px rgba(255,69,58,0.2), var(--bde-shadow-md);
+  box-shadow:
+    0 4px 16px rgba(255, 69, 58, 0.2),
+    var(--bde-shadow-md);
 }
 ```
 
@@ -397,6 +424,7 @@ The shell and navigation layer is functionally solid with good ARIA patterns and
 **PanelTabBar.tsx — Critical: inline styles must move to CSS classes**
 
 The entire component uses `style={{...}}` with `tokens.*` references. This means:
+
 - Light theme CSS variable overrides do not apply (the TS `tokens` object is static).
 - Cannot be targeted by global CSS changes.
 - Performance: creates new style objects every render.
@@ -434,6 +462,7 @@ Lines 128-139: The green dot indicator is inline-styled. Should be a CSS class `
 **StatusBar.tsx — Expand component interface**
 
 The current `StatusBarProps` only accepts `model: string`. Should be expanded:
+
 ```ts
 interface StatusBarProps {
   model: string
@@ -454,22 +483,22 @@ Each `ToastItem` should render a small X button (visible on hover) in addition t
 
 ```css
 /* Team 0 token updates */
---bde-bg: #050507;             /* was #0A0A0A */
---bde-surface: #111118;        /* was #141414 */
---bde-surface-high: #16161F;   /* was #1E1E1E */
---bde-border: #1E1E2A;         /* was #333333 */
---bde-text: #F5F5F7;           /* was #E8E8E8 */
+--bde-bg: #050507; /* was #0A0A0A */
+--bde-surface: #111118; /* was #141414 */
+--bde-surface-high: #16161f; /* was #1E1E1E */
+--bde-border: #1e1e2a; /* was #333333 */
+--bde-text: #f5f5f7; /* was #E8E8E8 */
 
---bde-radius-sm: 8px;          /* was 4px */
---bde-radius-md: 12px;         /* was 6px */
---bde-radius-lg: 16px;         /* was 8px */
---bde-radius-xl: 20px;         /* was 12px */
+--bde-radius-sm: 8px; /* was 4px */
+--bde-radius-md: 12px; /* was 6px */
+--bde-radius-lg: 16px; /* was 8px */
+--bde-radius-xl: 20px; /* was 12px */
 
 /* New tokens */
 --bde-radius-2xl: 24px;
 --bde-radius-3xl: 32px;
---bde-shadow-glow: 0 4px 16px rgba(0,211,127,0.3);
---bde-shadow-elevation: 0 24px 80px rgba(0,0,0,0.6);
+--bde-shadow-glow: 0 4px 16px rgba(0, 211, 127, 0.3);
+--bde-shadow-elevation: 0 24px 80px rgba(0, 0, 0, 0.6);
 
 --bde-font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 ```
@@ -533,31 +562,31 @@ Already detailed in UX Designer section above.
 
 ## Priority Matrix
 
-| Change | Impact | Effort | Priority |
-|--------|--------|--------|----------|
-| Update `base.css` token values to Team 0 targets (colors, radii, font) | High | Low | P0 |
-| Sync `tokens.ts` with new CSS variable values | High | Low | P0 |
-| Refactor PanelTabBar from inline styles to CSS classes | High | Medium | P0 |
-| Refactor PanelLeaf from inline styles to CSS classes | High | Medium | P0 |
-| Fix notification icon backgrounds from hardcoded rgba to CSS vars | Medium | Low | P0 |
-| Add `aria-activedescendant` to CommandPalette input | Medium | Low | P0 |
-| Add keyboard navigation to PanelTabBar (Arrow keys) | Medium | Medium | P1 |
-| Add keyboard accessibility to NotificationBell dropdown | Medium | Medium | P1 |
-| Extract ActivityBar context menu to CSS classes | Medium | Medium | P1 |
-| Increase titlebar height to 38px, add ambient logo glow | Medium | Low | P1 |
-| Update command-palette radii + selected state styling | Medium | Low | P1 |
-| Add glassmorphism + gradient to toasts | Low | Low | P1 |
-| Expand StatusBar with git branch, agent count, queue depth | High | Medium | P1 |
-| Add tab overflow dropdown to PanelTabBar | Medium | High | P2 |
-| ActivityBar visual grouping with dividers | Low | Low | P2 |
-| Add keyboard support to ActivityBar context menu | Low | Medium | P2 |
-| Add slide-in animation to NotificationBell dropdown | Low | Low | P2 |
-| Add close button to toast items | Low | Low | P2 |
-| PanelResizeHandle hover/active visual states | Low | Low | P2 |
-| PanelDropOverlay zone styles to CSS + accent color | Low | Low | P2 |
-| Add "Recent Tabs" to command palette | Medium | Medium | P2 |
-| Panel focus glow instead of hard outline | Low | Low | P3 |
-| StatusBar gradient-horizon overlay | Low | Low | P3 |
-| Tab reorder within same panel | Low | High | P3 |
-| Pin tab feature | Low | High | P3 |
-| Panel layout mini-map overview | Low | High | P3 |
+| Change                                                                 | Impact | Effort | Priority |
+| ---------------------------------------------------------------------- | ------ | ------ | -------- |
+| Update `base.css` token values to Team 0 targets (colors, radii, font) | High   | Low    | P0       |
+| Sync `tokens.ts` with new CSS variable values                          | High   | Low    | P0       |
+| Refactor PanelTabBar from inline styles to CSS classes                 | High   | Medium | P0       |
+| Refactor PanelLeaf from inline styles to CSS classes                   | High   | Medium | P0       |
+| Fix notification icon backgrounds from hardcoded rgba to CSS vars      | Medium | Low    | P0       |
+| Add `aria-activedescendant` to CommandPalette input                    | Medium | Low    | P0       |
+| Add keyboard navigation to PanelTabBar (Arrow keys)                    | Medium | Medium | P1       |
+| Add keyboard accessibility to NotificationBell dropdown                | Medium | Medium | P1       |
+| Extract ActivityBar context menu to CSS classes                        | Medium | Medium | P1       |
+| Increase titlebar height to 38px, add ambient logo glow                | Medium | Low    | P1       |
+| Update command-palette radii + selected state styling                  | Medium | Low    | P1       |
+| Add glassmorphism + gradient to toasts                                 | Low    | Low    | P1       |
+| Expand StatusBar with git branch, agent count, queue depth             | High   | Medium | P1       |
+| Add tab overflow dropdown to PanelTabBar                               | Medium | High   | P2       |
+| ActivityBar visual grouping with dividers                              | Low    | Low    | P2       |
+| Add keyboard support to ActivityBar context menu                       | Low    | Medium | P2       |
+| Add slide-in animation to NotificationBell dropdown                    | Low    | Low    | P2       |
+| Add close button to toast items                                        | Low    | Low    | P2       |
+| PanelResizeHandle hover/active visual states                           | Low    | Low    | P2       |
+| PanelDropOverlay zone styles to CSS + accent color                     | Low    | Low    | P2       |
+| Add "Recent Tabs" to command palette                                   | Medium | Medium | P2       |
+| Panel focus glow instead of hard outline                               | Low    | Low    | P3       |
+| StatusBar gradient-horizon overlay                                     | Low    | Low    | P3       |
+| Tab reorder within same panel                                          | Low    | High   | P3       |
+| Pin tab feature                                                        | Low    | High   | P3       |
+| Panel layout mini-map overview                                         | Low    | High   | P3       |

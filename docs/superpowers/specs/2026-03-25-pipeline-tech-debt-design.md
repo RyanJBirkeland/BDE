@@ -38,7 +38,7 @@ The AgentManager pipeline has three classes of tech debt identified via audit:
 let logger: Logger = {
   info: (m) => console.log(m),
   warn: (m) => console.warn(m),
-  error: (m) => console.error(m),
+  error: (m) => console.error(m)
 }
 
 export function setSprintQueriesLogger(l: Logger): void {
@@ -71,6 +71,7 @@ export function setSprintQueriesLogger(l: Logger): void {
 **Target state:** All catch blocks log at `warn` level with context about what failed and why. No behavior change — just visibility. Scope: every empty `catch` in `worktree.ts` — grep for `catch {` and `catch (` with empty/comment-only bodies.
 
 **Known locations (non-exhaustive — implementer should grep for all):**
+
 - `releaseLock` rmSync failure
 - `git worktree remove` fallback to `rmSync`
 - worktree list fallback to prune
@@ -84,6 +85,7 @@ export function setSprintQueriesLogger(l: Logger): void {
 - any additional empty catches found via grep
 
 **Pattern:**
+
 ```typescript
 // Before:
 } catch { /* best-effort */ }
@@ -103,13 +105,14 @@ export function setSprintQueriesLogger(l: Logger): void {
 **Target state:** Add `.eq('claimed_by', executorId)` guard so only the owning executor can release.
 
 **Change in sprint-queries.ts:**
+
 ```typescript
 export async function releaseTask(taskId: string, executorId: string): Promise<void> {
   const { error } = await getSupabaseClient()
     .from('sprint_tasks')
     .update({ claimed_by: null, agent_run_id: null, status: 'queued' })
     .eq('id', taskId)
-    .eq('claimed_by', executorId)  // NEW: only release if we own it
+    .eq('claimed_by', executorId) // NEW: only release if we own it
   if (error) {
     logger.warn(`[sprint-queries] releaseTask failed for id=${taskId}: ${error.message}`)
   }
@@ -142,6 +145,7 @@ export function stripBlockedNote(notes: string | null): string {
 ```
 
 **Callers to update:**
+
 - `index.ts:265` — drain loop auto-block
 - `queue-api/task-handlers.ts:220` — createTask auto-block
 - `handlers/sprint-local.ts:129, 184` — sprint:create and sprint:update
@@ -157,7 +161,7 @@ export function stripBlockedNote(notes: string | null): string {
 export async function checkTaskDependencies(
   taskId: string,
   rawDeps: unknown,
-  logger: Logger,
+  logger: Logger
 ): Promise<{ shouldBlock: boolean; blockedBy: string[] }> {
   // Parse deps, create index, check satisfaction
   // Returns { shouldBlock: false, blockedBy: [] } if deps satisfied or unparseable
@@ -165,6 +169,7 @@ export async function checkTaskDependencies(
 ```
 
 **Callers to update:**
+
 - `index.ts:254-276` — drain loop dep check
 - `queue-api/task-handlers.ts:205-227` — createTask dep check
 - `handlers/sprint-local.ts:114-129, 170-184` — sprint handlers
@@ -182,6 +187,7 @@ export async function checkTaskDependencies(
 **Current:** 175 lines doing 7 things.
 
 **Extract into completion.ts:**
+
 - `detectBranch(worktreePath: string): Promise<string>` — git rev-parse
 - `autoCommitIfDirty(worktreePath: string, title: string): Promise<void>` — git status + add + commit
 - `pushBranch(worktreePath: string, branch: string): Promise<void>` — git push
@@ -202,6 +208,7 @@ Remove `preloadOAuthToken()` from `sdk-adapter.ts`. Deprecated, no callers.
 ### 3a. Extract Magic Numbers
 
 Add to `types.ts`:
+
 ```typescript
 export const BRANCH_SLUG_MAX_LENGTH = 40
 export const LAST_OUTPUT_MAX_LENGTH = 500
@@ -214,6 +221,7 @@ Replace hardcoded values in `worktree.ts:15`, `run-agent.ts:262`, `completion.ts
 ### 3b. Convert Async Imports to Top-Level
 
 In `queue-api/task-handlers.ts:207-210`:
+
 ```typescript
 // Before:
 const { createDependencyIndex } = await import('../agent-manager/dependency-index')
@@ -230,28 +238,28 @@ import { listTasks } from '../data/sprint-queries'
 
 ## Testing Strategy
 
-| Phase | Approach |
-|-------|----------|
-| 1a | TDD: Write tests asserting return-not-throw for converted functions. Update caller tests. |
-| 1b | Existing tests pass. Add assertions that logger.warn is called on failure paths. |
-| 1c | New test: releaseTask with mismatched executorId is a no-op. |
-| 2a-2b | Unit tests for new helpers. Existing integration tests verify behavioral equivalence. |
-| 2c-2d | Existing tests pass (behavioral equivalence). New unit tests for extracted functions. |
-| 2e | Remove preloadOAuthToken test from `sdk-adapter-sdk-path.test.ts` (surgical removal, not file deletion). |
-| 3a-3b | No new tests. Existing tests validate. |
+| Phase | Approach                                                                                                 |
+| ----- | -------------------------------------------------------------------------------------------------------- |
+| 1a    | TDD: Write tests asserting return-not-throw for converted functions. Update caller tests.                |
+| 1b    | Existing tests pass. Add assertions that logger.warn is called on failure paths.                         |
+| 1c    | New test: releaseTask with mismatched executorId is a no-op.                                             |
+| 2a-2b | Unit tests for new helpers. Existing integration tests verify behavioral equivalence.                    |
+| 2c-2d | Existing tests pass (behavioral equivalence). New unit tests for extracted functions.                    |
+| 2e    | Remove preloadOAuthToken test from `sdk-adapter-sdk-path.test.ts` (surgical removal, not file deletion). |
+| 3a-3b | No new tests. Existing tests validate.                                                                   |
 
 ## Files Changed
 
-| File | Phase | Change |
-|------|-------|--------|
-| `src/main/data/sprint-queries.ts` | 1a, 1c | Error handling standardization, executor guard |
-| `src/main/agent-manager/worktree.ts` | 1b | Add logging to catch blocks |
-| `src/main/agent-manager/index.ts` | 1a, 2c | Update callers, decompose drainLoop |
-| `src/main/agent-manager/completion.ts` | 2d | Decompose resolveSuccess |
-| `src/main/agent-manager/dependency-helpers.ts` | 2a, 2b | **New file** — shared auto-block + dep check |
-| `src/main/queue-api/task-handlers.ts` | 2a, 2b, 3b | Use shared helpers, fix imports |
-| `src/main/handlers/sprint-local.ts` | 2a, 2b | Use shared helpers |
-| `src/main/agent-manager/resolve-dependents.ts` | 2a | Use stripBlockedNote |
-| `src/main/agent-manager/sdk-adapter.ts` | 2e | Remove preloadOAuthToken |
-| `src/main/agent-manager/types.ts` | 3a | Add magic number constants |
-| `src/main/agent-manager/orphan-recovery.ts` | 1a | Simplify error handling after sprint-queries change |
+| File                                           | Phase      | Change                                              |
+| ---------------------------------------------- | ---------- | --------------------------------------------------- |
+| `src/main/data/sprint-queries.ts`              | 1a, 1c     | Error handling standardization, executor guard      |
+| `src/main/agent-manager/worktree.ts`           | 1b         | Add logging to catch blocks                         |
+| `src/main/agent-manager/index.ts`              | 1a, 2c     | Update callers, decompose drainLoop                 |
+| `src/main/agent-manager/completion.ts`         | 2d         | Decompose resolveSuccess                            |
+| `src/main/agent-manager/dependency-helpers.ts` | 2a, 2b     | **New file** — shared auto-block + dep check        |
+| `src/main/queue-api/task-handlers.ts`          | 2a, 2b, 3b | Use shared helpers, fix imports                     |
+| `src/main/handlers/sprint-local.ts`            | 2a, 2b     | Use shared helpers                                  |
+| `src/main/agent-manager/resolve-dependents.ts` | 2a         | Use stripBlockedNote                                |
+| `src/main/agent-manager/sdk-adapter.ts`        | 2e         | Remove preloadOAuthToken                            |
+| `src/main/agent-manager/types.ts`              | 3a         | Add magic number constants                          |
+| `src/main/agent-manager/orphan-recovery.ts`    | 1a         | Simplify error handling after sprint-queries change |

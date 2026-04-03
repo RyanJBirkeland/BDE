@@ -11,7 +11,9 @@ vi.mock('../../stores/toasts', () => ({
 }))
 
 describe('useGitHubRateLimitWarning', () => {
-  let rateLimitHandler: ((data: { remaining: number; limit: number; resetEpoch: number }) => void) | null
+  let rateLimitHandler:
+    | ((data: { remaining: number; limit: number; resetEpoch: number }) => void)
+    | null
   let tokenExpiredHandler: (() => void) | null
   const unsubRate = vi.fn()
   const unsubToken = vi.fn()
@@ -59,9 +61,6 @@ describe('useGitHubRateLimitWarning', () => {
     renderHook(() => useGitHubRateLimitWarning())
 
     tokenExpiredHandler!()
-    expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining('expired'),
-      12_000
-    )
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('expired'), 12_000)
   })
 })

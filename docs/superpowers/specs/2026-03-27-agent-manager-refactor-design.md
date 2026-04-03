@@ -121,6 +121,7 @@ Uses `_` prefix convention for testable internals (matches `_runAgent` pattern).
 ## Risk
 
 Medium — structural refactor of core orchestrator. Mitigated by:
+
 - Public API is identical (44 existing tests as regression gate)
 - Each extracted method is testable independently before integration
 - The class is in the same file — no import path changes

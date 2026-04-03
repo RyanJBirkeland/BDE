@@ -3,11 +3,13 @@
 You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
 
 ## Context
+
 The app connects to an OpenClaw gateway at `ws://127.0.0.1:18789`. The gateway token is read from `~/.openclaw/openclaw.json`. The gateway WebSocket connection is managed in `src/renderer/src/lib/gateway.ts` and `src/renderer/src/stores/gateway.ts`.
 
 The `LiveFeed` component lives at `src/renderer/src/components/sessions/LiveFeed.tsx`. It currently renders placeholder data.
 
 ## Task
+
 Wire the LiveFeed component to stream real messages from the OpenClaw gateway WebSocket.
 
 ### What to build
@@ -29,6 +31,7 @@ Wire the LiveFeed component to stream real messages from the OpenClaw gateway We
 6. **IPC bridge** — The WebSocket lives in the renderer process (via `src/renderer/src/lib/gateway.ts`). Make sure messages flow correctly from the gateway store into LiveFeed.
 
 ## Rules
+
 - Work on a branch: `git checkout -b feat/live-feed`
 - Build must pass: `npm run build`
 - Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE live feed — real WebSocket streaming from gateway" -f body="Wires LiveFeed to real gateway WebSocket messages" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`

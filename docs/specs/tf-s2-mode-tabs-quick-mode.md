@@ -1,13 +1,16 @@
 # TF-S2: Mode Tabs + Quick Mode
+
 **Epic:** Ticket Flow  
 **Phase:** 2 of 3  
 **Depends on:** TF-S1 merged  
 **Status:** Ready to implement
 
 ## Problem
+
 There's no fast path for capturing a task idea. Every ticket requires the full modal with all fields. Ryan should be able to fire "Fix the toast z-index" in 3 seconds and move on — Paul writes the spec in the background. Currently that's impossible; the only path is the full form.
 
 ## Solution
+
 Add a 3-tab mode switcher to `NewTicketModal`. Implement **Quick Mode** as the default tab: title + repo only, auto-spec generated in the background after save. The other two tabs (Template = current form, Design = coming in TF-S3) are added as tabs but Template tab just renders the existing form and Design tab renders a placeholder.
 
 Also fix 2 existing gaps: add `sprint:generatePrompt` IPC handler, expose `sprint.delete()` in preload.
@@ -24,33 +27,34 @@ interface GeneratePromptRequest {
   taskId: string
   title: string
   repo: string
-  templateHint: string  // from detectTemplate(title) — never undefined
+  templateHint: string // from detectTemplate(title) — never undefined
 }
 
 // Response
 interface GeneratePromptResponse {
   taskId: string
-  spec: string    // may be '' on failure — never throws
-  prompt: string  // always has a value: generated spec or fallback to title
+  spec: string // may be '' on failure — never throws
+  prompt: string // always has a value: generated spec or fallback to title
 }
 ```
 
 **Transport:** Main process makes HTTP POST directly to OpenClaw gateway `/tools/invoke`. Uses `sessions_send` tool with `sessionKey: 'bde-spec-gen'` (ephemeral session, NOT 'main'). This runs entirely in the main process — no round-trip through the renderer for background generation.
 
 **Gateway call shape:**
+
 ```typescript
 const body = {
   tool: 'sessions_send',
   args: {
     sessionKey: 'bde-spec-gen',
     message: buildQuickSpecPrompt(title, repo, templateHint),
-    timeoutSeconds: 45,
-  },
+    timeoutSeconds: 45
+  }
 }
 const response = await fetch(`${gatewayUrl}/tools/invoke`, {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${gatewayToken}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify(body),
+  headers: { Authorization: `Bearer ${gatewayToken}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify(body)
 })
 ```
 
@@ -89,13 +93,28 @@ Create this file exactly:
 
 const HEURISTIC_RULES: ReadonlyArray<{ keywords: readonly string[]; template: string }> = [
   { keywords: ['fix', 'bug', 'broken', 'crash', 'error', 'revert'], template: 'bugfix' },
-  { keywords: ['add', 'new', 'create', 'implement', 'build', 'wire', 'integrate'], template: 'feature' },
-  { keywords: ['refactor', 'extract', 'move', 'rename', 'clean', 'decompose', 'split'], template: 'refactor' },
+  {
+    keywords: ['add', 'new', 'create', 'implement', 'build', 'wire', 'integrate'],
+    template: 'feature'
+  },
+  {
+    keywords: ['refactor', 'extract', 'move', 'rename', 'clean', 'decompose', 'split'],
+    template: 'refactor'
+  },
   { keywords: ['test', 'coverage', 'spec', 'vitest', 'playwright', 'e2e'], template: 'test' },
-  { keywords: ['perf', 'slow', 'optimize', 'cache', 'latency', 'debounce', 'memo'], template: 'performance' },
-  { keywords: ['style', 'css', 'ui', 'ux', 'polish', 'design', 'layout', 'modal', 'animation'], template: 'ux' },
+  {
+    keywords: ['perf', 'slow', 'optimize', 'cache', 'latency', 'debounce', 'memo'],
+    template: 'performance'
+  },
+  {
+    keywords: ['style', 'css', 'ui', 'ux', 'polish', 'design', 'layout', 'modal', 'animation'],
+    template: 'ux'
+  },
   { keywords: ['audit', 'review', 'check', 'eval', 'investigate'], template: 'audit' },
-  { keywords: ['infra', 'deploy', 'ci', 'config', 'script', 'workflow', 'launchd'], template: 'infra' },
+  {
+    keywords: ['infra', 'deploy', 'ci', 'config', 'script', 'workflow', 'launchd'],
+    template: 'infra'
+  }
 ]
 
 export function detectTemplate(title: string): string {
@@ -114,49 +133,63 @@ Find where the existing sprint IPC handlers are registered (look for `ipcMain.ha
 Add this new handler in the same registration section:
 
 ```typescript
-ipcMain.handle('sprint:generatePrompt', async (_event, args: GeneratePromptRequest): Promise<GeneratePromptResponse> => {
-  const { taskId, title, repo, templateHint } = args
-  const fallback: GeneratePromptResponse = { taskId, spec: '', prompt: title }
+ipcMain.handle(
+  'sprint:generatePrompt',
+  async (_event, args: GeneratePromptRequest): Promise<GeneratePromptResponse> => {
+    const { taskId, title, repo, templateHint } = args
+    const fallback: GeneratePromptResponse = { taskId, spec: '', prompt: title }
 
-  try {
-    const { url: gatewayUrl, token: gatewayToken } = await getGatewayConfig()
+    try {
+      const { url: gatewayUrl, token: gatewayToken } = await getGatewayConfig()
 
-    const templateScaffold = getTemplateScaffold(templateHint)
-    const message = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
+      const templateScaffold = getTemplateScaffold(templateHint)
+      const message = buildQuickSpecPrompt(title, repo, templateHint, templateScaffold)
 
-    const response = await fetch(`${gatewayUrl}/tools/invoke`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${gatewayToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        tool: 'sessions_send',
-        args: { sessionKey: 'bde-spec-gen', message, timeoutSeconds: 45 },
-      }),
-    })
+      const response = await fetch(`${gatewayUrl}/tools/invoke`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${gatewayToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tool: 'sessions_send',
+          args: { sessionKey: 'bde-spec-gen', message, timeoutSeconds: 45 }
+        })
+      })
 
-    if (!response.ok) return fallback
+      if (!response.ok) return fallback
 
-    const data = await response.json() as { result?: { content?: Array<{ type: string; text: string }> } }
-    const text = data.result?.content?.[0]?.text ?? ''
-    if (!text) return fallback
+      const data = (await response.json()) as {
+        result?: { content?: Array<{ type: string; text: string }> }
+      }
+      const text = data.result?.content?.[0]?.text ?? ''
+      if (!text) return fallback
 
-    // Persist the generated spec + prompt to SQLite
-    const db = getDb()
-    db.prepare('UPDATE sprint_tasks SET spec = ?, prompt = ? WHERE id = ?').run(text, text, taskId)
+      // Persist the generated spec + prompt to SQLite
+      const db = getDb()
+      db.prepare('UPDATE sprint_tasks SET spec = ?, prompt = ? WHERE id = ?').run(
+        text,
+        text,
+        taskId
+      )
 
-    return { taskId, spec: text, prompt: text }
-  } catch {
-    return fallback
+      return { taskId, spec: text, prompt: text }
+    } catch {
+      return fallback
+    }
   }
-})
+)
 ```
 
 **Helper functions to add in sprint.ts:**
 
 ```typescript
-function buildQuickSpecPrompt(title: string, repo: string, templateHint: string, scaffold: string): string {
+function buildQuickSpecPrompt(
+  title: string,
+  repo: string,
+  templateHint: string,
+  scaffold: string
+): string {
   return `You are writing a coding agent spec. Be precise. Name exact files. No preamble.
 
 Task: "${title}"
@@ -181,7 +214,7 @@ function getTemplateScaffold(templateHint: string): string {
     performance: `## What's Slow\n\n## Approach\n\n## Files to Change\n\n## How to Verify`,
     ux: `## UX Problem\n\n## Target Design\n\n## Files to Change (CSS + TSX)\n\n## Out of Scope`,
     audit: `## Audit Scope\n\n## Criteria\n\n## Deliverable`,
-    infra: `## What's Being Changed\n\n## Steps\n\n## Verification`,
+    infra: `## What's Being Changed\n\n## Steps\n\n## Verification`
   }
   return SCAFFOLDS[templateHint] ?? SCAFFOLDS.feature
 }
@@ -194,6 +227,7 @@ function getTemplateScaffold(templateHint: string): string {
 Find the `sprint` object in the preload (where `sprint.list`, `sprint.create`, etc. are exposed).
 
 Add:
+
 ```typescript
 generatePrompt: (args: { taskId: string; title: string; repo: string; templateHint: string }) =>
   ipcRenderer.invoke('sprint:generatePrompt', args),
@@ -218,8 +252,10 @@ const [mode, setMode] = useState<TicketMode>('quick')
 In the modal body, BEFORE the existing form fields, add a tab switcher. Insert after the modal header and before the first form field:
 
 ```tsx
-{/* Mode tabs */}
-<div className="new-ticket-modal__tabs">
+{
+  /* Mode tabs */
+}
+;<div className="new-ticket-modal__tabs">
   <button
     className={`new-ticket-modal__tab ${mode === 'quick' ? 'new-ticket-modal__tab--active' : ''}`}
     onClick={() => setMode('quick')}
@@ -251,59 +287,61 @@ Wrap the existing form fields with `{mode === 'template' && (...)}` so they only
 Add a new Quick Mode body that shows when `mode === 'quick'`:
 
 ```tsx
-{mode === 'quick' && (
-  <div className="new-ticket-modal__quick">
-    <div className="new-ticket-modal__field">
-      <label className="new-ticket-modal__label">What needs to happen? *</label>
-      <input
-        ref={titleRef}
-        className="sprint-tasks__input"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
-        placeholder='e.g. "Fix toast z-index above SpecDrawer"'
-        autoFocus
-      />
+{
+  mode === 'quick' && (
+    <div className="new-ticket-modal__quick">
+      <div className="new-ticket-modal__field">
+        <label className="new-ticket-modal__label">What needs to happen? *</label>
+        <input
+          ref={titleRef}
+          className="sprint-tasks__input"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSubmit()
+          }}
+          placeholder='e.g. "Fix toast z-index above SpecDrawer"'
+          autoFocus
+        />
+      </div>
+      <div className="new-ticket-modal__field">
+        <label className="new-ticket-modal__label">Repo</label>
+        <select
+          className="sprint-tasks__select"
+          value={repo}
+          onChange={(e) => setRepo(e.target.value)}
+        >
+          <option value="bde">BDE</option>
+          <option value="life-os">life-os</option>
+          <option value="feast">feast</option>
+        </select>
+      </div>
+      <p className="new-ticket-modal__quick-hint">
+        Paul will write the spec in the background. Review it in SpecDrawer before launching.
+      </p>
     </div>
-    <div className="new-ticket-modal__field">
-      <label className="new-ticket-modal__label">Repo</label>
-      <select
-        className="sprint-tasks__select"
-        value={repo}
-        onChange={(e) => setRepo(e.target.value)}
-      >
-        <option value="bde">BDE</option>
-        <option value="life-os">life-os</option>
-        <option value="feast">feast</option>
-      </select>
-    </div>
-    <p className="new-ticket-modal__quick-hint">
-      Paul will write the spec in the background. Review it in SpecDrawer before launching.
-    </p>
-  </div>
-)}
+  )
+}
 ```
 
 #### 4d. Design Mode placeholder
 
 ```tsx
-{mode === 'design' && (
-  <div className="new-ticket-modal__design-placeholder">
-    <p>🎨 Design with Paul is coming soon.</p>
-    <p>Use Template mode for now — switch tabs above.</p>
-  </div>
-)}
+{
+  mode === 'design' && (
+    <div className="new-ticket-modal__design-placeholder">
+      <p>🎨 Design with Paul is coming soon.</p>
+      <p>Use Template mode for now — switch tabs above.</p>
+    </div>
+  )
+}
 ```
 
 #### 4e. Footer submit button text by mode
 
 ```tsx
 // In the footer submit button:
-<button
-  className="btn btn--primary"
-  onClick={handleSubmit}
-  disabled={!title.trim()}
->
+<button className="btn btn--primary" onClick={handleSubmit} disabled={!title.trim()}>
   {mode === 'quick' ? '⚡ Save — Paul writes the spec' : 'Save to Backlog'}
 </button>
 ```
@@ -324,7 +362,7 @@ const handleSubmit = async () => {
       description: '',
       prompt: title.trim(),
       spec: null,
-      priority: 1,  // Medium — not user-visible in Quick mode
+      priority: 1 // Medium — not user-visible in Quick mode
     })
     onClose()
     return
@@ -337,7 +375,7 @@ const handleSubmit = async () => {
     description: '',
     prompt: spec || title.trim(),
     spec: spec || null,
-    priority,
+    priority
   })
   onClose()
 }
@@ -363,29 +401,34 @@ const handleCreateTask = useCallback(async (input: CreateTaskInput) => {
 
   // Trigger background spec generation for Quick Mode tasks (no spec yet)
   if (!input.spec && created?.id) {
-    const { detectTemplate } = await import('../../shared/template-heuristics')  // dynamic import fine here
+    const { detectTemplate } = await import('../../shared/template-heuristics') // dynamic import fine here
     // OR: import at top of file if preferred
     const templateHint = detectTemplate(input.title)
 
     setGeneratingIds((prev) => new Set(prev).add(created.id))
 
-    window.api.sprint.generatePrompt({
-      taskId: created.id,
-      title: input.title,
-      repo: input.repo,
-      templateHint,
-    }).then((result) => {
-      // Update local task state with generated spec
-      setTasks((prev) =>
-        prev.map((t) => t.id === result.taskId ? { ...t, spec: result.spec || null, prompt: result.prompt } : t)
-      )
-    }).finally(() => {
-      setGeneratingIds((prev) => {
-        const next = new Set(prev)
-        next.delete(created.id)
-        return next
+    window.api.sprint
+      .generatePrompt({
+        taskId: created.id,
+        title: input.title,
+        repo: input.repo,
+        templateHint
       })
-    })
+      .then((result) => {
+        // Update local task state with generated spec
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === result.taskId ? { ...t, spec: result.spec || null, prompt: result.prompt } : t
+          )
+        )
+      })
+      .finally(() => {
+        setGeneratingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(created.id)
+          return next
+        })
+      })
   }
 }, [])
 ```
@@ -417,11 +460,13 @@ Add `isGenerating?: boolean` to the `TaskCard` props interface.
 When `isGenerating` is true, show a small badge below the title:
 
 ```tsx
-{isGenerating && (
-  <span className="task-card__spec-badge task-card__spec-badge--generating">
-    ✦ Writing spec...
-  </span>
-)}
+{
+  isGenerating && (
+    <span className="task-card__spec-badge task-card__spec-badge--generating">
+      ✦ Writing spec...
+    </span>
+  )
+}
 ```
 
 Add CSS for this badge in sprint.css:
@@ -435,8 +480,13 @@ Add CSS for this badge in sprint.css:
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 ```
 
@@ -501,20 +551,21 @@ Append to `sprint.css`:
 
 ## Files to Change
 
-| File | What Changes |
-|------|-------------|
-| `src/shared/template-heuristics.ts` | **NEW** — `detectTemplate(title)` keyword mapping |
-| `src/main/handlers/sprint.ts` | Add `sprint:generatePrompt` handler + helper functions |
-| `src/preload/index.ts` | Add `sprint.generatePrompt()` and `sprint.delete()` |
-| `src/preload/index.d.ts` | Type declarations for new methods |
+| File                                                    | What Changes                                                   |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| `src/shared/template-heuristics.ts`                     | **NEW** — `detectTemplate(title)` keyword mapping              |
+| `src/main/handlers/sprint.ts`                           | Add `sprint:generatePrompt` handler + helper functions         |
+| `src/preload/index.ts`                                  | Add `sprint.generatePrompt()` and `sprint.delete()`            |
+| `src/preload/index.d.ts`                                | Type declarations for new methods                              |
 | `src/renderer/src/components/sprint/NewTicketModal.tsx` | Mode tabs, Quick Mode body, Design placeholder, submit by mode |
-| `src/renderer/src/components/sprint/SprintCenter.tsx` | `generatingIds` state, background spec gen trigger |
-| `src/renderer/src/components/sprint/KanbanBoard.tsx` | `generatingIds` prop pass-through |
-| `src/renderer/src/components/sprint/KanbanColumn.tsx` | `generatingIds` prop pass-through |
-| `src/renderer/src/components/sprint/TaskCard.tsx` | `isGenerating` prop + badge |
-| `src/renderer/src/assets/sprint.css` | Mode tab CSS + generating badge CSS |
+| `src/renderer/src/components/sprint/SprintCenter.tsx`   | `generatingIds` state, background spec gen trigger             |
+| `src/renderer/src/components/sprint/KanbanBoard.tsx`    | `generatingIds` prop pass-through                              |
+| `src/renderer/src/components/sprint/KanbanColumn.tsx`   | `generatingIds` prop pass-through                              |
+| `src/renderer/src/components/sprint/TaskCard.tsx`       | `isGenerating` prop + badge                                    |
+| `src/renderer/src/assets/sprint.css`                    | Mode tab CSS + generating badge CSS                            |
 
 ## Out of Scope
+
 - Design Mode implementation (TF-S3)
 - Streaming spec generation
 - Repo context injection (file tree in prompt)
@@ -522,6 +573,7 @@ Append to `sprint.css`:
 - Markdown preview in modal
 
 ## PR Command
+
 ```bash
 git add -A && git commit -m "feat: Quick Mode ticket creation — mode tabs, background spec gen, generating badge" && git push origin HEAD && gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: Quick Mode — capture tickets in seconds, Paul writes spec in background" -f body="Adds 3-tab mode switcher to NewTicketModal. Quick Mode (default): title + repo only, task saved instantly, Paul auto-generates spec in background using title keyword detection. Template Mode: existing form. Design Mode: placeholder (coming next). Also: sprint.delete() preload gap fixed." -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
 ```

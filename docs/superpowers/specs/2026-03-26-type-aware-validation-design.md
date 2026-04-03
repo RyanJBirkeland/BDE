@@ -24,13 +24,13 @@ Tier 1 (structural) and Tier 2 (semantic) check IDs use **kebab-case**: `spec-pr
 
 ### Profile Matrix
 
-| Check | Feature | Bug Fix | Refactor | Test | Performance | UX | Audit | Infra |
-|-------|---------|---------|----------|------|-------------|-----|-------|-------|
-| `spec-present` | required (50) | required (50) | required (30) | advisory (20) | required (50) | required (50) | advisory (20) | advisory (20) |
-| `spec-structure` | required (2) | required (2) | advisory (1) | advisory (1) | required (2) | required (2) | advisory (1) | advisory (1) |
-| `clarity` | required | required | required | advisory | required | required | advisory | advisory |
-| `scope` | required | required | advisory | advisory | required | required | advisory | advisory |
-| `files-exist` | required | required | advisory | skip | advisory | advisory | skip | skip |
+| Check            | Feature       | Bug Fix       | Refactor      | Test          | Performance   | UX            | Audit         | Infra         |
+| ---------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |
+| `spec-present`   | required (50) | required (50) | required (30) | advisory (20) | required (50) | required (50) | advisory (20) | advisory (20) |
+| `spec-structure` | required (2)  | required (2)  | advisory (1)  | advisory (1)  | required (2)  | required (2)  | advisory (1)  | advisory (1)  |
+| `clarity`        | required      | required      | required      | advisory      | required      | required      | advisory      | advisory      |
+| `scope`          | required      | required      | advisory      | advisory      | required      | required      | advisory      | advisory      |
+| `files-exist`    | required      | required      | advisory      | skip          | advisory      | advisory      | skip          | skip          |
 
 Numbers in parentheses are thresholds — `spec-present` threshold is min character count, `spec-structure` threshold is min heading count.
 
@@ -57,10 +57,12 @@ No new UI components needed. The `ConfirmModal` `message` prop accepts a string 
 ### Button Logic Changes
 
 **canQueue** (Queue Now button):
+
 - Current: `allTier1Pass && !tier3HasFails`
 - New: `allRequiredTier1Pass && !tier3HasFails` — only checks with `required` behavior in the active profile must pass. Advisory failures don't disable the button but trigger the confirmation dialog before submission.
 
 **canLaunch** (Launch button):
+
 - Current: `allTier1Pass && semanticNoFails && !tier3HasFails`
 - New: `allRequiredTier1Pass && allRequiredSemanticPass && !tier3HasFails` — same profile-awareness for both Tier 1 and Tier 2 checks. Advisory semantic failures surface in confirmation dialog, not block Launch.
 
@@ -71,6 +73,7 @@ No new UI components needed. The `ConfirmModal` `message` prop accepts a string 
 ### Type Button Behavior
 
 Clicking a template button (Feature, Bug Fix, Refactor, Test) sets BOTH:
+
 1. The spec textarea content (existing template scaffold behavior)
 2. The `specType` in the store (new)
 
@@ -107,16 +110,19 @@ Nullable, defaults to null for existing tasks. Valid values: `feature`, `bugfix`
 ## Files to Change
 
 ### Shared Layer
+
 - **`src/shared/spec-validation.ts`** — Define `SpecType` union, `CheckBehavior` type, `ValidationProfile` interface, `VALIDATION_PROFILES` map, `getValidationProfile(type)` function. Update `validateStructural()` to accept optional `specType` param and apply profile thresholds/behaviors.
 - **`src/shared/types.ts`** — Add `spec_type?: string | null` to `SprintTask` interface.
 
 ### Main Process
+
 - **`src/main/db.ts`** — Add migration v16 for `spec_type TEXT` column on `sprint_tasks`.
 - **`src/main/data/sprint-queries.ts`** — Add `'spec_type'` to `UPDATE_ALLOWLIST`. Include in `sanitizeTask()` field mapping.
 - **`src/main/spec-semantic-check.ts`** — Accept `specType` param in `checkSpecSemantic()`. Skip checks marked `skip` in profile. Include `specType` context in AI prompt so it grades contextually (e.g., "This is a test task — focus on whether test targets are clear, not on file paths").
 - **`src/main/handlers/workbench.ts`** — Thread `specType` through `workbench:checkSpec` handler.
 
 ### Renderer
+
 - **`src/renderer/src/stores/taskWorkbench.ts`** — Add `specType: SpecType | null` to store state and `setSpecType` action.
 - **`src/renderer/src/hooks/useReadinessChecks.ts`** — Read `specType` from store, pass to `computeStructuralChecks()`. Apply profile to determine check behavior: required fail → `fail`, advisory fail → `warn`, skip → omit from results.
 - **`src/renderer/src/components/task-workbench/WorkbenchActions.tsx`** — Update `canQueue` and `canLaunch` to distinguish required vs advisory failures using profile. Expose `hasAdvisoryFailures` boolean for confirmation dialog trigger.
@@ -124,9 +130,11 @@ Nullable, defaults to null for existing tasks. Valid values: `feature`, `bugfix`
 - **`src/renderer/src/components/task-workbench/SpecEditor.tsx`** — Wire type button clicks to both `setField('spec', template)` (existing) AND `setSpecType(type)` (new).
 
 ### Preload (if needed)
+
 - **`src/preload/index.ts` / `src/preload/index.d.ts`** — Only needed if `workbench:checkSpec` IPC signature changes shape. Currently `checkSpec` takes `{ title, repo, spec }` — adding `specType` to this object is a payload change, not a channel signature change, so preload bridge does NOT need updating (it's a passthrough).
 
 ### Tests
+
 - **`src/renderer/src/hooks/__tests__/useReadinessChecks.test.ts`** — Test profile-aware structural checks: Feature profile requires 50 chars + 2 headings; Test profile makes them advisory; null specType defaults to Feature.
 - **`src/renderer/src/components/task-workbench/__tests__/WorkbenchActions.test.tsx`** — Test advisory vs required button state: advisory failures don't disable Queue Now, required failures do.
 - **`src/shared/__tests__/spec-validation.test.ts`** — Test `getValidationProfile()` returns correct profile per type, null defaults to Feature, `validateStructural()` applies profile thresholds.

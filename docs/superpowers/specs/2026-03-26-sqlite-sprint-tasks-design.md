@@ -10,12 +10,12 @@ BDE should be self-contained. Sprint tasks were originally stored in local SQLit
 
 ## Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Data migration | One-time import from Supabase at migration v15 | Smoothest UX; no data loss; silent no-op if creds missing |
-| Supabase future | Remove entirely; add back later if needed | YAGNI; half-used sync layers invite bugs |
-| API surface | All functions sync | Honest API; SQLite is sync; simpler callers everywhere |
-| Migration approach | Big-bang rewrite of sprint-queries.ts | Single file owns all queries; mechanical translation |
+| Decision           | Choice                                         | Rationale                                                 |
+| ------------------ | ---------------------------------------------- | --------------------------------------------------------- |
+| Data migration     | One-time import from Supabase at migration v15 | Smoothest UX; no data loss; silent no-op if creds missing |
+| Supabase future    | Remove entirely; add back later if needed      | YAGNI; half-used sync layers invite bugs                  |
+| API surface        | All functions sync                             | Honest API; SQLite is sync; simpler callers everywhere    |
+| Migration approach | Big-bang rewrite of sprint-queries.ts          | Single file owns all queries; mechanical translation      |
 
 ## Database Migration (v15)
 
@@ -73,6 +73,7 @@ Migration v15 checks if `supabase.url` and `supabase.serviceKey` exist in the se
 Uses raw `fetch()` — not `@supabase/supabase-js` — so the dependency can be removed.
 
 **Import details:**
+
 - Uses `INSERT OR IGNORE` to be idempotent (safe if migration runs twice due to a bug)
 - `depends_on`: raw `fetch()` returns JSON strings (no auto-deserialization), so insert as-is into TEXT column
 - `playground_enabled` / `needs_review`: Supabase returns booleans; convert `true` -> `1`, `false` -> `0`
@@ -86,6 +87,7 @@ All 19 exported query functions rewritten from async Supabase client calls to sy
 ### Translation Patterns
 
 **Simple queries:**
+
 ```typescript
 // Before
 export async function getTask(id: string): Promise<SprintTask | null> {
@@ -102,13 +104,16 @@ export function getTask(id: string): SprintTask | null {
 ```
 
 **Atomic claim (conditional update):**
+
 ```typescript
 export function claimTask(id: string, claimedBy: string): SprintTask | null {
   const now = new Date().toISOString()
-  const result = getDb().prepare(
-    `UPDATE sprint_tasks SET status = 'active', claimed_by = ?, started_at = ?
+  const result = getDb()
+    .prepare(
+      `UPDATE sprint_tasks SET status = 'active', claimed_by = ?, started_at = ?
      WHERE id = ? AND status = 'queued'`
-  ).run(claimedBy, now, id)
+    )
+    .run(claimedBy, now, id)
   if (result.changes === 0) return null
   return getTask(id)
 }
@@ -127,25 +132,27 @@ Frequently-called queries use cached prepared statements via `better-sqlite3`'s 
 
 ### Type Mapping: SQLite <-> TypeScript
 
-| SQLite type | TypeScript type | Conversion |
-|-------------|----------------|------------|
-| `INTEGER DEFAULT 0` | `boolean` | Read: `!!row.playground_enabled`, `!!row.needs_review`. Write: `value ? 1 : 0` |
-| `TEXT` (depends_on) | `TaskDependency[] \| null` | Read: `JSON.parse()` in `sanitizeTask()`. Write: `JSON.stringify()` before INSERT/UPDATE |
-| `TEXT NOT NULL DEFAULT ''` (prompt) | `string \| null` | Coerce `null` to `''` on write. Existing null prompts coerced to `''` during Supabase import |
+| SQLite type                         | TypeScript type            | Conversion                                                                                   |
+| ----------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| `INTEGER DEFAULT 0`                 | `boolean`                  | Read: `!!row.playground_enabled`, `!!row.needs_review`. Write: `value ? 1 : 0`               |
+| `TEXT` (depends_on)                 | `TaskDependency[] \| null` | Read: `JSON.parse()` in `sanitizeTask()`. Write: `JSON.stringify()` before INSERT/UPDATE     |
+| `TEXT NOT NULL DEFAULT ''` (prompt) | `string \| null`           | Coerce `null` to `''` on write. Existing null prompts coerced to `''` during Supabase import |
 
 `sanitizeTask()` handles all read-side conversions:
+
 ```typescript
 function sanitizeTask(row: Record<string, unknown>): SprintTask {
   return {
     ...row,
     depends_on: sanitizeDependsOn(row.depends_on),
     playground_enabled: !!row.playground_enabled,
-    needs_review: !!row.needs_review,
+    needs_review: !!row.needs_review
   } as SprintTask
 }
 ```
 
 `createTask()` and `updateTask()` handle write-side conversions:
+
 - `depends_on`: `JSON.stringify()` before binding
 - `playground_enabled` / `needs_review`: `value ? 1 : 0`
 
@@ -155,27 +162,27 @@ function sanitizeTask(row: Record<string, unknown>): SprintTask {
 
 ### Functions (19 query functions, all become sync)
 
-| Function | Return type change |
-|----------|-------------------|
-| `getTask` | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
-| `listTasks` | `Promise<SprintTask[]>` -> `SprintTask[]` |
-| `createTask` | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
-| `updateTask` | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
-| `deleteTask` | `Promise<void>` -> `void` |
-| `claimTask` | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
-| `releaseTask` | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
-| `getQueueStats` | `Promise<QueueStats>` -> `QueueStats` |
-| `getDoneTodayCount` | `Promise<number>` -> `number` |
-| `markTaskDoneByPrNumber` | `Promise<string[]>` -> `string[]` |
-| `markTaskCancelledByPrNumber` | `Promise<string[]>` -> `string[]` |
-| `listTasksWithOpenPrs` | `Promise<SprintTask[]>` -> `SprintTask[]` |
-| `updateTaskMergeableState` | `Promise<void>` -> `void` |
-| `getActiveTaskCount` | `Promise<number>` -> `number` |
-| `getQueuedTasks` | `Promise<SprintTask[]>` -> `SprintTask[]` |
-| `getOrphanedTasks` | `Promise<SprintTask[]>` -> `SprintTask[]` |
-| `clearSprintTaskFk` | `Promise<void>` -> `void` |
-| `getHealthCheckTasks` | `Promise<SprintTask[]>` -> `SprintTask[]` |
-| `getTasksWithDependencies` | `Promise<Array<...>>` -> `Array<...>` |
+| Function                      | Return type change                                    |
+| ----------------------------- | ----------------------------------------------------- |
+| `getTask`                     | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
+| `listTasks`                   | `Promise<SprintTask[]>` -> `SprintTask[]`             |
+| `createTask`                  | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
+| `updateTask`                  | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
+| `deleteTask`                  | `Promise<void>` -> `void`                             |
+| `claimTask`                   | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
+| `releaseTask`                 | `Promise<SprintTask \| null>` -> `SprintTask \| null` |
+| `getQueueStats`               | `Promise<QueueStats>` -> `QueueStats`                 |
+| `getDoneTodayCount`           | `Promise<number>` -> `number`                         |
+| `markTaskDoneByPrNumber`      | `Promise<string[]>` -> `string[]`                     |
+| `markTaskCancelledByPrNumber` | `Promise<string[]>` -> `string[]`                     |
+| `listTasksWithOpenPrs`        | `Promise<SprintTask[]>` -> `SprintTask[]`             |
+| `updateTaskMergeableState`    | `Promise<void>` -> `void`                             |
+| `getActiveTaskCount`          | `Promise<number>` -> `number`                         |
+| `getQueuedTasks`              | `Promise<SprintTask[]>` -> `SprintTask[]`             |
+| `getOrphanedTasks`            | `Promise<SprintTask[]>` -> `SprintTask[]`             |
+| `clearSprintTaskFk`           | `Promise<void>` -> `void`                             |
+| `getHealthCheckTasks`         | `Promise<SprintTask[]>` -> `SprintTask[]`             |
+| `getTasksWithDependencies`    | `Promise<Array<...>>` -> `Array<...>`                 |
 
 ## Caller Updates
 
@@ -203,7 +210,11 @@ export interface ISprintTaskRepository {
   getTask(id: string): SprintTask | null
   updateTask(id: string, patch: Record<string, unknown>): SprintTask | null
   getQueuedTasks(limit: number): SprintTask[]
-  getTasksWithDependencies(): Array<{ id: string; depends_on: TaskDependency[] | null; status: string }>
+  getTasksWithDependencies(): Array<{
+    id: string
+    depends_on: TaskDependency[] | null
+    status: string
+  }>
   getOrphanedTasks(claimedBy: string): SprintTask[]
   getActiveTaskCount(): number
   claimTask(id: string, claimedBy: string): SprintTask | null
@@ -244,26 +255,26 @@ With sprint tasks back in SQLite, the `bde.db` file watcher (`bootstrap.ts`) nat
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `src/main/db.ts` | Add migration v15 |
-| `src/main/data/sprint-queries.ts` | Rewrite all 19 query functions (Supabase -> SQLite, async -> sync) |
-| `src/main/data/sprint-task-repository.ts` | Interface + impl: Promise<T> -> T |
-| `src/main/data/supabase-client.ts` | DELETE |
-| `src/main/handlers/sprint-local.ts` | Drop async/await on ~15 handlers |
-| `src/main/queue-api/task-handlers.ts` | Drop async/await on HTTP handlers |
-| `src/main/agent-manager/index.ts` | Drop await on repository calls |
-| `src/main/agent-manager/run-agent.ts` | Drop await on repository calls |
-| `src/main/agent-manager/completion.ts` | Drop await on repository calls |
-| `src/main/agent-manager/dependency-helpers.ts` | Drop await on repository calls |
-| `src/main/agent-manager/resolve-dependents.ts` | Drop await on repository calls; update function parameter types from `Promise<T>` to `T` |
-| `src/main/sprint-pr-poller.ts` | Drop async/await; update `SprintPrPollerDeps` parameter types from `Promise<T>` to `T` |
-| `src/main/agent-history.ts` | Drop await if it calls sprint-queries |
-| `src/main/handlers/workbench.ts` | Replace `getSupabaseClient()` conflict-check query with `listTasks()` from sprint-queries |
-| `src/main/queue-api/field-mapper.ts` | Update `toSnakeCase()`: `JSON.stringify()` JSONB fields before write (Supabase auto-serialized, SQLite does not) |
-| `package.json` | Remove @supabase/supabase-js |
-| Tests (7+ files) | Swap Supabase mocks for SQLite/getDb mocks |
-| `CLAUDE.md` | Update architecture notes |
+| File                                           | Change                                                                                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `src/main/db.ts`                               | Add migration v15                                                                                                |
+| `src/main/data/sprint-queries.ts`              | Rewrite all 19 query functions (Supabase -> SQLite, async -> sync)                                               |
+| `src/main/data/sprint-task-repository.ts`      | Interface + impl: Promise<T> -> T                                                                                |
+| `src/main/data/supabase-client.ts`             | DELETE                                                                                                           |
+| `src/main/handlers/sprint-local.ts`            | Drop async/await on ~15 handlers                                                                                 |
+| `src/main/queue-api/task-handlers.ts`          | Drop async/await on HTTP handlers                                                                                |
+| `src/main/agent-manager/index.ts`              | Drop await on repository calls                                                                                   |
+| `src/main/agent-manager/run-agent.ts`          | Drop await on repository calls                                                                                   |
+| `src/main/agent-manager/completion.ts`         | Drop await on repository calls                                                                                   |
+| `src/main/agent-manager/dependency-helpers.ts` | Drop await on repository calls                                                                                   |
+| `src/main/agent-manager/resolve-dependents.ts` | Drop await on repository calls; update function parameter types from `Promise<T>` to `T`                         |
+| `src/main/sprint-pr-poller.ts`                 | Drop async/await; update `SprintPrPollerDeps` parameter types from `Promise<T>` to `T`                           |
+| `src/main/agent-history.ts`                    | Drop await if it calls sprint-queries                                                                            |
+| `src/main/handlers/workbench.ts`               | Replace `getSupabaseClient()` conflict-check query with `listTasks()` from sprint-queries                        |
+| `src/main/queue-api/field-mapper.ts`           | Update `toSnakeCase()`: `JSON.stringify()` JSONB fields before write (Supabase auto-serialized, SQLite does not) |
+| `package.json`                                 | Remove @supabase/supabase-js                                                                                     |
+| Tests (7+ files)                               | Swap Supabase mocks for SQLite/getDb mocks                                                                       |
+| `CLAUDE.md`                                    | Update architecture notes                                                                                        |
 
 ## Testing Strategy
 
@@ -275,9 +286,9 @@ With sprint tasks back in SQLite, the `bde.db` file watcher (`bootstrap.ts`) nat
 
 ## Risk Assessment
 
-| Risk | Likelihood | Mitigation |
-|------|-----------|------------|
-| Data loss during migration | Low | One-time Supabase import; empty table if creds missing |
-| Blocking event loop on large queries | Low | SQLite sub-ms for single-row; `listTasks()` is the heaviest, still fast for <1000 tasks |
-| Life OS / chat-service lose write access | Expected | They route through Queue API; document this as the contract |
-| Concurrent claim races | Low | SQLite atomic WHERE clause + WAL mode + busy_timeout |
+| Risk                                     | Likelihood | Mitigation                                                                              |
+| ---------------------------------------- | ---------- | --------------------------------------------------------------------------------------- |
+| Data loss during migration               | Low        | One-time Supabase import; empty table if creds missing                                  |
+| Blocking event loop on large queries     | Low        | SQLite sub-ms for single-row; `listTasks()` is the heaviest, still fast for <1000 tasks |
+| Life OS / chat-service lose write access | Expected   | They route through Queue API; document this as the contract                             |
+| Concurrent claim races                   | Low        | SQLite atomic WHERE clause + WAL mode + busy_timeout                                    |

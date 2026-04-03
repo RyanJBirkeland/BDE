@@ -23,7 +23,11 @@ interface AgentConsoleProps {
   onCommand: (cmd: string, args?: string) => void
 }
 
-export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps): React.JSX.Element {
+export function AgentConsole({
+  agentId,
+  onSteer,
+  onCommand
+}: AgentConsoleProps): React.JSX.Element {
   const parentRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
   const [showJumpButton, setShowJumpButton] = useState(false)

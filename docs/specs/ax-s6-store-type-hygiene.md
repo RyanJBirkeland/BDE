@@ -20,10 +20,10 @@ The audit found several type hygiene issues across Zustand stores and the preloa
 ```typescript
 interface TerminalTab {
   kind: 'shell' | 'agent'
-  isAgentTab: boolean  // ← always equals kind === 'agent'
-  shell?: string       // only meaningful for kind === 'shell'
-  agentId?: string     // only meaningful for kind === 'agent'
-  agentSessionKey?: string  // only meaningful for kind === 'agent'
+  isAgentTab: boolean // ← always equals kind === 'agent'
+  shell?: string // only meaningful for kind === 'shell'
+  agentId?: string // only meaningful for kind === 'agent'
+  agentSessionKey?: string // only meaningful for kind === 'agent'
 }
 ```
 
@@ -56,10 +56,10 @@ The renderer casts this to `SprintTask[]` in `SprintCenter.tsx`. The type should
 
 ### 4. Dead State Fields
 
-| Field | Store | Issue |
-|-------|-------|-------|
-| `lastUpdated: number` | `localAgents.ts` | Set on every fetch, never read by UI |
-| `loading: boolean` | `agentHistory.ts` | Set to `false` in `finally` on first fetch, never meaningfully `true` after init |
+| Field                 | Store             | Issue                                                                            |
+| --------------------- | ----------------- | -------------------------------------------------------------------------------- |
+| `lastUpdated: number` | `localAgents.ts`  | Set on every fetch, never read by UI                                             |
+| `loading: boolean`    | `agentHistory.ts` | Set to `false` in `finally` on first fetch, never meaningfully `true` after init |
 
 ### 5. focusedPaneIndex Not Validated
 
@@ -133,6 +133,7 @@ export interface SprintTask {
 ```
 
 Update preload:
+
 ```typescript
 sprint: {
   list: (): Promise<SprintTask[]> => ipcRenderer.invoke('sprint:list'),
@@ -148,31 +149,33 @@ sprint: {
 ### Fix 5: Validate focusedPaneIndex
 
 In `setSplitMode()`:
+
 ```typescript
-setSplitMode: (mode) => set((s) => {
-  const maxIndex = mode === 'single' ? 0 : mode === '2-pane' ? 1 : 3
-  return {
-    splitMode: mode,
-    splitPanes: mode === 'single' ? [s.splitPanes[0], null, null, null] : s.splitPanes,
-    focusedPaneIndex: Math.min(s.focusedPaneIndex, maxIndex)
-  }
-})
+setSplitMode: (mode) =>
+  set((s) => {
+    const maxIndex = mode === 'single' ? 0 : mode === '2-pane' ? 1 : 3
+    return {
+      splitMode: mode,
+      splitPanes: mode === 'single' ? [s.splitPanes[0], null, null, null] : s.splitPanes,
+      focusedPaneIndex: Math.min(s.focusedPaneIndex, maxIndex)
+    }
+  })
 ```
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/stores/terminal.ts` | Discriminated union, remove `isAgentTab` |
-| `src/renderer/src/stores/sessions.ts` | Closed status union, normalize at parse time |
-| `src/renderer/src/stores/localAgents.ts` | Remove `lastUpdated` |
-| `src/renderer/src/stores/agentHistory.ts` | Remove `loading` |
-| `src/renderer/src/stores/splitLayout.ts` | Validate `focusedPaneIndex` on mode change |
-| `src/shared/types.ts` | Add `SprintTask` interface |
-| `src/preload/index.ts` | Type `sprint.list` return as `SprintTask[]` |
-| `src/preload/index.d.ts` | Update declaration |
-| Renderer components using `isAgentTab` | Replace with `kind === 'agent'` |
-| Renderer components using `loading` from agentHistory | Replace with `isFetching` or derived check |
+| File                                                  | Change                                       |
+| ----------------------------------------------------- | -------------------------------------------- |
+| `src/renderer/src/stores/terminal.ts`                 | Discriminated union, remove `isAgentTab`     |
+| `src/renderer/src/stores/sessions.ts`                 | Closed status union, normalize at parse time |
+| `src/renderer/src/stores/localAgents.ts`              | Remove `lastUpdated`                         |
+| `src/renderer/src/stores/agentHistory.ts`             | Remove `loading`                             |
+| `src/renderer/src/stores/splitLayout.ts`              | Validate `focusedPaneIndex` on mode change   |
+| `src/shared/types.ts`                                 | Add `SprintTask` interface                   |
+| `src/preload/index.ts`                                | Type `sprint.list` return as `SprintTask[]`  |
+| `src/preload/index.d.ts`                              | Update declaration                           |
+| Renderer components using `isAgentTab`                | Replace with `kind === 'agent'`              |
+| Renderer components using `loading` from agentHistory | Replace with `isFetching` or derived check   |
 
 ## Acceptance Criteria
 

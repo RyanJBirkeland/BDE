@@ -12,38 +12,39 @@
 
 ## File Map
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Create | `src/renderer/src/components/settings/MemorySection.tsx` | Memory tab content (adapted from MemoryView) |
-| Create | `src/renderer/src/components/settings/CostSection.tsx` | Cost tab content (adapted from CostView) |
-| Modify | `src/renderer/src/views/SettingsView.tsx` | Add Memory + Cost tabs to TABS array and SECTION_MAP |
-| Modify | `src/renderer/src/stores/panelLayout.ts:7-56` | Remove `'memory'` and `'cost'` from View union + VIEW_LABELS |
-| Modify | `src/renderer/src/stores/sidebar.ts:4-15` | Remove `'memory'` and `'cost'` from ALL_VIEWS |
-| Modify | `src/renderer/src/stores/ui.ts` | No changes needed (View type re-exported from panelLayout) |
-| Modify | `src/renderer/src/App.tsx:28-51` | Update VIEW_SHORTCUT_MAP (⌘7→settings, remove ⌘8/⌘9) + VIEW_TITLES |
-| Modify | `src/renderer/src/components/panels/PanelLeaf.tsx:12-64` | Remove MemoryView/CostView lazy imports, VIEW_LOADERS entries, resolveView cases |
-| Modify | `src/renderer/src/components/layout/NeonSidebar.tsx:23-60` | Remove memory/cost from VIEW_ICONS, VIEW_LABELS, VIEW_SHORTCUTS |
-| Modify | `src/renderer/src/components/layout/OverflowMenu.tsx:21-45` | Remove memory/cost from VIEW_ICONS, VIEW_LABELS |
-| Modify | `src/renderer/src/components/layout/CommandPalette.tsx:85-86` | Remove "Go to Memory" / "Go to Cost" commands |
-| Delete | `src/renderer/src/views/MemoryView.tsx` | Replaced by MemorySection |
-| Delete | `src/renderer/src/views/CostView.tsx` | Replaced by CostSection |
-| Modify | `src/renderer/src/components/settings/__tests__/SettingsView.test.tsx` | Add assertions for Memory + Cost tabs |
-| Modify | `src/renderer/src/views/__tests__/MemoryView.test.tsx` | Update imports to test MemorySection |
-| Modify | `src/renderer/src/views/__tests__/MemoryView-unsaved.test.tsx` | Update imports to test MemorySection |
-| Modify | `src/renderer/src/stores/__tests__/panelLayout.test.ts` | Remove references to `'memory'`/`'cost'` views |
-| Modify | `src/renderer/src/stores/__tests__/sidebar.test.ts` | Update ALL_VIEWS expectations |
-| Modify | `src/renderer/src/stores/__tests__/ui.test.ts` | Remove memory/cost view references |
-| Modify | `src/renderer/src/components/layout/__tests__/OverflowMenu.test.tsx` | Update view list expectations |
-| Modify | `src/renderer/src/views/__tests__/CostView.test.tsx` | Update imports to test CostSection |
-| Modify | `src/renderer/src/views/__tests__/smoke.test.tsx` | Remove MemoryView/CostView smoke tests, add SettingsView smoke |
-| Modify | `src/renderer/src/components/panels/__tests__/PanelLeaf.test.tsx` | Remove MemoryView/CostView mocks |
-| Modify | `src/renderer/src/components/panels/__tests__/PanelRenderer.test.tsx` | Remove MemoryView/CostView mocks |
+| Action | File                                                                   | Responsibility                                                                   |
+| ------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Create | `src/renderer/src/components/settings/MemorySection.tsx`               | Memory tab content (adapted from MemoryView)                                     |
+| Create | `src/renderer/src/components/settings/CostSection.tsx`                 | Cost tab content (adapted from CostView)                                         |
+| Modify | `src/renderer/src/views/SettingsView.tsx`                              | Add Memory + Cost tabs to TABS array and SECTION_MAP                             |
+| Modify | `src/renderer/src/stores/panelLayout.ts:7-56`                          | Remove `'memory'` and `'cost'` from View union + VIEW_LABELS                     |
+| Modify | `src/renderer/src/stores/sidebar.ts:4-15`                              | Remove `'memory'` and `'cost'` from ALL_VIEWS                                    |
+| Modify | `src/renderer/src/stores/ui.ts`                                        | No changes needed (View type re-exported from panelLayout)                       |
+| Modify | `src/renderer/src/App.tsx:28-51`                                       | Update VIEW_SHORTCUT_MAP (⌘7→settings, remove ⌘8/⌘9) + VIEW_TITLES               |
+| Modify | `src/renderer/src/components/panels/PanelLeaf.tsx:12-64`               | Remove MemoryView/CostView lazy imports, VIEW_LOADERS entries, resolveView cases |
+| Modify | `src/renderer/src/components/layout/NeonSidebar.tsx:23-60`             | Remove memory/cost from VIEW_ICONS, VIEW_LABELS, VIEW_SHORTCUTS                  |
+| Modify | `src/renderer/src/components/layout/OverflowMenu.tsx:21-45`            | Remove memory/cost from VIEW_ICONS, VIEW_LABELS                                  |
+| Modify | `src/renderer/src/components/layout/CommandPalette.tsx:85-86`          | Remove "Go to Memory" / "Go to Cost" commands                                    |
+| Delete | `src/renderer/src/views/MemoryView.tsx`                                | Replaced by MemorySection                                                        |
+| Delete | `src/renderer/src/views/CostView.tsx`                                  | Replaced by CostSection                                                          |
+| Modify | `src/renderer/src/components/settings/__tests__/SettingsView.test.tsx` | Add assertions for Memory + Cost tabs                                            |
+| Modify | `src/renderer/src/views/__tests__/MemoryView.test.tsx`                 | Update imports to test MemorySection                                             |
+| Modify | `src/renderer/src/views/__tests__/MemoryView-unsaved.test.tsx`         | Update imports to test MemorySection                                             |
+| Modify | `src/renderer/src/stores/__tests__/panelLayout.test.ts`                | Remove references to `'memory'`/`'cost'` views                                   |
+| Modify | `src/renderer/src/stores/__tests__/sidebar.test.ts`                    | Update ALL_VIEWS expectations                                                    |
+| Modify | `src/renderer/src/stores/__tests__/ui.test.ts`                         | Remove memory/cost view references                                               |
+| Modify | `src/renderer/src/components/layout/__tests__/OverflowMenu.test.tsx`   | Update view list expectations                                                    |
+| Modify | `src/renderer/src/views/__tests__/CostView.test.tsx`                   | Update imports to test CostSection                                               |
+| Modify | `src/renderer/src/views/__tests__/smoke.test.tsx`                      | Remove MemoryView/CostView smoke tests, add SettingsView smoke                   |
+| Modify | `src/renderer/src/components/panels/__tests__/PanelLeaf.test.tsx`      | Remove MemoryView/CostView mocks                                                 |
+| Modify | `src/renderer/src/components/panels/__tests__/PanelRenderer.test.tsx`  | Remove MemoryView/CostView mocks                                                 |
 
 ---
 
 ### Task 1: Remove `memory` and `cost` from the View type system and migrate saved layouts
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/panelLayout.ts:7-17, 45-56`
 - Modify: `src/renderer/src/stores/sidebar.ts:4-15`
 
@@ -150,6 +151,7 @@ git commit -m "feat: remove memory and cost from View type union"
 ### Task 2: Create MemorySection and CostSection settings components
 
 **Files:**
+
 - Create: `src/renderer/src/components/settings/MemorySection.tsx`
 - Create: `src/renderer/src/components/settings/CostSection.tsx`
 - Delete: `src/renderer/src/views/MemoryView.tsx`
@@ -167,6 +169,7 @@ Create `src/renderer/src/components/settings/MemorySection.tsx`. This is the ful
 6. Keep all imports, state, callbacks, CSS class names unchanged
 
 The key structural change — before:
+
 ```tsx
 export default function MemoryView() {
   return (
@@ -182,14 +185,13 @@ export default function MemoryView() {
 ```
 
 After:
+
 ```tsx
 export function MemorySection() {
   // ... all the same hooks/state/callbacks ...
   return (
     <div className="memory-view memory-view--column" style={{ height: '100%' }}>
-      <div className="memory-view__content">
-        {/* sidebar + editor — unchanged */}
-      </div>
+      <div className="memory-view__content">{/* sidebar + editor — unchanged */}</div>
       <ConfirmModal {...confirmProps} />
     </div>
   )
@@ -206,6 +208,7 @@ Create `src/renderer/src/components/settings/CostSection.tsx`. Adapted from `src
 4. Keep all internal components (`ClaudeCodePanel`, `TaskTable`, `exportCsv`), formatting helpers, polling, and state unchanged
 
 Before:
+
 ```tsx
 export default function CostView() {
   return (
@@ -221,11 +224,15 @@ export default function CostView() {
 ```
 
 After:
+
 ```tsx
 export function CostSection() {
   return (
     <div className="cost-view cost-view--glass" style={{ height: '100%' }}>
-      <div className="cost-view__header-actions" style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+      <div
+        className="cost-view__header-actions"
+        style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}
+      >
         {/* Refresh + Export buttons */}
       </div>
       <div className="cost-view__scroll">...</div>
@@ -253,6 +260,7 @@ git commit -m "feat: create MemorySection and CostSection settings components"
 ### Task 3: Wire Memory + Cost tabs into SettingsView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx`
 
 - [ ] **Step 1: Add imports for new sections**
@@ -317,6 +325,7 @@ git commit -m "feat: add Memory and Cost tabs to SettingsView"
 ### Task 4: Update keyboard shortcuts and app shell
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx:28-51`
 
 - [ ] **Step 1: Update VIEW_SHORTCUT_MAP**
@@ -370,11 +379,13 @@ git commit -m "feat: compact keyboard shortcuts to ⌘1-7"
 ### Task 5: Update PanelLeaf view routing
 
 **Files:**
+
 - Modify: `src/renderer/src/components/panels/PanelLeaf.tsx:12-64`
 
 - [ ] **Step 1: Remove lazy imports for MemoryView and CostView**
 
 Delete these lines:
+
 ```typescript
 const MemoryView = React.lazy(() => import('../../views/MemoryView'))
 const CostView = React.lazy(() => import('../../views/CostView'))
@@ -383,6 +394,7 @@ const CostView = React.lazy(() => import('../../views/CostView'))
 - [ ] **Step 2: Remove VIEW_LOADERS entries**
 
 Remove:
+
 ```typescript
   memory: () => import('../../views/MemoryView'),
   cost: () => import('../../views/CostView'),
@@ -391,6 +403,7 @@ Remove:
 - [ ] **Step 3: Remove resolveView cases**
 
 Remove these cases from the switch:
+
 ```typescript
     case 'memory':
       return <MemoryView />
@@ -410,6 +423,7 @@ git commit -m "feat: remove memory/cost from panel view routing"
 ### Task 6: Update sidebar, overflow menu, and command palette
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/NeonSidebar.tsx:23-60`
 - Modify: `src/renderer/src/components/layout/OverflowMenu.tsx:21-45`
 - Modify: `src/renderer/src/components/layout/CommandPalette.tsx`
@@ -511,6 +525,7 @@ git commit -m "feat: update sidebar, overflow menu, and command palette for cons
 ### Task 7: Update all tests
 
 **Files:**
+
 - Modify: `src/renderer/src/components/settings/__tests__/SettingsView.test.tsx`
 - Modify: `src/renderer/src/views/__tests__/MemoryView.test.tsx`
 - Modify: `src/renderer/src/views/__tests__/MemoryView-unsaved.test.tsx`

@@ -9,7 +9,12 @@ interface NeonTooltipProps {
   children: ReactNode
 }
 
-export function NeonTooltip({ label, shortcut, delay = 300, children }: NeonTooltipProps): React.JSX.Element {
+export function NeonTooltip({
+  label,
+  shortcut,
+  delay = 300,
+  children
+}: NeonTooltipProps): React.JSX.Element {
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)

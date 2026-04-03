@@ -15,6 +15,7 @@
 ### Task 1: Add `assistant` flag to localAgents store
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/localAgents.ts:35-38`
 - Test: `src/renderer/src/components/agents/__tests__/AgentLaunchpad.test.tsx` (verified in Task 5)
 
@@ -23,12 +24,8 @@
 In `src/renderer/src/stores/localAgents.ts`, update the `spawnAgent` method signature to include `assistant`:
 
 ```typescript
-spawnAgent: (args: {
-  task: string
-  repoPath: string
-  model?: string
-  assistant?: boolean
-}) => Promise<{ pid: number; logPath: string; id: string }>
+spawnAgent: (args: { task: string; repoPath: string; model?: string; assistant?: boolean }) =>
+  Promise<{ pid: number; logPath: string; id: string }>
 ```
 
 - [ ] **Step 2: Pass `assistant` through to IPC**
@@ -49,6 +46,7 @@ git commit -m "feat: add assistant flag to localAgents spawnAgent type"
 Removing the dedicated assistant handler since all spawns now go through `local:spawnClaudeAgent` with `assistant: true`.
 
 **Files:**
+
 - Modify: `src/main/handlers/agent-handlers.ts:34-41`
 - Modify: `src/shared/ipc-channels.ts:148` (remove `agent:spawnAssistant` entry)
 - Modify: `src/preload/index.ts:65-66` (remove `spawnAssistant` bridge)
@@ -68,16 +66,17 @@ In `src/shared/ipc-channels.ts`, delete the `'agent:spawnAssistant'` entry (arou
 - [ ] **Step 3: Remove preload bridge**
 
 In `src/preload/index.ts`, delete:
+
 ```typescript
 spawnAssistant: (args: { repoPath: string; model?: string }) =>
   typedInvoke('agent:spawnAssistant', args),
 ```
 
 In `src/preload/index.d.ts`, delete:
+
 ```typescript
-spawnAssistant: (
-  ...args: IpcArgs<'agent:spawnAssistant'>
-) => Promise<IpcResult<'agent:spawnAssistant'>>
+spawnAssistant: (...args: IpcArgs<'agent:spawnAssistant'>) =>
+  Promise<IpcResult<'agent:spawnAssistant'>>
 ```
 
 - [ ] **Step 4: Update CommandPalette to use spawnLocalAgent**
@@ -116,6 +115,7 @@ In `src/renderer/src/components/layout/CommandPalette.tsx`, replace the `action-
 - [ ] **Step 5: Update tests**
 
 In `src/main/handlers/__tests__/agent-handlers.test.ts`:
+
 - Remove `agent:spawnAssistant` from the `toContain` channel assertion (line 83)
 - Delete the entire `describe('agent:spawnAssistant handler', ...)` test block (lines 294-334)
 
@@ -138,12 +138,14 @@ git commit -m "refactor: remove agent:spawnAssistant IPC, use spawnLocalAgent wi
 ### Task 3: Clean up launchpad types and prompt-assembly
 
 **Files:**
+
 - Modify: `src/renderer/src/lib/launchpad-types.ts` (remove `RecentTask`, `RECENT_TASKS_KEY`, `RECENT_TASKS_LIMIT`)
 - Modify: `src/renderer/src/lib/prompt-assembly.ts` (delete `migrateHistory`, keep `assemblePrompt`)
 
 - [ ] **Step 1: Remove recents types from launchpad-types.ts**
 
 In `src/renderer/src/lib/launchpad-types.ts`, delete:
+
 - `RecentTask` interface (lines 59-71)
 - `RECENT_TASKS_KEY` constant (line 74)
 - `RECENT_TASKS_LIMIT` constant (line 77)
@@ -151,6 +153,7 @@ In `src/renderer/src/lib/launchpad-types.ts`, delete:
 - [ ] **Step 2: Delete migrateHistory from prompt-assembly.ts**
 
 In `src/renderer/src/lib/prompt-assembly.ts`:
+
 - Delete the `migrateHistory` function (lines 36-63)
 - Remove `RecentTask` from the import: change to `import type { PromptTemplate } from './launchpad-types'`
 
@@ -173,6 +176,7 @@ git commit -m "refactor: remove RecentTask type and migrateHistory, keep assembl
 This is the main UI change. AgentLaunchpad becomes a thin wrapper. LaunchpadGrid becomes the single-screen launcher.
 
 **Files:**
+
 - Rewrite: `src/renderer/src/components/agents/AgentLaunchpad.tsx`
 - Rewrite: `src/renderer/src/components/agents/LaunchpadGrid.tsx`
 - Delete: `src/renderer/src/components/agents/LaunchpadConfigure.tsx`
@@ -448,6 +452,7 @@ styled as chat entry point."
 ### Task 5: Update tests
 
 **Files:**
+
 - Rewrite: `src/renderer/src/components/agents/__tests__/AgentLaunchpad.test.tsx`
 - Rewrite: `src/renderer/src/components/agents/__tests__/LaunchpadGrid.test.tsx`
 - Delete: `src/renderer/src/components/agents/__tests__/LaunchpadConfigure.test.tsx`
@@ -463,6 +468,7 @@ rm src/renderer/src/components/agents/__tests__/LaunchpadReview.test.tsx
 - [ ] **Step 2: Rewrite AgentLaunchpad.test.tsx**
 
 Test the simplified orchestrator:
+
 - Renders LaunchpadGrid with templates
 - Spawns agent with `assistant: true` on custom prompt
 - Spawns agent with template prompt on tile click (variables stripped)
@@ -473,6 +479,7 @@ Key mock setup: mock `usePromptTemplatesStore`, `useLocalAgentsStore`, `window.a
 - [ ] **Step 3: Rewrite LaunchpadGrid.test.tsx**
 
 Test the simplified grid:
+
 - Renders quick action tiles from templates
 - Renders repo chip and model pills
 - Renders chat input with placeholder "What would you like to work on?"
@@ -499,6 +506,7 @@ git commit -m "test: update Launchpad tests for interactive session redesign"
 ### Task 6: Clean up CSS
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/agent-launchpad-neon.css`
 
 - [ ] **Step 1: Add `.launchpad__defaults-row` style**
@@ -518,6 +526,7 @@ Add to `agent-launchpad-neon.css`:
 - [ ] **Step 2: Remove unused CSS classes**
 
 Delete all CSS rules with these prefixes from `agent-launchpad-neon.css`:
+
 - `.launchpad__review*` (review screen)
 - `.launchpad__chat*` (configure wizard chat)
 - `.launchpad__recent*` (recent tasks list)
@@ -566,14 +575,17 @@ Expected: Pass (or only pre-existing warnings).
 - [ ] **Step 4: Verify no dead imports**
 
 Grep for any remaining references to deleted files/exports:
+
 ```bash
 grep -r "LaunchpadConfigure\|LaunchpadReview\|migrateHistory\|RECENT_TASKS_KEY\|RECENT_TASKS_LIMIT\|RecentTask\|spawnAssistant" src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v __tests__
 ```
+
 Expected: No results (or only the spec doc).
 
 - [ ] **Step 5: Commit any fixes**
 
 If any issues found, fix and commit:
+
 ```bash
 git add -A
 git commit -m "chore: clean up dead references from Launchpad simplification"

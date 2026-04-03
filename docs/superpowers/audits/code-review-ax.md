@@ -17,6 +17,7 @@ The Code & Review domain has a well-structured GitHub API proxy layer that corre
 ### 2.1 Hardcoded `REPO_OPTIONS` used for owner/label lookups across PR Station
 
 **Files:**
+
 - `/Users/ryan/projects/BDE/src/renderer/src/lib/constants.ts` (lines 51-55)
 - `/Users/ryan/projects/BDE/src/renderer/src/views/PRStationView.tsx` (line 104)
 - `/Users/ryan/projects/BDE/src/renderer/src/components/pr-station/PRStationDetail.tsx` (line 83)
@@ -54,10 +55,12 @@ The caller in `PRStationView.tsx` (line 107) passes `controller.signal` expectin
 ### 3.1 Duplicated merge strategy dropdown: `MergeButton` vs `PRStationActions`
 
 **Files:**
+
 - `/Users/ryan/projects/BDE/src/renderer/src/components/pr-station/MergeButton.tsx` (115 lines)
 - `/Users/ryan/projects/BDE/src/renderer/src/components/pr-station/PRStationActions.tsx` (177 lines)
 
 Both components contain:
+
 - Identical `MERGE_STRATEGIES` array (lines 14-19 in both)
 - Identical outside-click dropdown dismissal (useEffect with mousedown listener)
 - Identical `handleMerge` function calling `mergePR()` with toast feedback
@@ -75,6 +78,7 @@ Both components contain:
 **File:** `/Users/ryan/projects/BDE/src/renderer/src/components/diff/DiffViewer.tsx`
 
 This single file contains:
+
 - `FileList` component (sidebar, lines 19-51)
 - `VirtualizedDiffContent` component (virtualized renderer, lines 94-211)
 - `PlainDiffContent` component (non-virtualized renderer with comments, lines 215-412) -- takes 17 props
@@ -91,6 +95,7 @@ This single file contains:
 **File:** `/Users/ryan/projects/BDE/src/renderer/src/components/pr-station/PRStationDetail.tsx` (lines 68-77)
 
 Eight `useState` calls for data that all derives from a single PR fetch:
+
 ```typescript
 const [detail, setDetail] = useState<PRDetailData | null>(null)
 const [files, setFiles] = useState<PRFile[]>([])
@@ -111,6 +116,7 @@ This is a classic case for a `useReducer` or a custom `usePRDetail(pr)` hook tha
 **File:** `/Users/ryan/projects/BDE/src/renderer/src/lib/github-cache.ts`
 
 The cache has an `invalidateCache()` export (line 43), but it is never called anywhere after mutations:
+
 - `mergePR()` in `PRStationActions.tsx` and `MergeButton.tsx` -- does not invalidate detail/mergeability cache
 - `createReview()` in `ReviewSubmitDialog.tsx` -- does not invalidate reviews/comments cache
 - `closePR()` in `PRStationActions.tsx` -- does not invalidate
@@ -122,6 +128,7 @@ After merging a PR, the cached detail still shows it as open for up to 30 second
 ### 3.5 Source Control view uses extensive inline styles instead of CSS classes
 
 **Files:**
+
 - `/Users/ryan/projects/BDE/src/renderer/src/views/GitTreeView.tsx` -- 50+ inline style objects
 - `/Users/ryan/projects/BDE/src/renderer/src/components/git-tree/BranchSelector.tsx` -- 80+ lines of inline styles
 - `/Users/ryan/projects/BDE/src/renderer/src/components/git-tree/CommitBox.tsx` -- 40+ lines of inline styles
@@ -297,17 +304,17 @@ Data Flow Summary:
 
 ## Summary of Recommendations (prioritized)
 
-| Priority | Issue | Effort |
-|----------|-------|--------|
-| P0 | Replace hardcoded `REPO_OPTIONS` with dynamic resolution in PR Station | Medium |
-| P0 | Fix `getPrMergeability` abort signal race condition | Low |
-| P1 | Deduplicate `MergeButton` / `PRStationActions` merge dropdown | Medium |
-| P1 | Invalidate github-cache after mutations (merge, review, close) | Low |
-| P1 | Extract `usePRDetail` hook from `PRStationDetail` | Medium |
-| P1 | Decompose `DiffViewer.tsx` into smaller files | High |
-| P2 | Migrate Source Control from inline styles to neon CSS | High |
-| P2 | Replace hardcoded rgba() in `InlineDiffDrawer` and `diff-neon.css` | Low |
-| P3 | Use cached review comments in `PRStationDiff` | Low |
-| P3 | Remove dead `getPendingCount` method | Low |
-| P3 | Move `@keyframes bde-spin` to CSS file | Low |
-| P3 | Add error boundary around diff rendering | Low |
+| Priority | Issue                                                                  | Effort |
+| -------- | ---------------------------------------------------------------------- | ------ |
+| P0       | Replace hardcoded `REPO_OPTIONS` with dynamic resolution in PR Station | Medium |
+| P0       | Fix `getPrMergeability` abort signal race condition                    | Low    |
+| P1       | Deduplicate `MergeButton` / `PRStationActions` merge dropdown          | Medium |
+| P1       | Invalidate github-cache after mutations (merge, review, close)         | Low    |
+| P1       | Extract `usePRDetail` hook from `PRStationDetail`                      | Medium |
+| P1       | Decompose `DiffViewer.tsx` into smaller files                          | High   |
+| P2       | Migrate Source Control from inline styles to neon CSS                  | High   |
+| P2       | Replace hardcoded rgba() in `InlineDiffDrawer` and `diff-neon.css`     | Low    |
+| P3       | Use cached review comments in `PRStationDiff`                          | Low    |
+| P3       | Remove dead `getPendingCount` method                                   | Low    |
+| P3       | Move `@keyframes bde-spin` to CSS file                                 | Low    |
+| P3       | Add error boundary around diff rendering                               | Low    |

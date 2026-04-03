@@ -24,6 +24,8 @@ export function ReadinessChecks(): React.JSX.Element | null {
   const structural = useTaskWorkbenchStore((s) => s.structuralChecks)
   const semantic = useTaskWorkbenchStore((s) => s.semanticChecks)
   const operational = useTaskWorkbenchStore((s) => s.operationalChecks)
+  const semanticLoading = useTaskWorkbenchStore((s) => s.semanticLoading)
+  const operationalLoading = useTaskWorkbenchStore((s) => s.operationalLoading)
   const expanded = useTaskWorkbenchStore((s) => s.checksExpanded)
   const toggleExpanded = useTaskWorkbenchStore((s) => s.toggleChecksExpanded)
 
@@ -31,8 +33,9 @@ export function ReadinessChecks(): React.JSX.Element | null {
   const passing = allChecks.filter((c) => c.status === 'pass').length
   const total = allChecks.length
   const hasFailures = allChecks.some((c) => c.status === 'fail')
+  const isLoading = semanticLoading || operationalLoading
 
-  if (total === 0) return null
+  if (total === 0 && !isLoading) return null
 
   return (
     <div className={`wb-checks${hasFailures ? ' wb-checks--has-fail' : ''}`}>
@@ -44,6 +47,11 @@ export function ReadinessChecks(): React.JSX.Element | null {
       >
         <span>{expanded ? '\u25be' : '\u25b8'}</span>
         <span className="wb-checks__icons">
+          {isLoading && (
+            <span title="Running checks..." className="wb-check-icon wb-check-icon--pending">
+              <Loader2 size={14} className="wb-spinner" />
+            </span>
+          )}
           {allChecks.map((c) => (
             <span key={c.id} title={c.label}>
               <CheckIcon status={c.status} />
@@ -51,7 +59,7 @@ export function ReadinessChecks(): React.JSX.Element | null {
           ))}
         </span>
         <span className="wb-checks__count">
-          {passing}/{total} passing
+          {isLoading ? 'Checking...' : `${passing}/${total} passing`}
         </span>
       </button>
       {expanded && (

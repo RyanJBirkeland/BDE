@@ -15,26 +15,27 @@
 
 ## File Map
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/renderer/src/assets/agent-launchpad-neon.css` | Create | All launchpad styling — tiles, chat, review, animations |
-| `src/renderer/src/components/agents/LaunchpadGrid.tsx` | Create | Tile grid + recents + prompt bar |
-| `src/renderer/src/components/agents/LaunchpadConfigure.tsx` | Create | Chat-style question flow |
-| `src/renderer/src/components/agents/LaunchpadReview.tsx` | Create | Review prompt + params + spawn |
-| `src/renderer/src/components/agents/AgentLaunchpad.tsx` | Create | Phase orchestrator component |
-| `src/renderer/src/components/agents/__tests__/LaunchpadGrid.test.tsx` | Create | Grid component tests |
-| `src/renderer/src/components/agents/__tests__/LaunchpadConfigure.test.tsx` | Create | Configure flow tests |
-| `src/renderer/src/components/agents/__tests__/LaunchpadReview.test.tsx` | Create | Review component tests |
-| `src/renderer/src/components/agents/__tests__/AgentLaunchpad.test.tsx` | Create | Orchestrator integration tests |
-| `src/renderer/src/views/AgentsView.tsx` | Modify | Replace SpawnModal with AgentLaunchpad |
-| `src/renderer/src/components/agents/SpawnModal.tsx` | Delete | Replaced by AgentLaunchpad |
-| `src/renderer/src/components/agents/__tests__/SpawnModal.test.tsx` | Delete | Replaced by new tests |
+| File                                                                       | Action | Purpose                                                 |
+| -------------------------------------------------------------------------- | ------ | ------------------------------------------------------- |
+| `src/renderer/src/assets/agent-launchpad-neon.css`                         | Create | All launchpad styling — tiles, chat, review, animations |
+| `src/renderer/src/components/agents/LaunchpadGrid.tsx`                     | Create | Tile grid + recents + prompt bar                        |
+| `src/renderer/src/components/agents/LaunchpadConfigure.tsx`                | Create | Chat-style question flow                                |
+| `src/renderer/src/components/agents/LaunchpadReview.tsx`                   | Create | Review prompt + params + spawn                          |
+| `src/renderer/src/components/agents/AgentLaunchpad.tsx`                    | Create | Phase orchestrator component                            |
+| `src/renderer/src/components/agents/__tests__/LaunchpadGrid.test.tsx`      | Create | Grid component tests                                    |
+| `src/renderer/src/components/agents/__tests__/LaunchpadConfigure.test.tsx` | Create | Configure flow tests                                    |
+| `src/renderer/src/components/agents/__tests__/LaunchpadReview.test.tsx`    | Create | Review component tests                                  |
+| `src/renderer/src/components/agents/__tests__/AgentLaunchpad.test.tsx`     | Create | Orchestrator integration tests                          |
+| `src/renderer/src/views/AgentsView.tsx`                                    | Modify | Replace SpawnModal with AgentLaunchpad                  |
+| `src/renderer/src/components/agents/SpawnModal.tsx`                        | Delete | Replaced by AgentLaunchpad                              |
+| `src/renderer/src/components/agents/__tests__/SpawnModal.test.tsx`         | Delete | Replaced by new tests                                   |
 
 ---
 
 ### Task 1: Create Launchpad CSS
 
 **Files:**
+
 - Create: `src/renderer/src/assets/agent-launchpad-neon.css`
 
 - [ ] **Step 1: Create the CSS file**
@@ -92,7 +93,9 @@ Create the file `src/renderer/src/assets/agent-launchpad-neon.css` with this exa
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
-  transition: color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
 }
 
 .launchpad__back:hover {
@@ -125,7 +128,10 @@ Create the file `src/renderer/src/assets/agent-launchpad-neon.css` with this exa
   padding: 18px 14px;
   text-align: center;
   cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
   position: relative;
   overflow: hidden;
 }
@@ -193,7 +199,9 @@ Create the file `src/renderer/src/assets/agent-launchpad-neon.css` with this exa
   border-radius: 8px;
   padding: 10px 14px;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .launchpad__recent-item:hover {
@@ -679,6 +687,7 @@ git commit -m "feat(launchpad): add neon CSS for tile grid, chat flow, and revie
 ### Task 2: Create LaunchpadGrid Component + Tests
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/LaunchpadGrid.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/LaunchpadGrid.test.tsx`
 
@@ -696,11 +705,11 @@ import type { RecentTask } from '../../../lib/launchpad-types'
 
 const mockRepos = [
   { label: 'BDE', owner: 'owner', color: '#fff' },
-  { label: 'life-os', owner: 'owner', color: '#fff' },
+  { label: 'life-os', owner: 'owner', color: '#fff' }
 ]
 
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => mockRepos,
+  useRepoOptions: () => mockRepos
 }))
 
 describe('LaunchpadGrid', () => {
@@ -713,7 +722,7 @@ describe('LaunchpadGrid', () => {
     recents: [] as RecentTask[],
     onSelectTemplate,
     onCustomPrompt,
-    onSelectRecent,
+    onSelectRecent
   }
 
   beforeEach(() => {
@@ -741,13 +750,13 @@ describe('LaunchpadGrid', () => {
     render(<LaunchpadGrid {...defaultProps} />)
     fireEvent.click(screen.getByText('Clean Code'))
     expect(onSelectTemplate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'builtin-clean-code' }),
+      expect.objectContaining({ id: 'builtin-clean-code' })
     )
   })
 
   it('renders recent tasks when provided', () => {
     const recents: RecentTask[] = [
-      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() - 3600000 },
+      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() - 3600000 }
     ]
     render(<LaunchpadGrid {...defaultProps} recents={recents} />)
     expect(screen.getByText(/Fix the login bug/)).toBeInTheDocument()
@@ -755,7 +764,7 @@ describe('LaunchpadGrid', () => {
 
   it('calls onSelectRecent when a recent item is clicked', () => {
     const recents: RecentTask[] = [
-      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() },
+      { prompt: 'Fix the login bug', repo: 'BDE', model: 'sonnet', timestamp: Date.now() }
     ]
     render(<LaunchpadGrid {...defaultProps} recents={recents} />)
     fireEvent.click(screen.getByText(/Fix the login bug/))
@@ -782,7 +791,7 @@ describe('LaunchpadGrid', () => {
     expect(onCustomPrompt).toHaveBeenCalledWith(
       'Do something custom',
       expect.any(String), // repo
-      expect.any(String), // model
+      expect.any(String) // model
     )
   })
 })
@@ -813,13 +822,52 @@ interface LaunchpadGridProps {
   onSelectRecent: (recent: RecentTask) => void
 }
 
-const ACCENT_VARS: Record<NeonAccent, { bg: string; border: string; color: string; glow: string; hover: string }> = {
-  cyan: { bg: 'rgba(0,255,255,0.06)', border: 'var(--neon-cyan-border)', color: 'var(--neon-cyan)', glow: 'rgba(0,255,255,0.15)', hover: 'rgba(0,255,255,0.3)' },
-  pink: { bg: 'rgba(255,0,255,0.06)', border: 'var(--neon-pink-border)', color: 'var(--neon-pink)', glow: 'rgba(255,0,255,0.15)', hover: 'rgba(255,0,255,0.3)' },
-  blue: { bg: 'rgba(100,100,255,0.06)', border: 'var(--neon-blue-border)', color: 'var(--neon-blue)', glow: 'rgba(100,100,255,0.15)', hover: 'rgba(100,100,255,0.3)' },
-  purple: { bg: 'rgba(138,43,226,0.06)', border: 'var(--neon-purple-border)', color: 'var(--neon-purple)', glow: 'rgba(138,43,226,0.15)', hover: 'rgba(138,43,226,0.3)' },
-  orange: { bg: 'rgba(255,165,0,0.06)', border: 'var(--neon-orange-border)', color: 'var(--neon-orange)', glow: 'rgba(255,165,0,0.15)', hover: 'rgba(255,165,0,0.3)' },
-  red: { bg: 'rgba(255,80,80,0.06)', border: 'var(--neon-red-border)', color: 'var(--neon-red)', glow: 'rgba(255,80,80,0.15)', hover: 'rgba(255,80,80,0.3)' },
+const ACCENT_VARS: Record<
+  NeonAccent,
+  { bg: string; border: string; color: string; glow: string; hover: string }
+> = {
+  cyan: {
+    bg: 'rgba(0,255,255,0.06)',
+    border: 'var(--neon-cyan-border)',
+    color: 'var(--neon-cyan)',
+    glow: 'rgba(0,255,255,0.15)',
+    hover: 'rgba(0,255,255,0.3)'
+  },
+  pink: {
+    bg: 'rgba(255,0,255,0.06)',
+    border: 'var(--neon-pink-border)',
+    color: 'var(--neon-pink)',
+    glow: 'rgba(255,0,255,0.15)',
+    hover: 'rgba(255,0,255,0.3)'
+  },
+  blue: {
+    bg: 'rgba(100,100,255,0.06)',
+    border: 'var(--neon-blue-border)',
+    color: 'var(--neon-blue)',
+    glow: 'rgba(100,100,255,0.15)',
+    hover: 'rgba(100,100,255,0.3)'
+  },
+  purple: {
+    bg: 'rgba(138,43,226,0.06)',
+    border: 'var(--neon-purple-border)',
+    color: 'var(--neon-purple)',
+    glow: 'rgba(138,43,226,0.15)',
+    hover: 'rgba(138,43,226,0.3)'
+  },
+  orange: {
+    bg: 'rgba(255,165,0,0.06)',
+    border: 'var(--neon-orange-border)',
+    color: 'var(--neon-orange)',
+    glow: 'rgba(255,165,0,0.15)',
+    hover: 'rgba(255,165,0,0.3)'
+  },
+  red: {
+    bg: 'rgba(255,80,80,0.06)',
+    border: 'var(--neon-red-border)',
+    color: 'var(--neon-red)',
+    glow: 'rgba(255,80,80,0.15)',
+    hover: 'rgba(255,80,80,0.3)'
+  }
 }
 
 function formatRelativeTime(ts: number): string {
@@ -837,7 +885,7 @@ export function LaunchpadGrid({
   recents,
   onSelectTemplate,
   onCustomPrompt,
-  onSelectRecent,
+  onSelectRecent
 }: LaunchpadGridProps) {
   const repos = useRepoOptions()
   const [prompt, setPrompt] = useState('')
@@ -851,7 +899,7 @@ export function LaunchpadGrid({
         onCustomPrompt(prompt.trim(), repo, model)
       }
     },
-    [prompt, repo, model, onCustomPrompt],
+    [prompt, repo, model, onCustomPrompt]
   )
 
   return (
@@ -872,13 +920,15 @@ export function LaunchpadGrid({
               key={t.id}
               type="button"
               className="launchpad__tile"
-              style={{
-                '--tile-bg': vars.bg,
-                '--tile-border': vars.border,
-                '--tile-color': vars.color,
-                '--tile-glow': vars.glow,
-                '--tile-hover-border': vars.hover,
-              } as React.CSSProperties}
+              style={
+                {
+                  '--tile-bg': vars.bg,
+                  '--tile-border': vars.border,
+                  '--tile-color': vars.color,
+                  '--tile-glow': vars.glow,
+                  '--tile-hover-border': vars.hover
+                } as React.CSSProperties
+              }
               onClick={() => onSelectTemplate(t)}
             >
               <div className="launchpad__tile-icon">{t.icon}</div>
@@ -974,6 +1024,7 @@ git commit -m "feat(launchpad): add LaunchpadGrid component with tile grid, rece
 ### Task 3: Create LaunchpadConfigure Component + Tests
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/LaunchpadConfigure.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/LaunchpadConfigure.test.tsx`
 
@@ -996,10 +1047,10 @@ const mockTemplate: PromptTemplate = {
   description: 'Test',
   questions: [
     { id: 'scope', label: 'Pick a scope', type: 'choice', choices: ['All', 'Some', 'None'] },
-    { id: 'detail', label: 'Describe in detail', type: 'text', required: true },
+    { id: 'detail', label: 'Describe in detail', type: 'text', required: true }
   ],
   promptTemplate: '{{scope}} — {{detail}}',
-  order: 0,
+  order: 0
 }
 
 describe('LaunchpadConfigure', () => {
@@ -1103,13 +1154,15 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
   useEffect(() => {
     if (template.questions.length > 0) {
       const q = template.questions[0]
-      setMessages([{
-        type: 'system',
-        text: q.label,
-        questionId: q.id,
-        choices: q.choices,
-        questionType: q.type,
-      }])
+      setMessages([
+        {
+          type: 'system',
+          text: q.label,
+          questionId: q.id,
+          choices: q.choices,
+          questionType: q.type
+        }
+      ])
     }
   }, [template])
 
@@ -1133,14 +1186,14 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
           text: q.label,
           questionId: q.id,
           choices: q.choices,
-          questionType: q.type,
-        },
+          questionType: q.type
+        }
       ])
       setCurrentStep(nextStep)
       setInputValue('')
       inputRef.current?.focus()
     },
-    [template, totalSteps, onComplete],
+    [template, totalSteps, onComplete]
   )
 
   const handleChoiceClick = useCallback(
@@ -1151,7 +1204,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
       setMessages((prev) => [...prev, { type: 'user', text: choice }])
       advanceOrComplete(newAnswers, currentStep + 1)
     },
-    [answers, currentStep, template, advanceOrComplete],
+    [answers, currentStep, template, advanceOrComplete]
   )
 
   const handleTextSubmit = useCallback(() => {
@@ -1172,7 +1225,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
         handleTextSubmit()
       }
     },
-    [handleTextSubmit],
+    [handleTextSubmit]
   )
 
   const currentQuestion = template.questions[currentStep]
@@ -1183,12 +1236,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
       <div className="launchpad__chat">
         {/* Header */}
         <div className="launchpad__chat-header">
-          <button
-            type="button"
-            className="launchpad__back"
-            onClick={onBack}
-            title="Back to grid"
-          >
+          <button type="button" className="launchpad__back" onClick={onBack} title="Back to grid">
             &#x2190;
           </button>
           <div className="launchpad__chat-badge">
@@ -1226,7 +1274,7 @@ export function LaunchpadConfigure({ template, onComplete, onBack }: LaunchpadCo
               <div key={i} className="launchpad__msg launchpad__msg--user">
                 {msg.text}
               </div>
-            ),
+            )
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -1274,6 +1322,7 @@ git commit -m "feat(launchpad): add LaunchpadConfigure chat-style question flow 
 ### Task 4: Create LaunchpadReview Component + Tests
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/LaunchpadReview.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/LaunchpadReview.test.tsx`
 
@@ -1293,11 +1342,9 @@ const mockTemplate: PromptTemplate = {
   icon: '🧹',
   accent: 'cyan',
   description: 'Audit',
-  questions: [
-    { id: 'scope', label: 'Scope', type: 'choice', choices: ['All'] },
-  ],
+  questions: [{ id: 'scope', label: 'Scope', type: 'choice', choices: ['All'] }],
   promptTemplate: 'Audit {{scope}}',
-  order: 0,
+  order: 0
 }
 
 describe('LaunchpadReview', () => {
@@ -1314,7 +1361,7 @@ describe('LaunchpadReview', () => {
     onSpawn,
     onBack,
     onSaveTemplate,
-    spawning: false,
+    spawning: false
   }
 
   beforeEach(() => vi.clearAllMocks())
@@ -1402,7 +1449,7 @@ export function LaunchpadReview({
   onSpawn,
   onBack,
   onSaveTemplate,
-  spawning,
+  spawning
 }: LaunchpadReviewProps) {
   const [editing, setEditing] = useState(false)
   const [editedPrompt, setEditedPrompt] = useState(assembledPrompt)
@@ -1417,8 +1464,8 @@ export function LaunchpadReview({
     { label: 'Model', value: model.charAt(0).toUpperCase() + model.slice(1) },
     ...Object.entries(answers).map(([key, value]) => ({
       label: key.charAt(0).toUpperCase() + key.slice(1),
-      value,
-    })),
+      value
+    }))
   ]
 
   return (
@@ -1465,9 +1512,7 @@ export function LaunchpadReview({
               onChange={(e) => setEditedPrompt(e.target.value)}
             />
           ) : (
-            <div className="launchpad__spec-content">
-              {assembledPrompt}
-            </div>
+            <div className="launchpad__spec-content">{assembledPrompt}</div>
           )}
         </div>
 
@@ -1512,6 +1557,7 @@ git commit -m "feat(launchpad): add LaunchpadReview component with param grid, e
 ### Task 5: Create AgentLaunchpad Orchestrator + Tests
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/AgentLaunchpad.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/AgentLaunchpad.test.tsx`
 
@@ -1534,13 +1580,11 @@ const mockTemplates = [
     icon: '🧹',
     accent: 'cyan',
     description: 'Audit',
-    questions: [
-      { id: 'scope', label: 'Pick scope', type: 'choice', choices: ['All', 'Some'] },
-    ],
+    questions: [{ id: 'scope', label: 'Pick scope', type: 'choice', choices: ['All', 'Some'] }],
     promptTemplate: 'Audit {{scope}}',
     order: 0,
-    builtIn: true,
-  },
+    builtIn: true
+  }
 ]
 
 vi.mock('../../../stores/localAgents', () => ({
@@ -1548,9 +1592,9 @@ vi.mock('../../../stores/localAgents', () => ({
     selector({
       spawnAgent: mockSpawnAgent,
       fetchProcesses: mockFetchProcesses,
-      isSpawning: false,
-    }),
-  ),
+      isSpawning: false
+    })
+  )
 }))
 
 vi.mock('../../../stores/promptTemplates', () => ({
@@ -1558,19 +1602,17 @@ vi.mock('../../../stores/promptTemplates', () => ({
     selector({
       templates: mockTemplates,
       loading: false,
-      loadTemplates: mockLoadTemplates,
-    }),
-  ),
+      loadTemplates: mockLoadTemplates
+    })
+  )
 }))
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => [
-    { label: 'BDE', owner: 'owner', color: '#fff' },
-  ],
+  useRepoOptions: () => [{ label: 'BDE', owner: 'owner', color: '#fff' }]
 }))
 
 Object.defineProperty(window, 'api', {
@@ -1582,11 +1624,11 @@ Object.defineProperty(window, 'api', {
       set: vi.fn(),
       getJson: vi.fn().mockResolvedValue(null),
       setJson: vi.fn(),
-      delete: vi.fn(),
-    },
+      delete: vi.fn()
+    }
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 import { AgentLaunchpad } from '../AgentLaunchpad'
@@ -1627,7 +1669,7 @@ describe('AgentLaunchpad', () => {
 
     await waitFor(() => {
       expect(mockSpawnAgent).toHaveBeenCalledWith(
-        expect.objectContaining({ task: expect.stringContaining('Audit All') }),
+        expect.objectContaining({ task: expect.stringContaining('Audit All') })
       )
     })
   })
@@ -1690,7 +1732,10 @@ export function AgentLaunchpad({ onAgentSpawned }: AgentLaunchpadProps) {
   // Load templates and recents on mount
   useEffect(() => {
     loadTemplates()
-    window.api.getRepoPaths().then(setRepoPaths).catch(() => {})
+    window.api
+      .getRepoPaths()
+      .then(setRepoPaths)
+      .catch(() => {})
 
     try {
       const stored = localStorage.getItem(RECENT_TASKS_KEY)
@@ -1698,17 +1743,25 @@ export function AgentLaunchpad({ onAgentSpawned }: AgentLaunchpadProps) {
         const parsed = JSON.parse(stored)
         setRecents(migrateHistory(parsed))
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [loadTemplates])
 
   const visibleTemplates = templates.filter((t) => !t.hidden)
 
-  const saveRecent = useCallback((prompt: string) => {
-    const entry: RecentTask = { prompt, repo, model, timestamp: Date.now() }
-    const updated = [entry, ...recents.filter((r) => r.prompt !== prompt)].slice(0, RECENT_TASKS_LIMIT)
-    setRecents(updated)
-    localStorage.setItem(RECENT_TASKS_KEY, JSON.stringify(updated))
-  }, [recents, repo, model])
+  const saveRecent = useCallback(
+    (prompt: string) => {
+      const entry: RecentTask = { prompt, repo, model, timestamp: Date.now() }
+      const updated = [entry, ...recents.filter((r) => r.prompt !== prompt)].slice(
+        0,
+        RECENT_TASKS_LIMIT
+      )
+      setRecents(updated)
+      localStorage.setItem(RECENT_TASKS_KEY, JSON.stringify(updated))
+    },
+    [recents, repo, model]
+  )
 
   // ── Phase transitions ──
 
@@ -1742,31 +1795,37 @@ export function AgentLaunchpad({ onAgentSpawned }: AgentLaunchpadProps) {
     setPhase('review')
   }, [])
 
-  const handleConfigureComplete = useCallback((configAnswers: Record<string, string>) => {
-    setAnswers(configAnswers)
-    if (selectedTemplate) {
-      setAssembledPromptText(assemblePrompt(selectedTemplate, configAnswers))
-    }
-    setPhase('review')
-  }, [selectedTemplate])
+  const handleConfigureComplete = useCallback(
+    (configAnswers: Record<string, string>) => {
+      setAnswers(configAnswers)
+      if (selectedTemplate) {
+        setAssembledPromptText(assemblePrompt(selectedTemplate, configAnswers))
+      }
+      setPhase('review')
+    },
+    [selectedTemplate]
+  )
 
-  const handleSpawn = useCallback(async (finalPrompt: string) => {
-    const repoPath = repoPaths[repo.toLowerCase()]
-    if (!repoPath) {
-      toast.error(`Repo path not found for "${repo}"`)
-      return
-    }
-    try {
-      await spawnAgent({ task: finalPrompt, repoPath, model })
-      saveRecent(finalPrompt)
-      fetchProcesses()
-      toast.success('Agent spawned')
-      onAgentSpawned()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      toast.error(`Spawn failed: ${message}`)
-    }
-  }, [repo, model, repoPaths, spawnAgent, fetchProcesses, saveRecent, onAgentSpawned])
+  const handleSpawn = useCallback(
+    async (finalPrompt: string) => {
+      const repoPath = repoPaths[repo.toLowerCase()]
+      if (!repoPath) {
+        toast.error(`Repo path not found for "${repo}"`)
+        return
+      }
+      try {
+        await spawnAgent({ task: finalPrompt, repoPath, model })
+        saveRecent(finalPrompt)
+        fetchProcesses()
+        toast.success('Agent spawned')
+        onAgentSpawned()
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        toast.error(`Spawn failed: ${message}`)
+      }
+    },
+    [repo, model, repoPaths, spawnAgent, fetchProcesses, saveRecent, onAgentSpawned]
+  )
 
   const handleSaveTemplate = useCallback(() => {
     toast.info('Template saving coming soon')
@@ -1839,6 +1898,7 @@ git commit -m "feat(launchpad): add AgentLaunchpad orchestrator with phase manag
 ### Task 6: Integrate into AgentsView + Delete SpawnModal
 
 **Files:**
+
 - Modify: `src/renderer/src/views/AgentsView.tsx`
 - Delete: `src/renderer/src/components/agents/SpawnModal.tsx`
 - Delete: `src/renderer/src/components/agents/__tests__/SpawnModal.test.tsx`
@@ -1854,6 +1914,7 @@ Open `src/renderer/src/views/AgentsView.tsx` and make these exact changes:
 3. **Replace `spawnOpen` state** — Change `const [spawnOpen, setSpawnOpen] = useState(false)` to `const [showLaunchpad, setShowLaunchpad] = useState(false)`
 
 4. **Update the event listener** — Change the `bde:open-spawn-modal` handler from `setSpawnOpen(true)` to:
+
    ```tsx
    const handler = (): void => {
      setSelectedId(null)
@@ -1862,6 +1923,7 @@ Open `src/renderer/src/views/AgentsView.tsx` and make these exact changes:
    ```
 
 5. **Update the + button** — Change `onClick={() => setSpawnOpen(true)}` to:
+
    ```tsx
    onClick={() => {
      setSelectedId(null)
@@ -1881,21 +1943,19 @@ Open `src/renderer/src/views/AgentsView.tsx` and make these exact changes:
          }}
        />
      ) : selectedAgent ? (
-       <AgentConsole
-         agentId={selectedAgent.id}
-         onSteer={handleSteer}
-         onCommand={handleCommand}
-       />
+       <AgentConsole agentId={selectedAgent.id} onSteer={handleSteer} onCommand={handleCommand} />
      ) : (
-       <div style={{
-         display: 'flex',
-         alignItems: 'center',
-         justifyContent: 'center',
-         height: '100%',
-         color: 'rgba(255, 255, 255, 0.2)',
-         fontSize: tokens.size.md,
-         fontFamily: 'var(--bde-font-code)',
-       }}>
+       <div
+         style={{
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'center',
+           height: '100%',
+           color: 'rgba(255, 255, 255, 0.2)',
+           fontSize: tokens.size.md,
+           fontFamily: 'var(--bde-font-code)'
+         }}
+       >
          {'> Select an agent to view console.'}
        </div>
      )}
@@ -1905,6 +1965,7 @@ Open `src/renderer/src/views/AgentsView.tsx` and make these exact changes:
 7. **Delete the SpawnModal render** — Remove: `<SpawnModal open={spawnOpen} onClose={() => setSpawnOpen(false)} />`
 
 8. **Update handleSelectAgent** — When an agent is selected, hide the launchpad:
+
    ```tsx
    const handleSelectAgent = useCallback((id: string) => {
      setSelectedId(id)
@@ -1917,6 +1978,7 @@ Open `src/renderer/src/views/AgentsView.tsx` and make these exact changes:
 - [ ] **Step 2: Delete SpawnModal files**
 
 Run:
+
 ```bash
 rm src/renderer/src/components/agents/SpawnModal.tsx
 rm src/renderer/src/components/agents/__tests__/SpawnModal.test.tsx

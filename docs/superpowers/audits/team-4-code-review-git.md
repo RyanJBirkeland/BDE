@@ -13,6 +13,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 **Current state:** Flat list rows with 2px left-border accent on selection. Repo badges are tiny pills (10px font, full-radius) with hardcoded background colors. CI badges are icon-only with no background treatment.
 
 **Issues:**
+
 1. **Card treatment missing.** PR rows are borderless flat divs. They need `border-radius: 16px`, glass-surface background (`rgba(5,5,5,0.85) + backdrop-filter: blur(20px)`), and a subtle border (`1px solid var(--bde-border)`).
 2. **Hover state is anemic.** Current: `background: var(--bde-surface)`. Needs: border brighten on hover (`border-color` transition to `var(--bde-border-hover)`), plus `active:scale(0.97)` micro-interaction.
 3. **Selected state uses a left-border accent.** This is fine directionally but should add an ambient glow: `box-shadow: inset 0 0 0 1px var(--bde-accent), 0 0 20px rgba(0,211,127,0.06)`.
@@ -25,6 +26,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 **Current state:** Clean section-based layout with 800px max-width. Description body gets a `var(--bde-surface)` card with `border-radius: var(--bde-radius-md)` (6px).
 
 **Issues:**
+
 1. **Section cards need the feast-site radius.** `border-radius: 6px` -> `16px` for description body, review cards, conversation cards. Inner elements like check run items: `12px`.
 2. **Header lacks visual weight.** The PR title + number + metadata is plain text. Add a subtle `var(--bde-header-gradient)` underline or a glass-surface card treatment for the entire header block.
 3. **Stats badges (+additions / -deletions)** are plain colored text. Wrap in tinted pills: `+42` in a green-tinted pill, `-18` in a red-tinted pill, matching the file-badge pattern but with the new radii.
@@ -36,6 +38,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 **Current state:** Functional unified diff with file sidebar, line gutters, hunk headers. Colors use `var(--bde-diff-add-bg)` / `var(--bde-diff-del-bg)` which are likely low-opacity tints.
 
 **Issues:**
+
 1. **File header sticky bar** (`diff-file__header`) uses `var(--bde-surface)` with no blur. Upgrade to glassmorphism: `backdrop-filter: blur(12px)` + semi-transparent background so diff content scrolls visibly behind it.
 2. **Hunk headers** (`diff-hunk__header`) use `var(--bde-hover-subtle)` -- too subtle. Add a left-accent bar (3px solid `var(--bde-info)`) to visually anchor each hunk.
 3. **Line selection highlight** uses `!important` override (line 592 of `diff.css`). Replace with a proper specificity chain. The selection color should have a subtle pulse animation to indicate interactivity.
@@ -48,6 +51,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 **This is THE feast-site CTA moment.** Current state: plain `bde-btn--primary` with flat `var(--bde-accent)` background. No gradient, no glow, no animation.
 
 **Required upgrades:**
+
 1. **Gradient background:** `linear-gradient(135deg, #00D37F, #00A863)` -- the signature feast-site CTA gradient.
 2. **Ambient glow on idle:** `box-shadow: 0 4px 16px rgba(0,211,127,0.25), 0 8px 32px rgba(0,211,127,0.08)`.
 3. **Hover glow intensification:** `box-shadow: 0 4px 24px rgba(0,211,127,0.35), 0 8px 48px rgba(0,211,127,0.12)`.
@@ -63,6 +67,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 **Current state:** Button group for repo chips using `bde-btn--sm` + `bde-btn--primary/ghost`. Sort dropdown is a native `<select>`.
 
 **Issues:**
+
 1. **Repo chips** should be pill-shaped (`border-radius: 9999px`) with glass surface when inactive and the accent gradient fill when active.
 2. **Sort dropdown** is a native `<select>` element (line 56-68 of `PRStationFilters.tsx`). Native selects cannot be styled consistently. Replace with a custom dropdown matching the merge strategy dropdown pattern -- glass surface, `border-radius: 12px`, layered shadow.
 3. **Filter bar container** needs `padding` increase and a subtle bottom-border gradient separator.
@@ -73,6 +78,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 **Current state:** Entirely inline-styled using the `tokens` object. No CSS classes, no design system CSS variables. Visually functional but completely disconnected from the feast-site direction.
 
 **Issues:**
+
 1. **All components use inline styles.** `GitFileRow.tsx`, `FileTreeSection.tsx`, `CommitBox.tsx`, `BranchSelector.tsx`, `InlineDiffDrawer.tsx` -- every one uses `style={{...}}` with `tokens.color.*` / `tokens.radius.*`. This bypasses CSS variables, makes theming impossible, and prevents hover/focus pseudo-class styling (hence the `onMouseEnter`/`onMouseLeave` JS hacks throughout).
 2. **Hover states are JS-managed.** Every interactive element manually sets `style.backgroundColor` and `style.color` on mouseenter/mouseleave. This is fragile, doesn't handle keyboard focus, and creates accessibility gaps (no `:focus-visible` styling).
 3. **Border radius uses `tokens.radius.sm` (4px)** everywhere. Needs feast-site upgrade: commit box `16px`, branch selector `12px`, file rows `8px`.
@@ -85,6 +91,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 ### Branch Selector
 
 **Issues:**
+
 1. **Trigger button** is a small inline-styled element. Needs feast-site treatment: glass-surface background, `border-radius: 12px`, border-brighten on hover.
 2. **Dropdown uses `zIndex: 1000`** with a full-viewport invisible backdrop div. This works but the overlay should use `var(--bde-overlay)` instead of being invisible.
 3. **Active branch** in dropdown uses `tokens.color.accentDim` background. Good start -- add a left-accent bar or checkmark icon for stronger affordance.
@@ -93,6 +100,7 @@ The PR Station is the second-largest component set in the app (11 components + 4
 ### Commit Box
 
 **Issues:**
+
 1. **Textarea** uses inline `onFocus`/`onBlur` to toggle border color. Should be CSS `:focus` pseudo-class.
 2. **No character count or conventional commit format hinting.** Consider a subtle helper below the textarea.
 3. **Button group** is horizontal flex. The commit button is `flex: 1` while push is fixed-width -- good hierarchy, but both need `border-radius: 12px`.
@@ -149,10 +157,13 @@ The PR Station is the second-largest component set in the app (11 components + 4
 ### Component-Level Changes
 
 #### `MergeButton.tsx` + `PRStationActions.tsx` — Duplicate Logic (P1)
+
 Both components duplicate: `MERGE_STRATEGIES` array, merge method state, dropdown open/close logic, outside-click handler, merge API call. `PRStationActions` adds close-PR functionality. **Recommendation:** Extract `MergeButton` as the single merge CTA and have `PRStationActions` compose it alongside the Close button. Remove the `MergeButton` render from `PRStationDetail.tsx` (line 184) to eliminate the dual-merge-button problem.
 
 #### Git Tree Components — Inline Style Migration (P1)
+
 All 5 git-tree components use inline styles exclusively. This creates:
+
 - No `:hover`, `:focus`, `:focus-visible`, `:active` pseudo-class support
 - JS-managed hover states (`onMouseEnter`/`onMouseLeave`) that don't fire on keyboard navigation
 - No CSS transition support (inline style changes are instant)
@@ -161,48 +172,54 @@ All 5 git-tree components use inline styles exclusively. This creates:
 **Recommendation:** Create a `git-tree.css` file. Migrate all inline styles to CSS classes. Use CSS variables for colors. This unblocks all feast-site styling and fixes accessibility gaps.
 
 #### `DiffViewer.tsx` — Prop Drilling (P2)
+
 `PlainDiffContent` receives 18 props. This is a maintenance burden. **Recommendation:** Extract a `DiffViewerContext` to hold selection state, composer range, and event handlers. Components within the diff tree can consume via `useContext`.
 
 #### `InlineDiffDrawer.tsx` — Hardcoded rgba() Values (P2)
+
 Lines 28-32 use `rgba(0, 211, 127, 0.07)`, `rgba(255, 77, 77, 0.07)`, `rgba(59, 130, 246, 0.07)`. These violate the CSS theming rule. **Recommendation:** Use `var(--bde-diff-add-bg)`, `var(--bde-diff-del-bg)`, `var(--bde-diff-info-bg)` CSS variables (already defined for the main diff view).
 
 #### `ReviewSubmitDialog.tsx` — Missing ARIA (P2)
+
 The dialog uses `onClick={onClose}` on backdrop but has no `role="dialog"`, no `aria-modal="true"`, no focus trap, no `Escape` key handler. **Recommendation:** Add `role="dialog" aria-modal="true" aria-labelledby="review-dialog-title"`. Add focus trap and Escape handler.
 
 #### `PRStationFilters.tsx` — Native Select (P2)
+
 The `<select>` element (line 56) cannot be styled for the feast-site aesthetic. Native selects render differently per OS. **Recommendation:** Replace with a custom dropdown component matching the pattern in `MergeButton` or `BranchSelector`.
 
 #### `PRStationList.tsx` — Triple Filter Call (P3)
+
 The `removedKeys` filter runs three times (lines 79, 93, 96) per render. **Recommendation:** Compute filtered list once in a `useMemo`.
 
 ### CSS Changes
 
 #### `pr-station.css` — Feast-Site Upgrade Targets
 
-| Selector | Current | Target |
-|---|---|---|
-| `.pr-station-list__row` | `border-radius: 0` | `border-radius: 12px; margin: 2px 8px` |
-| `.pr-detail__body` | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px` |
-| `.pr-review` | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px` |
-| `.pr-conversation__comment` | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px` |
-| `.pr-conflict-banner` | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px` |
-| `.review-dialog` | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 20px` + glassmorphism |
-| `.pr-actions__dropdown` | `border-radius: 6px` | `border-radius: 12px` + glassmorphism |
-| `.merge-button__action` | `bde-btn--primary` (flat) | Gradient + glow (see UX section) |
-| `.pr-station__tab--active` | `border-bottom: 2px` | Sliding pill indicator |
+| Selector                    | Current                                     | Target                                 |
+| --------------------------- | ------------------------------------------- | -------------------------------------- |
+| `.pr-station-list__row`     | `border-radius: 0`                          | `border-radius: 12px; margin: 2px 8px` |
+| `.pr-detail__body`          | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px`                  |
+| `.pr-review`                | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px`                  |
+| `.pr-conversation__comment` | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px`                  |
+| `.pr-conflict-banner`       | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 16px`                  |
+| `.review-dialog`            | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 20px` + glassmorphism  |
+| `.pr-actions__dropdown`     | `border-radius: 6px`                        | `border-radius: 12px` + glassmorphism  |
+| `.merge-button__action`     | `bde-btn--primary` (flat)                   | Gradient + glow (see UX section)       |
+| `.pr-station__tab--active`  | `border-bottom: 2px`                        | Sliding pill indicator                 |
 
 #### `diff.css` — Feast-Site Upgrade Targets
 
-| Selector | Current | Target |
-|---|---|---|
-| `.diff-file__header` | `background: var(--bde-surface)` | Glassmorphism sticky header |
-| `.diff-comment-widget` | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 12px` |
-| `.diff-comment-composer` | `border: 1px solid var(--bde-accent)` | Accent glow shadow |
-| `.diff-sidebar` | `background: var(--bde-surface)` | Glass-surface with blur |
-| `.diff-line--selected` | `!important` override | Proper specificity chain |
-| `.diff-selection-trigger` | `border-radius: 50%` | Add glow: `box-shadow: 0 2px 8px rgba(0,211,127,0.3)` |
+| Selector                  | Current                                     | Target                                                |
+| ------------------------- | ------------------------------------------- | ----------------------------------------------------- |
+| `.diff-file__header`      | `background: var(--bde-surface)`            | Glassmorphism sticky header                           |
+| `.diff-comment-widget`    | `border-radius: var(--bde-radius-md)` (6px) | `border-radius: 12px`                                 |
+| `.diff-comment-composer`  | `border: 1px solid var(--bde-accent)`       | Accent glow shadow                                    |
+| `.diff-sidebar`           | `background: var(--bde-surface)`            | Glass-surface with blur                               |
+| `.diff-line--selected`    | `!important` override                       | Proper specificity chain                              |
+| `.diff-selection-trigger` | `border-radius: 50%`                        | Add glow: `box-shadow: 0 2px 8px rgba(0,211,127,0.3)` |
 
 #### New CSS File Needed: `git-tree.css`
+
 All git-tree inline styles need to be migrated here. Estimated ~200 lines of CSS to replace ~400 lines of inline style objects.
 
 ### Performance Concerns
@@ -221,32 +238,32 @@ All git-tree inline styles need to be migrated here. Estimated ~200 lines of CSS
 
 ## Priority Matrix
 
-| Priority | Item | Persona | Effort |
-|---|---|---|---|
-| **P0** | Merge Button feast-site gradient CTA treatment | UX/Dev | S |
-| **P0** | Git Tree inline styles -> CSS migration | Dev | L |
-| **P1** | Deduplicate MergeButton / PRStationActions merge logic | PM/Dev | M |
-| **P1** | PR list row card treatment (radius, glass, hover) | UX/Dev | M |
-| **P1** | Review dialog ARIA / focus trap / keyboard | Dev | S |
-| **P1** | All border-radius upgrades (6px -> 12-20px across pr-station.css) | UX/Dev | M |
-| **P1** | Diff file header glassmorphism sticky bar | UX/Dev | S |
-| **P1** | InlineDiffDrawer hardcoded rgba -> CSS variables | Dev | S |
-| **P2** | Replace native `<select>` in PRStationFilters with custom dropdown | UX/Dev | M |
-| **P2** | Review submit dialog glassmorphism + radius upgrade | UX/Dev | S |
-| **P2** | Tab active indicator -> sliding pill animation | UX/Dev | S |
-| **P2** | CI badge pill treatment (background tints) | UX/Dev | S |
-| **P2** | Diff comment composer glow treatment | UX/Dev | S |
-| **P2** | DiffViewer PlainDiffContent prop drilling -> Context | Dev | M |
-| **P2** | PRStationList triple-filter -> useMemo | Dev | S |
-| **P2** | Branch selector dropdown glass-surface + keyboard nav | UX/Dev | M |
-| **P2** | Commit button feast-site gradient treatment | UX/Dev | S |
-| **P3** | Keyboard shortcuts for review (n/p comments, c to compose) | PM/Dev | M |
-| **P3** | Changed Files -> Diff tab cross-linking | PM/Dev | M |
-| **P3** | PR description editing | PM/Dev | L |
-| **P3** | Git stash / pull / amend support | PM/Dev | L |
-| **P3** | Virtualized diff with comment widgets | Dev | L |
-| **P3** | Review progress indicator (files reviewed counter) | PM/Dev | M |
-| **P3** | Commit message templates / conventional commit hints | PM/Dev | S |
+| Priority | Item                                                               | Persona | Effort |
+| -------- | ------------------------------------------------------------------ | ------- | ------ |
+| **P0**   | Merge Button feast-site gradient CTA treatment                     | UX/Dev  | S      |
+| **P0**   | Git Tree inline styles -> CSS migration                            | Dev     | L      |
+| **P1**   | Deduplicate MergeButton / PRStationActions merge logic             | PM/Dev  | M      |
+| **P1**   | PR list row card treatment (radius, glass, hover)                  | UX/Dev  | M      |
+| **P1**   | Review dialog ARIA / focus trap / keyboard                         | Dev     | S      |
+| **P1**   | All border-radius upgrades (6px -> 12-20px across pr-station.css)  | UX/Dev  | M      |
+| **P1**   | Diff file header glassmorphism sticky bar                          | UX/Dev  | S      |
+| **P1**   | InlineDiffDrawer hardcoded rgba -> CSS variables                   | Dev     | S      |
+| **P2**   | Replace native `<select>` in PRStationFilters with custom dropdown | UX/Dev  | M      |
+| **P2**   | Review submit dialog glassmorphism + radius upgrade                | UX/Dev  | S      |
+| **P2**   | Tab active indicator -> sliding pill animation                     | UX/Dev  | S      |
+| **P2**   | CI badge pill treatment (background tints)                         | UX/Dev  | S      |
+| **P2**   | Diff comment composer glow treatment                               | UX/Dev  | S      |
+| **P2**   | DiffViewer PlainDiffContent prop drilling -> Context               | Dev     | M      |
+| **P2**   | PRStationList triple-filter -> useMemo                             | Dev     | S      |
+| **P2**   | Branch selector dropdown glass-surface + keyboard nav              | UX/Dev  | M      |
+| **P2**   | Commit button feast-site gradient treatment                        | UX/Dev  | S      |
+| **P3**   | Keyboard shortcuts for review (n/p comments, c to compose)         | PM/Dev  | M      |
+| **P3**   | Changed Files -> Diff tab cross-linking                            | PM/Dev  | M      |
+| **P3**   | PR description editing                                             | PM/Dev  | L      |
+| **P3**   | Git stash / pull / amend support                                   | PM/Dev  | L      |
+| **P3**   | Virtualized diff with comment widgets                              | Dev     | L      |
+| **P3**   | Review progress indicator (files reviewed counter)                 | PM/Dev  | M      |
+| **P3**   | Commit message templates / conventional commit hints               | PM/Dev  | S      |
 
 **Effort key:** S = < 2 hours, M = 2-6 hours, L = 6+ hours
 

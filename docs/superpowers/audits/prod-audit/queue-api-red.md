@@ -10,17 +10,17 @@
 
 ### Previously Reported -- Now Fixed
 
-| March 28 ID | Issue | Status |
-|---|---|---|
-| SEC-5 | **CORS `*` on auth-protected localhost API** -- `helpers.ts` had `Access-Control-Allow-Origin: *` allowing any browser tab to probe the API | **Fixed.** `CORS_HEADERS` is now an empty object `{}` (line 57 of `helpers.ts`). Comment at line 55-56 documents the rationale. CORS headers are no longer emitted on any response. |
+| March 28 ID | Issue                                                                                                                                       | Status                                                                                                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-5       | **CORS `*` on auth-protected localhost API** -- `helpers.ts` had `Access-Control-Allow-Origin: *` allowing any browser tab to probe the API | **Fixed.** `CORS_HEADERS` is now an empty object `{}` (line 57 of `helpers.ts`). Comment at line 55-56 documents the rationale. CORS headers are no longer emitted on any response. |
 
 ### Previously Reported -- Still Open
 
-| March 28 ID | Issue | Status |
-|---|---|---|
-| main-process-sd C4 | **SSE token exposure via query params** -- `?token=` query parameter for SSE auth is logged in access logs and visible in network traces | **Still open.** `checkAuth()` at `helpers.ts:29-35` still accepts `?token=` query param. See QA-RED-1 below for full analysis. |
-| main-process-sd S7 | **SQL column allowlist entries not regex-asserted** -- column names interpolated into SQL via string concatenation | **Still open.** `sprint-queries.ts:200` still uses `${key} = ?` interpolation. The allowlist protects it in practice, but the pattern remains fragile. See QA-RED-4 below. |
-| ARCH-2 | **Repository pattern inconsistently applied** -- Queue API bypasses `ISprintTaskRepository`, creating different side-effect paths | **Still open.** `task-handlers.ts` imports `sprint-queries` directly. Not a direct security issue but means security controls (audit trail, notifications) can be inconsistently applied. |
+| March 28 ID        | Issue                                                                                                                                    | Status                                                                                                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| main-process-sd C4 | **SSE token exposure via query params** -- `?token=` query parameter for SSE auth is logged in access logs and visible in network traces | **Still open.** `checkAuth()` at `helpers.ts:29-35` still accepts `?token=` query param. See QA-RED-1 below for full analysis.                                                            |
+| main-process-sd S7 | **SQL column allowlist entries not regex-asserted** -- column names interpolated into SQL via string concatenation                       | **Still open.** `sprint-queries.ts:200` still uses `${key} = ?` interpolation. The allowlist protects it in practice, but the pattern remains fragile. See QA-RED-4 below.                |
+| ARCH-2             | **Repository pattern inconsistently applied** -- Queue API bypasses `ISprintTaskRepository`, creating different side-effect paths        | **Still open.** `task-handlers.ts` imports `sprint-queries` directly. Not a direct security issue but means security controls (audit trail, notifications) can be inconsistently applied. |
 
 ### New Findings
 
@@ -42,6 +42,7 @@ See Findings section below.
   4. Potentially leaked via `Referer` headers on subsequent requests
 
   Since the API key is a long-lived secret (auto-generated `randomBytes(32)`, never rotated), exposure through any of these channels grants persistent access.
+
 - **Evidence:**
   ```typescript
   // helpers.ts:29-35
@@ -70,6 +71,7 @@ See Findings section below.
 - **Description:** The `checkAuth()` function performs a constant-time-unsafe string comparison (`token !== apiKey` at line 43) and has no rate limiting. An attacker on the local network (or via a compromised browser tab, since CORS is now removed but `fetch()` can still be used for simple requests) can brute-force the API key. The API key is 64 hex characters (256 bits), making brute force computationally infeasible in practice, but the lack of rate limiting also enables credential stuffing if the key is partially leaked.
 
   More importantly, the string comparison `token !== apiKey` at line 43 uses JavaScript's `!==` operator, which is not constant-time. This creates a theoretical timing side-channel, though exploitation over localhost HTTP is extremely difficult.
+
 - **Evidence:**
   ```typescript
   // helpers.ts:43
@@ -96,6 +98,7 @@ See Findings section below.
 - **Description:** The batch endpoint (`POST /queue/tasks/batch`) allows `delete` operations on any task by ID with no additional checks. Any authenticated client can delete any task, including tasks owned by (claimed by) other executors. The same applies to batch `update` operations -- there is no ownership check.
 
   Combined with the single shared API key (all clients share the same key), this means any task runner can delete or modify tasks belonging to other runners. There is no per-client authorization or ownership enforcement.
+
 - **Evidence:**
   ```typescript
   // task-handlers.ts:606-608
@@ -119,6 +122,7 @@ See Findings section below.
   The Queue API's `handleUpdateTask` and `handleUpdateStatus` do filter through `GENERAL_PATCH_FIELDS` and `STATUS_UPDATE_FIELDS` respectively, then through `toSnakeCase()` which maps from a fixed dictionary. However, `toSnakeCase()` has a fallback: `const snakeKey = CAMEL_TO_SNAKE[key] ?? key` (field-mapper.ts:56) -- if a key is not in the mapping, it passes through unchanged. This means a key like `title` (which IS in `GENERAL_PATCH_FIELDS` but NOT in `CAMEL_TO_SNAKE`) would pass through to `updateTask` as-is, which is safe. But if `GENERAL_PATCH_FIELDS` ever included a key with SQL metacharacters, the allowlist in `sprint-queries.ts` would catch it -- unless that allowlist was also updated carelessly.
 
   This is a defense-in-depth concern, not an active vulnerability.
+
 - **Evidence:**
   ```typescript
   // sprint-queries.ts:200
@@ -126,7 +130,7 @@ See Findings section below.
   ```
   ```typescript
   // field-mapper.ts:56
-  const snakeKey = CAMEL_TO_SNAKE[key] ?? key  // pass-through fallback
+  const snakeKey = CAMEL_TO_SNAKE[key] ?? key // pass-through fallback
   ```
 - **Recommendation:** Add a regex assertion at the `updateTask()` entry point:
   ```typescript
@@ -148,11 +152,20 @@ See Findings section below.
   ```typescript
   // task-handlers.ts:118
   const status = query.get('status') ?? undefined
-  const tasks = listTasks(status)  // No validation against known statuses
+  const tasks = listTasks(status) // No validation against known statuses
   ```
 - **Recommendation:** Validate `status` against the known set before querying:
   ```typescript
-  const VALID_STATUSES = new Set(['backlog', 'queued', 'blocked', 'active', 'done', 'failed', 'cancelled', 'error'])
+  const VALID_STATUSES = new Set([
+    'backlog',
+    'queued',
+    'blocked',
+    'active',
+    'done',
+    'failed',
+    'cancelled',
+    'error'
+  ])
   if (status && !VALID_STATUSES.has(status)) {
     sendJson(res, 400, { error: `Invalid status: ${status}` })
     return
@@ -173,6 +186,7 @@ See Findings section below.
   4. Internal code structure and implementation details
 
   The `GET /queue/agents` endpoint similarly exposes all agent metadata (model, repo, cost data) without scoping to the caller's tasks.
+
 - **Evidence:**
   ```typescript
   // agent-handlers.ts:38-75
@@ -200,6 +214,7 @@ See Findings section below.
   2. Task IDs and metadata for tasks the client did not create
 
   In a multi-tenant scenario (multiple task runners sharing the queue), this is an information disclosure vulnerability.
+
 - **Evidence:**
   ```typescript
   // sse-broadcaster.ts:44-53
@@ -232,11 +247,12 @@ See Findings section below.
 - **Description:** The CORS preflight handler responds to `OPTIONS` requests without authentication. While this is standard behavior for CORS preflight (browsers require it), the current implementation responds with `204` and the (now-empty) `CORS_HEADERS` to ANY path, regardless of whether the path exists. This allows unauthenticated path enumeration -- an attacker can `OPTIONS /queue/tasks` to confirm the endpoint exists (gets 204) vs `OPTIONS /nonexistent` (also gets 204, so actually this is NOT useful for enumeration since all paths return 204).
 
   With `CORS_HEADERS` now empty, the preflight response provides no useful CORS permissions, which means cross-origin requests will be blocked by browsers. This is largely a non-issue now that CORS `*` is fixed.
+
 - **Evidence:**
   ```typescript
   // router.ts:19-23
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, CORS_HEADERS)  // CORS_HEADERS = {} (no CORS headers)
+    res.writeHead(204, CORS_HEADERS) // CORS_HEADERS = {} (no CORS headers)
     res.end()
     return
   }
@@ -253,6 +269,7 @@ See Findings section below.
 - **Description:** Both `handleCreateTask` (line 174) and `handleUpdateStatus` (line 317) accept a `?skipValidation=true` query parameter that bypasses semantic spec validation checks entirely. This means any authenticated client can queue tasks with no spec, a malformed spec, or a spec that fails semantic checks. There is no audit trail showing that validation was skipped.
 
   While this is documented as intentional for programmatic use, it creates a path to queue low-quality tasks that may waste agent compute time and cost money (each agent run incurs API costs).
+
 - **Evidence:**
   ```typescript
   // task-handlers.ts:174
@@ -321,11 +338,11 @@ See Findings section below.
 ## Summary
 
 | Severity | Count |
-|----------|-------|
-| Critical | 0 |
-| High | 0 |
-| Medium | 5 |
-| Low | 5 |
+| -------- | ----- |
+| Critical | 0     |
+| High     | 0     |
+| Medium   | 5     |
+| Low      | 5     |
 
 **None found at Critical or High severity.** The Queue API has a solid security foundation: authentication is always enforced, SQL queries use parameterized statements for values, the server binds to `127.0.0.1` (localhost only), the CORS wildcard has been fixed, and request body size is limited. The remaining findings are primarily around authorization granularity (no per-client/per-task scoping), information disclosure through SSE broadcasts and error messages, and defense-in-depth hardening.
 

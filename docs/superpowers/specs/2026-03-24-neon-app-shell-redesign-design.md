@@ -10,14 +10,14 @@ Redesign BDE's app shell from a 3-tier layout (TitleBar + ActivityBar + StatusBa
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Layout style | Arc Browser (option C) | Most space-efficient, clean, modern. Icon-only sidebar maximizes content area. |
-| Header | Unified header merging TitleBar + tab bar | Eliminates wasted vertical space, provides wide drag region |
-| Sidebar | 52px icon-only with tooltips | Minimal chrome, customizable via pin/unpin |
-| StatusBar | Eliminated | Redundant — model badge moves to sidebar footer, cost to header |
-| Customization | Pin/unpin with overflow "more" menu | All features remain discoverable, users prioritize what they use |
-| Panel detachment | Out of scope (future spec) | Multi-window requires separate IPC/state architecture |
+| Decision         | Choice                                    | Rationale                                                                      |
+| ---------------- | ----------------------------------------- | ------------------------------------------------------------------------------ |
+| Layout style     | Arc Browser (option C)                    | Most space-efficient, clean, modern. Icon-only sidebar maximizes content area. |
+| Header           | Unified header merging TitleBar + tab bar | Eliminates wasted vertical space, provides wide drag region                    |
+| Sidebar          | 52px icon-only with tooltips              | Minimal chrome, customizable via pin/unpin                                     |
+| StatusBar        | Eliminated                                | Redundant — model badge moves to sidebar footer, cost to header                |
+| Customization    | Pin/unpin with overflow "more" menu       | All features remain discoverable, users prioritize what they use               |
+| Panel detachment | Out of scope (future spec)                | Multi-window requires separate IPC/state architecture                          |
 
 ## Section 1: Unified Header Bar (44px)
 
@@ -149,33 +149,33 @@ The ActivityBar becomes an ultra-slim 52px icon rail with neon treatment.
 
 ### New Components
 
-| Component | File | Responsibility |
-|-----------|------|----------------|
+| Component       | File                                                   | Responsibility                                                                                   |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | `UnifiedHeader` | `src/renderer/src/components/layout/UnifiedHeader.tsx` | Replaces TitleBar + PanelTabBar. Logo zone + tab strip + action buttons. Drag region management. |
-| `HeaderTab` | `src/renderer/src/components/layout/HeaderTab.tsx` | Single tab — glass active state, close button, status dot, drag support. |
-| `NeonSidebar` | `src/renderer/src/components/layout/NeonSidebar.tsx` | Replaces ActivityBar. 52px icon rail with pin/unpin, reorder, tooltips. |
-| `SidebarItem` | `src/renderer/src/components/layout/SidebarItem.tsx` | Single nav icon — active glow, hover glass, tooltip, right-click menu, drag reorder. |
-| `OverflowMenu` | `src/renderer/src/components/layout/OverflowMenu.tsx` | Popover for unpinned items. `GlassPanel` with pin actions. |
-| `NeonTooltip` | `src/renderer/src/components/neon/NeonTooltip.tsx` | Reusable neon-styled tooltip. Positioned right of trigger, accent-tinted, 300ms delay. |
+| `HeaderTab`     | `src/renderer/src/components/layout/HeaderTab.tsx`     | Single tab — glass active state, close button, status dot, drag support.                         |
+| `NeonSidebar`   | `src/renderer/src/components/layout/NeonSidebar.tsx`   | Replaces ActivityBar. 52px icon rail with pin/unpin, reorder, tooltips.                          |
+| `SidebarItem`   | `src/renderer/src/components/layout/SidebarItem.tsx`   | Single nav icon — active glow, hover glass, tooltip, right-click menu, drag reorder.             |
+| `OverflowMenu`  | `src/renderer/src/components/layout/OverflowMenu.tsx`  | Popover for unpinned items. `GlassPanel` with pin actions.                                       |
+| `NeonTooltip`   | `src/renderer/src/components/neon/NeonTooltip.tsx`     | Reusable neon-styled tooltip. Positioned right of trigger, accent-tinted, 300ms delay.           |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/App.tsx` | Swap TitleBar/ActivityBar/StatusBar for UnifiedHeader + NeonSidebar. Remove StatusBar. |
-| `src/renderer/src/components/panels/PanelLeaf.tsx` | Remove PanelTabBar rendering — tabs now render in UnifiedHeader. Keep view content rendering. |
-| `src/renderer/src/stores/panelLayout.ts` | Minor: PanelLeaf tab rendering logic adjustments for focused/unfocused behavior. |
-| `src/renderer/src/stores/sidebar.ts` | **New store** for sidebar pin/unpin state, persisted separately from panel layout. |
-| `src/renderer/src/assets/main.css` | Remove old TitleBar/ActivityBar/StatusBar CSS. Add neon shell styles (or create `neon-shell.css`). |
+| File                                               | Change                                                                                             |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/App.tsx`                         | Swap TitleBar/ActivityBar/StatusBar for UnifiedHeader + NeonSidebar. Remove StatusBar.             |
+| `src/renderer/src/components/panels/PanelLeaf.tsx` | Remove PanelTabBar rendering — tabs now render in UnifiedHeader. Keep view content rendering.      |
+| `src/renderer/src/stores/panelLayout.ts`           | Minor: PanelLeaf tab rendering logic adjustments for focused/unfocused behavior.                   |
+| `src/renderer/src/stores/sidebar.ts`               | **New store** for sidebar pin/unpin state, persisted separately from panel layout.                 |
+| `src/renderer/src/assets/main.css`                 | Remove old TitleBar/ActivityBar/StatusBar CSS. Add neon shell styles (or create `neon-shell.css`). |
 
 ### Deleted Components
 
-| Component | Reason |
-|-----------|--------|
-| `TitleBar.tsx` | Replaced by UnifiedHeader |
-| `ActivityBar.tsx` | Replaced by NeonSidebar |
-| `StatusBar.tsx` | Eliminated — info moved to sidebar footer and header actions |
-| `PanelTabBar.tsx` | Tabs moved into UnifiedHeader |
+| Component         | Reason                                                       |
+| ----------------- | ------------------------------------------------------------ |
+| `TitleBar.tsx`    | Replaced by UnifiedHeader                                    |
+| `ActivityBar.tsx` | Replaced by NeonSidebar                                      |
+| `StatusBar.tsx`   | Eliminated — info moved to sidebar footer and header actions |
+| `PanelTabBar.tsx` | Tabs moved into UnifiedHeader                                |
 
 ### Reused Neon Primitives
 
@@ -194,15 +194,15 @@ Sidebar customization state lives in its own store (`src/renderer/src/stores/sid
 // src/renderer/src/stores/sidebar.ts
 interface SidebarStore {
   // State
-  pinnedViews: View[]  // ordered list of pinned sidebar items
+  pinnedViews: View[] // ordered list of pinned sidebar items
 
   // Derived (computed in selectors, not stored)
   // unpinnedViews: ALL_VIEWS.filter(v => !pinnedViews.includes(v))
 
   // Actions
-  pinView(view: View): void      // add to end of pinnedViews
-  unpinView(view: View): void    // remove from pinnedViews
-  reorderViews(views: View[]): void  // set new pinned order after drag
+  pinView(view: View): void // add to end of pinnedViews
+  unpinView(view: View): void // remove from pinnedViews
+  reorderViews(views: View[]): void // set new pinned order after drag
 }
 ```
 
@@ -229,6 +229,7 @@ When the focused panel changes (click or keyboard), the header tabs update to sh
 ### Keyboard Shortcuts
 
 All existing shortcuts preserved:
+
 - ⌘1-9: Switch to view (unchanged — triggers via NeonSidebar or direct)
 - ⌘P: Command palette (unchanged)
 - ⌘\: Split panel (unchanged)
@@ -244,18 +245,18 @@ All existing shortcuts preserved:
 
 ## File Locations
 
-| What | Where |
-|------|-------|
-| UnifiedHeader | `src/renderer/src/components/layout/UnifiedHeader.tsx` |
-| HeaderTab | `src/renderer/src/components/layout/HeaderTab.tsx` |
-| NeonSidebar | `src/renderer/src/components/layout/NeonSidebar.tsx` |
-| SidebarItem | `src/renderer/src/components/layout/SidebarItem.tsx` |
-| OverflowMenu | `src/renderer/src/components/layout/OverflowMenu.tsx` |
-| NeonTooltip | `src/renderer/src/components/neon/NeonTooltip.tsx` |
-| Shell CSS | `src/renderer/src/assets/neon-shell.css` (new) |
-| Sidebar store | `src/renderer/src/stores/sidebar.ts` (new) |
-| Panel store tweaks | `src/renderer/src/stores/panelLayout.ts` |
-| App shell | `src/renderer/src/App.tsx` |
+| What               | Where                                                  |
+| ------------------ | ------------------------------------------------------ |
+| UnifiedHeader      | `src/renderer/src/components/layout/UnifiedHeader.tsx` |
+| HeaderTab          | `src/renderer/src/components/layout/HeaderTab.tsx`     |
+| NeonSidebar        | `src/renderer/src/components/layout/NeonSidebar.tsx`   |
+| SidebarItem        | `src/renderer/src/components/layout/SidebarItem.tsx`   |
+| OverflowMenu       | `src/renderer/src/components/layout/OverflowMenu.tsx`  |
+| NeonTooltip        | `src/renderer/src/components/neon/NeonTooltip.tsx`     |
+| Shell CSS          | `src/renderer/src/assets/neon-shell.css` (new)         |
+| Sidebar store      | `src/renderer/src/stores/sidebar.ts` (new)             |
+| Panel store tweaks | `src/renderer/src/stores/panelLayout.ts`               |
+| App shell          | `src/renderer/src/App.tsx`                             |
 
 ## Non-Goals
 

@@ -13,10 +13,10 @@ Two issues:
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/main/fs.ts` | In `writeMemoryFile()`: add `await mkdir(dirname(fullPath), { recursive: true })` before `writeFile()` |
-| `src/renderer/src/views/MemoryView.tsx` | Wrap `createFile()` body in `try/catch` with a `toast.error()` on failure |
+| File                                    | Change                                                                                                 |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `src/main/fs.ts`                        | In `writeMemoryFile()`: add `await mkdir(dirname(fullPath), { recursive: true })` before `writeFile()` |
+| `src/renderer/src/views/MemoryView.tsx` | Wrap `createFile()` body in `try/catch` with a `toast.error()` on failure                              |
 
 ## Implementation Notes
 

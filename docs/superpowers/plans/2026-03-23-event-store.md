@@ -18,31 +18,32 @@
 
 ### BDE (`~/projects/BDE`)
 
-| File | Role | Action |
-|------|------|--------|
-| `src/main/data/event-queries.ts` | Event DB queries | Modify -- add `insertEventBatch`, `queryEvents`, `pruneEventsByAgentIds` |
-| `src/main/data/__tests__/event-queries.test.ts` | Event query tests | Modify -- add tests for new functions |
-| `src/main/queue-api/router.ts` | HTTP router | Modify -- wire persistence into `POST /queue/tasks/:id/output`, add `GET /queue/tasks/:id/events` |
-| `src/main/queue-api/__tests__/queue-api.test.ts` | Router tests | Modify -- add tests for event persistence and new endpoint |
-| `src/main/agent-history.ts` | Agent history facade | Modify -- wire `pruneEventsByAgentIds` into `pruneOldAgents` |
-| `src/main/__tests__/agent-history.test.ts` | History tests | Modify -- verify event pruning |
-| `src/shared/queue-api-contract.ts` | API contract types | Modify -- add `TaskEventsResponse` |
+| File                                             | Role                 | Action                                                                                            |
+| ------------------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/main/data/event-queries.ts`                 | Event DB queries     | Modify -- add `insertEventBatch`, `queryEvents`, `pruneEventsByAgentIds`                          |
+| `src/main/data/__tests__/event-queries.test.ts`  | Event query tests    | Modify -- add tests for new functions                                                             |
+| `src/main/queue-api/router.ts`                   | HTTP router          | Modify -- wire persistence into `POST /queue/tasks/:id/output`, add `GET /queue/tasks/:id/events` |
+| `src/main/queue-api/__tests__/queue-api.test.ts` | Router tests         | Modify -- add tests for event persistence and new endpoint                                        |
+| `src/main/agent-history.ts`                      | Agent history facade | Modify -- wire `pruneEventsByAgentIds` into `pruneOldAgents`                                      |
+| `src/main/__tests__/agent-history.test.ts`       | History tests        | Modify -- verify event pruning                                                                    |
+| `src/shared/queue-api-contract.ts`               | API contract types   | Modify -- add `TaskEventsResponse`                                                                |
 
 ### claude-chat-service (`~/projects/claude-chat-service`)
 
-| File | Role | Action |
-|------|------|--------|
-| `src/adapters/sprint/bde-client.ts` | HTTP client for BDE Queue API | Modify -- add `fetchTaskEvents` |
-| `src/adapters/sprint/bde-client.test.ts` | Client tests | Modify -- add tests for `fetchTaskEvents` |
-| `src/adapters/sprint/tools.ts` | MCP tool definitions | Modify -- add `get_task_events` |
-| `src/adapters/sprint/tools.test.ts` | Tool handler tests | Modify -- add tests for `get_task_events` |
-| `src/adapters/sprint/index.ts` | MCP server wiring | Verify tool is registered (Plan 1 Task 11 sets up the `agentTools` array and `isBdeConfigured()` guard in `index.ts` — if Plan 1 is not yet complete, this wiring must be done here) |
+| File                                     | Role                          | Action                                                                                                                                                                               |
+| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/adapters/sprint/bde-client.ts`      | HTTP client for BDE Queue API | Modify -- add `fetchTaskEvents`                                                                                                                                                      |
+| `src/adapters/sprint/bde-client.test.ts` | Client tests                  | Modify -- add tests for `fetchTaskEvents`                                                                                                                                            |
+| `src/adapters/sprint/tools.ts`           | MCP tool definitions          | Modify -- add `get_task_events`                                                                                                                                                      |
+| `src/adapters/sprint/tools.test.ts`      | Tool handler tests            | Modify -- add tests for `get_task_events`                                                                                                                                            |
+| `src/adapters/sprint/index.ts`           | MCP server wiring             | Verify tool is registered (Plan 1 Task 11 sets up the `agentTools` array and `isBdeConfigured()` guard in `index.ts` — if Plan 1 is not yet complete, this wiring must be done here) |
 
 ---
 
 ## Task 1: `insertEventBatch` in `event-queries.ts`
 
 **Files:**
+
 - Modify: `~/projects/BDE/src/main/data/event-queries.ts`
 - Modify: `~/projects/BDE/src/main/data/__tests__/event-queries.test.ts`
 
@@ -54,9 +55,24 @@ In `src/main/data/__tests__/event-queries.test.ts`, add `insertEventBatch` to th
 describe('insertEventBatch', () => {
   it('inserts multiple events in a single transaction', () => {
     const events = [
-      { agentId: 'agent-1', eventType: 'agent:started', payload: '{"type":"agent:started","model":"opus"}', timestamp: 1000 },
-      { agentId: 'agent-1', eventType: 'agent:tool_call', payload: '{"type":"agent:tool_call","tool":"Bash"}', timestamp: 2000 },
-      { agentId: 'agent-1', eventType: 'agent:completed', payload: '{"type":"agent:completed","exitCode":0}', timestamp: 3000 },
+      {
+        agentId: 'agent-1',
+        eventType: 'agent:started',
+        payload: '{"type":"agent:started","model":"opus"}',
+        timestamp: 1000
+      },
+      {
+        agentId: 'agent-1',
+        eventType: 'agent:tool_call',
+        payload: '{"type":"agent:tool_call","tool":"Bash"}',
+        timestamp: 2000
+      },
+      {
+        agentId: 'agent-1',
+        eventType: 'agent:completed',
+        payload: '{"type":"agent:completed","exitCode":0}',
+        timestamp: 3000
+      }
     ]
 
     insertEventBatch(db, events)
@@ -80,7 +96,7 @@ describe('insertEventBatch', () => {
     // The batch itself should succeed since all fields are valid
     const events = [
       { agentId: 'agent-1', eventType: 'agent:started', payload: '{"a":1}', timestamp: 1000 },
-      { agentId: 'agent-1', eventType: 'agent:text', payload: '{"b":2}', timestamp: 2000 },
+      { agentId: 'agent-1', eventType: 'agent:text', payload: '{"b":2}', timestamp: 2000 }
     ]
     insertEventBatch(db, events)
 
@@ -105,10 +121,7 @@ export interface EventBatchItem {
   timestamp: number
 }
 
-export function insertEventBatch(
-  db: Database.Database,
-  events: EventBatchItem[]
-): void {
+export function insertEventBatch(db: Database.Database, events: EventBatchItem[]): void {
   if (events.length === 0) return
 
   const insert = db.prepare(
@@ -139,6 +152,7 @@ git commit -m "feat: add insertEventBatch for transactional bulk event insert"
 ## Task 2: `queryEvents` in `event-queries.ts`
 
 **Files:**
+
 - Modify: `~/projects/BDE/src/main/data/event-queries.ts`
 - Modify: `~/projects/BDE/src/main/data/__tests__/event-queries.test.ts`
 
@@ -167,7 +181,7 @@ describe('queryEvents', () => {
   it('filters by event type', () => {
     const result = queryEvents(db, { agentId: 'agent-1', eventType: 'agent:tool_call' })
     expect(result.events).toHaveLength(2)
-    expect(result.events.every(e => e.event_type === 'agent:tool_call')).toBe(true)
+    expect(result.events.every((e) => e.event_type === 'agent:tool_call')).toBe(true)
   })
 
   it('supports afterTimestamp for pagination', () => {
@@ -228,10 +242,7 @@ export interface QueryEventsResult {
   hasMore: boolean
 }
 
-export function queryEvents(
-  db: Database.Database,
-  opts: QueryEventsOptions
-): QueryEventsResult {
+export function queryEvents(db: Database.Database, opts: QueryEventsOptions): QueryEventsResult {
   const conditions: string[] = []
   const params: unknown[] = []
   const limit = opts.limit ?? 200
@@ -283,6 +294,7 @@ git commit -m "feat: add queryEvents with filtering, pagination, and multi-agent
 ## Task 3: `pruneEventsByAgentIds` in `event-queries.ts`
 
 **Files:**
+
 - Modify: `~/projects/BDE/src/main/data/event-queries.ts`
 - Modify: `~/projects/BDE/src/main/data/__tests__/event-queries.test.ts`
 
@@ -326,16 +338,11 @@ Expect: FAIL -- `pruneEventsByAgentIds` is not exported.
 In `src/main/data/event-queries.ts`, add:
 
 ```typescript
-export function pruneEventsByAgentIds(
-  db: Database.Database,
-  agentIds: string[]
-): void {
+export function pruneEventsByAgentIds(db: Database.Database, agentIds: string[]): void {
   if (agentIds.length === 0) return
 
   const placeholders = agentIds.map(() => '?').join(', ')
-  db.prepare(`DELETE FROM agent_events WHERE agent_id IN (${placeholders})`).run(
-    ...agentIds
-  )
+  db.prepare(`DELETE FROM agent_events WHERE agent_id IN (${placeholders})`).run(...agentIds)
 }
 ```
 
@@ -354,6 +361,7 @@ git commit -m "feat: add pruneEventsByAgentIds for targeted event cleanup"
 ## Task 4: Wire Event Persistence into `POST /queue/tasks/:id/output` Handler
 
 **Files:**
+
 - Modify: `~/projects/BDE/src/main/queue-api/router.ts`
 - Modify: `~/projects/BDE/src/main/queue-api/__tests__/queue-api.test.ts`
 
@@ -365,7 +373,7 @@ In `src/main/queue-api/__tests__/queue-api.test.ts`, add the mock for event-quer
 const mockInsertEventBatch = vi.fn()
 
 vi.mock('../../data/event-queries', () => ({
-  insertEventBatch: (...args: unknown[]) => mockInsertEventBatch(...args),
+  insertEventBatch: (...args: unknown[]) => mockInsertEventBatch(...args)
 }))
 ```
 
@@ -376,7 +384,12 @@ describe('POST /queue/tasks/:id/output - event persistence', () => {
   it('persists events to SQLite via insertEventBatch', async () => {
     const events = [
       { type: 'agent:started', model: 'opus', timestamp: '2025-01-01T00:00:00Z' },
-      { type: 'agent:tool_call', tool: 'Bash', summary: 'run tests', timestamp: '2025-01-01T00:01:00Z' },
+      {
+        type: 'agent:tool_call',
+        tool: 'Bash',
+        summary: 'run tests',
+        timestamp: '2025-01-01T00:01:00Z'
+      }
     ]
     const res = await request('POST', '/queue/tasks/task-1/output', { events })
     expect(res.status).toBe(200)
@@ -385,12 +398,12 @@ describe('POST /queue/tasks/:id/output - event persistence', () => {
       expect.arrayContaining([
         expect.objectContaining({
           agentId: 'task-1',
-          eventType: 'agent:started',
+          eventType: 'agent:started'
         }),
         expect.objectContaining({
           agentId: 'task-1',
-          eventType: 'agent:tool_call',
-        }),
+          eventType: 'agent:tool_call'
+        })
       ])
     )
   })
@@ -423,26 +436,33 @@ In the `handleTaskOutput` function, after the SSE broadcast loop, add event pers
 ```typescript
 // Persist curated events to SQLite for later retrieval
 const CURATED_TYPES = new Set([
-  'agent:started', 'agent:tool_call', 'agent:tool_result',
-  'agent:rate_limited', 'agent:error', 'agent:completed',
+  'agent:started',
+  'agent:tool_call',
+  'agent:tool_result',
+  'agent:rate_limited',
+  'agent:error',
+  'agent:completed'
 ])
 try {
   // Use agentId from request body if provided, otherwise fall back to taskId
-  const agentId = (body as Record<string, unknown>).agentId as string ?? taskId
+  const agentId = ((body as Record<string, unknown>).agentId as string) ?? taskId
   const dbEvents = events
-    .filter((e): e is Record<string, unknown> =>
-      typeof e === 'object' && e !== null &&
-      CURATED_TYPES.has(String((e as Record<string, unknown>).type))
+    .filter(
+      (e): e is Record<string, unknown> =>
+        typeof e === 'object' &&
+        e !== null &&
+        CURATED_TYPES.has(String((e as Record<string, unknown>).type))
     )
     .map((e) => ({
       agentId,
       eventType: String((e as Record<string, unknown>).type ?? 'unknown'),
       payload: JSON.stringify(e),
-      timestamp: typeof (e as Record<string, unknown>).timestamp === 'string'
-        ? new Date((e as Record<string, unknown>).timestamp as string).getTime()
-        : typeof (e as Record<string, unknown>).timestamp === 'number'
-          ? (e as Record<string, unknown>).timestamp as number
-          : Date.now(),
+      timestamp:
+        typeof (e as Record<string, unknown>).timestamp === 'string'
+          ? new Date((e as Record<string, unknown>).timestamp as string).getTime()
+          : typeof (e as Record<string, unknown>).timestamp === 'number'
+            ? ((e as Record<string, unknown>).timestamp as number)
+            : Date.now()
     }))
   if (dbEvents.length > 0) {
     insertEventBatch(getDb(), dbEvents)
@@ -470,6 +490,7 @@ git commit -m "feat: persist visibility events to SQLite in POST /queue/tasks/:i
 ## Task 5: `GET /queue/tasks/:id/events` Endpoint
 
 **Files:**
+
 - Modify: `~/projects/BDE/src/main/queue-api/router.ts`
 - Modify: `~/projects/BDE/src/main/queue-api/__tests__/queue-api.test.ts`
 
@@ -483,7 +504,7 @@ const mockQueryEvents = vi.fn()
 // REPLACE the existing event-queries mock from Task 4 (only one vi.mock per module allowed):
 vi.mock('../../data/event-queries', () => ({
   insertEventBatch: (...args: unknown[]) => mockInsertEventBatch(...args),
-  queryEvents: (...args: unknown[]) => mockQueryEvents(...args),
+  queryEvents: (...args: unknown[]) => mockQueryEvents(...args)
 }))
 ```
 
@@ -494,10 +515,22 @@ describe('GET /queue/tasks/:id/events', () => {
   it('returns events for a task', async () => {
     mockQueryEvents.mockReturnValue({
       events: [
-        { id: 1, agent_id: 'task-1', event_type: 'agent:started', payload: '{"type":"agent:started","model":"opus"}', timestamp: 1000 },
-        { id: 2, agent_id: 'task-1', event_type: 'agent:tool_call', payload: '{"type":"agent:tool_call","tool":"Bash"}', timestamp: 2000 },
+        {
+          id: 1,
+          agent_id: 'task-1',
+          event_type: 'agent:started',
+          payload: '{"type":"agent:started","model":"opus"}',
+          timestamp: 1000
+        },
+        {
+          id: 2,
+          agent_id: 'task-1',
+          event_type: 'agent:tool_call',
+          payload: '{"type":"agent:tool_call","tool":"Bash"}',
+          timestamp: 2000
+        }
       ],
-      hasMore: false,
+      hasMore: false
     })
 
     const res = await request('GET', '/queue/tasks/task-1/events')
@@ -579,10 +612,7 @@ async function handleGetTaskEvents(
   const afterTimestamp = query.has('afterTimestamp')
     ? parseInt(query.get('afterTimestamp')!, 10)
     : undefined
-  const limit = Math.min(
-    Math.max(parseInt(query.get('limit') ?? '200', 10) || 200, 1),
-    1000
-  )
+  const limit = Math.min(Math.max(parseInt(query.get('limit') ?? '200', 10) || 200, 1), 1000)
 
   // Query by taskId -- events stored with agentId from request body
   // may use either agent run ID or task ID as the key.
@@ -592,7 +622,7 @@ async function handleGetTaskEvents(
     agentId: taskId,
     eventType,
     afterTimestamp,
-    limit,
+    limit
   })
 
   sendJson(res, 200, {
@@ -601,9 +631,9 @@ async function handleGetTaskEvents(
       agentId: e.agent_id,
       eventType: e.event_type,
       payload: JSON.parse(e.payload),
-      timestamp: e.timestamp,
+      timestamp: e.timestamp
     })),
-    hasMore: result.hasMore,
+    hasMore: result.hasMore
   })
 }
 ```
@@ -623,6 +653,7 @@ git commit -m "feat: add GET /queue/tasks/:id/events endpoint"
 ## Task 6: Wire `pruneEventsByAgentIds` into `pruneOldAgents`
 
 **Files:**
+
 - Modify: `~/projects/BDE/src/main/agent-history.ts`
 - Modify: `~/projects/BDE/src/main/__tests__/agent-history.test.ts`
 
@@ -651,7 +682,7 @@ describe('pruneOldAgents cleans up events', () => {
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
-        sprintTaskId: null,
+        sprintTaskId: null
       })
     }
 
@@ -687,7 +718,7 @@ In the `pruneOldAgents` function, add event cleanup right before the `deleteAgen
 
 ```typescript
 // Clean up events for agents being removed
-const agentIdsToRemove = toRemove.map(r => r.id)
+const agentIdsToRemove = toRemove.map((r) => r.id)
 if (agentIdsToRemove.length > 0) {
   pruneEventsByAgentIds(db, agentIdsToRemove)
 }
@@ -708,6 +739,7 @@ git commit -m "feat: prune events alongside agent records in pruneOldAgents"
 ## Task 7: Add `TaskEventsResponse` to `queue-api-contract.ts`
 
 **Files:**
+
 - Modify: `~/projects/BDE/src/shared/queue-api-contract.ts`
 
 - [ ] **Step 1: Add the response type**
@@ -750,6 +782,7 @@ git commit -m "feat: add TaskEventsResponse to queue-api-contract"
 **Dependency:** Requires Plan 1 Task 8 (bde-client.ts must exist).
 
 **Files:**
+
 - Modify: `~/projects/claude-chat-service/src/adapters/sprint/bde-client.ts`
 - Modify: `~/projects/claude-chat-service/src/adapters/sprint/bde-client.test.ts`
 
@@ -762,13 +795,26 @@ describe('fetchTaskEvents', () => {
   it('calls GET /queue/tasks/:id/events', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({
-        events: [
-          { id: 1, agentId: 'task-1', eventType: 'agent:started', payload: { type: 'agent:started', model: 'opus' }, timestamp: 1000 },
-          { id: 2, agentId: 'task-1', eventType: 'agent:tool_call', payload: { type: 'agent:tool_call', tool: 'Bash' }, timestamp: 2000 },
-        ],
-        hasMore: false,
-      }),
+      json: () =>
+        Promise.resolve({
+          events: [
+            {
+              id: 1,
+              agentId: 'task-1',
+              eventType: 'agent:started',
+              payload: { type: 'agent:started', model: 'opus' },
+              timestamp: 1000
+            },
+            {
+              id: 2,
+              agentId: 'task-1',
+              eventType: 'agent:tool_call',
+              payload: { type: 'agent:tool_call', tool: 'Bash' },
+              timestamp: 2000
+            }
+          ],
+          hasMore: false
+        })
     })
     vi.stubGlobal('fetch', mockFetch)
 
@@ -777,8 +823,8 @@ describe('fetchTaskEvents', () => {
       'http://127.0.0.1:18790/queue/tasks/task-1/events?limit=200',
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: 'Bearer test-key',
-        }),
+          Authorization: 'Bearer test-key'
+        })
       })
     )
     expect(result.events).toHaveLength(2)
@@ -788,7 +834,7 @@ describe('fetchTaskEvents', () => {
   it('passes eventType filter', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ events: [], hasMore: false }),
+      json: () => Promise.resolve({ events: [], hasMore: false })
     })
     vi.stubGlobal('fetch', mockFetch)
 
@@ -800,11 +846,14 @@ describe('fetchTaskEvents', () => {
   })
 
   it('throws on non-OK response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      text: () => Promise.resolve('Server error'),
-    }))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: () => Promise.resolve('Server error')
+      })
+    )
 
     await expect(fetchTaskEvents('task-1')).rejects.toThrow('BDE API error 500')
   })
@@ -872,6 +921,7 @@ git commit -m "feat: add fetchTaskEvents to bde-client.ts"
 ## Task 9: `get_task_events` MCP Tool
 
 **Files:**
+
 - Modify: `~/projects/claude-chat-service/src/adapters/sprint/tools.ts`
 - Modify: `~/projects/claude-chat-service/src/adapters/sprint/tools.test.ts`
 
@@ -884,7 +934,7 @@ vi.mock('./bde-client.js', () => ({
   fetchAgentRuns: vi.fn(),
   fetchAgentLog: vi.fn(),
   fetchTaskEvents: vi.fn(),
-  isBdeConfigured: vi.fn().mockReturnValue(true),
+  isBdeConfigured: vi.fn().mockReturnValue(true)
 }))
 
 import { fetchAgentRuns, fetchAgentLog, fetchTaskEvents } from './bde-client.js'
@@ -897,11 +947,29 @@ describe('get_task_events', () => {
   it('formats events as a structured timeline', async () => {
     vi.mocked(fetchTaskEvents).mockResolvedValue({
       events: [
-        { id: 1, agentId: 'task-1', eventType: 'agent:started', payload: { type: 'agent:started', model: 'opus' }, timestamp: 1000 },
-        { id: 2, agentId: 'task-1', eventType: 'agent:tool_call', payload: { type: 'agent:tool_call', tool: 'Bash', summary: 'npm test' }, timestamp: 2000 },
-        { id: 3, agentId: 'task-1', eventType: 'agent:completed', payload: { type: 'agent:completed', exitCode: 0, costUsd: 0.45 }, timestamp: 3000 },
+        {
+          id: 1,
+          agentId: 'task-1',
+          eventType: 'agent:started',
+          payload: { type: 'agent:started', model: 'opus' },
+          timestamp: 1000
+        },
+        {
+          id: 2,
+          agentId: 'task-1',
+          eventType: 'agent:tool_call',
+          payload: { type: 'agent:tool_call', tool: 'Bash', summary: 'npm test' },
+          timestamp: 2000
+        },
+        {
+          id: 3,
+          agentId: 'task-1',
+          eventType: 'agent:completed',
+          payload: { type: 'agent:completed', exitCode: 0, costUsd: 0.45 },
+          timestamp: 3000
+        }
       ],
-      hasMore: false,
+      hasMore: false
     })
 
     const result = await sprintToolHandlers.get_task_events({ taskId: 'task-1' })
@@ -925,7 +993,10 @@ describe('get_task_events', () => {
   it('passes eventType filter', async () => {
     vi.mocked(fetchTaskEvents).mockResolvedValue({ events: [], hasMore: false })
     await sprintToolHandlers.get_task_events({ taskId: 'task-1', eventType: 'agent:tool_call' })
-    expect(fetchTaskEvents).toHaveBeenCalledWith('task-1', expect.objectContaining({ eventType: 'agent:tool_call' }))
+    expect(fetchTaskEvents).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ eventType: 'agent:tool_call' })
+    )
   })
 })
 ```
@@ -1024,6 +1095,7 @@ git commit -m "feat: add get_task_events MCP tool"
 ## Task 10: Wire Tool into MCP Server
 
 **Files:**
+
 - Modify: `~/projects/claude-chat-service/src/adapters/sprint/index.ts` (if not already done)
 
 - [ ] **Step 1: Verify `get_task_events` is in the `agentTools` array**

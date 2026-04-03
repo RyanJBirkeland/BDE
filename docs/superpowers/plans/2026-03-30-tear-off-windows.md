@@ -14,35 +14,36 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/main/tearoff-manager.ts` | Create | Window lifecycle, IPC handlers, bounds persistence |
-| `src/main/index.ts` | Modify (lines 44-63, 92-94, 193-205) | Extract shared webPreferences, register tearoff handlers, quit hooks |
-| `src/shared/ipc-channels.ts` | Modify (lines 290-296, 528-546) | Add `TearoffChannels` interface |
-| `src/preload/index.ts` | Modify (lines 21-285) | Expose tearoff IPC methods |
-| `src/preload/index.d.ts` | Modify (lines 21-252) | Type declarations for tearoff API |
-| `src/renderer/src/App.tsx` | Modify (lines 152-240, 251-287) | Query param routing, suppress shortcuts in tearoff |
-| `src/renderer/src/components/layout/TearoffShell.tsx` | Create | Minimal single-view shell for tear-off windows |
-| `src/renderer/src/hooks/useTearoffDrag.ts` | Create | Drag boundary detection + screen coordinate tracking |
-| `src/renderer/src/components/layout/UnifiedHeader.tsx` | Modify | Wire useTearoffDrag into tab drag events |
-| `src/renderer/src/stores/panelLayout.ts` | Modify (lines 382-386) | Last-tab replacement with dashboard |
-| `src/renderer/src/stores/theme.ts` | Modify (lines 27-42) | Cross-window theme sync via storage event |
-| `src/renderer/src/assets/tearoff-shell.css` | Create | Styles for TearoffShell header |
+| File                                                   | Action                               | Responsibility                                                       |
+| ------------------------------------------------------ | ------------------------------------ | -------------------------------------------------------------------- |
+| `src/main/tearoff-manager.ts`                          | Create                               | Window lifecycle, IPC handlers, bounds persistence                   |
+| `src/main/index.ts`                                    | Modify (lines 44-63, 92-94, 193-205) | Extract shared webPreferences, register tearoff handlers, quit hooks |
+| `src/shared/ipc-channels.ts`                           | Modify (lines 290-296, 528-546)      | Add `TearoffChannels` interface                                      |
+| `src/preload/index.ts`                                 | Modify (lines 21-285)                | Expose tearoff IPC methods                                           |
+| `src/preload/index.d.ts`                               | Modify (lines 21-252)                | Type declarations for tearoff API                                    |
+| `src/renderer/src/App.tsx`                             | Modify (lines 152-240, 251-287)      | Query param routing, suppress shortcuts in tearoff                   |
+| `src/renderer/src/components/layout/TearoffShell.tsx`  | Create                               | Minimal single-view shell for tear-off windows                       |
+| `src/renderer/src/hooks/useTearoffDrag.ts`             | Create                               | Drag boundary detection + screen coordinate tracking                 |
+| `src/renderer/src/components/layout/UnifiedHeader.tsx` | Modify                               | Wire useTearoffDrag into tab drag events                             |
+| `src/renderer/src/stores/panelLayout.ts`               | Modify (lines 382-386)               | Last-tab replacement with dashboard                                  |
+| `src/renderer/src/stores/theme.ts`                     | Modify (lines 27-42)                 | Cross-window theme sync via storage event                            |
+| `src/renderer/src/assets/tearoff-shell.css`            | Create                               | Styles for TearoffShell header                                       |
 
 **Test files:**
 
-| File | Tests |
-|------|-------|
-| `src/main/__tests__/tearoff-manager.test.ts` | Window creation, close flow, timeout, bounds, quit |
-| `src/renderer/src/hooks/__tests__/useTearoffDrag.test.ts` | State machine transitions, timer logic |
+| File                                                                 | Tests                                               |
+| -------------------------------------------------------------------- | --------------------------------------------------- |
+| `src/main/__tests__/tearoff-manager.test.ts`                         | Window creation, close flow, timeout, bounds, quit  |
+| `src/renderer/src/hooks/__tests__/useTearoffDrag.test.ts`            | State machine transitions, timer logic              |
 | `src/renderer/src/components/layout/__tests__/TearoffShell.test.tsx` | View rendering, return button, shortcut suppression |
-| `src/main/__tests__/integration/ipc-handlers-integration.test.ts` | Update handler count |
+| `src/main/__tests__/integration/ipc-handlers-integration.test.ts`    | Update handler count                                |
 
 ---
 
 ### Task 1: IPC Channel Definitions
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts:290-296,528-546`
 
 - [ ] **Step 1: Add TearoffChannels interface**
@@ -52,7 +53,15 @@ In `src/shared/ipc-channels.ts`, after the existing `WindowChannels` interface (
 ```typescript
 export interface TearoffChannels {
   'tearoff:create': {
-    args: [{ view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }]
+    args: [
+      {
+        view: string
+        screenX: number
+        screenY: number
+        sourcePanelId: string
+        sourceTabIndex: number
+      }
+    ]
     result: { windowId: string }
   }
   'tearoff:closeConfirmed': {
@@ -87,6 +96,7 @@ git commit -m "feat(tearoff): add IPC channel type definitions"
 ### Task 2: Preload Bridge
 
 **Files:**
+
 - Modify: `src/preload/index.ts`
 - Modify: `src/preload/index.d.ts`
 
@@ -152,6 +162,7 @@ git commit -m "feat(tearoff): expose tearoff IPC methods in preload bridge"
 ### Task 3: Tearoff Manager (Main Process)
 
 **Files:**
+
 - Create: `src/main/tearoff-manager.ts`
 - Create: `src/main/__tests__/tearoff-manager.test.ts`
 
@@ -314,13 +325,16 @@ function createTearoffWindow(payload: {
     }, 5000)
 
     // Wait for response (one-time)
-    ipcMain.once(`tearoff:closeResponse:${windowId}`, (_event, response: { action: 'return' | 'close'; remember: boolean }) => {
-      clearTimeout(timeout)
-      if (response.remember) {
-        setSetting('tearoff.closeAction', response.action)
+    ipcMain.once(
+      `tearoff:closeResponse:${windowId}`,
+      (_event, response: { action: 'return' | 'close'; remember: boolean }) => {
+        clearTimeout(timeout)
+        if (response.remember) {
+          setSetting('tearoff.closeAction', response.action)
+        }
+        handleCloseAction(windowId, response.action)
       }
-      handleCloseAction(windowId, response.action)
-    })
+    )
   })
 
   // Notify main window to remove the tab
@@ -375,6 +389,7 @@ export function closeTearoffWindows(): void {
 - [ ] **Step 4: Write real tests**
 
 Replace placeholder test in `src/main/__tests__/tearoff-manager.test.ts` with tests covering:
+
 - `createTearoffWindow` returns windowId
 - Window loads correct URL with query params
 - `handleCloseAction('return')` sends `tearoff:tabReturned` to main window
@@ -399,6 +414,7 @@ git commit -m "feat(tearoff): main process window manager with close flow"
 ### Task 4: Wire Tearoff Manager into Main Process
 
 **Files:**
+
 - Modify: `src/main/index.ts:44-63,92-94,193-205`
 
 - [ ] **Step 1: Extract shared webPreferences**
@@ -406,7 +422,12 @@ git commit -m "feat(tearoff): main process window manager with close flow"
 In `src/main/index.ts`, import `SHARED_WEB_PREFERENCES` from `tearoff-manager` and use it in `createWindow()`:
 
 ```typescript
-import { registerTearoffHandlers, closeTearoffWindows, setQuitting, SHARED_WEB_PREFERENCES } from './tearoff-manager'
+import {
+  registerTearoffHandlers,
+  closeTearoffWindows,
+  setQuitting,
+  SHARED_WEB_PREFERENCES
+} from './tearoff-manager'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -454,6 +475,7 @@ git commit -m "feat(tearoff): wire tearoff manager into app lifecycle"
 ### Task 5: TearoffShell Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/layout/TearoffShell.tsx`
 - Create: `src/renderer/src/assets/tearoff-shell.css`
 - Create: `src/renderer/src/components/layout/__tests__/TearoffShell.test.tsx`
@@ -559,7 +581,9 @@ Create `src/renderer/src/assets/tearoff-shell.css`:
   border-radius: 4px;
   color: var(--neon-text-dim);
   cursor: pointer;
-  transition: color 100ms ease, background 100ms ease;
+  transition:
+    color 100ms ease,
+    background 100ms ease;
 }
 
 .tearoff-shell__btn:hover {
@@ -695,6 +719,7 @@ git commit -m "feat(tearoff): TearoffShell component with close dialog"
 ### Task 6: Query Parameter Routing in App.tsx
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx:152-240,251-287`
 
 - [ ] **Step 1: Add tearoff detection at top of App component**
@@ -739,6 +764,7 @@ git commit -m "feat(tearoff): query param routing in App.tsx"
 ### Task 7: useTearoffDrag Hook
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/useTearoffDrag.ts`
 - Create: `src/renderer/src/hooks/__tests__/useTearoffDrag.test.ts`
 
@@ -747,6 +773,7 @@ git commit -m "feat(tearoff): query param routing in App.tsx"
 Create `src/renderer/src/hooks/__tests__/useTearoffDrag.test.ts`:
 
 Test the core logic functions (not React hooks — extract pure functions):
+
 - `shouldCreateTearoff(state)` → true when timer expired and dragData is set
 - Timer start/cancel flow
 - `tearoffCreated` flag suppresses dragend handling
@@ -860,6 +887,7 @@ git commit -m "feat(tearoff): useTearoffDrag hook with boundary detection"
 ### Task 8: Wire Drag Hook into Header Tabs
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/UnifiedHeader.tsx`
 
 - [ ] **Step 1: Import and use useTearoffDrag**
@@ -941,6 +969,7 @@ git commit -m "feat(tearoff): wire drag hook into header tabs + IPC listeners"
 ### Task 9: Theme Sync Across Windows
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/theme.ts:27-42`
 
 - [ ] **Step 1: Add storage event listener**
@@ -977,6 +1006,7 @@ git commit -m "feat(tearoff): cross-window theme sync via storage event"
 ### Task 10: Update Handler Count Tests + Integration
 
 **Files:**
+
 - Modify: `src/main/__tests__/integration/ipc-handlers-integration.test.ts`
 - Modify: `src/main/handlers/__tests__/` (any handler count assertions)
 

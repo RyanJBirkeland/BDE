@@ -10,17 +10,17 @@
 
 ### Previously Reported — Now Fixed
 
-| # | Issue | Status |
-|---|-------|--------|
+| #     | Issue                                                                                                                                                                                                                            | Status    |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | SEC-5 | **CORS `*` on auth-protected localhost API** — `helpers.ts` line 57 now exports `CORS_HEADERS = {}` with a comment explaining the removal. The wildcard `Access-Control-Allow-Origin: *` has been replaced with an empty object. | **Fixed** |
 
 ### Previously Reported — Still Open
 
-| # | Issue | Status |
-|---|-------|--------|
-| ARCH-2 | **Repository pattern inconsistently applied** — Queue API `task-handlers.ts` still imports `sprint-queries` directly (lines 7-18) rather than going through `ISprintTaskRepository`. This means Queue API writes do not trigger the same notification side effects as agent manager writes. | Still open |
+| #                                        | Issue                                                                                                                                                                                                                                                                                           | Status     |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| ARCH-2                                   | **Repository pattern inconsistently applied** — Queue API `task-handlers.ts` still imports `sprint-queries` directly (lines 7-18) rather than going through `ISprintTaskRepository`. This means Queue API writes do not trigger the same notification side effects as agent manager writes.     | Still open |
 | main-process-ax 4.8 / main-process-pm M1 | **Stale "Supabase proxy" JSDoc in server.ts** — `server.ts` line 3 still reads `"Queue API HTTP server — lightweight Supabase proxy on port 18790"`. BDE migrated to local SQLite; this is no longer a Supabase proxy. Misleading for anyone reading the code or API consumers checking source. | Still open |
-| main-process-sd C4 | **SSE token via query-string exposure** — `checkAuth()` in `helpers.ts` lines 30-35 accepts `?token=` query param. This is documented as accepted risk for SSE clients that cannot set headers, but the token is logged in access logs and browser history. No change since March 28. | Still open |
+| main-process-sd C4                       | **SSE token via query-string exposure** — `checkAuth()` in `helpers.ts` lines 30-35 accepts `?token=` query param. This is documented as accepted risk for SSE clients that cannot set headers, but the token is logged in access logs and browser history. No change since March 28.           | Still open |
 
 ### New Findings
 
@@ -87,7 +87,7 @@ See below.
 - **Description:** `handleUpdateTask` and `handleUpdateStatus` catch errors from `updateTask()` and return `500` with the actual error message (e.g., `"Failed to update task abc: UNIQUE constraint failed"`). But `handleHealth`, `handleListTasks`, `handleGetTask`, `handleCreateTask`, `handleClaim`, and `handleRelease` do NOT catch errors from their query calls — they fall through to the global handler in `server.ts` which returns a generic `"Internal server error"`. This means:
   - For update operations: consumers get specific error messages (potentially leaking internal details)
   - For all other operations: consumers get an opaque `"Internal server error"`
-  The inconsistency makes debugging harder and the specific messages may leak SQLite internals.
+    The inconsistency makes debugging harder and the specific messages may leak SQLite internals.
 - **Evidence:**
   - `handleUpdateTask` line 278: `error: \`Failed to update task ${id}: ${err.message}\`` — specific
   - `handleHealth` has no try/catch — falls to server.ts line 35: `{ error: 'Internal server error' }` — generic
@@ -173,22 +173,24 @@ See below.
 
 ## Summary
 
-| Severity | Count |
-|----------|-------|
+| Severity | Count      |
+| -------- | ---------- |
 | Critical | None found |
-| High | 1 |
-| Medium | 4 |
-| Low | 8 |
+| High     | 1          |
+| Medium   | 4          |
+| Low      | 8          |
 
 **Total findings:** 13
 
 **Key themes:**
+
 1. **Field naming inconsistency** (QA-UX-1) is the highest-impact consumer-facing issue — snake_case vs camelCase varies by endpoint.
 2. **Silent field dropping** (QA-UX-2) can cause consumers to believe mutations succeeded when key fields were ignored.
 3. **Error message quality** varies widely — some endpoints return specific actionable messages while others return opaque `"Internal server error"` (QA-UX-5, QA-UX-6).
 4. **Missing REST conventions** — no individual DELETE, batch always returns 200, output endpoint doesn't validate task existence (QA-UX-4, QA-UX-11, QA-UX-12).
 
 **Positive notes:**
+
 - Error response format is consistently JSON `{ error: "..." }` across all endpoints — no plain text or empty responses.
 - Auth handling is solid with clear 401 vs 403 differentiation.
 - Dependency validation (cycle detection, existence checks) returns helpful specific messages.

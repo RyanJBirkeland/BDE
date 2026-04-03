@@ -14,31 +14,32 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/shared/ipc-channels.ts` | Modify (lines 299-308) | Add 7 cross-window drag channels to TearoffChannels |
-| `src/preload/index.ts` | Modify (lines 265-288) | Add drag IPC methods to tearoff namespace |
-| `src/preload/index.d.ts` | Modify (lines 233-241) | Type declarations for new methods |
-| `src/main/tearoff-manager.ts` | Modify (lines 166-313) | Add drag coordinator (polling, relay, cancel) |
-| `src/renderer/src/hooks/useTearoffDrag.ts` | Modify (lines 59-73) | Cross-window branching in timer-fires logic |
-| `src/renderer/src/hooks/useCrossWindowDrop.ts` | Create | Hook to receive cross-window drags |
-| `src/renderer/src/components/panels/CrossWindowDropOverlay.tsx` | Create | Full-window overlay with 5-zone targeting + pointerup capture |
-| `src/renderer/src/App.tsx` | Modify (lines 140-157) | Mount useCrossWindowDrop, listen for crossWindowDrop |
-| `src/renderer/src/components/layout/TearoffShell.tsx` | Modify (lines 92-133) | Mount useCrossWindowDrop, handle dragDone → close |
+| File                                                            | Action                 | Responsibility                                                |
+| --------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------- |
+| `src/shared/ipc-channels.ts`                                    | Modify (lines 299-308) | Add 7 cross-window drag channels to TearoffChannels           |
+| `src/preload/index.ts`                                          | Modify (lines 265-288) | Add drag IPC methods to tearoff namespace                     |
+| `src/preload/index.d.ts`                                        | Modify (lines 233-241) | Type declarations for new methods                             |
+| `src/main/tearoff-manager.ts`                                   | Modify (lines 166-313) | Add drag coordinator (polling, relay, cancel)                 |
+| `src/renderer/src/hooks/useTearoffDrag.ts`                      | Modify (lines 59-73)   | Cross-window branching in timer-fires logic                   |
+| `src/renderer/src/hooks/useCrossWindowDrop.ts`                  | Create                 | Hook to receive cross-window drags                            |
+| `src/renderer/src/components/panels/CrossWindowDropOverlay.tsx` | Create                 | Full-window overlay with 5-zone targeting + pointerup capture |
+| `src/renderer/src/App.tsx`                                      | Modify (lines 140-157) | Mount useCrossWindowDrop, listen for crossWindowDrop          |
+| `src/renderer/src/components/layout/TearoffShell.tsx`           | Modify (lines 92-133)  | Mount useCrossWindowDrop, handle dragDone → close             |
 
 **Test files:**
 
-| File | Tests |
-|------|-------|
-| `src/main/__tests__/tearoff-drag-coordinator.test.ts` | Polling, target detection, relay, cancel, timeout |
-| `src/renderer/src/hooks/__tests__/useCrossWindowDrop.test.ts` | State transitions, pointerup → dropComplete |
-| `src/renderer/src/components/panels/__tests__/CrossWindowDropOverlay.test.tsx` | Zone detection, visual highlights |
+| File                                                                           | Tests                                             |
+| ------------------------------------------------------------------------------ | ------------------------------------------------- |
+| `src/main/__tests__/tearoff-drag-coordinator.test.ts`                          | Polling, target detection, relay, cancel, timeout |
+| `src/renderer/src/hooks/__tests__/useCrossWindowDrop.test.ts`                  | State transitions, pointerup → dropComplete       |
+| `src/renderer/src/components/panels/__tests__/CrossWindowDropOverlay.test.tsx` | Zone detection, visual highlights                 |
 
 ---
 
 ### Task 1: IPC Channel Definitions for Cross-Window Drag
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts:299-308`
 
 - [ ] **Step 1: Add cross-window drag channels to TearoffChannels**
@@ -49,7 +50,15 @@ In `src/shared/ipc-channels.ts`, expand the `TearoffChannels` interface (line 29
 export interface TearoffChannels {
   // Phase 1 (existing)
   'tearoff:create': {
-    args: [{ view: string; screenX: number; screenY: number; sourcePanelId: string; sourceTabIndex: number }]
+    args: [
+      {
+        view: string
+        screenX: number
+        screenY: number
+        sourcePanelId: string
+        sourceTabIndex: number
+      }
+    ]
     result: { windowId: string }
   }
   'tearoff:closeConfirmed': {
@@ -83,6 +92,7 @@ git commit -m "feat(tearoff): add cross-window drag IPC channel types"
 ### Task 2: Preload Bridge — Cross-Window Drag Methods
 
 **Files:**
+
 - Modify: `src/preload/index.ts:265-288`
 - Modify: `src/preload/index.d.ts:233-241`
 
@@ -157,12 +167,14 @@ git commit -m "feat(tearoff): preload bridge for cross-window drag IPC"
 ### Task 3: Main Process — Drag Coordinator
 
 **Files:**
+
 - Modify: `src/main/tearoff-manager.ts:166-313`
 - Create: `src/main/__tests__/tearoff-drag-coordinator.test.ts`
 
 - [ ] **Step 1: Write coordinator tests**
 
 Create `src/main/__tests__/tearoff-drag-coordinator.test.ts` with tests for:
+
 - `handleStartCrossWindowDrag` returns `{ targetFound: true }` when cursor is over another window
 - `handleStartCrossWindowDrag` returns `{ targetFound: false }` when cursor is over desktop
 - Polling sends `tearoff:dragMove` with local coords to target window
@@ -202,8 +214,12 @@ function findWindowAtPoint(x: number, y: number, excludeWinId?: number): Browser
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.id === excludeWinId || win.isDestroyed()) continue
     const bounds = win.getContentBounds()
-    if (x >= bounds.x && x < bounds.x + bounds.width &&
-        y >= bounds.y && y < bounds.y + bounds.height) {
+    if (
+      x >= bounds.x &&
+      x < bounds.x + bounds.width &&
+      y >= bounds.y &&
+      y < bounds.y + bounds.height
+    ) {
       return win
     }
   }
@@ -351,13 +367,19 @@ Inside `registerTearoffHandlers()` (after existing handlers), add:
 
 ```typescript
 // Cross-window drag
-ipcMain.handle('tearoff:startCrossWindowDrag', (_event, payload: { windowId: string; viewKey: string }) => {
-  return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
-})
+ipcMain.handle(
+  'tearoff:startCrossWindowDrag',
+  (_event, payload: { windowId: string; viewKey: string }) => {
+    return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
+  }
+)
 
-ipcMain.on('tearoff:dropComplete', (_event, payload: { viewKey: string; targetPanelId: string; zone: string }) => {
-  handleDropComplete(payload)
-})
+ipcMain.on(
+  'tearoff:dropComplete',
+  (_event, payload: { viewKey: string; targetPanelId: string; zone: string }) => {
+    handleDropComplete(payload)
+  }
+)
 
 ipcMain.on('tearoff:dragCancelFromRenderer', () => {
   cancelActiveDrag()
@@ -386,12 +408,14 @@ git commit -m "feat(tearoff): cross-window drag coordinator in main process"
 ### Task 4: CrossWindowDropOverlay Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/panels/CrossWindowDropOverlay.tsx`
 - Create: `src/renderer/src/components/panels/__tests__/CrossWindowDropOverlay.test.tsx`
 
 - [ ] **Step 1: Write tests**
 
 Test the overlay:
+
 - Renders nothing when `active` is false
 - Renders full-screen overlay when `active` is true
 - Shows correct zone highlight based on localX/localY
@@ -400,6 +424,7 @@ Test the overlay:
 - [ ] **Step 2: Implement CrossWindowDropOverlay**
 
 Reuses `getDropZone()` from `PanelDropOverlay.tsx` (line 30). The overlay:
+
 - `position: fixed; inset: 0; z-index: 9999; pointer-events: all` — captures pointerup
 - Walks panel DOM to find which `[data-panel-id]` element contains `(localX, localY)`
 - Calls `getDropZone(localX, localY, panelRect)` for 5-zone detection
@@ -433,12 +458,14 @@ git commit -m "feat(tearoff): CrossWindowDropOverlay with 5-zone targeting"
 ### Task 5: useCrossWindowDrop Hook
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/useCrossWindowDrop.ts`
 - Create: `src/renderer/src/hooks/__tests__/useCrossWindowDrop.test.ts`
 
 - [ ] **Step 1: Write tests**
 
 Test state transitions:
+
 - Initially inactive
 - `tearoff:dragIn` → active with viewKey and coords
 - `tearoff:dragMove` → updates coords
@@ -457,24 +484,36 @@ interface CrossWindowDropState {
 
 export function useCrossWindowDrop() {
   const [state, setState] = useState<CrossWindowDropState>({
-    active: false, viewKey: null, localX: 0, localY: 0
+    active: false,
+    viewKey: null,
+    localX: 0,
+    localY: 0
   })
 
   useEffect(() => {
     if (!window.api?.tearoff) return
     const unsubs = [
-      window.api.tearoff.onDragIn((p) => setState({ active: true, viewKey: p.viewKey, localX: p.localX, localY: p.localY })),
-      window.api.tearoff.onDragMove((p) => setState((s) => s.active ? { ...s, localX: p.localX, localY: p.localY } : s)),
-      window.api.tearoff.onDragCancel(() => setState({ active: false, viewKey: null, localX: 0, localY: 0 })),
+      window.api.tearoff.onDragIn((p) =>
+        setState({ active: true, viewKey: p.viewKey, localX: p.localX, localY: p.localY })
+      ),
+      window.api.tearoff.onDragMove((p) =>
+        setState((s) => (s.active ? { ...s, localX: p.localX, localY: p.localY } : s))
+      ),
+      window.api.tearoff.onDragCancel(() =>
+        setState({ active: false, viewKey: null, localX: 0, localY: 0 })
+      )
     ]
     return () => unsubs.forEach((u) => u())
   }, [])
 
-  const handleDrop = useCallback((targetPanelId: string, zone: string) => {
-    if (!state.viewKey) return
-    window.api.tearoff.sendDropComplete({ viewKey: state.viewKey, targetPanelId, zone })
-    setState({ active: false, viewKey: null, localX: 0, localY: 0 })
-  }, [state.viewKey])
+  const handleDrop = useCallback(
+    (targetPanelId: string, zone: string) => {
+      if (!state.viewKey) return
+      window.api.tearoff.sendDropComplete({ viewKey: state.viewKey, targetPanelId, zone })
+      setState({ active: false, viewKey: null, localX: 0, localY: 0 })
+    },
+    [state.viewKey]
+  )
 
   return { ...state, handleDrop }
 }
@@ -497,11 +536,13 @@ git commit -m "feat(tearoff): useCrossWindowDrop hook for receiving drags"
 ### Task 6: Modify useTearoffDrag for Cross-Window Branching
 
 **Files:**
+
 - Modify: `src/renderer/src/hooks/useTearoffDrag.ts:59-73`
 
 - [ ] **Step 1: Add crossWindowActive ref**
 
 Add after existing refs (~line 28):
+
 ```typescript
 const crossWindowActive = useRef(false)
 ```
@@ -550,7 +591,7 @@ const onDragEnd = () => {
   if (crossWindowActive.current) {
     crossWindowActive.current = false
     dragData.current = null
-    return  // don't call endDrag — coordinator handles lifecycle
+    return // don't call endDrag — coordinator handles lifecycle
   }
   endDrag()
 }
@@ -587,6 +628,7 @@ git commit -m "feat(tearoff): cross-window branching in useTearoffDrag"
 ### Task 7: Wire Into App.tsx and TearoffShell
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx:140-157`
 - Modify: `src/renderer/src/components/layout/TearoffShell.tsx:92-133`
 
@@ -621,7 +663,8 @@ useEffect(() => {
     if (payload.zone === 'center') {
       store.addTab(payload.targetPanelId, payload.view as View)
     } else {
-      const direction = (payload.zone === 'left' || payload.zone === 'right') ? 'horizontal' : 'vertical'
+      const direction =
+        payload.zone === 'left' || payload.zone === 'right' ? 'horizontal' : 'vertical'
       store.splitPanel(payload.targetPanelId, direction, payload.view as View)
     }
   })
@@ -677,11 +720,13 @@ git commit -m "feat(tearoff): wire cross-window drop into App + TearoffShell"
 ### Task 8: Update Handler Count Tests + Integration
 
 **Files:**
+
 - Modify: `src/main/__tests__/integration/ipc-handlers-integration.test.ts`
 
 - [ ] **Step 1: Update handler counts**
 
 Find tests asserting handler counts and increment for new cross-window handlers:
+
 - `tearoff:startCrossWindowDrag` (1 handle)
 - `tearoff:dropComplete` (1 on)
 - `tearoff:dragCancelFromRenderer` (1 on)

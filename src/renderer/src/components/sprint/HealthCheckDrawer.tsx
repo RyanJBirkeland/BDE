@@ -18,7 +18,12 @@ function minutesAgo(isoDate: string | null): number {
   return Math.floor((Date.now() - new Date(isoDate).getTime()) / 60_000)
 }
 
-export function HealthCheckDrawer({ open, tasks, onClose, onDismiss }: HealthCheckDrawerProps): React.JSX.Element {
+export function HealthCheckDrawer({
+  open,
+  tasks,
+  onClose,
+  onDismiss
+}: HealthCheckDrawerProps): React.JSX.Element {
   const [rescuing, setRescuing] = useState<string | null>(null)
 
   const handleRescue = useCallback(async (task: SprintTask) => {

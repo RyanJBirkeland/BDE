@@ -12,13 +12,13 @@ The overhaul is built as a **V2 primitive component system** — low coupling, h
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Aesthetic | Neon Cyberpunk | Bold, dramatic, unapologetically flashy |
-| Animation intensity | Full send | Particles, scanlines, pulsing glows, animated gradients |
-| Dashboard layout | Ops Deck (3-column) | Most data-dense, real operations console feel |
-| Color palette | Full rainbow neon | Every accent gets neon treatment — max vibrancy |
-| Architecture | V2 primitive components | Low coupling, high cohesion, single point of update |
+| Decision            | Choice                  | Rationale                                               |
+| ------------------- | ----------------------- | ------------------------------------------------------- |
+| Aesthetic           | Neon Cyberpunk          | Bold, dramatic, unapologetically flashy                 |
+| Animation intensity | Full send               | Particles, scanlines, pulsing glows, animated gradients |
+| Dashboard layout    | Ops Deck (3-column)     | Most data-dense, real operations console feel           |
+| Color palette       | Full rainbow neon       | Every accent gets neon treatment — max vibrancy         |
+| Architecture        | V2 primitive components | Low coupling, high cohesion, single point of update     |
 
 ## Section 1: Design System — Neon Rainbow Palette
 
@@ -32,14 +32,14 @@ The overhaul is built as a **V2 primitive component system** — low coupling, h
 
 6 colors, each with 4 variants:
 
-| Name | Hex | Usage |
-|------|-----|-------|
-| Neon Cyan | `#00ffc8` | Agents, success, "live" states |
-| Neon Pink | `#ff64c8` | Tasks, counts, highlights |
-| Neon Blue | `#64c8ff` | PRs, links, info states |
-| Neon Purple | `#bf5af2` | Headers, borders, structural |
-| Neon Orange | `#ffb432` | Cost, warnings, attention |
-| Neon Red | `#ff3264` | Errors, failures, danger |
+| Name        | Hex       | Usage                          |
+| ----------- | --------- | ------------------------------ |
+| Neon Cyan   | `#00ffc8` | Agents, success, "live" states |
+| Neon Pink   | `#ff64c8` | Tasks, counts, highlights      |
+| Neon Blue   | `#64c8ff` | PRs, links, info states        |
+| Neon Purple | `#bf5af2` | Headers, borders, structural   |
+| Neon Orange | `#ffb432` | Cost, warnings, attention      |
+| Neon Red    | `#ff3264` | Errors, failures, danger       |
 
 Each color gets 4 CSS custom property variants:
 
@@ -53,6 +53,7 @@ Each color gets 4 CSS custom property variants:
 ### Glass Card Treatment
 
 All cards get:
+
 - `backdrop-filter: blur(16px) saturate(180%)`
 - Gradient tint background from the card's accent color
 - 1px neon-tinted border
@@ -72,6 +73,7 @@ V2 tokens live alongside existing `--bde-*` tokens — no breaking changes. Exis
 ### Layer 1 — CSS Token Layer
 
 Extensions to `tokens.ts` and `base.css`:
+
 - `--neon-*` custom properties (6 colors × 4 variants = 24 properties)
 - `--glass-*` properties (blur levels, saturation, tint opacities)
 - `--atmosphere-*` properties (background gradients, scanline opacity, particle density)
@@ -80,24 +82,26 @@ Extensions to `tokens.ts` and `base.css`:
 
 New directory: `src/renderer/src/components/neon/`
 
-| Primitive | Purpose | Key Props |
-|-----------|---------|-----------|
-| `NeonCard` | Glass card with neon-tinted border | `accent`, `children`, `className` |
-| `StatCounter` | Big number + label + optional trend | `label`, `value`, `accent`, `trend?`, `icon?` |
-| `NeonBadge` | Status pill with glow | `accent`, `label`, `pulse?` |
-| `GlassPanel` | Full glass surface with blur | `blur?`, `accent?`, `children` |
-| `ActivityFeed` | Scrolling event list with dot indicators | `events`, `maxItems?` |
-| `NeonProgress` | Gradient progress bar with glow | `value`, `accent`, `label?` |
-| `PipelineFlow` | Horizontal status pipeline (CSS animated dashes) | `stages` |
-| `MiniChart` | Vertical bar chart with neon gradients | `data`, `accent?` |
-| `StatusBar` | Top bar with system indicator dot + title | `title`, `status`, `children?` |
-| `ScanlineOverlay` | Animated CSS scanline texture | `opacity?` |
-| `ParticleField` | Floating particle background (CSS-only) | `density?`, `accent?` |
+| Primitive         | Purpose                                          | Key Props                                     |
+| ----------------- | ------------------------------------------------ | --------------------------------------------- |
+| `NeonCard`        | Glass card with neon-tinted border               | `accent`, `children`, `className`             |
+| `StatCounter`     | Big number + label + optional trend              | `label`, `value`, `accent`, `trend?`, `icon?` |
+| `NeonBadge`       | Status pill with glow                            | `accent`, `label`, `pulse?`                   |
+| `GlassPanel`      | Full glass surface with blur                     | `blur?`, `accent?`, `children`                |
+| `ActivityFeed`    | Scrolling event list with dot indicators         | `events`, `maxItems?`                         |
+| `NeonProgress`    | Gradient progress bar with glow                  | `value`, `accent`, `label?`                   |
+| `PipelineFlow`    | Horizontal status pipeline (CSS animated dashes) | `stages`                                      |
+| `MiniChart`       | Vertical bar chart with neon gradients           | `data`, `accent?`                             |
+| `StatusBar`       | Top bar with system indicator dot + title        | `title`, `status`, `children?`                |
+| `ScanlineOverlay` | Animated CSS scanline texture                    | `opacity?`                                    |
+| `ParticleField`   | Floating particle background (CSS-only)          | `density?`, `accent?`                         |
 
 **Accent type**: All primitives share a `NeonAccent` union type:
+
 ```typescript
-type NeonAccent = 'cyan' | 'pink' | 'blue' | 'purple' | 'orange' | 'red';
+type NeonAccent = 'cyan' | 'pink' | 'blue' | 'purple' | 'orange' | 'red'
 ```
+
 This maps to the corresponding `--neon-{accent}` CSS custom properties. No arbitrary CSS colors — keeps the palette cohesive.
 
 **Composition rule**: Views never write raw glass/glow CSS. They import primitives and compose. The primitives own the visual treatment.
@@ -106,12 +110,12 @@ This maps to the corresponding `--neon-{accent}` CSS custom properties. No arbit
 
 Extensions to existing `src/renderer/src/lib/motion.ts`:
 
-| Animation | Type | Description |
-|-----------|------|-------------|
-| `neonPulse` | CSS `@keyframes` | Glow oscillation for borders/shadows (3s cycle) |
-| `scanlineScroll` | CSS `@keyframes` | Horizontal scanline movement (30s cycle) |
-| `gradientShift` | CSS `@keyframes` | Animated `background-position` rotation (8s cycle) |
-| `particleDrift` | CSS `@keyframes` | Floating particle paths (20-40s randomized cycles) |
+| Animation        | Type             | Description                                        |
+| ---------------- | ---------------- | -------------------------------------------------- |
+| `neonPulse`      | CSS `@keyframes` | Glow oscillation for borders/shadows (3s cycle)    |
+| `scanlineScroll` | CSS `@keyframes` | Horizontal scanline movement (30s cycle)           |
+| `gradientShift`  | CSS `@keyframes` | Animated `background-position` rotation (8s cycle) |
+| `particleDrift`  | CSS `@keyframes` | Floating particle paths (20-40s randomized cycles) |
 
 All animations respect `prefers-reduced-motion` via existing `useReducedMotion()` hook.
 
@@ -152,6 +156,7 @@ grid-template-columns: 200px 1fr 240px;
 ### Left Column — Stats Stack
 
 4 `StatCounter` primitives stacked vertically:
+
 - **Agents** (cyan) — live agent count
 - **Tasks** (pink) — active task count
 - **PRs** (blue) — open PR count
@@ -177,15 +182,16 @@ grid-template-columns: 200px 1fr 240px;
 
 Most data sources already exist. Two new IPC channels are needed:
 
-| Widget | Source | New IPC? |
-|--------|--------|----------|
-| Stats (counts) | `sprintTasks` Zustand store, grouped by status | No |
-| Pipeline stages | Same store, counts per status bucket | No |
-| MiniChart | `agent_runs` table — new query with hourly GROUP BY bucketing | **Yes**: `agent:completionsPerHour` |
-| ActivityFeed | `agent_events` table — needs renderer access | **Yes**: `agent:recentEvents` |
-| Cost | `costData` Zustand store | No |
+| Widget          | Source                                                        | New IPC?                            |
+| --------------- | ------------------------------------------------------------- | ----------------------------------- |
+| Stats (counts)  | `sprintTasks` Zustand store, grouped by status                | No                                  |
+| Pipeline stages | Same store, counts per status bucket                          | No                                  |
+| MiniChart       | `agent_runs` table — new query with hourly GROUP BY bucketing | **Yes**: `agent:completionsPerHour` |
+| ActivityFeed    | `agent_events` table — needs renderer access                  | **Yes**: `agent:recentEvents`       |
+| Cost            | `costData` Zustand store                                      | No                                  |
 
 **New IPC channels required:**
+
 - `agent:completionsPerHour` — queries `agent_runs` table, groups by hour bucket over last 24h, returns `{ hour: string, count: number }[]`
 - `agent:recentEvents` — queries `agent_events` table for latest N events, returns typed event list. Also subscribes to PR poller `pr:listUpdated` broadcasts for PR-related feed items.
 
@@ -194,43 +200,47 @@ Most data sources already exist. Two new IPC channels are needed:
 ### Ambient Effects (always on)
 
 **Scanline overlay:**
+
 - `repeating-linear-gradient` horizontal lines
 - Scrolling upward via `@keyframes` at ~30s per full cycle
 - 2% opacity — texture, not distraction
 
 **Particle field:**
+
 - 15-20 small dots (2-4px) via absolutely positioned `<div>`s
 - Randomized `@keyframes` paths over 20-40s cycles
 - `animation-delay` offsets for staggered motion
 - Neon-colored with matching `box-shadow` glow
 
 **Ambient gradient pools:**
+
 - 2-3 `radial-gradient` blobs on page background
 - Slowly shift position via `@keyframes` (60s+ cycles)
 - Very subtle — mood setter, not content competitor
 
 ### Interactive Effects
 
-| Trigger | Effect | Timing |
-|---------|--------|--------|
-| Card hover | Border glow 6px→16px, `scale(1.01)` | 150ms ease |
-| StatCounter hover | `text-shadow` brightens, glow pulses once | 150ms + 300ms pulse |
-| PipelineFlow arrows | Animated `stroke-dashoffset` cycling | Continuous |
-| ActivityFeed new entry | `slideLeft` entrance (existing motion variant) | Spring, snappy |
-| MiniChart mount | Bars grow from 0 height, staggered springs | Existing stagger pattern |
+| Trigger                | Effect                                         | Timing                   |
+| ---------------------- | ---------------------------------------------- | ------------------------ |
+| Card hover             | Border glow 6px→16px, `scale(1.01)`            | 150ms ease               |
+| StatCounter hover      | `text-shadow` brightens, glow pulses once      | 150ms + 300ms pulse      |
+| PipelineFlow arrows    | Animated `stroke-dashoffset` cycling           | Continuous               |
+| ActivityFeed new entry | `slideLeft` entrance (existing motion variant) | Spring, snappy           |
+| MiniChart mount        | Bars grow from 0 height, staggered springs     | Existing stagger pattern |
 
 ### Persistent Animations
 
-| Element | Animation | Cycle |
-|---------|-----------|-------|
-| StatCounter borders | Glow oscillation (6px↔12px shadow) | 3s, each offset ~0.5s |
-| Pipeline active stage | Brighter pulse than inactive stages | 2s |
-| StatusBar dot | Breathing opacity (0.6→1.0) | 2s |
-| NeonCard borders | Gradient angle rotation | 8s |
+| Element               | Animation                           | Cycle                 |
+| --------------------- | ----------------------------------- | --------------------- |
+| StatCounter borders   | Glow oscillation (6px↔12px shadow)  | 3s, each offset ~0.5s |
+| Pipeline active stage | Brighter pulse than inactive stages | 2s                    |
+| StatusBar dot         | Breathing opacity (0.6→1.0)         | 2s                    |
+| NeonCard borders      | Gradient angle rotation             | 8s                    |
 
 ### Reduced Motion Behavior
 
 When `prefers-reduced-motion: reduce`:
+
 - Glows stay on but don't animate
 - Particles hidden
 - Scanlines hidden
@@ -248,15 +258,15 @@ When `prefers-reduced-motion: reduce`:
 
 ## File Locations
 
-| What | Where |
-|------|-------|
-| V2 CSS tokens | `src/renderer/src/assets/base.css` (new `/* V2 Neon */` section) |
-| V2 TS tokens | `src/renderer/src/design-system/tokens.ts` (new `neon` namespace) |
-| Primitive components | `src/renderer/src/components/neon/` (new directory) |
-| Neon CSS (keyframes, classes) | `src/renderer/src/assets/neon.css` (new file) |
-| Animation extensions | `src/renderer/src/lib/motion.ts` (extend existing) |
-| Dashboard view | `src/renderer/src/views/DashboardView.tsx` (rewrite) |
-| Dashboard components | `src/renderer/src/components/dashboard/` (rewrite using primitives) |
+| What                          | Where                                                               |
+| ----------------------------- | ------------------------------------------------------------------- |
+| V2 CSS tokens                 | `src/renderer/src/assets/base.css` (new `/* V2 Neon */` section)    |
+| V2 TS tokens                  | `src/renderer/src/design-system/tokens.ts` (new `neon` namespace)   |
+| Primitive components          | `src/renderer/src/components/neon/` (new directory)                 |
+| Neon CSS (keyframes, classes) | `src/renderer/src/assets/neon.css` (new file)                       |
+| Animation extensions          | `src/renderer/src/lib/motion.ts` (extend existing)                  |
+| Dashboard view                | `src/renderer/src/views/DashboardView.tsx` (rewrite)                |
+| Dashboard components          | `src/renderer/src/components/dashboard/` (rewrite using primitives) |
 
 ## Rollout Strategy
 

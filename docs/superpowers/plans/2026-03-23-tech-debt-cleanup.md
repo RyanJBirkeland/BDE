@@ -14,16 +14,16 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Modify | `src/main/agent-manager/__tests__/index.test.ts` | Fix 11 stale tests referencing removed checkAuthStatus |
-| Modify | `src/main/agent-manager/dependency-index.ts` | Remove unused `update()` and `remove()` methods |
-| Modify | `src/main/agent-manager/__tests__/dependency-index.test.ts` | Remove tests for deleted methods |
-| Modify | `src/renderer/src/components/sprint/KanbanColumn.tsx` | Deduplicate readOnly/interactive task mapping |
-| Modify | `src/renderer/src/components/sprint/TaskCard.tsx` | Extract inline styles to CSS classes |
-| Create | `src/renderer/src/components/sprint/SpecEditor.tsx` | Edit mode textarea (extracted from SpecDrawer) |
-| Create | `src/renderer/src/components/sprint/SpecViewer.tsx` | View mode rendered markdown (extracted from SpecDrawer; sanitized via DOMPurify in renderMarkdown) |
-| Modify | `src/renderer/src/components/sprint/SpecDrawer.tsx` | Compose from SpecEditor + SpecViewer |
+| Action | File                                                        | Responsibility                                                                                     |
+| ------ | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Modify | `src/main/agent-manager/__tests__/index.test.ts`            | Fix 11 stale tests referencing removed checkAuthStatus                                             |
+| Modify | `src/main/agent-manager/dependency-index.ts`                | Remove unused `update()` and `remove()` methods                                                    |
+| Modify | `src/main/agent-manager/__tests__/dependency-index.test.ts` | Remove tests for deleted methods                                                                   |
+| Modify | `src/renderer/src/components/sprint/KanbanColumn.tsx`       | Deduplicate readOnly/interactive task mapping                                                      |
+| Modify | `src/renderer/src/components/sprint/TaskCard.tsx`           | Extract inline styles to CSS classes                                                               |
+| Create | `src/renderer/src/components/sprint/SpecEditor.tsx`         | Edit mode textarea (extracted from SpecDrawer)                                                     |
+| Create | `src/renderer/src/components/sprint/SpecViewer.tsx`         | View mode rendered markdown (extracted from SpecDrawer; sanitized via DOMPurify in renderMarkdown) |
+| Modify | `src/renderer/src/components/sprint/SpecDrawer.tsx`         | Compose from SpecEditor + SpecViewer                                                               |
 
 ---
 
@@ -32,11 +32,13 @@
 The drain loop no longer calls `checkAuthStatus` — auth is validated by the SDK at spawn time. 11 tests still reference the removed auth flow. Additionally, the initial drain is now deferred by `INITIAL_DRAIN_DEFER_MS` (5000ms), so tests using only `flush()` never trigger it.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/__tests__/index.test.ts`
 
 - [ ] **Step 1: Read the test file and identify all auth-related code**
 
 Lines to change:
+
 - Line 30-32: `vi.mock('../../auth-guard', ...)` — remove entirely
 - Line 67: `import { checkAuthStatus } from '../../auth-guard'` — remove
 - Line 104: `vi.mocked(checkAuthStatus).mockResolvedValue(...)` in setupDefaultMocks — remove
@@ -55,6 +57,7 @@ Delete line 104 (`vi.mocked(checkAuthStatus).mockResolvedValue(...)` from setupD
 This test should verify the drain loop calls `getQueuedTasks` (no auth check). The drain is deferred by `INITIAL_DRAIN_DEFER_MS` (5000ms), so it needs fake timers.
 
 Replace the test with:
+
 ```typescript
 it('runs initial drain after defer period', async () => {
   vi.useFakeTimers()
@@ -147,6 +150,7 @@ it('skips drain when no concurrency slots available', async () => {
 The drain is deferred by 5s, so `flush()` alone doesn't trigger it. Update each test to use fake timers.
 
 Pattern to apply to each test:
+
 1. Add `vi.useFakeTimers()` at start
 2. After `mgr.start()`, advance timers:
    ```typescript
@@ -157,6 +161,7 @@ Pattern to apply to each test:
 3. Replace `await mgr.stop(...)` + `await flush()` with `mgr.stop(0).catch(() => {})` and `vi.useRealTimers()`
 
 Apply to these tests:
+
 - "claims task, spawns agent, registers in active map" (lines 183-204)
 - "skips task when repo path not found" (lines 244-258)
 - "marks task error when setupWorktree fails" (lines 261-278)
@@ -166,12 +171,13 @@ Apply to these tests:
 - "calls handle.abort()" (lines 457-474)
 
 Also update `spawnAgent` mock call expectation (line 195-199) to use `expect.objectContaining` since logger is now passed:
+
 ```typescript
 expect(vi.mocked(spawnAgent)).toHaveBeenCalledWith(
   expect.objectContaining({
     prompt: 'Do the thing',
     cwd: '/tmp/wt/myrepo/task-1',
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-4-5'
   })
 )
 ```
@@ -197,6 +203,7 @@ git commit -m "fix: update stale agent-manager tests — remove checkAuthStatus 
 Since the drain loop now rebuilds the full index each cycle, these methods are unused.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/dependency-index.ts`
 - Modify: `src/main/agent-manager/__tests__/dependency-index.test.ts`
 - Modify: `src/main/agent-manager/__tests__/index.test.ts`
@@ -206,6 +213,7 @@ Since the drain loop now rebuilds the full index each cycle, these methods are u
 - [ ] **Step 2: Remove from dependency-index.ts**
 
 Remove from the `DependencyIndex` interface (lines 8-9):
+
 ```typescript
 update(taskId: string, oldDeps: TaskDependency[] | null, newDeps: TaskDependency[] | null): void
 remove(taskId: string): void
@@ -245,6 +253,7 @@ git commit -m "chore: remove unused update/remove from DependencyIndex (rebuild-
 The readOnly and interactive branches in KanbanColumn render nearly identical JSX. The only differences are: (1) `SortableContext` wrapper, (2) `isGenerating` prop, (3) drop-hint in empty state.
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/KanbanColumn.tsx`
 
 - [ ] **Step 1: Read the file**
@@ -317,6 +326,7 @@ git commit -m "chore: deduplicate task rendering in KanbanColumn"
 The dependency chips use inline styles instead of CSS classes. Extract to a CSS class.
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/TaskCard.tsx:68-85`
 - Modify: CSS file for sprint styles (find via grep for `.task-card`)
 
@@ -329,18 +339,20 @@ Run: `grep -rl "\.task-card" src/renderer/src/` to find the sprint CSS file.
 Replace the inline-styled dependency chip (lines 68-85):
 
 ```tsx
-{task.depends_on && task.depends_on.length > 0 && (
-  <div className="task-card__deps">
-    {task.depends_on.map((dep) => (
-      <span
-        key={dep.id}
-        className={`task-card__dep-chip ${dep.type === 'hard' ? 'task-card__dep-chip--hard' : ''}`}
-      >
-        {dep.type === 'hard' ? '●' : '○'} {dep.id.slice(0, 8)}
-      </span>
-    ))}
-  </div>
-)}
+{
+  task.depends_on && task.depends_on.length > 0 && (
+    <div className="task-card__deps">
+      {task.depends_on.map((dep) => (
+        <span
+          key={dep.id}
+          className={`task-card__dep-chip ${dep.type === 'hard' ? 'task-card__dep-chip--hard' : ''}`}
+        >
+          {dep.type === 'hard' ? '●' : '○'} {dep.id.slice(0, 8)}
+        </span>
+      ))}
+    </div>
+  )
+}
 ```
 
 - [ ] **Step 3: Add CSS classes to the sprint stylesheet**
@@ -386,6 +398,7 @@ git commit -m "chore: extract inline styles to CSS classes in TaskCard dependenc
 SpecDrawer is 302 lines with 7 state hooks. Extract the edit textarea and the rendered markdown view into focused sub-components.
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/SpecEditor.tsx`
 - Create: `src/renderer/src/components/sprint/SpecViewer.tsx`
 - Modify: `src/renderer/src/components/sprint/SpecDrawer.tsx`
@@ -460,18 +473,23 @@ export function SpecViewer({ content, onEdit }: SpecViewerProps) {
 - [ ] **Step 4: Update SpecDrawer.tsx to use sub-components**
 
 Add imports:
+
 ```tsx
 import { SpecEditor } from './SpecEditor'
 import { SpecViewer } from './SpecViewer'
 ```
 
 Replace the body section (lines 211-234) with:
+
 ```tsx
 <div className="spec-drawer__body">
   {editing ? (
     <SpecEditor
       value={draft}
-      onChange={(v) => { setDraft(v); setDirty(true) }}
+      onChange={(v) => {
+        setDraft(v)
+        setDirty(true)
+      }}
     />
   ) : (
     <SpecViewer content={draft} onEdit={() => setEditing(true)} />
@@ -480,6 +498,7 @@ Replace the body section (lines 211-234) with:
 ```
 
 Remove from SpecDrawer:
+
 - `editorRef` state hook (line 34)
 - The `useEffect` that focuses the editor (lines 133-135)
 - The `renderMarkdown` import (line 7)
@@ -502,10 +521,10 @@ git commit -m "chore: extract SpecEditor and SpecViewer from SpecDrawer"
 
 ## Summary
 
-| Task | What | Est. |
-|------|------|------|
-| 1. Fix stale tests | Rewrite 11 tests to match current drain loop (no auth check, deferred drain) | 20 min |
-| 2. Remove dead code | Delete unused `update()`/`remove()` from DependencyIndex | 5 min |
-| 3. Dedup KanbanColumn | Extract shared task rendering function | 5 min |
-| 4. Extract inline styles | Move TaskCard dep chip styles to CSS | 5 min |
-| 5. Split SpecDrawer | Extract SpecEditor + SpecViewer sub-components | 10 min |
+| Task                     | What                                                                         | Est.   |
+| ------------------------ | ---------------------------------------------------------------------------- | ------ |
+| 1. Fix stale tests       | Rewrite 11 tests to match current drain loop (no auth check, deferred drain) | 20 min |
+| 2. Remove dead code      | Delete unused `update()`/`remove()` from DependencyIndex                     | 5 min  |
+| 3. Dedup KanbanColumn    | Extract shared task rendering function                                       | 5 min  |
+| 4. Extract inline styles | Move TaskCard dep chip styles to CSS                                         | 5 min  |
+| 5. Split SpecDrawer      | Extract SpecEditor + SpecViewer sub-components                               | 10 min |

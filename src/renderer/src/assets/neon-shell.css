@@ -87,7 +87,9 @@
   cursor: pointer;
   -webkit-app-region: no-drag;
   border-radius: 8px 8px 0 0;
-  transition: color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
   white-space: nowrap;
   position: relative;
   bottom: -1px;
@@ -127,7 +129,9 @@
   border-radius: 4px;
   color: var(--neon-text-dim);
   cursor: pointer;
-  transition: color 100ms ease, background 100ms ease;
+  transition:
+    color 100ms ease,
+    background 100ms ease;
   background: none;
   border: none;
   padding: 0;
@@ -185,7 +189,9 @@
   justify-content: center;
   cursor: pointer;
   position: relative;
-  transition: background 150ms ease, color 150ms ease;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
   color: var(--neon-text-muted);
   border: none;
   background: transparent;
@@ -266,7 +272,9 @@
   cursor: pointer;
   color: var(--neon-text-muted);
   font-size: 12px;
-  transition: background 100ms ease, color 100ms ease;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
   border-radius: 6px;
 }
 

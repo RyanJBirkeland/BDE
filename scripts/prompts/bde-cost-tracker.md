@@ -3,9 +3,11 @@
 You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
 
 ## Context
+
 The app connects to an OpenClaw gateway at `ws://127.0.0.1:18789`. Gateway config is read from `~/.openclaw/openclaw.json`. The `src/renderer/src/lib/rpc.ts` file contains the RPC client for calling gateway tools.
 
 ## Task
+
 Build a Cost Tracker view that shows API spend across sessions.
 
 ### What to build
@@ -30,6 +32,7 @@ Build a Cost Tracker view that shows API spend across sessions.
 6. **Auto-refresh** — Refresh every 30 seconds.
 
 ## Rules
+
 - Work on a branch: `git checkout -b feat/cost-tracker`
 - Build must pass: `npm run build`
 - Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE cost tracker — session spend dashboard" -f body="Cost tracking view with per-session breakdown and daily/weekly totals" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`

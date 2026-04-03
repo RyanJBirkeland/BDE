@@ -14,28 +14,29 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/shared/spec-validation.ts` | Modify | Add `SpecType`, `CheckBehavior`, `ValidationProfile`, `VALIDATION_PROFILES`, `getValidationProfile()` |
-| `src/shared/types.ts` | Modify | Add `spec_type` to `SprintTask` interface |
-| `src/main/db.ts` | Modify | Add migration v16 for `spec_type` column |
-| `src/main/data/sprint-queries.ts` | Modify | Add `spec_type` to `UPDATE_ALLOWLIST` |
-| `src/renderer/src/stores/taskWorkbench.ts` | Modify | Add `specType` state + `setSpecType` action |
-| `src/renderer/src/hooks/useReadinessChecks.ts` | Modify | Accept `specType`, apply profile to structural checks |
-| `src/renderer/src/components/task-workbench/SpecEditor.tsx` | Modify | Wire type buttons to `setSpecType()` |
-| `src/renderer/src/components/task-workbench/WorkbenchActions.tsx` | Modify | Profile-aware `canQueue`/`canLaunch` logic |
-| `src/renderer/src/components/task-workbench/WorkbenchForm.tsx` | Modify | Thread `specType` through semantic checks, confirmation dialog, task creation |
-| `src/main/spec-semantic-check.ts` | Modify | Accept `specType`, skip/contextualize checks |
-| `src/main/handlers/workbench.ts` | Modify | Thread `specType` through `workbench:checkSpec` |
-| `src/shared/__tests__/spec-validation.test.ts` | Create | Profile tests |
-| `src/renderer/src/hooks/__tests__/useReadinessChecks.test.ts` | Modify | Profile-aware structural check tests |
-| `src/renderer/src/components/task-workbench/__tests__/WorkbenchActions.test.tsx` | Modify | Advisory vs required button state tests |
+| File                                                                             | Action | Responsibility                                                                                        |
+| -------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| `src/shared/spec-validation.ts`                                                  | Modify | Add `SpecType`, `CheckBehavior`, `ValidationProfile`, `VALIDATION_PROFILES`, `getValidationProfile()` |
+| `src/shared/types.ts`                                                            | Modify | Add `spec_type` to `SprintTask` interface                                                             |
+| `src/main/db.ts`                                                                 | Modify | Add migration v16 for `spec_type` column                                                              |
+| `src/main/data/sprint-queries.ts`                                                | Modify | Add `spec_type` to `UPDATE_ALLOWLIST`                                                                 |
+| `src/renderer/src/stores/taskWorkbench.ts`                                       | Modify | Add `specType` state + `setSpecType` action                                                           |
+| `src/renderer/src/hooks/useReadinessChecks.ts`                                   | Modify | Accept `specType`, apply profile to structural checks                                                 |
+| `src/renderer/src/components/task-workbench/SpecEditor.tsx`                      | Modify | Wire type buttons to `setSpecType()`                                                                  |
+| `src/renderer/src/components/task-workbench/WorkbenchActions.tsx`                | Modify | Profile-aware `canQueue`/`canLaunch` logic                                                            |
+| `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`                   | Modify | Thread `specType` through semantic checks, confirmation dialog, task creation                         |
+| `src/main/spec-semantic-check.ts`                                                | Modify | Accept `specType`, skip/contextualize checks                                                          |
+| `src/main/handlers/workbench.ts`                                                 | Modify | Thread `specType` through `workbench:checkSpec`                                                       |
+| `src/shared/__tests__/spec-validation.test.ts`                                   | Create | Profile tests                                                                                         |
+| `src/renderer/src/hooks/__tests__/useReadinessChecks.test.ts`                    | Modify | Profile-aware structural check tests                                                                  |
+| `src/renderer/src/components/task-workbench/__tests__/WorkbenchActions.test.tsx` | Modify | Advisory vs required button state tests                                                               |
 
 ---
 
 ### Task 1: Validation Profiles in Shared Layer
 
 **Files:**
+
 - Modify: `src/shared/spec-validation.ts`
 - Create: `src/shared/__tests__/spec-validation.test.ts`
 
@@ -91,7 +92,12 @@ describe('getValidationProfile', () => {
 
 describe('validateStructural with specType', () => {
   it('enforces 50-char min for feature', () => {
-    const result = validateStructural({ title: 'Fix', repo: 'BDE', spec: 'Short', status: 'queued' })
+    const result = validateStructural({
+      title: 'Fix',
+      repo: 'BDE',
+      spec: 'Short',
+      status: 'queued'
+    })
     expect(result.valid).toBe(false)
   })
 
@@ -140,7 +146,15 @@ Add to `src/shared/spec-validation.ts`:
 ```typescript
 // --- Spec Types ---
 
-export type SpecType = 'feature' | 'bugfix' | 'refactor' | 'test' | 'performance' | 'ux' | 'audit' | 'infra'
+export type SpecType =
+  | 'feature'
+  | 'bugfix'
+  | 'refactor'
+  | 'test'
+  | 'performance'
+  | 'ux'
+  | 'audit'
+  | 'infra'
 
 export type CheckBehavior = 'required' | 'advisory' | 'skip'
 
@@ -225,6 +239,7 @@ git commit -m "feat: add validation profiles to spec-validation"
 ### Task 2: Data Model — SprintTask Interface + Migration + Allowlist
 
 **Files:**
+
 - Modify: `src/shared/types.ts:31-57` (SprintTask interface)
 - Modify: `src/main/db.ts` (add migration v16)
 - Modify: `src/main/data/sprint-queries.ts:45-68` (UPDATE_ALLOWLIST)
@@ -275,6 +290,7 @@ git commit -m "feat: add spec_type column to sprint_tasks (migration v16)"
 ### Task 3: Store + SpecEditor — Wire specType Through UI
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/taskWorkbench.ts`
 - Modify: `src/renderer/src/components/task-workbench/SpecEditor.tsx`
 
@@ -316,10 +332,26 @@ In `src/renderer/src/components/task-workbench/SpecEditor.tsx`:
 3. Add `specType` key to `SPEC_TEMPLATES`:
    ```typescript
    const SPEC_TEMPLATES: Record<string, { label: string; spec: string; specType: SpecType }> = {
-     feature: { label: 'Feature', specType: 'feature', spec: '## Problem\n\n## Solution\n\n## Files to Change\n\n## Out of Scope\n' },
-     bugfix: { label: 'Bug Fix', specType: 'bugfix', spec: '## Bug Description\n\n## Root Cause\n\n## Fix\n\n## Files to Change\n\n## How to Test\n' },
-     refactor: { label: 'Refactor', specType: 'refactor', spec: "## What's Being Refactored\n\n## Target State\n\n## Files to Change\n\n## Out of Scope\n" },
-     test: { label: 'Test', specType: 'test', spec: '## What to Test\n\n## Test Strategy\n\n## Files to Create\n\n## Coverage Target\n' }
+     feature: {
+       label: 'Feature',
+       specType: 'feature',
+       spec: '## Problem\n\n## Solution\n\n## Files to Change\n\n## Out of Scope\n'
+     },
+     bugfix: {
+       label: 'Bug Fix',
+       specType: 'bugfix',
+       spec: '## Bug Description\n\n## Root Cause\n\n## Fix\n\n## Files to Change\n\n## How to Test\n'
+     },
+     refactor: {
+       label: 'Refactor',
+       specType: 'refactor',
+       spec: "## What's Being Refactored\n\n## Target State\n\n## Files to Change\n\n## Out of Scope\n"
+     },
+     test: {
+       label: 'Test',
+       specType: 'test',
+       spec: '## What to Test\n\n## Test Strategy\n\n## Files to Create\n\n## Coverage Target\n'
+     }
    }
    ```
 4. Update button onClick:
@@ -344,6 +376,7 @@ git commit -m "feat: wire specType through store and SpecEditor buttons"
 ### Task 4: Profile-Aware Structural Checks
 
 **Files:**
+
 - Modify: `src/renderer/src/hooks/useReadinessChecks.ts`
 - Modify: `src/renderer/src/hooks/__tests__/useReadinessChecks.test.ts`
 
@@ -365,7 +398,11 @@ describe('computeStructuralChecks with specType', () => {
 
   it('test type: no headings is warn (advisory) not fail', () => {
     const checks = computeStructuralChecks(
-      { title: 'Test', repo: 'BDE', spec: 'Run the integration test suite for authentication module' },
+      {
+        title: 'Test',
+        repo: 'BDE',
+        spec: 'Run the integration test suite for authentication module'
+      },
       'test'
     )
     const structure = checks.find((c) => c.id === 'spec-structure')
@@ -382,20 +419,14 @@ describe('computeStructuralChecks with specType', () => {
   })
 
   it('null specType defaults to feature profile (required)', () => {
-    const checks = computeStructuralChecks(
-      { title: 'Fix', repo: 'BDE', spec: 'Short' },
-      null
-    )
+    const checks = computeStructuralChecks({ title: 'Fix', repo: 'BDE', spec: 'Short' }, null)
     const specPresent = checks.find((c) => c.id === 'spec-present')
     expect(specPresent?.status).toBe('fail')
   })
 
   it('refactor type: uses 30-char threshold', () => {
-    const spec = 'Refactor the auth module code here'  // 34 chars > 30
-    const checks = computeStructuralChecks(
-      { title: 'Refactor', repo: 'BDE', spec },
-      'refactor'
-    )
+    const spec = 'Refactor the auth module code here' // 34 chars > 30
+    const checks = computeStructuralChecks({ title: 'Refactor', repo: 'BDE', spec }, 'refactor')
     const specPresent = checks.find((c) => c.id === 'spec-present')
     expect(specPresent?.status).toBe('pass')
   })
@@ -414,7 +445,10 @@ In `src/renderer/src/hooks/useReadinessChecks.ts`:
 1. Add import: `import { getValidationProfile, type SpecType } from '../../../shared/spec-validation'`
 2. Update `computeStructuralChecks` signature to accept optional second param:
    ```typescript
-   export function computeStructuralChecks(form: FormSnapshot, specType?: SpecType | null): CheckResult[]
+   export function computeStructuralChecks(
+     form: FormSnapshot,
+     specType?: SpecType | null
+   ): CheckResult[]
    ```
 3. Get profile at top of function:
    ```typescript
@@ -447,6 +481,7 @@ git commit -m "feat: profile-aware structural checks based on specType"
 ### Task 5: Profile-Aware Button Logic + Confirmation Dialog
 
 **Files:**
+
 - Modify: `src/renderer/src/components/task-workbench/WorkbenchActions.tsx`
 - Modify: `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`
 - Modify: `src/renderer/src/components/task-workbench/__tests__/WorkbenchActions.test.tsx`
@@ -502,6 +537,7 @@ In `src/renderer/src/components/task-workbench/WorkbenchActions.tsx`:
    const specType = useTaskWorkbenchStore((s) => s.specType)
    ```
 3. Replace `allTier1Pass` logic with profile-aware version:
+
    ```typescript
    const profile = getValidationProfile(specType)
 
@@ -539,11 +575,13 @@ In `src/renderer/src/components/task-workbench/WorkbenchActions.tsx`:
 In `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`:
 
 1. Add state for dynamic confirm message:
+
    ```typescript
    const [queueConfirmMessage, setQueueConfirmMessage] = useState('')
    ```
 
 2. In `handleSubmit`, after operational checks pass (around line 152), collect ALL warnings (operational + advisory structural/semantic):
+
    ```typescript
    const allStructural = useTaskWorkbenchStore.getState().structuralChecks
    const allSemantic = useTaskWorkbenchStore.getState().semanticChecks
@@ -563,6 +601,7 @@ In `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`:
    ```
 
 3. Update ConfirmModal to use dynamic message:
+
    ```tsx
    <ConfirmModal
      open={showQueueConfirm}
@@ -599,6 +638,7 @@ git commit -m "feat: profile-aware button logic + advisory confirmation dialog"
 ### Task 6: Profile-Aware Semantic Checks
 
 **Files:**
+
 - Modify: `src/main/spec-semantic-check.ts`
 - Modify: `src/main/handlers/workbench.ts`
 - Modify: `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`
@@ -608,12 +648,15 @@ git commit -m "feat: profile-aware button logic + advisory confirmation dialog"
 In `src/main/spec-semantic-check.ts`:
 
 1. Add import at top:
+
    ```typescript
    import { getValidationProfile, type SpecType } from '../shared/spec-validation'
    ```
+
    Note: verify the relative path — from `src/main/` to `src/shared/` is `../shared/`. Check existing imports in the file for the correct pattern.
 
 2. Update `checkSpecSemantic` signature:
+
    ```typescript
    export async function checkSpecSemantic(input: {
      title: string
@@ -624,6 +667,7 @@ In `src/main/spec-semantic-check.ts`:
    ```
 
 3. At top of function body, get profile and determine which checks to run:
+
    ```typescript
    const profile = getValidationProfile(input.specType ?? null)
    const runClarity = profile.clarity.behavior !== 'skip'
@@ -632,11 +676,13 @@ In `src/main/spec-semantic-check.ts`:
    ```
 
 4. Add spec type context to AI prompt:
+
    ```typescript
    const typeContext = input.specType
      ? `\nTask type: ${input.specType}. Adjust expectations accordingly — ${input.specType} tasks may have different structure/scope requirements than feature tasks.`
      : ''
    ```
+
    Append `typeContext` to the prompt string.
 
 5. For skipped checks, return `pass` directly without querying:
@@ -697,6 +743,7 @@ git commit -m "feat: profile-aware semantic checks with specType context"
 ### Task 7: Full Integration Test + Final Verification
 
 **Files:**
+
 - All modified files from Tasks 1-6
 
 - [ ] **Step 1: Run full renderer test suite**

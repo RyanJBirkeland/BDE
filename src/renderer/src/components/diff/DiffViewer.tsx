@@ -448,7 +448,11 @@ function PlainDiffContent({
 
 // ─── Main DiffViewer ─────────────────────────────────────
 
-function VirtualizedDiffBanner({ onForceFullDiff }: { onForceFullDiff: () => void }): React.JSX.Element {
+function VirtualizedDiffBanner({
+  onForceFullDiff
+}: {
+  onForceFullDiff: () => void
+}): React.JSX.Element {
   return (
     <div className="diff-virtualized-banner">
       <span className="diff-virtualized-banner__text">

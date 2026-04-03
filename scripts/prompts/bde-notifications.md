@@ -3,14 +3,22 @@
 You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
 
 ## Task
+
 Build a toast notification system for in-app feedback.
 
 ### What to build
 
 1. **Toast store** — Create `src/renderer/src/stores/toasts.ts` (Zustand):
+
    ```ts
-   type Toast = { id: string; message: string; type: 'success' | 'error' | 'info'; durationMs?: number }
+   type Toast = {
+     id: string
+     message: string
+     type: 'success' | 'error' | 'info'
+     durationMs?: number
+   }
    ```
+
    Actions: `addToast(message, type, durationMs?)`, `removeToast(id)`
    Auto-remove after `durationMs` (default 3000ms).
 
@@ -31,6 +39,7 @@ Build a toast notification system for in-app feedback.
    ```
 
 ## Rules
+
 - Work on a branch: `git checkout -b feat/notifications`
 - Build must pass: `npm run build`
 - Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE notifications — toast system with Zustand store" -f body="Toast notification system wired to existing actions" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`

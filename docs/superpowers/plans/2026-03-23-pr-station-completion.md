@@ -11,6 +11,7 @@
 **Spec:** `docs/superpowers/specs/2026-03-23-pr-station-completion-design.md`
 
 **Pre-existing context you need:**
+
 - All GitHub API calls go through `githubFetchRaw(path, init?)` in `src/renderer/src/lib/github-api.ts` which calls `window.api.github.fetch()` — this proxies through the main process and adds the OAuth token
 - `fetchAllPages<T>(path)` handles pagination via `linkNext`
 - The `REPO_OPTIONS` array in `src/renderer/src/lib/constants.ts` maps repo labels to `{ label, owner, color }`
@@ -27,33 +28,36 @@
 ## File Map
 
 ### New Files
-| File | Responsibility |
-|------|---------------|
-| `src/renderer/src/stores/pendingReview.ts` | Zustand store for pending review comments |
-| `src/renderer/src/components/pr-station/PRStationReviews.tsx` | Reviews section for Info tab |
-| `src/renderer/src/components/pr-station/PRStationConversation.tsx` | Comment timeline for Info tab |
-| `src/renderer/src/components/pr-station/PRStationConflictBanner.tsx` | Conflict warning with file list |
-| `src/renderer/src/components/pr-station/ReviewSubmitDialog.tsx` | Batch review submission dialog |
-| `src/renderer/src/components/diff/DiffCommentWidget.tsx` | Inline comment display in diff |
-| `src/renderer/src/components/diff/DiffCommentComposer.tsx` | Comment input box in diff |
+
+| File                                                                 | Responsibility                            |
+| -------------------------------------------------------------------- | ----------------------------------------- |
+| `src/renderer/src/stores/pendingReview.ts`                           | Zustand store for pending review comments |
+| `src/renderer/src/components/pr-station/PRStationReviews.tsx`        | Reviews section for Info tab              |
+| `src/renderer/src/components/pr-station/PRStationConversation.tsx`   | Comment timeline for Info tab             |
+| `src/renderer/src/components/pr-station/PRStationConflictBanner.tsx` | Conflict warning with file list           |
+| `src/renderer/src/components/pr-station/ReviewSubmitDialog.tsx`      | Batch review submission dialog            |
+| `src/renderer/src/components/diff/DiffCommentWidget.tsx`             | Inline comment display in diff            |
+| `src/renderer/src/components/diff/DiffCommentComposer.tsx`           | Comment input box in diff                 |
 
 ### Modified Files
-| File | Changes |
-|------|---------|
-| `src/shared/types.ts` | Add `PrReview`, `PrComment`, `PrIssueComment` types |
-| `src/renderer/src/lib/github-api.ts` | Add `getReviews`, `getReviewComments`, `getIssueComments`, `createReview`, `replyToComment` |
-| `src/renderer/src/assets/pr-station.css` | Tab styles, reviews, conversation, conflict, review dialog |
-| `src/renderer/src/assets/diff.css` | Selection highlight, comment widgets, composer |
-| `src/renderer/src/views/PRStationView.tsx` | Review banner + dialog, conflict integration |
-| `src/renderer/src/components/pr-station/PRStationDetail.tsx` | Reviews section, conversation section, conflict banner |
-| `src/renderer/src/components/pr-station/PRStationDiff.tsx` | Pass comments + pending state to DiffViewer |
-| `src/renderer/src/components/diff/DiffViewer.tsx` | Line selection, comment anchoring, comment widgets |
+
+| File                                                         | Changes                                                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `src/shared/types.ts`                                        | Add `PrReview`, `PrComment`, `PrIssueComment` types                                         |
+| `src/renderer/src/lib/github-api.ts`                         | Add `getReviews`, `getReviewComments`, `getIssueComments`, `createReview`, `replyToComment` |
+| `src/renderer/src/assets/pr-station.css`                     | Tab styles, reviews, conversation, conflict, review dialog                                  |
+| `src/renderer/src/assets/diff.css`                           | Selection highlight, comment widgets, composer                                              |
+| `src/renderer/src/views/PRStationView.tsx`                   | Review banner + dialog, conflict integration                                                |
+| `src/renderer/src/components/pr-station/PRStationDetail.tsx` | Reviews section, conversation section, conflict banner                                      |
+| `src/renderer/src/components/pr-station/PRStationDiff.tsx`   | Pass comments + pending state to DiffViewer                                                 |
+| `src/renderer/src/components/diff/DiffViewer.tsx`            | Line selection, comment anchoring, comment widgets                                          |
 
 ---
 
 ## Task 1: Fix Tab CSS + Conflict Store Wiring
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/pr-station.css` (add tab styles after line 53)
 - Modify: `src/renderer/src/views/PRStationView.tsx` (add conflict fetch)
 - Create: `src/renderer/src/components/pr-station/PRStationConflictBanner.tsx`
@@ -93,7 +97,9 @@ Add after the `.pr-station__detail-content` block (after line 29 in pr-station.c
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color var(--bde-transition-fast), border-color var(--bde-transition-fast);
+  transition:
+    color var(--bde-transition-fast),
+    border-color var(--bde-transition-fast);
 }
 
 .pr-station__tab:hover {
@@ -161,7 +167,9 @@ export function PRStationConflictBanner({ pr, mergeableState }: ConflictBannerPr
       ) : conflictFiles.length > 0 ? (
         <ul className="pr-conflict-banner__files">
           {conflictFiles.map((f) => (
-            <li key={f} className="pr-conflict-banner__file">{f}</li>
+            <li key={f} className="pr-conflict-banner__file">
+              {f}
+            </li>
           ))}
         </ul>
       ) : null}
@@ -231,7 +239,7 @@ export interface PRDetail {
   body: string | null
   draft: boolean
   mergeable: boolean | null
-  mergeable_state: string | null  // <-- add this field
+  mergeable_state: string | null // <-- add this field
   head: { ref: string; sha: string }
   base: { ref: string }
   user: { login: string; avatar_url: string }
@@ -246,19 +254,24 @@ export interface PRDetail {
 In `src/renderer/src/components/pr-station/PRStationDetail.tsx`:
 
 Add import:
+
 ```tsx
 import { PRStationConflictBanner } from './PRStationConflictBanner'
 ```
 
 Extract mergeable_state from detail (after the `if (!detail)` guard):
+
 ```tsx
 const mergeableState = detail?.mergeable_state ?? null
 ```
 
 Render the banner between the header and the Description section:
+
 ```tsx
-{/* After </div> of pr-detail__header, before Description section */}
-<PRStationConflictBanner pr={pr} mergeableState={mergeableState} />
+{
+  /* After </div> of pr-detail__header, before Description section */
+}
+;<PRStationConflictBanner pr={pr} mergeableState={mergeableState} />
 ```
 
 - [ ] **Step 6: Verify typecheck passes**
@@ -281,6 +294,7 @@ git commit -m "fix: add missing PR Station tab CSS and conflict banner"
 ## Task 2: Reviews & Approvals Display
 
 **Files:**
+
 - Modify: `src/shared/types.ts` (add PrReview type)
 - Modify: `src/renderer/src/lib/github-api.ts` (add getReviews)
 - Create: `src/renderer/src/components/pr-station/PRStationReviews.tsx`
@@ -307,14 +321,8 @@ export interface PrReview {
 Add import of `PrReview` from shared types at the top. Then add the function:
 
 ```typescript
-export async function getReviews(
-  owner: string,
-  repo: string,
-  number: number
-): Promise<PrReview[]> {
-  return fetchAllPages<PrReview>(
-    `/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100`
-  )
+export async function getReviews(owner: string, repo: string, number: number): Promise<PrReview[]> {
+  return fetchAllPages<PrReview>(`/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100`)
 }
 ```
 
@@ -508,7 +516,9 @@ Append to end of `pr-station.css`:
   line-height: 1.5;
 }
 
-.pr-review__body p { margin: 2px 0; }
+.pr-review__body p {
+  margin: 2px 0;
+}
 
 .pr-review__body code {
   font-family: var(--bde-font-code);
@@ -524,6 +534,7 @@ Append to end of `pr-station.css`:
 In `PRStationDetail.tsx`:
 
 Add imports:
+
 ```tsx
 import { PRStationReviews } from './PRStationReviews'
 import { getReviews } from '../../lib/github-api'
@@ -531,12 +542,14 @@ import type { PrReview } from '../../../../shared/types'
 ```
 
 Add state:
+
 ```tsx
 const [reviews, setReviews] = useState<PrReview[]>([])
 const [reviewsLoading, setReviewsLoading] = useState(true)
 ```
 
 Update the `fetchAll()` function to also fetch reviews (extend the existing Promise.all):
+
 ```tsx
 const [prDetail, prFiles, prReviews] = await Promise.all([
   getPRDetail(repo.owner, repo.label, pr.number),
@@ -574,6 +587,7 @@ git commit -m "feat(pr-station): display PR reviews and approval status"
 ## Task 3: Comment Threads Display (Info Tab)
 
 **Files:**
+
 - Modify: `src/shared/types.ts` (add PrComment, PrIssueComment types)
 - Modify: `src/renderer/src/lib/github-api.ts` (add getReviewComments, getIssueComments)
 - Create: `src/renderer/src/components/pr-station/PRStationConversation.tsx`
@@ -622,9 +636,7 @@ export async function getReviewComments(
   repo: string,
   number: number
 ): Promise<PrComment[]> {
-  return fetchAllPages<PrComment>(
-    `/repos/${owner}/${repo}/pulls/${number}/comments?per_page=100`
-  )
+  return fetchAllPages<PrComment>(`/repos/${owner}/${repo}/pulls/${number}/comments?per_page=100`)
 }
 
 export async function getIssueComments(
@@ -703,7 +715,15 @@ function buildTimeline(
   return items.map((i) => i.item)
 }
 
-function CommentCard({ login, body, createdAt }: { login: string; body: string; createdAt: string }) {
+function CommentCard({
+  login,
+  body,
+  createdAt
+}: {
+  login: string
+  body: string
+  createdAt: string
+}) {
   return (
     <div className="pr-conversation__comment">
       <div className="pr-conversation__comment-header">
@@ -718,7 +738,11 @@ function CommentCard({ login, body, createdAt }: { login: string; body: string; 
   )
 }
 
-export function PRStationConversation({ reviewComments, issueComments, loading }: ConversationProps) {
+export function PRStationConversation({
+  reviewComments,
+  issueComments,
+  loading
+}: ConversationProps) {
   if (loading) {
     return (
       <div className="pr-detail__section">
@@ -832,7 +856,9 @@ Append to end of `pr-station.css`:
   line-height: 1.5;
 }
 
-.pr-conversation__body p { margin: 2px 0; }
+.pr-conversation__body p {
+  margin: 2px 0;
+}
 .pr-conversation__body code {
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-xs);
@@ -877,6 +903,7 @@ Append to end of `pr-station.css`:
 In `PRStationDetail.tsx`:
 
 Add imports:
+
 ```tsx
 import { PRStationConversation } from './PRStationConversation'
 import { getReviewComments, getIssueComments } from '../../lib/github-api'
@@ -884,6 +911,7 @@ import type { PrComment, PrIssueComment } from '../../../../shared/types'
 ```
 
 Add state:
+
 ```tsx
 const [reviewComments, setReviewComments] = useState<PrComment[]>([])
 const [issueComments, setIssueComments] = useState<PrIssueComment[]>([])
@@ -891,6 +919,7 @@ const [commentsLoading, setCommentsLoading] = useState(true)
 ```
 
 Extend the `fetchAll()` Promise.all (building on Task 2 which already added reviews):
+
 ```tsx
 const [prDetail, prFiles, prReviews, prReviewComments, prIssueComments] = await Promise.all([
   getPRDetail(repo.owner, repo.label, pr.number),
@@ -911,6 +940,7 @@ setLoading(false)
 ```
 
 Render between Reviews and Changed Files:
+
 ```tsx
 <PRStationConversation
   reviewComments={reviewComments}
@@ -940,12 +970,14 @@ git commit -m "feat(pr-station): display PR comment threads and conversation tim
 ## Task 4: Diff Enhancement — Line Selection + Comment Anchoring
 
 **Files:**
+
 - Create: `src/renderer/src/components/diff/DiffCommentWidget.tsx`
 - Modify: `src/renderer/src/components/diff/DiffViewer.tsx` (selection + comment rendering)
 - Modify: `src/renderer/src/components/pr-station/PRStationDiff.tsx` (pass comments data)
 - Modify: `src/renderer/src/assets/diff.css` (selection + comment styles)
 
 **Important DiffViewer context:**
+
 - The component has two rendering paths: `VirtualizedDiffContent` (>500 lines) and `PlainDiffContent` (<500 lines)
 - For the initial implementation, only add comment/selection support to `PlainDiffContent`
 - When comments exist, force plain mode to avoid height calculation complexity in virtualized mode
@@ -974,13 +1006,12 @@ export function DiffCommentWidget({ comments }: DiffCommentWidgetProps) {
 
   return (
     <div className="diff-comment-widget">
-      <button
-        className="diff-comment-widget__toggle"
-        onClick={() => setCollapsed((c) => !c)}
-      >
+      <button className="diff-comment-widget__toggle" onClick={() => setCollapsed((c) => !c)}>
         {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
         <MessageSquare size={12} />
-        <span>{comments.length} comment{comments.length > 1 ? 's' : ''}</span>
+        <span>
+          {comments.length} comment{comments.length > 1 ? 's' : ''}
+        </span>
       </button>
       {!collapsed && (
         <div className="diff-comment-widget__thread">
@@ -1110,7 +1141,9 @@ Append to `src/renderer/src/assets/diff.css`:
   line-height: 1.5;
 }
 
-.diff-comment-widget__body p { margin: 2px 0; }
+.diff-comment-widget__body p {
+  margin: 2px 0;
+}
 .diff-comment-widget__body code {
   font-family: var(--bde-font-code);
   font-size: 11px;
@@ -1125,12 +1158,14 @@ Append to `src/renderer/src/assets/diff.css`:
 In `src/renderer/src/components/diff/DiffViewer.tsx`:
 
 Add imports:
+
 ```tsx
 import type { PrComment } from '../../../../shared/types'
 import { DiffCommentWidget } from './DiffCommentWidget'
 ```
 
 Add new types and update component interface:
+
 ```tsx
 export interface LineRange {
   file: string
@@ -1149,6 +1184,7 @@ interface DiffViewerProps {
 ```
 
 Update the DiffViewer function signature:
+
 ```tsx
 function DiffViewer({
   files,
@@ -1160,12 +1196,14 @@ function DiffViewer({
 ```
 
 Force plain mode when comments exist (prevents virtualization complexity):
+
 ```tsx
 const hasComments = comments.length > 0
 const useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments
 ```
 
 Build a comments-by-position map:
+
 ```tsx
 const commentsByPosition = useMemo(() => {
   const map = new Map<string, PrComment[]>()
@@ -1186,14 +1224,20 @@ const commentsByPosition = useMemo(() => {
 ```
 
 Add selection state:
+
 ```tsx
-const [selectionStart, setSelectionStart] = useState<{ file: string; line: number; side: 'LEFT' | 'RIGHT' } | null>(null)
+const [selectionStart, setSelectionStart] = useState<{
+  file: string
+  line: number
+  side: 'LEFT' | 'RIGHT'
+} | null>(null)
 const [isSelecting, setIsSelecting] = useState(false)
 ```
 
 In **PlainDiffContent**, update each line's gutter to be clickable:
 
 For the new-line gutter (right side):
+
 ```tsx
 <span
   className="diff-line__gutter diff-line__gutter--new diff-line__gutter--selectable"
@@ -1201,7 +1245,12 @@ For the new-line gutter (right side):
     if (line.lineNo.new == null) return
     setSelectionStart({ file: file.path, line: line.lineNo.new, side: 'RIGHT' })
     setIsSelecting(true)
-    onSelectRange?.({ file: file.path, startLine: line.lineNo.new, endLine: line.lineNo.new, side: 'RIGHT' })
+    onSelectRange?.({
+      file: file.path,
+      startLine: line.lineNo.new,
+      endLine: line.lineNo.new,
+      side: 'RIGHT'
+    })
   }}
   onMouseEnter={() => {
     if (!isSelecting || !selectionStart || selectionStart.file !== file.path) return
@@ -1219,6 +1268,7 @@ For the new-line gutter (right side):
 ```
 
 Add a global mouseup handler:
+
 ```tsx
 useEffect(() => {
   const handleMouseUp = () => setIsSelecting(false)
@@ -1228,49 +1278,61 @@ useEffect(() => {
 ```
 
 Check if a line is selected:
+
 ```tsx
 const isLineSelected = (filePath: string, lineNo: number | undefined): boolean => {
   if (!selectedRange || !lineNo) return false
-  return selectedRange.file === filePath &&
+  return (
+    selectedRange.file === filePath &&
     lineNo >= selectedRange.startLine &&
     lineNo <= selectedRange.endLine
+  )
 }
 ```
 
 Add `diff-line--selected` class when selected:
+
 ```tsx
 <div className={`diff-line diff-line--${line.type}${isLineSelected(file.path, line.lineNo.new) ? ' diff-line--selected' : ''}`}>
 ```
 
 After each line, render comment widget if comments exist at that position:
+
 ```tsx
-{(() => {
-  const lineNum = line.lineNo.new ?? line.lineNo.old
-  if (!lineNum) return null
-  const key = `${file.path}:${lineNum}`
-  const lineComments = commentsByPosition.get(key)
-  if (!lineComments || lineComments.length === 0) return null
-  return <DiffCommentWidget comments={lineComments} />
-})()}
+{
+  ;(() => {
+    const lineNum = line.lineNo.new ?? line.lineNo.old
+    if (!lineNum) return null
+    const key = `${file.path}:${lineNum}`
+    const lineComments = commentsByPosition.get(key)
+    if (!lineComments || lineComments.length === 0) return null
+    return <DiffCommentWidget comments={lineComments} />
+  })()
+}
 ```
 
 Show the "+" trigger button at the start of the selection:
+
 ```tsx
-{selectedRange && selectedRange.file === file.path &&
-  line.lineNo.new === selectedRange.startLine && onCommentTrigger && (
-  <div style={{ position: 'relative' }}>
-    <button
-      className="diff-selection-trigger"
-      onClick={(e) => {
-        e.stopPropagation()
-        onCommentTrigger(selectedRange)
-      }}
-      title="Add comment"
-    >
-      +
-    </button>
-  </div>
-)}
+{
+  selectedRange &&
+    selectedRange.file === file.path &&
+    line.lineNo.new === selectedRange.startLine &&
+    onCommentTrigger && (
+      <div style={{ position: 'relative' }}>
+        <button
+          className="diff-selection-trigger"
+          onClick={(e) => {
+            e.stopPropagation()
+            onCommentTrigger(selectedRange)
+          }}
+          title="Add comment"
+        >
+          +
+        </button>
+      </div>
+    )
+}
 ```
 
 Note: These gutter handlers and comment widgets need to be passed down to `PlainDiffContent` as props. Update `PlainDiffContent`'s props to include: `comments`, `commentsByPosition`, `selectedRange`, `selectionStart`, `isSelecting`, `setSelectionStart`, `setIsSelecting`, `onSelectRange`, `onCommentTrigger`, `isLineSelected`.
@@ -1282,6 +1344,7 @@ Alternatively (simpler): Move the selection state and comment map into the paren
 In `src/renderer/src/components/pr-station/PRStationDiff.tsx`:
 
 Add imports:
+
 ```tsx
 import { getReviewComments } from '../../lib/github-api'
 import type { PrComment } from '../../../../shared/types'
@@ -1289,20 +1352,27 @@ import type { LineRange } from '../diff/DiffViewer'
 ```
 
 Add state:
+
 ```tsx
 const [comments, setComments] = useState<PrComment[]>([])
 const [selectedRange, setSelectedRange] = useState<LineRange | null>(null)
 ```
 
 Fetch comments alongside diff (in the existing useEffect, after diff is loaded):
+
 ```tsx
 // Add after the getPRDiff call succeeds and before loadDiff:
 getReviewComments(repoOption.owner, repoOption.label, pr.number)
-  .then((c) => { if (!cancelled) setComments(c) })
-  .catch(() => { if (!cancelled) setComments([]) })
+  .then((c) => {
+    if (!cancelled) setComments(c)
+  })
+  .catch(() => {
+    if (!cancelled) setComments([])
+  })
 ```
 
 Pass to DiffViewer:
+
 ```tsx
 <DiffViewer
   files={files}
@@ -1332,6 +1402,7 @@ git commit -m "feat(pr-station): add diff line selection and inline comment disp
 ## Task 5: Inline Commenting (Write Path) + Pending Review Store
 
 **Files:**
+
 - Create: `src/renderer/src/stores/pendingReview.ts`
 - Create: `src/renderer/src/components/diff/DiffCommentComposer.tsx`
 - Modify: `src/renderer/src/lib/github-api.ts` (add createReview, replyToComment)
@@ -1380,9 +1451,7 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
   updateComment: (prKey, commentId, body) =>
     set((state) => {
       const next = new Map(state.pendingComments)
-      const list = (next.get(prKey) ?? []).map((c) =>
-        c.id === commentId ? { ...c, body } : c
-      )
+      const list = (next.get(prKey) ?? []).map((c) => (c.id === commentId ? { ...c, body } : c))
       next.set(prKey, list)
       return { pendingComments: next }
     }),
@@ -1402,7 +1471,7 @@ export const usePendingReviewStore = create<PendingReviewStore>((set, get) => ({
       return { pendingComments: next }
     }),
 
-  getPendingCount: (prKey) => (get().pendingComments.get(prKey) ?? []).length,
+  getPendingCount: (prKey) => (get().pendingComments.get(prKey) ?? []).length
 }))
 ```
 
@@ -1420,7 +1489,11 @@ interface DiffCommentComposerProps {
   initialBody?: string
 }
 
-export function DiffCommentComposer({ onSubmit, onCancel, initialBody = '' }: DiffCommentComposerProps) {
+export function DiffCommentComposer({
+  onSubmit,
+  onCancel,
+  initialBody = ''
+}: DiffCommentComposerProps) {
   const [body, setBody] = useState(initialBody)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -1603,11 +1676,13 @@ interface DiffViewerProps {
 ```
 
 Add state for active composer:
+
 ```tsx
 const [composerRange, setComposerRange] = useState<LineRange | null>(null)
 ```
 
 When user clicks the "+" trigger, open composer instead of calling `onCommentTrigger`:
+
 ```tsx
 onClick={(e) => {
   e.stopPropagation()
@@ -1616,28 +1691,33 @@ onClick={(e) => {
 ```
 
 Render composer at the anchor line (after the last selected line):
+
 ```tsx
-{composerRange && composerRange.file === file.path &&
-  line.lineNo.new === composerRange.endLine && (
-  <DiffCommentComposer
-    onSubmit={(body) => {
-      onAddComment?.(composerRange, body)
-      setComposerRange(null)
-      onSelectRange?.(null)
-    }}
-    onCancel={() => {
-      setComposerRange(null)
-      onSelectRange?.(null)
-    }}
-  />
-)}
+{
+  composerRange &&
+    composerRange.file === file.path &&
+    line.lineNo.new === composerRange.endLine && (
+      <DiffCommentComposer
+        onSubmit={(body) => {
+          onAddComment?.(composerRange, body)
+          setComposerRange(null)
+          onSelectRange?.(null)
+        }}
+        onCancel={() => {
+          setComposerRange(null)
+          onSelectRange?.(null)
+        }}
+      />
+    )
+}
 ```
 
 Render pending comments with a "Pending" badge by building a pending-by-position map similar to commentsByPosition:
+
 ```tsx
 const pendingByPosition = useMemo(() => {
   const map = new Map<string, PendingComment[]>()
-  for (const c of (pendingComments ?? [])) {
+  for (const c of pendingComments ?? []) {
     const key = `${c.path}:${c.line}`
     const arr = map.get(key) ?? []
     arr.push(c)
@@ -1660,11 +1740,10 @@ import type { LineRange } from '../diff/DiffViewer'
 ```
 
 In component:
+
 ```tsx
 const prKey = `${pr.repo}#${pr.number}`
-const pendingComments = usePendingReviewStore(
-  (s) => s.pendingComments.get(prKey) ?? []
-)
+const pendingComments = usePendingReviewStore((s) => s.pendingComments.get(prKey) ?? [])
 const addComment = usePendingReviewStore((s) => s.addComment)
 const removeComment = usePendingReviewStore((s) => s.removeComment)
 
@@ -1676,12 +1755,13 @@ const handleAddComment = (range: LineRange, body: string) => {
     side: range.side,
     startLine: range.startLine !== range.endLine ? range.startLine : undefined,
     startSide: range.startLine !== range.endLine ? range.side : undefined,
-    body,
+    body
   })
 }
 ```
 
 Pass to DiffViewer:
+
 ```tsx
 <DiffViewer
   files={files}
@@ -1716,6 +1796,7 @@ git commit -m "feat(pr-station): add inline comment composer and pending review 
 ## Task 6: Batch Review Submission
 
 **Files:**
+
 - Create: `src/renderer/src/components/pr-station/ReviewSubmitDialog.tsx`
 - Modify: `src/renderer/src/views/PRStationView.tsx` (review banner + dialog)
 - Modify: `src/renderer/src/assets/pr-station.css` (banner + dialog styles)
@@ -1764,8 +1845,8 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
           side: c.side,
           ...(c.startLine ? { start_line: c.startLine } : {}),
           ...(c.startSide ? { start_side: c.startSide } : {}),
-          body: c.body,
-        })),
+          body: c.body
+        }))
       }
       await createReview(repo.owner, repo.label, pr.number, review)
       clearPending(prKey)
@@ -1782,7 +1863,11 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
   const eventOptions: { value: ReviewEvent; label: string; description: string }[] = [
     { value: 'COMMENT', label: 'Comment', description: 'Submit general feedback without approval' },
     { value: 'APPROVE', label: 'Approve', description: 'Approve this pull request' },
-    { value: 'REQUEST_CHANGES', label: 'Request changes', description: 'Submit feedback that must be addressed' },
+    {
+      value: 'REQUEST_CHANGES',
+      label: 'Request changes',
+      description: 'Submit feedback that must be addressed'
+    }
   ]
 
   return (
@@ -1818,7 +1903,8 @@ export function ReviewSubmitDialog({ pr, prKey, onClose, onSubmitted }: ReviewSu
 
         {pendingComments.length > 0 && (
           <div className="review-dialog__pending-count">
-            {pendingComments.length} pending comment{pendingComments.length > 1 ? 's' : ''} will be included
+            {pendingComments.length} pending comment{pendingComments.length > 1 ? 's' : ''} will be
+            included
           </div>
         )}
 
@@ -1930,7 +2016,7 @@ Append to end of `pr-station.css`:
   background: var(--bde-surface);
 }
 
-.review-dialog__event input[type="radio"] {
+.review-dialog__event input[type='radio'] {
   margin-top: 2px;
   accent-color: var(--bde-accent);
 }
@@ -1968,6 +2054,7 @@ Append to end of `pr-station.css`:
 In `src/renderer/src/views/PRStationView.tsx`:
 
 Add imports:
+
 ```tsx
 import { usePendingReviewStore } from '../stores/pendingReview'
 import { ReviewSubmitDialog } from '../components/pr-station/ReviewSubmitDialog'
@@ -1975,6 +2062,7 @@ import { Button } from '../components/ui/Button'
 ```
 
 Add state and derived values:
+
 ```tsx
 const [showReviewDialog, setShowReviewDialog] = useState(false)
 const prKey = selectedPr ? `${selectedPr.repo}#${selectedPr.number}` : ''
@@ -1984,37 +2072,43 @@ const pendingCount = usePendingReviewStore((s) =>
 ```
 
 Add review banner inside the detail panel, between the tabs and the tab content:
+
 ```tsx
-{pendingCount > 0 && (
-  <div className="pr-review-banner">
-    <span className="pr-review-banner__count">{pendingCount}</span>
-    <span>pending comment{pendingCount > 1 ? 's' : ''}</span>
-    <Button
-      className="pr-review-banner__submit"
-      variant="primary"
-      size="sm"
-      onClick={() => setShowReviewDialog(true)}
-    >
-      Submit Review
-    </Button>
-  </div>
-)}
+{
+  pendingCount > 0 && (
+    <div className="pr-review-banner">
+      <span className="pr-review-banner__count">{pendingCount}</span>
+      <span>pending comment{pendingCount > 1 ? 's' : ''}</span>
+      <Button
+        className="pr-review-banner__submit"
+        variant="primary"
+        size="sm"
+        onClick={() => setShowReviewDialog(true)}
+      >
+        Submit Review
+      </Button>
+    </div>
+  )
+}
 ```
 
 Add dialog render at the end (before closing `</div>` of the root):
+
 ```tsx
-{showReviewDialog && selectedPr && (
-  <ReviewSubmitDialog
-    pr={selectedPr}
-    prKey={prKey}
-    onClose={() => setShowReviewDialog(false)}
-    onSubmitted={() => {
-      const pr = selectedPr
-      setSelectedPr(null)
-      setTimeout(() => setSelectedPr(pr), 0)
-    }}
-  />
-)}
+{
+  showReviewDialog && selectedPr && (
+    <ReviewSubmitDialog
+      pr={selectedPr}
+      prKey={prKey}
+      onClose={() => setShowReviewDialog(false)}
+      onSubmitted={() => {
+        const pr = selectedPr
+        setSelectedPr(null)
+        setTimeout(() => setSelectedPr(pr), 0)
+      }}
+    />
+  )
+}
 ```
 
 - [ ] **Step 4: Verify typecheck passes**

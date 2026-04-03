@@ -12,12 +12,12 @@ Three separate pieces of dead code exist in the codebase, each adding maintenanc
 
 ## Files to Change
 
-| File | Action |
-|------|--------|
-| `src/renderer/src/components/sessions/AgentHistoryPanel.tsx` | Delete |
-| `src/renderer/src/components/sessions/__tests__/AgentHistoryPanel.test.tsx` | Delete (if exists) |
-| `src/main/handlers/agent-handlers.ts` | Remove the `sessions:getHistory` handler (lines 61-63) |
-| `src/renderer/src/components/sprint/AddCardForm.tsx` | Delete |
+| File                                                                        | Action                                                 |
+| --------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `src/renderer/src/components/sessions/AgentHistoryPanel.tsx`                | Delete                                                 |
+| `src/renderer/src/components/sessions/__tests__/AgentHistoryPanel.test.tsx` | Delete (if exists)                                     |
+| `src/main/handlers/agent-handlers.ts`                                       | Remove the `sessions:getHistory` handler (lines 61-63) |
+| `src/renderer/src/components/sprint/AddCardForm.tsx`                        | Delete                                                 |
 
 ## Implementation Notes
 

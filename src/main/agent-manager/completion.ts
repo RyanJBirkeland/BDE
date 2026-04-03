@@ -251,8 +251,7 @@ export async function findOrCreatePR(
 }
 
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo } =
-    opts
+  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo } = opts
 
   // 0. Guard: worktree must still exist (macOS /tmp can evict it)
   if (!existsSync(worktreePath)) {
@@ -364,7 +363,9 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
 
   // 4. Transition to review — preserve worktree for code review.
   // Push + PR creation deferred to explicit user/UI action.
-  logger.info(`[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`)
+  logger.info(
+    `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`
+  )
   try {
     repo.updateTask(taskId, {
       status: 'review',

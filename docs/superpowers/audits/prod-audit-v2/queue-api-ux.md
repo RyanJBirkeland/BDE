@@ -9,21 +9,21 @@
 
 ## Summary Table
 
-| # | Finding | Previous Severity | Status | Notes |
-|---|---------|-------------------|--------|-------|
-| QA-UX-1 | Inconsistent field naming (snake_case vs camelCase) | High | **Fixed** | `release` endpoint now uses `claimedBy` (camelCase); `create` still uses `depends_on` (snake_case) -- see Residual below |
-| QA-UX-2 | General PATCH silently drops disallowed fields | Medium | **Fixed** | Now returns 400 with explicit list of disallowed fields (QA-14 remediation) |
-| QA-UX-3 | `RUNNER_WRITABLE_STATUSES` excludes `blocked` and `backlog` | Medium | **Partially Fixed** | `blocked` added (QA-11). `backlog` still excluded -- runners cannot de-queue tasks |
-| QA-UX-4 | No individual DELETE endpoint | Medium | **Fixed** | `DELETE /queue/tasks/:id` route added (router.ts:117, QA-15) |
-| QA-UX-5 | Error response inconsistency (local catch vs global) | Medium | **Fixed** | `handleHealth` now has try/catch (QA-16). Global handler in `server.ts` returns `details` field. All handlers consistently catch errors |
-| QA-UX-6 | `handleUpdateStatus` returns unhelpful "No valid fields" error | Low | **Not Fixed** | Still returns generic `"No valid fields to update"` without listing which fields are allowed on the status endpoint |
-| QA-UX-7 | Stale JSDoc describes server as "Supabase proxy" | Low | **Fixed** | `server.ts` line 2 now reads `"Queue API HTTP server on port 18790."` -- Supabase reference removed |
-| QA-UX-8 | SSE events all use `task:output` type | Low | **Fixed** | `event-handlers.ts:76` now uses actual event type from payload (QA-28 remediation) |
-| QA-UX-9 | `handleTaskOutput` returns `{ ok: true }` instead of resource | Low | **Fixed** | Now returns `{ taskId, eventsReceived, eventsPersisted }` (QA-29 remediation) |
-| QA-UX-10 | `parseBody` resolves with `null` for empty body | Low | **Not Fixed** | Still resolves `null` on empty body (helpers.ts:144). Every handler repeats the null-check boilerplate |
-| QA-UX-11 | `handleTaskOutput` does not validate task existence | Low | **Not Fixed** | No `getTask(taskId)` call before broadcasting/persisting. Nonexistent task IDs still get 200 |
-| QA-UX-12 | Batch endpoint always returns 200 | Low | **Not Fixed** | Still returns 200 unconditionally (task-handlers.ts:722). No 207 Multi-Status or top-level `ok` field |
-| QA-UX-13 | No API discovery endpoint | Low | **Not Fixed** | No `GET /queue` route listing available endpoints |
+| #        | Finding                                                        | Previous Severity | Status              | Notes                                                                                                                                   |
+| -------- | -------------------------------------------------------------- | ----------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| QA-UX-1  | Inconsistent field naming (snake_case vs camelCase)            | High              | **Fixed**           | `release` endpoint now uses `claimedBy` (camelCase); `create` still uses `depends_on` (snake_case) -- see Residual below                |
+| QA-UX-2  | General PATCH silently drops disallowed fields                 | Medium            | **Fixed**           | Now returns 400 with explicit list of disallowed fields (QA-14 remediation)                                                             |
+| QA-UX-3  | `RUNNER_WRITABLE_STATUSES` excludes `blocked` and `backlog`    | Medium            | **Partially Fixed** | `blocked` added (QA-11). `backlog` still excluded -- runners cannot de-queue tasks                                                      |
+| QA-UX-4  | No individual DELETE endpoint                                  | Medium            | **Fixed**           | `DELETE /queue/tasks/:id` route added (router.ts:117, QA-15)                                                                            |
+| QA-UX-5  | Error response inconsistency (local catch vs global)           | Medium            | **Fixed**           | `handleHealth` now has try/catch (QA-16). Global handler in `server.ts` returns `details` field. All handlers consistently catch errors |
+| QA-UX-6  | `handleUpdateStatus` returns unhelpful "No valid fields" error | Low               | **Not Fixed**       | Still returns generic `"No valid fields to update"` without listing which fields are allowed on the status endpoint                     |
+| QA-UX-7  | Stale JSDoc describes server as "Supabase proxy"               | Low               | **Fixed**           | `server.ts` line 2 now reads `"Queue API HTTP server on port 18790."` -- Supabase reference removed                                     |
+| QA-UX-8  | SSE events all use `task:output` type                          | Low               | **Fixed**           | `event-handlers.ts:76` now uses actual event type from payload (QA-28 remediation)                                                      |
+| QA-UX-9  | `handleTaskOutput` returns `{ ok: true }` instead of resource  | Low               | **Fixed**           | Now returns `{ taskId, eventsReceived, eventsPersisted }` (QA-29 remediation)                                                           |
+| QA-UX-10 | `parseBody` resolves with `null` for empty body                | Low               | **Not Fixed**       | Still resolves `null` on empty body (helpers.ts:144). Every handler repeats the null-check boilerplate                                  |
+| QA-UX-11 | `handleTaskOutput` does not validate task existence            | Low               | **Not Fixed**       | No `getTask(taskId)` call before broadcasting/persisting. Nonexistent task IDs still get 200                                            |
+| QA-UX-12 | Batch endpoint always returns 200                              | Low               | **Not Fixed**       | Still returns 200 unconditionally (task-handlers.ts:722). No 207 Multi-Status or top-level `ok` field                                   |
+| QA-UX-13 | No API discovery endpoint                                      | Low               | **Not Fixed**       | No `GET /queue` route listing available endpoints                                                                                       |
 
 ---
 
@@ -32,11 +32,13 @@
 ### QA-UX-1: Inconsistent field naming -- FIXED (with residual)
 
 **Release endpoint**: Now uses `claimedBy` (camelCase) at `task-handlers.ts:514`:
+
 ```
 const claimedBy = (body as Record<string, unknown>).claimedBy as string
 ```
 
 **Dependencies endpoint**: Uses `dependsOn` (camelCase) at `task-handlers.ts:548`:
+
 ```
 const { dependsOn } = body as { dependsOn?: unknown }
 ```
@@ -44,14 +46,17 @@ const { dependsOn } = body as { dependsOn?: unknown }
 **Claim endpoint**: Uses `executorId` (camelCase) at `task-handlers.ts:472` -- unchanged, was already camelCase.
 
 **Residual inconsistency**: The `POST /queue/tasks` create endpoint still accepts `depends_on` (snake_case) at line 181:
+
 ```
 const { title, repo, depends_on } = body as Record<string, unknown>
 ```
+
 This is the only remaining snake_case field in the request API. All other endpoints are now camelCase. Severity reduced from high to low since it is isolated to one field on one endpoint.
 
 ### QA-UX-2: Silent field dropping -- FIXED
 
 The general PATCH handler now returns 400 when any disallowed fields are present (task-handlers.ts:308-314):
+
 ```
 if (disallowed.length > 0) {
   sendJson(res, 400, {
@@ -60,11 +65,13 @@ if (disallowed.length > 0) {
   return
 }
 ```
+
 This is a strict approach -- the consumer gets immediate feedback about which fields are wrong and where to send them.
 
 ### QA-UX-3: Missing writable statuses -- PARTIALLY FIXED
 
 `blocked` was added to `RUNNER_WRITABLE_STATUSES` in `queue-api-contract.ts:45`:
+
 ```
 'blocked', // QA-11: Allow runners to set blocked status for dependency management
 ```
@@ -74,9 +81,11 @@ This is a strict approach -- the consumer gets immediate feedback about which fi
 ### QA-UX-4: No individual DELETE -- FIXED
 
 Route added in `router.ts:117`:
+
 ```
 if (method === 'DELETE') return tasks.handleDeleteTask(res, id)
 ```
+
 Handler at `task-handlers.ts:605-614` returns `{ ok: true, id }`. Note: no existence check -- `deleteTask()` on a nonexistent ID silently succeeds with 200. Minor gap but not a regression.
 
 ### QA-UX-5: Error response inconsistency -- FIXED
@@ -86,34 +95,41 @@ Handler at `task-handlers.ts:605-614` returns `{ ok: true, id }`. Note: no exist
 ### QA-UX-6: Unhelpful "No valid fields" on status endpoint -- NOT FIXED
 
 `handleUpdateStatus` at task-handlers.ts:427-429 still returns:
+
 ```
 sendJson(res, 400, { error: 'No valid fields to update' })
 ```
+
 No list of allowed fields. Consumer cannot know they should use `status`, `notes`, `prUrl`, etc.
 
 ### QA-UX-7: Stale Supabase JSDoc -- FIXED
 
 `server.ts` lines 1-4 now read:
+
 ```
 /**
  * Queue API HTTP server on port 18790.
  * Allows external runners to consume the sprint task queue via a simple REST interface.
  */
 ```
+
 No Supabase reference.
 
 ### QA-UX-8: SSE event type always `task:output` -- FIXED
 
 `event-handlers.ts:74-77`:
+
 ```
 const eventType = typeof eventObj['type'] === 'string' ? eventObj['type'] : 'task:output'
 sseBroadcaster.broadcast(eventType, { taskId, ...eventObj })
 ```
+
 Events now use the actual event type (e.g., `agent:started`), falling back to `task:output` for untyped events. Note: backward compatibility concern -- consumers subscribed to `task:output` will no longer receive typed events. No dual-broadcast as originally recommended.
 
 ### QA-UX-9: `handleTaskOutput` returns `{ ok: true }` -- FIXED
 
 `event-handlers.ts:112-116`:
+
 ```
 sendJson(res, 200, {
   taskId,
@@ -121,17 +137,20 @@ sendJson(res, 200, {
   eventsPersisted: persistedCount
 })
 ```
+
 Consumers now get visibility into what was persisted vs. broadcast.
 
 ### QA-UX-10: `parseBody` resolves null for empty body -- NOT FIXED
 
 `helpers.ts:144-146`:
+
 ```
 if (!raw) {
   resolve(null)
   return
 }
 ```
+
 Every handler repeats `if (!body || typeof body !== 'object')` -- 8 instances in task-handlers.ts + 1 in event-handlers.ts.
 
 ### QA-UX-11: `handleTaskOutput` does not validate task existence -- NOT FIXED
@@ -141,9 +160,11 @@ Every handler repeats `if (!body || typeof body !== 'object')` -- 8 instances in
 ### QA-UX-12: Batch always returns 200 -- NOT FIXED
 
 `task-handlers.ts:722`:
+
 ```
 sendJson(res, 200, { results })
 ```
+
 No top-level `ok` or `failCount` field. No 207 Multi-Status.
 
 ### QA-UX-13: No API discovery endpoint -- NOT FIXED
@@ -194,11 +215,11 @@ No `GET /queue` or documentation route.
 
 ## Previously Reported Cross-Audit Issues (re-verified)
 
-| # | Issue | Status |
-|---|-------|--------|
-| ARCH-2 | Repository pattern inconsistently applied | **Still open** -- `task-handlers.ts` imports `sprint-queries` directly (lines 7-19) |
-| SEC-5 | CORS `*` on auth-protected localhost API | **Fixed** -- `CORS_HEADERS = {}` at `helpers.ts:86` |
-| main-process-sd C4 | SSE token via query-string exposure | **Still open** -- accepted risk at `helpers.ts:43-50` |
+| #                  | Issue                                     | Status                                                                              |
+| ------------------ | ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| ARCH-2             | Repository pattern inconsistently applied | **Still open** -- `task-handlers.ts` imports `sprint-queries` directly (lines 7-19) |
+| SEC-5              | CORS `*` on auth-protected localhost API  | **Fixed** -- `CORS_HEADERS = {}` at `helpers.ts:86`                                 |
+| main-process-sd C4 | SSE token via query-string exposure       | **Still open** -- accepted risk at `helpers.ts:43-50`                               |
 
 ---
 
@@ -209,6 +230,7 @@ No `GET /queue` or documentation route.
 The high-severity field naming inconsistency (QA-UX-1) has been largely resolved -- the only residual is `depends_on` on the create endpoint. The medium-severity silent field dropping (QA-UX-2) and missing DELETE (QA-UX-4) are both properly fixed. Error handling consistency (QA-UX-5) is now solid across all handlers.
 
 The remaining unfixed items are all low-severity quality-of-life improvements:
+
 - Better error messages listing allowed fields (QA-UX-6)
 - `parseBody` null handling (QA-UX-10)
 - Task existence checks on output/delete (QA-UX-11, QA-UX-14)
@@ -217,13 +239,13 @@ The remaining unfixed items are all low-severity quality-of-life improvements:
 
 The Queue API is in good shape for its current use case (small number of known consumers on localhost). The SSE breaking change (QA-UX-16) is the most actionable new finding if external consumers rely on the `task:output` event name.
 
-| Metric | Count |
-|--------|-------|
-| Fixed | 8 |
-| Partially Fixed | 1 |
-| Not Fixed | 4 |
-| New Issues | 3 |
-| **Total open** | **8** (4 unfixed + 1 partial + 3 new) |
-| Critical/High open | 0 |
-| Medium open | 0 |
-| Low open | 8 |
+| Metric             | Count                                 |
+| ------------------ | ------------------------------------- |
+| Fixed              | 8                                     |
+| Partially Fixed    | 1                                     |
+| Not Fixed          | 4                                     |
+| New Issues         | 3                                     |
+| **Total open**     | **8** (4 unfixed + 1 partial + 3 new) |
+| Critical/High open | 0                                     |
+| Medium open        | 0                                     |
+| Low open           | 8                                     |

@@ -20,19 +20,19 @@ The Sprint feature has 11 components totaling 1,420 LOC with **zero tests**. Thi
 
 ### Component Inventory
 
-| Component | File | LOC | Responsibility | Risk |
-|-----------|------|-----|----------------|------|
-| SprintCenter | `sprint/SprintCenter.tsx` | 271 | Main container: task polling, CRUD, drawer state | High |
-| KanbanBoard | `sprint/KanbanBoard.tsx` | 83 | 4-column DnD board | Medium |
-| KanbanColumn | `sprint/KanbanColumn.tsx` | 73 | Single column with drop zone | Medium |
-| NewTicketModal | `sprint/NewTicketModal.tsx` | 243 | Create task form with AI spec generation | High |
-| TaskCard | `sprint/TaskCard.tsx` | 115 | Kanban card with context menu | Medium |
-| SpecDrawer | `sprint/SpecDrawer.tsx` | 222 | Read/edit task spec | Medium |
-| LogDrawer | `sprint/LogDrawer.tsx` | 106 | Agent run output viewer | Medium |
-| PRList | `sprint/PRList.tsx` | 148 | GitHub PR list with polling | High |
-| AddCardForm | `sprint/AddCardForm.tsx` | 88 | Quick-add form | Low |
-| AgentStatusChip | `sprint/AgentStatusChip.tsx` | 35 | Status badge | Low |
-| PRSection | `sprint/PRSection.tsx` | 36 | PR list container | Low |
+| Component       | File                         | LOC | Responsibility                                   | Risk   |
+| --------------- | ---------------------------- | --- | ------------------------------------------------ | ------ |
+| SprintCenter    | `sprint/SprintCenter.tsx`    | 271 | Main container: task polling, CRUD, drawer state | High   |
+| KanbanBoard     | `sprint/KanbanBoard.tsx`     | 83  | 4-column DnD board                               | Medium |
+| KanbanColumn    | `sprint/KanbanColumn.tsx`    | 73  | Single column with drop zone                     | Medium |
+| NewTicketModal  | `sprint/NewTicketModal.tsx`  | 243 | Create task form with AI spec generation         | High   |
+| TaskCard        | `sprint/TaskCard.tsx`        | 115 | Kanban card with context menu                    | Medium |
+| SpecDrawer      | `sprint/SpecDrawer.tsx`      | 222 | Read/edit task spec                              | Medium |
+| LogDrawer       | `sprint/LogDrawer.tsx`       | 106 | Agent run output viewer                          | Medium |
+| PRList          | `sprint/PRList.tsx`          | 148 | GitHub PR list with polling                      | High   |
+| AddCardForm     | `sprint/AddCardForm.tsx`     | 88  | Quick-add form                                   | Low    |
+| AgentStatusChip | `sprint/AgentStatusChip.tsx` | 35  | Status badge                                     | Low    |
+| PRSection       | `sprint/PRSection.tsx`       | 36  | PR list container                                | Low    |
 
 ### Key Dependencies
 
@@ -56,19 +56,21 @@ The Sprint feature has 11 components totaling 1,420 LOC with **zero tests**. Thi
 ```ts
 // Mock Supabase/gateway RPC
 vi.mock('../../lib/rpc', () => ({
-  rpcCall: vi.fn(),
+  rpcCall: vi.fn()
 }))
 
 // Mock GitHub API
 vi.mock('../../lib/github-api', () => ({
-  listOpenPRs: vi.fn().mockResolvedValue([]),
+  listOpenPRs: vi.fn().mockResolvedValue([])
 }))
 
 // Mock window.api
 window.api = {
   getGitHubToken: vi.fn().mockResolvedValue('gh-token'),
-  getSupabaseConfig: vi.fn().mockResolvedValue({ url: 'https://example.supabase.co', anonKey: 'key' }),
-  getRepoPaths: vi.fn().mockResolvedValue({ BDE: '/path/to/bde' }),
+  getSupabaseConfig: vi
+    .fn()
+    .mockResolvedValue({ url: 'https://example.supabase.co', anonKey: 'key' }),
+  getRepoPaths: vi.fn().mockResolvedValue({ BDE: '/path/to/bde' })
 }
 
 // Mock data factories
@@ -80,7 +82,7 @@ function makeTask(overrides = {}) {
     priority: 'medium',
     spec: null,
     created_at: new Date().toISOString(),
-    ...overrides,
+    ...overrides
   }
 }
 ```
@@ -181,14 +183,14 @@ function makeTask(overrides = {}) {
 
 ## Files to Create
 
-| File | Purpose | Estimated LOC |
-|------|---------|---------------|
-| `src/renderer/src/components/sprint/__tests__/SprintCenter.test.tsx` | Main container tests | ~120 |
-| `src/renderer/src/components/sprint/__tests__/NewTicketModal.test.tsx` | Ticket creation tests | ~110 |
-| `src/renderer/src/components/sprint/__tests__/KanbanBoard.test.tsx` | Board layout tests | ~60 |
-| `src/renderer/src/components/sprint/__tests__/TaskCard.test.tsx` | Card render + interaction | ~70 |
-| `src/renderer/src/components/sprint/__tests__/PRList.test.tsx` | PR integration tests | ~80 |
-| `src/renderer/src/components/sprint/__tests__/SpecDrawer.test.tsx` | Spec editing tests | ~70 |
+| File                                                                   | Purpose                   | Estimated LOC |
+| ---------------------------------------------------------------------- | ------------------------- | ------------- |
+| `src/renderer/src/components/sprint/__tests__/SprintCenter.test.tsx`   | Main container tests      | ~120          |
+| `src/renderer/src/components/sprint/__tests__/NewTicketModal.test.tsx` | Ticket creation tests     | ~110          |
+| `src/renderer/src/components/sprint/__tests__/KanbanBoard.test.tsx`    | Board layout tests        | ~60           |
+| `src/renderer/src/components/sprint/__tests__/TaskCard.test.tsx`       | Card render + interaction | ~70           |
+| `src/renderer/src/components/sprint/__tests__/PRList.test.tsx`         | PR integration tests      | ~80           |
+| `src/renderer/src/components/sprint/__tests__/SpecDrawer.test.tsx`     | Spec editing tests        | ~70           |
 
 ## Files to Modify
 
@@ -211,6 +213,7 @@ Recommended: Option 2 for SprintCenter, Option 1 for KanbanBoard.
 ### Supabase / RPC Mocking
 
 Sprint components access data through two paths:
+
 1. **Gateway RPC** (`rpcCall(...)`) — most operations go through this
 2. **Direct Supabase fetch** — some polling queries hit Supabase directly
 
@@ -219,15 +222,17 @@ Mock both consistently. Use `vi.mock('../../lib/rpc')` for RPC and `global.fetch
 ### Rendering
 
 Sprint components import from `@dnd-kit/core` and `@dnd-kit/sortable`. These need jsdom support for:
+
 - `Element.getBoundingClientRect()`
 - `ResizeObserver`
 
 Add to test setup if not already present:
+
 ```ts
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
-  disconnect: vi.fn(),
+  disconnect: vi.fn()
 }))
 ```
 

@@ -14,11 +14,11 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| **Rewrite** | `src/main/agent-manager/index.ts` | Replace closure factory with `AgentManagerImpl` class |
-| **Create** | `src/main/agent-manager/__tests__/index-methods.test.ts` | Tests for class internal methods and race guard |
-| **Verify** | `src/main/agent-manager/__tests__/index.test.ts` | Existing 44 tests must still pass (public API unchanged) |
+| Action      | File                                                     | Responsibility                                           |
+| ----------- | -------------------------------------------------------- | -------------------------------------------------------- |
+| **Rewrite** | `src/main/agent-manager/index.ts`                        | Replace closure factory with `AgentManagerImpl` class    |
+| **Create**  | `src/main/agent-manager/__tests__/index-methods.test.ts` | Tests for class internal methods and race guard          |
+| **Verify**  | `src/main/agent-manager/__tests__/index.test.ts`         | Existing 44 tests must still pass (public API unchanged) |
 
 ---
 
@@ -27,12 +27,14 @@
 Pure structural refactor. No behavioral changes. All 44 existing tests must pass.
 
 **Files:**
+
 - Rewrite: `src/main/agent-manager/index.ts`
 - Verify: `src/main/agent-manager/__tests__/index.test.ts`
 
 - [ ] **Step 1: Read existing tests and source thoroughly**
 
 Read both files to understand:
+
 - `src/main/agent-manager/index.ts` — full 644-line file, all closure state and functions
 - `src/main/agent-manager/__tests__/index.test.ts` — how factory is tested, what's mocked
 - `src/main/agent-manager/types.ts` — AgentManagerConfig, ActiveAgent interfaces
@@ -43,6 +45,7 @@ Read both files to understand:
 Rewrite `src/main/agent-manager/index.ts`. The key transformation:
 
 **Keep unchanged at the top of the file (lines 1-216):**
+
 - All imports (lines 1-36)
 - Logger helpers: `rotateAmLogIfNeeded`, `fileLog`, `defaultLogger` (lines 37-75)
 - Pure exported functions: `checkOAuthToken`, `handleWatchdogVerdict` (lines 85-186)
@@ -114,6 +117,7 @@ export function createAgentManager(
 4. **`isActive` callbacks** — `recoverOrphans(isActive, ...)` and `pruneStaleWorktrees(..., isActive)` pass `isActive` as a callback. Use arrow: `(id: string) => this._activeAgents.has(id)` — simpler than binding.
 
 5. **`setInterval` callbacks** — All 4 timers need arrow functions to preserve `this`:
+
    ```typescript
    this.pollTimer = setInterval(() => { ... this._drainLoop() ... }, this.config.pollIntervalMs)
    ```
@@ -127,6 +131,7 @@ Run: `npx vitest run --config src/main/vitest.main.config.ts src/main/agent-mana
 Expected: All 44 tests PASS.
 
 If tests fail, the most likely issues are:
+
 - `this` binding lost in setInterval callbacks → use arrow functions
 - Mock patterns that depend on closure structure → adjust mock targets
 - `runAgentDeps` reference timing (built in constructor, `this` is available)
@@ -159,11 +164,13 @@ git commit -m "refactor: convert agent manager from closure factory to class"
 Add the `_processingTasks` Set to prevent drain/watchdog conflicts. This is a behavioral change — separate commit from the structural refactor.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts`
 
 - [ ] **Step 1: Add `_processingTasks` property**
 
 Add to the class (if not already added in Task 1):
+
 ```typescript
 readonly _processingTasks = new Set<string>()
 ```
@@ -171,6 +178,7 @@ readonly _processingTasks = new Set<string>()
 - [ ] **Step 2: Guard `_processQueuedTask`**
 
 At the top of `_processQueuedTask`, before any logic:
+
 ```typescript
 const taskId = raw.id as string
 if (this._processingTasks.has(taskId)) return
@@ -185,6 +193,7 @@ try {
 - [ ] **Step 3: Guard `_watchdogLoop`**
 
 At the top of the watchdog's `for` loop, after getting the verdict:
+
 ```typescript
 for (const agent of this._activeAgents.values()) {
   // Skip if drain loop is mid-processing this task
@@ -215,6 +224,7 @@ git commit -m "fix: add drain/watchdog race guard via processingTasks Set"
 Write focused tests for the class internals and race guard behavior.
 
 **Files:**
+
 - Create: `src/main/agent-manager/__tests__/index-methods.test.ts`
 
 - [ ] **Step 1: Create test file**
@@ -291,7 +301,11 @@ describe('AgentManagerImpl internals', () => {
     })
 
     it('exposes concurrency state with configured maxSlots', () => {
-      const am = new AgentManagerImpl(makeConfig({ maxConcurrent: 3 }), makeRepo() as any, mockLogger)
+      const am = new AgentManagerImpl(
+        makeConfig({ maxConcurrent: 3 }),
+        makeRepo() as any,
+        mockLogger
+      )
       expect(am._concurrency.maxSlots).toBe(3)
     })
   })
@@ -318,7 +332,9 @@ describe('AgentManagerImpl internals', () => {
 
     it('cleans up processingTasks on thrown error', async () => {
       const repo = makeRepo()
-      repo.claimTask.mockImplementation(() => { throw new Error('boom') })
+      repo.claimTask.mockImplementation(() => {
+        throw new Error('boom')
+      })
       const am = new AgentManagerImpl(makeConfig(), repo as any, mockLogger)
 
       await am._processQueuedTask({ id: 'task-3', title: 'Test', repo: 'myrepo' }, new Map())

@@ -46,21 +46,22 @@ src/renderer/src/components/sessions/TicketEditor.tsx   → src/renderer/src/com
 
 ### Key Modified Files
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/views/AgentsView.tsx` | Update SpawnModal import path |
-| `src/renderer/src/lib/chat-markdown.tsx` | Update TicketEditor import path |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | Replace ChatThread with ChatRenderer + agentEvents store |
+| File                                                      | Change                                                   |
+| --------------------------------------------------------- | -------------------------------------------------------- |
+| `src/renderer/src/views/AgentsView.tsx`                   | Update SpawnModal import path                            |
+| `src/renderer/src/lib/chat-markdown.tsx`                  | Update TicketEditor import path                          |
+| `src/renderer/src/components/sprint/LogDrawer.tsx`        | Replace ChatThread with ChatRenderer + agentEvents store |
 | `src/renderer/src/components/terminal/AgentOutputTab.tsx` | Replace ChatThread/LocalAgentLogViewer with ChatRenderer |
-| `src/renderer/src/views/SettingsView.tsx` | Rewire to `window.api.templates.*` API |
-| `src/renderer/src/assets/main.css` | Remove sessions.css import |
-| `CLAUDE.md` | Update architecture notes (Sessions → Agents) |
+| `src/renderer/src/views/SettingsView.tsx`                 | Rewire to `window.api.templates.*` API                   |
+| `src/renderer/src/assets/main.css`                        | Remove sessions.css import                               |
+| `CLAUDE.md`                                               | Update architecture notes (Sessions → Agents)            |
 
 ---
 
 ## Task 1: Delete Dead Files + Move SpawnModal/TicketEditor
 
 **Files:**
+
 - Delete: all 18 files listed in "Files Deleted" above
 - Move: `sessions/SpawnModal.tsx` → `agents/SpawnModal.tsx`
 - Move: `sessions/TicketEditor.tsx` → `sprint/TicketEditor.tsx`
@@ -77,6 +78,7 @@ mv src/renderer/src/components/sessions/SpawnModal.tsx src/renderer/src/componen
 - [ ] **Step 2: Update AgentsView import**
 
 In `src/renderer/src/views/AgentsView.tsx`, change:
+
 ```typescript
 // FROM:
 import { SpawnModal } from '../components/sessions/SpawnModal'
@@ -93,6 +95,7 @@ mv src/renderer/src/components/sessions/TicketEditor.tsx src/renderer/src/compon
 - [ ] **Step 4: Update chat-markdown.tsx import**
 
 In `src/renderer/src/lib/chat-markdown.tsx`, change:
+
 ```typescript
 // FROM:
 import { TicketEditor } from '../components/sessions/TicketEditor'
@@ -127,6 +130,7 @@ rm src/renderer/src/assets/sessions.css
 - [ ] **Step 7: Remove sessions.css import from main.css**
 
 In `src/renderer/src/assets/main.css`, find and remove:
+
 ```css
 @import './sessions.css';
 ```
@@ -148,6 +152,7 @@ git commit -m "chore: delete dead sessions components, move SpawnModal + TicketE
 ## Task 2: Grep for Remaining 'sessions/' References
 
 **Files:**
+
 - Various renderer files
 
 - [ ] **Step 1: Search for stale imports**
@@ -181,15 +186,19 @@ git commit -m "chore: fix remaining sessions references"
 ## Task 3: Migrate LogDrawer to ChatRenderer
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/LogDrawer.tsx`
 
 - [ ] **Step 1: Update imports**
 
 Replace:
+
 ```typescript
 import { ChatThread } from '../sessions/ChatThread'
 ```
+
 With:
+
 ```typescript
 import { ChatRenderer } from '../agents/ChatRenderer'
 import { useAgentEventsStore } from '../../stores/agentEvents'
@@ -253,6 +262,7 @@ And rename the button label from "Open in Sessions" to "Open in Agents".
 - [ ] **Step 5: Remove unused imports**
 
 Remove any imports that are now unused after the ChatThread removal:
+
 - `chatItemsToMessages` (if no longer used)
 - `ChatMessage` type (if no longer used)
 - `parseStreamJson` and related (if only used by ChatThread path)
@@ -276,18 +286,22 @@ git commit -m "refactor(sprint): migrate LogDrawer from ChatThread to ChatRender
 ## Task 4: Migrate AgentOutputTab to ChatRenderer
 
 **Files:**
+
 - Modify: `src/renderer/src/components/terminal/AgentOutputTab.tsx`
 
 - [ ] **Step 1: Replace imports**
 
 Replace:
+
 ```typescript
 import { LocalAgentLogViewer, AgentLogViewer } from '../sessions/LocalAgentLogViewer'
 import { parseStreamJson, type ChatItem } from '../../lib/stream-parser'
 import { chatItemsToMessages } from '../../lib/agent-messages'
 import { ChatThread } from '../sessions/ChatThread'
 ```
+
 With:
+
 ```typescript
 import { ChatRenderer } from '../agents/ChatRenderer'
 import { useAgentEventsStore } from '../../stores/agentEvents'
@@ -402,6 +416,7 @@ git commit -m "refactor(terminal): migrate AgentOutputTab from ChatThread to Cha
 ## Task 5: Delete ChatThread, LocalAgentLogViewer, LogDrawer Tests
 
 **Files:**
+
 - Delete: `src/renderer/src/components/sessions/ChatThread.tsx`
 - Delete: `src/renderer/src/components/sessions/LocalAgentLogViewer.tsx`
 - Delete: `src/renderer/src/components/sprint/__tests__/LogDrawer.test.tsx`
@@ -441,11 +456,13 @@ git commit -m "chore: delete ChatThread, LocalAgentLogViewer, and LogDrawer test
 ## Task 6: Rewire SettingsView Templates to CRUD API
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx`
 
 - [ ] **Step 1: Replace data loading**
 
 In `TaskTemplatesSection`, replace:
+
 ```typescript
 useEffect(() => {
   window.api.settings.getJson('task.templates').then((raw) => {
@@ -460,7 +477,9 @@ useEffect(() => {
   })
 }, [])
 ```
+
 With:
+
 ```typescript
 useEffect(() => {
   window.api.templates.list().then((list) => {
@@ -473,6 +492,7 @@ useEffect(() => {
 - [ ] **Step 2: Replace save handler**
 
 Replace `saveTemplates`:
+
 ```typescript
 const saveTemplates = useCallback(async (template: TaskTemplate) => {
   await window.api.templates.save(template)
@@ -484,6 +504,7 @@ const saveTemplates = useCallback(async (template: TaskTemplate) => {
 - [ ] **Step 3: Update name/prefix change handlers**
 
 Update `handleNameChange` and `handlePrefixChange` to call the new `saveTemplates` with the full template object:
+
 ```typescript
 const handleNameChange = useCallback(
   (index: number, name: string) => {
@@ -546,13 +567,17 @@ In the template row JSX, add a built-in badge and change the delete button for b
     disabled={!!t.isBuiltIn}
   />
   {t.isBuiltIn && (
-    <span style={{
-      fontSize: tokens.size.xs,
-      padding: '2px 6px',
-      borderRadius: tokens.radius.full,
-      background: tokens.color.infoDim,
-      color: tokens.color.info,
-    }}>Built-in</span>
+    <span
+      style={{
+        fontSize: tokens.size.xs,
+        padding: '2px 6px',
+        borderRadius: tokens.radius.full,
+        background: tokens.color.infoDim,
+        color: tokens.color.info
+      }}
+    >
+      Built-in
+    </span>
   )}
   <Button
     variant="icon"
@@ -589,11 +614,13 @@ git commit -m "feat(settings): rewire template management to formal CRUD API"
 ## Task 7: Update CLAUDE.md
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Update architecture notes**
 
 In the Architecture Notes section:
+
 - Change "Views: 7 views ... Sessions, Terminal, Sprint..." → "Views: 7 views ... Agents, Terminal, Sprint..."
 - Change "Agent spawning: `src/main/local-agents.ts` — spawns Claude CLI agents" → mention provider factory
 - Add note about `src/main/agents/` directory (types, providers, event-bus, event-store)
@@ -613,12 +640,12 @@ git commit -m "docs: update CLAUDE.md architecture notes for Phase 2"
 
 ## Summary
 
-| Task | Description | Files Changed | Risk |
-|------|-------------|--------------|------|
-| 1 | Delete dead files, move SpawnModal + TicketEditor | ~20 deleted, 3 modified | Low |
-| 2 | Grep for remaining sessions references | 1-3 modified | Low |
-| 3 | Migrate LogDrawer → ChatRenderer | 1 modified | Medium |
-| 4 | Migrate AgentOutputTab → ChatRenderer | 1 modified | Medium |
-| 5 | Delete ChatThread, LocalAgentLogViewer, tests | 3-4 deleted | Low |
-| 6 | Rewire SettingsView templates | 1 modified | Low |
-| 7 | Update CLAUDE.md | 1 modified | Low |
+| Task | Description                                       | Files Changed           | Risk   |
+| ---- | ------------------------------------------------- | ----------------------- | ------ |
+| 1    | Delete dead files, move SpawnModal + TicketEditor | ~20 deleted, 3 modified | Low    |
+| 2    | Grep for remaining sessions references            | 1-3 modified            | Low    |
+| 3    | Migrate LogDrawer → ChatRenderer                  | 1 modified              | Medium |
+| 4    | Migrate AgentOutputTab → ChatRenderer             | 1 modified              | Medium |
+| 5    | Delete ChatThread, LocalAgentLogViewer, tests     | 3-4 deleted             | Low    |
+| 6    | Rewire SettingsView templates                     | 1 modified              | Low    |
+| 7    | Update CLAUDE.md                                  | 1 modified              | Low    |

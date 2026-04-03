@@ -15,48 +15,52 @@ BDE is a capable Electron desktop app with solid architectural foundations: type
 
 ### Security
 
-| # | Issue | Flagged By | File(s) | Effort |
-|---|-------|-----------|---------|--------|
-| SEC-1 | **Renderer sandbox disabled** -- compromised renderer gets full Node.js access | main-process-sd C2 | `src/main/index.ts:60` | L |
-| SEC-2 | **Symlink-based path traversal bypass in IDE** -- `path.resolve()` does not follow symlinks; a symlink inside IDE root allows read/write/delete of arbitrary files | workspace-sd 2.1 | `src/main/handlers/ide-fs-handlers.ts:15-21` | S |
-| SEC-3 | **`github:fetch` IPC is an open proxy** -- renderer can make arbitrary mutating GitHub API calls (DELETE repos, add collaborators) with user's token | code-review-sd 2.1 | `src/main/handlers/git-handlers.ts:40-70` | M |
-| SEC-4 | **PlaygroundModal iframe allows scripts** -- agent-generated HTML executes JS via `sandbox="allow-scripts"` in Electron renderer | workspace-sd 2.3 | `src/renderer/src/components/agents/PlaygroundModal.tsx:334` | S |
-| SEC-5 | **CORS `*` on auth-protected localhost API** -- any browser tab can probe Queue API | main-process-sd C3 | `src/main/queue-api/helpers.ts:56` | S |
-| SEC-6 | **SQL string interpolation in `backupDatabase()`** -- `VACUUM INTO '${backupPath}'` | main-process-ax 3.6, main-process-sd C1 | `src/main/db.ts:31` | S |
+| #     | Issue                                                                                                                                                              | Flagged By                              | File(s)                                                      | Effort |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- | ------------------------------------------------------------ | ------ |
+| SEC-1 | **Renderer sandbox disabled** -- compromised renderer gets full Node.js access                                                                                     | main-process-sd C2                      | `src/main/index.ts:60`                                       | L      |
+| SEC-2 | **Symlink-based path traversal bypass in IDE** -- `path.resolve()` does not follow symlinks; a symlink inside IDE root allows read/write/delete of arbitrary files | workspace-sd 2.1                        | `src/main/handlers/ide-fs-handlers.ts:15-21`                 | S      |
+| SEC-3 | **`github:fetch` IPC is an open proxy** -- renderer can make arbitrary mutating GitHub API calls (DELETE repos, add collaborators) with user's token               | code-review-sd 2.1                      | `src/main/handlers/git-handlers.ts:40-70`                    | M      |
+| SEC-4 | **PlaygroundModal iframe allows scripts** -- agent-generated HTML executes JS via `sandbox="allow-scripts"` in Electron renderer                                   | workspace-sd 2.3                        | `src/renderer/src/components/agents/PlaygroundModal.tsx:334` | S      |
+| SEC-5 | **CORS `*` on auth-protected localhost API** -- any browser tab can probe Queue API                                                                                | main-process-sd C3                      | `src/main/queue-api/helpers.ts:56`                           | S      |
+| SEC-6 | **SQL string interpolation in `backupDatabase()`** -- `VACUUM INTO '${backupPath}'`                                                                                | main-process-ax 3.6, main-process-sd C1 | `src/main/db.ts:31`                                          | S      |
 
 ### Architecture
 
-| # | Issue | Flagged By | File(s) | Effort |
-|---|-------|-----------|---------|--------|
-| ARCH-1 | **Dual orchestrator duplication** -- SprintCenter and SprintPipeline independently wire identical hooks, polling, and side effects | sprint-tasks-ax C1 | `SprintCenter.tsx`, `SprintPipeline.tsx` | M |
-| ARCH-2 | **Repository pattern inconsistently applied** -- IPC handlers and Queue API bypass `ISprintTaskRepository`, creating 3 different task update codepaths with different side effects | main-process-ax 2.2 | `sprint-local.ts`, `task-handlers.ts`, `sprint-service.ts` | M |
-| ARCH-3 | **Hardcoded `REPO_OPTIONS` in PR Station** -- 7 components import a static 3-repo constant instead of using `useRepoOptions()` hook; any user-configured repo silently fails all API calls | code-review-ax 2.1 | `constants.ts`, 7 PR Station components | M |
-| ARCH-4 | **Two competing design systems** -- `ui/` (BEM + CSS vars) and `neon/` (inline tokens) coexist with 8 hybrid components mixing both | shell-design-ax 2.2, 2.3, 3.2, 3.3 | `ui/*`, `neon/*`, `tokens.ts`, `base.css`, `neon.css` | L |
-| ARCH-5 | **VIEW_LABELS/VIEW_ICONS duplicated 4x** -- adding a view requires updating 4 files in lockstep; missing entries cause runtime crashes | shell-design-ax 2.1, shell-design-sd 4.1, shell-design-pm 4.3 | `panelLayout.ts`, `NeonSidebar.tsx`, `OverflowMenu.tsx`, `App.tsx` | S |
-| ARCH-6 | **Fragile `onStatusTerminal` wiring** -- 4 separate setter functions must be called in correct order at startup; easy to miss when adding new terminal-status modules | main-process-ax 2.3 | `src/main/index.ts:115-124` | M |
+| #      | Issue                                                                                                                                                                                      | Flagged By                                                    | File(s)                                                            | Effort |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------ | ------ |
+| ARCH-1 | **Dual orchestrator duplication** -- SprintCenter and SprintPipeline independently wire identical hooks, polling, and side effects                                                         | sprint-tasks-ax C1                                            | `SprintCenter.tsx`, `SprintPipeline.tsx`                           | M      |
+| ARCH-2 | **Repository pattern inconsistently applied** -- IPC handlers and Queue API bypass `ISprintTaskRepository`, creating 3 different task update codepaths with different side effects         | main-process-ax 2.2                                           | `sprint-local.ts`, `task-handlers.ts`, `sprint-service.ts`         | M      |
+| ARCH-3 | **Hardcoded `REPO_OPTIONS` in PR Station** -- 7 components import a static 3-repo constant instead of using `useRepoOptions()` hook; any user-configured repo silently fails all API calls | code-review-ax 2.1                                            | `constants.ts`, 7 PR Station components                            | M      |
+| ARCH-4 | **Two competing design systems** -- `ui/` (BEM + CSS vars) and `neon/` (inline tokens) coexist with 8 hybrid components mixing both                                                        | shell-design-ax 2.2, 2.3, 3.2, 3.3                            | `ui/*`, `neon/*`, `tokens.ts`, `base.css`, `neon.css`              | L      |
+| ARCH-5 | **VIEW_LABELS/VIEW_ICONS duplicated 4x** -- adding a view requires updating 4 files in lockstep; missing entries cause runtime crashes                                                     | shell-design-ax 2.1, shell-design-sd 4.1, shell-design-pm 4.3 | `panelLayout.ts`, `NeonSidebar.tsx`, `OverflowMenu.tsx`, `App.tsx` | S      |
+| ARCH-6 | **Fragile `onStatusTerminal` wiring** -- 4 separate setter functions must be called in correct order at startup; easy to miss when adding new terminal-status modules                      | main-process-ax 2.3                                           | `src/main/index.ts:115-124`                                        | M      |
 
 ### UX
 
-| # | Issue | Flagged By | File(s) | Effort |
-|---|-------|-----------|---------|--------|
-| UX-1 | **Agent failure notes are not actionable** -- users see "Fast-fail exhausted", "Idle timeout", "Empty prompt" with no recovery guidance | main-process-pm C1 | `index.ts`, `run-agent.ts`, `completion.ts` | S |
-| UX-2 | **Virtualized diff silently disables all commenting** -- large PR diffs become read-only with no indication to user | code-review-pm 2.1 | `DiffViewer.tsx:444` | M |
-| UX-3 | **Pipeline "Edit" button navigates to blank Workbench** -- does not call `loadTask()`, so user sees empty form | sprint-tasks-pm C3 | `SprintPipeline.tsx:276`, `TaskDetailDrawer.tsx:264-267` | S |
-| UX-4 | **Duplicate merge controls with divergent behavior** -- two merge buttons visible simultaneously, one has no confirmation dialog | code-review-ax 3.1, code-review-sd 3.6, code-review-pm 2.2 | `MergeButton.tsx`, `PRStationActions.tsx` | M |
-| UX-5 | **Keyboard shortcuts fire in contentEditable** -- typing in Monaco editor triggers app shortcuts (`?` toggles overlay, `Cmd+P` opens palette instead of Monaco quick-open) | shell-design-sd 2.1 | `App.tsx:177-178` | S |
+| #    | Issue                                                                                                                                                                      | Flagged By                                                 | File(s)                                                  | Effort |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------- | ------ |
+| UX-1 | **Agent failure notes are not actionable** -- users see "Fast-fail exhausted", "Idle timeout", "Empty prompt" with no recovery guidance                                    | main-process-pm C1                                         | `index.ts`, `run-agent.ts`, `completion.ts`              | S      |
+| UX-2 | **Virtualized diff silently disables all commenting** -- large PR diffs become read-only with no indication to user                                                        | code-review-pm 2.1                                         | `DiffViewer.tsx:444`                                     | M      |
+| UX-3 | **Pipeline "Edit" button navigates to blank Workbench** -- does not call `loadTask()`, so user sees empty form                                                             | sprint-tasks-pm C3                                         | `SprintPipeline.tsx:276`, `TaskDetailDrawer.tsx:264-267` | S      |
+| UX-4 | **Duplicate merge controls with divergent behavior** -- two merge buttons visible simultaneously, one has no confirmation dialog                                           | code-review-ax 3.1, code-review-sd 3.6, code-review-pm 2.2 | `MergeButton.tsx`, `PRStationActions.tsx`                | M      |
+| UX-5 | **Keyboard shortcuts fire in contentEditable** -- typing in Monaco editor triggers app shortcuts (`?` toggles overlay, `Cmd+P` opens palette instead of Monaco quick-open) | shell-design-sd 2.1                                        | `App.tsx:177-178`                                        | S      |
 
 ---
 
 ## 3. Cross-Cutting Themes
 
 ### 3.1 Dead Code Everywhere (all 5 groups)
+
 Every domain group found significant dead code. The sprint domain alone has ~3,700 lines of orphaned SprintCenter-era components (sprint-tasks-sd). The workspace domain has 581+ lines of dead agent components plus a 409-line dead unified store (workspace-ax C1, workspace-sd). The main process has 5 dead IPC channels (main-process-ax). This is the result of successive UI redesigns without cleanup passes.
 
 ### 3.2 Competing Design Systems (shell-design-ax, shell-design-sd, shell-design-pm + all domain groups)
+
 Every group flagged styling inconsistency. The codebase has: (a) `ui/` BEM components with `--bde-*` CSS vars, (b) `neon/` components with inline `tokens.*` styles, (c) hardcoded `rgba()` values violating the CSS theming rule, and (d) `onMouseEnter`/`onMouseLeave` handlers substituting for CSS `:hover`. Source Control, Dashboard, and most agent components use inline styles exclusively. This blocks light theme support and makes the codebase resistant to design iteration.
 
 ### 3.3 Missing Error Feedback (all PM audits)
+
 All five PM audits found silent failures or missing error states:
+
 - PR Station: infinite loading skeleton when GitHub is unreachable (code-review-pm 2.3)
 - Agent Manager: terse internal error labels instead of actionable messages (main-process-pm C1)
 - Sprint Pipeline: spec validation errors flattened to strings crossing IPC boundary (main-process-pm S3)
@@ -64,15 +68,19 @@ All five PM audits found silent failures or missing error states:
 - Shell: `ErrorBoundary` has no retry button -- crashed views require full app reload (shell-design-sd 2.3)
 
 ### 3.4 Duplicated Utility Functions (sprint-tasks-ax S3, sprint-tasks-sd 4.1-4.5, workspace-ax M1-M3)
+
 `formatElapsed`, `getDotColor`, `statusBadgeVariant`, `getStatusDisplay`, `priorityVariant`, `PRIORITY_OPTIONS`, `formatDuration`, `formatTime`, and `formatFileSize` are each duplicated 2-4 times across components. At least 9 distinct helper functions need extraction to shared utilities.
 
 ### 3.5 `window.confirm()` / `window.prompt()` Usage (sprint-tasks-sd 2.1, sprint-tasks-pm C2, workspace-sd 4.3, workspace-pm 3.4, shell-design-sd 2.2)
+
 Five reports flagged native browser dialogs (`confirm()`, `prompt()`) in an Electron app. These block the renderer thread, break the neon aesthetic, and are inconsistent with the app's own `useConfirm()` hook and `ConfirmModal` component. Found in: SprintDetailPane, CommandPalette, FileSidebar.
 
 ### 3.6 Hardcoded `rgba()` Values (code-review-ax 3.6, shell-design-ax 3.6, shell-design-sd 3.5, code-review-pm 3.8)
+
 Multiple reports flagged hardcoded `rgba()` in DashboardView, SidebarItem, OverflowMenu, InlineDiffDrawer, neon-shell.css, and diff-neon.css. These violate the CSS theming rule in CLAUDE.md and will not adapt to light theme.
 
 ### 3.7 Inline Styles vs CSS Classes (all groups)
+
 Every domain has components using inline `style={{}}` with `tokens.*` instead of CSS classes, despite CLAUDE.md stating: "Do NOT use inline `tokens.*` styles for neon views -- use CSS classes." Worst offenders: Source Control (entire view), DashboardView, TaskMonitorPanel, SprintTaskRow, all neon primitives, most agent components.
 
 ---
@@ -80,55 +88,60 @@ Every domain has components using inline `style={{}}` with `tokens.*` instead of
 ## 4. Dead Code Summary
 
 ### Sprint & Tasks Domain (~3,700 lines)
-| Component | Lines | Source |
-|-----------|-------|--------|
-| `SprintCenter.tsx` + subtree (SprintTaskList, SprintDetailPane, KanbanBoard, KanbanColumn, TaskCard, BulkActionBar, SprintTaskRow, TaskTable, AgentStatusChip, TaskEventSubtitle) | ~2,400 | sprint-tasks-sd 5 |
-| `NewTicketModal.tsx` | 436 | sprint-tasks-ax S5 |
-| `LogDrawer.tsx` | 252 | sprint-tasks-sd 5 |
-| `TaskMonitorPanel.tsx` | 337 | sprint-tasks-sd 5 |
-| `SpecDrawer.tsx` | 305 | sprint-tasks-sd 5 |
-| `PRList.tsx` | 194 | sprint-tasks-sd 5 |
-| `CircuitPipelineExample.tsx` | 104 | sprint-tasks-sd 5 |
-| `SprintTaskList.example.tsx` | 150 | sprint-tasks-sd 5 |
-| `EventCard.tsx` | 371 | sprint-tasks-sd 5 |
-| 3 component-level markdown files | ~50 | sprint-tasks-ax M7 |
-| `exitCode` state in LogDrawer + TaskMonitorPanel | dead state | sprint-tasks-sd 3.6 |
+
+| Component                                                                                                                                                                         | Lines      | Source              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------- |
+| `SprintCenter.tsx` + subtree (SprintTaskList, SprintDetailPane, KanbanBoard, KanbanColumn, TaskCard, BulkActionBar, SprintTaskRow, TaskTable, AgentStatusChip, TaskEventSubtitle) | ~2,400     | sprint-tasks-sd 5   |
+| `NewTicketModal.tsx`                                                                                                                                                              | 436        | sprint-tasks-ax S5  |
+| `LogDrawer.tsx`                                                                                                                                                                   | 252        | sprint-tasks-sd 5   |
+| `TaskMonitorPanel.tsx`                                                                                                                                                            | 337        | sprint-tasks-sd 5   |
+| `SpecDrawer.tsx`                                                                                                                                                                  | 305        | sprint-tasks-sd 5   |
+| `PRList.tsx`                                                                                                                                                                      | 194        | sprint-tasks-sd 5   |
+| `CircuitPipelineExample.tsx`                                                                                                                                                      | 104        | sprint-tasks-sd 5   |
+| `SprintTaskList.example.tsx`                                                                                                                                                      | 150        | sprint-tasks-sd 5   |
+| `EventCard.tsx`                                                                                                                                                                   | 371        | sprint-tasks-sd 5   |
+| 3 component-level markdown files                                                                                                                                                  | ~50        | sprint-tasks-ax M7  |
+| `exitCode` state in LogDrawer + TaskMonitorPanel                                                                                                                                  | dead state | sprint-tasks-sd 3.6 |
 
 Dead CSS in `sprint-neon.css`: estimated 600-800 lines of orphaned selectors.
 
 ### Workspace Domain (~1,000+ lines)
-| Component | Lines | Source |
-|-----------|-------|--------|
-| `AgentTimeline.tsx` | 95 | workspace-ax S5, workspace-sd 5 |
-| `TimelineBar.tsx` | 114 | workspace-ax S5, workspace-sd 5 |
-| `AgentDetail.tsx` | 211 | workspace-ax C2, workspace-sd 5 |
-| `SteerInput.tsx` | 103 | workspace-sd 5 |
-| `HealthBar.tsx` | 70 | workspace-ax S5, workspace-sd 5 |
-| `PaneStatusBar.tsx` | 42 | workspace-ax S5, workspace-sd 5 |
-| `EmptyState.tsx` (terminal) | 49 | workspace-ax S5, workspace-sd 5 |
-| `useAgentsStore` (unified mega-store) | 409 | workspace-ax C1, workspace-sd 3.1 |
-| Associated test files (4+) | ~600 | workspace-sd 5 |
-| Terminal `fontSize`/zoom state (never consumed) | dead feature | workspace-sd 3.5 |
+
+| Component                                       | Lines                        | Source                             |
+| ----------------------------------------------- | ---------------------------- | ---------------------------------- |
+| `AgentTimeline.tsx`                             | 95                           | workspace-ax S5, workspace-sd 5    |
+| `TimelineBar.tsx`                               | 114                          | workspace-ax S5, workspace-sd 5    |
+| `AgentDetail.tsx`                               | 211                          | workspace-ax C2, workspace-sd 5    |
+| `SteerInput.tsx`                                | 103                          | workspace-sd 5                     |
+| `HealthBar.tsx`                                 | 70                           | workspace-ax S5, workspace-sd 5    |
+| `PaneStatusBar.tsx`                             | 42                           | workspace-ax S5, workspace-sd 5    |
+| `EmptyState.tsx` (terminal)                     | 49                           | workspace-ax S5, workspace-sd 5    |
+| `useAgentsStore` (unified mega-store)           | 409                          | workspace-ax C1, workspace-sd 3.1  |
+| Associated test files (4+)                      | ~600                         | workspace-sd 5                     |
+| Terminal `fontSize`/zoom state (never consumed) | dead feature                 | workspace-sd 3.5                   |
 | `LaunchpadReview.tsx` "Save as Template" button | dead code behind `{false &&` | workspace-sd 4.6, workspace-pm 2.3 |
 
 ### Main Process (~dead IPC channels + handlers)
-| Item | Source |
-|------|--------|
-| `config:getAgentConfig` -- returns null | main-process-ax 3.7 |
-| `config:saveAgentConfig` -- no-op | main-process-ax 3.7 |
-| `local:sendToAgent` -- returns error | main-process-ax 5 |
-| `local:isInteractive` -- returns false | main-process-ax 5 |
-| `agent:killLocal` -- returns error, misplaced in window-handlers | main-process-ax 3.4 |
-| Stale "Supabase proxy" JSDoc in server.ts | main-process-ax 4.8, main-process-pm M1 |
+
+| Item                                                             | Source                                  |
+| ---------------------------------------------------------------- | --------------------------------------- |
+| `config:getAgentConfig` -- returns null                          | main-process-ax 3.7                     |
+| `config:saveAgentConfig` -- no-op                                | main-process-ax 3.7                     |
+| `local:sendToAgent` -- returns error                             | main-process-ax 5                       |
+| `local:isInteractive` -- returns false                           | main-process-ax 5                       |
+| `agent:killLocal` -- returns error, misplaced in window-handlers | main-process-ax 3.4                     |
+| Stale "Supabase proxy" JSDoc in server.ts                        | main-process-ax 4.8, main-process-pm M1 |
 
 ### Shell & Design
-| Item | Source |
-|------|--------|
-| `ui/Tooltip.tsx` (if consolidated to NeonTooltip) | shell-design-ax 2.2 |
+
+| Item                                                | Source              |
+| --------------------------------------------------- | ------------------- |
+| `ui/Tooltip.tsx` (if consolidated to NeonTooltip)   | shell-design-ax 2.2 |
 | Duplicate `VIEW_LABELS`/`VIEW_ICONS` across 4 files | shell-design-ax 2.1 |
-| `ShortcutsOverlay` inline in App.tsx | shell-design-ax 3.4 |
+| `ShortcutsOverlay` inline in App.tsx                | shell-design-ax 3.4 |
 
 ### Estimated Total Dead Code: ~5,500-6,500 lines
+
 (Components + tests + associated CSS selectors)
 
 ---
@@ -137,28 +150,29 @@ Dead CSS in `sprint-neon.css`: estimated 600-800 lines of orphaned selectors.
 
 High-impact, low-effort issues (Effort S) that should be tackled first:
 
-| # | Issue | Source | Impact |
-|---|-------|--------|--------|
-| 1 | **Fix symlink path traversal** -- add `fs.realpathSync()` to `validateIdePath()` | workspace-sd 2.1 | Security fix, 3-line change |
-| 2 | **Fix contentEditable keyboard guard** -- add `isContentEditable` check in App.tsx | shell-design-sd 2.1 | Stops shortcuts firing in Monaco editor |
-| 3 | **Fix SprintTask type re-export** -- import from `shared/types` not SprintCenter | sprint-tasks-ax C3 | Removes artificial coupling, unblocks cleanup |
-| 4 | **Fix Pipeline "Edit" button** -- call `loadTask()` before `setView('task-workbench')` | sprint-tasks-pm C3 | Fixes broken edit workflow |
-| 5 | **Add retry button to ErrorBoundary** | shell-design-sd 2.3 | Users can recover crashed views without reload |
-| 6 | **Validate PR label colors** -- regex check for `label.color` before CSS injection | code-review-sd 2.2 | CSS injection prevention |
-| 7 | **Replace `window.confirm()`** in SprintDetailPane, CommandPalette, FileSidebar | sprint-tasks-sd 2.1, shell-design-sd 2.2, workspace-sd 4.3 | Consistent UX, non-blocking |
-| 8 | **Wire terminal fontSize from store to xterm** | workspace-sd 3.5, workspace-pm 2.2 | Fixes broken zoom shortcuts |
-| 9 | **Remove phantom `/approve` and `/files` commands** from autocomplete | workspace-pm 2.1 | User trust |
-| 10 | **Delete 5 dead IPC channels** (config:getAgentConfig, config:saveAgentConfig, local:sendToAgent, local:isInteractive, agent:killLocal) | main-process-ax 3.4, 3.7, 5 | Reduces surface area |
-| 11 | **Consolidate VIEW_LABELS/VIEW_ICONS** into single `view-registry.ts` | shell-design-ax 2.1 | Eliminates 4-file sync landmine |
-| 12 | **Fix `getPrMergeability` abort signal** -- wire signal or remove parameter | code-review-ax 2.2, code-review-sd 3.4 | Prevents stale mergeability display |
-| 13 | **Invalidate github-cache after mutations** | code-review-ax 3.4 | Prevents stale data after merge/review |
-| 14 | **Improve agent failure notes** -- add actionable recovery guidance | main-process-pm C1 | Biggest PM-side UX gap |
+| #   | Issue                                                                                                                                   | Source                                                     | Impact                                         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| 1   | **Fix symlink path traversal** -- add `fs.realpathSync()` to `validateIdePath()`                                                        | workspace-sd 2.1                                           | Security fix, 3-line change                    |
+| 2   | **Fix contentEditable keyboard guard** -- add `isContentEditable` check in App.tsx                                                      | shell-design-sd 2.1                                        | Stops shortcuts firing in Monaco editor        |
+| 3   | **Fix SprintTask type re-export** -- import from `shared/types` not SprintCenter                                                        | sprint-tasks-ax C3                                         | Removes artificial coupling, unblocks cleanup  |
+| 4   | **Fix Pipeline "Edit" button** -- call `loadTask()` before `setView('task-workbench')`                                                  | sprint-tasks-pm C3                                         | Fixes broken edit workflow                     |
+| 5   | **Add retry button to ErrorBoundary**                                                                                                   | shell-design-sd 2.3                                        | Users can recover crashed views without reload |
+| 6   | **Validate PR label colors** -- regex check for `label.color` before CSS injection                                                      | code-review-sd 2.2                                         | CSS injection prevention                       |
+| 7   | **Replace `window.confirm()`** in SprintDetailPane, CommandPalette, FileSidebar                                                         | sprint-tasks-sd 2.1, shell-design-sd 2.2, workspace-sd 4.3 | Consistent UX, non-blocking                    |
+| 8   | **Wire terminal fontSize from store to xterm**                                                                                          | workspace-sd 3.5, workspace-pm 2.2                         | Fixes broken zoom shortcuts                    |
+| 9   | **Remove phantom `/approve` and `/files` commands** from autocomplete                                                                   | workspace-pm 2.1                                           | User trust                                     |
+| 10  | **Delete 5 dead IPC channels** (config:getAgentConfig, config:saveAgentConfig, local:sendToAgent, local:isInteractive, agent:killLocal) | main-process-ax 3.4, 3.7, 5                                | Reduces surface area                           |
+| 11  | **Consolidate VIEW_LABELS/VIEW_ICONS** into single `view-registry.ts`                                                                   | shell-design-ax 2.1                                        | Eliminates 4-file sync landmine                |
+| 12  | **Fix `getPrMergeability` abort signal** -- wire signal or remove parameter                                                             | code-review-ax 2.2, code-review-sd 3.4                     | Prevents stale mergeability display            |
+| 13  | **Invalidate github-cache after mutations**                                                                                             | code-review-ax 3.4                                         | Prevents stale data after merge/review         |
+| 14  | **Improve agent failure notes** -- add actionable recovery guidance                                                                     | main-process-pm C1                                         | Biggest PM-side UX gap                         |
 
 ---
 
 ## 6. Action Items by Sprint
 
 ### Sprint 1: Security + Safety
+
 Focus: Close the critical security gaps and fix data-integrity issues.
 
 - [ ] **SEC-2**: Add `fs.realpathSync()` to IDE path validation (S)
@@ -174,6 +188,7 @@ Focus: Close the critical security gaps and fix data-integrity issues.
 - [ ] **shell-design-sd 2.4**: Validate `viewLink` against View union before `setView()` (S)
 
 ### Sprint 2: Dead Code + Cleanup
+
 Focus: Remove accumulated dead code to reduce maintenance surface by ~5,000+ lines.
 
 - [ ] Delete SprintCenter subtree: SprintCenter, SprintTaskList, SprintDetailPane, KanbanBoard, KanbanColumn, TaskCard, BulkActionBar, SprintTaskRow, TaskTable, AgentStatusChip, TaskEventSubtitle, CircuitPipelineExample, SprintTaskList.example (L)
@@ -190,6 +205,7 @@ Focus: Remove accumulated dead code to reduce maintenance surface by ~5,000+ lin
 - [ ] Extract duplicated utilities: `formatElapsed`, `getDotColor`, `statusBadgeVariant`, `getStatusDisplay`, `priorityVariant`, `PRIORITY_OPTIONS`, `formatDuration`, `formatTime`, `formatFileSize` into shared `lib/task-format.ts` and `lib/format-utils.ts` (M)
 
 ### Sprint 3: Architecture
+
 Focus: Fix structural issues and consolidate design systems.
 
 - [ ] **ARCH-1**: Extract shared `useSprintOrchestration()` hook from SprintCenter/SprintPipeline (M)
@@ -210,6 +226,7 @@ Focus: Fix structural issues and consolidate design systems.
 - [ ] Deduplicate MergeButton/PRStationActions merge dropdown (code-review-ax 3.1) (M)
 
 ### Sprint 4: UX Polish
+
 Focus: Empty states, error messages, discoverability, and missing workflows.
 
 - [ ] **UX-1**: Rewrite agent failure notes with actionable guidance (S)

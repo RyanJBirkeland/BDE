@@ -15,6 +15,7 @@
 ### Task 1: Add CSS classes for all four features
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/agents-neon.css` (append at end, before reduced-motion section)
 
 - [ ] **Step 1: Add markdown rendering CSS classes**
@@ -62,14 +63,35 @@ Append before the `/* ── Reduced Motion Overrides ── */` section:
   font-family: var(--bde-font-code);
 }
 
-.console-tool-icon--bash { background: var(--neon-orange-surface); color: var(--neon-orange); }
-.console-tool-icon--read { background: var(--neon-blue-surface); color: var(--neon-blue); }
+.console-tool-icon--bash {
+  background: var(--neon-orange-surface);
+  color: var(--neon-orange);
+}
+.console-tool-icon--read {
+  background: var(--neon-blue-surface);
+  color: var(--neon-blue);
+}
 .console-tool-icon--edit,
-.console-tool-icon--write { background: var(--neon-cyan-surface); color: var(--neon-cyan); }
-.console-tool-icon--grep { background: var(--neon-purple-surface); color: var(--neon-purple); }
-.console-tool-icon--glob { background: var(--neon-orange-surface); color: var(--neon-orange); }
-.console-tool-icon--agent { background: var(--neon-pink-surface); color: var(--neon-pink); }
-.console-tool-icon--default { background: var(--neon-blue-surface); color: var(--neon-blue); }
+.console-tool-icon--write {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+}
+.console-tool-icon--grep {
+  background: var(--neon-purple-surface);
+  color: var(--neon-purple);
+}
+.console-tool-icon--glob {
+  background: var(--neon-orange-surface);
+  color: var(--neon-orange);
+}
+.console-tool-icon--agent {
+  background: var(--neon-pink-surface);
+  color: var(--neon-pink);
+}
+.console-tool-icon--default {
+  background: var(--neon-blue-surface);
+  color: var(--neon-blue);
+}
 ```
 
 - [ ] **Step 3: Add completion card CSS classes**
@@ -215,6 +237,7 @@ git commit -m "feat(agents): add neon CSS classes for console polish"
 ### Task 2: Add consecutive text merging to pairEvents
 
 **Files:**
+
 - Modify: `src/renderer/src/lib/pair-events.ts`
 - Modify: `src/renderer/src/lib/__tests__/pair-events.test.ts`
 
@@ -227,7 +250,7 @@ it('merges consecutive text blocks into single block', () => {
   const events: AgentEvent[] = [
     { type: 'agent:text', text: 'First line', timestamp: 3000 },
     { type: 'agent:text', text: 'Second line', timestamp: 3100 },
-    { type: 'agent:text', text: 'Third line', timestamp: 3200 },
+    { type: 'agent:text', text: 'Third line', timestamp: 3200 }
   ]
 
   const blocks = pairEvents(events)
@@ -236,7 +259,7 @@ it('merges consecutive text blocks into single block', () => {
   expect(blocks[0]).toEqual({
     type: 'text',
     text: 'First line\nSecond line\nThird line',
-    timestamp: 3000,
+    timestamp: 3000
   })
 })
 
@@ -244,7 +267,7 @@ it('does not merge text blocks separated by other event types', () => {
   const events: AgentEvent[] = [
     { type: 'agent:text', text: 'Before', timestamp: 3000 },
     { type: 'agent:tool_call', tool: 'Bash', summary: 'Run ls', timestamp: 3100 },
-    { type: 'agent:text', text: 'After', timestamp: 3200 },
+    { type: 'agent:text', text: 'After', timestamp: 3200 }
   ]
 
   const blocks = pairEvents(events)
@@ -255,9 +278,7 @@ it('does not merge text blocks separated by other event types', () => {
 })
 
 it('preserves single text block without modification', () => {
-  const events: AgentEvent[] = [
-    { type: 'agent:text', text: 'Only one', timestamp: 3000 },
-  ]
+  const events: AgentEvent[] = [{ type: 'agent:text', text: 'Only one', timestamp: 3000 }]
 
   const blocks = pairEvents(events)
 
@@ -276,18 +297,18 @@ Expected: The "merges consecutive text blocks" test FAILS (currently produces 3 
 In `src/renderer/src/lib/pair-events.ts`, replace the final `return blocks` with a merge pass:
 
 ```typescript
-  // Merge consecutive text blocks into single grouped blocks
-  const merged: ChatBlock[] = []
-  for (const block of blocks) {
-    const prev = merged[merged.length - 1]
-    if (block.type === 'text' && prev?.type === 'text') {
-      prev.text += '\n' + block.text
-    } else {
-      merged.push(block)
-    }
+// Merge consecutive text blocks into single grouped blocks
+const merged: ChatBlock[] = []
+for (const block of blocks) {
+  const prev = merged[merged.length - 1]
+  if (block.type === 'text' && prev?.type === 'text') {
+    prev.text += '\n' + block.text
+  } else {
+    merged.push(block)
   }
+}
 
-  return merged
+return merged
 ```
 
 - [ ] **Step 4: Update the existing "passes text events through" test**
@@ -298,7 +319,7 @@ The existing test (around line 67) asserts `blocks.length === 2` for two consecu
 it('merges consecutive text events into single text block', () => {
   const events: AgentEvent[] = [
     { type: 'agent:text', text: 'Hello from agent', timestamp: 3000 },
-    { type: 'agent:text', text: 'Another message', timestamp: 3100 },
+    { type: 'agent:text', text: 'Another message', timestamp: 3100 }
   ]
 
   const blocks = pairEvents(events)
@@ -307,7 +328,7 @@ it('merges consecutive text events into single text block', () => {
   expect(blocks[0]).toEqual({
     type: 'text',
     text: 'Hello from agent\nAnother message',
-    timestamp: 3000,
+    timestamp: 3000
   })
 })
 ```
@@ -331,6 +352,7 @@ git commit -m "feat(agents): merge consecutive text blocks in pairEvents"
 ### Task 3: Create renderAgentMarkdown utility
 
 **Files:**
+
 - Create: `src/renderer/src/lib/render-agent-markdown.tsx`
 - Create: `src/renderer/src/lib/__tests__/render-agent-markdown.test.tsx`
 
@@ -389,18 +411,14 @@ describe('renderAgentMarkdown', () => {
   })
 
   it('handles heading mid-text (only at line start)', () => {
-    const { container } = render(
-      <>{renderAgentMarkdown('Result\n## Next Step\nDo the thing')}</>
-    )
+    const { container } = render(<>{renderAgentMarkdown('Result\n## Next Step\nDo the thing')}</>)
     const heading = container.querySelector('.console-md-heading')
     expect(heading).toBeInTheDocument()
     expect(heading?.textContent).toBe('Next Step')
   })
 
   it('does not render script tags as HTML', () => {
-    const { container } = render(
-      <>{renderAgentMarkdown('<script>alert("xss")</script>')}</>
-    )
+    const { container } = render(<>{renderAgentMarkdown('<script>alert("xss")</script>')}</>)
     expect(container.querySelector('script')).toBeNull()
     // React auto-escapes, so script tag text appears as literal text
     expect(container.textContent).toContain('<script>')
@@ -514,6 +532,7 @@ git commit -m "feat(agents): add lightweight markdown renderer for agent console
 ### Task 4: Update ConsoleLine with tool icons, markdown, completion card, and CSS migration
 
 This is the main integration task. It modifies `ConsoleLine.tsx` to:
+
 1. Use CSS classes instead of inline styles (per CLAUDE.md neon convention)
 2. Render agent text through `renderAgentMarkdown()`
 3. Add tool-specific icons with colored prefixes
@@ -521,6 +540,7 @@ This is the main integration task. It modifies `ConsoleLine.tsx` to:
 5. Apply grouped text styling
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/ConsoleLine.tsx`
 - Modify: `src/renderer/src/components/agents/__tests__/ConsoleLine.test.tsx`
 
@@ -537,7 +557,7 @@ it('renders Bash tool_pair with orange tool icon', () => {
     summary: 'Running ls',
     input: { command: 'ls' },
     result: { success: true, summary: 'Output', output: 'file.txt' },
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   const icon = container.querySelector('.console-tool-icon--bash')
@@ -551,7 +571,7 @@ it('renders Read tool_call with blue tool icon', () => {
     tool: 'Read',
     summary: 'Reading file',
     input: { path: 'file.txt' },
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   const icon = container.querySelector('.console-tool-icon--read')
@@ -564,7 +584,7 @@ it('renders unknown tool with default icon', () => {
     type: 'tool_call',
     tool: 'CustomTool',
     summary: 'Doing something',
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   const icon = container.querySelector('.console-tool-icon--default')
@@ -576,7 +596,7 @@ it('renders markdown in text blocks', () => {
   const block: ChatBlock = {
     type: 'text',
     text: '✅ **Step 1 PASSED**: Run `npm test`',
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   expect(container.querySelector('.console-md-bold')?.textContent).toBe('Step 1 PASSED')
@@ -588,7 +608,7 @@ it('applies grouped styling to multi-line text blocks', () => {
   const block: ChatBlock = {
     type: 'text',
     text: 'Line one\nLine two',
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   expect(container.querySelector('.console-line__content--grouped')).toBeInTheDocument()
@@ -598,7 +618,7 @@ it('does not apply grouped styling to single-line text', () => {
   const block: ChatBlock = {
     type: 'text',
     text: 'Just one line',
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   expect(container.querySelector('.console-line__content--grouped')).not.toBeInTheDocument()
@@ -613,7 +633,7 @@ it('renders completion card with stats for successful completion', () => {
     tokensIn: 142000,
     tokensOut: 8200,
     durationMs: 314000,
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   expect(container.querySelector('.console-completion-card')).toBeInTheDocument()
@@ -633,7 +653,7 @@ it('renders failed completion card with exit code', () => {
     tokensIn: 380000,
     tokensOut: 24000,
     durationMs: 723000,
-    timestamp: Date.now(),
+    timestamp: Date.now()
   }
   const { container } = render(<ConsoleLine block={block} />)
   expect(container.querySelector('.console-completion-card--failed')).toBeInTheDocument()
@@ -654,6 +674,7 @@ Expected: New tests FAIL (no tool icons, no completion card, no markdown classes
 - [ ] **Step 4: Rewrite ConsoleLine.tsx**
 
 Replace the full contents of `src/renderer/src/components/agents/ConsoleLine.tsx` with the new implementation that:
+
 - Removes all inline style objects (`lineStyle`, `prefixStyle`, `contentStyle`, `timestampStyle`, `badgeStyle`, `jsonBlockStyle`)
 - Uses CSS classes: `console-line`, `console-prefix`, `console-prefix--agent`, `console-line__content`, `console-line__timestamp`, `console-line--collapsible`, `console-line--expanded`, `console-line__chevron`, `console-badge`, `console-line__detail`, `console-line__json`, etc.
 - Adds `getToolMeta()` helper for tool icon lookup
@@ -666,6 +687,7 @@ Replace the full contents of `src/renderer/src/components/agents/ConsoleLine.tsx
 Full implementation in spec code block above (Task 4, Step 3 in the spec). Key structural points:
 
 **Tool icon helper:**
+
 ```tsx
 const TOOL_MAP: Record<string, ToolMeta> = {
   bash: { letter: '$', iconClass: 'console-tool-icon--bash' },
@@ -674,15 +696,18 @@ const TOOL_MAP: Record<string, ToolMeta> = {
   write: { letter: 'W', iconClass: 'console-tool-icon--write' },
   grep: { letter: 'G', iconClass: 'console-tool-icon--grep' },
   glob: { letter: 'G', iconClass: 'console-tool-icon--glob' },
-  agent: { letter: 'A', iconClass: 'console-tool-icon--agent' },
+  agent: { letter: 'A', iconClass: 'console-tool-icon--agent' }
 }
 
 function getToolMeta(toolName: string): ToolMeta {
-  return TOOL_MAP[toolName.toLowerCase()] ?? { letter: '•', iconClass: 'console-tool-icon--default' }
+  return (
+    TOOL_MAP[toolName.toLowerCase()] ?? { letter: '•', iconClass: 'console-tool-icon--default' }
+  )
 }
 ```
 
 **Format helpers:**
+
 ```tsx
 function formatDuration(ms: number): string {
   const totalSec = Math.floor(ms / 1000)
@@ -702,6 +727,7 @@ function formatTokenCount(n: number): string {
 ```
 
 **Completion card (replaces old `completed` case):**
+
 ```tsx
 case 'completed': {
   const success = block.exitCode === 0
@@ -789,6 +815,7 @@ Expected: PASS — thresholds met (72% stmts, 66% branches, 70% functions, 74% l
 
 Run: `npm run dev`
 Navigate to Agents view, select an agent with history. Verify:
+
 - Agent text shows bold/code/heading formatting
 - Tool calls show colored icons (Bash=`$` orange, Read=R blue, etc.)
 - Completion shows a card with 4 stats, not a single `[done]` line

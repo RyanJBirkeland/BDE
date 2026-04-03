@@ -14,67 +14,67 @@
 
 ### New Test Files (Renderer — Component Tests)
 
-| File | Tests |
-|------|-------|
-| `src/renderer/src/components/pr-station/__tests__/PRStationList.test.tsx` | PR list rendering, refresh, CI badges, selection |
-| `src/renderer/src/components/pr-station/__tests__/PRStationDetail.test.tsx` | Detail header, markdown body, parallel data fetch, cleanup |
-| `src/renderer/src/components/pr-station/__tests__/PRStationReviews.test.tsx` | Review dedup, state badges, loading/empty |
-| `src/renderer/src/components/pr-station/__tests__/PRStationConversation.test.tsx` | Timeline build, thread grouping, comment cards |
-| `src/renderer/src/components/pr-station/__tests__/PRStationDiff.test.tsx` | Diff fetch/parse, size warning, comment adding |
-| `src/renderer/src/components/pr-station/__tests__/PRStationChecks.test.tsx` | Check status icons, loading, links |
-| `src/renderer/src/components/pr-station/__tests__/PRStationActions.test.tsx` | Merge/close, method dropdown, confirmation |
-| `src/renderer/src/components/pr-station/__tests__/PRStationConflictBanner.test.tsx` | Banner visibility, conflict file listing |
-| `src/renderer/src/components/pr-station/__tests__/ReviewSubmitDialog.test.tsx` | Review submission, radio selection, pending count |
-| `src/renderer/src/components/diff/__tests__/DiffCommentWidget.test.tsx` | Collapse/expand, comment rendering |
-| `src/renderer/src/components/diff/__tests__/DiffCommentComposer.test.tsx` | Submit, cancel, keyboard shortcuts |
-| `src/renderer/src/components/diff/__tests__/DiffSizeWarning.test.tsx` | Size formatting, load-anyway button |
-| `src/renderer/src/components/diff/__tests__/DiffViewer.test.tsx` | File list, virtualization decision, keyboard nav |
-| `src/renderer/src/components/settings/__tests__/SettingsView.test.tsx` | Tab switching, section rendering |
-| `src/renderer/src/components/settings/__tests__/AppearanceSection.test.tsx` | Theme toggle, accent color |
-| `src/renderer/src/components/settings/__tests__/ConnectionsSection.test.tsx` | Auth status, agent settings, GitHub token |
-| `src/renderer/src/components/settings/__tests__/RepositoriesSection.test.tsx` | CRUD repos, color picker, directory browse |
-| `src/renderer/src/components/settings/__tests__/AgentManagerSection.test.tsx` | Config fields, save, unit conversion |
-| `src/renderer/src/components/settings/__tests__/TaskTemplatesSection.test.tsx` | Template list, built-in vs custom |
-| `src/renderer/src/components/settings/__tests__/CredentialForm.test.tsx` | Password toggle, test button, save |
-| `src/renderer/src/components/terminal/__tests__/TerminalTabBar.test.tsx` | Tab add/close/rename, context menu |
-| `src/renderer/src/components/terminal/__tests__/TerminalToolbar.test.tsx` | Clear, split toggle |
-| `src/renderer/src/components/terminal/__tests__/TerminalContent.test.tsx` | Tab rendering, agent vs shell |
-| `src/renderer/src/views/__tests__/MemoryView.test.tsx` | File list, edit/save, keyboard nav, grouping |
-| `src/renderer/src/views/__tests__/TerminalView.test.tsx` | Keyboard shortcuts, tab management |
+| File                                                                                | Tests                                                      |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `src/renderer/src/components/pr-station/__tests__/PRStationList.test.tsx`           | PR list rendering, refresh, CI badges, selection           |
+| `src/renderer/src/components/pr-station/__tests__/PRStationDetail.test.tsx`         | Detail header, markdown body, parallel data fetch, cleanup |
+| `src/renderer/src/components/pr-station/__tests__/PRStationReviews.test.tsx`        | Review dedup, state badges, loading/empty                  |
+| `src/renderer/src/components/pr-station/__tests__/PRStationConversation.test.tsx`   | Timeline build, thread grouping, comment cards             |
+| `src/renderer/src/components/pr-station/__tests__/PRStationDiff.test.tsx`           | Diff fetch/parse, size warning, comment adding             |
+| `src/renderer/src/components/pr-station/__tests__/PRStationChecks.test.tsx`         | Check status icons, loading, links                         |
+| `src/renderer/src/components/pr-station/__tests__/PRStationActions.test.tsx`        | Merge/close, method dropdown, confirmation                 |
+| `src/renderer/src/components/pr-station/__tests__/PRStationConflictBanner.test.tsx` | Banner visibility, conflict file listing                   |
+| `src/renderer/src/components/pr-station/__tests__/ReviewSubmitDialog.test.tsx`      | Review submission, radio selection, pending count          |
+| `src/renderer/src/components/diff/__tests__/DiffCommentWidget.test.tsx`             | Collapse/expand, comment rendering                         |
+| `src/renderer/src/components/diff/__tests__/DiffCommentComposer.test.tsx`           | Submit, cancel, keyboard shortcuts                         |
+| `src/renderer/src/components/diff/__tests__/DiffSizeWarning.test.tsx`               | Size formatting, load-anyway button                        |
+| `src/renderer/src/components/diff/__tests__/DiffViewer.test.tsx`                    | File list, virtualization decision, keyboard nav           |
+| `src/renderer/src/components/settings/__tests__/SettingsView.test.tsx`              | Tab switching, section rendering                           |
+| `src/renderer/src/components/settings/__tests__/AppearanceSection.test.tsx`         | Theme toggle, accent color                                 |
+| `src/renderer/src/components/settings/__tests__/ConnectionsSection.test.tsx`        | Auth status, agent settings, GitHub token                  |
+| `src/renderer/src/components/settings/__tests__/RepositoriesSection.test.tsx`       | CRUD repos, color picker, directory browse                 |
+| `src/renderer/src/components/settings/__tests__/AgentManagerSection.test.tsx`       | Config fields, save, unit conversion                       |
+| `src/renderer/src/components/settings/__tests__/TaskTemplatesSection.test.tsx`      | Template list, built-in vs custom                          |
+| `src/renderer/src/components/settings/__tests__/CredentialForm.test.tsx`            | Password toggle, test button, save                         |
+| `src/renderer/src/components/terminal/__tests__/TerminalTabBar.test.tsx`            | Tab add/close/rename, context menu                         |
+| `src/renderer/src/components/terminal/__tests__/TerminalToolbar.test.tsx`           | Clear, split toggle                                        |
+| `src/renderer/src/components/terminal/__tests__/TerminalContent.test.tsx`           | Tab rendering, agent vs shell                              |
+| `src/renderer/src/views/__tests__/MemoryView.test.tsx`                              | File list, edit/save, keyboard nav, grouping               |
+| `src/renderer/src/views/__tests__/TerminalView.test.tsx`                            | Keyboard shortcuts, tab management                         |
 
 ### New Test Files (Renderer — Stores)
 
-| File | Tests |
-|------|-------|
-| `src/renderer/src/stores/__tests__/pendingReview.test.ts` | Add/update/remove comments, clear, count |
-| `src/renderer/src/stores/__tests__/sprintTasks.test.ts` | Load, optimistic update, SSE merge, create/delete |
-| `src/renderer/src/stores/__tests__/sprintUI.test.ts` | Selection, filter, generating IDs |
-| `src/renderer/src/stores/__tests__/healthCheck.test.ts` | Stuck tasks, dismiss, clear |
-| `src/renderer/src/stores/__tests__/prConflicts.test.ts` | Set/update conflicts, equality check |
-| `src/renderer/src/stores/__tests__/costData.test.ts` | Cost summary, agent runs |
+| File                                                      | Tests                                             |
+| --------------------------------------------------------- | ------------------------------------------------- |
+| `src/renderer/src/stores/__tests__/pendingReview.test.ts` | Add/update/remove comments, clear, count          |
+| `src/renderer/src/stores/__tests__/sprintTasks.test.ts`   | Load, optimistic update, SSE merge, create/delete |
+| `src/renderer/src/stores/__tests__/sprintUI.test.ts`      | Selection, filter, generating IDs                 |
+| `src/renderer/src/stores/__tests__/healthCheck.test.ts`   | Stuck tasks, dismiss, clear                       |
+| `src/renderer/src/stores/__tests__/prConflicts.test.ts`   | Set/update conflicts, equality check              |
+| `src/renderer/src/stores/__tests__/costData.test.ts`      | Cost summary, agent runs                          |
 
 ### New Test Files (Renderer — Hooks)
 
-| File | Tests |
-|------|-------|
-| `src/renderer/src/hooks/__tests__/useHealthCheck.test.ts` | Stuck task detection, dismiss, interval |
-| `src/renderer/src/hooks/__tests__/useSprintPolling.test.ts` | Adaptive polling, external change |
-| `src/renderer/src/hooks/__tests__/useRepoOptions.test.ts` | IPC load, fallback, color defaults |
-| `src/renderer/src/hooks/__tests__/useSprintTaskActions.test.ts` | Drag/drop, confirm modal, WIP limit |
-| `src/renderer/src/hooks/__tests__/usePrStatusPolling.test.ts` | Poll cycle, conflict detection, auto-update |
+| File                                                            | Tests                                       |
+| --------------------------------------------------------------- | ------------------------------------------- |
+| `src/renderer/src/hooks/__tests__/useHealthCheck.test.ts`       | Stuck task detection, dismiss, interval     |
+| `src/renderer/src/hooks/__tests__/useSprintPolling.test.ts`     | Adaptive polling, external change           |
+| `src/renderer/src/hooks/__tests__/useRepoOptions.test.ts`       | IPC load, fallback, color defaults          |
+| `src/renderer/src/hooks/__tests__/useSprintTaskActions.test.ts` | Drag/drop, confirm modal, WIP limit         |
+| `src/renderer/src/hooks/__tests__/usePrStatusPolling.test.ts`   | Poll cycle, conflict detection, auto-update |
 
 ### New Test Files (Main — Integration)
 
-| File | Tests |
-|------|-------|
-| `src/main/__tests__/integration/agent-manager-pipeline.test.ts` | Full drain→spawn→complete lifecycle |
-| `src/main/__tests__/integration/queue-api-integration.test.ts` | HTTP CRUD + SSE with real server |
-| `src/main/__tests__/sprint-pr-poller.test.ts` | Poll cycle, merge→done, close→cancelled |
+| File                                                            | Tests                                   |
+| --------------------------------------------------------------- | --------------------------------------- |
+| `src/main/__tests__/integration/agent-manager-pipeline.test.ts` | Full drain→spawn→complete lifecycle     |
+| `src/main/__tests__/integration/queue-api-integration.test.ts`  | HTTP CRUD + SSE with real server        |
+| `src/main/__tests__/sprint-pr-poller.test.ts`                   | Poll cycle, merge→done, close→cancelled |
 
 ### Expanded Existing Files
 
-| File | Addition |
-|------|----------|
+| File                                              | Addition                       |
+| ------------------------------------------------- | ------------------------------ |
 | `src/renderer/src/views/__tests__/smoke.test.tsx` | Add PR Station view smoke test |
 
 ---
@@ -84,6 +84,7 @@
 ### Task 1: PR Station — PRStationList
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationList.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationList.tsx`
 
@@ -113,7 +114,7 @@ const mockPr = {
   user: { login: 'alice' },
   merged: false,
   merged_at: null,
-  repo: 'bde',
+  repo: 'bde'
 }
 
 describe('PRStationList', () => {
@@ -121,7 +122,7 @@ describe('PRStationList', () => {
     vi.clearAllMocks()
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [mockPr],
-      checks: { '42': { total: 1, passed: 1, failed: 0, pending: 0, status: 'pass' } },
+      checks: { '42': { total: 1, passed: 1, failed: 0, pending: 0, status: 'pass' } }
     })
     vi.mocked(window.api.onPrListUpdated).mockReturnValue(() => {})
   })
@@ -182,6 +183,7 @@ git commit -m "test: add PRStationList component tests"
 ### Task 2: PR Station — PRStationChecks
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationChecks.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationChecks.tsx`
 
@@ -196,9 +198,24 @@ vi.mock('../../../lib/github-api', () => ({}))
 import { PRStationChecks } from '../PRStationChecks'
 
 const checks = [
-  { name: 'CI Build', status: 'completed', conclusion: 'success', html_url: 'https://github.com/checks/1' },
-  { name: 'Lint', status: 'in_progress', conclusion: null, html_url: 'https://github.com/checks/2' },
-  { name: 'Tests', status: 'completed', conclusion: 'failure', html_url: 'https://github.com/checks/3' },
+  {
+    name: 'CI Build',
+    status: 'completed',
+    conclusion: 'success',
+    html_url: 'https://github.com/checks/1'
+  },
+  {
+    name: 'Lint',
+    status: 'in_progress',
+    conclusion: null,
+    html_url: 'https://github.com/checks/2'
+  },
+  {
+    name: 'Tests',
+    status: 'completed',
+    conclusion: 'failure',
+    html_url: 'https://github.com/checks/3'
+  }
 ]
 
 describe('PRStationChecks', () => {
@@ -237,6 +254,7 @@ git commit -m "test: add PRStationChecks component tests"
 ### Task 3: PR Station — PRStationReviews
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationReviews.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationReviews.tsx`
 
@@ -251,10 +269,31 @@ vi.mock('../../../lib/render-markdown', () => ({ renderMarkdown: (s: string) => 
 import { PRStationReviews } from '../PRStationReviews'
 
 const reviews = [
-  { id: 1, user: { login: 'alice', avatar_url: '' }, state: 'APPROVED', body: 'LGTM', submitted_at: new Date().toISOString(), html_url: '' },
-  { id: 2, user: { login: 'bob', avatar_url: '' }, state: 'CHANGES_REQUESTED', body: 'Fix types', submitted_at: new Date().toISOString(), html_url: '' },
+  {
+    id: 1,
+    user: { login: 'alice', avatar_url: '' },
+    state: 'APPROVED',
+    body: 'LGTM',
+    submitted_at: new Date().toISOString(),
+    html_url: ''
+  },
+  {
+    id: 2,
+    user: { login: 'bob', avatar_url: '' },
+    state: 'CHANGES_REQUESTED',
+    body: 'Fix types',
+    submitted_at: new Date().toISOString(),
+    html_url: ''
+  },
   // Duplicate alice review (older) — should be deduped
-  { id: 3, user: { login: 'alice', avatar_url: '' }, state: 'COMMENTED', body: 'Hmm', submitted_at: new Date(Date.now() - 60000).toISOString(), html_url: '' },
+  {
+    id: 3,
+    user: { login: 'alice', avatar_url: '' },
+    state: 'COMMENTED',
+    body: 'Hmm',
+    submitted_at: new Date(Date.now() - 60000).toISOString(),
+    html_url: ''
+  }
 ]
 
 describe('PRStationReviews', () => {
@@ -294,6 +333,7 @@ git commit -m "test: add PRStationReviews component tests"
 ### Task 4: PR Station — PRStationConversation
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationConversation.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationConversation.tsx`
 
@@ -308,23 +348,59 @@ vi.mock('../../../lib/render-markdown', () => ({ renderMarkdown: (s: string) => 
 import { PRStationConversation } from '../PRStationConversation'
 
 const issueComments = [
-  { id: 10, user: { login: 'alice', avatar_url: '' }, body: 'Looks good overall', created_at: '2026-01-01T00:00:00Z', html_url: '' },
+  {
+    id: 10,
+    user: { login: 'alice', avatar_url: '' },
+    body: 'Looks good overall',
+    created_at: '2026-01-01T00:00:00Z',
+    html_url: ''
+  }
 ]
 const reviewComments = [
-  { id: 20, user: { login: 'bob', avatar_url: '' }, body: 'Fix this line', created_at: '2026-01-01T01:00:00Z', updated_at: '2026-01-01T01:00:00Z', html_url: '', path: 'src/main.ts', line: 42, side: 'RIGHT', in_reply_to_id: null },
-  { id: 21, user: { login: 'alice', avatar_url: '' }, body: 'Done', created_at: '2026-01-01T02:00:00Z', updated_at: '2026-01-01T02:00:00Z', html_url: '', path: 'src/main.ts', line: 42, side: 'RIGHT', in_reply_to_id: 20 },
+  {
+    id: 20,
+    user: { login: 'bob', avatar_url: '' },
+    body: 'Fix this line',
+    created_at: '2026-01-01T01:00:00Z',
+    updated_at: '2026-01-01T01:00:00Z',
+    html_url: '',
+    path: 'src/main.ts',
+    line: 42,
+    side: 'RIGHT',
+    in_reply_to_id: null
+  },
+  {
+    id: 21,
+    user: { login: 'alice', avatar_url: '' },
+    body: 'Done',
+    created_at: '2026-01-01T02:00:00Z',
+    updated_at: '2026-01-01T02:00:00Z',
+    html_url: '',
+    path: 'src/main.ts',
+    line: 42,
+    side: 'RIGHT',
+    in_reply_to_id: 20
+  }
 ]
 
 describe('PRStationConversation', () => {
   it('renders issue comments and review threads', () => {
-    render(<PRStationConversation reviewComments={reviewComments} issueComments={issueComments} loading={false} />)
+    render(
+      <PRStationConversation
+        reviewComments={reviewComments}
+        issueComments={issueComments}
+        loading={false}
+      />
+    )
     expect(screen.getByText('Looks good overall')).toBeInTheDocument()
     expect(screen.getByText('Fix this line')).toBeInTheDocument()
     expect(screen.getByText('Done')).toBeInTheDocument()
   })
 
   it('groups review comment replies into threads', () => {
-    render(<PRStationConversation reviewComments={reviewComments} issueComments={[]} loading={false} />)
+    render(
+      <PRStationConversation reviewComments={reviewComments} issueComments={[]} loading={false} />
+    )
     // Thread contains path info
     expect(screen.getByText(/src\/main\.ts/)).toBeInTheDocument()
   })
@@ -349,6 +425,7 @@ git commit -m "test: add PRStationConversation component tests"
 ### Task 5: PR Station — PRStationConflictBanner
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationConflictBanner.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationConflictBanner.tsx`
 
@@ -360,12 +437,26 @@ import { render, screen, waitFor } from '@testing-library/react'
 
 // Mock REPO_OPTIONS so the component can look up the repo
 vi.mock('../../../lib/constants', () => ({
-  REPO_OPTIONS: [{ label: 'bde', owner: 'org', color: '#fff' }],
+  REPO_OPTIONS: [{ label: 'bde', owner: 'org', color: '#fff' }]
 }))
 
 import { PRStationConflictBanner } from '../PRStationConflictBanner'
 
-const mockPr = { number: 42, repo: 'bde', html_url: '', title: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'feat/x', sha: '' }, base: { ref: 'main' }, user: { login: '' }, merged: false, merged_at: null }
+const mockPr = {
+  number: 42,
+  repo: 'bde',
+  html_url: '',
+  title: '',
+  state: 'open',
+  draft: false,
+  created_at: '',
+  updated_at: '',
+  head: { ref: 'feat/x', sha: '' },
+  base: { ref: 'main' },
+  user: { login: '' },
+  merged: false,
+  merged_at: null
+}
 
 describe('PRStationConflictBanner', () => {
   beforeEach(() => {
@@ -375,7 +466,7 @@ describe('PRStationConflictBanner', () => {
       files: ['src/main.ts', 'README.md'],
       prNumber: 42,
       baseBranch: 'main',
-      headBranch: 'feat/x',
+      headBranch: 'feat/x'
     })
   })
 
@@ -405,6 +496,7 @@ git commit -m "test: add PRStationConflictBanner component tests"
 ### Task 6: PR Station — PRStationActions
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationActions.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationActions.tsx`
 
@@ -417,29 +509,55 @@ import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../lib/github-api', () => ({
   mergePR: vi.fn().mockResolvedValue(undefined),
-  closePR: vi.fn().mockResolvedValue(undefined),
+  closePR: vi.fn().mockResolvedValue(undefined)
 }))
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn() }
 }))
 
 import { PRStationActions } from '../PRStationActions'
 import { mergePR, closePR } from '../../../lib/github-api'
 
-const mockPr = { number: 42, repo: 'bde', html_url: '', title: 'Test', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'feat/x', sha: '' }, base: { ref: 'main' }, user: { login: '' }, merged: false, merged_at: null }
+const mockPr = {
+  number: 42,
+  repo: 'bde',
+  html_url: '',
+  title: 'Test',
+  state: 'open',
+  draft: false,
+  created_at: '',
+  updated_at: '',
+  head: { ref: 'feat/x', sha: '' },
+  base: { ref: 'main' },
+  user: { login: '' },
+  merged: false,
+  merged_at: null
+}
 
 describe('PRStationActions', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('renders merge and close buttons', () => {
-    render(<PRStationActions pr={mockPr} mergeability={{ number: 42, repo: 'bde', mergeable: true, mergeable_state: 'clean' }} onRemovePr={vi.fn()} />)
+    render(
+      <PRStationActions
+        pr={mockPr}
+        mergeability={{ number: 42, repo: 'bde', mergeable: true, mergeable_state: 'clean' }}
+        onRemovePr={vi.fn()}
+      />
+    )
     expect(screen.getByText(/merge/i)).toBeInTheDocument()
     expect(screen.getByText(/close/i)).toBeInTheDocument()
   })
 
   it('shows confirmation before merging', async () => {
     const user = userEvent.setup()
-    render(<PRStationActions pr={mockPr} mergeability={{ number: 42, repo: 'bde', mergeable: true, mergeable_state: 'clean' }} onRemovePr={vi.fn()} />)
+    render(
+      <PRStationActions
+        pr={mockPr}
+        mergeability={{ number: 42, repo: 'bde', mergeable: true, mergeable_state: 'clean' }}
+        onRemovePr={vi.fn()}
+      />
+    )
     await user.click(screen.getByText(/merge/i))
     expect(screen.getByText(/confirm/i)).toBeInTheDocument()
   })
@@ -447,10 +565,18 @@ describe('PRStationActions', () => {
   it('calls mergePR and removes PR on confirm', async () => {
     const user = userEvent.setup()
     const onRemove = vi.fn()
-    render(<PRStationActions pr={mockPr} mergeability={{ number: 42, repo: 'bde', mergeable: true, mergeable_state: 'clean' }} onRemovePr={onRemove} />)
+    render(
+      <PRStationActions
+        pr={mockPr}
+        mergeability={{ number: 42, repo: 'bde', mergeable: true, mergeable_state: 'clean' }}
+        onRemovePr={onRemove}
+      />
+    )
     await user.click(screen.getByText(/merge/i))
     // Click confirm
-    const confirmBtn = screen.getAllByText(/merge/i).find(el => el.closest('[class*="confirm"]') || el !== screen.getAllByText(/merge/i)[0])
+    const confirmBtn = screen
+      .getAllByText(/merge/i)
+      .find((el) => el.closest('[class*="confirm"]') || el !== screen.getAllByText(/merge/i)[0])
     if (confirmBtn) await user.click(confirmBtn)
     await waitFor(() => expect(mergePR).toHaveBeenCalled())
   })
@@ -476,6 +602,7 @@ git commit -m "test: add PRStationActions component tests"
 ### Task 7: PR Station — PRStationDetail
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationDetail.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationDetail.tsx`
 
@@ -486,22 +613,50 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
 vi.mock('../../../lib/github-api', () => ({
-  getPRDetail: vi.fn().mockResolvedValue({ title: 'Test PR', body: 'Description', additions: 10, deletions: 5, labels: [] }),
-  getPRFiles: vi.fn().mockResolvedValue([{ filename: 'src/main.ts', status: 'modified', additions: 5, deletions: 2 }]),
+  getPRDetail: vi
+    .fn()
+    .mockResolvedValue({
+      title: 'Test PR',
+      body: 'Description',
+      additions: 10,
+      deletions: 5,
+      labels: []
+    }),
+  getPRFiles: vi
+    .fn()
+    .mockResolvedValue([
+      { filename: 'src/main.ts', status: 'modified', additions: 5, deletions: 2 }
+    ]),
   getCheckRunsList: vi.fn().mockResolvedValue([]),
   getReviews: vi.fn().mockResolvedValue([]),
   getReviewComments: vi.fn().mockResolvedValue([]),
-  getIssueComments: vi.fn().mockResolvedValue([]),
+  getIssueComments: vi.fn().mockResolvedValue([])
 }))
 vi.mock('../../../lib/render-markdown', () => ({ renderMarkdown: (s: string) => s ?? '' }))
 vi.mock('../PRStationChecks', () => ({ PRStationChecks: () => <div data-testid="checks" /> }))
 vi.mock('../PRStationConflictBanner', () => ({ PRStationConflictBanner: () => null }))
 vi.mock('../PRStationReviews', () => ({ PRStationReviews: () => <div data-testid="reviews" /> }))
-vi.mock('../PRStationConversation', () => ({ PRStationConversation: () => <div data-testid="conversation" /> }))
+vi.mock('../PRStationConversation', () => ({
+  PRStationConversation: () => <div data-testid="conversation" />
+}))
 
 import { PRStationDetail } from '../PRStationDetail'
 
-const mockPr = { number: 42, repo: 'bde', html_url: '', title: 'Test PR', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'feat/x', sha: 'abc' }, base: { ref: 'main' }, user: { login: 'alice' }, merged: false, merged_at: null }
+const mockPr = {
+  number: 42,
+  repo: 'bde',
+  html_url: '',
+  title: 'Test PR',
+  state: 'open',
+  draft: false,
+  created_at: '',
+  updated_at: '',
+  head: { ref: 'feat/x', sha: 'abc' },
+  base: { ref: 'main' },
+  user: { login: 'alice' },
+  merged: false,
+  merged_at: null
+}
 
 describe('PRStationDetail', () => {
   beforeEach(() => vi.clearAllMocks())
@@ -539,6 +694,7 @@ git commit -m "test: add PRStationDetail component tests"
 ### Task 8: PR Station — PRStationDiff
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/PRStationDiff.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/PRStationDiff.tsx`
 
@@ -549,25 +705,51 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
 vi.mock('../../../lib/github-api', () => ({
-  getPRDiff: vi.fn().mockResolvedValue('diff --git a/file.ts b/file.ts\n--- a/file.ts\n+++ b/file.ts\n@@ -1,3 +1,3 @@\n context\n-old\n+new\n context'),
-  getReviewComments: vi.fn().mockResolvedValue([]),
+  getPRDiff: vi
+    .fn()
+    .mockResolvedValue(
+      'diff --git a/file.ts b/file.ts\n--- a/file.ts\n+++ b/file.ts\n@@ -1,3 +1,3 @@\n context\n-old\n+new\n context'
+    ),
+  getReviewComments: vi.fn().mockResolvedValue([])
 }))
 vi.mock('../../../stores/pendingReview', () => ({
   usePendingReviewStore: vi.fn((sel?: Function) => {
-    const state = { pendingComments: new Map(), addComment: vi.fn(), removeComment: vi.fn(), clearPending: vi.fn(), getPendingCount: vi.fn(() => 0) }
+    const state = {
+      pendingComments: new Map(),
+      addComment: vi.fn(),
+      removeComment: vi.fn(),
+      clearPending: vi.fn(),
+      getPendingCount: vi.fn(() => 0)
+    }
     return sel ? sel(state) : state
-  }),
+  })
 }))
 vi.mock('../../../stores/ui', () => ({
-  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'pr-station' })),
+  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'pr-station' }))
 }))
 vi.mock('../../diff/DiffViewer', () => ({
-  DiffViewer: (props: any) => <div data-testid="diff-viewer" data-files={props.files?.length ?? 0} />,
+  DiffViewer: (props: any) => (
+    <div data-testid="diff-viewer" data-files={props.files?.length ?? 0} />
+  )
 }))
 
 import { PRStationDiff } from '../PRStationDiff'
 
-const mockPr = { number: 42, repo: 'bde', html_url: '', title: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'feat/x', sha: '' }, base: { ref: 'main' }, user: { login: '' }, merged: false, merged_at: null }
+const mockPr = {
+  number: 42,
+  repo: 'bde',
+  html_url: '',
+  title: '',
+  state: 'open',
+  draft: false,
+  created_at: '',
+  updated_at: '',
+  head: { ref: 'feat/x', sha: '' },
+  base: { ref: 'main' },
+  user: { login: '' },
+  merged: false,
+  merged_at: null
+}
 
 describe('PRStationDiff', () => {
   beforeEach(() => vi.clearAllMocks())
@@ -599,6 +781,7 @@ git commit -m "test: add PRStationDiff component tests"
 ### Task 9: PR Station — ReviewSubmitDialog
 
 **Files:**
+
 - Test: `src/renderer/src/components/pr-station/__tests__/ReviewSubmitDialog.test.tsx`
 - Reference: `src/renderer/src/components/pr-station/ReviewSubmitDialog.tsx`
 
@@ -610,44 +793,66 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../lib/github-api', () => ({
-  createReview: vi.fn().mockResolvedValue(undefined),
+  createReview: vi.fn().mockResolvedValue(undefined)
 }))
 vi.mock('../../../stores/pendingReview', () => ({
   usePendingReviewStore: vi.fn((sel?: Function) => {
     const state = {
-      pendingComments: new Map([['bde#42', [{ id: 'c1', path: 'file.ts', line: 10, side: 'RIGHT', body: 'Fix this' }]]]),
+      pendingComments: new Map([
+        ['bde#42', [{ id: 'c1', path: 'file.ts', line: 10, side: 'RIGHT', body: 'Fix this' }]]
+      ]),
       clearPending: vi.fn(),
-      getPendingCount: vi.fn(() => 1),
+      getPendingCount: vi.fn(() => 1)
     }
     return sel ? sel(state) : state
-  }),
+  })
 }))
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn() }
 }))
 
 import { ReviewSubmitDialog } from '../ReviewSubmitDialog'
 
-const mockPr = { number: 42, repo: 'bde', html_url: '', title: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: '', sha: '' }, base: { ref: '' }, user: { login: '' }, merged: false, merged_at: null }
+const mockPr = {
+  number: 42,
+  repo: 'bde',
+  html_url: '',
+  title: '',
+  state: 'open',
+  draft: false,
+  created_at: '',
+  updated_at: '',
+  head: { ref: '', sha: '' },
+  base: { ref: '' },
+  user: { login: '' },
+  merged: false,
+  merged_at: null
+}
 
 describe('ReviewSubmitDialog', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('renders review type radio options', () => {
-    render(<ReviewSubmitDialog pr={mockPr} prKey="bde#42" onClose={vi.fn()} onSubmitted={vi.fn()} />)
+    render(
+      <ReviewSubmitDialog pr={mockPr} prKey="bde#42" onClose={vi.fn()} onSubmitted={vi.fn()} />
+    )
     expect(screen.getByText(/comment/i)).toBeInTheDocument()
     expect(screen.getByText(/approve/i)).toBeInTheDocument()
     expect(screen.getByText(/request changes/i)).toBeInTheDocument()
   })
 
   it('shows pending comment count', () => {
-    render(<ReviewSubmitDialog pr={mockPr} prKey="bde#42" onClose={vi.fn()} onSubmitted={vi.fn()} />)
+    render(
+      <ReviewSubmitDialog pr={mockPr} prKey="bde#42" onClose={vi.fn()} onSubmitted={vi.fn()} />
+    )
     expect(screen.getByText(/1/)).toBeInTheDocument()
   })
 
   it('calls onClose when cancel clicked', async () => {
     const onClose = vi.fn()
-    render(<ReviewSubmitDialog pr={mockPr} prKey="bde#42" onClose={onClose} onSubmitted={vi.fn()} />)
+    render(
+      <ReviewSubmitDialog pr={mockPr} prKey="bde#42" onClose={onClose} onSubmitted={vi.fn()} />
+    )
     await userEvent.click(screen.getByText(/cancel/i))
     expect(onClose).toHaveBeenCalled()
   })
@@ -667,6 +872,7 @@ git commit -m "test: add ReviewSubmitDialog component tests"
 ### Task 10: Diff Components — DiffCommentComposer, DiffCommentWidget, DiffSizeWarning
 
 **Files:**
+
 - Test: `src/renderer/src/components/diff/__tests__/DiffCommentComposer.test.tsx`
 - Test: `src/renderer/src/components/diff/__tests__/DiffCommentWidget.test.tsx`
 - Test: `src/renderer/src/components/diff/__tests__/DiffSizeWarning.test.tsx`
@@ -721,8 +927,22 @@ vi.mock('../../../lib/render-markdown', () => ({ renderMarkdown: (s: string) => 
 import { DiffCommentWidget } from '../DiffCommentWidget'
 
 const comments = [
-  { id: 1, user: { login: 'alice', avatar_url: '' }, body: 'First comment', created_at: '2026-01-01T00:00:00Z', updated_at: '', html_url: '' },
-  { id: 2, user: { login: 'bob', avatar_url: '' }, body: 'Reply', created_at: '2026-01-01T01:00:00Z', updated_at: '', html_url: '' },
+  {
+    id: 1,
+    user: { login: 'alice', avatar_url: '' },
+    body: 'First comment',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '',
+    html_url: ''
+  },
+  {
+    id: 2,
+    user: { login: 'bob', avatar_url: '' },
+    body: 'Reply',
+    created_at: '2026-01-01T01:00:00Z',
+    updated_at: '',
+    html_url: ''
+  }
 ]
 
 describe('DiffCommentWidget', () => {
@@ -781,6 +1001,7 @@ git commit -m "test: add Diff component tests (Composer, Widget, SizeWarning)"
 ### Task 11: Diff Components — DiffViewer
 
 **Files:**
+
 - Test: `src/renderer/src/components/diff/__tests__/DiffViewer.test.tsx`
 - Reference: `src/renderer/src/components/diff/DiffViewer.tsx`
 
@@ -791,7 +1012,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 vi.mock('../../../stores/ui', () => ({
-  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'pr-station' })),
+  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'pr-station' }))
 }))
 
 import { DiffViewer } from '../DiffViewer'
@@ -801,18 +1022,20 @@ const files = [
     path: 'src/main.ts',
     additions: 3,
     deletions: 1,
-    hunks: [{
-      header: '@@ -1,3 +1,5 @@',
-      lines: [
-        { type: 'context', lineNo: { old: 1, new: 1 }, content: ' const a = 1' },
-        { type: 'del', lineNo: { old: 2, new: undefined }, content: '-const b = 2' },
-        { type: 'add', lineNo: { old: undefined, new: 2 }, content: '+const b = 3' },
-        { type: 'add', lineNo: { old: undefined, new: 3 }, content: '+const c = 4' },
-        { type: 'add', lineNo: { old: undefined, new: 4 }, content: '+const d = 5' },
-        { type: 'context', lineNo: { old: 3, new: 5 }, content: ' export {}' },
-      ],
-    }],
-  },
+    hunks: [
+      {
+        header: '@@ -1,3 +1,5 @@',
+        lines: [
+          { type: 'context', lineNo: { old: 1, new: 1 }, content: ' const a = 1' },
+          { type: 'del', lineNo: { old: 2, new: undefined }, content: '-const b = 2' },
+          { type: 'add', lineNo: { old: undefined, new: 2 }, content: '+const b = 3' },
+          { type: 'add', lineNo: { old: undefined, new: 3 }, content: '+const c = 4' },
+          { type: 'add', lineNo: { old: undefined, new: 4 }, content: '+const d = 5' },
+          { type: 'context', lineNo: { old: 3, new: 5 }, content: ' export {}' }
+        ]
+      }
+    ]
+  }
 ]
 
 describe('DiffViewer', () => {
@@ -849,6 +1072,7 @@ git commit -m "test: add DiffViewer component tests"
 ### Task 12: Settings — SettingsView + Sections
 
 **Files:**
+
 - Test: `src/renderer/src/components/settings/__tests__/SettingsView.test.tsx`
 - Test: `src/renderer/src/components/settings/__tests__/AppearanceSection.test.tsx`
 - Test: `src/renderer/src/components/settings/__tests__/ConnectionsSection.test.tsx`
@@ -866,7 +1090,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../stores/theme', () => ({
-  useThemeStore: vi.fn((sel: Function) => sel({ theme: 'dark', toggleTheme: vi.fn(), setTheme: vi.fn() })),
+  useThemeStore: vi.fn((sel: Function) =>
+    sel({ theme: 'dark', toggleTheme: vi.fn(), setTheme: vi.fn() })
+  )
 }))
 
 import SettingsView from '../../../views/SettingsView'
@@ -896,7 +1122,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../../stores/theme', () => ({
-  useThemeStore: vi.fn((sel: Function) => sel({ theme: 'dark', toggleTheme: vi.fn(), setTheme: vi.fn() })),
+  useThemeStore: vi.fn((sel: Function) =>
+    sel({ theme: 'dark', toggleTheme: vi.fn(), setTheme: vi.fn() })
+  )
 }))
 
 import { AppearanceSection } from '../AppearanceSection'
@@ -922,7 +1150,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
 vi.mock('../../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn() }
 }))
 
 import { ConnectionsSection } from '../ConnectionsSection'
@@ -966,6 +1194,7 @@ git commit -m "test: add Settings view and section component tests"
 ### Task 13: MemoryView
 
 **Files:**
+
 - Test: `src/renderer/src/views/__tests__/MemoryView.test.tsx`
 - Reference: `src/renderer/src/views/MemoryView.tsx`
 
@@ -977,14 +1206,14 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../../stores/ui', () => ({
-  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'memory' })),
+  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'memory' }))
 }))
 
 import MemoryView from '../MemoryView'
 
 const mockFiles = [
   { path: 'MEMORY.md', name: 'MEMORY.md', size: 256, modifiedAt: Date.now() },
-  { path: 'daily/2026-03-23.md', name: '2026-03-23.md', size: 128, modifiedAt: Date.now() },
+  { path: 'daily/2026-03-23.md', name: '2026-03-23.md', size: 128, modifiedAt: Date.now() }
 ]
 
 describe('MemoryView', () => {
@@ -1037,6 +1266,7 @@ git commit -m "test: add MemoryView component tests"
 ### Task 14: Terminal Components
 
 **Files:**
+
 - Test: `src/renderer/src/components/terminal/__tests__/TerminalTabBar.test.tsx`
 - Test: `src/renderer/src/components/terminal/__tests__/TerminalToolbar.test.tsx`
 - Test: `src/renderer/src/components/terminal/__tests__/TerminalContent.test.tsx`
@@ -1053,29 +1283,73 @@ import { TerminalTabBar } from '../TerminalTabBar'
 
 const tabs = [
   { id: 'tab-1', label: 'Terminal 1', kind: 'shell' as const },
-  { id: 'tab-2', label: 'Terminal 2', kind: 'shell' as const },
+  { id: 'tab-2', label: 'Terminal 2', kind: 'shell' as const }
 ]
 
 describe('TerminalTabBar', () => {
   it('renders tab labels', () => {
-    render(<TerminalTabBar tabs={tabs} activeTabId="tab-1" onSelectTab={vi.fn()} onCloseTab={vi.fn()} onAddTab={vi.fn()} onCreateAgentTab={vi.fn()} onRenameTab={vi.fn()} onReorderTab={vi.fn()} onDuplicateTab={vi.fn()} onCloseOthers={vi.fn()} onCloseAll={vi.fn()} />)
+    render(
+      <TerminalTabBar
+        tabs={tabs}
+        activeTabId="tab-1"
+        onSelectTab={vi.fn()}
+        onCloseTab={vi.fn()}
+        onAddTab={vi.fn()}
+        onCreateAgentTab={vi.fn()}
+        onRenameTab={vi.fn()}
+        onReorderTab={vi.fn()}
+        onDuplicateTab={vi.fn()}
+        onCloseOthers={vi.fn()}
+        onCloseAll={vi.fn()}
+      />
+    )
     expect(screen.getByText('Terminal 1')).toBeInTheDocument()
     expect(screen.getByText('Terminal 2')).toBeInTheDocument()
   })
 
   it('calls onSelectTab when tab clicked', async () => {
     const onSelect = vi.fn()
-    render(<TerminalTabBar tabs={tabs} activeTabId="tab-1" onSelectTab={onSelect} onCloseTab={vi.fn()} onAddTab={vi.fn()} onCreateAgentTab={vi.fn()} onRenameTab={vi.fn()} onReorderTab={vi.fn()} onDuplicateTab={vi.fn()} onCloseOthers={vi.fn()} onCloseAll={vi.fn()} />)
+    render(
+      <TerminalTabBar
+        tabs={tabs}
+        activeTabId="tab-1"
+        onSelectTab={onSelect}
+        onCloseTab={vi.fn()}
+        onAddTab={vi.fn()}
+        onCreateAgentTab={vi.fn()}
+        onRenameTab={vi.fn()}
+        onReorderTab={vi.fn()}
+        onDuplicateTab={vi.fn()}
+        onCloseOthers={vi.fn()}
+        onCloseAll={vi.fn()}
+      />
+    )
     await userEvent.click(screen.getByText('Terminal 2'))
     expect(onSelect).toHaveBeenCalledWith('tab-2')
   })
 
   it('calls onAddTab when plus button clicked', async () => {
     const onAdd = vi.fn()
-    render(<TerminalTabBar tabs={tabs} activeTabId="tab-1" onSelectTab={vi.fn()} onCloseTab={vi.fn()} onAddTab={onAdd} onCreateAgentTab={vi.fn()} onRenameTab={vi.fn()} onReorderTab={vi.fn()} onDuplicateTab={vi.fn()} onCloseOthers={vi.fn()} onCloseAll={vi.fn()} />)
+    render(
+      <TerminalTabBar
+        tabs={tabs}
+        activeTabId="tab-1"
+        onSelectTab={vi.fn()}
+        onCloseTab={vi.fn()}
+        onAddTab={onAdd}
+        onCreateAgentTab={vi.fn()}
+        onRenameTab={vi.fn()}
+        onReorderTab={vi.fn()}
+        onDuplicateTab={vi.fn()}
+        onCloseOthers={vi.fn()}
+        onCloseAll={vi.fn()}
+      />
+    )
     // Find the add button (usually a plus icon)
     const addBtns = screen.getAllByRole('button')
-    const addBtn = addBtns.find(b => b.getAttribute('aria-label')?.includes('add') || b.textContent?.includes('+'))
+    const addBtn = addBtns.find(
+      (b) => b.getAttribute('aria-label')?.includes('add') || b.textContent?.includes('+')
+    )
     if (addBtn) await userEvent.click(addBtn)
   })
 })
@@ -1093,12 +1367,26 @@ import { TerminalToolbar } from '../TerminalToolbar'
 
 describe('TerminalToolbar', () => {
   it('renders clear and split buttons', () => {
-    render(<TerminalToolbar onClear={vi.fn()} onToggleSplit={vi.fn()} splitEnabled={false} isAgentTab={false} />)
+    render(
+      <TerminalToolbar
+        onClear={vi.fn()}
+        onToggleSplit={vi.fn()}
+        splitEnabled={false}
+        isAgentTab={false}
+      />
+    )
     expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument()
   })
 
   it('hides for agent tabs', () => {
-    const { container } = render(<TerminalToolbar onClear={vi.fn()} onToggleSplit={vi.fn()} splitEnabled={false} isAgentTab={true} />)
+    const { container } = render(
+      <TerminalToolbar
+        onClear={vi.fn()}
+        onToggleSplit={vi.fn()}
+        splitEnabled={false}
+        isAgentTab={true}
+      />
+    )
     expect(container.innerHTML).toBe('')
   })
 })
@@ -1113,7 +1401,7 @@ import { render } from '@testing-library/react'
 import { fireEvent } from '@testing-library/react'
 
 vi.mock('../../stores/ui', () => ({
-  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'terminal' })),
+  useUIStore: vi.fn((sel: Function) => sel({ activeView: 'terminal' }))
 }))
 vi.mock('../../stores/terminal', () => {
   const addTab = vi.fn()
@@ -1132,17 +1420,17 @@ vi.mock('../../stores/terminal', () => {
     toggleSplit: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
-    resetZoom: vi.fn(),
+    resetZoom: vi.fn()
   }
   return {
-    useTerminalStore: vi.fn((sel?: Function) => sel ? sel(state) : state),
-    __mocks: { addTab, closeTab },
+    useTerminalStore: vi.fn((sel?: Function) => (sel ? sel(state) : state)),
+    __mocks: { addTab, closeTab }
   }
 })
 vi.mock('../../components/terminal/TerminalPane', () => ({
   TerminalPane: () => <div data-testid="terminal-pane" />,
   clearTerminal: vi.fn(),
-  getSearchAddon: vi.fn(),
+  getSearchAddon: vi.fn()
 }))
 vi.mock('../../components/terminal/FindBar', () => ({ FindBar: () => null }))
 
@@ -1172,6 +1460,7 @@ git commit -m "test: add Terminal component and view tests"
 ### Task 15: Untested Stores
 
 **Files:**
+
 - Test: `src/renderer/src/stores/__tests__/pendingReview.test.ts`
 - Test: `src/renderer/src/stores/__tests__/sprintUI.test.ts`
 - Test: `src/renderer/src/stores/__tests__/healthCheck.test.ts`
@@ -1241,7 +1530,10 @@ import { useSprintUIStore } from '../sprintUI'
 describe('sprintUI store', () => {
   beforeEach(() => {
     useSprintUIStore.setState({
-      selectedTaskId: null, logDrawerTaskId: null, repoFilter: null, generatingIds: new Set()
+      selectedTaskId: null,
+      logDrawerTaskId: null,
+      repoFilter: null,
+      generatingIds: new Set()
     })
   })
 
@@ -1324,15 +1616,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useSprintTasks } from '../sprintTasks'
 
 vi.mock('../toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
 describe('sprintTasks store', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useSprintTasks.setState({
-      tasks: [], loading: true, loadError: null, prMergedMap: {},
-      pendingUpdates: new Map(), pendingCreates: new Set(),
+      tasks: [],
+      loading: true,
+      loadError: null,
+      prMergedMap: {},
+      pendingUpdates: new Map(),
+      pendingCreates: new Set()
     })
   })
 
@@ -1362,10 +1658,12 @@ describe('sprintTasks store', () => {
   it('updateTask protects optimistic data during concurrent loadData', async () => {
     useSprintTasks.setState({
       tasks: [{ id: 't1', title: 'Optimistic', status: 'active' } as any],
-      pendingUpdates: new Map([['t1', Date.now()]]),
+      pendingUpdates: new Map([['t1', Date.now()]])
     })
     // loadData returns stale data
-    vi.mocked(window.api.sprint.list).mockResolvedValue([{ id: 't1', title: 'Stale', status: 'backlog' } as any])
+    vi.mocked(window.api.sprint.list).mockResolvedValue([
+      { id: 't1', title: 'Stale', status: 'backlog' } as any
+    ])
     await useSprintTasks.getState().loadData()
     // Optimistic version preserved
     expect(useSprintTasks.getState().tasks[0].title).toBe('Optimistic')
@@ -1404,7 +1702,7 @@ describe('costData store', () => {
   it('fetchLocalAgents loads agents and computes total cost', async () => {
     vi.mocked(window.api.cost as any).getAgentHistory = vi.fn().mockResolvedValue([
       { id: 'a1', costUsd: 1.5 },
-      { id: 'a2', costUsd: 2.5 },
+      { id: 'a2', costUsd: 2.5 }
     ])
     await useCostDataStore.getState().fetchLocalAgents()
     expect(useCostDataStore.getState().localAgents).toHaveLength(2)
@@ -1445,6 +1743,7 @@ git commit -m "test: add tests for untested Zustand stores"
 ### Task 16: Untested Hooks
 
 **Files:**
+
 - Test: `src/renderer/src/hooks/__tests__/useHealthCheck.test.ts`
 - Test: `src/renderer/src/hooks/__tests__/useSprintPolling.test.ts`
 - Test: `src/renderer/src/hooks/__tests__/useRepoOptions.test.ts`
@@ -1468,7 +1767,7 @@ describe('useRepoOptions', () => {
 
   it('loads repos from settings', async () => {
     vi.mocked(window.api.settings.getJson).mockResolvedValue([
-      { name: 'bde', localPath: '/path/bde', githubOwner: 'org', githubRepo: 'bde' },
+      { name: 'bde', localPath: '/path/bde', githubOwner: 'org', githubRepo: 'bde' }
     ])
     const { result } = renderHook(() => useRepoOptions())
     await waitFor(() => expect(result.current.length).toBeGreaterThan(0))
@@ -1484,19 +1783,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 
 vi.mock('../../stores/healthCheck', () => ({
-  useHealthCheckStore: vi.fn((sel: Function) => sel({
-    stuckTaskIds: new Set(['task-1']),
-    dismissedIds: new Set(),
-    setStuckTasks: vi.fn(),
-    dismiss: vi.fn(),
-  })),
+  useHealthCheckStore: vi.fn((sel: Function) =>
+    sel({
+      stuckTaskIds: new Set(['task-1']),
+      dismissedIds: new Set(),
+      setStuckTasks: vi.fn(),
+      dismiss: vi.fn()
+    })
+  )
 }))
 
 import { useHealthCheck } from '../useHealthCheck'
 
 const tasks = [
   { id: 'task-1', status: 'active', title: 'Test' },
-  { id: 'task-2', status: 'active', title: 'Test 2' },
+  { id: 'task-2', status: 'active', title: 'Test 2' }
 ] as any[]
 
 describe('useHealthCheck', () => {
@@ -1521,16 +1822,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
 vi.mock('../../stores/sprintTasks', () => ({
-  useSprintTasks: vi.fn((sel: Function) => sel({
-    tasks: [{ id: 't1', status: 'active' }],
-    loadData: vi.fn().mockResolvedValue(undefined),
-  })),
+  useSprintTasks: vi.fn((sel: Function) =>
+    sel({
+      tasks: [{ id: 't1', status: 'active' }],
+      loadData: vi.fn().mockResolvedValue(undefined)
+    })
+  )
 }))
 vi.mock('../useVisibilityAwareInterval', () => ({
   useVisibilityAwareInterval: vi.fn((cb: Function, ms: number | null) => {
     // Simulate immediate call for testing
     if (ms !== null) cb()
-  }),
+  })
 }))
 
 import { useSprintPolling } from '../useSprintPolling'
@@ -1552,20 +1855,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 
 vi.mock('../../stores/sprintTasks', () => ({
-  useSprintTasks: vi.fn((sel: Function) => sel({
-    tasks: [],
-    updateTask: vi.fn(),
-  })),
+  useSprintTasks: vi.fn((sel: Function) =>
+    sel({
+      tasks: [],
+      updateTask: vi.fn()
+    })
+  )
 }))
 vi.mock('../../stores/prConflicts', () => ({
-  usePrConflictsStore: vi.fn((sel: Function) => sel({
-    conflictingTaskIds: new Set(),
-    setConflicts: vi.fn(),
-  })),
+  usePrConflictsStore: vi.fn((sel: Function) =>
+    sel({
+      conflictingTaskIds: new Set(),
+      setConflicts: vi.fn()
+    })
+  )
 }))
 vi.mock('../../stores/toasts', () => ({ toast: { error: vi.fn() } }))
 vi.mock('../useVisibilityAwareInterval', () => ({
-  useVisibilityAwareInterval: vi.fn(),
+  useVisibilityAwareInterval: vi.fn()
 }))
 
 import { usePrStatusPolling } from '../usePrStatusPolling'
@@ -1587,21 +1894,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
 vi.mock('../../stores/sprintTasks', () => ({
-  useSprintTasks: vi.fn((sel: Function) => sel({
-    tasks: [{ id: 't1', status: 'backlog', title: 'Task 1' }],
-    updateTask: vi.fn().mockResolvedValue(undefined),
-    deleteTask: vi.fn().mockResolvedValue(undefined),
-    launchTask: vi.fn().mockResolvedValue(undefined),
-  })),
+  useSprintTasks: vi.fn((sel: Function) =>
+    sel({
+      tasks: [{ id: 't1', status: 'backlog', title: 'Task 1' }],
+      updateTask: vi.fn().mockResolvedValue(undefined),
+      deleteTask: vi.fn().mockResolvedValue(undefined),
+      launchTask: vi.fn().mockResolvedValue(undefined)
+    })
+  )
 }))
 vi.mock('../../stores/sprintUI', () => ({
-  useSprintUIStore: vi.fn((sel: Function) => sel({
-    setSelectedTaskId: vi.fn(),
-    setLogDrawerTaskId: vi.fn(),
-  })),
+  useSprintUIStore: vi.fn((sel: Function) =>
+    sel({
+      setSelectedTaskId: vi.fn(),
+      setLogDrawerTaskId: vi.fn()
+    })
+  )
 }))
 vi.mock('../../stores/toasts', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), undoable: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), undoable: vi.fn() }
 }))
 
 import { useSprintTaskActions } from '../useSprintTaskActions'
@@ -1636,6 +1947,7 @@ git commit -m "test: add tests for untested hooks"
 ### Task 17: Main Process Integration — Sprint PR Poller
 
 **Files:**
+
 - Test: `src/main/__tests__/sprint-pr-poller.test.ts`
 - Reference: `src/main/sprint-pr-poller.ts`
 
@@ -1654,7 +1966,7 @@ function makeDeps(overrides: Partial<SprintPrPollerDeps> = {}): SprintPrPollerDe
     markTaskCancelledByPrNumber: vi.fn().mockResolvedValue([]),
     updateTaskMergeableState: vi.fn().mockResolvedValue(undefined),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -1664,13 +1976,17 @@ describe('createSprintPrPoller', () => {
 
   it('polls on start and marks merged PRs as done', async () => {
     const deps = makeDeps({
-      listTasksWithOpenPrs: vi.fn().mockResolvedValue([
-        { id: 'task-1', pr_url: 'https://github.com/o/r/pull/42', pr_status: 'open' },
-      ]),
-      pollPrStatuses: vi.fn().mockResolvedValue([
-        { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null },
-      ]),
-      markTaskDoneByPrNumber: vi.fn().mockResolvedValue(['task-1']),
+      listTasksWithOpenPrs: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'task-1', pr_url: 'https://github.com/o/r/pull/42', pr_status: 'open' }
+        ]),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null }
+        ]),
+      markTaskDoneByPrNumber: vi.fn().mockResolvedValue(['task-1'])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -1687,13 +2003,17 @@ describe('createSprintPrPoller', () => {
 
   it('marks closed PRs as cancelled', async () => {
     const deps = makeDeps({
-      listTasksWithOpenPrs: vi.fn().mockResolvedValue([
-        { id: 'task-2', pr_url: 'https://github.com/o/r/pull/99', pr_status: 'open' },
-      ]),
-      pollPrStatuses: vi.fn().mockResolvedValue([
-        { taskId: 'task-2', merged: false, state: 'CLOSED', mergeableState: null },
-      ]),
-      markTaskCancelledByPrNumber: vi.fn().mockResolvedValue(['task-2']),
+      listTasksWithOpenPrs: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 'task-2', pr_url: 'https://github.com/o/r/pull/99', pr_status: 'open' }
+        ]),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-2', merged: false, state: 'CLOSED', mergeableState: null }
+        ]),
+      markTaskCancelledByPrNumber: vi.fn().mockResolvedValue(['task-2'])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -1743,6 +2063,7 @@ git commit -m "test: add sprint PR poller integration tests"
 ### Task 18: Main Process Integration — AgentManager Pipeline
 
 **Files:**
+
 - Test: `src/main/__tests__/integration/agent-manager-pipeline.test.ts`
 - Reference: `src/main/agent-manager/index.ts`
 
@@ -1760,19 +2081,19 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
   getTask: vi.fn(),
   getOrphanedTasks: vi.fn().mockResolvedValue([]),
-  getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+  getTasksWithDependencies: vi.fn().mockResolvedValue([])
 }))
 vi.mock('../../agent-manager/sdk-adapter', () => ({ spawnAgent: vi.fn() }))
 vi.mock('../../agent-manager/worktree', () => ({
   setupWorktree: vi.fn(),
   cleanupWorktree: vi.fn(),
   pruneStaleWorktrees: vi.fn().mockResolvedValue(0),
-  branchNameForTask: vi.fn((t: any) => `agent/${t.title.toLowerCase().replace(/\s+/g, '-')}`),
+  branchNameForTask: vi.fn((t: any) => `agent/${t.title.toLowerCase().replace(/\s+/g, '-')}`)
 }))
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getGhRepo: vi.fn(),
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
+  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log'
 }))
 
 import { createAgentManager } from '../../agent-manager'
@@ -1783,23 +2104,48 @@ import { getRepoPaths } from '../../paths'
 
 function makeTask(id: string) {
   return {
-    id, title: `Task ${id}`, repo: 'myrepo', prompt: 'Do work', spec: null,
-    priority: 1, status: 'queued' as const, notes: null, retry_count: 0,
-    fast_fail_count: 0, agent_run_id: null, pr_number: null, pr_status: null,
-    pr_url: null, claimed_by: null, started_at: null, completed_at: null,
-    template_name: null, depends_on: null, updated_at: '2026-01-01T00:00:00Z',
-    created_at: '2026-01-01T00:00:00Z',
+    id,
+    title: `Task ${id}`,
+    repo: 'myrepo',
+    prompt: 'Do work',
+    spec: null,
+    priority: 1,
+    status: 'queued' as const,
+    notes: null,
+    retry_count: 0,
+    fast_fail_count: 0,
+    agent_run_id: null,
+    pr_number: null,
+    pr_status: null,
+    pr_url: null,
+    claimed_by: null,
+    started_at: null,
+    completed_at: null,
+    template_name: null,
+    depends_on: null,
+    updated_at: '2026-01-01T00:00:00Z',
+    created_at: '2026-01-01T00:00:00Z'
   }
 }
 
 function makeBlockingHandle() {
   let resolve: (() => void) | undefined
-  const p = new Promise<void>(r => { resolve = r })
+  const p = new Promise<void>((r) => {
+    resolve = r
+  })
   const abort = vi.fn(() => resolve?.())
-  async function* gen() { await p }
+  async function* gen() {
+    await p
+  }
   return {
-    handle: { messages: gen(), sessionId: 's1', abort, steer: vi.fn().mockResolvedValue(undefined) },
-    abort, resolve: () => resolve?.(),
+    handle: {
+      messages: gen(),
+      sessionId: 's1',
+      abort,
+      steer: vi.fn().mockResolvedValue(undefined)
+    },
+    abort,
+    resolve: () => resolve?.()
   }
 }
 
@@ -1820,10 +2166,17 @@ describe('AgentManager pipeline integration', () => {
     const { handle } = makeBlockingHandle()
     vi.mocked(spawnAgent).mockResolvedValueOnce(handle as any)
 
-    const mgr = createAgentManager({
-      maxConcurrent: 1, worktreeBase: '/tmp/wt', maxRuntimeMs: 600000,
-      idleTimeoutMs: 120000, pollIntervalMs: 1000, defaultModel: 'claude-sonnet-4-5',
-    }, { info: vi.fn(), warn: vi.fn(), error: vi.fn() })
+    const mgr = createAgentManager(
+      {
+        maxConcurrent: 1,
+        worktreeBase: '/tmp/wt',
+        maxRuntimeMs: 600000,
+        idleTimeoutMs: 120000,
+        pollIntervalMs: 1000,
+        defaultModel: 'claude-sonnet-4-5'
+      },
+      { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    )
 
     mgr.start()
 
@@ -1855,6 +2208,7 @@ git commit -m "test: add AgentManager pipeline integration test"
 ### Task 19: Main Process Integration — Queue API with Real HTTP
 
 **Files:**
+
 - Test: `src/main/__tests__/integration/queue-api-integration.test.ts`
 - Reference: `src/main/queue-api/`
 
@@ -1870,10 +2224,18 @@ import http from 'node:http'
 vi.mock('../../data/sprint-queries', () => {
   const tasks = new Map()
   return {
-    getQueuedTasks: vi.fn(async () => Array.from(tasks.values()).filter(t => t.status === 'queued')),
+    getQueuedTasks: vi.fn(async () =>
+      Array.from(tasks.values()).filter((t) => t.status === 'queued')
+    ),
     getTask: vi.fn(async (id: string) => tasks.get(id) ?? null),
     createTask: vi.fn(async (data: any) => {
-      const task = { id: `task-${Date.now()}`, ...data, status: data.status ?? 'backlog', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+      const task = {
+        id: `task-${Date.now()}`,
+        ...data,
+        status: data.status ?? 'backlog',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
       tasks.set(task.id, task)
       return task
     }),
@@ -1884,22 +2246,30 @@ vi.mock('../../data/sprint-queries', () => {
       return task
     }),
     listTasks: vi.fn(async () => Array.from(tasks.values())),
-    __tasks: tasks,
+    __tasks: tasks
   }
 })
 vi.mock('../../data/settings-queries', () => ({
-  getSetting: vi.fn(() => 'test-api-key'),
+  getSetting: vi.fn(() => 'test-api-key')
 }))
 
 import { startQueueApi, stopQueueApi } from '../../queue-api/server'
 
 let port: number
 
-function request(method: string, path: string, body?: unknown, token = 'test-api-key'): Promise<{ status: number; body: any }> {
+function request(
+  method: string,
+  path: string,
+  body?: unknown,
+  token = 'test-api-key'
+): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
     const opts: http.RequestOptions = {
-      hostname: '127.0.0.1', port, path, method,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      hostname: '127.0.0.1',
+      port,
+      path,
+      method,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
     }
     const req = http.request(opts, (res) => {
       const chunks: Buffer[] = []
@@ -1927,7 +2297,9 @@ describe('Queue API HTTP integration', () => {
     })
   })
 
-  afterAll(async () => { await stopQueueApi() })
+  afterAll(async () => {
+    await stopQueueApi()
+  })
 
   it('GET /queue/health returns stats', async () => {
     const res = await request('GET', '/queue/health')
@@ -1936,13 +2308,21 @@ describe('Queue API HTTP integration', () => {
   })
 
   it('POST /queue/tasks creates a task', async () => {
-    const res = await request('POST', '/queue/tasks', { title: 'Integration test', repo: 'bde', priority: 1 })
+    const res = await request('POST', '/queue/tasks', {
+      title: 'Integration test',
+      repo: 'bde',
+      priority: 1
+    })
     expect(res.status).toBe(201)
     expect(res.body.title).toBe('Integration test')
   })
 
   it('GET /queue/tasks/:id retrieves a task', async () => {
-    const create = await request('POST', '/queue/tasks', { title: 'Fetch me', repo: 'bde', priority: 1 })
+    const create = await request('POST', '/queue/tasks', {
+      title: 'Fetch me',
+      repo: 'bde',
+      priority: 1
+    })
     const res = await request('GET', `/queue/tasks/${create.body.id}`)
     expect(res.status).toBe(200)
     expect(res.body.title).toBe('Fetch me')
@@ -1971,6 +2351,7 @@ git commit -m "test: add Queue API HTTP integration tests"
 ### Task 20: Expanded Smoke Tests
 
 **Files:**
+
 - Modify: `src/renderer/src/views/__tests__/smoke.test.tsx`
 
 - [ ] **Step 1: Add PR Station view smoke test**
@@ -1981,13 +2362,13 @@ Add import and test for the PR Station view (PRStationView or however it's expor
 // Add to existing smoke.test.tsx
 
 vi.mock('../../components/pr-station/PRStationList', () => ({
-  PRStationList: () => <div data-testid="pr-station-list" />,
+  PRStationList: () => <div data-testid="pr-station-list" />
 }))
 vi.mock('../../components/pr-station/PRStationDetail', () => ({
-  PRStationDetail: () => <div data-testid="pr-station-detail" />,
+  PRStationDetail: () => <div data-testid="pr-station-detail" />
 }))
 vi.mock('../../components/pr-station/PRStationDiff', () => ({
-  PRStationDiff: () => <div data-testid="pr-station-diff" />,
+  PRStationDiff: () => <div data-testid="pr-station-diff" />
 }))
 
 import PRStationView from '../PRStationView'

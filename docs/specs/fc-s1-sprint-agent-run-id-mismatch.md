@@ -8,21 +8,21 @@ When an agent is launched from a sprint task, the frontend sends an update patch
 
 Three-way naming inconsistency:
 
-| Layer | Field name | Source |
-|-------|-----------|--------|
-| DB schema (`src/main/db.ts:58`) | `agent_run_id` | SQLite column |
-| Backend allowlist (`src/main/handlers/sprint.ts:144-147`) | `agent_run_id` | Allowed in UPDATE |
-| Frontend type + patch (`SprintCenter.tsx:28, 174-178`) | `agent_session_id` | Sent in update |
+| Layer                                                     | Field name         | Source            |
+| --------------------------------------------------------- | ------------------ | ----------------- |
+| DB schema (`src/main/db.ts:58`)                           | `agent_run_id`     | SQLite column     |
+| Backend allowlist (`src/main/handlers/sprint.ts:144-147`) | `agent_run_id`     | Allowed in UPDATE |
+| Frontend type + patch (`SprintCenter.tsx:28, 174-178`)    | `agent_session_id` | Sent in update    |
 
 The frontend sends `{ agent_session_id: result.id }` but the handler only permits `agent_run_id`, so the field is silently dropped.
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
+| File                                                  | Change                                                                                                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `src/renderer/src/components/sprint/SprintCenter.tsx` | Rename `agent_session_id` → `agent_run_id` in the `SprintTask` type (line 28) and in the launch patch (lines 174-178) |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | Update all references from `task.agent_session_id` to `task.agent_run_id` (lines 28, 56) |
-| `src/renderer/src/components/sprint/TaskCard.tsx` | Update any references from `agent_session_id` to `agent_run_id` |
+| `src/renderer/src/components/sprint/LogDrawer.tsx`    | Update all references from `task.agent_session_id` to `task.agent_run_id` (lines 28, 56)                              |
+| `src/renderer/src/components/sprint/TaskCard.tsx`     | Update any references from `agent_session_id` to `agent_run_id`                                                       |
 
 ## Implementation Notes
 

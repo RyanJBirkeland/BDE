@@ -32,11 +32,13 @@ GitHub Actions runs on every push to `main` and every PR targeting `main`:
 All checks are required before merge.
 
 **MANDATORY: Before EVERY commit, run ALL of these:**
+
 ```bash
 npm run typecheck   # Zero errors required
 npm test            # All tests must pass
 npm run lint        # Zero errors required (warnings OK)
 ```
+
 Do NOT commit with failing checks. Fix issues first. If you cannot fix a failure, do NOT commit — report the issue.
 
 ## Branch Conventions
@@ -54,6 +56,7 @@ Format: `{type}: {description}`
 - `chore:` maintenance / docs
 
 ## Key File Locations
+
 - Task terminal resolution service: `src/main/services/task-terminal-service.ts` (unified `onStatusTerminal` — all terminal paths converge here)
 - Sprint task dependency management: `src/main/handlers/sprint-local.ts` (auto-blocking on create/transition)
 - Dependency resolution after completion: `src/main/agent-manager/resolve-dependents.ts`

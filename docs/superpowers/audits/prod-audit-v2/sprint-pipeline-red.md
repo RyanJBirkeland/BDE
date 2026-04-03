@@ -205,7 +205,12 @@
 - **Recommendation:** Add the same active-task guard before `_deleteTask(id)`:
   ```typescript
   if (task?.status === 'active') {
-    results.push({ id, op: 'delete', ok: false, error: 'Cannot delete active task — stop the agent first' })
+    results.push({
+      id,
+      op: 'delete',
+      ok: false,
+      error: 'Cannot delete active task — stop the agent first'
+    })
     continue
   }
   ```
@@ -250,56 +255,56 @@
 
 ## Summary Table
 
-| ID | Title | Previous Status | Current Status |
-|---|---|---|---|
-| SP-RED-1 | SQL column name interpolation without identifier validation | Open | **Fixed** |
-| SP-RED-2 | IPC `sprint:update` accepts arbitrary fields without allowlist | Open | **Fixed** |
-| SP-RED-3 | `sprint:unblockTask` bypasses spec quality checks | Open | **Fixed** |
-| SP-RED-4 | Symlink-based path traversal in `validateSpecPath` | Open | **Fixed** |
-| SP-RED-5 | `sprint:readLog` agent ID not validated | Open | **Fixed** |
-| SP-RED-6 | Unvalidated `href` construction from task notes | Open | **Fixed** |
-| SP-RED-7 | `sprint:delete` has no status guard | Open | **Fixed** |
-| SP-RED-8 | `sprint:healthCheck` uses direct `_updateTask` | Open | **Fixed** |
-| SP-RED-9 | `pr_url` rendered without URL validation | Open | **Fixed** |
-| SP-RED-10 | `sanitizeDependsOn` recursive parsing unbounded | Open | **Not Fixed** |
-| SP-RED-11 | Queue API blocked->queued bypass | Open | **Partially Fixed** |
-| SP-1 | TOCTOU race in `sprint:update` | Open | **Partially Fixed** |
-| SP-2 | `_onStatusTerminal` null-guard drops resolution | Open | **Fixed** |
-| SP-3 | PR poller stale `onTaskTerminal` reference | Open | **Fixed** |
-| SP-4 | `sprint:batchUpdate` skips `_onStatusTerminal` | Open | **Fixed** |
-| SP-7 | ConflictDrawer/HealthCheckDrawer unreachable | Open | **Fixed** |
-| SP-12 | `sprint:batchUpdate` status without spec validation | Open | **Fixed** |
-| SP-15 | SpecPanel draft not synced | Open | **Fixed** |
-| SP-16 | TicketEditor partial failure duplicates | Open | **Fixed** |
-| SP-17 | TaskDetailDrawer resize listener leak | Open | **Fixed** |
-| SP-18 | Unblock button bypasses dependencies | Open | **Fixed** |
-| SP-20 | SpecPanel no save feedback | Open | **Fixed** |
-| SP-22 | HealthCheck Rescue no clear claimed_by | Open | **Fixed** |
-| SP-23 | healthCheck per-row writes no transaction | Open | **Fixed** |
-| SP-26 | CircuitPipeline dead code | Open | **Fixed** |
-| SP-27 | DoneHistoryPanel no keyboard accessibility | Open | **Fixed** |
-| SP-28 | SpecPanel/DoneHistoryPanel no Escape dismiss | Open | **Fixed** |
-| SP-29 | Loading state no spinner | Open | **Fixed** |
-| SP-30 | Failed notes truncated, no tooltip | Open | **Fixed** |
-| SP-32 | Re-run misleading label | Open | **Fixed** |
-| SP-33 | Duplicate sanitizeDeps in store | Open | **Fixed** |
-| SP-34 | Duplicate formatElapsed/getDotColor | Open | **Fixed** |
-| SP-37 | Resize handle no ARIA affordance | Open | **Fixed** |
-| SP-RED-V2-1 | Batch delete skips active task guard | — | **New (Low)** |
-| SP-RED-V2-2 | blocked->queued still skips dep re-eval | — | **New (Medium)** |
-| SP-RED-V2-3 | unblockTask uses raw _updateTask | — | **New (Low)** |
-| SP-RED-V2-4 | TicketEditor 30+ inline token styles | — | **New (Low)** |
+| ID          | Title                                                          | Previous Status | Current Status      |
+| ----------- | -------------------------------------------------------------- | --------------- | ------------------- |
+| SP-RED-1    | SQL column name interpolation without identifier validation    | Open            | **Fixed**           |
+| SP-RED-2    | IPC `sprint:update` accepts arbitrary fields without allowlist | Open            | **Fixed**           |
+| SP-RED-3    | `sprint:unblockTask` bypasses spec quality checks              | Open            | **Fixed**           |
+| SP-RED-4    | Symlink-based path traversal in `validateSpecPath`             | Open            | **Fixed**           |
+| SP-RED-5    | `sprint:readLog` agent ID not validated                        | Open            | **Fixed**           |
+| SP-RED-6    | Unvalidated `href` construction from task notes                | Open            | **Fixed**           |
+| SP-RED-7    | `sprint:delete` has no status guard                            | Open            | **Fixed**           |
+| SP-RED-8    | `sprint:healthCheck` uses direct `_updateTask`                 | Open            | **Fixed**           |
+| SP-RED-9    | `pr_url` rendered without URL validation                       | Open            | **Fixed**           |
+| SP-RED-10   | `sanitizeDependsOn` recursive parsing unbounded                | Open            | **Not Fixed**       |
+| SP-RED-11   | Queue API blocked->queued bypass                               | Open            | **Partially Fixed** |
+| SP-1        | TOCTOU race in `sprint:update`                                 | Open            | **Partially Fixed** |
+| SP-2        | `_onStatusTerminal` null-guard drops resolution                | Open            | **Fixed**           |
+| SP-3        | PR poller stale `onTaskTerminal` reference                     | Open            | **Fixed**           |
+| SP-4        | `sprint:batchUpdate` skips `_onStatusTerminal`                 | Open            | **Fixed**           |
+| SP-7        | ConflictDrawer/HealthCheckDrawer unreachable                   | Open            | **Fixed**           |
+| SP-12       | `sprint:batchUpdate` status without spec validation            | Open            | **Fixed**           |
+| SP-15       | SpecPanel draft not synced                                     | Open            | **Fixed**           |
+| SP-16       | TicketEditor partial failure duplicates                        | Open            | **Fixed**           |
+| SP-17       | TaskDetailDrawer resize listener leak                          | Open            | **Fixed**           |
+| SP-18       | Unblock button bypasses dependencies                           | Open            | **Fixed**           |
+| SP-20       | SpecPanel no save feedback                                     | Open            | **Fixed**           |
+| SP-22       | HealthCheck Rescue no clear claimed_by                         | Open            | **Fixed**           |
+| SP-23       | healthCheck per-row writes no transaction                      | Open            | **Fixed**           |
+| SP-26       | CircuitPipeline dead code                                      | Open            | **Fixed**           |
+| SP-27       | DoneHistoryPanel no keyboard accessibility                     | Open            | **Fixed**           |
+| SP-28       | SpecPanel/DoneHistoryPanel no Escape dismiss                   | Open            | **Fixed**           |
+| SP-29       | Loading state no spinner                                       | Open            | **Fixed**           |
+| SP-30       | Failed notes truncated, no tooltip                             | Open            | **Fixed**           |
+| SP-32       | Re-run misleading label                                        | Open            | **Fixed**           |
+| SP-33       | Duplicate sanitizeDeps in store                                | Open            | **Fixed**           |
+| SP-34       | Duplicate formatElapsed/getDotColor                            | Open            | **Fixed**           |
+| SP-37       | Resize handle no ARIA affordance                               | Open            | **Fixed**           |
+| SP-RED-V2-1 | Batch delete skips active task guard                           | —               | **New (Low)**       |
+| SP-RED-V2-2 | blocked->queued still skips dep re-eval                        | —               | **New (Medium)**    |
+| SP-RED-V2-3 | unblockTask uses raw \_updateTask                              | —               | **New (Low)**       |
+| SP-RED-V2-4 | TicketEditor 30+ inline token styles                           | —               | **New (Low)**       |
 
 ## Severity Summary
 
-| Severity | Count |
-|----------|-------|
-| Critical | 0 |
-| High | 0 |
-| Medium | 1 (SP-RED-V2-2, carried forward) |
-| Low | 3 (SP-RED-V2-1, V2-3, V2-4) |
-| Not Fixed (Low risk) | 1 (SP-RED-10) |
-| Partially Fixed | 2 (SP-RED-11/SP-1) |
+| Severity             | Count                            |
+| -------------------- | -------------------------------- |
+| Critical             | 0                                |
+| High                 | 0                                |
+| Medium               | 1 (SP-RED-V2-2, carried forward) |
+| Low                  | 3 (SP-RED-V2-1, V2-3, V2-4)      |
+| Not Fixed (Low risk) | 1 (SP-RED-10)                    |
+| Partially Fixed      | 2 (SP-RED-11/SP-1)               |
 
 ## Overall Assessment
 
@@ -314,6 +319,7 @@ The Sprint Pipeline has undergone substantial security remediation since the ini
 - Resource cleanup patterns (resize listeners, intervals) are properly managed
 
 The remaining gaps are minor:
+
 1. **Dependency bypass** (SP-RED-V2-2) is the most significant remaining issue — the Queue API status endpoint allows `blocked->queued` without re-evaluating dependencies. This is a logic bypass, not a remote exploit.
 2. **Batch delete inconsistency** (SP-RED-V2-1) is a defense-in-depth gap that's unlikely to be triggered accidentally.
 3. The unbounded recursion in `sanitizeDependsOn` (SP-RED-10) is purely theoretical.

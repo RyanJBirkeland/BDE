@@ -65,7 +65,10 @@
   padding: 18px 14px;
   text-align: center;
   cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
   position: relative;
   overflow: hidden;
 }
@@ -226,7 +229,6 @@
   padding: 8px 16px;
   opacity: 0.7;
 }
-
 
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {

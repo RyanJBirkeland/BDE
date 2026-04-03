@@ -8,13 +8,13 @@
 
 ## Remediation Status Summary
 
-| Status | Count |
-|--------|-------|
-| Fixed | 10 |
-| Partially Fixed | 4 |
-| Not Fixed | 5 |
-| Moot / Superseded | 2 |
-| New Issues | 1 |
+| Status            | Count |
+| ----------------- | ----- |
+| Fixed             | 10    |
+| Partially Fixed   | 4     |
+| Not Fixed         | 5     |
+| Moot / Superseded | 2     |
+| New Issues        | 1     |
 
 ---
 
@@ -34,6 +34,7 @@
 **Original Severity:** Critical
 **Status:** Fixed
 **Evidence:** `src/main/handlers/sprint-local.ts:167-174`. The handler now logs via `logger.error()` when `_onStatusTerminal` is null during a terminal transition:
+
 ```typescript
 if (!_onStatusTerminal) {
   logger.error(
@@ -41,6 +42,7 @@ if (!_onStatusTerminal) {
   )
 }
 ```
+
 The null-guard still exists (silent no-op for resolution), but the structured error log ensures the issue is detectable in `~/.bde/bde.log`. The underlying setter pattern (`let _onStatusTerminal = null`) remains, but the observability fix addresses the reliability concern.
 
 ---
@@ -50,6 +52,7 @@ The null-guard still exists (silent no-op for resolution), but the structured er
 **Original Severity:** Critical
 **Status:** Fixed
 **Evidence:** `src/main/sprint-pr-poller.ts:108-122`. The legacy `startSprintPrPoller()` now uses late binding via a closure:
+
 ```typescript
 onTaskTerminal: (taskId: string, status: string) => {
   if (_onTaskTerminal) {
@@ -59,6 +62,7 @@ onTaskTerminal: (taskId: string, status: string) => {
   }
 },
 ```
+
 This reads `_onTaskTerminal` at call time, not construction time, so `setOnTaskTerminal()` can be called after `startSprintPrPoller()` and the poller will pick up the new value. Comment at line 108 explicitly references SP-3.
 
 ---
@@ -68,6 +72,7 @@ This reads `_onTaskTerminal` at call time, not construction time, so `setOnTaskT
 **Original Severity:** Significant
 **Status:** Fixed
 **Evidence:** `src/main/handlers/sprint-local.ts:219-243`. Both issues addressed:
+
 1. **Transaction:** Lines 232-237 wrap the loop in `db.transaction(() => { ... })()` for all-or-nothing semantics.
 2. **Logger:** Line 240 uses `logger.warn(...)` instead of `console.warn`.
 
@@ -78,6 +83,7 @@ This reads `_onTaskTerminal` at call time, not construction time, so `setOnTaskT
 **Original Severity:** Significant
 **Status:** Fixed (with caveat)
 **Evidence:** `src/main/handlers/sprint-local.ts:404-418`. The batch update handler now includes terminal status handling:
+
 ```typescript
 if (updated && filtered.status && typeof filtered.status === 'string' &&
     TERMINAL_STATUSES.has(filtered.status)) {
@@ -88,6 +94,7 @@ if (updated && filtered.status && typeof filtered.status === 'string' &&
   }
 }
 ```
+
 **Caveat:** This code is currently unreachable because `GENERAL_PATCH_FIELDS` (imported from `src/shared/queue-api-contract.ts` line 72) does NOT include `status`. The filter at line 354 (`if (GENERAL_PATCH_FIELDS.has(k)) filtered[k] = v`) strips `status` before the check at line 363. The fix is defensive (correct if `GENERAL_PATCH_FIELDS` ever adds `status`), but as of today, batch updates cannot change status at all.
 
 ---
@@ -97,10 +104,12 @@ if (updated && filtered.status && typeof filtered.status === 'string' &&
 **Original Severity:** Significant
 **Status:** Fixed (Moot)
 **Evidence:** `src/shared/queue-api-contract.ts:70-82`. `GENERAL_PATCH_FIELDS` explicitly excludes `status`:
+
 ```
 /** Allowed fields for general PATCH /queue/tasks/:id — excludes status, claimed_by, depends_on
  *  which must go through their dedicated endpoints to enforce validation. */
 ```
+
 The batch handler at `sprint-local.ts:354` filters through this set, so `status` is never included in `filtered`. The original finding is moot -- status changes through batch updates are blocked at the field-filtering level. Additionally, the handler includes spec validation code (lines 362-400) as defense-in-depth should `status` ever be added to the allowlist.
 
 ---
@@ -110,6 +119,7 @@ The batch handler at `sprint-local.ts:354` filters through this set, so `status`
 **Original Severity:** Significant
 **Status:** Fixed
 **Evidence:** `src/main/handlers/sprint-local.ts:278-313`. The `sprint:unblockTask` handler now runs both structural and semantic validation before transitioning to queued:
+
 ```typescript
 const structural = validateStructural({
   title: task.title,
@@ -143,10 +153,12 @@ if (task.spec) {
 **Original Severity:** Significant
 **Status:** Fixed
 **Evidence:** `src/renderer/src/stores/sprintTasks.ts:116-172`. The store now uses `updateId = Date.now()` (line 116) as a per-operation identifier. Both the success handler (line 141) and error handler (line 159) check `current.ts === updateId` before clearing:
+
 ```typescript
 const current = s.pendingUpdates[taskId]
 const shouldClear = !current || current.ts === updateId
 ```
+
 This ensures that a second concurrent update doesn't prematurely clear the first update's pending state. Only the most recent update clears the pending entry.
 
 ---
@@ -156,6 +168,7 @@ This ensures that a second concurrent update doesn't prematurely clear the first
 **Original Severity:** Significant
 **Status:** Fixed
 **Evidence:** `src/renderer/src/components/sprint/SpecPanel.tsx:17-22`. A `useEffect` now syncs draft when `spec` prop changes while not editing:
+
 ```typescript
 useEffect(() => {
   if (!editing) {
@@ -163,6 +176,7 @@ useEffect(() => {
   }
 }, [spec, editing])
 ```
+
 This is exactly the fix recommended in the original audit.
 
 ---
@@ -188,6 +202,7 @@ This is exactly the fix recommended in the original audit.
 **Original Severity:** Moderate
 **Status:** Fixed
 **Evidence:** `src/renderer/src/components/sprint/TicketEditor.tsx:23-133`. The component now tracks per-ticket creation status via a `created?: boolean` field on `TicketWithId` (line 24). The `createAll` function:
+
 1. Skips already-created tickets (lines 96-98: `if (ticket.created) { successCount++; continue }`)
 2. Marks each ticket as `created: true` on success (lines 112-114)
 3. Shows partial-success feedback: `${successCount} succeeded, ${failCount} failed` (line 131)
@@ -200,6 +215,7 @@ This is exactly the fix recommended in the original audit.
 **Original Severity:** Moderate
 **Status:** Fixed
 **Evidence:** `src/renderer/src/components/sprint/TaskDetailDrawer.tsx:70-114`. The component now uses a `cleanupRef` (line 70) to store the cleanup function during drag:
+
 ```typescript
 cleanupRef.current = () => {
   document.removeEventListener('mousemove', onMove)
@@ -208,6 +224,7 @@ cleanupRef.current = () => {
   document.body.style.userSelect = ''
 }
 ```
+
 A `useEffect` at lines 73-79 calls `cleanupRef.current()` on unmount, ensuring listeners are removed even if the component unmounts mid-drag.
 
 ---
@@ -217,9 +234,11 @@ A `useEffect` at lines 73-79 calls `cleanupRef.current()` on unmount, ensuring l
 **Original Severity:** Moderate
 **Status:** Fixed
 **Evidence:** `src/main/handlers/sprint-local.ts:240`:
+
 ```typescript
 logger.warn(`[sprint:healthCheck] Failed to flag stuck tasks: ${err}`)
 ```
+
 Now uses the `logger` instance instead of `console.warn`.
 
 ---
@@ -229,9 +248,11 @@ Now uses the `logger` instance instead of `console.warn`.
 **Original Severity:** Moderate
 **Status:** Fixed
 **Evidence:** `src/renderer/src/stores/sprintTasks.ts:6`. The store now imports the shared function:
+
 ```typescript
 import { sanitizeDependsOn } from '../../../shared/sanitize-depends-on'
 ```
+
 It is used consistently at lines 60, 151, 330, and 343 for all incoming task data (loadData, updateTask success, mergeSseUpdate, setTasks). No local `sanitizeDeps` duplicate exists.
 
 ---
@@ -257,9 +278,11 @@ It is used consistently at lines 60, 151, 330, and 343 for all incoming task dat
 **Original Severity:** Low
 **Status:** Fixed
 **Evidence:** Both `TaskPill.tsx` (line 6) and `TaskDetailDrawer.tsx` (line 4) now import from a shared utility:
+
 ```typescript
 import { formatElapsed, getDotColor } from '../../lib/task-format'
 ```
+
 The shared implementation at `src/renderer/src/lib/task-format.ts` handles all statuses including `failed`, `error`, and `cancelled` (lines 23-26). No duplicated local functions exist in either component.
 
 ---
@@ -269,6 +292,7 @@ The shared implementation at `src/renderer/src/lib/task-format.ts` handles all s
 **Original Severity:** Low
 **Status:** Fixed
 **Evidence:** Test files now exist for all four previously untested components:
+
 - `src/renderer/src/components/sprint/__tests__/ConflictDrawer.test.tsx`
 - `src/renderer/src/components/sprint/__tests__/HealthCheckDrawer.test.tsx`
 - `src/renderer/src/components/sprint/__tests__/TicketEditor.test.tsx`
@@ -294,28 +318,28 @@ The shared implementation at `src/renderer/src/lib/task-format.ts` handles all s
 
 ## Synthesis Cross-Reference (SP-1 through SP-24)
 
-| Synthesis ID | Finding | Status |
-|---|---|---|
-| SP-1 (TOCTOU) | `sprint:update` async validation gap | **Not Fixed** |
-| SP-2 (null onStatusTerminal) | Silent drop of dependency resolution | **Fixed** (error log added) |
-| SP-3 (stale PR poller ref) | Late-binding closure | **Fixed** |
-| SP-4 (batchUpdate terminal) | Terminal status handling added | **Fixed** (defensive, currently unreachable) |
-| SP-5 (spec path traversal) | Outside scope of this audit | -- |
-| SP-6 (update allowlist) | Field allowlist applied | **Fixed** (line 99-108) |
-| SP-7 (drawers unreachable) | ConflictDrawer + HealthCheckDrawer wired | **Fixed** (SprintPipeline.tsx lines 356-367) |
-| SP-8 (unblock spec validation) | Structural + semantic validation added | **Fixed** |
-| SP-9 (readLog agentId validation) | Regex validation added | **Fixed** |
-| SP-10 (stored XSS in PR URL) | URL validation + regex guard | **Fixed** (TaskDetailDrawer.tsx lines 229-231, 377-378) |
-| SP-12 (batchUpdate status bypass) | `GENERAL_PATCH_FIELDS` excludes `status` | **Fixed** (moot) |
-| SP-13 (sanitizeDependsOn null coercion) | Still coerces to null | **Partially Fixed** |
-| SP-14 (concurrent updateTask race) | Per-operation tracking via `updateId` | **Fixed** |
-| SP-15 (SpecPanel draft sync) | `useEffect` sync added | **Fixed** |
-| SP-16 (TicketEditor partial failure) | Per-ticket `created` tracking | **Fixed** |
-| SP-17 (resize listener leak) | `cleanupRef` pattern | **Fixed** |
-| SP-18 (unblock bypasses deps) | Now properly validates spec | **Fixed** |
-| SP-22 (rescue doesn't clear claimed_by) | Now passes `claimed_by: null` in rescue PATCH | **Fixed** (HealthCheckDrawer.tsx line 30) |
-| SP-23 (healthCheck no transaction) | Transaction wrapper added | **Fixed** |
-| SP-24 (delete no status guard) | Active status guard added | **Fixed** (line 185-187) |
+| Synthesis ID                            | Finding                                       | Status                                                  |
+| --------------------------------------- | --------------------------------------------- | ------------------------------------------------------- |
+| SP-1 (TOCTOU)                           | `sprint:update` async validation gap          | **Not Fixed**                                           |
+| SP-2 (null onStatusTerminal)            | Silent drop of dependency resolution          | **Fixed** (error log added)                             |
+| SP-3 (stale PR poller ref)              | Late-binding closure                          | **Fixed**                                               |
+| SP-4 (batchUpdate terminal)             | Terminal status handling added                | **Fixed** (defensive, currently unreachable)            |
+| SP-5 (spec path traversal)              | Outside scope of this audit                   | --                                                      |
+| SP-6 (update allowlist)                 | Field allowlist applied                       | **Fixed** (line 99-108)                                 |
+| SP-7 (drawers unreachable)              | ConflictDrawer + HealthCheckDrawer wired      | **Fixed** (SprintPipeline.tsx lines 356-367)            |
+| SP-8 (unblock spec validation)          | Structural + semantic validation added        | **Fixed**                                               |
+| SP-9 (readLog agentId validation)       | Regex validation added                        | **Fixed**                                               |
+| SP-10 (stored XSS in PR URL)            | URL validation + regex guard                  | **Fixed** (TaskDetailDrawer.tsx lines 229-231, 377-378) |
+| SP-12 (batchUpdate status bypass)       | `GENERAL_PATCH_FIELDS` excludes `status`      | **Fixed** (moot)                                        |
+| SP-13 (sanitizeDependsOn null coercion) | Still coerces to null                         | **Partially Fixed**                                     |
+| SP-14 (concurrent updateTask race)      | Per-operation tracking via `updateId`         | **Fixed**                                               |
+| SP-15 (SpecPanel draft sync)            | `useEffect` sync added                        | **Fixed**                                               |
+| SP-16 (TicketEditor partial failure)    | Per-ticket `created` tracking                 | **Fixed**                                               |
+| SP-17 (resize listener leak)            | `cleanupRef` pattern                          | **Fixed**                                               |
+| SP-18 (unblock bypasses deps)           | Now properly validates spec                   | **Fixed**                                               |
+| SP-22 (rescue doesn't clear claimed_by) | Now passes `claimed_by: null` in rescue PATCH | **Fixed** (HealthCheckDrawer.tsx line 30)               |
+| SP-23 (healthCheck no transaction)      | Transaction wrapper added                     | **Fixed**                                               |
+| SP-24 (delete no status guard)          | Active status guard added                     | **Fixed** (line 185-187)                                |
 
 ---
 
@@ -326,10 +350,12 @@ The shared implementation at `src/renderer/src/lib/task-format.ts` handles all s
 **Severity:** Low
 **File:** `src/main/handlers/sprint-local.ts:362-418`
 **Evidence:** The batch handler imports `GENERAL_PATCH_FIELDS` from `src/shared/queue-api-contract.ts` which explicitly excludes `status`. The filter at line 354 strips any `status` field from the patch. Therefore:
+
 - Lines 362-400 (spec validation when `filtered.status === 'queued'`) are unreachable
 - Lines 404-418 (terminal status `_onStatusTerminal` call) are unreachable
 
 While this is defense-in-depth (correct if `GENERAL_PATCH_FIELDS` ever adds `status`), it is untestable dead code that could silently become stale. Consider either:
+
 1. Adding a comment documenting this is intentional defense-in-depth, or
 2. Removing the dead code and enforcing the invariant via a test that asserts `GENERAL_PATCH_FIELDS` does not contain `status`.
 
@@ -337,13 +363,13 @@ While this is defense-in-depth (correct if `GENERAL_PATCH_FIELDS` ever adds `sta
 
 ## Remaining Open Items (Not Fixed)
 
-| ID | Severity | Summary | Risk |
-|---|---|---|---|
-| SP-REL-1 | Critical | TOCTOU race in `sprint:update` async validation gap | Task queued with stale/invalid spec during concurrent writes |
-| SP-REL-17 | Moderate | Create handler uses raw path vs update uses service layer | Maintenance hazard if service layer gains side effects |
-| SP-REL-21 | Low | PR poller error path untested | `safePoll` error handling could regress undetected |
-| SP-REL-8 | Significant | `sanitizeDependsOn` still silently coerces invalid deps to null | Silent data loss of dependency info |
-| SP-REL-22 | Low | `readLog` filesystem error propagates unhandled | Log viewer may stop polling on transient FS error |
+| ID        | Severity    | Summary                                                         | Risk                                                         |
+| --------- | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------ |
+| SP-REL-1  | Critical    | TOCTOU race in `sprint:update` async validation gap             | Task queued with stale/invalid spec during concurrent writes |
+| SP-REL-17 | Moderate    | Create handler uses raw path vs update uses service layer       | Maintenance hazard if service layer gains side effects       |
+| SP-REL-21 | Low         | PR poller error path untested                                   | `safePoll` error handling could regress undetected           |
+| SP-REL-8  | Significant | `sanitizeDependsOn` still silently coerces invalid deps to null | Silent data loss of dependency info                          |
+| SP-REL-22 | Low         | `readLog` filesystem error propagates unhandled                 | Log viewer may stop polling on transient FS error            |
 
 ---
 
@@ -352,6 +378,7 @@ While this is defense-in-depth (correct if `GENERAL_PATCH_FIELDS` ever adds `sta
 **Remediation rate: 15 of 22 findings addressed (68%), with 10 fully fixed and 5 partially fixed or defensively addressed.**
 
 The most impactful fixes are:
+
 1. **SP-REL-3** (PR poller stale reference) -- eliminated a class of permanently-blocked-task bugs via late-binding closure
 2. **SP-REL-5/6** (batch update) -- status changes blocked at field-filter level with defense-in-depth code ready if the contract changes
 3. **SP-REL-7** (unblock validation) -- closed a spec-bypass path that could send unready tasks to agents

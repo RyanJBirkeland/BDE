@@ -160,4 +160,3 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
     </div>
   )
 }
-

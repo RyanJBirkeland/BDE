@@ -19,6 +19,7 @@ PR Station delivers a surprisingly complete code review workflow: list PRs acros
 **Files:** `src/renderer/src/components/diff/DiffViewer.tsx`, lines 444, 667-675
 
 When `totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments`, the component renders `VirtualizedDiffContent` which has **zero** support for:
+
 - Line range selection (no `onMouseDown`/`onMouseEnter` handlers)
 - Comment composer rendering
 - Pending comment display
@@ -33,6 +34,7 @@ This means any large PR diff silently becomes read-only with no indication to th
 **Files:** `src/renderer/src/components/pr-station/MergeButton.tsx`, `src/renderer/src/components/pr-station/PRStationActions.tsx`
 
 Two independent merge button implementations exist:
+
 - `MergeButton` (rendered inside `PRStationDetail` at line 212) -- merges immediately on click, no confirmation step.
 - `PRStationActions` (rendered alongside `PRStationDetail` at line 191-195 in `PRStationView`) -- has a two-step confirm flow before merging.
 
@@ -65,10 +67,12 @@ The `replyToComment` API function exists in `github-api.ts` but is never called 
 **File:** `src/renderer/src/views/PRStationView.tsx`, lines 213-217
 
 After `ReviewSubmitDialog.onSubmitted`, the parent does:
+
 ```tsx
 setSelectedPr(null)
 setTimeout(() => setSelectedPr(pr), 0)
 ```
+
 This causes a full unmount/remount of `PRStationDetail`, re-fetching all data from GitHub. The user sees a flash to the "Select a PR" empty state and back. The GitHub API cache (30s TTL) may return stale data that doesn't include the just-submitted review.
 
 ### 3.3 Source Control has no pull/fetch capability
@@ -76,6 +80,7 @@ This causes a full unmount/remount of `PRStationDetail`, re-fetching all data fr
 **File:** `src/renderer/src/views/GitTreeView.tsx`, `src/renderer/src/stores/gitTree.ts`
 
 The view has Commit and Push buttons but **no Pull or Fetch**. There's no way to:
+
 - Pull remote changes
 - Fetch to check for upstream updates
 - See ahead/behind count relative to remote
@@ -94,6 +99,7 @@ When `hasUncommittedChanges` is true, the branch selector is completely disabled
 **File:** `src/renderer/src/components/git-tree/CommitBox.tsx`, lines 116-143
 
 The Push button:
+
 - Is always enabled regardless of whether there's anything to push
 - Shows no indication of ahead/behind status
 - Has no loading state while pushing
@@ -131,6 +137,7 @@ Per CLAUDE.md CSS theming rules: "Never use hardcoded `rgba()` for overlays." Th
 ### 4.1 Git Tree view uses inline styles exclusively
 
 **Files:** All files in `src/renderer/src/components/git-tree/` use `tokens.*` inline styles rather than CSS classes. Per CLAUDE.md neon styling convention, Source Control is listed as a view "without neon" but the inline style approach means:
+
 - No hover animations possible (pseudo-classes require CSS)
 - `onMouseEnter`/`onMouseLeave` handlers are used as workarounds (e.g., `BranchSelector.tsx` lines 151-161)
 - Theming requires touching every component file instead of a single CSS file
@@ -175,75 +182,67 @@ A `<style>` tag with `@keyframes` is injected directly in the component JSX. Thi
 
 ## 5. Feature Gap Analysis (vs. GitHub Web UI)
 
-| Feature | GitHub Web | BDE PR Station | Gap |
-|---|---|---|---|
-| View PR list | Yes | Yes | -- |
-| Filter by repo | Yes (per-repo) | Yes (chip filter) | -- |
-| Filter by author | Yes | **No** | Missing |
-| Filter by label | Yes | **No** | Missing |
-| Filter by review status | Yes (reviewed, awaiting) | **No** | Missing |
-| Search PRs | Yes | **No** | Missing |
-| View PR description (markdown) | Yes | Yes | -- |
-| View CI checks | Yes | Yes | -- |
-| Re-run failed CI checks | Yes | **No** | Missing |
-| View merge conflicts | Yes | Yes (banner + file list) | -- |
-| Resolve conflicts | Yes (web editor) | **No** | Missing |
-| View diff (unified) | Yes | Yes | -- |
-| View diff (side-by-side) | Yes | **No** | Missing -- only unified mode |
-| Inline comments on diff | Yes | Partial (broken on large diffs) | Degraded |
-| Reply to comment threads | Yes | **No** | Missing (API exists, unused) |
-| Edit/delete own comments | Yes | **No** | Missing |
-| Resolve conversation threads | Yes | **No** | Missing |
-| Submit batch review | Yes | Yes | -- |
-| Approve/Request changes | Yes | Yes | -- |
-| Merge (squash/merge/rebase) | Yes | Yes | -- |
-| Close PR | Yes | Yes | -- |
-| View commits list | Yes | **No** | Missing |
-| View individual commit diffs | Yes | **No** | Missing |
-| Request reviewers | Yes | **No** | Missing |
-| Add labels | Yes | **No** | Missing |
-| Link to issues | Yes | **No** | Missing |
-| Create PR | Yes | **No** | Missing -- must use terminal/GitHub |
-| Draft PR toggle | Yes | **No** | Missing |
+| Feature                        | GitHub Web               | BDE PR Station                  | Gap                                 |
+| ------------------------------ | ------------------------ | ------------------------------- | ----------------------------------- |
+| View PR list                   | Yes                      | Yes                             | --                                  |
+| Filter by repo                 | Yes (per-repo)           | Yes (chip filter)               | --                                  |
+| Filter by author               | Yes                      | **No**                          | Missing                             |
+| Filter by label                | Yes                      | **No**                          | Missing                             |
+| Filter by review status        | Yes (reviewed, awaiting) | **No**                          | Missing                             |
+| Search PRs                     | Yes                      | **No**                          | Missing                             |
+| View PR description (markdown) | Yes                      | Yes                             | --                                  |
+| View CI checks                 | Yes                      | Yes                             | --                                  |
+| Re-run failed CI checks        | Yes                      | **No**                          | Missing                             |
+| View merge conflicts           | Yes                      | Yes (banner + file list)        | --                                  |
+| Resolve conflicts              | Yes (web editor)         | **No**                          | Missing                             |
+| View diff (unified)            | Yes                      | Yes                             | --                                  |
+| View diff (side-by-side)       | Yes                      | **No**                          | Missing -- only unified mode        |
+| Inline comments on diff        | Yes                      | Partial (broken on large diffs) | Degraded                            |
+| Reply to comment threads       | Yes                      | **No**                          | Missing (API exists, unused)        |
+| Edit/delete own comments       | Yes                      | **No**                          | Missing                             |
+| Resolve conversation threads   | Yes                      | **No**                          | Missing                             |
+| Submit batch review            | Yes                      | Yes                             | --                                  |
+| Approve/Request changes        | Yes                      | Yes                             | --                                  |
+| Merge (squash/merge/rebase)    | Yes                      | Yes                             | --                                  |
+| Close PR                       | Yes                      | Yes                             | --                                  |
+| View commits list              | Yes                      | **No**                          | Missing                             |
+| View individual commit diffs   | Yes                      | **No**                          | Missing                             |
+| Request reviewers              | Yes                      | **No**                          | Missing                             |
+| Add labels                     | Yes                      | **No**                          | Missing                             |
+| Link to issues                 | Yes                      | **No**                          | Missing                             |
+| Create PR                      | Yes                      | **No**                          | Missing -- must use terminal/GitHub |
+| Draft PR toggle                | Yes                      | **No**                          | Missing                             |
 
-| Feature | GitHub Web / Terminal | BDE Source Control | Gap |
-|---|---|---|---|
-| View status | Yes | Yes | -- |
-| Stage/unstage files | Yes | Yes | -- |
-| View diff | Yes | Yes (inline drawer) | -- |
-| Commit | Yes | Yes | -- |
-| Push | Yes | Yes (no loading state) | Degraded |
-| Pull / Fetch | Yes | **No** | Critical gap |
-| Stash / Unstash | Yes | **No** | Missing |
-| Branch create | Yes | **No** | Missing |
-| Branch delete | Yes | **No** | Missing |
-| Merge branches | Yes | **No** | Missing |
-| Rebase | Yes | **No** | Missing |
-| Conflict resolution | Yes | **No** | Missing |
-| Ahead/behind indicator | Yes | **No** | Missing |
-| Commit history / log | Yes | **No** | Missing |
-| Amend last commit | Yes | **No** | Missing |
-| Discard changes (per file) | Yes | **No** | Missing |
-| Blame / annotation | Yes | **No** | Missing |
+| Feature                    | GitHub Web / Terminal | BDE Source Control     | Gap          |
+| -------------------------- | --------------------- | ---------------------- | ------------ |
+| View status                | Yes                   | Yes                    | --           |
+| Stage/unstage files        | Yes                   | Yes                    | --           |
+| View diff                  | Yes                   | Yes (inline drawer)    | --           |
+| Commit                     | Yes                   | Yes                    | --           |
+| Push                       | Yes                   | Yes (no loading state) | Degraded     |
+| Pull / Fetch               | Yes                   | **No**                 | Critical gap |
+| Stash / Unstash            | Yes                   | **No**                 | Missing      |
+| Branch create              | Yes                   | **No**                 | Missing      |
+| Branch delete              | Yes                   | **No**                 | Missing      |
+| Merge branches             | Yes                   | **No**                 | Missing      |
+| Rebase                     | Yes                   | **No**                 | Missing      |
+| Conflict resolution        | Yes                   | **No**                 | Missing      |
+| Ahead/behind indicator     | Yes                   | **No**                 | Missing      |
+| Commit history / log       | Yes                   | **No**                 | Missing      |
+| Amend last commit          | Yes                   | **No**                 | Missing      |
+| Discard changes (per file) | Yes                   | **No**                 | Missing      |
+| Blame / annotation         | Yes                   | **No**                 | Missing      |
 
 ---
 
 ## Summary of Priorities
 
 **Must fix before shipping:**
+
 1. Virtualized diff dropping all comment features silently (Critical 2.1)
 2. Duplicate merge buttons with different confirmation behavior (Critical 2.2)
 3. Missing error handling on PR list fetch failure (Critical 2.3)
 
-**Should fix soon:**
-4. Add reply-to-comment capability (Significant 3.1)
-5. Add pull/fetch to Source Control (Significant 3.3)
-6. Add stash support or remove the "stash" suggestion from tooltip (Significant 3.4)
-7. File list -> diff tab navigation (Significant 3.7)
+**Should fix soon:** 4. Add reply-to-comment capability (Significant 3.1) 5. Add pull/fetch to Source Control (Significant 3.3) 6. Add stash support or remove the "stash" suggestion from tooltip (Significant 3.4) 7. File list -> diff tab navigation (Significant 3.7)
 
-**Nice to have:**
-8. PR search/filter by author/label/review status
-9. Side-by-side diff mode
-10. Create PR from BDE
-11. Commit history view
-12. Discard changes per file
+**Nice to have:** 8. PR search/filter by author/label/review status 9. Side-by-side diff mode 10. Create PR from BDE 11. Commit history view 12. Discard changes per file

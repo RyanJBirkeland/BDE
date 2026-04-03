@@ -17,6 +17,7 @@ handler: (e: Electron.IpcMainInvokeEvent, ...args: any[]) => any
 ```
 
 This means:
+
 1. Channel names are unchecked strings — a typo in `'local:spawnClaudeAgent'` compiles fine
 2. Payload shapes are not validated between preload and main — the preload declares `(args: SpawnLocalAgentArgs)` but the handler receives `...args: any[]`
 3. Return types are implicitly `any` — a handler returning the wrong shape is invisible to TypeScript
@@ -42,7 +43,10 @@ export interface IpcChannelMap {
   'get-supabase-config': { args: []; result: { url: string; anonKey: string } | null }
 
   // Git client
-  'git:status': { args: [cwd: string]; result: { files: { path: string; status: string; staged: boolean }[] } }
+  'git:status': {
+    args: [cwd: string]
+    result: { files: { path: string; status: string; staged: boolean }[] }
+  }
   'git:diff': { args: [cwd: string, file?: string]; result: string }
   'git:stage': { args: [cwd: string, files: string[]]; result: void }
   'git:unstage': { args: [cwd: string, files: string[]]; result: void }
@@ -54,7 +58,10 @@ export interface IpcChannelMap {
   // ... (all 38+ live channels)
 
   // Terminal
-  'terminal:create': { args: [opts: { cols: number; rows: number; shell?: string }]; result: number }
+  'terminal:create': {
+    args: [opts: { cols: number; rows: number; shell?: string }]
+    result: number
+  }
   'terminal:resize': { args: [opts: { id: number; cols: number; rows: number }]; result: void }
   'terminal:kill': { args: [id: number]; result: void }
 }
@@ -89,7 +96,9 @@ export function safeHandle<K extends keyof IpcChannelMap>(
 ```typescript
 // src/preload/index.ts
 type PreloadApi = {
-  [K in keyof IpcChannelMap]: (...args: IpcChannelMap[K]['args']) => Promise<IpcChannelMap[K]['result']>
+  [K in keyof IpcChannelMap]: (
+    ...args: IpcChannelMap[K]['args']
+  ) => Promise<IpcChannelMap[K]['result']>
 }
 ```
 
@@ -108,14 +117,14 @@ export interface IpcFireAndForgetMap {
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/shared/ipc-channels.ts` | **New** — channel map type definitions |
-| `src/shared/types.ts` | Add any missing payload types (e.g., `TailLogArgs`, `TailLogResult`) |
-| `src/main/ipc-utils.ts` | Replace `any` with generic `K extends keyof IpcChannelMap` |
-| `src/preload/index.ts` | Derive API types from channel map |
-| `src/preload/index.d.ts` | Regenerate from channel map |
-| `src/main/handlers/*.ts` | Update `safeHandle` calls — TypeScript will surface mismatches |
+| File                         | Change                                                               |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `src/shared/ipc-channels.ts` | **New** — channel map type definitions                               |
+| `src/shared/types.ts`        | Add any missing payload types (e.g., `TailLogArgs`, `TailLogResult`) |
+| `src/main/ipc-utils.ts`      | Replace `any` with generic `K extends keyof IpcChannelMap`           |
+| `src/preload/index.ts`       | Derive API types from channel map                                    |
+| `src/preload/index.d.ts`     | Regenerate from channel map                                          |
+| `src/main/handlers/*.ts`     | Update `safeHandle` calls — TypeScript will surface mismatches       |
 
 ## Acceptance Criteria
 

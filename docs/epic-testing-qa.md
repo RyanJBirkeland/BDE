@@ -20,16 +20,16 @@ The engineering audit (`docs/audit-engineering-report.md` §5) and testing audit
 
 ### Risk Matrix
 
-| Gap | Risk | Impact if Bug Ships |
-|-----|------|---------------------|
-| IPC handlers untested | Critical | Silent data loss, security bypass, crash loops |
+| Gap                      | Risk     | Impact if Bug Ships                              |
+| ------------------------ | -------- | ------------------------------------------------ |
+| IPC handlers untested    | Critical | Silent data loss, security bypass, crash loops   |
 | local-agents.ts untested | Critical | Zombie processes, log corruption, spawn failures |
-| Terminal PTY untested | High | Memory leaks, lost I/O, shell injection |
-| fs.ts path traversal | High | Arbitrary file read/write outside memory root |
-| config.ts error paths | High | App crash on missing config, credential exposure |
-| Sprint components | Medium | Broken Kanban, lost tickets, failed PR merges |
-| No E2E | Medium | Regression in critical flows undetectable |
-| Vitest config bleed | Low | CI failures, false negatives in coverage |
+| Terminal PTY untested    | High     | Memory leaks, lost I/O, shell injection          |
+| fs.ts path traversal     | High     | Arbitrary file read/write outside memory root    |
+| config.ts error paths    | High     | App crash on missing config, credential exposure |
+| Sprint components        | Medium   | Broken Kanban, lost tickets, failed PR merges    |
+| No E2E                   | Medium   | Regression in critical flows undetectable        |
+| Vitest config bleed      | Low      | CI failures, false negatives in coverage         |
 
 ---
 
@@ -54,16 +54,16 @@ src/renderer/src/views/__tests__/ (1)  smoke (all 7 views)
 
 ## Stories
 
-| ID | Title | Priority | Type | Estimate |
-|----|-------|----------|------|----------|
-| TQ-S1 | Fix Vitest configuration & coverage reporting | P0 | Infra | S |
-| TQ-S2 | Unit tests for local-agents.ts | P0 | Unit | L |
-| TQ-S3 | Unit tests for config.ts + fs.ts | P0 | Unit | M |
-| TQ-S4 | IPC handler registration tests | P0 | Integration | L |
-| TQ-S5 | Terminal PTY lifecycle tests | P1 | Unit | M |
-| TQ-S6 | Renderer test gap closure (hooks + services) | P1 | Unit | M |
-| TQ-S7 | Sprint component tests | P1 | Component | L |
-| TQ-S8 | E2E infrastructure + 5 critical flows | P2 | E2E | XL |
+| ID    | Title                                         | Priority | Type        | Estimate |
+| ----- | --------------------------------------------- | -------- | ----------- | -------- |
+| TQ-S1 | Fix Vitest configuration & coverage reporting | P0       | Infra       | S        |
+| TQ-S2 | Unit tests for local-agents.ts                | P0       | Unit        | L        |
+| TQ-S3 | Unit tests for config.ts + fs.ts              | P0       | Unit        | M        |
+| TQ-S4 | IPC handler registration tests                | P0       | Integration | L        |
+| TQ-S5 | Terminal PTY lifecycle tests                  | P1       | Unit        | M        |
+| TQ-S6 | Renderer test gap closure (hooks + services)  | P1       | Unit        | M        |
+| TQ-S7 | Sprint component tests                        | P1       | Component   | L        |
+| TQ-S8 | E2E infrastructure + 5 critical flows         | P2       | E2E         | XL       |
 
 ## Execution Order
 

@@ -16,60 +16,61 @@
 
 ### New Files
 
-| File | Responsibility |
-|------|---------------|
-| `src/main/agent-manager/agent-manager.ts` | Drain loop, concurrency pool, spawn/completion orchestration |
-| `src/main/agent-manager/worktree-ops.ts` | Git worktree create/remove, file-based repo locking |
-| `src/main/agent-manager/completion-handler.ts` | Post-agent: detect branch, push, open PR, update task status |
-| `src/main/agent-manager/watchdog.ts` | Per-agent max runtime + idle timeout timers |
-| `src/main/agent-manager/index.ts` | Re-exports for clean imports |
-| `src/main/auth-guard.ts` | Keychain token validation, CLI detection, `ensureSubscriptionAuth()` |
-| `src/main/handlers/auth-handlers.ts` | IPC handlers for auth status checks |
-| `src/main/handlers/agent-manager-handlers.ts` | IPC handlers for AgentManager operations |
-| `src/renderer/src/components/Onboarding.tsx` | First-run setup screen (CLI check, token check) |
+| File                                           | Responsibility                                                       |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| `src/main/agent-manager/agent-manager.ts`      | Drain loop, concurrency pool, spawn/completion orchestration         |
+| `src/main/agent-manager/worktree-ops.ts`       | Git worktree create/remove, file-based repo locking                  |
+| `src/main/agent-manager/completion-handler.ts` | Post-agent: detect branch, push, open PR, update task status         |
+| `src/main/agent-manager/watchdog.ts`           | Per-agent max runtime + idle timeout timers                          |
+| `src/main/agent-manager/index.ts`              | Re-exports for clean imports                                         |
+| `src/main/auth-guard.ts`                       | Keychain token validation, CLI detection, `ensureSubscriptionAuth()` |
+| `src/main/handlers/auth-handlers.ts`           | IPC handlers for auth status checks                                  |
+| `src/main/handlers/agent-manager-handlers.ts`  | IPC handlers for AgentManager operations                             |
+| `src/renderer/src/components/Onboarding.tsx`   | First-run setup screen (CLI check, token check)                      |
 
 ### Deleted Files
 
-| File | Reason |
-|------|--------|
-| `src/main/queue-api/server.ts` | No external task runner to serve |
-| `src/main/queue-api/router.ts` | No external task runner to serve |
-| `src/main/queue-api/event-store.ts` | No external task runner to serve |
-| `src/main/queue-api/sse.ts` | No external task runner to serve |
-| `src/main/handlers/queue-handlers.ts` | Imports from deleted queue-api |
-| `src/main/handlers/gateway-handlers.ts` | OpenClaw gateway — BDE is standalone |
-| `src/main/sprint-sse.ts` | SSE connection to external task runner |
-| `src/main/agents/cli-provider.ts` | SDK-only going forward |
-| `src/renderer/src/lib/gateway.ts` | OpenClaw WebSocket client |
-| `src/renderer/src/lib/taskRunnerSSE.ts` | Task runner SSE client |
-| `src/renderer/src/stores/gateway.ts` | Gateway connection store |
-| `src/renderer/src/stores/sessions.ts` | OpenClaw session store |
-| `src/renderer/src/lib/rpc.ts` | Gateway RPC helper (if solely gateway-dependent) |
-| `src/renderer/src/lib/message.ts` | Gateway message helper (if solely gateway-dependent) |
+| File                                    | Reason                                               |
+| --------------------------------------- | ---------------------------------------------------- |
+| `src/main/queue-api/server.ts`          | No external task runner to serve                     |
+| `src/main/queue-api/router.ts`          | No external task runner to serve                     |
+| `src/main/queue-api/event-store.ts`     | No external task runner to serve                     |
+| `src/main/queue-api/sse.ts`             | No external task runner to serve                     |
+| `src/main/handlers/queue-handlers.ts`   | Imports from deleted queue-api                       |
+| `src/main/handlers/gateway-handlers.ts` | OpenClaw gateway — BDE is standalone                 |
+| `src/main/sprint-sse.ts`                | SSE connection to external task runner               |
+| `src/main/agents/cli-provider.ts`       | SDK-only going forward                               |
+| `src/renderer/src/lib/gateway.ts`       | OpenClaw WebSocket client                            |
+| `src/renderer/src/lib/taskRunnerSSE.ts` | Task runner SSE client                               |
+| `src/renderer/src/stores/gateway.ts`    | Gateway connection store                             |
+| `src/renderer/src/stores/sessions.ts`   | OpenClaw session store                               |
+| `src/renderer/src/lib/rpc.ts`           | Gateway RPC helper (if solely gateway-dependent)     |
+| `src/renderer/src/lib/message.ts`       | Gateway message helper (if solely gateway-dependent) |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `src/main/index.ts` | Remove queue-api/sprint-sse/gateway startup; add AgentManager + AuthGuard startup; rewrite CSP |
-| `src/main/agents/index.ts` | Remove provider factory, export `SdkProvider` directly |
-| `src/main/local-agents.ts` | Remove `steerViaTaskRunner()`, remove `getTaskRunnerConfig` import, remove `createAgentProvider()` usage |
-| `src/main/config.ts` | Remove `getGatewayConfig()`, `getTaskRunnerConfig()`, `getAgentProvider()` |
-| `src/main/settings.ts` | Remove `migrateFromOpenClawConfig()`, add agent-manager settings helpers |
-| `src/preload/index.ts` | Remove gateway APIs, add auth-status + agent-manager IPC bridges |
-| `src/renderer/src/App.tsx` | Remove gateway store init, add onboarding gate |
-| `src/renderer/src/components/settings/ConnectionsSection.tsx` | Remove gateway + task runner config UI, add auth status display |
-| `src/renderer/src/hooks/useSprintPolling.ts` | Remove `subscribeSSE` dependency |
-| `src/renderer/src/hooks/useTaskNotifications.ts` | Remove `subscribeSSE` dependency |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | Remove `subscribeSSE` imports, use event bus IPC only |
-| `src/renderer/src/stores/sprintEvents.ts` | Remove SSE-dependent fields if any |
-| `src/shared/ipc-channels.ts` | Remove gateway/queue IPC channel types, add auth + agent-manager channels |
+| File                                                          | Change                                                                                                   |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/main/index.ts`                                           | Remove queue-api/sprint-sse/gateway startup; add AgentManager + AuthGuard startup; rewrite CSP           |
+| `src/main/agents/index.ts`                                    | Remove provider factory, export `SdkProvider` directly                                                   |
+| `src/main/local-agents.ts`                                    | Remove `steerViaTaskRunner()`, remove `getTaskRunnerConfig` import, remove `createAgentProvider()` usage |
+| `src/main/config.ts`                                          | Remove `getGatewayConfig()`, `getTaskRunnerConfig()`, `getAgentProvider()`                               |
+| `src/main/settings.ts`                                        | Remove `migrateFromOpenClawConfig()`, add agent-manager settings helpers                                 |
+| `src/preload/index.ts`                                        | Remove gateway APIs, add auth-status + agent-manager IPC bridges                                         |
+| `src/renderer/src/App.tsx`                                    | Remove gateway store init, add onboarding gate                                                           |
+| `src/renderer/src/components/settings/ConnectionsSection.tsx` | Remove gateway + task runner config UI, add auth status display                                          |
+| `src/renderer/src/hooks/useSprintPolling.ts`                  | Remove `subscribeSSE` dependency                                                                         |
+| `src/renderer/src/hooks/useTaskNotifications.ts`              | Remove `subscribeSSE` dependency                                                                         |
+| `src/renderer/src/components/sprint/LogDrawer.tsx`            | Remove `subscribeSSE` imports, use event bus IPC only                                                    |
+| `src/renderer/src/stores/sprintEvents.ts`                     | Remove SSE-dependent fields if any                                                                       |
+| `src/shared/ipc-channels.ts`                                  | Remove gateway/queue IPC channel types, add auth + agent-manager channels                                |
 
 ---
 
 ## Task 1: AuthGuard Module
 
 **Files:**
+
 - Create: `src/main/auth-guard.ts`
 - Test: `src/main/auth-guard.test.ts`
 
@@ -82,7 +83,7 @@ import { checkAuthStatus, ensureSubscriptionAuth } from './auth-guard'
 import { execFile } from 'child_process'
 
 vi.mock('child_process', () => ({
-  execFile: vi.fn(),
+  execFile: vi.fn()
 }))
 
 const mockExecFile = vi.mocked(execFile)
@@ -90,9 +91,9 @@ const mockExecFile = vi.mocked(execFile)
 function mockKeychainResponse(response: string | null, error?: Error): void {
   mockExecFile.mockImplementation((_cmd, _args, _opts, cb) => {
     if (error) {
-      (cb as Function)(error, '', '')
+      ;(cb as Function)(error, '', '')
     } else {
-      (cb as Function)(null, response, '')
+      ;(cb as Function)(null, response, '')
     }
     return {} as any
   })
@@ -106,8 +107,8 @@ describe('checkAuthStatus', () => {
     const keychainData = JSON.stringify({
       claudeAiOauth: {
         accessToken: 'test-token',
-        expiresAt: String(future),
-      },
+        expiresAt: String(future)
+      }
     })
     mockKeychainResponse(keychainData)
 
@@ -121,8 +122,8 @@ describe('checkAuthStatus', () => {
     const keychainData = JSON.stringify({
       claudeAiOauth: {
         accessToken: 'test-token',
-        expiresAt: String(past),
-      },
+        expiresAt: String(past)
+      }
     })
     mockKeychainResponse(keychainData)
 
@@ -150,9 +151,11 @@ describe('ensureSubscriptionAuth', () => {
   it('clears ANTHROPIC_API_KEY from env', async () => {
     process.env.ANTHROPIC_API_KEY = 'should-be-cleared'
     const future = Date.now() + 3600_000
-    mockKeychainResponse(JSON.stringify({
-      claudeAiOauth: { accessToken: 'tok', expiresAt: String(future) },
-    }))
+    mockKeychainResponse(
+      JSON.stringify({
+        claudeAiOauth: { accessToken: 'tok', expiresAt: String(future) }
+      })
+    )
 
     await ensureSubscriptionAuth()
     expect(process.env.ANTHROPIC_API_KEY).toBeUndefined()
@@ -178,7 +181,7 @@ const execFileAsync = promisify(execFile)
 const CLI_SEARCH_PATHS = [
   '/usr/local/bin/claude',
   '/opt/homebrew/bin/claude',
-  `${process.env.HOME}/.local/bin/claude`,
+  `${process.env.HOME}/.local/bin/claude`
 ]
 
 export interface AuthStatus {
@@ -232,7 +235,7 @@ async function readKeychainToken(): Promise<OAuthToken | null> {
     const { stdout } = await execFileAsync(
       'security',
       ['find-generic-password', '-s', 'Claude Code-credentials', '-w'],
-      { encoding: 'utf-8' },
+      { encoding: 'utf-8' }
     )
     const parsed = JSON.parse(stdout.trim())
     const oauth = parsed?.claudeAiOauth
@@ -261,6 +264,7 @@ git commit -m "feat: add AuthGuard module for Keychain token validation"
 ## Task 2: Watchdog Module
 
 **Files:**
+
 - Create: `src/main/agent-manager/watchdog.ts`
 - Test: `src/main/agent-manager/watchdog.test.ts`
 
@@ -386,6 +390,7 @@ git commit -m "feat: add Watchdog module for agent timeout detection"
 ## Task 3: WorktreeOps Module
 
 **Files:**
+
 - Create: `src/main/agent-manager/worktree-ops.ts`
 - Test: `src/main/agent-manager/worktree-ops.test.ts`
 
@@ -403,14 +408,14 @@ vi.mock('fs/promises', () => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
   writeFile: vi.fn().mockResolvedValue(undefined),
   unlink: vi.fn().mockResolvedValue(undefined),
-  access: vi.fn().mockRejectedValue(new Error('ENOENT')),
+  access: vi.fn().mockRejectedValue(new Error('ENOENT'))
 }))
 
 const mockExecFile = vi.mocked(execFile)
 
 function mockExecSuccess(stdout = ''): void {
   mockExecFile.mockImplementation((_cmd, _args, _opts, cb) => {
-    (cb as Function)(null, stdout, '')
+    ;(cb as Function)(null, stdout, '')
     return {} as any
   })
 }
@@ -426,7 +431,7 @@ describe('createWorktree', () => {
       'git',
       expect.arrayContaining(['worktree', 'add']),
       expect.objectContaining({ cwd: '/repo' }),
-      expect.any(Function),
+      expect.any(Function)
     )
     expect(result.branch).toMatch(/^agent\//)
     expect(result.worktreePath).toBe('/tmp/wt/task-123')
@@ -444,13 +449,13 @@ describe('removeWorktree', () => {
       'git',
       ['worktree', 'remove', '--force', '/tmp/wt/task-123'],
       expect.any(Object),
-      expect.any(Function),
+      expect.any(Function)
     )
     expect(mockExecFile).toHaveBeenCalledWith(
       'git',
       ['worktree', 'prune'],
       expect.any(Object),
-      expect.any(Function),
+      expect.any(Function)
     )
   })
 })
@@ -496,7 +501,7 @@ export async function createWorktree(
   repoPath: string,
   taskId: string,
   worktreeBase: string,
-  baseBranch?: string,
+  baseBranch?: string
 ): Promise<WorktreeResult> {
   const worktreePath = join(worktreeBase, taskId)
   const branch = `agent/${taskId}`
@@ -510,13 +515,11 @@ export async function createWorktree(
     // Offline — proceed with local state
   }
 
-  const base = baseBranch ?? await getDefaultBranch(repoPath)
+  const base = baseBranch ?? (await getDefaultBranch(repoPath))
 
-  await execFileAsync(
-    'git',
-    ['worktree', 'add', '-b', branch, worktreePath, base],
-    { cwd: repoPath },
-  )
+  await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath, base], {
+    cwd: repoPath
+  })
 
   return { worktreePath, branch }
 }
@@ -531,11 +534,10 @@ export async function removeWorktree(repoPath: string, worktreePath: string): Pr
 }
 
 export async function getActualBranch(worktreePath: string): Promise<string> {
-  const { stdout } = await execFileAsync(
-    'git',
-    ['rev-parse', '--abbrev-ref', 'HEAD'],
-    { cwd: worktreePath, encoding: 'utf-8' },
-  )
+  const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+    cwd: worktreePath,
+    encoding: 'utf-8'
+  })
   return stdout.trim()
 }
 
@@ -579,7 +581,7 @@ async function getDefaultBranch(repoPath: string): Promise<string> {
     const { stdout } = await execFileAsync(
       'git',
       ['symbolic-ref', 'refs/remotes/origin/HEAD', '--short'],
-      { cwd: repoPath, encoding: 'utf-8' },
+      { cwd: repoPath, encoding: 'utf-8' }
     )
     return stdout.trim() // e.g. "origin/main"
   } catch {
@@ -605,6 +607,7 @@ git commit -m "feat: add WorktreeOps module for git worktree management"
 ## Task 4: Completion Handler Module
 
 **Files:**
+
 - Create: `src/main/agent-manager/completion-handler.ts`
 - Test: `src/main/agent-manager/completion-handler.test.ts`
 - Reference: `src/main/git.ts` (existing git operations), `src/shared/types.ts` (SprintTask type)
@@ -619,14 +622,14 @@ import { handleAgentCompletion, type CompletionContext } from './completion-hand
 vi.mock('child_process', () => ({ execFile: vi.fn() }))
 vi.mock('./worktree-ops', () => ({
   getActualBranch: vi.fn().mockResolvedValue('agent/task-123'),
-  removeWorktree: vi.fn().mockResolvedValue(undefined),
+  removeWorktree: vi.fn().mockResolvedValue(undefined)
 }))
 
 const mockExecFile = vi.mocked(await import('child_process')).execFile
 
 function mockExecSuccess(stdout = ''): void {
   mockExecFile.mockImplementation((_cmd, _args, _opts, cb) => {
-    (cb as Function)(null, stdout, '')
+    ;(cb as Function)(null, stdout, '')
     return {} as any
   })
 }
@@ -639,7 +642,7 @@ const baseContext: CompletionContext = {
   ghRepo: 'owner/repo',
   exitCode: 0,
   worktreeBase: '/tmp/wt',
-  updateTask: vi.fn().mockResolvedValue(undefined),
+  updateTask: vi.fn().mockResolvedValue(undefined)
 }
 
 describe('handleAgentCompletion', () => {
@@ -649,21 +652,23 @@ describe('handleAgentCompletion', () => {
     // Mock gh pr create returning PR URL
     mockExecFile.mockImplementation((_cmd, args, _opts, cb) => {
       if (Array.isArray(args) && args[0] === 'push') {
-        (cb as Function)(null, '', '')
+        ;(cb as Function)(null, '', '')
       } else if (Array.isArray(args) && args[0] === 'pr') {
-        (cb as Function)(null, 'https://github.com/owner/repo/pull/42\n', '')
+        ;(cb as Function)(null, 'https://github.com/owner/repo/pull/42\n', '')
       } else {
-        (cb as Function)(null, '', '')
+        ;(cb as Function)(null, '', '')
       }
       return {} as any
     })
 
     await handleAgentCompletion(baseContext)
 
-    expect(baseContext.updateTask).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'done',
-      pr_url: 'https://github.com/owner/repo/pull/42',
-    }))
+    expect(baseContext.updateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'done',
+        pr_url: 'https://github.com/owner/repo/pull/42'
+      })
+    )
   })
 
   it('requeues task on failure when under max retries', async () => {
@@ -672,9 +677,11 @@ describe('handleAgentCompletion', () => {
 
     await handleAgentCompletion(ctx)
 
-    expect(ctx.updateTask).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'queued',
-    }))
+    expect(ctx.updateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'queued'
+      })
+    )
   })
 
   it('sets error status when max retries exceeded', async () => {
@@ -683,9 +690,11 @@ describe('handleAgentCompletion', () => {
 
     await handleAgentCompletion(ctx)
 
-    expect(ctx.updateTask).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'error',
-    }))
+    expect(ctx.updateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'error'
+      })
+    )
   })
 })
 ```
@@ -742,7 +751,7 @@ async function handleSuccess(ctx: CompletionContext): Promise<void> {
 
   // Push branch to remote
   await execFileAsync('git', ['push', '-u', 'origin', branch], {
-    cwd: ctx.worktreePath,
+    cwd: ctx.worktreePath
   })
 
   // Open PR via gh CLI
@@ -754,7 +763,7 @@ async function handleSuccess(ctx: CompletionContext): Promise<void> {
     pr_url: prUrl,
     pr_number: prNumber,
     pr_status: 'open',
-    completed_at: new Date().toISOString(),
+    completed_at: new Date().toISOString()
   })
 }
 
@@ -768,7 +777,7 @@ async function handleFailure(ctx: CompletionContext): Promise<void> {
       status: 'error',
       retry_count: retryCount,
       fast_fail_count: fastFailCount,
-      notes: `${MAX_FAST_FAILS} consecutive fast-fails — task spec may be invalid`,
+      notes: `${MAX_FAST_FAILS} consecutive fast-fails — task spec may be invalid`
     })
     return
   }
@@ -777,7 +786,7 @@ async function handleFailure(ctx: CompletionContext): Promise<void> {
     await ctx.updateTask({
       status: 'error',
       retry_count: retryCount,
-      fast_fail_count: fastFailCount,
+      fast_fail_count: fastFailCount
     })
     return
   }
@@ -788,7 +797,7 @@ async function handleFailure(ctx: CompletionContext): Promise<void> {
     retry_count: retryCount,
     fast_fail_count: fastFailCount,
     claimed_by: null,
-    agent_run_id: null,
+    agent_run_id: null
   })
 }
 
@@ -796,13 +805,13 @@ async function openPullRequest(
   cwd: string,
   ghRepo: string,
   branch: string,
-  taskId: string,
+  taskId: string
 ): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync(
       'gh',
       ['pr', 'create', '--repo', ghRepo, '--head', branch, '--fill'],
-      { cwd, encoding: 'utf-8' },
+      { cwd, encoding: 'utf-8' }
     )
     return stdout.trim()
   } catch (err) {
@@ -829,6 +838,7 @@ git commit -m "feat: add CompletionHandler for post-agent branch push and PR"
 ## Task 5: AgentManager Core Module
 
 **Files:**
+
 - Create: `src/main/agent-manager/agent-manager.ts`
 - Create: `src/main/agent-manager/index.ts`
 - Test: `src/main/agent-manager/agent-manager.test.ts`
@@ -850,16 +860,30 @@ function createMockDeps(): AgentManagerDeps {
       id: 'agent-1',
       events: (async function* () {
         yield { type: 'agent:started', model: 'sonnet', timestamp: Date.now() }
-        yield { type: 'agent:completed', exitCode: 0, costUsd: 0.01, tokensIn: 100, tokensOut: 50, durationMs: 5000, timestamp: Date.now() }
+        yield {
+          type: 'agent:completed',
+          exitCode: 0,
+          costUsd: 0.01,
+          tokensIn: 100,
+          tokensOut: 50,
+          durationMs: 5000,
+          timestamp: Date.now()
+        }
       })(),
       steer: vi.fn(),
-      stop: vi.fn(),
+      stop: vi.fn()
     }),
     createWorktree: vi.fn().mockResolvedValue({ worktreePath: '/tmp/wt/t1', branch: 'agent/t1' }),
     handleCompletion: vi.fn().mockResolvedValue(undefined),
     emitEvent: vi.fn(),
     getRepoInfo: vi.fn().mockReturnValue({ repoPath: '/repo', ghRepo: 'owner/repo' }),
-    config: { maxConcurrent: 3, worktreeBase: '/tmp/wt', maxRuntimeMs: 3_600_000, idleMs: 900_000, drainIntervalMs: 5_000 },
+    config: {
+      maxConcurrent: 3,
+      worktreeBase: '/tmp/wt',
+      maxRuntimeMs: 3_600_000,
+      idleMs: 900_000,
+      drainIntervalMs: 5_000
+    }
   }
 }
 
@@ -869,7 +893,16 @@ describe('AgentManager', () => {
 
   it('drains a queued task when started', async () => {
     const deps = createMockDeps()
-    const task = { id: 't1', title: 'Fix bug', repo: 'BDE', prompt: 'fix it', priority: 1, status: 'queued' as const, retry_count: 0, fast_fail_count: 0 }
+    const task = {
+      id: 't1',
+      title: 'Fix bug',
+      repo: 'BDE',
+      prompt: 'fix it',
+      priority: 1,
+      status: 'queued' as const,
+      retry_count: 0,
+      fast_fail_count: 0
+    }
     vi.mocked(deps.getQueuedTasks).mockResolvedValueOnce([task])
 
     const manager = new AgentManager(deps)
@@ -892,14 +925,35 @@ describe('AgentManager', () => {
     // Mock agent that never completes
     vi.mocked(deps.spawnAgent).mockResolvedValue({
       id: 'agent-1',
-      events: (async function* () { yield { type: 'agent:started', model: 'sonnet', timestamp: Date.now() }; await new Promise(() => {}) })(),
+      events: (async function* () {
+        yield { type: 'agent:started', model: 'sonnet', timestamp: Date.now() }
+        await new Promise(() => {})
+      })(),
       steer: vi.fn(),
-      stop: vi.fn(),
+      stop: vi.fn()
     })
 
     const tasks = [
-      { id: 't1', title: 'A', repo: 'BDE', prompt: 'a', priority: 1, status: 'queued' as const, retry_count: 0, fast_fail_count: 0 },
-      { id: 't2', title: 'B', repo: 'BDE', prompt: 'b', priority: 2, status: 'queued' as const, retry_count: 0, fast_fail_count: 0 },
+      {
+        id: 't1',
+        title: 'A',
+        repo: 'BDE',
+        prompt: 'a',
+        priority: 1,
+        status: 'queued' as const,
+        retry_count: 0,
+        fast_fail_count: 0
+      },
+      {
+        id: 't2',
+        title: 'B',
+        repo: 'BDE',
+        prompt: 'b',
+        priority: 2,
+        status: 'queued' as const,
+        retry_count: 0,
+        fast_fail_count: 0
+      }
     ]
     vi.mocked(deps.getQueuedTasks).mockResolvedValue(tasks)
 
@@ -953,7 +1007,11 @@ export interface AgentManagerDeps {
   updateTask: (taskId: string, update: Record<string, unknown>) => Promise<void>
   ensureAuth: () => Promise<void>
   spawnAgent: (opts: { prompt: string; cwd: string; model?: string }) => Promise<AgentHandle>
-  createWorktree: (repoPath: string, taskId: string, worktreeBase: string) => Promise<{ worktreePath: string; branch: string }>
+  createWorktree: (
+    repoPath: string,
+    taskId: string,
+    worktreeBase: string
+  ) => Promise<{ worktreePath: string; branch: string }>
   handleCompletion: (ctx: Record<string, unknown>) => Promise<void>
   emitEvent: (agentId: string, event: unknown) => void
   getRepoInfo: (repoName: string) => { repoPath: string; ghRepo: string } | null
@@ -1042,7 +1100,7 @@ export class AgentManager {
     if (!repoInfo) {
       await this.deps.updateTask(task.id, {
         status: 'error',
-        notes: `Repo "${task.repo}" not found in settings`,
+        notes: `Repo "${task.repo}" not found in settings`
       })
       return
     }
@@ -1050,14 +1108,14 @@ export class AgentManager {
     // Mark active
     await this.deps.updateTask(task.id, {
       status: 'active',
-      started_at: new Date().toISOString(),
+      started_at: new Date().toISOString()
     })
 
     // Create worktree
     const { worktreePath, branch } = await this.deps.createWorktree(
       repoInfo.repoPath,
       task.id,
-      this.deps.config.worktreeBase,
+      this.deps.config.worktreeBase
     )
 
     // Build prompt
@@ -1073,7 +1131,7 @@ export class AgentManager {
       onTimeout: (reason) => {
         console.warn(`[agent-manager] Watchdog timeout (${reason}) for task ${task.id}`)
         handle.stop().catch(() => {})
-      },
+      }
     })
 
     const activeAgent: ActiveAgent = {
@@ -1084,7 +1142,7 @@ export class AgentManager {
       ghRepo: repoInfo.ghRepo,
       watchdog,
       startTime: Date.now(),
-      handle,
+      handle
     }
 
     this.active.set(task.id, activeAgent)
@@ -1131,7 +1189,7 @@ export class AgentManager {
         durationMs,
         retryCount: task.retry_count,
         fastFailCount: task.fast_fail_count,
-        worktreeBase: this.deps.config.worktreeBase,
+        worktreeBase: this.deps.config.worktreeBase
       })
     }
   }
@@ -1152,7 +1210,13 @@ function buildPrompt(task: QueuedTask): string {
 // src/main/agent-manager/index.ts
 export { AgentManager, type AgentManagerConfig, type AgentManagerDeps } from './agent-manager'
 export { Watchdog } from './watchdog'
-export { createWorktree, removeWorktree, getActualBranch, acquireRepoLock, releaseRepoLock } from './worktree-ops'
+export {
+  createWorktree,
+  removeWorktree,
+  getActualBranch,
+  acquireRepoLock,
+  releaseRepoLock
+} from './worktree-ops'
 export { handleAgentCompletion, type CompletionContext } from './completion-handler'
 ```
 
@@ -1178,6 +1242,7 @@ git commit -m "feat: add AgentManager core module with drain loop and concurrenc
 ## Task 6: Remove External Service Dependencies (Main Process)
 
 **Files:**
+
 - Delete: `src/main/queue-api/` (all files)
 - Delete: `src/main/handlers/queue-handlers.ts`
 - Delete: `src/main/handlers/gateway-handlers.ts`
@@ -1216,7 +1281,13 @@ Remove `getGatewayConfig()`, `getTaskRunnerConfig()`, `getAgentProvider()`, and 
 Replace the provider factory with direct `SdkProvider` export:
 
 ```typescript
-export type { AgentProvider, AgentHandle, AgentEvent, AgentSpawnOptions, AgentEventType } from './types'
+export type {
+  AgentProvider,
+  AgentHandle,
+  AgentEvent,
+  AgentSpawnOptions,
+  AgentEventType
+} from './types'
 export { SdkProvider } from './sdk-provider'
 ```
 
@@ -1235,6 +1306,7 @@ Remove `migrateFromOpenClawConfig()` function and its `OPENCLAW_CONFIG_PATH` imp
 - [ ] **Step 6: Rewrite `src/main/index.ts`**
 
 Remove these imports and their startup/shutdown calls:
+
 - `startSprintSseClient` / `stopSprintSseClient` (lines 20, 122-123)
 - `startQueueApi` / `stopQueueApi` (lines 24, 131-132)
 - `registerGatewayHandlers` (lines 11, 144)
@@ -1286,6 +1358,7 @@ git commit -m "chore: remove external service dependencies (queue-api, gateway, 
 **IMPORTANT:** This task has a large surface area. Many renderer files depend on `gateway.ts`, `sessions.ts`, `taskRunnerSSE.ts`, and `sprintEvents.ts` queue-health calls. Read each file before modifying. The goal is a compilable state after every step — do not delete files before updating their consumers.
 
 **Files to delete:**
+
 - `src/renderer/src/lib/gateway.ts`
 - `src/renderer/src/lib/taskRunnerSSE.ts`
 - `src/renderer/src/lib/rpc.ts` (verify it's solely gateway-dependent first)
@@ -1297,6 +1370,7 @@ git commit -m "chore: remove external service dependencies (queue-api, gateway, 
 - `src/renderer/src/stores/__tests__/sessions.test.ts`
 
 **Files to modify (read each carefully first):**
+
 - `src/renderer/src/App.tsx` — remove `useGatewayStore`, remove `useSessionsStore` (runningCount), remove gateway init
 - `src/renderer/src/components/layout/StatusBar.tsx` — remove `GatewayStatus` type import, replace with auth status
 - `src/renderer/src/components/layout/ActivityBar.tsx` — remove gateway connection status references
@@ -1377,6 +1451,7 @@ git commit -m "chore: remove gateway, task runner SSE, sessions, and queue healt
 ## Task 8: Wire AgentManager + AuthGuard into BDE
 
 **Files:**
+
 - Create: `src/main/handlers/auth-handlers.ts`
 - Create: `src/main/handlers/agent-manager-handlers.ts`
 - Modify: `src/main/index.ts` — start AgentManager on app ready, register new handlers
@@ -1409,7 +1484,7 @@ export function registerAgentManagerHandlers(manager: AgentManager): void {
   safeHandle('agent-manager:status', async () => {
     return {
       activeCount: manager.activeCount,
-      availableSlots: manager.availableSlots,
+      availableSlots: manager.availableSlots
     }
   })
 
@@ -1466,8 +1541,8 @@ const agentManager = new AgentManager({
     worktreeBase: getWorktreeBase(),
     maxRuntimeMs: getMaxRuntimeMinutes() * 60_000,
     idleMs: 15 * 60_000,
-    drainIntervalMs: 5_000,
-  },
+    drainIntervalMs: 5_000
+  }
 })
 
 agentManager.start()
@@ -1516,6 +1591,7 @@ git commit -m "feat: wire AgentManager and AuthGuard into BDE main process"
 ## Task 9: Onboarding UI Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/Onboarding.tsx`
 - Modify: `src/renderer/src/App.tsx` — gate main app behind onboarding check
 
@@ -1546,6 +1622,7 @@ git commit -m "feat: add onboarding screen with Claude auth status checks"
 ## Task 10: Update Settings View
 
 **Files:**
+
 - Modify: `src/renderer/src/components/settings/ConnectionsSection.tsx` — replace gateway/task-runner config with auth status + agent-manager settings
 
 - [ ] **Step 1: Add auth status display**
@@ -1555,6 +1632,7 @@ Show current auth status (connected / expired / not configured) from `window.api
 - [ ] **Step 2: Add agent-manager settings**
 
 Settings inputs for:
+
 - Max concurrent agents (number, default 3)
 - Worktree base path (text, default `/tmp/worktrees/bde`)
 - Max runtime minutes (number, default 60)
@@ -1578,6 +1656,7 @@ git commit -m "feat: update Settings view with auth status and agent-manager con
 ## Task 11: Build & Package Verification
 
 **Files:**
+
 - Reference: `electron-builder.yml`, `package.json`
 
 - [ ] **Step 1: Run full typecheck**
@@ -1603,6 +1682,7 @@ Expected: DMG produced in `release/` directory
 - [ ] **Step 5: Smoke test the DMG**
 
 Open the DMG, drag BDE to Applications, launch it. Verify:
+
 - Onboarding screen appears (or main app if already authed)
 - Settings view shows auth status
 - Sprint view can queue a task

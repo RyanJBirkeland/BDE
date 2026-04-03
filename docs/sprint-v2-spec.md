@@ -25,12 +25,12 @@
 
 ### Column Definitions
 
-| Column | Meaning | Supabase status | Task runner picks up? |
-|--------|---------|-----------------|----------------------|
-| **Backlog** | Draft ideas, work in progress specs | `backlog` | ❌ No |
-| **Sprint** | Approved, ready for agent pickup | `queued` | ✅ Yes |
-| **In Progress** | Agent actively working | `active` | — (claimed) |
-| **Done** | Completed, PR opened | `done` | — |
+| Column          | Meaning                             | Supabase status | Task runner picks up? |
+| --------------- | ----------------------------------- | --------------- | --------------------- |
+| **Backlog**     | Draft ideas, work in progress specs | `backlog`       | ❌ No                 |
+| **Sprint**      | Approved, ready for agent pickup    | `queued`        | ✅ Yes                |
+| **In Progress** | Agent actively working              | `active`        | — (claimed)           |
+| **Done**        | Completed, PR opened                | `done`          | —                     |
 
 **Key change:** Tasks created via "New Ticket" land in **Backlog** with `status: 'backlog'` in Supabase. The task runner ignores `status: 'backlog'`. Only when Ryan explicitly drags to Sprint OR clicks "Push to Sprint" does it become `status: 'queued'` and get picked up.
 
@@ -62,6 +62,7 @@ ipcMain.handle('sprint:delete', async (_, id: string) => {
 ```
 
 Expose via preload:
+
 ```typescript
 sprint: {
   list: () => ipcRenderer.invoke('sprint:list'),
@@ -131,7 +132,7 @@ const TEMPLATES: Record<string, string> = {
 
   ux: `## UX Problem\n<!-- What's confusing or broken in the UI -->\n\n## Target Design\n<!-- ASCII wireframe or bullet description of desired state -->\n\n## Files to Change\n<!-- CSS + TSX files -->\n\n## Visual References\n<!-- See docs/visual-identity-spec.md -->`,
 
-  infra: `## Infrastructure Task\n<!-- What service/config/script is being set up or changed -->\n\n## Steps\n<!-- Ordered list -->\n\n## Verification\n<!-- How to confirm it worked -->`,
+  infra: `## Infrastructure Task\n<!-- What service/config/script is being set up or changed -->\n\n## Steps\n<!-- Ordered list -->\n\n## Verification\n<!-- How to confirm it worked -->`
 }
 ```
 
@@ -152,7 +153,7 @@ Write a complete, spec-ready prompt for a Claude Code agent to implement this ta
   const result = await window.api.invokeTool('sessions_send', {
     sessionKey: 'main',
     message: prompt,
-    timeoutSeconds: 30,
+    timeoutSeconds: 30
   })
   return result?.response ?? ''
 }
@@ -179,7 +180,7 @@ Each column gets its own color identity:
 .kanban-col--backlog .kanban-col__header {
   background: linear-gradient(135deg, rgba(108, 142, 239, 0.12) 0%, transparent 100%);
   border-left: 2px solid rgba(108, 142, 239, 0.5);
-  color: #6C8EEF;
+  color: #6c8eef;
 }
 
 /* Sprint — aurora green */
@@ -202,13 +203,14 @@ Each column gets its own color identity:
 
 /* Done — muted green */
 .kanban-col--done .kanban-col__header {
-  background: linear-gradient(135deg, rgba(0, 168, 99, 0.10) 0%, transparent 100%);
+  background: linear-gradient(135deg, rgba(0, 168, 99, 0.1) 0%, transparent 100%);
   border-left: 2px solid rgba(0, 168, 99, 0.3);
   color: var(--accent-dim);
 }
 ```
 
 Columns themselves are glass panels:
+
 ```css
 .kanban-col {
   background: var(--glass-tint-dark);
@@ -231,7 +233,7 @@ Columns themselves are glass panels:
 }
 .task-card:hover {
   border-color: var(--border-light);
-  background: rgba(28, 28, 39, 0.90);
+  background: rgba(28, 28, 39, 0.9);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   transform: translateY(-1px);
 }
@@ -241,7 +243,9 @@ Columns themselves are glass panels:
 }
 .kanban-col--sprint .task-card:hover {
   border-left-color: rgba(0, 211, 127, 0.5);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), -2px 0 12px rgba(0, 211, 127, 0.08);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.25),
+    -2px 0 12px rgba(0, 211, 127, 0.08);
 }
 ```
 
@@ -266,7 +270,7 @@ Columns themselves are glass panels:
   background-clip: text;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -274,9 +278,16 @@ Columns themselves are glass panels:
 .sprint-center__header::after {
   content: '';
   position: absolute;
-  bottom: 0; left: 16px; right: 16px;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0,211,127,0.4) 0%, rgba(108,142,239,0.2) 60%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 211, 127, 0.4) 0%,
+    rgba(108, 142, 239, 0.2) 60%,
+    transparent 100%
+  );
 }
 
 /* New Ticket button — aurora gradient primary */
@@ -292,16 +303,18 @@ Columns themselves are glass panels:
 In Backlog, each TaskCard gets a **"→ Sprint"** button instead of (or alongside) "Launch":
 
 ```tsx
-{task.status === 'backlog' && (
-  <>
-    <Button variant="primary" size="sm" onClick={() => onPushToSprint(task)}>
-      → Sprint
-    </Button>
-    <Button variant="ghost" size="sm" onClick={() => onViewSpec(task)}>
-      Spec
-    </Button>
-  </>
-)}
+{
+  task.status === 'backlog' && (
+    <>
+      <Button variant="primary" size="sm" onClick={() => onPushToSprint(task)}>
+        → Sprint
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => onViewSpec(task)}>
+        Spec
+      </Button>
+    </>
+  )
+}
 ```
 
 `onPushToSprint` calls `window.api.sprint.update(task.id, { status: 'queued' })` — this is what the task runner actually picks up.
@@ -328,23 +341,24 @@ Add to the drawer footer:
 
 ## Files to Change / Create
 
-| File | Action | What |
-|------|--------|------|
-| `src/main/handlers/sprint.ts` | **CREATE** | IPC handlers: sprint:list, sprint:create, sprint:update, sprint:delete — calls Supabase REST API |
-| `src/main/index.ts` | **MODIFY** | Import + register sprint handlers |
-| `src/preload/index.ts` | **MODIFY** | Expose `window.api.sprint.*` |
-| `src/renderer/src/components/sprint/SprintCenter.tsx` | **REWRITE** | Use `window.api.sprint.*` instead of readMemoryFile; 4 columns; New Ticket button |
-| `src/renderer/src/components/sprint/KanbanBoard.tsx` | **MODIFY** | 4 columns (add Sprint column); column color classes |
-| `src/renderer/src/components/sprint/KanbanColumn.tsx` | **MODIFY** | Column color variant prop; remove AddCardForm from backlog |
-| `src/renderer/src/components/sprint/TaskCard.tsx` | **MODIFY** | "→ Sprint" button in backlog; glass hover; sprint cards get accent left border |
-| `src/renderer/src/components/sprint/NewTicketModal.tsx` | **CREATE** | Title, repo, priority, template picker, spec textarea, Ask Paul button, glass-modal |
-| `src/renderer/src/components/sprint/SpecDrawer.tsx` | **MODIFY** | Add "→ Sprint" + "✨ Ask Paul" buttons |
-| `src/renderer/src/assets/sprint.css` | **CREATE/MODIFY** | All sprint-specific styles: columns, cards, header, modal, glass treatments |
-| `src/renderer/src/components/sprint/AddCardForm.tsx` | **DELETE** | Replaced by NewTicketModal |
+| File                                                    | Action            | What                                                                                             |
+| ------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| `src/main/handlers/sprint.ts`                           | **CREATE**        | IPC handlers: sprint:list, sprint:create, sprint:update, sprint:delete — calls Supabase REST API |
+| `src/main/index.ts`                                     | **MODIFY**        | Import + register sprint handlers                                                                |
+| `src/preload/index.ts`                                  | **MODIFY**        | Expose `window.api.sprint.*`                                                                     |
+| `src/renderer/src/components/sprint/SprintCenter.tsx`   | **REWRITE**       | Use `window.api.sprint.*` instead of readMemoryFile; 4 columns; New Ticket button                |
+| `src/renderer/src/components/sprint/KanbanBoard.tsx`    | **MODIFY**        | 4 columns (add Sprint column); column color classes                                              |
+| `src/renderer/src/components/sprint/KanbanColumn.tsx`   | **MODIFY**        | Column color variant prop; remove AddCardForm from backlog                                       |
+| `src/renderer/src/components/sprint/TaskCard.tsx`       | **MODIFY**        | "→ Sprint" button in backlog; glass hover; sprint cards get accent left border                   |
+| `src/renderer/src/components/sprint/NewTicketModal.tsx` | **CREATE**        | Title, repo, priority, template picker, spec textarea, Ask Paul button, glass-modal              |
+| `src/renderer/src/components/sprint/SpecDrawer.tsx`     | **MODIFY**        | Add "→ Sprint" + "✨ Ask Paul" buttons                                                           |
+| `src/renderer/src/assets/sprint.css`                    | **CREATE/MODIFY** | All sprint-specific styles: columns, cards, header, modal, glass treatments                      |
+| `src/renderer/src/components/sprint/AddCardForm.tsx`    | **DELETE**        | Replaced by NewTicketModal                                                                       |
 
 ---
 
 ## Out of Scope
+
 - Sprint planning / velocity tracking / dates
 - Multi-sprint management (one sprint at a time is fine)
 - Drag-to-reorder within a column (keeping existing dnd-kit behavior)
@@ -354,29 +368,35 @@ Add to the drawer footer:
 ---
 
 ## Supabase Schema Note
+
 `sprint_tasks` already has `status` column. Need to confirm `backlog` is a valid enum value. If not, the migration is:
+
 ```sql
 ALTER TYPE sprint_tasks_status_enum ADD VALUE IF NOT EXISTS 'backlog';
 -- or if it's a CHECK constraint:
 ALTER TABLE sprint_tasks DROP CONSTRAINT IF EXISTS sprint_tasks_status_check;
-ALTER TABLE sprint_tasks ADD CONSTRAINT sprint_tasks_status_check 
+ALTER TABLE sprint_tasks ADD CONSTRAINT sprint_tasks_status_check
   CHECK (status IN ('backlog', 'queued', 'active', 'done', 'cancelled'));
 ```
 
 ---
 
 ## Supabase Config in IPC
+
 The sprint IPC handlers need the Supabase URL + service role key. These should be read from:
+
 1. `process.env.SUPABASE_SERVICE_ROLE_KEY` (already set in launchd plist via life-os .env)
 2. `process.env.VITE_SUPABASE_URL`
 
 Both are already in `~/Documents/Repositories/life-os/.env` and loaded by the task runner. The BDE main process launchd plist (`com.rbtechbot.bde-dev`) may not have these env vars. Agent should:
+
 1. Check if they're available via `process.env`
 2. If not, read `~/Documents/Repositories/life-os/.env` at startup and inject
 
 ---
 
 ## Success Criteria
+
 - [ ] New Ticket modal opens from header button, has template picker + spec editor + Ask Paul
 - [ ] Creating a ticket lands in Backlog (status: 'backlog'), NOT immediately queued
 - [ ] "→ Sprint" button / drag to Sprint column sets status: 'queued'

@@ -17,16 +17,16 @@ A reusable neon-styled component that visualizes pipeline stages with a circuit 
 ### Basic Example
 
 ```tsx
-import { CircuitPipeline, type CircuitNode } from '@/components/neon/CircuitPipeline';
+import { CircuitPipeline, type CircuitNode } from '@/components/neon/CircuitPipeline'
 
 const nodes: CircuitNode[] = [
   { id: 'queued', label: 'Queued', count: 5, accent: 'orange' },
   { id: 'active', label: 'Active', count: 3, accent: 'cyan', active: true },
   { id: 'review', label: 'Review', count: 2, accent: 'blue' },
-  { id: 'done', label: 'Done', count: 12, accent: 'purple' },
-];
+  { id: 'done', label: 'Done', count: 12, accent: 'purple' }
+]
 
-<CircuitPipeline nodes={nodes} />
+;<CircuitPipeline nodes={nodes} />
 ```
 
 ### With Icons
@@ -36,64 +36,56 @@ const nodes: CircuitNode[] = [
   { id: 'queued', label: 'Queued', count: 5, accent: 'orange', icon: '⏳' },
   { id: 'active', label: 'Active', count: 3, accent: 'cyan', icon: '⚡', active: true },
   { id: 'review', label: 'Review', count: 2, accent: 'blue', icon: '👁️' },
-  { id: 'done', label: 'Done', count: 12, accent: 'purple', icon: '✓' },
-];
+  { id: 'done', label: 'Done', count: 12, accent: 'purple', icon: '✓' }
+]
 
-<CircuitPipeline nodes={nodes} animated={true} />
+;<CircuitPipeline nodes={nodes} animated={true} />
 ```
 
 ### Vertical Layout
 
 ```tsx
-<CircuitPipeline
-  nodes={nodes}
-  orientation="vertical"
-  animated={true}
-/>
+<CircuitPipeline nodes={nodes} orientation="vertical" animated={true} />
 ```
 
 ### Compact Mode
 
 ```tsx
-<CircuitPipeline
-  nodes={nodes}
-  compact={true}
-  className="my-custom-class"
-/>
+<CircuitPipeline nodes={nodes} compact={true} className="my-custom-class" />
 ```
 
 ## Props
 
 ### `CircuitPipeline`
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `nodes` | `CircuitNode[]` | required | Array of pipeline stage nodes |
-| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Layout direction |
-| `animated` | `boolean` | `true` | Enable animated current flow effects |
-| `compact` | `boolean` | `false` | Use smaller node size (64px vs 80px) |
-| `className` | `string` | `''` | Additional CSS classes |
+| Prop          | Type                         | Default        | Description                          |
+| ------------- | ---------------------------- | -------------- | ------------------------------------ |
+| `nodes`       | `CircuitNode[]`              | required       | Array of pipeline stage nodes        |
+| `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Layout direction                     |
+| `animated`    | `boolean`                    | `true`         | Enable animated current flow effects |
+| `compact`     | `boolean`                    | `false`        | Use smaller node size (64px vs 80px) |
+| `className`   | `string`                     | `''`           | Additional CSS classes               |
 
 ### `CircuitNode`
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | `string` | ✓ | Unique identifier for the node |
-| `label` | `string` | ✓ | Display label (e.g., "Queued") |
-| `count` | `number` | ✓ | Number to display in the node |
-| `accent` | `NeonAccent` | ✓ | Color accent (`'cyan' \| 'pink' \| 'blue' \| 'purple' \| 'orange' \| 'red'`) |
-| `icon` | `ReactNode` | | Optional icon to display above the count |
-| `active` | `boolean` | | If true, node will pulse with neon glow |
+| Property | Type         | Required | Description                                                                  |
+| -------- | ------------ | -------- | ---------------------------------------------------------------------------- |
+| `id`     | `string`     | ✓        | Unique identifier for the node                                               |
+| `label`  | `string`     | ✓        | Display label (e.g., "Queued")                                               |
+| `count`  | `number`     | ✓        | Number to display in the node                                                |
+| `accent` | `NeonAccent` | ✓        | Color accent (`'cyan' \| 'pink' \| 'blue' \| 'purple' \| 'orange' \| 'red'`) |
+| `icon`   | `ReactNode`  |          | Optional icon to display above the count                                     |
+| `active` | `boolean`    |          | If true, node will pulse with neon glow                                      |
 
 ## Integration Example: Sprint Center
 
 See `CircuitPipelineExample.tsx` for a complete Sprint Center integration example:
 
 ```tsx
-import { CircuitPipelineExample } from './CircuitPipelineExample';
+import { CircuitPipelineExample } from './CircuitPipelineExample'
 
 // In SprintCenter header:
-<div className="sprint-center__title-row">
+;<div className="sprint-center__title-row">
   <span className="sprint-center__title text-gradient-aurora">SPRINT CENTER</span>
   <CircuitPipelineExample tasks={filteredTasks} compact={true} />
 </div>
@@ -134,6 +126,7 @@ All animations respect `prefers-reduced-motion` settings.
 ## Browser Support
 
 Works in all modern browsers that support:
+
 - CSS custom properties
 - CSS animations
 - Flexbox

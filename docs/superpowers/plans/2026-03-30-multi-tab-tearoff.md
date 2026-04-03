@@ -14,31 +14,32 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/renderer/src/lib/view-resolver.ts` | Create | Shared lazy view imports (deduplicate from PanelLeaf + TearoffShell) |
-| `src/renderer/src/components/layout/TearoffTabBar.tsx` | Create | Tab strip for focused panel in tear-off windows |
-| `src/renderer/src/stores/panelLayout.ts` | Modify (lines 305, 346, 527) | Export `findFirstLeaf`, add `persistable` flag, guard subscriber |
-| `src/renderer/src/components/layout/TearoffShell.tsx` | Modify (lines 89-170) | Mode derivation, panel mode rendering, crossWindowDrop upgrade, Return All, keyboard shortcuts |
-| `src/renderer/src/components/panels/PanelLeaf.tsx` | Modify (lines 12-18, 38-57) | Import from shared view-resolver.ts |
-| `src/shared/ipc-channels.ts` | Modify (lines 299-312) | Add `tearoff:returnAll` channel |
-| `src/preload/index.ts` | Modify (lines 265-319) | Add `returnAll` method |
-| `src/preload/index.d.ts` | Modify (lines 234-250) | Add `returnAll` type |
-| `src/main/tearoff-manager.ts` | Modify (lines 340+) | Handle `tearoff:returnAll` IPC |
+| File                                                   | Action                       | Responsibility                                                                                 |
+| ------------------------------------------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| `src/renderer/src/lib/view-resolver.ts`                | Create                       | Shared lazy view imports (deduplicate from PanelLeaf + TearoffShell)                           |
+| `src/renderer/src/components/layout/TearoffTabBar.tsx` | Create                       | Tab strip for focused panel in tear-off windows                                                |
+| `src/renderer/src/stores/panelLayout.ts`               | Modify (lines 305, 346, 527) | Export `findFirstLeaf`, add `persistable` flag, guard subscriber                               |
+| `src/renderer/src/components/layout/TearoffShell.tsx`  | Modify (lines 89-170)        | Mode derivation, panel mode rendering, crossWindowDrop upgrade, Return All, keyboard shortcuts |
+| `src/renderer/src/components/panels/PanelLeaf.tsx`     | Modify (lines 12-18, 38-57)  | Import from shared view-resolver.ts                                                            |
+| `src/shared/ipc-channels.ts`                           | Modify (lines 299-312)       | Add `tearoff:returnAll` channel                                                                |
+| `src/preload/index.ts`                                 | Modify (lines 265-319)       | Add `returnAll` method                                                                         |
+| `src/preload/index.d.ts`                               | Modify (lines 234-250)       | Add `returnAll` type                                                                           |
+| `src/main/tearoff-manager.ts`                          | Modify (lines 340+)          | Handle `tearoff:returnAll` IPC                                                                 |
 
 **Test files:**
 
-| File | Tests |
-|------|-------|
-| `src/renderer/src/components/layout/__tests__/TearoffTabBar.test.tsx` | Tab rendering, close, active state |
-| `src/renderer/src/components/layout/__tests__/TearoffShell.test.tsx` | Update: panel mode, transition, Return All |
-| `src/renderer/src/stores/__tests__/panelLayout.test.ts` | Update: persistable flag |
+| File                                                                  | Tests                                      |
+| --------------------------------------------------------------------- | ------------------------------------------ |
+| `src/renderer/src/components/layout/__tests__/TearoffTabBar.test.tsx` | Tab rendering, close, active state         |
+| `src/renderer/src/components/layout/__tests__/TearoffShell.test.tsx`  | Update: panel mode, transition, Return All |
+| `src/renderer/src/stores/__tests__/panelLayout.test.ts`               | Update: persistable flag                   |
 
 ---
 
 ### Task 1: Shared View Resolver
 
 **Files:**
+
 - Create: `src/renderer/src/lib/view-resolver.ts`
 - Modify: `src/renderer/src/components/panels/PanelLeaf.tsx:12-18,38-57`
 - Modify: `src/renderer/src/components/layout/TearoffShell.tsx:1-47`
@@ -105,6 +106,7 @@ git commit -m "refactor: extract shared view-resolver.ts from PanelLeaf + Tearof
 ### Task 2: Persistable Flag in panelLayout Store
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/panelLayout.ts:305,346-367,527-535`
 - Modify: `src/renderer/src/stores/__tests__/panelLayout.test.ts`
 
@@ -140,7 +142,7 @@ At the bottom of the file (~line 527), modify the subscriber:
 
 ```typescript
 usePanelLayoutStore.subscribe((state) => {
-  if (!state.persistable) return  // tear-off windows skip persistence
+  if (!state.persistable) return // tear-off windows skip persistence
   if (typeof window === 'undefined' || !window.api?.settings) return
   if (_saveTimeout) clearTimeout(_saveTimeout)
   _saveTimeout = setTimeout(() => {
@@ -176,12 +178,14 @@ git commit -m "feat(tearoff): add persistable flag to panelLayout store"
 ### Task 3: TearoffTabBar Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/layout/TearoffTabBar.tsx`
 - Create: `src/renderer/src/components/layout/__tests__/TearoffTabBar.test.tsx`
 
 - [ ] **Step 1: Write tests**
 
 Test:
+
 - Renders tab labels for each tab
 - Active tab has `--active` class
 - Close button calls onCloseTab with correct index
@@ -249,7 +253,9 @@ export function TearoffTabBar({ tabs, activeTab, onSelectTab, onCloseTab }: Tear
   color: var(--neon-text-dim);
   cursor: pointer;
   border-right: 1px solid var(--neon-surface-dim);
-  transition: color 100ms ease, background 100ms ease;
+  transition:
+    color 100ms ease,
+    background 100ms ease;
   white-space: nowrap;
 }
 
@@ -304,6 +310,7 @@ git commit -m "feat(tearoff): TearoffTabBar component for panel mode"
 ### Task 4: Return All IPC
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts:299-312`
 - Modify: `src/preload/index.ts:265-319`
 - Modify: `src/preload/index.d.ts:234-250`
@@ -352,7 +359,11 @@ ipcMain.on('tearoff:returnAll', (_event, payload: { windowId: string; views: str
 
   tearoffWindows.delete(windowId)
   clearResizeTimer(windowId)
-  try { entry.win.destroy() } catch { /* already destroyed */ }
+  try {
+    entry.win.destroy()
+  } catch {
+    /* already destroyed */
+  }
   logger.info(`[tearoff] returnAll: returned ${views.length} views from ${windowId}`)
 })
 ```
@@ -374,6 +385,7 @@ git commit -m "feat(tearoff): returnAll IPC for bulk tab return"
 ### Task 5: Upgrade TearoffShell to Panel Mode
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/TearoffShell.tsx:89-170`
 
 This is the core task. Modify TearoffShell to:
@@ -392,7 +404,7 @@ useEffect(() => {
     focusedPanelId: leaf.panelId,
     activeView: view
   })
-}, [])  // only on mount
+}, []) // only on mount
 ```
 
 - [ ] **Step 2: Derive mode from store**
@@ -419,7 +431,8 @@ useEffect(() => {
     if (payload.zone === 'center') {
       store.addTab(payload.targetPanelId || store.focusedPanelId || '', payload.view as View)
     } else {
-      const direction = (payload.zone === 'left' || payload.zone === 'right') ? 'horizontal' : 'vertical'
+      const direction =
+        payload.zone === 'left' || payload.zone === 'right' ? 'horizontal' : 'vertical'
       const targetId = payload.targetPanelId || store.focusedPanelId || ''
       store.splitPanel(targetId, direction, payload.view as View)
     }
@@ -461,19 +474,25 @@ useEffect(() => {
 return (
   <div className="tearoff-shell">
     <header className="tearoff-shell__header">
-      <span className="tearoff-shell__title">
-        {isMultiTab ? '' : label}
-      </span>
+      <span className="tearoff-shell__title">{isMultiTab ? '' : label}</span>
       <div className="tearoff-shell__actions">
         {isMultiTab && (
-          <button className="tearoff-shell__btn" onClick={handleReturnAll}
-            aria-label="Return all tabs to main window" title="Return all">
+          <button
+            className="tearoff-shell__btn"
+            onClick={handleReturnAll}
+            aria-label="Return all tabs to main window"
+            title="Return all"
+          >
             <Undo2 size={14} />
           </button>
         )}
         {!isMultiTab && (
-          <button className="tearoff-shell__btn" onClick={handleReturn}
-            aria-label="Return to main window" title="Return to main window">
+          <button
+            className="tearoff-shell__btn"
+            onClick={handleReturn}
+            aria-label="Return to main window"
+            title="Return to main window"
+          >
             <Undo2 size={14} />
           </button>
         )}
@@ -531,12 +550,14 @@ git commit -m "feat(tearoff): upgrade TearoffShell to panel mode with tab bar"
 ### Task 6: Update Tests + Integration
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/__tests__/TearoffShell.test.tsx`
 - Modify: integration tests if handler counts changed
 
 - [ ] **Step 1: Add panel mode tests to TearoffShell**
 
 Add tests:
+
 - Initializes store with `persistable: false` on mount
 - Renders single-view when store has one tab
 - Renders PanelRenderer when store has multiple tabs (mock PanelRenderer)

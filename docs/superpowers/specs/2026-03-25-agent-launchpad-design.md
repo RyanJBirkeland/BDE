@@ -41,6 +41,7 @@ The launchpad has three phases, managed by local React state (`phase: 'grid' | '
 ```
 
 **Phase transitions:**
+
 - Grid → Configure: user clicks a quick-action tile
 - Grid → Review: user types a custom prompt and hits Enter/Spawn (skip configure)
 - Configure → Review: all required questions answered
@@ -79,29 +80,29 @@ Stored in SQLite `settings` table under key `prompt_templates` as a JSON array.
 
 ```ts
 interface PromptTemplate {
-  id: string                    // crypto.randomUUID()
-  name: string                  // "Clean Code Audit"
-  icon: string                  // emoji: "🧹"
-  accent: NeonAccent            // 'cyan' | 'pink' | 'blue' | 'purple' | 'orange' | 'red'
-  description: string           // "Audit & remediate"
+  id: string // crypto.randomUUID()
+  name: string // "Clean Code Audit"
+  icon: string // emoji: "🧹"
+  accent: NeonAccent // 'cyan' | 'pink' | 'blue' | 'purple' | 'orange' | 'red'
+  description: string // "Audit & remediate"
   questions: TemplateQuestion[]
-  promptTemplate: string        // "Perform a {{action}} on {{scope}}..."
+  promptTemplate: string // "Perform a {{action}} on {{scope}}..."
   defaults?: {
-    model?: ClaudeModelId       // optional default model override
-    repo?: string               // optional default repo
+    model?: ClaudeModelId // optional default model override
+    repo?: string // optional default repo
   }
-  builtIn?: boolean             // true = shipped default, cannot be deleted (only hidden)
-  hidden?: boolean              // user hid this built-in template
-  order: number                 // display sort position
+  builtIn?: boolean // true = shipped default, cannot be deleted (only hidden)
+  hidden?: boolean // user hid this built-in template
+  order: number // display sort position
 }
 
 interface TemplateQuestion {
-  id: string                    // variable name: "scope", "focus", "action"
-  label: string                 // "Which area should I focus on?"
+  id: string // variable name: "scope", "focus", "action"
+  label: string // "Which area should I focus on?"
   type: 'choice' | 'text' | 'multi-choice'
-  choices?: string[]            // for choice/multi-choice: ["Entire repo", "Specific directory", ...]
-  default?: string              // pre-selected answer
-  required?: boolean            // defaults true
+  choices?: string[] // for choice/multi-choice: ["Entire repo", "Specific directory", ...]
+  default?: string // pre-selected answer
+  required?: boolean // defaults true
 }
 ```
 
@@ -138,11 +139,11 @@ Recent tasks stored in `localStorage` under key `bde-spawn-history` (same key as
 
 ```ts
 interface RecentTask {
-  prompt: string        // the full assembled prompt text
-  templateId?: string   // which template was used (if any)
+  prompt: string // the full assembled prompt text
+  templateId?: string // which template was used (if any)
   repo: string
   model: string
-  timestamp: number     // Date.now()
+  timestamp: number // Date.now()
 }
 ```
 
@@ -263,6 +264,7 @@ Migrating from old format: old history is `string[]`. On first load, detect arra
 ## Styling
 
 All styles in `agent-launchpad-neon.css`. Uses:
+
 - `var(--neon-*)` CSS custom properties from `neon.css`
 - `tokens.*` from `design-system/tokens.ts` for inline styles in components
 - Glass morphism for panels and the spec block
@@ -294,6 +296,7 @@ interface PromptTemplatesState {
 - Single store, one domain concern (per convention)
 
 ### Existing stores used:
+
 - `localAgentsStore.spawnAgent()` — spawn call
 - `localAgentsStore.fetchProcesses()` — refresh after spawn
 - `uiStore` — view management
@@ -335,17 +338,17 @@ New section in Settings view: **"Prompt Templates"**
 
 ## File Map
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/renderer/src/components/agents/AgentLaunchpad.tsx` | Create | Phase orchestrator |
-| `src/renderer/src/components/agents/LaunchpadGrid.tsx` | Create | Tile grid + recents + prompt bar |
-| `src/renderer/src/components/agents/LaunchpadConfigure.tsx` | Create | Chat-style question flow |
-| `src/renderer/src/components/agents/LaunchpadReview.tsx` | Create | Review + edit + spawn |
-| `src/renderer/src/assets/agent-launchpad-neon.css` | Create | All launchpad styling |
-| `src/renderer/src/stores/promptTemplates.ts` | Create | Template CRUD store |
-| `src/renderer/src/lib/prompt-assembly.ts` | Create | Template interpolation + history migration |
-| `src/renderer/src/lib/default-templates.ts` | Create | Built-in template definitions |
-| `src/renderer/src/views/AgentsView.tsx` | Modify | Replace SpawnModal with AgentLaunchpad |
-| `src/renderer/src/components/agents/SpawnModal.tsx` | Delete | Replaced |
-| `src/renderer/src/components/agents/__tests__/SpawnModal.test.tsx` | Delete | Replaced |
-| `src/renderer/src/components/settings/PromptTemplatesSection.tsx` | Create | Prompt template management UI (separate from existing TaskTemplatesSection which handles sprint task prefixes) |
+| File                                                               | Action | Purpose                                                                                                        |
+| ------------------------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/components/agents/AgentLaunchpad.tsx`            | Create | Phase orchestrator                                                                                             |
+| `src/renderer/src/components/agents/LaunchpadGrid.tsx`             | Create | Tile grid + recents + prompt bar                                                                               |
+| `src/renderer/src/components/agents/LaunchpadConfigure.tsx`        | Create | Chat-style question flow                                                                                       |
+| `src/renderer/src/components/agents/LaunchpadReview.tsx`           | Create | Review + edit + spawn                                                                                          |
+| `src/renderer/src/assets/agent-launchpad-neon.css`                 | Create | All launchpad styling                                                                                          |
+| `src/renderer/src/stores/promptTemplates.ts`                       | Create | Template CRUD store                                                                                            |
+| `src/renderer/src/lib/prompt-assembly.ts`                          | Create | Template interpolation + history migration                                                                     |
+| `src/renderer/src/lib/default-templates.ts`                        | Create | Built-in template definitions                                                                                  |
+| `src/renderer/src/views/AgentsView.tsx`                            | Modify | Replace SpawnModal with AgentLaunchpad                                                                         |
+| `src/renderer/src/components/agents/SpawnModal.tsx`                | Delete | Replaced                                                                                                       |
+| `src/renderer/src/components/agents/__tests__/SpawnModal.test.tsx` | Delete | Replaced                                                                                                       |
+| `src/renderer/src/components/settings/PromptTemplatesSection.tsx`  | Create | Prompt template management UI (separate from existing TaskTemplatesSection which handles sprint task prefixes) |

@@ -19,12 +19,12 @@
 
 ### Terminal Handler API
 
-| Channel | Method | Args | Returns |
-|---------|--------|------|---------|
+| Channel           | Method       | Args                     | Returns                |
+| ----------------- | ------------ | ------------------------ | ---------------------- |
 | `terminal:create` | `safeHandle` | `{ cols, rows, shell? }` | `number` (terminal ID) |
-| `terminal:write` | `ipcMain.on` | `{ id, data }` | void (fire-and-forget) |
-| `terminal:resize` | `safeHandle` | `{ id, cols, rows }` | void |
-| `terminal:kill` | `safeHandle` | `id` | void |
+| `terminal:write`  | `ipcMain.on` | `{ id, data }`           | void (fire-and-forget) |
+| `terminal:resize` | `safeHandle` | `{ id, cols, rows }`     | void                   |
+| `terminal:kill`   | `safeHandle` | `id`                     | void                   |
 
 ### Data Flow
 
@@ -54,29 +54,29 @@ const mockPtyInstance = {
   write: vi.fn(),
   resize: vi.fn(),
   kill: vi.fn(),
-  pid: 12345,
+  pid: 12345
 }
 
 vi.mock('node-pty', () => ({
-  spawn: vi.fn(() => mockPtyInstance),
+  spawn: vi.fn(() => mockPtyInstance)
 }))
 
 // Mock Electron
 const mockSend = vi.fn()
 vi.mock('electron', () => ({
   BrowserWindow: {
-    getAllWindows: vi.fn(() => [{ webContents: { send: mockSend } }]),
+    getAllWindows: vi.fn(() => [{ webContents: { send: mockSend } }])
   },
   ipcMain: {
     handle: vi.fn(),
-    on: vi.fn(),
-  },
+    on: vi.fn()
+  }
 }))
 
 vi.mock('../ipc-utils', () => ({
   safeHandle: vi.fn((channel, handler) => {
     // Capture handler for direct invocation
-  }),
+  })
 }))
 ```
 
@@ -148,9 +148,9 @@ vi.mock('../ipc-utils', () => ({
 
 ## Files to Create
 
-| File | Purpose | Estimated LOC |
-|------|---------|---------------|
-| `src/main/__tests__/terminal-handlers.test.ts` | Terminal PTY lifecycle tests | ~180 |
+| File                                           | Purpose                      | Estimated LOC |
+| ---------------------------------------------- | ---------------------------- | ------------- |
+| `src/main/__tests__/terminal-handlers.test.ts` | Terminal PTY lifecycle tests | ~180          |
 
 ## Files to Modify
 
@@ -176,15 +176,21 @@ function createMockPty() {
   let exitCallback: (() => void) | null = null
 
   return {
-    onData: vi.fn((cb) => { dataCallback = cb }),
-    onExit: vi.fn((cb) => { exitCallback = cb }),
+    onData: vi.fn((cb) => {
+      dataCallback = cb
+    }),
+    onExit: vi.fn((cb) => {
+      exitCallback = cb
+    }),
     write: vi.fn(),
     resize: vi.fn(),
-    kill: vi.fn(() => { exitCallback?.() }),
+    kill: vi.fn(() => {
+      exitCallback?.()
+    }),
     pid: Math.floor(Math.random() * 99999),
     // Helpers for tests
     _simulateData: (data: string) => dataCallback?.(data),
-    _simulateExit: () => exitCallback?.(),
+    _simulateExit: () => exitCallback?.()
   }
 }
 ```

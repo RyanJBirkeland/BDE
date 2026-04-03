@@ -9,7 +9,13 @@ function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-function MessageBubble({ msg, onInsert }: { msg: CopilotMessage; onInsert?: () => void }): React.JSX.Element {
+function MessageBubble({
+  msg,
+  onInsert
+}: {
+  msg: CopilotMessage
+  onInsert?: () => void
+}): React.JSX.Element {
   const isUser = msg.role === 'user'
   const isSystem = msg.role === 'system'
 

@@ -37,7 +37,9 @@ describe('dashboardDataStore', () => {
       { id: 1, agent_id: 'a1', event_type: 'complete', payload: '{}', timestamp: 1000 },
       { id: 2, agent_id: 'a2', event_type: 'error', payload: '{}', timestamp: 2000 }
     ])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [{ number: 1 }, { number: 2 }, { number: 3 }] })
+    ;(window.api.getPrList as any).mockResolvedValue({
+      prs: [{ number: 1 }, { number: 2 }, { number: 3 }]
+    })
 
     await useDashboardDataStore.getState().fetchAll()
 

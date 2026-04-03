@@ -10,19 +10,19 @@
 
 ### Previously Reported -- Now Fixed
 
-| Synthesis ID | Issue | Status |
-|---|---|---|
-| SEC-3 | `github:fetch` IPC is an open proxy | **Fixed.** `git-handlers.ts:31-48` now has an endpoint/method allowlist with regex patterns. DELETE and admin endpoints are blocked. |
-| ARCH-3 | Hardcoded `REPO_OPTIONS` in PR Station | **Partially fixed.** `useRepoOptions()` hook created at `src/renderer/src/hooks/useRepoOptions.ts` loads repos dynamically from settings via IPC, falling back to `REPO_OPTIONS`. All 7 PR Station components now use this hook. However, the fallback still uses the hardcoded constant during the async load window (see PR-REL-01). |
+| Synthesis ID | Issue                                  | Status                                                                                                                                                                                                                                                                                                                                 |
+| ------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-3        | `github:fetch` IPC is an open proxy    | **Fixed.** `git-handlers.ts:31-48` now has an endpoint/method allowlist with regex patterns. DELETE and admin endpoints are blocked.                                                                                                                                                                                                   |
+| ARCH-3       | Hardcoded `REPO_OPTIONS` in PR Station | **Partially fixed.** `useRepoOptions()` hook created at `src/renderer/src/hooks/useRepoOptions.ts` loads repos dynamically from settings via IPC, falling back to `REPO_OPTIONS`. All 7 PR Station components now use this hook. However, the fallback still uses the hardcoded constant during the async load window (see PR-REL-01). |
 
 ### Previously Reported -- Still Open
 
-| Synthesis ID | Issue | Status |
-|---|---|---|
-| UX-2 | Virtualized diff silently disables all commenting | **Still open.** `DiffViewer.tsx:444`: `useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments`. When virtualized mode activates, `VirtualizedDiffContent` renders no comment widgets, no selection handlers, no pending comments. No user-facing indicator. See PR-REL-06 for expanded analysis. |
-| UX-4 | Duplicate merge controls with divergent behavior | **Still open per synthesis.** However, within the audited scope, only `MergeButton.tsx` and `CloseButton.tsx` exist as action components in `PRStationDetail`. The synthesis references `PRStationActions.tsx` which is not in the current file list -- it may have been removed or renamed. The remaining `MergeButton` has no confirmation dialog before merge (see PR-REL-05). |
-| code-review-ax 2.2 | `getPrMergeability` abort signal unused | **Still open.** `github-api.ts:65`: parameter `_signal?: AbortSignal` is accepted but never wired to the fetch call. See PR-REL-02. |
-| code-review-ax 3.4 / Quick Win 13 | Cache not invalidated after mutations | **Partially fixed.** `MergeButton`, `CloseButton`, and `ReviewSubmitDialog` all call `invalidatePRCache()` after their respective mutations. However, `PRStationDetail` still uses cached data and has no mechanism to detect that another component invalidated the cache and refetch. See PR-REL-03. |
+| Synthesis ID                      | Issue                                             | Status                                                                                                                                                                                                                                                                                                                                                                            |
+| --------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UX-2                              | Virtualized diff silently disables all commenting | **Still open.** `DiffViewer.tsx:444`: `useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments`. When virtualized mode activates, `VirtualizedDiffContent` renders no comment widgets, no selection handlers, no pending comments. No user-facing indicator. See PR-REL-06 for expanded analysis.                                                              |
+| UX-4                              | Duplicate merge controls with divergent behavior  | **Still open per synthesis.** However, within the audited scope, only `MergeButton.tsx` and `CloseButton.tsx` exist as action components in `PRStationDetail`. The synthesis references `PRStationActions.tsx` which is not in the current file list -- it may have been removed or renamed. The remaining `MergeButton` has no confirmation dialog before merge (see PR-REL-05). |
+| code-review-ax 2.2                | `getPrMergeability` abort signal unused           | **Still open.** `github-api.ts:65`: parameter `_signal?: AbortSignal` is accepted but never wired to the fetch call. See PR-REL-02.                                                                                                                                                                                                                                               |
+| code-review-ax 3.4 / Quick Win 13 | Cache not invalidated after mutations             | **Partially fixed.** `MergeButton`, `CloseButton`, and `ReviewSubmitDialog` all call `invalidatePRCache()` after their respective mutations. However, `PRStationDetail` still uses cached data and has no mechanism to detect that another component invalidated the cache and refetch. See PR-REL-03.                                                                            |
 
 ---
 
@@ -52,6 +52,7 @@ More critically, if a user's repo is not in the hardcoded fallback at all, the `
 **File:** `src/renderer/src/lib/github-api.ts:61-76`
 
 **Evidence:**
+
 ```typescript
 export async function getPrMergeability(
   owner: string,
@@ -91,6 +92,7 @@ The `onMerged` callback in `PRStationDetail` is only called by `MergeButton.tsx:
 **File:** `src/renderer/src/stores/pendingReview.ts:76-88`
 
 **Evidence:** The localStorage persistence is debounced by 500ms:
+
 ```typescript
 usePendingReviewStore.subscribe((state) => {
   if (persistTimer) clearTimeout(persistTimer)
@@ -119,6 +121,7 @@ Additionally, the `restoreFromStorage()` method is defined but there is no evide
 **File:** `src/renderer/src/components/pr-station/MergeButton.tsx:51-65`
 
 **Evidence:** Clicking the merge button immediately calls `mergePR()` with no confirmation step:
+
 ```typescript
 async function handleMerge() {
     const repo = repoOptions.find((r) => r.label === pr.repo)
@@ -141,6 +144,7 @@ This is a destructive, irreversible operation. A single accidental click merges 
 **File:** `src/renderer/src/components/diff/DiffViewer.tsx:444`
 
 **Evidence:**
+
 ```typescript
 const useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments
 ```
@@ -162,6 +166,7 @@ The threshold is 500 lines, which is not particularly large -- many real PRs exc
 **File:** `src/renderer/src/lib/github-api.ts:13-28`
 
 **Evidence:**
+
 ```typescript
 async function fetchAllPages<T>(path: string): Promise<T[]> {
   const items: T[] = []
@@ -193,9 +198,10 @@ The main-process `pr-poller.ts` has the same pattern via `fetchAllGitHubPages` b
 **File:** `src/main/pr-poller.ts:96-103`
 
 **Evidence:**
+
 ```typescript
 function safePoll(): void {
-  poll().catch(err => console.error('[pr-poller] poll error:', err))
+  poll().catch((err) => console.error('[pr-poller] poll error:', err))
 }
 
 export function startPrPoller(): void {
@@ -231,6 +237,7 @@ Specifically: mount -> effect runs with fallback REPO_OPTIONS -> settings load c
 **File:** `src/renderer/src/components/pr-station/PRStationDiff.tsx:78-85`
 
 **Evidence:**
+
 ```typescript
 getPRDiff(repoOption.owner, repoOption.label, pr.number)
   .then((raw) => {
@@ -261,6 +268,7 @@ Also, this uses `getReviewComments` (uncached) rather than `cachedGetReviewComme
 **File:** `src/renderer/src/components/diff/DiffViewer.tsx:607-653`
 
 **Evidence:**
+
 ```typescript
 useEffect(() => {
     if (activeView !== 'pr-station') return
@@ -289,6 +297,7 @@ The keyboard handler is added to `window` and only guards against `activeView !=
 **File:** `src/renderer/src/components/diff/DiffViewer.tsx:112-127`
 
 **Evidence:**
+
 ```typescript
 useEffect(() => {
     const el = containerRef.current
@@ -340,6 +349,7 @@ The effect runs once with empty deps. If `containerRef.current` changes (e.g., d
 **File:** `src/renderer/src/lib/github-cache.ts:40-56`
 
 **Evidence:**
+
 ```typescript
 function set(key: string, data: unknown, ttl: number): void {
   if (cache.size >= MAX_CACHE_ENTRIES) {
@@ -364,6 +374,7 @@ Only one entry is evicted per `set()`, which means the cache can only grow to `M
 **File:** `src/main/pr-poller.ts:19-28`
 
 **Evidence:**
+
 ```typescript
 async function fetchOpenPrs(owner: string, repo: string, token: string): Promise<OpenPr[]> {
   try {
@@ -387,6 +398,7 @@ If one repo's fetch fails (e.g., repo deleted, permissions changed), it silently
 **File:** `src/renderer/src/components/pr-station/PRStationConflictBanner.tsx:16-34`
 
 **Evidence:**
+
 ```typescript
 useEffect(() => {
     if (mergeableState !== 'dirty') {
@@ -431,41 +443,41 @@ No cancellation flag or AbortController. If the PR changes while the conflict ch
 
 ## Test Coverage Gaps
 
-| ID | Gap | Impact |
-|---|---|---|
-| PR-REL-13 | `CloseButton` has no test file | Destructive operation untested |
-| PR-REL-14 | `restoreFromStorage` has zero tests | Data recovery path untested |
-| TCG-01 | `github-cache.ts` has no test file | Cache TTL, LRU eviction, invalidation patterns untested |
-| TCG-02 | `pr-poller.ts` has no test file in scope | Polling lifecycle, error handling, broadcast untested |
-| TCG-03 | No test covers GitHub API rate limit (403 with Retry-After header) handling | Rate limit response path untested |
-| TCG-04 | No test covers `fetchAllPages` with > 2 pages | Deep pagination path untested |
-| TCG-05 | No test covers concurrent merge attempts (double-click) | Race condition path untested |
-| TCG-06 | `PRStationDiff` test mocks `parseDiffChunked` away entirely | Diff parsing integration untested |
+| ID        | Gap                                                                         | Impact                                                  |
+| --------- | --------------------------------------------------------------------------- | ------------------------------------------------------- |
+| PR-REL-13 | `CloseButton` has no test file                                              | Destructive operation untested                          |
+| PR-REL-14 | `restoreFromStorage` has zero tests                                         | Data recovery path untested                             |
+| TCG-01    | `github-cache.ts` has no test file                                          | Cache TTL, LRU eviction, invalidation patterns untested |
+| TCG-02    | `pr-poller.ts` has no test file in scope                                    | Polling lifecycle, error handling, broadcast untested   |
+| TCG-03    | No test covers GitHub API rate limit (403 with Retry-After header) handling | Rate limit response path untested                       |
+| TCG-04    | No test covers `fetchAllPages` with > 2 pages                               | Deep pagination path untested                           |
+| TCG-05    | No test covers concurrent merge attempts (double-click)                     | Race condition path untested                            |
+| TCG-06    | `PRStationDiff` test mocks `parseDiffChunked` away entirely                 | Diff parsing integration untested                       |
 
 ---
 
 ## Summary Table
 
-| ID | Severity | Component | Issue |
-|---|---|---|---|
-| PR-REL-01 | Significant | useRepoOptions / PRStationDetail | Race between settings load and API calls |
-| PR-REL-02 | Significant | github-api.ts | Abort signal accepted but never used |
-| PR-REL-03 | Significant | github-cache / PRStationDetail | Cache invalidation doesn't trigger refetch |
-| PR-REL-04 | Significant | pendingReview store | 500ms debounce window data loss on crash |
-| PR-REL-05 | Significant | MergeButton / CloseButton | No confirmation dialog for destructive operations |
-| PR-REL-06 | Significant | DiffViewer | Virtualized mode silently disables commenting |
-| PR-REL-07 | Moderate | github-api.ts | No pagination depth limit |
-| PR-REL-08 | Moderate | pr-poller.ts | No error backoff, console-only logging |
-| PR-REL-09 | Moderate | PRStationDetail | repoOptions ref instability causes double fetch |
-| PR-REL-10 | Moderate | PRStationDiff | Nested fire-and-forget comments fetch |
-| PR-REL-11 | Moderate | DiffViewer | Keyboard handler fires in contentEditable |
-| PR-REL-12 | Moderate | DiffViewer | ResizeObserver default viewport flash |
-| PR-REL-13 | Minor | CloseButton | No test coverage |
-| PR-REL-14 | Minor | pendingReview store | restoreFromStorage untested |
-| PR-REL-15 | Minor | github-cache.ts | O(n) LRU eviction scan |
-| PR-REL-16 | Minor | pr-poller.ts | Silent error swallowing per-repo |
-| PR-REL-17 | Minor | PRStationConflictBanner | Missing async cleanup |
-| PR-REL-18 | Minor | PRStationDiff | Uses uncached API while Detail uses cached |
+| ID        | Severity    | Component                        | Issue                                             |
+| --------- | ----------- | -------------------------------- | ------------------------------------------------- |
+| PR-REL-01 | Significant | useRepoOptions / PRStationDetail | Race between settings load and API calls          |
+| PR-REL-02 | Significant | github-api.ts                    | Abort signal accepted but never used              |
+| PR-REL-03 | Significant | github-cache / PRStationDetail   | Cache invalidation doesn't trigger refetch        |
+| PR-REL-04 | Significant | pendingReview store              | 500ms debounce window data loss on crash          |
+| PR-REL-05 | Significant | MergeButton / CloseButton        | No confirmation dialog for destructive operations |
+| PR-REL-06 | Significant | DiffViewer                       | Virtualized mode silently disables commenting     |
+| PR-REL-07 | Moderate    | github-api.ts                    | No pagination depth limit                         |
+| PR-REL-08 | Moderate    | pr-poller.ts                     | No error backoff, console-only logging            |
+| PR-REL-09 | Moderate    | PRStationDetail                  | repoOptions ref instability causes double fetch   |
+| PR-REL-10 | Moderate    | PRStationDiff                    | Nested fire-and-forget comments fetch             |
+| PR-REL-11 | Moderate    | DiffViewer                       | Keyboard handler fires in contentEditable         |
+| PR-REL-12 | Moderate    | DiffViewer                       | ResizeObserver default viewport flash             |
+| PR-REL-13 | Minor       | CloseButton                      | No test coverage                                  |
+| PR-REL-14 | Minor       | pendingReview store              | restoreFromStorage untested                       |
+| PR-REL-15 | Minor       | github-cache.ts                  | O(n) LRU eviction scan                            |
+| PR-REL-16 | Minor       | pr-poller.ts                     | Silent error swallowing per-repo                  |
+| PR-REL-17 | Minor       | PRStationConflictBanner          | Missing async cleanup                             |
+| PR-REL-18 | Minor       | PRStationDiff                    | Uses uncached API while Detail uses cached        |
 
 ---
 

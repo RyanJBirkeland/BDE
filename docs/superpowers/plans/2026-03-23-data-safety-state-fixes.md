@@ -12,24 +12,25 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Modify | `src/renderer/src/stores/sprintTasks.ts` | Convert `pendingUpdates: Map` → `Record`, `pendingCreates: Set` → `string[]` |
-| Modify | `src/renderer/src/stores/healthCheck.ts` | Convert `stuckTaskIds: Set` → `string[]`, `dismissedIds: Set` → `string[]` |
-| Modify | `src/renderer/src/stores/prConflicts.ts` | Convert `conflictingTaskIds: Set` → `string[]` |
-| Modify | `src/renderer/src/stores/sprintUI.ts` | Convert `generatingIds: Set` → `string[]` |
-| Modify | `src/renderer/src/stores/pendingReview.ts` | Add localStorage persistence + restore on init |
-| Modify | `src/renderer/src/views/MemoryView.tsx` | Add unsaved-changes guard before navigation |
-| Modify | `src/renderer/src/views/PRStationView.tsx` | Add unsaved-comments warning before navigation |
-| Create | `src/renderer/src/stores/__tests__/sprintTasks-map-removal.test.ts` | Tests for Map→Record conversion |
-| Create | `src/renderer/src/stores/__tests__/pendingReview-persistence.test.ts` | Tests for localStorage persistence |
-| Create | `src/renderer/src/views/__tests__/MemoryView-unsaved.test.ts` | Tests for unsaved-changes guard |
+| Action | File                                                                  | Responsibility                                                               |
+| ------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Modify | `src/renderer/src/stores/sprintTasks.ts`                              | Convert `pendingUpdates: Map` → `Record`, `pendingCreates: Set` → `string[]` |
+| Modify | `src/renderer/src/stores/healthCheck.ts`                              | Convert `stuckTaskIds: Set` → `string[]`, `dismissedIds: Set` → `string[]`   |
+| Modify | `src/renderer/src/stores/prConflicts.ts`                              | Convert `conflictingTaskIds: Set` → `string[]`                               |
+| Modify | `src/renderer/src/stores/sprintUI.ts`                                 | Convert `generatingIds: Set` → `string[]`                                    |
+| Modify | `src/renderer/src/stores/pendingReview.ts`                            | Add localStorage persistence + restore on init                               |
+| Modify | `src/renderer/src/views/MemoryView.tsx`                               | Add unsaved-changes guard before navigation                                  |
+| Modify | `src/renderer/src/views/PRStationView.tsx`                            | Add unsaved-comments warning before navigation                               |
+| Create | `src/renderer/src/stores/__tests__/sprintTasks-map-removal.test.ts`   | Tests for Map→Record conversion                                              |
+| Create | `src/renderer/src/stores/__tests__/pendingReview-persistence.test.ts` | Tests for localStorage persistence                                           |
+| Create | `src/renderer/src/views/__tests__/MemoryView-unsaved.test.ts`         | Tests for unsaved-changes guard                                              |
 
 ---
 
 ### Task 1: Convert sprintTasks Map/Set to Record/Array
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/sprintTasks.ts:29-30,48-49,61,67,70,171,190,241`
 - Create: `src/renderer/src/stores/__tests__/sprintTasks-map-removal.test.ts`
 
@@ -49,9 +50,9 @@ vi.stubGlobal('window', {
       list: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: 'new-1', title: 'Test' }),
       update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined),
-    },
-  },
+      delete: vi.fn().mockResolvedValue(undefined)
+    }
+  }
 })
 
 import { useSprintTasks } from '../sprintTasks'
@@ -64,7 +65,7 @@ describe('sprintTasks Map→Record migration', () => {
       loadError: null,
       pendingUpdates: {},
       pendingCreates: [],
-      prMergedMap: {},
+      prMergedMap: {}
     })
   })
 
@@ -82,7 +83,7 @@ describe('sprintTasks Map→Record migration', () => {
 
   it('updateTask records pending update timestamp as Record entry', async () => {
     useSprintTasks.setState({
-      tasks: [{ id: 'task-1', title: 'Test', status: 'backlog' } as any],
+      tasks: [{ id: 'task-1', title: 'Test', status: 'backlog' } as any]
     })
     await useSprintTasks.getState().updateTask('task-1', { title: 'Updated' })
     const { pendingUpdates } = useSprintTasks.getState()
@@ -101,6 +102,7 @@ Expected: FAIL — `pendingUpdates instanceof Map` is true, not a plain object
 In `src/renderer/src/stores/sprintTasks.ts`, make these changes:
 
 **Line 29:** Change type from `Map<string, number>` to `Record<string, number>`
+
 ```typescript
 // BEFORE
 pendingUpdates: Map<string, number>
@@ -112,6 +114,7 @@ pendingCreates: string[]
 ```
 
 **Lines 48-49:** Change initial values
+
 ```typescript
 // BEFORE
 pendingUpdates: new Map<string, number>(),
@@ -123,6 +126,7 @@ pendingCreates: [],
 ```
 
 **Line 61 (loadData — pending update expiry):**
+
 ```typescript
 // BEFORE
 const pending = new Map(s.pendingUpdates)
@@ -142,6 +146,7 @@ for (const id of Object.keys(pending)) {
 **Line 70 (loadData — incoming map):** Same — local variable for merge logic. Keep as Map.
 
 **Line ~105 (updateTask — record pending timestamp):**
+
 ```typescript
 // BEFORE
 s.pendingUpdates = new Map(s.pendingUpdates)
@@ -152,6 +157,7 @@ s.pendingUpdates = { ...s.pendingUpdates, [taskId]: Date.now() }
 ```
 
 **Line ~171 (createTask — add to pendingCreates):**
+
 ```typescript
 // BEFORE
 const next = new Set(s.pendingCreates)
@@ -163,6 +169,7 @@ return { pendingCreates: [...s.pendingCreates, tempId] }
 ```
 
 **Line ~190 (createTask success — remove from pendingCreates):**
+
 ```typescript
 // BEFORE
 const next = new Set(s.pendingCreates)
@@ -170,10 +177,11 @@ next.delete(tempId)
 return { pendingCreates: next }
 
 // AFTER
-return { pendingCreates: s.pendingCreates.filter(id => id !== tempId) }
+return { pendingCreates: s.pendingCreates.filter((id) => id !== tempId) }
 ```
 
 **Line ~241 (createTask error — remove from pendingCreates):**
+
 ```typescript
 // BEFORE
 const next = new Set(s.pendingCreates)
@@ -181,10 +189,11 @@ next.delete(tempId)
 return { pendingCreates: next }
 
 // AFTER
-return { pendingCreates: s.pendingCreates.filter(id => id !== tempId) }
+return { pendingCreates: s.pendingCreates.filter((id) => id !== tempId) }
 ```
 
 **Line ~62 (loadData — check if task is pending):**
+
 ```typescript
 // BEFORE
 if (s.pendingUpdates.has(t.id)) ...
@@ -217,6 +226,7 @@ git commit -m "fix: convert sprintTasks Map/Set to Record/Array (Zustand anti-pa
 ### Task 2: Convert healthCheck, prConflicts, sprintUI Sets to Arrays
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/healthCheck.ts:12-13,14-30`
 - Modify: `src/renderer/src/stores/prConflicts.ts:5,12-22`
 - Modify: `src/renderer/src/stores/sprintUI.ts:8,26-28`
@@ -334,6 +344,7 @@ setGeneratingIds: (updater) => set((s) => ({
 ```
 
 **Update all callers** of `setGeneratingIds` that use Set API:
+
 ```typescript
 // BEFORE: setGeneratingIds(prev => { const next = new Set(prev); next.add(id); return next })
 // AFTER:  setGeneratingIds(prev => prev.includes(id) ? prev : [...prev, id])
@@ -364,6 +375,7 @@ git commit -m "fix: convert remaining Set<string> to string[] in Zustand stores"
 ### Task 3: Persist Pending PR Review Comments to localStorage
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/pendingReview.ts:1-58`
 - Create: `src/renderer/src/stores/__tests__/pendingReview-persistence.test.ts`
 
@@ -380,9 +392,15 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {}
   return {
     getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => { store[key] = value }),
-    removeItem: vi.fn((key: string) => { delete store[key] }),
-    clear: vi.fn(() => { store = {} }),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key]
+    }),
+    clear: vi.fn(() => {
+      store = {}
+    })
   }
 })()
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
@@ -403,7 +421,7 @@ describe('pendingReview localStorage persistence', () => {
       path: 'src/index.ts',
       line: 10,
       body: 'Fix this',
-      side: 'RIGHT',
+      side: 'RIGHT'
     })
 
     expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -414,7 +432,9 @@ describe('pendingReview localStorage persistence', () => {
 
   it('restores comments from localStorage on init', () => {
     const saved = {
-      'owner/repo#1': [{ id: 'c1', path: 'src/index.ts', line: 10, body: 'Saved comment', side: 'RIGHT' }],
+      'owner/repo#1': [
+        { id: 'c1', path: 'src/index.ts', line: 10, body: 'Saved comment', side: 'RIGHT' }
+      ]
     }
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(saved))
 
@@ -426,7 +446,11 @@ describe('pendingReview localStorage persistence', () => {
 
   it('clears localStorage entry when pending comments are submitted', () => {
     usePendingReviewStore.getState().addComment('owner/repo#1', {
-      id: 'c1', path: 'src/index.ts', line: 10, body: 'Test', side: 'RIGHT',
+      id: 'c1',
+      path: 'src/index.ts',
+      line: 10,
+      body: 'Test',
+      side: 'RIGHT'
     })
     usePendingReviewStore.getState().clearPending('owner/repo#1')
 
@@ -451,9 +475,7 @@ const STORAGE_KEY = 'bde:pendingReviewComments'
 function persistToStorage(comments: Record<string, PendingComment[]>) {
   try {
     // Only persist entries that have comments
-    const filtered = Object.fromEntries(
-      Object.entries(comments).filter(([, v]) => v.length > 0)
-    )
+    const filtered = Object.fromEntries(Object.entries(comments).filter(([, v]) => v.length > 0))
     if (Object.keys(filtered).length === 0) {
       localStorage.removeItem(STORAGE_KEY)
     } else {
@@ -465,7 +487,7 @@ function persistToStorage(comments: Record<string, PendingComment[]>) {
 }
 
 // Add to store actions:
-restoreFromStorage: () => {
+restoreFromStorage: (() => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
@@ -477,11 +499,10 @@ restoreFromStorage: () => {
     localStorage.removeItem(STORAGE_KEY)
   }
 },
-
-// Add subscriber after store creation to auto-persist:
-usePendingReviewStore.subscribe((state) => {
-  persistToStorage(state.pendingComments)
-})
+  // Add subscriber after store creation to auto-persist:
+  usePendingReviewStore.subscribe((state) => {
+    persistToStorage(state.pendingComments)
+  }))
 ```
 
 - [ ] **Step 4: Call restoreFromStorage on app init**
@@ -516,6 +537,7 @@ git commit -m "fix: persist pending PR review comments to localStorage"
 ### Task 4: Add Unsaved-Changes Guard to Memory Editor
 
 **Files:**
+
 - Modify: `src/renderer/src/views/MemoryView.tsx:206,314`
 - Create: `src/renderer/src/views/__tests__/MemoryView-unsaved.test.ts`
 
@@ -560,7 +582,7 @@ const handleSelectFile = async (path: string) => {
       title: 'Unsaved Changes',
       message: 'You have unsaved changes. Discard them?',
       confirmLabel: 'Discard',
-      variant: 'danger',
+      variant: 'danger'
     })
     if (!ok) return
   }
@@ -605,6 +627,7 @@ git commit -m "fix: add unsaved-changes guard to Memory editor"
 ### Task 5: Add Unsaved-Comments Warning to PR Station
 
 **Files:**
+
 - Modify: `src/renderer/src/views/PRStationView.tsx`
 
 **Context:** When user selects a different PR while they have pending review comments on the current one, the comments stay in the store but the UI switches away. Add a warning.
@@ -625,7 +648,7 @@ const handleSelectPr = async (pr: PullRequest) => {
       title: 'Pending Review Comments',
       message: `You have ${pendingCount} unsent comment(s) on this PR. Switch anyway? Comments are saved and will be here when you return.`,
       confirmLabel: 'Switch PR',
-      variant: 'default',
+      variant: 'default'
     })
     if (!ok) return
   }

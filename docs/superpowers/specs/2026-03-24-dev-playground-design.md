@@ -14,14 +14,14 @@ When `playground_enabled` is set on a task, the agent's system prompt is augment
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Surface location | Inline card in agent chat → expand to modal | Stays in context, no view switching, familiar tool-call pattern |
+| Decision           | Choice                                               | Rationale                                                                                                                                        |
+| ------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Surface location   | Inline card in agent chat → expand to modal          | Stays in context, no view switching, familiar tool-call pattern                                                                                  |
 | Artifact detection | Event stream pattern matching on `.html` file writes | Agents can't call IPC directly (they're subprocesses via SDK). Detect Write tool results that target `.html` files in the message stream parser. |
-| Enablement | Per-task toggle | Frontend tasks get playground, backend tasks don't waste tokens |
-| Modal layout | Split: preview + source | Devs need to see what the agent built and how |
-| Sandboxing | `sandbox="allow-scripts"` iframe | Secure — no Node.js access, no filesystem, no navigation |
-| File lifecycle | Ephemeral (dies with worktree) | Playgrounds are previews, not artifacts. Good work lands in PRs |
+| Enablement         | Per-task toggle                                      | Frontend tasks get playground, backend tasks don't waste tokens                                                                                  |
+| Modal layout       | Split: preview + source                              | Devs need to see what the agent built and how                                                                                                    |
+| Sandboxing         | `sandbox="allow-scripts"` iframe                     | Secure — no Node.js access, no filesystem, no navigation                                                                                         |
+| File lifecycle     | Ephemeral (dies with worktree)                       | Playgrounds are previews, not artifacts. Good work lands in PRs                                                                                  |
 
 ## Architecture
 
@@ -54,6 +54,7 @@ Agents run as subprocesses via `@anthropic-ai/claude-agent-sdk` (see `sdk-adapte
 **Location:** `src/main/agent-manager/run-agent.ts` — in the existing message processing loop
 
 When `task.playground_enabled === true`:
+
 - Watch for tool results where tool name is `Write` (or equivalent file-write tools)
 - Check if the output file path ends in `.html`
 - Read the file content from disk (enforce 5MB size limit)
@@ -65,6 +66,7 @@ When `task.playground_enabled === true`:
 **Location:** `src/main/agent-manager/run-agent.ts` — prompt construction
 
 When `task.playground_enabled === true`, append to agent system prompt:
+
 ```
 ## Dev Playground
 
@@ -83,6 +85,7 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
 **Location:** `src/shared/types.ts`
 
 Add to `AgentEvent` discriminated union:
+
 ```typescript
 | { type: 'agent:playground'; filename: string; html: string; sizeBytes: number; timestamp: number }
 ```
@@ -92,12 +95,14 @@ Also add `'agent:playground'` to the `AgentEventType` string literal union (thes
 #### 4. Renderer Components
 
 **PlaygroundCard** (`src/renderer/src/components/agents/PlaygroundCard.tsx`):
+
 - Compact inline card rendered in ChatRenderer when a playground event is detected
 - Shows: file icon, filename, file size, "Click to preview" hint
 - Click handler opens PlaygroundModal
 - Styled consistently with existing ToolCallBlock
 
 **PlaygroundModal** (`src/renderer/src/components/agents/PlaygroundModal.tsx`):
+
 - Full-screen overlay (~90% viewport width/height)
 - Toolbar: filename, file size, Split/Preview/Source view toggle, "Open in Browser" button, close (✕)
 - Left pane: sandboxed iframe (`sandbox="allow-scripts"`) rendering the HTML via `srcdoc`
@@ -110,20 +115,24 @@ Also add `'agent:playground'` to the `AgentEventType` string literal union (thes
 #### 5. Data Model Changes
 
 **SprintTask extension** (`src/shared/types.ts`):
+
 - Add optional `playground_enabled?: boolean` field to `SprintTask` interface
 - Default: `false`
 - Stored in Supabase `sprint_tasks` table (new column, nullable boolean)
 
 **RunAgentTask extension** (`src/main/agent-manager/run-agent.ts`):
+
 - Add `playground_enabled?: boolean` to `RunAgentTask` interface (the subset of SprintTask passed to `runAgent()`)
 
 #### 6. Task Creation UI
 
 **Sprint Center** (`src/renderer/src/components/sprint/`):
+
 - Add "Dev Playground" checkbox to task creation form
 - Tooltip: "Enable native HTML preview rendering for frontend work"
 
 **Task Workbench** (`src/renderer/src/views/TaskWorkbenchView.tsx`):
+
 - Same checkbox in the task form
 
 ### Security
@@ -151,19 +160,25 @@ Also add `'agent:playground'` to the `AgentEventType` string literal union (thes
 ## Implementation Tasks
 
 ### Task 1: Event Type + Detection Foundation
+
 Add `agent:playground` to both the `AgentEvent` union and `AgentEventType` literal union in `src/shared/types.ts`. Extend `RunAgentTask` interface to include `playground_enabled`. In `run-agent.ts` message loop, add detection logic: when `playground_enabled` is true and a tool result indicates a `.html` file write, read the file (max 5MB), emit `agent:playground` event via existing `agent:event` IPC broadcast.
 
 ### Task 2: PlaygroundCard Component
+
 Create `PlaygroundCard.tsx` in `src/renderer/src/components/agents/`. Compact card with file icon, filename, size, click hint. Integrate into `ChatRenderer.tsx` to render when `agent:playground` events appear in the stream.
 
 ### Task 3: PlaygroundModal Component
+
 Create `PlaygroundModal.tsx` in `src/renderer/src/components/agents/`. Split modal with sandboxed iframe (left) and source display (right). Toolbar with view toggle (Split/Preview/Source), "Open in Browser" (writes temp file + opens), close button. Escape to close. Use design tokens. Source display uses `<pre><code>` with CSS-based highlighting (no new deps).
 
 ### Task 4: Per-Task Toggle + Prompt Injection
+
 Add `playground_enabled` field to `SprintTask` type. Add checkbox to Sprint Center and Task Workbench task creation forms. In `run-agent.ts`, conditionally augment agent system prompt with playground instructions when flag is set. Update `sprint-queries.ts` field mappings and `UPDATE_ALLOWLIST`.
 
 ### Task 5: Supabase Schema Change
+
 Add `playground_enabled` boolean column to `sprint_tasks` table via Supabase dashboard or CLI migration (NOT local `db.ts` — sprint_tasks lives in Supabase). Nullable, defaults to false.
 
 ### Task 6: Integration Testing
+
 Test the full flow: enable playground on task → agent writes HTML → detection triggers in run-agent → playground card appears in chat → modal renders correctly → iframe is sandboxed → escape closes modal. Add unit tests for PlaygroundCard, PlaygroundModal, and the detection logic in run-agent.

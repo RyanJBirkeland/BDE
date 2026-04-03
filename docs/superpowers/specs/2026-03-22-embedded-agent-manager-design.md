@@ -70,21 +70,22 @@ src/main/agent-manager/
 import { createAgent } from '@anthropic-ai/claude-agent-sdk'
 
 interface AgentHandle {
-  messages: AsyncIterable<SdkMessage>   // typed event stream
+  messages: AsyncIterable<SdkMessage> // typed event stream
   sessionId: string
-  abort(): void                          // SIGTERM the agent
-  steer(message: string): Promise<void>  // send follow-up message via stdin
+  abort(): void // SIGTERM the agent
+  steer(message: string): Promise<void> // send follow-up message via stdin
 }
 
 // Spawn an agent in a worktree directory
 async function spawnAgent(opts: {
   prompt: string
-  cwd: string          // worktree path
+  cwd: string // worktree path
   model: string
 }): Promise<AgentHandle>
 ```
 
 The `messages` async iterable emits typed events including:
+
 - `tool_use` / `tool_result` — tool calls and results
 - `rate_limited` — rate-limit events (drives backpressure)
 - `cost` — token usage and cost data (drives cost tracking)
@@ -109,18 +110,18 @@ export interface AgentManagerDeps {
 }
 
 export interface AgentManager {
-  start(): void                              // begin drain loop + orphan recovery
-  stop(timeoutMs?: number): Promise<void>    // graceful shutdown (default 10s), then force-kill remaining
-  getStatus(): AgentManagerStatus            // concurrency, active count, health
+  start(): void // begin drain loop + orphan recovery
+  stop(timeoutMs?: number): Promise<void> // graceful shutdown (default 10s), then force-kill remaining
+  getStatus(): AgentManagerStatus // concurrency, active count, health
 }
 
 export interface AgentManagerConfig {
-  maxConcurrent: number                      // default 2
-  worktreeBase: string                       // default /tmp/worktrees/bde
-  maxRuntimeMs: number                       // default 60 * 60 * 1000
-  idleTimeoutMs: number                      // default 15 * 60 * 1000
-  pollIntervalMs: number                     // default 30_000
-  defaultModel: string                       // default claude-sonnet-4-5
+  maxConcurrent: number // default 2
+  worktreeBase: string // default /tmp/worktrees/bde
+  maxRuntimeMs: number // default 60 * 60 * 1000
+  idleTimeoutMs: number // default 15 * 60 * 1000
+  pollIntervalMs: number // default 30_000
+  defaultModel: string // default claude-sonnet-4-5
 }
 
 export interface AgentManagerStatus {
@@ -210,7 +211,7 @@ for await (const msg of handle.messages) {
   mainWindow.webContents.send('agent-manager:agent-output', {
     taskId: agent.taskId,
     type: msg.type,
-    content: msg,
+    content: msg
   })
 
   // Persist to agent_events table (existing event bus)
@@ -238,11 +239,11 @@ safeHandle('agent:steer', async (_e, { taskId, message }) => {
 
 Three failure modes, checked every 10 seconds per active agent:
 
-| Mode | Threshold | Action |
-|------|-----------|--------|
-| **Idle** | 15 min no output | SIGTERM → 5s grace → SIGKILL. Re-queue task. |
-| **Max runtime** | 60 min wall clock | SIGTERM → 5s grace → SIGKILL. Mark task `error`. |
-| **Rate-limit loop** | 10 consecutive rate-limit events | SIGTERM. Apply backpressure. Re-queue task. |
+| Mode                | Threshold                        | Action                                           |
+| ------------------- | -------------------------------- | ------------------------------------------------ |
+| **Idle**            | 15 min no output                 | SIGTERM → 5s grace → SIGKILL. Re-queue task.     |
+| **Max runtime**     | 60 min wall clock                | SIGTERM → 5s grace → SIGKILL. Mark task `error`. |
+| **Rate-limit loop** | 10 consecutive rate-limit events | SIGTERM. Apply backpressure. Re-queue task.      |
 
 The watchdog tracks `lastOutputAt` (updated on every SDK message) and `rateLimitCount` (incremented on rate-limit events, reset on any non-rate-limit message).
 
@@ -266,12 +267,12 @@ Direct port of the HD-S8 pattern:
 
 ```typescript
 interface ConcurrencyState {
-  maxSlots: number          // from config (default 2)
-  effectiveSlots: number    // reduced by rate limits
+  maxSlots: number // from config (default 2)
+  effectiveSlots: number // reduced by rate limits
   activeCount: number
   recoveryDueAt: number | null
   consecutiveRateLimits: number
-  atFloor: boolean          // when true, further rate-limits don't reset recovery timer
+  atFloor: boolean // when true, further rate-limits don't reset recovery timer
 }
 ```
 
@@ -338,13 +339,13 @@ On startup and every 60 seconds:
 
 The agent manager emits events to the renderer via IPC:
 
-| IPC Event | When | Data |
-|-----------|------|------|
-| `agent-manager:status` | Every drain cycle | `AgentManagerStatus` |
-| `agent-manager:agent-started` | Agent spawned | `{ taskId, model, agentId }` |
-| `agent-manager:agent-output` | SDK message received | `{ taskId, type, content }` |
-| `agent-manager:agent-completed` | Agent exits | `{ taskId, exitCode, costUsd, durationMs }` |
-| `agent-manager:error` | Unrecoverable error | `{ taskId, message }` |
+| IPC Event                       | When                 | Data                                        |
+| ------------------------------- | -------------------- | ------------------------------------------- |
+| `agent-manager:status`          | Every drain cycle    | `AgentManagerStatus`                        |
+| `agent-manager:agent-started`   | Agent spawned        | `{ taskId, model, agentId }`                |
+| `agent-manager:agent-output`    | SDK message received | `{ taskId, type, content }`                 |
+| `agent-manager:agent-completed` | Agent exits          | `{ taskId, exitCode, costUsd, durationMs }` |
+| `agent-manager:error`           | Unrecoverable error  | `{ taskId, message }`                       |
 
 These feed into the existing Sprint LogDrawer and Agents view.
 
@@ -354,13 +355,13 @@ These feed into the existing Sprint LogDrawer and Agents view.
 
 New settings in BDE Settings view (persisted to SQLite `settings` table):
 
-| Setting | Key | Default | Description |
-|---------|-----|---------|-------------|
-| Max concurrent agents | `agentManager.maxConcurrent` | `2` | Concurrency slots |
-| Worktree base | `agentManager.worktreeBase` | `/tmp/worktrees/bde` | Where worktrees are created |
-| Max runtime | `agentManager.maxRuntimeMs` | `3600000` (60min) | Per-agent wall clock limit |
-| Default model | `agentManager.defaultModel` | `claude-sonnet-4-5` | Model for new agents |
-| Auto-start | `agentManager.autoStart` | `true` | Start drain loop on app launch |
+| Setting               | Key                          | Default              | Description                    |
+| --------------------- | ---------------------------- | -------------------- | ------------------------------ |
+| Max concurrent agents | `agentManager.maxConcurrent` | `2`                  | Concurrency slots              |
+| Worktree base         | `agentManager.worktreeBase`  | `/tmp/worktrees/bde` | Where worktrees are created    |
+| Max runtime           | `agentManager.maxRuntimeMs`  | `3600000` (60min)    | Per-agent wall clock limit     |
+| Default model         | `agentManager.defaultModel`  | `claude-sonnet-4-5`  | Model for new agents           |
+| Auto-start            | `agentManager.autoStart`     | `true`               | Start drain loop on app launch |
 
 Config changes require app restart (read once at startup, per existing BDE convention).
 
@@ -388,12 +389,12 @@ BDE main process starts
 
 ## What Changes in Existing Code
 
-| File | Change |
-|------|--------|
-| `src/main/index.ts` | Import and wire AgentManager. Start after auth check. |
-| `src/main/handlers/agent-handlers.ts` | Replace the "not supported" throw with delegation to AgentManager for `local:spawnClaudeAgent`. Add IPC handlers for status, steer, kill. |
-| `src/main/handlers/agent-manager-handlers.ts` | Replace runner-client proxy with direct AgentManager calls. |
-| `src/renderer/src/views/SettingsView.tsx` | Add AgentManager settings section. |
+| File                                          | Change                                                                                                                                    |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main/index.ts`                           | Import and wire AgentManager. Start after auth check.                                                                                     |
+| `src/main/handlers/agent-handlers.ts`         | Replace the "not supported" throw with delegation to AgentManager for `local:spawnClaudeAgent`. Add IPC handlers for status, steer, kill. |
+| `src/main/handlers/agent-manager-handlers.ts` | Replace runner-client proxy with direct AgentManager calls.                                                                               |
+| `src/renderer/src/views/SettingsView.tsx`     | Add AgentManager settings section.                                                                                                        |
 
 ---
 

@@ -9,9 +9,11 @@
 ## Problems
 
 ### 1. Toolbar icons overlapping content (top-right corner)
+
 `.sessions-split-toolbar` is `position: absolute; top: 8; right: 12` inside `.sessions-chat__main` which has no `position: relative`. In single mode the 3 icons float over the SessionHeader text. In split modes they overlap the pane headers.
 
 ### 2. Split views not working — panes start empty
+
 When switching from single → 2-pane or grid-4, `splitPanes[0..3]` are all `null`. The `setSplitMode` action in `splitLayout.ts` does NOT auto-populate pane 0 from the currently selected session. So both panes immediately show "Select a session or spawn an agent" empty state. The user has to manually re-select a session via the dropdown inside each pane.
 
 ---
@@ -19,9 +21,13 @@ When switching from single → 2-pane or grid-4, `splitPanes[0..3]` are all `nul
 ## Fix 1: Toolbar — move out of absolute positioning
 
 ### Current (SessionsView.tsx ~line 319)
+
 ```tsx
 <div className="sessions-chat__main">
-  <div className="sessions-split-toolbar" style={{ position: 'absolute', top: 8, right: 12, zIndex: 5 }}>
+  <div
+    className="sessions-split-toolbar"
+    style={{ position: 'absolute', top: 8, right: 12, zIndex: 5 }}
+  >
     ...buttons...
   </div>
   {renderMainContent()}
@@ -29,6 +35,7 @@ When switching from single → 2-pane or grid-4, `splitPanes[0..3]` are all `nul
 ```
 
 ### Fix
+
 Replace with a proper header bar. Remove the inline `style` entirely. Give the main area a flex column layout with a dedicated top bar:
 
 ```tsx
@@ -53,6 +60,7 @@ Replace with a proper header bar. Remove the inline `style` entirely. Give the m
 ```
 
 CSS for the topbar (add to sessions.css):
+
 ```css
 .sessions-main__topbar {
   height: 36px;
@@ -63,7 +71,7 @@ CSS for the topbar (add to sessions.css):
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   /* Glass treatment — double down */
-  background: rgba(10, 10, 15, 0.60);
+  background: rgba(10, 10, 15, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -77,6 +85,7 @@ CSS for the topbar (add to sessions.css):
 ```
 
 Upgrade the split mode buttons to glass style while we're here:
+
 ```css
 .sessions-split-btn {
   width: 28px;
@@ -100,7 +109,7 @@ Upgrade the split mode buttons to glass style while we're here:
 }
 
 .sessions-split-btn--active {
-  border-color: rgba(0, 211, 127, 0.40);
+  border-color: rgba(0, 211, 127, 0.4);
   color: var(--accent);
   background: rgba(0, 211, 127, 0.08);
   box-shadow: 0 0 8px rgba(0, 211, 127, 0.15);
@@ -112,7 +121,9 @@ Upgrade the split mode buttons to glass style while we're here:
 ## Fix 2: Auto-populate split panes on mode switch
 
 ### Current problem (splitLayout.ts)
+
 `setSplitMode` sets the mode but never seeds pane 0 with the current session:
+
 ```ts
 setSplitMode: (mode) => {
   set({ splitMode: mode }) // splitPanes stay [null, null, null, null]
@@ -125,17 +136,20 @@ Replace the direct `setSplitMode(mode)` calls with a handler that pre-populates 
 
 ```tsx
 // Add this handler in SessionsView (inside the component, near the other callbacks)
-const handleSplitModeChange = useCallback((mode: SplitMode): void => {
-  if (mode === 'single') {
-    setSplitMode('single')
-    return
-  }
-  // Pre-populate pane 0 with currently selected session
-  if (selectedKey && splitPanes[0] === null) {
-    setPaneSession(0, selectedKey)
-  }
-  setSplitMode(mode)
-}, [selectedKey, splitPanes, setSplitMode, setPaneSession])
+const handleSplitModeChange = useCallback(
+  (mode: SplitMode): void => {
+    if (mode === 'single') {
+      setSplitMode('single')
+      return
+    }
+    // Pre-populate pane 0 with currently selected session
+    if (selectedKey && splitPanes[0] === null) {
+      setPaneSession(0, selectedKey)
+    }
+    setSplitMode(mode)
+  },
+  [selectedKey, splitPanes, setSplitMode, setPaneSession]
+)
 ```
 
 Replace the 3 keyboard shortcut `setSplitMode(...)` calls AND the toolbar button `onClick={() => setSplitMode(mode)}` with `handleSplitModeChange(mode)`.
@@ -181,14 +195,15 @@ In single mode, the topbar has empty space on the left. Fill it with the current
 
 ## Files to Change
 
-| File | Changes |
-|------|---------|
-| `src/renderer/src/views/SessionsView.tsx` | Add `handleSplitModeChange` callback; replace all `setSplitMode(mode)` in toolbar + keyboard shortcuts with it; restructure main area JSX to use `.sessions-main__topbar` instead of `position:absolute` toolbar |
-| `src/renderer/src/assets/sessions.css` | Add `.sessions-main__topbar`, `.sessions-main__session-label`, `.sessions-main__topbar-spacer`; upgrade `.sessions-split-btn` to glass style; remove any lingering absolute-position rules on `.sessions-split-toolbar` |
+| File                                      | Changes                                                                                                                                                                                                                 |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/views/SessionsView.tsx` | Add `handleSplitModeChange` callback; replace all `setSplitMode(mode)` in toolbar + keyboard shortcuts with it; restructure main area JSX to use `.sessions-main__topbar` instead of `position:absolute` toolbar        |
+| `src/renderer/src/assets/sessions.css`    | Add `.sessions-main__topbar`, `.sessions-main__session-label`, `.sessions-main__topbar-spacer`; upgrade `.sessions-split-btn` to glass style; remove any lingering absolute-position rules on `.sessions-split-toolbar` |
 
 ---
 
 ## Out of Scope
+
 - Redesigning ChatPane or MiniChatPane internals
 - Persisting splitPanes to localStorage
 - Adding session-picker UX inside panes (already exists via select dropdown)
@@ -196,6 +211,7 @@ In single mode, the topbar has empty space on the left. Fill it with the current
 ---
 
 ## Success Criteria
+
 - [ ] Split mode buttons sit in a proper 36px header bar — no overlap with content
 - [ ] Switching to 2-pane auto-populates pane 0 with the active session
 - [ ] Switching to grid-4 auto-populates pane 0 with the active session

@@ -14,29 +14,30 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Create | `src/renderer/src/views/DashboardView.tsx` | Card-based home screen with aggregated metrics |
-| Create | `src/renderer/src/views/__tests__/DashboardView.test.tsx` | Tests for Dashboard |
-| Modify | `src/renderer/src/components/sprint/SprintCenter.tsx` | Replace LogDrawer overlay with inline panel option |
-| Create | `src/renderer/src/components/sprint/TaskMonitorPanel.tsx` | Inline task output panel (promoted LogDrawer) |
-| Create | `src/renderer/src/components/sprint/__tests__/TaskMonitorPanel.test.tsx` | Tests for monitor panel |
-| Create | `src/renderer/src/components/dashboard/DashboardCard.tsx` | Reusable summary card |
-| Create | `src/renderer/src/components/dashboard/ActiveTasksCard.tsx` | Active/queued tasks list |
-| Create | `src/renderer/src/components/dashboard/RecentCompletionsCard.tsx` | Recently completed tasks |
-| Create | `src/renderer/src/components/dashboard/CostSummaryCard.tsx` | Weekly cost snapshot |
-| Create | `src/renderer/src/components/dashboard/OpenPRsCard.tsx` | Open PRs needing attention |
-| Modify | `src/renderer/src/components/layout/ActivityBar.tsx` | Add Dashboard as first nav item |
-| Modify | `src/renderer/src/components/panels/PanelLeaf.tsx` | Register Dashboard view in lazy switch |
-| Modify | `src/renderer/src/stores/panelLayout.ts` | Add 'dashboard' to View type |
-| Modify | `src/renderer/src/lib/constants.ts` | Add dashboard polling interval |
-| Modify | `src/shared/ipc-channels.ts` | No changes needed — all data from existing channels |
+| Action | File                                                                     | Responsibility                                      |
+| ------ | ------------------------------------------------------------------------ | --------------------------------------------------- |
+| Create | `src/renderer/src/views/DashboardView.tsx`                               | Card-based home screen with aggregated metrics      |
+| Create | `src/renderer/src/views/__tests__/DashboardView.test.tsx`                | Tests for Dashboard                                 |
+| Modify | `src/renderer/src/components/sprint/SprintCenter.tsx`                    | Replace LogDrawer overlay with inline panel option  |
+| Create | `src/renderer/src/components/sprint/TaskMonitorPanel.tsx`                | Inline task output panel (promoted LogDrawer)       |
+| Create | `src/renderer/src/components/sprint/__tests__/TaskMonitorPanel.test.tsx` | Tests for monitor panel                             |
+| Create | `src/renderer/src/components/dashboard/DashboardCard.tsx`                | Reusable summary card                               |
+| Create | `src/renderer/src/components/dashboard/ActiveTasksCard.tsx`              | Active/queued tasks list                            |
+| Create | `src/renderer/src/components/dashboard/RecentCompletionsCard.tsx`        | Recently completed tasks                            |
+| Create | `src/renderer/src/components/dashboard/CostSummaryCard.tsx`              | Weekly cost snapshot                                |
+| Create | `src/renderer/src/components/dashboard/OpenPRsCard.tsx`                  | Open PRs needing attention                          |
+| Modify | `src/renderer/src/components/layout/ActivityBar.tsx`                     | Add Dashboard as first nav item                     |
+| Modify | `src/renderer/src/components/panels/PanelLeaf.tsx`                       | Register Dashboard view in lazy switch              |
+| Modify | `src/renderer/src/stores/panelLayout.ts`                                 | Add 'dashboard' to View type                        |
+| Modify | `src/renderer/src/lib/constants.ts`                                      | Add dashboard polling interval                      |
+| Modify | `src/shared/ipc-channels.ts`                                             | No changes needed — all data from existing channels |
 
 ---
 
 ### Task 1: Add Dashboard View Type and Navigation
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/panelLayout.ts`
 - Modify: `src/renderer/src/components/layout/ActivityBar.tsx`
 - Modify: `src/renderer/src/components/panels/PanelLeaf.tsx`
@@ -48,10 +49,19 @@
 In `src/renderer/src/stores/panelLayout.ts`, find the `View` type union and add `'dashboard'`. Also add `'dashboard'` to the `VIEW_LABELS` map:
 
 ```typescript
-export type View = 'dashboard' | 'agents' | 'terminal' | 'sprint' | 'pr-station' | 'memory' | 'cost' | 'settings' | 'task-workbench'
+export type View =
+  | 'dashboard'
+  | 'agents'
+  | 'terminal'
+  | 'sprint'
+  | 'pr-station'
+  | 'memory'
+  | 'cost'
+  | 'settings'
+  | 'task-workbench'
 
 export const VIEW_LABELS: Record<View, string> = {
-  dashboard: 'Dashboard',
+  dashboard: 'Dashboard'
   // ... existing entries
 }
 ```
@@ -69,17 +79,17 @@ import { LayoutDashboard } from 'lucide-react'
 
 **New coordinated shortcut assignments** (shifts all existing shortcuts down by 1):
 
-| Shortcut | View |
-|----------|------|
-| ⌘1 | Dashboard |
-| ⌘2 | Agents |
-| ⌘3 | Terminal |
-| ⌘4 | Sprint |
-| ⌘5 | PR Station |
-| ⌘6 | Git (from Phase 6 plan) |
-| ⌘7 | Memory |
-| ⌘8 | Cost |
-| ⌘9 | Settings |
+| Shortcut | View                    |
+| -------- | ----------------------- |
+| ⌘1       | Dashboard               |
+| ⌘2       | Agents                  |
+| ⌘3       | Terminal                |
+| ⌘4       | Sprint                  |
+| ⌘5       | PR Station              |
+| ⌘6       | Git (from Phase 6 plan) |
+| ⌘7       | Memory                  |
+| ⌘8       | Cost                    |
+| ⌘9       | Settings                |
 
 **Important:** The keyboard handlers in `App.tsx` must also be updated to match these new assignments. Search for the `⌘+digit` / `Cmd+digit` key event handler block and remap each digit to the corresponding view above.
 
@@ -100,7 +110,7 @@ case 'dashboard':
 In `src/renderer/src/stores/panelLayout.ts`, update the default root layout to use 'dashboard':
 
 ```typescript
-export const DEFAULT_LAYOUT: PanelNode = createLeaf('dashboard')  // was 'agents'
+export const DEFAULT_LAYOUT: PanelNode = createLeaf('dashboard') // was 'agents'
 ```
 
 - [ ] **Step 5: Commit**
@@ -115,6 +125,7 @@ git commit -m "feat: register Dashboard view type and navigation"
 ### Task 2: Build DashboardCard Base Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/DashboardCard.tsx`
 
 **Context:** Each dashboard section is a card with a title, optional icon, and content area. Uses existing `Card` component with consistent styling.
@@ -182,6 +193,7 @@ git commit -m "feat: add DashboardCard base component"
 ### Task 3: Build Dashboard Section Cards
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/ActiveTasksCard.tsx`
 - Create: `src/renderer/src/components/dashboard/RecentCompletionsCard.tsx`
 - Create: `src/renderer/src/components/dashboard/CostSummaryCard.tsx`
@@ -433,6 +445,7 @@ git commit -m "feat: add Dashboard section cards (active tasks, completions, cos
 ### Task 4: Build DashboardView
 
 **Files:**
+
 - Create: `src/renderer/src/views/DashboardView.tsx`
 - Create: `src/renderer/src/views/__tests__/DashboardView.test.tsx`
 
@@ -548,6 +561,7 @@ git commit -m "feat: add Dashboard home view with aggregated metrics"
 ### Task 5: Build TaskMonitorPanel (Promoted LogDrawer)
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/TaskMonitorPanel.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/TaskMonitorPanel.test.tsx`
 - Modify: `src/renderer/src/components/sprint/SprintCenter.tsx`
@@ -769,6 +783,7 @@ git commit -m "feat: add inline TaskMonitorPanel to Sprint Center (promoted LogD
 ### Task 6: Extend Onboarding to Check Git, Repos, and Supabase
 
 **Files:**
+
 - Modify: `src/renderer/src/components/Onboarding.tsx`
 
 **Context:** Onboarding currently only checks Claude Code CLI and OAuth token. Users pass onboarding and then hit errors because git isn't installed, repos aren't configured, or Supabase isn't reachable.
@@ -779,19 +794,36 @@ Extend the checks array in Onboarding.tsx:
 
 ```typescript
 const checks = [
-  { label: 'Claude Code CLI', check: () => window.api.authStatus().then(r => r.cliFound) },
-  { label: 'Authentication token', check: () => window.api.authStatus().then(r => r.tokenFound && !r.tokenExpired) },
-  { label: 'Git available', check: () => window.api.gitStatus('.').then(() => true).catch(() => false) },
+  { label: 'Claude Code CLI', check: () => window.api.authStatus().then((r) => r.cliFound) },
+  {
+    label: 'Authentication token',
+    check: () => window.api.authStatus().then((r) => r.tokenFound && !r.tokenExpired)
+  },
+  {
+    label: 'Git available',
+    check: () =>
+      window.api
+        .gitStatus('.')
+        .then(() => true)
+        .catch(() => false)
+  },
   {
     label: 'Repositories configured',
-    check: () => window.api.settings.getJson('repos').then((repos: any[]) => Array.isArray(repos) && repos.length > 0),
-    optional: true,  // user can configure later
+    check: () =>
+      window.api.settings
+        .getJson('repos')
+        .then((repos: any[]) => Array.isArray(repos) && repos.length > 0),
+    optional: true // user can configure later
   },
   {
     label: 'Supabase connected',
-    check: () => window.api.sprint.list().then(() => true).catch(() => false),
-    optional: true,
-  },
+    check: () =>
+      window.api.sprint
+        .list()
+        .then(() => true)
+        .catch(() => false),
+    optional: true
+  }
 ]
 ```
 
@@ -805,7 +837,7 @@ const helpText: Record<string, string> = {
   'Authentication token': 'Run: claude login',
   'Git available': 'Install git: brew install git (macOS) or apt install git (Linux)',
   'Repositories configured': 'Go to Settings → Repositories to add your repos',
-  'Supabase connected': 'Go to Settings → Connections to configure Supabase URL and key',
+  'Supabase connected': 'Go to Settings → Connections to configure Supabase URL and key'
 }
 ```
 

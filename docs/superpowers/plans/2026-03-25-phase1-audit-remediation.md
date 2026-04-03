@@ -14,24 +14,25 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/renderer/src/views/DashboardView.tsx` | Modify | Add polling interval + error handling |
-| `src/renderer/src/lib/constants.ts` | Modify | Add `POLL_DASHBOARD_INTERVAL` constant |
-| `src/renderer/src/views/__tests__/DashboardView.test.tsx` | Modify | Test polling + error handling |
-| `src/main/agent-manager/index.ts` | Modify | Atomic slot reservation in drain loop |
-| `src/main/agent-manager/__tests__/index.test.ts` | Modify | Test over-spawn prevention |
-| `src/main/queue-api/task-handlers.ts` | Modify | Pre-creation dep validation + WIP limit on claim |
-| `src/main/queue-api/__tests__/queue-api.test.ts` | Modify | Test dep validation order + WIP enforcement |
-| `src/main/data/sprint-queries.ts` | Modify | Add `getActiveTaskCount()` helper |
-| `src/main/data/__tests__/sprint-queries.test.ts` | Modify | Test `getActiveTaskCount()` |
-| `src/shared/queue-api-contract.ts` | Modify | Add `MAX_ACTIVE_TASKS` constant |
+| File                                                      | Action | Responsibility                                   |
+| --------------------------------------------------------- | ------ | ------------------------------------------------ |
+| `src/renderer/src/views/DashboardView.tsx`                | Modify | Add polling interval + error handling            |
+| `src/renderer/src/lib/constants.ts`                       | Modify | Add `POLL_DASHBOARD_INTERVAL` constant           |
+| `src/renderer/src/views/__tests__/DashboardView.test.tsx` | Modify | Test polling + error handling                    |
+| `src/main/agent-manager/index.ts`                         | Modify | Atomic slot reservation in drain loop            |
+| `src/main/agent-manager/__tests__/index.test.ts`          | Modify | Test over-spawn prevention                       |
+| `src/main/queue-api/task-handlers.ts`                     | Modify | Pre-creation dep validation + WIP limit on claim |
+| `src/main/queue-api/__tests__/queue-api.test.ts`          | Modify | Test dep validation order + WIP enforcement      |
+| `src/main/data/sprint-queries.ts`                         | Modify | Add `getActiveTaskCount()` helper                |
+| `src/main/data/__tests__/sprint-queries.test.ts`          | Modify | Test `getActiveTaskCount()`                      |
+| `src/shared/queue-api-contract.ts`                        | Modify | Add `MAX_ACTIVE_TASKS` constant                  |
 
 ---
 
 ### Task 1: Dashboard Polling & Error Handling
 
 **Files:**
+
 - Modify: `src/renderer/src/lib/constants.ts:57`
 - Modify: `src/renderer/src/views/DashboardView.tsx:51-118`
 - Modify: `src/renderer/src/views/__tests__/DashboardView.test.tsx`
@@ -43,7 +44,7 @@
 In `src/renderer/src/lib/constants.ts`, add after line 12 (`POLL_HEALTH_CHECK_MS`):
 
 ```typescript
-export const POLL_DASHBOARD_INTERVAL = 60_000   // 60s
+export const POLL_DASHBOARD_INTERVAL = 60_000 // 60s
 ```
 
 - [ ] **Step 2: Write failing test for polling behavior**
@@ -98,14 +99,18 @@ useEffect(() => {
       const data = await window.api.dashboard?.completionsPerHour()
       if (cancelled || !data) return
       const accents: Array<'cyan' | 'pink' | 'blue' | 'orange' | 'purple'> = [
-        'cyan', 'pink', 'blue', 'orange', 'purple',
+        'cyan',
+        'pink',
+        'blue',
+        'orange',
+        'purple'
       ]
       setChartData(
         data.map((d, i) => ({
           value: d.count,
           accent: accents[i % accents.length],
-          label: d.hour,
-        })),
+          label: d.hour
+        }))
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch completions:', err)
@@ -125,8 +130,8 @@ useEffect(() => {
               : e.event_type === 'complete'
                 ? ('cyan' as const)
                 : ('purple' as const),
-          timestamp: e.timestamp,
-        })),
+          timestamp: e.timestamp
+        }))
       )
     } catch (err) {
       console.error('[Dashboard] Failed to fetch events:', err)
@@ -198,6 +203,7 @@ every 60s and logs errors to console."
 ### Task 2: AgentManager Concurrency Slot Reservation
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:200-290` (processQueuedTask + drainLoop)
 - Modify: `src/main/agent-manager/__tests__/index.test.ts`
 
@@ -239,7 +245,9 @@ for (const raw of queued) {
   try {
     await processQueuedTask(raw, taskStatusMap)
   } catch (err) {
-    logger.error(`[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`)
+    logger.error(
+      `[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`
+    )
   }
 }
 ```
@@ -271,6 +279,7 @@ re-checks activeAgents.size before each processQueuedTask call."
 ### Task 3: Validate Dependencies Before Task Creation
 
 **Files:**
+
 - Modify: `src/main/queue-api/task-handlers.ts:118-242` (handleCreateTask)
 - Modify: `src/main/queue-api/__tests__/queue-api.test.ts`
 
@@ -345,6 +354,7 @@ also failed."
 ### Task 4: Enforce WIP Limit at API Layer
 
 **Files:**
+
 - Modify: `src/shared/queue-api-contract.ts`
 - Modify: `src/main/data/sprint-queries.ts`
 - Modify: `src/main/data/__tests__/sprint-queries.test.ts`
@@ -463,10 +473,13 @@ Expected: PASS
 - [ ] **Step 10: Update renderer to use shared constant**
 
 In `src/renderer/src/lib/constants.ts`, replace:
+
 ```typescript
 export const WIP_LIMIT_IN_PROGRESS = 5
 ```
+
 with:
+
 ```typescript
 // WIP limit is also enforced server-side via MAX_ACTIVE_TASKS in queue-api-contract
 export const WIP_LIMIT_IN_PROGRESS = 5

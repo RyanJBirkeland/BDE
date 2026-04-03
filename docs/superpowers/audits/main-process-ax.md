@@ -17,6 +17,7 @@ The BDE main process is well-structured for its complexity. The repository patte
 ### 2.1 Duplicate `runSdkStreaming` implementations
 
 **Files:**
+
 - `src/main/handlers/workbench.ts` lines 24-78
 - `src/main/services/spec-synthesizer.ts` lines 243-297
 
@@ -29,12 +30,14 @@ These are identical 55-line functions with the same SDK query setup, timeout han
 **The contract says:** Agent manager data access goes through `ISprintTaskRepository` (injected).
 
 **What actually happens:**
+
 - Agent manager (`src/main/agent-manager/`) -- uses `ISprintTaskRepository` (correct)
 - IPC handlers (`src/main/handlers/sprint-local.ts`) -- imports from `sprint-queries` directly at lines 22-26 and from `sprint-service` at lines 28-41
 - Queue API task handlers (`src/main/queue-api/task-handlers.ts`) -- imports from `sprint-queries` directly at lines 6-17
 - Sprint service (`src/main/services/sprint-service.ts`) -- wraps `sprint-queries` but does not implement `ISprintTaskRepository`
 
 This means:
+
 1. Queue API writes bypass the notification layer (`notifySprintMutation`) for some operations
 2. There are three different codepaths for updating tasks, each with slightly different side effects
 3. Unit testing the Queue API requires mocking module-level imports rather than injecting a repository
@@ -46,6 +49,7 @@ This means:
 **File:** `src/main/index.ts` lines 115-124
 
 Four separate setter functions must be called in the correct order at startup:
+
 ```
 setOnStatusTerminal(terminalService.onStatusTerminal)
 setQueueApiOnStatusTerminal(terminalService.onStatusTerminal)
@@ -66,6 +70,7 @@ Meanwhile, the agent manager has its OWN `onTaskTerminal` method (line 278 of `s
 ### 3.1 Agent manager has its own logging system parallel to `createLogger`
 
 **Files:**
+
 - `src/main/logger.ts` -- the shared logger used by all other modules
 - `src/main/agent-manager/index.ts` lines 33-75 -- a separate file logger writing to `~/.bde/agent-manager.log`
 
@@ -78,6 +83,7 @@ The agent manager reimplements rotation logic (10MB, `.old` suffix), write count
 **File:** `src/main/queue-api/task-handlers.ts`
 
 When the Queue API updates a task (lines 276, 374, 524), it calls `sprint-queries.updateTask()` directly. This records the audit trail (via `recordTaskChanges` inside `updateTask`), but does NOT call `notifySprintMutation`, so:
+
 - SSE `task:updated` events are not broadcast for Queue API writes
 - Renderer windows don't get `sprint:externalChange` pushes
 - The only notification comes from the DB file watcher (500ms debounce), which is an unreliable heuristic
@@ -91,6 +97,7 @@ The `handleCreateTask` function (line 232) also calls `sprint-queries.createTask
 **File:** `src/main/handlers/sprint-local.ts` lines 47-67
 
 This handler file re-exports service functions, listener APIs, and spec helpers so that "existing deep imports keep working." This creates a 3-layer re-export chain:
+
 ```
 sprint-queries.ts -> sprint-service.ts -> sprint-local.ts (handler)
 ```
@@ -104,6 +111,7 @@ Other modules import from `sprint-local.ts` (a handler) to get data access funct
 **File:** `src/main/handlers/window-handlers.ts` lines 18-24
 
 The `agent:killLocal` handler is registered in `window-handlers.ts` but returns a hardcoded error:
+
 ```typescript
 return { ok: false, error: 'Local PID-based agent kill removed...' }
 ```
@@ -113,6 +121,7 @@ This handler belongs in `agent-handlers.ts` (or should be removed entirely since
 ### 3.5 Batch update logic duplicated between IPC and Queue API
 
 **Files:**
+
 - `src/main/handlers/sprint-local.ts` lines 252-315 (`sprint:batchUpdate` handler)
 - `src/main/queue-api/task-handlers.ts` lines 538-624 (`handleBatchTasks`)
 
@@ -148,6 +157,7 @@ Both return null / no-op. They still consume IPC channel slots and appear in the
 ### 4.2 `console.log`/`console.warn` leaks
 
 Several modules use `console.*` directly instead of the structured logger:
+
 - `src/main/db.ts` line 33: `console.error('[db] Backup failed:', err)`
 - `src/main/agent-manager/worktree.ts` line 91, 252: `console.warn`
 - `src/main/handlers/sprint-local.ts` line 204: `console.warn('[sprint:healthCheck]...')`
@@ -196,242 +206,263 @@ The comment says "lightweight Supabase proxy on port 18790" but the Queue API no
 86 typed channels across 18 domain interfaces, plus ~10 untyped push channels.
 
 ### Settings (5 channels) -- `SettingsChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `settings:get` | config-handlers.ts | |
-| `settings:set` | config-handlers.ts | |
-| `settings:getJson` | config-handlers.ts | |
-| `settings:setJson` | config-handlers.ts | |
-| `settings:delete` | config-handlers.ts | |
+
+| Channel            | Handler Module     | Notes |
+| ------------------ | ------------------ | ----- |
+| `settings:get`     | config-handlers.ts |       |
+| `settings:set`     | config-handlers.ts |       |
+| `settings:getJson` | config-handlers.ts |       |
+| `settings:setJson` | config-handlers.ts |       |
+| `settings:delete`  | config-handlers.ts |       |
 
 **Assessment:** Clean, minimal. No merge candidates.
 
 ### Git (9 channels) -- `GitChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `git:status` | git-handlers.ts | |
-| `git:diff` | git-handlers.ts | |
-| `git:getRepoPaths` | git-handlers.ts | |
-| `git:stage` | git-handlers.ts | |
-| `git:unstage` | git-handlers.ts | |
-| `git:commit` | git-handlers.ts | |
-| `git:push` | git-handlers.ts | |
-| `git:branches` | git-handlers.ts | |
-| `git:checkout` | git-handlers.ts | |
+
+| Channel            | Handler Module  | Notes |
+| ------------------ | --------------- | ----- |
+| `git:status`       | git-handlers.ts |       |
+| `git:diff`         | git-handlers.ts |       |
+| `git:getRepoPaths` | git-handlers.ts |       |
+| `git:stage`        | git-handlers.ts |       |
+| `git:unstage`      | git-handlers.ts |       |
+| `git:commit`       | git-handlers.ts |       |
+| `git:push`         | git-handlers.ts |       |
+| `git:branches`     | git-handlers.ts |       |
+| `git:checkout`     | git-handlers.ts |       |
 
 **Assessment:** One-to-one with git operations. Minimal.
 
 ### PR (4 channels) -- `PrChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `pr:pollStatuses` | git-handlers.ts | Side-effects: marks tasks done/cancelled |
-| `pr:checkConflictFiles` | git-handlers.ts | |
-| `pr:getList` | git-handlers.ts | |
-| `pr:refreshList` | git-handlers.ts | |
+
+| Channel                 | Handler Module  | Notes                                    |
+| ----------------------- | --------------- | ---------------------------------------- |
+| `pr:pollStatuses`       | git-handlers.ts | Side-effects: marks tasks done/cancelled |
+| `pr:checkConflictFiles` | git-handlers.ts |                                          |
+| `pr:getList`            | git-handlers.ts |                                          |
+| `pr:refreshList`        | git-handlers.ts |                                          |
 
 **Assessment:** `pr:pollStatuses` does too much -- it polls AND updates task state AND triggers terminal resolution. Consider splitting the side effects.
 
 ### Agent Config (2 channels) -- `AgentConfigChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `config:getAgentConfig` | agent-handlers.ts | **DEAD** -- returns null |
-| `config:saveAgentConfig` | agent-handlers.ts | **DEAD** -- no-op |
+
+| Channel                  | Handler Module    | Notes                    |
+| ------------------------ | ----------------- | ------------------------ |
+| `config:getAgentConfig`  | agent-handlers.ts | **DEAD** -- returns null |
+| `config:saveAgentConfig` | agent-handlers.ts | **DEAD** -- no-op        |
 
 **REMOVE CANDIDATE:** Both channels are dead code. Remove from `IpcChannelMap`, handlers, and preload.
 
 ### Agent Lifecycle (10 channels) -- `AgentChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `local:spawnClaudeAgent` | agent-handlers.ts | |
-| `local:getAgentProcesses` | agent-handlers.ts | Returns runner agents, not processes |
-| `local:sendToAgent` | agent-handlers.ts | **DEAD** -- returns error |
-| `local:isInteractive` | agent-handlers.ts | **DEAD** -- returns false |
-| `local:tailAgentLog` | agent-handlers.ts | |
-| `agent:steer` | agent-handlers.ts | |
-| `agent:kill` | agent-handlers.ts | |
-| `agent:killLocal` | window-handlers.ts | **DEAD** -- returns error; misplaced |
-| `agents:list` | agent-handlers.ts | |
-| `agents:readLog` | agent-handlers.ts | |
-| `agents:import` | agent-handlers.ts | |
+
+| Channel                   | Handler Module     | Notes                                |
+| ------------------------- | ------------------ | ------------------------------------ |
+| `local:spawnClaudeAgent`  | agent-handlers.ts  |                                      |
+| `local:getAgentProcesses` | agent-handlers.ts  | Returns runner agents, not processes |
+| `local:sendToAgent`       | agent-handlers.ts  | **DEAD** -- returns error            |
+| `local:isInteractive`     | agent-handlers.ts  | **DEAD** -- returns false            |
+| `local:tailAgentLog`      | agent-handlers.ts  |                                      |
+| `agent:steer`             | agent-handlers.ts  |                                      |
+| `agent:kill`              | agent-handlers.ts  |                                      |
+| `agent:killLocal`         | window-handlers.ts | **DEAD** -- returns error; misplaced |
+| `agents:list`             | agent-handlers.ts  |                                      |
+| `agents:readLog`          | agent-handlers.ts  |                                      |
+| `agents:import`           | agent-handlers.ts  |                                      |
 
 **REMOVE CANDIDATES:** `local:sendToAgent`, `local:isInteractive`, `agent:killLocal` are all dead. `local:getAgentProcesses` is misleadingly named (returns runner agents, not OS processes).
 
 ### GitHub API (1 channel) -- `GitHubApiChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
+
+| Channel        | Handler Module  | Notes                     |
+| -------------- | --------------- | ------------------------- |
 | `github:fetch` | git-handlers.ts | Proxy with auth injection |
 
 **Assessment:** Clean. Single responsibility.
 
 ### Cost (3 channels) -- `CostChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `cost:summary` | cost-handlers.ts | |
-| `cost:agentRuns` | cost-handlers.ts | |
-| `cost:getAgentHistory` | cost-handlers.ts | |
+
+| Channel                | Handler Module   | Notes |
+| ---------------------- | ---------------- | ----- |
+| `cost:summary`         | cost-handlers.ts |       |
+| `cost:agentRuns`       | cost-handlers.ts |       |
+| `cost:getAgentHistory` | cost-handlers.ts |       |
 
 **MERGE CANDIDATE:** `cost:agentRuns` and `cost:getAgentHistory` serve similar purposes (list agent runs with cost). Consider unifying with query parameters.
 
 ### Sprint Tasks (13 channels) -- `SprintChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `sprint:list` | sprint-local.ts | |
-| `sprint:create` | sprint-local.ts | |
-| `sprint:update` | sprint-local.ts | |
-| `sprint:delete` | sprint-local.ts | |
-| `sprint:readSpecFile` | sprint-local.ts | |
-| `sprint:generatePrompt` | sprint-local.ts | |
-| `sprint:healthCheck` | sprint-local.ts | |
-| `sprint:claimTask` | sprint-local.ts | |
-| `sprint:readLog` | sprint-local.ts | |
-| `sprint:validateDependencies` | sprint-local.ts | |
-| `sprint:unblockTask` | sprint-local.ts | |
-| `sprint:getChanges` | sprint-local.ts | |
-| `sprint:batchUpdate` | sprint-local.ts | |
+
+| Channel                       | Handler Module  | Notes |
+| ----------------------------- | --------------- | ----- |
+| `sprint:list`                 | sprint-local.ts |       |
+| `sprint:create`               | sprint-local.ts |       |
+| `sprint:update`               | sprint-local.ts |       |
+| `sprint:delete`               | sprint-local.ts |       |
+| `sprint:readSpecFile`         | sprint-local.ts |       |
+| `sprint:generatePrompt`       | sprint-local.ts |       |
+| `sprint:healthCheck`          | sprint-local.ts |       |
+| `sprint:claimTask`            | sprint-local.ts |       |
+| `sprint:readLog`              | sprint-local.ts |       |
+| `sprint:validateDependencies` | sprint-local.ts |       |
+| `sprint:unblockTask`          | sprint-local.ts |       |
+| `sprint:getChanges`           | sprint-local.ts |       |
+| `sprint:batchUpdate`          | sprint-local.ts |       |
 
 **Assessment:** 13 channels in one handler module is dense. `sprint:readLog` could move to agent-handlers since it reads agent logs. `sprint:generatePrompt` and `sprint:readSpecFile` are spec-focused -- could be their own module. `sprint:healthCheck` has side effects (flags stuck tasks) -- misleading name for a "check."
 
 ### Window (1 channel) -- `WindowChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `window:openExternal` | window-handlers.ts | |
+
+| Channel               | Handler Module     | Notes |
+| --------------------- | ------------------ | ----- |
+| `window:openExternal` | window-handlers.ts |       |
 
 **Assessment:** Clean.
 
 ### Memory (4 channels) -- `MemoryChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `memory:listFiles` | fs.ts | |
-| `memory:readFile` | fs.ts | |
-| `memory:writeFile` | fs.ts | |
-| `memory:search` | memory-search.ts | |
+
+| Channel            | Handler Module   | Notes |
+| ------------------ | ---------------- | ----- |
+| `memory:listFiles` | fs.ts            |       |
+| `memory:readFile`  | fs.ts            |       |
+| `memory:writeFile` | fs.ts            |       |
+| `memory:search`    | memory-search.ts |       |
 
 **Assessment:** Clean. `memory:search` could merge into the `fs.ts` handler module for coherence.
 
 ### File System / IDE (14 channels) -- `FsChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `fs:openFileDialog` | fs.ts | |
-| `fs:readFileAsBase64` | fs.ts | |
-| `fs:readFileAsText` | fs.ts | |
-| `fs:openDirectoryDialog` | fs.ts | |
-| `fs:readDir` | ide-fs-handlers.ts | Requires `fs:watchDir` first |
-| `fs:readFile` | ide-fs-handlers.ts | Requires `fs:watchDir` first |
-| `fs:writeFile` | ide-fs-handlers.ts | Requires `fs:watchDir` first |
-| `fs:watchDir` | ide-fs-handlers.ts | |
-| `fs:unwatchDir` | ide-fs-handlers.ts | |
-| `fs:createFile` | ide-fs-handlers.ts | |
-| `fs:createDir` | ide-fs-handlers.ts | |
-| `fs:rename` | ide-fs-handlers.ts | |
-| `fs:delete` | ide-fs-handlers.ts | |
-| `fs:stat` | ide-fs-handlers.ts | |
+
+| Channel                  | Handler Module     | Notes                        |
+| ------------------------ | ------------------ | ---------------------------- |
+| `fs:openFileDialog`      | fs.ts              |                              |
+| `fs:readFileAsBase64`    | fs.ts              |                              |
+| `fs:readFileAsText`      | fs.ts              |                              |
+| `fs:openDirectoryDialog` | fs.ts              |                              |
+| `fs:readDir`             | ide-fs-handlers.ts | Requires `fs:watchDir` first |
+| `fs:readFile`            | ide-fs-handlers.ts | Requires `fs:watchDir` first |
+| `fs:writeFile`           | ide-fs-handlers.ts | Requires `fs:watchDir` first |
+| `fs:watchDir`            | ide-fs-handlers.ts |                              |
+| `fs:unwatchDir`          | ide-fs-handlers.ts |                              |
+| `fs:createFile`          | ide-fs-handlers.ts |                              |
+| `fs:createDir`           | ide-fs-handlers.ts |                              |
+| `fs:rename`              | ide-fs-handlers.ts |                              |
+| `fs:delete`              | ide-fs-handlers.ts |                              |
+| `fs:stat`                | ide-fs-handlers.ts |                              |
 
 **Assessment:** The `fs:` namespace is shared between two handler modules (`fs.ts` and `ide-fs-handlers.ts`). This is confusing. The IDE fs handlers require path scoping via `watchDir` while the original `fs:` handlers do not. Consider renaming the IDE channels to `ide:readDir`, `ide:readFile`, etc. to avoid confusion.
 
 ### Agent Events (2 channels) -- `AgentEventChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `agent:event` | (push only, not handled) | Renderer subscribes |
-| `agent:history` | agent-handlers.ts | |
+
+| Channel         | Handler Module           | Notes               |
+| --------------- | ------------------------ | ------------------- |
+| `agent:event`   | (push only, not handled) | Renderer subscribes |
+| `agent:history` | agent-handlers.ts        |                     |
 
 **Assessment:** Clean.
 
 ### Templates (4 channels) -- `TemplateChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `templates:list` | template-handlers.ts | |
-| `templates:save` | template-handlers.ts | |
-| `templates:delete` | template-handlers.ts | |
-| `templates:reset` | template-handlers.ts | |
+
+| Channel            | Handler Module       | Notes |
+| ------------------ | -------------------- | ----- |
+| `templates:list`   | template-handlers.ts |       |
+| `templates:save`   | template-handlers.ts |       |
+| `templates:delete` | template-handlers.ts |       |
+| `templates:reset`  | template-handlers.ts |       |
 
 **Assessment:** Clean.
 
 ### Auth (1 channel) -- `AuthChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `auth:status` | auth-handlers.ts | |
+
+| Channel       | Handler Module   | Notes |
+| ------------- | ---------------- | ----- |
+| `auth:status` | auth-handlers.ts |       |
 
 **Assessment:** Clean.
 
 ### Agent Manager (2 channels) -- `AgentManagerChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `agent-manager:status` | agent-manager-handlers.ts | |
-| `agent-manager:kill` | agent-manager-handlers.ts | |
+
+| Channel                | Handler Module            | Notes |
+| ---------------------- | ------------------------- | ----- |
+| `agent-manager:status` | agent-manager-handlers.ts |       |
+| `agent-manager:kill`   | agent-manager-handlers.ts |       |
 
 **Assessment:** Clean.
 
 ### Terminal (3 channels) -- `TerminalChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `terminal:create` | terminal-handlers.ts | |
-| `terminal:resize` | terminal-handlers.ts | |
-| `terminal:kill` | terminal-handlers.ts | |
+
+| Channel           | Handler Module       | Notes |
+| ----------------- | -------------------- | ----- |
+| `terminal:create` | terminal-handlers.ts |       |
+| `terminal:resize` | terminal-handlers.ts |       |
+| `terminal:kill`   | terminal-handlers.ts |       |
 
 **Plus untyped:** `terminal:write` (ipcMain.on), `terminal:data:${id}` (push), `terminal:exit:${id}` (push)
 
 **Assessment:** The dynamic channel names bypass the typed system. Consider using a single `terminal:data` channel with an `{id, data}` payload.
 
 ### Workbench (7 channels) -- `WorkbenchChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `workbench:chat` | workbench.ts | Non-streaming |
-| `workbench:generateSpec` | workbench.ts | |
-| `workbench:checkSpec` | workbench.ts | |
-| `workbench:checkOperational` | workbench.ts | |
-| `workbench:researchRepo` | workbench.ts | |
-| `workbench:chatStream` | workbench.ts | |
-| `workbench:cancelStream` | workbench.ts | |
+
+| Channel                      | Handler Module | Notes         |
+| ---------------------------- | -------------- | ------------- |
+| `workbench:chat`             | workbench.ts   | Non-streaming |
+| `workbench:generateSpec`     | workbench.ts   |               |
+| `workbench:checkSpec`        | workbench.ts   |               |
+| `workbench:checkOperational` | workbench.ts   |               |
+| `workbench:researchRepo`     | workbench.ts   |               |
+| `workbench:chatStream`       | workbench.ts   |               |
+| `workbench:cancelStream`     | workbench.ts   |               |
 
 **MERGE CANDIDATE:** `workbench:chat` (non-streaming) is now superseded by `workbench:chatStream`. Check if any caller still uses the sync version. If not, remove it.
 
 ### Playground (1 channel) -- `PlaygroundChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `playground:show` | playground-handlers.ts | |
+
+| Channel           | Handler Module         | Notes |
+| ----------------- | ---------------------- | ----- |
+| `playground:show` | playground-handlers.ts |       |
 
 **Assessment:** Clean.
 
 ### Dashboard (2 channels) -- `DashboardChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
+
+| Channel                    | Handler Module        | Notes                                  |
+| -------------------------- | --------------------- | -------------------------------------- |
 | `agent:completionsPerHour` | dashboard-handlers.ts | Namespace conflict with agent channels |
-| `agent:recentEvents` | dashboard-handlers.ts | Namespace conflict with agent channels |
+| `agent:recentEvents`       | dashboard-handlers.ts | Namespace conflict with agent channels |
 
 **Assessment:** These use the `agent:` prefix but are dashboard analytics, not agent lifecycle operations. Should be `dashboard:completionsPerHour` and `dashboard:recentEvents` for clarity.
 
 ### Synthesizer (3 channels) -- `SynthesizerChannels`
-| Channel | Handler Module | Notes |
-|---------|---------------|-------|
-| `synthesizer:generate` | synthesizer-handlers.ts | |
-| `synthesizer:revise` | synthesizer-handlers.ts | |
-| `synthesizer:cancel` | synthesizer-handlers.ts | |
+
+| Channel                | Handler Module          | Notes |
+| ---------------------- | ----------------------- | ----- |
+| `synthesizer:generate` | synthesizer-handlers.ts |       |
+| `synthesizer:revise`   | synthesizer-handlers.ts |       |
+| `synthesizer:cancel`   | synthesizer-handlers.ts |       |
 
 **Assessment:** Clean.
 
 ### Untyped Push Channels (not in `IpcChannelMap`)
-| Channel | Source | Notes |
-|---------|--------|-------|
-| `fs:dirChanged` | ide-fs-handlers.ts | |
-| `github:rateLimitWarning` | github-fetch.ts | |
-| `github:tokenExpired` | github-fetch.ts | |
-| `pr:listUpdated` | pr-poller.ts | |
-| `sprint:externalChange` | sprint-listeners.ts, bootstrap.ts | |
-| `workbench:chatChunk` | workbench.ts | |
-| `synthesizer:chunk` | synthesizer-handlers.ts | |
-| `terminal:data:${id}` | terminal-handlers.ts | Dynamic |
-| `terminal:exit:${id}` | terminal-handlers.ts | Dynamic |
-| `window:setTitle` | window-handlers.ts (ipcMain.on) | |
+
+| Channel                   | Source                            | Notes   |
+| ------------------------- | --------------------------------- | ------- |
+| `fs:dirChanged`           | ide-fs-handlers.ts                |         |
+| `github:rateLimitWarning` | github-fetch.ts                   |         |
+| `github:tokenExpired`     | github-fetch.ts                   |         |
+| `pr:listUpdated`          | pr-poller.ts                      |         |
+| `sprint:externalChange`   | sprint-listeners.ts, bootstrap.ts |         |
+| `workbench:chatChunk`     | workbench.ts                      |         |
+| `synthesizer:chunk`       | synthesizer-handlers.ts           |         |
+| `terminal:data:${id}`     | terminal-handlers.ts              | Dynamic |
+| `terminal:exit:${id}`     | terminal-handlers.ts              | Dynamic |
+| `window:setTitle`         | window-handlers.ts (ipcMain.on)   |         |
 
 **Assessment:** 10 untyped push channels. These should be added to `IpcChannelMap` as push-only types (even if they don't follow the invoke/handle pattern) to maintain the "single source of truth" contract.
 
 ### Summary of removal/merge candidates
 
-| Action | Channels | Savings |
-|--------|----------|---------|
-| **Remove (dead)** | `config:getAgentConfig`, `config:saveAgentConfig`, `local:sendToAgent`, `local:isInteractive`, `agent:killLocal` | 5 channels |
-| **Merge** | `cost:agentRuns` into `cost:getAgentHistory` | 1 channel |
-| **Merge** | `workbench:chat` into `workbench:chatStream` (if unused) | 1 channel |
-| **Rename** | `agent:completionsPerHour` -> `dashboard:*`, `agent:recentEvents` -> `dashboard:*` | 0 (namespace fix) |
+| Action            | Channels                                                                                                         | Savings           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **Remove (dead)** | `config:getAgentConfig`, `config:saveAgentConfig`, `local:sendToAgent`, `local:isInteractive`, `agent:killLocal` | 5 channels        |
+| **Merge**         | `cost:agentRuns` into `cost:getAgentHistory`                                                                     | 1 channel         |
+| **Merge**         | `workbench:chat` into `workbench:chatStream` (if unused)                                                         | 1 channel         |
+| **Rename**        | `agent:completionsPerHour` -> `dashboard:*`, `agent:recentEvents` -> `dashboard:*`                               | 0 (namespace fix) |
 
 Net reduction: 6-7 channels, bringing the total to ~79-80.

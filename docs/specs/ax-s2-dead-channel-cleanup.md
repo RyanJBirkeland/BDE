@@ -15,35 +15,36 @@ After the dead code purge in PR #81 (~1,450 lines removed), the audit found 8 de
 
 ### Dead IPC Handlers (registered in main, never invoked from renderer)
 
-| Channel | File | Line | Reason Dead |
-|---------|------|------|-------------|
-| `sessions:getHistory` | `agent-handlers.ts` | 61-63 | Stub — always returns `[]`. No preload method calls it. |
-| `get-diff` | `git-handlers.ts` | 23 | Legacy — replaced by `git:diff` in the git client refactor |
-| `get-branch` | `git-handlers.ts` | 24 | Legacy — replaced by `git:branches` |
-| `get-log` | `git-handlers.ts` | 25 | Legacy — replaced by git client; never called from preload |
-| `read-sprint-md` | `git-handlers.ts` | 20 | Legacy — no preload bridge entry, no renderer calls |
+| Channel               | File                | Line  | Reason Dead                                                |
+| --------------------- | ------------------- | ----- | ---------------------------------------------------------- |
+| `sessions:getHistory` | `agent-handlers.ts` | 61-63 | Stub — always returns `[]`. No preload method calls it.    |
+| `get-diff`            | `git-handlers.ts`   | 23    | Legacy — replaced by `git:diff` in the git client refactor |
+| `get-branch`          | `git-handlers.ts`   | 24    | Legacy — replaced by `git:branches`                        |
+| `get-log`             | `git-handlers.ts`   | 25    | Legacy — replaced by git client; never called from preload |
+| `read-sprint-md`      | `git-handlers.ts`   | 20    | Legacy — no preload bridge entry, no renderer calls        |
 
 ### Dead Preload Methods (exposed in preload, never called from renderer)
 
-| Method | Preload Line | Reason Dead |
-|--------|-------------|-------------|
-| `agents.getMeta(args)` | `index.ts:77-78` | Handler exists and works, but no renderer file calls `window.api.agents.getMeta()` |
+| Method                  | Preload Line     | Reason Dead                                                                         |
+| ----------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| `agents.getMeta(args)`  | `index.ts:77-78` | Handler exists and works, but no renderer file calls `window.api.agents.getMeta()`  |
 | `agents.markDone(args)` | `index.ts:83-84` | Handler exists and works, but no renderer file calls `window.api.agents.markDone()` |
-| `sprint.delete(id)` | `index.ts:101` | Handler exists and works, but no renderer file calls `window.api.sprint.delete()` |
+| `sprint.delete(id)`     | `index.ts:101`   | Handler exists and works, but no renderer file calls `window.api.sprint.delete()`   |
 
 ### Dead Renderer Exports
 
-| Export | File | Reason Dead |
-|--------|------|-------------|
-| `getSupabaseConfig()` | `src/renderer/src/lib/supabase.ts` | Renderer uses `window.api.getSupabaseConfig()` (IPC) instead |
-| `clearConfigCache()` | `src/renderer/src/lib/rpc.ts` | Marked `@deprecated`, is a no-op |
-| `AgentSource` type | `src/renderer/src/hooks/useUnifiedAgents.ts` | Exported but never imported; inline union used instead |
+| Export                | File                                         | Reason Dead                                                  |
+| --------------------- | -------------------------------------------- | ------------------------------------------------------------ |
+| `getSupabaseConfig()` | `src/renderer/src/lib/supabase.ts`           | Renderer uses `window.api.getSupabaseConfig()` (IPC) instead |
+| `clearConfigCache()`  | `src/renderer/src/lib/rpc.ts`                | Marked `@deprecated`, is a no-op                             |
+| `AgentSource` type    | `src/renderer/src/hooks/useUnifiedAgents.ts` | Exported but never imported; inline union used instead       |
 
 ## Implementation
 
 ### Step 1: Remove dead IPC handlers
 
 **`src/main/handlers/agent-handlers.ts`** — Remove lines 60-63:
+
 ```diff
 -  // --- Session history (agent output tabs) ---
 -  safeHandle('sessions:getHistory', async (_event, _sessionKey: string) => {
@@ -52,6 +53,7 @@ After the dead code purge in PR #81 (~1,450 lines removed), the audit found 8 de
 ```
 
 **`src/main/handlers/git-handlers.ts`** — Remove lines 20-25:
+
 ```diff
 -  safeHandle('read-sprint-md', (_e, repoPath: string) => readSprintMd(repoPath))
 -
@@ -68,6 +70,7 @@ Remove unused imports: `readSprintMd`, `getDiff`, `getBranch`, `getLog` from `'.
 ### Step 2: Remove dead preload methods
 
 **`src/preload/index.ts`** — Remove:
+
 - `agents.getMeta` (line 77-78)
 - `agents.markDone` (line 83-84)
 - `sprint.delete` (line 101)

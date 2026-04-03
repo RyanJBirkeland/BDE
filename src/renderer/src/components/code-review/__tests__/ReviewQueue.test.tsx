@@ -42,9 +42,27 @@ describe('ReviewQueue', () => {
 
   it('renders task list when review tasks exist', () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Fix bug', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' },
-      { id: 't2', title: 'Add feature', repo: 'life-os', status: 'review', updated_at: '2026-04-02T00:00:00Z' },
-      { id: 't3', title: 'Active task', repo: 'bde', status: 'active', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Fix bug',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Add feature',
+        repo: 'life-os',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      },
+      {
+        id: 't3',
+        title: 'Active task',
+        repo: 'bde',
+        status: 'active',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     render(<ReviewQueue />)
     expect(screen.getByText('Fix bug')).toBeInTheDocument()
@@ -55,7 +73,13 @@ describe('ReviewQueue', () => {
 
   it('clicking a task calls selectTask', () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Fix bug', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Fix bug',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     render(<ReviewQueue />)
     fireEvent.click(screen.getByText('Fix bug'))
@@ -64,7 +88,13 @@ describe('ReviewQueue', () => {
 
   it('highlights the selected task', () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Fix bug', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Fix bug',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ReviewQueue />)
@@ -74,8 +104,20 @@ describe('ReviewQueue', () => {
 
   it('sorts tasks by updated_at descending', () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Older', repo: 'bde', status: 'review', updated_at: '2026-03-01T00:00:00Z' },
-      { id: 't2', title: 'Newer', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Older',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-03-01T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Newer',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     render(<ReviewQueue />)
     const items = screen.getAllByRole('button')

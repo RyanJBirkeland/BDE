@@ -42,7 +42,9 @@
   border-radius: 4px;
   color: var(--neon-text-dim);
   cursor: pointer;
-  transition: color 100ms ease, background 100ms ease;
+  transition:
+    color 100ms ease,
+    background 100ms ease;
 }
 
 .tearoff-shell__btn:hover {
@@ -109,18 +111,39 @@
   color: var(--neon-text-muted);
   cursor: pointer;
   border-right: 1px solid var(--neon-surface-dim);
-  transition: color 100ms ease, background 100ms ease;
+  transition:
+    color 100ms ease,
+    background 100ms ease;
   white-space: nowrap;
 }
-.tearoff-tab:hover { color: var(--neon-text-muted); background: var(--neon-surface-dim); }
-.tearoff-tab--active { color: var(--neon-text); background: var(--neon-bg); border-top: 2px solid var(--neon-cyan); }
-.tearoff-tab__close {
-  display: flex; align-items: center; background: none; border: none;
-  color: inherit; cursor: pointer; padding: 2px; border-radius: 3px;
-  opacity: 0; transition: opacity 100ms ease;
+.tearoff-tab:hover {
+  color: var(--neon-text-muted);
+  background: var(--neon-surface-dim);
 }
-.tearoff-tab:hover .tearoff-tab__close { opacity: 0.6; }
-.tearoff-tab__close:hover { opacity: 1; background: var(--neon-surface-subtle); }
+.tearoff-tab--active {
+  color: var(--neon-text);
+  background: var(--neon-bg);
+  border-top: 2px solid var(--neon-cyan);
+}
+.tearoff-tab__close {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+.tearoff-tab:hover .tearoff-tab__close {
+  opacity: 0.6;
+}
+.tearoff-tab__close:hover {
+  opacity: 1;
+  background: var(--neon-surface-subtle);
+}
 .tearoff-tab__close:focus-visible {
   opacity: 1;
   outline: 2px solid var(--bde-accent);

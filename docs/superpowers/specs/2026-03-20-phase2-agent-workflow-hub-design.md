@@ -17,18 +17,18 @@ Phase 1 (Modular Monolith) is complete. BDE owns its config, data, and agent lif
 
 ### What Exists Today
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Local agent spawning (CLI) | Working | `spawnClaudeAgent()` in `local-agents.ts`, stdout → log file |
-| Log file polling | Working | 1s interval, byte-offset tracking in `src/renderer/src/stores/localAgents.ts` and `agentHistory.ts` |
-| Agent steering (local) | Working | stdin-based via `sendToAgent(pid, message)` |
-| Agent steering (remote) | Working | HTTP POST to task-runner `/agents/:id/steer` |
-| Task Queue API | Working | HTTP + SSE on port 18790, full CRUD |
-| Task output events | Working | `POST /queue/tasks/:id/output`, in-memory store (max 500) |
-| Sprint SSE client | Working | Connects to task-runner `/events`, relays to renderer |
-| Unified agent store | Working | `unifiedAgents.ts` merges sessions + local + history |
-| Agent templates | Working | 4 built-in (`bugfix`, `feature`, `refactor`, `test`), auto-detection heuristics, settings JSON only |
-| Sessions view | Working | Already shows unified agents (local + sessions + history), search/filter, split modes, SpawnModal — will be evolved into Agents view |
+| Feature                    | Status  | Notes                                                                                                                                |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Local agent spawning (CLI) | Working | `spawnClaudeAgent()` in `local-agents.ts`, stdout → log file                                                                         |
+| Log file polling           | Working | 1s interval, byte-offset tracking in `src/renderer/src/stores/localAgents.ts` and `agentHistory.ts`                                  |
+| Agent steering (local)     | Working | stdin-based via `sendToAgent(pid, message)`                                                                                          |
+| Agent steering (remote)    | Working | HTTP POST to task-runner `/agents/:id/steer`                                                                                         |
+| Task Queue API             | Working | HTTP + SSE on port 18790, full CRUD                                                                                                  |
+| Task output events         | Working | `POST /queue/tasks/:id/output`, in-memory store (max 500)                                                                            |
+| Sprint SSE client          | Working | Connects to task-runner `/events`, relays to renderer                                                                                |
+| Unified agent store        | Working | `unifiedAgents.ts` merges sessions + local + history                                                                                 |
+| Agent templates            | Working | 4 built-in (`bugfix`, `feature`, `refactor`, `test`), auto-detection heuristics, settings JSON only                                  |
+| Sessions view              | Working | Already shows unified agents (local + sessions + history), search/filter, split modes, SpawnModal — will be evolved into Agents view |
 
 ---
 
@@ -66,8 +66,8 @@ interface AgentSpawnOptions {
 
 interface AgentHandle {
   id: string
-  logPath?: string                      // CLI provider sets this for backup log persistence
-  events: AsyncIterable<AgentEvent>     // unified event stream — consumers derive status from events
+  logPath?: string // CLI provider sets this for backup log persistence
+  events: AsyncIterable<AgentEvent> // unified event stream — consumers derive status from events
   steer(message: string): Promise<void>
   stop(): Promise<void>
 }
@@ -82,10 +82,25 @@ type AgentEvent =
   | { type: 'agent:user_message'; text: string; timestamp: number }
   | { type: 'agent:thinking'; tokenCount: number; text?: string; timestamp: number }
   | { type: 'agent:tool_call'; tool: string; summary: string; input?: unknown; timestamp: number }
-  | { type: 'agent:tool_result'; tool: string; success: boolean; summary: string; output?: unknown; timestamp: number }
+  | {
+      type: 'agent:tool_result'
+      tool: string
+      success: boolean
+      summary: string
+      output?: unknown
+      timestamp: number
+    }
   | { type: 'agent:rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
   | { type: 'agent:error'; message: string; timestamp: number }
-  | { type: 'agent:completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
+  | {
+      type: 'agent:completed'
+      exitCode: number
+      costUsd: number
+      tokensIn: number
+      tokensOut: number
+      durationMs: number
+      timestamp: number
+    }
 ```
 
 Extends the existing `TaskOutputEvent` types in `queue-api-contract.ts` with `agent:text` and `agent:user_message` for full conversation capture.
@@ -95,12 +110,14 @@ Extends the existing `TaskOutputEvent` types in `queue-api-contract.ts` with `ag
 ### Adapters
 
 **`sdk-provider.ts`:**
+
 - Uses `claude_agent_sdk` to spawn agents
 - Maps SDK callbacks/events to `AgentEvent` async iterable
 - `steer()` sends user message through SDK conversation API
 - `stop()` cancels the SDK agent run
 
 **`cli-provider.ts`:**
+
 - Extracts current `spawnClaudeAgent()` logic from `local-agents.ts`
 - Parses stdout JSON stream into `AgentEvent`s
 - `steer()` writes to stdin
@@ -108,6 +125,7 @@ Extends the existing `TaskOutputEvent` types in `queue-api-contract.ts` with `ag
 - Fallback adapter — used if SDK is unavailable or for legacy compatibility
 
 **`index.ts` factory:**
+
 - Reads `agent.provider` from settings (`'sdk' | 'cli'`, default `'sdk'`)
 - Returns the appropriate provider
 - `local-agents.ts` delegates to this factory instead of spawning directly
@@ -151,6 +169,7 @@ src/main/agents/
 ```
 
 **`event-bus.ts`:**
+
 - Single funnel for all agent events from both sources
 - Local agents (SDK/CLI provider) emit events into it
 - Task-runner output events (`POST /queue/tasks/:id/output`) emit into it
@@ -183,6 +202,7 @@ src/renderer/src/stores/agentEvents.ts
 ```
 
 New Zustand store:
+
 - Subscribes to `agent:event` IPC on mount
 - Buffers events per agent in memory (for the active view)
 - `getHistory(agentId)` fetches from main process via `agent:history` IPC for past runs
@@ -200,20 +220,24 @@ Slice 2 is not independently shippable — `LogDrawer.tsx` and the sprint store 
 ### What Dies
 
 **Log tailing infrastructure (all three IPC channels):**
+
 - `local:tailAgentLog` IPC handler — local agent log file tailing
 - `agents:readLog` IPC handler — unified agent log reading
 - `sprint:readLog` IPC handler — sprint task log reading
 - Log polling logic in `src/renderer/src/stores/localAgents.ts` and `agentHistory.ts`
 
 **Task-runner SSE log events:**
+
 - `log:chunk` SSE event subscription in `LogDrawer.tsx` and `taskRunnerSSE.ts` — replaced by `agent:event` IPC
 - `log:done` SSE event subscription — replaced by `agent:completed` event through event bus
 
 **Event storage:**
+
 - In-memory event-store in `queue-api/event-store.ts` — replaced by SQLite store
 - `initEventStoreCleanup()` mutation hook — replaced by time-based pruning (see note below)
 
 **Constants:**
+
 - `POLL_LOG_INTERVAL` constant
 
 **Behavioral change — event cleanup:** The in-memory store auto-clears events when a task reaches terminal status via `onSprintMutation` hook. The SQLite store intentionally does NOT do this — events are retained for full history replay and pruned on a time basis (30 days, configurable via `agent.eventRetentionDays`). This is a deliberate change: history is a feature.
@@ -271,17 +295,20 @@ src/renderer/src/components/agents/
 ### AgentsView Layout
 
 Two-panel layout (using `react-resizable-panels`):
+
 - **Left panel:** `AgentList` — all agents grouped by status
 - **Right panel:** `AgentDetail` — selected agent's full view
 
 ### AgentList (Left Panel)
 
 Three groups, always visible:
+
 - **Running** — active agents with live pulse indicator, token counter ticking up
 - **Recent** — completed in last 24h, sorted by recency
 - **History** — older runs, lazy-loaded on scroll
 
 Each `AgentCard` displays:
+
 - Agent name / task title
 - Status badge (running, done, failed, cancelled)
 - Duration (live-updating for running agents)
@@ -300,17 +327,17 @@ Clicking a card selects it and loads the agent into `AgentDetail`.
 
 Each `AgentEvent` maps to a component:
 
-| Event Type | Component | Behavior |
-|------------|-----------|----------|
-| `agent:text` | `ChatBubble` | Markdown rendered, left-aligned |
-| `agent:user_message` | `ChatBubble` | Right-aligned, distinct style (user steering) |
-| `agent:thinking` | `ThinkingBlock` | Collapsed by default, shows token count. Expands to full reasoning text |
-| `agent:tool_call` | `ToolCallBlock` | Tool name + summary line, collapsed. Expands to show input args |
-| `agent:tool_result` | Merged into preceding `ToolCallBlock` | Shows success/fail badge + summary. Expands to show full output |
-| `agent:error` | Red-bordered `ChatBubble` | Error message |
-| `agent:rate_limited` | Yellow info bar | Retry countdown |
-| `agent:started` | Subtle header | "Agent started — model: opus-4" |
-| `agent:completed` | Summary card | Exit code, total cost, tokens in/out, duration |
+| Event Type           | Component                             | Behavior                                                                |
+| -------------------- | ------------------------------------- | ----------------------------------------------------------------------- |
+| `agent:text`         | `ChatBubble`                          | Markdown rendered, left-aligned                                         |
+| `agent:user_message` | `ChatBubble`                          | Right-aligned, distinct style (user steering)                           |
+| `agent:thinking`     | `ThinkingBlock`                       | Collapsed by default, shows token count. Expands to full reasoning text |
+| `agent:tool_call`    | `ToolCallBlock`                       | Tool name + summary line, collapsed. Expands to show input args         |
+| `agent:tool_result`  | Merged into preceding `ToolCallBlock` | Shows success/fail badge + summary. Expands to show full output         |
+| `agent:error`        | Red-bordered `ChatBubble`             | Error message                                                           |
+| `agent:rate_limited` | Yellow info bar                       | Retry countdown                                                         |
+| `agent:started`      | Subtle header                         | "Agent started — model: opus-4"                                         |
+| `agent:completed`    | Summary card                          | Exit code, total cost, tokens in/out, duration                          |
 
 **Auto-scroll:** Follows tail when user is at bottom of scroll, pauses when user scrolls up. Same pattern as current LogDrawer.
 
@@ -321,6 +348,7 @@ Each `AgentEvent` maps to a component:
 ### SteerInput
 
 Extracted from current `LogDrawer.tsx` steering UI:
+
 - Textarea + send button
 - Calls `agentProvider.steer(agentId, message)` via IPC
 - Agent receives message, `agent:user_message` event emitted into event stream
@@ -347,6 +375,7 @@ Sprint board task cards retain status badges. Clicking a running or completed ta
 `SessionsView.tsx` already has significant working functionality: unified agent list (local + sessions + history), search/filter, split modes (1/2-pane/grid), `SpawnModal` integration, and keyboard shortcuts. The Agents view should **evolve** this, not rewrite from scratch.
 
 Concrete approach:
+
 - Rename `SessionsView.tsx` → `AgentsView.tsx`, update imports
 - Refactor agent list components from `components/sessions/` → `components/agents/`
 - Replace the log/chat rendering path with the new `ChatRenderer`
@@ -398,12 +427,14 @@ No new endpoints needed. Moves existing data to new location.
 Displayed in `AgentCard` and `AgentDetail` header:
 
 **Running agents (live-updating):**
+
 - Duration — elapsed since `agent:started` event
 - Tokens — accumulated in/out count from events
 - Cost — running total derived from token counts
 - Rate limit indicator — if `agent:rate_limited` event received, show cooldown
 
 **Completed agents:**
+
 - Final values from `agent:completed` event summary card
 
 All data derived from the `AgentEvent` stream. No new endpoints or data sources.
@@ -427,6 +458,7 @@ Custom Templates
 ```
 
 **Behavior:**
+
 - Edit opens inline form: name (text input), prompt prefix (textarea)
 - Add creates a new custom template
 - Delete removes custom templates; built-in templates can be reset to defaults but not permanently deleted
@@ -434,6 +466,7 @@ Custom Templates
 - Auto-detection heuristics in `template-heuristics.ts` updated to include custom template keywords
 
 **New IPC handlers:**
+
 - `templates:list` — returns all templates (built-in + custom)
 - `templates:save` — create or update a template
 - `templates:delete` — remove a custom template
@@ -475,30 +508,30 @@ Slices are sequential — each builds on the previous. Slice 2 includes a compat
 
 ## Files Deleted or Renamed After All Slices
 
-| File | Action | Reason |
-|------|--------|--------|
-| `src/renderer/src/views/SessionsView.tsx` | Renamed → `AgentsView.tsx` | Evolved, not rebuilt |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | Deleted | Replaced by AgentDetail + ChatRenderer |
-| `src/renderer/src/components/sprint/__tests__/LogDrawer.test.tsx` | Deleted | Replaced by ChatRenderer tests |
-| `src/renderer/src/components/sessions/ChatThread.tsx` | Deleted | All 5 import sites migrated to ChatRenderer |
-| `src/renderer/src/components/sessions/__tests__/ChatThread.test.tsx` | Deleted | Replaced by ChatRenderer tests |
-| `src/main/queue-api/event-store.ts` | Deleted | In-memory store replaced by SQLite persistence |
-| `src/renderer/src/components/sessions/` | Renamed → `components/agents/` | View rename |
-| Log polling in `localAgents.ts`, `agentHistory.ts` | Removed | Event streaming replaces polling |
+| File                                                                 | Action                         | Reason                                         |
+| -------------------------------------------------------------------- | ------------------------------ | ---------------------------------------------- |
+| `src/renderer/src/views/SessionsView.tsx`                            | Renamed → `AgentsView.tsx`     | Evolved, not rebuilt                           |
+| `src/renderer/src/components/sprint/LogDrawer.tsx`                   | Deleted                        | Replaced by AgentDetail + ChatRenderer         |
+| `src/renderer/src/components/sprint/__tests__/LogDrawer.test.tsx`    | Deleted                        | Replaced by ChatRenderer tests                 |
+| `src/renderer/src/components/sessions/ChatThread.tsx`                | Deleted                        | All 5 import sites migrated to ChatRenderer    |
+| `src/renderer/src/components/sessions/__tests__/ChatThread.test.tsx` | Deleted                        | Replaced by ChatRenderer tests                 |
+| `src/main/queue-api/event-store.ts`                                  | Deleted                        | In-memory store replaced by SQLite persistence |
+| `src/renderer/src/components/sessions/`                              | Renamed → `components/agents/` | View rename                                    |
+| Log polling in `localAgents.ts`, `agentHistory.ts`                   | Removed                        | Event streaming replaces polling               |
 
 ## New Dependencies
 
-| Package | Purpose | Slice |
-|---------|---------|-------|
-| `@anthropic-ai/claude-agent-sdk` | Agent SDK for spawning agents | Slice 1 |
-| `@tanstack/react-virtual` | Windowed rendering for long conversations | Slice 3 |
+| Package                          | Purpose                                   | Slice   |
+| -------------------------------- | ----------------------------------------- | ------- |
+| `@anthropic-ai/claude-agent-sdk` | Agent SDK for spawning agents             | Slice 1 |
+| `@tanstack/react-virtual`        | Windowed rendering for long conversations | Slice 3 |
 
 ## Settings Changes
 
-| Key | Type | Default | Purpose |
-|-----|------|---------|---------|
-| `agent.provider` | `'sdk' \| 'cli'` | `'sdk'` | Which agent spawning backend to use |
-| `agent.eventRetentionDays` | `number` | `30` | How long to keep agent events in SQLite |
+| Key                        | Type             | Default | Purpose                                 |
+| -------------------------- | ---------------- | ------- | --------------------------------------- |
+| `agent.provider`           | `'sdk' \| 'cli'` | `'sdk'` | Which agent spawning backend to use     |
+| `agent.eventRetentionDays` | `number`         | `30`    | How long to keep agent events in SQLite |
 
 ## Out of Scope
 

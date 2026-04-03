@@ -17,6 +17,7 @@
 ### Task 1: Add pipeline UI state to sprintUI store
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/sprintUI.ts`
 - Test: `src/renderer/src/stores/__tests__/sprintUI.test.ts` (if exists, else inline verification)
 
@@ -73,6 +74,7 @@ git commit -m "feat(sprint): add pipeline drawer state to sprintUI store"
 ### Task 2: Create sprint-pipeline-neon.css
 
 **Files:**
+
 - Create: `src/renderer/src/assets/sprint-pipeline-neon.css`
 
 - [ ] **Step 1: Create the CSS file**
@@ -178,7 +180,9 @@ Create `src/renderer/src/assets/sprint-pipeline-neon.css` with all pipeline layo
   padding: 8px 10px;
   margin-bottom: 4px;
   cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
 .backlog-card:hover {
@@ -328,8 +332,13 @@ Create `src/renderer/src/assets/sprint-pipeline-neon.css` with all pipeline layo
 }
 
 @keyframes pipeline-pulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(191, 90, 242, 0.5); }
-  50% { box-shadow: 0 0 20px rgba(191, 90, 242, 0.8); }
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(191, 90, 242, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(191, 90, 242, 0.8);
+  }
 }
 
 .pipeline-stage__header {
@@ -344,11 +353,21 @@ Create `src/renderer/src/assets/sprint-pipeline-neon.css` with all pipeline layo
   letter-spacing: 0.5px;
 }
 
-.pipeline-stage__name--queued { color: var(--neon-cyan); }
-.pipeline-stage__name--blocked { color: var(--neon-orange); }
-.pipeline-stage__name--active { color: var(--neon-purple); }
-.pipeline-stage__name--review { color: var(--neon-blue); }
-.pipeline-stage__name--done { color: var(--neon-pink); }
+.pipeline-stage__name--queued {
+  color: var(--neon-cyan);
+}
+.pipeline-stage__name--blocked {
+  color: var(--neon-orange);
+}
+.pipeline-stage__name--active {
+  color: var(--neon-purple);
+}
+.pipeline-stage__name--review {
+  color: var(--neon-blue);
+}
+.pipeline-stage__name--done {
+  color: var(--neon-pink);
+}
 
 .pipeline-stage__count {
   font-size: 9px;
@@ -469,8 +488,12 @@ Create `src/renderer/src/assets/sprint-pipeline-neon.css` with all pipeline layo
 
 /* Arrival glow animation */
 @keyframes task-arrive {
-  0% { box-shadow: 0 0 16px var(--neon-cyan); }
-  100% { box-shadow: none; }
+  0% {
+    box-shadow: 0 0 16px var(--neon-cyan);
+  }
+  100% {
+    box-shadow: none;
+  }
 }
 
 .task-pill--arriving {
@@ -783,6 +806,7 @@ git commit -m "feat(sprint): add pipeline-specific neon CSS"
 ### Task 3: Create TaskPill component
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/TaskPill.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/TaskPill.test.tsx`
 
@@ -831,17 +855,13 @@ describe('TaskPill', () => {
   })
 
   it('applies selected class when selected', () => {
-    const { container } = render(
-      <TaskPill task={baseMockTask} selected={true} onClick={vi.fn()} />
-    )
+    const { container } = render(<TaskPill task={baseMockTask} selected={true} onClick={vi.fn()} />)
     expect(container.querySelector('.task-pill--selected')).toBeInTheDocument()
   })
 
   it('applies active class for active tasks', () => {
     const activeTask = { ...baseMockTask, status: 'active' as const }
-    const { container } = render(
-      <TaskPill task={activeTask} selected={false} onClick={vi.fn()} />
-    )
+    const { container } = render(<TaskPill task={activeTask} selected={false} onClick={vi.fn()} />)
     expect(container.querySelector('.task-pill--active')).toBeInTheDocument()
   })
 
@@ -900,11 +920,16 @@ function getStatusClass(status: string, prStatus?: string | null): string {
 
 function getDotColor(status: string): string {
   switch (status) {
-    case 'queued': return 'var(--neon-cyan)'
-    case 'blocked': return 'var(--neon-orange)'
-    case 'active': return 'var(--neon-purple)'
-    case 'done': return 'var(--neon-pink)'
-    default: return 'var(--neon-cyan)'
+    case 'queued':
+      return 'var(--neon-cyan)'
+    case 'blocked':
+      return 'var(--neon-orange)'
+    case 'active':
+      return 'var(--neon-purple)'
+    case 'done':
+      return 'var(--neon-pink)'
+    default:
+      return 'var(--neon-cyan)'
   }
 }
 
@@ -973,6 +998,7 @@ git commit -m "feat(sprint): add TaskPill component for pipeline display"
 ### Task 4: Create PipelineStage component
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/PipelineStage.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/PipelineStage.test.tsx`
 
@@ -986,24 +1012,42 @@ import { PipelineStage } from '../PipelineStage'
 describe('PipelineStage', () => {
   it('renders stage name', () => {
     render(
-      <PipelineStage name="queued" label="Queued" tasks={[]} count="3 tasks"
-        selectedTaskId={null} onTaskClick={vi.fn()} />
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={[]}
+        count="3 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
     )
     expect(screen.getByText('Queued')).toBeInTheDocument()
   })
 
   it('renders task count', () => {
     render(
-      <PipelineStage name="active" label="Active" tasks={[]} count="2 of 5"
-        selectedTaskId={null} onTaskClick={vi.fn()} />
+      <PipelineStage
+        name="active"
+        label="Active"
+        tasks={[]}
+        count="2 of 5"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
     )
     expect(screen.getByText('2 of 5')).toBeInTheDocument()
   })
 
   it('renders stage dot with count', () => {
     const { container } = render(
-      <PipelineStage name="queued" label="Queued" tasks={[]} count="0"
-        selectedTaskId={null} onTaskClick={vi.fn()} />
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={[]}
+        count="0"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
     )
     expect(container.querySelector('.pipeline-stage__dot--queued')).toBeInTheDocument()
   })
@@ -1034,13 +1078,17 @@ interface PipelineStageProps {
 }
 
 export function PipelineStage({
-  name, label, tasks, count, selectedTaskId, onTaskClick, doneFooter
+  name,
+  label,
+  tasks,
+  count,
+  selectedTaskId,
+  onTaskClick,
+  doneFooter
 }: PipelineStageProps) {
   return (
     <div className="pipeline-stage">
-      <div className={`pipeline-stage__dot pipeline-stage__dot--${name}`}>
-        {tasks.length}
-      </div>
+      <div className={`pipeline-stage__dot pipeline-stage__dot--${name}`}>{tasks.length}</div>
       <div className="pipeline-stage__header">
         <div className={`pipeline-stage__name pipeline-stage__name--${name}`}>{label}</div>
         <div className="pipeline-stage__count">{count}</div>
@@ -1077,6 +1125,7 @@ git commit -m "feat(sprint): add PipelineStage component"
 ### Task 5: Create PipelineBacklog sidebar component
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/PipelineBacklog.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/PipelineBacklog.test.tsx`
 
@@ -1101,7 +1150,11 @@ interface PipelineBacklogProps {
 }
 
 export function PipelineBacklog({
-  backlog, failed, onTaskClick, onAddToQueue, onRerun
+  backlog,
+  failed,
+  onTaskClick,
+  onAddToQueue,
+  onRerun
 }: PipelineBacklogProps) {
   return (
     <div className="pipeline-sidebar">
@@ -1118,7 +1171,10 @@ export function PipelineBacklog({
             </div>
             <button
               className="backlog-card__action"
-              onClick={(e) => { e.stopPropagation(); onAddToQueue(task) }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onAddToQueue(task)
+              }}
             >
               → Add to queue
             </button>
@@ -1143,7 +1199,10 @@ export function PipelineBacklog({
               </div>
               <button
                 className="backlog-card__action"
-                onClick={(e) => { e.stopPropagation(); onRerun(task) }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onRerun(task)
+                }}
                 style={{ color: 'var(--neon-red)' }}
               >
                 ↻ Re-run
@@ -1169,6 +1228,7 @@ git commit -m "feat(sprint): add PipelineBacklog sidebar component"
 ### Task 6: Create TaskDetailDrawer component
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/TaskDetailDrawer.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/TaskDetailDrawer.test.tsx`
 
@@ -1179,6 +1239,7 @@ Test: renders task title, shows prompt in monospace block, shows "View Spec →"
 - [ ] **Step 2: Implement TaskDetailDrawer**
 
 Key sections:
+
 - **Header**: title + status dot + elapsed time
 - **Metadata fields**: repo, priority, dependencies, timestamps
 - **Prompt block**: `<div className="task-drawer__prompt">{task.task}</div>` — shows `SprintTask.task` (the instruction string)
@@ -1201,6 +1262,7 @@ git commit -m "feat(sprint): add TaskDetailDrawer component"
 ### Task 7: Create SpecPanel overlay component
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/SpecPanel.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/SpecPanel.test.tsx`
 
@@ -1211,6 +1273,7 @@ Test: renders spec content, closes on backdrop click, closes on X button, shows 
 - [ ] **Step 2: Implement SpecPanel**
 
 Wide overlay panel (600px) that slides in from right. Shows:
+
 - Header with task title + close button
 - Body with markdown-rendered spec content (reuse existing `renderContent` from `chat-markdown.ts` if suitable, or plain `<pre>` with `white-space: pre-wrap`)
 - Edit mode: textarea replaces rendered view, Save/Cancel buttons
@@ -1230,6 +1293,7 @@ git commit -m "feat(sprint): add SpecPanel overlay component"
 ### Task 8: Create DoneHistoryPanel modal
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/DoneHistoryPanel.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/DoneHistoryPanel.test.tsx`
 
@@ -1247,6 +1311,7 @@ git commit -m "feat(sprint): add DoneHistoryPanel modal"
 ### Task 9: Create SprintPipeline shell and wire everything together
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/SprintPipeline.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/SprintPipeline.test.tsx`
 
@@ -1259,6 +1324,7 @@ Test: renders pipeline header with stats, renders 5 pipeline stages, renders bac
 - [ ] **Step 2: Implement SprintPipeline**
 
 The shell component:
+
 - Imports CSS: `import '../../assets/sprint-pipeline-neon.css'`
 - Uses same hooks as SprintCenter: `useSprintPolling`, `usePrStatusPolling`, `useSprintTaskActions`, `useSprintEvents`, `useTaskToasts`, `useSprintKeyboardShortcuts`, `useHealthCheck`
 - Wraps pipeline stages in `<LayoutGroup>` from framer-motion for cross-stage `layoutId` animations
@@ -1278,6 +1344,7 @@ The shell component:
 - Header: stats computed from partition counts
 
 **Key wiring** (copy patterns from SprintCenter lines 36-120):
+
 - `initTaskOutputListener` effect
 - `useTaskToasts` hook
 - `useSprintPolling` + `usePrStatusPolling` hooks
@@ -1298,6 +1365,7 @@ git commit -m "feat(sprint): add SprintPipeline shell with full wiring"
 ### Task 10: Swap SprintView to use SprintPipeline
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SprintView.tsx`
 
 - [ ] **Step 1: Update SprintView import**
@@ -1359,6 +1427,7 @@ Run: `npm run test:coverage`
 
 Run: `npm run dev`
 Navigate to Sprint view. Verify:
+
 - Three-zone layout renders (backlog | pipeline | drawer)
 - Pipeline shows 5 stages with connector line
 - Task pills show in correct stages

@@ -29,6 +29,7 @@
 15. Renders: `<div className="log-drawer__empty">Agent is starting up...</div>` (`LogDrawer.tsx:133`)
 
 This persists for the **entire** agent run (often 5-20 minutes). When the agent finally exits, `--print` dumps plain text to stdout, which gets written to the log file. At that point:
+
 - `parseStreamJson` tries JSON.parse on each line, fails, and wraps them as `{ kind: 'plain' }` items
 - LogDrawer renders via ChatThread, which may not render `plain` items well
 
@@ -44,11 +45,13 @@ This persists for the **entire** agent run (often 5-20 minutes). When the agent 
 ### Secondary issue: preload type mismatch
 
 The preload declares `sprint.readLog` as:
+
 ```ts
 readLog: (agentId: string): Promise<{ content: string; status: string }>
 ```
 
 But the handler returns `{ content, status, nextByte }` and accepts `(agentId, fromByte?)`. The preload:
+
 1. Never passes `fromByte`, so every poll re-reads the **entire** log file from byte 0
 2. Omits `nextByte` from the return type
 
@@ -75,6 +78,7 @@ For BDE-spawned agents with stream-json logs (up to 3.4MB observed), this means 
 ### Failure 2: stdin is closed — `--print` mode
 
 Even if we somehow got the child reference:
+
 1. Task-runner calls `child.stdin.end()` immediately after writing the prompt (`task-runner.js:411`)
 2. `--print` mode does not accept follow-up stdin messages
 3. `child.stdin.destroyed` would be `true`
@@ -83,6 +87,7 @@ Even if we somehow got the child reference:
 ### Note on BDE-spawned agents
 
 Steering **would** work for agents spawned via BDE's `spawnClaudeAgent()` because:
+
 - They use `--input-format stream-json` (accepts stdin messages)
 - stdin is **not** closed after the initial message
 - The child is registered in `activeAgentsById`
@@ -130,13 +135,13 @@ task-runner.js                    BDE Electron (main)              BDE Renderer
 
 ### Breakage points
 
-| # | Where | What breaks |
-|---|-------|-------------|
-| A | `--print` flag | No streaming output — log stays 0 bytes during run |
-| B | `stdin.end()` | Prevents any follow-up messages |
-| C | Preload omits `fromByte` | Re-reads entire file every poll (perf, not correctness) |
-| D | Preload omits `nextByte` | Can't do incremental reads even if wanted |
-| E | Plain text output | `parseStreamJson` wraps as `plain` items — no tool use, no structured chat |
+| #   | Where                    | What breaks                                                                |
+| --- | ------------------------ | -------------------------------------------------------------------------- |
+| A   | `--print` flag           | No streaming output — log stays 0 bytes during run                         |
+| B   | `stdin.end()`            | Prevents any follow-up messages                                            |
+| C   | Preload omits `fromByte` | Re-reads entire file every poll (perf, not correctness)                    |
+| D   | Preload omits `nextByte` | Can't do incremental reads even if wanted                                  |
+| E   | Plain text output        | `parseStreamJson` wraps as `plain` items — no tool use, no structured chat |
 
 ---
 
@@ -171,11 +176,11 @@ LogDrawer                   Preload                    Main Process             
 
 ### Breakage points
 
-| # | Where | What breaks |
-|---|-------|-------------|
-| 1 | `activeAgentsById` map | Only populated by BDE's `spawnClaudeAgent()`, not task-runner |
-| 2 | `child.stdin.end()` | Task-runner closes stdin immediately — `--print` doesn't accept follow-ups |
-| 3 | Process boundary | Child process belongs to task-runner (separate Node.js process), not BDE Electron |
+| #   | Where                  | What breaks                                                                       |
+| --- | ---------------------- | --------------------------------------------------------------------------------- |
+| 1   | `activeAgentsById` map | Only populated by BDE's `spawnClaudeAgent()`, not task-runner                     |
+| 2   | `child.stdin.end()`    | Task-runner closes stdin immediately — `--print` doesn't accept follow-ups        |
+| 3   | Process boundary       | Child process belongs to task-runner (separate Node.js process), not BDE Electron |
 
 ---
 
@@ -209,16 +214,16 @@ Log size: Tiny (0 bytes during run, ~100-500 bytes after exit)
 
 ### What happens if we remove `--print` from task-runner?
 
-| Aspect | Current (`--print`) | Without `--print` (interactive) |
-|--------|--------------------|---------------------------------|
-| Output format | Plain text at exit | Need `--output-format stream-json` |
-| Streaming | None during run | Real-time token streaming |
-| stdin | Must call `.end()` | Must NOT call `.end()` |
-| Initial prompt | Plain text to stdin | JSON message to stdin |
-| Agent exit | Exits after output | Exits after emitting `result` event |
-| Log file during run | 0 bytes | Growing continuously |
-| PR URL extraction | `extractPrUrl(plainText)` | Must parse stream-json for text blocks, then extract |
-| Follow-up messages | Impossible | Possible via stdin JSON messages |
+| Aspect              | Current (`--print`)       | Without `--print` (interactive)                      |
+| ------------------- | ------------------------- | ---------------------------------------------------- |
+| Output format       | Plain text at exit        | Need `--output-format stream-json`                   |
+| Streaming           | None during run           | Real-time token streaming                            |
+| stdin               | Must call `.end()`        | Must NOT call `.end()`                               |
+| Initial prompt      | Plain text to stdin       | JSON message to stdin                                |
+| Agent exit          | Exits after output        | Exits after emitting `result` event                  |
+| Log file during run | 0 bytes                   | Growing continuously                                 |
+| PR URL extraction   | `extractPrUrl(plainText)` | Must parse stream-json for text blocks, then extract |
+| Follow-up messages  | Impossible                | Possible via stdin JSON messages                     |
 
 ### Risks of changing to interactive mode
 
@@ -230,6 +235,7 @@ Log size: Tiny (0 bytes during run, ~100-500 bytes after exit)
 ### Can you steer a `--print` session?
 
 **No.** `--print` mode:
+
 1. Reads stdin until EOF (`.end()`)
 2. Processes the input as a single prompt
 3. Writes the result to stdout
@@ -248,6 +254,7 @@ There is no mechanism for follow-up messages. stdin must be closed for `--print`
 **Changes needed:**
 
 1. **Line 375-383** — Change spawn flags:
+
    ```js
    // FROM:
    spawn(CLAUDE_BIN, ['--permission-mode', 'bypassPermissions', '--print', '--add-dir', worktreeDir], ...)
@@ -262,15 +269,18 @@ There is no mechanism for follow-up messages. stdin must be closed for `--print`
    ```
 
 2. **Line 410-411** — Change stdin protocol:
+
    ```js
    // FROM:
    child.stdin.write(promptText)
    child.stdin.end()
    // TO:
-   child.stdin.write(JSON.stringify({
-     type: 'user',
-     message: { role: 'user', content: promptText }
-   }) + '\n')
+   child.stdin.write(
+     JSON.stringify({
+       type: 'user',
+       message: { role: 'user', content: promptText }
+     }) + '\n'
+   )
    // DO NOT call stdin.end()
    ```
 
@@ -326,6 +336,7 @@ if (!child) {
 ### Fix 4: Alternative — move agent spawning into BDE [HIGH RISK, HIGH REWARD]
 
 Instead of task-runner spawning agents, have BDE's main process do it. This would:
+
 - Put child processes in BDE's `activeAgentsById` map (steering works)
 - Use stream-json mode (live output works)
 - Eliminate the cross-process problem entirely

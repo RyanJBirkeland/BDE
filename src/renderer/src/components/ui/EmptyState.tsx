@@ -7,7 +7,12 @@ type EmptyStateProps = {
   action?: { label: string; onClick: () => void }
 }
 
-export function EmptyState({ icon, title, description, action }: EmptyStateProps): React.JSX.Element {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action
+}: EmptyStateProps): React.JSX.Element {
   return (
     <div className="bde-empty">
       {icon && <div className="bde-empty__icon">{icon}</div>}

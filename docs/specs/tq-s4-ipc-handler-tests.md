@@ -13,20 +13,21 @@ BDE has 8 handler registration files that wire 30+ IPC channels between the rend
 
 ### Handler Inventory
 
-| File | Channels | Risk |
-|------|----------|------|
-| `handlers/agent-handlers.ts` | 8 channels (spawn, list, get, tail, send, import, markDone, prune) | High — process lifecycle |
-| `handlers/git-handlers.ts` | 12 channels (status, diff, log, branch, stage, unstage, commit, push, checkout, repoPaths, readSprint) | High — shell commands |
-| `handlers/terminal-handlers.ts` | 4 channels (create, write, resize, kill) | High — PTY lifecycle |
-| `handlers/config-handlers.ts` | 4 channels (getGatewayConfig, getGitHubToken, saveGatewayConfig, getSupabaseConfig) | Medium — auth |
-| `handlers/gateway-handlers.ts` | 1 channel (gateway:invoke) | Medium — HTTP proxy |
-| `handlers/window-handlers.ts` | 3 channels (open-external, kill-local-agent, set-title) | Medium — process kill |
-| `fs.ts` (registerFsHandlers) | 3 channels (list-memory-files, read-memory-file, write-memory-file) | Medium — file I/O |
-| `ipc-utils.ts` (safeHandle) | N/A — wrapper | Low |
+| File                            | Channels                                                                                               | Risk                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------ |
+| `handlers/agent-handlers.ts`    | 8 channels (spawn, list, get, tail, send, import, markDone, prune)                                     | High — process lifecycle |
+| `handlers/git-handlers.ts`      | 12 channels (status, diff, log, branch, stage, unstage, commit, push, checkout, repoPaths, readSprint) | High — shell commands    |
+| `handlers/terminal-handlers.ts` | 4 channels (create, write, resize, kill)                                                               | High — PTY lifecycle     |
+| `handlers/config-handlers.ts`   | 4 channels (getGatewayConfig, getGitHubToken, saveGatewayConfig, getSupabaseConfig)                    | Medium — auth            |
+| `handlers/gateway-handlers.ts`  | 1 channel (gateway:invoke)                                                                             | Medium — HTTP proxy      |
+| `handlers/window-handlers.ts`   | 3 channels (open-external, kill-local-agent, set-title)                                                | Medium — process kill    |
+| `fs.ts` (registerFsHandlers)    | 3 channels (list-memory-files, read-memory-file, write-memory-file)                                    | Medium — file I/O        |
+| `ipc-utils.ts` (safeHandle)     | N/A — wrapper                                                                                          | Low                      |
 
 ### What We're Testing
 
 This story tests the **wiring layer** — that each handler:
+
 1. Registers on the correct IPC channel name
 2. Calls the correct underlying function with the correct arguments
 3. Returns the expected result shape
@@ -52,7 +53,7 @@ vi.mock('../local-agents', () => ({
   tailAgentLog: vi.fn().mockResolvedValue({ content: '', nextByte: 0 }),
   sendToAgent: vi.fn().mockReturnValue({ ok: true }),
   isAgentInteractive: vi.fn().mockReturnValue(true),
-  cleanupOldLogs: vi.fn(),
+  cleanupOldLogs: vi.fn()
 }))
 
 vi.mock('../agent-history', () => ({
@@ -61,14 +62,14 @@ vi.mock('../agent-history', () => ({
   readLog: vi.fn().mockResolvedValue({ content: '', nextByte: 0 }),
   importAgent: vi.fn().mockResolvedValue({}),
   updateAgentMeta: vi.fn(),
-  pruneOldAgents: vi.fn(),
+  pruneOldAgents: vi.fn()
 }))
 
 vi.mock('../git', () => ({
   gitStatus: vi.fn().mockReturnValue({ files: [] }),
   gitDiffFile: vi.fn().mockReturnValue(''),
   getDiff: vi.fn().mockReturnValue(''),
-  getLog: vi.fn().mockReturnValue(''),
+  getLog: vi.fn().mockReturnValue('')
   // ... etc
 }))
 
@@ -76,7 +77,7 @@ vi.mock('../config', () => ({
   getGatewayConfig: vi.fn().mockReturnValue({ url: 'ws://localhost:18789', token: 'test' }),
   getGitHubToken: vi.fn().mockReturnValue('gh-token'),
   saveGatewayConfig: vi.fn(),
-  getSupabaseConfig: vi.fn().mockReturnValue(null),
+  getSupabaseConfig: vi.fn().mockReturnValue(null)
 }))
 ```
 
@@ -88,14 +89,14 @@ const handlers = new Map<string, Function>()
 vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn((channel, handler) => handlers.set(channel, handler)),
-    on: vi.fn((channel, handler) => handlers.set(channel, handler)),
+    on: vi.fn((channel, handler) => handlers.set(channel, handler))
   },
   BrowserWindow: {
-    getAllWindows: vi.fn(() => [{ webContents: { send: vi.fn() } }]),
+    getAllWindows: vi.fn(() => [{ webContents: { send: vi.fn() } }])
   },
   shell: { openExternal: vi.fn() },
   dialog: { showErrorBox: vi.fn() },
-  app: { quit: vi.fn() },
+  app: { quit: vi.fn() }
 }))
 ```
 
@@ -188,9 +189,9 @@ vi.mock('electron', () => ({
 
 ## Files to Create
 
-| File | Purpose | Estimated LOC |
-|------|---------|---------------|
-| `src/main/__tests__/handlers.test.ts` | IPC handler wiring tests | ~250 |
+| File                                  | Purpose                  | Estimated LOC |
+| ------------------------------------- | ------------------------ | ------------- |
+| `src/main/__tests__/handlers.test.ts` | IPC handler wiring tests | ~250          |
 
 ## Files to Modify
 

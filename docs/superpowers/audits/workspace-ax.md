@@ -39,6 +39,7 @@ This is 409 lines of dead code with 600+ lines of dead tests. The unified store 
 ### C3. Cross-domain coupling: Agent components directly import terminal store
 
 **Files:**
+
 - `src/renderer/src/components/agents/ConsoleHeader.tsx` line 8: `import { useTerminalStore } from '../../stores/terminal'`
 - `src/renderer/src/components/agents/AgentDetail.tsx` line 11 (dead, but shows the pattern)
 
@@ -53,6 +54,7 @@ This is 409 lines of dead code with 600+ lines of dead tests. The unified store 
 ### S1. Dual rendering paths for agent events: `ChatRenderer` vs `ConsoleLine`
 
 **Files:**
+
 - `src/renderer/src/components/agents/ChatRenderer.tsx` (237 lines) -- used by `AgentDetail` (dead), `AgentOutputTab`, `LogDrawer`, `TaskMonitorPanel`
 - `src/renderer/src/components/agents/ConsoleLine.tsx` (387 lines) -- used by `AgentConsole`
 
@@ -77,6 +79,7 @@ A single `useEffect` binds ~15 keyboard shortcuts spanning both editor and termi
 **File:** `src/renderer/src/views/IDEView.tsx` line 103
 
 `const [fileContents, setFileContents] = useState<Record<string, string>>({})` holds all file content in component-local state. This means:
+
 - Content is lost when IDEView unmounts (switching views in the panel system).
 - `handleContentChange` and `handleSave` must be threaded through props instead of accessed from the store.
 - The content cache cannot be shared with other panels.
@@ -113,6 +116,7 @@ These module-scoped maps plus the exported `clearTerminal()` and `getSearchAddon
 | `EmptyState` | `components/terminal/EmptyState.tsx` | 49 | Only imported by itself (no consumers) |
 
 Plus their test files:
+
 - `__tests__/AgentTimeline.test.tsx`
 - `__tests__/AgentDetail.test.tsx`
 - `__tests__/HealthBar.test.tsx`
@@ -126,6 +130,7 @@ Plus their test files:
 ### M1. `formatDuration` duplicated 3 times in agent components
 
 Implementations exist in:
+
 - `src/renderer/src/components/agents/AgentCard.tsx` lines 26-33
 - `src/renderer/src/components/agents/ConsoleHeader.tsx` lines 24-39
 - `src/renderer/src/components/agents/ConsoleLine.tsx` lines 22-30

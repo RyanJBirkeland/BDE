@@ -58,6 +58,7 @@ src/renderer/src/assets/agents.css
 Create the new CSS file and sidebar components. After this task, the sidebar renders with Sessions/Queue sections (using existing data) but the main panel is still the old AgentDetail.
 
 **Files:**
+
 - Create: `src/renderer/src/assets/agents-view.css`
 - Create: `src/renderer/src/components/agents/SessionList.tsx`
 - Create: `src/renderer/src/components/agents/QueueList.tsx`
@@ -109,13 +110,18 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 211, 127, 0.4) 0%,
+    rgba(108, 142, 239, 0.2) 60%,
+    transparent 100%
+  );
 }
 
 .agents-sidebar__title {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -130,7 +136,9 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
   border-radius: var(--radius-sm, 4px);
   cursor: pointer;
   color: var(--text-secondary, var(--bde-text-muted));
-  transition: color 0.12s ease, border-color 0.12s ease;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .agents-sidebar__add-btn:hover {
@@ -250,8 +258,13 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* ── Session Header ──────────────────────────────── */
@@ -307,7 +320,9 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
   border: none;
   cursor: pointer;
   font-family: inherit;
-  transition: color 0.1s, background 0.1s;
+  transition:
+    color 0.1s,
+    background 0.1s;
 }
 
 .session-header__tab:hover {
@@ -328,7 +343,9 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
   padding: 2px 6px;
   border-radius: 4px;
   font-family: inherit;
-  transition: color 0.1s, background 0.1s;
+  transition:
+    color 0.1s,
+    background 0.1s;
 }
 
 .session-header__stop:hover {
@@ -635,7 +652,9 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
   border: none;
   cursor: pointer;
   font-family: inherit;
-  transition: color 0.1s, background 0.1s;
+  transition:
+    color 0.1s,
+    background 0.1s;
 }
 
 .new-session__model-chip--active {
@@ -655,7 +674,9 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
   justify-content: center;
   font-size: 14px;
   font-weight: bold;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 
 .new-session__send-btn--enabled {
@@ -716,7 +737,9 @@ Complete CSS for the entire Agents view. Use CSS variables from `base.css` and `
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 
 .steer-input__send--enabled {
@@ -1009,6 +1032,7 @@ Remove source icon (Bot/Cpu), use CSS classes instead of inline styles. Keep the
 The card should use the new CSS classes: `agent-card`, `agent-card--selected`, `agent-card__dot`, `agent-card__dot--{status}`, `agent-card__title`, `agent-card__meta`.
 
 Map status to dot class (same for all agents — sidebar sections provide visual distinction):
+
 - `running` → `agent-card__dot--running` (green pulse)
 - `done` → `agent-card__dot--done`
 - `failed` → `agent-card__dot--failed`
@@ -1031,6 +1055,7 @@ git commit -m "feat(agents): add CSS foundation, SessionList, QueueList, simplif
 ## Task 2: NewSessionForm — inline spawn replacing SpawnModal
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/NewSessionForm.tsx`
 
 - [ ] **Step 1: Create `NewSessionForm.tsx`**
@@ -1040,6 +1065,7 @@ Centered form with greeting, textarea, repo select, model chips, send button.
 Key props: `onSessionCreated: (id: string) => void` — called after spawn succeeds so AgentsView can set `selectedId`.
 
 **Repo path resolution** (same pattern as current SpawnModal):
+
 1. On mount, call `window.api.getRepoPaths()` → `Record<string, string>` (lowercase name → path)
 2. Use `useRepoOptions()` hook for select labels
 3. On submit, look up `repoPaths[repo.toLowerCase()]` for filesystem path
@@ -1065,6 +1091,7 @@ git commit -m "feat(agents): add NewSessionForm — inline spawn replacing Spawn
 ## Task 3: ChatTab — interleaved stream with tool grouping
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/AgentText.tsx`
 - Create: `src/renderer/src/components/agents/UserMessage.tsx`
 - Create: `src/renderer/src/components/agents/ToolBlock.tsx`
@@ -1155,6 +1182,7 @@ git commit -m "feat(agents): add ChatTab with tool grouping, AgentText, UserMess
 ## Task 4: ToolsTab — tool call inspector
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/ToolsTab.tsx`
 
 - [ ] **Step 1: Create `ToolsTab.tsx`**
@@ -1183,11 +1211,13 @@ git commit -m "feat(agents): add ToolsTab — tool call inspector"
 ## Task 5: FilesTab — files touched view
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/FilesTab.tsx`
 
 - [ ] **Step 1: Create `FilesTab.tsx`**
 
 Extracts file paths from tool call events. Groups by action:
+
 - **Read**: tool_call where `tool === 'Read'`
 - **Modified**: tool_call where `tool === 'Edit' || tool === 'Write'`
 - **Searched**: tool_call where `tool === 'Glob' || tool === 'Grep'`
@@ -1218,6 +1248,7 @@ git commit -m "feat(agents): add FilesTab — files touched view"
 Wire everything together. This is the big integration task.
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/SessionHeader.tsx`
 - Modify: `src/renderer/src/views/AgentsView.tsx` (complete rewrite)
 - Modify: `src/renderer/src/components/agents/SteerInput.tsx` (polish)
@@ -1232,6 +1263,7 @@ Renders: status dot + task name + model/repo metadata + tab buttons (Chat/Tools/
 - [ ] **Step 2: Rewrite `AgentsView.tsx`**
 
 New structure:
+
 ```
 motion.div (root, fade-in)
 ├── agents-view__body (flex row)
@@ -1253,6 +1285,7 @@ motion.div (root, fade-in)
 ```
 
 Key state:
+
 - `selectedId: string | null` — null shows NewSessionForm
 - `activeTab: 'chat' | 'tools' | 'files'` — local state, resets to 'chat' on selection change
 - Remove auto-select-first-agent logic
@@ -1289,6 +1322,7 @@ git commit -m "feat(agents): rewrite AgentsView — chat-first layout with tabs,
 ## Task 7: Remove old components + cleanup
 
 **Files:**
+
 - Delete: `src/renderer/src/components/agents/SpawnModal.tsx`
 - Delete: `src/renderer/src/components/agents/ChatRenderer.tsx`
 - Delete: `src/renderer/src/components/agents/ChatBubble.tsx`
@@ -1304,6 +1338,7 @@ Delete all 7 files listed above. These are no longer imported by any component a
 - [ ] **Step 2: Remove any lingering imports**
 
 Search for imports of removed components across the codebase:
+
 - `CommandPalette` dispatches `bde:open-spawn-modal` — keep this event. AgentsView listens for it (Task 6) and sets `selectedId = null`.
 - Check `App.tsx` for any SpawnModal references — remove if found.
 - Check smoke tests (`src/renderer/src/views/__tests__/smoke.test.tsx`) — mock path may be `../../components/sessions/SpawnModal` (old path). Remove stale mocks.
@@ -1329,15 +1364,15 @@ git commit -m "chore(agents): remove old components — SpawnModal, ChatRenderer
 
 ## Execution Summary
 
-| Task | What | New Files | Modified |
-|------|------|-----------|----------|
-| 1 | CSS + sidebar (SessionList, QueueList, AgentCard) | 3 | 1 |
-| 2 | NewSessionForm (inline spawn) | 1 | 0 |
-| 3 | ChatTab + AgentText + UserMessage + ToolBlock | 4 | 0 |
-| 4 | ToolsTab (inspector) | 1 | 0 |
-| 5 | FilesTab (files touched) | 1 | 0 |
-| 6 | SessionHeader + AgentsView rewrite + SteerInput/ThinkingBlock polish | 1 | 4 |
-| 7 | Remove old components + cleanup | 0 | -7 deleted |
+| Task | What                                                                 | New Files | Modified   |
+| ---- | -------------------------------------------------------------------- | --------- | ---------- |
+| 1    | CSS + sidebar (SessionList, QueueList, AgentCard)                    | 3         | 1          |
+| 2    | NewSessionForm (inline spawn)                                        | 1         | 0          |
+| 3    | ChatTab + AgentText + UserMessage + ToolBlock                        | 4         | 0          |
+| 4    | ToolsTab (inspector)                                                 | 1         | 0          |
+| 5    | FilesTab (files touched)                                             | 1         | 0          |
+| 6    | SessionHeader + AgentsView rewrite + SteerInput/ThinkingBlock polish | 1         | 4          |
+| 7    | Remove old components + cleanup                                      | 0         | -7 deleted |
 
 **Total tasks:** 7
 **New files:** 11

@@ -17,6 +17,7 @@
 **Context:** AgentManager creates `agentRunId` (line 188) and stores it in the in-memory `ActiveAgent` object, but never calls `updateTask()` to persist it to Supabase. After app restart, LogDrawer can't find the agent's log because the link is missing.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:200-202`
 - Test: `src/main/agent-manager/__tests__/index.test.ts`
 
@@ -45,10 +46,10 @@ Expected: FAIL — `updateTask` is never called with `agent_run_id`
 In `src/main/agent-manager/index.ts`, after line 201 (`activeAgents.set(task.id, agent)`), add:
 
 ```typescript
-    // Persist agent_run_id so LogDrawer can find logs after restart
-    await updateTask(task.id, { agent_run_id: agentRunId }).catch((err) =>
-      logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
-    )
+// Persist agent_run_id so LogDrawer can find logs after restart
+await updateTask(task.id, { agent_run_id: agentRunId }).catch((err) =>
+  logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
+)
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -75,6 +76,7 @@ git commit -m "fix: persist agent_run_id to sprint task after spawn (FC-S1)"
 **Context:** `gitPush()` in `git.ts` was converted from sync to async but the error path needs verification. Node's `util.promisify(execFile)` DOES reject on non-zero exit, so the function throws — but the error message is a raw Node error, not a descriptive git-push-specific message. The agent-manager's `completion.ts` calls `execFile` directly (not `gitPush()`), so this mainly affects future callers.
 
 **Files:**
+
 - Modify: `src/main/git.ts:89-96`
 
 - [ ] **Step 1: Verify current behavior**
@@ -120,17 +122,25 @@ git commit -m "fix: add descriptive error wrapping to gitPush (FC-S2)"
 **Context:** In `agent-manager/index.ts:464`, `pruneLoop().catch(() => {})` silently swallows errors. This is inconsistent — `orphanLoop()` on line 463 was fixed in PR #328 to log, but `pruneLoop()` was missed.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:464`
 
 - [ ] **Step 1: Apply the one-line fix**
 
 Change line 464 from:
+
 ```typescript
-pruneTimer = setInterval(() => { pruneLoop().catch(() => {}) }, WORKTREE_PRUNE_INTERVAL_MS)
+pruneTimer = setInterval(() => {
+  pruneLoop().catch(() => {})
+}, WORKTREE_PRUNE_INTERVAL_MS)
 ```
+
 to:
+
 ```typescript
-pruneTimer = setInterval(() => { pruneLoop().catch((err) => logger.warn(`[agent-manager] Prune loop error: ${err}`)) }, WORKTREE_PRUNE_INTERVAL_MS)
+pruneTimer = setInterval(() => {
+  pruneLoop().catch((err) => logger.warn(`[agent-manager] Prune loop error: ${err}`))
+}, WORKTREE_PRUNE_INTERVAL_MS)
 ```
 
 - [ ] **Step 2: Run typecheck and tests**
@@ -152,6 +162,7 @@ git commit -m "fix: log pruneLoop errors instead of swallowing"
 **Context:** `auth-guard.ts:78` uses `oauth.expiresAt!` (non-null assertion) on an optional field. If `expiresAt` is undefined, `parseInt(undefined, 10)` returns `NaN`, `new Date(NaN)` is Invalid Date, and `new Date() >= invalidDate` is `false` — meaning a missing expiry appears valid.
 
 **Files:**
+
 - Modify: `src/main/auth-guard.ts:78`
 - Test: `src/main/auth-guard.test.ts`
 
@@ -166,7 +177,7 @@ import type { CredentialStore } from './auth-guard'
 it('reports tokenExpired when expiresAt is missing', async () => {
   const store: CredentialStore = {
     readToken: async () => ({ claudeAiOauth: { accessToken: 'tok' } }),
-    detectCli: () => true,
+    detectCli: () => true
   }
   const status = await checkAuthStatus(store)
   expect(status.tokenExpired).toBe(true)
@@ -183,15 +194,15 @@ Expected: FAIL — currently returns `tokenExpired: false`
 Replace lines 78-79 in `auth-guard.ts` with:
 
 ```typescript
-  if (!oauth.expiresAt) {
-    return { cliFound, tokenFound: true, tokenExpired: true }
-  }
-  const expiresMs = parseInt(oauth.expiresAt, 10)
-  if (Number.isNaN(expiresMs)) {
-    return { cliFound, tokenFound: true, tokenExpired: true }
-  }
-  const expiresAt = new Date(expiresMs)
-  const tokenExpired = new Date() >= expiresAt
+if (!oauth.expiresAt) {
+  return { cliFound, tokenFound: true, tokenExpired: true }
+}
+const expiresMs = parseInt(oauth.expiresAt, 10)
+if (Number.isNaN(expiresMs)) {
+  return { cliFound, tokenFound: true, tokenExpired: true }
+}
+const expiresAt = new Date(expiresMs)
+const tokenExpired = new Date() >= expiresAt
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -220,6 +231,7 @@ git commit -m "fix: handle missing/invalid expiresAt in auth-guard"
 **Important:** `AgentCostRecord` already exists in `src/shared/types.ts` — import it, don't redefine.
 
 **Files:**
+
 - Modify: `src/main/data/cost-queries.ts` (add `getAgentHistory` with `db` param)
 - Modify: `src/main/cost-queries.ts` (add wrapper that injects `getDb()`)
 - Modify: `src/main/handlers/cost-handlers.ts` (replace raw SQL with wrapper call)
@@ -274,7 +286,7 @@ function rowToRecord(row: AgentCostRow): AgentCostRecord {
     numTurns: row.num_turns,
     taskTitle: row.title,
     prUrl: row.pr_url,
-    repo: row.repo,
+    repo: row.repo
   }
 }
 
@@ -292,7 +304,7 @@ Add the `getAgentHistory` wrapper alongside the existing wrappers:
 import {
   getCostSummary as _getCostSummary,
   getRecentAgentRunsWithCost as _getRecentAgentRunsWithCost,
-  getAgentHistory as _getAgentHistory,
+  getAgentHistory as _getAgentHistory
 } from './data/cost-queries'
 import type { AgentCostRecord } from '../shared/types'
 
@@ -341,6 +353,7 @@ git commit -m "refactor: move raw SQL from cost-handlers to data layer"
 **Context:** `sprint-local.ts:195-197` uses inline `db.prepare('SELECT log_path, status FROM agent_runs WHERE id = ?')` when a data layer function `getAgentLogPath()` already exists in `data/agent-queries.ts:184-192`. The existing function only returns `log_path` — we need `status` too, so add a small extension.
 
 **Files:**
+
 - Modify: `src/main/data/agent-queries.ts` (add `getAgentLogInfo`)
 - Modify: `src/main/handlers/sprint-local.ts:193-197`
 
@@ -351,9 +364,9 @@ export function getAgentLogInfo(
   db: Database.Database,
   id: string
 ): { logPath: string; status: string } | null {
-  const row = db
-    .prepare('SELECT log_path, status FROM agent_runs WHERE id = ?')
-    .get(id) as { log_path: string; status: string } | undefined
+  const row = db.prepare('SELECT log_path, status FROM agent_runs WHERE id = ?').get(id) as
+    | { log_path: string; status: string }
+    | undefined
   if (!row?.log_path) return null
   return { logPath: row.log_path, status: row.status }
 }
@@ -391,15 +404,19 @@ git commit -m "refactor: use data layer for sprint:readLog agent lookup"
 **Context:** `TicketEditor.tsx:39` defaults priority to `3`, but `db.ts:140` defaults to `1`. Since tickets are now created via Supabase (not local SQLite), the DB default doesn't directly apply — but the inconsistency is confusing and `1` is the correct semantic default (highest priority).
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/TicketEditor.tsx:39`
 
 - [ ] **Step 1: Align the default**
 
 Change line 39 in `TicketEditor.tsx` from:
+
 ```typescript
 priority: priority ?? 3,
 ```
+
 to:
+
 ```typescript
 priority: priority ?? 1,
 ```
@@ -420,15 +437,15 @@ git commit -m "fix: align TicketEditor default priority with DB schema (3 -> 1)"
 
 ## Summary
 
-| Task | Bug | Risk | Est. |
-|------|-----|------|------|
-| 1 | agent_run_id not persisted (FC-S1) | Low — additive, no behavior change for existing flows | 5 min |
-| 2 | gitPush() error wrapping (FC-S2) | Low — function may not be called currently | 3 min |
-| 3 | pruneLoop swallowed error | Trivial — one-line consistency fix | 1 min |
-| 4 | auth-guard non-null assertion | Low — defensive, fails closed | 5 min |
-| 5 | Raw SQL in cost-handlers | Low — moves existing code, no behavior change | 5 min |
-| 6 | Raw SQL in sprint-local | Low — uses existing data layer pattern | 3 min |
-| 7 | Priority default mismatch | Trivial — constant change | 1 min |
+| Task | Bug                                | Risk                                                  | Est.  |
+| ---- | ---------------------------------- | ----------------------------------------------------- | ----- |
+| 1    | agent_run_id not persisted (FC-S1) | Low — additive, no behavior change for existing flows | 5 min |
+| 2    | gitPush() error wrapping (FC-S2)   | Low — function may not be called currently            | 3 min |
+| 3    | pruneLoop swallowed error          | Trivial — one-line consistency fix                    | 1 min |
+| 4    | auth-guard non-null assertion      | Low — defensive, fails closed                         | 5 min |
+| 5    | Raw SQL in cost-handlers           | Low — moves existing code, no behavior change         | 5 min |
+| 6    | Raw SQL in sprint-local            | Low — uses existing data layer pattern                | 3 min |
+| 7    | Priority default mismatch          | Trivial — constant change                             | 1 min |
 
 **Total estimated: ~25 minutes**
 

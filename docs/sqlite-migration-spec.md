@@ -2,11 +2,12 @@
 
 > **Status: COMPLETED (2026-03-16)**
 > All four stories (S1-S4) have been implemented and merged. Supabase is fully retired.
+>
 > - S1 (Foundation): `src/main/db.ts` — better-sqlite3 with WAL mode, schema migrations.
 > - S2 (Sprint IPC): `src/main/handlers/sprint.ts` — all handlers use SQLite, no Supabase.
 > - S3 (Task Runner): Task runner reads/writes `~/.bde/bde.db` directly.
 > - S4 (Agent History): `src/main/agent-history.ts` — `agent_runs` table replaces `agents.json`.
-> This document is preserved as a historical record of the migration design.
+>   This document is preserved as a historical record of the migration design.
 
 **Date:** 2026-03-16
 **Vision:** Replace Supabase REST (cloud Postgres) + `agents.json` flat file with a local SQLite database (`~/.bde/bde.db`). BDE is a desktop app — local storage is faster, simpler, and more reliable.
@@ -17,12 +18,12 @@
 
 ## What Moves to SQLite
 
-| Current Storage | Data | New Home |
-|-----------------|------|----------|
-| Supabase Life OS (`sprint_tasks` table) | Task queue, backlog, sprint | `bde.db` sprint_tasks |
-| `~/.bde/agents.json` | Agent run history + metadata | `bde.db` agent_runs |
-| `~/.bde/agent-logs/<date>/<id>/output.log` | Agent log output | **Stays on disk** (streaming files, not DB) |
-| In-memory (hardcoded) | Repo paths, settings | `bde.db` settings |
+| Current Storage                            | Data                         | New Home                                    |
+| ------------------------------------------ | ---------------------------- | ------------------------------------------- |
+| Supabase Life OS (`sprint_tasks` table)    | Task queue, backlog, sprint  | `bde.db` sprint_tasks                       |
+| `~/.bde/agents.json`                       | Agent run history + metadata | `bde.db` agent_runs                         |
+| `~/.bde/agent-logs/<date>/<id>/output.log` | Agent log output             | **Stays on disk** (streaming files, not DB) |
+| In-memory (hardcoded)                      | Repo paths, settings         | `bde.db` settings                           |
 
 ---
 
@@ -157,19 +158,25 @@ const db = new Database(join(homedir(), '.bde', 'bde.db'))
 db.pragma('journal_mode = WAL')
 
 function getQueuedTasks(limit) {
-  return db.prepare(
-    "SELECT * FROM sprint_tasks WHERE status = 'queued' ORDER BY priority ASC, created_at ASC LIMIT ?"
-  ).all(limit)
+  return db
+    .prepare(
+      "SELECT * FROM sprint_tasks WHERE status = 'queued' ORDER BY priority ASC, created_at ASC LIMIT ?"
+    )
+    .all(limit)
 }
 
 function claimTask(id) {
-  return db.prepare(
-    "UPDATE sprint_tasks SET status = 'active', started_at = ? WHERE id = ? AND status = 'queued'"
-  ).run(new Date().toISOString(), id)
+  return db
+    .prepare(
+      "UPDATE sprint_tasks SET status = 'active', started_at = ? WHERE id = ? AND status = 'queued'"
+    )
+    .run(new Date().toISOString(), id)
 }
 
 function updateTask(id, patch) {
-  const cols = Object.keys(patch).map(k => `${k} = ?`).join(', ')
+  const cols = Object.keys(patch)
+    .map((k) => `${k} = ?`)
+    .join(', ')
   return db.prepare(`UPDATE sprint_tasks SET ${cols} WHERE id = ?`).run(...Object.values(patch), id)
 }
 ```
@@ -182,21 +189,41 @@ No more Supabase env vars required in the task runner.
 
 ```typescript
 export function registerAgent(meta: Omit<AgentMeta, 'logPath'> & { logPath: string }): void {
-  getDb().prepare(`
+  getDb()
+    .prepare(
+      `
     INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'running', ?, ?)
-  `).run(meta.id, meta.pid, meta.bin, meta.task, meta.repo, meta.repoPath, meta.model, meta.logPath, meta.startedAt)
+  `
+    )
+    .run(
+      meta.id,
+      meta.pid,
+      meta.bin,
+      meta.task,
+      meta.repo,
+      meta.repoPath,
+      meta.model,
+      meta.logPath,
+      meta.startedAt
+    )
 }
 
 export function finishAgent(id: string, exitCode: number): void {
-  getDb().prepare(`
+  getDb()
+    .prepare(
+      `
     UPDATE agent_runs SET status = ?, exit_code = ?, finished_at = ?
     WHERE id = ?
-  `).run(exitCode === 0 ? 'done' : 'failed', exitCode, new Date().toISOString(), id)
+  `
+    )
+    .run(exitCode === 0 ? 'done' : 'failed', exitCode, new Date().toISOString(), id)
 }
 
 export function listAgents(limit = 100): AgentMeta[] {
-  return getDb().prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?').all(limit) as AgentMeta[]
+  return getDb()
+    .prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?')
+    .all(limit) as AgentMeta[]
 }
 ```
 
@@ -205,10 +232,12 @@ export function listAgents(limit = 100): AgentMeta[] {
 ## Stories (Sequential — each depends on previous)
 
 ### S1 — SQLite Foundation
+
 **Branch:** `feat/sqlite-s1-foundation`
 **Scope:** Install `better-sqlite3`, create `src/main/db.ts` with schema + migrations, add to main/index.ts init sequence, add `closeDb()` on app quit. No data logic yet.
 
 Files:
+
 - `package.json` — add `better-sqlite3` + `@types/better-sqlite3`
 - `src/main/db.ts` — NEW: getDb(), closeDb(), runMigrations()
 - `src/main/index.ts` — import getDb() at startup to init schema; closeDb() on app.on('quit')
@@ -219,27 +248,32 @@ Verification: app starts, `~/.bde/bde.db` exists, schema tables visible.
 ---
 
 ### S2 — Sprint Tasks IPC → SQLite
+
 **Branch:** `feat/sqlite-s2-sprint`
 **Depends on:** S1 merged
 **Scope:** Replace `src/main/handlers/sprint.ts` Supabase REST calls with SQLite. All sprint: IPC handlers become synchronous. Keep same IPC surface (no renderer changes needed).
 
 Files:
+
 - `src/main/handlers/sprint.ts` — REWRITE: all handlers use `getDb()`, no fetch calls, no Supabase env vars
 - Remove Supabase env resolution code (`resolveSupabaseEnv`, `supabaseFetch`, `ensureBacklogStatus`)
 - Keep same handler names: `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:readLog`
 
 Data migration (run once at startup if Supabase data exists):
+
 - Try to fetch from Supabase; if successful AND local table is empty, copy rows to SQLite
 - One-time migration, then Supabase is no longer used for sprint_tasks
 
 ---
 
 ### S3 — Task Runner → SQLite
+
 **Branch:** `feat/sqlite-s3-task-runner`
 **Depends on:** S2 merged (schema must exist)
 **Scope:** Rewrite task runner's data layer to use SQLite directly. Remove all Supabase fetch calls.
 
 Files:
+
 - `~/Documents/Repositories/life-os/scripts/task-runner.js` — replace all Supabase REST calls with better-sqlite3
   - `getQueuedTasks()`, `claimTask()`, `updateTask()`, `registerBdeAgent()`, `finishBdeAgent()` all use SQLite
   - Remove `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `supabaseFetch()` entirely
@@ -251,11 +285,13 @@ Note: task runner must install `better-sqlite3`: check `life-os/package.json` an
 ---
 
 ### S4 — Agent History → SQLite
+
 **Branch:** `feat/sqlite-s4-agent-history`
 **Depends on:** S1 merged (can run parallel with S2/S3)
 **Scope:** Replace `~/.bde/agents.json` flat file with `agent_runs` SQLite table.
 
 Files:
+
 - `src/main/agent-history.ts` — REWRITE: all read/write uses SQLite `agent_runs` table
   - `registerAgent()`, `appendLog()`, `readLog()`, `finishAgent()`, `listAgents()`, `pruneOldAgents()`
   - Log files stay on disk at `~/.bde/agent-logs/` — only metadata moves to SQLite
@@ -280,12 +316,14 @@ S3 and S4 can overlap after S1 is merged. S3 depends on S2 because sprint_tasks 
 ## Package Changes
 
 ### BDE (package.json)
+
 ```json
 "better-sqlite3": "^9.x",
 "@types/better-sqlite3": "^7.x"
 ```
 
 ### electron.vite.config.ts
+
 ```typescript
 // better-sqlite3 is a native module — must be external
 build: {
@@ -296,6 +334,7 @@ build: {
 ```
 
 ### Life OS (scripts/package.json or root package.json)
+
 ```json
 "better-sqlite3": "^9.x"
 ```
@@ -303,6 +342,7 @@ build: {
 ---
 
 ## Out of Scope
+
 - Syncing SQLite to cloud (no iCloud sync, no multi-machine)
 - Sprint task auth/permissions (single-user desktop app)
 - Real-time subscriptions (polling is fine for desktop)
@@ -312,6 +352,7 @@ build: {
 ---
 
 ## Success Criteria
+
 - [ ] BDE starts with no Supabase env vars required
 - [ ] Sprint Center loads tasks from SQLite — instant, no network
 - [ ] Creating a ticket writes to SQLite, appears immediately

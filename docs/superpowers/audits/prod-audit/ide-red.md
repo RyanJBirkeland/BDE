@@ -10,15 +10,15 @@
 
 ### Previously Reported -- Now Fixed
 
-| Synthesis ID | Issue | Status |
-|---|---|---|
-| SEC-2 | Symlink-based path traversal bypass in `ide-fs-handlers.ts` -- `path.resolve()` does not follow symlinks | **Fixed.** `validateIdePath()` now calls `fs.realpathSync()` on both the root and the target path (lines 19-42). Integration test at `src/main/__tests__/integration/ide-path-traversal.test.ts` covers `..` traversal, absolute paths outside root, prefix siblings, and null bytes. |
+| Synthesis ID | Issue                                                                                                    | Status                                                                                                                                                                                                                                                                                |
+| ------------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-2        | Symlink-based path traversal bypass in `ide-fs-handlers.ts` -- `path.resolve()` does not follow symlinks | **Fixed.** `validateIdePath()` now calls `fs.realpathSync()` on both the root and the target path (lines 19-42). Integration test at `src/main/__tests__/integration/ide-path-traversal.test.ts` covers `..` traversal, absolute paths outside root, prefix siblings, and null bytes. |
 
 ### Previously Reported -- Still Open
 
-| Synthesis ID | Issue | Status |
-|---|---|---|
-| SEC-1 | Renderer sandbox disabled | **Still open.** With sandbox disabled, any renderer-side vulnerability (XSS in Monaco, malicious file content) grants full Node.js access. This amplifies every finding below. |
+| Synthesis ID | Issue                     | Status                                                                                                                                                                         |
+| ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| SEC-1        | Renderer sandbox disabled | **Still open.** With sandbox disabled, any renderer-side vulnerability (XSS in Monaco, malicious file content) grants full Node.js access. This amplifies every finding below. |
 
 ---
 
@@ -29,6 +29,7 @@
 **Severity:** High
 **File:** `src/main/handlers/ide-fs-handlers.ts:140-151`
 **Code:**
+
 ```typescript
 safeHandle('fs:watchDir', (_e, dirPath: string) => {
     stopWatcher()
@@ -42,6 +43,7 @@ safeHandle('fs:watchDir', (_e, dirPath: string) => {
 **Combined with SEC-1 (sandbox disabled):** A compromised renderer already has full Node.js access, so this is redundant in the worst case. However, if the sandbox is re-enabled (SEC-1 fix), this becomes the primary escalation path.
 
 **Fix:**
+
 1. Validate that `dirPath` exists, is a directory, and is within the user's home directory (or other allowlist).
 2. Alternatively, require that `dirPath` originates from `dialog.showOpenDialog()` by generating a nonce on the main process side that must be passed back.
 
@@ -52,13 +54,14 @@ safeHandle('fs:watchDir', (_e, dirPath: string) => {
 **Severity:** Medium
 **File:** `src/main/handlers/ide-fs-handlers.ts:14-48`
 **Code:**
+
 ```typescript
 export function validateIdePath(targetPath: string, allowedRoot: string): string {
   // ... resolves symlinks for validation ...
   if (!real.startsWith(rootReal + '/') && real !== rootReal) {
     throw new Error(`Path traversal blocked: ...`)
   }
-  return resolved  // <-- Returns the UN-resolved symlink path
+  return resolved // <-- Returns the UN-resolved symlink path
 }
 ```
 
@@ -79,19 +82,20 @@ This is a narrow race window but is exploitable in theory, especially for write 
 **Severity:** Medium
 **File:** `src/main/handlers/ide-fs-handlers.ts:32-42`
 **Code:**
+
 ```typescript
-  try {
-    real = fs.realpathSync(resolved)
-  } catch {
-    // If realpath fails (e.g., path doesn't exist yet), we need to normalize
-    if (resolved.startsWith(root + '/')) {
-      real = resolved.replace(root, rootReal)
-    } else if (resolved === root) {
-      real = rootReal
-    } else {
-      real = resolved
-    }
+try {
+  real = fs.realpathSync(resolved)
+} catch {
+  // If realpath fails (e.g., path doesn't exist yet), we need to normalize
+  if (resolved.startsWith(root + '/')) {
+    real = resolved.replace(root, rootReal)
+  } else if (resolved === root) {
+    real = rootReal
+  } else {
+    real = resolved
   }
+}
 ```
 
 **Impact:** When `realpathSync` fails (path does not exist), the fallback uses `resolved.replace(root, rootReal)` which uses `String.replace()` -- this only replaces the **first** occurrence. If `root` appears as a substring within the path (e.g., root is `/home/user` and path is `/home/user/home/user/../../../etc/passwd`), the replacement is applied incorrectly, though `path.resolve()` would have already collapsed the `..` segments making this harder to exploit in practice.
@@ -107,15 +111,17 @@ More critically: for the `fs:createFile` and `fs:createDir` handlers, the target
 **Severity:** Medium
 **File:** `src/renderer/src/components/ide/FileSidebar.tsx:30-63`
 **Code:**
+
 ```typescript
 async function handleNewFile(parentPath: string): Promise<void> {
-    const name = await prompt({ message: 'New file name:', placeholder: 'filename.txt' })
-    if (!name) return
-    await window.api.createFile(`${parentPath}/${name}`)  // name is user-supplied, unsanitized
+  const name = await prompt({ message: 'New file name:', placeholder: 'filename.txt' })
+  if (!name) return
+  await window.api.createFile(`${parentPath}/${name}`) // name is user-supplied, unsanitized
 }
 ```
 
 **Impact:** User-supplied filenames from the prompt dialog are concatenated directly into paths. A user (or compromised renderer) could enter `../../../etc/cron.d/evil` as a filename. The `validateIdePath` call in the main process handler would catch `..` traversal, but other dangerous inputs pass through:
+
 - Names containing `/` create nested directories: entering `a/b/c.txt` creates intermediate dirs via `mkdir(dirname(safe), { recursive: true })` in `writeFileContent`.
 - Names with special characters (null bytes, unicode control chars) could cause unexpected behavior.
 - Names like `.` or `..` (just the dots) would resolve to the parent directory.
@@ -131,6 +137,7 @@ The main-process `validateIdePath` mitigates the worst cases, but the renderer s
 **Severity:** Low (design concern)
 **File:** `src/main/fs.ts:116-124, 143-171`
 **Code:**
+
 ```typescript
 export function validateSafePath(filePath: string): string {
   const resolved = resolve(filePath)
@@ -154,6 +161,7 @@ export function validateSafePath(filePath: string): string {
 **Severity:** Low
 **File:** `src/main/handlers/ide-fs-handlers.ts:104-119`
 **Code:**
+
 ```typescript
 const tmpPath = `${filePath}.bde-tmp-${Date.now()}`
 ```
@@ -174,6 +182,7 @@ In practice, BDE is a single-user desktop app, so this is low risk. However, it 
 **Impact:** The integration test covers `..` traversal, absolute paths, prefix siblings, and null bytes, but does NOT test the actual symlink scenario that SEC-2 was about. There is no test that creates a symlink inside the IDE root pointing outside, then verifies that `validateIdePath` blocks it. The fix (adding `realpathSync`) is present in the code, but its effectiveness against actual symlinks is untested.
 
 **Fix:** Add a test case that:
+
 1. Creates a temp directory as IDE root
 2. Creates a symlink inside it: `$ROOT/escape -> /tmp` (or `-> /etc`)
 3. Calls `validateIdePath('$ROOT/escape/passwd', ROOT)` and asserts it throws
@@ -187,6 +196,7 @@ In practice, BDE is a single-user desktop app, so this is low risk. However, it 
 **File:** `src/renderer/src/components/ide/TerminalPanel.tsx`
 
 **Impact:** The integrated terminal (via `TerminalPanel` -> `TerminalContent` -> xterm.js + node-pty) provides unrestricted shell access. This is by design for a development IDE, but worth noting that:
+
 - Any command injection that reaches the terminal has full system access
 - The terminal inherits the Electron process's environment, which includes `PATH` augmentation from `buildAgentEnv()`
 - There is no command logging or audit trail for terminal sessions
@@ -207,17 +217,17 @@ In practice, BDE is a single-user desktop app, so this is low risk. However, it 
 
 ## Summary Table
 
-| ID | Severity | Title | File | Fixed? |
-|---|---|---|---|---|
-| SEC-2 (cross-ref) | Critical | Symlink path traversal bypass | `ide-fs-handlers.ts:15-21` | Yes -- `realpathSync` added |
-| IDE-RED-1 | High | `fs:watchDir` accepts any path as IDE root | `ide-fs-handlers.ts:140-151` | No |
-| IDE-RED-2 | Medium | `validateIdePath` returns pre-symlink path (TOCTOU) | `ide-fs-handlers.ts:47` | No |
-| IDE-RED-3 | Medium | Fallback path for non-existent files skips symlink resolution | `ide-fs-handlers.ts:32-42` | No |
-| IDE-RED-4 | Medium | No filename sanitization in create/rename operations | `FileSidebar.tsx:30-63` | No |
-| IDE-RED-5 | Low | `readFileAsBase64`/`readFileAsText` not scoped to IDE root | `fs.ts:116-124` | No |
-| IDE-RED-6 | Low | Predictable temp file path in atomic write | `ide-fs-handlers.ts:106` | No |
-| IDE-RED-7 | Low | No symlink integration test for SEC-2 fix | `ide-path-traversal.test.ts` | No |
-| IDE-RED-8 | Informational | Terminal has full shell access (accepted risk) | `TerminalPanel.tsx` | N/A |
+| ID                | Severity      | Title                                                         | File                         | Fixed?                      |
+| ----------------- | ------------- | ------------------------------------------------------------- | ---------------------------- | --------------------------- |
+| SEC-2 (cross-ref) | Critical      | Symlink path traversal bypass                                 | `ide-fs-handlers.ts:15-21`   | Yes -- `realpathSync` added |
+| IDE-RED-1         | High          | `fs:watchDir` accepts any path as IDE root                    | `ide-fs-handlers.ts:140-151` | No                          |
+| IDE-RED-2         | Medium        | `validateIdePath` returns pre-symlink path (TOCTOU)           | `ide-fs-handlers.ts:47`      | No                          |
+| IDE-RED-3         | Medium        | Fallback path for non-existent files skips symlink resolution | `ide-fs-handlers.ts:32-42`   | No                          |
+| IDE-RED-4         | Medium        | No filename sanitization in create/rename operations          | `FileSidebar.tsx:30-63`      | No                          |
+| IDE-RED-5         | Low           | `readFileAsBase64`/`readFileAsText` not scoped to IDE root    | `fs.ts:116-124`              | No                          |
+| IDE-RED-6         | Low           | Predictable temp file path in atomic write                    | `ide-fs-handlers.ts:106`     | No                          |
+| IDE-RED-7         | Low           | No symlink integration test for SEC-2 fix                     | `ide-path-traversal.test.ts` | No                          |
+| IDE-RED-8         | Informational | Terminal has full shell access (accepted risk)                | `TerminalPanel.tsx`          | N/A                         |
 
 ---
 

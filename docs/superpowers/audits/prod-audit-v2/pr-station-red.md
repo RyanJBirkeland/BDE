@@ -16,6 +16,7 @@
 **Status: Fixed.**
 
 Two changes address this:
+
 1. **Repo scoping** (`git-handlers.ts:112-121`): `getConfiguredRepos()` reads the `repos` JSON setting, builds a Set of `owner/repo` strings, and `isGitHubRequestAllowed()` validates that the extracted `owner/repo` from the API path matches a configured repo. Requests to unconfigured repos are rejected with a log warning.
 2. **GET regex breadth** remains unchanged -- the regexes still use prefix matching (e.g., `/^\/repos\/[^/]+\/[^/]+\/pulls/`), allowing access to any sub-path under pulls/issues/commits. However, combined with repo scoping, the blast radius is limited to configured repos only.
 
@@ -30,6 +31,7 @@ Two changes address this:
 **Status: Fixed.**
 
 Two changes address this:
+
 1. **Repo scoping** (same as PR-RED-1): PATCH requests are now restricted to configured repos.
 2. **PATCH body validation** (`git-handlers.ts:73-87, 123-129`): `validatePatchBody()` parses the JSON body and checks that all fields are in `Set(['title', 'body'])`. Non-allowed fields are rejected.
 
@@ -44,11 +46,13 @@ Two changes address this:
 **Status: Fixed.**
 
 `PRStationDetail.tsx:68-71` now uses `safeLabelColor()`:
+
 ```typescript
 function safeLabelColor(color: string): string {
   return /^[0-9a-fA-F]{6}$/.test(color) ? `#${color}` : 'var(--neon-text-dim)'
 }
 ```
+
 Labels are rendered at line 214 via `style={{ background: safeLabelColor(label.color) }}`. The regex validates exactly 6 hex characters and falls back to a CSS variable for invalid values.
 
 ---
@@ -60,6 +64,7 @@ Labels are rendered at line 214 via `style={{ background: safeLabelColor(label.c
 **Status: Fixed.**
 
 `render-markdown.ts:20-39` now configures DOMPurify with an explicit allowlist:
+
 - ALLOWED_TAGS: p, h1, h2, h3, strong, em, code, pre, ul, ol, li, a, br, blockquote
 - ALLOWED_ATTR: href, title, class
 - ALLOW_DATA_ATTR: false
@@ -89,6 +94,7 @@ Both `MergeButton.tsx` and `CloseButton.tsx` now import `useConfirm` and `Confir
 **Status: Fixed.**
 
 `pendingReview.ts:68-81` now validates individual fields:
+
 ```typescript
 validated[key] = comments.filter(
   (c) =>
@@ -99,6 +105,7 @@ validated[key] = comments.filter(
     (c.side === 'LEFT' || c.side === 'RIGHT')
 )
 ```
+
 Invalid entries are silently dropped. Only comments matching the `PendingComment` interface shape are retained.
 
 ---
@@ -110,6 +117,7 @@ Invalid entries are silently dropped. Only comments matching the `PendingComment
 **Status: Fixed.**
 
 All mutation functions in `github-api.ts` now use generic error messages:
+
 - `mergePR` (line 198): `"Merge failed: unable to merge pull request (status ${res.status})"`
 - `createReview` (line 250): `"Review failed: unable to submit review (status ${res.status})"`
 - `closePR` (line 284): `"Close failed: unable to close pull request (status ${res.status})"`
@@ -126,9 +134,11 @@ Status codes are still exposed (useful for debugging), but internal GitHub error
 **Status: Fixed.**
 
 `PRStationChecks.tsx:55` now validates the URL origin:
+
 ```tsx
 {run.html_url && run.html_url.startsWith('https://github.com/') && (
 ```
+
 Links with non-GitHub URLs are simply not rendered. Combined with the existing Electron `setWindowOpenHandler` protocol validation, this provides defense-in-depth.
 
 ---
@@ -140,12 +150,14 @@ Links with non-GitHub URLs are simply not rendered. Combined with the existing E
 **Status: Fixed.**
 
 `github-cache.ts:73-82` now uses exact matching after the colon separator:
+
 ```typescript
 const colonIndex = key.indexOf(':')
 if (colonIndex !== -1 && key.substring(colonIndex + 1) === prefix) {
   cache.delete(key)
 }
 ```
+
 With cache keys in format `detail:owner/repo#42`, this extracts the portion after the first colon and compares with strict equality. PR #1 no longer collides with PR #10.
 
 ---
@@ -204,11 +216,13 @@ Still a consequence of disabled renderer sandbox (SEC-1). No additional mitigati
 **Evidence:**
 
 The `closePR()` function sends:
+
 ```typescript
 body: JSON.stringify({ state: 'closed' })
 ```
 
 The `validatePatchBody()` function allows only `title` and `body` fields:
+
 ```typescript
 const allowedFields = new Set(['title', 'body'])
 ```
@@ -249,6 +263,7 @@ If these tests are passing in CI, it suggests either (a) the real `getSettingJso
 **Evidence:**
 
 There are zero tests for PATCH body validation behavior. The following scenarios are untested:
+
 - PATCH with `{ state: 'closed' }` (should succeed after fix)
 - PATCH with `{ title: 'new title' }` (should succeed)
 - PATCH with `{ base: 'other-branch' }` (should fail)
@@ -266,6 +281,7 @@ There are zero tests for PATCH body validation behavior. The following scenarios
 
 **File:** `src/main/pr-poller.ts:117-125`
 **Evidence:**
+
 ```typescript
 export function startPrPoller(): void {
   safePoll()
@@ -286,26 +302,26 @@ Each tick clears the interval and creates a new one with the current `backoffDel
 
 ## Summary Table
 
-| ID | Severity | Status | Component | Issue |
-|---|---|---|---|---|
-| PR-RED-1 | High | **Fixed** | git-handlers.ts | Allowlist regex too broad + no repo scoping |
-| PR-RED-2 | High | **Fixed** | git-handlers.ts | PATCH allowlist permits arbitrary mutation |
-| PR-RED-3 | Medium | **Fixed** | PRStationDetail.tsx | CSS injection via label colors |
-| PR-RED-4 | Medium | **Fixed** | render-markdown.ts | DOMPurify default config too permissive |
-| PR-RED-5 | Medium | **Fixed** | MergeButton/CloseButton | No confirmation dialog |
-| PR-RED-6 | Medium | **Fixed** | pendingReview.ts | localStorage restore lacks validation |
-| PR-RED-7 | Low | **Fixed** | github-api.ts | Error messages leaked verbatim |
-| PR-RED-8 | Low | **Fixed** | PRStationChecks.tsx | html_url not validated |
-| PR-RED-9 | Low | **Fixed** | github-cache.ts | Cache key over-invalidation |
-| PR-RED-10 | Low | **Partially Fixed** | github-api.ts | No renderer-side owner/repo validation |
-| PR-RED-11 | Low | **Fixed** | github-api.ts | Unused AbortSignal parameter |
-| PR-RED-12 | Info | **Not Fixed** | github-api.ts | No rate limiting |
-| PR-RED-13 | Info | **N/A** | PRStationDiff.tsx | UUID generation (no issue) |
-| PR-RED-14 | Info | **Not Fixed** | git-handlers.ts | No CSRF protection |
-| PR-RED-V2-1 | **Critical** | **New** | git-handlers.ts | PATCH body validation rejects closePR (regression) |
-| PR-RED-V2-2 | **High** | **New** | git-handlers.test.ts | Allowlist tests don't mock configured repos |
-| PR-RED-V2-3 | **Medium** | **New** | git-handlers.test.ts | Zero test coverage for PATCH body validation |
-| PR-RED-V2-4 | **Low** | **New** | pr-poller.ts | Backoff timer creates double-poll on tick |
+| ID          | Severity     | Status              | Component               | Issue                                              |
+| ----------- | ------------ | ------------------- | ----------------------- | -------------------------------------------------- |
+| PR-RED-1    | High         | **Fixed**           | git-handlers.ts         | Allowlist regex too broad + no repo scoping        |
+| PR-RED-2    | High         | **Fixed**           | git-handlers.ts         | PATCH allowlist permits arbitrary mutation         |
+| PR-RED-3    | Medium       | **Fixed**           | PRStationDetail.tsx     | CSS injection via label colors                     |
+| PR-RED-4    | Medium       | **Fixed**           | render-markdown.ts      | DOMPurify default config too permissive            |
+| PR-RED-5    | Medium       | **Fixed**           | MergeButton/CloseButton | No confirmation dialog                             |
+| PR-RED-6    | Medium       | **Fixed**           | pendingReview.ts        | localStorage restore lacks validation              |
+| PR-RED-7    | Low          | **Fixed**           | github-api.ts           | Error messages leaked verbatim                     |
+| PR-RED-8    | Low          | **Fixed**           | PRStationChecks.tsx     | html_url not validated                             |
+| PR-RED-9    | Low          | **Fixed**           | github-cache.ts         | Cache key over-invalidation                        |
+| PR-RED-10   | Low          | **Partially Fixed** | github-api.ts           | No renderer-side owner/repo validation             |
+| PR-RED-11   | Low          | **Fixed**           | github-api.ts           | Unused AbortSignal parameter                       |
+| PR-RED-12   | Info         | **Not Fixed**       | github-api.ts           | No rate limiting                                   |
+| PR-RED-13   | Info         | **N/A**             | PRStationDiff.tsx       | UUID generation (no issue)                         |
+| PR-RED-14   | Info         | **Not Fixed**       | git-handlers.ts         | No CSRF protection                                 |
+| PR-RED-V2-1 | **Critical** | **New**             | git-handlers.ts         | PATCH body validation rejects closePR (regression) |
+| PR-RED-V2-2 | **High**     | **New**             | git-handlers.test.ts    | Allowlist tests don't mock configured repos        |
+| PR-RED-V2-3 | **Medium**   | **New**             | git-handlers.test.ts    | Zero test coverage for PATCH body validation       |
+| PR-RED-V2-4 | **Low**      | **New**             | pr-poller.ts            | Backoff timer creates double-poll on tick          |
 
 ---
 
@@ -318,6 +334,7 @@ Each tick clears the interval and creates a new one with the current `backoffDel
 The allowlist fixes for PR-RED-1 and PR-RED-2 are architecturally sound -- repo scoping and PATCH body validation are the right approaches. However, the PATCH body validation introduces a **critical regression** (PR-RED-V2-1): `closePR()` sends `{ state: 'closed' }` which is not in the allowed fields, breaking the Close PR feature. The fix is trivial (add `'state'` to the allowed fields), but the fact that this was not caught exposes the second issue (PR-RED-V2-2): the test suite does not properly exercise the new security code because it never mocks `getSettingJson` to set up configured repos.
 
 **Recommended priority:**
+
 1. **PR-RED-V2-1** (Critical): Add `'state'` to `validatePatchBody` allowed fields -- 1-line fix
 2. **PR-RED-V2-2** (High): Fix allowlist test mocks to properly validate security boundaries
 3. **PR-RED-V2-3** (Medium): Add PATCH body validation test cases

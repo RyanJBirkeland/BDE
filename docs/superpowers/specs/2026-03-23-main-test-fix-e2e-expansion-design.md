@@ -17,6 +17,7 @@ Add a vitest `globalSetup` file that checks the native module at startup and run
 **File:** `src/main/vitest-global-setup.ts`
 
 Logic:
+
 1. Try to `require('better-sqlite3')`
 2. If it throws a `NODE_MODULE_VERSION` mismatch error, run `npm rebuild better-sqlite3 --build-from-source` synchronously via `execSync`
 3. If rebuild succeeds, tests proceed normally
@@ -67,6 +68,7 @@ Selectors: `.cost-view`, `.cost-view__title`, `.cost-view__panels`
 ### Test Pattern
 
 All tests follow the established pattern:
+
 ```typescript
 import { test, expect } from './fixtures'
 

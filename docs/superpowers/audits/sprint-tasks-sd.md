@@ -2,7 +2,7 @@
 
 **Auditor**: SD (Code Quality Lens)
 **Date**: 2026-03-27
-**Scope**: Views (SprintView, TaskWorkbenchView), Components (sprint/*, task-workbench/*), Store (sprintTasks.ts), CSS (sprint-pipeline-neon, task-workbench-neon, sprint-neon)
+**Scope**: Views (SprintView, TaskWorkbenchView), Components (sprint/_, task-workbench/_), Store (sprintTasks.ts), CSS (sprint-pipeline-neon, task-workbench-neon, sprint-neon)
 
 ---
 
@@ -52,7 +52,7 @@ The `onDelete` prop ultimately calls `useSprintTasks.deleteTask()`, which alread
 **File**: `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`, line 217
 
 ```ts
-[createOrUpdateTask, resetForm, setOperationalChecks, repo]
+;[createOrUpdateTask, resetForm, setOperationalChecks, repo]
 ```
 
 The dependency array is missing `mode` and `taskId`, which are referenced inside the callback body at line 212: `toast.success(mode === 'edit' && taskId ? 'Task updated' : 'Task created')`. While this only affects the toast message text (not data correctness), it means switching from create to edit mode could show the wrong success message. More concerning, the early `return` paths inside `handleSubmit` (lines 186-206) also reference `useTaskWorkbenchStore.getState()` for structural/semantic checks, which is safe since it reads from the store directly rather than the closure.
@@ -84,6 +84,7 @@ After a task is created, if no spec is provided, a background `generatePrompt` c
 **Files**: `src/renderer/src/components/sprint/LogDrawer.tsx` (252 lines), `src/renderer/src/components/sprint/TaskMonitorPanel.tsx` (337 lines)
 
 These two components share approximately 80% of their logic:
+
 - Both have identical `useEffect` hooks for resetting state on agent change (LogDrawer:44-49, TaskMonitorPanel:57-62)
 - Both have identical `catchUp` polling logic (LogDrawer:52-87, TaskMonitorPanel:65-98)
 - Both have identical `displayEvents` memoization with thinking-event collapsing (LogDrawer:99-113, TaskMonitorPanel:107-122)
@@ -194,30 +195,30 @@ SprintPipeline uses `useSprintUI((s) => s.selectedTaskId)` from the store, but S
 
 ## 5. Dead Code Inventory
 
-| # | File | Lines | Description |
-|---|------|-------|-------------|
-| 1 | `sprint/CircuitPipelineExample.tsx` | 1-104 | Example/demo component, never imported in production code |
-| 2 | `sprint/SprintTaskList.example.tsx` | 1-150 | Example/demo component, never imported anywhere |
-| 3 | `sprint/PRList.tsx` | 1-194 | Not imported by any production component (only test mock) |
-| 4 | `sprint/LogDrawer.tsx` | 1-252 | Not imported by any production component (only tests) |
-| 5 | `sprint/TaskMonitorPanel.tsx` | 1-337 | Not imported by any production component (only tests) |
-| 6 | `sprint/SpecDrawer.tsx` | 1-305 | Not imported by any production component (only tests + docs) |
-| 7 | `sprint/KanbanBoard.tsx` | 1-236 | Not imported by any production component (only tests) |
-| 8 | `sprint/KanbanColumn.tsx` | 1-140 | Only imported by KanbanBoard (which is dead) |
-| 9 | `sprint/TaskCard.tsx` | 1-253 | Only imported by KanbanColumn (which is dead) |
-| 10 | `sprint/BulkActionBar.tsx` | 1-110 | Not imported by any production component (only tests) |
-| 11 | `sprint/NewTicketModal.tsx` | 1-436 | Not imported by any production component (only tests) |
-| 12 | `sprint/SprintTaskRow.tsx` | 1-528 | Not imported by any production component (only tests + docs) |
-| 13 | `sprint/TaskTable.tsx` | 1-536 | Not imported by any production component (only tests) |
-| 14 | `sprint/AgentStatusChip.tsx` | 1-32 | Only imported by TaskCard (which is dead) |
-| 15 | `sprint/TaskEventSubtitle.tsx` | 1-82 | Only imported by TaskCard (which is dead) |
-| 16 | `sprint/EventCard.tsx` | 1-371 | Imported by LogDrawer + TaskMonitorPanel (both dead in production) |
-| 17 | `sprint/LogDrawer.tsx:31` | 31 | `exitCode` state + `setExitCode` -- never written to |
-| 18 | `sprint/TaskMonitorPanel.tsx:47` | 47 | `exitCode` state + `setExitCode` -- never written to |
-| 19 | `sprint/SprintDetailPane.tsx:237` | 237 | `_onMarkDone` parameter destructured with underscore prefix, never used in ActionButtons |
-| 20 | `sprint/SprintDetailPane.md` | all | Documentation file for removed/legacy component |
-| 21 | `sprint/SprintTaskList.README.md` | all | Documentation file referencing dead SpecDrawer import |
-| 22 | `sprint/SprintTaskRow.md` | all | Documentation file for dead component |
+| #   | File                                | Lines | Description                                                                              |
+| --- | ----------------------------------- | ----- | ---------------------------------------------------------------------------------------- |
+| 1   | `sprint/CircuitPipelineExample.tsx` | 1-104 | Example/demo component, never imported in production code                                |
+| 2   | `sprint/SprintTaskList.example.tsx` | 1-150 | Example/demo component, never imported anywhere                                          |
+| 3   | `sprint/PRList.tsx`                 | 1-194 | Not imported by any production component (only test mock)                                |
+| 4   | `sprint/LogDrawer.tsx`              | 1-252 | Not imported by any production component (only tests)                                    |
+| 5   | `sprint/TaskMonitorPanel.tsx`       | 1-337 | Not imported by any production component (only tests)                                    |
+| 6   | `sprint/SpecDrawer.tsx`             | 1-305 | Not imported by any production component (only tests + docs)                             |
+| 7   | `sprint/KanbanBoard.tsx`            | 1-236 | Not imported by any production component (only tests)                                    |
+| 8   | `sprint/KanbanColumn.tsx`           | 1-140 | Only imported by KanbanBoard (which is dead)                                             |
+| 9   | `sprint/TaskCard.tsx`               | 1-253 | Only imported by KanbanColumn (which is dead)                                            |
+| 10  | `sprint/BulkActionBar.tsx`          | 1-110 | Not imported by any production component (only tests)                                    |
+| 11  | `sprint/NewTicketModal.tsx`         | 1-436 | Not imported by any production component (only tests)                                    |
+| 12  | `sprint/SprintTaskRow.tsx`          | 1-528 | Not imported by any production component (only tests + docs)                             |
+| 13  | `sprint/TaskTable.tsx`              | 1-536 | Not imported by any production component (only tests)                                    |
+| 14  | `sprint/AgentStatusChip.tsx`        | 1-32  | Only imported by TaskCard (which is dead)                                                |
+| 15  | `sprint/TaskEventSubtitle.tsx`      | 1-82  | Only imported by TaskCard (which is dead)                                                |
+| 16  | `sprint/EventCard.tsx`              | 1-371 | Imported by LogDrawer + TaskMonitorPanel (both dead in production)                       |
+| 17  | `sprint/LogDrawer.tsx:31`           | 31    | `exitCode` state + `setExitCode` -- never written to                                     |
+| 18  | `sprint/TaskMonitorPanel.tsx:47`    | 47    | `exitCode` state + `setExitCode` -- never written to                                     |
+| 19  | `sprint/SprintDetailPane.tsx:237`   | 237   | `_onMarkDone` parameter destructured with underscore prefix, never used in ActionButtons |
+| 20  | `sprint/SprintDetailPane.md`        | all   | Documentation file for removed/legacy component                                          |
+| 21  | `sprint/SprintTaskList.README.md`   | all   | Documentation file referencing dead SpecDrawer import                                    |
+| 22  | `sprint/SprintTaskRow.md`           | all   | Documentation file for dead component                                                    |
 
 **Total estimated dead code**: ~3,700+ lines across 16 components (plus 3 markdown docs). This represents the old SprintCenter-era UI that has been superseded by SprintPipeline. The dead code constitutes roughly 60% of the `sprint/` component directory by line count.
 

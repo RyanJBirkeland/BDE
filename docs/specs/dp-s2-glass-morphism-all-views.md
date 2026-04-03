@@ -12,27 +12,27 @@ Glass morphism is BDE's signature visual treatment but is only applied to ~40% o
 
 ### Current Glass Coverage
 
-| Component | Glass? | Class Used |
-|-----------|--------|-----------|
-| TitleBar | Yes | `glass` |
-| ActivityBar | Yes | CSS-level glass via fallback vars |
-| Sessions sidebar | Yes | CSS-level glass (`session-list`) |
-| AgentRow | Yes | `glass glass-highlight` |
-| NewTicketModal | Yes | `glass-modal elevation-3` |
-| SpawnModal | Yes | `glass-modal` |
-| CommandPalette | Yes | `glass-modal` |
-| ShortcutsOverlay | Yes | `glass-modal` |
-| App shell | Yes | `elevation-0` |
-| **DiffView sidebar** | **No** | `background: var(--bde-surface)` — flat |
+| Component                | Glass? | Class Used                              |
+| ------------------------ | ------ | --------------------------------------- |
+| TitleBar                 | Yes    | `glass`                                 |
+| ActivityBar              | Yes    | CSS-level glass via fallback vars       |
+| Sessions sidebar         | Yes    | CSS-level glass (`session-list`)        |
+| AgentRow                 | Yes    | `glass glass-highlight`                 |
+| NewTicketModal           | Yes    | `glass-modal elevation-3`               |
+| SpawnModal               | Yes    | `glass-modal`                           |
+| CommandPalette           | Yes    | `glass-modal`                           |
+| ShortcutsOverlay         | Yes    | `glass-modal`                           |
+| App shell                | Yes    | `elevation-0`                           |
+| **DiffView sidebar**     | **No** | `background: var(--bde-surface)` — flat |
 | **DiffView file header** | **No** | `background: var(--bde-surface)` — flat |
-| **MemoryView sidebar** | **No** | `background: var(--bde-surface)` — flat |
-| **CostView cards** | **No** | `bde-card` — flat surface |
-| **CostView charts** | **No** | `background: var(--bde-surface)` — flat |
-| **SettingsView** | **No** | No panel treatment at all |
-| **StatusBar** | **No** | `background: var(--bde-surface)` — flat |
-| **SpecDrawer** | **No** | `background: var(--bde-surface)` — flat |
-| **Sprint columns** | **No** | `background: var(--bde-surface)` — flat |
-| **Sprint cards** | **No** | `background: var(--bde-bg)` — flat |
+| **MemoryView sidebar**   | **No** | `background: var(--bde-surface)` — flat |
+| **CostView cards**       | **No** | `bde-card` — flat surface               |
+| **CostView charts**      | **No** | `background: var(--bde-surface)` — flat |
+| **SettingsView**         | **No** | No panel treatment at all               |
+| **StatusBar**            | **No** | `background: var(--bde-surface)` — flat |
+| **SpecDrawer**           | **No** | `background: var(--bde-surface)` — flat |
+| **Sprint columns**       | **No** | `background: var(--bde-surface)` — flat |
+| **Sprint cards**         | **No** | `background: var(--bde-bg)` — flat      |
 
 ---
 
@@ -40,12 +40,12 @@ Glass morphism is BDE's signature visual treatment but is only applied to ~40% o
 
 Apply the elevation system consistently:
 
-| Level | Treatment | Where |
-|-------|-----------|-------|
-| `elevation-0` | App background + subtle radial glow | Already applied to `.app-shell` |
-| `elevation-1` / `glass` | Sidebars, panels, StatusBar | DiffView sidebar, MemoryView sidebar, StatusBar |
+| Level                            | Treatment                                | Where                                                         |
+| -------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| `elevation-0`                    | App background + subtle radial glow      | Already applied to `.app-shell`                               |
+| `elevation-1` / `glass`          | Sidebars, panels, StatusBar              | DiffView sidebar, MemoryView sidebar, StatusBar               |
 | `elevation-2` / `glass-elevated` | Active panels, drawers, chart containers | SpecDrawer, CostView chart/donut cards, SettingsView sections |
-| `elevation-3` / `glass-modal` | Modals, overlays | Already applied |
+| `elevation-3` / `glass-modal`    | Modals, overlays                         | Already applied                                               |
 
 ### Specific Changes
 
@@ -69,11 +69,11 @@ Apply the elevation system consistently:
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/assets/main.css` | Glass for: `.diff-sidebar`, `.memory-sidebar`, `.statusbar`, `.settings-section` |
-| `src/renderer/src/assets/cost.css` | Glass for: `.cost-chart`, `.cost-donut`, `.cost-stat-card` |
-| `src/renderer/src/assets/sprint.css` | Glass for: `.kanban-col`, `.task-card`, `.spec-drawer` |
+| File                                 | Change                                                                           |
+| ------------------------------------ | -------------------------------------------------------------------------------- |
+| `src/renderer/src/assets/main.css`   | Glass for: `.diff-sidebar`, `.memory-sidebar`, `.statusbar`, `.settings-section` |
+| `src/renderer/src/assets/cost.css`   | Glass for: `.cost-chart`, `.cost-donut`, `.cost-stat-card`                       |
+| `src/renderer/src/assets/sprint.css` | Glass for: `.kanban-col`, `.task-card`, `.spec-drawer`                           |
 
 ## Acceptance Criteria
 

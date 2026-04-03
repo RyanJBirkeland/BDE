@@ -14,30 +14,32 @@ Phase 2 (PR #320) replaced SessionsView with AgentsView and introduced ChatRende
 
 **Files with zero live importers — safe to delete immediately:**
 
-| File | Reason |
-|------|--------|
-| `src/renderer/src/components/sessions/AgentList.tsx` | Replaced by `agents/AgentList.tsx` |
-| `src/renderer/src/components/sessions/AgentRow.tsx` | Replaced by `agents/AgentCard.tsx` |
-| `src/renderer/src/components/sessions/ChatPane.tsx` | Only used by deleted SessionsView |
-| `src/renderer/src/components/sessions/MiniChatPane.tsx` | Only used by deleted SessionsView |
-| `src/renderer/src/components/sessions/SessionHeader.tsx` | Only used by deleted SessionsView |
-| `src/renderer/src/components/sessions/SessionMainContent.tsx` | Only used by deleted SessionsView |
-| `src/renderer/src/components/sessions/LocalAgentRow.tsx` | Only used by deleted SessionsView |
-| `src/renderer/src/components/sessions/MessageInput.tsx` | Only used by deleted SessionsView |
-| `src/renderer/src/components/sessions/__tests__/*` | Tests for above |
-| `src/renderer/src/stores/splitLayout.ts` | Only used by deleted SessionMainContent |
-| `src/renderer/src/hooks/useSessionsKeyboardShortcuts.ts` | Zero importers |
-| `src/renderer/src/assets/sessions.css` | Styles for deleted sessions view |
+| File                                                          | Reason                                  |
+| ------------------------------------------------------------- | --------------------------------------- |
+| `src/renderer/src/components/sessions/AgentList.tsx`          | Replaced by `agents/AgentList.tsx`      |
+| `src/renderer/src/components/sessions/AgentRow.tsx`           | Replaced by `agents/AgentCard.tsx`      |
+| `src/renderer/src/components/sessions/ChatPane.tsx`           | Only used by deleted SessionsView       |
+| `src/renderer/src/components/sessions/MiniChatPane.tsx`       | Only used by deleted SessionsView       |
+| `src/renderer/src/components/sessions/SessionHeader.tsx`      | Only used by deleted SessionsView       |
+| `src/renderer/src/components/sessions/SessionMainContent.tsx` | Only used by deleted SessionsView       |
+| `src/renderer/src/components/sessions/LocalAgentRow.tsx`      | Only used by deleted SessionsView       |
+| `src/renderer/src/components/sessions/MessageInput.tsx`       | Only used by deleted SessionsView       |
+| `src/renderer/src/components/sessions/__tests__/*`            | Tests for above                         |
+| `src/renderer/src/stores/splitLayout.ts`                      | Only used by deleted SessionMainContent |
+| `src/renderer/src/hooks/useSessionsKeyboardShortcuts.ts`      | Zero importers                          |
+| `src/renderer/src/assets/sessions.css`                        | Styles for deleted sessions view        |
 
 ## 2. File Migrations (Move Before Delete)
 
 ### SpawnModal.tsx
+
 - **From:** `components/sessions/SpawnModal.tsx`
 - **To:** `components/agents/SpawnModal.tsx`
 - **Consumers:** `views/AgentsView.tsx` — update import path
 - **Changes:** Import path only, no logic changes
 
 ### TicketEditor.tsx
+
 - **From:** `components/sessions/TicketEditor.tsx`
 - **To:** `components/sprint/TicketEditor.tsx`
 - **Consumers:** `lib/chat-markdown.tsx` — update import path
@@ -46,17 +48,20 @@ Phase 2 (PR #320) replaced SessionsView with AgentsView and introduced ChatRende
 ## 3. LogDrawer Migration (Sprint View)
 
 **Current flow:**
+
 ```
 sprint store taskEvents → parseStreamJson → ChatMessage[] → ChatThread
 ```
 
 **New flow:**
+
 ```
 agentEventsStore[agentId] → AgentEvent[] → ChatRenderer
 Fallback: raw log text → <pre> block
 ```
 
 ### Changes to `src/renderer/src/components/sprint/LogDrawer.tsx`:
+
 - Import `useAgentEventsStore` and `ChatRenderer`
 - When `task.agent_run_id` exists, read events from `useAgentEventsStore`
 - If events are available and non-empty, render `<ChatRenderer events={events} />`
@@ -66,12 +71,14 @@ Fallback: raw log text → <pre> block
 - Steering UI unchanged — it's independent of the renderer
 
 ### Data availability:
+
 - New agents spawned via the provider factory emit events through the event bus → SQLite → agentEvents store
 - Old agents that pre-date Phase 2 have no events in the store → fall back to `<pre>` with raw log text
 
 ## 4. AgentOutputTab Migration (Terminal View)
 
 **Current flow:**
+
 ```
 LocalAgentLogViewer: logContent → parseStreamJson → ChatMessage[] → ChatThread
 AgentLogViewer: logContent → parseStreamJson → ChatMessage[] → ChatThread
@@ -79,12 +86,14 @@ Gateway session: polled history → parseStreamJson → ChatMessage[] → ChatTh
 ```
 
 **New flow:**
+
 ```
 UUID/local agents: agentEventsStore[agentId] → AgentEvent[] → ChatRenderer
 Gateway sessions: keep polling → <pre> fallback (no AgentEvent source)
 ```
 
 ### Changes to `src/renderer/src/components/terminal/AgentOutputTab.tsx`:
+
 - Import `useAgentEventsStore` and `ChatRenderer`
 - For UUID agents (`agentId` is a UUID): load events from store, render via ChatRenderer
 - For local agents (`agentId` starts with `local:`): extract UUID from agent history by PID lookup, then use agentEvents store
@@ -95,25 +104,27 @@ Gateway sessions: keep polling → <pre> fallback (no AgentEvent source)
 
 After LogDrawer and AgentOutputTab are migrated:
 
-| File | Status |
-|------|--------|
-| `components/sessions/ChatThread.tsx` | Delete — zero importers |
-| `components/sessions/__tests__/ChatThread.test.tsx` | Delete — zero importers |
-| `components/sessions/LocalAgentLogViewer.tsx` | Delete — zero importers |
-| `components/sprint/__tests__/LogDrawer.test.tsx` | Delete — LogDrawer internals changed significantly |
-| `components/sessions/` directory | Delete entirely (SpawnModal + TicketEditor already moved) |
+| File                                                | Status                                                    |
+| --------------------------------------------------- | --------------------------------------------------------- |
+| `components/sessions/ChatThread.tsx`                | Delete — zero importers                                   |
+| `components/sessions/__tests__/ChatThread.test.tsx` | Delete — zero importers                                   |
+| `components/sessions/LocalAgentLogViewer.tsx`       | Delete — zero importers                                   |
+| `components/sprint/__tests__/LogDrawer.test.tsx`    | Delete — LogDrawer internals changed significantly        |
+| `components/sessions/` directory                    | Delete entirely (SpawnModal + TicketEditor already moved) |
 
 ## 6. SettingsView Template Rewire
 
 **Current:** Uses `settings.getJson('task.templates')` / `settings.setJson('task.templates', ...)` directly.
 
 **New:** Uses the formal template CRUD API added in Phase 2:
+
 - `window.api.templates.list()` → fetches merged built-in + custom templates with `isBuiltIn` flag
 - `window.api.templates.save(template)` → saves (override for built-in, append for custom)
 - `window.api.templates.delete(name)` → removes custom template
 - `window.api.templates.reset(name)` → resets built-in to default
 
 ### UI Changes:
+
 - Show `isBuiltIn` badge on built-in templates
 - Add "Reset to Default" button on built-in templates (calls `templates.reset`)
 - Add "Delete" button on custom templates only (calls `templates.delete`)

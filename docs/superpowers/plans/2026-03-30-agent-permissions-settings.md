@@ -14,29 +14,30 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/main/handlers/claude-config-handlers.ts` | Create | IPC handlers for reading/writing `~/.claude/settings.json` |
-| `src/main/index.ts` | Modify | Register claude-config handlers |
-| `src/shared/ipc-channels.ts` | Modify | Add ClaudeConfigChannels |
-| `src/preload/index.ts` | Modify | Expose claudeConfig methods |
-| `src/preload/index.d.ts` | Modify | Type declarations |
-| `src/renderer/src/components/settings/AgentPermissionsSection.tsx` | Create | Permissions UI with banner, rules, presets |
-| `src/renderer/src/views/SettingsView.tsx` | Modify (lines 19-43) | Add Permissions tab |
-| `src/renderer/src/assets/settings-neon.css` | Modify | Add permission-specific styles |
+| File                                                               | Action               | Responsibility                                             |
+| ------------------------------------------------------------------ | -------------------- | ---------------------------------------------------------- |
+| `src/main/handlers/claude-config-handlers.ts`                      | Create               | IPC handlers for reading/writing `~/.claude/settings.json` |
+| `src/main/index.ts`                                                | Modify               | Register claude-config handlers                            |
+| `src/shared/ipc-channels.ts`                                       | Modify               | Add ClaudeConfigChannels                                   |
+| `src/preload/index.ts`                                             | Modify               | Expose claudeConfig methods                                |
+| `src/preload/index.d.ts`                                           | Modify               | Type declarations                                          |
+| `src/renderer/src/components/settings/AgentPermissionsSection.tsx` | Create               | Permissions UI with banner, rules, presets                 |
+| `src/renderer/src/views/SettingsView.tsx`                          | Modify (lines 19-43) | Add Permissions tab                                        |
+| `src/renderer/src/assets/settings-neon.css`                        | Modify               | Add permission-specific styles                             |
 
 **Test files:**
 
-| File | Tests |
-|------|-------|
-| `src/main/handlers/__tests__/claude-config-handlers.test.ts` | Read/write config, missing file, merge logic |
-| `src/renderer/src/components/settings/__tests__/AgentPermissionsSection.test.tsx` | Banner, presets, toggle rules, save |
+| File                                                                              | Tests                                        |
+| --------------------------------------------------------------------------------- | -------------------------------------------- |
+| `src/main/handlers/__tests__/claude-config-handlers.test.ts`                      | Read/write config, missing file, merge logic |
+| `src/renderer/src/components/settings/__tests__/AgentPermissionsSection.test.tsx` | Banner, presets, toggle rules, save          |
 
 ---
 
 ### Task 1: IPC Channels + Handlers for ~/.claude/settings.json
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts`
 - Create: `src/main/handlers/claude-config-handlers.ts`
 - Create: `src/main/handlers/__tests__/claude-config-handlers.test.ts`
@@ -86,17 +87,24 @@ export function registerClaudeConfigHandlers(): void {
     }
   })
 
-  safeHandle('claude:setPermissions', async (_e, permissions: { allow: string[]; deny: string[] }) => {
-    if (!existsSync(CLAUDE_DIR)) mkdirSync(CLAUDE_DIR, { recursive: true })
+  safeHandle(
+    'claude:setPermissions',
+    async (_e, permissions: { allow: string[]; deny: string[] }) => {
+      if (!existsSync(CLAUDE_DIR)) mkdirSync(CLAUDE_DIR, { recursive: true })
 
-    let settings: Record<string, unknown> = {}
-    if (existsSync(SETTINGS_PATH)) {
-      try { settings = JSON.parse(readFileSync(SETTINGS_PATH, 'utf-8')) } catch { /* start fresh */ }
+      let settings: Record<string, unknown> = {}
+      if (existsSync(SETTINGS_PATH)) {
+        try {
+          settings = JSON.parse(readFileSync(SETTINGS_PATH, 'utf-8'))
+        } catch {
+          /* start fresh */
+        }
+      }
+
+      settings.permissions = { allow: permissions.allow, deny: permissions.deny }
+      writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n')
     }
-
-    settings.permissions = { allow: permissions.allow, deny: permissions.deny }
-    writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n')
-  })
+  )
 }
 ```
 
@@ -107,6 +115,7 @@ Add import and call `registerClaudeConfigHandlers()` in the handler registration
 - [ ] **Step 4: Add preload methods**
 
 In `src/preload/index.ts`:
+
 ```typescript
 claudeConfig: {
   get: () => typedInvoke('claude:getConfig'),
@@ -116,9 +125,11 @@ claudeConfig: {
 ```
 
 In `src/preload/index.d.ts`:
+
 ```typescript
 claudeConfig: {
-  get: () => Promise<{ permissions?: { allow?: string[]; deny?: string[] }; [key: string]: unknown }>
+  get: () =>
+    Promise<{ permissions?: { allow?: string[]; deny?: string[] }; [key: string]: unknown }>
   setPermissions: (permissions: { allow: string[]; deny: string[] }) => Promise<void>
 }
 ```
@@ -144,6 +155,7 @@ git commit -m "feat(permissions): IPC handlers for ~/.claude/settings.json"
 ### Task 2: AgentPermissionsSection Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/settings/AgentPermissionsSection.tsx`
 - Create: `src/renderer/src/components/settings/__tests__/AgentPermissionsSection.test.tsx`
 
@@ -165,15 +177,44 @@ const TOOL_DESCRIPTIONS: Record<string, string> = {
 
 const PRESETS = {
   recommended: {
-    allow: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'Agent', 'WebFetch', 'WebSearch', 'NotebookEdit'],
-    deny: ['Bash(rm -rf /*)', 'Bash(rm -rf ~*)', 'Bash(sudo rm *)', 'Bash(sudo dd *)', 'Bash(mkfs*)', 'Bash(chmod -R 777 /*)']
+    allow: [
+      'Read',
+      'Write',
+      'Edit',
+      'Glob',
+      'Grep',
+      'Bash',
+      'Agent',
+      'WebFetch',
+      'WebSearch',
+      'NotebookEdit'
+    ],
+    deny: [
+      'Bash(rm -rf /*)',
+      'Bash(rm -rf ~*)',
+      'Bash(sudo rm *)',
+      'Bash(sudo dd *)',
+      'Bash(mkfs*)',
+      'Bash(chmod -R 777 /*)'
+    ]
   },
   restrictive: {
     allow: ['Read', 'Glob', 'Grep'],
     deny: ['Bash(rm -rf /*)', 'Bash(rm -rf ~*)', 'Bash(sudo rm *)', 'Bash(sudo dd *)']
   },
   permissive: {
-    allow: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'Agent', 'WebFetch', 'WebSearch', 'NotebookEdit'],
+    allow: [
+      'Read',
+      'Write',
+      'Edit',
+      'Glob',
+      'Grep',
+      'Bash',
+      'Agent',
+      'WebFetch',
+      'WebSearch',
+      'NotebookEdit'
+    ],
     deny: []
   }
 }
@@ -182,23 +223,27 @@ const PRESETS = {
 - [ ] **Step 2: Implement component**
 
 Structure:
+
 ```tsx
 export function AgentPermissionsSection(): React.JSX.Element {
   const [allow, setAllow] = useState<string[]>([])
   const [deny, setDeny] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [dirty, setDirty] = useState(false)
-  const [consented, setConsented] = useState(() =>
-    localStorage.getItem('bde-permissions-consent') === 'true'
+  const [consented, setConsented] = useState(
+    () => localStorage.getItem('bde-permissions-consent') === 'true'
   )
 
   // Load on mount
   useEffect(() => {
-    window.api.claudeConfig.get().then((config) => {
-      setAllow(config.permissions?.allow ?? [])
-      setDeny(config.permissions?.deny ?? [])
-      setLoading(false)
-    }).catch(() => setLoading(false))
+    window.api.claudeConfig
+      .get()
+      .then((config) => {
+        setAllow(config.permissions?.allow ?? [])
+        setDeny(config.permissions?.deny ?? [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [])
 
   // Save handler
@@ -219,9 +264,7 @@ export function AgentPermissionsSection(): React.JSX.Element {
 
   // Toggle a tool in allow list
   function toggleTool(tool: string) {
-    setAllow(prev =>
-      prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool]
-    )
+    setAllow((prev) => (prev.includes(tool) ? prev.filter((t) => t !== tool) : [...prev, tool]))
     setDirty(true)
   }
 
@@ -240,7 +283,7 @@ export function AgentPermissionsSection(): React.JSX.Element {
     }
   }
   function removeDenyRule(rule: string) {
-    setDeny(deny.filter(r => r !== rule))
+    setDeny(deny.filter((r) => r !== rule))
     setDirty(true)
   }
 
@@ -252,15 +295,20 @@ export function AgentPermissionsSection(): React.JSX.Element {
       {!consented && !loading && (
         <div className="permissions-banner">
           <p>BDE agents need permission to read/write files and run commands in your repos.</p>
-          <p>Review the default permissions below, or accept the recommended defaults to get started.</p>
+          <p>
+            Review the default permissions below, or accept the recommended defaults to get started.
+          </p>
           <div className="permissions-banner__actions">
             <button className="bde-btn bde-btn--primary bde-btn--sm" onClick={handleAcceptDefaults}>
               Accept Recommended
             </button>
-            <button className="bde-btn bde-btn--ghost bde-btn--sm" onClick={() => {
-              setConsented(true)
-              localStorage.setItem('bde-permissions-consent', 'true')
-            }}>
+            <button
+              className="bde-btn bde-btn--ghost bde-btn--sm"
+              onClick={() => {
+                setConsented(true)
+                localStorage.setItem('bde-permissions-consent', 'true')
+              }}
+            >
               I'll Configure Manually
             </button>
           </div>
@@ -271,9 +319,24 @@ export function AgentPermissionsSection(): React.JSX.Element {
       <div className="settings-field">
         <span className="settings-field__label">Presets</span>
         <div className="settings-theme-buttons">
-          <button className="bde-btn bde-btn--sm bde-btn--ghost" onClick={() => applyPreset('recommended')}>Recommended</button>
-          <button className="bde-btn bde-btn--sm bde-btn--ghost" onClick={() => applyPreset('restrictive')}>Restrictive</button>
-          <button className="bde-btn bde-btn--sm bde-btn--ghost" onClick={() => applyPreset('permissive')}>Permissive</button>
+          <button
+            className="bde-btn bde-btn--sm bde-btn--ghost"
+            onClick={() => applyPreset('recommended')}
+          >
+            Recommended
+          </button>
+          <button
+            className="bde-btn bde-btn--sm bde-btn--ghost"
+            onClick={() => applyPreset('restrictive')}
+          >
+            Restrictive
+          </button>
+          <button
+            className="bde-btn bde-btn--sm bde-btn--ghost"
+            onClick={() => applyPreset('permissive')}
+          >
+            Permissive
+          </button>
         </div>
       </div>
 
@@ -302,7 +365,9 @@ export function AgentPermissionsSection(): React.JSX.Element {
           {deny.map((rule) => (
             <div key={rule} className="permissions-deny-rule">
               <code>{rule}</code>
-              <button onClick={() => removeDenyRule(rule)} aria-label={`Remove ${rule}`}>×</button>
+              <button onClick={() => removeDenyRule(rule)} aria-label={`Remove ${rule}`}>
+                ×
+              </button>
             </div>
           ))}
           <input
@@ -327,14 +392,17 @@ export function AgentPermissionsSection(): React.JSX.Element {
         >
           Save Permissions
         </button>
-        {dirty && <span style={{ fontSize: 12, color: 'var(--bde-warning)' }}>Unsaved changes</span>}
+        {dirty && (
+          <span style={{ fontSize: 12, color: 'var(--bde-warning)' }}>Unsaved changes</span>
+        )}
       </div>
 
       {/* Info */}
       <div className="settings-field">
         <span className="permissions-info">
           These permissions apply to all BDE-spawned agents. Pipeline agents (autonomous tasks)
-          auto-allow all tools for safety via worktree isolation. Changes are saved to ~/.claude/settings.json.
+          auto-allow all tools for safety via worktree isolation. Changes are saved to
+          ~/.claude/settings.json.
         </span>
       </div>
     </section>
@@ -363,12 +431,14 @@ git commit -m "feat(permissions): AgentPermissionsSection component with consent
 ### Task 3: Wire into Settings View + CSS
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx:19-43`
 - Modify: `src/renderer/src/assets/settings-neon.css`
 
 - [ ] **Step 1: Add Permissions tab**
 
 In `SettingsView.tsx`, add to TABS array (after 'agent' entry, ~line 23):
+
 ```typescript
 { id: 'permissions', label: 'Permissions', icon: Shield },
 ```
@@ -376,6 +446,7 @@ In `SettingsView.tsx`, add to TABS array (after 'agent' entry, ~line 23):
 Import `Shield` from `lucide-react`.
 
 Add to SECTION_MAP:
+
 ```typescript
 permissions: AgentPermissionsSection,
 ```
@@ -493,6 +564,7 @@ git commit -m "feat(permissions): wire into Settings view + neon CSS"
 ### Task 4: Update Handler Counts + Final Verification
 
 **Files:**
+
 - Modify: `src/main/__tests__/integration/ipc-registration.test.ts`
 
 - [ ] **Step 1: Update handler count test**
@@ -545,7 +617,7 @@ npm run dev
 1. Uncheck "Bash" → dirty indicator shows
 2. Click "Save Permissions" → toast "Agent permissions saved"
 3. Reload app → Bash still unchecked (persisted)
-4. Add deny rule "Bash(curl *)" via input → appears in list
+4. Add deny rule "Bash(curl \*)" via input → appears in list
 5. Remove a deny rule via × button
 
 - [ ] **Step 5: Verify agent inherits**

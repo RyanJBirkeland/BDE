@@ -28,7 +28,7 @@ interface PanelSplitNode {
   type: 'split'
   direction: 'horizontal' | 'vertical'
   children: [PanelNode, PanelNode]
-  sizes: [number, number]  // percentage split
+  sizes: [number, number] // percentage split
 }
 
 type PanelNode = PanelLeafNode | PanelSplitNode
@@ -37,36 +37,69 @@ type PanelNode = PanelLeafNode | PanelSplitNode
 ### Examples
 
 **Default (single Agents panel):**
+
 ```json
-{ "type": "leaf", "panelId": "p1", "tabs": [{ "viewKey": "agents", "label": "Agents" }], "activeTab": 0 }
+{
+  "type": "leaf",
+  "panelId": "p1",
+  "tabs": [{ "viewKey": "agents", "label": "Agents" }],
+  "activeTab": 0
+}
 ```
 
 **Agents left + Terminal right (50/50):**
+
 ```json
 {
   "type": "split",
   "direction": "horizontal",
   "children": [
-    { "type": "leaf", "panelId": "p1", "tabs": [{ "viewKey": "agents", "label": "Agents" }], "activeTab": 0 },
-    { "type": "leaf", "panelId": "p2", "tabs": [{ "viewKey": "terminal", "label": "Terminal" }], "activeTab": 0 }
+    {
+      "type": "leaf",
+      "panelId": "p1",
+      "tabs": [{ "viewKey": "agents", "label": "Agents" }],
+      "activeTab": 0
+    },
+    {
+      "type": "leaf",
+      "panelId": "p2",
+      "tabs": [{ "viewKey": "terminal", "label": "Terminal" }],
+      "activeTab": 0
+    }
   ],
   "sizes": [50, 50]
 }
 ```
 
 **Three panels (Agents left, Terminal top-right, Sprint bottom-right):**
+
 ```json
 {
   "type": "split",
   "direction": "horizontal",
   "children": [
-    { "type": "leaf", "panelId": "p1", "tabs": [{ "viewKey": "agents", "label": "Agents" }], "activeTab": 0 },
+    {
+      "type": "leaf",
+      "panelId": "p1",
+      "tabs": [{ "viewKey": "agents", "label": "Agents" }],
+      "activeTab": 0
+    },
     {
       "type": "split",
       "direction": "vertical",
       "children": [
-        { "type": "leaf", "panelId": "p2", "tabs": [{ "viewKey": "terminal", "label": "Terminal" }], "activeTab": 0 },
-        { "type": "leaf", "panelId": "p3", "tabs": [{ "viewKey": "sprint", "label": "Sprint" }], "activeTab": 0 }
+        {
+          "type": "leaf",
+          "panelId": "p2",
+          "tabs": [{ "viewKey": "terminal", "label": "Terminal" }],
+          "activeTab": 0
+        },
+        {
+          "type": "leaf",
+          "panelId": "p3",
+          "tabs": [{ "viewKey": "sprint", "label": "Sprint" }],
+          "activeTab": 0
+        }
       ],
       "sizes": [50, 50]
     }
@@ -126,8 +159,8 @@ Code that currently reads `useUIStore(s => s.activeView)` needs migration. Provi
 
 ```typescript
 function useActiveView(): View {
-  const root = usePanelLayoutStore(s => s.root)
-  const focusedId = usePanelLayoutStore(s => s.focusedPanelId)
+  const root = usePanelLayoutStore((s) => s.root)
+  const focusedId = usePanelLayoutStore((s) => s.focusedPanelId)
   // Walk tree to find focused leaf, return its active tab's viewKey
 }
 ```
@@ -150,15 +183,15 @@ Recursive React component that walks the `PanelNode` tree:
 
 ### View Mounting Strategy
 
-| View | Loading | Mount Behavior |
-|------|---------|---------------|
-| Agents | Eager | Mounted when in tree, hidden when background tab |
-| Terminal | Eager | Mounted when in tree. xterm detach/reattach on tab switch. |
-| Sprint | Lazy | `React.lazy()` + Suspense. Mounted when in tree. |
-| PR Station | Lazy | Same |
-| Memory | Lazy | Same |
-| Cost | Lazy | Same |
-| Settings | Lazy | Same |
+| View       | Loading | Mount Behavior                                             |
+| ---------- | ------- | ---------------------------------------------------------- |
+| Agents     | Eager   | Mounted when in tree, hidden when background tab           |
+| Terminal   | Eager   | Mounted when in tree. xterm detach/reattach on tab switch. |
+| Sprint     | Lazy    | `React.lazy()` + Suspense. Mounted when in tree.           |
+| PR Station | Lazy    | Same                                                       |
+| Memory     | Lazy    | Same                                                       |
+| Cost       | Lazy    | Same                                                       |
+| Settings   | Lazy    | Same                                                       |
 
 **Terminal special handling:** xterm.js requires a visible DOM node. When Terminal is in a background tab, call `terminal.element = null` to detach. When tab activates, reattach to the new container div. The existing `TerminalPane` component handles this — it attaches xterm in a `useEffect` that depends on the container ref.
 
@@ -215,6 +248,7 @@ When dragging over a panel leaf, five zones appear as translucent overlays:
 ### Zone Hit-Testing
 
 Divide the panel's bounding rect into zones:
+
 - Top/Bottom: 25% height strips at edges
 - Left/Right: 25% width strips at edges (excluding top/bottom strips)
 - Center: remaining middle area
@@ -237,16 +271,19 @@ HTML5 Drag and Drop API. No external DnD library needed — all drag sources and
 ### Drop Handling (Tree Mutations)
 
 **Edge drop (top/bottom/left/right):**
+
 1. If source is an existing tab, remove it from source panel
 2. Replace target leaf with a new split node containing target + new leaf
 3. Direction: top/bottom → vertical, left/right → horizontal
 4. New leaf placed first (top/left) or second (bottom/right)
 
 **Center drop (tab):**
+
 1. If source is an existing tab, remove it from source panel
 2. Add as new tab in target leaf's `tabs` array
 
 **Close handling:**
+
 - Closing the last tab in a leaf removes that leaf from the tree
 - If a split node ends up with only one child, collapse: the remaining child replaces the split node in the parent
 
@@ -264,16 +301,17 @@ The ActivityBar transforms from a view switcher to a panel launcher with open/cl
 
 ### Interaction
 
-| Action | Behavior |
-|--------|----------|
-| Left-click (view open) | Focus the panel containing that view |
-| Left-click (view closed) | Open as new tab in the focused panel |
-| Right-click | Context menu: "Open to the Right", "Open Below", "Open in New Tab", "Close All Instances" |
-| Drag icon into panels | Dock at drop zone position |
+| Action                   | Behavior                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| Left-click (view open)   | Focus the panel containing that view                                                      |
+| Left-click (view closed) | Open as new tab in the focused panel                                                      |
+| Right-click              | Context menu: "Open to the Right", "Open Below", "Open in New Tab", "Close All Instances" |
+| Drag icon into panels    | Dock at drop zone position                                                                |
 
 ### Derived State
 
 ActivityBar reads from the panel layout store:
+
 - `getOpenViews()` → which icons get the open dot
 - `focusedPanelId` + active tab → which icon gets the accent bar
 
@@ -281,20 +319,21 @@ ActivityBar reads from the panel layout store:
 
 ## 6. Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| Cmd+1-7 | Focus panel containing that view (or open it in focused panel if not present) |
-| Cmd+\ | Split focused panel right with empty panel |
-| Cmd+W | Close focused panel's active tab |
-| Cmd+Shift+[ / ] | Cycle tabs within focused panel |
-| Cmd+Alt+Arrow | Move focus between panels (directional in tree) |
-| Cmd+P → "Split Right" | Split focused panel right |
-| Cmd+P → "Split Below" | Split focused panel below |
-| Cmd+P → "Reset Layout" | Restore default single Agents panel |
+| Shortcut               | Action                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| Cmd+1-7                | Focus panel containing that view (or open it in focused panel if not present) |
+| Cmd+\                  | Split focused panel right with empty panel                                    |
+| Cmd+W                  | Close focused panel's active tab                                              |
+| Cmd+Shift+[ / ]        | Cycle tabs within focused panel                                               |
+| Cmd+Alt+Arrow          | Move focus between panels (directional in tree)                               |
+| Cmd+P → "Split Right"  | Split focused panel right                                                     |
+| Cmd+P → "Split Below"  | Split focused panel below                                                     |
+| Cmd+P → "Reset Layout" | Restore default single Agents panel                                           |
 
 ### Focus Navigation (Cmd+Alt+Arrow)
 
 Walk the panel tree to find the nearest sibling in the requested direction:
+
 - Left/Right — Find sibling in horizontal split ancestors
 - Up/Down — Find sibling in vertical split ancestors
 - If no sibling in that direction, wrap or no-op
@@ -313,6 +352,7 @@ Walk the panel tree to find the nearest sibling in the requested direction:
 ### Restore
 
 On app launch:
+
 1. Read `panel.layout` from settings
 2. Validate: all `viewKey` values are valid `View` members, tree structure is well-formed
 3. If valid, use as initial `root`
@@ -321,6 +361,7 @@ On app launch:
 ### Reset
 
 "Reset Layout" command (Cmd+P or button):
+
 1. Delete `panel.layout` setting
 2. Set `root` to default
 3. Toast: "Layout reset"
@@ -330,11 +371,13 @@ On app launch:
 ## 8. CSS Considerations
 
 **No CSS modules migration.** The existing BEM naming (`.sprint-board__`, `.pr-station__`, `.cost-view__`, etc.) already namespaces view styles. Multiple views rendering simultaneously will not conflict because:
+
 - Each view uses unique BEM prefixes
 - No two views share class names
 - Views are contained in `overflow: hidden` panel divs
 
 **New CSS needed:**
+
 - `.panel-leaf` — Container with focus ring, overflow hidden
 - `.panel-tab-bar` — Tab strip with draggable tabs
 - `.panel-tab` — Individual tab with label, close button, drag handle
@@ -395,14 +438,14 @@ src/renderer/src/components/panels/
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/App.tsx` | Replace ViewRouter with PanelRenderer |
-| `src/renderer/src/stores/ui.ts` | Deprecate activeView, add useActiveView compat |
-| `src/renderer/src/components/layout/ActivityBar.tsx` | Open indicators, right-click menu, drag source |
-| `src/renderer/src/components/layout/CommandPalette.tsx` | Add panel commands |
-| `src/renderer/src/assets/main.css` | Panel CSS classes |
-| `src/renderer/src/views/TerminalView.tsx` | xterm detach/reattach for background tabs |
+| File                                                    | Change                                         |
+| ------------------------------------------------------- | ---------------------------------------------- |
+| `src/renderer/src/App.tsx`                              | Replace ViewRouter with PanelRenderer          |
+| `src/renderer/src/stores/ui.ts`                         | Deprecate activeView, add useActiveView compat |
+| `src/renderer/src/components/layout/ActivityBar.tsx`    | Open indicators, right-click menu, drag source |
+| `src/renderer/src/components/layout/CommandPalette.tsx` | Add panel commands                             |
+| `src/renderer/src/assets/main.css`                      | Panel CSS classes                              |
+| `src/renderer/src/views/TerminalView.tsx`               | xterm detach/reattach for background tabs      |
 
 ### No Changes Needed
 
@@ -413,16 +456,19 @@ All 7 view files remain unchanged — they render inside `<PanelLeaf>` which han
 ## 11. Testing Strategy
 
 **Unit tests:**
+
 - Tree mutations (split, close, collapse, addTab, moveTab) — pure functions on PanelNode
 - Drop zone hit-testing — geometry math, no DOM needed
 - `useActiveView` compat helper — returns correct view from tree
 
 **Component tests:**
+
 - PanelRenderer renders correct nesting for 1, 2, 3 panel trees
 - PanelLeaf shows tab bar for multi-tab leaves, hides for single tab
 - ActivityBar shows open dots for views in tree
 
 **Integration:**
+
 - Smoke tests: app renders with default panel layout
 - Existing view smoke tests continue to pass (views mount inside panels)
 

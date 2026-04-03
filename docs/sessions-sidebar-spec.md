@@ -10,6 +10,7 @@
 ## Problem
 
 The Sessions sidebar has two issues:
+
 1. **AgentRow is fixed at `height: 36px`** but renders 3 lines of content (label + meta badges + task preview) → text overflows and overlaps
 2. **Sidebar header is cramped** — "AGENTS" title + spawn button squeezed together, no breathing room
 
@@ -20,60 +21,67 @@ Ryan's direction: fix the cramping, AND double down on the glass + gradient aest
 ## 1. AgentRow Fix
 
 ### Root Cause
+
 `.agent-row { height: 36px }` — hard-coded single-line height. The row renders up to 3 rows of content.
 
 ### Fix
+
 Remove `height: 36px`. Replace with `min-height` + proper padding so rows auto-size to content:
 
 ```css
 .agent-row {
   display: flex;
-  align-items: flex-start;   /* was: center — must change so dot aligns to first line */
+  align-items: flex-start; /* was: center — must change so dot aligns to first line */
   gap: 8px;
   width: 100%;
-  min-height: 44px;           /* comfortable minimum for label + meta */
-  padding: 8px 10px;          /* replaces height: 36px */
+  min-height: 44px; /* comfortable minimum for label + meta */
+  padding: 8px 10px; /* replaces height: 36px */
   /* all other properties unchanged */
 }
 
 .agent-row__dot {
-  margin-top: 5px;            /* align dot with first line of text, not center */
+  margin-top: 5px; /* align dot with first line of text, not center */
   flex-shrink: 0;
 }
 
 .agent-row__info {
-  gap: 3px;                   /* was: 1px — give lines room to breathe */
+  gap: 3px; /* was: 1px — give lines room to breathe */
 }
 
 .agent-row__meta {
-  flex-wrap: wrap;            /* allow badges to wrap if sidebar is narrow */
+  flex-wrap: wrap; /* allow badges to wrap if sidebar is narrow */
   gap: 4px;
   row-gap: 2px;
 }
 ```
 
 ### Selected + Glass State (enhance with double-down directive)
+
 When selected, the row should feel premium. Upgrade the selected state:
 
 ```css
 .agent-row--selected {
-  background: linear-gradient(
-    135deg,
-    rgba(0, 211, 127, 0.08) 0%,
-    rgba(108, 142, 239, 0.05) 100%
-  );
+  background: linear-gradient(135deg, rgba(0, 211, 127, 0.08) 0%, rgba(108, 142, 239, 0.05) 100%);
   border: 1px solid rgba(0, 211, 127, 0.25);
   box-shadow:
-    0 0 16px rgba(0, 211, 127, 0.10),
+    0 0 16px rgba(0, 211, 127, 0.1),
     inset 0 0.5px 0 rgba(255, 255, 255, 0.06);
 }
 ```
 
 Running rows get a more vivid pulse:
+
 ```css
 @keyframes pulse-glow-row {
-  0%, 100% { box-shadow: 0 0 8px rgba(0, 211, 127, 0.08); }
-  50%       { box-shadow: 0 0 20px rgba(0, 211, 127, 0.18), 0 0 0 1px rgba(0, 211, 127, 0.15); }
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(0, 211, 127, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(0, 211, 127, 0.18),
+      0 0 0 1px rgba(0, 211, 127, 0.15);
+  }
 }
 .agent-row.glow-pulse {
   animation: pulse-glow-row 2.5s ease-in-out infinite;
@@ -85,6 +93,7 @@ Running rows get a more vivid pulse:
 ## 2. Sidebar Header Redesign
 
 ### Current HTML (SessionsView.tsx ~line 268)
+
 ```html
 <div class="session-list__header">
   <span class="session-list__title bde-section-title">AGENTS</span>
@@ -96,6 +105,7 @@ Running rows get a more vivid pulse:
 ```
 
 ### Target Layout
+
 ```
 ┌────────────────────────────────────┐
 │  ✦ AGENTS              [+Spawn]   │  ← gradient accent line below
@@ -105,12 +115,13 @@ Running rows get a more vivid pulse:
 ```
 
 ### CSS changes to `session-list__header`:
+
 ```css
 .session-list__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 12px 10px;          /* was: cramped */
+  padding: 14px 12px 10px; /* was: cramped */
   position: relative;
 }
 
@@ -145,7 +156,7 @@ Running rows get a more vivid pulse:
 .session-list__new-btn {
   /* Use .btn-glass from design-system.css */
   background: rgba(0, 211, 127, 0.08);
-  border: 1px solid rgba(0, 211, 127, 0.20);
+  border: 1px solid rgba(0, 211, 127, 0.2);
   color: var(--accent);
   border-radius: 6px;
   width: 26px;
@@ -158,12 +169,13 @@ Running rows get a more vivid pulse:
 }
 .session-list__new-btn:hover {
   background: rgba(0, 211, 127, 0.15);
-  border-color: rgba(0, 211, 127, 0.40);
-  box-shadow: 0 0 12px rgba(0, 211, 127, 0.20);
+  border-color: rgba(0, 211, 127, 0.4);
+  box-shadow: 0 0 12px rgba(0, 211, 127, 0.2);
 }
 ```
 
 ### Search input (glass treatment):
+
 ```css
 .session-list__search {
   padding: 8px 10px 6px;
@@ -178,7 +190,9 @@ Running rows get a more vivid pulse:
   font-size: 12px;
   color: var(--text-primary);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .session-list__search input:focus {
@@ -228,14 +242,15 @@ Upgrade from plain uppercase labels to premium section dividers:
 
 ## 4. Files to Change
 
-| File | What changes |
-|------|-------------|
+| File                                   | What changes                                                                                                                                                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/renderer/src/assets/sessions.css` | AgentRow height→padding, dot margin-top, meta flex-wrap, selected gradient bg, pulse animation, header padding+gradient line+gradient title, search glass input, group header left-accent line, spawn btn glow |
-| No .tsx changes needed | All fixes are pure CSS |
+| No .tsx changes needed                 | All fixes are pure CSS                                                                                                                                                                                         |
 
 ---
 
 ## 5. Out of Scope
+
 - AgentRow data or logic changes
 - Sidebar width changes
 - Split view / multi-pane layout
@@ -243,6 +258,7 @@ Upgrade from plain uppercase labels to premium section dividers:
 ---
 
 ## Success Criteria
+
 - [ ] AgentRow shows all 3 lines (label + meta + task) without overlap at any sidebar width
 - [ ] Status dot aligns with first line of text
 - [ ] Meta badges wrap on narrow sidebar instead of overflowing

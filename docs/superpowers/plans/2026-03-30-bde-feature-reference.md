@@ -15,6 +15,7 @@
 ### Task 1: Create BDE_FEATURES.md — Header & Workflow Overview
 
 **Files:**
+
 - Create: `docs/BDE_FEATURES.md`
 
 - [ ] **Step 1: Create the file with header and workflow overview**
@@ -56,6 +57,7 @@ git commit -m "docs: create BDE feature reference — header and workflow overvi
 ### Task 2: Add Task System section
 
 **Files:**
+
 - Modify: `docs/BDE_FEATURES.md` (append)
 
 - [ ] **Step 1: Append Task System section**
@@ -63,7 +65,6 @@ git commit -m "docs: create BDE feature reference — header and workflow overvi
 Append to `docs/BDE_FEATURES.md`:
 
 ```markdown
-
 ## Task System
 
 ### Task Workbench
@@ -135,6 +136,7 @@ git commit -m "docs: add Task System section to BDE feature reference"
 ### Task 3: Add Agent System section
 
 **Files:**
+
 - Modify: `docs/BDE_FEATURES.md` (append)
 
 - [ ] **Step 1: Append Agent System section**
@@ -142,20 +144,19 @@ git commit -m "docs: add Task System section to BDE feature reference"
 Append to `docs/BDE_FEATURES.md`:
 
 ```markdown
-
 ## Agent System
 
 ### Agent Types
 
 BDE spawns five types of AI agents, each with different capabilities and contexts:
 
-| Type | Spawned by | Interactive | Tool access | Worktree | Playground |
-|------|-----------|------------|-------------|----------|------------|
-| Pipeline | Agent Manager (auto) | No | Full | Yes (isolated) | If enabled |
-| Adhoc | User (Agents view) | Yes (multi-turn) | Full | No (repo dir) | Always |
-| Assistant | User (Agents view) | Yes (multi-turn) | Full | No (repo dir) | Always |
-| Copilot | Task Workbench | Yes (chat) | None (text-only) | No | No |
-| Synthesizer | Task Workbench | No (single-turn) | None | No | No |
+| Type        | Spawned by           | Interactive      | Tool access      | Worktree       | Playground |
+| ----------- | -------------------- | ---------------- | ---------------- | -------------- | ---------- |
+| Pipeline    | Agent Manager (auto) | No               | Full             | Yes (isolated) | If enabled |
+| Adhoc       | User (Agents view)   | Yes (multi-turn) | Full             | No (repo dir)  | Always     |
+| Assistant   | User (Agents view)   | Yes (multi-turn) | Full             | No (repo dir)  | Always     |
+| Copilot     | Task Workbench       | Yes (chat)       | None (text-only) | No             | No         |
+| Synthesizer | Task Workbench       | No (single-turn) | None             | No             | No         |
 
 - **Pipeline**: Executes sprint tasks autonomously. Works in isolated git worktree. Commits, pushes branch, opens PR on completion. Prompt includes task spec/prompt and branch name
 - **Adhoc**: User-spawned one-off tasks from the Agents view. Multi-turn sessions via SDK `query()` with session resumption (`resume: sessionId`). Works in repo directory directly
@@ -209,6 +210,7 @@ git commit -m "docs: add Agent System section to BDE feature reference"
 ### Task 4: Add Code Review section
 
 **Files:**
+
 - Modify: `docs/BDE_FEATURES.md` (append)
 
 - [ ] **Step 1: Append Code Review section**
@@ -216,7 +218,6 @@ git commit -m "docs: add Agent System section to BDE feature reference"
 Append to `docs/BDE_FEATURES.md`:
 
 ```markdown
-
 ## Code Review
 
 ### PR Station
@@ -254,6 +255,7 @@ git commit -m "docs: add Code Review section to BDE feature reference"
 ### Task 5: Add Development Tools and App Shell sections
 
 **Files:**
+
 - Modify: `docs/BDE_FEATURES.md` (append)
 
 - [ ] **Step 1: Append Development Tools and App Shell sections**
@@ -261,7 +263,6 @@ git commit -m "docs: add Code Review section to BDE feature reference"
 Append to `docs/BDE_FEATURES.md`:
 
 ```markdown
-
 ## Development Tools
 
 ### IDE
@@ -346,6 +347,7 @@ git commit -m "docs: add Development Tools and App Shell sections to BDE feature
 ### Task 6: Wire into CLAUDE.md and verify
 
 **Files:**
+
 - Modify: `CLAUDE.md` (add 1 line)
 
 - [ ] **Step 1: Add `@` directive to CLAUDE.md**
@@ -398,6 +400,7 @@ Give it a task like: "How does the Dev Playground work in BDE?"
 - [ ] **Step 3: Verify agent has feature knowledge**
 
 The agent should answer from the BDE_FEATURES.md content without needing to `grep` or `Read` source files. It should know:
+
 - Playground renders HTML inline (not in browser)
 - It uses DOMPurify sanitization
 - Pipeline agents need `playground_enabled`, adhoc always has it

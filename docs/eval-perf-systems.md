@@ -2,6 +2,7 @@
 
 > **Status: PRE-FIX AUDIT (2026-03-16)**
 > Several issues identified here have been partially addressed:
+>
 > - P0 #2 (backdrop-filter): Replaced with solid `rgba()` backgrounds.
 > - P0 #3 (log tail reads entire file): Fixed with positioned `fh.read()` via byte offset.
 > - P1 #4 (no polling backpressure): Sprint polling gated on `activeView`.
@@ -22,16 +23,16 @@
 
 Every git operation blocks the main thread:
 
-| Function | Call | Line |
-|----------|------|------|
-| `gitStatus()` | `execFileSync('git', ['status', '--porcelain'])` | :26 |
-| `gitDiffFile()` | `execFileSync('git', ['diff', ...])` × 2 calls | :58-59 |
-| `gitStage()` | `execFileSync('git', ['add', ...])` | :68 |
-| `gitUnstage()` | `execFileSync('git', ['reset', 'HEAD', ...])` | :73 |
-| `gitCommit()` | `execFileSync('git', ['commit', ...])` | :77 |
-| `gitPush()` | `spawnSync('git', ['push'])` | :81 |
-| `gitBranches()` | `execFileSync('git', ['branch'])` | :95 |
-| `gitCheckout()` | `execFileSync('git', ['checkout', ...])` | :115 |
+| Function        | Call                                             | Line   |
+| --------------- | ------------------------------------------------ | ------ |
+| `gitStatus()`   | `execFileSync('git', ['status', '--porcelain'])` | :26    |
+| `gitDiffFile()` | `execFileSync('git', ['diff', ...])` × 2 calls   | :58-59 |
+| `gitStage()`    | `execFileSync('git', ['add', ...])`              | :68    |
+| `gitUnstage()`  | `execFileSync('git', ['reset', 'HEAD', ...])`    | :73    |
+| `gitCommit()`   | `execFileSync('git', ['commit', ...])`           | :77    |
+| `gitPush()`     | `spawnSync('git', ['push'])`                     | :81    |
+| `gitBranches()` | `execFileSync('git', ['branch'])`                | :95    |
+| `gitCheckout()` | `execFileSync('git', ['checkout', ...])`         | :115   |
 
 **Impact**: `git push` and `git diff` on large repos can take 2-10+ seconds. During this time, **all IPC channels are frozen** — the renderer cannot get responses to any `ipcMain.handle` call. The UI freezes completely.
 
@@ -44,7 +45,9 @@ const execFileAsync = promisify(execFile)
 
 export async function gitStatus(cwd: string): Promise<{ files: GitFileStatus[] }> {
   const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
-    cwd, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024
+    cwd,
+    encoding: 'utf-8',
+    maxBuffer: 10 * 1024 * 1024
   })
   // ... parse stdout
 }
@@ -77,16 +80,16 @@ These are called from IPC handlers, but `getGatewayConfig()` is also called from
 
 ### Channel Count: 37 registered handlers
 
-| Module | Channels | Count |
-|--------|----------|-------|
-| agent-handlers | `local:getAgentProcesses`, `local:spawnClaudeAgent`, `local:tailAgentLog`, `local:sendToAgent`, `local:isInteractive`, `agent:steer`, `agents:list`, `agents:readLog`, `agents:import` | 9 |
-| git-handlers | `get-repo-paths`, `git:status`, `git:diff`, `git:stage`, `git:unstage`, `git:commit`, `git:push`, `git:branches`, `git:checkout`, `poll-pr-statuses` | 10 |
-| sprint | `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:read-spec-file`, `sprint:readLog` | 6 |
-| config-handlers | `get-gateway-config`, `get-github-token`, `save-gateway-config`, `get-supabase-config` | 4 |
-| gateway-handlers | `gateway:invoke`, `gateway:getSessionHistory` | 2 |
-| terminal-handlers | `terminal:create`, `terminal:resize`, `terminal:kill` + `ipcMain.on('terminal:write')` | 4 |
-| window-handlers | `open-external`, `kill-local-agent` + `ipcMain.on('set-title')` | 3 |
-| fs | `list-memory-files`, `read-memory-file`, `write-memory-file`, `open-file-dialog`, `read-file-as-base64`, `read-file-as-text` | 6 |
+| Module            | Channels                                                                                                                                                                               | Count |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| agent-handlers    | `local:getAgentProcesses`, `local:spawnClaudeAgent`, `local:tailAgentLog`, `local:sendToAgent`, `local:isInteractive`, `agent:steer`, `agents:list`, `agents:readLog`, `agents:import` | 9     |
+| git-handlers      | `get-repo-paths`, `git:status`, `git:diff`, `git:stage`, `git:unstage`, `git:commit`, `git:push`, `git:branches`, `git:checkout`, `poll-pr-statuses`                                   | 10    |
+| sprint            | `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:read-spec-file`, `sprint:readLog`                                                                            | 6     |
+| config-handlers   | `get-gateway-config`, `get-github-token`, `save-gateway-config`, `get-supabase-config`                                                                                                 | 4     |
+| gateway-handlers  | `gateway:invoke`, `gateway:getSessionHistory`                                                                                                                                          | 2     |
+| terminal-handlers | `terminal:create`, `terminal:resize`, `terminal:kill` + `ipcMain.on('terminal:write')`                                                                                                 | 4     |
+| window-handlers   | `open-external`, `kill-local-agent` + `ipcMain.on('set-title')`                                                                                                                        | 3     |
+| fs                | `list-memory-files`, `read-memory-file`, `write-memory-file`, `open-file-dialog`, `read-file-as-base64`, `read-file-as-text`                                                           | 6     |
 
 37 channels is not inherently problematic, but the **polling frequency** creates saturation risk.
 
@@ -94,14 +97,14 @@ These are called from IPC handlers, but `getGatewayConfig()` is also called from
 
 When a user has the Sessions view open with an active agent, the renderer fires these timers **simultaneously**:
 
-| Poll target | Interval | IPC channel | Blocks main? |
-|-------------|----------|-------------|-------------|
-| Agent processes (ps scan) | 5s | `local:getAgentProcesses` | No (async execFile) |
-| Agent history | 10s | `agents:list` | Yes (sync SQLite) |
-| Session list | 10s | `gateway:invoke` | No (async fetch) |
-| Chat history (streaming) | 1s | `gateway:invoke` | No (async fetch) |
-| Log tail | 1s | `local:tailAgentLog` | No (async readFile) |
-| Log poller (store) | 1s | `agents:readLog` | Yes (sync SQLite query + async readFile) |
+| Poll target               | Interval | IPC channel               | Blocks main?                             |
+| ------------------------- | -------- | ------------------------- | ---------------------------------------- |
+| Agent processes (ps scan) | 5s       | `local:getAgentProcesses` | No (async execFile)                      |
+| Agent history             | 10s      | `agents:list`             | Yes (sync SQLite)                        |
+| Session list              | 10s      | `gateway:invoke`          | No (async fetch)                         |
+| Chat history (streaming)  | 1s       | `gateway:invoke`          | No (async fetch)                         |
+| Log tail                  | 1s       | `local:tailAgentLog`      | No (async readFile)                      |
+| Log poller (store)        | 1s       | `agents:readLog`          | Yes (sync SQLite query + async readFile) |
 
 **Worst case at a single 1-second tick**: Up to 3 IPC calls fire simultaneously (chat history + log tail + log poller), and every 5 seconds an additional `ps -eo` scan fires. Every 10 seconds, two more polls overlap.
 
@@ -119,7 +122,10 @@ function pollLoop(fn: () => Promise<void>, ms: number): () => void {
     if (!stopped) timer = setTimeout(tick, ms)
   }
   tick()
-  return () => { stopped = true; if (timer) clearTimeout(timer) }
+  return () => {
+    stopped = true
+    if (timer) clearTimeout(timer)
+  }
 }
 ```
 
@@ -132,6 +138,7 @@ ChatThread already uses this pattern correctly (recursive setTimeout). Apply it 
 ### Agent Spawning (`local-agents.ts`)
 
 **Good practices already in place**:
+
 - `child.unref()` — won't keep Electron alive
 - `detached: true` — agent survives if BDE quits
 - Tracked in `activeAgentProcesses` Map and cleaned up on exit
@@ -142,6 +149,7 @@ ChatThread already uses this pattern correctly (recursive setTimeout). Apply it 
 **File**: `src/main/local-agents.ts:183-196`
 
 Each call to `getAgentProcesses()`:
+
 1. Runs `ps -eo pid,%cpu,rss,etime,args` — scans entire process table
 2. For each matching agent process, runs `lsof -p <pid> -a -d cwd -F n` to get CWD
 
@@ -150,6 +158,7 @@ With 5 running agents, that's 1 ps + 5 lsof = **6 child processes spawned every 
 The CWD cache (`cwdCache`) mitigates repeated lsof calls for known PIDs, but new agents always trigger lsof.
 
 **Fix**:
+
 - The ps scan is unavoidable, but consider `proc_pidinfo` via native addon for macOS (eliminates lsof entirely)
 - Increase `POLL_PROCESSES_INTERVAL` to 10s when no agents are running
 - Batch lsof calls: `lsof -p pid1,pid2,pid3` in a single invocation
@@ -165,6 +174,7 @@ child.stdout?.on('data', (chunk: Buffer) => {
 ```
 
 `appendAgentLog()` does:
+
 1. Sync SQLite query to get `log_path` (`agent-history.ts:158`)
 2. Async `appendFile()` to disk
 
@@ -196,10 +206,10 @@ Agents are `detached: true` and tracked. The `exit` handler cleans up maps. `rec
 The following pragmas would improve throughput with no downside for an embedded single-process database:
 
 ```ts
-_db.pragma('synchronous = NORMAL')    // WAL + NORMAL is safe and 2-3× faster than FULL
-_db.pragma('cache_size = -8000')       // 8MB page cache (default is 2MB)
-_db.pragma('busy_timeout = 5000')      // Wait 5s on lock contention instead of failing
-_db.pragma('temp_store = MEMORY')      // Temp tables in RAM
+_db.pragma('synchronous = NORMAL') // WAL + NORMAL is safe and 2-3× faster than FULL
+_db.pragma('cache_size = -8000') // 8MB page cache (default is 2MB)
+_db.pragma('busy_timeout = 5000') // Wait 5s on lock contention instead of failing
+_db.pragma('temp_store = MEMORY') // Temp tables in RAM
 ```
 
 Currently only `journal_mode = WAL` and `foreign_keys = ON` are set.
@@ -227,6 +237,7 @@ All transactions are short (`agent-history.ts:83` migration, `agent-history.ts:2
 **File**: `src/main/index.ts:19-47`
 
 Only two `fs.watch()` instances:
+
 1. `~/.bde/bde.db` — the SQLite database file
 2. `~/.bde/bde.db-wal` — the WAL file
 
@@ -271,7 +282,10 @@ export async function tailAgentLog(args: TailLogArgs): Promise<TailLogResult> {
     const fh = await open(safePath, 'r')
     const stats = await fh.stat()
     const size = stats.size
-    if (fromByte >= size) { await fh.close(); return { content: '', nextByte: fromByte } }
+    if (fromByte >= size) {
+      await fh.close()
+      return { content: '', nextByte: fromByte }
+    }
     const buf = Buffer.alloc(size - fromByte)
     await fh.read(buf, 0, buf.length, fromByte)
     await fh.close()
@@ -303,11 +317,13 @@ No `app.commandLine.appendSwitch()` calls anywhere. Electron defaults are in eff
 ### HIGH: Excessive backdrop-filter usage (65+ instances)
 
 Backdrop filters are the single most expensive CSS property in Chromium. They force the compositor to:
+
 1. Rasterize everything behind the element
 2. Apply a gaussian blur kernel
 3. Composite the result
 
 Found in every major view's stylesheet:
+
 - `design-system.css` — glass panel classes (blur-sm through blur-xl + saturate)
 - `sessions.css` — 5 instances
 - `sprint.css` — 7 instances
@@ -317,6 +333,7 @@ Found in every major view's stylesheet:
 **Impact**: Every scroll, resize, or animation that intersects a backdrop-filter element triggers a full re-rasterize of the layers behind it. This is the most likely cause of perceived UI lag during normal interaction.
 
 **Fix**:
+
 - Replace `backdrop-filter: blur(N) saturate(120%)` with solid semi-transparent backgrounds: `background: rgba(10, 10, 10, 0.85)` for a similar dark glass look without GPU cost
 - If blur aesthetic is essential, limit to modals only (not panels, cards, or list items)
 - Remove the `-webkit-backdrop-filter` prefix — Electron 39 doesn't need it
@@ -334,6 +351,7 @@ staggerContainer: {
 Applied to AgentList (up to 20 items) and potentially Kanban columns (up to 50 cards). With 20 items: `60ms delay + 20 × 40ms = 860ms` of cascading animation. During this time, each child triggers layout, paint, and composite passes.
 
 **Fix**:
+
 - Remove stagger from lists >10 items — fade the container instead
 - Already implements `useReducedMotion()` correctly, but stagger should be opt-out for large lists regardless
 
@@ -366,10 +384,12 @@ Every task card has `layoutId={task.id}` for cross-column drag animations. With 
 **`electron.vite.config.ts`**: No production optimizations configured.
 
 **BrowserWindow config** (`src/main/index.ts:51-66`):
+
 - `backgroundColor: '#0A0A0A'` — good, prevents white flash
 - `sandbox: false` — required for preload with node-pty, but noted
 
 **Missing**:
+
 - No `v8-cache` or `code-cache` flags
 - No `webPreferences.backgroundThrottling` consideration (defaults to true, which is correct)
 
@@ -379,29 +399,29 @@ Every task card has `layoutId={task.id}` for cross-column drag animations. With 
 
 ### P0 — Immediate Impact (fix this week)
 
-| # | Issue | File | Fix | Effort |
-|---|-------|------|-----|--------|
-| 1 | **Sync git operations block main thread** | `src/main/git.ts` | Convert `execFileSync` → `execFileAsync` for all functions | 1-2 hrs |
-| 2 | **Backdrop-filter on 65+ elements** | `*.css` | Replace with solid `rgba()` backgrounds; keep blur only on modals | 2-3 hrs |
-| 3 | **Log tail reads entire file** | `local-agents.ts:324`, `agent-history.ts:171` | Use positioned `fh.read()` instead of `readFile()` | 30 min |
+| #   | Issue                                     | File                                          | Fix                                                               | Effort  |
+| --- | ----------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------- | ------- |
+| 1   | **Sync git operations block main thread** | `src/main/git.ts`                             | Convert `execFileSync` → `execFileAsync` for all functions        | 1-2 hrs |
+| 2   | **Backdrop-filter on 65+ elements**       | `*.css`                                       | Replace with solid `rgba()` backgrounds; keep blur only on modals | 2-3 hrs |
+| 3   | **Log tail reads entire file**            | `local-agents.ts:324`, `agent-history.ts:171` | Use positioned `fh.read()` instead of `readFile()`                | 30 min  |
 
 ### P1 — Important (fix this sprint)
 
-| # | Issue | File | Fix | Effort |
-|---|-------|------|-----|--------|
-| 4 | **No polling backpressure** | All renderer polling code | Replace `setInterval` with recursive `setTimeout` pattern | 1 hr |
-| 5 | **SQLite query on every agent stdout chunk** | `agent-history.ts:156-161` | Cache log_path at spawn time, pass directly | 15 min |
-| 6 | **Missing SQLite pragmas** | `src/main/db.ts` | Add `synchronous=NORMAL`, `cache_size=-8000`, `busy_timeout=5000` | 5 min |
-| 7 | **Config re-read from disk on every gateway call** | `src/main/config.ts` | Cache `getGitHubToken()` and `getSupabaseConfig()` results | 30 min |
+| #   | Issue                                              | File                       | Fix                                                               | Effort |
+| --- | -------------------------------------------------- | -------------------------- | ----------------------------------------------------------------- | ------ |
+| 4   | **No polling backpressure**                        | All renderer polling code  | Replace `setInterval` with recursive `setTimeout` pattern         | 1 hr   |
+| 5   | **SQLite query on every agent stdout chunk**       | `agent-history.ts:156-161` | Cache log_path at spawn time, pass directly                       | 15 min |
+| 6   | **Missing SQLite pragmas**                         | `src/main/db.ts`           | Add `synchronous=NORMAL`, `cache_size=-8000`, `busy_timeout=5000` | 5 min  |
+| 7   | **Config re-read from disk on every gateway call** | `src/main/config.ts`       | Cache `getGitHubToken()` and `getSupabaseConfig()` results        | 30 min |
 
 ### P2 — Nice to Have
 
-| # | Issue | File | Fix | Effort |
-|---|-------|------|-----|--------|
-| 8 | AnimatePresence `mode="wait"` blocks transitions | `App.tsx:87` | Switch to `mode="popLayout"` | 5 min |
-| 9 | Stagger animations on 20-item lists | `motion.ts`, `AgentList.tsx` | Disable stagger when list > 10 items | 30 min |
-| 10 | 6 child processes every 5s for agent scan | `local-agents.ts` | Batch lsof, increase interval when idle | 1 hr |
-| 11 | ChatThread renders all 100 messages | `ChatThread.tsx` | Virtualize with `react-window` or similar | 2-3 hrs |
+| #   | Issue                                            | File                         | Fix                                       | Effort  |
+| --- | ------------------------------------------------ | ---------------------------- | ----------------------------------------- | ------- |
+| 8   | AnimatePresence `mode="wait"` blocks transitions | `App.tsx:87`                 | Switch to `mode="popLayout"`              | 5 min   |
+| 9   | Stagger animations on 20-item lists              | `motion.ts`, `AgentList.tsx` | Disable stagger when list > 10 items      | 30 min  |
+| 10  | 6 child processes every 5s for agent scan        | `local-agents.ts`            | Batch lsof, increase interval when idle   | 1 hr    |
+| 11  | ChatThread renders all 100 messages              | `ChatThread.tsx`             | Virtualize with `react-window` or similar | 2-3 hrs |
 
 ### Quick Config Wins (5 minutes total)
 

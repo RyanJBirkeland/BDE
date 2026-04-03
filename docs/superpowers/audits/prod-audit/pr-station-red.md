@@ -11,6 +11,7 @@
 The March 28 audit (synthesis-final-report.md) flagged **SEC-3**: `github:fetch` IPC is an open proxy allowing arbitrary GitHub API calls.
 
 **Status: FIXED.** An endpoint/method allowlist was implemented in `src/main/handlers/git-handlers.ts:31-42`. The allowlist restricts:
+
 - GET to `/repos/.../pulls`, `/repos/.../issues`, `/repos/.../commits`, `/repos/.../branches`, `/repos/.../check-runs`
 - POST to `/repos/.../pulls/{id}/reviews` and `/repos/.../pulls/{id}/comments`
 - PUT to `/repos/.../pulls/{id}/merge`
@@ -36,6 +37,7 @@ None found.
 
 **File:** `src/main/handlers/git-handlers.ts:32-36`
 **Evidence:**
+
 ```typescript
 { method: 'GET', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls/ },
 { method: 'GET', pattern: /^\/repos\/[^/]+\/[^/]+\/issues/ },
@@ -43,6 +45,7 @@ None found.
 ```
 
 These regexes use prefix matching (`/pulls/` not `/pulls$` or `/pulls?`). This means any GET under these paths is allowed, including:
+
 - `/repos/{owner}/{repo}/pulls/{number}/requested_reviewers` -- reveals who was asked to review
 - `/repos/{owner}/{repo}/issues/{number}/reactions` -- reveals who reacted
 - `/repos/{owner}/{repo}/commits/{sha}/comments` -- access commit comments
@@ -59,11 +62,13 @@ The allowlist also does not restrict which `owner/repo` combinations can be quer
 
 **File:** `src/main/handlers/git-handlers.ts:40`
 **Evidence:**
+
 ```typescript
 { method: 'PATCH', pattern: /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+/ },
 ```
 
 The PATCH pattern allows patching any field on any PR number on any accessible repo. The only PATCH operation PR Station uses is `closePR()` (setting `state: 'closed'`), but the allowlist permits:
+
 - Changing PR title, body, base branch
 - Converting a PR to/from draft
 - Modifying milestone, labels, assignees (via the PR endpoint)
@@ -80,6 +85,7 @@ The PATCH pattern allows patching any field on any PR number on any accessible r
 
 **File:** `src/renderer/src/components/pr-station/PRStationDetail.tsx:201`
 **Evidence:**
+
 ```tsx
 style={{ background: `#${label.color}` }}
 ```
@@ -97,6 +103,7 @@ React's `style` prop does provide protection by treating values as property valu
 
 **File:** `src/renderer/src/lib/render-markdown.ts:20`
 **Evidence:**
+
 ```typescript
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html)
@@ -104,6 +111,7 @@ function sanitizeHtml(html: string): string {
 ```
 
 DOMPurify with default configuration allows a wide range of HTML tags including `<img>` (with onerror stripped but src allowed), `<a>` (with href), `<form>`, `<input>`, `<table>`, and `<style>` tags. Specifically:
+
 - `<style>` tags are allowed by default and can inject CSS that alters the page layout or creates visual spoofing (e.g., overlaying fake UI elements, hiding the merge button, making the "Approve" radio appear selected)
 - `<a href="javascript:...">` is blocked, but `<a href="https://phishing.com">` styled to look like a merge button is not
 - `<img src="https://tracker.evil.com/pixel.gif">` enables tracking/exfiltration of the fact that a user is viewing a specific PR
@@ -112,10 +120,25 @@ This affects 4 sites where `dangerouslySetInnerHTML` is used with `renderMarkdow
 
 **Severity:** Medium -- CSS injection, tracking pixels, and visual spoofing are possible through PR bodies and review comments authored by any GitHub user
 **Fix:** Configure DOMPurify with an explicit allowlist:
+
 ```typescript
 DOMPurify.sanitize(html, {
-  ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'strong', 'em', 'code', 'pre',
-                 'ul', 'ol', 'li', 'a', 'br', 'blockquote'],
+  ALLOWED_TAGS: [
+    'p',
+    'h1',
+    'h2',
+    'h3',
+    'strong',
+    'em',
+    'code',
+    'pre',
+    'ul',
+    'ol',
+    'li',
+    'a',
+    'br',
+    'blockquote'
+  ],
   ALLOWED_ATTR: ['href', 'title', 'class'],
   ALLOW_DATA_ATTR: false
 })
@@ -141,6 +164,7 @@ These are destructive, irreversible operations on a remote repository. A single 
 
 **File:** `src/renderer/src/stores/pendingReview.ts:62-73`
 **Evidence:**
+
 ```typescript
 restoreFromStorage: () => {
   try {
@@ -171,6 +195,7 @@ Additionally, the `body` field of pending comments is displayed via `{pc.body}` 
 
 **File:** `src/renderer/src/lib/github-api.ts:195-197`, `src/renderer/src/lib/github-api.ts:248-249`, `src/renderer/src/lib/github-api.ts:268-270`
 **Evidence:**
+
 ```typescript
 const err = (res.body ?? {}) as { message?: string }
 throw new Error(`Merge failed: ${res.status} -- ${err.message ?? 'unknown'}`)
@@ -187,6 +212,7 @@ GitHub API error responses can contain internal details (e.g., "Resource not acc
 
 **File:** `src/renderer/src/components/pr-station/PRStationChecks.tsx:56-64`
 **Evidence:**
+
 ```tsx
 <a
   href={run.html_url}
@@ -208,6 +234,7 @@ The `html_url` from check runs is used directly as an href. The main process has
 
 **File:** `src/renderer/src/lib/github-cache.ts:73-81`
 **Evidence:**
+
 ```typescript
 export function invalidatePRCache(owner: string, repo: string, number: number): void {
   const prefix = `${owner}/${repo}#${number}`
@@ -232,8 +259,9 @@ The `includes()` check means `invalidatePRCache('owner', 'repo', 1)` would also 
 **Evidence:**
 
 All API functions accept `owner` and `repo` as strings and interpolate them into URL paths:
+
 ```typescript
-`/repos/${owner}/${repo}/pulls?state=open&per_page=100`
+;`/repos/${owner}/${repo}/pulls?state=open&per_page=100`
 ```
 
 There is no validation that `owner` and `repo` are alphanumeric/dash/underscore. A value containing `/` or URL-encoded characters could construct unintended API paths (e.g., `owner = "../../orgs"` would produce `/repos/../../orgs/{repo}/pulls`).
@@ -249,6 +277,7 @@ However, the main process allowlist regexes in `git-handlers.ts` would reject ma
 
 **File:** `src/renderer/src/lib/github-api.ts:65`
 **Evidence:**
+
 ```typescript
 export async function getPrMergeability(
   owner: string, repo: string, prNumber: number,
@@ -281,22 +310,22 @@ The `github:fetch` proxy injects the GitHub token server-side, but there is no a
 
 ## Summary Table
 
-| ID | Severity | Component | Issue | Status |
-|---|---|---|---|---|
-| PR-RED-1 | High | git-handlers.ts | Allowlist regex too broad -- allows GET reads on any repo, any sub-path | Open |
-| PR-RED-2 | High | git-handlers.ts | PATCH allowlist permits arbitrary PR field mutation on any repo | Open |
-| PR-RED-3 | Medium | PRStationDetail.tsx | CSS injection via unvalidated PR label colors | Open |
-| PR-RED-4 | Medium | render-markdown.ts | DOMPurify default config allows style tags, img tracking pixels, visual spoofing | Open |
-| PR-RED-5 | Medium | MergeButton.tsx, CloseButton.tsx | No confirmation dialog for destructive merge/close operations | Open |
-| PR-RED-6 | Medium | pendingReview.ts | localStorage restore lacks field-level validation | Open |
-| PR-RED-7 | Low | github-api.ts | GitHub error messages leaked verbatim to user | Open |
-| PR-RED-8 | Low | PRStationChecks.tsx | Check run html_url not validated as GitHub URL (mitigated) | Open |
-| PR-RED-9 | Low | github-cache.ts | invalidatePRCache uses includes() causing over-invalidation | Open |
-| PR-RED-10 | Low | github-api.ts | No renderer-side validation of owner/repo path parameters (mitigated) | Open |
-| PR-RED-11 | Low | github-api.ts | Unused AbortSignal in getPrMergeability -- stale data risk | Open |
-| PR-RED-12 | Info | github-api.ts | No rate limiting on renderer-initiated API calls | Open |
-| PR-RED-13 | Info | PRStationDiff.tsx | UUID generation for pending comments -- no issue | N/A |
-| PR-RED-14 | Info | git-handlers.ts | No CSRF on API mutations (consequence of SEC-1) | Open |
+| ID        | Severity | Component                        | Issue                                                                            | Status |
+| --------- | -------- | -------------------------------- | -------------------------------------------------------------------------------- | ------ |
+| PR-RED-1  | High     | git-handlers.ts                  | Allowlist regex too broad -- allows GET reads on any repo, any sub-path          | Open   |
+| PR-RED-2  | High     | git-handlers.ts                  | PATCH allowlist permits arbitrary PR field mutation on any repo                  | Open   |
+| PR-RED-3  | Medium   | PRStationDetail.tsx              | CSS injection via unvalidated PR label colors                                    | Open   |
+| PR-RED-4  | Medium   | render-markdown.ts               | DOMPurify default config allows style tags, img tracking pixels, visual spoofing | Open   |
+| PR-RED-5  | Medium   | MergeButton.tsx, CloseButton.tsx | No confirmation dialog for destructive merge/close operations                    | Open   |
+| PR-RED-6  | Medium   | pendingReview.ts                 | localStorage restore lacks field-level validation                                | Open   |
+| PR-RED-7  | Low      | github-api.ts                    | GitHub error messages leaked verbatim to user                                    | Open   |
+| PR-RED-8  | Low      | PRStationChecks.tsx              | Check run html_url not validated as GitHub URL (mitigated)                       | Open   |
+| PR-RED-9  | Low      | github-cache.ts                  | invalidatePRCache uses includes() causing over-invalidation                      | Open   |
+| PR-RED-10 | Low      | github-api.ts                    | No renderer-side validation of owner/repo path parameters (mitigated)            | Open   |
+| PR-RED-11 | Low      | github-api.ts                    | Unused AbortSignal in getPrMergeability -- stale data risk                       | Open   |
+| PR-RED-12 | Info     | github-api.ts                    | No rate limiting on renderer-initiated API calls                                 | Open   |
+| PR-RED-13 | Info     | PRStationDiff.tsx                | UUID generation for pending comments -- no issue                                 | N/A    |
+| PR-RED-14 | Info     | git-handlers.ts                  | No CSRF on API mutations (consequence of SEC-1)                                  | Open   |
 
 ---
 

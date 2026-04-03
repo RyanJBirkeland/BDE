@@ -14,29 +14,30 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Create | `src/renderer/src/stores/gitTree.ts` | Zustand store for git status, staging, branches |
-| Create | `src/renderer/src/stores/__tests__/gitTree.test.ts` | Store tests |
-| Create | `src/renderer/src/views/GitTreeView.tsx` | Main Source Control view |
-| Create | `src/renderer/src/views/__tests__/GitTreeView.test.tsx` | View tests |
-| Create | `src/renderer/src/components/git-tree/FileTreeSection.tsx` | Collapsible file list (staged or unstaged) |
-| Create | `src/renderer/src/components/git-tree/GitFileRow.tsx` | Single file row with status icon and actions |
-| Create | `src/renderer/src/components/git-tree/CommitBox.tsx` | Commit message input + commit/push buttons |
-| Create | `src/renderer/src/components/git-tree/BranchSelector.tsx` | Current branch display + branch switcher |
-| Create | `src/renderer/src/components/git-tree/InlineDiffDrawer.tsx` | Inline diff preview for selected file |
-| Create | `src/renderer/src/components/git-tree/__tests__/GitFileRow.test.tsx` | File row tests |
-| Create | `src/renderer/src/components/git-tree/__tests__/CommitBox.test.tsx` | Commit box tests |
-| Modify | `src/renderer/src/stores/panelLayout.ts` | Add 'git' to View type |
-| Modify | `src/renderer/src/components/layout/ActivityBar.tsx` | Add Source Control nav item |
-| Modify | `src/renderer/src/components/panels/PanelLeaf.tsx` | Register git view in lazy switch |
-| Modify | `src/renderer/src/lib/constants.ts` | Verify `POLL_GIT_STATUS_INTERVAL` exists (no new constant needed) |
+| Action | File                                                                 | Responsibility                                                    |
+| ------ | -------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Create | `src/renderer/src/stores/gitTree.ts`                                 | Zustand store for git status, staging, branches                   |
+| Create | `src/renderer/src/stores/__tests__/gitTree.test.ts`                  | Store tests                                                       |
+| Create | `src/renderer/src/views/GitTreeView.tsx`                             | Main Source Control view                                          |
+| Create | `src/renderer/src/views/__tests__/GitTreeView.test.tsx`              | View tests                                                        |
+| Create | `src/renderer/src/components/git-tree/FileTreeSection.tsx`           | Collapsible file list (staged or unstaged)                        |
+| Create | `src/renderer/src/components/git-tree/GitFileRow.tsx`                | Single file row with status icon and actions                      |
+| Create | `src/renderer/src/components/git-tree/CommitBox.tsx`                 | Commit message input + commit/push buttons                        |
+| Create | `src/renderer/src/components/git-tree/BranchSelector.tsx`            | Current branch display + branch switcher                          |
+| Create | `src/renderer/src/components/git-tree/InlineDiffDrawer.tsx`          | Inline diff preview for selected file                             |
+| Create | `src/renderer/src/components/git-tree/__tests__/GitFileRow.test.tsx` | File row tests                                                    |
+| Create | `src/renderer/src/components/git-tree/__tests__/CommitBox.test.tsx`  | Commit box tests                                                  |
+| Modify | `src/renderer/src/stores/panelLayout.ts`                             | Add 'git' to View type                                            |
+| Modify | `src/renderer/src/components/layout/ActivityBar.tsx`                 | Add Source Control nav item                                       |
+| Modify | `src/renderer/src/components/panels/PanelLeaf.tsx`                   | Register git view in lazy switch                                  |
+| Modify | `src/renderer/src/lib/constants.ts`                                  | Verify `POLL_GIT_STATUS_INTERVAL` exists (no new constant needed) |
 
 ---
 
 ### Task 1: Create Git Tree Zustand Store
 
 **Files:**
+
 - Create: `src/renderer/src/stores/gitTree.ts`
 - Create: `src/renderer/src/stores/__tests__/gitTree.test.ts`
 
@@ -55,14 +56,14 @@ vi.stubGlobal('window', {
       branch: 'feat/git-tree',
       staged: [{ path: 'src/index.ts', status: 'M' }],
       unstaged: [{ path: 'src/app.ts', status: 'M' }],
-      untracked: [{ path: 'src/new-file.ts', status: '?' }],
+      untracked: [{ path: 'src/new-file.ts', status: '?' }]
     }),
     gitDiff: vi.fn().mockResolvedValue('diff --git a/src/app.ts\n+added line'),
     gitStage: vi.fn().mockResolvedValue(undefined),
     gitUnstage: vi.fn().mockResolvedValue(undefined),
     gitBranches: vi.fn().mockResolvedValue(['main', 'feat/git-tree']),
-    getRepoPaths: vi.fn().mockResolvedValue(['/Users/ryan/projects/BDE']),
-  },
+    getRepoPaths: vi.fn().mockResolvedValue(['/Users/ryan/projects/BDE'])
+  }
 })
 
 import { useGitTreeStore } from '../gitTree'
@@ -79,7 +80,7 @@ describe('gitTree store', () => {
       diffContent: '',
       commitMessage: '',
       repoPaths: [],
-      activeRepo: '',
+      activeRepo: ''
     })
   })
 
@@ -120,7 +121,7 @@ import { create } from 'zustand'
 
 export interface GitFileEntry {
   path: string
-  status: string  // M, A, D, ?, R
+  status: string // M, A, D, ?, R
 }
 
 interface GitTreeState {
@@ -173,7 +174,7 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
         staged: result.staged ?? [],
         unstaged: result.unstaged ?? [],
         untracked: result.untracked ?? [],
-        loading: false,
+        loading: false
       })
     } catch {
       set({ loading: false })
@@ -250,12 +251,12 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
       const paths = await window.api.getRepoPaths()
       set({
         repoPaths: Array.isArray(paths) ? paths : [],
-        activeRepo: Array.isArray(paths) && paths.length > 0 ? paths[0] : '',
+        activeRepo: Array.isArray(paths) && paths.length > 0 ? paths[0] : ''
       })
     } catch {
       set({ repoPaths: [] })
     }
-  },
+  }
 }))
 ```
 
@@ -276,6 +277,7 @@ git commit -m "feat: add gitTree Zustand store for source control"
 ### Task 2: Build GitFileRow Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/git-tree/GitFileRow.tsx`
 - Create: `src/renderer/src/components/git-tree/__tests__/GitFileRow.test.tsx`
 
@@ -471,6 +473,7 @@ git commit -m "feat: add GitFileRow component with status indicators and stage/u
 ### Task 3: Build FileTreeSection Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/git-tree/FileTreeSection.tsx`
 - Create: `src/renderer/src/components/git-tree/__tests__/FileTreeSection.test.tsx`
 
@@ -666,6 +669,7 @@ git commit -m "feat: add FileTreeSection with collapsible file list and bulk act
 ### Task 4: Build CommitBox Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/git-tree/CommitBox.tsx`
 - Create: `src/renderer/src/components/git-tree/__tests__/CommitBox.test.tsx`
 
@@ -840,6 +844,7 @@ git commit -m "feat: add CommitBox component with commit/push actions"
 ### Task 5: Build BranchSelector Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/git-tree/BranchSelector.tsx`
 - Create: `src/renderer/src/components/git-tree/__tests__/BranchSelector.test.tsx`
 
@@ -1007,6 +1012,7 @@ git commit -m "feat: add BranchSelector dropdown for branch switching"
 ### Task 6: Build InlineDiffDrawer Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/git-tree/InlineDiffDrawer.tsx`
 - Create: `src/renderer/src/components/git-tree/__tests__/InlineDiffDrawer.test.tsx`
 
@@ -1154,6 +1160,7 @@ git commit -m "feat: add InlineDiffDrawer for file diff preview"
 ### Task 7: Build GitTreeView and Register in App
 
 **Files:**
+
 - Create: `src/renderer/src/views/GitTreeView.tsx`
 - Create: `src/renderer/src/views/__tests__/GitTreeView.test.tsx`
 - Modify: `src/renderer/src/stores/panelLayout.ts`

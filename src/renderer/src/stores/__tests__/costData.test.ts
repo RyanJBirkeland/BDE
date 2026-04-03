@@ -30,7 +30,9 @@ describe('costData store', () => {
     useCostDataStore.setState(initialState)
     vi.clearAllMocks()
     // Reset getAgentHistory mock from test-setup
-    ;(window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>).getAgentHistory.mockResolvedValue([])
+    ;(
+      window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>
+    ).getAgentHistory.mockResolvedValue([])
   })
 
   it('starts with empty localAgents, isFetching=false, totalCost=0', () => {

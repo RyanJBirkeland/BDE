@@ -16,7 +16,13 @@ import { PlaygroundModal } from './PlaygroundModal'
 
 // --- Block Renderers ---
 
-function StartedBlock({ model, timestamp }: { model: string; timestamp: number }): React.JSX.Element {
+function StartedBlock({
+  model,
+  timestamp
+}: {
+  model: string
+  timestamp: number
+}): React.JSX.Element {
   return (
     <div
       style={{
@@ -57,7 +63,13 @@ function CompletedBlock({
   )
 }
 
-function RateLimitedBlock({ attempt, retryDelayMs }: { attempt: number; retryDelayMs: number }): React.JSX.Element {
+function RateLimitedBlock({
+  attempt,
+  retryDelayMs
+}: {
+  attempt: number
+  retryDelayMs: number
+}): React.JSX.Element {
   return (
     <div
       style={{
@@ -76,7 +88,10 @@ function RateLimitedBlock({ attempt, retryDelayMs }: { attempt: number; retryDel
 
 type PlaygroundEvent = { html: string; filename: string; sizeBytes: number }
 
-function renderBlock(block: ChatBlock, onPlaygroundClick: (event: PlaygroundEvent) => void): React.JSX.Element | null {
+function renderBlock(
+  block: ChatBlock,
+  onPlaygroundClick: (event: PlaygroundEvent) => void
+): React.JSX.Element | null {
   switch (block.type) {
     case 'started':
       return <StartedBlock model={block.model} timestamp={block.timestamp} />

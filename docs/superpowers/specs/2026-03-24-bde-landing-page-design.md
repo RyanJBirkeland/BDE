@@ -12,16 +12,16 @@ Fork the `feast-site` repo into a new `bde-site` project. Reuse the Next.js 16 +
 
 ## Project Setup
 
-| Setting | Value |
-|---------|-------|
-| Repo | `bde-site` at `~/projects/bde-site` |
-| Forked from | `feast-site` |
-| Framework | Next.js 16 + React 19 + TypeScript |
-| Styling | Tailwind CSS v4 with `@theme` tokens |
-| Deployment | Vercel (auto-deploy from `main`) |
-| Domain | TBD (`bde.dev`, `birkeland.dev`, or subdomain) |
+| Setting      | Value                                                                                                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repo         | `bde-site` at `~/projects/bde-site`                                                                                                                                                      |
+| Forked from  | `feast-site`                                                                                                                                                                             |
+| Framework    | Next.js 16 + React 19 + TypeScript                                                                                                                                                       |
+| Styling      | Tailwind CSS v4 with `@theme` tokens                                                                                                                                                     |
+| Deployment   | Vercel (auto-deploy from `main`)                                                                                                                                                         |
+| Domain       | TBD (`bde.dev`, `birkeland.dev`, or subdomain)                                                                                                                                           |
 | Feature flag | `NEXT_PUBLIC_SITE_LIVE` — toggles full site vs coming-soon screen (must be wired into `page.tsx` — feast-site has `ComingSoon.tsx` but the conditional rendering isn't currently active) |
-| Waitlist | Supabase `waitlist` table with `source: 'bde'` to distinguish from feast signups |
+| Waitlist     | Supabase `waitlist` table with `source: 'bde'` to distinguish from feast signups                                                                                                         |
 
 ## Audience
 
@@ -31,21 +31,21 @@ Open-source developers who would download and use BDE for their own agent workfl
 
 Identical to feast-site. Brand consistency across products.
 
-| Token | Value |
-|-------|-------|
-| Background | `#050505` |
-| Surface | `#111113` |
-| Card | `#1A1A1D` |
-| Border | `#2A2A2E` |
-| Brand green | `#00D37F` |
-| Green dark | `#00A863` |
-| Text primary | `#F5F5F7` |
-| Text secondary | `#98989F` |
-| Text tertiary | `#5C5C63` |
+| Token          | Value                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| Background     | `#050505`                                                                                 |
+| Surface        | `#111113`                                                                                 |
+| Card           | `#1A1A1D`                                                                                 |
+| Border         | `#2A2A2E`                                                                                 |
+| Brand green    | `#00D37F`                                                                                 |
+| Green dark     | `#00A863`                                                                                 |
+| Text primary   | `#F5F5F7`                                                                                 |
+| Text secondary | `#98989F`                                                                                 |
+| Text tertiary  | `#5C5C63`                                                                                 |
 | Glass morphism | `rgba(26,26,29,0.8)` bg + `rgba(255,255,255,0.06)` border + `backdrop-filter: blur(20px)` |
-| Font | Inter (via `next/font/google` — already configured in feast-site `layout.tsx`) |
-| Button glow | `boxShadow: 0 4px 16px rgba(0,211,127,0.3)` |
-| Radial glow | `radial-gradient(circle, rgba(0,211,127,0.08), transparent 60%)` |
+| Font           | Inter (via `next/font/google` — already configured in feast-site `layout.tsx`)            |
+| Button glow    | `boxShadow: 0 4px 16px rgba(0,211,127,0.3)`                                               |
+| Radial glow    | `radial-gradient(circle, rgba(0,211,127,0.08), transparent 60%)`                          |
 
 All CSS tokens use the `v2-` prefix convention from feast-site (e.g., `--color-v2-background`, `--color-v2-primary`). Keep this convention in the fork.
 
@@ -75,13 +75,13 @@ All CSS tokens use the `v2-` prefix convention from feast-site (e.g., `--color-v
 - **Layout:** 3 cards top row + 2 centered bottom row (or 3+2 asymmetric)
 - **Card style:** Glass morphism cards with icon, title, description. Hover state with border color transition.
 
-| # | Title | Icon | Description |
-|---|-------|------|-------------|
-| 1 | Agent Orchestration | Cpu / Bot | Spawn, monitor, and manage multiple AI agents working your codebase in parallel. Each agent runs in an isolated git worktree. |
-| 2 | Task Dependencies | GitBranch / Network | Hard and soft dependencies with cycle detection and auto-blocking. Agents work in the right order, automatically. |
-| 3 | Sprint Management | Kanban / ListTodo | Task queue with real-time Supabase sync, status transitions, and an automated drain loop that keeps agents busy. |
-| 4 | Code Review | GitPullRequest / MessageSquare | Built-in PR station with inline comments, CI status badges, diff viewer, and merge controls. No context switching. |
-| 5 | Cost Tracking | DollarSign / BarChart | Token analytics and daily spend charts so you always know what your agents cost. |
+| #   | Title               | Icon                           | Description                                                                                                                   |
+| --- | ------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Agent Orchestration | Cpu / Bot                      | Spawn, monitor, and manage multiple AI agents working your codebase in parallel. Each agent runs in an isolated git worktree. |
+| 2   | Task Dependencies   | GitBranch / Network            | Hard and soft dependencies with cycle detection and auto-blocking. Agents work in the right order, automatically.             |
+| 3   | Sprint Management   | Kanban / ListTodo              | Task queue with real-time Supabase sync, status transitions, and an automated drain loop that keeps agents busy.              |
+| 4   | Code Review         | GitPullRequest / MessageSquare | Built-in PR station with inline comments, CI status badges, diff viewer, and merge controls. No context switching.            |
+| 5   | Cost Tracking       | DollarSign / BarChart          | Token analytics and daily spend charts so you always know what your agents cost.                                              |
 
 Icons from `@heroicons/react` (already installed in feast-site fork). Feast-site uses Heroicons throughout — keep consistent.
 
@@ -91,12 +91,12 @@ Icons from `@heroicons/react` (already installed in feast-site fork). Feast-site
 - **Layout:** Numbered steps with green gradient connectors between them. Each step has text on one side and a mini app screenshot on the other (alternating sides on desktop).
 - **Step badge:** Green gradient circle with step number
 
-| Step | Title | Description | Screenshot |
-|------|-------|-------------|------------|
-| 1 | Define tasks and dependencies | Break your feature into tasks on the sprint board. Set dependencies so agents tackle prerequisites first. | Kanban / Sprint view |
-| 2 | BDE spawns agents in isolation | Each task gets its own agent in an isolated git worktree. Agents work in parallel without stepping on each other. | Agents view |
-| 3 | Agents push branches and open PRs | When an agent finishes, BDE auto-commits, pushes the branch, and opens a pull request. You stay informed, not involved. | PR list or notification |
-| 4 | Review, merge, and ship | Review diffs, leave inline comments, check CI status, and merge — all from PR Station. No context switching. | PR Station diff view |
+| Step | Title                             | Description                                                                                                             | Screenshot              |
+| ---- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| 1    | Define tasks and dependencies     | Break your feature into tasks on the sprint board. Set dependencies so agents tackle prerequisites first.               | Kanban / Sprint view    |
+| 2    | BDE spawns agents in isolation    | Each task gets its own agent in an isolated git worktree. Agents work in parallel without stepping on each other.       | Agents view             |
+| 3    | Agents push branches and open PRs | When an agent finishes, BDE auto-commits, pushes the branch, and opens a pull request. You stay informed, not involved. | PR list or notification |
+| 4    | Review, merge, and ship           | Review diffs, leave inline comments, check CI status, and merge — all from PR Station. No context switching.            | PR Station diff view    |
 
 ### 5. App Preview — Multi-Window Showcase
 
@@ -113,14 +113,14 @@ Icons from `@heroicons/react` (already installed in feast-site fork). Feast-site
 - **Background:** `#050505`
 - **Layout:** Clean grid of 6 items, each with icon + title + one-line description. Or a minimal architecture diagram.
 
-| Item | Description |
-|------|-------------|
-| Electron + React | Native desktop app with web UI flexibility |
-| TypeScript | Strict mode, end-to-end type safety |
-| SQLite | Local-first data — your data stays on your machine |
-| Claude Agent SDK | Direct integration with Anthropic's agent SDK |
-| Git Worktrees | Each agent works in isolation — no branch conflicts |
-| Supabase Sync | Optional cloud sync for team sprint management |
+| Item             | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| Electron + React | Native desktop app with web UI flexibility          |
+| TypeScript       | Strict mode, end-to-end type safety                 |
+| SQLite           | Local-first data — your data stays on your machine  |
+| Claude Agent SDK | Direct integration with Anthropic's agent SDK       |
+| Git Worktrees    | Each agent works in isolation — no branch conflicts |
+| Supabase Sync    | Optional cloud sync for team sprint management      |
 
 Tone: emphasize local-first, privacy, clean architecture. Developers care about what's under the hood.
 
@@ -129,14 +129,14 @@ Tone: emphasize local-first, privacy, clean architecture. Developers care about 
 - **Background:** `#111113`
 - **Layout:** Two-column comparison (or before/after)
 
-| Without BDE | With BDE |
-|-------------|----------|
-| Juggle terminal tabs for each agent | Unified workspace — all agents in one view |
-| Manually track agent output and errors | Real-time monitoring with watchdog + status |
+| Without BDE                            | With BDE                                       |
+| -------------------------------------- | ---------------------------------------------- |
+| Juggle terminal tabs for each agent    | Unified workspace — all agents in one view     |
+| Manually track agent output and errors | Real-time monitoring with watchdog + status    |
 | No dependency management between tasks | Hard/soft deps, cycle detection, auto-blocking |
-| Copy-paste PRs into GitHub for review | Built-in PR station with inline comments |
-| No visibility into token spend | Cost dashboard with daily analytics |
-| Hope agents don't conflict on branches | Automatic git worktree isolation |
+| Copy-paste PRs into GitHub for review  | Built-in PR station with inline comments       |
+| No visibility into token spend         | Cost dashboard with daily analytics            |
+| Hope agents don't conflict on branches | Automatic git worktree isolation               |
 
 ### 8. Waitlist — Email Signup CTA
 
@@ -158,44 +158,44 @@ Tone: emphasize local-first, privacy, clean architecture. Developers care about 
 
 ## Components to Build (New)
 
-| Component | Replaces | Purpose |
-|-----------|----------|---------|
+| Component         | Replaces          | Purpose                                                                                                  |
+| ----------------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
 | `WindowFrame.tsx` | `PhoneMockup.tsx` | Desktop app window frame with traffic light dots, title bar. Accepts `size` prop and screenshot content. |
-| `TechStack.tsx` | `Personas.tsx` | 6-item grid of tech stack cards |
-| `Comparison.tsx` | — (new) | Two-column BDE vs terminal comparison |
+| `TechStack.tsx`   | `Personas.tsx`    | 6-item grid of tech stack cards                                                                          |
+| `Comparison.tsx`  | — (new)           | Two-column BDE vs terminal comparison                                                                    |
 
 ## Components to Reuse (from feast-site)
 
-| Component | Changes Needed |
-|-----------|---------------|
-| `Header.tsx` | Swap "FEAST" → "BDE", update nav links |
-| `Hero.tsx` | Replace phone mockup with WindowFrame, update copy |
-| `Features.tsx` | Update to 5 cards (was 4), new icons + copy |
+| Component        | Changes Needed                                                           |
+| ---------------- | ------------------------------------------------------------------------ |
+| `Header.tsx`     | Swap "FEAST" → "BDE", update nav links                                   |
+| `Hero.tsx`       | Replace phone mockup with WindowFrame, update copy                       |
+| `Features.tsx`   | Update to 5 cards (was 4), new icons + copy                              |
 | `HowItWorks.tsx` | Update 4 steps with BDE workflow, use WindowFrame instead of PhoneMockup |
-| `AppPreview.tsx` | 3 WindowFrames instead of 3 phones |
-| `Waitlist.tsx` | Add `source: 'bde'` to API call |
-| `ComingSoon.tsx` | Update copy for BDE |
-| `Footer.tsx` | Swap wordmark + tagline, add GitHub link |
+| `AppPreview.tsx` | 3 WindowFrames instead of 3 phones                                       |
+| `Waitlist.tsx`   | Add `source: 'bde'` to API call                                          |
+| `ComingSoon.tsx` | Update copy for BDE                                                      |
+| `Footer.tsx`     | Swap wordmark + tagline, add GitHub link                                 |
 
 ## Components to Delete
 
-| Component | Reason |
-|-----------|--------|
-| `Personas.tsx` | Feast-specific (AI team members) — replaced by TechStack |
-| `PhoneMockup.tsx` | Mobile app frame — replaced by WindowFrame |
+| Component         | Reason                                                   |
+| ----------------- | -------------------------------------------------------- |
+| `Personas.tsx`    | Feast-specific (AI team members) — replaced by TechStack |
+| `PhoneMockup.tsx` | Mobile app frame — replaced by WindowFrame               |
 
 ## Screenshots Needed
 
 These will be captured from the running BDE app and placed in `public/screenshots/`:
 
-| Screenshot | Used In | View |
-|------------|---------|------|
-| `sprint-kanban.png` | Hero (right), HowItWorks step 1, AppPreview left | Sprint view — Kanban board with tasks |
-| `agents-view.png` | HowItWorks step 2, AppPreview center | Agents view — active agents with status |
-| `pr-list.png` | HowItWorks step 3 | PR Station — list with CI badges |
-| `pr-diff.png` | HowItWorks step 4, AppPreview right | PR Station — diff viewer with inline comment |
-| `cost-dashboard.png` | (optional, features section) | Cost view — token analytics chart |
-| `ide-view.png` | (optional, AppPreview alternative) | IDE — Monaco + file explorer + terminal |
+| Screenshot           | Used In                                          | View                                         |
+| -------------------- | ------------------------------------------------ | -------------------------------------------- |
+| `sprint-kanban.png`  | Hero (right), HowItWorks step 1, AppPreview left | Sprint view — Kanban board with tasks        |
+| `agents-view.png`    | HowItWorks step 2, AppPreview center             | Agents view — active agents with status      |
+| `pr-list.png`        | HowItWorks step 3                                | PR Station — list with CI badges             |
+| `pr-diff.png`        | HowItWorks step 4, AppPreview right              | PR Station — diff viewer with inline comment |
+| `cost-dashboard.png` | (optional, features section)                     | Cost view — token analytics chart            |
+| `ide-view.png`       | (optional, AppPreview alternative)               | IDE — Monaco + file explorer + terminal      |
 
 Placeholder screenshots will be used initially (similar to feast-site approach), replaced with real captures before launch.
 

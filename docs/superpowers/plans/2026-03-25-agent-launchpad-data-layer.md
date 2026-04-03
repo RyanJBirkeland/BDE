@@ -14,20 +14,21 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/renderer/src/lib/launchpad-types.ts` | Create | PromptTemplate, TemplateQuestion, RecentTask interfaces + constants |
-| `src/renderer/src/lib/default-templates.ts` | Create | 6 built-in PromptTemplate definitions with full question schemas |
-| `src/renderer/src/lib/prompt-assembly.ts` | Create | `assemblePrompt()` interpolation + `migrateHistory()` old→new format |
-| `src/renderer/src/lib/__tests__/prompt-assembly.test.ts` | Create | Tests for assemblePrompt and migrateHistory |
-| `src/renderer/src/stores/promptTemplates.ts` | Create | Zustand store: load, save, delete, reorder, hide templates |
-| `src/renderer/src/stores/__tests__/promptTemplates.test.ts` | Create | Store tests with mocked window.api |
+| File                                                        | Action | Responsibility                                                       |
+| ----------------------------------------------------------- | ------ | -------------------------------------------------------------------- |
+| `src/renderer/src/lib/launchpad-types.ts`                   | Create | PromptTemplate, TemplateQuestion, RecentTask interfaces + constants  |
+| `src/renderer/src/lib/default-templates.ts`                 | Create | 6 built-in PromptTemplate definitions with full question schemas     |
+| `src/renderer/src/lib/prompt-assembly.ts`                   | Create | `assemblePrompt()` interpolation + `migrateHistory()` old→new format |
+| `src/renderer/src/lib/__tests__/prompt-assembly.test.ts`    | Create | Tests for assemblePrompt and migrateHistory                          |
+| `src/renderer/src/stores/promptTemplates.ts`                | Create | Zustand store: load, save, delete, reorder, hide templates           |
+| `src/renderer/src/stores/__tests__/promptTemplates.test.ts` | Create | Store tests with mocked window.api                                   |
 
 ---
 
 ### Task 1: Create Launchpad Type Definitions
 
 **Files:**
+
 - Create: `src/renderer/src/lib/launchpad-types.ts`
 
 - [ ] **Step 1: Create the type definitions file**
@@ -132,6 +133,7 @@ git commit -m "feat(launchpad): add PromptTemplate, TemplateQuestion, RecentTask
 ### Task 2: Create Default Built-In Templates
 
 **Files:**
+
 - Create: `src/renderer/src/lib/default-templates.ts`
 
 - [ ] **Step 1: Create the default templates file**
@@ -160,22 +162,28 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         label: 'Which area of the codebase should I focus on?',
         type: 'choice',
         choices: ['Entire repo', 'Specific directory', 'Changed files only'],
-        default: 'Entire repo',
+        default: 'Entire repo'
       },
       {
         id: 'focus',
         label: 'What should I prioritize?',
         type: 'multi-choice',
-        choices: ['Dead code', 'Naming & readability', 'SOLID violations', 'Magic numbers', 'All of the above'],
-        default: 'All of the above',
+        choices: [
+          'Dead code',
+          'Naming & readability',
+          'SOLID violations',
+          'Magic numbers',
+          'All of the above'
+        ],
+        default: 'All of the above'
       },
       {
         id: 'action',
         label: 'Should I auto-fix issues or just report them?',
         type: 'choice',
         choices: ['Report only', 'Auto-fix safe changes', 'Auto-fix everything'],
-        default: 'Auto-fix safe changes',
-      },
+        default: 'Auto-fix safe changes'
+      }
     ],
     promptTemplate:
       'Perform a comprehensive clean code audit on {{scope}} of this repository.\n\n' +
@@ -183,10 +191,10 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'Action mode: {{action}}.\n\n' +
       'For auto-fix: apply changes where the fix is clearly correct. For changes that require judgment ' +
       'or could alter behavior, report them with file path and line number but do not modify.\n\n' +
-      'Use the project\'s existing conventions in CLAUDE.md. Run `npm test` after changes to verify nothing breaks. ' +
+      "Use the project's existing conventions in CLAUDE.md. Run `npm test` after changes to verify nothing breaks. " +
       'Commit fixes in logical groups with descriptive messages.',
     builtIn: true,
-    order: 0,
+    order: 0
   },
   {
     id: 'builtin-fix-bug',
@@ -197,22 +205,22 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
     questions: [
       {
         id: 'description',
-        label: 'Describe the bug — what\'s happening vs what should happen?',
+        label: "Describe the bug — what's happening vs what should happen?",
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'repro',
         label: 'How can the bug be reproduced?',
         type: 'text',
-        required: false,
+        required: false
       },
       {
         id: 'area',
         label: 'Where do you suspect the issue is?',
         type: 'text',
-        required: false,
-      },
+        required: false
+      }
     ],
     promptTemplate:
       'Fix the following bug:\n\n' +
@@ -222,7 +230,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'Investigate the root cause, implement a fix, add a regression test, and verify existing tests still pass. ' +
       'Commit with a descriptive message explaining what was broken and why.',
     builtIn: true,
-    order: 1,
+    order: 1
   },
   {
     id: 'builtin-new-feature',
@@ -235,21 +243,21 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'feature',
         label: 'Describe the feature you want built.',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'files',
         label: 'Any specific files or areas to modify?',
         type: 'text',
-        required: false,
+        required: false
       },
       {
         id: 'tests',
         label: 'What testing approach should I use?',
         type: 'choice',
         choices: ['TDD — write tests first', 'Tests after implementation', 'No tests needed'],
-        default: 'TDD — write tests first',
-      },
+        default: 'TDD — write tests first'
+      }
     ],
     promptTemplate:
       'Implement the following feature:\n\n' +
@@ -259,7 +267,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'Follow the existing code patterns and conventions in CLAUDE.md. Keep the implementation focused — ' +
       'build only what was requested, no extras. Commit in logical increments.',
     builtIn: true,
-    order: 2,
+    order: 2
   },
   {
     id: 'builtin-write-tests',
@@ -272,21 +280,21 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'target',
         label: 'Which files or components should I write tests for?',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'testType',
         label: 'What type of tests?',
         type: 'choice',
         choices: ['Unit tests', 'Integration tests', 'Both unit and integration'],
-        default: 'Unit tests',
+        default: 'Unit tests'
       },
       {
         id: 'goal',
         label: 'Any specific coverage goal or scenarios to cover?',
         type: 'text',
-        required: false,
-      },
+        required: false
+      }
     ],
     promptTemplate:
       'Write {{testType}} for: {{target}}\n\n' +
@@ -295,7 +303,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'vitest for main process). Test real behavior, not implementation details. Cover happy path, ' +
       'error cases, and edge cases. Run `npm test` to verify all tests pass.',
     builtIn: true,
-    order: 3,
+    order: 3
   },
   {
     id: 'builtin-code-review',
@@ -308,22 +316,29 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'target',
         label: 'What should I review? (PR number, branch name, or file paths)',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'focus',
         label: 'What should I focus on?',
         type: 'multi-choice',
-        choices: ['Correctness', 'Performance', 'Security', 'Code style', 'Test coverage', 'All of the above'],
-        default: 'All of the above',
+        choices: [
+          'Correctness',
+          'Performance',
+          'Security',
+          'Code style',
+          'Test coverage',
+          'All of the above'
+        ],
+        default: 'All of the above'
       },
       {
         id: 'strictness',
         label: 'How strict should the review be?',
         type: 'choice',
         choices: ['Lenient — only flag real issues', 'Standard', 'Strict — flag everything'],
-        default: 'Standard',
-      },
+        default: 'Standard'
+      }
     ],
     promptTemplate:
       'Review the following code: {{target}}\n\n' +
@@ -332,7 +347,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'For each issue found, provide: file path, line number, severity (critical/warning/suggestion), ' +
       'and a clear explanation of the problem and recommended fix. Group findings by file.',
     builtIn: true,
-    order: 4,
+    order: 4
   },
   {
     id: 'builtin-refactor',
@@ -345,21 +360,27 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         id: 'target',
         label: 'What code needs to be refactored?',
         type: 'text',
-        required: true,
+        required: true
       },
       {
         id: 'type',
         label: 'What kind of refactoring?',
         type: 'choice',
-        choices: ['Extract/split — break up large file', 'Rename/reorganize', 'Simplify complex logic', 'Remove duplication', 'Other'],
-        default: 'Simplify complex logic',
+        choices: [
+          'Extract/split — break up large file',
+          'Rename/reorganize',
+          'Simplify complex logic',
+          'Remove duplication',
+          'Other'
+        ],
+        default: 'Simplify complex logic'
       },
       {
         id: 'constraints',
         label: 'Any constraints or things to preserve?',
         type: 'text',
-        required: false,
-      },
+        required: false
+      }
     ],
     promptTemplate:
       'Refactor the following code: {{target}}\n\n' +
@@ -369,8 +390,8 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
       'each change to verify nothing breaks. Commit in small, logical increments. Follow existing ' +
       'patterns and conventions in CLAUDE.md.',
     builtIn: true,
-    order: 5,
-  },
+    order: 5
+  }
 ]
 ```
 
@@ -392,6 +413,7 @@ git commit -m "feat(launchpad): add 6 built-in prompt templates with question sc
 ### Task 3: Create Prompt Assembly Utilities
 
 **Files:**
+
 - Create: `src/renderer/src/lib/prompt-assembly.ts`
 - Create: `src/renderer/src/lib/__tests__/prompt-assembly.test.ts`
 
@@ -412,10 +434,10 @@ const mockTemplate: PromptTemplate = {
   description: 'Test template',
   questions: [
     { id: 'scope', label: 'Scope?', type: 'choice', choices: ['All', 'Some'] },
-    { id: 'focus', label: 'Focus?', type: 'text' },
+    { id: 'focus', label: 'Focus?', type: 'text' }
   ],
   promptTemplate: 'Audit {{scope}} focusing on {{focus}}.',
-  order: 0,
+  order: 0
 }
 
 describe('assemblePrompt', () => {
@@ -427,7 +449,7 @@ describe('assemblePrompt', () => {
   it('replaces multiple occurrences of the same variable', () => {
     const template: PromptTemplate = {
       ...mockTemplate,
-      promptTemplate: '{{scope}} first, then {{scope}} again.',
+      promptTemplate: '{{scope}} first, then {{scope}} again.'
     }
     const result = assemblePrompt(template, { scope: 'All' })
     expect(result).toBe('All first, then All again.')
@@ -441,7 +463,7 @@ describe('assemblePrompt', () => {
   it('trims leading/trailing whitespace from result', () => {
     const template: PromptTemplate = {
       ...mockTemplate,
-      promptTemplate: '  {{scope}}  ',
+      promptTemplate: '  {{scope}}  '
     }
     const result = assemblePrompt(template, { scope: 'All' })
     expect(result).toBe('All')
@@ -450,7 +472,7 @@ describe('assemblePrompt', () => {
   it('collapses triple+ newlines left by empty optional fields', () => {
     const template: PromptTemplate = {
       ...mockTemplate,
-      promptTemplate: 'Line one.\n\n{{focus}}\n\nLine three.',
+      promptTemplate: 'Line one.\n\n{{focus}}\n\nLine three.'
     }
     const result = assemblePrompt(template, { focus: '' })
     expect(result).toBe('Line one.\n\nLine three.')
@@ -471,19 +493,19 @@ describe('migrateHistory', () => {
       prompt: 'Fix the bug',
       repo: '',
       model: '',
-      timestamp: 0,
+      timestamp: 0
     })
     expect(result[1]).toEqual({
       prompt: 'Add feature',
       repo: '',
       model: '',
-      timestamp: 0,
+      timestamp: 0
     })
   })
 
   it('returns RecentTask[] as-is if already migrated', () => {
     const already: RecentTask[] = [
-      { prompt: 'Fix bug', repo: 'BDE', model: 'sonnet', timestamp: 1000 },
+      { prompt: 'Fix bug', repo: 'BDE', model: 'sonnet', timestamp: 1000 }
     ]
     const result = migrateHistory(already)
     expect(result).toEqual(already)
@@ -535,10 +557,7 @@ import type { PromptTemplate, RecentTask } from './launchpad-types'
  * - Collapses triple+ newlines (left by empty optionals) into double newlines.
  * - Trims leading/trailing whitespace.
  */
-export function assemblePrompt(
-  template: PromptTemplate,
-  answers: Record<string, string>,
-): string {
+export function assemblePrompt(template: PromptTemplate, answers: Record<string, string>): string {
   let prompt = template.promptTemplate
 
   // Replace all {{variable}} placeholders
@@ -583,7 +602,7 @@ export function migrateHistory(data: unknown): RecentTask[] {
       prompt,
       repo: '',
       model: '',
-      timestamp: 0,
+      timestamp: 0
     }))
 }
 ```
@@ -606,6 +625,7 @@ git commit -m "feat(launchpad): add assemblePrompt and migrateHistory utilities 
 ### Task 4: Create Prompt Templates Zustand Store
 
 **Files:**
+
 - Create: `src/renderer/src/stores/promptTemplates.ts`
 - Create: `src/renderer/src/stores/__tests__/promptTemplates.test.ts`
 
@@ -629,11 +649,11 @@ Object.defineProperty(window, 'api', {
       set: vi.fn(),
       getJson: mockGetJson,
       setJson: mockSetJson,
-      delete: vi.fn(),
-    },
+      delete: vi.fn()
+    }
   },
   writable: true,
-  configurable: true,
+  configurable: true
 })
 
 // Import AFTER mocks are set up
@@ -646,7 +666,7 @@ describe('promptTemplatesStore', () => {
     // Reset store state
     usePromptTemplatesStore.setState({
       templates: [],
-      loading: false,
+      loading: false
     })
   })
 
@@ -672,7 +692,7 @@ describe('promptTemplatesStore', () => {
         description: 'Custom task',
         questions: [],
         promptTemplate: 'Do the thing.',
-        order: 10,
+        order: 10
       }
       mockGetJson.mockResolvedValue([userTemplate])
 
@@ -704,7 +724,7 @@ describe('promptTemplatesStore', () => {
         description: '',
         questions: [],
         promptTemplate: '',
-        order: -1, // before all built-ins
+        order: -1 // before all built-ins
       }
       mockGetJson.mockResolvedValue([userFirst])
 
@@ -728,7 +748,7 @@ describe('promptTemplatesStore', () => {
         description: 'Brand new',
         questions: [],
         promptTemplate: 'Do something new.',
-        order: 99,
+        order: 99
       }
 
       await usePromptTemplatesStore.getState().saveTemplate(newTemplate)
@@ -737,7 +757,7 @@ describe('promptTemplatesStore', () => {
       expect(templates.find((t) => t.id === 'user-new')).toBeDefined()
       expect(mockSetJson).toHaveBeenCalledWith(
         'prompt_templates',
-        expect.arrayContaining([expect.objectContaining({ id: 'user-new' })]),
+        expect.arrayContaining([expect.objectContaining({ id: 'user-new' })])
       )
     })
 
@@ -750,14 +770,14 @@ describe('promptTemplatesStore', () => {
         description: 'Old',
         questions: [],
         promptTemplate: 'Old prompt.',
-        order: 10,
+        order: 10
       }
       mockGetJson.mockResolvedValue([existing])
       await usePromptTemplatesStore.getState().loadTemplates()
 
       await usePromptTemplatesStore.getState().saveTemplate({
         ...existing,
-        name: 'New Name',
+        name: 'New Name'
       })
 
       const { templates } = usePromptTemplatesStore.getState()
@@ -776,7 +796,7 @@ describe('promptTemplatesStore', () => {
         description: '',
         questions: [],
         promptTemplate: '',
-        order: 10,
+        order: 10
       }
       mockGetJson.mockResolvedValue([userTemplate])
       await usePromptTemplatesStore.getState().loadTemplates()
@@ -820,7 +840,10 @@ describe('promptTemplatesStore', () => {
       mockGetJson.mockResolvedValue(null)
       await usePromptTemplatesStore.getState().loadTemplates()
 
-      const ids = usePromptTemplatesStore.getState().templates.map((t) => t.id).reverse()
+      const ids = usePromptTemplatesStore
+        .getState()
+        .templates.map((t) => t.id)
+        .reverse()
       await usePromptTemplatesStore.getState().reorderTemplates(ids)
 
       const { templates } = usePromptTemplatesStore.getState()
@@ -973,11 +996,11 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
   hideBuiltIn: async (id) => {
     const { templates } = get()
     const updated = templates.map((t) =>
-      t.id === id && t.builtIn ? { ...t, hidden: !t.hidden } : t,
+      t.id === id && t.builtIn ? { ...t, hidden: !t.hidden } : t
     )
     set({ templates: updated })
     await window.api.settings.setJson(SETTINGS_KEY, toPersistedTemplates(updated))
-  },
+  }
 }))
 ```
 

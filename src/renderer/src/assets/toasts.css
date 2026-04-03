@@ -67,7 +67,9 @@
   padding: 2px 10px;
   border-radius: var(--bde-radius-sm);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .toast__action-btn:hover {
@@ -85,4 +87,3 @@
     transform: translateX(0);
   }
 }
-

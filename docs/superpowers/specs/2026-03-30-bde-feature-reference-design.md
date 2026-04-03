@@ -105,12 +105,15 @@ Covers Dashboard, Panel System, Settings.
 ## Implementation
 
 ### Files to create
+
 - `docs/BDE_FEATURES.md` — the feature reference (~400 lines)
 
 ### Files to modify
+
 - `CLAUDE.md` — add `@docs/BDE_FEATURES.md` directive
 
 ### What NOT to change
+
 - `prompt-composer.ts` — no changes needed, SDK handles `@` loading
 - No UI changes — this is documentation only
 - No new dependencies

@@ -24,7 +24,7 @@
 .agents-view__title {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -39,7 +39,9 @@
   border-radius: var(--radius-sm, 4px);
   cursor: pointer;
   color: var(--text-secondary, var(--bde-text-muted));
-  transition: color 0.12s ease, border-color 0.12s ease;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .agents-view__spawn-btn:hover {

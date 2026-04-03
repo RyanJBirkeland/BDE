@@ -18,16 +18,17 @@
 ## Sub-component Split
 
 ### Before (1 file, 446 LOC)
+
 `TerminalView.tsx` — everything
 
 ### After (4 files)
 
-| File | LOC target | Responsibility |
-|------|------------|----------------|
-| `views/TerminalView.tsx` | ~80 | Orchestration only: state, handlers, compose sub-components |
-| `components/terminal/TerminalTabBar.tsx` | ~80 | Tab pills, new tab button, close buttons |
-| `components/terminal/TerminalToolbar.tsx` | ~60 | Shell picker, find bar toggle, split button |
-| `components/terminal/TerminalContent.tsx` | ~80 | Routes to correct pane or agent output tab |
+| File                                      | LOC target | Responsibility                                              |
+| ----------------------------------------- | ---------- | ----------------------------------------------------------- |
+| `views/TerminalView.tsx`                  | ~80        | Orchestration only: state, handlers, compose sub-components |
+| `components/terminal/TerminalTabBar.tsx`  | ~80        | Tab pills, new tab button, close buttons                    |
+| `components/terminal/TerminalToolbar.tsx` | ~60        | Shell picker, find bar toggle, split button                 |
+| `components/terminal/TerminalContent.tsx` | ~80        | Routes to correct pane or agent output tab                  |
 
 Existing files that stay unchanged: `TerminalPane.tsx`, `AgentOutputTab.tsx`, `FindBar.tsx`
 
@@ -102,11 +103,18 @@ All inline `style={{...}}` in TerminalView removed and replaced with class names
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.1s, background 0.1s;
+  transition:
+    opacity 0.1s,
+    background 0.1s;
 }
 .terminal-tab:hover .terminal-tab__close,
-.terminal-tab--active .terminal-tab__close { opacity: 1; }
-.terminal-tab__close:hover { background: var(--surface-hover); color: var(--text); }
+.terminal-tab--active .terminal-tab__close {
+  opacity: 1;
+}
+.terminal-tab__close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
 
 /* Toolbar */
 .terminal-toolbar {
@@ -131,7 +139,10 @@ All inline `style={{...}}` in TerminalView removed and replaced with class names
   font-size: 11px;
   cursor: pointer;
 }
-.terminal-shell-select:focus { border-color: var(--accent); outline: none; }
+.terminal-shell-select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
 
 /* New tab button */
 .terminal-new-tab-btn {
@@ -181,7 +192,7 @@ All inline `style={{...}}` in TerminalView removed and replaced with class names
   background-clip: text;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 ```
@@ -190,17 +201,18 @@ All inline `style={{...}}` in TerminalView removed and replaced with class names
 
 ## Files to Change
 
-| File | Action | What |
-|------|--------|------|
-| `src/views/TerminalView.tsx` | **REWRITE** | ~80 LOC orchestrator; all inline styles removed; composes sub-components |
-| `src/components/terminal/TerminalTabBar.tsx` | **CREATE** | Tab pills, new tab button, active dot indicator |
-| `src/components/terminal/TerminalToolbar.tsx` | **CREATE** | Shell picker dropdown, find bar toggle, keyboard shortcut hints |
-| `src/components/terminal/TerminalContent.tsx` | **CREATE** | Routes active tab → TerminalPane or AgentOutputTab |
-| `src/renderer/src/assets/terminal.css` | **CREATE** | All terminal styles (above) |
+| File                                          | Action      | What                                                                     |
+| --------------------------------------------- | ----------- | ------------------------------------------------------------------------ |
+| `src/views/TerminalView.tsx`                  | **REWRITE** | ~80 LOC orchestrator; all inline styles removed; composes sub-components |
+| `src/components/terminal/TerminalTabBar.tsx`  | **CREATE**  | Tab pills, new tab button, active dot indicator                          |
+| `src/components/terminal/TerminalToolbar.tsx` | **CREATE**  | Shell picker dropdown, find bar toggle, keyboard shortcut hints          |
+| `src/components/terminal/TerminalContent.tsx` | **CREATE**  | Routes active tab → TerminalPane or AgentOutputTab                       |
+| `src/renderer/src/assets/terminal.css`        | **CREATE**  | All terminal styles (above)                                              |
 
 ---
 
 ## Out of Scope
+
 - Tab virtualization / unmounting idle PTYs (separate story)
 - xterm.js theme changes
 - New terminal features (split panes, etc.)
@@ -209,6 +221,7 @@ All inline `style={{...}}` in TerminalView removed and replaced with class names
 ---
 
 ## Success Criteria
+
 - [ ] TerminalView.tsx ≤ 100 LOC
 - [ ] Zero inline `style={{}}` in any terminal component
 - [ ] Tab bar has glass background + active green dot

@@ -18,17 +18,17 @@ The BDE main process is a well-structured system with solid architecture pattern
 
 When an agent fails, the `notes` field is the only user-visible diagnostic. Current notes are internal labels, not actionable guidance:
 
-| File | Line | Notes value | What user should see instead |
-|------|------|-------------|------------------------------|
-| `src/main/agent-manager/index.ts` | 147 | `"Max runtime exceeded"` | "Agent ran for over 1 hour without completing. Consider breaking this task into smaller pieces, or increase max_runtime_ms in task settings." |
-| `src/main/agent-manager/index.ts` | 162 | `"Idle timeout"` | "Agent stopped producing output for 15 minutes and was killed. This usually means the agent got stuck. Check the agent console for the last tool call." |
-| `src/main/agent-manager/index.ts` | 179 | `"Rate-limit loop -- re-queued"` | "Agent hit API rate limits 10 times and was re-queued. It will retry automatically after a cooldown period." |
-| `src/main/agent-manager/run-agent.ts` | 143 | `"Empty prompt"` | "Task has no prompt, spec, or title. Add a spec before queuing." |
-| `src/main/agent-manager/run-agent.ts` | 190 | `"Spawn failed: {err.message}"` | Good -- includes the actual error. But should add: "Check that `claude login` has been run and `~/.bde/oauth-token` is fresh." |
-| `src/main/agent-manager/run-agent.ts` | 387 | `"Fast-fail exhausted"` | "Agent crashed 3 times within 30 seconds of starting. This usually indicates a broken spec or missing dependencies. Review the spec and agent console logs." |
-| `src/main/agent-manager/completion.ts` | 207 | `"Worktree evicted before completion ({path}). Use ~/worktrees/ instead of /tmp/."` | Actionable but references an internal config detail. Better: "Agent's working directory was deleted before it could finish. This is a known macOS issue. The task will need to be re-queued." |
-| `src/main/agent-manager/completion.ts` | 229 | `"Failed to detect branch"` | "Could not determine which git branch the agent was working on. This usually means the worktree was corrupted. Re-queue the task." |
-| `src/main/agent-manager/completion.ts` | 248 | `"Empty branch name"` | Same as above -- should be merged into a single actionable message. |
+| File                                   | Line | Notes value                                                                         | What user should see instead                                                                                                                                                                  |
+| -------------------------------------- | ---- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main/agent-manager/index.ts`      | 147  | `"Max runtime exceeded"`                                                            | "Agent ran for over 1 hour without completing. Consider breaking this task into smaller pieces, or increase max_runtime_ms in task settings."                                                 |
+| `src/main/agent-manager/index.ts`      | 162  | `"Idle timeout"`                                                                    | "Agent stopped producing output for 15 minutes and was killed. This usually means the agent got stuck. Check the agent console for the last tool call."                                       |
+| `src/main/agent-manager/index.ts`      | 179  | `"Rate-limit loop -- re-queued"`                                                    | "Agent hit API rate limits 10 times and was re-queued. It will retry automatically after a cooldown period."                                                                                  |
+| `src/main/agent-manager/run-agent.ts`  | 143  | `"Empty prompt"`                                                                    | "Task has no prompt, spec, or title. Add a spec before queuing."                                                                                                                              |
+| `src/main/agent-manager/run-agent.ts`  | 190  | `"Spawn failed: {err.message}"`                                                     | Good -- includes the actual error. But should add: "Check that `claude login` has been run and `~/.bde/oauth-token` is fresh."                                                                |
+| `src/main/agent-manager/run-agent.ts`  | 387  | `"Fast-fail exhausted"`                                                             | "Agent crashed 3 times within 30 seconds of starting. This usually indicates a broken spec or missing dependencies. Review the spec and agent console logs."                                  |
+| `src/main/agent-manager/completion.ts` | 207  | `"Worktree evicted before completion ({path}). Use ~/worktrees/ instead of /tmp/."` | Actionable but references an internal config detail. Better: "Agent's working directory was deleted before it could finish. This is a known macOS issue. The task will need to be re-queued." |
+| `src/main/agent-manager/completion.ts` | 229  | `"Failed to detect branch"`                                                         | "Could not determine which git branch the agent was working on. This usually means the worktree was corrupted. Re-queue the task."                                                            |
+| `src/main/agent-manager/completion.ts` | 248  | `"Empty branch name"`                                                               | Same as above -- should be merged into a single actionable message.                                                                                                                           |
 
 **Impact:** Users see error/failed tasks in the pipeline with no idea what to do. They must SSH into logs or read `~/.bde/agent-manager.log` to diagnose.
 
@@ -61,11 +61,13 @@ External consumers (Life OS, chat-service, task-runner) must guess which convent
 ### S2. No API documentation or error catalog for Queue API consumers
 
 The Queue API has 14 endpoints but no formal documentation. External consumers must reverse-engineer the contract from:
+
 - `src/shared/queue-api-contract.ts` (types and field sets)
 - `src/main/queue-api/router.ts` (endpoint list)
 - `src/main/queue-api/task-handlers.ts` (validation logic)
 
 Key undocumented behaviors:
+
 - `?skipValidation=true` bypasses spec quality checks (not discoverable)
 - `POST /queue/tasks` with `status=queued` requires a spec with 2+ headings and 50+ chars (unless `?skipValidation=true`)
 - `PATCH /queue/tasks/:id` silently drops fields not in `GENERAL_PATCH_FIELDS` -- no error for unrecognized fields
@@ -145,79 +147,79 @@ The proactive refresh at 45 minutes (line 107) is a good defensive measure, but 
 
 ### Agent Manager (user sees these in task `notes` field)
 
-| Location | Error String | Actionable? | Recommendation |
-|----------|-------------|-------------|----------------|
-| `index.ts:147` | "Max runtime exceeded" | No | Add time limit value and suggestion to break up task |
-| `index.ts:162` | "Idle timeout" | No | Add timeout duration and pointer to agent console |
-| `index.ts:179` | "Rate-limit loop -- re-queued" | Partially | Add that it will auto-retry after cooldown |
-| `run-agent.ts:143` | "Empty prompt" | No | Explain that spec/prompt must be set before queuing |
-| `run-agent.ts:190` | "Spawn failed: {message}" | Yes | Good -- includes actual error |
-| `run-agent.ts:387` | "Fast-fail exhausted" | No | Explain what fast-fail means and suggest reviewing spec |
-| `completion.ts:207` | "Worktree evicted before completion..." | Partially | Remove internal path detail, add re-queue suggestion |
-| `completion.ts:229` | "Failed to detect branch" | No | Add "re-queue the task" suggestion |
-| `completion.ts:248` | "Empty branch name" | No | Merge with above |
-| `completion.ts:273` | "Agent produced no commits (no output captured)" | Partially | Add "check agent console for what the agent attempted" |
-| `completion.ts:306` | "git push failed for branch {b}: {err}" | Yes | Good -- includes branch and error |
-| `completion.ts:326` | "Branch {b} pushed but PR creation failed" | Yes | Good -- tells user to create PR manually |
-| `index.ts:412` | "Worktree setup failed: {msg}" | Yes | Good -- includes actual error |
+| Location            | Error String                                     | Actionable? | Recommendation                                          |
+| ------------------- | ------------------------------------------------ | ----------- | ------------------------------------------------------- |
+| `index.ts:147`      | "Max runtime exceeded"                           | No          | Add time limit value and suggestion to break up task    |
+| `index.ts:162`      | "Idle timeout"                                   | No          | Add timeout duration and pointer to agent console       |
+| `index.ts:179`      | "Rate-limit loop -- re-queued"                   | Partially   | Add that it will auto-retry after cooldown              |
+| `run-agent.ts:143`  | "Empty prompt"                                   | No          | Explain that spec/prompt must be set before queuing     |
+| `run-agent.ts:190`  | "Spawn failed: {message}"                        | Yes         | Good -- includes actual error                           |
+| `run-agent.ts:387`  | "Fast-fail exhausted"                            | No          | Explain what fast-fail means and suggest reviewing spec |
+| `completion.ts:207` | "Worktree evicted before completion..."          | Partially   | Remove internal path detail, add re-queue suggestion    |
+| `completion.ts:229` | "Failed to detect branch"                        | No          | Add "re-queue the task" suggestion                      |
+| `completion.ts:248` | "Empty branch name"                              | No          | Merge with above                                        |
+| `completion.ts:273` | "Agent produced no commits (no output captured)" | Partially   | Add "check agent console for what the agent attempted"  |
+| `completion.ts:306` | "git push failed for branch {b}: {err}"          | Yes         | Good -- includes branch and error                       |
+| `completion.ts:326` | "Branch {b} pushed but PR creation failed"       | Yes         | Good -- tells user to create PR manually                |
+| `index.ts:412`      | "Worktree setup failed: {msg}"                   | Yes         | Good -- includes actual error                           |
 
 ### Queue API (external consumers see these in HTTP response body)
 
-| Location | Error String | Actionable? | HTTP Status |
-|----------|-------------|-------------|-------------|
-| `helpers.ts:39` | "Missing or invalid Authorization header" | Yes | 401 |
-| `helpers.ts:44` | "Invalid API key" | Yes | 403 |
-| `helpers.ts:78` | "Payload too large" | Yes | 413 |
-| `task-handlers.ts:126` | "Task {id} not found" | Yes | 404 |
-| `task-handlers.ts:140` | "Invalid JSON body" | Yes | 400 |
-| `task-handlers.ts:145` | "Request body must be a JSON object" | Yes | 400 |
-| `task-handlers.ts:151` | "title is required" | Yes | 400 |
-| `task-handlers.ts:155` | "repo is required" | Yes | 400 |
-| `task-handlers.ts:167` | "Spec quality checks failed" (+ details array) | Yes | 400 |
-| `task-handlers.ts:183` | "Cannot create task with queued status -- semantic checks failed" (+ details) | Yes | 400 |
-| `task-handlers.ts:194` | "depends_on must be an array or null" | Yes | 400 |
-| `task-handlers.ts:200` | "Each dependency must be an object" | Yes | 400 |
-| `task-handlers.ts:205` | "Each dependency must have a valid id" | Yes | 400 |
-| `task-handlers.ts:209` | "Each dependency type must be \"hard\" or \"soft\"" | Yes | 400 |
-| `task-handlers.ts:234` | "Failed to create task" | No | 500 |
-| `task-handlers.ts:269` | "No valid fields to update" | Partially | 400 |
-| `task-handlers.ts:279` | "Failed to update task {id}: {message}" | Yes | 500 |
-| `task-handlers.ts:310` | "Invalid status: {status}" | Partially | 400 |
-| `task-handlers.ts:335` | "Cannot queue task -- spec quality checks failed" (+ details) | Yes | 400 |
-| `task-handlers.ts:350` | "Cannot queue task -- semantic spec checks failed" (+ details) | Yes | 400 |
-| `task-handlers.ts:426` | "WIP limit reached ({n}/{max} active tasks)..." | Yes | 409 |
-| `task-handlers.ts:429` | "Task {id} is not claimable (not queued or does not exist)" | Yes | 409 |
-| `task-handlers.ts:462` | "Task {id} is not releasable..." | Partially | 409 |
-| `task-handlers.ts:557` | "operations array is required and must not be empty" | Yes | 400 |
-| `task-handlers.ts:562` | "Maximum 50 operations per batch" | Yes | 400 |
-| `server.ts:35` | "Internal server error" | No | 500 |
-| `server.ts:42` | (logged only) "Port {port} is already in use -- Queue API not started..." | Yes (log) | N/A |
-| `router.ts:115` | "Not found" | Yes | 404 |
+| Location               | Error String                                                                  | Actionable? | HTTP Status |
+| ---------------------- | ----------------------------------------------------------------------------- | ----------- | ----------- |
+| `helpers.ts:39`        | "Missing or invalid Authorization header"                                     | Yes         | 401         |
+| `helpers.ts:44`        | "Invalid API key"                                                             | Yes         | 403         |
+| `helpers.ts:78`        | "Payload too large"                                                           | Yes         | 413         |
+| `task-handlers.ts:126` | "Task {id} not found"                                                         | Yes         | 404         |
+| `task-handlers.ts:140` | "Invalid JSON body"                                                           | Yes         | 400         |
+| `task-handlers.ts:145` | "Request body must be a JSON object"                                          | Yes         | 400         |
+| `task-handlers.ts:151` | "title is required"                                                           | Yes         | 400         |
+| `task-handlers.ts:155` | "repo is required"                                                            | Yes         | 400         |
+| `task-handlers.ts:167` | "Spec quality checks failed" (+ details array)                                | Yes         | 400         |
+| `task-handlers.ts:183` | "Cannot create task with queued status -- semantic checks failed" (+ details) | Yes         | 400         |
+| `task-handlers.ts:194` | "depends_on must be an array or null"                                         | Yes         | 400         |
+| `task-handlers.ts:200` | "Each dependency must be an object"                                           | Yes         | 400         |
+| `task-handlers.ts:205` | "Each dependency must have a valid id"                                        | Yes         | 400         |
+| `task-handlers.ts:209` | "Each dependency type must be \"hard\" or \"soft\""                           | Yes         | 400         |
+| `task-handlers.ts:234` | "Failed to create task"                                                       | No          | 500         |
+| `task-handlers.ts:269` | "No valid fields to update"                                                   | Partially   | 400         |
+| `task-handlers.ts:279` | "Failed to update task {id}: {message}"                                       | Yes         | 500         |
+| `task-handlers.ts:310` | "Invalid status: {status}"                                                    | Partially   | 400         |
+| `task-handlers.ts:335` | "Cannot queue task -- spec quality checks failed" (+ details)                 | Yes         | 400         |
+| `task-handlers.ts:350` | "Cannot queue task -- semantic spec checks failed" (+ details)                | Yes         | 400         |
+| `task-handlers.ts:426` | "WIP limit reached ({n}/{max} active tasks)..."                               | Yes         | 409         |
+| `task-handlers.ts:429` | "Task {id} is not claimable (not queued or does not exist)"                   | Yes         | 409         |
+| `task-handlers.ts:462` | "Task {id} is not releasable..."                                              | Partially   | 409         |
+| `task-handlers.ts:557` | "operations array is required and must not be empty"                          | Yes         | 400         |
+| `task-handlers.ts:562` | "Maximum 50 operations per batch"                                             | Yes         | 400         |
+| `server.ts:35`         | "Internal server error"                                                       | No          | 500         |
+| `server.ts:42`         | (logged only) "Port {port} is already in use -- Queue API not started..."     | Yes (log)   | N/A         |
+| `router.ts:115`        | "Not found"                                                                   | Yes         | 404         |
 
 ### IPC Handlers (renderer sees these via `safeHandle` error propagation)
 
-| Location | Error String | Actionable? |
-|----------|-------------|-------------|
-| `sprint-local.ts:90` | "Spec quality checks failed: {errors}" | Partially -- errors are joined with `;` |
-| `sprint-local.ts:93` | "Failed to create task" | No -- no reason given |
-| `sprint-local.ts:111` | "Cannot queue task -- spec quality checks failed: {errors}" | Yes |
-| `sprint-local.ts:126` | "Cannot queue task -- semantic checks failed: {msgs}" | Yes |
-| `sprint-local.ts:239` | "Task {id} not found" | Yes |
-| `sprint-local.ts:241` | "Task {id} is not blocked (status: {s})" | Yes |
-| `sprint-spec.ts:30` | "Cannot resolve spec path: BDE repo not configured" | Partially |
-| `sprint-spec.ts:34` | "Path traversal blocked: \"{path}\" resolves outside {root}" | Yes (security) |
-| `ide-fs-handlers.ts:19` | "Path traversal blocked: \"{path}\" is outside root \"{root}\"" | Yes (security) |
-| `ide-fs-handlers.ts:61` | "File too large: {size}MB exceeds 5 MB limit" | Yes |
-| `ide-fs-handlers.ts:71` | "File appears to be binary and cannot be opened as text" | Yes |
-| `ide-fs-handlers.ts:133-164` | "No IDE root path set -- call fs:watchDir first" (7 occurrences) | No -- internal detail |
-| `terminal-handlers.ts:22` | "Terminal unavailable: node-pty failed to load" | Partially |
-| `terminal-handlers.ts:26` | "Shell not allowed: \"{shell}\"" | Yes |
-| `agent-manager-handlers.ts:29` | "Agent manager not available" | No -- no recovery hint |
-| `git-handlers.ts:43` | "GitHub token not configured. Set it in Settings -> Connections." | Yes |
-| `git-handlers.ts:49` | "github:fetch only allows api.github.com URLs" | Yes (security) |
-| `window-handlers.ts:13` | "Blocked URL scheme: \"{protocol}\"" | Yes (security) |
-| `playground-handlers.ts:19` | "Invalid file type: only .html files are supported (got: {path})" | Yes |
-| `playground-handlers.ts:26` | "File too large: {size}MB exceeds {max}MB limit" | Yes |
+| Location                       | Error String                                                      | Actionable?                             |
+| ------------------------------ | ----------------------------------------------------------------- | --------------------------------------- |
+| `sprint-local.ts:90`           | "Spec quality checks failed: {errors}"                            | Partially -- errors are joined with `;` |
+| `sprint-local.ts:93`           | "Failed to create task"                                           | No -- no reason given                   |
+| `sprint-local.ts:111`          | "Cannot queue task -- spec quality checks failed: {errors}"       | Yes                                     |
+| `sprint-local.ts:126`          | "Cannot queue task -- semantic checks failed: {msgs}"             | Yes                                     |
+| `sprint-local.ts:239`          | "Task {id} not found"                                             | Yes                                     |
+| `sprint-local.ts:241`          | "Task {id} is not blocked (status: {s})"                          | Yes                                     |
+| `sprint-spec.ts:30`            | "Cannot resolve spec path: BDE repo not configured"               | Partially                               |
+| `sprint-spec.ts:34`            | "Path traversal blocked: \"{path}\" resolves outside {root}"      | Yes (security)                          |
+| `ide-fs-handlers.ts:19`        | "Path traversal blocked: \"{path}\" is outside root \"{root}\""   | Yes (security)                          |
+| `ide-fs-handlers.ts:61`        | "File too large: {size}MB exceeds 5 MB limit"                     | Yes                                     |
+| `ide-fs-handlers.ts:71`        | "File appears to be binary and cannot be opened as text"          | Yes                                     |
+| `ide-fs-handlers.ts:133-164`   | "No IDE root path set -- call fs:watchDir first" (7 occurrences)  | No -- internal detail                   |
+| `terminal-handlers.ts:22`      | "Terminal unavailable: node-pty failed to load"                   | Partially                               |
+| `terminal-handlers.ts:26`      | "Shell not allowed: \"{shell}\""                                  | Yes                                     |
+| `agent-manager-handlers.ts:29` | "Agent manager not available"                                     | No -- no recovery hint                  |
+| `git-handlers.ts:43`           | "GitHub token not configured. Set it in Settings -> Connections." | Yes                                     |
+| `git-handlers.ts:49`           | "github:fetch only allows api.github.com URLs"                    | Yes (security)                          |
+| `window-handlers.ts:13`        | "Blocked URL scheme: \"{protocol}\""                              | Yes (security)                          |
+| `playground-handlers.ts:19`    | "Invalid file type: only .html files are supported (got: {path})" | Yes                                     |
+| `playground-handlers.ts:26`    | "File too large: {size}MB exceeds {max}MB limit"                  | Yes                                     |
 
 ### Summary Statistics
 

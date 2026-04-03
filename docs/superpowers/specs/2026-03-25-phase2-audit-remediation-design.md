@@ -9,6 +9,7 @@ Three targeted structural improvements from the BDE deep audit: allow per-task r
 **Problem:** All agent tasks share a 1-hour runtime limit. Long-running data processing tasks get killed prematurely.
 
 **Solution:**
+
 - Add optional `max_runtime_ms` (nullable integer) to `SprintTask` type and Supabase schema
 - Add to `UPDATE_ALLOWLIST` and `GENERAL_PATCH_FIELDS` for API access
 - Store in `ActiveAgent` at spawn time
@@ -19,6 +20,7 @@ Three targeted structural improvements from the BDE deep audit: allow per-task r
 **Problem:** 13 fixed-interval pollers fire simultaneously, no error backoff. Thundering herd at every interval boundary.
 
 **Solution:**
+
 - Create `useBackoffInterval(callback, baseMs, options?)` hook
 - Options: `maxMs` (default: 5x base), `jitterMs` (default: 10% of base), `backoffFactor` (default: 2)
 - On error: double interval up to maxMs. On success: reset to base + jitter.
@@ -28,11 +30,12 @@ Three targeted structural improvements from the BDE deep audit: allow per-task r
 
 ## Item 7: Structured Logging
 
-**Problem:** 26 console.* calls in 12 main-process files with no persistent file output. Agent manager has its own file logger but nothing else does.
+**Problem:** 26 console.\* calls in 12 main-process files with no persistent file output. Agent manager has its own file logger but nothing else does.
 
 **Solution:**
+
 - Extract shared `createLogger(name)` to `src/main/logger.ts`
 - Writes to `~/.bde/bde.log` with `[LEVEL] [name] message` format
 - Basic rotation: truncate at startup if file > 10MB
-- Replace all 26 console.* calls with shared logger
+- Replace all 26 console.\* calls with shared logger
 - Agent manager keeps its own `agent-manager.log` (separate concern)

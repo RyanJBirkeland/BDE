@@ -4,7 +4,9 @@ import { buildLocalAgentMessage, buildDisplayContent, buildGatewayPayload } from
 
 // Mock crypto.randomUUID
 beforeEach(() => {
-  vi.spyOn(crypto, 'randomUUID').mockReturnValue('test-uuid-1234' as `${string}-${string}-${string}-${string}-${string}`)
+  vi.spyOn(crypto, 'randomUUID').mockReturnValue(
+    'test-uuid-1234' as `${string}-${string}-${string}-${string}-${string}`
+  )
 })
 
 const textAttachment: Attachment = {

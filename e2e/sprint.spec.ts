@@ -29,9 +29,15 @@ test.describe('Sprint Pipeline — stage rendering', () => {
     await navigateToSprint(window)
 
     // Verify the three primary stages exist via data-testid
-    await expect(window.locator('[data-testid="pipeline-stage-queued"]')).toBeVisible({ timeout: 5_000 })
-    await expect(window.locator('[data-testid="pipeline-stage-active"]')).toBeVisible({ timeout: 5_000 })
-    await expect(window.locator('[data-testid="pipeline-stage-done"]')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('[data-testid="pipeline-stage-queued"]')).toBeVisible({
+      timeout: 5_000
+    })
+    await expect(window.locator('[data-testid="pipeline-stage-active"]')).toBeVisible({
+      timeout: 5_000
+    })
+    await expect(window.locator('[data-testid="pipeline-stage-done"]')).toBeVisible({
+      timeout: 5_000
+    })
 
     // Verify stage labels via CSS class selectors
     await expect(window.locator('.pipeline-stage__name--queued')).toContainText('Queued')

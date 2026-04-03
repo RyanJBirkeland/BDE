@@ -109,6 +109,7 @@
   Actually, on closer inspection, the try/catch at line 196 will catch `nukeStaleState` failures. The real issue is narrower: the `acquireLock` at line 177 is outside the try/finally. If the code between lines 177-185 throws (which in practice means the `existsSync` + `.git` check), the lock release at line 181 handles that specific path. However, line 175 (`mkdirSync`) could also throw if the filesystem is full, and the lock would NOT have been acquired yet at that point so that's fine.
 
   **Re-evaluated:** The lock handling is actually correct for the current code paths. Downgrading this finding.
+
 - **Severity:** low (defense-in-depth)
 - **Recommendation:** Wrap the entire `acquireLock` through completion in a single try/finally for clarity. Currently the lock release is split across two locations (line 181 and 203/207) making it harder to verify correctness during future changes.
 
@@ -155,7 +156,7 @@
   ```typescript
   for (const agent of this._activeAgents.values()) {
     // ...
-    this._activeAgents.delete(agent.taskId)  // line 503
+    this._activeAgents.delete(agent.taskId) // line 503
     // ... handleWatchdogVerdict may throw ...
   }
   ```
@@ -262,7 +263,7 @@
     id: raw.id as string,
     title: raw.title as string,
     // ...
-    repo: raw.repo as string,
+    repo: raw.repo as string
   }
   ```
 - **Recommendation:** Add validation at the top: if `!raw.id || !raw.title || !raw.repo`, log a warning and return `null`. Have `_processQueuedTask` skip null-mapped tasks.
@@ -277,6 +278,7 @@
   Actually, looking more carefully at orphan recovery line 17: `if (task.pr_url || task.pr_status === 'branch_only')` -- this condition covers both cases. For `branch_only`, it clears `claimed_by` and skips re-queuing. The task remains `active` with a note explaining the branch was pushed. This is the intended behavior -- the user can manually create a PR from the branch.
 
   **Re-evaluated:** The behavior is intentional but could lead to confusion. The task stays `active` indefinitely with `pr_status='branch_only'`. Downgrading to low since it's by design and documented.
+
 - **Severity:** low
 - **Recommendation:** Consider setting status to `done` or a dedicated `needs_manual_pr` status for `branch_only` tasks so they don't clutter the active pipeline.
 
@@ -321,6 +323,7 @@
 - **Description:** The CLI fallback `spawnViaCli` creates a child process and yields messages from stdout. If the child process crashes (e.g., SIGSEGV) or is killed externally, the `stdout` stream will end, and the async iterator will complete normally. There is no `'error'` event handler on the child process, no `'exit'` event handler, and no monitoring of exit code. The `for await (const chunk of child.stdout)` will complete when the stream ends, and the caller will treat it as a normal exit with `exitCode = undefined` (defaulting to 1 in `classifyExit`).
 
   The issue is that there's no way to communicate the exit code back through the message stream in the CLI path. The caller in `run-agent.ts:272` looks for `exit_code` in messages, but if the child crashes without sending a final message, `exitCode` remains `undefined` and defaults to 1 at line 371.
+
 - **Evidence:** No `child.on('error', ...)` or `child.on('exit', ...)` handlers.
 - **Recommendation:** Add a `child.on('exit', (code) => { ... })` handler that stores the exit code. Expose it through the `AgentHandle` interface (e.g., `exitCode: Promise<number | null>`) so `run-agent.ts` can use the actual exit code instead of guessing from messages.
 
@@ -343,11 +346,11 @@
 ## Summary
 
 | Severity | Count |
-|----------|-------|
-| Critical | 0 |
-| High     | 1 |
-| Medium   | 8 |
-| Low      | 7 |
+| -------- | ----- |
+| Critical | 0     |
+| High     | 1     |
+| Medium   | 8     |
+| Low      | 7     |
 
 **Critical: None found.**
 

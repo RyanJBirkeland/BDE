@@ -10,10 +10,10 @@
 
 BDE has two coexisting token systems:
 
-| System | Defined In | Used By |
-|--------|-----------|---------|
-| `--bde-*` | `design-system.css` | Sessions, Sprint, modals, buttons |
-| `--bg-*`, `--accent-*`, `--text-*`, `--border-*` | `base.css` | Terminal, Memory, Settings, Cost |
+| System                                           | Defined In          | Used By                           |
+| ------------------------------------------------ | ------------------- | --------------------------------- |
+| `--bde-*`                                        | `design-system.css` | Sessions, Sprint, modals, buttons |
+| `--bg-*`, `--accent-*`, `--text-*`, `--border-*` | `base.css`          | Terminal, Memory, Settings, Cost  |
 
 Result: Terminal/Memory/Settings/Cost look like a different app. Same product, two visual identities.
 
@@ -48,6 +48,7 @@ The `--bde-*` tokens in `design-system.css` are the canonical system. The `--bg-
 ```
 
 **Strategy:** Keep both names temporarily by aliasing in `base.css`:
+
 ```css
 :root {
   /* Legacy aliases — point to canonical tokens */
@@ -57,6 +58,7 @@ The `--bde-*` tokens in `design-system.css` are the canonical system. The `--bg-
   /* etc. */
 }
 ```
+
 This is zero-risk: existing code using old names still works, new code uses canonical names. Remove aliases in a follow-up once all usages are migrated.
 
 ---
@@ -64,6 +66,7 @@ This is zero-risk: existing code using old names still works, new code uses cano
 ## View-by-View Glass Treatment
 
 ### MemoryView
+
 Current: plain dark background, file list with no visual hierarchy.
 Target: glass header bar with aurora "MEMORY" title, glass sidebar panel, glass editor area.
 
@@ -82,16 +85,26 @@ Target: glass header bar with aurora "MEMORY" title, glass sidebar panel, glass 
 .memory-view__header::after {
   content: '';
   position: absolute;
-  bottom: 0; left: 16px; right: 16px;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(167,139,250,0.4) 0%, rgba(108,142,239,0.2) 60%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(167, 139, 250, 0.4) 0%,
+    rgba(108, 142, 239, 0.2) 60%,
+    transparent 100%
+  );
 }
 .memory-view__title {
-  background: linear-gradient(90deg, #A78BFA 0%, #6C8EEF 60%, #00D37F 100%);
+  background: linear-gradient(90deg, #a78bfa 0%, #6c8eef 60%, #00d37f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 13px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 .memory-view__sidebar {
   background: var(--glass-tint-dark);
@@ -102,7 +115,9 @@ Target: glass header bar with aurora "MEMORY" title, glass sidebar panel, glass 
   border-radius: var(--bde-radius-sm);
   transition: background 0.12s;
 }
-.memory-file-item:hover { background: var(--bde-surface-hover); }
+.memory-file-item:hover {
+  background: var(--bde-surface-hover);
+}
 .memory-file-item--active {
   background: var(--glass-tint);
   border-left: 2px solid var(--bde-accent);
@@ -110,15 +125,23 @@ Target: glass header bar with aurora "MEMORY" title, glass sidebar panel, glass 
 ```
 
 ### SettingsView
+
 Current: plain form fields with no visual grouping.
 Target: glass header, glass card sections per setting group.
 
 ```css
-.settings-view__header { /* same pattern as memory-view__header */ }
+.settings-view__header {
+  /* same pattern as memory-view__header */
+}
 .settings-view__title {
-  background: linear-gradient(90deg, #6C8EEF 0%, #A78BFA 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  font-size: 13px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase;
+  background: linear-gradient(90deg, #6c8eef 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 .settings-section {
   background: var(--glass-tint-dark);
@@ -129,19 +152,26 @@ Target: glass header, glass card sections per setting group.
   margin-bottom: 12px;
 }
 .settings-section__title {
-  font-size: 11px; font-weight: 600; color: var(--bde-text-muted);
-  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
 }
 ```
 
 ### CostView
+
 Current: data tables with no hierarchy.
 Target: glass header, glass stat cards at top, glass table.
 
 ```css
-.cost-view__header { /* same glass header pattern */ }
+.cost-view__header {
+  /* same glass header pattern */
+}
 .cost-view__title {
-  background: linear-gradient(90deg, #00D37F 0%, #6C8EEF 100%);
+  background: linear-gradient(90deg, #00d37f 0%, #6c8eef 100%);
   /* aurora gradient text */
 }
 .cost-stat-card {
@@ -152,31 +182,40 @@ Target: glass header, glass stat cards at top, glass table.
   padding: 12px 16px;
   transition: border-color 0.15s;
 }
-.cost-stat-card:hover { border-color: var(--bde-border-light); }
+.cost-stat-card:hover {
+  border-color: var(--bde-border-light);
+}
 .cost-stat-card__value {
-  font-size: 22px; font-weight: 700; color: var(--bde-text);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--bde-text);
   font-variant-numeric: tabular-nums;
 }
-.cost-stat-card__label { font-size: 11px; color: var(--bde-text-muted); margin-top: 2px; }
+.cost-stat-card__label {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  margin-top: 2px;
+}
 ```
 
 ---
 
 ## Files to Change
 
-| File | Action | What |
-|------|--------|------|
-| `src/renderer/src/assets/base.css` | **MODIFY** | Add legacy token aliases (--bg → --bde-bg etc.) at top of :root |
-| `src/renderer/src/views/MemoryView.tsx` | **MODIFY** | Replace old token class names; add header section with aurora title |
-| `src/renderer/src/views/SettingsView.tsx` | **MODIFY** | Wrap settings in glass section cards; add glass header |
-| `src/renderer/src/views/CostView.tsx` | **MODIFY** | Add glass header + glass stat cards above the table |
-| `src/renderer/src/assets/memory.css` | **CREATE/MODIFY** | Memory-specific glass styles |
-| `src/renderer/src/assets/settings.css` | **CREATE/MODIFY** | Settings-specific glass styles |
-| `src/renderer/src/assets/cost.css` | **CREATE/MODIFY** | Cost-specific glass styles |
+| File                                      | Action            | What                                                                |
+| ----------------------------------------- | ----------------- | ------------------------------------------------------------------- |
+| `src/renderer/src/assets/base.css`        | **MODIFY**        | Add legacy token aliases (--bg → --bde-bg etc.) at top of :root     |
+| `src/renderer/src/views/MemoryView.tsx`   | **MODIFY**        | Replace old token class names; add header section with aurora title |
+| `src/renderer/src/views/SettingsView.tsx` | **MODIFY**        | Wrap settings in glass section cards; add glass header              |
+| `src/renderer/src/views/CostView.tsx`     | **MODIFY**        | Add glass header + glass stat cards above the table                 |
+| `src/renderer/src/assets/memory.css`      | **CREATE/MODIFY** | Memory-specific glass styles                                        |
+| `src/renderer/src/assets/settings.css`    | **CREATE/MODIFY** | Settings-specific glass styles                                      |
+| `src/renderer/src/assets/cost.css`        | **CREATE/MODIFY** | Cost-specific glass styles                                          |
 
 ---
 
 ## Out of Scope
+
 - Removing old token names (aliases keep them alive — cleanup is a separate story)
 - CostView data/logic changes (layout only)
 - MemoryView editor improvements
@@ -185,6 +224,7 @@ Target: glass header, glass stat cards at top, glass table.
 ---
 
 ## Success Criteria
+
 - [ ] No visual regression in Sessions, Sprint, Terminal (all existing glass preserved)
 - [ ] Memory, Settings, Cost views have glass headers with aurora gradient titles
 - [ ] Memory file list has glass sidebar + active item accent

@@ -40,7 +40,7 @@ const initialState = {
   diffFiles: [] as DiffFile[],
   commits: [] as ReviewCommit[],
   loading: {} as Record<string, boolean>,
-  error: null as string | null,
+  error: null as string | null
 }
 
 export const useCodeReviewStore = create<CodeReviewState>((set) => ({
@@ -50,8 +50,7 @@ export const useCodeReviewStore = create<CodeReviewState>((set) => ({
   setActiveTab: (tab): void => set({ activeTab: tab }),
   setDiffFiles: (files): void => set({ diffFiles: files }),
   setCommits: (commits): void => set({ commits }),
-  setLoading: (key, loading): void =>
-    set((s) => ({ loading: { ...s.loading, [key]: loading } })),
+  setLoading: (key, loading): void => set((s) => ({ loading: { ...s.loading, [key]: loading } })),
   setError: (error): void => set({ error }),
-  reset: (): void => set(initialState),
+  reset: (): void => set(initialState)
 }))

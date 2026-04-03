@@ -9,7 +9,12 @@ interface AgentPillProps {
   onClick: () => void
 }
 
-export function AgentPill({ agent, currentAction, accent, onClick }: AgentPillProps): React.JSX.Element {
+export function AgentPill({
+  agent,
+  currentAction,
+  accent,
+  onClick
+}: AgentPillProps): React.JSX.Element {
   const truncate = (str: string, maxLen: number): string => {
     return str.length > maxLen ? str.slice(0, maxLen) + '…' : str
   }

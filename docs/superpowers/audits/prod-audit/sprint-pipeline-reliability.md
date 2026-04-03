@@ -10,19 +10,19 @@
 
 ### Previously Reported -- Now Fixed
 
-| Synthesis Issue | Status | Evidence |
-|---|---|---|
-| UX-3: Pipeline "Edit" button navigates to blank Workbench (does not call `loadTask()`) | **Fixed** | `SprintPipeline.tsx:278` now calls `useTaskWorkbenchStore.getState().loadTask(selectedTask)` before `setView('task-workbench')` |
+| Synthesis Issue                                                                                 | Status              | Evidence                                                                                                                                                                                                                                                           |
+| ----------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| UX-3: Pipeline "Edit" button navigates to blank Workbench (does not call `loadTask()`)          | **Fixed**           | `SprintPipeline.tsx:278` now calls `useTaskWorkbenchStore.getState().loadTask(selectedTask)` before `setView('task-workbench')`                                                                                                                                    |
 | ARCH-2: Repository pattern inconsistently applied (IPC handlers bypass `ISprintTaskRepository`) | **Partially fixed** | `sprint-local.ts` now imports from `sprint-service.ts` for notification-aware functions (`updateTask`, `getTask`, `listTasks`, etc.). Direct `_createTask`/`_updateTask`/`_deleteTask` imports remain for cases requiring raw data access (creation, health check) |
-| sprint-tasks-sd 2.1: `window.confirm()` in SprintDetailPane | **Fixed** (moot) | SprintDetailPane is dead code; SprintPipeline uses `ConfirmModal` via `useSprintTaskActions().confirmProps` |
+| sprint-tasks-sd 2.1: `window.confirm()` in SprintDetailPane                                     | **Fixed** (moot)    | SprintDetailPane is dead code; SprintPipeline uses `ConfirmModal` via `useSprintTaskActions().confirmProps`                                                                                                                                                        |
 
 ### Previously Reported -- Still Open
 
-| Synthesis Issue | Status | Notes |
-|---|---|---|
-| ARCH-1: Dual orchestrator duplication (SprintCenter + SprintPipeline) | **Still open** | SprintCenter is dead code but not deleted; no shared `useSprintOrchestration()` hook |
-| ARCH-6: Fragile `onStatusTerminal` wiring -- 4 separate setter functions | **Still open** | `sprint-local.ts:71-75` still uses `_onStatusTerminal` setter pattern; `sprint-pr-poller.ts:100-104` uses `_onTaskTerminal` setter |
-| sprint-tasks-pm C2: `window.confirm()` usage in other locations | **Still open in broader codebase** (not in files in scope) |
+| Synthesis Issue                                                          | Status                                                     | Notes                                                                                                                              |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| ARCH-1: Dual orchestrator duplication (SprintCenter + SprintPipeline)    | **Still open**                                             | SprintCenter is dead code but not deleted; no shared `useSprintOrchestration()` hook                                               |
+| ARCH-6: Fragile `onStatusTerminal` wiring -- 4 separate setter functions | **Still open**                                             | `sprint-local.ts:71-75` still uses `_onStatusTerminal` setter pattern; `sprint-pr-poller.ts:100-104` uses `_onTaskTerminal` setter |
+| sprint-tasks-pm C2: `window.confirm()` usage in other locations          | **Still open in broader codebase** (not in files in scope) |
 
 ---
 
@@ -64,7 +64,7 @@
   export function startSprintPrPoller(): void {
     _instance = createSprintPrPoller({
       // ...
-      onTaskTerminal: _onTaskTerminal ?? undefined,
+      onTaskTerminal: _onTaskTerminal ?? undefined
       // ...
     })
     _instance.start()
@@ -182,7 +182,9 @@
 - **Impact:** User saves outdated spec content, overwriting newer server-side spec.
 - **Fix:** Add a `useEffect` that resets `draft` when `spec` prop changes while not in editing mode:
   ```typescript
-  useEffect(() => { if (!editing) setDraft(spec) }, [spec, editing])
+  useEffect(() => {
+    if (!editing) setDraft(spec)
+  }, [spec, editing])
   ```
 
 ### Moderate
@@ -192,8 +194,8 @@
 - **File:** `src/main/handlers/sprint-local.ts:156-163`
 - **Evidence:**
   ```typescript
-  const task = getTask(id)    // service-layer getTask
-  _deleteTask(id)             // raw delete (no existence check)
+  const task = getTask(id) // service-layer getTask
+  _deleteTask(id) // raw delete (no existence check)
   ```
   `getTask` and `_deleteTask` use different access paths (service-layer vs raw). If the task is deleted between the `getTask` call and the `_deleteTask` call, `_deleteTask` runs against a non-existent row. While SQLite handles this gracefully (0 rows affected), the `notifySprintMutation('deleted', task)` fires with the stale task object, potentially confusing SSE consumers.
 - **Impact:** Minor: phantom delete notification for already-deleted task.
@@ -203,6 +205,7 @@
 
 - **File:** `src/renderer/src/components/sprint/ConflictDrawer.tsx:29-76`
 - **Evidence:**
+
   ```typescript
   useEffect(() => {
     // ...
@@ -211,13 +214,15 @@
       // ...
     }
     // ...
-  }, [open, tasks])  // branchInfo is NOT in the dependency array
+  }, [open, tasks]) // branchInfo is NOT in the dependency array
   ```
+
   The effect reads `branchInfo` to skip already-loaded tasks, but `branchInfo` is not in the dependency array. This means:
   1. When `branchInfo` updates (task data loaded), the effect doesn't re-run, which is correct for avoiding re-fetches.
   2. But if `tasks` changes to add a new task while `branchInfo` is stale, the closure captures the old `branchInfo` and may incorrectly skip the new task.
 
   React's exhaustive-deps lint rule would flag this.
+
 - **Impact:** New conflicting tasks added while the drawer is open may not have their branch info fetched.
 - **Fix:** Use a ref for `branchInfo` in the skip check, or add it to deps with appropriate guarding.
 
@@ -287,6 +292,7 @@
 
 - **File:** `src/main/handlers/sprint-local.ts:92-94` vs `149`
 - **Evidence:**
+
   ```typescript
   // Create: raw + manual notify
   const row = _createTask(validation.task)
@@ -295,7 +301,9 @@
   // Update: service-layer (auto-notifies)
   const result = updateTask(id, patch)
   ```
+
   The create handler calls `_createTask` (raw, no notification) then manually calls `notifySprintMutation`. The update handler calls `updateTask` from the service layer (which auto-notifies). This means if the service layer ever changes its notification behavior, the create and update paths will diverge.
+
 - **Impact:** Maintenance hazard. If someone adds a side effect to `sprint-service.createTask()`, the IPC handler won't benefit because it bypasses it.
 - **Fix:** Have `sprint:create` call the service-layer `createTask()` instead of `_createTask` + manual notification.
 
@@ -358,64 +366,66 @@
 
 ## Test Coverage Assessment
 
-| File | Tests Exist | Critical Path Coverage | Gaps |
-|---|---|---|---|
-| `sprint-local.ts` | Yes (unit + integration) | Good: create, update, delete, claim, healthCheck, readLog, validateDeps, unblockTask, batchUpdate | **Missing**: batchUpdate terminal status path, concurrent update scenario, semantic check failure during update |
-| `sprint-pr-poller.ts` | Yes (unit) | Good: merged, closed, open, stop, interval | **Missing**: error path, multiple tasks with same PR number |
-| `sanitize-depends-on.ts` | **No dedicated test file** | N/A | Validated indirectly through integration tests but no unit-level edge case coverage |
-| `sprintTasks.ts` (store) | Yes (unit) | Good: loadData, updateTask, createTask, deleteTask, launchTask, mergeSseUpdate, optimistic updates | **Missing**: concurrent updateTask calls, setTasks path |
-| `SprintPipeline.tsx` | Yes (unit) | Good: rendering, drawer states, spec panel, done history | **Missing**: error state rendering, loading state |
-| `PipelineStage.tsx` | Yes (unit) | Good: rendering, empty state, task count | Adequate |
-| `PipelineBacklog.tsx` | Yes (unit) | Good: backlog/failed rendering, actions, keyboard | Adequate |
-| `TaskPill.tsx` | Yes (unit) | Good: status classes, elapsed time, selection | Adequate |
-| `TaskDetailDrawer.tsx` | Yes (unit) | Good: all status action buttons, PR display, deps, branch-only | **Missing**: resize drag behavior |
-| `SpecPanel.tsx` | Yes (unit) | Good: edit/save/cancel, close | **Missing**: prop change while editing |
-| `DoneHistoryPanel.tsx` | Yes (unit) | Good: rendering, click handlers, empty state | Adequate |
-| `ConflictDrawer.tsx` | **No** | N/A | Needs full test coverage |
-| `HealthCheckDrawer.tsx` | **No** | N/A | Needs basic render + rescue test |
-| `TicketEditor.tsx` | **No** | N/A | Needs partial failure + batch creation tests |
-| `CircuitPipeline.tsx` | **No** | N/A | Needs count accuracy test |
-| `sprint-listeners.ts` | Yes (unit) | Good: sub/unsub, error isolation, SSE broadcast, IPC broadcast | Adequate |
+| File                     | Tests Exist                | Critical Path Coverage                                                                             | Gaps                                                                                                            |
+| ------------------------ | -------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `sprint-local.ts`        | Yes (unit + integration)   | Good: create, update, delete, claim, healthCheck, readLog, validateDeps, unblockTask, batchUpdate  | **Missing**: batchUpdate terminal status path, concurrent update scenario, semantic check failure during update |
+| `sprint-pr-poller.ts`    | Yes (unit)                 | Good: merged, closed, open, stop, interval                                                         | **Missing**: error path, multiple tasks with same PR number                                                     |
+| `sanitize-depends-on.ts` | **No dedicated test file** | N/A                                                                                                | Validated indirectly through integration tests but no unit-level edge case coverage                             |
+| `sprintTasks.ts` (store) | Yes (unit)                 | Good: loadData, updateTask, createTask, deleteTask, launchTask, mergeSseUpdate, optimistic updates | **Missing**: concurrent updateTask calls, setTasks path                                                         |
+| `SprintPipeline.tsx`     | Yes (unit)                 | Good: rendering, drawer states, spec panel, done history                                           | **Missing**: error state rendering, loading state                                                               |
+| `PipelineStage.tsx`      | Yes (unit)                 | Good: rendering, empty state, task count                                                           | Adequate                                                                                                        |
+| `PipelineBacklog.tsx`    | Yes (unit)                 | Good: backlog/failed rendering, actions, keyboard                                                  | Adequate                                                                                                        |
+| `TaskPill.tsx`           | Yes (unit)                 | Good: status classes, elapsed time, selection                                                      | Adequate                                                                                                        |
+| `TaskDetailDrawer.tsx`   | Yes (unit)                 | Good: all status action buttons, PR display, deps, branch-only                                     | **Missing**: resize drag behavior                                                                               |
+| `SpecPanel.tsx`          | Yes (unit)                 | Good: edit/save/cancel, close                                                                      | **Missing**: prop change while editing                                                                          |
+| `DoneHistoryPanel.tsx`   | Yes (unit)                 | Good: rendering, click handlers, empty state                                                       | Adequate                                                                                                        |
+| `ConflictDrawer.tsx`     | **No**                     | N/A                                                                                                | Needs full test coverage                                                                                        |
+| `HealthCheckDrawer.tsx`  | **No**                     | N/A                                                                                                | Needs basic render + rescue test                                                                                |
+| `TicketEditor.tsx`       | **No**                     | N/A                                                                                                | Needs partial failure + batch creation tests                                                                    |
+| `CircuitPipeline.tsx`    | **No**                     | N/A                                                                                                | Needs count accuracy test                                                                                       |
+| `sprint-listeners.ts`    | Yes (unit)                 | Good: sub/unsub, error isolation, SSE broadcast, IPC broadcast                                     | Adequate                                                                                                        |
 
 ---
 
 ## Summary Table
 
-| ID | Severity | File | Summary |
-|---|---|---|---|
-| SP-REL-1 | Critical | `sprint-local.ts:98-153` | TOCTOU race: async validation gap between getTask and updateTask |
-| SP-REL-2 | Critical | `sprint-local.ts:71-75` | Null `_onStatusTerminal` silently drops dependency resolution |
-| SP-REL-3 | Critical | `sprint-pr-poller.ts:106-117` | `onTaskTerminal` captures stale reference at construction time |
-| SP-REL-4 | Significant | `sprint-local.ts:191-207` | Health check per-row writes without transaction; `console.warn` |
-| SP-REL-5 | Significant | `sprint-local.ts:252-315` | `batchUpdate` skips `_onStatusTerminal` for terminal transitions |
-| SP-REL-6 | Significant | `sprint-local.ts:274-291` | `batchUpdate` allows status changes without spec validation |
-| SP-REL-7 | Significant | `sprint-local.ts:237-245` | `unblockTask` skips spec validation before queuing |
-| SP-REL-8 | Significant | `sanitize-depends-on.ts:17-19` | Invalid deps silently coerced to null (data loss) |
-| SP-REL-9 | Significant | `sprintTasks.ts:126-165` | Concurrent updateTask calls race on pendingUpdates cleanup |
-| SP-REL-10 | Significant | `SpecPanel.tsx:13` | Draft state not synced when spec prop changes externally |
-| SP-REL-11 | Moderate | `sprint-local.ts:156-163` | Delete notifies with stale task if concurrent delete |
-| SP-REL-12 | Moderate | `ConflictDrawer.tsx:29-76` | Missing `branchInfo` in useEffect dependency array |
-| SP-REL-13 | Moderate | `TicketEditor.tsx:88-106` | Partial failure in batch create causes duplicate tickets on retry |
-| SP-REL-14 | Moderate | `TaskDetailDrawer.tsx:96-121` | Resize event listeners leak on unmount during drag |
-| SP-REL-15 | Moderate | `sprint-local.ts:204` | `console.warn` instead of structured logger |
-| SP-REL-16 | Moderate | `sprintTasks.ts:23-32` | Duplicate `sanitizeDeps` weaker than shared `sanitizeDependsOn` |
-| SP-REL-17 | Moderate | `sprint-local.ts:92-94` | Create uses raw path; update uses service-layer (inconsistent) |
-| SP-REL-18 | Low | `CircuitPipeline.tsx:24-43` | Duplicated count logic diverges from `partitionSprintTasks` |
-| SP-REL-19 | Low | `TaskPill.tsx` / `TaskDetailDrawer.tsx` | Duplicated `formatElapsed` / `getDotColor` with divergent behavior |
-| SP-REL-20 | Low | `sprint/__tests__/` | No tests for 4 components (ConflictDrawer, HealthCheckDrawer, TicketEditor, CircuitPipeline) |
-| SP-REL-21 | Low | `sprint-pr-poller.test.ts` | No test for poll error/rejection path |
-| SP-REL-22 | Low | `sprint-local.ts:209-216` | `readLog` throw propagates unhandled to renderer |
+| ID        | Severity    | File                                    | Summary                                                                                      |
+| --------- | ----------- | --------------------------------------- | -------------------------------------------------------------------------------------------- |
+| SP-REL-1  | Critical    | `sprint-local.ts:98-153`                | TOCTOU race: async validation gap between getTask and updateTask                             |
+| SP-REL-2  | Critical    | `sprint-local.ts:71-75`                 | Null `_onStatusTerminal` silently drops dependency resolution                                |
+| SP-REL-3  | Critical    | `sprint-pr-poller.ts:106-117`           | `onTaskTerminal` captures stale reference at construction time                               |
+| SP-REL-4  | Significant | `sprint-local.ts:191-207`               | Health check per-row writes without transaction; `console.warn`                              |
+| SP-REL-5  | Significant | `sprint-local.ts:252-315`               | `batchUpdate` skips `_onStatusTerminal` for terminal transitions                             |
+| SP-REL-6  | Significant | `sprint-local.ts:274-291`               | `batchUpdate` allows status changes without spec validation                                  |
+| SP-REL-7  | Significant | `sprint-local.ts:237-245`               | `unblockTask` skips spec validation before queuing                                           |
+| SP-REL-8  | Significant | `sanitize-depends-on.ts:17-19`          | Invalid deps silently coerced to null (data loss)                                            |
+| SP-REL-9  | Significant | `sprintTasks.ts:126-165`                | Concurrent updateTask calls race on pendingUpdates cleanup                                   |
+| SP-REL-10 | Significant | `SpecPanel.tsx:13`                      | Draft state not synced when spec prop changes externally                                     |
+| SP-REL-11 | Moderate    | `sprint-local.ts:156-163`               | Delete notifies with stale task if concurrent delete                                         |
+| SP-REL-12 | Moderate    | `ConflictDrawer.tsx:29-76`              | Missing `branchInfo` in useEffect dependency array                                           |
+| SP-REL-13 | Moderate    | `TicketEditor.tsx:88-106`               | Partial failure in batch create causes duplicate tickets on retry                            |
+| SP-REL-14 | Moderate    | `TaskDetailDrawer.tsx:96-121`           | Resize event listeners leak on unmount during drag                                           |
+| SP-REL-15 | Moderate    | `sprint-local.ts:204`                   | `console.warn` instead of structured logger                                                  |
+| SP-REL-16 | Moderate    | `sprintTasks.ts:23-32`                  | Duplicate `sanitizeDeps` weaker than shared `sanitizeDependsOn`                              |
+| SP-REL-17 | Moderate    | `sprint-local.ts:92-94`                 | Create uses raw path; update uses service-layer (inconsistent)                               |
+| SP-REL-18 | Low         | `CircuitPipeline.tsx:24-43`             | Duplicated count logic diverges from `partitionSprintTasks`                                  |
+| SP-REL-19 | Low         | `TaskPill.tsx` / `TaskDetailDrawer.tsx` | Duplicated `formatElapsed` / `getDotColor` with divergent behavior                           |
+| SP-REL-20 | Low         | `sprint/__tests__/`                     | No tests for 4 components (ConflictDrawer, HealthCheckDrawer, TicketEditor, CircuitPipeline) |
+| SP-REL-21 | Low         | `sprint-pr-poller.test.ts`              | No test for poll error/rejection path                                                        |
+| SP-REL-22 | Low         | `sprint-local.ts:209-216`               | `readLog` throw propagates unhandled to renderer                                             |
 
 ---
 
 ## Recommended Fix Priority
 
 ### Immediate (blocks production reliability)
+
 1. **SP-REL-5**: Add `_onStatusTerminal` call in `batchUpdate` -- one-line fix, prevents permanently blocked tasks
 2. **SP-REL-2**: Add warning log when `_onStatusTerminal` is null during terminal transition
 3. **SP-REL-3**: Fix stale reference capture in PR poller construction
 
 ### Next Sprint
+
 4. **SP-REL-1**: Add optimistic locking or transaction for update handler
 5. **SP-REL-6**: Exclude `status` from `batchUpdate` `GENERAL_PATCH_FIELDS` filter
 6. **SP-REL-8**: Preserve original value when `sanitizeDependsOn` parse fails
@@ -423,6 +433,7 @@
 8. **SP-REL-10**: Sync SpecPanel draft with prop changes
 
 ### Backlog
+
 9. **SP-REL-20**: Add tests for untested components
 10. **SP-REL-16**: Replace local `sanitizeDeps` with shared function
 11. **SP-REL-14**: Fix resize listener leak

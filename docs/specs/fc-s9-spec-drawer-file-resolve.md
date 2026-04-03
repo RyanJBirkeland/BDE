@@ -15,19 +15,21 @@ Read docs/specs/ax-s3-ipc-boundary-validation.md in full before writing code.
 Two-part fix:
 
 ### 1. IPC handler: `sprint:read-spec-file`
+
 Add a new IPC handler in `src/main/handlers/sprint-handlers.ts` (or wherever sprint IPC lives):
 
 ```ts
 safeHandle('sprint:read-spec-file', (_e, filePath: string) => {
   // filePath is relative to BDE repo root, e.g. "docs/specs/ax-s3-ipc-boundary-validation.md"
   // Resolve against the BDE repo root (use app.getAppPath() or __dirname traversal)
-  const repoRoot = join(__dirname, '../../..')  // adjust depth as needed
-  const abs = validatePath(repoRoot, filePath)  // use existing validateMemoryPath pattern
+  const repoRoot = join(__dirname, '../../..') // adjust depth as needed
+  const abs = validatePath(repoRoot, filePath) // use existing validateMemoryPath pattern
   return readFileSync(abs, 'utf-8')
 })
 ```
 
 Expose in preload:
+
 ```ts
 readSpecFile: (filePath: string) => ipcRenderer.invoke('sprint:read-spec-file', filePath)
 ```
@@ -44,6 +46,7 @@ function extractSpecPath(prompt: string): string | null {
 ```
 
 In the `useEffect` that initialises `draft`:
+
 ```ts
 useEffect(() => {
   if (!task) return
@@ -53,8 +56,9 @@ useEffect(() => {
   }
   const specPath = extractSpecPath(task.prompt ?? '')
   if (specPath) {
-    window.api.readSpecFile(specPath)
-      .then(content => setDraft(content))
+    window.api
+      .readSpecFile(specPath)
+      .then((content) => setDraft(content))
       .catch(() => setDraft(task.prompt ?? ''))
   } else {
     setDraft(task.prompt ?? '')
@@ -65,15 +69,16 @@ useEffect(() => {
 Do the same for the read-only rendered view (replace the inline `task.spec ?? task.prompt` fallback with resolved state).
 
 ### 3. Persist on save (optional but recommended)
+
 When the user saves a spec, the `onSave` callback already calls `sprint:update`. No change needed — the content will be stored in `task.spec` going forward. Once saved, the file-read path is bypassed.
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/main/handlers/sprint-handlers.ts` | Add `sprint:read-spec-file` handler |
-| `src/preload/index.ts` | Expose `readSpecFile` in `window.api` |
-| `src/preload/index.d.ts` | Add type for `readSpecFile` |
+| File                                                | Change                                    |
+| --------------------------------------------------- | ----------------------------------------- |
+| `src/main/handlers/sprint-handlers.ts`              | Add `sprint:read-spec-file` handler       |
+| `src/preload/index.ts`                              | Expose `readSpecFile` in `window.api`     |
+| `src/preload/index.d.ts`                            | Add type for `readSpecFile`               |
 | `src/renderer/src/components/sprint/SpecDrawer.tsx` | `extractSpecPath()` + useEffect auto-load |
 
 ## Acceptance Criteria

@@ -220,7 +220,10 @@ None found.
 - **Code:**
   ```ts
   const { stdout } = await execFileAsync('security', [
-    'find-generic-password', '-s', 'Claude Code-credentials', '-w'
+    'find-generic-password',
+    '-s',
+    'Claude Code-credentials',
+    '-w'
   ])
   ```
 - **Risk:** Each call to `checkAuthStatus()` spawns a child process to read from the macOS Keychain. There is no caching or rate-limiting. If the renderer calls `auth:status` in a tight loop (e.g., via polling), it could spawn many `security` processes. The CLAUDE.md notes this hangs in Electron's main process, which is why the auth guard is NOT called in the drain loop -- but it is still callable via IPC.
@@ -254,34 +257,34 @@ None found.
 
 ## Summary Table
 
-| ID | Severity | Category | File | Status |
-|---|---|---|---|---|
-| DL-RED-1 | High | SQL injection (dynamic columns) | sprint-queries.ts:200 | Open |
-| DL-RED-2 | High | SQL injection (dynamic columns) | agent-queries.ts:131 | Open |
-| DL-RED-3 | High | Path traversal (latent) | db.ts:32 | Open |
-| DL-RED-4 | Medium | Credential storage | supabase-import.ts:64 | Open |
-| DL-RED-5 | Medium | File permissions | env-utils.ts:36 | Open |
-| DL-RED-6 | Medium | Auth bypass | auth-guard.ts:101 | Open |
-| DL-RED-7 | Medium | Migration safety | db.ts:440 | Open |
-| DL-RED-8 | Medium | Unsafe deserialization | settings-queries.ts:26 | Open |
-| DL-RED-9 | Medium | Token in query string | helpers.ts:30 | Accepted risk |
-| DL-RED-10 | Low | SQL pragma interpolation | db.ts:443 | Open |
-| DL-RED-11 | Low | Unbounded recursion | sanitize-depends-on.ts:16 | Open |
-| DL-RED-12 | Low | Input validation | supabase-import.ts:127 | Open |
-| DL-RED-13 | Low | DoS (process spawn) | auth-guard.ts:43 | Open |
-| DL-RED-14 | Low | File permissions | db.ts:9 | Open |
-| DL-RED-15 | Low | Backup integrity | db.ts:37 | Open |
+| ID        | Severity | Category                        | File                      | Status        |
+| --------- | -------- | ------------------------------- | ------------------------- | ------------- |
+| DL-RED-1  | High     | SQL injection (dynamic columns) | sprint-queries.ts:200     | Open          |
+| DL-RED-2  | High     | SQL injection (dynamic columns) | agent-queries.ts:131      | Open          |
+| DL-RED-3  | High     | Path traversal (latent)         | db.ts:32                  | Open          |
+| DL-RED-4  | Medium   | Credential storage              | supabase-import.ts:64     | Open          |
+| DL-RED-5  | Medium   | File permissions                | env-utils.ts:36           | Open          |
+| DL-RED-6  | Medium   | Auth bypass                     | auth-guard.ts:101         | Open          |
+| DL-RED-7  | Medium   | Migration safety                | db.ts:440                 | Open          |
+| DL-RED-8  | Medium   | Unsafe deserialization          | settings-queries.ts:26    | Open          |
+| DL-RED-9  | Medium   | Token in query string           | helpers.ts:30             | Accepted risk |
+| DL-RED-10 | Low      | SQL pragma interpolation        | db.ts:443                 | Open          |
+| DL-RED-11 | Low      | Unbounded recursion             | sanitize-depends-on.ts:16 | Open          |
+| DL-RED-12 | Low      | Input validation                | supabase-import.ts:127    | Open          |
+| DL-RED-13 | Low      | DoS (process spawn)             | auth-guard.ts:43          | Open          |
+| DL-RED-14 | Low      | File permissions                | db.ts:9                   | Open          |
+| DL-RED-15 | Low      | Backup integrity                | db.ts:37                  | Open          |
 
 ---
 
 ## Cross-Reference with March 28 Audit
 
-| March 28 ID | This Audit | Status |
-|---|---|---|
-| SEC-6 (SQL string interpolation in backupDatabase) | DL-RED-3 | Partially mitigated -- regex added but allows traversal |
-| main-process-sd S7 (SQL column allowlist assertion) | DL-RED-1, DL-RED-2 | Still open -- no regex assertion on column names |
-| main-process-sd C4 (SSE token query-string) | DL-RED-9 | Acknowledged as accepted risk |
-| SEC-5 (CORS wildcard) | N/A | Fixed -- `CORS_HEADERS = {}` (empty object, no wildcard) |
+| March 28 ID                                         | This Audit         | Status                                                   |
+| --------------------------------------------------- | ------------------ | -------------------------------------------------------- |
+| SEC-6 (SQL string interpolation in backupDatabase)  | DL-RED-3           | Partially mitigated -- regex added but allows traversal  |
+| main-process-sd S7 (SQL column allowlist assertion) | DL-RED-1, DL-RED-2 | Still open -- no regex assertion on column names         |
+| main-process-sd C4 (SSE token query-string)         | DL-RED-9           | Acknowledged as accepted risk                            |
+| SEC-5 (CORS wildcard)                               | N/A                | Fixed -- `CORS_HEADERS = {}` (empty object, no wildcard) |
 
 ---
 

@@ -55,7 +55,10 @@ const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
   }
   const mockUseIDEStore = vi.fn((selector: (s: MockIDEState) => unknown) =>
     selector(defaultState)
-  ) as ReturnType<typeof vi.fn> & { getState: () => MockIDEState; setState: (partial: Partial<MockIDEState>) => void }
+  ) as ReturnType<typeof vi.fn> & {
+    getState: () => MockIDEState
+    setState: (partial: Partial<MockIDEState>) => void
+  }
   mockUseIDEStore.getState = () => defaultState
   mockUseIDEStore.setState = vi.fn()
   return { mockUseIDEStore, mockSetFocusedPanel }

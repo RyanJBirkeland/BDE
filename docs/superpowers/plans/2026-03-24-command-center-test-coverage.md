@@ -14,15 +14,15 @@
 
 Almost all work is new test files or additions to existing test files. One production bugfix in DashboardView (PR count always reads 0).
 
-| Action | File | Purpose |
-|--------|------|---------|
-| Create | `src/renderer/src/components/dashboard/__tests__/CostSummaryCard.test.tsx` | Full coverage for CostSummaryCard |
-| Create | `src/renderer/src/components/dashboard/__tests__/OpenPRsCard.test.tsx` | Full coverage for OpenPRsCard |
-| Modify | `src/renderer/src/components/neon/__tests__/ActivityFeed.test.tsx` | Cover hours/days branches (L21-23) |
-| Modify | `src/renderer/src/components/neon/__tests__/StatCounter.test.tsx` | Cover trend directions + icon prop |
-| Modify | `src/renderer/src/components/neon/__tests__/MiniChart.test.tsx` | Cover default accent fallback (L33) |
-| Modify | `src/renderer/src/views/DashboardView.tsx:112` | Fix PR count bug (Array.isArray on object) |
-| Modify | `src/renderer/src/views/__tests__/DashboardView.test.tsx` | Cover data-fetching branches, PR count logic |
+| Action | File                                                                       | Purpose                                      |
+| ------ | -------------------------------------------------------------------------- | -------------------------------------------- |
+| Create | `src/renderer/src/components/dashboard/__tests__/CostSummaryCard.test.tsx` | Full coverage for CostSummaryCard            |
+| Create | `src/renderer/src/components/dashboard/__tests__/OpenPRsCard.test.tsx`     | Full coverage for OpenPRsCard                |
+| Modify | `src/renderer/src/components/neon/__tests__/ActivityFeed.test.tsx`         | Cover hours/days branches (L21-23)           |
+| Modify | `src/renderer/src/components/neon/__tests__/StatCounter.test.tsx`          | Cover trend directions + icon prop           |
+| Modify | `src/renderer/src/components/neon/__tests__/MiniChart.test.tsx`            | Cover default accent fallback (L33)          |
+| Modify | `src/renderer/src/views/DashboardView.tsx:112`                             | Fix PR count bug (Array.isArray on object)   |
+| Modify | `src/renderer/src/views/__tests__/DashboardView.test.tsx`                  | Cover data-fetching branches, PR count logic |
 
 ---
 
@@ -31,6 +31,7 @@ Almost all work is new test files or additions to existing test files. One produ
 ### Task 1: CostSummaryCard tests
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/__tests__/CostSummaryCard.test.tsx`
 - Reference: `src/renderer/src/components/dashboard/CostSummaryCard.tsx`
 
@@ -49,7 +50,7 @@ let mockTotalCost = 0
 
 vi.mock('../../../stores/costData', () => ({
   useCostDataStore: (selector: (s: { localAgents: Agent[]; totalCost: number }) => unknown) =>
-    selector({ localAgents: mockLocalAgents, totalCost: mockTotalCost }),
+    selector({ localAgents: mockLocalAgents, totalCost: mockTotalCost })
 }))
 
 import { CostSummaryCard } from '../CostSummaryCard'
@@ -146,6 +147,7 @@ git commit -m "test: add CostSummaryCard tests — formatCost branches, avg calc
 ### Task 2: OpenPRsCard tests
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/__tests__/OpenPRsCard.test.tsx`
 - Reference: `src/renderer/src/components/dashboard/OpenPRsCard.tsx`
 - Reference: `src/shared/types.ts:129-141` (OpenPr interface)
@@ -179,7 +181,7 @@ function makePr(overrides: Partial<OpenPr> = {}): OpenPr {
     merged: false,
     merged_at: null,
     repo: 'test-repo',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -212,7 +214,7 @@ describe('OpenPRsCard', () => {
   it('renders PR titles after loading', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ number: 42, title: 'Add auth module' })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -223,7 +225,7 @@ describe('OpenPRsCard', () => {
   it('shows PR number', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ number: 99 })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -234,7 +236,7 @@ describe('OpenPRsCard', () => {
   it('shows Draft badge for draft PRs', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ draft: true })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -245,7 +247,7 @@ describe('OpenPRsCard', () => {
   it('does not show Draft badge for non-draft PRs', async () => {
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ draft: false })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -255,9 +257,7 @@ describe('OpenPRsCard', () => {
   })
 
   it('limits display to 5 PRs', async () => {
-    const prs = Array.from({ length: 7 }, (_, i) =>
-      makePr({ number: i + 1, title: `PR ${i + 1}` }),
-    )
+    const prs = Array.from({ length: 7 }, (_, i) => makePr({ number: i + 1, title: `PR ${i + 1}` }))
     vi.mocked(window.api.getPrList).mockResolvedValue({ prs, checks: {} })
     render(<OpenPRsCard />)
     await waitFor(() => {
@@ -270,16 +270,14 @@ describe('OpenPRsCard', () => {
     const user = userEvent.setup()
     vi.mocked(window.api.getPrList).mockResolvedValue({
       prs: [makePr({ number: 7, html_url: 'https://github.com/test/repo/pull/7' })],
-      checks: {},
+      checks: {}
     })
     render(<OpenPRsCard />)
     await waitFor(() => {
       expect(screen.getByText('Test PR')).toBeInTheDocument()
     })
     await user.click(screen.getByLabelText('Open PR #7 in browser'))
-    expect(window.api.openExternal).toHaveBeenCalledWith(
-      'https://github.com/test/repo/pull/7',
-    )
+    expect(window.api.openExternal).toHaveBeenCalledWith('https://github.com/test/repo/pull/7')
   })
 
   it('handles getPrList rejection gracefully', async () => {
@@ -313,6 +311,7 @@ git commit -m "test: add OpenPRsCard tests — loading, empty, draft badge, max 
 ### Task 3: ActivityFeed — hours and days branches
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/__tests__/ActivityFeed.test.tsx`
 - Reference: `src/renderer/src/components/neon/ActivityFeed.tsx:15-24` (formatRelativeTime)
 
@@ -325,7 +324,7 @@ Append these tests inside the existing `describe('ActivityFeed', ...)` block:
 ```tsx
 it('shows hours-ago format for timestamps 1-23 hours old', () => {
   const hoursAgoEvents: FeedEvent[] = [
-    { id: 'h1', label: 'hours test', accent: 'cyan', timestamp: Date.now() - 3 * 60 * 60 * 1000 },
+    { id: 'h1', label: 'hours test', accent: 'cyan', timestamp: Date.now() - 3 * 60 * 60 * 1000 }
   ]
   render(<ActivityFeed events={hoursAgoEvents} />)
   expect(screen.getByText('3h ago')).toBeInTheDocument()
@@ -333,7 +332,7 @@ it('shows hours-ago format for timestamps 1-23 hours old', () => {
 
 it('shows days-ago format for timestamps 24+ hours old', () => {
   const daysAgoEvents: FeedEvent[] = [
-    { id: 'd1', label: 'days test', accent: 'pink', timestamp: Date.now() - 48 * 60 * 60 * 1000 },
+    { id: 'd1', label: 'days test', accent: 'pink', timestamp: Date.now() - 48 * 60 * 60 * 1000 }
   ]
   render(<ActivityFeed events={daysAgoEvents} />)
   expect(screen.getByText('2d ago')).toBeInTheDocument()
@@ -341,7 +340,7 @@ it('shows days-ago format for timestamps 24+ hours old', () => {
 
 it('shows "just now" for events less than 1 second old', () => {
   const justNowEvents: FeedEvent[] = [
-    { id: 'jn', label: 'just now test', accent: 'blue', timestamp: Date.now() },
+    { id: 'jn', label: 'just now test', accent: 'blue', timestamp: Date.now() }
   ]
   render(<ActivityFeed events={justNowEvents} />)
   expect(screen.getByText('just now')).toBeInTheDocument()
@@ -365,6 +364,7 @@ git commit -m "test: cover ActivityFeed hours/days/just-now time branches"
 ### Task 4: StatCounter — trend directions and icon prop
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/__tests__/StatCounter.test.tsx`
 - Reference: `src/renderer/src/components/neon/StatCounter.tsx:56-64` (trend rendering)
 
@@ -377,7 +377,12 @@ Append inside the existing `describe('StatCounter', ...)` block:
 ```tsx
 it('renders up arrow and red color for upward trend', () => {
   const { container } = render(
-    <StatCounter label="Cost" value="$10" accent="orange" trend={{ direction: 'up', label: '5% increase' }} />,
+    <StatCounter
+      label="Cost"
+      value="$10"
+      accent="orange"
+      trend={{ direction: 'up', label: '5% increase' }}
+    />
   )
   expect(screen.getByText(/↑/)).toBeInTheDocument()
   expect(screen.getByText(/5% increase/)).toBeInTheDocument()
@@ -385,23 +390,31 @@ it('renders up arrow and red color for upward trend', () => {
 
 it('renders down arrow for downward trend', () => {
   render(
-    <StatCounter label="Cost" value="$4" accent="cyan" trend={{ direction: 'down', label: '3% drop' }} />,
+    <StatCounter
+      label="Cost"
+      value="$4"
+      accent="cyan"
+      trend={{ direction: 'down', label: '3% drop' }}
+    />
   )
   expect(screen.getByText(/↓/)).toBeInTheDocument()
   expect(screen.getByText(/3% drop/)).toBeInTheDocument()
 })
 
 it('does not render trend section when trend is undefined', () => {
-  const { container } = render(
-    <StatCounter label="Agents" value={5} accent="cyan" />,
-  )
+  const { container } = render(<StatCounter label="Agents" value={5} accent="cyan" />)
   expect(screen.queryByText(/↑/)).not.toBeInTheDocument()
   expect(screen.queryByText(/↓/)).not.toBeInTheDocument()
 })
 
 it('renders icon when provided', () => {
   render(
-    <StatCounter label="Agents" value={3} accent="cyan" icon={<span data-testid="test-icon">⚡</span>} />,
+    <StatCounter
+      label="Agents"
+      value={3}
+      accent="cyan"
+      icon={<span data-testid="test-icon">⚡</span>}
+    />
   )
   expect(screen.getByTestId('test-icon')).toBeInTheDocument()
 })
@@ -424,6 +437,7 @@ git commit -m "test: cover StatCounter trend up/down arrows, icon prop"
 ### Task 5: MiniChart — default accent fallback
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/__tests__/MiniChart.test.tsx`
 - Reference: `src/renderer/src/components/neon/MiniChart.tsx:33` (`bar.accent ?? 'purple'`)
 
@@ -461,6 +475,7 @@ git commit -m "test: cover MiniChart default purple accent fallback"
 ### Task 6: DashboardView — fix PR count bug + cover data fetch branches
 
 **Files:**
+
 - Modify: `src/renderer/src/views/DashboardView.tsx:112`
 - Modify: `src/renderer/src/views/__tests__/DashboardView.test.tsx`
 - Reference: `src/renderer/src/views/DashboardView.tsx:50-118` (useEffect data fetches)
@@ -468,6 +483,7 @@ git commit -m "test: cover MiniChart default purple accent fallback"
 **Bug found during coverage audit:** `DashboardView.tsx` line 112 does `Array.isArray(prs) ? prs.length : 0` where `prs` is a `PrListPayload` object (`{ prs: OpenPr[], checks: ... }`). Since an object is never an array, `prCount` is always 0. The fix is `setPrCount(prs?.prs?.length ?? 0)`.
 
 The existing tests render with empty mocks. Branch coverage is at 50% because none of the data-fetching paths are exercised with real data. Key untested branches:
+
 - L65: `data.map()` in completionsPerHour callback (requires non-empty response)
 - L86-94: event type → accent mapping (`'error'` → red, `'complete'` → cyan, else → purple)
 - L112: PR count extraction (currently bugged)
@@ -477,13 +493,13 @@ The existing tests render with empty mocks. Branch coverage is at 50% because no
 In `src/renderer/src/views/DashboardView.tsx`, change line 112 from:
 
 ```tsx
-        setPrCount(Array.isArray(prs) ? prs.length : 0)
+setPrCount(Array.isArray(prs) ? prs.length : 0)
 ```
 
 to:
 
 ```tsx
-        setPrCount(prs?.prs?.length ?? 0)
+setPrCount(prs?.prs?.length ?? 0)
 ```
 
 - [ ] **Step 2: Write the failing test first (TDD for the bugfix)**
@@ -500,7 +516,7 @@ Then add these tests inside the existing `describe('DashboardView', ...)` block:
 it('renders chart data from completionsPerHour', async () => {
   vi.mocked(window.api.dashboard.completionsPerHour).mockResolvedValue([
     { hour: '10:00', count: 5 },
-    { hour: '11:00', count: 3 },
+    { hour: '11:00', count: 3 }
   ])
   render(<DashboardView />)
   await waitFor(() => {
@@ -512,7 +528,7 @@ it('renders feed events from recentEvents', async () => {
   vi.mocked(window.api.dashboard.recentEvents).mockResolvedValue([
     { id: 1, event_type: 'complete', agent_id: 'agent-1', timestamp: Date.now() - 5000 },
     { id: 2, event_type: 'error', agent_id: 'agent-2', timestamp: Date.now() - 10000 },
-    { id: 3, event_type: 'spawn', agent_id: 'agent-3', timestamp: Date.now() - 20000 },
+    { id: 3, event_type: 'spawn', agent_id: 'agent-3', timestamp: Date.now() - 20000 }
   ])
   render(<DashboardView />)
   await waitFor(() => {
@@ -525,10 +541,38 @@ it('renders feed events from recentEvents', async () => {
 it('renders correct PR count from getPrList payload', async () => {
   vi.mocked(window.api.getPrList).mockResolvedValue({
     prs: [
-      { number: 1, title: 'PR1', html_url: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'a', sha: 'b' }, base: { ref: 'main' }, user: { login: 'u' }, merged: false, merged_at: null, repo: 'r' },
-      { number: 2, title: 'PR2', html_url: '', state: 'open', draft: false, created_at: '', updated_at: '', head: { ref: 'c', sha: 'd' }, base: { ref: 'main' }, user: { login: 'u' }, merged: false, merged_at: null, repo: 'r' },
+      {
+        number: 1,
+        title: 'PR1',
+        html_url: '',
+        state: 'open',
+        draft: false,
+        created_at: '',
+        updated_at: '',
+        head: { ref: 'a', sha: 'b' },
+        base: { ref: 'main' },
+        user: { login: 'u' },
+        merged: false,
+        merged_at: null,
+        repo: 'r'
+      },
+      {
+        number: 2,
+        title: 'PR2',
+        html_url: '',
+        state: 'open',
+        draft: false,
+        created_at: '',
+        updated_at: '',
+        head: { ref: 'c', sha: 'd' },
+        base: { ref: 'main' },
+        user: { login: 'u' },
+        merged: false,
+        merged_at: null,
+        repo: 'r'
+      }
     ],
-    checks: {},
+    checks: {}
   })
   render(<DashboardView />)
   // After the bugfix, PR count should be 2 (extracted from payload.prs.length)
@@ -539,6 +583,7 @@ it('renders correct PR count from getPrList payload', async () => {
 ```
 
 Note: If TypeScript complains about `vi.mocked`, cast the mock:
+
 ```tsx
 ;(window.api.dashboard.completionsPerHour as ReturnType<typeof vi.fn>).mockResolvedValue(...)
 ```
@@ -573,6 +618,7 @@ Expected: All tests PASS, all thresholds met
 Run: `npx vitest run --coverage 2>&1 | grep -E "(neon|dashboard|Dashboard)"`
 
 Verify:
+
 - `CostSummaryCard` → lines ≥ 90%, branches ≥ 80%
 - `OpenPRsCard` → lines ≥ 90%, branches ≥ 80%
 - `ActivityFeed` → lines = 100%, branches ≥ 90%

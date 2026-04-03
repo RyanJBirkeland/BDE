@@ -30,6 +30,7 @@ WS8 (1d) ───────────────────────�
 **Branch:** `chore/ws1-fix-dependency-direction`
 
 **Files:**
+
 - Modify: `src/main/agents/types.ts` — remove AgentEvent/AgentEventType
 - Modify: `src/shared/types.ts` — add AgentEvent/AgentEventType
 - Modify: `src/shared/ipc-channels.ts:11` — fix import
@@ -71,10 +72,25 @@ export type AgentEvent =
   | { type: 'agent:user_message'; text: string; timestamp: number }
   | { type: 'agent:thinking'; tokenCount: number; text?: string; timestamp: number }
   | { type: 'agent:tool_call'; tool: string; summary: string; input?: unknown; timestamp: number }
-  | { type: 'agent:tool_result'; tool: string; success: boolean; summary: string; output?: unknown; timestamp: number }
+  | {
+      type: 'agent:tool_result'
+      tool: string
+      success: boolean
+      summary: string
+      output?: unknown
+      timestamp: number
+    }
   | { type: 'agent:rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
   | { type: 'agent:error'; message: string; timestamp: number }
-  | { type: 'agent:completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
+  | {
+      type: 'agent:completed'
+      exitCode: number
+      costUsd: number
+      tokensIn: number
+      tokensOut: number
+      durationMs: number
+      timestamp: number
+    }
 ```
 
 - [ ] **Step 3: Remove AgentEvent types from main/agents/types.ts**
@@ -89,16 +105,16 @@ import type { AgentEvent } from '../../shared/types'
 
 Each file needs its import changed:
 
-| File | Old | New |
-|------|-----|-----|
-| `src/shared/ipc-channels.ts:11` | `import type { AgentEvent } from '../main/agents/types'` | `import type { AgentEvent } from './types'` |
-| `src/preload/index.ts:6` | `import type { AgentEvent } from '../main/agents/types'` | `import type { AgentEvent } from '../shared/types'` |
-| `src/preload/index.d.ts:5` | `import type { AgentEvent } from '../main/agents/types'` | `import type { AgentEvent } from '../shared/types'` |
-| `src/main/queue-api/router.ts:23` | `import type { AgentEvent } from '../agents/types'` | `import type { AgentEvent } from '../../shared/types'` |
-| `src/renderer/src/stores/agentEvents.ts:2` | `import type { AgentEvent } from '../../../main/agents/types'` | `import type { AgentEvent } from '../../../../shared/types'` |
-| `src/renderer/src/components/agents/AgentDetail.tsx:7` | `import type { AgentEvent } from '../../../../main/agents/types'` | `import type { AgentEvent } from '../../../../../shared/types'` |
+| File                                                    | Old                                                               | New                                                             |
+| ------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------- |
+| `src/shared/ipc-channels.ts:11`                         | `import type { AgentEvent } from '../main/agents/types'`          | `import type { AgentEvent } from './types'`                     |
+| `src/preload/index.ts:6`                                | `import type { AgentEvent } from '../main/agents/types'`          | `import type { AgentEvent } from '../shared/types'`             |
+| `src/preload/index.d.ts:5`                              | `import type { AgentEvent } from '../main/agents/types'`          | `import type { AgentEvent } from '../shared/types'`             |
+| `src/main/queue-api/router.ts:23`                       | `import type { AgentEvent } from '../agents/types'`               | `import type { AgentEvent } from '../../shared/types'`          |
+| `src/renderer/src/stores/agentEvents.ts:2`              | `import type { AgentEvent } from '../../../main/agents/types'`    | `import type { AgentEvent } from '../../../../shared/types'`    |
+| `src/renderer/src/components/agents/AgentDetail.tsx:7`  | `import type { AgentEvent } from '../../../../main/agents/types'` | `import type { AgentEvent } from '../../../../../shared/types'` |
 | `src/renderer/src/components/agents/ChatRenderer.tsx:8` | `import type { AgentEvent } from '../../../../main/agents/types'` | `import type { AgentEvent } from '../../../../../shared/types'` |
-| ChatRenderer.test.tsx | same pattern | same fix |
+| ChatRenderer.test.tsx                                   | same pattern                                                      | same fix                                                        |
 
 - [ ] **Step 5: Run typecheck and tests**
 
@@ -134,6 +150,7 @@ in src/shared/types.ts."
 **Branch:** `chore/ws2-extract-data-layer`
 
 **Files:**
+
 - Create: `src/main/data/sprint-queries.ts`
 - Create: `src/main/data/agent-queries.ts`
 - Create: `src/main/data/cost-queries.ts` (move from `src/main/cost-queries.ts`)
@@ -208,7 +225,9 @@ import { getTask, listTasks, createTask, updateTask, deleteTask } from '../sprin
 
 describe('getTask', () => {
   it('returns task by id', () => {
-    db.prepare("INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))").run('t1', 'Test Task', 'backlog', 10)
+    db.prepare(
+      "INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))"
+    ).run('t1', 'Test Task', 'backlog', 10)
     const task = getTask(db, 't1')
     expect(task).not.toBeNull()
     expect(task!.id).toBe('t1')
@@ -222,16 +241,24 @@ describe('getTask', () => {
 
 describe('listTasks', () => {
   it('returns tasks ordered by priority', () => {
-    db.prepare("INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))").run('a', 'Low', 'backlog', 99)
-    db.prepare("INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))").run('b', 'High', 'backlog', 1)
+    db.prepare(
+      "INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))"
+    ).run('a', 'Low', 'backlog', 99)
+    db.prepare(
+      "INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))"
+    ).run('b', 'High', 'backlog', 1)
     const tasks = listTasks(db)
     expect(tasks[0].id).toBe('b')
     expect(tasks[1].id).toBe('a')
   })
 
   it('filters by status', () => {
-    db.prepare("INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))").run('a', 'Backlog', 'backlog', 1)
-    db.prepare("INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))").run('b', 'Queued', 'queued', 1)
+    db.prepare(
+      "INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))"
+    ).run('a', 'Backlog', 'backlog', 1)
+    db.prepare(
+      "INSERT INTO sprint_tasks (id, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))"
+    ).run('b', 'Queued', 'queued', 1)
     const tasks = listTasks(db, 'queued')
     expect(tasks).toHaveLength(1)
     expect(tasks[0].id).toBe('b')
@@ -307,6 +334,7 @@ git commit -m "chore: remove old cost-queries.ts (moved to data layer)"
 **Branch:** `chore/ws3-split-sprint-store`
 
 **Files:**
+
 - Create: `src/renderer/src/stores/sprintTasks.ts`
 - Create: `src/renderer/src/stores/sprintUI.ts`
 - Create: `src/renderer/src/stores/sprintEvents.ts`
@@ -345,6 +373,7 @@ grep -rn "useSprintStore" src/renderer/src/
 ```
 
 Key files to update:
+
 - `SprintCenter.tsx` — uses all 3 stores
 - `TaskCard.tsx` — `sprintEvents` (latestEvents)
 - `TicketEditor.tsx` — `sprintTasks` (createTask, updateTask)
@@ -397,6 +426,7 @@ Breaks monolithic useSprintStore (19 properties, 5 concerns) into:
 **Depends on:** WS2 merged
 
 **Files:**
+
 - Create: `src/main/handlers/sprint-spec.ts`
 - Create: `src/main/handlers/sprint-listeners.ts`
 - Rename: `src/main/handlers/sprint-local.ts` → `src/main/handlers/sprint-handlers.ts`
@@ -433,7 +463,11 @@ export function onSprintMutation(cb: SprintMutationListener): () => void {
 export function notifySprintMutation(type: SprintMutationEvent['type'], task: SprintTask): void {
   const event = { type, task }
   for (const cb of listeners) {
-    try { cb(event) } catch (err) { console.error('[sprint-listeners]', err) }
+    try {
+      cb(event)
+    } catch (err) {
+      console.error('[sprint-listeners]', err)
+    }
   }
 }
 ```
@@ -487,6 +521,7 @@ Splits 469-LOC sprint-local.ts into:
 **Branch:** `chore/ws5-decompose-settings-view`
 
 **Files:**
+
 - Create: `src/renderer/src/components/settings/AppearanceSection.tsx`
 - Create: `src/renderer/src/components/settings/ConnectionsSection.tsx`
 - Create: `src/renderer/src/components/settings/CredentialForm.tsx`
@@ -570,6 +605,7 @@ Introduces CredentialForm to eliminate 3x copy-pasted credential logic."
 **Depends on:** WS3 merged
 
 **Files:**
+
 - Create: `src/renderer/src/components/sprint/SprintToolbar.tsx`
 - Create: `src/renderer/src/hooks/useSprintTaskActions.ts`
 - Modify: `src/renderer/src/components/sprint/SprintCenter.tsx` — reduce to layout shell
@@ -585,6 +621,7 @@ git checkout main && git pull && git checkout -b chore/ws6-decompose-sprint-cent
 - [ ] **Step 2: Create useSprintTaskActions hook**
 
 Create `src/renderer/src/hooks/useSprintTaskActions.ts` with task lifecycle callbacks extracted from SprintCenter. Key behaviors to preserve:
+
 - `handleStop` uses `TASK_STATUS.CANCELLED` (not 'failed'), checks `task.agent_run_id` is not null
 - `handleRerun` creates a NEW task via `createTask()`, does NOT mutate the existing task
 
@@ -600,30 +637,42 @@ export function useSprintTaskActions() {
   const launchTask = useSprintTasks((s) => s.launchTask)
   const createTask = useSprintTasks((s) => s.createTask)
 
-  const handleMarkDone = useCallback((task: SprintTask) => {
-    updateTask(task.id, { status: TASK_STATUS.DONE })
-  }, [updateTask])
+  const handleMarkDone = useCallback(
+    (task: SprintTask) => {
+      updateTask(task.id, { status: TASK_STATUS.DONE })
+    },
+    [updateTask]
+  )
 
-  const handleStop = useCallback(async (task: SprintTask) => {
-    if (!task.agent_run_id) return
-    // Use existing confirm pattern from SprintCenter
-    await window.api.killAgent(task.agent_run_id)
-    await updateTask(task.id, { status: TASK_STATUS.CANCELLED })
-  }, [updateTask])
+  const handleStop = useCallback(
+    async (task: SprintTask) => {
+      if (!task.agent_run_id) return
+      // Use existing confirm pattern from SprintCenter
+      await window.api.killAgent(task.agent_run_id)
+      await updateTask(task.id, { status: TASK_STATUS.CANCELLED })
+    },
+    [updateTask]
+  )
 
-  const handleRerun = useCallback(async (task: SprintTask) => {
-    await createTask({
-      title: task.title,
-      prompt: task.prompt ?? '',
-      repo: task.repo,
-      priority: task.priority,
-      template_name: task.template_name,
-    })
-  }, [createTask])
+  const handleRerun = useCallback(
+    async (task: SprintTask) => {
+      await createTask({
+        title: task.title,
+        prompt: task.prompt ?? '',
+        repo: task.repo,
+        priority: task.priority,
+        template_name: task.template_name
+      })
+    },
+    [createTask]
+  )
 
-  const handleDelete = useCallback(async (task: SprintTask) => {
-    await deleteTask(task.id)
-  }, [deleteTask])
+  const handleDelete = useCallback(
+    async (task: SprintTask) => {
+      await deleteTask(task.id)
+    },
+    [deleteTask]
+  )
 
   return { handleMarkDone, handleStop, handleRerun, handleDelete, handleLaunch: launchTask }
 }
@@ -664,6 +713,7 @@ Updates existing hooks to use split stores from WS3."
 **Branch:** `chore/ws7-error-handling-cleanup`
 
 **Files:**
+
 - Modify: `src/shared/types.ts` — add `Result<T>` type
 - Modify: `src/main/git.ts` — refactor gitStatus, gitDiffFile to return Result
 - Modify: `src/main/handlers/git-handlers.ts` — unwrap Results, log errors
@@ -686,17 +736,21 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string }
 - [ ] **Step 3: Refactor gitStatus to return Result**
 
 In `src/main/git.ts`, change `gitStatus` from:
+
 ```typescript
 } catch {
   return { files: [] }
 }
 ```
+
 To:
+
 ```typescript
 } catch (err) {
   return { ok: false, error: `git status failed in ${cwd}: ${err instanceof Error ? err.message : String(err)}` }
 }
 ```
+
 And wrap the success path in `{ ok: true, data: ... }`.
 
 - [ ] **Step 4: Refactor gitDiffFile to return Result**
@@ -721,10 +775,13 @@ safeHandle('git:status', async (_e, cwd) => {
 - [ ] **Step 6: Fix consumeEvents fire-and-forget**
 
 In `src/main/local-agents.ts` line 183, change:
+
 ```typescript
 consumeEvents(id, handle, meta.logPath).catch(() => {})
 ```
+
 To:
+
 ```typescript
 consumeEvents(id, handle, meta.logPath).catch((err) => {
   console.error(`[agents] Event consumption failed for ${id}:`, err)
@@ -772,6 +829,7 @@ context to error messages."
 **Branch:** `chore/ws8-terminal-decoupling`
 
 **Files:**
+
 - Create: `src/main/pty.ts`
 - Create: `src/main/__tests__/pty.test.ts`
 - Modify: `src/main/handlers/terminal-handlers.ts` — thin Electron wiring
@@ -821,19 +879,41 @@ Create `src/main/pty.ts` with pure PTY management. Copy the `ALLOWED_SHELLS` set
 import type { IPty } from 'node-pty'
 
 let pty: typeof import('node-pty') | null = null
-try { pty = require('node-pty') } catch { /* terminal unavailable */ }
+try {
+  pty = require('node-pty')
+} catch {
+  /* terminal unavailable */
+}
 
-export function _setPty(mock: typeof import('node-pty') | null): void { pty = mock }
+export function _setPty(mock: typeof import('node-pty') | null): void {
+  pty = mock
+}
 
 const ALLOWED_SHELLS = new Set([
-  '/bin/bash', '/bin/zsh', '/bin/sh', '/bin/dash', '/bin/fish',
-  '/usr/bin/bash', '/usr/bin/zsh', '/usr/bin/sh', '/usr/bin/dash', '/usr/bin/fish',
-  '/usr/local/bin/bash', '/usr/local/bin/zsh', '/usr/local/bin/fish',
-  '/opt/homebrew/bin/bash', '/opt/homebrew/bin/zsh', '/opt/homebrew/bin/fish',
+  '/bin/bash',
+  '/bin/zsh',
+  '/bin/sh',
+  '/bin/dash',
+  '/bin/fish',
+  '/usr/bin/bash',
+  '/usr/bin/zsh',
+  '/usr/bin/sh',
+  '/usr/bin/dash',
+  '/usr/bin/fish',
+  '/usr/local/bin/bash',
+  '/usr/local/bin/zsh',
+  '/usr/local/bin/fish',
+  '/opt/homebrew/bin/bash',
+  '/opt/homebrew/bin/zsh',
+  '/opt/homebrew/bin/fish'
 ])
 
-export function isPtyAvailable(): boolean { return pty !== null }
-export function validateShell(shell: string): boolean { return ALLOWED_SHELLS.has(shell) }
+export function isPtyAvailable(): boolean {
+  return pty !== null
+}
+export function validateShell(shell: string): boolean {
+  return ALLOWED_SHELLS.has(shell)
+}
 
 export interface PtyHandle {
   process: IPty
@@ -845,23 +925,37 @@ export interface PtyHandle {
 }
 
 export function createPty(opts: {
-  shell: string; cols: number; rows: number; cwd?: string
+  shell: string
+  cols: number
+  rows: number
+  cwd?: string
 }): PtyHandle {
   if (!pty) throw new Error('Terminal unavailable: node-pty failed to load')
   if (!validateShell(opts.shell)) throw new Error(`Shell not allowed: "${opts.shell}"`)
   const proc = pty.spawn(opts.shell, [], {
     name: 'xterm-256color',
-    cols: opts.cols, rows: opts.rows,
+    cols: opts.cols,
+    rows: opts.rows,
     cwd: opts.cwd ?? process.env.HOME ?? '/',
-    env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>,
+    env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>
   })
   return {
     process: proc,
-    onData: (cb) => { proc.onData(cb) },
-    onExit: (cb) => { proc.onExit(() => cb()) },
-    write: (data) => { proc.write(data) },
-    resize: (cols, rows) => { proc.resize(cols, rows) },
-    kill: () => { proc.kill() },
+    onData: (cb) => {
+      proc.onData(cb)
+    },
+    onExit: (cb) => {
+      proc.onExit(() => cb())
+    },
+    write: (data) => {
+      proc.write(data)
+    },
+    resize: (cols, rows) => {
+      proc.resize(cols, rows)
+    },
+    kill: () => {
+      proc.kill()
+    }
   }
 }
 ```
@@ -877,6 +971,7 @@ Expected: PASS.
 - [ ] **Step 6: Rewrite terminal-handlers.ts**
 
 Rewrite `src/main/handlers/terminal-handlers.ts` to import from `../pty`. Preserve exact IPC contract:
+
 - Integer IDs (`let termId = 0; const id = ++termId`)
 - `ipcMain.on` for `terminal:write` with `{ id, data }` payload
 - `terminal:exit:${id}` sends no payload

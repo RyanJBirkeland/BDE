@@ -48,7 +48,13 @@ describe('ReviewActions', () => {
 
   it('shows hint when selected task is not in review status', () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Active task', repo: 'bde', status: 'active', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Active task',
+        repo: 'bde',
+        status: 'active',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ReviewActions />)
@@ -57,7 +63,13 @@ describe('ReviewActions', () => {
 
   it('shows all 4 action buttons when review task selected', () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Review task', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Review task',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ReviewActions />)
@@ -69,7 +81,13 @@ describe('ReviewActions', () => {
 
   it('renders merge strategy selector defaulting to squash', () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Review task', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Review task',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ReviewActions />)
@@ -79,7 +97,13 @@ describe('ReviewActions', () => {
 
   it('merge button triggers confirm dialog', async () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Review task', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Review task',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ReviewActions />)
@@ -91,7 +115,13 @@ describe('ReviewActions', () => {
 
   it('discard button triggers danger confirm', async () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Review task', repo: 'bde', status: 'review', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Review task',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ReviewActions />)
@@ -103,7 +133,14 @@ describe('ReviewActions', () => {
 
   it('create PR calls review.createPr on click', async () => {
     sprintState.tasks = [
-      { id: 't1', title: 'Review task', repo: 'bde', status: 'review', spec: '## Spec', updated_at: '2026-04-01T00:00:00Z' }
+      {
+        id: 't1',
+        title: 'Review task',
+        repo: 'bde',
+        status: 'review',
+        spec: '## Spec',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
     ]
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ReviewActions />)

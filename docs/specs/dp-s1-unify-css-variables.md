@@ -17,11 +17,11 @@ The `body` selector (`base.css:234-236`) still references `--bde-bg`, `--bde-tex
 
 ### Evidence
 
-| System | Definition | Usage Count (approx) |
-|--------|-----------|---------------------|
-| `--bde-bg`, `--bde-surface`, etc. | `base.css:12-26` | 200+ references across 6 CSS files |
-| `--bg-void`, `--bg-base`, etc. | `base.css:87-103` | ~30 references in `design-system.css` glass/elevation classes |
-| `tokens.ts` JS object | `tokens.ts:1-70` | 63 references in `TerminalView.tsx` alone |
+| System                            | Definition        | Usage Count (approx)                                          |
+| --------------------------------- | ----------------- | ------------------------------------------------------------- |
+| `--bde-bg`, `--bde-surface`, etc. | `base.css:12-26`  | 200+ references across 6 CSS files                            |
+| `--bg-void`, `--bg-base`, etc.    | `base.css:87-103` | ~30 references in `design-system.css` glass/elevation classes |
+| `tokens.ts` JS object             | `tokens.ts:1-70`  | 63 references in `TerminalView.tsx` alone                     |
 
 ### Impact
 
@@ -39,20 +39,20 @@ In `base.css`, make every `--bde-*` variable point to its v2 equivalent:
 
 ```css
 /* DEPRECATED — use v2 tokens directly */
---bde-bg:           var(--bg-base);
---bde-surface:      var(--bg-surface);
+--bde-bg: var(--bg-base);
+--bde-surface: var(--bg-surface);
 --bde-surface-high: var(--bg-card);
---bde-border:       var(--border);
+--bde-border: var(--border);
 --bde-border-hover: var(--border-light);
---bde-accent:       var(--accent);
---bde-accent-dim:   var(--accent-muted);
---bde-text:         var(--text-primary);
---bde-text-muted:   var(--text-secondary);
---bde-text-dim:     var(--text-muted);
---bde-danger:       var(--color-error);
---bde-danger-dim:   rgba(255, 69, 58, 0.15);
---bde-font-ui:      var(--font-ui);
---bde-font-code:    var(--font-mono);
+--bde-accent: var(--accent);
+--bde-accent-dim: var(--accent-muted);
+--bde-text: var(--text-primary);
+--bde-text-muted: var(--text-secondary);
+--bde-text-dim: var(--text-muted);
+--bde-danger: var(--color-error);
+--bde-danger-dim: rgba(255, 69, 58, 0.15);
+--bde-font-ui: var(--font-ui);
+--bde-font-code: var(--font-mono);
 ```
 
 ### Phase 2: Update body and global selectors
@@ -77,11 +77,11 @@ Replace `tokens.ts` with a thin wrapper that reads CSS custom properties at runt
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/assets/base.css` | Alias `--bde-*` → v2, update body/global selectors, add light-theme v2 overrides |
-| `src/renderer/src/assets/design-system.css` | No change needed (already uses v2 for glass/elevation) |
-| `src/renderer/src/design-system/tokens.ts` | Mark as deprecated, add `// DEPRECATED: use CSS custom properties` |
+| File                                        | Change                                                                           |
+| ------------------------------------------- | -------------------------------------------------------------------------------- |
+| `src/renderer/src/assets/base.css`          | Alias `--bde-*` → v2, update body/global selectors, add light-theme v2 overrides |
+| `src/renderer/src/assets/design-system.css` | No change needed (already uses v2 for glass/elevation)                           |
+| `src/renderer/src/design-system/tokens.ts`  | Mark as deprecated, add `// DEPRECATED: use CSS custom properties`               |
 
 ## Acceptance Criteria
 

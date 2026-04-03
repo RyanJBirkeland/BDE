@@ -13,6 +13,7 @@
 ## File Structure
 
 **New files:**
+
 ```
 src/main/agent-system/
 ├── personality/
@@ -41,6 +42,7 @@ src/main/agent-system/
 ```
 
 **Modified files:**
+
 ```
 src/main/agent-manager/prompt-composer.ts    # Add native system integration
 src/main/agent-manager/__tests__/prompt-composer.test.ts  # Add native system tests
@@ -53,6 +55,7 @@ src/main/db.ts                               # Add agentManager.useNativeSystem 
 ## Task 1: Foundation - Personality System
 
 **Files:**
+
 - Create: `src/main/agent-system/personality/types.ts`
 - Create: `src/main/agent-system/personality/pipeline-personality.ts`
 - Create: `src/main/agent-system/personality/assistant-personality.ts`
@@ -73,10 +76,10 @@ Create `src/main/agent-system/personality/types.ts`:
  * Agent personality definition - voice, role, constraints, patterns
  */
 export interface AgentPersonality {
-  voice: string          // Tone and style guidelines
-  roleFrame: string      // Identity framing ("You are a...")
-  constraints: string[]  // Hard boundaries and rules
-  patterns: string[]     // Communication and behavior patterns
+  voice: string // Tone and style guidelines
+  roleFrame: string // Identity framing ("You are a...")
+  constraints: string[] // Hard boundaries and rules
+  patterns: string[] // Communication and behavior patterns
 }
 
 export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer'
@@ -165,7 +168,9 @@ describe('Personality System', () => {
     })
 
     it('should include git constraints', () => {
-      expect(pipelinePersonality.constraints).toContain(expect.stringContaining('NEVER push to main'))
+      expect(pipelinePersonality.constraints).toContain(
+        expect.stringContaining('NEVER push to main')
+      )
       expect(pipelinePersonality.constraints).toContain(expect.stringContaining('Run tests'))
     })
 
@@ -186,7 +191,9 @@ describe('Personality System', () => {
     })
 
     it('should include full tool access', () => {
-      expect(assistantPersonality.constraints).toContain(expect.stringContaining('Full tool access'))
+      expect(assistantPersonality.constraints).toContain(
+        expect.stringContaining('Full tool access')
+      )
     })
 
     it('should include BDE-specific patterns', () => {
@@ -218,6 +225,7 @@ git commit -m "feat: add agent personality system (pipeline + assistant)"
 ## Task 2: Memory System - IPC Conventions
 
 **Files:**
+
 - Create: `src/main/agent-system/memory/ipc-conventions.ts`
 
 - [ ] **Step 1: Write IPC conventions memory**
@@ -275,6 +283,7 @@ git commit -m "feat: add IPC conventions memory module"
 ## Task 3: Memory System - Testing Patterns
 
 **Files:**
+
 - Create: `src/main/agent-system/memory/testing-patterns.ts`
 
 - [ ] **Step 1: Write testing patterns memory**
@@ -343,6 +352,7 @@ git commit -m "feat: add testing patterns memory module"
 ## Task 4: Memory System - Architecture Rules
 
 **Files:**
+
 - Create: `src/main/agent-system/memory/architecture-rules.ts`
 
 - [ ] **Step 1: Write architecture rules memory**
@@ -414,6 +424,7 @@ git commit -m "feat: add architecture rules memory module"
 ## Task 5: Memory System - Consolidator
 
 **Files:**
+
 - Create: `src/main/agent-system/memory/index.ts`
 - Test: `src/main/agent-system/memory/__tests__/memory.test.ts`
 
@@ -430,11 +441,7 @@ import { architectureRules } from './architecture-rules'
  * Consolidate all memory modules into a single markdown string
  */
 export function getAllMemory(): string {
-  return [
-    ipcConventions,
-    testingPatterns,
-    architectureRules
-  ].join('\n\n---\n\n')
+  return [ipcConventions, testingPatterns, architectureRules].join('\n\n---\n\n')
 }
 ```
 
@@ -499,6 +506,7 @@ git commit -m "feat: add memory system consolidator"
 ## Task 6: Skills System - Types and Infrastructure
 
 **Files:**
+
 - Create: `src/main/agent-system/skills/types.ts`
 
 - [ ] **Step 1: Write skill types**
@@ -510,10 +518,10 @@ Create `src/main/agent-system/skills/types.ts`:
  * BDE skill definition - structured guidance for interactive agents
  */
 export interface BDESkill {
-  id: string              // Unique identifier (e.g., 'system-introspection')
-  trigger: string         // When to suggest this skill
-  description: string     // What it helps with
-  guidance: string        // Markdown content (instructions, examples)
+  id: string // Unique identifier (e.g., 'system-introspection')
+  trigger: string // When to suggest this skill
+  description: string // What it helps with
+  guidance: string // Markdown content (instructions, examples)
   capabilities?: string[] // Optional: IPC calls, DB queries this skill enables
 }
 ```
@@ -530,6 +538,7 @@ git commit -m "feat: add skill types definition"
 ## Task 7: Skills System - System Introspection
 
 **Files:**
+
 - Create: `src/main/agent-system/skills/system-introspection.ts`
 
 - [ ] **Step 1: Write system introspection skill**
@@ -603,6 +612,7 @@ git commit -m "feat: add system introspection skill"
 ## Task 8: Skills System - Task Orchestration
 
 **Files:**
+
 - Create: `src/main/agent-system/skills/task-orchestration.ts`
 
 - [ ] **Step 1: Write task orchestration skill**
@@ -689,6 +699,7 @@ git commit -m "feat: add task orchestration skill"
 ## Task 9: Skills System - Code Patterns
 
 **Files:**
+
 - Create: `src/main/agent-system/skills/code-patterns.ts`
 
 - [ ] **Step 1: Write code patterns skill**
@@ -801,6 +812,7 @@ git commit -m "feat: add code patterns skill"
 ## Task 10: Skills System - Registry
 
 **Files:**
+
 - Create: `src/main/agent-system/skills/index.ts`
 - Test: `src/main/agent-system/skills/__tests__/skills.test.ts`
 
@@ -817,24 +829,16 @@ import { codePatternsSkill } from './code-patterns'
  * Consolidate all skills into a single markdown string for interactive agents
  */
 export function getAllSkills(): string {
-  const skills = [
-    systemIntrospectionSkill,
-    taskOrchestrationSkill,
-    codePatternsSkill
-  ]
+  const skills = [systemIntrospectionSkill, taskOrchestrationSkill, codePatternsSkill]
 
-  return skills.map(s => s.guidance).join('\n\n---\n\n')
+  return skills.map((s) => s.guidance).join('\n\n---\n\n')
 }
 
 /**
  * Get all skills as structured data
  */
 export function getSkillList() {
-  return [
-    systemIntrospectionSkill,
-    taskOrchestrationSkill,
-    codePatternsSkill
-  ]
+  return [systemIntrospectionSkill, taskOrchestrationSkill, codePatternsSkill]
 }
 ```
 
@@ -922,6 +926,7 @@ git commit -m "feat: add skills system registry"
 ## Task 11: Integration - Enhance Prompt Composer
 
 **Files:**
+
 - Modify: `src/main/agent-manager/prompt-composer.ts`
 - Modify: `src/shared/types.ts`
 
@@ -958,7 +963,7 @@ export interface BuildPromptInput {
   codebaseContext?: string
 
   // NEW: native system control
-  useNativeSystem?: boolean  // Default false during migration
+  useNativeSystem?: boolean // Default false during migration
 }
 ```
 
@@ -995,36 +1000,36 @@ function getPersonality(agentType: AgentType): AgentPersonality {
 In the `buildAgentPrompt` function, after "Start with universal preamble", replace the role instructions section with:
 
 ```typescript
-  const { agentType, useNativeSystem } = input
+const { agentType, useNativeSystem } = input
 
-  // Start with universal preamble
-  let prompt = UNIVERSAL_PREAMBLE
+// Start with universal preamble
+let prompt = UNIVERSAL_PREAMBLE
 
-  if (useNativeSystem) {
-    // NEW: Inject personality
-    const personality = getPersonality(agentType)
-    prompt += '\n\n## Voice\n' + personality.voice
-    prompt += '\n\n## Your Role\n' + personality.roleFrame
-    prompt += '\n\n## Constraints\n' + personality.constraints.map(c => `- ${c}`).join('\n')
+if (useNativeSystem) {
+  // NEW: Inject personality
+  const personality = getPersonality(agentType)
+  prompt += '\n\n## Voice\n' + personality.voice
+  prompt += '\n\n## Your Role\n' + personality.roleFrame
+  prompt += '\n\n## Constraints\n' + personality.constraints.map((c) => `- ${c}`).join('\n')
 
-    // NEW: Inject memory (all agents get this)
-    prompt += '\n\n## BDE Conventions\n'
-    prompt += getAllMemory()
+  // NEW: Inject memory (all agents get this)
+  prompt += '\n\n## BDE Conventions\n'
+  prompt += getAllMemory()
 
-    // NEW: Inject skills (interactive agents only)
-    if (agentType === 'assistant' || agentType === 'adhoc') {
-      prompt += '\n\n## Available Skills\n'
-      prompt += getAllSkills()
-    }
-
-    // NEW: Plugin disable note
-    prompt += '\n\n## Note\n'
-    prompt += 'You have BDE-native skills and conventions loaded. '
-    prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
-  } else {
-    // Existing behavior (use role instructions)
-    prompt += '\n\n' + ROLE_INSTRUCTIONS[agentType]
+  // NEW: Inject skills (interactive agents only)
+  if (agentType === 'assistant' || agentType === 'adhoc') {
+    prompt += '\n\n## Available Skills\n'
+    prompt += getAllSkills()
   }
+
+  // NEW: Plugin disable note
+  prompt += '\n\n## Note\n'
+  prompt += 'You have BDE-native skills and conventions loaded. '
+  prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
+} else {
+  // Existing behavior (use role instructions)
+  prompt += '\n\n' + ROLE_INSTRUCTIONS[agentType]
+}
 ```
 
 - [ ] **Step 6: Commit prompt composer integration**
@@ -1039,6 +1044,7 @@ git commit -m "feat: integrate native system into prompt composer"
 ## Task 12: Integration - Prompt Composer Tests
 
 **Files:**
+
 - Modify: `src/main/agent-manager/__tests__/prompt-composer.test.ts`
 
 - [ ] **Step 1: Read existing tests**
@@ -1167,6 +1173,7 @@ git commit -m "test: add native system tests for prompt composer"
 ## Task 13: Database - Add Settings
 
 **Files:**
+
 - Modify: `src/main/db.ts`
 
 - [ ] **Step 1: Read current schema**
@@ -1220,6 +1227,7 @@ git commit -m "feat: add agentManager.useNativeSystem setting (migration v18)"
 ## Task 14: Settings UI - Add Toggle
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx` (Agent Manager tab)
 
 - [ ] **Step 1: Read current Agent Manager settings section**
@@ -1292,6 +1300,7 @@ git commit -m "feat: add native agent system toggle to Settings UI"
 ## Task 15: Integration - Wire to Agent Spawning
 
 **Files:**
+
 - Modify: `src/main/adhoc-agent.ts`
 - Modify: `src/main/agent-manager/run-agent.ts`
 
@@ -1354,6 +1363,7 @@ git commit -m "feat: wire native system to agent spawning"
 ## Task 16: Integration Tests
 
 **Files:**
+
 - Create: `src/main/agent-system/__tests__/integration.test.ts`
 
 - [ ] **Step 1: Write integration tests**
@@ -1469,6 +1479,7 @@ git commit -m "test: add native agent system integration tests"
 ## Task 17: Documentation
 
 **Files:**
+
 - Modify: `src/main/agent-manager/prompt-composer.ts` (add JSDoc)
 - Create: `docs/agent-system-guide.md`
 
@@ -1493,7 +1504,7 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
 
 Create `docs/agent-system-guide.md`:
 
-```markdown
+````markdown
 # BDE Native Agent System Guide
 
 The native agent system provides BDE-specific personality, memory, and skills to agents instead of relying on third-party plugins.
@@ -1501,11 +1512,13 @@ The native agent system provides BDE-specific personality, memory, and skills to
 ## Overview
 
 **Components:**
+
 - **Personality** - Voice, role framing, constraints per agent type
 - **Memory** - BDE conventions (IPC, testing, architecture)
 - **Skills** - Interactive agent guidance (introspection, orchestration, patterns)
 
 **Agent Types:**
+
 - Pipeline agents: Get personality + memory (lightweight)
 - Interactive agents (assistant/adhoc): Get personality + memory + skills (rich)
 
@@ -1536,6 +1549,7 @@ When `useNativeSystem` is enabled:
 ## Adding New Skills
 
 1. Create skill file in `src/main/agent-system/skills/my-skill.ts`:
+
    ```typescript
    import type { BDESkill } from './types'
 
@@ -1547,8 +1561,10 @@ When `useNativeSystem` is enabled:
      capabilities: ['capability-name']
    }
    ```
+````
 
 2. Export from `src/main/agent-system/skills/index.ts`:
+
    ```typescript
    import { mySkill } from './my-skill'
 
@@ -1557,7 +1573,7 @@ When `useNativeSystem` is enabled:
        systemIntrospectionSkill,
        taskOrchestrationSkill,
        codePatternsSkill,
-       mySkill  // Add here
+       mySkill // Add here
      ]
    }
    ```
@@ -1590,33 +1606,38 @@ npm test src/main/agent-manager/__tests__/prompt-composer.test.ts
 ## Troubleshooting
 
 **Agents not using native system:**
+
 - Check Settings → Agent Manager → toggle is ON
 - Restart BDE after enabling
 - Check `~/.bde/bde.db`: `SELECT value FROM settings WHERE key='agentManager.useNativeSystem'` should be 'true'
 
 **Prompts too large:**
+
 - Check token estimate in integration tests
 - Target: 6-8k tokens, max: 10k tokens
 - Trim verbose sections in memory/skills modules
 
 **Skills not appearing for interactive agents:**
+
 - Verify agent type is 'assistant' or 'adhoc'
 - Pipeline agents don't get skills (by design)
 - Check prompt includes "## Available Skills" section
-```
+
+````
 
 - [ ] **Step 3: Commit documentation**
 
 ```bash
 git add src/main/agent-manager/prompt-composer.ts docs/agent-system-guide.md
 git commit -m "docs: add native agent system guide and JSDoc"
-```
+````
 
 ---
 
 ## Task 18: Update CLAUDE.md
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Add native agent system entry to Key File Locations**
@@ -1647,6 +1668,7 @@ git commit -m "docs: document native agent system in CLAUDE.md"
 ## Task 19: Verification and Final Testing
 
 **Files:**
+
 - None (testing only)
 
 - [ ] **Step 1: Run full test suite**
@@ -1716,6 +1738,7 @@ Create a test summary comment in the final commit:
 ## Task 20: Final Commit and Branch
 
 **Files:**
+
 - None (git operations only)
 
 - [ ] **Step 1: Review all changes**

@@ -18,19 +18,19 @@
 
 ## File Structure
 
-| File | Action | Phase | Responsibility |
-|------|--------|-------|----------------|
-| `src/main/data/sprint-queries.ts` | Modify | 1 | Standardize error handling, add logger, add executor guard |
-| `src/main/agent-manager/worktree.ts` | Modify | 1 | Add logging to all silent catch blocks |
-| `src/main/agent-manager/index.ts` | Modify | 1, 2 | Update callers for new sprint-queries contract; decompose drainLoop |
-| `src/main/agent-manager/orphan-recovery.ts` | Modify | 1 | Simplify after sprint-queries change |
-| `src/main/agent-manager/dependency-helpers.ts` | **Create** | 2 | Shared auto-block formatting + dependency check helper |
-| `src/main/agent-manager/completion.ts` | Modify | 2 | Decompose resolveSuccess into focused functions |
-| `src/main/queue-api/task-handlers.ts` | Modify | 2 | Use shared dep helpers, convert async imports to top-level |
-| `src/main/handlers/sprint-local.ts` | Modify | 2 | Use shared dep helpers |
-| `src/main/agent-manager/resolve-dependents.ts` | Modify | 2 | Use shared stripBlockedNote |
-| `src/main/agent-manager/sdk-adapter.ts` | Modify | 2 | Remove dead preloadOAuthToken |
-| `src/main/agent-manager/types.ts` | Modify | 3 | Add magic number constants |
+| File                                           | Action     | Phase | Responsibility                                                      |
+| ---------------------------------------------- | ---------- | ----- | ------------------------------------------------------------------- |
+| `src/main/data/sprint-queries.ts`              | Modify     | 1     | Standardize error handling, add logger, add executor guard          |
+| `src/main/agent-manager/worktree.ts`           | Modify     | 1     | Add logging to all silent catch blocks                              |
+| `src/main/agent-manager/index.ts`              | Modify     | 1, 2  | Update callers for new sprint-queries contract; decompose drainLoop |
+| `src/main/agent-manager/orphan-recovery.ts`    | Modify     | 1     | Simplify after sprint-queries change                                |
+| `src/main/agent-manager/dependency-helpers.ts` | **Create** | 2     | Shared auto-block formatting + dependency check helper              |
+| `src/main/agent-manager/completion.ts`         | Modify     | 2     | Decompose resolveSuccess into focused functions                     |
+| `src/main/queue-api/task-handlers.ts`          | Modify     | 2     | Use shared dep helpers, convert async imports to top-level          |
+| `src/main/handlers/sprint-local.ts`            | Modify     | 2     | Use shared dep helpers                                              |
+| `src/main/agent-manager/resolve-dependents.ts` | Modify     | 2     | Use shared stripBlockedNote                                         |
+| `src/main/agent-manager/sdk-adapter.ts`        | Modify     | 2     | Remove dead preloadOAuthToken                                       |
+| `src/main/agent-manager/types.ts`              | Modify     | 3     | Add magic number constants                                          |
 
 ---
 
@@ -39,6 +39,7 @@
 ### Task 1: sprint-queries.ts — Add Logger Injection
 
 **Files:**
+
 - Modify: `src/main/data/sprint-queries.ts:1-10`
 - Test: `src/main/data/__tests__/sprint-queries.test.ts`
 
@@ -53,7 +54,7 @@ import type { Logger } from '../agent-manager/types'
 let logger: Logger = {
   info: (m) => console.log(m),
   warn: (m) => console.warn(m),
-  error: (m) => console.error(m),
+  error: (m) => console.error(m)
 }
 
 export function setSprintQueriesLogger(l: Logger): void {
@@ -64,6 +65,7 @@ export function setSprintQueriesLogger(l: Logger): void {
 - [ ] **Step 2: Replace all `console.warn` calls with `logger.warn`**
 
 Find-and-replace in sprint-queries.ts:
+
 - `console.warn(` → `logger.warn(`
 
 There are ~10 instances. Each `console.warn('[sprint-queries] ...')` becomes `logger.warn('[sprint-queries] ...')`.
@@ -85,6 +87,7 @@ git commit -m "refactor: inject logger into sprint-queries (defaults to console)
 ### Task 2: sprint-queries.ts — Convert Throwing Functions to Return Pattern
 
 **Files:**
+
 - Modify: `src/main/data/sprint-queries.ts:109-135, 351-368, 399-412`
 - Test: `src/main/data/__tests__/sprint-queries.test.ts`
 
@@ -97,7 +100,11 @@ Add tests asserting that `createTask`, `getQueuedTasks`, `getOrphanedTasks`, and
 ```typescript
 it('createTask returns null and logs on Supabase error', async () => {
   mockSupabase.from.mockReturnValue({
-    insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: { message: 'DB down' } }) }) }),
+    insert: () => ({
+      select: () => ({
+        single: () => Promise.resolve({ data: null, error: { message: 'DB down' } })
+      })
+    })
   })
   const result = await createTask({ title: 'Test', repo: 'myrepo' })
   expect(result).toBeNull()
@@ -190,6 +197,7 @@ git commit -m "fix: convert throwing sprint-queries functions to return null/[] 
 ### Task 3: Update Callers That Expected Throws
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts`
 - Modify: `src/main/agent-manager/orphan-recovery.ts`
 
@@ -202,7 +210,9 @@ The wrapper at lines 31-38 uses `Promise.race` to catch hangs AND thrown errors.
 async function fetchQueuedTasks(limit: number): Promise<Array<Record<string, unknown>>> {
   const result = await Promise.race([
     _getQueuedTasks(limit),
-    new Promise<never>((_, rej) => setTimeout(() => rej(new Error('getQueuedTasks timeout')), QUEUE_TIMEOUT_MS)),
+    new Promise<never>((_, rej) =>
+      setTimeout(() => rej(new Error('getQueuedTasks timeout')), QUEUE_TIMEOUT_MS)
+    )
   ])
   return result as unknown as Array<Record<string, unknown>>
 }
@@ -242,6 +252,7 @@ Lines 153-159 also use try/catch for `getTasksWithDependencies`. After change, n
 `sprint:create` handler calls `_createTask(task)` and expects a SprintTask back. After change, it can return `null`. The handler should check:
 
 In `src/main/handlers/sprint-local.ts:133`:
+
 ```typescript
 // Before:
 const row = await _createTask(task)
@@ -256,6 +267,7 @@ This preserves the IPC error behavior (safeHandle catches and returns error to r
 - [ ] **Step 6: Update `createTask` caller in task-handlers.ts**
 
 In `src/main/queue-api/task-handlers.ts:230`:
+
 ```typescript
 // Before:
 const task = await createTask(createInput as unknown as Parameters<typeof createTask>[0])
@@ -286,6 +298,7 @@ git commit -m "fix: update createTask callers to handle null return"
 ### Task 4: worktree.ts — Add Logging to Silent Catch Blocks
 
 **Files:**
+
 - Modify: `src/main/agent-manager/worktree.ts`
 - Test: `src/main/agent-manager/__tests__/worktree.test.ts`
 
@@ -308,6 +321,7 @@ For every `catch { /* ... */ }` or `catch { }` in worktree.ts, change to:
 ```
 
 Key locations and their messages:
+
 - `releaseLock` rmSync: `"Failed to remove lock file"`
 - Stale worktree force-remove fallback: `"Failed to rm stale worktree path"`
 - Worktree list fallback: `"Failed to list worktrees for stale branch cleanup"`
@@ -339,6 +353,7 @@ git commit -m "fix: add logging to all silent catch blocks in worktree.ts"
 ### Task 5: releaseTask — Add Executor Guard
 
 **Files:**
+
 - Modify: `src/main/data/sprint-queries.ts:195-208`
 - Modify: `src/main/handlers/sprint-local.ts:65-66`
 - Modify: `src/main/queue-api/task-handlers.ts:429`
@@ -377,6 +392,7 @@ export async function releaseTask(id: string, claimedBy: string): Promise<Sprint
 - [ ] **Step 3: Update callers**
 
 In `src/main/handlers/sprint-local.ts:65-66`:
+
 ```typescript
 // Before:
 export async function releaseTask(id: string): Promise<SprintTask | null> {
@@ -388,6 +404,7 @@ export async function releaseTask(id: string, claimedBy: string): Promise<Sprint
 ```
 
 In `src/main/queue-api/task-handlers.ts:429`:
+
 ```typescript
 // Before:
 const released = await releaseTask(id)
@@ -425,6 +442,7 @@ git commit -m "fix: add executor guard to releaseTask — require claimed_by mat
 ### Task 6: Create dependency-helpers.ts — Shared Auto-Block Utilities
 
 **Files:**
+
 - Create: `src/main/agent-manager/dependency-helpers.ts`
 - Create: `src/main/agent-manager/__tests__/dependency-helpers.test.ts`
 
@@ -442,7 +460,9 @@ describe('formatBlockedNote', () => {
 
 describe('stripBlockedNote', () => {
   it('removes auto-block prefix from notes', () => {
-    expect(stripBlockedNote('[auto-block] Blocked by: task-1\nUser notes here')).toBe('User notes here')
+    expect(stripBlockedNote('[auto-block] Blocked by: task-1\nUser notes here')).toBe(
+      'User notes here'
+    )
   })
   it('returns empty string for null', () => {
     expect(stripBlockedNote(null)).toBe('')
@@ -501,6 +521,7 @@ git commit -m "feat: add shared dependency-helpers — formatBlockedNote, stripB
 ### Task 7: Replace Inline Auto-Block Formatting with Shared Helpers
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:268`
 - Modify: `src/main/queue-api/task-handlers.ts:219-221`
 - Modify: `src/main/handlers/sprint-local.ts:129, 183-188`
@@ -587,6 +608,7 @@ git commit -m "refactor: use shared dependency-helpers for auto-block formatting
 ### Task 8: Extract Shared Dependency Check Helper
 
 **Files:**
+
 - Modify: `src/main/agent-manager/dependency-helpers.ts`
 - Modify: `src/main/agent-manager/__tests__/dependency-helpers.test.ts`
 
@@ -618,7 +640,7 @@ import type { Logger } from './types'
 export async function checkTaskDependencies(
   taskId: string,
   rawDeps: unknown,
-  logger: Logger,
+  logger: Logger
 ): Promise<{ shouldBlock: boolean; blockedBy: string[] }> {
   if (!rawDeps) return { shouldBlock: false, blockedBy: [] }
   try {
@@ -630,10 +652,8 @@ export async function checkTaskDependencies(
     const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
     idx.rebuild(allTasks.map((t) => ({ id: t.id, depends_on: t.depends_on, status: t.status })))
 
-    const { satisfied, blockedBy } = idx.areDependenciesSatisfied(
-      taskId,
-      deps,
-      (depId: string) => statusMap.get(depId),
+    const { satisfied, blockedBy } = idx.areDependenciesSatisfied(taskId, deps, (depId: string) =>
+      statusMap.get(depId)
     )
     return { shouldBlock: !satisfied && blockedBy.length > 0, blockedBy }
   } catch (err) {
@@ -653,13 +673,18 @@ Expected: PASS
 Update `sprint-local.ts` (2 locations) and `task-handlers.ts` (1 location) to use `checkTaskDependencies`.
 
 Example for sprint-local.ts sprint:create (lines 114-132):
+
 ```typescript
 // Before: 10 lines of inline dep index creation + check
 // After:
 import { checkTaskDependencies, buildBlockedNotes } from '../agent-manager/dependency-helpers'
 // ...
 if (task.depends_on && task.depends_on.length > 0 && (task.status === 'queued' || !task.status)) {
-  const { shouldBlock, blockedBy } = await checkTaskDependencies('new-task', task.depends_on, logger)
+  const { shouldBlock, blockedBy } = await checkTaskDependencies(
+    'new-task',
+    task.depends_on,
+    logger
+  )
   if (shouldBlock) {
     task = { ...task, status: 'blocked', notes: buildBlockedNotes(blockedBy, task.notes) }
   }
@@ -683,6 +708,7 @@ git commit -m "refactor: extract shared checkTaskDependencies helper — dedup 3
 ### Task 9: Decompose drainLoop — Extract processQueuedTask
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts`
 
 - [ ] **Step 1: Extract the inner for-loop body to a separate function**
@@ -692,7 +718,7 @@ Extract lines ~246-320 (the per-task processing inside `for (const raw of queued
 ```typescript
 async function processQueuedTask(
   raw: Record<string, unknown>,
-  taskStatusMap: Map<string, string>,
+  taskStatusMap: Map<string, string>
 ): Promise<void> {
   // ... existing per-task logic: map fields, check deps, resolve repo, claim, setup worktree, spawn
 }
@@ -726,6 +752,7 @@ git commit -m "refactor: extract processQueuedTask from drainLoop — reduce nes
 ### Task 10: Decompose resolveSuccess — Extract Focused Functions
 
 **Files:**
+
 - Modify: `src/main/agent-manager/completion.ts`
 - Test: `src/main/agent-manager/__tests__/completion.test.ts`
 
@@ -733,7 +760,10 @@ git commit -m "refactor: extract processQueuedTask from drainLoop — reduce nes
 
 ```typescript
 async function detectBranch(worktreePath: string): Promise<string> {
-  const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: worktreePath, env: buildAgentEnv() })
+  const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+    cwd: worktreePath,
+    env: buildAgentEnv()
+  })
   return stdout.trim()
 }
 ```
@@ -741,12 +771,22 @@ async function detectBranch(worktreePath: string): Promise<string> {
 - [ ] **Step 2: Extract `autoCommitIfDirty`**
 
 ```typescript
-async function autoCommitIfDirty(worktreePath: string, title: string, logger: Logger): Promise<void> {
-  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], { cwd: worktreePath, env: buildAgentEnv() })
+async function autoCommitIfDirty(
+  worktreePath: string,
+  title: string,
+  logger: Logger
+): Promise<void> {
+  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
+    cwd: worktreePath,
+    env: buildAgentEnv()
+  })
   if (statusOut.trim()) {
     logger.info(`[completion] Auto-committing uncommitted changes`)
     await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
-    await execFile('git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`], { cwd: worktreePath, env: buildAgentEnv() })
+    await execFile('git', ['commit', '-m', `${title}\n\nAutomated commit by BDE agent manager`], {
+      cwd: worktreePath,
+      env: buildAgentEnv()
+    })
   }
 }
 ```
@@ -759,7 +799,7 @@ async function findOrCreatePR(
   branch: string,
   title: string,
   ghRepo: string,
-  logger: Logger,
+  logger: Logger
 ): Promise<{ prUrl: string | null; prNumber: number | null }> {
   // ... existing PR check + create logic from resolveSuccess lines 158-220
 }
@@ -783,9 +823,13 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     // ... branch detection error (unchanged)
     return
   }
-  if (!branch) { /* ... */ return }
+  if (!branch) {
+    /* ... */ return
+  }
 
-  try { await autoCommitIfDirty(worktreePath, title, logger) } catch (err) {
+  try {
+    await autoCommitIfDirty(worktreePath, title, logger)
+  } catch (err) {
     logger.warn(`[completion] Auto-commit failed for task ${taskId}: ${err}`)
   }
 
@@ -811,6 +855,7 @@ git commit -m "refactor: decompose resolveSuccess into detectBranch, autoCommitI
 ### Task 11: Remove Deprecated preloadOAuthToken
 
 **Files:**
+
 - Modify: `src/main/agent-manager/sdk-adapter.ts:7-9`
 - Modify: `src/main/index.ts:30,118` (caller)
 - Modify: `src/main/agent-manager/__tests__/sdk-adapter-sdk-path.test.ts`
@@ -836,6 +881,7 @@ Note: `getOAuthToken` may already be imported in index.ts — check first and av
 - [ ] **Step 2: Remove preloadOAuthToken from sdk-adapter.ts**
 
 Delete lines 7-9:
+
 ```typescript
 /** @deprecated Use getOAuthToken() from env-utils instead. Kept for API compat. */
 export function preloadOAuthToken(): void {
@@ -852,6 +898,7 @@ Delete the `describe('preloadOAuthToken', ...)` block and its import.
 ```bash
 grep -r 'preloadOAuthToken' src/
 ```
+
 Expected: No matches
 
 - [ ] **Step 5: Run tests**
@@ -873,6 +920,7 @@ git commit -m "chore: remove deprecated preloadOAuthToken — replace with direc
 ### Task 12: Extract Magic Numbers to Constants
 
 **Files:**
+
 - Modify: `src/main/agent-manager/types.ts`
 - Modify: `src/main/agent-manager/worktree.ts`
 - Modify: `src/main/agent-manager/run-agent.ts`
@@ -890,6 +938,7 @@ export const NOTES_MAX_LENGTH = 500
 - [ ] **Step 2: Replace hardcoded values**
 
 In `worktree.ts:15`:
+
 ```typescript
 // Before: .slice(0, 40)
 // After:
@@ -899,6 +948,7 @@ import { BRANCH_SLUG_MAX_LENGTH } from './types'
 ```
 
 In `run-agent.ts:262`:
+
 ```typescript
 // Before: .slice(-500)
 // After:
@@ -908,12 +958,14 @@ import { LAST_OUTPUT_MAX_LENGTH } from './types'
 ```
 
 In `completion.ts` (agent summary slice and notes slice):
+
 ```typescript
 import { AGENT_SUMMARY_MAX_LENGTH, NOTES_MAX_LENGTH } from './types'
 // ...
-agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)
-// ...
-.slice(0, NOTES_MAX_LENGTH)
+agentSummary
+  .slice(0, AGENT_SUMMARY_MAX_LENGTH)
+  // ...
+  .slice(0, NOTES_MAX_LENGTH)
 ```
 
 - [ ] **Step 3: Run tests**
@@ -933,6 +985,7 @@ git commit -m "chore: extract magic numbers to named constants in types.ts"
 ### Task 13: Convert Async Imports to Top-Level in task-handlers.ts
 
 **Files:**
+
 - Modify: `src/main/queue-api/task-handlers.ts`
 
 Note: After Task 8, the `await import('../agent-manager/dependency-index')` and `await import('../data/sprint-queries')` calls in task-handlers.ts may already be removed (replaced by `checkTaskDependencies`). Check first — skip this task if the imports are already gone.

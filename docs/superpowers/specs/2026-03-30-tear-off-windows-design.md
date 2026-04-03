@@ -118,16 +118,16 @@ Minimal wrapper for tear-off windows:
 
 Zustand stores are independent per window. `TearoffShell` only initializes stores required by the specific view being rendered:
 
-| View | Required Stores | Skipped Stores |
-|------|----------------|----------------|
-| Dashboard | `sprintTasks`, `costData` | `ide`, `terminal`, `gitTree`, `panelLayout` |
-| Agents | `agentHistory`, `agentEvents` | `ide`, `terminal`, `gitTree` |
-| IDE | `ide`, `terminal` | `agentHistory`, `costData` |
-| Sprint/Pipeline | `sprintTasks` | `ide`, `terminal`, `costData` |
-| PR Station | `prList` (via IPC) | `ide`, `terminal`, `sprintTasks` |
-| Source Control | `gitTree` | `ide`, `agentHistory`, `costData` |
-| Settings | (minimal) | Most stores |
-| Task Workbench | `taskWorkbench`, `sprintTasks` | `ide`, `terminal` |
+| View            | Required Stores                | Skipped Stores                              |
+| --------------- | ------------------------------ | ------------------------------------------- |
+| Dashboard       | `sprintTasks`, `costData`      | `ide`, `terminal`, `gitTree`, `panelLayout` |
+| Agents          | `agentHistory`, `agentEvents`  | `ide`, `terminal`, `gitTree`                |
+| IDE             | `ide`, `terminal`              | `agentHistory`, `costData`                  |
+| Sprint/Pipeline | `sprintTasks`                  | `ide`, `terminal`, `costData`               |
+| PR Station      | `prList` (via IPC)             | `ide`, `terminal`, `sprintTasks`            |
+| Source Control  | `gitTree`                      | `ide`, `agentHistory`, `costData`           |
+| Settings        | (minimal)                      | Most stores                                 |
+| Task Workbench  | `taskWorkbench`, `sprintTasks` | `ide`, `terminal`                           |
 
 Stores that poll (e.g., `sprintTasks`, `costData`) will run their own intervals in the tear-off window. This is acceptable for Phase 1 since tear-offs are expected to be few (1-3 windows).
 
@@ -144,7 +144,7 @@ interface TearoffDragState {
   isDragging: boolean
   lastScreenX: number
   lastScreenY: number
-  tearoffCreated: boolean  // suppresses dragend handling after tear-off
+  tearoffCreated: boolean // suppresses dragend handling after tear-off
   dragData: { sourcePanelId: string; sourceTabIndex: number; viewKey: View } | null
 }
 ```
@@ -169,6 +169,7 @@ interface TearoffDragState {
 6. On `dragend` (always): reset all hook state
 
 **Edge cases:**
+
 - Multi-monitor: `screenX`/`screenY` are absolute screen coordinates — works across monitors
 - Drag cancelled (Escape key): `dragend` fires, timer cancelled, state reset
 - **Last tab in root panel:** If the dragged tab is the only tab in a single-leaf root, the tab is still torn off, but the main window replaces the empty root with a default dashboard view (see Creation step 8)
@@ -212,14 +213,14 @@ export function closeTearoffWindows(): void {
 
 **IPC channels (new):**
 
-| Channel | Pattern | Direction | Payload | Return | Purpose |
-|---------|---------|-----------|---------|--------|---------|
-| `tearoff:create` | `handle` | renderer → main | `{ view, screenX, screenY, sourcePanelId, sourceTabIndex }` | `{ windowId }` | Create tear-off window |
-| `tearoff:tabRemoved` | `send` | main → main-renderer | `{ sourcePanelId, sourceTabIndex }` | — | Remove tab from source panel |
-| `tearoff:confirmClose` | `send` | main → tearoff-renderer | `{}` | — | Ask tear-off for close preference |
-| `tearoff:closeConfirmed` | `handle` | tearoff-renderer → main | `{ action: 'return' \| 'close', remember: boolean }` | `void` | User's close choice |
-| `tearoff:tabReturned` | `send` | main → main-renderer | `{ view: View }` | — | Re-add tab to main window |
-| `tearoff:returnToMain` | `send` | tearoff-renderer → main | `{ windowId }` | — | User clicked "Return" button |
+| Channel                  | Pattern  | Direction               | Payload                                                     | Return         | Purpose                           |
+| ------------------------ | -------- | ----------------------- | ----------------------------------------------------------- | -------------- | --------------------------------- |
+| `tearoff:create`         | `handle` | renderer → main         | `{ view, screenX, screenY, sourcePanelId, sourceTabIndex }` | `{ windowId }` | Create tear-off window            |
+| `tearoff:tabRemoved`     | `send`   | main → main-renderer    | `{ sourcePanelId, sourceTabIndex }`                         | —              | Remove tab from source panel      |
+| `tearoff:confirmClose`   | `send`   | main → tearoff-renderer | `{}`                                                        | —              | Ask tear-off for close preference |
+| `tearoff:closeConfirmed` | `handle` | tearoff-renderer → main | `{ action: 'return' \| 'close', remember: boolean }`        | `void`         | User's close choice               |
+| `tearoff:tabReturned`    | `send`   | main → main-renderer    | `{ view: View }`                                            | —              | Re-add tab to main window         |
+| `tearoff:returnToMain`   | `send`   | tearoff-renderer → main | `{ windowId }`                                              | —              | User clicked "Return" button      |
 
 ### Bounds Persistence
 
@@ -230,16 +231,16 @@ export function closeTearoffWindows(): void {
 
 ### What Existing Code Needs to Change
 
-| File | Change |
-|------|--------|
-| `src/main/index.ts` | Register tearoff handlers, call `setQuitting()` on `before-quit`, call `closeTearoffWindows()` on quit. Extract `webPreferences` into shared constant from `SHARED_WEB_PREFERENCES`. |
-| `src/renderer/src/App.tsx` | Query param check, conditional render `TearoffShell`. Suppress `VIEW_SHORTCUT_MAP` in tear-off mode. |
-| `src/renderer/src/components/layout/HeaderTab.tsx` | Track `screenX`/`screenY` on `dragover` for tear-off detection |
-| `src/shared/ipc-channels.ts` | Add 6 new channel type definitions with full type signatures |
-| `src/preload/index.ts` | Expose tearoff IPC methods via `contextBridge` |
-| `src/preload/index.d.ts` | Type declarations for new preload methods |
-| `src/renderer/src/stores/theme.ts` | Add `storage` event listener for cross-window theme sync |
-| `src/main/handlers/__tests__/*` | Update handler count tests to include new tearoff handler registrations |
+| File                                               | Change                                                                                                                                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/main/index.ts`                                | Register tearoff handlers, call `setQuitting()` on `before-quit`, call `closeTearoffWindows()` on quit. Extract `webPreferences` into shared constant from `SHARED_WEB_PREFERENCES`. |
+| `src/renderer/src/App.tsx`                         | Query param check, conditional render `TearoffShell`. Suppress `VIEW_SHORTCUT_MAP` in tear-off mode.                                                                                 |
+| `src/renderer/src/components/layout/HeaderTab.tsx` | Track `screenX`/`screenY` on `dragover` for tear-off detection                                                                                                                       |
+| `src/shared/ipc-channels.ts`                       | Add 6 new channel type definitions with full type signatures                                                                                                                         |
+| `src/preload/index.ts`                             | Expose tearoff IPC methods via `contextBridge`                                                                                                                                       |
+| `src/preload/index.d.ts`                           | Type declarations for new preload methods                                                                                                                                            |
+| `src/renderer/src/stores/theme.ts`                 | Add `storage` event listener for cross-window theme sync                                                                                                                             |
+| `src/main/handlers/__tests__/*`                    | Update handler count tests to include new tearoff handler registrations                                                                                                              |
 
 ### What Does NOT Change
 
@@ -263,17 +264,20 @@ The Phase 1 architecture (query param routing, separate windows, `tearoff-manage
 ## Testing Strategy
 
 **Unit tests:**
+
 - `useTearoffDrag` hook: structure hook as a state machine so the timer/event logic can be tested without real DOM drag events. Test: state transitions, timer cancellation, `tearoffCreated` flag suppression.
 - `tearoff-manager.ts`: window creation, two-phase close flow with return/close actions, 5s timeout force-close, bounds persistence, `isQuitting` bypass
 - `TearoffShell.tsx`: renders correct view for `?view=` param, return button sends IPC, header layout, suppresses view shortcuts
 
 **Integration tests:**
+
 - IPC round-trip: `tearoff:create` → window spawned → `tearoff:tabRemoved` received
 - Close flow: `tearoff:closeConfirmed` with `action='return'` → `tearoff:tabReturned` received
 - Last-tab tear-off: source panel replaced with dashboard
 - Handler count: update existing handler count tests for new tearoff registrations
 
 **Manual tests:**
+
 - Drag tab off window → new window appears at cursor position
 - Close tear-off → dialog appears (first time), respects "Remember" checkbox
 - Return to main → tab re-added to focused panel

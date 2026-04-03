@@ -26,4 +26,4 @@ This verification was generated automatically as part of the BDE project's conti
 
 ---
 
-*Auto-generated on 2026-03-20*
+_Auto-generated on 2026-03-20_

@@ -20,6 +20,7 @@ The data layer received three rounds of remediation (PRs #551, #558, #562) addre
 **Status: Fixed**
 
 Migration v17 (`db.ts:460-513`) recreates the `sprint_tasks` table with `branch_only` added to the `pr_status` CHECK constraint:
+
 ```
 pr_status TEXT CHECK(pr_status IS NULL OR pr_status IN ('open','merged','closed','draft','branch_only'))
 ```
@@ -33,6 +34,7 @@ pr_status TEXT CHECK(pr_status IS NULL OR pr_status IN ('open','merged','closed'
 **Status: Not Fixed**
 
 The error return pattern is unchanged. All functions now have standardized error message formatting (tagged `DL-17` in comments), but the fundamental inconsistency remains:
+
 - `getTask()` returns `null` on error (line 128)
 - `listTasks()` returns `[]` on error (line 151)
 - `createTask()` returns `null` on error (line 184)
@@ -49,6 +51,7 @@ The standardized error messages are an improvement to debuggability but callers 
 **Status: Partially Fixed**
 
 The following functions now include audit trail recording:
+
 - `claimTask()` (line 305-311, 335-341) -- records `status`, `claimed_by`, `started_at` with `changedBy` set to the `claimedBy` argument
 - `releaseTask()` (line 373-379) -- records changes with `changedBy` set to the `claimedBy` argument
 - `markTaskDoneByPrNumber()` (lines 459-472, 489-502) -- records changes with `changedBy = 'pr-poller'`
@@ -56,6 +59,7 @@ The following functions now include audit trail recording:
 - `deleteTask()` (lines 260-266) -- records a `_deleted` event with full task snapshot before deletion
 
 **Still not audited:**
+
 - `updateTaskMergeableState()` (line 612-626) -- writes `pr_mergeable_state` directly with no audit trail
 - `clearSprintTaskFk()` (line 679-689) -- writes `agent_run_id = NULL` with no audit trail
 
@@ -68,6 +72,7 @@ These are lower-impact (metadata fields, not status transitions), but the gap me
 **Status: Fixed**
 
 `backupDatabase()` (`db.ts:46-69`) now:
+
 1. Validates the backup path against directory traversal (DL-4 fix)
 2. Lets the `VACUUM INTO` error propagate (no try/catch swallowing)
 3. Verifies backup file existence and size ratio after creation (DL-24 fix)
@@ -107,6 +112,7 @@ The pattern divergence remains but is now documented and partially bridged by op
 **Status: Not Fixed**
 
 `sprint-queries.ts:192-193` is unchanged:
+
 ```typescript
 const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
 if (entries.length === 0) return null
@@ -139,6 +145,7 @@ Additionally, the TOCTOU race on the "table is empty" check (DL-10) was fixed by
 **Status: Not Fixed**
 
 `sprint-queries.ts:169` is unchanged:
+
 ```typescript
 input.prompt ?? input.spec ?? input.title,
 ```
@@ -152,6 +159,7 @@ No JSDoc comment was added to `CreateTaskInput.prompt` (lines 84-95) explaining 
 **Status: Partially Fixed**
 
 The `changedBy` parameter is now populated in several callers:
+
 - `claimTask()` passes the `claimedBy` argument (lines 309, 338)
 - `releaseTask()` passes the `claimedBy` argument (line 377)
 - `markTaskDoneByPrNumber()` passes `'pr-poller'` (line 465)
@@ -159,6 +167,7 @@ The `changedBy` parameter is now populated in several callers:
 - `deleteTask()` accepts a `deletedBy` parameter (line 256, default `'unknown'`)
 
 **Still hardcoded as `'unknown'`:**
+
 - `updateTask()` at line 237 still passes `'unknown'`. This is the primary general-purpose update path used by IPC handlers and Queue API. The majority of audit trail entries will still say `changed_by = 'unknown'`.
 
 ---
@@ -212,6 +221,7 @@ The `changedBy` parameter is now populated in several callers:
 **File:** `src/main/db.ts:466-508` (migration v17)
 
 **Evidence:** Migration v17 recreates `sprint_tasks` to update the `pr_status` CHECK constraint. The new table definition (`sprint_tasks_v17`) omits three columns present in the v15 schema:
+
 - `playground_enabled INTEGER NOT NULL DEFAULT 0`
 - `needs_review INTEGER NOT NULL DEFAULT 0`
 - `max_runtime_ms INTEGER`
@@ -266,34 +276,34 @@ If the migration were to somehow succeed (e.g., on a database without those colu
 
 ## Summary Table
 
-| ID | Original Severity | Status | Notes |
-|----|-------------------|--------|-------|
-| DL-UX-1 | Significant | Fixed | Migration v17 adds `branch_only` to CHECK (but see NEW-1) |
-| DL-UX-2 | Significant | Not Fixed | Error messages standardized, but return value inconsistency unchanged |
-| DL-UX-3 | Significant | Partially Fixed | 5 of 7 bypass functions now audit; `updateTaskMergeableState` and `clearSprintTaskFk` still skip |
-| DL-UX-4 | Significant | Fixed | Errors now propagate; backup integrity verified |
-| DL-UX-5 | Moderate | Fixed | Parse errors logged; optional validator added |
-| DL-UX-6 | Moderate | Not Fixed | No JSDoc/runtime check, but `setSettingJson` provides safe alternative |
-| DL-UX-7 | Moderate | Not Fixed (Documented) | DI divergence documented; optional `db` params added to key functions |
-| DL-UX-8 | Moderate | Not Fixed | Triple-null ambiguity unchanged |
-| DL-UX-9 | Moderate | Fixed | Individual migration transactions with version/description in error |
-| DL-UX-10 | Moderate | Fixed | Status validation, per-row warnings, accurate counters |
-| DL-UX-11 | Minor | Not Fixed | No JSDoc on prompt fallback chain |
-| DL-UX-12 | Minor | Partially Fixed | Specialized callers pass identity; `updateTask` still `'unknown'` |
-| DL-UX-13 | Minor | Not Fixed (Documented) | Interface scope documented as intentional |
-| DL-UX-14 | Minor | Partially Fixed | Audit event recorded on delete, but return type still void |
-| DL-UX-15 | Minor | Fixed | Returns `AgentMeta` consistently |
-| DL-UX-16 | Minor | Not Fixed (Documented) | Vestigial column documented with rationale |
-| DL-UX-17 | Minor | Partially Fixed | Callers now pass all args correctly; positional API unchanged |
+| ID       | Original Severity | Status                 | Notes                                                                                            |
+| -------- | ----------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| DL-UX-1  | Significant       | Fixed                  | Migration v17 adds `branch_only` to CHECK (but see NEW-1)                                        |
+| DL-UX-2  | Significant       | Not Fixed              | Error messages standardized, but return value inconsistency unchanged                            |
+| DL-UX-3  | Significant       | Partially Fixed        | 5 of 7 bypass functions now audit; `updateTaskMergeableState` and `clearSprintTaskFk` still skip |
+| DL-UX-4  | Significant       | Fixed                  | Errors now propagate; backup integrity verified                                                  |
+| DL-UX-5  | Moderate          | Fixed                  | Parse errors logged; optional validator added                                                    |
+| DL-UX-6  | Moderate          | Not Fixed              | No JSDoc/runtime check, but `setSettingJson` provides safe alternative                           |
+| DL-UX-7  | Moderate          | Not Fixed (Documented) | DI divergence documented; optional `db` params added to key functions                            |
+| DL-UX-8  | Moderate          | Not Fixed              | Triple-null ambiguity unchanged                                                                  |
+| DL-UX-9  | Moderate          | Fixed                  | Individual migration transactions with version/description in error                              |
+| DL-UX-10 | Moderate          | Fixed                  | Status validation, per-row warnings, accurate counters                                           |
+| DL-UX-11 | Minor             | Not Fixed              | No JSDoc on prompt fallback chain                                                                |
+| DL-UX-12 | Minor             | Partially Fixed        | Specialized callers pass identity; `updateTask` still `'unknown'`                                |
+| DL-UX-13 | Minor             | Not Fixed (Documented) | Interface scope documented as intentional                                                        |
+| DL-UX-14 | Minor             | Partially Fixed        | Audit event recorded on delete, but return type still void                                       |
+| DL-UX-15 | Minor             | Fixed                  | Returns `AgentMeta` consistently                                                                 |
+| DL-UX-16 | Minor             | Not Fixed (Documented) | Vestigial column documented with rationale                                                       |
+| DL-UX-17 | Minor             | Partially Fixed        | Callers now pass all args correctly; positional API unchanged                                    |
 
 ### New Issues
 
-| ID | Severity | File | Issue |
-|----|----------|------|-------|
-| NEW-1 | Critical | `db.ts:466-508` | Migration v17 drops 3 columns (`playground_enabled`, `needs_review`, `max_runtime_ms`) -- will crash on upgrade |
-| NEW-2 | Significant | `db.ts:494-495` | Migration v17 `SELECT *` with column reordering causes silent data corruption |
-| NEW-3 | Moderate | `db.ts:298-340` | Migration v10 `foreign_keys = ON` inside exec block -- not re-enabled on partial failure |
-| NEW-4 | Moderate | `sprint-queries.ts:232-253` | Audit failure in `updateTask` transaction silently returns null to caller |
+| ID    | Severity    | File                        | Issue                                                                                                           |
+| ----- | ----------- | --------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| NEW-1 | Critical    | `db.ts:466-508`             | Migration v17 drops 3 columns (`playground_enabled`, `needs_review`, `max_runtime_ms`) -- will crash on upgrade |
+| NEW-2 | Significant | `db.ts:494-495`             | Migration v17 `SELECT *` with column reordering causes silent data corruption                                   |
+| NEW-3 | Moderate    | `db.ts:298-340`             | Migration v10 `foreign_keys = ON` inside exec block -- not re-enabled on partial failure                        |
+| NEW-4 | Moderate    | `sprint-queries.ts:232-253` | Audit failure in `updateTask` transaction silently returns null to caller                                       |
 
 ---
 
@@ -308,6 +318,7 @@ However, **migration v17 is a critical regression** that will crash any existing
 The unfixed UX issues (DL-UX-2 error patterns, DL-UX-8 triple-null) are deeper architectural choices that would require coordinated refactoring across all callers. They remain valid concerns but are reasonable to defer.
 
 **Recommended immediate actions:**
+
 1. **Fix migration v17** -- add missing columns, use explicit column lists (Critical, blocks release)
 2. **Pass `changedBy` in `updateTask`** -- accept it as a parameter from IPC/Queue API callers (Low effort, high audit value)
 3. **Add audit to `updateTaskMergeableState`** -- small function, easy to wrap (Low effort)

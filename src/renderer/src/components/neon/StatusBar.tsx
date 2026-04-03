@@ -8,7 +8,12 @@ interface StatusBarProps {
   children?: ReactNode
 }
 
-export function StatusBar({ title, status, accent = 'purple', children }: StatusBarProps): React.JSX.Element {
+export function StatusBar({
+  title,
+  status,
+  accent = 'purple',
+  children
+}: StatusBarProps): React.JSX.Element {
   return (
     <div
       className="status-bar"

@@ -12,14 +12,14 @@ The log viewer renders correctly because `SessionsView.renderMainContent()` chec
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
+| File                                      | Change                                                                                                               |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `src/renderer/src/views/SessionsView.tsx` | Add a `useEffect` that listens for `bde:navigate` events and syncs `selectedUnifiedId` with the incoming `sessionId` |
 
 **OR (alternative approach):**
 
-| File | Change |
-|------|--------|
+| File                                      | Change                                                                                                                                       |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/renderer/src/views/SessionsView.tsx` | Derive `selectedUnifiedId` from the agent history store's `selectedId` when it changes externally, rather than maintaining independent state |
 
 ## Implementation Notes

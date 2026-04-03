@@ -43,12 +43,9 @@
 
   /* ── Atmosphere ── */
   --neon-bg: #0a0015;
-  --neon-bg-gradient: radial-gradient(
-      ellipse at 30% 20%, rgba(138, 43, 226, 0.12) 0%, transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 70% 80%, rgba(0, 200, 255, 0.08) 0%, transparent 50%
-    );
+  --neon-bg-gradient:
+    radial-gradient(ellipse at 30% 20%, rgba(138, 43, 226, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(0, 200, 255, 0.08) 0%, transparent 50%);
 
   /* ── Glass ── */
   --neon-glass-blur: blur(16px) saturate(180%);
@@ -105,12 +102,9 @@ html.theme-light {
   --neon-red-border: rgba(214, 48, 49, 0.2);
 
   --neon-bg: #f8f7fc;
-  --neon-bg-gradient: radial-gradient(
-      ellipse at 30% 20%, rgba(168, 85, 247, 0.06) 0%, transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 70% 80%, rgba(9, 132, 227, 0.04) 0%, transparent 50%
-    );
+  --neon-bg-gradient:
+    radial-gradient(ellipse at 30% 20%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(9, 132, 227, 0.04) 0%, transparent 50%);
 
   --neon-glass-blur: blur(16px) saturate(120%);
   --neon-glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.5);
@@ -161,12 +155,9 @@ html.theme-warm {
   --neon-red-border: rgba(196, 74, 61, 0.25);
 
   --neon-bg: #eae4db;
-  --neon-bg-gradient: radial-gradient(
-      ellipse at 30% 20%, rgba(212, 145, 92, 0.04) 0%, transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 70% 80%, rgba(168, 139, 172, 0.03) 0%, transparent 50%
-    );
+  --neon-bg-gradient:
+    radial-gradient(ellipse at 30% 20%, rgba(212, 145, 92, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(168, 139, 172, 0.03) 0%, transparent 50%);
 
   --neon-glass-blur: blur(16px) saturate(110%);
   --neon-glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -188,18 +179,32 @@ html.theme-warm {
    ═══════════════════════════════════════════════════════ */
 
 @keyframes neon-pulse {
-  0%, 100% { box-shadow: var(--pulse-shadow-min); }
-  50% { box-shadow: var(--pulse-shadow-max); }
+  0%,
+  100% {
+    box-shadow: var(--pulse-shadow-min);
+  }
+  50% {
+    box-shadow: var(--pulse-shadow-max);
+  }
 }
 
 @keyframes neon-breathe {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes neon-scanline {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 -200px; }
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 -200px;
+  }
 }
 
 .neon-scanline-overlay {
@@ -207,64 +212,135 @@ html.theme-warm {
 }
 
 @keyframes neon-gradient-rotate {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes neon-particle-drift-1 {
-  0% { transform: translate(0, 0) scale(1); opacity: 0; }
-  10% { opacity: 0.6; }
-  90% { opacity: 0.6; }
-  100% { transform: translate(120px, -180px) scale(0.5); opacity: 0; }
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(120px, -180px) scale(0.5);
+    opacity: 0;
+  }
 }
 
 @keyframes neon-particle-drift-2 {
-  0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
-  10% { opacity: 0.5; }
-  90% { opacity: 0.5; }
-  100% { transform: translate(-100px, -220px) scale(0.3); opacity: 0; }
+  0% {
+    transform: translate(0, 0) scale(0.8);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-100px, -220px) scale(0.3);
+    opacity: 0;
+  }
 }
 
 @keyframes neon-particle-drift-3 {
-  0% { transform: translate(0, 0) scale(1.2); opacity: 0; }
-  10% { opacity: 0.4; }
-  90% { opacity: 0.4; }
-  100% { transform: translate(80px, -160px) scale(0.6); opacity: 0; }
+  0% {
+    transform: translate(0, 0) scale(1.2);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(80px, -160px) scale(0.6);
+    opacity: 0;
+  }
 }
 
 @keyframes neon-dash-flow {
-  0% { stroke-dashoffset: 20; }
-  100% { stroke-dashoffset: 0; }
+  0% {
+    stroke-dashoffset: 20;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes neon-ambient-shift {
-  0% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
-  100% { background-position: 0% 0%; }
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
 }
 
 @keyframes circuit-pulse {
-  0%, 100% {
-    box-shadow: var(--pulse-shadow-min), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  0%,
+  100% {
+    box-shadow:
+      var(--pulse-shadow-min),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
   50% {
-    box-shadow: var(--pulse-shadow-max), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    box-shadow:
+      var(--pulse-shadow-max),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 }
 
 @keyframes circuit-flow-horizontal {
-  0% { left: -8px; opacity: 0; }
-  20% { opacity: 0.6; }
-  80% { opacity: 0.6; }
-  100% { left: calc(100% + 8px); opacity: 0; }
+  0% {
+    left: -8px;
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    left: calc(100% + 8px);
+    opacity: 0;
+  }
 }
 
 @keyframes circuit-flow-vertical {
-  0% { top: -8px; opacity: 0; }
-  20% { opacity: 0.6; }
-  80% { opacity: 0.6; }
-  100% { top: calc(100% + 8px); opacity: 0; }
+  0% {
+    top: -8px;
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    top: calc(100% + 8px);
+    opacity: 0;
+  }
 }
 
 /* ── Reduced motion ── */
@@ -277,8 +353,8 @@ html.theme-warm {
   .neon-pulse,
   .neon-breathe,
   .neon-gradient-rotate,
-  [data-role="circuit-node"],
-  [data-role="current-pulse"] {
+  [data-role='circuit-node'],
+  [data-role='current-pulse'] {
     animation: none !important;
   }
 }

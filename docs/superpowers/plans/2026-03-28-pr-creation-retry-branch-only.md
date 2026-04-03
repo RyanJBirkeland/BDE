@@ -13,6 +13,7 @@
 ### Task 1: Add `branch_only` to constants and types
 
 **Files:**
+
 - Modify: `src/shared/constants.ts:19-24`
 - Modify: `src/shared/types.ts:44`
 
@@ -50,6 +51,7 @@ git commit -m "feat: add branch_only pr_status constant and type"
 ### Task 2: Add retry logic to PR creation in `completion.ts`
 
 **Files:**
+
 - Modify: `src/main/agent-manager/completion.ts:140-181` (the `createNewPr` function)
 - Modify: `src/main/agent-manager/completion.ts:317-330` (the PR result handler in `resolveSuccess`)
 
@@ -86,8 +88,11 @@ async function createNewPr(
 
   for (let attempt = 0; attempt < PR_CREATE_MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) {
-      const delayMs = PR_CREATE_BACKOFF_MS[attempt - 1] ?? PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1]
-      logger.info(`[completion] Retrying PR creation for branch ${branch} (attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS}) after ${delayMs}ms`)
+      const delayMs =
+        PR_CREATE_BACKOFF_MS[attempt - 1] ?? PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1]
+      logger.info(
+        `[completion] Retrying PR creation for branch ${branch} (attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS}) after ${delayMs}ms`
+      )
       await sleep(delayMs)
     }
 
@@ -108,18 +113,24 @@ async function createNewPr(
 
       // If PR creation failed because one already exists (race condition), fetch it immediately
       if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
-        logger.info(`[completion] PR creation failed because one already exists, fetching existing PR`)
+        logger.info(
+          `[completion] PR creation failed because one already exists, fetching existing PR`
+        )
         const existing = await checkExistingPr(worktreePath, branch, logger)
         if (existing) {
           return { prUrl: existing.prUrl, prNumber: existing.prNumber }
         }
       }
 
-      logger.warn(`[completion] gh pr create attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS} failed: ${err}`)
+      logger.warn(
+        `[completion] gh pr create attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS} failed: ${err}`
+      )
     }
   }
 
-  logger.warn(`[completion] PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}: ${lastError}`)
+  logger.warn(
+    `[completion] PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}: ${lastError}`
+  )
   return { prUrl: null, prNumber: null }
 }
 ```
@@ -129,22 +140,24 @@ async function createNewPr(
 Replace the existing PR result handler block (the section after `findOrCreatePR` call, lines ~320-330) with:
 
 ```typescript
-  // 6. Update task with PR info (task stays active; SprintPrPoller handles done on merge)
-  try {
-    if (prUrl !== null && prNumber !== null) {
-      repo.updateTask(taskId, { pr_status: 'open', pr_url: prUrl, pr_number: prNumber })
-    } else {
-      // Branch pushed but PR creation exhausted retries — mark as branch_only
-      // so the UI shows a "Create PR" link instead of silently orphaning
-      repo.updateTask(taskId, {
-        pr_status: 'branch_only',
-        notes: `Branch ${branch} pushed to ${ghRepo} but PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts`
-      })
-      logger.warn(`[completion] Task ${taskId}: branch ${branch} pushed, PR creation failed — set pr_status=branch_only`)
-    }
-  } catch (err) {
-    logger.error(`[completion] Failed to update task ${taskId} with PR info: ${err}`)
+// 6. Update task with PR info (task stays active; SprintPrPoller handles done on merge)
+try {
+  if (prUrl !== null && prNumber !== null) {
+    repo.updateTask(taskId, { pr_status: 'open', pr_url: prUrl, pr_number: prNumber })
+  } else {
+    // Branch pushed but PR creation exhausted retries — mark as branch_only
+    // so the UI shows a "Create PR" link instead of silently orphaning
+    repo.updateTask(taskId, {
+      pr_status: 'branch_only',
+      notes: `Branch ${branch} pushed to ${ghRepo} but PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts`
+    })
+    logger.warn(
+      `[completion] Task ${taskId}: branch ${branch} pushed, PR creation failed — set pr_status=branch_only`
+    )
   }
+} catch (err) {
+  logger.error(`[completion] Failed to update task ${taskId} with PR info: ${err}`)
+}
 ```
 
 - [ ] **Step 4: Export `PR_CREATE_MAX_ATTEMPTS` for use in tests**
@@ -169,6 +182,7 @@ git commit -m "feat: retry PR creation with backoff and set branch_only on exhau
 ### Task 3: Update completion tests
 
 **Files:**
+
 - Modify: `src/main/agent-manager/__tests__/completion.test.ts`
 
 - [ ] **Step 1: Update the existing "gh pr create fails" test to verify `branch_only`**
@@ -180,15 +194,15 @@ it('sets pr_status=branch_only when gh pr create fails after retries', async () 
   let callIndex = 0
   const responses: Array<{ stdout?: string; error?: Error }> = [
     { stdout: 'agent/add-login-page\n' }, // git rev-parse
-    { stdout: '' },                        // git status --porcelain
-    { stdout: '1\n' },                     // git rev-list --count
-    { stdout: '' },                        // git push
-    { stdout: '' },                        // gh pr list (no existing PR)
-    { stdout: '' },                        // git log (generatePrBody)
-    { stdout: '' },                        // git diff --stat (generatePrBody)
+    { stdout: '' }, // git status --porcelain
+    { stdout: '1\n' }, // git rev-list --count
+    { stdout: '' }, // git push
+    { stdout: '' }, // gh pr list (no existing PR)
+    { stdout: '' }, // git log (generatePrBody)
+    { stdout: '' }, // git diff --stat (generatePrBody)
     { error: new Error('gh: authentication error') }, // attempt 1 fails
     { error: new Error('gh: authentication error') }, // attempt 2 fails
-    { error: new Error('gh: authentication error') }, // attempt 3 fails
+    { error: new Error('gh: authentication error') } // attempt 3 fails
   ]
   getCustomMock().mockImplementation((..._args: unknown[]) => {
     const resp = responses[callIndex] ?? { stdout: '' }
@@ -212,14 +226,14 @@ it('retries PR creation and succeeds on second attempt', async () => {
   let callIndex = 0
   const responses: Array<{ stdout?: string; error?: Error }> = [
     { stdout: 'agent/add-login-page\n' }, // git rev-parse
-    { stdout: '' },                        // git status --porcelain
-    { stdout: '1\n' },                     // git rev-list --count
-    { stdout: '' },                        // git push
-    { stdout: '' },                        // gh pr list (no existing PR)
-    { stdout: '' },                        // git log (generatePrBody)
-    { stdout: '' },                        // git diff --stat (generatePrBody)
+    { stdout: '' }, // git status --porcelain
+    { stdout: '1\n' }, // git rev-list --count
+    { stdout: '' }, // git push
+    { stdout: '' }, // gh pr list (no existing PR)
+    { stdout: '' }, // git log (generatePrBody)
+    { stdout: '' }, // git diff --stat (generatePrBody)
     { error: new Error('gh: rate limit') }, // attempt 1 fails
-    { stdout: 'https://github.com/owner/repo/pull/50\n' }, // attempt 2 succeeds
+    { stdout: 'https://github.com/owner/repo/pull/50\n' } // attempt 2 succeeds
   ]
   getCustomMock().mockImplementation((..._args: unknown[]) => {
     const resp = responses[callIndex] ?? { stdout: '' }
@@ -242,8 +256,12 @@ Note: These tests will be slow due to the backoff sleeps. Either use `vi.useFake
 
 ```typescript
 // At the top of the retry tests:
-beforeEach(() => { vi.useFakeTimers() })
-afterEach(() => { vi.useRealTimers() })
+beforeEach(() => {
+  vi.useFakeTimers()
+})
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 // In each test, after calling resolveSuccess, advance timers:
 const promise = resolveSuccess(opts, noopLogger)
@@ -269,6 +287,7 @@ git commit -m "test: add completion tests for PR creation retry and branch_only 
 ### Task 4: Update partition logic for `branch_only`
 
 **Files:**
+
 - Modify: `src/renderer/src/lib/partitionSprintTasks.ts:47-52`
 - Modify: `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts`
 
@@ -325,6 +344,7 @@ git commit -m "feat: route branch_only tasks to awaitingReview partition"
 ### Task 5: Update TaskPill styling for `branch_only`
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/TaskPill.tsx:12-18`
 - Modify: `src/renderer/src/assets/sprint-pipeline-neon.css` (after line ~406)
 - Modify: `src/renderer/src/components/sprint/__tests__/TaskPill.test.tsx`
@@ -398,6 +418,7 @@ git commit -m "feat: add branch-only amber styling to TaskPill"
 ### Task 6: Update TaskDetailDrawer for `branch_only` state
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/TaskDetailDrawer.tsx:205-213`
 - Modify: `src/renderer/src/components/sprint/__tests__/TaskDetailDrawer.test.tsx`
 
@@ -426,41 +447,50 @@ Expected: FAIL
 Replace the PR section (lines 205-213) with:
 
 ```tsx
-{/* PR section */}
-{task.pr_url && task.pr_number && (
-  <div className="task-drawer__field">
-    <span className="task-drawer__label">PR</span>
-    <span className="task-drawer__value">
-      #{task.pr_number} ({task.pr_status ?? 'unknown'})
-    </span>
-  </div>
-)}
+{
+  /* PR section */
+}
+{
+  task.pr_url && task.pr_number && (
+    <div className="task-drawer__field">
+      <span className="task-drawer__label">PR</span>
+      <span className="task-drawer__value">
+        #{task.pr_number} ({task.pr_status ?? 'unknown'})
+      </span>
+    </div>
+  )
+}
 
-{/* Branch-only: PR creation failed */}
-{task.pr_status === 'branch_only' && (
-  <div className="task-drawer__branch-only">
-    <span className="task-drawer__label">Branch pushed</span>
-    <span className="task-drawer__value task-drawer__value--warning">
-      PR creation failed after retries
-    </span>
-    {task.notes && (() => {
-      const match = task.notes.match(/Branch\s+(\S+)\s+pushed/)
-      if (!match) return null
-      const branch = match[1]
-      return (
-        <a
-          className="task-drawer__btn task-drawer__btn--primary"
-          href={`https://github.com/${task.repo}/pull/new/${branch}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{ marginTop: '8px', display: 'inline-block' }}
-        >
-          Create PR →
-        </a>
-      )
-    })()}
-  </div>
-)}
+{
+  /* Branch-only: PR creation failed */
+}
+{
+  task.pr_status === 'branch_only' && (
+    <div className="task-drawer__branch-only">
+      <span className="task-drawer__label">Branch pushed</span>
+      <span className="task-drawer__value task-drawer__value--warning">
+        PR creation failed after retries
+      </span>
+      {task.notes &&
+        (() => {
+          const match = task.notes.match(/Branch\s+(\S+)\s+pushed/)
+          if (!match) return null
+          const branch = match[1]
+          return (
+            <a
+              className="task-drawer__btn task-drawer__btn--primary"
+              href={`https://github.com/${task.repo}/pull/new/${branch}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ marginTop: '8px', display: 'inline-block' }}
+            >
+              Create PR →
+            </a>
+          )
+        })()}
+    </div>
+  )
+}
 ```
 
 Note: `task.repo` here is the short name (e.g., `"BDE"`), not the GitHub `owner/repo` format. The GitHub URL needs `owner/repo`. Check how the existing PR links are constructed — if `task.pr_url` contains the full GitHub URL, we may need to extract owner/repo from there. But for `branch_only`, there's no `pr_url`. We have two options:
@@ -472,11 +502,13 @@ Note: `task.repo` here is the short name (e.g., `"BDE"`), not the GitHub `owner/
 Option A is simpler. Update the notes format in Task 2 accordingly, and the regex to: `/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/` extracting `[branch, ghRepo]`.
 
 Updated `completion.ts` notes line (in Task 2, Step 3):
+
 ```typescript
 notes: `Branch ${branch} pushed to ${ghRepo} but PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts`
 ```
 
 Updated drawer extraction:
+
 ```tsx
 const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
 if (!match) return null
@@ -526,6 +558,7 @@ git commit -m "feat: show Create PR link in drawer for branch_only tasks"
 ### Task 7: Update orphan recovery to recognize `branch_only`
 
 **Files:**
+
 - Modify: `src/main/agent-manager/orphan-recovery.ts:17`
 - Modify: `src/main/agent-manager/__tests__/orphan-recovery.test.ts`
 

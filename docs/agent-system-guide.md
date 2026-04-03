@@ -36,13 +36,13 @@ src/main/agent-system/
 
 BDE spawns five types of agents, each with tailored personalities:
 
-| Type | Spawned by | Interactive | Tool access | Worktree | Personality |
-|------|-----------|------------|-------------|----------|-------------|
-| Pipeline | Agent Manager (auto) | No | Full | Yes (isolated) | Concise, action-oriented |
-| Adhoc | User (Agents view) | Yes | Full | No (repo dir) | Same as pipeline |
-| Assistant | User (Agents view) | Yes | Full | No (repo dir) | Conversational, proactive |
-| Copilot | Task Workbench | Yes | None | No | Minimal (text-only) |
-| Synthesizer | Task Workbench | No | None | No | Minimal (spec generation) |
+| Type        | Spawned by           | Interactive | Tool access | Worktree       | Personality               |
+| ----------- | -------------------- | ----------- | ----------- | -------------- | ------------------------- |
+| Pipeline    | Agent Manager (auto) | No          | Full        | Yes (isolated) | Concise, action-oriented  |
+| Adhoc       | User (Agents view)   | Yes         | Full        | No (repo dir)  | Same as pipeline          |
+| Assistant   | User (Agents view)   | Yes         | Full        | No (repo dir)  | Conversational, proactive |
+| Copilot     | Task Workbench       | Yes         | None        | No             | Minimal (text-only)       |
+| Synthesizer | Task Workbench       | No          | None        | No             | Minimal (spec generation) |
 
 **Pipeline agents** execute sprint tasks autonomously. They work in isolated git worktrees, commit changes, push branches, and open PRs. Their personality is concise and execution-focused.
 
@@ -56,10 +56,10 @@ Each personality defines four fields:
 
 ```typescript
 export interface AgentPersonality {
-  voice: string          // Tone and style guidelines (concise, conversational, etc.)
-  roleFrame: string      // Identity framing ("You are a BDE pipeline agent...")
-  constraints: string[]  // Hard boundaries (never push to main, run tests, etc.)
-  patterns: string[]     // Communication and behavior patterns
+  voice: string // Tone and style guidelines (concise, conversational, etc.)
+  roleFrame: string // Identity framing ("You are a BDE pipeline agent...")
+  constraints: string[] // Hard boundaries (never push to main, run tests, etc.)
+  patterns: string[] // Communication and behavior patterns
 }
 ```
 
@@ -110,20 +110,20 @@ const conventions = getAllMemory()
 
 Skills provide actionable guidance for interactive agents:
 
-| Skill | Trigger | Capabilities |
-|-------|---------|--------------|
-| System Introspection | Agent needs to query system state | sqlite-query, file-read-logs |
-| Task Orchestration | Agent needs to create tasks or set dependencies | ipc-sprint-create, queue-api-call |
-| Code Patterns | Agent needs to generate BDE-idiomatic code | code-generation |
+| Skill                | Trigger                                         | Capabilities                      |
+| -------------------- | ----------------------------------------------- | --------------------------------- |
+| System Introspection | Agent needs to query system state               | sqlite-query, file-read-logs      |
+| Task Orchestration   | Agent needs to create tasks or set dependencies | ipc-sprint-create, queue-api-call |
+| Code Patterns        | Agent needs to generate BDE-idiomatic code      | code-generation                   |
 
 Each skill defines:
 
 ```typescript
 export interface BDESkill {
   id: string
-  trigger: string         // When to use this skill
-  description: string     // What it does
-  guidance: string        // Step-by-step instructions + examples
+  trigger: string // When to use this skill
+  description: string // What it does
+  guidance: string // Step-by-step instructions + examples
   capabilities?: string[] // What it enables
 }
 ```
@@ -133,8 +133,8 @@ Call `getAllSkills()` to get formatted guidance text, or `getSkillList()` for sk
 ```typescript
 import { getAllSkills, getSkillList } from './agent-system/skills'
 
-const skillsText = getAllSkills()      // For prompt injection
-const skillObjects = getSkillList()    // For programmatic access
+const skillsText = getAllSkills() // For prompt injection
+const skillObjects = getSkillList() // For programmatic access
 ```
 
 ## Prompt Composer
@@ -152,13 +152,13 @@ export function buildAgentPrompt(input: BuildPromptInput): string
 ```typescript
 export interface BuildPromptInput {
   agentType: AgentType
-  taskContent?: string                 // Spec, prompt, or user message
-  branch?: string                      // Git branch for pipeline/adhoc agents
-  playgroundEnabled?: boolean          // Whether to include playground instructions
-  messages?: Array<{ role: string; content: string }>  // For copilot chat
-  formContext?: { title: string; repo: string; spec: string }  // For copilot
-  codebaseContext?: string             // For synthesizer (file tree, relevant files)
-  useNativeSystem?: boolean            // Enable BDE-native personality + memory + skills (default: false)
+  taskContent?: string // Spec, prompt, or user message
+  branch?: string // Git branch for pipeline/adhoc agents
+  playgroundEnabled?: boolean // Whether to include playground instructions
+  messages?: Array<{ role: string; content: string }> // For copilot chat
+  formContext?: { title: string; repo: string; spec: string } // For copilot
+  codebaseContext?: string // For synthesizer (file tree, relevant files)
+  useNativeSystem?: boolean // Enable BDE-native personality + memory + skills (default: false)
 }
 ```
 
@@ -211,6 +211,7 @@ const prompt = buildAgentPrompt({
 The `useNativeSystem` flag defaults to **false**. All existing agents use legacy prompts. Users can opt-in via **Settings > Agent Manager > Use native agent system**.
 
 **How to enable:**
+
 1. Open BDE Settings (Cmd+7)
 2. Navigate to Agent Manager tab
 3. Check "Use native agent system"
@@ -229,6 +230,7 @@ After restart, all spawned agents (pipeline, adhoc, assistant) will receive BDE-
 ### Phase 3: Deprecate Legacy (Future)
 
 Once native system is proven stable:
+
 1. Flip default to `useNativeSystem: true` in migration v19
 2. Remove toggle from Settings UI
 3. Delete `ROLE_INSTRUCTIONS` map from prompt-composer.ts
@@ -299,5 +301,6 @@ A: Check the agent's initial prompt in the Agents view console. Native system pr
 ---
 
 For spec and plan documents, see:
+
 - `docs/superpowers/specs/2026-03-31-bde-native-agent-system-design.md`
 - `docs/superpowers/plans/2026-03-31-bde-native-agent-system.md`

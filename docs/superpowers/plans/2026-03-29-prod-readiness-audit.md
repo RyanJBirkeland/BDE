@@ -42,6 +42,7 @@ git commit -m "chore: create prod-audit output directory"
 Dispatch 6 agents in parallel. Each agent uses `isolation: "worktree"` and `subagent_type: "general-purpose"`.
 
 **Files:**
+
 - Create: `docs/superpowers/audits/prod-audit/agent-manager-red.md`
 - Create: `docs/superpowers/audits/prod-audit/agent-manager-reliability.md`
 - Create: `docs/superpowers/audits/prod-audit/agent-manager-ux.md`
@@ -144,6 +145,7 @@ Use these prefixes for finding IDs:
 ```
 
 **Agent Manager — Source files for prompt:**
+
 ```
 src/main/agent-manager/index.ts
 src/main/agent-manager/types.ts
@@ -166,6 +168,7 @@ src/main/sdk-streaming.ts
 ```
 
 **Agent Manager — Test files:**
+
 ```
 src/main/agent-manager/__tests__/concurrency.test.ts
 src/main/agent-manager/__tests__/dependency-helpers.test.ts
@@ -187,6 +190,7 @@ src/main/agent-manager/__tests__/resolve-dependents.test.ts
 ```
 
 **Queue API — Source files for prompt:**
+
 ```
 src/main/queue-api/index.ts
 src/main/queue-api/agent-handlers.ts
@@ -200,6 +204,7 @@ src/main/queue-api/helpers.ts
 ```
 
 **Queue API — Test files:**
+
 ```
 src/main/queue-api/__tests__/sse-broadcaster.test.ts
 src/main/queue-api/__tests__/field-mapper.test.ts
@@ -235,6 +240,7 @@ git commit -m "audit: batch 1 — Agent Manager + Queue API (6 reports)"
 Same dispatch pattern as Task 1.
 
 **Files:**
+
 - Create: `docs/superpowers/audits/prod-audit/sprint-pipeline-red.md`
 - Create: `docs/superpowers/audits/prod-audit/sprint-pipeline-reliability.md`
 - Create: `docs/superpowers/audits/prod-audit/sprint-pipeline-ux.md`
@@ -247,6 +253,7 @@ Same dispatch pattern as Task 1.
 Use same prompt template from Task 1. Fill in:
 
 **Finding ID prefixes:**
+
 - Sprint Pipeline Red Team: SP-RED-{N}
 - Sprint Pipeline Reliability: SP-REL-{N}
 - Sprint Pipeline UX: SP-UX-{N}
@@ -255,6 +262,7 @@ Use same prompt template from Task 1. Fill in:
 - IDE UX: IDE-UX-{N}
 
 **Sprint Pipeline — Source files:**
+
 ```
 src/main/handlers/sprint-local.ts
 src/main/sprint-pr-poller.ts
@@ -274,6 +282,7 @@ src/renderer/src/stores/sprintTasks.ts
 ```
 
 **Sprint Pipeline — Test files:**
+
 ```
 src/main/handlers/__tests__/sprint-local.test.ts
 src/main/handlers/__tests__/sprint-listeners.test.ts
@@ -292,6 +301,7 @@ src/renderer/src/stores/__tests__/sprintTasks-map-removal.test.ts
 ```
 
 **IDE — Source files:**
+
 ```
 src/renderer/src/views/IDEView.tsx
 src/renderer/src/stores/ide.ts
@@ -309,6 +319,7 @@ src/renderer/src/components/ide/file-tree-constants.ts
 ```
 
 **IDE — Test files:**
+
 ```
 src/renderer/src/components/ide/__tests__/EditorPane.test.tsx
 src/renderer/src/components/ide/__tests__/EditorTabBar.test.tsx
@@ -343,6 +354,7 @@ git commit -m "audit: batch 2 — Sprint Pipeline + IDE (6 reports)"
 Same dispatch pattern as Task 1.
 
 **Files:**
+
 - Create: `docs/superpowers/audits/prod-audit/pr-station-red.md`
 - Create: `docs/superpowers/audits/prod-audit/pr-station-reliability.md`
 - Create: `docs/superpowers/audits/prod-audit/pr-station-ux.md`
@@ -353,6 +365,7 @@ Same dispatch pattern as Task 1.
 - [ ] **Step 1: Dispatch all 6 agents in a single message**
 
 **Finding ID prefixes:**
+
 - PR Station Red Team: PR-RED-{N}
 - PR Station Reliability: PR-REL-{N}
 - PR Station UX: PR-UX-{N}
@@ -361,6 +374,7 @@ Same dispatch pattern as Task 1.
 - Data Layer UX: DL-UX-{N}
 
 **PR Station — Source files:**
+
 ```
 src/renderer/src/lib/github-api.ts
 src/renderer/src/lib/github-cache.ts
@@ -385,6 +399,7 @@ src/renderer/src/components/diff/DiffSizeWarning.tsx
 ```
 
 **PR Station — Test files:**
+
 ```
 src/renderer/src/components/pr-station/__tests__/PRStationList.test.tsx
 src/renderer/src/components/pr-station/__tests__/PRStationDetail.test.tsx
@@ -406,6 +421,7 @@ src/main/handlers/__tests__/git-handlers.test.ts
 ```
 
 **Data Layer — Source files:**
+
 ```
 src/main/db.ts
 src/main/auth-guard.ts
@@ -420,6 +436,7 @@ src/main/data/supabase-import.ts
 ```
 
 **Data Layer — Test files:**
+
 ```
 src/main/__tests__/db.test.ts
 src/main/data/__tests__/sprint-queries.test.ts
@@ -452,6 +469,7 @@ git commit -m "audit: batch 3 — PR Station + Data Layer (6 reports)"
 ## Task 4: Synthesis (1 agent)
 
 **Files:**
+
 - Create: `docs/superpowers/audits/prod-audit/synthesis.md`
 
 - [ ] **Step 1: Dispatch synthesis agent**
@@ -569,6 +587,7 @@ git commit -m "audit: synthesis — deduplicated findings + remediation task map
 ## Task 5: Create & Queue Remediation Tasks (1 agent or manual)
 
 **Files:**
+
 - Read: `docs/superpowers/audits/prod-audit/synthesis.md`
 
 - [ ] **Step 1: Read the synthesis Remediation Task Map**

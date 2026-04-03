@@ -34,14 +34,14 @@ src/renderer/src/components/panels/
 
 ### Key Modified Files
 
-| File | Phase | Change |
-|------|-------|--------|
-| `src/renderer/src/App.tsx` | 3a | Replace `ViewRouter` with `<PanelRenderer>` |
-| `src/renderer/src/stores/ui.ts` | 3a | Add `useActiveView()` compat helper, keep `setView` working |
-| `src/renderer/src/components/layout/ActivityBar.tsx` | 3b | Open dots, right-click menu, drag source |
-| `src/renderer/src/components/layout/CommandPalette.tsx` | 3c | Add panel commands (split, close, reset) |
-| `src/renderer/src/assets/main.css` | 3a | Panel CSS classes |
-| `CLAUDE.md` | 3c | Document panel architecture |
+| File                                                    | Phase | Change                                                      |
+| ------------------------------------------------------- | ----- | ----------------------------------------------------------- |
+| `src/renderer/src/App.tsx`                              | 3a    | Replace `ViewRouter` with `<PanelRenderer>`                 |
+| `src/renderer/src/stores/ui.ts`                         | 3a    | Add `useActiveView()` compat helper, keep `setView` working |
+| `src/renderer/src/components/layout/ActivityBar.tsx`    | 3b    | Open dots, right-click menu, drag source                    |
+| `src/renderer/src/components/layout/CommandPalette.tsx` | 3c    | Add panel commands (split, close, reset)                    |
+| `src/renderer/src/assets/main.css`                      | 3a    | Panel CSS classes                                           |
+| `CLAUDE.md`                                             | 3c    | Document panel architecture                                 |
 
 ---
 
@@ -50,6 +50,7 @@ src/renderer/src/components/panels/
 ### Task 1: PanelNode Types + Tree Mutation Functions
 
 **Files:**
+
 - Create: `src/renderer/src/stores/panelLayout.ts`
 - Create: `src/renderer/src/components/panels/__tests__/panelLayout.test.ts`
 
@@ -67,7 +68,7 @@ import {
   addTab,
   collapseIfNeeded,
   findLeaf,
-  getOpenViews,
+  getOpenViews
 } from '../../../stores/panelLayout'
 
 describe('panelLayout tree mutations', () => {
@@ -98,7 +99,12 @@ describe('panelLayout tree mutations', () => {
   })
 
   it('splitNode works on nested trees', () => {
-    const root = splitNode(createLeaf('agents'), createLeaf('agents').panelId, 'horizontal', 'terminal')
+    const root = splitNode(
+      createLeaf('agents'),
+      createLeaf('agents').panelId,
+      'horizontal',
+      'terminal'
+    )
     // root is split(agents, terminal) — now split the terminal panel vertically
     if (root.type === 'split' && root.children[1].type === 'leaf') {
       const terminalId = root.children[1].panelId
@@ -142,7 +148,14 @@ describe('panelLayout tree mutations', () => {
   it('collapseIfNeeded removes split with single child', () => {
     // Manually create a split where one child is null (simulating closed leaf)
     const leaf = createLeaf('agents')
-    expect(collapseIfNeeded({ type: 'split', direction: 'horizontal', children: [leaf, null as any], sizes: [50, 50] })).toBe(leaf)
+    expect(
+      collapseIfNeeded({
+        type: 'split',
+        direction: 'horizontal',
+        children: [leaf, null as any],
+        sizes: [50, 50]
+      })
+    ).toBe(leaf)
   })
 
   it('findLeaf finds a leaf by panelId', () => {
@@ -185,7 +198,7 @@ export const VIEW_LABELS: Record<View, string> = {
   'pr-station': 'PR Station',
   memory: 'Memory',
   cost: 'Cost',
-  settings: 'Settings',
+  settings: 'Settings'
 }
 
 export type DropZone = 'top' | 'bottom' | 'left' | 'right' | 'center'
@@ -215,17 +228,19 @@ export type PanelNode = PanelLeafNode | PanelSplitNode
 
 let _idCounter = 0
 function nextId(): string {
-  return 'p' + (++_idCounter)
+  return 'p' + ++_idCounter
 }
 // For tests: reset counter
-export function _resetIdCounter(): void { _idCounter = 0 }
+export function _resetIdCounter(): void {
+  _idCounter = 0
+}
 
 export function createLeaf(viewKey: View): PanelLeafNode {
   return {
     type: 'leaf',
     panelId: nextId(),
     tabs: [{ viewKey, label: VIEW_LABELS[viewKey] }],
-    activeTab: 0,
+    activeTab: 0
   }
 }
 
@@ -241,14 +256,19 @@ export function getOpenViews(node: PanelNode): View[] {
   return [...getOpenViews(node.children[0]), ...getOpenViews(node.children[1])]
 }
 
-export function splitNode(root: PanelNode, targetId: string, direction: 'horizontal' | 'vertical', viewKey: View): PanelNode {
+export function splitNode(
+  root: PanelNode,
+  targetId: string,
+  direction: 'horizontal' | 'vertical',
+  viewKey: View
+): PanelNode {
   if (root.type === 'leaf') {
     if (root.panelId === targetId) {
       return {
         type: 'split',
         direction,
         children: [root, createLeaf(viewKey)],
-        sizes: [50, 50],
+        sizes: [50, 50]
       }
     }
     return root
@@ -257,8 +277,8 @@ export function splitNode(root: PanelNode, targetId: string, direction: 'horizon
     ...root,
     children: [
       splitNode(root.children[0], targetId, direction, viewKey),
-      splitNode(root.children[1], targetId, direction, viewKey),
-    ],
+      splitNode(root.children[1], targetId, direction, viewKey)
+    ]
   }
 }
 
@@ -274,8 +294,8 @@ export function addTab(root: PanelNode, targetId: string, viewKey: View): PanelN
     ...root,
     children: [
       addTab(root.children[0], targetId, viewKey),
-      addTab(root.children[1], targetId, viewKey),
-    ],
+      addTab(root.children[1], targetId, viewKey)
+    ]
   }
 }
 
@@ -309,8 +329,8 @@ export function setActiveTab(root: PanelNode, panelId: string, tabIndex: number)
     ...root,
     children: [
       setActiveTab(root.children[0], panelId, tabIndex),
-      setActiveTab(root.children[1], panelId, tabIndex),
-    ],
+      setActiveTab(root.children[1], panelId, tabIndex)
+    ]
   }
 }
 
@@ -362,13 +382,14 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
 
   findPanelByView: (viewKey) => {
     const search = (node: PanelNode): string | null => {
-      if (node.type === 'leaf') return node.tabs.some((t) => t.viewKey === viewKey) ? node.panelId : null
+      if (node.type === 'leaf')
+        return node.tabs.some((t) => t.viewKey === viewKey) ? node.panelId : null
       return search(node.children[0]) ?? search(node.children[1])
     }
     return search(get().root)
   },
 
-  getOpenViews: () => getOpenViews(get().root),
+  getOpenViews: () => getOpenViews(get().root)
 }))
 ```
 
@@ -391,6 +412,7 @@ git commit -m "feat(panels): add PanelNode tree types and mutation functions"
 ### Task 2: PanelLeaf Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/panels/PanelLeaf.tsx`
 
 - [ ] **Step 1: Create PanelLeaf**
@@ -552,6 +574,7 @@ git commit -m "feat(panels): add PanelLeaf component with tab bar and view mount
 ### Task 3: PanelResizeHandle + PanelRenderer
 
 **Files:**
+
 - Create: `src/renderer/src/components/panels/PanelResizeHandle.tsx`
 - Create: `src/renderer/src/components/panels/PanelRenderer.tsx`
 - Create: `src/renderer/src/components/panels/__tests__/PanelRenderer.test.tsx`
@@ -676,6 +699,7 @@ git commit -m "feat(panels): add PanelRenderer with recursive tree rendering"
 ### Task 4: Replace ViewRouter with PanelRenderer in App.tsx
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx`
 - Modify: `src/renderer/src/stores/ui.ts`
 
@@ -715,7 +739,7 @@ export const useUIStore = create<UIStore>((set) => ({
       store.addTab(store.focusedPanelId, view)
     }
     set({ activeView: view })
-  },
+  }
 }))
 
 // Subscribe to panel layout changes to keep activeView in sync
@@ -733,6 +757,7 @@ usePanelLayoutStore.subscribe((state) => {
 - [ ] **Step 2: Replace ViewRouter in App.tsx**
 
 In `src/renderer/src/App.tsx`:
+
 - Remove the `ViewRouter` component entirely (lines 74-122)
 - Remove view-specific imports that are now handled by PanelLeaf: `AgentsView`, `TerminalView`, lazy imports for Sprint/Memory/Cost/Settings/PRStation
 - Add: `import { PanelRenderer } from './components/panels/PanelRenderer'`
@@ -758,6 +783,7 @@ git commit -m "feat(panels): replace ViewRouter with PanelRenderer in App.tsx"
 ### Task 5: Panel CSS
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/main.css`
 
 - [ ] **Step 1: Add panel CSS classes**
@@ -840,6 +866,7 @@ git commit -m "feat(panels): add panel CSS classes"
 ### Task 6: Smoke Test + Verify Phase 3a
 
 **Files:**
+
 - Modify: `src/renderer/src/views/__tests__/smoke.test.tsx`
 
 - [ ] **Step 1: Update smoke test mocks for panel layout**
@@ -867,6 +894,7 @@ git commit -m "test(panels): update smoke tests for panel layout"
 ### Task 7: PanelTabBar with Drag Source
 
 **Files:**
+
 - Create: `src/renderer/src/components/panels/PanelTabBar.tsx`
 - Modify: `src/renderer/src/components/panels/PanelLeaf.tsx` (extract tab bar)
 
@@ -902,6 +930,7 @@ git commit -m "feat(panels): extract PanelTabBar with drag source"
 ### Task 8: PanelDropOverlay with 5-Zone Hit Testing
 
 **Files:**
+
 - Create: `src/renderer/src/components/panels/PanelDropOverlay.tsx`
 - Create: `src/renderer/src/components/panels/__tests__/PanelDropOverlay.test.tsx`
 
@@ -1040,12 +1069,14 @@ git commit -m "feat(panels): add PanelDropOverlay with 5-zone hit testing"
 ### Task 9: Wire Drag-and-Drop into PanelLeaf
 
 **Files:**
+
 - Modify: `src/renderer/src/components/panels/PanelLeaf.tsx`
 - Modify: `src/renderer/src/stores/panelLayout.ts` (add `moveTab`)
 
 - [ ] **Step 1: Add moveTab mutation to panelLayout store**
 
 `moveTab(sourcePanelId, sourceTabIndex, targetPanelId, zone)`:
+
 - If zone is 'center': remove tab from source, add to target
 - If zone is edge: remove tab from source, split target in the zone direction
 
@@ -1070,11 +1101,13 @@ git commit -m "feat(panels): wire drag-and-drop into PanelLeaf"
 ### Task 10: ActivityBar Drag Source + Open Indicators
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/ActivityBar.tsx`
 
 - [ ] **Step 1: Update ActivityBar**
 
 Changes:
+
 - Import `usePanelLayoutStore`
 - Read `getOpenViews()` and `focusedPanelId` to determine open/focused state
 - Add open indicator dot (small circle) next to icons for views in the tree
@@ -1099,6 +1132,7 @@ git commit -m "feat(panels): add ActivityBar drag source, open indicators, conte
 ### Task 11: Smoke Test Phase 3b
 
 **Files:**
+
 - Various test updates
 
 - [ ] **Step 1: Run full test suite**
@@ -1122,6 +1156,7 @@ git commit -m "test(panels): update tests for Phase 3b docking"
 ### Task 12: Panel Keyboard Shortcuts
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx`
 
 - [ ] **Step 1: Add new keyboard shortcuts to handleKeyDown**
@@ -1177,11 +1212,13 @@ git commit -m "feat(panels): add keyboard shortcuts (split, close, cycle tabs)"
 ### Task 13: Layout Persistence
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/panelLayout.ts`
 
 - [ ] **Step 1: Add save/restore logic**
 
 In the panelLayout store:
+
 - On store creation: read `panel.layout` from settings, validate, use as initial state or fall back to default
 - After every mutation: debounce-save (500ms) the root tree to `panel.layout` setting
 - `resetLayout`: also deletes the `panel.layout` setting
@@ -1208,8 +1245,12 @@ function isValidLayout(node: unknown): node is PanelNode {
     return Array.isArray(n.tabs) && n.tabs.length > 0
   }
   if (n.type === 'split') {
-    return Array.isArray(n.children) && n.children.length === 2
-      && isValidLayout(n.children[0]) && isValidLayout(n.children[1])
+    return (
+      Array.isArray(n.children) &&
+      n.children.length === 2 &&
+      isValidLayout(n.children[0]) &&
+      isValidLayout(n.children[1])
+    )
   }
   return false
 }
@@ -1234,6 +1275,7 @@ git commit -m "feat(panels): add layout persistence with debounced save/restore"
 ### Task 14: Command Palette Panel Commands
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/CommandPalette.tsx`
 
 - [ ] **Step 1: Add panel commands**
@@ -1303,11 +1345,13 @@ git commit -m "feat(panels): add panel commands to command palette"
 ### Task 15: Update CLAUDE.md + Final Verification
 
 **Files:**
+
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1: Update architecture notes**
 
 Add to the Architecture Notes section:
+
 - **Panel system**: `src/renderer/src/stores/panelLayout.ts` — recursive PanelNode tree (leaf/split), `src/renderer/src/components/panels/` — PanelRenderer, PanelLeaf, PanelTabBar, PanelDropOverlay. Layout persists to `panel.layout` setting.
 - Update "Views" note to mention panels.
 
@@ -1327,11 +1371,11 @@ git commit -m "docs: update CLAUDE.md with panel architecture notes"
 
 ## Summary
 
-| Phase | Tasks | Key Deliverable |
-|-------|-------|-----------------|
-| **3a** | 1-6 | Panel infrastructure — PanelNode tree, PanelRenderer, PanelLeaf, replace ViewRouter. Zero UX change. |
-| **3b** | 7-11 | Docking — PanelTabBar drag, PanelDropOverlay 5-zone, moveTab, ActivityBar launcher |
-| **3c** | 12-15 | Polish — Keyboard shortcuts, layout persistence, command palette commands |
+| Phase  | Tasks | Key Deliverable                                                                                      |
+| ------ | ----- | ---------------------------------------------------------------------------------------------------- |
+| **3a** | 1-6   | Panel infrastructure — PanelNode tree, PanelRenderer, PanelLeaf, replace ViewRouter. Zero UX change. |
+| **3b** | 7-11  | Docking — PanelTabBar drag, PanelDropOverlay 5-zone, moveTab, ActivityBar launcher                   |
+| **3c** | 12-15 | Polish — Keyboard shortcuts, layout persistence, command palette commands                            |
 
 **Total tasks:** 15
 **New files:** 8 (store + 5 panel components + 4 test files)

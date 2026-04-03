@@ -39,6 +39,7 @@ src/renderer/src/assets/pr-station.css       # Add view-level header styles
 ## Task 1: Create agents.css and migrate AgentsView header
 
 **Files:**
+
 - Create: `src/renderer/src/assets/agents.css`
 - Modify: `src/renderer/src/views/AgentsView.tsx:6-7,17,76,82-112`
 
@@ -65,13 +66,18 @@ src/renderer/src/assets/pr-station.css       # Add view-level header styles
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 211, 127, 0.4) 0%,
+    rgba(108, 142, 239, 0.2) 60%,
+    transparent 100%
+  );
 }
 
 .agents-view__title {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -86,7 +92,9 @@ src/renderer/src/assets/pr-station.css       # Add view-level header styles
   border-radius: var(--radius-sm, 4px);
   cursor: pointer;
   color: var(--text-secondary, var(--bde-text-muted));
-  transition: color 0.12s ease, border-color 0.12s ease;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .agents-view__spawn-btn:hover {
@@ -120,56 +128,63 @@ becomes:
 The sidebar header block (lines 83-112):
 
 ```tsx
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: `${tokens.space[2]} ${tokens.space[3]}`,
-          borderBottom: `1px solid ${tokens.color.border}`,
-        }}>
-          <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-            Agents
-          </span>
-          <button
-            onClick={() => setSpawnOpen(true)}
-            title="Spawn Agent"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 24,
-              height: 24,
-              background: 'none',
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.sm,
-              cursor: 'pointer',
-              color: tokens.color.textMuted,
-            }}
-          >
-            <Plus size={14} />
-          </button>
-        </div>
+{
+  /* Header */
+}
+;<div
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: `${tokens.space[2]} ${tokens.space[3]}`,
+    borderBottom: `1px solid ${tokens.color.border}`
+  }}
+>
+  <span
+    style={{
+      fontSize: tokens.size.xs,
+      color: tokens.color.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      fontWeight: 600
+    }}
+  >
+    Agents
+  </span>
+  <button
+    onClick={() => setSpawnOpen(true)}
+    title="Spawn Agent"
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 24,
+      height: 24,
+      background: 'none',
+      border: `1px solid ${tokens.color.border}`,
+      borderRadius: tokens.radius.sm,
+      cursor: 'pointer',
+      color: tokens.color.textMuted
+    }}
+  >
+    <Plus size={14} />
+  </button>
+</div>
 ```
 
 becomes:
 
 ```tsx
-        {/* Header */}
-        <div className="agents-view__sidebar-header">
-          <span className="agents-view__title text-gradient-aurora">
-            Agents
-          </span>
-          <button
-            className="agents-view__spawn-btn"
-            onClick={() => setSpawnOpen(true)}
-            title="Spawn Agent"
-          >
-            <Plus size={14} />
-          </button>
-        </div>
+{
+  /* Header */
+}
+;<div className="agents-view__sidebar-header">
+  <span className="agents-view__title text-gradient-aurora">Agents</span>
+  <button className="agents-view__spawn-btn" onClick={() => setSpawnOpen(true)} title="Spawn Agent">
+    <Plus size={14} />
+  </button>
+</div>
 ```
-
 
 - [ ] **Step 3: Verify build passes**
 
@@ -193,6 +208,7 @@ git commit -m "feat(DP-S3): migrate AgentsView header to CSS classes with aurora
 ## Task 2: Add view-level header to PRStationView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/PRStationView.tsx:70-71`
 - Modify: `src/renderer/src/assets/pr-station.css`
 
@@ -220,13 +236,18 @@ Add at the top of the file (after the `.pr-station` rule, around line 7):
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 211, 127, 0.4) 0%,
+    rgba(108, 142, 239, 0.2) 60%,
+    transparent 100%
+  );
 }
 
 .pr-station__view-title {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 ```
@@ -277,6 +298,7 @@ git commit -m "feat(DP-S3): add view-level aurora header to PRStationView"
 ## Task 3: Fix TerminalView header — add accent underline
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/terminal.css:11-19`
 
 - [ ] **Step 1: Add `position: relative` and `::after` to terminal header**
@@ -306,7 +328,12 @@ Then add the `::after` rule right after (after line 19):
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(0, 211, 127, 0.4) 0%, rgba(108, 142, 239, 0.2) 60%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(0, 211, 127, 0.4) 0%,
+    rgba(108, 142, 239, 0.2) 60%,
+    transparent 100%
+  );
 }
 ```
 
@@ -327,6 +354,7 @@ git commit -m "feat(DP-S3): add accent underline to TerminalView header"
 ## Task 4: Add fade-in motion to AgentsView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/AgentsView.tsx:6,75-76`
 
 - [ ] **Step 1: Add motion imports**
@@ -389,6 +417,7 @@ git commit -m "feat(DP-S7): add fade-in motion to AgentsView"
 ## Task 5: Add fade-in motion to PRStationView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/PRStationView.tsx:1,70`
 
 - [ ] **Step 1: Add motion imports**
@@ -440,6 +469,7 @@ git commit -m "feat(DP-S7): add fade-in motion to PRStationView"
 ## Task 6: Add fade-in motion to TerminalView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/TerminalView.tsx:1-7,165-166`
 
 - [ ] **Step 1: Add motion imports**
@@ -490,6 +520,7 @@ git commit -m "feat(DP-S7): add fade-in motion to TerminalView"
 ## Task 7: Add fade-in motion to SprintView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SprintView.tsx`
 
 SprintView currently returns `<SprintCenter />` directly with no wrapper div. Wrap it in a `motion.div`.
@@ -540,6 +571,7 @@ git commit -m "feat(DP-S7): add fade-in motion to SprintView"
 ## Task 8: Add fade-in motion to MemoryView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/MemoryView.tsx`
 
 - [ ] **Step 1: Add motion imports**
@@ -590,6 +622,7 @@ git commit -m "feat(DP-S7): add fade-in motion to MemoryView"
 ## Task 9: Add fade-in motion to CostView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/CostView.tsx`
 
 **Note:** CostView has TWO return statements — an early return for the loading skeleton (line 259) and the main return (line 275). Both use `<div className="cost-view cost-view--glass">` as root. Apply `motion.div` to **both** returns for consistent behavior.
@@ -642,6 +675,7 @@ git commit -m "feat(DP-S7): add fade-in motion to CostView"
 ## Task 10: Add fade-in motion to SettingsView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx`
 
 - [ ] **Step 1: Add motion imports**
@@ -691,18 +725,18 @@ git commit -m "feat(DP-S7): add fade-in motion to SettingsView"
 
 ## Execution Summary
 
-| Task | Story | What | Files |
-|------|-------|------|-------|
-| 1 | DP-S3 | AgentsView header → CSS classes + aurora gradient | `agents.css` (new), `AgentsView.tsx` |
-| 2 | DP-S3 | PRStationView view-level header | `PRStationView.tsx`, `pr-station.css` |
-| 3 | DP-S3 | TerminalView header accent underline fix | `terminal.css` |
-| 4 | DP-S7 | Fade-in motion: AgentsView | `AgentsView.tsx` |
-| 5 | DP-S7 | Fade-in motion: PRStationView | `PRStationView.tsx` |
-| 6 | DP-S7 | Fade-in motion: TerminalView | `TerminalView.tsx` |
-| 7 | DP-S7 | Fade-in motion: SprintView | `SprintView.tsx` |
-| 8 | DP-S7 | Fade-in motion: MemoryView | `MemoryView.tsx` |
-| 9 | DP-S7 | Fade-in motion: CostView | `CostView.tsx` |
-| 10 | DP-S7 | Fade-in motion: SettingsView | `SettingsView.tsx` |
+| Task | Story | What                                              | Files                                 |
+| ---- | ----- | ------------------------------------------------- | ------------------------------------- |
+| 1    | DP-S3 | AgentsView header → CSS classes + aurora gradient | `agents.css` (new), `AgentsView.tsx`  |
+| 2    | DP-S3 | PRStationView view-level header                   | `PRStationView.tsx`, `pr-station.css` |
+| 3    | DP-S3 | TerminalView header accent underline fix          | `terminal.css`                        |
+| 4    | DP-S7 | Fade-in motion: AgentsView                        | `AgentsView.tsx`                      |
+| 5    | DP-S7 | Fade-in motion: PRStationView                     | `PRStationView.tsx`                   |
+| 6    | DP-S7 | Fade-in motion: TerminalView                      | `TerminalView.tsx`                    |
+| 7    | DP-S7 | Fade-in motion: SprintView                        | `SprintView.tsx`                      |
+| 8    | DP-S7 | Fade-in motion: MemoryView                        | `MemoryView.tsx`                      |
+| 9    | DP-S7 | Fade-in motion: CostView                          | `CostView.tsx`                        |
+| 10   | DP-S7 | Fade-in motion: SettingsView                      | `SettingsView.tsx`                    |
 
 **Total tasks:** 10
 **New files:** 1 (`agents.css`)

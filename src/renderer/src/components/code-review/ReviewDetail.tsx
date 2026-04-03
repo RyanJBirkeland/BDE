@@ -6,7 +6,7 @@ import { ConversationTab } from './ConversationTab'
 const TABS: { key: ReviewTab; label: string }[] = [
   { key: 'changes', label: 'Changes' },
   { key: 'commits', label: 'Commits' },
-  { key: 'conversation', label: 'Conversation' },
+  { key: 'conversation', label: 'Conversation' }
 ]
 
 export function ReviewDetail(): React.JSX.Element {
@@ -15,9 +15,7 @@ export function ReviewDetail(): React.JSX.Element {
   const setActiveTab = useCodeReviewStore((s) => s.setActiveTab)
 
   if (!selectedTaskId) {
-    return (
-      <div className="cr-detail cr-detail--empty">Select a task to review</div>
-    )
+    return <div className="cr-detail cr-detail--empty">Select a task to review</div>
   }
 
   return (

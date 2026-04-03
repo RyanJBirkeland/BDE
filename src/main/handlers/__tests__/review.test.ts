@@ -199,9 +199,7 @@ describe('Review handlers', () => {
       })
 
       // Mock repo config
-      vi.mocked(getSettingJson).mockReturnValue([
-        { name: 'test-repo', localPath: '/repos/test' }
-      ])
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'test-repo', localPath: '/repos/test' }])
 
       vi.mocked(updateTask).mockReturnValue({
         id: 'task-1',
@@ -374,9 +372,7 @@ describe('Review handlers', () => {
         updated_at: new Date().toISOString()
       })
 
-      vi.mocked(getSettingJson).mockReturnValue([
-        { name: 'test-repo', localPath: '/repos/test' }
-      ])
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'test-repo', localPath: '/repos/test' }])
 
       vi.mocked(updateTask).mockReturnValue({
         id: 'task-1',

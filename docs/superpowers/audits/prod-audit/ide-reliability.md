@@ -10,16 +10,16 @@
 
 ### Previously Reported -- Now Fixed
 
-| Synthesis ID | Issue | Status |
-|---|---|---|
-| SEC-2 | Symlink-based path traversal bypass in IDE `validateIdePath` | **Fixed.** `fs.realpathSync()` added to both root and target paths at `ide-fs-handlers.ts:19-42`. Fallback logic handles non-existent paths for new file creation. |
+| Synthesis ID | Issue                                                        | Status                                                                                                                                                             |
+| ------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| SEC-2        | Symlink-based path traversal bypass in IDE `validateIdePath` | **Fixed.** `fs.realpathSync()` added to both root and target paths at `ide-fs-handlers.ts:19-42`. Fallback logic handles non-existent paths for new file creation. |
 
 ### Previously Reported -- Still Open
 
-| Synthesis ID | Issue | Current State |
-|---|---|---|
-| Sprint 3 action item | Move `fileContents` from IDEView local state to IDE store (workspace-ax S3, workspace-sd 3.2) | **Still open.** `fileContents` remains as `useState<Record<string, string>>({})` in `IDEView.tsx:103`. See IDE-REL-001. |
-| UX-5 | Keyboard shortcuts fire in contentEditable / Monaco editor | **Still open.** IDEView registers its own keydown handler at `IDEView.tsx:276` with `capture: true`, which intercepts keys before Monaco. The Cmd+S guard at line 190 checks `focusedPanel === 'editor'` which partially mitigates, but other IDE shortcuts (Cmd+B, Cmd+J, Cmd+O) fire unconditionally when IDE view is active regardless of Monaco focus state. |
+| Synthesis ID         | Issue                                                                                         | Current State                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sprint 3 action item | Move `fileContents` from IDEView local state to IDE store (workspace-ax S3, workspace-sd 3.2) | **Still open.** `fileContents` remains as `useState<Record<string, string>>({})` in `IDEView.tsx:103`. See IDE-REL-001.                                                                                                                                                                                                                                          |
+| UX-5                 | Keyboard shortcuts fire in contentEditable / Monaco editor                                    | **Still open.** IDEView registers its own keydown handler at `IDEView.tsx:276` with `capture: true`, which intercepts keys before Monaco. The Cmd+S guard at line 190 checks `focusedPanel === 'editor'` which partially mitigates, but other IDE shortcuts (Cmd+B, Cmd+J, Cmd+O) fire unconditionally when IDE view is active regardless of Monaco focus state. |
 
 ---
 
@@ -35,6 +35,7 @@ None found.
 
 **File:** `src/renderer/src/views/IDEView.tsx:103`
 **Code:**
+
 ```typescript
 const [fileContents, setFileContents] = useState<Record<string, string>>({})
 ```
@@ -52,6 +53,7 @@ const [fileContents, setFileContents] = useState<Record<string, string>>({})
 
 **File:** `src/main/handlers/ide-fs-handlers.ts:144`
 **Code:**
+
 ```typescript
 watcher = fs.watch(dirPath, { recursive: true }, () => {
   if (debounceTimer !== null) clearTimeout(debounceTimer)
@@ -65,6 +67,7 @@ watcher = fs.watch(dirPath, { recursive: true }, () => {
 **Problem:** `fs.watch()` emits `'error'` events (e.g., EMFILE when fd limit exceeded, EACCES on permission change, or when the watched directory is deleted). No `.on('error', ...)` handler is attached. In Node.js, an unhandled `'error'` event on an `EventEmitter` throws and crashes the process. Since this runs in Electron's main process, this could crash the entire app.
 
 **Fix:** Add an error handler:
+
 ```typescript
 watcher.on('error', (err) => {
   logger.error('File watcher error:', err)
@@ -78,6 +81,7 @@ watcher.on('error', (err) => {
 
 **File:** `src/renderer/src/views/IDEView.tsx:103, 132`
 **Code:**
+
 ```typescript
 setFileContents((prev) => ({ ...prev, [activeTab.filePath]: content }))
 ```
@@ -85,6 +89,7 @@ setFileContents((prev) => ({ ...prev, [activeTab.filePath]: content }))
 **Problem:** When a tab is closed via `closeTab(tabId)`, the corresponding entry in `fileContents` is never removed. Over a long session opening many files, `fileContents` grows unboundedly. With the 5MB file size limit, a user opening 20 large files accumulates up to 100MB of dead strings in memory. This is especially problematic because `fileContents` is also in `handleSave`'s dependency array, so the growing record triggers increasingly expensive closure captures.
 
 **Fix:** In `handleCloseTab`, after `closeTab(tabId)`, remove the file content:
+
 ```typescript
 const tab = openTabs.find((t) => t.id === tabId)
 if (tab) {
@@ -103,6 +108,7 @@ if (tab) {
 **File:** `src/renderer/src/views/IDEView.tsx:107-115, 117-127`
 
 **Problem:** The file-read effect (line 107) and `handleSave` (line 117) can race. Scenario:
+
 1. User edits file A (dirty).
 2. User switches to tab B. The effect fires for B, reading its content.
 3. User quickly clicks Save (Cmd+S). `handleSave` reads `fileContents[activeTab.filePath]` -- but `activeTab` is now B, not A.
@@ -118,6 +124,7 @@ The `activeTab` variable is derived from `openTabs` and `activeTabId` on each re
 
 **File:** `src/main/handlers/ide-fs-handlers.ts:140-151`
 **Code:**
+
 ```typescript
 safeHandle('fs:watchDir', (_e, dirPath: string) => {
   stopWatcher()
@@ -129,6 +136,7 @@ safeHandle('fs:watchDir', (_e, dirPath: string) => {
 **Problem:** The `fs:watchDir` handler sets `ideRootPath` and starts a watcher on any path without validating that the path exists or is a directory. If the renderer sends a bogus path, `fs.watch()` will throw synchronously (ENOENT), but the error is caught by `safeHandle` and returned to the renderer. However, `ideRootPath` has already been set to the bogus path on line 142, meaning all subsequent `fs:readDir`, `fs:readFile`, etc. calls will use this invalid root for path validation. A legitimate path could then be rejected or an unintended path accepted.
 
 **Fix:** Move `ideRootPath = dirPath` to after the `fs.watch()` call succeeds, or validate the path exists first:
+
 ```typescript
 const info = await stat(dirPath)
 if (!info.isDirectory()) throw new Error('Not a directory')
@@ -144,6 +152,7 @@ ideRootPath = dirPath
 **File:** `src/main/handlers/ide-fs-handlers.ts:122-126`, `src/renderer/src/components/ide/FileTree.tsx:34-37`
 
 **Problem:** `broadcastDirChanged(dirPath)` sends the changed directory path to all renderer windows, but `FileTree`'s `onDirChanged` listener ignores the path argument and re-reads the root directory on every change event:
+
 ```typescript
 const unsubscribe = window.api.onDirChanged(() => loadEntries())
 ```
@@ -170,6 +179,7 @@ This means every file save, create, rename, or delete triggers a full re-read of
 
 **File:** `src/main/handlers/ide-fs-handlers.ts:92-98`
 **Code:**
+
 ```typescript
 const probe = buf.subarray(0, BINARY_DETECT_BYTES)
 for (let i = 0; i < probe.length; i++) {
@@ -191,6 +201,7 @@ The result is that binary files that slip through will be loaded as garbled UTF-
 
 **File:** `src/main/handlers/ide-fs-handlers.ts:106`
 **Code:**
+
 ```typescript
 const tmpPath = `${filePath}.bde-tmp-${Date.now()}`
 ```
@@ -248,6 +259,7 @@ const tmpPath = `${filePath}.bde-tmp-${Date.now()}`
 **File:** `src/main/__tests__/ide-fs-handlers.test.ts:38-63`
 
 **Problem:** The test suite for `validateIdePath` tests path traversal with `..` and absolute paths outside root, but does not test the symlink resolution path. The symlink fix (SEC-2 from synthesis) added `fs.realpathSync()` calls, but there are no tests verifying that:
+
 1. A symlink inside root pointing outside root is rejected
 2. A symlink inside root pointing to another location inside root is allowed
 3. The fallback path when `realpathSync` throws (new file creation) works correctly
@@ -262,6 +274,7 @@ Since `fs.realpathSync` is not mocked in the test file, the tests exercise the f
 
 **File:** `src/main/handlers/ide-fs-handlers.ts:84-101`
 **Code:**
+
 ```typescript
 const info = await stat(filePath)
 if (info.size > MAX_READ_BYTES) {
@@ -280,6 +293,7 @@ const buf = await readFile(filePath)
 
 **File:** `src/renderer/src/components/ide/FileTreeNode.tsx:44-47`
 **Code:**
+
 ```typescript
 const activeFilePath = useIDEStore((s) => {
   const activeTab = s.openTabs.find((t) => t.id === s.activeTabId)
@@ -290,12 +304,14 @@ const activeFilePath = useIDEStore((s) => {
 **Problem:** This selector returns a primitive (`string | null`), which is fine for Zustand's shallow comparison. However, every `FileTreeNode` in the tree subscribes to this selector. When the active tab changes, ALL FileTreeNode instances re-render (since the selector return value changes for all of them). In a project with hundreds of visible files, this causes a cascade of re-renders on every tab switch.
 
 **Fix:** Each FileTreeNode only needs to know if IT is the active file. Change the selector to return a boolean:
+
 ```typescript
 const isActive = useIDEStore((s) => {
   const activeTab = s.openTabs.find((t) => t.id === s.activeTabId)
   return activeTab?.filePath === fullPath
 })
 ```
+
 This way, only the previously-active and newly-active nodes re-render.
 
 ---
@@ -306,6 +322,7 @@ This way, only the previously-active and newly-active nodes re-render.
 
 **File:** `src/renderer/src/components/ide/TerminalPanel.tsx:39-42`
 **Code:**
+
 ```typescript
 const handleCloseAll = useCallback(() => {
   const { tabs: currentTabs } = useTerminalStore.getState()
@@ -323,6 +340,7 @@ const handleCloseAll = useCallback(() => {
 
 **File:** `src/renderer/src/views/IDEView.tsx:129-136`
 **Code:**
+
 ```typescript
 const handleContentChange = useCallback(
   (content: string) => {
@@ -337,6 +355,7 @@ const handleContentChange = useCallback(
 **Problem:** Every keystroke in Monaco triggers `handleContentChange`, which calls `setDirty` on every keystroke. `setDirty` calls `set()` on the Zustand store, which triggers the persistence subscriber (IDE-REL-012), which serializes the entire state to JSON. For fast typists (10+ keystrokes/second), this generates significant GC pressure.
 
 **Fix:** Only call `setDirty(id, true)` if the tab is not already dirty:
+
 ```typescript
 if (!activeTab.isDirty) setDirty(activeTab.id, true)
 ```
@@ -345,26 +364,26 @@ if (!activeTab.isDirty) setDirty(activeTab.id, true)
 
 ## Summary Table
 
-| ID | Severity | File | Description |
-|---|---|---|---|
-| IDE-REL-001 | Significant | IDEView.tsx:103 | fileContents in component state causes data loss on view switch |
-| IDE-REL-002 | Significant | ide-fs-handlers.ts:144 | FSWatcher has no error handler -- unhandled 'error' can crash main process |
-| IDE-REL-003 | Significant | IDEView.tsx:103,132 | Closed tabs never evict from fileContents -- memory leak |
-| IDE-REL-004 | Significant | IDEView.tsx:107-127 | Race between save and file-read on rapid tab switch |
-| IDE-REL-005 | Significant | ide-fs-handlers.ts:140-142 | ideRootPath set before fs.watch succeeds -- stale root on failure |
-| IDE-REL-006 | Moderate | ide-fs-handlers.ts:122, FileTree.tsx:35 | dirChanged broadcasts to all windows; FileTree re-reads unconditionally |
-| IDE-REL-007 | Moderate | FileTreeNode.tsx:53-69 | Expanded subdirectories never refresh on filesystem changes |
-| IDE-REL-008 | Moderate | ide-fs-handlers.ts:92-98 | Binary detection only checks null bytes -- misses many formats |
-| IDE-REL-009 | Moderate | ide-fs-handlers.ts:106 | Date.now() temp file suffix -- collision risk on rapid saves |
-| IDE-REL-010 | Moderate | TerminalPanel.tsx | Zero test coverage for TerminalPanel component |
-| IDE-REL-011 | Moderate | ide.ts:113, IDEView.tsx:152 | setRootPath leaves stale tabs from old root open |
-| IDE-REL-012 | Moderate | ide.ts:216-233 | Persistence subscriber fires on all state changes, not just persisted fields |
-| IDE-REL-013 | Moderate | ide-fs-handlers.ts:140-151 | watchDir returns undefined -- renderer cannot detect failure |
-| IDE-REL-014 | Moderate | ide-fs-handlers.test.ts | No symlink test coverage for validateIdePath |
-| IDE-REL-015 | Moderate | ide-fs-handlers.ts:84-101 | Full file read before binary check wastes memory for binary files |
-| IDE-REL-016 | Moderate | FileTreeNode.tsx:44-47 | activeFilePath selector causes all tree nodes to re-render on tab switch |
-| IDE-REL-017 | Minor | TerminalPanel.tsx:39-42 | handleCloseAll always preserves first tab regardless of type |
-| IDE-REL-018 | Minor | IDEView.tsx:129-136 | setDirty called on every keystroke even when already dirty |
+| ID          | Severity    | File                                    | Description                                                                  |
+| ----------- | ----------- | --------------------------------------- | ---------------------------------------------------------------------------- |
+| IDE-REL-001 | Significant | IDEView.tsx:103                         | fileContents in component state causes data loss on view switch              |
+| IDE-REL-002 | Significant | ide-fs-handlers.ts:144                  | FSWatcher has no error handler -- unhandled 'error' can crash main process   |
+| IDE-REL-003 | Significant | IDEView.tsx:103,132                     | Closed tabs never evict from fileContents -- memory leak                     |
+| IDE-REL-004 | Significant | IDEView.tsx:107-127                     | Race between save and file-read on rapid tab switch                          |
+| IDE-REL-005 | Significant | ide-fs-handlers.ts:140-142              | ideRootPath set before fs.watch succeeds -- stale root on failure            |
+| IDE-REL-006 | Moderate    | ide-fs-handlers.ts:122, FileTree.tsx:35 | dirChanged broadcasts to all windows; FileTree re-reads unconditionally      |
+| IDE-REL-007 | Moderate    | FileTreeNode.tsx:53-69                  | Expanded subdirectories never refresh on filesystem changes                  |
+| IDE-REL-008 | Moderate    | ide-fs-handlers.ts:92-98                | Binary detection only checks null bytes -- misses many formats               |
+| IDE-REL-009 | Moderate    | ide-fs-handlers.ts:106                  | Date.now() temp file suffix -- collision risk on rapid saves                 |
+| IDE-REL-010 | Moderate    | TerminalPanel.tsx                       | Zero test coverage for TerminalPanel component                               |
+| IDE-REL-011 | Moderate    | ide.ts:113, IDEView.tsx:152             | setRootPath leaves stale tabs from old root open                             |
+| IDE-REL-012 | Moderate    | ide.ts:216-233                          | Persistence subscriber fires on all state changes, not just persisted fields |
+| IDE-REL-013 | Moderate    | ide-fs-handlers.ts:140-151              | watchDir returns undefined -- renderer cannot detect failure                 |
+| IDE-REL-014 | Moderate    | ide-fs-handlers.test.ts                 | No symlink test coverage for validateIdePath                                 |
+| IDE-REL-015 | Moderate    | ide-fs-handlers.ts:84-101               | Full file read before binary check wastes memory for binary files            |
+| IDE-REL-016 | Moderate    | FileTreeNode.tsx:44-47                  | activeFilePath selector causes all tree nodes to re-render on tab switch     |
+| IDE-REL-017 | Minor       | TerminalPanel.tsx:39-42                 | handleCloseAll always preserves first tab regardless of type                 |
+| IDE-REL-018 | Minor       | IDEView.tsx:129-136                     | setDirty called on every keystroke even when already dirty                   |
 
 ---
 

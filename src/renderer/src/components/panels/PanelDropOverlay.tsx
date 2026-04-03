@@ -120,4 +120,3 @@ export function PanelDropOverlay({ panelId, onDrop }: PanelDropOverlayProps): Re
     </div>
   )
 }
-

@@ -11,6 +11,7 @@ Upgrade tear-off windows from single-view to full panel support. When a second t
 ## Prerequisites from PR #565
 
 This spec depends on these components from the cross-window drag PR:
+
 - `src/renderer/src/hooks/useCrossWindowDrop.ts` — hook receiving `tearoff:dragIn/dragMove/dragCancel`
 - `src/renderer/src/components/panels/CrossWindowDropOverlay.tsx` — overlay with 5-zone targeting
 - `tearoff:crossWindowDrop` IPC channel (main → renderer) — executes tab add/split
@@ -61,6 +62,7 @@ Default `true`. `TearoffShell` sets it to `false` on mount. The subscriber check
 ### Component Structure
 
 **Single-view mode:**
+
 ```
 ┌─────────────────────────────────┐
 │ ● ● ●   [View Name]     [⤶] [✕]│  ← 32px header
@@ -72,6 +74,7 @@ Default `true`. `TearoffShell` sets it to `false` on mount. The subscriber check
 ```
 
 **Panel mode:**
+
 ```
 ┌─────────────────────────────────┐
 │ ● ● ●              [⤶ All] [✕] │  ← 32px header (drag region)
@@ -90,6 +93,7 @@ Default `true`. `TearoffShell` sets it to `false` on mount. The subscriber check
 Renders tabs for the focused panel in tear-off windows. Since there's no sidebar or `UnifiedHeader` in tear-offs, this component provides the tab management UI.
 
 **Props:**
+
 ```typescript
 interface TearoffTabBarProps {
   panelId: string
@@ -110,14 +114,14 @@ When `tearoff:crossWindowDrop` arrives and `isMultiTab` is false:
 
 ```typescript
 const store = usePanelLayoutStore.getState()
-const currentRoot = store.root as PanelLeafNode  // guaranteed leaf in single-view mode
+const currentRoot = store.root as PanelLeafNode // guaranteed leaf in single-view mode
 
 if (payload.zone === 'center') {
   // Add as tab — construct leaf with two tabs directly
   store.addTab(currentRoot.panelId, payload.view as View)
 } else {
   // Split — use existing splitPanel which creates a split node
-  const direction = (payload.zone === 'left' || payload.zone === 'right') ? 'horizontal' : 'vertical'
+  const direction = payload.zone === 'left' || payload.zone === 'right' ? 'horizontal' : 'vertical'
   store.splitPanel(currentRoot.panelId, direction, payload.view as View)
 }
 // isMultiTab now becomes true → TearoffShell re-renders in panel mode
@@ -135,6 +139,7 @@ No manual tree construction needed — use existing store actions. They handle t
 ```
 
 **TearoffShell handler:**
+
 ```typescript
 function handleReturnAll() {
   const views = getOpenViews(usePanelLayoutStore.getState().root)
@@ -166,7 +171,7 @@ import type { View } from '../stores/panelLayout'
 
 export const VIEW_COMPONENTS: Record<View, React.LazyExoticComponent<React.ComponentType>> = {
   dashboard: lazy(() => import('../views/DashboardView')),
-  agents: lazy(() => import('../views/AgentsView').then((m) => ({ default: m.AgentsView }))),
+  agents: lazy(() => import('../views/AgentsView').then((m) => ({ default: m.AgentsView })))
   // ... etc
 }
 ```
@@ -185,16 +190,16 @@ These are registered by `TearoffShell` when in panel mode, using the same event 
 
 ## What Changes
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/components/layout/TearoffShell.tsx` | Mode derivation from store, conditional render (single vs panel), crossWindowDrop handler, "Return All" button, Cmd+W shortcut, mount TearoffTabBar |
-| `src/renderer/src/components/layout/TearoffTabBar.tsx` | NEW — tab strip for focused panel in tear-off windows |
-| `src/renderer/src/lib/view-resolver.ts` | NEW — shared lazy view imports |
-| `src/renderer/src/stores/panelLayout.ts` | Export `findFirstLeaf`, add `persistable` flag + subscriber guard |
-| `src/renderer/src/components/panels/PanelLeaf.tsx` | Import views from shared `view-resolver.ts` |
-| `src/preload/index.ts` + `.d.ts` | Add `returnAll` method |
-| `src/shared/ipc-channels.ts` | Add `tearoff:returnAll` channel type |
-| `src/main/tearoff-manager.ts` | Handle `tearoff:returnAll` IPC |
+| File                                                   | Change                                                                                                                                              |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/components/layout/TearoffShell.tsx`  | Mode derivation from store, conditional render (single vs panel), crossWindowDrop handler, "Return All" button, Cmd+W shortcut, mount TearoffTabBar |
+| `src/renderer/src/components/layout/TearoffTabBar.tsx` | NEW — tab strip for focused panel in tear-off windows                                                                                               |
+| `src/renderer/src/lib/view-resolver.ts`                | NEW — shared lazy view imports                                                                                                                      |
+| `src/renderer/src/stores/panelLayout.ts`               | Export `findFirstLeaf`, add `persistable` flag + subscriber guard                                                                                   |
+| `src/renderer/src/components/panels/PanelLeaf.tsx`     | Import views from shared `view-resolver.ts`                                                                                                         |
+| `src/preload/index.ts` + `.d.ts`                       | Add `returnAll` method                                                                                                                              |
+| `src/shared/ipc-channels.ts`                           | Add `tearoff:returnAll` channel type                                                                                                                |
+| `src/main/tearoff-manager.ts`                          | Handle `tearoff:returnAll` IPC                                                                                                                      |
 
 ## What Does NOT Change
 
@@ -222,6 +227,7 @@ These are registered by `TearoffShell` when in panel mode, using the same event 
 ## Testing Strategy
 
 **Unit tests:**
+
 - TearoffShell: `isMultiTab` derivation (single leaf → false, two tabs → true, split → true)
 - TearoffShell: panel mode renders PanelRenderer
 - TearoffShell: single→panel transition on crossWindowDrop (center and directional)
@@ -229,11 +235,13 @@ These are registered by `TearoffShell` when in panel mode, using the same event 
 - `persistable` flag: subscriber skips save when false
 
 **Integration tests:**
+
 - Cross-window drop into single-view tear-off → panel mode activated
 - "Return All" → all views sent to main, window closes
 - Cmd+W in panel mode → tab closed
 
 **Manual tests:**
+
 - Drop tab into tear-off center → tab bar appears, both views
 - Drop tab into edge → views split side-by-side
 - Close tab in multi-tab tear-off → remaining tabs stay

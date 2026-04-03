@@ -12,12 +12,12 @@ Apply the V2 Neon Design System to the IDE view's layout chrome (sidebar, tab ba
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Neon scope | Chrome only | Editor/terminal are productivity surfaces — particles and glows would distract from code |
-| Empty state | Minimal neon | Neon-bg, purple title glow, cyan button. No StatusBar/NeonCard — it's transient |
+| Decision             | Choice                       | Rationale                                                                                    |
+| -------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
+| Neon scope           | Chrome only                  | Editor/terminal are productivity surfaces — particles and glows would distract from code     |
+| Empty state          | Minimal neon                 | Neon-bg, purple title glow, cyan button. No StatusBar/NeonCard — it's transient              |
 | Sidebar collapse fix | Toggle button in editor area | Respects user's collapse preference; `Cmd+B` still works but now there's a visual affordance |
-| Particles/scanlines | No | IDE is a focused workspace, not a dashboard |
+| Particles/scanlines  | No                           | IDE is a focused workspace, not a dashboard                                                  |
 
 ## Scope
 
@@ -75,12 +75,15 @@ Apply the V2 Neon Design System to the IDE view's layout chrome (sidebar, tab ba
 **Fix:** When the sidebar is collapsed and the editor area is empty (no active tab), render a small toggle button (`PanelLeftOpen` icon from lucide) in the top-left corner of the editor area. Clicking it calls `toggleSidebar()`.
 
 **Location:** `IDEView.tsx`, inside the `.ide-editor-area` div, rendered conditionally:
+
 ```tsx
-{sidebarCollapsed && !activeTab && (
-  <button className="ide-sidebar-toggle" onClick={toggleSidebar}>
-    <PanelLeftOpen size={16} />
-  </button>
-)}
+{
+  sidebarCollapsed && !activeTab && (
+    <button className="ide-sidebar-toggle" onClick={toggleSidebar}>
+      <PanelLeftOpen size={16} />
+    </button>
+  )
+}
 ```
 
 **Styling:** Positioned absolute, top-left of editor area. `--neon-text-dim` default, `--neon-cyan` on hover with subtle glow. Small and unobtrusive.
@@ -89,22 +92,22 @@ Apply the V2 Neon Design System to the IDE view's layout chrome (sidebar, tab ba
 
 The neon CSS overrides remap `--bde-*` tokens to `--neon-*` equivalents. Full mapping:
 
-| `ide.css` / `terminal.css` token | Neon replacement | Context |
-|----------------------------------|-----------------|---------|
-| `--bde-bg` | `--neon-bg` (#0a0015) | View background, editor empty state |
-| `--bde-surface` | `rgba(10, 0, 21, 0.6)` | Sidebar, tab bar backgrounds |
-| `--bde-surface-high` | `--neon-surface-deep` | Context menu background |
-| `--bde-border` | `--neon-purple-border` | All panel/tab borders |
-| `--bde-text` | `--neon-text` | Primary text |
-| `--bde-text-muted` | `--neon-text-muted` | Secondary text, inactive tabs |
-| `--bde-text-dim` | `--neon-text-dim` | Tertiary text, icons |
-| `--bde-accent` | `--neon-cyan` | Active indicators, dirty dots |
-| `--bde-accent-hover` | `--neon-cyan-surface` | Recent folder hover |
-| `--bde-hover` | `--neon-surface-dim` | Row/item hover backgrounds |
-| `--bde-hover-strong` | `--neon-surface-subtle` | Close button hover |
-| `--bde-selected` | `--neon-cyan-surface` | Active file node background |
-| `--bde-danger` | `--neon-red` | Danger context menu items |
-| `--bde-danger-hover` | `--neon-red-surface` | Danger item hover |
+| `ide.css` / `terminal.css` token | Neon replacement        | Context                             |
+| -------------------------------- | ----------------------- | ----------------------------------- |
+| `--bde-bg`                       | `--neon-bg` (#0a0015)   | View background, editor empty state |
+| `--bde-surface`                  | `rgba(10, 0, 21, 0.6)`  | Sidebar, tab bar backgrounds        |
+| `--bde-surface-high`             | `--neon-surface-deep`   | Context menu background             |
+| `--bde-border`                   | `--neon-purple-border`  | All panel/tab borders               |
+| `--bde-text`                     | `--neon-text`           | Primary text                        |
+| `--bde-text-muted`               | `--neon-text-muted`     | Secondary text, inactive tabs       |
+| `--bde-text-dim`                 | `--neon-text-dim`       | Tertiary text, icons                |
+| `--bde-accent`                   | `--neon-cyan`           | Active indicators, dirty dots       |
+| `--bde-accent-hover`             | `--neon-cyan-surface`   | Recent folder hover                 |
+| `--bde-hover`                    | `--neon-surface-dim`    | Row/item hover backgrounds          |
+| `--bde-hover-strong`             | `--neon-surface-subtle` | Close button hover                  |
+| `--bde-selected`                 | `--neon-cyan-surface`   | Active file node background         |
+| `--bde-danger`                   | `--neon-red`            | Danger context menu items           |
+| `--bde-danger-hover`             | `--neon-red-surface`    | Danger item hover                   |
 
 Glass-blur is applied via `backdrop-filter: var(--neon-glass-blur)` (= `blur(16px) saturate(180%)`) on sidebar header, tab bars, and context menus.
 
@@ -134,7 +137,10 @@ The existing class names and structure remain — we're reskinning, not restruct
   background: var(--neon-surface-deep);
   color: var(--neon-text-dim);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .ide-sidebar-toggle:hover {
   color: var(--neon-cyan);
@@ -149,11 +155,11 @@ The existing class names and structure remain — we're reskinning, not restruct
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/assets/ide-neon.css` | **New** — neon overrides for IDE chrome classes (from `ide.css`) and terminal chrome classes (from `terminal.css`) |
-| `src/renderer/src/views/IDEView.tsx` | Import `ide-neon.css`, add sidebar toggle button with `PanelLeftOpen` icon |
-| `src/renderer/src/components/ide/IDEEmptyState.tsx` | Neon styling for empty state (CSS class changes only) |
+| File                                                | Change                                                                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `src/renderer/src/assets/ide-neon.css`              | **New** — neon overrides for IDE chrome classes (from `ide.css`) and terminal chrome classes (from `terminal.css`) |
+| `src/renderer/src/views/IDEView.tsx`                | Import `ide-neon.css`, add sidebar toggle button with `PanelLeftOpen` icon                                         |
+| `src/renderer/src/components/ide/IDEEmptyState.tsx` | Neon styling for empty state (CSS class changes only)                                                              |
 
 No changes needed to `FileTree.tsx`, `FileTreeNode.tsx`, `EditorTabBar.tsx`, `TerminalPanel.tsx`, `TerminalTabBar.tsx`, or `TerminalToolbar.tsx` — all styling is via CSS overrides.
 

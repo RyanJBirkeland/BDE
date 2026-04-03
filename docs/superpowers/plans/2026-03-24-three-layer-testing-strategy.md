@@ -112,6 +112,7 @@ e2e/
 ### Task 1: Fix sprint-local.test.ts — Missing BDE_AGENTS_INDEX Mock
 
 **Files:**
+
 - Modify: `src/main/handlers/__tests__/sprint-local.test.ts` (line ~57)
 
 - [ ] **Step 1: Read the current paths mock to understand the shape**
@@ -126,7 +127,7 @@ In `sprint-local.test.ts`, find the `vi.mock('../../paths', ...)` block (around 
 ```typescript
 vi.mock('../../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue('/tmp/specs'),
-  BDE_AGENTS_INDEX: '/tmp/agents-index.json',
+  BDE_AGENTS_INDEX: '/tmp/agents-index.json'
 }))
 ```
 
@@ -147,6 +148,7 @@ git commit -m "fix(tests): add missing BDE_AGENTS_INDEX to paths mock in sprint-
 ### Task 2: Fix workbench.test.ts — child_process Mock
 
 **Files:**
+
 - Modify: `src/main/handlers/__tests__/workbench.test.ts` (lines ~24-56)
 
 - [ ] **Step 1: Read the current test file and the workbench handler to understand the spawn flow**
@@ -169,18 +171,27 @@ vi.mock('child_process', () => {
     spawn: vi.fn(() => {
       const proc = new EventEmitter()
       proc.stdout = new Readable({
-        read() { this.push('{"result":"ok"}'); this.push(null) }
+        read() {
+          this.push('{"result":"ok"}')
+          this.push(null)
+        }
       })
-      proc.stderr = new Readable({ read() { this.push(null) } })
+      proc.stderr = new Readable({
+        read() {
+          this.push(null)
+        }
+      })
       proc.stdin = new Writable({
-        write(_chunk: any, _enc: any, cb: any) { cb() }
+        write(_chunk: any, _enc: any, cb: any) {
+          cb()
+        }
       })
       proc.pid = 12345
       setTimeout(() => proc.emit('close', 0), 10)
       return proc
     }),
     execFile: vi.fn(),
-    execFileSync: vi.fn(),
+    execFileSync: vi.fn()
   }
 })
 ```
@@ -209,6 +220,7 @@ git commit -m "fix(tests): update child_process mock to handle spawn-based flow 
 ### Task 2b: Fix Remaining Main Process Test Failures
 
 **Files:**
+
 - Modify: `src/main/agent-manager/__tests__/resolve-dependents.test.ts` (3 failures)
 - Modify: `src/main/data/__tests__/sprint-queries.test.ts` (4 failures)
 
@@ -247,6 +259,7 @@ git commit -m "fix(tests): fix resolve-dependents and sprint-queries test failur
 ### Task 2c: Fix Renderer Test Failures — ChatRenderer + PlaygroundIntegration
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/__tests__/ChatRenderer.test.tsx`
 - Modify: `src/renderer/src/components/agents/__tests__/PlaygroundIntegration.test.tsx`
 
@@ -283,6 +296,7 @@ git commit -m "fix(tests): fix ChatRenderer and PlaygroundIntegration test failu
 ### Task 3: Fix E2E navigation.spec.ts — Update Shortcut Mapping
 
 **Files:**
+
 - Modify: `e2e/navigation.spec.ts`
 
 The E2E tests assert old shortcut mapping (Cmd+1=Agents, Cmd+2=Terminal, Cmd+3=Sprint, ...). The actual mapping in `App.tsx` (`VIEW_SHORTCUT_MAP`) is:
@@ -297,17 +311,17 @@ Cmd+3 -> ide          Cmd+6 -> git          Cmd+9 -> settings
 
 Read each view file to find root CSS class names. Build the selector mapping:
 
-| Shortcut | View | CSS Selector to verify |
-|----------|------|-------------|
-| Cmd+1 | Dashboard | Check DashboardView for root class or card classes |
-| Cmd+2 | Agents | `.agents-view` |
-| Cmd+3 | IDE | `.ide-view` |
-| Cmd+4 | Sprint | `.sprint-center` |
-| Cmd+5 | PR Station | `.pr-station__view-title` |
-| Cmd+6 | Source Control | Check GitTreeView for root class |
-| Cmd+7 | Memory | `.memory-view` |
-| Cmd+8 | Cost | `.cost-view` or `.cost-panel` |
-| Cmd+9 | Settings | `.settings-view` |
+| Shortcut | View           | CSS Selector to verify                             |
+| -------- | -------------- | -------------------------------------------------- |
+| Cmd+1    | Dashboard      | Check DashboardView for root class or card classes |
+| Cmd+2    | Agents         | `.agents-view`                                     |
+| Cmd+3    | IDE            | `.ide-view`                                        |
+| Cmd+4    | Sprint         | `.sprint-center`                                   |
+| Cmd+5    | PR Station     | `.pr-station__view-title`                          |
+| Cmd+6    | Source Control | Check GitTreeView for root class                   |
+| Cmd+7    | Memory         | `.memory-view`                                     |
+| Cmd+8    | Cost           | `.cost-view` or `.cost-panel`                      |
+| Cmd+9    | Settings       | `.settings-view`                                   |
 
 Verify each selector by reading the view file: `grep -n 'className' src/renderer/src/views/DashboardView.tsx` etc.
 
@@ -335,6 +349,7 @@ git commit -m "fix(e2e): update navigation tests to match current Cmd+1-9 shortc
 ### Task 4: Fix E2E sessions.spec.ts -> agents.spec.ts + command-palette.spec.ts
 
 **Files:**
+
 - Rename: `e2e/sessions.spec.ts` -> `e2e/agents.spec.ts`
 - Modify: `e2e/command-palette.spec.ts`
 - Merge into agents.spec.ts: `e2e/spawn-agent.spec.ts`
@@ -384,6 +399,7 @@ git commit -m "fix(e2e): rename sessions to agents, fix stale selectors, merge s
 ### Task 5: Terminal Components — AgentOutputTab, FindBar, TerminalPane, ShellPicker
 
 **Files:**
+
 - Create: `src/renderer/src/components/terminal/__tests__/AgentOutputTab.test.tsx`
 - Create: `src/renderer/src/components/terminal/__tests__/FindBar.test.tsx`
 - Create: `src/renderer/src/components/terminal/__tests__/TerminalPane.test.tsx`
@@ -394,12 +410,14 @@ These 4 components are at 0% coverage. TerminalPane is the largest and most impa
 - [ ] **Step 1: Read each component to understand props and behavior**
 
 Read:
+
 - `src/renderer/src/components/terminal/AgentOutputTab.tsx`
 - `src/renderer/src/components/terminal/FindBar.tsx`
 - `src/renderer/src/components/terminal/TerminalPane.tsx`
 - `src/renderer/src/components/terminal/ShellPicker.tsx`
 
 Also read existing terminal tests for patterns:
+
 - `src/renderer/src/components/terminal/__tests__/TerminalContent.test.tsx`
 - `src/renderer/src/components/terminal/__tests__/TerminalTabBar.test.tsx`
 
@@ -455,6 +473,7 @@ git commit -m "test(terminal): add unit tests for AgentOutputTab, FindBar, Termi
 ### Task 6: IDE Components — FileSidebar, FileContextMenu, UnsavedDialog, IDEEmptyState
 
 **Files:**
+
 - Create: `src/renderer/src/components/ide/__tests__/FileSidebar.test.tsx`
 - Create: `src/renderer/src/components/ide/__tests__/FileContextMenu.test.tsx`
 - Create: `src/renderer/src/components/ide/__tests__/UnsavedDialog.test.tsx`
@@ -465,12 +484,14 @@ IDE components are at 51% overall. FileSidebar (17%) and FileContextMenu (0%) ar
 - [ ] **Step 1: Read each component**
 
 Read:
+
 - `src/renderer/src/components/ide/FileSidebar.tsx`
 - `src/renderer/src/components/ide/FileContextMenu.tsx`
 - `src/renderer/src/components/ide/UnsavedDialog.tsx`
 - `src/renderer/src/components/ide/IDEEmptyState.tsx`
 
 Also read existing IDE tests for patterns:
+
 - `src/renderer/src/components/ide/__tests__/FileTree.test.tsx`
 
 - [ ] **Step 2: Write FileSidebar tests**
@@ -524,6 +545,7 @@ git commit -m "test(ide): add unit tests for FileSidebar, FileContextMenu, Unsav
 ### Task 7: Task Workbench Components
 
 **Files:**
+
 - Create: `src/renderer/src/components/task-workbench/__tests__/` (directory — `mkdir -p` first)
 - Create: `src/renderer/src/components/task-workbench/__tests__/WorkbenchForm.test.tsx`
 - Create: `src/renderer/src/components/task-workbench/__tests__/WorkbenchCopilot.test.tsx`
@@ -534,6 +556,7 @@ All Task Workbench components are at 0%. Focus on the 3 with the most logic.
 - [ ] **Step 1: Read each component and the taskWorkbench store**
 
 Read:
+
 - `src/renderer/src/components/task-workbench/WorkbenchForm.tsx`
 - `src/renderer/src/components/task-workbench/WorkbenchCopilot.tsx`
 - `src/renderer/src/components/task-workbench/WorkbenchActions.tsx`
@@ -579,6 +602,7 @@ git commit -m "test(workbench): add unit tests for WorkbenchForm, WorkbenchCopil
 ### Task 8: Agent Chat Sub-Components — SteerInput, ThinkingBlock, ChatBubble, ToolCallBlock
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/__tests__/SteerInput.test.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/ThinkingBlock.test.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/ChatBubble.test.tsx`
@@ -589,6 +613,7 @@ All at 0-14% coverage. These are the building blocks of the ChatRenderer.
 - [ ] **Step 1: Read each component**
 
 Read:
+
 - `src/renderer/src/components/agents/SteerInput.tsx`
 - `src/renderer/src/components/agents/ThinkingBlock.tsx`
 - `src/renderer/src/components/agents/ChatBubble.tsx`
@@ -645,6 +670,7 @@ git commit -m "test(agents): add unit tests for ChatBubble, ThinkingBlock, ToolC
 ### Task 9: Remaining Unit Gaps — PanelDropOverlay, AppearanceSection, Dashboard Cards, FileTreeSection
 
 **Files:**
+
 - Extend: `src/renderer/src/components/panels/__tests__/PanelDropOverlay.test.tsx`
 - Extend: `src/renderer/src/components/settings/__tests__/AppearanceSection.test.tsx`
 - Create: `src/renderer/src/components/dashboard/__tests__/` (directory — `mkdir -p` first)
@@ -720,6 +746,7 @@ git commit -m "test: close remaining unit test gaps -- panels, settings, dashboa
 ### Task 10: IPC Channel Registration Completeness
 
 **Files:**
+
 - Create: `src/main/__tests__/integration/ipc-registration.test.ts`
 
 One test that protects all 69+ IPC channels from registration typos.
@@ -727,6 +754,7 @@ One test that protects all 69+ IPC channels from registration typos.
 - [ ] **Step 1: Read the IPC channel map and handler registration**
 
 Read:
+
 - `src/shared/ipc-channels.ts` -- all channel type definitions
 - `src/main/index.ts` -- where handlers are registered via `ipcMain.handle()`
 
@@ -755,6 +783,7 @@ git commit -m "test(integration): add IPC channel registration completeness chec
 ### Task 11: Sprint CRUD IPC Integration
 
 **Files:**
+
 - Create: `src/main/__tests__/integration/sprint-ipc.test.ts`
 
 Test sprint handler create/list/update/delete through the actual handler functions (not mocked).
@@ -769,6 +798,7 @@ Identify the exported `registerSprintLocalHandlers()` function and how it uses `
 Mock Supabase client at the HTTP level (not the function level). Call handler functions directly with realistic arguments. Verify return shapes match what renderer stores expect.
 
 Test cases:
+
 - Create task -> returns task with ID
 - List tasks -> returns array with created task
 - Update task status -> returns updated task
@@ -792,6 +822,7 @@ git commit -m "test(integration): add sprint CRUD IPC integration tests"
 ### Task 12: Agent Manager Completion Pipeline
 
 **Files:**
+
 - Create: `src/main/__tests__/integration/agent-completion-pipeline.test.ts`
 
 Test: task completes -> resolveSuccess -> git add/commit/push -> open PR -> task status -> done.
@@ -799,6 +830,7 @@ Test: task completes -> resolveSuccess -> git add/commit/push -> open PR -> task
 - [ ] **Step 1: Read the completion handler and resolve flow**
 
 Read:
+
 - `src/main/agent-manager/completion.ts`
 - `src/main/agent-manager/resolve-dependents.ts`
 - `src/main/agent-manager/run-agent.ts`
@@ -808,6 +840,7 @@ Read:
 Mock `child_process.execFile` (for git commands) and GitHub API (for PR creation) at a higher level than unit tests. Wire real completion handler with mocked git/GitHub. Verify the full chain: completion -> git operations -> PR -> status transition -> dependent unblock.
 
 Test cases:
+
 - Agent exits 0 with changes -> push + PR -> task done with pr_url
 - Agent exits 0 with no changes -> task done, no PR
 - Agent exits non-zero -> retry count check -> re-queue or permanent fail
@@ -830,12 +863,14 @@ git commit -m "test(integration): add agent completion pipeline tests -- push, P
 ### Task 13: Queue API Auth + SSE Integration
 
 **Files:**
+
 - Create: `src/main/__tests__/integration/queue-api-auth.test.ts`
 - Create: `src/main/__tests__/integration/queue-api-sse.test.ts`
 
 - [ ] **Step 1: Read the Queue API auth helpers and SSE broadcaster**
 
 Read:
+
 - `src/main/queue-api/helpers.ts` -- auth logic (Bearer + ?token= paths)
 - `src/main/queue-api/sse-broadcaster.ts`
 - `src/main/queue-api/event-handlers.ts`
@@ -844,6 +879,7 @@ Read:
 - [ ] **Step 2: Write auth integration test**
 
 Test cases:
+
 - `?token=correct` -> 200
 - `?token=wrong` -> 403
 - `?token=` (empty) -> 401
@@ -871,6 +907,7 @@ git commit -m "test(integration): add Queue API auth and SSE event delivery test
 ### Task 14: IDE Path Traversal + DB CRUD Integration
 
 **Files:**
+
 - Create: `src/main/__tests__/integration/ide-path-traversal.test.ts`
 - Create: `src/main/__tests__/integration/db-crud.test.ts`
 
@@ -882,16 +919,25 @@ Read: `src/main/handlers/ide-fs-handlers.ts` -- find `validateIdePath()` or equi
 
 ```typescript
 describe('IDE FS Path Traversal Prevention', () => {
-  it('rejects ../../etc/passwd', async () => { /* ... */ })
-  it('rejects absolute paths outside watched root', async () => { /* ... */ })
-  it('allows valid paths within watched root', async () => { /* ... */ })
-  it('rejects symlink escape', async () => { /* ... */ })
+  it('rejects ../../etc/passwd', async () => {
+    /* ... */
+  })
+  it('rejects absolute paths outside watched root', async () => {
+    /* ... */
+  })
+  it('allows valid paths within watched root', async () => {
+    /* ... */
+  })
+  it('rejects symlink escape', async () => {
+    /* ... */
+  })
 })
 ```
 
 - [ ] **Step 3: Write DB CRUD integration test**
 
 Use in-memory SQLite (`:memory:`). Run all migrations. Exercise CRUD on each table:
+
 - `agent_runs`: insert -> select -> update status -> select
 - `settings`: set -> get -> delete -> get (returns null)
 - `agent_events`: insert -> query by agent_id -> verify ordering
@@ -921,6 +967,7 @@ git commit -m "test(integration): add IDE path traversal security + DB CRUD inte
 ### Task 15: E2E Helpers — seed-data.ts + mock-git-repo.ts
 
 **Files:**
+
 - Create: `e2e/helpers/seed-data.ts`
 - Create: `e2e/helpers/mock-git-repo.ts`
 
@@ -932,6 +979,7 @@ Understand how `bde.window` exposes `evaluate()` for running code in the Electro
 - [ ] **Step 2: Write seed-data.ts**
 
 Helper to insert/delete test tasks via the Electron evaluate API. Functions:
+
 - `seedTask(window, overrides?)` -- creates a task via `window.api.sprint.create()`, returns task ID
 - `cleanupTask(window, taskId)` -- deletes a task via `window.api.sprint.delete()`
 
@@ -940,6 +988,7 @@ Adjust the IPC method names after reading the actual preload API surface at `src
 - [ ] **Step 3: Write mock-git-repo.ts**
 
 Helper to create a temp git repo with known state for IDE/Source Control tests. Functions:
+
 - `createMockGitRepo()` -- returns `{ path, cleanup }`. Creates temp dir, runs `git init`, adds initial commit, creates staged + unstaged files.
 
 Uses `child_process.execFileSync` with argument arrays (not `exec` with string interpolation) per BDE code quality guidelines.
@@ -956,12 +1005,14 @@ git commit -m "test(e2e): add seed-data and mock-git-repo helpers"
 ### Task 16: E2E — Dashboard + Sprint Journeys
 
 **Files:**
+
 - Create: `e2e/dashboard.spec.ts`
 - Extend: `e2e/sprint.spec.ts`
 
 - [ ] **Step 1: Write dashboard.spec.ts**
 
 Test cases:
+
 - App launches to Dashboard (default view)
 - Dashboard shows 4 cards (ActiveTasks, RecentCompletions, CostSummary, OpenPRs)
 - Each card has a title and content area
@@ -986,6 +1037,7 @@ git commit -m "test(e2e): add Dashboard smoke tests + Sprint SpecDrawer and depe
 ### Task 17: E2E — IDE + Source Control Journeys
 
 **Files:**
+
 - Create: `e2e/ide.spec.ts`
 - Create: `e2e/source-control.spec.ts`
 
@@ -994,6 +1046,7 @@ Both use the `mock-git-repo.ts` helper for a temp repo with known git state.
 - [ ] **Step 1: Write ide.spec.ts**
 
 Test cases:
+
 - Navigate to IDE (Cmd+3), open a folder (the mock repo), verify FileSidebar shows files
 - Click a file in tree -> opens in editor tab
 - Close tab with unsaved changes -> UnsavedDialog appears
@@ -1001,6 +1054,7 @@ Test cases:
 - [ ] **Step 2: Write source-control.spec.ts**
 
 Test cases:
+
 - Navigate to Source Control (Cmd+6), set active repo to mock repo
 - Staged and unstaged sections visible with correct file counts
 - Click stage button -> file moves to staged section
@@ -1018,6 +1072,7 @@ git commit -m "test(e2e): add IDE and Source Control user journey tests"
 ### Task 18: E2E — Agents + PR Station + Settings + Cost Extensions
 
 **Files:**
+
 - Extend: `e2e/agents.spec.ts` (from Task 4)
 - Extend: `e2e/pr-station.spec.ts`
 - Extend: `e2e/settings.spec.ts`

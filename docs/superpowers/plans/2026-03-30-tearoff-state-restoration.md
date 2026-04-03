@@ -14,26 +14,27 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/main/tearoff-manager.ts` | Modify | Add views to TearoffEntry, persistTearoffState(), restoreTearoffWindows(), viewsChanged handler, bounds persistence on move, persist before quit |
-| `src/main/index.ts` | Modify | Call restoreTearoffWindows() after createWindow() |
-| `src/preload/index.ts` | Modify | Add `viewsChanged` method to tearoff namespace |
-| `src/preload/index.d.ts` | Modify | Add `viewsChanged` type |
-| `src/renderer/src/components/layout/TearoffShell.tsx` | Modify | Read `restore` param, init store with multiple views, subscribe to store → send viewsChanged |
+| File                                                  | Action | Responsibility                                                                                                                                   |
+| ----------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/main/tearoff-manager.ts`                         | Modify | Add views to TearoffEntry, persistTearoffState(), restoreTearoffWindows(), viewsChanged handler, bounds persistence on move, persist before quit |
+| `src/main/index.ts`                                   | Modify | Call restoreTearoffWindows() after createWindow()                                                                                                |
+| `src/preload/index.ts`                                | Modify | Add `viewsChanged` method to tearoff namespace                                                                                                   |
+| `src/preload/index.d.ts`                              | Modify | Add `viewsChanged` type                                                                                                                          |
+| `src/renderer/src/components/layout/TearoffShell.tsx` | Modify | Read `restore` param, init store with multiple views, subscribe to store → send viewsChanged                                                     |
 
 **Test files:**
 
-| File | Tests |
-|------|-------|
-| `src/main/__tests__/tearoff-state-restoration.test.ts` | persist, restore, bounds validation, view changes |
-| `src/renderer/src/components/layout/__tests__/TearoffShell.test.tsx` | Update: restore param handling |
+| File                                                                 | Tests                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------- |
+| `src/main/__tests__/tearoff-state-restoration.test.ts`               | persist, restore, bounds validation, view changes |
+| `src/renderer/src/components/layout/__tests__/TearoffShell.test.tsx` | Update: restore param handling                    |
 
 ---
 
 ### Task 1: Preload + IPC
 
 **Files:**
+
 - Modify: `src/preload/index.ts`
 - Modify: `src/preload/index.d.ts`
 
@@ -70,6 +71,7 @@ git commit -m "feat(tearoff): add viewsChanged IPC to preload"
 ### Task 2: Main Process — Persist & Restore
 
 **Files:**
+
 - Modify: `src/main/tearoff-manager.ts`
 - Create: `src/main/__tests__/tearoff-state-restoration.test.ts`
 
@@ -80,8 +82,8 @@ Add `views: string[]` to the `TearoffEntry` interface in tearoff-manager.ts:
 ```typescript
 interface TearoffEntry {
   win: BrowserWindow
-  view: string      // initial view (from create)
-  views: string[]   // current views (updated by renderer)
+  view: string // initial view (from create)
+  views: string[] // current views (updated by renderer)
   windowId: string
 }
 ```
@@ -104,6 +106,7 @@ function persistTearoffState(): void {
 ```
 
 Call `persistTearoffState()` after:
+
 - Creating a tear-off (end of `tearoff:create` handler)
 - Closing/destroying a tear-off (in `handleCloseRequest` after delete)
 - Returning to main (in `tearoff:returnToMain` and `tearoff:returnAll` handlers after delete)
@@ -133,7 +136,7 @@ function persistBoundsDebounced(windowId: string, win: BrowserWindow): void {
   if (existing) clearTimeout(existing)
   const timer = setTimeout(() => {
     resizeTimers.delete(windowId)
-    persistTearoffState()  // persist all state including bounds
+    persistTearoffState() // persist all state including bounds
   }, 500)
   resizeTimers.set(windowId, timer)
 }
@@ -151,9 +154,13 @@ In `closeTearoffWindows()` (called on quit), persist state BEFORE destroying win
 
 ```typescript
 export function closeTearoffWindows(): void {
-  persistTearoffState()  // save state before destroying
+  persistTearoffState() // save state before destroying
   for (const entry of tearoffWindows.values()) {
-    try { entry.win.destroy() } catch { /* already destroyed */ }
+    try {
+      entry.win.destroy()
+    } catch {
+      /* already destroyed */
+    }
   }
   tearoffWindows.clear()
 }
@@ -216,8 +223,12 @@ function isOnScreen(bounds: { x: number; y: number; width: number; height: numbe
   const displays = screen.getAllDisplays()
   return displays.some((d) => {
     const db = d.bounds
-    return bounds.x < db.x + db.width && bounds.x + bounds.width > db.x &&
-           bounds.y < db.y + db.height && bounds.y + bounds.height > db.y
+    return (
+      bounds.x < db.x + db.width &&
+      bounds.x + bounds.width > db.x &&
+      bounds.y < db.y + db.height &&
+      bounds.y + bounds.height > db.y
+    )
   })
 }
 
@@ -241,6 +252,7 @@ Refactor the common window setup (setWindowOpenHandler, resize/move listeners, c
 Create `src/main/__tests__/tearoff-state-restoration.test.ts`:
 
 Test:
+
 - `persistTearoffState` serializes entries correctly
 - `restoreTearoffWindows` creates windows from valid entries
 - `restoreTearoffWindows` skips entries with empty views
@@ -264,6 +276,7 @@ git commit -m "feat(tearoff): persist and restore tear-off windows on restart"
 ### Task 3: Wire Restore into App Startup
 
 **Files:**
+
 - Modify: `src/main/index.ts`
 
 - [ ] **Step 1: Import and call restoreTearoffWindows**
@@ -293,6 +306,7 @@ git commit -m "feat(tearoff): call restoreTearoffWindows on app startup"
 ### Task 4: Renderer — Restore Multiple Views
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/TearoffShell.tsx`
 
 - [ ] **Step 1: Read restore param**
@@ -316,7 +330,11 @@ useEffect(() => {
   usePanelLayoutStore.getState().setPersistable(false)
   if (initialViews.length === 1) {
     const leaf = createLeaf(initialViews[0])
-    usePanelLayoutStore.setState({ root: leaf, focusedPanelId: leaf.panelId, activeView: initialViews[0] })
+    usePanelLayoutStore.setState({
+      root: leaf,
+      focusedPanelId: leaf.panelId,
+      activeView: initialViews[0]
+    })
   } else {
     // Create a leaf with all views as tabs
     let leaf = createLeaf(initialViews[0])
@@ -324,7 +342,11 @@ useEffect(() => {
       const updated = addTab(leaf, leaf.panelId, initialViews[i])
       if (updated) leaf = updated as PanelLeafNode
     }
-    usePanelLayoutStore.setState({ root: leaf, focusedPanelId: leaf.panelId, activeView: initialViews[0] })
+    usePanelLayoutStore.setState({
+      root: leaf,
+      focusedPanelId: leaf.panelId,
+      activeView: initialViews[0]
+    })
   }
 }, [])
 ```
@@ -345,7 +367,10 @@ useEffect(() => {
       window.api?.tearoff?.viewsChanged({ windowId, views })
     }, 500)
   })
-  return () => { unsub(); if (debounce) clearTimeout(debounce) }
+  return () => {
+    unsub()
+    if (debounce) clearTimeout(debounce)
+  }
 }, [windowId])
 ```
 
@@ -365,6 +390,7 @@ git commit -m "feat(tearoff): restore multiple views from query param + notify v
 ### Task 5: Handler Counts + Final Verification
 
 **Files:**
+
 - Modify: `src/main/__tests__/integration/ipc-registration.test.ts`
 
 - [ ] **Step 1: Update allowedExtras**

@@ -41,14 +41,16 @@ Add a **LogDrawer** component that slides up from the bottom of the Sprint tab (
 New file: `src/renderer/src/components/sprint/LogDrawer.tsx`
 
 Props:
+
 ```typescript
 type LogDrawerProps = {
-  task: SprintTask | null  // null = closed
+  task: SprintTask | null // null = closed
   onClose: () => void
 }
 ```
 
 Layout (slides up from bottom, 50vh height, glass panel):
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  🤖 agent/<short-id>  ·  feat/sprint-center-v2  ·  ● running    [×]
@@ -63,6 +65,7 @@ Layout (slides up from bottom, 50vh height, glass panel):
 ```
 
 Implementation:
+
 - Uses existing `parseStreamJson` + `chatItemsToMessages` + `ChatThread` from Sessions view
 - Polls the log file via a new IPC: `sprint:readLog(agentId)` → returns `{ content: string; status: string }`
 - Polls every 2s while task is active, stops when task is done/failed
@@ -71,19 +74,21 @@ Implementation:
 ### New IPC: sprint:readLog
 
 Add to `src/main/handlers/sprint.ts`:
+
 ```typescript
 safeHandle('sprint:readLog', async (_e, agentId: string) => {
   // Look up agent in ~/.bde/agents.json by id
   const agents = readBdeAgentsIndex() // reads ~/.bde/agents.json
-  const agent = agents.find(a => a.id === agentId)
+  const agent = agents.find((a) => a.id === agentId)
   if (!agent?.logPath) return { content: '', status: 'unknown' }
-  
+
   const content = await readFile(agent.logPath, 'utf-8').catch(() => '')
   return { content, status: agent.status }
 })
 ```
 
 Expose in preload:
+
 ```typescript
 sprint: {
   // ...existing
@@ -94,6 +99,7 @@ sprint: {
 ### App.tsx — handle bde:navigate
 
 Add event listener in App.tsx `useEffect`:
+
 ```typescript
 useEffect(() => {
   const handler = (e: CustomEvent) => {
@@ -120,16 +126,16 @@ useEffect(() => {
 
 ## Files to Change / Create
 
-| File | Action | What |
-|------|--------|------|
-| `~/Documents/Repositories/life-os/scripts/task-runner.js` | **MODIFY** | After `registerBdeAgent()`, PATCH `sprint_tasks.agent_session_id = agentId` (the BDE UUID) |
-| `src/main/handlers/sprint.ts` | **MODIFY** | Add `sprint:readLog` IPC handler; import `readFile` from fs; add `readBdeAgentsIndex()` helper |
-| `src/preload/index.ts` | **MODIFY** | Expose `sprint.readLog` |
-| `src/preload/index.d.ts` | **MODIFY** | Add type for `sprint.readLog` |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | **CREATE** | Sliding glass drawer showing agent log with ChatThread |
-| `src/renderer/src/components/sprint/SprintCenter.tsx` | **MODIFY** | Add `logDrawerTask` state, `handleViewOutput` opens drawer, render LogDrawer |
-| `src/renderer/src/App.tsx` | **MODIFY** | Listen to `bde:navigate` event → switch view + select agent |
-| `src/renderer/src/assets/sprint.css` | **MODIFY** | LogDrawer styles: slide-up animation, glass panel, 50vh height, position absolute bottom-0 |
+| File                                                      | Action     | What                                                                                           |
+| --------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
+| `~/Documents/Repositories/life-os/scripts/task-runner.js` | **MODIFY** | After `registerBdeAgent()`, PATCH `sprint_tasks.agent_session_id = agentId` (the BDE UUID)     |
+| `src/main/handlers/sprint.ts`                             | **MODIFY** | Add `sprint:readLog` IPC handler; import `readFile` from fs; add `readBdeAgentsIndex()` helper |
+| `src/preload/index.ts`                                    | **MODIFY** | Expose `sprint.readLog`                                                                        |
+| `src/preload/index.d.ts`                                  | **MODIFY** | Add type for `sprint.readLog`                                                                  |
+| `src/renderer/src/components/sprint/LogDrawer.tsx`        | **CREATE** | Sliding glass drawer showing agent log with ChatThread                                         |
+| `src/renderer/src/components/sprint/SprintCenter.tsx`     | **MODIFY** | Add `logDrawerTask` state, `handleViewOutput` opens drawer, render LogDrawer                   |
+| `src/renderer/src/App.tsx`                                | **MODIFY** | Listen to `bde:navigate` event → switch view + select agent                                    |
+| `src/renderer/src/assets/sprint.css`                      | **MODIFY** | LogDrawer styles: slide-up animation, glass panel, 50vh height, position absolute bottom-0     |
 
 ---
 
@@ -138,7 +144,9 @@ useEffect(() => {
 ```css
 .log-drawer {
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 50vh;
   background: var(--glass-tint-dark);
   backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
@@ -151,8 +159,14 @@ useEffect(() => {
 }
 
 @keyframes log-drawer-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .log-drawer__header {
@@ -165,8 +179,15 @@ useEffect(() => {
   flex-shrink: 0;
 }
 
-.log-drawer__title { font-size: 12px; font-weight: 600; color: var(--text); }
-.log-drawer__meta  { font-size: 11px; color: var(--text-muted); }
+.log-drawer__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.log-drawer__meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
 
 .log-drawer__body {
   flex: 1;
@@ -188,6 +209,7 @@ useEffect(() => {
 ---
 
 ## Out of Scope
+
 - Full Sessions-style steering/stdin input from drawer (read-only view only)
 - Log search/filter
 - Multi-task log comparison

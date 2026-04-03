@@ -7,7 +7,11 @@ interface DoneHistoryPanelProps {
   onClose: () => void
 }
 
-export function DoneHistoryPanel({ tasks, onTaskClick, onClose }: DoneHistoryPanelProps): React.JSX.Element {
+export function DoneHistoryPanel({
+  tasks,
+  onTaskClick,
+  onClose
+}: DoneHistoryPanelProps): React.JSX.Element {
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

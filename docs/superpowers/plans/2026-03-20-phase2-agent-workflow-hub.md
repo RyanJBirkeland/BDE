@@ -67,22 +67,22 @@ src/main/queue-api/event-store.ts                                # Replaced by a
 
 ### Key Modified Files
 
-| File | Slice | Change |
-|------|-------|--------|
-| `src/main/local-agents.ts` | 1 | Thin orchestrator delegating to provider factory |
-| `src/main/config.ts` | 1 | Add `getAgentProvider()` setting getter |
-| `src/main/db.ts` | 2 | Migration v10: `agent_events` table |
-| `src/shared/ipc-channels.ts` | 2,4 | Add `agent:event`, `agent:history`, `templates:*` channels |
-| `src/preload/index.ts` | 2,4 | Add agent event + template API bridges |
-| `src/main/queue-api/router.ts` | 2 | Route output events through event bus |
-| `src/main/sprint-sse.ts` | 2 | Route SSE events through event bus |
-| `src/renderer/src/stores/sprint.ts` | 2,3 | Compatibility shim (Slice 2), remove legacy fields (Slice 3) |
-| `src/renderer/src/App.tsx` | 3 | `sessions` to `agents` view key, import AgentsView |
-| `src/renderer/src/stores/ui.ts` | 3 | `View` type: `sessions` to `agents` |
-| `src/renderer/src/components/layout/ActivityBar.tsx` | 3 | NAV_ITEMS: sessions to agents |
-| `src/renderer/src/components/layout/CommandPalette.tsx` | 3 | Navigation command label |
-| `src/renderer/src/views/SettingsView.tsx` | 4 | Add template management section |
-| `src/shared/template-heuristics.ts` | 4 | Support custom template keywords |
+| File                                                    | Slice | Change                                                       |
+| ------------------------------------------------------- | ----- | ------------------------------------------------------------ |
+| `src/main/local-agents.ts`                              | 1     | Thin orchestrator delegating to provider factory             |
+| `src/main/config.ts`                                    | 1     | Add `getAgentProvider()` setting getter                      |
+| `src/main/db.ts`                                        | 2     | Migration v10: `agent_events` table                          |
+| `src/shared/ipc-channels.ts`                            | 2,4   | Add `agent:event`, `agent:history`, `templates:*` channels   |
+| `src/preload/index.ts`                                  | 2,4   | Add agent event + template API bridges                       |
+| `src/main/queue-api/router.ts`                          | 2     | Route output events through event bus                        |
+| `src/main/sprint-sse.ts`                                | 2     | Route SSE events through event bus                           |
+| `src/renderer/src/stores/sprint.ts`                     | 2,3   | Compatibility shim (Slice 2), remove legacy fields (Slice 3) |
+| `src/renderer/src/App.tsx`                              | 3     | `sessions` to `agents` view key, import AgentsView           |
+| `src/renderer/src/stores/ui.ts`                         | 3     | `View` type: `sessions` to `agents`                          |
+| `src/renderer/src/components/layout/ActivityBar.tsx`    | 3     | NAV_ITEMS: sessions to agents                                |
+| `src/renderer/src/components/layout/CommandPalette.tsx` | 3     | Navigation command label                                     |
+| `src/renderer/src/views/SettingsView.tsx`               | 4     | Add template management section                              |
+| `src/shared/template-heuristics.ts`                     | 4     | Support custom template keywords                             |
 
 ---
 
@@ -91,6 +91,7 @@ src/main/queue-api/event-store.ts                                # Replaced by a
 ### Task 1: AgentEvent Type + AgentProvider Interface
 
 **Files:**
+
 - Create: `src/main/agents/types.ts`
 
 - [ ] **Step 1: Create the types file with AgentEvent union and interfaces**
@@ -117,10 +118,25 @@ export type AgentEvent =
   | { type: 'agent:user_message'; text: string; timestamp: number }
   | { type: 'agent:thinking'; tokenCount: number; text?: string; timestamp: number }
   | { type: 'agent:tool_call'; tool: string; summary: string; input?: unknown; timestamp: number }
-  | { type: 'agent:tool_result'; tool: string; success: boolean; summary: string; output?: unknown; timestamp: number }
+  | {
+      type: 'agent:tool_result'
+      tool: string
+      success: boolean
+      summary: string
+      output?: unknown
+      timestamp: number
+    }
   | { type: 'agent:rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
   | { type: 'agent:error'; message: string; timestamp: number }
-  | { type: 'agent:completed'; exitCode: number; costUsd: number; tokensIn: number; tokensOut: number; durationMs: number; timestamp: number }
+  | {
+      type: 'agent:completed'
+      exitCode: number
+      costUsd: number
+      tokensIn: number
+      tokensOut: number
+      durationMs: number
+      timestamp: number
+    }
 
 // --- Agent Provider Interface ---
 
@@ -163,6 +179,7 @@ git commit -m "feat(agents): add AgentEvent type and AgentProvider interface"
 ### Task 2: CLI Provider (Extract from local-agents.ts)
 
 **Files:**
+
 - Create: `src/main/agents/cli-provider.ts`
 - Create: `src/main/agents/__tests__/cli-provider.test.ts`
 - Modify: `src/main/local-agents.ts` (lines 150-287 — extract spawn logic)
@@ -183,7 +200,7 @@ describe('CliProvider', () => {
 
     const handle = await provider.spawn({
       prompt: 'test prompt',
-      workingDirectory: '/tmp/test',
+      workingDirectory: '/tmp/test'
     })
 
     expect(handle.id).toBeDefined()
@@ -198,7 +215,7 @@ describe('CliProvider', () => {
 
     const handle = await provider.spawn({
       prompt: 'test prompt',
-      workingDirectory: '/tmp/test',
+      workingDirectory: '/tmp/test'
     })
 
     const events: AgentEvent[] = []
@@ -216,7 +233,7 @@ describe('CliProvider', () => {
 
     const handle = await provider.spawn({
       prompt: 'test prompt',
-      workingDirectory: '/tmp/test',
+      workingDirectory: '/tmp/test'
     })
 
     await handle.stop()
@@ -235,6 +252,7 @@ Expected: FAIL — `cli-provider.ts` does not exist yet
 - [ ] **Step 3: Implement CliProvider**
 
 Create `src/main/agents/cli-provider.ts`:
+
 - Extract the `spawnClaudeAgent()` function body from `src/main/local-agents.ts` (lines 150-241)
 - Wrap in a `class CliProvider implements AgentProvider`
 - The `spawn()` method does what `spawnClaudeAgent` does today: uses `execFile`-style spawning with argument arrays (NOT string interpolation — prevent shell injection per CLAUDE.md)
@@ -269,6 +287,7 @@ git commit -m "feat(agents): extract CLI provider from local-agents.ts"
 ### Task 3: SDK Provider
 
 **Files:**
+
 - Create: `src/main/agents/sdk-provider.ts`
 - Create: `src/main/agents/__tests__/sdk-provider.test.ts`
 
@@ -294,7 +313,7 @@ describe('SdkProvider', () => {
 
     const handle = await provider.spawn({
       prompt: 'test prompt',
-      workingDirectory: '/tmp/test',
+      workingDirectory: '/tmp/test'
     })
 
     expect(handle.id).toBeDefined()
@@ -312,7 +331,7 @@ describe('SdkProvider', () => {
     const handle = await provider.spawn({
       prompt: 'test prompt',
       workingDirectory: '/tmp/test',
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-6'
     })
 
     const events: AgentEvent[] = []
@@ -338,6 +357,7 @@ Expected: FAIL — `sdk-provider.ts` does not exist yet
 - [ ] **Step 4: Implement SdkProvider**
 
 Create `src/main/agents/sdk-provider.ts`:
+
 - Import from `@anthropic-ai/claude-agent-sdk`
 - `class SdkProvider implements AgentProvider`
 - `spawn()` creates an SDK agent session:
@@ -372,6 +392,7 @@ git commit -m "feat(agents): add SDK provider using claude-agent-sdk"
 ### Task 4: Provider Factory + Config
 
 **Files:**
+
 - Create: `src/main/agents/index.ts`
 - Modify: `src/main/config.ts` (add `getAgentProvider()`)
 
@@ -395,7 +416,12 @@ Find the existing `getSetting` pattern in `config.ts` and follow it.
 
 ```typescript
 // src/main/agents/index.ts
-export { type AgentProvider, type AgentHandle, type AgentEvent, type AgentSpawnOptions } from './types'
+export {
+  type AgentProvider,
+  type AgentHandle,
+  type AgentEvent,
+  type AgentSpawnOptions
+} from './types'
 import type { AgentProvider } from './types'
 import { getAgentProvider } from '../config'
 import { CliProvider } from './cli-provider'
@@ -423,11 +449,13 @@ git commit -m "feat(agents): add provider factory with config-driven selection"
 ### Task 5: Wire local-agents.ts to Provider Factory
 
 **Files:**
+
 - Modify: `src/main/local-agents.ts`
 
 - [ ] **Step 1: Refactor local-agents.ts to delegate to provider**
 
 In `src/main/local-agents.ts`:
+
 - Import `createAgentProvider` from `./agents`
 - Replace the body of `spawnClaudeAgent()` with:
   1. Create provider via `createAgentProvider()`
@@ -467,6 +495,7 @@ git commit -m "refactor(agents): wire local-agents.ts to provider factory"
 ### Task 6: SQLite Migration for agent_events Table
 
 **Files:**
+
 - Modify: `src/main/db.ts` (add migration v11 after v10 — v10 already exists and drops FK constraint on agent_run_id)
 
 - [ ] **Step 1: Write failing test for migration**
@@ -476,9 +505,9 @@ Add to `src/main/agents/__tests__/event-store.test.ts`:
 ```typescript
 it('migration v11 creates agent_events table', () => {
   const db = getDb()
-  const table = db.prepare(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name='agent_events'"
-  ).get()
+  const table = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_events'")
+    .get()
   expect(table).toBeDefined()
 })
 
@@ -540,6 +569,7 @@ git commit -m "feat(agents): add migration v11 for agent_events table"
 ### Task 7: Event Store (SQLite Persistence)
 
 **Files:**
+
 - Create: `src/main/agents/event-store.ts`
 - Modify: `src/main/agents/__tests__/event-store.test.ts` (add CRUD tests)
 
@@ -555,7 +585,7 @@ describe('AgentEventStore', () => {
     const event = {
       type: 'agent:started' as const,
       model: 'claude-opus-4-6',
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
 
     appendEvent('agent-1', event)
@@ -570,7 +600,15 @@ describe('AgentEventStore', () => {
 
     appendEvent('agent-2', { type: 'agent:started', model: 'opus', timestamp: 100 })
     appendEvent('agent-2', { type: 'agent:text', text: 'hello', timestamp: 200 })
-    appendEvent('agent-2', { type: 'agent:completed', exitCode: 0, costUsd: 0.5, tokensIn: 100, tokensOut: 200, durationMs: 5000, timestamp: 300 })
+    appendEvent('agent-2', {
+      type: 'agent:completed',
+      exitCode: 0,
+      costUsd: 0.5,
+      tokensIn: 100,
+      tokensOut: 200,
+      durationMs: 5000,
+      timestamp: 300
+    })
 
     const history = getHistory('agent-2')
     expect(history).toHaveLength(3)
@@ -581,7 +619,7 @@ describe('AgentEventStore', () => {
   it('pruneOldEvents removes events older than retention period', () => {
     const { appendEvent, getHistory, pruneOldEvents } = require('../event-store')
 
-    const oldTimestamp = Date.now() - (31 * 24 * 60 * 60 * 1000)
+    const oldTimestamp = Date.now() - 31 * 24 * 60 * 60 * 1000
     appendEvent('agent-3', { type: 'agent:started', model: 'opus', timestamp: oldTimestamp })
     appendEvent('agent-3', { type: 'agent:text', text: 'recent', timestamp: Date.now() })
 
@@ -623,9 +661,7 @@ export function getHistory(agentId: string): AgentEvent[] {
 
 export function pruneOldEvents(retentionDays: number): void {
   const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000
-  getDb()
-    .prepare('DELETE FROM agent_events WHERE timestamp < ?')
-    .run(cutoff)
+  getDb().prepare('DELETE FROM agent_events WHERE timestamp < ?').run(cutoff)
 }
 ```
 
@@ -646,6 +682,7 @@ git commit -m "feat(agents): add SQLite event store for agent event persistence"
 ### Task 8: Event Bus
 
 **Files:**
+
 - Create: `src/main/agents/event-bus.ts`
 - Create: `src/main/agents/__tests__/event-bus.test.ts`
 
@@ -723,7 +760,7 @@ export function createEventBus(opts?: { persist?: boolean }): AgentEventBus {
     },
     off(channel, handler) {
       emitter.off(channel, handler)
-    },
+    }
   }
 
   return bus
@@ -759,6 +796,7 @@ git commit -m "feat(agents): add event bus for unified agent event broadcasting"
 ### Task 9: IPC Channels + Preload Bridge
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts` (add `agent:event`, `agent:history`)
 - Modify: `src/preload/index.ts` (add agent event listeners)
 - Modify: `src/main/index.ts` (register `agent:history` handler)
@@ -824,6 +862,7 @@ git commit -m "feat(agents): add agent event IPC channels and preload bridge"
 ### Task 10: agentEvents Zustand Store
 
 **Files:**
+
 - Create: `src/renderer/src/stores/agentEvents.ts`
 
 - [ ] **Step 1: Create the store**
@@ -848,8 +887,8 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
       set((state) => ({
         events: {
           ...state.events,
-          [agentId]: [...(state.events[agentId] ?? []), event],
-        },
+          [agentId]: [...(state.events[agentId] ?? []), event]
+        }
       }))
     })
   },
@@ -857,7 +896,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
   async loadHistory(agentId: string) {
     const history = await window.api.agentEvents.getHistory(agentId)
     set((state) => ({
-      events: { ...state.events, [agentId]: history },
+      events: { ...state.events, [agentId]: history }
     }))
   },
 
@@ -867,7 +906,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
       delete next[agentId]
       return { events: next }
     })
-  },
+  }
 }))
 ```
 
@@ -890,6 +929,7 @@ git commit -m "feat(agents): add agentEvents Zustand store for live event stream
 ### Task 11: Wire Event Bus into Queue API + Sprint SSE
 
 **Files:**
+
 - Modify: `src/main/queue-api/router.ts` (output handler emits to event bus)
 - Modify: `src/main/sprint-sse.ts` (relay through event bus)
 - Modify: `src/main/index.ts` (run pruning on startup)
@@ -912,7 +952,7 @@ const events = body.events as TaskOutputEvent[]
 for (const raw of events) {
   const agentEvent: AgentEvent = {
     ...raw,
-    timestamp: convertTimestamp(raw),
+    timestamp: convertTimestamp(raw)
   } as AgentEvent
   getEventBus().emit('agent:event', taskId, agentEvent)
 }
@@ -923,6 +963,7 @@ Keep existing response behavior intact.
 - [ ] **Step 2: Wire sprint SSE relay**
 
 In `src/main/sprint-sse.ts`, route agent output events through the event bus:
+
 - `task:queued` and `task:updated` continue broadcasting directly (task-level, not agent-level)
 - Any `log:chunk` or agent output events convert and emit into event bus
 
@@ -955,6 +996,7 @@ git commit -m "feat(agents): wire event bus into queue API and sprint SSE relay"
 ### Task 12: Compatibility Shim (Dual-Write to Sprint Store)
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/sprint.ts` (dual-write to legacy fields)
 
 - [ ] **Step 1: Update sprint store to dual-write**
@@ -967,12 +1009,12 @@ window.api.agentEvents.onEvent(({ agentId, event }) => {
   set((state) => ({
     taskEvents: {
       ...state.taskEvents,
-      [agentId]: [...(state.taskEvents[agentId] ?? []), event as any],
+      [agentId]: [...(state.taskEvents[agentId] ?? []), event as any]
     },
     latestEvents: {
       ...state.latestEvents,
-      [agentId]: event as any,
-    },
+      [agentId]: event as any
+    }
   }))
 })
 ```
@@ -1001,11 +1043,13 @@ git commit -m "feat(agents): add compatibility shim for dual-write during Slice 
 ### Task 13: ChatBubble Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/ChatBubble.tsx`
 
 - [ ] **Step 1: Create ChatBubble**
 
 Markdown-rendered message bubble with three variants:
+
 - `agent` — left-aligned, surface background
 - `user` — right-aligned, accent-tinted background
 - `error` — red border, error background
@@ -1029,6 +1073,7 @@ git commit -m "feat(agents): add ChatBubble component for agent/user messages"
 ### Task 14: ThinkingBlock Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/ThinkingBlock.tsx`
 
 - [ ] **Step 1: Create ThinkingBlock**
@@ -1052,11 +1097,13 @@ git commit -m "feat(agents): add ThinkingBlock component for collapsible thinkin
 ### Task 15: ToolCallBlock Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/ToolCallBlock.tsx`
 
 - [ ] **Step 1: Create ToolCallBlock**
 
 Props accept both unpaired (tool call only) and paired (tool call + result):
+
 ```typescript
 interface ToolCallBlockProps {
   tool: string
@@ -1066,6 +1113,7 @@ interface ToolCallBlockProps {
   timestamp: number
 }
 ```
+
 Collapsed: tool name + summary + success/fail badge. Expanded: input JSON + output. Blue accent.
 
 - [ ] **Step 2: Verify typecheck**
@@ -1085,6 +1133,7 @@ git commit -m "feat(agents): add ToolCallBlock component with collapsible detail
 ### Task 16: ChatRenderer (Orchestrator + Pairing Logic)
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/ChatRenderer.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/ChatRenderer.test.tsx`
 
@@ -1108,7 +1157,13 @@ describe('pairEvents', () => {
   it('pairs tool_call with following tool_result', () => {
     const events: AgentEvent[] = [
       { type: 'agent:tool_call', tool: 'Read', summary: 'src/foo.ts', timestamp: 100 },
-      { type: 'agent:tool_result', tool: 'Read', success: true, summary: '50 lines', timestamp: 101 },
+      {
+        type: 'agent:tool_result',
+        tool: 'Read',
+        success: true,
+        summary: '50 lines',
+        timestamp: 101
+      }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
@@ -1118,7 +1173,7 @@ describe('pairEvents', () => {
   it('leaves unpaired tool_call as standalone', () => {
     const events: AgentEvent[] = [
       { type: 'agent:tool_call', tool: 'Read', summary: 'src/foo.ts', timestamp: 100 },
-      { type: 'agent:text', text: 'hello', timestamp: 102 },
+      { type: 'agent:text', text: 'hello', timestamp: 102 }
     ]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(2)
@@ -1126,9 +1181,7 @@ describe('pairEvents', () => {
   })
 
   it('maps text events to text blocks', () => {
-    const events: AgentEvent[] = [
-      { type: 'agent:text', text: 'hello', timestamp: 100 },
-    ]
+    const events: AgentEvent[] = [{ type: 'agent:text', text: 'hello', timestamp: 100 }]
     const blocks = pairEvents(events)
     expect(blocks).toHaveLength(1)
     expect(blocks[0].type).toBe('text')
@@ -1144,6 +1197,7 @@ Expected: FAIL
 - [ ] **Step 4: Implement ChatRenderer**
 
 Create `src/renderer/src/components/agents/ChatRenderer.tsx`:
+
 - Export `pairEvents()` function: pre-processes `AgentEvent[]` into `ChatBlock[]`
   - `ChatBlock` is a discriminated union: `text | user_message | thinking | tool_call | tool_pair | error | rate_limited | started | completed`
   - Pairs `agent:tool_call` + immediately following `agent:tool_result` (matching `tool` name) into `tool_pair`
@@ -1172,6 +1226,7 @@ git commit -m "feat(agents): add ChatRenderer with event pairing and virtualizat
 ### Task 17: SteerInput Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/SteerInput.tsx`
 
 - [ ] **Step 1: Create SteerInput**
@@ -1206,6 +1261,7 @@ git commit -m "feat(agents): add SteerInput component extracted from LogDrawer"
 ### Task 18: AgentCard + AgentDetail Components
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/AgentCard.tsx`
 - Create: `src/renderer/src/components/agents/AgentDetail.tsx`
 
@@ -1216,6 +1272,7 @@ Shows: agent name/task title, status badge, duration, running cost, source icon 
 - [ ] **Step 2: Create AgentDetail**
 
 Layout:
+
 - **Header:** agent name, status badge, start time, model, cost summary
 - **Body:** `<ChatRenderer events={events} />`
 - **Footer:** `<SteerInput />` visible only when agent is running (derived from events: shown after `agent:started`, hidden after `agent:completed`/`agent:error`)
@@ -1239,6 +1296,7 @@ git commit -m "feat(agents): add AgentCard and AgentDetail components"
 ### Task 19: AgentList Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/AgentList.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/AgentList.test.tsx`
 
@@ -1251,7 +1309,7 @@ describe('groupAgents', () => {
     const agents = [
       { id: '1', status: 'running', startedAt: now },
       { id: '2', status: 'completed', completedAt: now - 3600_000 },
-      { id: '3', status: 'completed', completedAt: now - 48 * 3600_000 },
+      { id: '3', status: 'completed', completedAt: now - 48 * 3600_000 }
     ]
     const groups = groupAgents(agents as any)
     expect(groups.running).toHaveLength(1)
@@ -1286,12 +1344,14 @@ git commit -m "feat(agents): add AgentList with running/recent/history grouping"
 ### Task 20: AgentsView (Evolve SessionsView)
 
 **Files:**
+
 - Create: `src/renderer/src/views/AgentsView.tsx` (evolved from SessionsView)
 - Move: `src/renderer/src/components/sessions/SpawnModal.tsx` to `src/renderer/src/components/agents/SpawnModal.tsx`
 
 - [ ] **Step 1: Copy SessionsView as starting point**
 
 Copy `SessionsView.tsx` to `AgentsView.tsx`. Then:
+
 - Rename component `SessionsView` to `AgentsView`
 - Update all `components/sessions/` imports to `components/agents/`
 - Replace log/chat rendering with `AgentDetail` + `ChatRenderer`
@@ -1319,6 +1379,7 @@ git commit -m "feat(agents): evolve SessionsView into AgentsView with ChatRender
 ### Task 21: Navigation Updates
 
 **Files:**
+
 - Modify: `src/renderer/src/App.tsx`
 - Modify: `src/renderer/src/stores/ui.ts`
 - Modify: `src/renderer/src/components/layout/ActivityBar.tsx`
@@ -1364,6 +1425,7 @@ git commit -m "refactor(agents): rename sessions to agents across navigation"
 ### Task 22: Delete Legacy Files + Remove Compatibility Shim
 
 **Files:**
+
 - Delete: `src/renderer/src/views/SessionsView.tsx`
 - Delete: `src/renderer/src/components/sprint/LogDrawer.tsx`
 - Delete: `src/renderer/src/components/sprint/__tests__/LogDrawer.test.tsx`
@@ -1376,6 +1438,7 @@ git commit -m "refactor(agents): rename sessions to agents across navigation"
 - [ ] **Step 1: Audit the full sessions/ directory**
 
 List all files in `src/renderer/src/components/sessions/`. For each file, determine:
+
 - Is it already moved to `components/agents/` (SpawnModal, AgentList)? Delete the old copy.
 - Is it used by the new AgentsView? Move to `components/agents/` and update imports.
 - Is it only used by deleted components (LogDrawer, SessionsView)? Delete it.
@@ -1386,11 +1449,12 @@ Common files that may remain: `SessionHeader.tsx`, `AgentRow.tsx`, `LocalAgentRo
 - [ ] **Step 2: Migrate all ChatThread import sites**
 
 Before deleting `ChatThread.tsx`, update each import site to `ChatRenderer`:
+
 1. `SessionMainContent.tsx` — update import (or delete if orphaned)
 2. `LocalAgentLogViewer.tsx` — update import (or delete if orphaned)
 3. `ChatPane.tsx` — update import (or delete if orphaned)
 4. `AgentOutputTab.tsx` — update import to `components/agents/ChatRenderer`
-(LogDrawer already replaced by AgentDetail)
+   (LogDrawer already replaced by AgentDetail)
 
 - [ ] **Step 3: Audit sprint:readLog usage before deletion**
 
@@ -1416,6 +1480,7 @@ In `src/renderer/src/stores/sprint.ts`: remove `taskEvents`, `latestEvents`, `in
 - [ ] **Step 6: Remove dead IPC channels**
 
 In `src/shared/ipc-channels.ts`, remove (only after Step 3 confirms no live callers):
+
 - `local:tailAgentLog`
 - `agents:readLog`
 - `sprint:readLog`
@@ -1444,6 +1509,7 @@ git commit -m "chore(agents): remove legacy LogDrawer, ChatThread, sessions/, ev
 ### Task 23: HealthBar Component
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/HealthBar.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/HealthBar.test.tsx`
 
@@ -1484,6 +1550,7 @@ git commit -m "feat(agents): add HealthBar with task runner connection status"
 ### Task 24: Template CRUD Handlers
 
 **Files:**
+
 - Create: `src/main/handlers/template-handlers.ts`
 - Modify: `src/shared/ipc-channels.ts` (add template channels)
 - Modify: `src/preload/index.ts` (add template API bridge)
@@ -1498,11 +1565,12 @@ git commit -m "feat(agents): add HealthBar with task runner connection status"
 export interface TaskTemplate {
   name: string
   promptPrefix: string
-  isBuiltIn: boolean  // NEW — true for the 4 built-in templates, false for custom
+  isBuiltIn: boolean // NEW — true for the 4 built-in templates, false for custom
 }
 ```
 
 Update all existing consumers of `TaskTemplate` to handle the new field:
+
 - `src/main/handlers/sprint-local.ts` — `ClaimedTask` interface, template resolution
 - `src/renderer/src/views/SettingsView.tsx` — if it references templates
 - `src/renderer/src/components/sprint/NewTicketModal.tsx` — template dropdown
@@ -1511,6 +1579,7 @@ Update all existing consumers of `TaskTemplate` to handle the new field:
 - [ ] **Step 2: Add IPC channels for templates**
 
 In `src/shared/ipc-channels.ts`:
+
 ```typescript
 'templates:list': { args: []; result: TaskTemplate[] },
 'templates:save': { args: [template: TaskTemplate]; result: void },
@@ -1521,6 +1590,7 @@ In `src/shared/ipc-channels.ts`:
 - [ ] **Step 3: Implement template handlers**
 
 Create `src/main/handlers/template-handlers.ts`:
+
 - `templates:list` — merge DEFAULT_TASK_TEMPLATES with custom templates from settings, apply overrides
 - `templates:save` — for built-in: store override in `templates.overrides`; for custom: store in `templates.custom`
 - `templates:delete` — remove from `templates.custom`
@@ -1543,12 +1613,14 @@ git commit -m "feat(agents): add template CRUD IPC handlers"
 ### Task 25: Template Management UI in Settings
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx`
 - Modify: `src/shared/template-heuristics.ts`
 
 - [ ] **Step 1: Add template section to SettingsView**
 
 New section showing:
+
 - 4 built-in templates with Edit/Reset buttons
 - Custom templates section with Edit/Delete buttons
 - "+ Add Template" button
@@ -1577,6 +1649,7 @@ git commit -m "feat(agents): add template management UI in Settings"
 ### Task 26: Agent Metrics in AgentCard + AgentDetail
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/AgentCard.tsx`
 - Modify: `src/renderer/src/components/agents/AgentDetail.tsx`
 
@@ -1592,7 +1665,7 @@ function deriveMetrics(events: AgentEvent[]) {
     tokensIn: completed?.tokensIn ?? 0,
     tokensOut: completed?.tokensOut ?? 0,
     costUsd: completed?.costUsd ?? 0,
-    model: started?.model,
+    model: started?.model
   }
 }
 ```
@@ -1622,6 +1695,7 @@ git commit -m "feat(agents): add live agent metrics to AgentCard and AgentDetail
 ### Task 27: Final Cleanup + README Update
 
 **Files:**
+
 - Modify: `README.md`
 
 - [ ] **Step 1: Update README**
@@ -1651,12 +1725,12 @@ git commit -m "chore: update README for Phase 2 view changes"
 
 ## Summary
 
-| Slice | Tasks | Key Deliverable |
-|-------|-------|-----------------|
-| **1** | Tasks 1-5 | `AgentProvider` interface, SDK + CLI adapters, factory |
-| **2** | Tasks 6-12 | Event bus, SQLite persistence, IPC streaming, compatibility shim |
+| Slice | Tasks       | Key Deliverable                                                      |
+| ----- | ----------- | -------------------------------------------------------------------- |
+| **1** | Tasks 1-5   | `AgentProvider` interface, SDK + CLI adapters, factory               |
+| **2** | Tasks 6-12  | Event bus, SQLite persistence, IPC streaming, compatibility shim     |
 | **3** | Tasks 13-22 | Agents view, hybrid chat renderer, navigation rename, legacy cleanup |
-| **4** | Tasks 23-27 | HealthBar, template CRUD, agent metrics, README update |
+| **4** | Tasks 23-27 | HealthBar, template CRUD, agent metrics, README update               |
 
 **Total tasks:** 27
 **New dependencies:** `@anthropic-ai/claude-agent-sdk` (Slice 1), `@tanstack/react-virtual` (Slice 3)

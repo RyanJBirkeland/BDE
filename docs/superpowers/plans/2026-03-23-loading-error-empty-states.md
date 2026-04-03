@@ -12,22 +12,23 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Modify | `src/renderer/src/components/agents/AgentList.tsx` | Add loading skeleton |
-| Modify | `src/renderer/src/components/sprint/KanbanBoard.tsx` | Add WIP limit feedback toast |
-| Modify | `src/renderer/src/components/settings/CredentialForm.tsx` | Add validation + error/success feedback |
-| Modify | `src/renderer/src/views/PRStationView.tsx` | Standardize empty state to use EmptyState component |
-| Modify | `src/renderer/src/views/CostView.tsx` | Add tooltips to truncated task names |
-| Modify | `src/renderer/src/components/panels/PanelTabBar.tsx` | Add title attribute to truncated tabs |
-| Create | `src/renderer/src/components/agents/__tests__/AgentList-loading.test.tsx` | Test loading skeleton |
-| Create | `src/renderer/src/components/sprint/__tests__/KanbanBoard-wip.test.tsx` | Test WIP feedback |
+| Action | File                                                                      | Responsibility                                      |
+| ------ | ------------------------------------------------------------------------- | --------------------------------------------------- |
+| Modify | `src/renderer/src/components/agents/AgentList.tsx`                        | Add loading skeleton                                |
+| Modify | `src/renderer/src/components/sprint/KanbanBoard.tsx`                      | Add WIP limit feedback toast                        |
+| Modify | `src/renderer/src/components/settings/CredentialForm.tsx`                 | Add validation + error/success feedback             |
+| Modify | `src/renderer/src/views/PRStationView.tsx`                                | Standardize empty state to use EmptyState component |
+| Modify | `src/renderer/src/views/CostView.tsx`                                     | Add tooltips to truncated task names                |
+| Modify | `src/renderer/src/components/panels/PanelTabBar.tsx`                      | Add title attribute to truncated tabs               |
+| Create | `src/renderer/src/components/agents/__tests__/AgentList-loading.test.tsx` | Test loading skeleton                               |
+| Create | `src/renderer/src/components/sprint/__tests__/KanbanBoard-wip.test.tsx`   | Test WIP feedback                                   |
 
 ---
 
 ### Task 1: Add Loading Skeleton to AgentList
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/AgentList.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/AgentList-loading.test.tsx`
 
@@ -120,6 +121,7 @@ git commit -m "feat: add loading skeleton to AgentList"
 ### Task 2: Add WIP Limit Feedback to Kanban Board
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/KanbanBoard.tsx`
 - Create: `src/renderer/src/components/sprint/__tests__/KanbanBoard-wip.test.tsx`
 
@@ -173,7 +175,9 @@ import { toast } from '../../stores/toasts'
 
 // Where WIP check prevents the drop:
 if (inProgressCount >= WIP_LIMIT_IN_PROGRESS) {
-  toast.info(`Work-in-progress limit reached (${WIP_LIMIT_IN_PROGRESS}). Complete or cancel an active task first.`)
+  toast.info(
+    `Work-in-progress limit reached (${WIP_LIMIT_IN_PROGRESS}). Complete or cancel an active task first.`
+  )
   return
 }
 ```
@@ -195,6 +199,7 @@ git commit -m "feat: show WIP capacity indicator and toast on limit reached"
 ### Task 3: Standardize PR Station Empty State
 
 **Files:**
+
 - Modify: `src/renderer/src/views/PRStationView.tsx:136-139`
 
 **Context:** PR Station uses a custom empty state with inline icon + text instead of the standard `EmptyState` component used by Memory and Cost views.
@@ -237,6 +242,7 @@ git commit -m "fix: standardize PR Station empty state to use EmptyState compone
 ### Task 4: Add Tooltips to Truncated Content
 
 **Files:**
+
 - Modify: `src/renderer/src/views/CostView.tsx:62-64,155`
 - Modify: `src/renderer/src/components/panels/PanelTabBar.tsx:62-110`
 
@@ -283,6 +289,7 @@ git commit -m "fix: add title tooltips to truncated text in Cost view and panel 
 ### Task 5: Add Settings Form Validation Feedback
 
 **Files:**
+
 - Modify: `src/renderer/src/components/settings/CredentialForm.tsx`
 
 **Context:** Settings forms (especially credential inputs) have no inline validation, no required field indicators, and silently fail when save/test operations fail.
@@ -347,6 +354,7 @@ git commit -m "feat: add validation feedback and required indicators to Settings
 ### Task 6: Improve Cost View Number Alignment
 
 **Files:**
+
 - Modify: `src/renderer/src/views/CostView.tsx:157-181`
 
 **Context:** Numeric columns (Cost, Duration, Cache Hit %) are left-aligned, making visual comparison difficult.

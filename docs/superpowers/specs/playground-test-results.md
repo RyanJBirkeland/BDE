@@ -8,6 +8,7 @@
 ### Unit Tests
 
 #### PlaygroundCard (7 tests) ✅
+
 - ✅ Renders filename and file size
 - ✅ Renders with proper aria-label
 - ✅ Calls onClick when clicked
@@ -19,6 +20,7 @@
 **Location:** `src/renderer/src/components/agents/__tests__/PlaygroundCard.test.tsx`
 
 #### PlaygroundModal (15 tests) ✅
+
 - ✅ Renders the modal with filename and file size
 - ✅ Renders with dialog role and aria attributes
 - ✅ Renders sandboxed iframe with srcdoc in split mode (default)
@@ -38,7 +40,9 @@
 **Location:** `src/renderer/src/components/agents/__tests__/PlaygroundModal.test.tsx`
 
 #### ChatRenderer (30 tests, +5 for playground) ✅
+
 **Event Pairing (pairEvents):**
+
 - ✅ Pairs tool_call with following tool_result of same tool
 - ✅ Leaves unpaired tool_call as standalone
 - ✅ Maps text events to text blocks
@@ -57,6 +61,7 @@
 - ✅ Handles a full conversation with mixed events
 
 **Component Rendering:**
+
 - ✅ Renders container for empty events list
 - ✅ Renders text event as agent chat bubble
 - ✅ Renders user_message as user chat bubble
@@ -75,6 +80,7 @@
 **Location:** `src/renderer/src/components/agents/__tests__/ChatRenderer.test.tsx`
 
 #### Playground Handlers (7 tests) ✅
+
 - ✅ Validates .html extension
 - ✅ Enforces 5MB file size limit
 - ✅ Reads HTML file and broadcasts agent:playground event
@@ -88,25 +94,31 @@
 ### Integration Tests
 
 #### Playground Integration (12 tests) ✅
+
 **File Detection:**
+
 - ✅ Detects .html file writes
 - ✅ Ignores non-.html files
 - ✅ Handles .HTML uppercase extension
 
 **Event Flow:**
+
 - ✅ Creates valid agent:playground event structure
 - ✅ Preserves HTML content exactly
 
 **Security Constraints:**
+
 - ✅ Enforces 5MB file size limit
 - ✅ Accepts files under 5MB
 - ✅ Validates sandbox attributes
 
 **Prompt Augmentation:**
+
 - ✅ Augments prompt when playground_enabled is true
 - ✅ Does not augment prompt when playground_enabled is false
 
 **File Lifecycle:**
+
 - ✅ Creates HTML file in worktree
 - ✅ Supports multiple HTML files in sequence
 

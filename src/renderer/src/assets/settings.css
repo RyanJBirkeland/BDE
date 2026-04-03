@@ -22,7 +22,12 @@
   left: 16px;
   right: 16px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(108, 142, 239, 0.4) 0%, rgba(167, 139, 250, 0.2) 60%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(108, 142, 239, 0.4) 0%,
+    rgba(167, 139, 250, 0.2) 60%,
+    transparent 100%
+  );
 }
 
 .settings-view__header-title {
@@ -32,7 +37,7 @@
   background-clip: text;
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -80,7 +85,10 @@
   border-radius: var(--bde-radius-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .settings-tab:hover {

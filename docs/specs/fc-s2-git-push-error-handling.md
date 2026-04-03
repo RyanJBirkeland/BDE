@@ -12,9 +12,9 @@ In DiffView, `doPush()` at line 189-196 sets `setPushOutput(output || 'Pushed su
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/main/git.ts` | In `gitPush()`: check `result.status !== 0` and throw an Error with the stderr content |
+| File                                  | Change                                                                                                                                       |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main/git.ts`                     | In `gitPush()`: check `result.status !== 0` and throw an Error with the stderr content                                                       |
 | `src/renderer/src/views/DiffView.tsx` | In `doPush()`: catch the thrown error and display it as an error state (red banner or error toast) instead of treating all output as success |
 
 ## Implementation Notes
@@ -35,6 +35,7 @@ export function gitPush(cwd: string): string {
 ### DiffView.tsx changes (around line 189)
 
 The `doPush` handler already has a try/catch. The catch branch should:
+
 1. Set `pushOutput` to the error message
 2. Show an error toast
 3. Optionally add an `isPushError` state to render the output in red

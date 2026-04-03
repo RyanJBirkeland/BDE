@@ -130,14 +130,14 @@
   gap: 8px;
 }
 
-.dashboard-completion-row[role="button"] {
+.dashboard-completion-row[role='button'] {
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
   transition: background 0.15s ease;
 }
 
-.dashboard-completion-row[role="button"]:hover {
+.dashboard-completion-row[role='button']:hover {
   background: var(--neon-surface-dim);
 }
 
@@ -264,7 +264,9 @@
   font-weight: 600;
   cursor: pointer;
   opacity: 0.6;
-  transition: opacity 0.15s ease, border-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .dashboard-new-task-btn:hover {

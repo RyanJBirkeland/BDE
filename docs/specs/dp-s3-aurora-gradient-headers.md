@@ -15,13 +15,13 @@ The aurora gradient text treatment (`text-gradient-aurora`) creates a premium, d
 
 Every other view uses plain text for its title:
 
-| View | Header Text | Current Style | Line Reference |
-|------|------------|---------------|----------------|
-| Sessions sidebar | "AGENTS" | `bde-section-title` (plain uppercase muted) | `SessionsView.tsx:290` |
-| DiffView | (no view title — just repo chips) | N/A | `DiffView.tsx:240` |
-| MemoryView sidebar | "Memory" | `memory-sidebar__title` (plain) | `MemoryView.tsx:193` |
-| CostView | "Cost Tracker" | `cost-view__title` (16px plain) | `CostView.tsx:403` |
-| SettingsView | "Settings" | `settings-view__title` (20px plain) | `SettingsView.tsx:120` |
+| View               | Header Text                       | Current Style                               | Line Reference         |
+| ------------------ | --------------------------------- | ------------------------------------------- | ---------------------- |
+| Sessions sidebar   | "AGENTS"                          | `bde-section-title` (plain uppercase muted) | `SessionsView.tsx:290` |
+| DiffView           | (no view title — just repo chips) | N/A                                         | `DiffView.tsx:240`     |
+| MemoryView sidebar | "Memory"                          | `memory-sidebar__title` (plain)             | `MemoryView.tsx:193`   |
+| CostView           | "Cost Tracker"                    | `cost-view__title` (16px plain)             | `CostView.tsx:403`     |
+| SettingsView       | "Settings"                        | `settings-view__title` (20px plain)         | `SettingsView.tsx:120` |
 
 Additionally, the Sprint Center header has an aurora accent underline (`sprint.css:707-715`) that no other view header has.
 
@@ -63,7 +63,7 @@ Create a reusable `.view-header` CSS pattern:
 .view-header__title {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   background: var(--gradient-aurora);
   -webkit-background-clip: text;
@@ -74,14 +74,14 @@ Create a reusable `.view-header` CSS pattern:
 
 ### 2. Apply to each view
 
-| View | Change |
-|------|--------|
-| Sessions sidebar header | Replace `bde-section-title` with `view-header__title text-gradient-aurora` |
-| DiffView | Add a `.view-header` bar with "GIT" title above repo chips |
-| MemoryView sidebar header | Apply `text-gradient-aurora` to "MEMORY" title, add accent underline |
-| CostView header | Replace `cost-view__title` with `view-header__title text-gradient-aurora`, wrap in `.view-header` |
-| SettingsView title | Replace `settings-view__title` with `view-header__title text-gradient-aurora`, add accent underline |
-| Sprint Center | Already done — extract to reusable pattern |
+| View                      | Change                                                                                              |
+| ------------------------- | --------------------------------------------------------------------------------------------------- |
+| Sessions sidebar header   | Replace `bde-section-title` with `view-header__title text-gradient-aurora`                          |
+| DiffView                  | Add a `.view-header` bar with "GIT" title above repo chips                                          |
+| MemoryView sidebar header | Apply `text-gradient-aurora` to "MEMORY" title, add accent underline                                |
+| CostView header           | Replace `cost-view__title` with `view-header__title text-gradient-aurora`, wrap in `.view-header`   |
+| SettingsView title        | Replace `settings-view__title` with `view-header__title text-gradient-aurora`, add accent underline |
+| Sprint Center             | Already done — extract to reusable pattern                                                          |
 
 ### 3. Retire unused heading classes
 
@@ -91,15 +91,15 @@ Add deprecation comment to `heading-page`, `heading-hero`, `heading-section` in 
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/assets/main.css` | Add `.view-header` / `.view-header__title` classes |
-| `src/renderer/src/views/SessionsView.tsx` | Apply aurora title to sidebar header |
-| `src/renderer/src/views/DiffView.tsx` | Add `.view-header` with "GIT" title |
-| `src/renderer/src/views/MemoryView.tsx` | Apply aurora title + accent underline |
-| `src/renderer/src/views/CostView.tsx` | Wrap header in `.view-header`, apply aurora title |
-| `src/renderer/src/views/SettingsView.tsx` | Apply aurora title |
-| `src/renderer/src/assets/design-system.css` | Deprecation comment on unused heading classes |
+| File                                        | Change                                             |
+| ------------------------------------------- | -------------------------------------------------- |
+| `src/renderer/src/assets/main.css`          | Add `.view-header` / `.view-header__title` classes |
+| `src/renderer/src/views/SessionsView.tsx`   | Apply aurora title to sidebar header               |
+| `src/renderer/src/views/DiffView.tsx`       | Add `.view-header` with "GIT" title                |
+| `src/renderer/src/views/MemoryView.tsx`     | Apply aurora title + accent underline              |
+| `src/renderer/src/views/CostView.tsx`       | Wrap header in `.view-header`, apply aurora title  |
+| `src/renderer/src/views/SettingsView.tsx`   | Apply aurora title                                 |
+| `src/renderer/src/assets/design-system.css` | Deprecation comment on unused heading classes      |
 
 ## Acceptance Criteria
 

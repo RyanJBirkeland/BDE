@@ -29,10 +29,20 @@ src/main/
 import type { IPty } from 'node-pty'
 
 let pty: typeof import('node-pty') | null = null
-try { pty = require('node-pty') } catch { /* node-pty not available */ }
+try {
+  pty = require('node-pty')
+} catch {
+  /* node-pty not available */
+}
 
 // Preserve existing shell allowlist from terminal-handlers.ts
-const ALLOWED_SHELLS = new Set(['/bin/zsh', '/bin/bash', '/bin/sh', '/usr/bin/zsh', '/usr/bin/bash'])
+const ALLOWED_SHELLS = new Set([
+  '/bin/zsh',
+  '/bin/bash',
+  '/bin/sh',
+  '/usr/bin/zsh',
+  '/usr/bin/bash'
+])
 
 export function isPtyAvailable(): boolean {
   return pty !== null
@@ -45,7 +55,7 @@ export function validateShell(shell: string): boolean {
 export interface PtyHandle {
   process: IPty
   onData: (cb: (data: string) => void) => void
-  onExit: (cb: () => void) => void  // No exit code — matches existing IPC contract
+  onExit: (cb: () => void) => void // No exit code — matches existing IPC contract
   write: (data: string) => void
   resize: (cols: number, rows: number) => void
   kill: () => void
@@ -66,16 +76,26 @@ export function createPty(opts: {
     cols: opts.cols,
     rows: opts.rows,
     cwd: opts.cwd ?? process.env.HOME,
-    env: { ...process.env, ...opts.env } as Record<string, string>,
+    env: { ...process.env, ...opts.env } as Record<string, string>
   })
 
   return {
     process: proc,
-    onData: (cb) => { proc.onData(cb) },
-    onExit: (cb) => { proc.onExit(() => cb()) },  // Strip exit code to match contract
-    write: (data) => { proc.write(data) },
-    resize: (cols, rows) => { proc.resize(cols, rows) },
-    kill: () => { proc.kill() },
+    onData: (cb) => {
+      proc.onData(cb)
+    },
+    onExit: (cb) => {
+      proc.onExit(() => cb())
+    }, // Strip exit code to match contract
+    write: (data) => {
+      proc.write(data)
+    },
+    resize: (cols, rows) => {
+      proc.resize(cols, rows)
+    },
+    kill: () => {
+      proc.kill()
+    }
   }
 }
 ```
@@ -83,6 +103,7 @@ export function createPty(opts: {
 ### `terminal-handlers.ts` — Thin Electron Wiring
 
 Preserves the existing IPC contract:
+
 - Integer IDs (auto-incrementing counter)
 - `ipcMain.on` for `terminal:write` (fire-and-forget, payload is `{ id, data }`)
 - `terminal:exit:${id}` sends no payload
@@ -92,7 +113,7 @@ Preserves the existing IPC contract:
 import { BrowserWindow, ipcMain } from 'electron'
 import { createPty, isPtyAvailable, validateShell, type PtyHandle } from '../pty'
 
-let termId = 0  // Preserve integer ID scheme
+let termId = 0 // Preserve integer ID scheme
 const terminals = new Map<number, PtyHandle>()
 
 export function registerTerminalHandlers(): void {
@@ -111,7 +132,7 @@ export function registerTerminalHandlers(): void {
       win?.webContents.send(`terminal:data:${id}`, data)
     })
     handle.onExit(() => {
-      win?.webContents.send(`terminal:exit:${id}`)  // No payload — matches existing contract
+      win?.webContents.send(`terminal:exit:${id}`) // No payload — matches existing contract
       terminals.delete(id)
     })
 
@@ -123,9 +144,12 @@ export function registerTerminalHandlers(): void {
     terminals.get(id)?.write(data)
   })
 
-  safeHandle('terminal:resize', (_e, { id, cols, rows }: { id: number; cols: number; rows: number }) => {
-    terminals.get(id)?.resize(cols, rows)
-  })
+  safeHandle(
+    'terminal:resize',
+    (_e, { id, cols, rows }: { id: number; cols: number; rows: number }) => {
+      terminals.get(id)?.resize(cols, rows)
+    }
+  )
 
   safeHandle('terminal:kill', (_e, id: number) => {
     const handle = terminals.get(id)
@@ -142,6 +166,7 @@ export function registerTerminalHandlers(): void {
 ### 1. Create `src/main/pty.ts`
 
 Extract from terminal-handlers.ts:
+
 - PTY creation logic
 - `PtyHandle` interface wrapping `IPty`
 - `isPtyAvailable()` check
@@ -155,6 +180,7 @@ The module exports pure functions that return `PtyHandle` objects. No Electron i
 Keep only IPC handler registration. Import `createPty` from `../pty`. Wire `PtyHandle.onData` to `BrowserWindow.webContents.send`.
 
 Key contract preservation:
+
 - **Integer IDs**: `let termId = 0; const id = ++termId` (not UUID)
 - **`terminal:write` uses `ipcMain.on`**: Fire-and-forget with `{ id, data }` payload object
 - **`terminal:exit` sends no payload**: `win?.webContents.send(\`terminal:exit:${id}\`)`
@@ -189,8 +215,9 @@ describe('pty', () => {
     })
 
     it('rejects disallowed shells', () => {
-      expect(() => createPty({ shell: '/usr/bin/evil', cols: 80, rows: 24 }))
-        .toThrow('Shell not allowed')
+      expect(() => createPty({ shell: '/usr/bin/evil', cols: 80, rows: 24 })).toThrow(
+        'Shell not allowed'
+      )
     })
 
     it('receives data from PTY', async () => {
@@ -218,11 +245,11 @@ Simplify — they now only test wiring between `PtyHandle` callbacks and IPC sen
 
 ## File Size Targets
 
-| File | Target LOC |
-|------|-----------|
-| `pty.ts` | ~70 |
+| File                   | Target LOC                   |
+| ---------------------- | ---------------------------- |
+| `pty.ts`               | ~70                          |
 | `terminal-handlers.ts` | ~80 (down from current size) |
-| `pty.test.ts` | ~60 |
+| `pty.test.ts`          | ~60                          |
 
 ## Verification
 
@@ -237,6 +264,7 @@ Simplify — they now only test wiring between `PtyHandle` callbacks and IPC sen
 ## Risk
 
 Medium. PTY lifecycle management involves OS resources (child processes). The refactor changes how process handles are stored and accessed. Test carefully that:
+
 - PTY processes are properly killed on window close
 - Resize events reach the correct PTY
 - Multiple terminals don't cross-wire data streams

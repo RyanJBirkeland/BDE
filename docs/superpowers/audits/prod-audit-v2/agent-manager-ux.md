@@ -8,22 +8,22 @@
 
 ## Summary Table
 
-| Finding | Title | v1 Severity | Status | Evidence |
-|---------|-------|-------------|--------|----------|
-| AM-UX-1 | Rate-limit loop requeue note lacks recovery guidance | Medium | **Fixed** | `index.ts:193` now includes full guidance |
-| AM-UX-2 | Steer returns misleading "delivered: true" in SDK mode | High | **Fixed** | `sdk-adapter.ts:76` returns `{ delivered: false, error: 'SDK mode does not support steering' }` |
-| AM-UX-3 | No user-visible feedback when repo path resolution fails | Medium | **Fixed** | `index.ts:427-438` sets task to error with actionable note and calls `onTaskTerminal` |
-| AM-UX-4 | `claimed_by` not cleared on watchdog max-runtime and idle kills | High | **Fixed** | `index.ts:158` and `index.ts:177` both include `claimed_by: null` |
-| AM-UX-5 | `emitAgentEvent` silently swallows SQLite write failures | Low | **Fixed** | `agent-event-mapper.ts:80-87` now logs with rate-limited `console.warn` (1/min) |
-| AM-UX-6 | `resolveFailure` returns false on DB error, leaving task stuck | High | **Fixed** | `completion.ts:428-431` now returns `isTerminal` even on DB failure, so caller triggers `onStatusTerminal` correctly |
-| AM-UX-7 | Task terminal service rebuilds entire dep index on every terminal event | Low | **Not Fixed** | `task-terminal-service.ts:32` still calls `rebuildIndex()` every time |
-| AM-UX-8 | `killAgent` throws uncaught Error for missing agents | Medium | **Fixed** | `index.ts:749-759` returns `{ killed: boolean; error?: string }` result type |
-| AM-UX-9 | Worktree setup error notes truncated to 500 chars, loses diagnostic info | Low | **Fixed** | `index.ts:461-463` now keeps the tail of the message (truncates from the front with `'...'` prefix) |
-| AM-UX-10 | No agent:started event emitted for agents that fail during spawn | Medium | **Fixed** | `run-agent.ts:198-202` emits `agent:error` event before updating task status on spawn failure |
-| AM-UX-11 | Completion handler does not emit agent events for worktree eviction/branch failures | Medium | **Fixed** | `completion.ts:246-251`, `272-277`, `296-301` all emit `agent:error` events via `broadcast` before early returns |
-| AM-UX-12 | `pr_status='branch_only'` has no UI guidance for manual PR creation | Medium | **Fixed** | `completion.ts:390` now includes `gh pr create --head ${branch} --repo ${ghRepo}` in notes |
-| AM-UX-13 | Dependency check failure in drain loop silently falls through to claim | Medium | **Fixed** | `index.ts:374-387` now sets task to `error` with note and returns `true` (blocks task) instead of proceeding |
-| AM-UX-14 | `mapRawMessage` returns empty array for unrecognized message types | Low | **Not Fixed** | `agent-event-mapper.ts:60-63` logs to `console.debug` but still returns empty array with no fallback event |
+| Finding  | Title                                                                               | v1 Severity | Status        | Evidence                                                                                                             |
+| -------- | ----------------------------------------------------------------------------------- | ----------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| AM-UX-1  | Rate-limit loop requeue note lacks recovery guidance                                | Medium      | **Fixed**     | `index.ts:193` now includes full guidance                                                                            |
+| AM-UX-2  | Steer returns misleading "delivered: true" in SDK mode                              | High        | **Fixed**     | `sdk-adapter.ts:76` returns `{ delivered: false, error: 'SDK mode does not support steering' }`                      |
+| AM-UX-3  | No user-visible feedback when repo path resolution fails                            | Medium      | **Fixed**     | `index.ts:427-438` sets task to error with actionable note and calls `onTaskTerminal`                                |
+| AM-UX-4  | `claimed_by` not cleared on watchdog max-runtime and idle kills                     | High        | **Fixed**     | `index.ts:158` and `index.ts:177` both include `claimed_by: null`                                                    |
+| AM-UX-5  | `emitAgentEvent` silently swallows SQLite write failures                            | Low         | **Fixed**     | `agent-event-mapper.ts:80-87` now logs with rate-limited `console.warn` (1/min)                                      |
+| AM-UX-6  | `resolveFailure` returns false on DB error, leaving task stuck                      | High        | **Fixed**     | `completion.ts:428-431` now returns `isTerminal` even on DB failure, so caller triggers `onStatusTerminal` correctly |
+| AM-UX-7  | Task terminal service rebuilds entire dep index on every terminal event             | Low         | **Not Fixed** | `task-terminal-service.ts:32` still calls `rebuildIndex()` every time                                                |
+| AM-UX-8  | `killAgent` throws uncaught Error for missing agents                                | Medium      | **Fixed**     | `index.ts:749-759` returns `{ killed: boolean; error?: string }` result type                                         |
+| AM-UX-9  | Worktree setup error notes truncated to 500 chars, loses diagnostic info            | Low         | **Fixed**     | `index.ts:461-463` now keeps the tail of the message (truncates from the front with `'...'` prefix)                  |
+| AM-UX-10 | No agent:started event emitted for agents that fail during spawn                    | Medium      | **Fixed**     | `run-agent.ts:198-202` emits `agent:error` event before updating task status on spawn failure                        |
+| AM-UX-11 | Completion handler does not emit agent events for worktree eviction/branch failures | Medium      | **Fixed**     | `completion.ts:246-251`, `272-277`, `296-301` all emit `agent:error` events via `broadcast` before early returns     |
+| AM-UX-12 | `pr_status='branch_only'` has no UI guidance for manual PR creation                 | Medium      | **Fixed**     | `completion.ts:390` now includes `gh pr create --head ${branch} --repo ${ghRepo}` in notes                           |
+| AM-UX-13 | Dependency check failure in drain loop silently falls through to claim              | Medium      | **Fixed**     | `index.ts:374-387` now sets task to `error` with note and returns `true` (blocks task) instead of proceeding         |
+| AM-UX-14 | `mapRawMessage` returns empty array for unrecognized message types                  | Low         | **Not Fixed** | `agent-event-mapper.ts:60-63` logs to `console.debug` but still returns empty array with no fallback event           |
 
 ---
 
@@ -33,7 +33,7 @@
 
 #### AM-UX-1: Rate-limit loop requeue note -- Fixed
 
-The note at `index.ts:193` now reads: *"Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown."* This matches the recommendation exactly.
+The note at `index.ts:193` now reads: _"Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown."_ This matches the recommendation exactly.
 
 #### AM-UX-2: Steer in SDK mode -- Fixed
 
@@ -53,7 +53,7 @@ Both `max-runtime` (line 158) and `idle` (line 177) now include `claimed_by: nul
 
 #### AM-UX-6: `resolveFailure` DB error handling -- Fixed
 
-`completion.ts:428-431` now returns `isTerminal` (the correct terminal-status value) even when the DB write fails, with a comment: *"Still return correct terminal status even if DB update failed so caller knows to trigger onStatusTerminal callback."* This means the caller in `run-agent.ts` will correctly call `onTaskTerminal` for terminal failures even when the DB update throws.
+`completion.ts:428-431` now returns `isTerminal` (the correct terminal-status value) even when the DB write fails, with a comment: _"Still return correct terminal status even if DB update failed so caller knows to trigger onStatusTerminal callback."_ This means the caller in `run-agent.ts` will correctly call `onTaskTerminal` for terminal failures even when the DB update throws.
 
 **Residual concern (low):** If the DB write failed, the task is still in `active` status with `claimed_by` set. The caller now correctly triggers dependency resolution, but the task itself is stuck until orphan recovery picks it up. This is acceptable given orphan recovery runs periodically.
 
@@ -64,16 +64,18 @@ Both `max-runtime` (line 158) and `idle` (line 177) now include `claimed_by: nul
 #### AM-UX-9: Worktree error note truncation -- Fixed
 
 `index.ts:459-463` now truncates from the front (keeping the diagnostic tail):
+
 ```ts
-const notes = fullNote.length > NOTES_MAX_LENGTH
-  ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
-  : fullNote
+const notes =
+  fullNote.length > NOTES_MAX_LENGTH ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3)) : fullNote
 ```
-The comment at line 459 confirms intent: *"For git errors, keep the tail of the message (contains key diagnostic info)"*.
+
+The comment at line 459 confirms intent: _"For git errors, keep the tail of the message (contains key diagnostic info)"_.
 
 #### AM-UX-10: Spawn failure agent event -- Fixed
 
 `run-agent.ts:197-202` now emits an `agent:error` event before updating the task:
+
 ```ts
 emitAgentEvent(task.id, {
   type: 'agent:error',
@@ -81,11 +83,13 @@ emitAgentEvent(task.id, {
   timestamp: Date.now()
 })
 ```
+
 This uses `task.id` as the agent ID so the event correctly associates with the task in the agent console.
 
 #### AM-UX-11: Completion handler agent events -- Fixed
 
 All three early-return paths in `resolveSuccess` now emit `agent:error` events via `broadcast('agent:event', ...)`:
+
 - Worktree eviction: line 246-251 -- message: `"Worktree evicted before completion"`
 - Branch detection failure: line 272-277 -- message: `"Failed to detect branch"`
 - Empty branch name: line 296-301 -- message: `"Empty branch name"`
@@ -97,6 +101,7 @@ All three early-return paths in `resolveSuccess` now emit `agent:error` events v
 #### AM-UX-13: Dependency parse failure handling -- Fixed
 
 `index.ts:374-387` now catches parse failures and:
+
 1. Logs at error level: `"Task ${taskId} has malformed depends_on data: ${err}"`
 2. Sets task to `error` status with note: `"Malformed depends_on field - cannot validate dependencies"`
 3. Clears `claimed_by: null`
@@ -129,6 +134,7 @@ A `console.debug` log was added for unrecognized message types, which is an impr
 ```
 
 **Recommendation:** Emit a generic fallback event for unrecognized types so the agent console timeline stays complete:
+
 ```ts
 events.push({ type: 'agent:text', text: `[${msgType}]`, timestamp: now })
 ```
@@ -157,20 +163,20 @@ events.push({ type: 'agent:text', text: `[${msgType}]`, timestamp: now })
 
 The synthesis document consolidated the 14 UX findings with Red Team and Reliability findings into AM-1 through AM-30. The UX-relevant items that overlap:
 
-| Synthesis ID | UX Finding | Status |
-|---|---|---|
-| AM-4 | AM-UX-4 (`claimed_by` on watchdog) | **Fixed** |
-| AM-5 | AM-UX-6 (`resolveFailure` DB error) | **Fixed** |
-| AM-6 | AM-UX-2 (Steer misleading result) | **Fixed** |
-| AM-10 | AM-UX-13 (Dep parse failure bypass) | **Fixed** |
-| AM-11 | AM-RED-8 (Agent env inherits full process.env) | **Fixed** -- `env-utils.ts:17-33` now uses an `ENV_ALLOWLIST` |
-| AM-20 | AM-REL-16 (`_mapQueuedTask` validation) | **Fixed** -- `index.ts:317-328` validates id, title, repo |
-| AM-21 | AM-UX-1 (Rate-limit note) | **Fixed** |
-| AM-22 | AM-UX-3 (Repo path feedback) | **Fixed** |
-| AM-23 | AM-UX-8 (`killAgent` throws) | **Fixed** |
-| AM-24 | AM-UX-10 (Spawn event) | **Fixed** |
-| AM-25 | AM-UX-11 (Completion events) | **Fixed** |
-| AM-26 | AM-UX-12 (`branch_only` guidance) | **Fixed** |
+| Synthesis ID | UX Finding                                     | Status                                                        |
+| ------------ | ---------------------------------------------- | ------------------------------------------------------------- |
+| AM-4         | AM-UX-4 (`claimed_by` on watchdog)             | **Fixed**                                                     |
+| AM-5         | AM-UX-6 (`resolveFailure` DB error)            | **Fixed**                                                     |
+| AM-6         | AM-UX-2 (Steer misleading result)              | **Fixed**                                                     |
+| AM-10        | AM-UX-13 (Dep parse failure bypass)            | **Fixed**                                                     |
+| AM-11        | AM-RED-8 (Agent env inherits full process.env) | **Fixed** -- `env-utils.ts:17-33` now uses an `ENV_ALLOWLIST` |
+| AM-20        | AM-REL-16 (`_mapQueuedTask` validation)        | **Fixed** -- `index.ts:317-328` validates id, title, repo     |
+| AM-21        | AM-UX-1 (Rate-limit note)                      | **Fixed**                                                     |
+| AM-22        | AM-UX-3 (Repo path feedback)                   | **Fixed**                                                     |
+| AM-23        | AM-UX-8 (`killAgent` throws)                   | **Fixed**                                                     |
+| AM-24        | AM-UX-10 (Spawn event)                         | **Fixed**                                                     |
+| AM-25        | AM-UX-11 (Completion events)                   | **Fixed**                                                     |
+| AM-26        | AM-UX-12 (`branch_only` guidance)              | **Fixed**                                                     |
 
 Additionally notable from the synthesis: **AM-3** (task title sanitization in git commits) is now **Fixed** -- `completion.ts:24-30` defines `sanitizeForGit()` which strips backticks, command substitution, and markdown links. Used at lines 120 and 187. **AM-7** (git push --no-verify) is now **Fixed** -- `completion.ts:358` uses `git push origin branch` without `--no-verify`, so pre-push hooks run.
 

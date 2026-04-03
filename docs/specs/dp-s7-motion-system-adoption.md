@@ -12,15 +12,16 @@
 
 ### motion.ts Usage Audit
 
-| File | What's Imported | Usage |
-|------|----------------|-------|
-| `App.tsx` | motion.ts | ShortcutsOverlay animation (assumed) |
-| `AgentRow.tsx` | motion.ts | Session card entrance animation |
-| `SpawnModal.tsx` | motion.ts | Modal entrance/exit |
-| `AgentList.tsx` | motion.ts | List stagger animation |
-| `CommandPalette.tsx` | motion.ts | Palette entrance/exit |
+| File                 | What's Imported | Usage                                |
+| -------------------- | --------------- | ------------------------------------ |
+| `App.tsx`            | motion.ts       | ShortcutsOverlay animation (assumed) |
+| `AgentRow.tsx`       | motion.ts       | Session card entrance animation      |
+| `SpawnModal.tsx`     | motion.ts       | Modal entrance/exit                  |
+| `AgentList.tsx`      | motion.ts       | List stagger animation               |
+| `CommandPalette.tsx` | motion.ts       | Palette entrance/exit                |
 
 **Not using motion.ts:**
+
 - View transitions (`.view-enter` uses CSS `bde-slide-up-fade 120ms ease`)
 - Sprint cards (use CSS `bde-slide-up-fade` with `animation-delay`)
 - SpecDrawer (uses CSS `transform: translateX` transition)
@@ -30,16 +31,16 @@
 
 ### Current CSS Animations
 
-| Animation | Duration | Easing | Used By |
-|-----------|----------|--------|---------|
-| `bde-fade-in` | unset | linear | Unused |
-| `bde-slide-up-fade` | 200ms | ease | Sprint cards, view-enter (120ms) |
-| `bde-scale-fade-in` | 150ms | ease | Command palette, PR confirm, shortcuts |
-| `bde-shimmer` | 1.5s | ease-in-out | Skeleton loading |
-| `toast-slide-in` | 0.25s | ease-out | Toasts |
-| `log-drawer-up` | 250ms | cubic-bezier | Log drawer |
-| `bde-pulse` | 1.5s | ease-in-out | Agent running dot |
-| `pulse-glow` | 2.5s | ease-in-out | Glow pulse effect |
+| Animation           | Duration | Easing       | Used By                                |
+| ------------------- | -------- | ------------ | -------------------------------------- |
+| `bde-fade-in`       | unset    | linear       | Unused                                 |
+| `bde-slide-up-fade` | 200ms    | ease         | Sprint cards, view-enter (120ms)       |
+| `bde-scale-fade-in` | 150ms    | ease         | Command palette, PR confirm, shortcuts |
+| `bde-shimmer`       | 1.5s     | ease-in-out  | Skeleton loading                       |
+| `toast-slide-in`    | 0.25s    | ease-out     | Toasts                                 |
+| `log-drawer-up`     | 250ms    | cubic-bezier | Log drawer                             |
+| `bde-pulse`         | 1.5s     | ease-in-out  | Agent running dot                      |
+| `pulse-glow`        | 2.5s     | ease-in-out  | Glow pulse effect                      |
 
 ---
 
@@ -71,6 +72,7 @@ Remove the CSS `animation` from `.view-enter` — let framer-motion handle it.
 ### 2. List stagger — use `VARIANTS.staggerContainer` + `VARIANTS.staggerChild`
 
 Apply to:
+
 - **Sprint cards** in KanbanColumn: Wrap card list in `motion.div` with `staggerContainer` variant, each card gets `staggerChild`.
 - **Memory file list**: Stagger entrance when sidebar populates.
 - **Cost session table rows**: Stagger entrance on initial load.
@@ -99,6 +101,7 @@ Replace CSS `toast-slide-in` with framer-motion entrance for snappier, spring-ba
 ### 5. Modal/dialog entrances — ensure consistency
 
 All modals already use motion.ts (SpawnModal, CommandPalette). Ensure:
+
 - PR confirm dialog uses `VARIANTS.scaleIn`
 - NewTicketModal uses `VARIANTS.scaleIn` (already uses `glass-modal`)
 
@@ -118,15 +121,15 @@ Use it to disable spring animations when the user has reduced motion enabled (fa
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/App.tsx` | Wrap ViewRouter output in `AnimatePresence` |
-| `src/renderer/src/lib/motion.ts` | Add `useReducedMotion` hook |
-| `src/renderer/src/components/sprint/KanbanColumn.tsx` | Stagger card list with motion variants |
-| `src/renderer/src/components/sprint/SpecDrawer.tsx` | Replace CSS transition with framer-motion |
-| `src/renderer/src/components/layout/ToastContainer.tsx` | Replace CSS keyframe with framer-motion |
-| `src/renderer/src/assets/base.css` | Remove `bde-slide-up-fade` from `.view-enter` (keep keyframe for other uses) |
-| `src/renderer/src/assets/sprint.css` | Remove `animation` + `animation-delay` from `.sprint-card`, `.task-card` |
+| File                                                    | Change                                                                       |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `src/renderer/src/App.tsx`                              | Wrap ViewRouter output in `AnimatePresence`                                  |
+| `src/renderer/src/lib/motion.ts`                        | Add `useReducedMotion` hook                                                  |
+| `src/renderer/src/components/sprint/KanbanColumn.tsx`   | Stagger card list with motion variants                                       |
+| `src/renderer/src/components/sprint/SpecDrawer.tsx`     | Replace CSS transition with framer-motion                                    |
+| `src/renderer/src/components/layout/ToastContainer.tsx` | Replace CSS keyframe with framer-motion                                      |
+| `src/renderer/src/assets/base.css`                      | Remove `bde-slide-up-fade` from `.view-enter` (keep keyframe for other uses) |
+| `src/renderer/src/assets/sprint.css`                    | Remove `animation` + `animation-delay` from `.sprint-card`, `.task-card`     |
 
 ## Acceptance Criteria
 

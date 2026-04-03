@@ -15,6 +15,7 @@
 ### Task 1: Fork and Scaffold the Project
 
 **Files:**
+
 - Create: `~/projects/bde-site/` (full project directory)
 - Modify: `~/projects/bde-site/package.json`
 - Modify: `~/projects/bde-site/src/app/layout.tsx`
@@ -49,16 +50,16 @@ In `src/app/layout.tsx`, replace all Feast metadata with BDE metadata:
 
 ```tsx
 export const metadata: Metadata = {
-  title: "BDE - The IDE for Agent-Driven Development",
+  title: 'BDE - The IDE for Agent-Driven Development',
   description:
-    "Software development is changing. BDE is a desktop environment built from scratch for agent-driven development — manage tasks, orchestrate agents, review code, and ship.",
+    'Software development is changing. BDE is a desktop environment built from scratch for agent-driven development — manage tasks, orchestrate agents, review code, and ship.',
   openGraph: {
-    title: "BDE - The IDE for Agent-Driven Development",
+    title: 'BDE - The IDE for Agent-Driven Development',
     description:
-      "A desktop IDE purpose-built for the era of AI agents. Define tasks, manage dependencies, review pull requests, and ship.",
-    type: "website",
-  },
-};
+      'A desktop IDE purpose-built for the era of AI agents. Define tasks, manage dependencies, review pull requests, and ship.',
+    type: 'website'
+  }
+}
 ```
 
 - [ ] **Step 4: Delete feast-specific assets (keep components until replaced)**
@@ -82,6 +83,7 @@ mkdir -p ~/projects/bde-site/public/screenshots
 For now, create a simple placeholder SVG that each screenshot path can reference:
 
 Create `~/projects/bde-site/public/screenshots/placeholder.svg`:
+
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
   <rect width="800" height="500" fill="#111113"/>
@@ -116,6 +118,7 @@ git commit -m "chore: scaffold bde-site from feast-site fork"
 ### Task 2: WindowFrame Component
 
 **Files:**
+
 - Create: `~/projects/bde-site/src/components/WindowFrame.tsx`
 
 This replaces `PhoneMockup.tsx` — a desktop app window frame with traffic light dots, title bar, and configurable sizes.
@@ -126,25 +129,43 @@ Create `~/projects/bde-site/src/components/WindowFrame.tsx`:
 
 ```tsx
 const SIZES = {
-  sm: { width: "w-[240px]", padding: "p-[4px]", outerRadius: "rounded-[12px]", innerRadius: "rounded-[8px]", titleBar: "h-7 text-[10px]" },
-  md: { width: "w-[320px]", padding: "p-[5px]", outerRadius: "rounded-[14px]", innerRadius: "rounded-[10px]", titleBar: "h-8 text-[11px]" },
-  lg: { width: "w-[480px]", padding: "p-[6px]", outerRadius: "rounded-[16px]", innerRadius: "rounded-[12px]", titleBar: "h-9 text-xs" },
-};
+  sm: {
+    width: 'w-[240px]',
+    padding: 'p-[4px]',
+    outerRadius: 'rounded-[12px]',
+    innerRadius: 'rounded-[8px]',
+    titleBar: 'h-7 text-[10px]'
+  },
+  md: {
+    width: 'w-[320px]',
+    padding: 'p-[5px]',
+    outerRadius: 'rounded-[14px]',
+    innerRadius: 'rounded-[10px]',
+    titleBar: 'h-8 text-[11px]'
+  },
+  lg: {
+    width: 'w-[480px]',
+    padding: 'p-[6px]',
+    outerRadius: 'rounded-[16px]',
+    innerRadius: 'rounded-[12px]',
+    titleBar: 'h-9 text-xs'
+  }
+}
 
 export function WindowFrame({
-  size = "lg",
+  size = 'lg',
   glow = false,
-  title = "",
-  className = "",
-  children,
+  title = '',
+  className = '',
+  children
 }: {
-  size?: "sm" | "md" | "lg";
-  glow?: boolean;
-  title?: string;
-  className?: string;
-  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg'
+  glow?: boolean
+  title?: string
+  className?: string
+  children: React.ReactNode
 }) {
-  const s = SIZES[size];
+  const s = SIZES[size]
 
   return (
     <div className={`${s.width} shrink-0 ${className}`}>
@@ -152,8 +173,8 @@ export function WindowFrame({
         className={`bg-v2-card ${s.outerRadius} border border-v2-border ${s.padding}`}
         style={{
           boxShadow: glow
-            ? "0 8px 32px rgba(0,0,0,0.5), 0 4px 16px rgba(0,211,127,0.08)"
-            : "0 8px 32px rgba(0,0,0,0.5)",
+            ? '0 8px 32px rgba(0,0,0,0.5), 0 4px 16px rgba(0,211,127,0.08)'
+            : '0 8px 32px rgba(0,0,0,0.5)'
         }}
       >
         {/* Title bar */}
@@ -163,17 +184,13 @@ export function WindowFrame({
             <div className="h-2.5 w-2.5 rounded-full bg-[#eab308]/80" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#22c55e]/80" />
           </div>
-          {title && (
-            <span className="ml-2 text-v2-text-tertiary">{title}</span>
-          )}
+          {title && <span className="ml-2 text-v2-text-tertiary">{title}</span>}
         </div>
         {/* Content */}
-        <div className={`bg-v2-background ${s.innerRadius} overflow-hidden`}>
-          {children}
-        </div>
+        <div className={`bg-v2-background ${s.innerRadius} overflow-hidden`}>{children}</div>
       </div>
     </div>
-  );
+  )
 }
 ```
 
@@ -197,6 +214,7 @@ git commit -m "feat: add WindowFrame component replacing PhoneMockup"
 ### Task 3: Header Component
 
 **Files:**
+
 - Modify: `~/projects/bde-site/src/components/Header.tsx`
 
 - [ ] **Step 1: Update Header with BDE content**
@@ -204,30 +222,31 @@ git commit -m "feat: add WindowFrame component replacing PhoneMockup"
 Replace the full contents of `src/components/Header.tsx`:
 
 ```tsx
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useState } from 'react'
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 
 const NAV_LINKS = [
-  { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Tech Stack", href: "#tech-stack" },
-];
+  { label: 'Features', href: '#features' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Tech Stack', href: '#tech-stack' }
+]
 
 export function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <header
       className="fixed top-0 z-50 w-full border-b border-white/[0.06]"
-      style={{ background: "rgba(5, 5, 5, 0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+      style={{
+        background: 'rgba(5, 5, 5, 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)'
+      }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a
-          href="#"
-          className="text-lg font-bold tracking-[0.3em] uppercase text-v2-primary"
-        >
+        <a href="#" className="text-lg font-bold tracking-[0.3em] uppercase text-v2-primary">
           BDE
         </a>
 
@@ -245,7 +264,7 @@ export function Header() {
           <a
             href="#waitlist"
             className="rounded-[20px] px-5 py-2 text-sm font-semibold text-v2-background transition-all duration-200 active:scale-[0.97]"
-            style={{ background: "linear-gradient(135deg, #00D37F, #00A863)" }}
+            style={{ background: 'linear-gradient(135deg, #00D37F, #00A863)' }}
           >
             Join Waitlist
           </a>
@@ -282,14 +301,14 @@ export function Header() {
             href="#waitlist"
             onClick={() => setMobileOpen(false)}
             className="mt-2 block rounded-[20px] px-5 py-2.5 text-center text-sm font-semibold text-v2-background"
-            style={{ background: "linear-gradient(135deg, #00D37F, #00A863)" }}
+            style={{ background: 'linear-gradient(135deg, #00D37F, #00A863)' }}
           >
             Join Waitlist
           </a>
         </nav>
       )}
     </header>
-  );
+  )
 }
 ```
 
@@ -305,6 +324,7 @@ git commit -m "feat: update Header for BDE — nav links, wordmark"
 ### Task 4: Hero Component
 
 **Files:**
+
 - Modify: `~/projects/bde-site/src/components/Hero.tsx`
 
 - [ ] **Step 1: Rewrite Hero with BDE content and WindowFrame**
@@ -312,8 +332,8 @@ git commit -m "feat: update Header for BDE — nav links, wordmark"
 Replace the full contents of `src/components/Hero.tsx`:
 
 ```tsx
-import Image from "next/image";
-import { WindowFrame } from "@/components/WindowFrame";
+import Image from 'next/image'
+import { WindowFrame } from '@/components/WindowFrame'
 
 export function Hero() {
   return (
@@ -330,20 +350,18 @@ export function Hero() {
             <span className="text-v2-primary">Your IDE should too.</span>
           </h1>
           <p className="mx-auto mt-5 max-w-full md:max-w-[480px] text-[17px] leading-[1.7] text-v2-text-secondary md:mx-0">
-            BDE is a desktop environment built from scratch for{" "}
-            <span className="font-semibold text-v2-text-primary">
-              agent-driven development
-            </span>
-            — where you define the work and AI agents execute it. Manage tasks,
-            review code, and ship features without writing every line yourself.
+            BDE is a desktop environment built from scratch for{' '}
+            <span className="font-semibold text-v2-text-primary">agent-driven development</span>—
+            where you define the work and AI agents execute it. Manage tasks, review code, and ship
+            features without writing every line yourself.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row md:justify-start">
             <a
               href="#waitlist"
               className="w-full sm:w-auto text-center rounded-[20px] px-8 py-3.5 text-[15px] font-bold text-v2-background transition-all duration-200 active:scale-[0.97]"
               style={{
-                background: "linear-gradient(135deg, #00D37F, #00A863)",
-                boxShadow: "0 4px 16px rgba(0,211,127,0.3)",
+                background: 'linear-gradient(135deg, #00D37F, #00A863)',
+                boxShadow: '0 4px 16px rgba(0,211,127,0.3)'
               }}
             >
               Join the Waitlist
@@ -362,11 +380,15 @@ export function Hero() {
           <div
             className="pointer-events-none absolute top-1/2 left-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2"
             style={{
-              background:
-                "radial-gradient(circle, rgba(0,211,127,0.08) 0%, transparent 70%)",
+              background: 'radial-gradient(circle, rgba(0,211,127,0.08) 0%, transparent 70%)'
             }}
           />
-          <WindowFrame size="lg" glow title="BDE — Sprint Board" className="!w-[300px] md:!w-[480px]">
+          <WindowFrame
+            size="lg"
+            glow
+            title="BDE — Sprint Board"
+            className="!w-[300px] md:!w-[480px]"
+          >
             <Image
               src="/screenshots/placeholder.svg"
               alt="BDE — Sprint board with task queue"
@@ -378,7 +400,7 @@ export function Hero() {
         </div>
       </div>
     </section>
-  );
+  )
 }
 ```
 
@@ -394,6 +416,7 @@ git commit -m "feat: rewrite Hero for BDE — headline, WindowFrame, copy"
 ### Task 5: Features Component
 
 **Files:**
+
 - Modify: `~/projects/bde-site/src/components/Features.tsx`
 
 - [ ] **Step 1: Rewrite Features with 5 BDE feature cards**
@@ -406,41 +429,40 @@ import {
   ArrowsPointingOutIcon,
   QueueListIcon,
   CodeBracketSquareIcon,
-  ChartBarIcon,
-} from "@heroicons/react/24/outline";
+  ChartBarIcon
+} from '@heroicons/react/24/outline'
 
 const FEATURES = [
   {
     icon: CpuChipIcon,
-    title: "Agent Orchestration",
+    title: 'Agent Orchestration',
     description:
-      "Spawn, monitor, and manage multiple AI agents working your codebase in parallel. Each agent runs in an isolated git worktree.",
+      'Spawn, monitor, and manage multiple AI agents working your codebase in parallel. Each agent runs in an isolated git worktree.'
   },
   {
     icon: ArrowsPointingOutIcon,
-    title: "Task Dependencies",
+    title: 'Task Dependencies',
     description:
-      "Hard and soft dependencies with cycle detection and auto-blocking. Agents work in the right order, automatically.",
+      'Hard and soft dependencies with cycle detection and auto-blocking. Agents work in the right order, automatically.'
   },
   {
     icon: QueueListIcon,
-    title: "Sprint Management",
+    title: 'Sprint Management',
     description:
-      "Task queue with real-time sync, status transitions, and an automated drain loop that keeps agents busy.",
+      'Task queue with real-time sync, status transitions, and an automated drain loop that keeps agents busy.'
   },
   {
     icon: CodeBracketSquareIcon,
-    title: "Code Review",
+    title: 'Code Review',
     description:
-      "Built-in PR station with inline comments, CI status badges, diff viewer, and merge controls. No context switching.",
+      'Built-in PR station with inline comments, CI status badges, diff viewer, and merge controls. No context switching.'
   },
   {
     icon: ChartBarIcon,
-    title: "Cost Tracking",
-    description:
-      "Token analytics and daily spend charts so you always know what your agents cost.",
-  },
-];
+    title: 'Cost Tracking',
+    description: 'Token analytics and daily spend charts so you always know what your agents cost.'
+  }
+]
 
 export function Features() {
   return (
@@ -454,8 +476,8 @@ export function Features() {
             Everything you need to orchestrate agents
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-v2-text-secondary">
-            BDE replaces the patchwork of terminals, browser tabs, and scripts
-            with a single workspace designed for agent-driven development.
+            BDE replaces the patchwork of terminals, browser tabs, and scripts with a single
+            workspace designed for agent-driven development.
           </p>
         </div>
 
@@ -464,7 +486,7 @@ export function Features() {
             <div
               key={feature.title}
               className="rounded-[20px] border border-white/[0.06] p-5 md:p-7 transition-colors duration-200 hover:border-white/[0.12]"
-              style={{ background: "rgba(26, 26, 29, 0.8)" }}
+              style={{ background: 'rgba(26, 26, 29, 0.8)' }}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-v2-primary/12">
                 <feature.icon className="h-6 w-6 text-v2-primary" />
@@ -483,7 +505,7 @@ export function Features() {
             <div
               key={feature.title}
               className="rounded-[20px] border border-white/[0.06] p-5 md:p-7 transition-colors duration-200 hover:border-white/[0.12]"
-              style={{ background: "rgba(26, 26, 29, 0.8)" }}
+              style={{ background: 'rgba(26, 26, 29, 0.8)' }}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-v2-primary/12">
                 <feature.icon className="h-6 w-6 text-v2-primary" />
@@ -499,7 +521,7 @@ export function Features() {
         </div>
       </div>
     </section>
-  );
+  )
 }
 ```
 
@@ -523,6 +545,7 @@ git commit -m "feat: rewrite Features for BDE — 5 capability cards"
 ### Task 6: HowItWorks Component
 
 **Files:**
+
 - Modify: `~/projects/bde-site/src/components/HowItWorks.tsx`
 
 - [ ] **Step 1: Rewrite HowItWorks with BDE 4-step workflow**
@@ -530,42 +553,42 @@ git commit -m "feat: rewrite Features for BDE — 5 capability cards"
 Replace the full contents of `src/components/HowItWorks.tsx`:
 
 ```tsx
-import Image from "next/image";
-import { WindowFrame } from "@/components/WindowFrame";
+import Image from 'next/image'
+import { WindowFrame } from '@/components/WindowFrame'
 
 const STEPS = [
   {
-    number: "01",
-    title: "Define tasks and dependencies",
+    number: '01',
+    title: 'Define tasks and dependencies',
     description:
-      "Break your feature into tasks on the sprint board. Set hard or soft dependencies so agents tackle prerequisites first.",
+      'Break your feature into tasks on the sprint board. Set hard or soft dependencies so agents tackle prerequisites first.'
   },
   {
-    number: "02",
-    title: "BDE spawns agents in isolation",
+    number: '02',
+    title: 'BDE spawns agents in isolation',
     description:
-      "Each task gets its own agent in an isolated git worktree. Agents work in parallel without stepping on each other.",
+      'Each task gets its own agent in an isolated git worktree. Agents work in parallel without stepping on each other.'
   },
   {
-    number: "03",
-    title: "Agents push branches and open PRs",
+    number: '03',
+    title: 'Agents push branches and open PRs',
     description:
-      "When an agent finishes, BDE auto-commits, pushes the branch, and opens a pull request. You stay informed, not involved.",
+      'When an agent finishes, BDE auto-commits, pushes the branch, and opens a pull request. You stay informed, not involved.'
   },
   {
-    number: "04",
-    title: "Review, merge, and ship",
+    number: '04',
+    title: 'Review, merge, and ship',
     description:
-      "Review diffs, leave inline comments, check CI status, and merge — all from PR Station. No context switching.",
-  },
-];
+      'Review diffs, leave inline comments, check CI status, and merge — all from PR Station. No context switching.'
+  }
+]
 
 const STEP_SCREENSHOTS = [
-  { src: "/screenshots/placeholder.svg", alt: "BDE — Sprint board with task dependencies" },
-  { src: "/screenshots/placeholder.svg", alt: "BDE — Agents view with parallel workers" },
-  { src: "/screenshots/placeholder.svg", alt: "BDE — PR list with CI badges" },
-  { src: "/screenshots/placeholder.svg", alt: "BDE — PR Station diff viewer" },
-];
+  { src: '/screenshots/placeholder.svg', alt: 'BDE — Sprint board with task dependencies' },
+  { src: '/screenshots/placeholder.svg', alt: 'BDE — Agents view with parallel workers' },
+  { src: '/screenshots/placeholder.svg', alt: 'BDE — PR list with CI badges' },
+  { src: '/screenshots/placeholder.svg', alt: 'BDE — PR Station diff viewer' }
+]
 
 export function HowItWorks() {
   return (
@@ -586,23 +609,22 @@ export function HowItWorks() {
         <div className="mt-16">
           {STEPS.map((step, i) => (
             <div key={step.number}>
-              <div className={`flex flex-col items-center gap-8 md:gap-12 ${i % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"}`}>
+              <div
+                className={`flex flex-col items-center gap-8 md:gap-12 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
+              >
                 {/* Text */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3.5">
                     <div
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-bold text-v2-background"
                       style={{
-                        background:
-                          "linear-gradient(135deg, #00D37F, #00A863)",
-                        boxShadow: "0 4px 12px rgba(0,211,127,0.25)",
+                        background: 'linear-gradient(135deg, #00D37F, #00A863)',
+                        boxShadow: '0 4px 12px rgba(0,211,127,0.25)'
                       }}
                     >
                       {step.number}
                     </div>
-                    <h3 className="text-xl font-bold text-v2-text-primary">
-                      {step.title}
-                    </h3>
+                    <h3 className="text-xl font-bold text-v2-text-primary">{step.title}</h3>
                   </div>
                   <p className="mt-3 pl-[54px] text-[15px] leading-[1.7] text-v2-text-secondary">
                     {step.description}
@@ -610,7 +632,7 @@ export function HowItWorks() {
                 </div>
 
                 {/* Mini window */}
-                <WindowFrame size="sm" title={STEP_SCREENSHOTS[i].alt.replace("BDE — ", "")}>
+                <WindowFrame size="sm" title={STEP_SCREENSHOTS[i].alt.replace('BDE — ', '')}>
                   <Image
                     src={STEP_SCREENSHOTS[i].src}
                     alt={STEP_SCREENSHOTS[i].alt}
@@ -626,8 +648,7 @@ export function HowItWorks() {
                 <div
                   className="mx-auto my-8 h-16 w-0.5 rounded-full"
                   style={{
-                    background:
-                      "linear-gradient(to bottom, #00D37F, #2A2A2E)",
+                    background: 'linear-gradient(to bottom, #00D37F, #2A2A2E)'
                   }}
                 />
               )}
@@ -636,7 +657,7 @@ export function HowItWorks() {
         </div>
       </div>
     </section>
-  );
+  )
 }
 ```
 
@@ -652,6 +673,7 @@ git commit -m "feat: rewrite HowItWorks for BDE — 4-step agent workflow"
 ### Task 7: AppPreview Component
 
 **Files:**
+
 - Modify: `~/projects/bde-site/src/components/AppPreview.tsx`
 
 - [ ] **Step 1: Rewrite AppPreview with 3 WindowFrames**
@@ -659,8 +681,8 @@ git commit -m "feat: rewrite HowItWorks for BDE — 4-step agent workflow"
 Replace the full contents of `src/components/AppPreview.tsx`:
 
 ```tsx
-import Image from "next/image";
-import { WindowFrame } from "@/components/WindowFrame";
+import Image from 'next/image'
+import { WindowFrame } from '@/components/WindowFrame'
 
 export function AppPreview() {
   return (
@@ -669,8 +691,7 @@ export function AppPreview() {
       <div
         className="pointer-events-none absolute top-1/2 left-1/2 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2"
         style={{
-          background:
-            "radial-gradient(ellipse, rgba(0,211,127,0.06) 0%, transparent 70%)",
+          background: 'radial-gradient(ellipse, rgba(0,211,127,0.06) 0%, transparent 70%)'
         }}
       />
 
@@ -700,9 +721,7 @@ export function AppPreview() {
                 className="w-full h-auto"
               />
             </WindowFrame>
-            <p className="mt-2.5 text-center text-[11px] text-v2-text-tertiary">
-              Sprint Board
-            </p>
+            <p className="mt-2.5 text-center text-[11px] text-v2-text-tertiary">Sprint Board</p>
           </div>
 
           {/* Center: Agents (elevated) */}
@@ -716,9 +735,7 @@ export function AppPreview() {
                 className="w-full h-auto"
               />
             </WindowFrame>
-            <p className="mt-2.5 text-center text-[11px] text-v2-text-tertiary">
-              Agents
-            </p>
+            <p className="mt-2.5 text-center text-[11px] text-v2-text-tertiary">Agents</p>
           </div>
 
           {/* Right: PR Station */}
@@ -732,9 +749,7 @@ export function AppPreview() {
                 className="w-full h-auto"
               />
             </WindowFrame>
-            <p className="mt-2.5 text-center text-[11px] text-v2-text-tertiary">
-              PR Station
-            </p>
+            <p className="mt-2.5 text-center text-[11px] text-v2-text-tertiary">PR Station</p>
           </div>
         </div>
 
@@ -752,7 +767,7 @@ export function AppPreview() {
         </div>
       </div>
     </section>
-  );
+  )
 }
 ```
 
@@ -768,6 +783,7 @@ git commit -m "feat: rewrite AppPreview — 3 WindowFrames in fan layout"
 ### Task 8: TechStack Component (New)
 
 **Files:**
+
 - Create: `~/projects/bde-site/src/components/TechStack.tsx`
 
 - [ ] **Step 1: Create TechStack component**
@@ -781,41 +797,41 @@ import {
   CircleStackIcon,
   SparklesIcon,
   DocumentDuplicateIcon,
-  CloudIcon,
-} from "@heroicons/react/24/outline";
+  CloudIcon
+} from '@heroicons/react/24/outline'
 
 const STACK = [
   {
     icon: ComputerDesktopIcon,
-    title: "Electron + React",
-    description: "Native desktop app with web UI flexibility.",
+    title: 'Electron + React',
+    description: 'Native desktop app with web UI flexibility.'
   },
   {
     icon: CodeBracketIcon,
-    title: "TypeScript",
-    description: "Strict mode, end-to-end type safety.",
+    title: 'TypeScript',
+    description: 'Strict mode, end-to-end type safety.'
   },
   {
     icon: CircleStackIcon,
-    title: "SQLite",
-    description: "Local-first data — your data stays on your machine.",
+    title: 'SQLite',
+    description: 'Local-first data — your data stays on your machine.'
   },
   {
     icon: SparklesIcon,
-    title: "Claude Agent SDK",
-    description: "Direct integration with Anthropic's agent SDK.",
+    title: 'Claude Agent SDK',
+    description: "Direct integration with Anthropic's agent SDK."
   },
   {
     icon: DocumentDuplicateIcon,
-    title: "Git Worktrees",
-    description: "Each agent works in isolation — no branch conflicts.",
+    title: 'Git Worktrees',
+    description: 'Each agent works in isolation — no branch conflicts.'
   },
   {
     icon: CloudIcon,
-    title: "Supabase Sync",
-    description: "Optional cloud sync for team sprint management.",
-  },
-];
+    title: 'Supabase Sync',
+    description: 'Optional cloud sync for team sprint management.'
+  }
+]
 
 export function TechStack() {
   return (
@@ -838,14 +854,12 @@ export function TechStack() {
             <div
               key={item.title}
               className="rounded-[20px] border border-white/[0.06] p-5 md:p-7 transition-colors duration-200 hover:border-white/[0.12]"
-              style={{ background: "rgba(26, 26, 29, 0.8)" }}
+              style={{ background: 'rgba(26, 26, 29, 0.8)' }}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-v2-primary/12">
                 <item.icon className="h-6 w-6 text-v2-primary" />
               </div>
-              <h3 className="mt-4 text-[17px] font-semibold text-v2-text-primary">
-                {item.title}
-              </h3>
+              <h3 className="mt-4 text-[17px] font-semibold text-v2-text-primary">{item.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-v2-text-secondary">
                 {item.description}
               </p>
@@ -854,7 +868,7 @@ export function TechStack() {
         </div>
       </div>
     </section>
-  );
+  )
 }
 ```
 
@@ -870,6 +884,7 @@ git commit -m "feat: add TechStack section — 6 technology cards"
 ### Task 9: Comparison Component (New)
 
 **Files:**
+
 - Create: `~/projects/bde-site/src/components/Comparison.tsx`
 
 - [ ] **Step 1: Create Comparison component**
@@ -877,34 +892,34 @@ git commit -m "feat: add TechStack section — 6 technology cards"
 Create `~/projects/bde-site/src/components/Comparison.tsx`:
 
 ```tsx
-import { XMarkIcon, CheckIcon } from "@heroicons/react/24/solid";
+import { XMarkIcon, CheckIcon } from '@heroicons/react/24/solid'
 
 const ROWS = [
   {
-    without: "Juggle terminal tabs for each agent",
-    with: "Unified workspace — all agents in one view",
+    without: 'Juggle terminal tabs for each agent',
+    with: 'Unified workspace — all agents in one view'
   },
   {
-    without: "Manually track agent output and errors",
-    with: "Real-time monitoring with watchdog + status",
+    without: 'Manually track agent output and errors',
+    with: 'Real-time monitoring with watchdog + status'
   },
   {
-    without: "No dependency management between tasks",
-    with: "Hard/soft deps, cycle detection, auto-blocking",
+    without: 'No dependency management between tasks',
+    with: 'Hard/soft deps, cycle detection, auto-blocking'
   },
   {
-    without: "Copy-paste PRs into GitHub for review",
-    with: "Built-in PR station with inline comments",
+    without: 'Copy-paste PRs into GitHub for review',
+    with: 'Built-in PR station with inline comments'
   },
   {
-    without: "No visibility into token spend",
-    with: "Cost dashboard with daily analytics",
+    without: 'No visibility into token spend',
+    with: 'Cost dashboard with daily analytics'
   },
   {
     without: "Hope agents don't conflict on branches",
-    with: "Automatic git worktree isolation",
-  },
-];
+    with: 'Automatic git worktree isolation'
+  }
+]
 
 export function Comparison() {
   return (
@@ -922,7 +937,10 @@ export function Comparison() {
           </p>
         </div>
 
-        <div className="mt-16 overflow-hidden rounded-[20px] border border-white/[0.06]" style={{ background: "rgba(26, 26, 29, 0.8)" }}>
+        <div
+          className="mt-16 overflow-hidden rounded-[20px] border border-white/[0.06]"
+          style={{ background: 'rgba(26, 26, 29, 0.8)' }}
+        >
           {/* Column headers */}
           <div className="grid grid-cols-2 border-b border-white/[0.06] px-5 py-4 md:px-7">
             <p className="text-sm font-semibold text-v2-text-tertiary">Without BDE</p>
@@ -933,7 +951,7 @@ export function Comparison() {
           {ROWS.map((row, i) => (
             <div
               key={i}
-              className={`grid grid-cols-2 px-5 py-4 md:px-7 ${i < ROWS.length - 1 ? "border-b border-white/[0.04]" : ""}`}
+              className={`grid grid-cols-2 px-5 py-4 md:px-7 ${i < ROWS.length - 1 ? 'border-b border-white/[0.04]' : ''}`}
             >
               <div className="flex items-start gap-2.5 pr-4">
                 <XMarkIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-400/70" />
@@ -948,7 +966,7 @@ export function Comparison() {
         </div>
       </div>
     </section>
-  );
+  )
 }
 ```
 
@@ -964,6 +982,7 @@ git commit -m "feat: add Comparison section — BDE vs terminal table"
 ### Task 10: Waitlist, ComingSoon, and Footer Components
 
 **Files:**
+
 - Modify: `~/projects/bde-site/src/components/Waitlist.tsx`
 - Modify: `~/projects/bde-site/src/components/ComingSoon.tsx`
 - Modify: `~/projects/bde-site/src/components/Footer.tsx`
@@ -986,6 +1005,7 @@ In `src/app/api/waitlist/route.ts`, change `source: "landing-page"` to `source: 
 - [ ] **Step 3: Update ComingSoon**
 
 In `src/components/ComingSoon.tsx`:
+
 1. Change `FEAST` to `BDE`
 2. Change "Something delicious is cooking." to "Something powerful is building." with second line in green: `<span className="text-v2-primary">is building.</span>`
 3. Change description to "We're putting the finishing touches on BDE — a desktop IDE for agent-driven development. Check back soon."
@@ -993,6 +1013,7 @@ In `src/components/ComingSoon.tsx`:
 - [ ] **Step 4: Update Footer**
 
 In `src/components/Footer.tsx`:
+
 1. Change `FEAST` wordmark to `BDE`
 2. Change tagline to "The development environment for the age of agents."
 3. Remove the `Contact` mailto link (not in spec). Keep Privacy and Terms.
@@ -1022,6 +1043,7 @@ git commit -m "feat: update Waitlist, ComingSoon, Footer for BDE"
 ### Task 11: Page Assembly and Feature Flag
 
 **Files:**
+
 - Modify: `~/projects/bde-site/src/app/page.tsx`
 - Delete: `~/projects/bde-site/src/components/Personas.tsx`
 - Delete: `~/projects/bde-site/src/components/PhoneMockup.tsx`
@@ -1031,22 +1053,22 @@ git commit -m "feat: update Waitlist, ComingSoon, Footer for BDE"
 Replace the full contents of `src/app/page.tsx`:
 
 ```tsx
-import { Header } from "@/components/Header";
-import { Hero } from "@/components/Hero";
-import { Features } from "@/components/Features";
-import { HowItWorks } from "@/components/HowItWorks";
-import { AppPreview } from "@/components/AppPreview";
-import { TechStack } from "@/components/TechStack";
-import { Comparison } from "@/components/Comparison";
-import { Waitlist } from "@/components/Waitlist";
-import { Footer } from "@/components/Footer";
-import { ComingSoon } from "@/components/ComingSoon";
+import { Header } from '@/components/Header'
+import { Hero } from '@/components/Hero'
+import { Features } from '@/components/Features'
+import { HowItWorks } from '@/components/HowItWorks'
+import { AppPreview } from '@/components/AppPreview'
+import { TechStack } from '@/components/TechStack'
+import { Comparison } from '@/components/Comparison'
+import { Waitlist } from '@/components/Waitlist'
+import { Footer } from '@/components/Footer'
+import { ComingSoon } from '@/components/ComingSoon'
 
-const IS_LIVE = process.env.NEXT_PUBLIC_SITE_LIVE === "true";
+const IS_LIVE = process.env.NEXT_PUBLIC_SITE_LIVE === 'true'
 
 export default function Home() {
   if (!IS_LIVE) {
-    return <ComingSoon />;
+    return <ComingSoon />
   }
 
   return (
@@ -1063,7 +1085,7 @@ export default function Home() {
       </main>
       <Footer />
     </>
-  );
+  )
 }
 ```
 
@@ -1086,6 +1108,7 @@ git commit -m "feat: assemble all BDE sections + feature flag gate + remove feas
 ### Task 12: Build Verification and Cleanup
 
 **Files:**
+
 - Possibly modify any file with build errors
 
 - [ ] **Step 1: Run typecheck**
@@ -1111,6 +1134,7 @@ cd ~/projects/bde-site && npm run dev
 ```
 
 Open `http://localhost:3000` and verify:
+
 - Coming soon screen appears (no `NEXT_PUBLIC_SITE_LIVE` env var)
 - With `NEXT_PUBLIC_SITE_LIVE=true npm run dev`, all 9 sections render
 - Mobile responsive (375px viewport)
@@ -1152,6 +1176,7 @@ git commit -m "chore: build verification and feast cleanup"
 ### Task 13: GitHub Repo and CLAUDE.md
 
 **Files:**
+
 - Create: `~/projects/bde-site/CLAUDE.md`
 
 - [ ] **Step 1: Create GitHub repo**
@@ -1165,7 +1190,7 @@ gh repo create RyanJBirkeland/bde-site --private --source=. --push
 
 Create `~/projects/bde-site/CLAUDE.md`:
 
-```markdown
+````markdown
 # CLAUDE.md — BDE Site
 
 @../../ARCHITECTURE.md
@@ -1197,6 +1222,7 @@ npm run dev      # Dev server on :3000
 npm run build    # Production build
 npm run lint     # ESLint
 ```
+````
 
 ## Feature Flags
 
@@ -1214,18 +1240,19 @@ npm run lint     # ESLint
 
 Placeholder SVG at `public/screenshots/placeholder.svg`. Replace with real BDE captures before launch:
 
-| File | View |
-|------|------|
-| `sprint-kanban.png` | Sprint board — Kanban with tasks |
-| `agents-view.png` | Agents — active agents with status |
-| `pr-list.png` | PR Station — list with CI badges |
-| `pr-diff.png` | PR Station — diff viewer |
+| File                | View                               |
+| ------------------- | ---------------------------------- |
+| `sprint-kanban.png` | Sprint board — Kanban with tasks   |
+| `agents-view.png`   | Agents — active agents with status |
+| `pr-list.png`       | PR Station — list with CI badges   |
+| `pr-diff.png`       | PR Station — diff viewer           |
 
 ## Component Gotchas
 
 - **WindowFrame width overrides:** Like PhoneMockup, uses size lookup. Override with `!important` (e.g., `className="!w-[300px]"`).
 - **Hero `pt-32`:** Asymmetric padding for fixed header clearance. Don't replace with `py-*`.
-```
+
+````
 
 - [ ] **Step 3: Commit and push**
 
@@ -1234,4 +1261,4 @@ cd ~/projects/bde-site
 git add CLAUDE.md
 git commit -m "docs: add CLAUDE.md for bde-site"
 git push origin main
-```
+````

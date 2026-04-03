@@ -19,9 +19,9 @@
 
 - **AM-RED-6: Worktree Lock Race Between Cleanup and Re-Acquire** -- VERIFIED FIXED. `worktree.ts:79-94` now uses atomic rename: writes to a temp file (`lockFile + '.${pid}.tmp'`), removes the stale lock, then uses `renameSync(tempLockFile, lockFile)` which is atomic on POSIX. Cleanup of the temp file on failure is also handled (line 92).
 
-- **AM-RED-7: _checkAndBlockDeps Silently Proceeds on Parse Failure (Dependency Bypass)** -- VERIFIED FIXED. `index.ts:374-387` now sets the task to error status on parse failure: `status: 'error', notes: 'Malformed depends_on field - cannot validate dependencies'`. Returns `true` (blocks the task). Error is logged at line 376.
+- **AM-RED-7: \_checkAndBlockDeps Silently Proceeds on Parse Failure (Dependency Bypass)** -- VERIFIED FIXED. `index.ts:374-387` now sets the task to error status on parse failure: `status: 'error', notes: 'Malformed depends_on field - cannot validate dependencies'`. Returns `true` (blocks the task). Error is logged at line 376.
 
-- **AM-RED-8: Agent Environment Inherits Full process.env Including Sensitive Variables** -- VERIFIED FIXED. `env-utils.ts:16-33` defines `ENV_ALLOWLIST` with only essential variables (PATH, HOME, USER, SHELL, LANG, TERM, TMPDIR, XDG_*, GIT_*, NODE_PATH). `buildAgentEnv()` at lines 38-60 iterates only over allowlisted keys plus `npm_config_*` prefixed vars. No longer copies `{ ...process.env }`.
+- **AM-RED-8: Agent Environment Inherits Full process.env Including Sensitive Variables** -- VERIFIED FIXED. `env-utils.ts:16-33` defines `ENV_ALLOWLIST` with only essential variables (PATH, HOME, USER, SHELL, LANG, TERM, TMPDIR, XDG*\*, GIT*_, NODE*PATH). `buildAgentEnv()` at lines 38-60 iterates only over allowlisted keys plus `npm_config*_`prefixed vars. No longer copies`{ ...process.env }`.
 
 - **AM-RED-10: No Rate Limiting on steerAgent IPC** -- VERIFIED FIXED. `index.ts:740-741` adds message size validation: `if (message.length > 10_000) return { delivered: false, error: 'Message exceeds 10KB limit' }`. Note: per-agent rate limiting (messages per minute) was not implemented, only size validation.
 
@@ -53,11 +53,11 @@
 
 ## Summary
 
-| Status | Count |
-|--------|-------|
-| Fixed | 10 |
-| Partially Fixed | 2 |
-| Not Fixed | 0 |
-| New Issues | 3 |
+| Status          | Count |
+| --------------- | ----- |
+| Fixed           | 10    |
+| Partially Fixed | 2     |
+| Not Fixed       | 0     |
+| New Issues      | 3     |
 
 **Overall assessment:** Strong remediation effort -- 10 of 12 original findings are fully verified fixed, with the remaining 2 partially addressed. All high-severity items (AM-RED-2 token-via-env, AM-RED-3 title sanitization) are resolved. AM-RED-1 (bypassPermissions) was removed from the pipeline agent path but persists in adhoc, workbench, and spec-check paths. AM-RED-9 (git add -A secrets) is mitigated by enabling pre-push hooks but lacks built-in scanning. The new `JSDOM` dependency (NEW-1) should be lazily loaded.

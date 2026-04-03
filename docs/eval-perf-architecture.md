@@ -2,6 +2,7 @@
 
 > **Status: PRE-FIX AUDIT (2026-03-16)**
 > This document was written before several performance fixes shipped. Key changes since:
+>
 > - Issue #1 (polling storm): Sprint polling is now gated on `activeView`.
 > - Issue #5 (Supabase polling): Supabase removed entirely. Sprint data is local SQLite. The `sprint:external-change` file watcher push replaces remote polling.
 > - PR status polling: Now 60s via GitHub REST API (was 15s via `gh` CLI).
@@ -15,21 +16,21 @@
 
 ### 1. CRITICAL — Polling Storm: Up to 11 concurrent setInterval timers in the renderer
 
-**Impact:** Every view sets up its own polling timers, and many run *even when the view is not visible*. At worst, the renderer is firing 11+ independent timers simultaneously:
+**Impact:** Every view sets up its own polling timers, and many run _even when the view is not visible_. At worst, the renderer is firing 11+ independent timers simultaneously:
 
-| Timer | Interval | Location | Runs when hidden? |
-|-------|----------|----------|-------------------|
-| `fetchSessions` | 10s | `SessionsView.tsx:48` | **YES** — SessionsView stays mounted (never unmounts) |
-| `fetchProcesses` (`ps aux`) | 5s | `AgentList.tsx:45` | **YES** — child of always-mounted SessionsView |
-| `fetchAgents` (history) | 10s | `AgentList.tsx:46` | **YES** — child of always-mounted SessionsView |
-| `ChatThread` poll | 1s or 5s | `ChatThread.tsx:146` | **YES** — per-pane, up to 4 in grid-4 mode |
-| `logPoller` (agent logs) | 1s | `logPoller.ts:48` | YES — if an agent is selected |
-| Sprint tasks | 5s or 30s | `SprintCenter.tsx:61` | No — on-demand |
-| PR status poll | 60s | `SprintCenter.tsx:92` | No — on-demand |
-| PR list poll | 60s | `PRList.tsx:39` | No — on-demand |
-| Git status poll | 30s | `DiffView.tsx:106` | No — on-demand |
-| Task notifications (Supabase) | 30s | `useTaskNotifications.ts:93` | **YES** — always mounted in App |
-| `LocalAgentLogViewer` tick | 1s | `LocalAgentLogViewer.tsx:115` | YES — `setTick(t => t+1)` just to update elapsed time |
+| Timer                         | Interval  | Location                      | Runs when hidden?                                     |
+| ----------------------------- | --------- | ----------------------------- | ----------------------------------------------------- |
+| `fetchSessions`               | 10s       | `SessionsView.tsx:48`         | **YES** — SessionsView stays mounted (never unmounts) |
+| `fetchProcesses` (`ps aux`)   | 5s        | `AgentList.tsx:45`            | **YES** — child of always-mounted SessionsView        |
+| `fetchAgents` (history)       | 10s       | `AgentList.tsx:46`            | **YES** — child of always-mounted SessionsView        |
+| `ChatThread` poll             | 1s or 5s  | `ChatThread.tsx:146`          | **YES** — per-pane, up to 4 in grid-4 mode            |
+| `logPoller` (agent logs)      | 1s        | `logPoller.ts:48`             | YES — if an agent is selected                         |
+| Sprint tasks                  | 5s or 30s | `SprintCenter.tsx:61`         | No — on-demand                                        |
+| PR status poll                | 60s       | `SprintCenter.tsx:92`         | No — on-demand                                        |
+| PR list poll                  | 60s       | `PRList.tsx:39`               | No — on-demand                                        |
+| Git status poll               | 30s       | `DiffView.tsx:106`            | No — on-demand                                        |
+| Task notifications (Supabase) | 30s       | `useTaskNotifications.ts:93`  | **YES** — always mounted in App                       |
+| `LocalAgentLogViewer` tick    | 1s        | `LocalAgentLogViewer.tsx:115` | YES — `setTick(t => t+1)` just to update elapsed time |
 
 **Worst case:** SessionsView + 4x ChatThread in grid-4 mode = **5 timers firing every 1s**, plus `fetchProcesses` spawning `ps` + `lsof` every 5s, plus Supabase polling every 30s.
 
@@ -39,11 +40,11 @@
 // SessionsView.tsx — only poll when visible
 const activeView = useUIStore((s) => s.activeView)
 useEffect(() => {
-  if (activeView !== 'sessions') return  // <-- add this guard
+  if (activeView !== 'sessions') return // <-- add this guard
   fetchSessions()
   const id = setInterval(fetchSessions, POLL_SESSIONS_INTERVAL)
   return () => clearInterval(id)
-}, [fetchSessions, activeView])  // <-- add activeView dep
+}, [fetchSessions, activeView]) // <-- add activeView dep
 ```
 
 Apply the same pattern to `AgentList.tsx:42-51` (fetchProcesses + fetchAgents), and `useTaskNotifications.ts:93`.
@@ -66,6 +67,7 @@ With 5 agent processes, that's **6 child process spawns every 5 seconds**. The `
 The CWD cache (`cwdCache` at `local-agents.ts:49`) helps, but `ps` still runs every time.
 
 **Fix:**
+
 - **Cache the full `ps` result** with a TTL of 5s at the module level. If the IPC handler is called within the TTL, return the cached result.
 - **Increase the poll interval** from 5s to 15s (process list doesn't change that fast).
 - **Gate on visibility:** Only poll when SessionsView is active (see issue #1).
@@ -85,7 +87,9 @@ export async function getAgentProcesses(): Promise<LocalAgentProcess[]> {
     _cachedAt = Date.now()
     // ...rest stays same
     return results
-  } catch { return _cachedResult }
+  } catch {
+    return _cachedResult
+  }
 }
 ```
 
@@ -106,6 +110,7 @@ That's **2 HTTP POSTs to the gateway + 2 IPC round-trips every 10 seconds**, eve
 Additionally, `CostView.tsx:339` independently calls `invokeTool('sessions_list')` on its own 30s timer, duplicating the sessions_list call.
 
 **Fix:**
+
 - **Deduplicate:** Make `fetchSessions()` the single source of truth for session data. CostView should subscribe to `useSessionsStore((s) => s.sessions)` instead of fetching independently.
 - **Debounce gateway RPC:** Add a per-tool-name deduplication layer in `rpc.ts` that coalesces identical calls within 1s:
 
@@ -118,9 +123,12 @@ export async function invokeTool(tool: string, args = {}): Promise<unknown> {
   const existing = inflight.get(key)
   if (existing) return existing
 
-  const promise = window.api.invokeTool(tool, args).then(parse).finally(() => {
-    inflight.delete(key)
-  })
+  const promise = window.api
+    .invokeTool(tool, args)
+    .then(parse)
+    .finally(() => {
+      inflight.delete(key)
+    })
   inflight.set(key, promise)
   return promise
 }
@@ -135,6 +143,7 @@ export async function invokeTool(tool: string, args = {}): Promise<unknown> {
 ### 4. MEDIUM — Synchronous `execFileSync` git operations block the main process
 
 **Impact:** All git operations in `git.ts` use `execFileSync`:
+
 - `gitStatus` (line 25): `execFileSync('git', ['status', '--porcelain'])`
 - `gitDiffFile` (line 53-59): **Two** sequential `execFileSync` calls (unstaged + staged)
 - `gitBranches` (line 94): `execFileSync('git', ['branch'])`
@@ -153,7 +162,9 @@ const execFileAsync = promisify(execFile)
 
 export async function gitStatus(cwd: string): Promise<{ files: GitFileStatus[] }> {
   const { stdout: raw } = await execFileAsync('git', ['status', '--porcelain'], {
-    cwd, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024
+    cwd,
+    encoding: 'utf-8',
+    maxBuffer: 10 * 1024 * 1024
   })
   // ...rest unchanged
 }
@@ -201,6 +212,7 @@ useEffect(() => {
 ### 6. SessionsView and TerminalView are always mounted
 
 `App.tsx:80-85` keeps SessionsView and TerminalView permanently in the DOM with `display: none`. This means:
+
 - Their `useEffect` hooks (polling timers) run even when invisible
 - Their child components (AgentList, ChatThread, ChatPane) stay mounted with their own timers
 
@@ -215,11 +227,14 @@ This is intentional (preserving PTY state and chat state), but the polling timer
 **Fix:** Memoize individual message rendering with `React.memo` on message items, keyed by content hash. Only re-render the last message during streaming:
 
 ```tsx
-const MemoizedMessage = React.memo(({ msg }: { msg: ChatMessage }) => (
-  <div className={`chat-msg chat-msg--${msg.role}`}>
-    <span className="chat-msg__text">{renderContent(msg.content)}</span>
-  </div>
-), (prev, next) => prev.msg.content === next.msg.content)
+const MemoizedMessage = React.memo(
+  ({ msg }: { msg: ChatMessage }) => (
+    <div className={`chat-msg chat-msg--${msg.role}`}>
+      <span className="chat-msg__text">{renderContent(msg.content)}</span>
+    </div>
+  ),
+  (prev, next) => prev.msg.content === next.msg.content
+)
 ```
 
 ### 8. `getGatewayConfig()` reads config file synchronously on every RPC call
@@ -254,24 +269,24 @@ export function getGatewayConfig(): GatewayConfig {
 
 ## Quick Wins (< 1 hour each)
 
-| Fix | Files | Time |
-|-----|-------|------|
-| Gate SessionsView polling on `activeView` | `SessionsView.tsx`, `AgentList.tsx` | 30m |
-| Cache `getAgentProcesses()` with 5s TTL | `local-agents.ts` | 30m |
-| Delete Supabase fetch in `useTaskNotifications.ts` | `useTaskNotifications.ts` | 30m |
-| Cache `getGatewayConfig()` with 60s TTL | `config.ts` | 15m |
-| Remove `setTick` forced re-render in `LocalAgentLogViewer.tsx:115` | `LocalAgentLogViewer.tsx` | 15m |
-| Increase `POLL_PROCESSES_INTERVAL` from 5s to 15s | `constants.ts` (or `AgentList.tsx`) | 5m |
+| Fix                                                                | Files                               | Time |
+| ------------------------------------------------------------------ | ----------------------------------- | ---- |
+| Gate SessionsView polling on `activeView`                          | `SessionsView.tsx`, `AgentList.tsx` | 30m  |
+| Cache `getAgentProcesses()` with 5s TTL                            | `local-agents.ts`                   | 30m  |
+| Delete Supabase fetch in `useTaskNotifications.ts`                 | `useTaskNotifications.ts`           | 30m  |
+| Cache `getGatewayConfig()` with 60s TTL                            | `config.ts`                         | 15m  |
+| Remove `setTick` forced re-render in `LocalAgentLogViewer.tsx:115` | `LocalAgentLogViewer.tsx`           | 15m  |
+| Increase `POLL_PROCESSES_INTERVAL` from 5s to 15s                  | `constants.ts` (or `AgentList.tsx`) | 5m   |
 
 ## Bigger Refactors (> 1 hour)
 
-| Fix | Files | Time |
-|-----|-------|------|
-| Convert all `execFileSync` git ops to async | `git.ts`, `git-handlers.ts`, `DiffView.tsx` | 2-3h |
-| Deduplicate `sessions_list` RPC across stores/views | `rpc.ts`, `CostView.tsx`, `sessions.ts` | 2-3h |
-| Add `React.memo` to `AgentRow`, `TaskCard`, message items | Multiple components | 2-3h |
-| Replace per-ChatThread polling with WebSocket push from gateway | `ChatThread.tsx`, `gateway.ts` | 4-6h |
-| Consolidate all polling into a single "data sync" layer | New `lib/sync.ts`, all stores | 6-8h |
+| Fix                                                             | Files                                       | Time |
+| --------------------------------------------------------------- | ------------------------------------------- | ---- |
+| Convert all `execFileSync` git ops to async                     | `git.ts`, `git-handlers.ts`, `DiffView.tsx` | 2-3h |
+| Deduplicate `sessions_list` RPC across stores/views             | `rpc.ts`, `CostView.tsx`, `sessions.ts`     | 2-3h |
+| Add `React.memo` to `AgentRow`, `TaskCard`, message items       | Multiple components                         | 2-3h |
+| Replace per-ChatThread polling with WebSocket push from gateway | `ChatThread.tsx`, `gateway.ts`              | 4-6h |
+| Consolidate all polling into a single "data sync" layer         | New `lib/sync.ts`, all stores               | 6-8h |
 
 ---
 

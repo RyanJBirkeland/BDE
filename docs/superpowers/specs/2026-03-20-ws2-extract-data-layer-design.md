@@ -65,9 +65,21 @@ import type { Database } from 'better-sqlite3'
 import type { SprintTask } from '../../shared/types'
 
 const UPDATE_ALLOWLIST = new Set([
-  'title', 'prompt', 'repo', 'status', 'priority', 'spec', 'notes',
-  'pr_url', 'pr_number', 'pr_status', 'agent_run_id', 'claimed_by',
-  'template_name', 'started_at', 'completed_at',
+  'title',
+  'prompt',
+  'repo',
+  'status',
+  'priority',
+  'spec',
+  'notes',
+  'pr_url',
+  'pr_number',
+  'pr_status',
+  'agent_run_id',
+  'claimed_by',
+  'template_name',
+  'started_at',
+  'completed_at'
 ])
 
 export function getTask(db: Database, id: string): SprintTask | null {
@@ -102,6 +114,7 @@ export function updateTask(
 ### 1. Create `src/main/data/sprint-queries.ts`
 
 Extract from `src/main/handlers/sprint-local.ts`:
+
 - `getTask()`, `listTasks()`, `createTask()`, `updateTask()`, `deleteTask()`
 - `claimTask()`, `releaseTask()`, `getQueueStats()`, `getDoneTodayCount()`
 - `markTaskDoneByPrNumber()`, `markTaskCancelledByPrNumber()`
@@ -112,6 +125,7 @@ All functions gain `db: Database` as first parameter.
 ### 2. Create `src/main/data/agent-queries.ts`
 
 Extract from `src/main/agent-history.ts`:
+
 - `listAgents()`, `getAgentMeta()`, `createAgentRecord()`, `updateAgentMeta()`
 - `findAgentByPid()`, `pruneOldAgents()`, `importAgent()`
 
@@ -124,21 +138,26 @@ Already somewhat isolated. Add `db` parameter, remove internal `getDb()` calls.
 ### 4. Create `src/main/data/settings-queries.ts`
 
 Extract from `src/main/settings.ts`:
+
 - `getSetting()`, `setSetting()`, `deleteSetting()`, `getSettingJson()`, `setSettingJson()`
 
 ### 5. Create `src/main/data/event-queries.ts`
 
 Extract from `src/main/agents/event-store.ts`:
+
 - Agent event persistence (INSERT/SELECT on agent_events if applicable)
 
 ### 6. Update callers
 
 All existing callers change from:
+
 ```typescript
 import { getTask } from './handlers/sprint-local'
 // getTask(id)
 ```
+
 To:
+
 ```typescript
 import { getTask } from './data/sprint-queries'
 // getTask(getDb(), id)
@@ -157,6 +176,7 @@ src/main/data/__tests__/
 ```
 
 Each test file:
+
 ```typescript
 import Database from 'better-sqlite3'
 import { runMigrations } from '../db'
@@ -174,7 +194,11 @@ afterEach(() => {
 
 describe('getTask', () => {
   it('returns task by id', () => {
-    db.prepare('INSERT INTO sprint_tasks (id, title, status) VALUES (?, ?, ?)').run('t1', 'Test', 'backlog')
+    db.prepare('INSERT INTO sprint_tasks (id, title, status) VALUES (?, ?, ?)').run(
+      't1',
+      'Test',
+      'backlog'
+    )
     expect(getTask(db, 't1')).toMatchObject({ id: 't1', title: 'Test' })
   })
 

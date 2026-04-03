@@ -3,9 +3,11 @@
 You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
 
 ## Context
+
 Gateway config is read from `~/.openclaw/openclaw.json` via `src/main/config.ts`. The `getGatewayConfig` IPC handler returns `{ url, token }`.
 
 ## Task
+
 Build a Settings view so users can configure the app without editing files.
 
 ### What to build
@@ -37,6 +39,7 @@ Build a Settings view so users can configure the app without editing files.
 4. **Wire in** — Add settings (gear) icon to `ActivityBar.tsx`. The `'settings'` view is already in `VIEW_ORDER` — just make sure `ViewRouter` renders `<SettingsView />` for it.
 
 ## Rules
+
 - Work on a branch: `git checkout -b feat/settings-view`
 - Build must pass: `npm run build`
 - Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE settings view — gateway config, repo paths, accent color" -f body="Settings screen for gateway config and appearance" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`

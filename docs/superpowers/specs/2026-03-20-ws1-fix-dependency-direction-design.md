@@ -37,15 +37,15 @@ Delete the `AgentEvent` and `AgentEventType` definitions. Keep `AgentProvider`, 
 
 ### 3. Update imports in 8 files
 
-| File | Old Import | New Import |
-|------|-----------|------------|
-| `src/shared/ipc-channels.ts` | `../main/agents/types` | `./types` |
-| `src/preload/index.ts` | `../main/agents/types` | `../shared/types` |
-| `src/preload/index.d.ts` | `../main/agents/types` | `../shared/types` |
-| `src/main/queue-api/router.ts` | `../agents/types` | `../../shared/types` |
-| `src/renderer/src/stores/agentEvents.ts` | `main/agents/types` path | `@shared/types` or relative to shared |
-| `src/renderer/src/components/agents/AgentDetail.tsx` | `main/agents/types` path | `@shared/types` or relative to shared |
-| `src/renderer/src/components/agents/ChatRenderer.tsx` | `main/agents/types` path | `@shared/types` or relative to shared |
+| File                                                                 | Old Import               | New Import                            |
+| -------------------------------------------------------------------- | ------------------------ | ------------------------------------- |
+| `src/shared/ipc-channels.ts`                                         | `../main/agents/types`   | `./types`                             |
+| `src/preload/index.ts`                                               | `../main/agents/types`   | `../shared/types`                     |
+| `src/preload/index.d.ts`                                             | `../main/agents/types`   | `../shared/types`                     |
+| `src/main/queue-api/router.ts`                                       | `../agents/types`        | `../../shared/types`                  |
+| `src/renderer/src/stores/agentEvents.ts`                             | `main/agents/types` path | `@shared/types` or relative to shared |
+| `src/renderer/src/components/agents/AgentDetail.tsx`                 | `main/agents/types` path | `@shared/types` or relative to shared |
+| `src/renderer/src/components/agents/ChatRenderer.tsx`                | `main/agents/types` path | `@shared/types` or relative to shared |
 | `src/renderer/src/components/agents/__tests__/ChatRenderer.test.tsx` | `main/agents/types` path | `@shared/types` or relative to shared |
 
 ### 4. Update remaining main-process consumers

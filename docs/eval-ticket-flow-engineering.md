@@ -12,31 +12,31 @@
 
 ### 1.1 Component Inventory
 
-| Component | File | LOC | Purpose | State Model |
-|-----------|------|-----|---------|-------------|
-| **SprintCenter** | `src/renderer/src/components/sprint/SprintCenter.tsx` | ~250 | Root orchestrator — owns all sprint state, wires all IPC, renders layout | Local `useState` (no Zustand) |
-| **KanbanBoard** | `…/sprint/KanbanBoard.tsx` | ~120 | `@dnd-kit` DnD context, 4 columns, drag overlay | Props only |
-| **KanbanColumn** | `…/sprint/KanbanColumn.tsx` | ~80 | Single droppable column, sortable context, motion animations | Props + `useReducedMotion` |
-| **TaskCard** | `…/sprint/TaskCard.tsx` | ~130 | Draggable card, action buttons by status, repo badge, spec dot | Props only |
-| **AgentStatusChip** | `…/sprint/AgentStatusChip.tsx` | ~50 | Live elapsed-time ticker for running agents | Props + `setInterval` |
-| **NewTicketModal** | `…/sprint/NewTicketModal.tsx` | 255 | Modal form: title, repo, priority, template chips, spec textarea, Ask Paul | Local `useState` |
-| **SpecDrawer** | `…/sprint/SpecDrawer.tsx` | ~300 | Slide-in spec viewer/editor, markdown renderer, Ask Paul, push-to-sprint | Local `useState` |
-| **LogDrawer** | `…/sprint/LogDrawer.tsx` | ~200 | Slide-in agent output viewer, steer input, stream-json parsing | Local `useState` + polling |
-| **PRSection** | `…/sprint/PRSection.tsx` | ~40 | Collapsible container for PRList | `localStorage` toggle |
-| **PRList** | `…/sprint/PRList.tsx` | ~200 | Fetches open PRs via GitHub REST, merge button with confirmation | Local `useState` + polling |
+| Component           | File                                                  | LOC  | Purpose                                                                    | State Model                   |
+| ------------------- | ----------------------------------------------------- | ---- | -------------------------------------------------------------------------- | ----------------------------- |
+| **SprintCenter**    | `src/renderer/src/components/sprint/SprintCenter.tsx` | ~250 | Root orchestrator — owns all sprint state, wires all IPC, renders layout   | Local `useState` (no Zustand) |
+| **KanbanBoard**     | `…/sprint/KanbanBoard.tsx`                            | ~120 | `@dnd-kit` DnD context, 4 columns, drag overlay                            | Props only                    |
+| **KanbanColumn**    | `…/sprint/KanbanColumn.tsx`                           | ~80  | Single droppable column, sortable context, motion animations               | Props + `useReducedMotion`    |
+| **TaskCard**        | `…/sprint/TaskCard.tsx`                               | ~130 | Draggable card, action buttons by status, repo badge, spec dot             | Props only                    |
+| **AgentStatusChip** | `…/sprint/AgentStatusChip.tsx`                        | ~50  | Live elapsed-time ticker for running agents                                | Props + `setInterval`         |
+| **NewTicketModal**  | `…/sprint/NewTicketModal.tsx`                         | 255  | Modal form: title, repo, priority, template chips, spec textarea, Ask Paul | Local `useState`              |
+| **SpecDrawer**      | `…/sprint/SpecDrawer.tsx`                             | ~300 | Slide-in spec viewer/editor, markdown renderer, Ask Paul, push-to-sprint   | Local `useState`              |
+| **LogDrawer**       | `…/sprint/LogDrawer.tsx`                              | ~200 | Slide-in agent output viewer, steer input, stream-json parsing             | Local `useState` + polling    |
+| **PRSection**       | `…/sprint/PRSection.tsx`                              | ~40  | Collapsible container for PRList                                           | `localStorage` toggle         |
+| **PRList**          | `…/sprint/PRList.tsx`                                 | ~200 | Fetches open PRs via GitHub REST, merge button with confirmation           | Local `useState` + polling    |
 
 ### 1.2 IPC Surface (Sprint-Related)
 
-| Channel | Direction | Handler File | Preload Method | Wired? |
-|---------|-----------|--------------|----------------|--------|
-| `sprint:list` | invoke | `src/main/handlers/sprint.ts` | `window.api.sprint.list()` | Yes |
-| `sprint:create` | invoke | `sprint.ts` | `window.api.sprint.create(task)` | Yes |
-| `sprint:update` | invoke | `sprint.ts` | `window.api.sprint.update(id, patch)` | Yes |
-| `sprint:delete` | invoke | `sprint.ts` | **NOT exposed** in preload | Handler exists, no preload method |
-| `sprint:read-spec-file` | invoke | `sprint.ts` | `window.api.sprint.readSpecFile(path)` | Yes |
-| `sprint:readLog` | invoke | `sprint.ts` | `window.api.sprint.readLog(agentId)` | Yes (return type mismatch: handler returns `nextByte`, preload type omits it) |
-| `sprint:external-change` | push (main→renderer) | File watcher in `src/main/index.ts` | `window.api.onExternalSprintChange(cb)` | Yes |
-| `gateway:invoke` | invoke | `gateway-handlers.ts` | `window.api.invokeTool(tool, args)` | Yes — used by Ask Paul |
+| Channel                  | Direction            | Handler File                        | Preload Method                          | Wired?                                                                        |
+| ------------------------ | -------------------- | ----------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------- |
+| `sprint:list`            | invoke               | `src/main/handlers/sprint.ts`       | `window.api.sprint.list()`              | Yes                                                                           |
+| `sprint:create`          | invoke               | `sprint.ts`                         | `window.api.sprint.create(task)`        | Yes                                                                           |
+| `sprint:update`          | invoke               | `sprint.ts`                         | `window.api.sprint.update(id, patch)`   | Yes                                                                           |
+| `sprint:delete`          | invoke               | `sprint.ts`                         | **NOT exposed** in preload              | Handler exists, no preload method                                             |
+| `sprint:read-spec-file`  | invoke               | `sprint.ts`                         | `window.api.sprint.readSpecFile(path)`  | Yes                                                                           |
+| `sprint:readLog`         | invoke               | `sprint.ts`                         | `window.api.sprint.readLog(agentId)`    | Yes (return type mismatch: handler returns `nextByte`, preload type omits it) |
+| `sprint:external-change` | push (main→renderer) | File watcher in `src/main/index.ts` | `window.api.onExternalSprintChange(cb)` | Yes                                                                           |
+| `gateway:invoke`         | invoke               | `gateway-handlers.ts`               | `window.api.invokeTool(tool, args)`     | Yes — used by Ask Paul                                                        |
 
 ### 1.3 AI Integration — How "Ask Paul" Works Today
 
@@ -54,6 +54,7 @@ User clicks "Ask Paul" →
 ```
 
 Key characteristics:
+
 - **One-shot**: Single request/response. No conversation state.
 - **Blocking**: UI shows "Generating..." / "Paul is writing your spec..." in textarea. No streaming.
 - **Silent failure**: `catch {}` swallows all errors (line 121). User sees nothing on failure.
@@ -79,16 +80,16 @@ interface SprintTask {
   id: string
   title: string
   repo: string
-  prompt: string | null       // Agent-facing instruction
-  priority: number             // 0=High, 1=Medium, 2=Low
+  prompt: string | null // Agent-facing instruction
+  priority: number // 0=High, 1=Medium, 2=Low
   status: 'backlog' | 'queued' | 'active' | 'done'
-  description: string | null   // Dead field — never populated from UI
-  spec: string | null          // Markdown specification
+  description: string | null // Dead field — never populated from UI
+  spec: string | null // Markdown specification
   agent_run_id: string | null
   pr_number: number | null
   pr_status: 'open' | 'merged' | 'closed' | 'draft' | null
   pr_url: string | null
-  column_order: number         // Present in type but not used for ordering
+  column_order: number // Present in type but not used for ordering
   started_at: string | null
   completed_at: string | null
   updated_at: string
@@ -115,6 +116,7 @@ The `sprint:create` handler defaults `prompt` to `spec ?? title` if not provided
 ### 1.6 Store Architecture
 
 **No Zustand store exists for sprint state.** All state lives in `SprintCenter` via `useState`:
+
 - `tasks: SprintTask[]`
 - `repoFilter: string | null`
 - `selectedTask: SprintTask | null`
@@ -128,6 +130,7 @@ This means no other view can read sprint state. Cross-view coordination (e.g., S
 ### 1.7 CSS Status
 
 **No CSS rules exist for any `.new-ticket-modal__*` class.** Zero results from searching all `.css` files. The modal renders using:
+
 - `.glass-modal` base class (from the design system)
 - `.elevation-3` shadow class
 - `.sprint-tasks__input` / `.sprint-tasks__select` (borrowed from an older sprint panel)
@@ -141,26 +144,26 @@ The modal is functional only because the glass-modal base and browser defaults h
 
 ### 2.1 Critical Issues
 
-| Issue | Location | Impact |
-|-------|----------|--------|
-| **No CSS for modal** | Missing `.new-ticket-modal__*` rules in any stylesheet | Layout depends on browser defaults; template chip active state invisible |
-| **Ask Paul fails silently** | `NewTicketModal.tsx:121` — empty `catch {}` | User waits up to 30s, sees nothing on failure |
-| **Template + AI don't compose** | `NewTicketModal.tsx:100-106` — prompt ignores `selectedTemplate` | Template selection has no effect on AI-generated spec |
-| **Main session pollution** | `sessionKey: 'main'` in Ask Paul call | Spec generation messages appear in the main agent conversation history |
+| Issue                           | Location                                                         | Impact                                                                   |
+| ------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **No CSS for modal**            | Missing `.new-ticket-modal__*` rules in any stylesheet           | Layout depends on browser defaults; template chip active state invisible |
+| **Ask Paul fails silently**     | `NewTicketModal.tsx:121` — empty `catch {}`                      | User waits up to 30s, sees nothing on failure                            |
+| **Template + AI don't compose** | `NewTicketModal.tsx:100-106` — prompt ignores `selectedTemplate` | Template selection has no effect on AI-generated spec                    |
+| **Main session pollution**      | `sessionKey: 'main'` in Ask Paul call                            | Spec generation messages appear in the main agent conversation history   |
 
 ### 2.2 Functional Gaps
 
-| Gap | Detail |
-|-----|--------|
-| **No quick-capture mode** | Every ticket requires the full modal with all fields visible |
-| **No conversational refinement** | One-shot generation only; no way to iterate with Paul |
-| **No streaming** | Entire spec appears at once after up to 30s wait |
-| **No spec quality signal** | No feedback on whether a spec is agent-ready |
-| **No draft persistence** | Closing the modal discards all work with no confirmation |
-| **Template overwrite is destructive** | Selecting a template replaces spec content with no undo |
-| **`sprint:delete` not in preload** | Handler exists, no `window.api.sprint.delete()` method |
-| **`description` field is dead** | Passed as `''` on create, never stored or displayed |
-| **`column_order` unused** | In the type but not used for within-column ordering |
+| Gap                                   | Detail                                                       |
+| ------------------------------------- | ------------------------------------------------------------ |
+| **No quick-capture mode**             | Every ticket requires the full modal with all fields visible |
+| **No conversational refinement**      | One-shot generation only; no way to iterate with Paul        |
+| **No streaming**                      | Entire spec appears at once after up to 30s wait             |
+| **No spec quality signal**            | No feedback on whether a spec is agent-ready                 |
+| **No draft persistence**              | Closing the modal discards all work with no confirmation     |
+| **Template overwrite is destructive** | Selecting a template replaces spec content with no undo      |
+| **`sprint:delete` not in preload**    | Handler exists, no `window.api.sprint.delete()` method       |
+| **`description` field is dead**       | Passed as `''` on create, never stored or displayed          |
+| **`column_order` unused**             | In the type but not used for within-column ordering          |
 
 ---
 
@@ -204,7 +207,7 @@ interface GeneratePromptInput {
   taskId: string
   title: string
   repo: string
-  templateHint?: string  // auto-detected from title heuristics
+  templateHint?: string // auto-detected from title heuristics
 }
 
 interface GeneratePromptResult {
@@ -215,6 +218,7 @@ interface GeneratePromptResult {
 ```
 
 **Implementation:**
+
 - Main process handler receives the request
 - Reads gateway config, POSTs to `/tools/invoke` with tool `sessions_send`
 - System prompt includes: title, repo, detected template structure (from heuristic), instruction to output spec markdown
@@ -235,7 +239,7 @@ const HEURISTIC_RULES: Array<{ keywords: string[]; template: string }> = [
   { keywords: ['perf', 'slow', 'optimize', 'cache', 'latency'], template: 'performance' },
   { keywords: ['style', 'css', 'ui', 'ux', 'polish', 'design'], template: 'ux' },
   { keywords: ['audit', 'review', 'check'], template: 'audit' },
-  { keywords: ['infra', 'deploy', 'ci', 'config', 'script'], template: 'infra' },
+  { keywords: ['infra', 'deploy', 'ci', 'config', 'script'], template: 'infra' }
 ]
 
 export function detectTemplate(title: string): string {
@@ -295,7 +299,11 @@ When the user has edited the spec (dirty state) and clicks a template chip, show
 
 ```typescript
 const handleSelectTemplate = (key: string) => {
-  if (selectedTemplate === key) { setSelectedTemplate(null); setSpec(''); return }
+  if (selectedTemplate === key) {
+    setSelectedTemplate(null)
+    setSpec('')
+    return
+  }
   if (spec.trim() && spec !== TEMPLATES[selectedTemplate ?? '']?.spec) {
     if (!confirm('Replace current spec with template?')) return
   }
@@ -334,6 +342,7 @@ performance: {
 #### Component Impact
 
 No new components. Changes are confined to `NewTicketModal.tsx`:
+
 - Add mode tabs at the top of the modal body
 - Gate the full form (repo, priority, templates, spec, Ask Paul) behind `mode === 'template'`
 - Fix the three issues above
@@ -372,11 +381,13 @@ const [title, setTitle] = useState('')
 ```
 
 **`OPENING_MESSAGE`** is a static assistant message — no AI call needed:
+
 ```typescript
 const OPENING_MESSAGE: DesignMessage = {
   role: 'assistant',
-  content: "What are you thinking about building? Describe the feature or problem in your own words.",
-  timestamp: Date.now(),
+  content:
+    'What are you thinking about building? Describe the feature or problem in your own words.',
+  timestamp: Date.now()
 }
 ```
 
@@ -399,14 +410,14 @@ const sendDesignMessage = async (userText: string) => {
 
   try {
     const result = await window.api.invokeTool('sessions_send', {
-      sessionKey: 'bde-design-mode',  // dedicated session, not 'main'
+      sessionKey: 'bde-design-mode', // dedicated session, not 'main'
       message: fullMessage,
-      timeoutSeconds: 30,
+      timeoutSeconds: 30
     })
     const text = result?.result?.content?.[0]?.text ?? ''
     if (text) {
       setMessages((prev) => [...prev, { role: 'assistant', content: text, timestamp: Date.now() }])
-      extractSpec(text)  // parse spec from response
+      extractSpec(text) // parse spec from response
     }
   } catch {
     toast.error('Paul is unavailable — try again')
@@ -441,6 +452,7 @@ When you propose a spec, wrap it in a ~~~spec fence block. Example:
 ```
 
 Extraction:
+
 ```typescript
 function extractSpec(assistantText: string): void {
   const match = assistantText.match(/~~~spec\n([\s\S]*?)~~~/)
@@ -505,7 +517,7 @@ const handleDesignSave = () => {
     repo,
     description: '',
     spec: specDraft,
-    priority,
+    priority
   })
   onClose()
 }
@@ -530,18 +542,18 @@ onClose()
 
 ### 4.1 New Handlers
 
-| Channel | File | Parameters | Return | Purpose |
-|---------|------|------------|--------|---------|
+| Channel                 | File                          | Parameters                               | Return                     | Purpose                                   |
+| ----------------------- | ----------------------------- | ---------------------------------------- | -------------------------- | ----------------------------------------- |
 | `sprint:generatePrompt` | `src/main/handlers/sprint.ts` | `{ taskId, title, repo, templateHint? }` | `{ taskId, spec, prompt }` | Background spec generation for Quick Mode |
 
 Implementation: The handler calls the gateway `/tools/invoke` endpoint directly from the main process (same pattern as `gateway:invoke`), using `sessions_send` with `sessionKey: 'bde-spec-gen'`. This avoids round-tripping through the renderer for background generation.
 
 ### 4.2 New Preload Exposures
 
-| Method | Channel | Parameters |
-|--------|---------|------------|
+| Method                                   | Channel                 | Parameters                                                               |
+| ---------------------------------------- | ----------------------- | ------------------------------------------------------------------------ |
 | `window.api.sprint.generatePrompt(args)` | `sprint:generatePrompt` | `{ taskId: string, title: string, repo: string, templateHint?: string }` |
-| `window.api.sprint.delete(id)` | `sprint:delete` | `id: string` |
+| `window.api.sprint.delete(id)`           | `sprint:delete`         | `id: string`                                                             |
 
 The `sprint.delete()` exposure is a gap fix — the handler already exists but has no preload method.
 
@@ -569,6 +581,7 @@ This set is passed to `KanbanBoard` → `KanbanColumn` → `TaskCard` so cards c
 ### 5.3 Future: Sprint Zustand Store (Out of Scope)
 
 Extracting sprint state to a Zustand store (`src/renderer/src/stores/sprint.ts`) would enable:
+
 - Cross-view access to active task state
 - Shared `generatingIds` without prop drilling
 - Cleaner separation of data-fetching from rendering
@@ -581,27 +594,27 @@ This is architectural improvement and should be its own PR after the three modes
 
 ### 6.1 Modified Components
 
-| Component | Changes |
-|-----------|---------|
+| Component              | Changes                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **NewTicketModal.tsx** | Add mode tabs (`quick` / `template` / `design`), gate form sections by mode, fix template-aware Ask Paul prompt, add error toast on Ask Paul failure, add template overwrite confirmation, add Test Coverage and Performance templates, render `QuickModeContent` or `DesignModeContent` by mode |
-| **SprintCenter.tsx** | Add `generatingIds` state, wire `sprint:generatePrompt` call after Quick Mode create, pass `generatingIds` to KanbanBoard |
-| **TaskCard.tsx** | Add shimmer/badge when `generatingIds.has(task.id)` |
+| **SprintCenter.tsx**   | Add `generatingIds` state, wire `sprint:generatePrompt` call after Quick Mode create, pass `generatingIds` to KanbanBoard                                                                                                                                                                        |
+| **TaskCard.tsx**       | Add shimmer/badge when `generatingIds.has(task.id)`                                                                                                                                                                                                                                              |
 
 ### 6.2 New Components
 
-| Component | File | Purpose | LOC Estimate |
-|-----------|------|---------|--------------|
-| **DesignModeContent** | `src/renderer/src/components/sprint/DesignModeContent.tsx` | Split-panel chat + spec preview for Design Mode | ~200 |
-| **DesignChat** | Inline in DesignModeContent (not a separate file) | Message list + input bar | ~80 (part of above) |
-| **DesignSpecPreview** | Inline in DesignModeContent (not a separate file) | Rendered markdown preview panel | ~40 (part of above) |
+| Component             | File                                                       | Purpose                                         | LOC Estimate        |
+| --------------------- | ---------------------------------------------------------- | ----------------------------------------------- | ------------------- |
+| **DesignModeContent** | `src/renderer/src/components/sprint/DesignModeContent.tsx` | Split-panel chat + spec preview for Design Mode | ~200                |
+| **DesignChat**        | Inline in DesignModeContent (not a separate file)          | Message list + input bar                        | ~80 (part of above) |
+| **DesignSpecPreview** | Inline in DesignModeContent (not a separate file)          | Rendered markdown preview panel                 | ~40 (part of above) |
 
 `DesignModeContent` is the only new file. The chat message list and spec preview are simple enough to be inline JSX blocks, not separate components. If the file exceeds 300 LOC, split then.
 
 ### 6.3 New Shared Utilities
 
-| File | Purpose | LOC Estimate |
-|------|---------|--------------|
-| `src/shared/template-heuristics.ts` | `detectTemplate(title)` — keyword → template mapping | ~30 |
+| File                                | Purpose                                              | LOC Estimate |
+| ----------------------------------- | ---------------------------------------------------- | ------------ |
+| `src/shared/template-heuristics.ts` | `detectTemplate(title)` — keyword → template mapping | ~30          |
 
 The `TEMPLATES` const stays in `NewTicketModal.tsx` — it's only used there and in the system prompt for Ask Paul. Moving it to a shared file is premature until a second consumer exists.
 
@@ -611,37 +624,37 @@ The `TEMPLATES` const stays in `NewTicketModal.tsx` — it's only used there and
 
 ### New Files
 
-| File | Purpose |
-|------|---------|
-| `src/renderer/src/components/sprint/DesignModeContent.tsx` | Design Mode split-panel UI |
-| `src/shared/template-heuristics.ts` | Title heuristic → template type mapping |
+| File                                                       | Purpose                                 |
+| ---------------------------------------------------------- | --------------------------------------- |
+| `src/renderer/src/components/sprint/DesignModeContent.tsx` | Design Mode split-panel UI              |
+| `src/shared/template-heuristics.ts`                        | Title heuristic → template type mapping |
 
 ### Modified Files
 
-| File | What Changes |
-|------|-------------|
+| File                                                    | What Changes                                                                                                                             |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/renderer/src/components/sprint/NewTicketModal.tsx` | Mode tabs, Quick/Template/Design content switching, template-aware Ask Paul prompt, error toast, overwrite confirmation, 2 new templates |
-| `src/renderer/src/components/sprint/SprintCenter.tsx` | `generatingIds` state, `handleQuickCreate` with background `sprint:generatePrompt` call, pass `generatingIds` to children |
-| `src/renderer/src/components/sprint/TaskCard.tsx` | Accept `isGenerating?: boolean` prop, render shimmer/badge |
-| `src/renderer/src/components/sprint/KanbanBoard.tsx` | Pass-through `generatingIds` prop to KanbanColumn |
-| `src/renderer/src/components/sprint/KanbanColumn.tsx` | Pass-through `generatingIds` prop to TaskCard |
-| `src/main/handlers/sprint.ts` | Add `sprint:generatePrompt` handler |
-| `src/preload/index.ts` | Add `sprint.generatePrompt()` and `sprint.delete()` methods |
-| `src/preload/index.d.ts` | Type declarations for new preload methods |
+| `src/renderer/src/components/sprint/SprintCenter.tsx`   | `generatingIds` state, `handleQuickCreate` with background `sprint:generatePrompt` call, pass `generatingIds` to children                |
+| `src/renderer/src/components/sprint/TaskCard.tsx`       | Accept `isGenerating?: boolean` prop, render shimmer/badge                                                                               |
+| `src/renderer/src/components/sprint/KanbanBoard.tsx`    | Pass-through `generatingIds` prop to KanbanColumn                                                                                        |
+| `src/renderer/src/components/sprint/KanbanColumn.tsx`   | Pass-through `generatingIds` prop to TaskCard                                                                                            |
+| `src/main/handlers/sprint.ts`                           | Add `sprint:generatePrompt` handler                                                                                                      |
+| `src/preload/index.ts`                                  | Add `sprint.generatePrompt()` and `sprint.delete()` methods                                                                              |
+| `src/preload/index.d.ts`                                | Type declarations for new preload methods                                                                                                |
 
 ### CSS (New or Modified)
 
-| File | What |
-|------|------|
+| File                                                     | What                                                                                                                       |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Existing sprint CSS file (or new `new-ticket-modal.css`) | All `.new-ticket-modal__*` class rules: mode tabs, template chip active state, spec editor, Design Mode split-panel layout |
 
 ### Test Files (New or Modified)
 
-| File | What |
-|------|------|
-| `src/renderer/src/components/sprint/__tests__/NewTicketModal.test.tsx` | Add tests for: mode switching, Quick Mode submit, template-aware Ask Paul, error toast, overwrite confirmation |
-| `src/renderer/src/components/sprint/__tests__/DesignModeContent.test.tsx` (new) | Conversation flow, spec extraction, save, discard confirmation |
-| `src/shared/__tests__/template-heuristics.test.ts` (new) | `detectTemplate` keyword matching |
+| File                                                                            | What                                                                                                           |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/components/sprint/__tests__/NewTicketModal.test.tsx`          | Add tests for: mode switching, Quick Mode submit, template-aware Ask Paul, error toast, overwrite confirmation |
+| `src/renderer/src/components/sprint/__tests__/DesignModeContent.test.tsx` (new) | Conversation flow, spec extraction, save, discard confirmation                                                 |
+| `src/shared/__tests__/template-heuristics.test.ts` (new)                        | `detectTemplate` keyword matching                                                                              |
 
 ---
 
@@ -706,13 +719,13 @@ The `TEMPLATES` const stays in `NewTicketModal.tsx` — it's only used there and
 
 ## 10. Decision Log
 
-| Decision | Rationale | Alternative Considered |
-|----------|-----------|----------------------|
-| **Local state, not Zustand** for mode + conversation | Matches existing sprint architecture (all local state). Avoids premature abstraction. | Zustand sprint store — deferred to future PR. |
-| **`sessions_send` for Design Mode AI** (not WebSocket `chat.send`) | Zero new infrastructure. One-shot is sufficient for 2-3 paragraph responses. | `chat.send` via GatewayClient — needed only if streaming is required. |
-| **Dedicated session keys** (`bde-spec-gen`, `bde-design-mode`) | Prevents polluting main agent session history. Gateway creates sessions lazily. | Reuse `main` session — rejected due to history pollution. |
-| **`sprint:generatePrompt` in main process** | Background generation should not depend on the renderer staying open. Main process can complete the HTTP call independently. | Renderer-side `invokeTool` — works but ties generation to renderer lifecycle. |
-| **Fenced block spec extraction** (not structured JSON) | Simpler, more robust with current LLM output. JSON parsing from LLM output is fragile. | Structured JSON with schema — over-engineered for v1. |
-| **Single new component file** (`DesignModeContent.tsx`) | Under 300 LOC estimate. Split only if it grows. | Separate files for chat/preview — premature decomposition. |
-| **`confirm()` for destructive actions** | Native, zero dependencies, adequate for solo-dev tool. | Custom modal — adds component count without proportional UX benefit. |
-| **Template heuristics in shared** | Used by both renderer (auto-suggest) and main (background generation). | Inline in each file — violates DRY. |
+| Decision                                                           | Rationale                                                                                                                    | Alternative Considered                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Local state, not Zustand** for mode + conversation               | Matches existing sprint architecture (all local state). Avoids premature abstraction.                                        | Zustand sprint store — deferred to future PR.                                 |
+| **`sessions_send` for Design Mode AI** (not WebSocket `chat.send`) | Zero new infrastructure. One-shot is sufficient for 2-3 paragraph responses.                                                 | `chat.send` via GatewayClient — needed only if streaming is required.         |
+| **Dedicated session keys** (`bde-spec-gen`, `bde-design-mode`)     | Prevents polluting main agent session history. Gateway creates sessions lazily.                                              | Reuse `main` session — rejected due to history pollution.                     |
+| **`sprint:generatePrompt` in main process**                        | Background generation should not depend on the renderer staying open. Main process can complete the HTTP call independently. | Renderer-side `invokeTool` — works but ties generation to renderer lifecycle. |
+| **Fenced block spec extraction** (not structured JSON)             | Simpler, more robust with current LLM output. JSON parsing from LLM output is fragile.                                       | Structured JSON with schema — over-engineered for v1.                         |
+| **Single new component file** (`DesignModeContent.tsx`)            | Under 300 LOC estimate. Split only if it grows.                                                                              | Separate files for chat/preview — premature decomposition.                    |
+| **`confirm()` for destructive actions**                            | Native, zero dependencies, adequate for solo-dev tool.                                                                       | Custom modal — adds component count without proportional UX benefit.          |
+| **Template heuristics in shared**                                  | Used by both renderer (auto-suggest) and main (background generation).                                                       | Inline in each file — violates DRY.                                           |

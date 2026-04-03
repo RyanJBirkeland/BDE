@@ -16,6 +16,7 @@
 **File:** `src/main/handlers/ide-fs-handlers.ts:21-45`
 
 The `fs:watchDir` handler now calls `validateIdeRoot(dirPath)` before setting `ideRootPath`. This async function:
+
 1. Resolves the path to an absolute path
 2. Validates it is within the user's home directory (`homedir()`)
 3. Verifies the path exists and is a directory via `stat()`
@@ -63,6 +64,7 @@ The comment `// IDE-3:` documents the fix rationale.
 **File:** `src/renderer/src/components/ide/FileSidebar.tsx:31-43`
 
 A `sanitizeFilename()` function has been added that rejects:
+
 - Empty/whitespace-only names
 - Names containing `/` or `\` (path separators)
 - Names equal to `.` or `..`
@@ -115,13 +117,15 @@ While `crypto.randomUUID()` would be cryptographically stronger, `Math.random()`
 A test case `rejects symlink escape attempts` has been added (lines 80-103). However, it does NOT actually create a symlink. The test body simply calls `validateIdePath('/etc/passwd', WATCHED_ROOT)` -- which is the same as the existing "rejects absolute paths outside watched root" test (line 39). The test contains a lengthy comment explaining why creating a real symlink is difficult, but this is not accurate -- creating `ln -s /etc/passwd ${WATCHED_ROOT}/evil-link` in a temp directory requires no elevated privileges.
 
 **What should be tested:**
+
 ```typescript
 import { symlinkSync } from 'fs'
 
 it('rejects symlink escape attempts', () => {
   symlinkSync('/etc/passwd', join(WATCHED_ROOT, 'evil-link'))
-  expect(() => validateIdePath(join(WATCHED_ROOT, 'evil-link'), WATCHED_ROOT))
-    .toThrow('Path traversal blocked')
+  expect(() => validateIdePath(join(WATCHED_ROOT, 'evil-link'), WATCHED_ROOT)).toThrow(
+    'Path traversal blocked'
+  )
 })
 ```
 
@@ -146,6 +150,7 @@ it('rejects symlink escape attempts', () => {
 The new `validateIdeRoot()` function validates that the resolved path starts with `homedir()`, but it does not call `realpathSync()` on the input before checking. If a symlink exists within the home directory that points to a location outside it (e.g., `~/link-to-root -> /`), and a user (or compromised renderer) passes `~/link-to-root` to `fs:watchDir`, the textual check passes because the path starts with `$HOME/`. The `stat()` call succeeds because the target exists and is a directory. The IDE root is then set to `~/link-to-root`, and since `validateIdePath` resolves symlinks via `realpathSync`, subsequent file operations will correctly resolve paths through the symlink -- but they validate against `rootReal` which would be `/`, effectively allowing access to the entire filesystem.
 
 **Exploit chain:**
+
 1. Attacker (or user) creates `~/link-to-root -> /`
 2. Compromised renderer calls `window.api.watchDir('/Users/user/link-to-root')`
 3. `validateIdeRoot` passes (path starts with homedir, stat succeeds, is directory)
@@ -181,33 +186,33 @@ This is read-only (no write/delete), so the impact is limited to information dis
 
 ## Previously Fixed Issues (Cross-Reference)
 
-| Synthesis ID | Issue | Status |
-|---|---|---|
-| SEC-2 | Symlink path traversal in `validateIdePath` | Fixed in v1 audit -- `realpathSync` added |
-| IDE-5 | File contents in component state | Fixed -- moved to Zustand store |
-| IDE-6 | File watcher has no error handler | Fixed -- error handler added at line 226 |
-| IDE-7 | Save/read race condition | Fixed -- async save with proper loading states |
-| IDE-8 | File read error silently shows empty content | Fixed -- toast error shown |
-| IDE-9 | No loading indicator during file fetch | Fixed -- loading state in store |
-| IDE-10 | No `beforeunload` guard for unsaved changes | Fixed -- guard added |
-| IDE-16 | Predictable temp file path | Fixed -- random component added |
+| Synthesis ID | Issue                                        | Status                                         |
+| ------------ | -------------------------------------------- | ---------------------------------------------- |
+| SEC-2        | Symlink path traversal in `validateIdePath`  | Fixed in v1 audit -- `realpathSync` added      |
+| IDE-5        | File contents in component state             | Fixed -- moved to Zustand store                |
+| IDE-6        | File watcher has no error handler            | Fixed -- error handler added at line 226       |
+| IDE-7        | Save/read race condition                     | Fixed -- async save with proper loading states |
+| IDE-8        | File read error silently shows empty content | Fixed -- toast error shown                     |
+| IDE-9        | No loading indicator during file fetch       | Fixed -- loading state in store                |
+| IDE-10       | No `beforeunload` guard for unsaved changes  | Fixed -- guard added                           |
+| IDE-16       | Predictable temp file path                   | Fixed -- random component added                |
 
 ---
 
 ## Summary Table
 
-| ID | Severity | Title | Status | Notes |
-|---|---|---|---|---|
-| IDE-RED-1 | High | `fs:watchDir` accepts any path as IDE root | **Fixed** | `validateIdeRoot()` enforces home dir + exists + is directory |
-| IDE-RED-2 | Medium | `validateIdePath` returns pre-symlink path (TOCTOU) | **Fixed** | Now returns `real` (canonical path) |
-| IDE-RED-3 | Medium | Fallback path for non-existent files skips symlink resolution | **Fixed** | Parent directory resolved via `realpathSync` |
-| IDE-RED-4 | Medium | No filename sanitization in create/rename | **Fixed** | `sanitizeFilename()` added in FileSidebar |
-| IDE-RED-5 | Low | `readFileAsBase64`/`readFileAsText` not scoped to IDE root | **Fixed** | IDE root passed when available |
-| IDE-RED-6 | Low | Predictable temp file path | **Fixed** | Random suffix added |
-| IDE-RED-7 | Low | No symlink integration test | **Partially Fixed** | Test exists but does not create actual symlink |
-| IDE-RED-8 | Info | Terminal has full shell access | **N/A** | Accepted risk |
-| IDE-RED-9 | Low | `validateIdeRoot` does not resolve symlinks | **New** | Symlink in $HOME could set root outside home |
-| IDE-RED-10 | Low | `validateIdePathForAttachment` lacks symlink resolution | **New** | Read-only information disclosure via symlink |
+| ID         | Severity | Title                                                         | Status              | Notes                                                         |
+| ---------- | -------- | ------------------------------------------------------------- | ------------------- | ------------------------------------------------------------- |
+| IDE-RED-1  | High     | `fs:watchDir` accepts any path as IDE root                    | **Fixed**           | `validateIdeRoot()` enforces home dir + exists + is directory |
+| IDE-RED-2  | Medium   | `validateIdePath` returns pre-symlink path (TOCTOU)           | **Fixed**           | Now returns `real` (canonical path)                           |
+| IDE-RED-3  | Medium   | Fallback path for non-existent files skips symlink resolution | **Fixed**           | Parent directory resolved via `realpathSync`                  |
+| IDE-RED-4  | Medium   | No filename sanitization in create/rename                     | **Fixed**           | `sanitizeFilename()` added in FileSidebar                     |
+| IDE-RED-5  | Low      | `readFileAsBase64`/`readFileAsText` not scoped to IDE root    | **Fixed**           | IDE root passed when available                                |
+| IDE-RED-6  | Low      | Predictable temp file path                                    | **Fixed**           | Random suffix added                                           |
+| IDE-RED-7  | Low      | No symlink integration test                                   | **Partially Fixed** | Test exists but does not create actual symlink                |
+| IDE-RED-8  | Info     | Terminal has full shell access                                | **N/A**             | Accepted risk                                                 |
+| IDE-RED-9  | Low      | `validateIdeRoot` does not resolve symlinks                   | **New**             | Symlink in $HOME could set root outside home                  |
+| IDE-RED-10 | Low      | `validateIdePathForAttachment` lacks symlink resolution       | **New**             | Read-only information disclosure via symlink                  |
 
 ---
 
@@ -223,6 +228,7 @@ This is read-only (no write/delete), so the impact is limited to information dis
 The two remaining issues (IDE-RED-9, IDE-RED-10) are both low severity and require an attacker to have write access to the user's home directory to create a malicious symlink. The one partial fix (IDE-RED-7) is a test quality issue, not a runtime vulnerability.
 
 **Recommended next steps:**
+
 1. Add `realpathSync()` to `validateIdeRoot()` -- 3-line change, closes IDE-RED-9
 2. Add `realpathSync()` to `validateIdePathForAttachment()` -- 4-line change, closes IDE-RED-10
 3. Create a real symlink in the integration test -- 2-line change, closes IDE-RED-7

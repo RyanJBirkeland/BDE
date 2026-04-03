@@ -54,10 +54,19 @@ Task enters pipeline with high-quality spec
 Add `'task-workbench'` to the `View` type in `panelLayout.ts`:
 
 ```typescript
-export type View = 'agents' | 'terminal' | 'sprint' | 'pr-station' | 'memory' | 'cost' | 'settings' | 'task-workbench'
+export type View =
+  | 'agents'
+  | 'terminal'
+  | 'sprint'
+  | 'pr-station'
+  | 'memory'
+  | 'cost'
+  | 'settings'
+  | 'task-workbench'
 ```
 
 New files:
+
 ```
 src/renderer/src/views/TaskWorkbenchView.tsx          — view wrapper
 src/renderer/src/components/task-workbench/
@@ -73,6 +82,7 @@ src/renderer/src/hooks/useReadinessChecks.ts           — check execution engin
 ```
 
 Modified files:
+
 ```
 src/renderer/src/stores/panelLayout.ts                 — add 'task-workbench' view type
 src/renderer/src/App.tsx                               — register TaskWorkbenchView in view map
@@ -134,6 +144,7 @@ src/main/index.ts                                      — register workbench ha
 ### TaskWorkbench.tsx — Main Orchestrator
 
 **Responsibilities:**
+
 - Manages the resizable two-column layout
 - Reads `taskId` prop (null for new, string for edit)
 - On mount with `taskId`: loads existing task data into store
@@ -142,8 +153,8 @@ src/main/index.ts                                      — register workbench ha
 
 ```typescript
 interface TaskWorkbenchProps {
-  taskId?: string | null  // null = new task, string = edit existing
-  onClose?: () => void    // navigate back to Sprint view
+  taskId?: string | null // null = new task, string = edit existing
+  onClose?: () => void // navigate back to Sprint view
 }
 ```
 
@@ -151,15 +162,16 @@ interface TaskWorkbenchProps {
 
 **Fields (top to bottom):**
 
-| Field | Component | Default | Notes |
-|-------|-----------|---------|-------|
-| Title | `<input>` | "" | Required. Auto-focused on mount. |
-| Repo | `<select>` | First REPO_OPTIONS | Dropdown from constants. |
-| Priority | `<select>` | P3 Medium | Inside "Advanced" expandable section. |
-| Task Template | `<select>` | None | Inside "Advanced" section. Loads from settings. |
-| Spec | `<SpecEditor>` | "" | Markdown editor with inline AI toolbar. |
+| Field         | Component      | Default            | Notes                                           |
+| ------------- | -------------- | ------------------ | ----------------------------------------------- |
+| Title         | `<input>`      | ""                 | Required. Auto-focused on mount.                |
+| Repo          | `<select>`     | First REPO_OPTIONS | Dropdown from constants.                        |
+| Priority      | `<select>`     | P3 Medium          | Inside "Advanced" expandable section.           |
+| Task Template | `<select>`     | None               | Inside "Advanced" section. Loads from settings. |
+| Spec          | `<SpecEditor>` | ""                 | Markdown editor with inline AI toolbar.         |
 
 **Progressive disclosure:**
+
 - Title and Repo are always visible
 - "Advanced" section (Priority, Task Template) is collapsed by default, shown via a "More options" toggle
 - Spec Editor is always visible but starts with helpful placeholder text
@@ -168,13 +180,14 @@ interface TaskWorkbenchProps {
 
 **Toolbar buttons (inline AI actions):**
 
-| Button | Label | Behavior |
-|--------|-------|----------|
-| Generate | "✨ Generate Spec" | New IPC `workbench:generateSpec` — shells out to `claude` CLI with the prompt from `buildQuickSpecPrompt()` (in `sprint-spec.ts`), streams the AI-written spec into the editor. Unlike the current `sprint:generatePrompt` (which is synchronous and returns only a scaffold prompt, not an actual spec), this performs real AI generation. |
-| Template | "📋 From Template" | Opens popover with 8 spec scaffolds. Reuses the existing `SCAFFOLDS` map in `sprint-spec.ts` (bugfix, feature, refactor, test, performance, ux, audit, infra) and the `TEMPLATES` in `NewTicketModal.tsx`. |
-| Research | "🔍 Research Codebase" | Sends title + repo to copilot with "research relevant files" system prompt, shows results in copilot with "Insert" button |
+| Button   | Label                  | Behavior                                                                                                                                                                                                                                                                                                                                    |
+| -------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Generate | "✨ Generate Spec"     | New IPC `workbench:generateSpec` — shells out to `claude` CLI with the prompt from `buildQuickSpecPrompt()` (in `sprint-spec.ts`), streams the AI-written spec into the editor. Unlike the current `sprint:generatePrompt` (which is synchronous and returns only a scaffold prompt, not an actual spec), this performs real AI generation. |
+| Template | "📋 From Template"     | Opens popover with 8 spec scaffolds. Reuses the existing `SCAFFOLDS` map in `sprint-spec.ts` (bugfix, feature, refactor, test, performance, ux, audit, infra) and the `TEMPLATES` in `NewTicketModal.tsx`.                                                                                                                                  |
+| Research | "🔍 Research Codebase" | Sends title + repo to copilot with "research relevant files" system prompt, shows results in copilot with "Insert" button                                                                                                                                                                                                                   |
 
 **Editor features:**
+
 - Monospace font, auto-growing height (min 200px, max 60vh)
 - Tab inserts 2 spaces (not focus change)
 - Placeholder: "Describe what the agent should do. The more specific, the better the results."
@@ -182,6 +195,7 @@ interface TaskWorkbenchProps {
 ### WorkbenchCopilot.tsx — AI Chat Sidebar
 
 **Architecture:**
+
 - Local message history in `taskWorkbench` store (not persisted across sessions)
 - Each message sent includes form context as a system message:
   ```
@@ -191,12 +205,14 @@ interface TaskWorkbenchProps {
 - For freeform chat: uses `workbench:chat` IPC channel (shells out to `claude` CLI)
 
 **UI:**
+
 - Scrollable message list with user/assistant bubbles
 - Input at bottom with Send button
 - Each assistant message with actionable content shows an "Insert into spec →" button
 - System welcome message on mount: "I can help you craft this task. Try asking me to research the codebase, brainstorm approaches, or review your spec."
 
 **Copilot capabilities (via system prompt):**
+
 1. **Research codebase** — "What files handle X in this repo?" → uses tool to grep/glob the target repo
 2. **Brainstorm** — "What's the best approach for X?" → general reasoning
 3. **Draft spec sections** — "Write the Problem section for this spec" → structured output
@@ -206,6 +222,7 @@ interface TaskWorkbenchProps {
 ### ReadinessChecks.tsx — The Quality Gate
 
 **Display:**
+
 - Collapsed state: horizontal bar showing pass/warn/fail icons + "3/5 passing" summary
 - Expanded state: vertical list with check name, status icon, and detail message
 
@@ -219,22 +236,23 @@ The check engine runs in the renderer process. Structural checks run synchronous
 
 #### Tier 1: Structural Checks (instant, on every keystroke)
 
-| Check | Pass | Warn | Fail |
-|-------|------|------|------|
-| **Title present** | Title is non-empty after trim | — | Empty title |
-| **Spec present** | Spec is non-empty (>50 chars) | Spec is 1-50 chars ("very short") | No spec at all |
-| **Spec has structure** | Contains at least 2 markdown headings (`##`) | Has 1 heading | No headings (wall of text) |
-| **Repo selected** | Repo is set | — | No repo (shouldn't happen with default) |
+| Check                  | Pass                                         | Warn                              | Fail                                    |
+| ---------------------- | -------------------------------------------- | --------------------------------- | --------------------------------------- |
+| **Title present**      | Title is non-empty after trim                | —                                 | Empty title                             |
+| **Spec present**       | Spec is non-empty (>50 chars)                | Spec is 1-50 chars ("very short") | No spec at all                          |
+| **Spec has structure** | Contains at least 2 markdown headings (`##`) | Has 1 heading                     | No headings (wall of text)              |
+| **Repo selected**      | Repo is set                                  | —                                 | No repo (shouldn't happen with default) |
 
 #### Tier 2: Semantic Checks (debounced, AI-assisted via IPC)
 
-| Check | Pass | Warn | Fail |
-|-------|------|------|------|
-| **Spec clarity** | AI rates spec as "clear and actionable" | AI flags vague language or ambiguity | AI rates spec as "too vague to execute" |
+| Check                | Pass                                                        | Warn                                     | Fail                                       |
+| -------------------- | ----------------------------------------------------------- | ---------------------------------------- | ------------------------------------------ |
+| **Spec clarity**     | AI rates spec as "clear and actionable"                     | AI flags vague language or ambiguity     | AI rates spec as "too vague to execute"    |
 | **Scope reasonable** | AI estimates task is achievable by one agent in one session | AI flags as "broad — consider splitting" | AI rates as "too large for a single agent" |
-| **Files exist** | All files referenced in spec exist in repo | Some files don't exist (renamed?) | — (warn only) |
+| **Files exist**      | All files referenced in spec exist in repo                  | Some files don't exist (renamed?)        | — (warn only)                              |
 
 **Implementation:**
+
 - New IPC channel: `workbench:checkSpec`
 - Debounced at 2 seconds after last spec edit
 - Runs in main process, shells out to `claude` CLI with a structured prompt asking for a JSON assessment
@@ -254,15 +272,16 @@ The check engine runs in the renderer process. Structural checks run synchronous
 
 #### Tier 3: Operational Checks (on-demand, before queue/launch)
 
-| Check | Pass | Warn | Fail |
-|-------|------|------|------|
-| **Auth token valid** | Token exists and not expired | Token expires within 1 hour | Token expired or missing |
-| **Repo path configured** | `getRepoPaths()[repo]` returns a valid path | — | No path configured for this repo |
-| **Git repo clean** | Target repo has no uncommitted changes on main | Uncommitted changes present (agent may conflict) | — (warn only) |
-| **No conflicting active task** | No other active/queued task on same repo | Another queued task on same repo | Another active task on same repo |
-| **Agent slots available** | AgentManager has free slots | All slots occupied (task will wait in queue) | — (warn only, queuing is fine) |
+| Check                          | Pass                                           | Warn                                             | Fail                             |
+| ------------------------------ | ---------------------------------------------- | ------------------------------------------------ | -------------------------------- |
+| **Auth token valid**           | Token exists and not expired                   | Token expires within 1 hour                      | Token expired or missing         |
+| **Repo path configured**       | `getRepoPaths()[repo]` returns a valid path    | —                                                | No path configured for this repo |
+| **Git repo clean**             | Target repo has no uncommitted changes on main | Uncommitted changes present (agent may conflict) | — (warn only)                    |
+| **No conflicting active task** | No other active/queued task on same repo       | Another queued task on same repo                 | Another active task on same repo |
+| **Agent slots available**      | AgentManager has free slots                    | All slots occupied (task will wait in queue)     | — (warn only, queuing is fine)   |
 
 **Implementation:**
+
 - New IPC channel: `workbench:checkOperational`
 - Runs on button click (not continuously — some checks are expensive)
 - Aggregates results from `auth:status`, `git:getRepoPaths`, `agent-manager:status`
@@ -284,11 +303,11 @@ The check engine runs in the renderer process. Structural checks run synchronous
 
 The split action button respects check results:
 
-| Action | Required Checks |
-|--------|----------------|
-| **Save to Backlog** | Tier 1 title check only (just needs a name) |
-| **Queue Now** | All Tier 1 pass + Tier 3 operational pass (no semantic failures required) |
-| **Launch Immediately** | All Tier 1 pass + Tier 2 no fails (warns OK) + Tier 3 no fails |
+| Action                 | Required Checks                                                           |
+| ---------------------- | ------------------------------------------------------------------------- |
+| **Save to Backlog**    | Tier 1 title check only (just needs a name)                               |
+| **Queue Now**          | All Tier 1 pass + Tier 3 operational pass (no semantic failures required) |
+| **Launch Immediately** | All Tier 1 pass + Tier 2 no fails (warns OK) + Tier 3 no fails            |
 
 Users can override warnings with a "Queue Anyway" confirmation dialog, but cannot override failures.
 
@@ -302,13 +321,13 @@ Users can override warnings with a "Queue Anyway" confirmation dialog, but canno
 interface TaskWorkbenchState {
   // --- Form State ---
   mode: 'create' | 'edit'
-  taskId: string | null              // null for new, real ID for edit
+  taskId: string | null // null for new, real ID for edit
   title: string
   repo: string
   priority: number
   spec: string
   taskTemplateName: string
-  advancedOpen: boolean              // whether Advanced section is expanded
+  advancedOpen: boolean // whether Advanced section is expanded
 
   // --- Copilot State ---
   copilotVisible: boolean
@@ -317,9 +336,9 @@ interface TaskWorkbenchState {
 
   // --- Readiness State ---
   checksExpanded: boolean
-  structuralChecks: CheckResult[]    // updated on every form change
-  semanticChecks: CheckResult[]      // updated after debounced AI call
-  operationalChecks: CheckResult[]   // updated on-demand
+  structuralChecks: CheckResult[] // updated on every form change
+  semanticChecks: CheckResult[] // updated after debounced AI call
+  operationalChecks: CheckResult[] // updated on-demand
   semanticLoading: boolean
   operationalLoading: boolean
 
@@ -339,7 +358,7 @@ interface CopilotMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: number
-  insertable?: boolean               // show "Insert into spec" button
+  insertable?: boolean // show "Insert into spec" button
 }
 
 interface CheckResult {
@@ -366,10 +385,12 @@ Add to `SprintChannels` or a new `WorkbenchChannels` interface in `ipc-channels.
 ```typescript
 export interface WorkbenchChannels {
   'workbench:chat': {
-    args: [input: {
-      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-      formContext: { title: string; repo: string; spec: string }
-    }]
+    args: [
+      input: {
+        messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
+        formContext: { title: string; repo: string; spec: string }
+      }
+    ]
     result: { content: string }
   }
   'workbench:generateSpec': {
@@ -397,9 +418,9 @@ export interface WorkbenchChannels {
   'workbench:researchRepo': {
     args: [input: { query: string; repo: string }]
     result: {
-      content: string                     // formatted text with file paths + context lines
-      filesSearched: string[]             // files that matched the search
-      totalMatches: number                // total grep hits (capped at 10 files returned)
+      content: string // formatted text with file paths + context lines
+      filesSearched: string[] // files that matched the search
+      totalMatches: number // total grep hits (capped at 10 files returned)
     }
   }
 }
@@ -411,13 +432,13 @@ New handler file: `src/main/handlers/workbench.ts`
 
 All AI-powered handlers shell out to the `claude` CLI in non-interactive mode. The binary path is resolved via the existing `AgentConfig` (`config:getAgentConfig`). Auth is handled by the CLI itself (uses the user's `claude login` session).
 
-| Handler | Implementation |
-|---------|----------------|
-| `workbench:chat` | Runs `claude -p "<system + user message>" --output-format json` with form context injected as a system preamble. Parses JSON response. |
-| `workbench:generateSpec` | Runs `claude -p "<prompt from buildQuickSpecPrompt()>" --output-format text`. Returns the generated spec markdown. Uses `execFile` with argument array (no shell injection). |
-| `workbench:checkSpec` | Runs `claude -p "<structured assessment prompt requesting JSON>" --output-format json`. Prompt asks for clarity/scope/files ratings. Parses JSON response with fallback to `{ status: 'warn', message: 'Unable to verify' }` on parse failure. |
-| `workbench:checkOperational` | No AI — aggregates: `checkAuthStatus()` + `getRepoPaths()` + `git status` (via execFile) + query `sprint_tasks` via Supabase for tasks with `status IN ('active', 'queued')` on the same repo + `agentManager.status()`. |
-| `workbench:researchRepo` | Runs `grep -rn` and `find` (via `execFile`) on the target repo path for terms extracted from the query. Returns up to 10 matching file paths with surrounding context lines (3 lines before/after each match). No AI involved — pure filesystem search. |
+| Handler                      | Implementation                                                                                                                                                                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workbench:chat`             | Runs `claude -p "<system + user message>" --output-format json` with form context injected as a system preamble. Parses JSON response.                                                                                                                  |
+| `workbench:generateSpec`     | Runs `claude -p "<prompt from buildQuickSpecPrompt()>" --output-format text`. Returns the generated spec markdown. Uses `execFile` with argument array (no shell injection).                                                                            |
+| `workbench:checkSpec`        | Runs `claude -p "<structured assessment prompt requesting JSON>" --output-format json`. Prompt asks for clarity/scope/files ratings. Parses JSON response with fallback to `{ status: 'warn', message: 'Unable to verify' }` on parse failure.          |
+| `workbench:checkOperational` | No AI — aggregates: `checkAuthStatus()` + `getRepoPaths()` + `git status` (via execFile) + query `sprint_tasks` via Supabase for tasks with `status IN ('active', 'queued')` on the same repo + `agentManager.status()`.                                |
+| `workbench:researchRepo`     | Runs `grep -rn` and `find` (via `execFile`) on the target repo path for terms extracted from the query. Returns up to 10 matching file paths with surrounding context lines (3 lines before/after each match). No AI involved — pure filesystem search. |
 
 ---
 
@@ -486,21 +507,21 @@ All AI-powered handlers shell out to the `claude` CLI in non-interactive mode. T
 
 ### Unit Tests (vitest)
 
-| Test | File | Coverage |
-|------|------|----------|
-| Structural check logic | `useReadinessChecks.test.ts` | All Tier 1 checks with edge cases |
-| Store actions | `taskWorkbench.test.ts` | setField, resetForm, loadTask, submit |
-| Check gating rules | `ReadinessChecks.test.ts` | Button disabled states per check results |
-| Copilot message handling | `WorkbenchCopilot.test.ts` | Send, receive, insert into spec |
+| Test                     | File                         | Coverage                                 |
+| ------------------------ | ---------------------------- | ---------------------------------------- |
+| Structural check logic   | `useReadinessChecks.test.ts` | All Tier 1 checks with edge cases        |
+| Store actions            | `taskWorkbench.test.ts`      | setField, resetForm, loadTask, submit    |
+| Check gating rules       | `ReadinessChecks.test.ts`    | Button disabled states per check results |
+| Copilot message handling | `WorkbenchCopilot.test.ts`   | Send, receive, insert into spec          |
 
 ### Integration Tests (test:main)
 
-| Test | Coverage |
-|------|----------|
-| `workbench:checkSpec` handler | Mock `claude` CLI output, verify JSON parse |
-| `workbench:checkOperational` handler | Mock auth/git/supabase, verify aggregation |
-| `workbench:chat` handler | Mock `claude` CLI output, verify form context injection |
-| `workbench:researchRepo` handler | Mock filesystem, verify grep results |
+| Test                                 | Coverage                                                |
+| ------------------------------------ | ------------------------------------------------------- |
+| `workbench:checkSpec` handler        | Mock `claude` CLI output, verify JSON parse             |
+| `workbench:checkOperational` handler | Mock auth/git/supabase, verify aggregation              |
+| `workbench:chat` handler             | Mock `claude` CLI output, verify form context injection |
+| `workbench:researchRepo` handler     | Mock filesystem, verify grep results                    |
 
 ### Manual Testing
 
@@ -522,13 +543,13 @@ All AI-powered handlers shell out to the `claude` CLI in non-interactive mode. T
 
 ## Error Handling
 
-| Scenario | Behavior |
-|----------|----------|
-| Spec generation fails | Toast error, editor remains editable with current content |
-| Copilot chat fails | Error message in chat, user can retry |
-| Semantic check API fails | Check shows "Unable to verify" (warn, not fail) — doesn't block |
-| Operational check fails | Check shows specific error with remediation hint |
-| Task create IPC fails | Toast error, form state preserved (not cleared) |
+| Scenario                    | Behavior                                                                    |
+| --------------------------- | --------------------------------------------------------------------------- |
+| Spec generation fails       | Toast error, editor remains editable with current content                   |
+| Copilot chat fails          | Error message in chat, user can retry                                       |
+| Semantic check API fails    | Check shows "Unable to verify" (warn, not fail) — doesn't block             |
+| Operational check fails     | Check shows specific error with remediation hint                            |
+| Task create IPC fails       | Toast error, form state preserved (not cleared)                             |
 | Auth expired during session | Operational check catches it, shows "Run `claude login` to re-authenticate" |
 
 ---

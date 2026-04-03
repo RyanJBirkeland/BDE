@@ -14,35 +14,36 @@
 
 ## File Map
 
-| File | Role | Action |
-|------|------|--------|
-| `src/shared/types.ts` | Shared types | Modify — add `TaskDependency`, update `SprintTask` |
-| `src/shared/constants.ts` | Status constants | Modify — add `BLOCKED` |
-| `src/shared/queue-api-contract.ts` | API contract types | Modify — update `QueueHealthResponse` |
-| `src/main/agent-manager/dependency-index.ts` | Reverse index + cycle detection | **Create** |
-| `src/main/agent-manager/__tests__/dependency-index.test.ts` | Tests for above | **Create** |
-| `src/main/agent-manager/resolve-dependents.ts` | Dependency resolution logic | **Create** |
-| `src/main/agent-manager/__tests__/resolve-dependents.test.ts` | Tests for above | **Create** |
-| `src/main/data/sprint-queries.ts` | Data access layer | Modify — allowlist, QueueStats, new queries, refactor markTask* |
-| `src/main/agent-manager/index.ts` | Agent manager | Modify — init index, hook resolution into terminal transitions |
-| `src/main/agent-manager/completion.ts` | Completion handler | No change — resolution is hooked in `index.ts` after calling `resolveFailure` |
-| `src/main/sprint-pr-poller.ts` | PR poller | Modify — consume task IDs, call resolution |
-| `src/main/handlers/sprint-local.ts` | IPC handlers | Modify — new handlers, update wrappers |
-| `src/main/handlers/git-handlers.ts` | Git/PR IPC handlers | Modify — consume task IDs from markTask* |
-| `src/main/queue-api/router.ts` | Queue API HTTP server | Modify — new PATCH route, health response |
-| `src/shared/ipc-channels.ts` | Typed IPC channel map | Modify — add `sprint:validate-dependencies` and `sprint:unblock-task` channels |
-| `src/main/index.ts` | IPC registration | Modify — wire PR poller `onTaskTerminal` |
-| `src/preload/index.ts` | Preload bridge | Modify — expose new IPC channels via `typedInvoke` |
-| `src/renderer/src/lib/partitionSprintTasks.ts` | Kanban partition logic | Modify — add `blocked` case |
-| `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts` | Partition tests | Modify — add blocked test |
-| `src/renderer/src/components/sprint/TaskCard.tsx` | Task card component | Modify — blocked badge, dependency chips, unblock button |
-| `src/renderer/src/components/sprint/SprintCenter.tsx` | Sprint kanban + task form | Modify — dependency field in create/edit form |
+| File                                                          | Role                            | Action                                                                         |
+| ------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| `src/shared/types.ts`                                         | Shared types                    | Modify — add `TaskDependency`, update `SprintTask`                             |
+| `src/shared/constants.ts`                                     | Status constants                | Modify — add `BLOCKED`                                                         |
+| `src/shared/queue-api-contract.ts`                            | API contract types              | Modify — update `QueueHealthResponse`                                          |
+| `src/main/agent-manager/dependency-index.ts`                  | Reverse index + cycle detection | **Create**                                                                     |
+| `src/main/agent-manager/__tests__/dependency-index.test.ts`   | Tests for above                 | **Create**                                                                     |
+| `src/main/agent-manager/resolve-dependents.ts`                | Dependency resolution logic     | **Create**                                                                     |
+| `src/main/agent-manager/__tests__/resolve-dependents.test.ts` | Tests for above                 | **Create**                                                                     |
+| `src/main/data/sprint-queries.ts`                             | Data access layer               | Modify — allowlist, QueueStats, new queries, refactor markTask\*               |
+| `src/main/agent-manager/index.ts`                             | Agent manager                   | Modify — init index, hook resolution into terminal transitions                 |
+| `src/main/agent-manager/completion.ts`                        | Completion handler              | No change — resolution is hooked in `index.ts` after calling `resolveFailure`  |
+| `src/main/sprint-pr-poller.ts`                                | PR poller                       | Modify — consume task IDs, call resolution                                     |
+| `src/main/handlers/sprint-local.ts`                           | IPC handlers                    | Modify — new handlers, update wrappers                                         |
+| `src/main/handlers/git-handlers.ts`                           | Git/PR IPC handlers             | Modify — consume task IDs from markTask\*                                      |
+| `src/main/queue-api/router.ts`                                | Queue API HTTP server           | Modify — new PATCH route, health response                                      |
+| `src/shared/ipc-channels.ts`                                  | Typed IPC channel map           | Modify — add `sprint:validate-dependencies` and `sprint:unblock-task` channels |
+| `src/main/index.ts`                                           | IPC registration                | Modify — wire PR poller `onTaskTerminal`                                       |
+| `src/preload/index.ts`                                        | Preload bridge                  | Modify — expose new IPC channels via `typedInvoke`                             |
+| `src/renderer/src/lib/partitionSprintTasks.ts`                | Kanban partition logic          | Modify — add `blocked` case                                                    |
+| `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts` | Partition tests                 | Modify — add blocked test                                                      |
+| `src/renderer/src/components/sprint/TaskCard.tsx`             | Task card component             | Modify — blocked badge, dependency chips, unblock button                       |
+| `src/renderer/src/components/sprint/SprintCenter.tsx`         | Sprint kanban + task form       | Modify — dependency field in create/edit form                                  |
 
 ---
 
 ## Task 1: Shared Types and Constants
 
 **Files:**
+
 - Modify: `src/shared/types.ts:22-44`
 - Modify: `src/shared/constants.ts:6-16`
 - Modify: `src/shared/queue-api-contract.ts:6-17`
@@ -83,7 +84,7 @@ export const TASK_STATUS = {
   DONE: 'done',
   CANCELLED: 'cancelled',
   FAILED: 'failed',
-  ERROR: 'error',
+  ERROR: 'error'
 } as const
 ```
 
@@ -111,6 +112,7 @@ export interface QueueHealthResponse {
 - [ ] **Step 4: Fix all `makeTask` test helpers**
 
 Adding `depends_on` to `SprintTask` will break every test file that constructs a `SprintTask` without it. Run `grep -rn 'function makeTask' src/ --include='*.ts'` to find all instances. Add `depends_on: null` to each helper's default object. Common locations:
+
 - `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts`
 - `src/renderer/src/components/sprint/__tests__/TaskCard.test.ts`
 - Any other test files constructing `SprintTask` objects
@@ -154,6 +156,7 @@ git commit -m "feat(deps): add TaskDependency type, blocked status, update share
 ## Task 2: Dependency Index (TDD)
 
 **Files:**
+
 - Create: `src/main/agent-manager/dependency-index.ts`
 - Create: `src/main/agent-manager/__tests__/dependency-index.test.ts`
 
@@ -163,11 +166,7 @@ Create `src/main/agent-manager/__tests__/dependency-index.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-import {
-  createDependencyIndex,
-  detectCycle,
-  type DependencyIndex,
-} from '../dependency-index'
+import { createDependencyIndex, detectCycle, type DependencyIndex } from '../dependency-index'
 import type { TaskDependency } from '../../../shared/types'
 
 function hardDep(id: string): TaskDependency {
@@ -184,7 +183,7 @@ describe('DependencyIndex', () => {
       const idx = createDependencyIndex()
       idx.rebuild([
         { id: 'B', depends_on: [hardDep('A')] },
-        { id: 'C', depends_on: [hardDep('A'), softDep('B')] },
+        { id: 'C', depends_on: [hardDep('A'), softDep('B')] }
       ])
       expect(idx.getDependents('A')).toEqual(new Set(['B', 'C']))
       expect(idx.getDependents('B')).toEqual(new Set(['C']))
@@ -233,7 +232,7 @@ describe('DependencyIndex', () => {
       const idx = createDependencyIndex()
       idx.rebuild([
         { id: 'B', depends_on: [hardDep('A')] },
-        { id: 'C', depends_on: [hardDep('B')] },
+        { id: 'C', depends_on: [hardDep('B')] }
       ])
       idx.remove('B')
       expect(idx.getDependents('A')).toEqual(new Set())
@@ -324,7 +323,7 @@ describe('detectCycle', () => {
   it('returns null when no cycle exists', () => {
     const deps: Record<string, TaskDependency[] | null> = {
       A: null,
-      B: [hardDep('A')],
+      B: [hardDep('A')]
     }
     const result = detectCycle('C', [hardDep('B')], (id) => deps[id] ?? null)
     expect(result).toBeNull()
@@ -337,7 +336,7 @@ describe('detectCycle', () => {
 
   it('detects A -> B -> A cycle', () => {
     const deps: Record<string, TaskDependency[] | null> = {
-      B: [hardDep('A')],
+      B: [hardDep('A')]
     }
     // A wants to depend on B, but B already depends on A
     const result = detectCycle('A', [hardDep('B')], (id) => deps[id] ?? null)
@@ -349,7 +348,7 @@ describe('detectCycle', () => {
   it('detects deep cycle A -> B -> C -> A', () => {
     const deps: Record<string, TaskDependency[] | null> = {
       B: [hardDep('A')],
-      C: [hardDep('B')],
+      C: [hardDep('B')]
     }
     const result = detectCycle('A', [hardDep('C')], (id) => deps[id] ?? null)
     expect(result).not.toBeNull()
@@ -361,7 +360,7 @@ describe('detectCycle', () => {
     const deps: Record<string, TaskDependency[] | null> = {
       B: [hardDep('A')],
       C: [hardDep('A')],
-      D: [hardDep('B'), hardDep('C')],
+      D: [hardDep('B'), hardDep('C')]
     }
     const result = detectCycle('E', [hardDep('D')], (id) => deps[id] ?? null)
     expect(result).toBeNull()
@@ -397,7 +396,7 @@ export interface DependencyIndex {
   areDependenciesSatisfied(
     taskId: string,
     deps: TaskDependency[],
-    getTaskStatus: (id: string) => string | undefined,
+    getTaskStatus: (id: string) => string | undefined
   ): { satisfied: boolean; blockedBy: string[] }
 }
 
@@ -476,7 +475,7 @@ export function createDependencyIndex(): DependencyIndex {
       }
 
       return { satisfied: blockedBy.length === 0, blockedBy }
-    },
+    }
   }
 }
 
@@ -486,7 +485,7 @@ export function createDependencyIndex(): DependencyIndex {
 export function detectCycle(
   taskId: string,
   proposedDeps: TaskDependency[],
-  getDepsForTask: (id: string) => TaskDependency[] | null,
+  getDepsForTask: (id: string) => TaskDependency[] | null
 ): string[] | null {
   // Check self-cycle
   for (const dep of proposedDeps) {
@@ -540,6 +539,7 @@ git commit -m "feat(deps): add DependencyIndex with reverse index and cycle dete
 ## Task 3: Resolve Dependents Logic (TDD)
 
 **Files:**
+
 - Create: `src/main/agent-manager/resolve-dependents.ts`
 - Create: `src/main/agent-manager/__tests__/resolve-dependents.test.ts`
 
@@ -576,7 +576,9 @@ describe('resolveDependents', () => {
     const idx = createDependencyIndex()
     idx.rebuild([{ id: 'B', depends_on: [hardDep('A')] }])
     const getTask = vi.fn().mockResolvedValue({
-      id: 'B', status: 'blocked', depends_on: [hardDep('A')],
+      id: 'B',
+      status: 'blocked',
+      depends_on: [hardDep('A')]
     })
     const updateTask = vi.fn().mockResolvedValue(null)
     await resolveDependents('A', 'done', idx, getTask, updateTask)
@@ -587,7 +589,9 @@ describe('resolveDependents', () => {
     const idx = createDependencyIndex()
     idx.rebuild([{ id: 'B', depends_on: [hardDep('A')] }])
     const getTask = vi.fn().mockResolvedValue({
-      id: 'B', status: 'blocked', depends_on: [hardDep('A')],
+      id: 'B',
+      status: 'blocked',
+      depends_on: [hardDep('A')]
     })
     const updateTask = vi.fn()
     await resolveDependents('A', 'failed', idx, getTask, updateTask)
@@ -598,7 +602,9 @@ describe('resolveDependents', () => {
     const idx = createDependencyIndex()
     idx.rebuild([{ id: 'B', depends_on: [hardDep('A')] }])
     const getTask = vi.fn().mockResolvedValue({
-      id: 'B', status: 'blocked', depends_on: [hardDep('A')],
+      id: 'B',
+      status: 'blocked',
+      depends_on: [hardDep('A')]
     })
     const updateTask = vi.fn()
     await resolveDependents('A', 'cancelled', idx, getTask, updateTask)
@@ -609,7 +615,9 @@ describe('resolveDependents', () => {
     const idx = createDependencyIndex()
     idx.rebuild([{ id: 'B', depends_on: [softDep('A')] }])
     const getTask = vi.fn().mockResolvedValue({
-      id: 'B', status: 'blocked', depends_on: [softDep('A')],
+      id: 'B',
+      status: 'blocked',
+      depends_on: [softDep('A')]
     })
     const updateTask = vi.fn().mockResolvedValue(null)
     await resolveDependents('A', 'failed', idx, getTask, updateTask)
@@ -620,7 +628,9 @@ describe('resolveDependents', () => {
     const idx = createDependencyIndex()
     idx.rebuild([{ id: 'B', depends_on: [hardDep('A')] }])
     const getTask = vi.fn().mockResolvedValue({
-      id: 'B', status: 'active', depends_on: [hardDep('A')],
+      id: 'B',
+      status: 'active',
+      depends_on: [hardDep('A')]
     })
     const updateTask = vi.fn()
     await resolveDependents('A', 'done', idx, getTask, updateTask)
@@ -632,10 +642,13 @@ describe('resolveDependents', () => {
     idx.rebuild([{ id: 'C', depends_on: [hardDep('A'), hardDep('B')] }])
 
     // A completes but B is still active — getTask returns status for all tasks
-    const tasks: Record<string, { id: string; status: string; depends_on: TaskDependency[] | null }> = {
+    const tasks: Record<
+      string,
+      { id: string; status: string; depends_on: TaskDependency[] | null }
+    > = {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'active', depends_on: null },
-      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
     const updateTask = vi.fn()
@@ -648,10 +661,13 @@ describe('resolveDependents', () => {
     const idx = createDependencyIndex()
     idx.rebuild([{ id: 'C', depends_on: [hardDep('A'), hardDep('B')] }])
 
-    const tasks: Record<string, { id: string; status: string; depends_on: TaskDependency[] | null }> = {
+    const tasks: Record<
+      string,
+      { id: string; status: string; depends_on: TaskDependency[] | null }
+    > = {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'done', depends_on: null },
-      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), hardDep('B')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
     const updateTask = vi.fn().mockResolvedValue(null)
@@ -664,10 +680,13 @@ describe('resolveDependents', () => {
     const idx = createDependencyIndex()
     idx.rebuild([{ id: 'C', depends_on: [hardDep('A'), softDep('B')] }])
 
-    const tasks: Record<string, { id: string; status: string; depends_on: TaskDependency[] | null }> = {
+    const tasks: Record<
+      string,
+      { id: string; status: string; depends_on: TaskDependency[] | null }
+    > = {
       A: { id: 'A', status: 'done', depends_on: null },
       B: { id: 'B', status: 'failed', depends_on: null },
-      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), softDep('B')] },
+      C: { id: 'C', status: 'blocked', depends_on: [hardDep('A'), softDep('B')] }
     }
     const getTask = vi.fn().mockImplementation((id: string) => Promise.resolve(tasks[id] ?? null))
     const updateTask = vi.fn().mockResolvedValue(null)
@@ -713,8 +732,12 @@ export async function resolveDependents(
   completedTaskId: string,
   completedStatus: string,
   index: DependencyIndex,
-  getTask: (id: string) => Promise<Pick<SprintTask, 'id' | 'status'> & { depends_on: TaskDependency[] | null } | null>,
-  updateTask: (id: string, patch: Record<string, unknown>) => Promise<unknown>,
+  getTask: (
+    id: string
+  ) => Promise<
+    (Pick<SprintTask, 'id' | 'status'> & { depends_on: TaskDependency[] | null }) | null
+  >,
+  updateTask: (id: string, patch: Record<string, unknown>) => Promise<unknown>
 ): Promise<void> {
   const dependents = index.getDependents(completedTaskId)
   if (dependents.size === 0) return
@@ -737,10 +760,8 @@ export async function resolveDependents(
         }
       }
 
-      const { satisfied } = index.areDependenciesSatisfied(
-        depId,
-        task.depends_on,
-        (id) => statusCache.get(id),
+      const { satisfied } = index.areDependenciesSatisfied(depId, task.depends_on, (id) =>
+        statusCache.get(id)
       )
 
       if (satisfied) {
@@ -770,6 +791,7 @@ git commit -m "feat(deps): add resolveDependents for automatic blocked->queued t
 ## Task 4: Data Layer Changes
 
 **Files:**
+
 - Modify: `src/main/data/sprint-queries.ts:10-29` (UPDATE_ALLOWLIST), `:31-40` (QueueStats), `:75-106` (CreateTaskInput/createTask), `:180-208` (getQueueStats), `:227-268` (markTaskDone/Cancelled)
 
 - [ ] **Step 1: Add `depends_on` to UPDATE_ALLOWLIST**
@@ -800,7 +822,11 @@ Add after `getHealthCheckTasks()`:
 
 ```typescript
 export async function getTasksWithDependencies(): Promise<
-  Array<{ id: string; depends_on: Array<{ id: string; type: 'hard' | 'soft' }> | null; status: string }>
+  Array<{
+    id: string
+    depends_on: Array<{ id: string; type: 'hard' | 'soft' }> | null
+    status: string
+  }>
 > {
   const { data, error } = await getSupabaseClient()
     .from('sprint_tasks')
@@ -902,6 +928,7 @@ git commit -m "feat(deps): update data layer — allowlist, QueueStats, createTa
 ## Task 5: Wire Up Resolution Across All Terminal Paths
 
 **Files:**
+
 - Modify: `src/main/handlers/sprint-local.ts:90-96`
 - Modify: `src/main/sprint-pr-poller.ts:12-18,46-49`
 - Modify: `src/main/handlers/git-handlers.ts:93-97`
@@ -988,12 +1015,14 @@ In the `start()` function, after `recoverOrphans(...)`:
 
 ```typescript
 // Build dependency index
-getTasksWithDependencies().then((tasks) => {
-  depIndex.rebuild(tasks)
-  logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
-}).catch((err) => {
-  logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
-})
+getTasksWithDependencies()
+  .then((tasks) => {
+    depIndex.rebuild(tasks)
+    logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
+  })
+  .catch((err) => {
+    logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
+  })
 ```
 
 Add a helper inside `createAgentManager()` for terminal resolution:
@@ -1087,7 +1116,7 @@ export function startSprintPrPoller(): void {
     markTaskDoneByPrNumber,
     markTaskCancelledByPrNumber,
     updateTaskMergeableState,
-    onTaskTerminal: _onTaskTerminal ?? undefined,
+    onTaskTerminal: _onTaskTerminal ?? undefined
   })
   _instance.start()
 }
@@ -1136,6 +1165,7 @@ git commit -m "feat(deps): wire resolveDependents into all terminal status paths
 ## Task 6: Queue API and IPC Handlers
 
 **Files:**
+
 - Modify: `src/main/queue-api/router.ts:186-199`
 - Modify: `src/main/handlers/sprint-local.ts:112-169`
 - Modify: `src/main/index.ts` (IPC registration)
@@ -1159,8 +1189,8 @@ async function handleHealth(res: http.ServerResponse): Promise<void> {
       done: stats.done,
       failed: stats.failed,
       cancelled: stats.cancelled,
-      error: stats.error,
-    },
+      error: stats.error
+    }
   })
 }
 ```
@@ -1183,7 +1213,7 @@ Add the handler function (after existing handlers, around line 297):
 async function handleUpdateTask(
   req: http.IncomingMessage,
   res: http.ServerResponse,
-  id: string,
+  id: string
 ): Promise<void> {
   let body: unknown
   try {
@@ -1213,33 +1243,42 @@ async function handleUpdateTask(
 In `src/main/handlers/sprint-local.ts`, add inside `registerSprintLocalHandlers()`:
 
 ```typescript
-safeHandle('sprint:validate-dependencies', async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
-  // Lazy import to avoid circular deps
-  const { detectCycle } = await import('../agent-manager/dependency-index')
-  const { getTask: fetchTask } = await import('../data/sprint-queries')
+safeHandle(
+  'sprint:validate-dependencies',
+  async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
+    // Lazy import to avoid circular deps
+    const { detectCycle } = await import('../agent-manager/dependency-index')
+    const { getTask: fetchTask } = await import('../data/sprint-queries')
 
-  // Validate all dep targets exist
-  for (const dep of proposedDeps) {
-    const target = await fetchTask(dep.id)
-    if (!target) return { valid: false, error: `Task ${dep.id} not found` }
+    // Validate all dep targets exist
+    for (const dep of proposedDeps) {
+      const target = await fetchTask(dep.id)
+      if (!target) return { valid: false, error: `Task ${dep.id} not found` }
+    }
+
+    // Check for cycles
+    const allTasks = await _listTasks()
+    const depsMap = new Map(
+      allTasks.map((t: SprintTask) => [
+        t.id,
+        (t as Record<string, unknown>).depends_on as Array<{ id: string; type: string }> | null
+      ])
+    )
+    const cycle = detectCycle(taskId, proposedDeps, (id) => {
+      const deps = depsMap.get(id)
+      return (deps as Array<{ id: string; type: 'hard' | 'soft' }> | null) ?? null
+    })
+    if (cycle) return { valid: false, cycle }
+
+    return { valid: true }
   }
-
-  // Check for cycles
-  const allTasks = await _listTasks()
-  const depsMap = new Map(allTasks.map((t: SprintTask) => [t.id, (t as Record<string, unknown>).depends_on as Array<{ id: string; type: string }> | null]))
-  const cycle = detectCycle(taskId, proposedDeps, (id) => {
-    const deps = depsMap.get(id)
-    return deps as Array<{ id: string; type: 'hard' | 'soft' }> | null ?? null
-  })
-  if (cycle) return { valid: false, cycle }
-
-  return { valid: true }
-})
+)
 
 safeHandle('sprint:unblock-task', async (_e, taskId: string) => {
   const task = await _getTask(taskId)
   if (!task) throw new Error(`Task ${taskId} not found`)
-  if (task.status !== 'blocked') throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
+  if (task.status !== 'blocked')
+    throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
   const updated = await _updateTask(taskId, { status: 'queued' })
   if (updated) notifySprintMutation('updated', updated)
   return updated
@@ -1259,9 +1298,9 @@ safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown
       const { createDependencyIndex } = await import('../agent-manager/dependency-index')
       const idx = createDependencyIndex() // temp index just for satisfaction check
       const allTasks = await _listTasks()
-      const statusMap = new Map(allTasks.map(t => [t.id, t.status]))
-      const { satisfied } = idx.areDependenciesSatisfied(
-        id, task.depends_on, (depId) => statusMap.get(depId)
+      const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+      const { satisfied } = idx.areDependenciesSatisfied(id, task.depends_on, (depId) =>
+        statusMap.get(depId)
       )
       if (!satisfied) {
         patch = { ...patch, status: 'blocked' }
@@ -1284,15 +1323,25 @@ safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
   if (task.depends_on && task.depends_on.length > 0) {
     const { detectCycle, createDependencyIndex } = await import('../agent-manager/dependency-index')
     const allTasks = await _listTasks()
-    const depsMap = new Map(allTasks.map(t => [t.id, (t as Record<string, unknown>).depends_on as Array<{ id: string; type: 'hard' | 'soft' }> | null]))
+    const depsMap = new Map(
+      allTasks.map((t) => [
+        t.id,
+        (t as Record<string, unknown>).depends_on as Array<{
+          id: string
+          type: 'hard' | 'soft'
+        }> | null
+      ])
+    )
     const cycle = detectCycle('__new__', task.depends_on, (id) => depsMap.get(id) ?? null)
     if (cycle) throw new Error(`Dependency cycle detected: ${cycle.join(' → ')}`)
 
     // Check if deps are satisfied — if not, override status to blocked
     if (task.status === 'queued') {
       const idx = createDependencyIndex()
-      const statusMap = new Map(allTasks.map(t => [t.id, t.status]))
-      const { satisfied } = idx.areDependenciesSatisfied('__new__', task.depends_on, (id) => statusMap.get(id))
+      const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+      const { satisfied } = idx.areDependenciesSatisfied('__new__', task.depends_on, (id) =>
+        statusMap.get(id)
+      )
       if (!satisfied) task = { ...task, status: 'blocked' }
     }
   }
@@ -1331,6 +1380,7 @@ git commit -m "feat(deps): add PATCH route, IPC handlers, blocked-status interce
 ## Task 7: UI — Partition, Task Card, Sprint Kanban
 
 **Files:**
+
 - Modify: `src/renderer/src/lib/partitionSprintTasks.ts:34-64`
 - Modify: `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts`
 - Modify: `src/renderer/src/components/sprint/TaskCard.tsx`
@@ -1379,37 +1429,41 @@ task.status === 'blocked' && 'task-card--blocked',
 In the badge/status area of the card's JSX, add a blocked badge conditionally:
 
 ```tsx
-{task.status === 'blocked' && (
-  <Badge variant="warning">Blocked</Badge>
-)}
+{
+  task.status === 'blocked' && <Badge variant="warning">Blocked</Badge>
+}
 ```
 
 Add dependency chips below the title (when `depends_on` exists):
 
 ```tsx
-{task.depends_on && task.depends_on.length > 0 && (
-  <div className="task-card__deps">
-    {task.depends_on.map((dep) => (
-      <span key={dep.id} className={`dep-chip dep-chip--${dep.type}`}>
-        {dep.type === 'hard' ? '⬤' : '◯'} {dep.id.slice(0, 8)}
-      </span>
-    ))}
-  </div>
-)}
+{
+  task.depends_on && task.depends_on.length > 0 && (
+    <div className="task-card__deps">
+      {task.depends_on.map((dep) => (
+        <span key={dep.id} className={`dep-chip dep-chip--${dep.type}`}>
+          {dep.type === 'hard' ? '⬤' : '◯'} {dep.id.slice(0, 8)}
+        </span>
+      ))}
+    </div>
+  )
+}
 ```
 
 Add an "Unblock" button for blocked cards (next to existing action buttons):
 
 ```tsx
-{task.status === 'blocked' && (
-  <Button
-    size="sm"
-    variant="ghost"
-    onClick={() => window.electron?.ipcRenderer.invoke('sprint:unblock-task', task.id)}
-  >
-    Unblock
-  </Button>
-)}
+{
+  task.status === 'blocked' && (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => window.electron?.ipcRenderer.invoke('sprint:unblock-task', task.id)}
+    >
+      Unblock
+    </Button>
+  )
+}
 ```
 
 Note: Adapt these JSX snippets to match the existing TaskCard patterns (check exact prop names, Button imports, layout structure). The exact integration depends on how the card is structured — read the full file before implementing.
@@ -1419,6 +1473,7 @@ Note: Adapt these JSX snippets to match the existing TaskCard patterns (check ex
 In `src/renderer/src/components/sprint/SprintCenter.tsx` (or wherever the task form lives), add a "Dependencies" section to the task creation form. This is a multi-select of existing tasks with a hard/soft toggle per selection.
 
 This is UI-specific and should match existing form patterns in the codebase. The key IPC calls:
+
 - `window.electron?.ipcRenderer.invoke('sprint:validate-dependencies', taskId, deps)` — validate before save
 - Include `depends_on` in the task create/update payload
 

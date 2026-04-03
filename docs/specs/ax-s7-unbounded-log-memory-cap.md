@@ -18,6 +18,7 @@ logNextByte: result.nextByte
 ```
 
 Two stores use this factory:
+
 - `localAgents.ts` — streams stdout/stderr from spawned agents
 - `agentHistory.ts` — reads historical agent logs
 
@@ -106,10 +107,10 @@ export function createLogPollerActions(set: SetState, get: GetState) {
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
+| File                                | Change                                  |
+| ----------------------------------- | --------------------------------------- |
 | `src/renderer/src/lib/logPoller.ts` | Add sliding window cap to poll callback |
-| `src/renderer/src/lib/constants.ts` | Add `MAX_LOG_CONTENT_BYTES` |
+| `src/renderer/src/lib/constants.ts` | Add `MAX_LOG_CONTENT_BYTES`             |
 
 No store files or consumer components change — the `logContent` API stays the same.
 

@@ -15,12 +15,14 @@
 ## Task 1: Fix Circular Dependency (F1)
 
 **Files:**
+
 - Modify: `src/main/handlers/sprint-spec.ts:10,137-138`
 - Modify: `src/main/handlers/sprint-local.ts` (the `sprint:generatePrompt` handler)
 
 - [ ] **Step 1: Remove import and side effect from sprint-spec.ts**
 
 In `src/main/handlers/sprint-spec.ts`:
+
 - Delete line 10: `import { updateTask } from './sprint-local'`
 - Delete line 138: `updateTask(taskId, { spec: text, prompt: text })`
 
@@ -72,6 +74,7 @@ in sprint-local persists the generated spec after the call."
 ## Task 2: Further Decompose SprintCenter (F2)
 
 **Files:**
+
 - Modify: `src/renderer/src/hooks/useSprintTaskActions.ts` — add 7 callbacks
 - Create: `src/renderer/src/hooks/useHealthCheck.ts` — extract health polling
 - Modify: `src/renderer/src/components/sprint/SprintCenter.tsx` — remove extracted code
@@ -81,12 +84,14 @@ in sprint-local persists the generated spec after the call."
 In `src/renderer/src/hooks/useSprintTaskActions.ts`, add these imports and callbacks after the existing ones. Copy the exact implementations from SprintCenter.tsx:
 
 Add to imports:
+
 ```typescript
 import { useSprintUI } from '../stores/sprintUI'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
 ```
 
 Add new store selectors inside the hook:
+
 ```typescript
 const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
 const setTasks = useSprintTasks((s) => s.setTasks)
@@ -115,12 +120,14 @@ const handleReorder = useCallback(
   (_status: SprintTask['status'], orderedIds: string[]) => {
     const current = useSprintTasks.getState().tasks
     const idOrder = new Map(orderedIds.map((id, i) => [id, i]))
-    setTasks([...current].sort((a, b) => {
-      const ai = idOrder.get(a.id)
-      const bi = idOrder.get(b.id)
-      if (ai !== undefined && bi !== undefined) return ai - bi
-      return 0
-    }))
+    setTasks(
+      [...current].sort((a, b) => {
+        const ai = idOrder.get(a.id)
+        const bi = idOrder.get(b.id)
+        if (ai !== undefined && bi !== undefined) return ai - bi
+        return 0
+      })
+    )
   },
   [setTasks]
 )
@@ -161,13 +168,24 @@ const handleUpdatePriority = useCallback(
 ```
 
 Add all 7 to the return object:
+
 ```typescript
 return {
   // existing
-  handleMarkDone, handleStop, handleRerun, handleDelete, handleLaunch: launchTask, confirmProps,
+  handleMarkDone,
+  handleStop,
+  handleRerun,
+  handleDelete,
+  handleLaunch: launchTask,
+  confirmProps,
   // new
-  handleDragEnd, handleReorder, handlePushToSprint, handleViewSpec, handleSaveSpec,
-  handleUpdateTitle, handleUpdatePriority,
+  handleDragEnd,
+  handleReorder,
+  handlePushToSprint,
+  handleViewSpec,
+  handleSaveSpec,
+  handleUpdateTitle,
+  handleUpdatePriority
 }
 ```
 
@@ -193,10 +211,14 @@ export function useHealthCheck(tasks: SprintTask[]) {
     try {
       const stuck = await window.api.sprint.healthCheck()
       setStuckTasks(stuck.map((t) => t.id))
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }, [setStuckTasks])
 
-  useEffect(() => { runHealthCheck() }, [runHealthCheck])
+  useEffect(() => {
+    runHealthCheck()
+  }, [runHealthCheck])
   useVisibilityAwareInterval(runHealthCheck, POLL_HEALTH_CHECK_MS)
 
   const visibleStuckTasks = useMemo(
@@ -249,6 +271,7 @@ useHealthCheck hook. SprintCenter reduced to layout shell."
 ## Task 3: Missing Data Layer Tests + Event Queries (F3)
 
 **Files:**
+
 - Create: `src/main/data/__tests__/agent-queries.test.ts`
 - Create: `src/main/data/__tests__/cost-queries.test.ts`
 - Create: `src/main/data/event-queries.ts`
@@ -269,18 +292,30 @@ import {
   listAgents,
   updateAgentMeta,
   findAgentByPid,
-  updateAgentRunCost,
+  updateAgentRunCost
 } from '../agent-queries'
 
 let db: Database.Database
-beforeEach(() => { db = new Database(':memory:'); runMigrations(db) })
-afterEach(() => { db.close() })
+beforeEach(() => {
+  db = new Database(':memory:')
+  runMigrations(db)
+})
+afterEach(() => {
+  db.close()
+})
 
 describe('insertAgentRecord + getAgentMeta', () => {
   it('inserts and retrieves agent', () => {
     insertAgentRecord(db, {
-      id: 'a1', pid: 1234, bin: 'claude', task: 'test task', repo: 'test-repo',
-      repoPath: '/tmp/repo', model: 'sonnet', logPath: '/tmp/log', source: 'bde',
+      id: 'a1',
+      pid: 1234,
+      bin: 'claude',
+      task: 'test task',
+      repo: 'test-repo',
+      repoPath: '/tmp/repo',
+      model: 'sonnet',
+      logPath: '/tmp/log',
+      source: 'bde'
     })
     const meta = getAgentMeta(db, 'a1')
     expect(meta).not.toBeNull()
@@ -296,8 +331,28 @@ describe('insertAgentRecord + getAgentMeta', () => {
 
 describe('listAgents', () => {
   it('returns agents ordered by started_at desc', () => {
-    insertAgentRecord(db, { id: 'a1', pid: 1, bin: 'claude', task: 't1', repo: 'r', repoPath: '/', model: 'm', logPath: '/l1', source: 'bde' })
-    insertAgentRecord(db, { id: 'a2', pid: 2, bin: 'claude', task: 't2', repo: 'r', repoPath: '/', model: 'm', logPath: '/l2', source: 'bde' })
+    insertAgentRecord(db, {
+      id: 'a1',
+      pid: 1,
+      bin: 'claude',
+      task: 't1',
+      repo: 'r',
+      repoPath: '/',
+      model: 'm',
+      logPath: '/l1',
+      source: 'bde'
+    })
+    insertAgentRecord(db, {
+      id: 'a2',
+      pid: 2,
+      bin: 'claude',
+      task: 't2',
+      repo: 'r',
+      repoPath: '/',
+      model: 'm',
+      logPath: '/l2',
+      source: 'bde'
+    })
     const agents = listAgents(db)
     expect(agents.length).toBeGreaterThanOrEqual(2)
   })
@@ -305,7 +360,17 @@ describe('listAgents', () => {
 
 describe('updateAgentMeta', () => {
   it('updates fields', () => {
-    insertAgentRecord(db, { id: 'a1', pid: 1, bin: 'claude', task: 't', repo: 'r', repoPath: '/', model: 'm', logPath: '/l', source: 'bde' })
+    insertAgentRecord(db, {
+      id: 'a1',
+      pid: 1,
+      bin: 'claude',
+      task: 't',
+      repo: 'r',
+      repoPath: '/',
+      model: 'm',
+      logPath: '/l',
+      source: 'bde'
+    })
     updateAgentMeta(db, 'a1', { status: 'done', exitCode: 0, finishedAt: new Date().toISOString() })
     const meta = getAgentMeta(db, 'a1')
     expect(meta!.status).toBe('done')
@@ -315,7 +380,17 @@ describe('updateAgentMeta', () => {
 
 describe('findAgentByPid', () => {
   it('finds agent by PID', () => {
-    insertAgentRecord(db, { id: 'a1', pid: 9999, bin: 'claude', task: 't', repo: 'r', repoPath: '/', model: 'm', logPath: '/l', source: 'bde' })
+    insertAgentRecord(db, {
+      id: 'a1',
+      pid: 9999,
+      bin: 'claude',
+      task: 't',
+      repo: 'r',
+      repoPath: '/',
+      model: 'm',
+      logPath: '/l',
+      source: 'bde'
+    })
     const meta = findAgentByPid(db, 9999)
     expect(meta).not.toBeNull()
     expect(meta!.id).toBe('a1')
@@ -346,8 +421,13 @@ import { runMigrations } from '../../db'
 import { getCostSummary, getRecentAgentRunsWithCost } from '../cost-queries'
 
 let db: Database.Database
-beforeEach(() => { db = new Database(':memory:'); runMigrations(db) })
-afterEach(() => { db.close() })
+beforeEach(() => {
+  db = new Database(':memory:')
+  runMigrations(db)
+})
+afterEach(() => {
+  db.close()
+})
 
 describe('getCostSummary', () => {
   it('returns zero summary with empty DB', () => {
@@ -390,10 +470,7 @@ export function appendEvent(
   ).run(agentId, eventType, payload, timestamp)
 }
 
-export function getEventHistory(
-  db: Database,
-  agentId: string
-): { payload: string }[] {
+export function getEventHistory(db: Database, agentId: string): { payload: string }[] {
   return db
     .prepare('SELECT payload FROM agent_events WHERE agent_id = ? ORDER BY timestamp ASC')
     .all(agentId) as { payload: string }[]
@@ -416,8 +493,13 @@ import { runMigrations } from '../../db'
 import { appendEvent, getEventHistory, pruneOldEvents } from '../event-queries'
 
 let db: Database.Database
-beforeEach(() => { db = new Database(':memory:'); runMigrations(db) })
-afterEach(() => { db.close() })
+beforeEach(() => {
+  db = new Database(':memory:')
+  runMigrations(db)
+})
+afterEach(() => {
+  db.close()
+})
 
 describe('appendEvent + getEventHistory', () => {
   it('inserts and retrieves events in order', () => {
@@ -462,7 +544,7 @@ import { getDb } from '../db'
 import {
   appendEvent as _appendEvent,
   getEventHistory,
-  pruneOldEvents as _pruneOldEvents,
+  pruneOldEvents as _pruneOldEvents
 } from '../data/event-queries'
 import type { AgentEvent } from '../../shared/types'
 
@@ -508,11 +590,13 @@ in-memory SQLite. Extracts event-store DB queries to data layer."
 ## Task 4: Fix `as never` Type Escape (F4)
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/sprintEvents.ts:10-13,42-52`
 
 - [ ] **Step 1: Read both types for reference**
 
 Confirm the type shapes:
+
 - `AgentEvent` (from `src/shared/types.ts`): `timestamp: number`, no `taskId` field
 - `TaskOutputEvent` (from `src/shared/queue-api-contract.ts`): `timestamp: string` (ISO 8601), has `taskId: string`
 
@@ -531,10 +615,11 @@ export type AnyTaskEvent = TaskOutputEvent | AgentEvent
 ```
 
 Update the state interface:
+
 ```typescript
 interface SprintEventsState {
-  taskEvents: Record<string, AnyTaskEvent[]>   // was TaskOutputEvent[]
-  latestEvents: Record<string, AnyTaskEvent>   // was TaskOutputEvent
+  taskEvents: Record<string, AnyTaskEvent[]> // was TaskOutputEvent[]
+  latestEvents: Record<string, AnyTaskEvent> // was TaskOutputEvent
   // ... rest unchanged
 }
 ```
@@ -542,6 +627,7 @@ interface SprintEventsState {
 - [ ] **Step 3: Remove both `as never` casts**
 
 Replace line 46:
+
 ```typescript
 // Before
 [agentId]: [...(s.taskEvents[agentId] ?? []), event as never],
@@ -550,6 +636,7 @@ Replace line 46:
 ```
 
 Replace line 50:
+
 ```typescript
 // Before
 [agentId]: event as never,

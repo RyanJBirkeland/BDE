@@ -525,7 +525,7 @@
   background: var(--neon-cyan-surface);
 }
 
-.review-dialog__event input[type="radio"] {
+.review-dialog__event input[type='radio'] {
   accent-color: var(--neon-cyan);
 }
 

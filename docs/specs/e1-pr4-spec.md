@@ -20,7 +20,16 @@ Open `src/shared/ipc-channels.ts`. After the existing entries (ending at line 77
 Add to the imports at line 12:
 
 ```ts
-import type { SpawnLocalAgentArgs, SpawnLocalAgentResult, AgentMeta, AgentCostRecord, AgentRunCostRow, CostSummary, SprintTask, PrListPayload } from './types'
+import type {
+  SpawnLocalAgentArgs,
+  SpawnLocalAgentResult,
+  AgentMeta,
+  AgentCostRecord,
+  AgentRunCostRow,
+  CostSummary,
+  SprintTask,
+  PrListPayload
+} from './types'
 ```
 
 Add to `IpcChannelMap` before the closing `}`:
@@ -224,6 +233,7 @@ Add to `IpcChannelMap` before the closing `}`:
 Go through each handler file and ensure channel names match `IpcChannelMap` keys exactly. Remove the `TODO: AX-S1` comments.
 
 Files to update:
+
 - `src/main/handlers/git-handlers.ts` — lines 69–92: remove TODO comments, channel names already match
 - `src/main/handlers/agent-handlers.ts` — all `safeHandle` calls
 - `src/main/handlers/cost-handlers.ts` — all `safeHandle` calls

@@ -86,11 +86,11 @@ None found.
   ```typescript
   export function getSettingJson<T>(db: Database.Database, key: string): T | null {
     const raw = getSetting(db, key)
-    if (!raw) return null    // key doesn't exist
+    if (!raw) return null // key doesn't exist
     try {
       return JSON.parse(raw) as T
     } catch {
-      return null            // key exists but JSON is corrupt
+      return null // key exists but JSON is corrupt
     }
   }
   ```
@@ -235,25 +235,25 @@ None found.
 
 ## Summary Table
 
-| ID | Severity | File | Issue |
-|----|----------|------|-------|
-| DL-UX-1 | Significant | `db.ts:389`, `types.ts:46` | `pr_status` CHECK constraint missing `branch_only` -- schema/type mismatch |
-| DL-UX-2 | Significant | `sprint-queries.ts` | Inconsistent error patterns: null vs [] vs Infinity vs throw |
-| DL-UX-3 | Significant | `sprint-queries.ts` | 5+ write functions bypass audit trail (`recordTaskChanges`) |
-| DL-UX-4 | Significant | `db.ts:38-40` | `backupDatabase()` swallows errors, no caller feedback |
-| DL-UX-5 | Moderate | `settings-queries.ts:26-34` | `getSettingJson` returns null for both missing and corrupt JSON |
-| DL-UX-6 | Moderate | `settings-queries.ts:14` | `setSetting` type coercion creates get/getJson divergence |
-| DL-UX-7 | Moderate | `agent-queries.ts` vs `sprint-queries.ts` | Incompatible DI patterns across query modules |
-| DL-UX-8 | Moderate | `sprint-queries.ts:184-185` | `updateTask` returns null for empty patch (same as not-found) |
-| DL-UX-9 | Moderate | `db.ts:440-447` | `runMigrations` has no error context on failure |
-| DL-UX-10 | Moderate | `supabase-import.ts:100-158` | `INSERT OR IGNORE` silently drops rows; counter inflated |
-| DL-UX-11 | Minor | `sprint-queries.ts:163` | Undocumented prompt fallback chain (prompt -> spec -> title) |
-| DL-UX-12 | Minor | `task-changes.ts:23`, `sprint-queries.ts:219` | `changedBy` always `'unknown'` in audit trail |
-| DL-UX-13 | Minor | `sprint-task-repository.ts:9-17` | `ISprintTaskRepository` covers only 7 of 20 query functions |
-| DL-UX-14 | Minor | `sprint-queries.ts:235-241` | `deleteTask` returns void, caller can't confirm deletion |
-| DL-UX-15 | Minor | `agent-queries.ts:120-143` | `updateAgentMeta` returns raw row (snake_case) while peers return mapped AgentMeta |
-| DL-UX-16 | Minor | `cost-queries.ts:83,170` | `pr_url` always NULL -- vestigial column from removed JOIN |
-| DL-UX-17 | Minor | `task-changes.ts:24-25` | Hybrid DI with awkward positional `db?` as 5th parameter |
+| ID       | Severity    | File                                          | Issue                                                                              |
+| -------- | ----------- | --------------------------------------------- | ---------------------------------------------------------------------------------- |
+| DL-UX-1  | Significant | `db.ts:389`, `types.ts:46`                    | `pr_status` CHECK constraint missing `branch_only` -- schema/type mismatch         |
+| DL-UX-2  | Significant | `sprint-queries.ts`                           | Inconsistent error patterns: null vs [] vs Infinity vs throw                       |
+| DL-UX-3  | Significant | `sprint-queries.ts`                           | 5+ write functions bypass audit trail (`recordTaskChanges`)                        |
+| DL-UX-4  | Significant | `db.ts:38-40`                                 | `backupDatabase()` swallows errors, no caller feedback                             |
+| DL-UX-5  | Moderate    | `settings-queries.ts:26-34`                   | `getSettingJson` returns null for both missing and corrupt JSON                    |
+| DL-UX-6  | Moderate    | `settings-queries.ts:14`                      | `setSetting` type coercion creates get/getJson divergence                          |
+| DL-UX-7  | Moderate    | `agent-queries.ts` vs `sprint-queries.ts`     | Incompatible DI patterns across query modules                                      |
+| DL-UX-8  | Moderate    | `sprint-queries.ts:184-185`                   | `updateTask` returns null for empty patch (same as not-found)                      |
+| DL-UX-9  | Moderate    | `db.ts:440-447`                               | `runMigrations` has no error context on failure                                    |
+| DL-UX-10 | Moderate    | `supabase-import.ts:100-158`                  | `INSERT OR IGNORE` silently drops rows; counter inflated                           |
+| DL-UX-11 | Minor       | `sprint-queries.ts:163`                       | Undocumented prompt fallback chain (prompt -> spec -> title)                       |
+| DL-UX-12 | Minor       | `task-changes.ts:23`, `sprint-queries.ts:219` | `changedBy` always `'unknown'` in audit trail                                      |
+| DL-UX-13 | Minor       | `sprint-task-repository.ts:9-17`              | `ISprintTaskRepository` covers only 7 of 20 query functions                        |
+| DL-UX-14 | Minor       | `sprint-queries.ts:235-241`                   | `deleteTask` returns void, caller can't confirm deletion                           |
+| DL-UX-15 | Minor       | `agent-queries.ts:120-143`                    | `updateAgentMeta` returns raw row (snake_case) while peers return mapped AgentMeta |
+| DL-UX-16 | Minor       | `cost-queries.ts:83,170`                      | `pr_url` always NULL -- vestigial column from removed JOIN                         |
+| DL-UX-17 | Minor       | `task-changes.ts:24-25`                       | Hybrid DI with awkward positional `db?` as 5th parameter                           |
 
 ---
 

@@ -25,6 +25,7 @@ Rename "Sprint" to "Task Pipeline" across all user-visible labels, unify the vie
 ### Rename Scope
 
 These labels change:
+
 - Tab: "Sprint" → "Task Pipeline" (`VIEW_LABELS` in `panelLayout.ts`)
 - Header title: "Sprint Center" → "Task Pipeline" (`VIEW_TITLES` in `App.tsx`)
 - Pipeline bar label: "Sprint Pipeline" → "Task Pipeline" (in `CircuitPipeline.tsx`)
@@ -34,6 +35,7 @@ These labels change:
 - Keyboard shortcut comment: update `⌘4=sprint` → `⌘4=task-pipeline`
 
 These stay unchanged:
+
 - View type: `'sprint'` (used in routing, IPC, stores, keyboard shortcuts)
 - CSS classes: `.sprint-*` prefix (hundreds of selectors, not worth renaming)
 - File names: `SprintCenter.tsx`, `SprintTaskList.tsx`, etc.
@@ -79,24 +81,25 @@ These stay unchanged:
 
 The detail pane status badge and task list badges use display names:
 
-| Raw Status | Display Name |
-|------------|-------------|
-| `active` (no PR) | Active |
-| `active` + `pr_status=open` | Review |
-| `done` + `pr_status=open` | Review |
-| `queued` | Queued |
-| `blocked` | Blocked |
-| `backlog` | Backlog |
-| `done` | Done |
-| `failed` | Failed |
-| `cancelled` | Cancelled |
-| `error` | Error |
+| Raw Status                  | Display Name |
+| --------------------------- | ------------ |
+| `active` (no PR)            | Active       |
+| `active` + `pr_status=open` | Review       |
+| `done` + `pr_status=open`   | Review       |
+| `queued`                    | Queued       |
+| `blocked`                   | Blocked      |
+| `backlog`                   | Backlog      |
+| `done`                      | Done         |
+| `failed`                    | Failed       |
+| `cancelled`                 | Cancelled    |
+| `error`                     | Error        |
 
 ### Pipeline Stage → Status Filter Integration
 
 Pipeline stages become clickable filters. Clicking a stage sets the `statusFilter` in `useSprintUI` to the corresponding filter value. The currently active filter gets a subtle glow/highlight on the corresponding pipeline stage pill.
 
 Mapping:
+
 - Backlog → `'backlog'`
 - Queued → `'todo'`
 - Active → `'in-progress'` (includes only truly active tasks, not awaiting-review)
@@ -111,6 +114,7 @@ Clicking the already-active stage resets to `'all'`.
 ## Files to Modify
 
 ### Must Change
+
 - `src/renderer/src/stores/panelLayout.ts` — `VIEW_LABELS.sprint` → "Task Pipeline"
 - `src/renderer/src/App.tsx` — `VIEW_TITLES.sprint` → "Task Pipeline", update shortcut comment
 - `src/renderer/src/components/layout/NeonSidebar.tsx` — `VIEW_LABELS.sprint` → "Task Pipeline"
@@ -123,10 +127,12 @@ Clicking the already-active stage resets to `'all'`.
 - `src/renderer/src/assets/sprint-neon.css` — Add new classes for sidebar, pipeline, task items, detail pane layout; update existing classes with spacious padding
 
 ### May Change
+
 - `src/renderer/src/assets/sprint.css` — Remove migrated task-list rules (lines ~2050-2256)
 - `src/renderer/src/stores/sprintUI.ts` — May need to expose status filter setter for pipeline stage clicks
 
 ### Won't Change
+
 - IPC channels, store logic, data layer, shared types
 - Other sprint components (KanbanBoard, SpecDrawer, LogDrawer, ConflictDrawer, etc.)
 - Preload bridge, handler files

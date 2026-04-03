@@ -9,6 +9,7 @@
 **Tech Stack:** React, TypeScript, CSS (agents-neon.css), Zustand, @tanstack/react-virtual, lucide-react, Vitest + React Testing Library
 
 **Prior art:**
+
 - Phase 1 (PR #592): Critical + high fixes already merged
 - Dashboard UX: PRs #584-591 (all merged, all 32 findings resolved)
 - Audit source: `docs/superpowers/audits/team-3-agents-terminal.md`
@@ -19,31 +20,31 @@
 
 ### New Files
 
-| File | Responsibility |
-|------|----------------|
-| `src/renderer/src/components/agents/ConsoleSearchBar.tsx` | Search/filter bar for console events with match highlighting |
-| `src/renderer/src/components/agents/__tests__/ConsoleSearchBar.test.tsx` | Tests for ConsoleSearchBar |
-| `src/renderer/src/lib/tool-summaries.ts` | Human-readable tool summary formatter |
-| `src/renderer/src/lib/__tests__/tool-summaries.test.ts` | Tests for tool-summaries |
+| File                                                                     | Responsibility                                               |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `src/renderer/src/components/agents/ConsoleSearchBar.tsx`                | Search/filter bar for console events with match highlighting |
+| `src/renderer/src/components/agents/__tests__/ConsoleSearchBar.test.tsx` | Tests for ConsoleSearchBar                                   |
+| `src/renderer/src/lib/tool-summaries.ts`                                 | Human-readable tool summary formatter                        |
+| `src/renderer/src/lib/__tests__/tool-summaries.test.ts`                  | Tests for tool-summaries                                     |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/components/agents/AgentConsole.tsx` | Add search bar, event cap banner, empty state variants |
-| `src/renderer/src/components/agents/ConsoleLine.tsx` | Tool summaries, "show full" toggle for 300px cap |
-| `src/renderer/src/components/agents/CommandBar.tsx` | Disabled state styling, steering echo |
-| `src/renderer/src/components/agents/AgentCard.tsx` | Status icons (CheckCircle/XCircle/Loader), done/cancelled labels |
-| `src/renderer/src/components/agents/AgentList.tsx` | Scroll-into-view on selection, resizable sidebar prep |
-| `src/renderer/src/components/agents/LiveActivityStrip.tsx` | Pill accents reflect status not index |
-| `src/renderer/src/components/agents/ConsoleHeader.tsx` | Running cost estimate |
-| `src/renderer/src/stores/agentEvents.ts` | LRU eviction, cap notification flag, history pagination |
-| `src/renderer/src/stores/agentHistory.ts` | Pagination support (offset/limit) |
-| `src/renderer/src/views/AgentsView.tsx` | Collapsible Zone 3, min-width, repo selector dropdown, /retry feedback |
-| `src/renderer/src/assets/agents-neon.css` | All new CSS classes |
-| `src/renderer/src/components/agents/__tests__/AgentConsole.test.tsx` | Updated tests |
-| `src/renderer/src/components/agents/__tests__/AgentCard.test.tsx` | Updated tests |
-| `src/renderer/src/views/__tests__/AgentsView.test.tsx` | Updated tests |
+| File                                                                 | Change                                                                 |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `src/renderer/src/components/agents/AgentConsole.tsx`                | Add search bar, event cap banner, empty state variants                 |
+| `src/renderer/src/components/agents/ConsoleLine.tsx`                 | Tool summaries, "show full" toggle for 300px cap                       |
+| `src/renderer/src/components/agents/CommandBar.tsx`                  | Disabled state styling, steering echo                                  |
+| `src/renderer/src/components/agents/AgentCard.tsx`                   | Status icons (CheckCircle/XCircle/Loader), done/cancelled labels       |
+| `src/renderer/src/components/agents/AgentList.tsx`                   | Scroll-into-view on selection, resizable sidebar prep                  |
+| `src/renderer/src/components/agents/LiveActivityStrip.tsx`           | Pill accents reflect status not index                                  |
+| `src/renderer/src/components/agents/ConsoleHeader.tsx`               | Running cost estimate                                                  |
+| `src/renderer/src/stores/agentEvents.ts`                             | LRU eviction, cap notification flag, history pagination                |
+| `src/renderer/src/stores/agentHistory.ts`                            | Pagination support (offset/limit)                                      |
+| `src/renderer/src/views/AgentsView.tsx`                              | Collapsible Zone 3, min-width, repo selector dropdown, /retry feedback |
+| `src/renderer/src/assets/agents-neon.css`                            | All new CSS classes                                                    |
+| `src/renderer/src/components/agents/__tests__/AgentConsole.test.tsx` | Updated tests                                                          |
+| `src/renderer/src/components/agents/__tests__/AgentCard.test.tsx`    | Updated tests                                                          |
+| `src/renderer/src/views/__tests__/AgentsView.test.tsx`               | Updated tests                                                          |
 
 ---
 
@@ -56,6 +57,7 @@
 When an agent isn't running, the command bar prompt `>` stays styled as if active — confusing. Also, `/retry` on adhoc agents silently does nothing because they have no `sprintTaskId`.
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/CommandBar.tsx`
 - Modify: `src/renderer/src/assets/agents-neon.css`
 - Modify: `src/renderer/src/views/AgentsView.tsx` (handleCommand for /retry)
@@ -142,6 +144,7 @@ git commit -m "fix: command bar disabled state + /retry adhoc feedback (#21, #8)
 **Finding:** #23 — Console shows generic "No events available" for all empty states. Users can't tell if events are loading, the agent has no events yet, or fetching failed.
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/AgentConsole.tsx`
 - Modify: `src/renderer/src/assets/agents-neon.css`
 - Test: `src/renderer/src/components/agents/__tests__/AgentConsole.test.tsx`
@@ -178,18 +181,20 @@ Expected: FAIL — both show "No events available"
 In `AgentConsole.tsx`, replace the generic empty state block (the `blocks.length === 0` branch around line 109):
 
 ```tsx
-{blocks.length === 0 && (
-  <div className="console-empty-state">
-    {agent.status === 'running' ? (
-      <>
-        <Loader size={16} className="console-empty-state__spinner" />
-        <span>Waiting for agent output…</span>
-      </>
-    ) : (
-      <span>No events recorded for this agent</span>
-    )}
-  </div>
-)}
+{
+  blocks.length === 0 && (
+    <div className="console-empty-state">
+      {agent.status === 'running' ? (
+        <>
+          <Loader size={16} className="console-empty-state__spinner" />
+          <span>Waiting for agent output…</span>
+        </>
+      ) : (
+        <span>No events recorded for this agent</span>
+      )}
+    </div>
+  )
+}
 ```
 
 Add `Loader` to the lucide-react import.
@@ -214,7 +219,9 @@ Add `Loader` to the lucide-react import.
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 ```
 
@@ -237,6 +244,7 @@ git commit -m "fix: contextual empty states in agent console (#23)"
 **Finding:** #5 — When an agent generates 2000+ events, oldest events are silently evicted. Users don't know they're missing early output.
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/agentEvents.ts`
 - Modify: `src/renderer/src/components/agents/AgentConsole.tsx`
 - Modify: `src/renderer/src/assets/agents-neon.css`
@@ -290,13 +298,9 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
         return {
           events: {
             ...state.events,
-            [agentId]: evicted
-              ? updated.slice(-MAX_EVENTS_PER_AGENT)
-              : updated
+            [agentId]: evicted ? updated.slice(-MAX_EVENTS_PER_AGENT) : updated
           },
-          evictedAgents: evicted
-            ? { ...state.evictedAgents, [agentId]: true }
-            : state.evictedAgents
+          evictedAgents: evicted ? { ...state.evictedAgents, [agentId]: true } : state.evictedAgents
         }
       })
     })
@@ -310,9 +314,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
         ...state.events,
         [agentId]: evicted ? history.slice(-MAX_EVENTS_PER_AGENT) : history
       },
-      evictedAgents: evicted
-        ? { ...state.evictedAgents, [agentId]: true }
-        : state.evictedAgents
+      evictedAgents: evicted ? { ...state.evictedAgents, [agentId]: true } : state.evictedAgents
     }))
   },
 
@@ -336,11 +338,11 @@ In `AgentConsole.tsx`, read the eviction flag and render a banner above the cons
 const evicted = useAgentEventsStore((s) => s.evictedAgents[agentId] ?? false)
 
 // In the JSX, before the console-body div:
-{evicted && (
-  <div className="console-cap-banner">
-    Older events were trimmed (showing last 2,000)
-  </div>
-)}
+{
+  evicted && (
+    <div className="console-cap-banner">Older events were trimmed (showing last 2,000)</div>
+  )
+}
 ```
 
 - [ ] **Step 5: Add CSS for cap banner**
@@ -379,6 +381,7 @@ git commit -m "feat: event cap notification banner when events evicted (#5)"
 Currently AgentCard shows a tiny 6px dot that's hard to distinguish. Replace with Lucide icons and add a text label for terminal statuses.
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/AgentCard.tsx`
 - Modify: `src/renderer/src/assets/agents-neon.css`
 - Test: `src/renderer/src/components/agents/__tests__/AgentCard.test.tsx`
@@ -392,7 +395,9 @@ it('renders CheckCircle icon for done agents', () => {
 })
 
 it('renders XCircle icon for failed agents', () => {
-  render(<AgentCard agent={{ ...mockAgent, status: 'failed' }} selected={false} onClick={vi.fn()} />)
+  render(
+    <AgentCard agent={{ ...mockAgent, status: 'failed' }} selected={false} onClick={vi.fn()} />
+  )
   expect(document.querySelector('[aria-label="Failed"]')).toBeInTheDocument()
 })
 
@@ -402,7 +407,9 @@ it('shows status label for done agents', () => {
 })
 
 it('shows status label for cancelled agents', () => {
-  render(<AgentCard agent={{ ...mockAgent, status: 'cancelled' }} selected={false} onClick={vi.fn()} />)
+  render(
+    <AgentCard agent={{ ...mockAgent, status: 'cancelled' }} selected={false} onClick={vi.fn()} />
+  )
   expect(screen.getByText('Cancelled')).toBeInTheDocument()
 })
 ```
@@ -425,7 +432,14 @@ function StatusIndicator({ status, accent }: { status: string; accent: NeonAccen
   const size = 14
   switch (status) {
     case 'running':
-      return <Loader size={size} color={color} className="agent-card__status-spinner" aria-label="Running" />
+      return (
+        <Loader
+          size={size}
+          color={color}
+          className="agent-card__status-spinner"
+          aria-label="Running"
+        />
+      )
     case 'done':
       return <CheckCircle size={size} color={color} aria-label="Done" />
     case 'failed':
@@ -433,7 +447,18 @@ function StatusIndicator({ status, accent }: { status: string; accent: NeonAccen
     case 'cancelled':
       return <Ban size={size} color={color} aria-label="Cancelled" />
     default:
-      return <span style={{ width: size, height: size, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
+      return (
+        <span
+          style={{
+            width: size,
+            height: size,
+            borderRadius: '50%',
+            background: color,
+            display: 'inline-block',
+            flexShrink: 0
+          }}
+        />
+      )
   }
 }
 ```
@@ -447,8 +472,10 @@ Use it in the card JSX replacing the `<span>` dot:
 Add a status label in the bottom row for terminal statuses:
 
 ```tsx
-{/* Bottom row: meta info */}
-<div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], paddingLeft: 14 }}>
+{
+  /* Bottom row: meta info */
+}
+;<div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2], paddingLeft: 14 }}>
   <SourceIcon size={10} color={tokens.color.textDim} />
   <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>{agent.model}</span>
   <span style={{ fontSize: tokens.size.xs, color: tokens.color.textMuted }}>·</span>
@@ -497,6 +524,7 @@ git commit -m "feat: status icons and labels in agent sidebar cards (#12, #18)"
 **Finding:** #11 — When a user sends a steering message via the command bar, there's no immediate visual confirmation in the console. The user_message event only appears after the backend echoes it, which can feel laggy.
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/CommandBar.tsx`
 - Modify: `src/renderer/src/assets/agents-neon.css`
 - Test: `src/renderer/src/components/agents/__tests__/AgentConsole.test.tsx`
@@ -533,10 +561,13 @@ In `AgentConsole.tsx`, add state for optimistic messages and inject them into th
 ```tsx
 const [pendingMessages, setPendingMessages] = useState<string[]>([])
 
-const handleSteer = useCallback((message: string) => {
-  setPendingMessages((prev) => [...prev, message])
-  onSteer(message)
-}, [onSteer])
+const handleSteer = useCallback(
+  (message: string) => {
+    setPendingMessages((prev) => [...prev, message])
+    onSteer(message)
+  },
+  [onSteer]
+)
 
 // Clear pending when a real user_message arrives
 useEffect(() => {
@@ -594,6 +625,7 @@ git commit -m "feat: optimistic steering message echo in console (#11)"
 **Finding:** #9 — This is the biggest Phase 2 feature. For long agent sessions (500+ events), users need to search console output. Add a search bar with text matching and match highlighting.
 
 **Files:**
+
 - Create: `src/renderer/src/components/agents/ConsoleSearchBar.tsx`
 - Create: `src/renderer/src/components/agents/__tests__/ConsoleSearchBar.test.tsx`
 - Modify: `src/renderer/src/components/agents/AgentConsole.tsx`
@@ -610,25 +642,61 @@ import { ConsoleSearchBar } from '../ConsoleSearchBar'
 
 describe('ConsoleSearchBar', () => {
   it('renders search input', () => {
-    render(<ConsoleSearchBar onSearch={vi.fn()} onClose={vi.fn()} matchCount={0} activeMatch={0} onNext={vi.fn()} onPrev={vi.fn()} />)
+    render(
+      <ConsoleSearchBar
+        onSearch={vi.fn()}
+        onClose={vi.fn()}
+        matchCount={0}
+        activeMatch={0}
+        onNext={vi.fn()}
+        onPrev={vi.fn()}
+      />
+    )
     expect(screen.getByPlaceholderText('Search console…')).toBeInTheDocument()
   })
 
   it('calls onSearch when typing', () => {
     const onSearch = vi.fn()
-    render(<ConsoleSearchBar onSearch={onSearch} onClose={vi.fn()} matchCount={0} activeMatch={0} onNext={vi.fn()} onPrev={vi.fn()} />)
+    render(
+      <ConsoleSearchBar
+        onSearch={onSearch}
+        onClose={vi.fn()}
+        matchCount={0}
+        activeMatch={0}
+        onNext={vi.fn()}
+        onPrev={vi.fn()}
+      />
+    )
     fireEvent.change(screen.getByPlaceholderText('Search console…'), { target: { value: 'error' } })
     expect(onSearch).toHaveBeenCalledWith('error')
   })
 
   it('shows match count', () => {
-    render(<ConsoleSearchBar onSearch={vi.fn()} onClose={vi.fn()} matchCount={5} activeMatch={2} onNext={vi.fn()} onPrev={vi.fn()} />)
+    render(
+      <ConsoleSearchBar
+        onSearch={vi.fn()}
+        onClose={vi.fn()}
+        matchCount={5}
+        activeMatch={2}
+        onNext={vi.fn()}
+        onPrev={vi.fn()}
+      />
+    )
     expect(screen.getByText('3 of 5')).toBeInTheDocument()
   })
 
   it('calls onClose on Escape', () => {
     const onClose = vi.fn()
-    render(<ConsoleSearchBar onSearch={vi.fn()} onClose={onClose} matchCount={0} activeMatch={0} onNext={vi.fn()} onPrev={vi.fn()} />)
+    render(
+      <ConsoleSearchBar
+        onSearch={vi.fn()}
+        onClose={onClose}
+        matchCount={0}
+        activeMatch={0}
+        onNext={vi.fn()}
+        onPrev={vi.fn()}
+      />
+    )
     fireEvent.keyDown(screen.getByPlaceholderText('Search console…'), { key: 'Escape' })
     expect(onClose).toHaveBeenCalled()
   })
@@ -696,10 +764,20 @@ export function ConsoleSearchBar({
           {activeMatch + 1} of {matchCount}
         </span>
       )}
-      <button className="console-search-bar__btn" onClick={onPrev} aria-label="Previous match" disabled={matchCount === 0}>
+      <button
+        className="console-search-bar__btn"
+        onClick={onPrev}
+        aria-label="Previous match"
+        disabled={matchCount === 0}
+      >
         <ChevronUp size={14} />
       </button>
-      <button className="console-search-bar__btn" onClick={onNext} aria-label="Next match" disabled={matchCount === 0}>
+      <button
+        className="console-search-bar__btn"
+        onClick={onNext}
+        aria-label="Next match"
+        disabled={matchCount === 0}
+      >
         <ChevronDown size={14} />
       </button>
       <button className="console-search-bar__btn" onClick={onClose} aria-label="Close search">
@@ -853,16 +931,21 @@ const handleSearchClose = () => {
 In the JSX, add the search bar below the ConsoleHeader and pass match CSS classes to ConsoleLine:
 
 ```tsx
-{searchOpen && (
-  <ConsoleSearchBar
-    onSearch={(q) => { setSearchQuery(q); setActiveMatchIndex(0) }}
-    onClose={handleSearchClose}
-    matchCount={searchMatches.length}
-    activeMatch={activeMatchIndex}
-    onNext={handleSearchNext}
-    onPrev={handleSearchPrev}
-  />
-)}
+{
+  searchOpen && (
+    <ConsoleSearchBar
+      onSearch={(q) => {
+        setSearchQuery(q)
+        setActiveMatchIndex(0)
+      }}
+      onClose={handleSearchClose}
+      matchCount={searchMatches.length}
+      activeMatch={activeMatchIndex}
+      onNext={handleSearchNext}
+      onPrev={handleSearchPrev}
+    />
+  )
+}
 ```
 
 For ConsoleLine, add an optional `searchHighlight` prop:
@@ -873,7 +956,9 @@ For ConsoleLine, add an optional `searchHighlight` prop:
   onPlaygroundClick={setPlaygroundBlock}
   searchHighlight={
     searchMatches.includes(virtualRow.index)
-      ? (virtualRow.index === searchMatches[activeMatchIndex] ? 'active' : 'match')
+      ? virtualRow.index === searchMatches[activeMatchIndex]
+        ? 'active'
+        : 'match'
       : undefined
   }
 />
@@ -889,11 +974,12 @@ interface ConsoleLineProps {
 }
 
 // At the top of the component, compute the className modifier:
-const highlightClass = searchHighlight === 'active'
-  ? ' console-line--search-active'
-  : searchHighlight === 'match'
-    ? ' console-line--search-match'
-    : ''
+const highlightClass =
+  searchHighlight === 'active'
+    ? ' console-line--search-active'
+    : searchHighlight === 'match'
+      ? ' console-line--search-match'
+      : ''
 
 // Apply to each returned div by appending highlightClass to className
 ```
@@ -905,11 +991,13 @@ it('opens search with Cmd+F and highlights matches', async () => {
   // Setup with text events containing searchable content
   useAgentHistoryStore.setState({ agents: [{ ...mockAgent, status: 'done' }] })
   useAgentEventsStore.setState({
-    events: { 'test-1': [
-      { type: 'agent:text', text: 'Found error in file', timestamp: 1 },
-      { type: 'agent:text', text: 'Fixed the bug', timestamp: 2 },
-      { type: 'agent:text', text: 'Another error here', timestamp: 3 }
-    ]}
+    events: {
+      'test-1': [
+        { type: 'agent:text', text: 'Found error in file', timestamp: 1 },
+        { type: 'agent:text', text: 'Fixed the bug', timestamp: 2 },
+        { type: 'agent:text', text: 'Another error here', timestamp: 3 }
+      ]
+    }
   })
   render(<AgentConsole agentId="test-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
 
@@ -938,6 +1026,7 @@ git commit -m "feat: console search/filter with Cmd+F and match navigation (#9)"
 **Finding:** #22 — Tool calls show raw JSON when expanded. Replace with human-readable summaries that surface the most useful information (file paths, commands, patterns).
 
 **Files:**
+
 - Create: `src/renderer/src/lib/tool-summaries.ts`
 - Create: `src/renderer/src/lib/__tests__/tool-summaries.test.ts`
 - Modify: `src/renderer/src/components/agents/ConsoleLine.tsx`
@@ -962,31 +1051,42 @@ describe('formatToolSummary', () => {
   })
 
   it('summarizes Read tool with file path', () => {
-    expect(formatToolSummary('Read', { file_path: '/src/main/index.ts' })).toBe('/src/main/index.ts')
+    expect(formatToolSummary('Read', { file_path: '/src/main/index.ts' })).toBe(
+      '/src/main/index.ts'
+    )
   })
 
   it('summarizes Read with offset/limit', () => {
-    expect(formatToolSummary('Read', { file_path: '/src/main/index.ts', offset: 10, limit: 50 }))
-      .toBe('/src/main/index.ts:10-60')
+    expect(
+      formatToolSummary('Read', { file_path: '/src/main/index.ts', offset: 10, limit: 50 })
+    ).toBe('/src/main/index.ts:10-60')
   })
 
   it('summarizes Edit tool', () => {
-    expect(formatToolSummary('Edit', { file_path: '/src/app.tsx', old_string: 'foo', new_string: 'bar' }))
-      .toBe('/src/app.tsx — replace "foo" → "bar"')
+    expect(
+      formatToolSummary('Edit', { file_path: '/src/app.tsx', old_string: 'foo', new_string: 'bar' })
+    ).toBe('/src/app.tsx — replace "foo" → "bar"')
   })
 
   it('truncates long edit strings', () => {
-    const result = formatToolSummary('Edit', { file_path: '/f.ts', old_string: 'a'.repeat(100), new_string: 'b'.repeat(100) })
+    const result = formatToolSummary('Edit', {
+      file_path: '/f.ts',
+      old_string: 'a'.repeat(100),
+      new_string: 'b'.repeat(100)
+    })
     expect(result).toContain('…')
   })
 
   it('summarizes Write tool', () => {
-    expect(formatToolSummary('Write', { file_path: '/new-file.ts', content: 'x'.repeat(500) }))
-      .toBe('/new-file.ts (500 chars)')
+    expect(
+      formatToolSummary('Write', { file_path: '/new-file.ts', content: 'x'.repeat(500) })
+    ).toBe('/new-file.ts (500 chars)')
   })
 
   it('summarizes Grep tool', () => {
-    expect(formatToolSummary('Grep', { pattern: 'TODO', path: '/src' })).toBe('pattern "TODO" in /src')
+    expect(formatToolSummary('Grep', { pattern: 'TODO', path: '/src' })).toBe(
+      'pattern "TODO" in /src'
+    )
   })
 
   it('summarizes Glob tool', () => {
@@ -994,7 +1094,9 @@ describe('formatToolSummary', () => {
   })
 
   it('summarizes Agent tool', () => {
-    expect(formatToolSummary('Agent', { prompt: 'Find all test files' })).toBe('Find all test files')
+    expect(formatToolSummary('Agent', { prompt: 'Find all test files' })).toBe(
+      'Find all test files'
+    )
   })
 
   it('returns null for unknown tools', () => {
@@ -1084,20 +1186,20 @@ In `ConsoleLine.tsx`, import and use `formatToolSummary` to replace raw JSON dis
 import { formatToolSummary } from '../../lib/tool-summaries'
 
 // In the tool_call and tool_pair expanded sections, show a summary line above raw JSON:
-{expanded && block.input !== undefined && (
-  <div className="console-line__detail">
-    {(() => {
-      const summary = formatToolSummary(block.tool, block.input)
-      return summary ? (
-        <div className="console-line__tool-summary">{summary}</div>
-      ) : null
-    })()}
-    <div className="console-line__detail-label">Input</div>
-    <pre className="console-line__json">
-      <code>{JSON.stringify(block.input, null, 2)}</code>
-    </pre>
-  </div>
-)}
+{
+  expanded && block.input !== undefined && (
+    <div className="console-line__detail">
+      {(() => {
+        const summary = formatToolSummary(block.tool, block.input)
+        return summary ? <div className="console-line__tool-summary">{summary}</div> : null
+      })()}
+      <div className="console-line__detail-label">Input</div>
+      <pre className="console-line__json">
+        <code>{JSON.stringify(block.input, null, 2)}</code>
+      </pre>
+    </div>
+  )
+}
 ```
 
 - [ ] **Step 6: Add CSS for tool summary**
@@ -1136,6 +1238,7 @@ git commit -m "feat: human-readable tool summaries in console (#22)"
 This task bundles 5 CSS/layout findings that are each small and interdependent.
 
 **Files:**
+
 - Modify: `src/renderer/src/views/AgentsView.tsx`
 - Modify: `src/renderer/src/components/agents/AgentList.tsx`
 - Modify: `src/renderer/src/components/agents/LiveActivityStrip.tsx`
@@ -1240,16 +1343,18 @@ useEffect(() => {
 }, [selectedId])
 
 // Wrap each AgentCard in a div with ref when selected:
-{groups.running.map((a) => (
-  <div key={a.id} ref={a.id === selectedId ? selectedRef : undefined}>
-    <AgentCard
-      agent={a}
-      selected={a.id === selectedId}
-      onClick={() => onSelect(a.id)}
-      onKill={onKill}
-    />
-  </div>
-))}
+{
+  groups.running.map((a) => (
+    <div key={a.id} ref={a.id === selectedId ? selectedRef : undefined}>
+      <AgentCard
+        agent={a}
+        selected={a.id === selectedId}
+        onClick={() => onSelect(a.id)}
+        onKill={onKill}
+      />
+    </div>
+  ))
+}
 ```
 
 Apply the same pattern to all three groups (running, recent, history).
@@ -1313,6 +1418,7 @@ git commit -m "feat: layout polish — min-width, collapsible chart, scroll-into
 **Finding:** #16 — The sidebar is fixed at 220px. Make it resizable using CSS `resize: horizontal` or a drag handle.
 
 **Files:**
+
 - Modify: `src/renderer/src/views/AgentsView.tsx`
 - Modify: `src/renderer/src/assets/agents-neon.css`
 - Test: `src/renderer/src/views/__tests__/AgentsView.test.tsx`
@@ -1349,7 +1455,11 @@ In `agents-neon.css`:
   border-right: 1px solid var(--neon-purple-border);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, var(--neon-purple-surface, rgba(138,43,226,0.04)), var(--neon-surface-deep, rgba(10,0,21,0.4)));
+  background: linear-gradient(
+    180deg,
+    var(--neon-purple-surface, rgba(138, 43, 226, 0.04)),
+    var(--neon-surface-deep, rgba(10, 0, 21, 0.4))
+  );
   resize: horizontal;
   overflow: hidden;
 }
@@ -1380,6 +1490,7 @@ git commit -m "feat: resizable agents sidebar (#16)"
 These are the final 5 findings — efficiency and memory improvements.
 
 **Files:**
+
 - Modify: `src/renderer/src/components/agents/ConsoleHeader.tsx` (#10 running cost)
 - Modify: `src/renderer/src/components/agents/ConsoleLine.tsx` (#20 show full toggle)
 - Modify: `src/renderer/src/stores/agentEvents.ts` (#14 LRU eviction)
@@ -1394,10 +1505,12 @@ These are the final 5 findings — efficiency and memory improvements.
 // In a ConsoleHeader test file:
 it('shows running cost estimate based on token usage', () => {
   const events = [
-    { type: 'agent:tool_result', tool: 'Bash', timestamp: Date.now() },
+    { type: 'agent:tool_result', tool: 'Bash', timestamp: Date.now() }
     // Events don't directly carry cost; cost comes from completed event
   ]
-  render(<ConsoleHeader agent={{ ...mockAgent, status: 'running', costUsd: null }} events={events} />)
+  render(
+    <ConsoleHeader agent={{ ...mockAgent, status: 'running', costUsd: null }} events={events} />
+  )
   // Running agents should show elapsed cost ticker or "Estimating…"
   expect(screen.getByText(/\$/)).toBeInTheDocument()
 })
@@ -1436,6 +1549,7 @@ const estimatedCost = useMemo(() => {
 ```
 
 CSS:
+
 ```css
 .console-header__cost-estimate {
   color: var(--neon-orange);
@@ -1449,9 +1563,9 @@ In `ConsoleLine.tsx`, the `.console-line__expanded-content` has `max-height: 300
 
 ```tsx
 // For the thinking block expanded content:
-{expanded && block.text && (
-  <ExpandableContent text={block.text} />
-)}
+{
+  expanded && block.text && <ExpandableContent text={block.text} />
+}
 ```
 
 Create a small `ExpandableContent` sub-component within ConsoleLine.tsx:
@@ -1480,7 +1594,10 @@ function ExpandableContent({ text }: { text: string }) {
       {overflows && !showFull && (
         <button
           className="console-line__show-full"
-          onClick={(e) => { e.stopPropagation(); setShowFull(true) }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowFull(true)
+          }}
         >
           Show full
         </button>
@@ -1491,6 +1608,7 @@ function ExpandableContent({ text }: { text: string }) {
 ```
 
 CSS:
+
 ```css
 .console-line__show-full {
   display: block;
@@ -1541,7 +1659,7 @@ Better approach: track access order in an array:
 interface AgentEventsState {
   events: Record<string, AgentEvent[]>
   evictedAgents: Record<string, boolean>
-  accessOrder: string[]  // Most recent at end
+  accessOrder: string[] // Most recent at end
   init: () => () => void
   loadHistory: (agentId: string) => Promise<void>
   clear: (agentId: string) => void
@@ -1586,17 +1704,17 @@ async loadMore() {
 In `AgentList.tsx`, at the bottom of the history group:
 
 ```tsx
-{hasMore && (
-  <button
-    className="agent-list__load-more"
-    onClick={onLoadMore}
-  >
-    Load more agents…
-  </button>
-)}
+{
+  hasMore && (
+    <button className="agent-list__load-more" onClick={onLoadMore}>
+      Load more agents…
+    </button>
+  )
+}
 ```
 
 CSS:
+
 ```css
 .agent-list__load-more {
   display: block;
@@ -1624,7 +1742,7 @@ In `AgentList.tsx`, replace the current single-input search with a filter that i
 ```tsx
 // Extract unique repos from agents:
 const repos = useMemo(() => {
-  const set = new Set(agents.map(a => a.repo))
+  const set = new Set(agents.map((a) => a.repo))
   return Array.from(set).sort()
 }, [agents])
 
@@ -1634,7 +1752,7 @@ const [repoFilter, setRepoFilter] = useState<string | null>(null)
 const filtered = useMemo(() => {
   let list = agents
   if (repoFilter) {
-    list = list.filter(a => a.repo === repoFilter)
+    list = list.filter((a) => a.repo === repoFilter)
   }
   if (!searchText) return list
   const lower = searchText.toLowerCase()
@@ -1650,28 +1768,31 @@ const filtered = useMemo(() => {
 Render repo chips above the agent groups:
 
 ```tsx
-{repos.length > 1 && (
-  <div className="agent-list__repo-chips">
-    <button
-      className={`agent-list__repo-chip${repoFilter === null ? ' agent-list__repo-chip--active' : ''}`}
-      onClick={() => setRepoFilter(null)}
-    >
-      All
-    </button>
-    {repos.map(repo => (
+{
+  repos.length > 1 && (
+    <div className="agent-list__repo-chips">
       <button
-        key={repo}
-        className={`agent-list__repo-chip${repoFilter === repo ? ' agent-list__repo-chip--active' : ''}`}
-        onClick={() => setRepoFilter(repoFilter === repo ? null : repo)}
+        className={`agent-list__repo-chip${repoFilter === null ? ' agent-list__repo-chip--active' : ''}`}
+        onClick={() => setRepoFilter(null)}
       >
-        {repo}
+        All
       </button>
-    ))}
-  </div>
-)}
+      {repos.map((repo) => (
+        <button
+          key={repo}
+          className={`agent-list__repo-chip${repoFilter === repo ? ' agent-list__repo-chip--active' : ''}`}
+          onClick={() => setRepoFilter(repoFilter === repo ? null : repo)}
+        >
+          {repo}
+        </button>
+      ))}
+    </div>
+  )
+}
 ```
 
 CSS:
+
 ```css
 .agent-list__repo-chips {
   display: flex;
@@ -1741,6 +1862,7 @@ Create one PR per phase:
    - Running cost estimate, show full toggle, LRU eviction, history pagination, repo selector
 
 Each PR should include:
+
 - All test files for the phase
 - Screenshot/ASCII art of each changed UI surface
 - `npm run typecheck && npm test` passing before PR creation
@@ -1749,25 +1871,25 @@ Each PR should include:
 
 ## Finding → Task Cross-Reference
 
-| Finding | Description | Task | Phase |
-|---------|------------|------|-------|
-| #5 | Event cap notification | 3 | 2 |
-| #8 | /retry silent fail feedback | 1 | 2 |
-| #9 | Console search/filter | 6 | 2 |
-| #11 | Steering message echo | 5 | 2 |
-| #12 | Status icons in sidebar | 4 | 2 |
-| #18 | Done/cancelled labels | 4 | 2 |
-| #21 | Command bar disabled state | 1 | 2 |
-| #22 | Tool-specific summaries | 7 | 2 |
-| #23 | Empty state context | 2 | 2 |
-| #6 | Minimum width enforcement | 8 | 3 |
-| #13 | Collapsible Zone 3 chart | 8 | 3 |
-| #16 | Resizable sidebar | 9 | 3 |
-| #17 | Scroll-into-view on selection | 8 | 3 |
-| #19 | Pill accents reflect status | 8 | 3 |
-| #24 | Completion card wrapping | 8 | 3 |
-| #10 | Running cost estimate | 10 | 4 |
-| #14 | LRU eviction for events | 10 | 4 |
-| #15 | Repo selector dropdown | 10 | 4 |
-| #20 | Show full for expanded content | 10 | 4 |
-| #25 | History pagination | 10 | 4 |
+| Finding | Description                    | Task | Phase |
+| ------- | ------------------------------ | ---- | ----- |
+| #5      | Event cap notification         | 3    | 2     |
+| #8      | /retry silent fail feedback    | 1    | 2     |
+| #9      | Console search/filter          | 6    | 2     |
+| #11     | Steering message echo          | 5    | 2     |
+| #12     | Status icons in sidebar        | 4    | 2     |
+| #18     | Done/cancelled labels          | 4    | 2     |
+| #21     | Command bar disabled state     | 1    | 2     |
+| #22     | Tool-specific summaries        | 7    | 2     |
+| #23     | Empty state context            | 2    | 2     |
+| #6      | Minimum width enforcement      | 8    | 3     |
+| #13     | Collapsible Zone 3 chart       | 8    | 3     |
+| #16     | Resizable sidebar              | 9    | 3     |
+| #17     | Scroll-into-view on selection  | 8    | 3     |
+| #19     | Pill accents reflect status    | 8    | 3     |
+| #24     | Completion card wrapping       | 8    | 3     |
+| #10     | Running cost estimate          | 10   | 4     |
+| #14     | LRU eviction for events        | 10   | 4     |
+| #15     | Repo selector dropdown         | 10   | 4     |
+| #20     | Show full for expanded content | 10   | 4     |
+| #25     | History pagination             | 10   | 4     |

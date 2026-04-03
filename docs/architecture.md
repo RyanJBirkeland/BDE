@@ -59,22 +59,22 @@ BDE is an Electron desktop app with three process layers:
 
 All handlers use the `safeHandle()` wrapper (`src/main/ipc-utils.ts`) for centralized error logging.
 
-| Module | File | Channels |
-|--------|------|----------|
-| Config | `handlers/config-handlers.ts` | `settings:get`, `settings:set`, `settings:getJson`, `settings:setJson`, `settings:delete` |
-| Agent | `handlers/agent-handlers.ts` | `local:getAgentProcesses`, `local:spawnClaudeAgent`, `local:tailAgentLog`, `local:sendToAgent`, `local:isInteractive`, `agent:steer`, `agent:kill`, `config:getAgentConfig`, `config:saveAgentConfig`, `agents:list`, `agents:readLog`, `agents:import` |
-| Agent Manager | `handlers/agent-manager-handlers.ts` | `agent-manager:status`, `agent-manager:kill` |
-| Auth | `handlers/auth-handlers.ts` | `auth:checkStatus` |
-| Git | `handlers/git-handlers.ts` | `github:fetch`, `git:getRepoPaths`, `git:status`, `git:diff`, `git:stage`, `git:unstage`, `git:commit`, `git:push`, `git:branches`, `git:checkout`, `pr:pollStatuses`, `pr:checkConflictFiles`, `pr:getList`, `pr:refreshList` |
-| Sprint | `handlers/sprint-local.ts` | `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:claimTask`, `sprint:healthCheck`, `sprint:readLog` |
-| Sprint Listeners | `handlers/sprint-listeners.ts` | DB file watcher, mutation observer |
-| Sprint Spec | `handlers/sprint-spec.ts` | `sprint:readSpecFile`, `sprint:generatePrompt` |
-| Templates | `handlers/template-handlers.ts` | `templates:list`, `templates:save`, `templates:delete`, `templates:reset` |
-| Terminal | `handlers/terminal-handlers.ts` | `terminal:create`, `terminal:resize`, `terminal:kill`, `terminal:write` (fire-and-forget) |
-| Window | `handlers/window-handlers.ts` | `window:openExternal`, `agent:killLocal`, `window:setTitle` (fire-and-forget) |
-| Cost | `handlers/cost-handlers.ts` | `cost:summary`, `cost:agentRuns`, `cost:getAgentHistory` |
-| Workbench | `handlers/workbench.ts` | `workbench:researchRepo`, `workbench:generateSpec`, `workbench:checkSpec`, `workbench:checkOperational`, `workbench:chat` |
-| Filesystem | `fs.ts` | `memory:listFiles`, `memory:readFile`, `memory:writeFile`, `fs:openFileDialog`, `fs:readFileAsBase64`, `fs:readFileAsText`, `fs:openDirectoryDialog` |
+| Module           | File                                 | Channels                                                                                                                                                                                                                                                |
+| ---------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Config           | `handlers/config-handlers.ts`        | `settings:get`, `settings:set`, `settings:getJson`, `settings:setJson`, `settings:delete`                                                                                                                                                               |
+| Agent            | `handlers/agent-handlers.ts`         | `local:getAgentProcesses`, `local:spawnClaudeAgent`, `local:tailAgentLog`, `local:sendToAgent`, `local:isInteractive`, `agent:steer`, `agent:kill`, `config:getAgentConfig`, `config:saveAgentConfig`, `agents:list`, `agents:readLog`, `agents:import` |
+| Agent Manager    | `handlers/agent-manager-handlers.ts` | `agent-manager:status`, `agent-manager:kill`                                                                                                                                                                                                            |
+| Auth             | `handlers/auth-handlers.ts`          | `auth:checkStatus`                                                                                                                                                                                                                                      |
+| Git              | `handlers/git-handlers.ts`           | `github:fetch`, `git:getRepoPaths`, `git:status`, `git:diff`, `git:stage`, `git:unstage`, `git:commit`, `git:push`, `git:branches`, `git:checkout`, `pr:pollStatuses`, `pr:checkConflictFiles`, `pr:getList`, `pr:refreshList`                          |
+| Sprint           | `handlers/sprint-local.ts`           | `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:claimTask`, `sprint:healthCheck`, `sprint:readLog`                                                                                                                            |
+| Sprint Listeners | `handlers/sprint-listeners.ts`       | DB file watcher, mutation observer                                                                                                                                                                                                                      |
+| Sprint Spec      | `handlers/sprint-spec.ts`            | `sprint:readSpecFile`, `sprint:generatePrompt`                                                                                                                                                                                                          |
+| Templates        | `handlers/template-handlers.ts`      | `templates:list`, `templates:save`, `templates:delete`, `templates:reset`                                                                                                                                                                               |
+| Terminal         | `handlers/terminal-handlers.ts`      | `terminal:create`, `terminal:resize`, `terminal:kill`, `terminal:write` (fire-and-forget)                                                                                                                                                               |
+| Window           | `handlers/window-handlers.ts`        | `window:openExternal`, `agent:killLocal`, `window:setTitle` (fire-and-forget)                                                                                                                                                                           |
+| Cost             | `handlers/cost-handlers.ts`          | `cost:summary`, `cost:agentRuns`, `cost:getAgentHistory`                                                                                                                                                                                                |
+| Workbench        | `handlers/workbench.ts`              | `workbench:researchRepo`, `workbench:generateSpec`, `workbench:checkSpec`, `workbench:checkOperational`, `workbench:chat`                                                                                                                               |
+| Filesystem       | `fs.ts`                              | `memory:listFiles`, `memory:readFile`, `memory:writeFile`, `fs:openFileDialog`, `fs:readFileAsBase64`, `fs:readFileAsText`, `fs:openDirectoryDialog`                                                                                                    |
 
 ### Preload Bridge
 
@@ -82,14 +82,14 @@ All handlers use the `safeHandle()` wrapper (`src/main/ipc-utils.ts`) for centra
 
 ### Push Events (Main → Renderer)
 
-| Event | Trigger | Purpose |
-|-------|---------|---------|
-| `sprint:externalChange` | `fs.watch()` on `~/.bde/bde.db` + WAL (500ms debounce) | Notify renderer of external DB writes |
-| `terminal:data:{id}` | PTY stdout | Stream terminal output to renderer |
-| `terminal:exit:{id}` | PTY process exit | Notify terminal tab of process end |
-| `task:output` | `POST /queue/tasks/:id/output` via TaskQueueAPI | Forward task runner output events to renderer |
-| `pr:listUpdated` | PR poller (60s interval) | Push updated PR list to renderer |
-| `sprint:sseEvent` | External SSE connection (`sprint-sse.ts`) | Relay external task runner SSE events to renderer |
+| Event                   | Trigger                                                | Purpose                                           |
+| ----------------------- | ------------------------------------------------------ | ------------------------------------------------- |
+| `sprint:externalChange` | `fs.watch()` on `~/.bde/bde.db` + WAL (500ms debounce) | Notify renderer of external DB writes             |
+| `terminal:data:{id}`    | PTY stdout                                             | Stream terminal output to renderer                |
+| `terminal:exit:{id}`    | PTY process exit                                       | Notify terminal tab of process end                |
+| `task:output`           | `POST /queue/tasks/:id/output` via TaskQueueAPI        | Forward task runner output events to renderer     |
+| `pr:listUpdated`        | PR poller (60s interval)                               | Push updated PR list to renderer                  |
+| `sprint:sseEvent`       | External SSE connection (`sprint-sse.ts`)              | Relay external task runner SSE events to renderer |
 
 ---
 
@@ -103,15 +103,15 @@ The TaskQueueAPI is an HTTP server that allows external task runners to claim an
 
 ### Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/queue/health` | Health check with queue stats and API version |
-| `GET` | `/queue/tasks` | List tasks (optional `?status=` filter) |
-| `GET` | `/queue/tasks/:id` | Get a single task by ID |
-| `POST` | `/queue/tasks/:id/claim` | Claim a queued task (body: `{ executorId }`) |
-| `PATCH` | `/queue/tasks/:id/status` | Update task status and fields |
-| `POST` | `/queue/tasks/:id/output` | Post output events for a task (body: `{ events }`) |
-| `GET` | `/queue/events` | SSE stream of task mutations (`task:queued`, `task:updated`, `heartbeat`) |
+| Method  | Path                      | Description                                                               |
+| ------- | ------------------------- | ------------------------------------------------------------------------- |
+| `GET`   | `/queue/health`           | Health check with queue stats and API version                             |
+| `GET`   | `/queue/tasks`            | List tasks (optional `?status=` filter)                                   |
+| `GET`   | `/queue/tasks/:id`        | Get a single task by ID                                                   |
+| `POST`  | `/queue/tasks/:id/claim`  | Claim a queued task (body: `{ executorId }`)                              |
+| `PATCH` | `/queue/tasks/:id/status` | Update task status and fields                                             |
+| `POST`  | `/queue/tasks/:id/output` | Post output events for a task (body: `{ events }`)                        |
+| `GET`   | `/queue/events`           | SSE stream of task mutations (`task:queued`, `task:updated`, `heartbeat`) |
 
 ### SSE Events
 
@@ -253,6 +253,7 @@ Agent logs stored at: `/tmp/bde-agents/{agentId}/output.log` (7-day auto-cleanup
 ### Agent Steering
 
 Running agents accept follow-up messages via stdin (stream-json protocol):
+
 - `sendToAgent(pid, message)` — by PID (for process-list agents)
 - `steerAgent(agentId, message)` — by UUID (for sprint LogDrawer)
 
@@ -301,14 +302,14 @@ backlog ──→ queued ──→ active ──→ done
                            └──→ failed
 ```
 
-| State | Meaning | Entered By |
-|-------|---------|------------|
-| `backlog` | Draft idea, spec in progress | User creates ticket via New Ticket modal |
-| `queued` | Ready for agent pickup | User drags to Sprint column or clicks "Push to Sprint" |
-| `active` | Agent working on task | User clicks "Launch" (spawns Claude agent) or task runner claims via API |
-| `done` | PR merged | `pollPrStatuses` detects merge via GitHub API |
-| `cancelled` | PR closed without merge | `pollPrStatuses` detects close via GitHub API |
-| `failed` | Agent exited with error | Agent process exits non-zero or task runner reports failure |
+| State       | Meaning                      | Entered By                                                               |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------ |
+| `backlog`   | Draft idea, spec in progress | User creates ticket via New Ticket modal                                 |
+| `queued`    | Ready for agent pickup       | User drags to Sprint column or clicks "Push to Sprint"                   |
+| `active`    | Agent working on task        | User clicks "Launch" (spawns Claude agent) or task runner claims via API |
+| `done`      | PR merged                    | `pollPrStatuses` detects merge via GitHub API                            |
+| `cancelled` | PR closed without merge      | `pollPrStatuses` detects close via GitHub API                            |
+| `failed`    | Agent exited with error      | Agent process exits non-zero or task runner reports failure              |
 
 ---
 
@@ -327,20 +328,20 @@ BDE uses SSE in two directions:
 
 All intervals defined in `src/renderer/src/lib/constants.ts`:
 
-| Constant | Interval | Purpose |
-|----------|----------|---------|
-| `POLL_LOG_INTERVAL` | 1s | Agent log tailing |
-| `POLL_PROCESSES_INTERVAL` | 5s | Agent process scan (ps + lsof) |
-| `POLL_AGENTS_INTERVAL` | 10s | Agent history list refresh |
-| `POLL_SESSIONS_INTERVAL` | 10s | Gateway session list |
-| `POLL_GIT_STATUS_INTERVAL` | 30s | Git status in PR Station |
-| `POLL_SPRINT_INTERVAL` | 120s | Sprint task list (idle) |
-| `POLL_SPRINT_ACTIVE_MS` | 30s | Sprint task list (active tasks) |
-| `POLL_PR_STATUS_MS` | 60s | PR merge/close status via GitHub REST |
-| `POLL_COST_INTERVAL` | 30s | Cost view data refresh |
-| `POLL_HEALTH_CHECK_MS` | 600s | Sprint health check |
-| `POLL_CHAT_STREAMING_MS` | 1s | Chat history (streaming) |
-| `POLL_CHAT_IDLE_MS` | 5s | Chat history (idle) |
+| Constant                   | Interval | Purpose                               |
+| -------------------------- | -------- | ------------------------------------- |
+| `POLL_LOG_INTERVAL`        | 1s       | Agent log tailing                     |
+| `POLL_PROCESSES_INTERVAL`  | 5s       | Agent process scan (ps + lsof)        |
+| `POLL_AGENTS_INTERVAL`     | 10s      | Agent history list refresh            |
+| `POLL_SESSIONS_INTERVAL`   | 10s      | Gateway session list                  |
+| `POLL_GIT_STATUS_INTERVAL` | 30s      | Git status in PR Station              |
+| `POLL_SPRINT_INTERVAL`     | 120s     | Sprint task list (idle)               |
+| `POLL_SPRINT_ACTIVE_MS`    | 30s      | Sprint task list (active tasks)       |
+| `POLL_PR_STATUS_MS`        | 60s      | PR merge/close status via GitHub REST |
+| `POLL_COST_INTERVAL`       | 30s      | Cost view data refresh                |
+| `POLL_HEALTH_CHECK_MS`     | 600s     | Sprint health check                   |
+| `POLL_CHAT_STREAMING_MS`   | 1s       | Chat history (streaming)              |
+| `POLL_CHAT_IDLE_MS`        | 5s       | Chat history (idle)                   |
 
 PR list polling runs at 60s from `src/main/pr-poller.ts` (main-process poller, not renderer-driven).
 
@@ -348,14 +349,14 @@ PR list polling runs at 60s from `src/main/pr-poller.ts` (main-process poller, n
 
 ## External Dependencies
 
-| Dependency | Purpose | Where Used |
-|-----------|---------|------------|
-| OpenClaw Gateway (optional) | AI agent sessions, tool invocation, RPC | WebSocket on port 18789 |
-| TaskQueueAPI | Task queue for external runners | HTTP on port 18790 (localhost) |
-| GitHub REST API | PR status polling, PR list | `git.ts`, `pr-poller.ts`, `git-handlers.ts` |
-| Claude CLI | Agent execution | `local-agents.ts:spawnClaudeAgent()` |
-| better-sqlite3 | Local database | `db.ts`, `agent-history.ts`, `handlers/sprint-local.ts` |
-| node-pty | Terminal PTY management | `handlers/terminal-handlers.ts` |
+| Dependency                  | Purpose                                 | Where Used                                              |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------- |
+| OpenClaw Gateway (optional) | AI agent sessions, tool invocation, RPC | WebSocket on port 18789                                 |
+| TaskQueueAPI                | Task queue for external runners         | HTTP on port 18790 (localhost)                          |
+| GitHub REST API             | PR status polling, PR list              | `git.ts`, `pr-poller.ts`, `git-handlers.ts`             |
+| Claude CLI                  | Agent execution                         | `local-agents.ts:spawnClaudeAgent()`                    |
+| better-sqlite3              | Local database                          | `db.ts`, `agent-history.ts`, `handlers/sprint-local.ts` |
+| node-pty                    | Terminal PTY management                 | `handlers/terminal-handlers.ts`                         |
 
 ---
 

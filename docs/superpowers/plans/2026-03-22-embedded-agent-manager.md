@@ -13,6 +13,7 @@
 ## File Structure
 
 ### New files
+
 - `src/main/agent-manager/types.ts` — config, handle, state types
 - `src/main/agent-manager/concurrency.ts` — ConcurrencyState entity (pure logic)
 - `src/main/agent-manager/watchdog.ts` — idle/runtime/rate-limit monitoring
@@ -25,6 +26,7 @@
 - `src/main/agent-manager/__tests__/*.test.ts` — unit tests per module
 
 ### Modified files
+
 - `src/main/data/sprint-queries.ts` — add `getQueuedTasks(limit)`, `getOrphanedTasks(claimedBy)` (note: `claimTask()` already exists)
 - `src/main/index.ts` — wire AgentManager on startup
 - `src/main/handlers/agent-handlers.ts` — replace throw with AgentManager delegation
@@ -37,6 +39,7 @@
 ## Task 1: Types & Concurrency Entity
 
 **Files:**
+
 - Create: `src/main/agent-manager/types.ts`
 - Create: `src/main/agent-manager/concurrency.ts`
 - Create: `src/main/agent-manager/__tests__/concurrency.test.ts`
@@ -47,12 +50,12 @@
 // src/main/agent-manager/types.ts
 
 export interface AgentManagerConfig {
-  maxConcurrent: number       // default 2
-  worktreeBase: string        // default /tmp/worktrees/bde
-  maxRuntimeMs: number        // default 3_600_000 (60min)
-  idleTimeoutMs: number       // default 900_000 (15min)
-  pollIntervalMs: number      // default 30_000
-  defaultModel: string        // default claude-sonnet-4-5
+  maxConcurrent: number // default 2
+  worktreeBase: string // default /tmp/worktrees/bde
+  maxRuntimeMs: number // default 3_600_000 (60min)
+  idleTimeoutMs: number // default 900_000 (15min)
+  pollIntervalMs: number // default 30_000
+  defaultModel: string // default claude-sonnet-4-5
 }
 
 export const DEFAULT_CONFIG: AgentManagerConfig = {
@@ -61,7 +64,7 @@ export const DEFAULT_CONFIG: AgentManagerConfig = {
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5',
+  defaultModel: 'claude-sonnet-4-5'
 }
 
 export const EXECUTOR_ID = 'bde-embedded'
@@ -150,7 +153,14 @@ export interface ConcurrencyState {
 }
 
 export function makeConcurrencyState(maxSlots: number): ConcurrencyState {
-  return { maxSlots, effectiveSlots: maxSlots, activeCount: 0, recoveryDueAt: null, consecutiveRateLimits: 0, atFloor: false }
+  return {
+    maxSlots,
+    effectiveSlots: maxSlots,
+    activeCount: 0,
+    recoveryDueAt: null,
+    consecutiveRateLimits: 0,
+    atFloor: false
+  }
 }
 
 export function availableSlots(s: ConcurrencyState): number {
@@ -161,8 +171,11 @@ export function applyBackpressure(s: ConcurrencyState, now: number): Concurrency
   if (s.atFloor) return { ...s, consecutiveRateLimits: s.consecutiveRateLimits + 1 }
   const newSlots = Math.max(1, s.effectiveSlots - 1)
   return {
-    ...s, effectiveSlots: newSlots, recoveryDueAt: now + RATE_LIMIT_COOLDOWN_MS,
-    consecutiveRateLimits: s.consecutiveRateLimits + 1, atFloor: newSlots <= 1,
+    ...s,
+    effectiveSlots: newSlots,
+    recoveryDueAt: now + RATE_LIMIT_COOLDOWN_MS,
+    consecutiveRateLimits: s.consecutiveRateLimits + 1,
+    atFloor: newSlots <= 1
   }
 }
 
@@ -170,9 +183,11 @@ export function tryRecover(s: ConcurrencyState, now: number): ConcurrencyState {
   if (s.recoveryDueAt !== null && now >= s.recoveryDueAt && s.effectiveSlots < s.maxSlots) {
     const newSlots = Math.min(s.maxSlots, s.effectiveSlots + 1)
     return {
-      ...s, effectiveSlots: newSlots,
+      ...s,
+      effectiveSlots: newSlots,
       recoveryDueAt: newSlots < s.maxSlots ? now + RATE_LIMIT_COOLDOWN_MS : null,
-      consecutiveRateLimits: 0, atFloor: false,
+      consecutiveRateLimits: 0,
+      atFloor: false
     }
   }
   return s
@@ -195,6 +210,7 @@ git commit -m "feat(agent-manager): add types and concurrency entity"
 ## Task 2: Watchdog & Fast-Fail
 
 **Files:**
+
 - Create: `src/main/agent-manager/watchdog.ts`
 - Create: `src/main/agent-manager/fast-fail.ts`
 - Create: `src/main/agent-manager/__tests__/watchdog.test.ts`
@@ -213,7 +229,11 @@ import { RATE_LIMIT_LOOP_THRESHOLD } from './types'
 
 export type WatchdogVerdict = 'ok' | 'idle' | 'max-runtime' | 'rate-limit-loop'
 
-export function checkAgent(agent: ActiveAgent, now: number, config: AgentManagerConfig): WatchdogVerdict {
+export function checkAgent(
+  agent: ActiveAgent,
+  now: number,
+  config: AgentManagerConfig
+): WatchdogVerdict {
   if (now - agent.startedAt >= config.maxRuntimeMs) return 'max-runtime'
   if (now - agent.lastOutputAt >= config.idleTimeoutMs) return 'idle'
   if (agent.rateLimitCount >= RATE_LIMIT_LOOP_THRESHOLD) return 'rate-limit-loop'
@@ -233,7 +253,11 @@ import { FAST_FAIL_THRESHOLD_MS, MAX_FAST_FAILS } from './types'
 
 export type FastFailResult = 'normal-exit' | 'fast-fail-requeue' | 'fast-fail-exhausted'
 
-export function classifyExit(spawnedAt: number, exitedAt: number, currentFastFailCount: number): FastFailResult {
+export function classifyExit(
+  spawnedAt: number,
+  exitedAt: number,
+  currentFastFailCount: number
+): FastFailResult {
   if (exitedAt - spawnedAt >= FAST_FAIL_THRESHOLD_MS) return 'normal-exit'
   const newCount = currentFastFailCount + 1
   return newCount >= MAX_FAST_FAILS ? 'fast-fail-exhausted' : 'fast-fail-requeue'
@@ -253,6 +277,7 @@ git commit -m "feat(agent-manager): add watchdog and fast-fail detection"
 ## Task 3: Worktree Management
 
 **Files:**
+
 - Create: `src/main/agent-manager/worktree.ts`
 - Create: `src/main/agent-manager/__tests__/worktree.test.ts`
 
@@ -263,6 +288,7 @@ Test `branchNameForTask` (slug generation), `setupWorktree` (mocked execFile), `
 - [ ] **Step 2: Implement worktree.ts**
 
 Key functions:
+
 - `branchNameForTask(title: string): string` — `agent/<slugified-title>`
 - `setupWorktree(opts: { repoPath, branch, worktreePath, taskId }): Promise<{ worktreePath, branch }>`
   - Uses `execFile('git', ['worktree', 'add', '-b', branch, path])` in repoPath
@@ -284,6 +310,7 @@ git commit -m "feat(agent-manager): add worktree management with repo locking"
 ## Task 4: SDK Adapter
 
 **Files:**
+
 - Create: `src/main/agent-manager/sdk-adapter.ts`
 - Create: `src/main/agent-manager/__tests__/sdk-adapter.test.ts`
 - Modify: `package.json` — add `@anthropic-ai/claude-agent-sdk`
@@ -321,16 +348,16 @@ export async function spawnAgent(opts: {
       cwd: opts.cwd,
       model: opts.model,
       permissionMode: 'bypassPermissions',
-      allowedTools: opts.allowedTools,
+      allowedTools: opts.allowedTools
     },
-    env,
+    env
   })
 
   return {
     messages: agent,
     sessionId: agent.sessionId ?? crypto.randomUUID(),
     abort: () => agent.abort(),
-    steer: (msg: string) => agent.steer(msg),
+    steer: (msg: string) => agent.steer(msg)
   }
 }
 ```
@@ -347,6 +374,7 @@ git commit -m "feat(agent-manager): add SDK adapter for agent spawning"
 ## Task 5: Completion Handler
 
 **Files:**
+
 - Create: `src/main/agent-manager/completion.ts`
 - Create: `src/main/agent-manager/__tests__/completion.test.ts`
 
@@ -377,7 +405,9 @@ export async function resolveSuccess(opts: {
   durationMs: number
 }): Promise<void> {
   // 1. Detect actual branch
-  const { stdout: branch } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: opts.worktreePath })
+  const { stdout: branch } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+    cwd: opts.worktreePath
+  })
   const branchName = branch.trim()
 
   // 2. Push branch
@@ -387,34 +417,50 @@ export async function resolveSuccess(opts: {
   let prUrl: string | null = null
   let prNumber: number | null = null
   try {
-    const { stdout } = await execFile('gh', [
-      'pr', 'create', '--title', opts.taskTitle,
-      '--body', `Automated by BDE agent manager`,
-      '--head', branchName, '--repo', opts.ghRepo,
-    ], { cwd: opts.worktreePath })
+    const { stdout } = await execFile(
+      'gh',
+      [
+        'pr',
+        'create',
+        '--title',
+        opts.taskTitle,
+        '--body',
+        `Automated by BDE agent manager`,
+        '--head',
+        branchName,
+        '--repo',
+        opts.ghRepo
+      ],
+      { cwd: opts.worktreePath }
+    )
     const match = stdout.match(/https:\/\/github\.com\/[^\s]+\/pull\/(\d+)/)
-    if (match) { prUrl = match[0]; prNumber = parseInt(match[1], 10) }
+    if (match) {
+      prUrl = match[0]
+      prNumber = parseInt(match[1], 10)
+    }
   } catch (err) {
-    console.error(`[agent-manager] PR creation failed for ${opts.taskId}: ${err instanceof Error ? err.message : err}`)
+    console.error(
+      `[agent-manager] PR creation failed for ${opts.taskId}: ${err instanceof Error ? err.message : err}`
+    )
   }
 
   // 4. Update task — stays active with PR info
   await updateTask(opts.taskId, {
-    ...(prUrl ? { pr_url: prUrl, pr_number: prNumber, pr_status: 'open' } : {}),
+    ...(prUrl ? { pr_url: prUrl, pr_number: prNumber, pr_status: 'open' } : {})
   })
 }
 
-export async function resolveFailure(opts: {
-  taskId: string
-  retryCount: number
-}): Promise<void> {
+export async function resolveFailure(opts: { taskId: string; retryCount: number }): Promise<void> {
   if (opts.retryCount < MAX_RETRIES) {
     await updateTask(opts.taskId, {
-      status: 'queued', retry_count: opts.retryCount + 1, claimed_by: null,
+      status: 'queued',
+      retry_count: opts.retryCount + 1,
+      claimed_by: null
     })
   } else {
     await updateTask(opts.taskId, {
-      status: 'failed', completed_at: new Date().toISOString(),
+      status: 'failed',
+      completed_at: new Date().toISOString()
     })
   }
 }
@@ -432,6 +478,7 @@ git commit -m "feat(agent-manager): add completion handler (push + PR)"
 ## Task 6: Orphan Recovery
 
 **Files:**
+
 - Create: `src/main/agent-manager/orphan-recovery.ts`
 - Create: `src/main/agent-manager/__tests__/orphan-recovery.test.ts`
 - Modify: `src/main/data/sprint-queries.ts` — add `getQueuedTasks()` and `getOrphanedTasks()`
@@ -442,8 +489,10 @@ git commit -m "feat(agent-manager): add completion handler (push + PR)"
 // Add to sprint-queries.ts:
 export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
   const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks').select('*')
-    .eq('status', 'queued').is('claimed_by', null)
+    .from('sprint_tasks')
+    .select('*')
+    .eq('status', 'queued')
+    .is('claimed_by', null)
     .order('priority', { ascending: true })
     .order('created_at', { ascending: true })
     .limit(limit)
@@ -453,8 +502,10 @@ export async function getQueuedTasks(limit: number): Promise<SprintTask[]> {
 
 export async function getOrphanedTasks(claimedBy: string): Promise<SprintTask[]> {
   const { data, error } = await getSupabaseClient()
-    .from('sprint_tasks').select('*')
-    .eq('status', 'active').eq('claimed_by', claimedBy)
+    .from('sprint_tasks')
+    .select('*')
+    .eq('status', 'active')
+    .eq('claimed_by', claimedBy)
   if (error) throw error
   return data ?? []
 }
@@ -480,12 +531,14 @@ git commit -m "feat(agent-manager): add orphan recovery and queued task query"
 ## Task 7: Agent Manager Core (Drain Loop)
 
 **Files:**
+
 - Create: `src/main/agent-manager/index.ts`
 - Create: `src/main/agent-manager/__tests__/index.test.ts`
 
 - [ ] **Step 1: Implement createAgentManager()**
 
 The factory function that ties everything together:
+
 - Creates `ConcurrencyState` from config
 - Maintains `activeAgents: Map<string, ActiveAgent>`
 - `start()`: runs orphan recovery, prunes worktrees, starts drain loop interval + watchdog interval
@@ -493,6 +546,7 @@ The factory function that ties everything together:
 - `getStatus()`: returns running state, concurrency, active agent list
 
 The drain loop:
+
 1. Check shutdown
 2. Check `availableSlots(concurrency)` — skip if 0
 3. `AuthGuard.checkAuthStatus()` — skip cycle if expired
@@ -504,9 +558,10 @@ The drain loop:
 9. Message consumption loop: update watchdog state, track cost, emit `agent-manager:agent-output` IPC events, persist to event bus via `getEventBus().emit('agent:event', ...)`
 10. On agent exit: classify (fast-fail or normal), resolve success/failure, cleanup worktree, write `agent_runs` record via `agent-history.ts`, unregister, emit `agent-manager:agent-completed` IPC event
 11. On error: emit `agent-manager:error` IPC event
-10. `tryRecover(concurrency)` at end of cycle
+12. `tryRecover(concurrency)` at end of cycle
 
 The watchdog loop (every 10s):
+
 - For each active agent: `checkAgent()` → if not `ok`, abort agent + handle the verdict
 
 - [ ] **Step 2: Write integration tests**
@@ -525,6 +580,7 @@ git commit -m "feat(agent-manager): core drain loop with watchdog"
 ## Task 8: Wire into BDE
 
 **Files:**
+
 - Modify: `src/main/index.ts`
 - Modify: `src/main/handlers/agent-handlers.ts`
 - Modify: `src/main/handlers/agent-manager-handlers.ts`
@@ -545,7 +601,7 @@ const agentManagerConfig = {
   maxRuntimeMs: getSettingJson('agentManager.maxRuntimeMs') ?? 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
-  defaultModel: getSettingJson('agentManager.defaultModel') ?? 'claude-sonnet-4-5',
+  defaultModel: getSettingJson('agentManager.defaultModel') ?? 'claude-sonnet-4-5'
 }
 
 const autoStart = getSettingJson('agentManager.autoStart') ?? true
@@ -617,11 +673,13 @@ git commit -m "feat: wire AgentManager into BDE main process"
 ## Task 9: Settings UI
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx`
 
 - [ ] **Step 1: Add AgentManager settings section to SettingsView**
 
 Read the existing SettingsView to understand the pattern for settings fields. Add a new section "Agent Manager" with fields for:
+
 - Max concurrent agents (`agentManager.maxConcurrent`, number input, default 2)
 - Default model (`agentManager.defaultModel`, text input, default `claude-sonnet-4-5`)
 - Worktree base (`agentManager.worktreeBase`, text input, default `/tmp/worktrees/bde`)
@@ -660,6 +718,7 @@ Verify no startup errors. Check console for "AgentManager started" or similar.
 - [ ] **Step 2: Queue a task in Sprint board**
 
 Create a task, push to queued. Verify:
+
 - AgentManager picks it up within 30s
 - Agent spawns in worktree
 - Logs stream to LogDrawer

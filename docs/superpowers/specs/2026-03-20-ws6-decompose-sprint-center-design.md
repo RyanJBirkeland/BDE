@@ -96,38 +96,60 @@ export function useSprintTaskActions() {
   const launchTask = useSprintTasks((s) => s.launchTask)
   const createTask = useSprintTasks((s) => s.createTask)
 
-  const handleDragEnd = useCallback((taskId: string, newStatus: string) => {
-    updateTask(taskId, { status: newStatus })
-  }, [updateTask])
+  const handleDragEnd = useCallback(
+    (taskId: string, newStatus: string) => {
+      updateTask(taskId, { status: newStatus })
+    },
+    [updateTask]
+  )
 
-  const handleMarkDone = useCallback((task: SprintTask) => {
-    updateTask(task.id, { status: TASK_STATUS.DONE })
-  }, [updateTask])
+  const handleMarkDone = useCallback(
+    (task: SprintTask) => {
+      updateTask(task.id, { status: TASK_STATUS.DONE })
+    },
+    [updateTask]
+  )
 
-  const handleStop = useCallback(async (task: SprintTask) => {
-    if (!task.agent_run_id) return  // guard: no agent to stop
-    if (!confirm('Stop this agent?')) return
-    await window.api.killAgent(task.agent_run_id)
-    await updateTask(task.id, { status: TASK_STATUS.CANCELLED })
-  }, [updateTask])
+  const handleStop = useCallback(
+    async (task: SprintTask) => {
+      if (!task.agent_run_id) return // guard: no agent to stop
+      if (!confirm('Stop this agent?')) return
+      await window.api.killAgent(task.agent_run_id)
+      await updateTask(task.id, { status: TASK_STATUS.CANCELLED })
+    },
+    [updateTask]
+  )
 
   // Rerun creates a NEW task (cloned from original), not an in-place mutation
-  const handleRerun = useCallback(async (task: SprintTask) => {
-    await createTask({
-      title: task.title,
-      prompt: task.prompt,
-      repo: task.repo,
-      priority: task.priority,
-      template_name: task.template_name,
-    })
-  }, [createTask])
+  const handleRerun = useCallback(
+    async (task: SprintTask) => {
+      await createTask({
+        title: task.title,
+        prompt: task.prompt,
+        repo: task.repo,
+        priority: task.priority,
+        template_name: task.template_name
+      })
+    },
+    [createTask]
+  )
 
-  const handleDelete = useCallback(async (task: SprintTask) => {
-    if (!confirm(`Delete "${task.title}"?`)) return
-    await deleteTask(task.id)
-  }, [deleteTask])
+  const handleDelete = useCallback(
+    async (task: SprintTask) => {
+      if (!confirm(`Delete "${task.title}"?`)) return
+      await deleteTask(task.id)
+    },
+    [deleteTask]
+  )
 
-  return { handleDragEnd, handleMarkDone, handleStop, handleRerun, handleDelete, handleLaunch: launchTask }
+  return {
+    handleDragEnd,
+    handleMarkDone,
+    handleStop,
+    handleRerun,
+    handleDelete,
+    handleLaunch: launchTask
+  }
 }
 ```
 
@@ -159,12 +181,12 @@ Reduce from ~456 LOC to ~150 LOC. Replace inline callbacks with `useSprintTaskAc
 
 ## File Size Targets
 
-| File | Target LOC |
-|------|-----------|
-| `SprintCenter.tsx` | ~150 |
-| `SprintToolbar.tsx` | ~80 |
-| `useSprintTaskActions.ts` | ~80 (new) |
-| `useSprintPolling.ts` | ~40 (updated) |
+| File                            | Target LOC    |
+| ------------------------------- | ------------- |
+| `SprintCenter.tsx`              | ~150          |
+| `SprintToolbar.tsx`             | ~80           |
+| `useSprintTaskActions.ts`       | ~80 (new)     |
+| `useSprintPolling.ts`           | ~40 (updated) |
 | `useSprintKeyboardShortcuts.ts` | ~50 (updated) |
 
 ## Verification

@@ -14,26 +14,26 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| **Create** | `src/main/services/task-terminal-service.ts` | Unified `onStatusTerminal()` — single entry point for dependency resolution |
-| **Create** | `src/main/services/__tests__/task-terminal-service.test.ts` | Tests for the new service |
-| **Modify** | `src/main/agent-manager/index.ts:235-241` | Replace inline `resolveDependents` call with `onStatusTerminal` |
-| **Modify** | `src/main/handlers/sprint-local.ts:147-199` | Call `onStatusTerminal` on terminal status transitions |
-| **Modify** | `src/main/handlers/git-handlers.ts:99-113` | Call `onStatusTerminal` after PR merge/close marks |
-| **Modify** | `src/main/queue-api/task-handlers.ts:402-415` | Replace per-request DependencyIndex with shared service |
-| **Modify** | `src/main/sprint-pr-poller.ts:75-101` | Remove legacy `setOnTaskTerminal` pattern |
-| **Modify** | `src/main/index.ts:104-147` | Wire service into agent manager, PR poller, IPC handlers |
-| **Modify** | `src/main/agent-manager/completion.ts:283-296` | Call `resolveFailure` on push failure |
-| **Modify** | `src/renderer/src/hooks/useSprintTaskActions.ts:102-124` | Fix kill to use correct IPC channel + task ID |
-| **Modify** | `src/main/env-utils.ts:83` | Set file permissions to `0o600` |
-| **Modify** | `src/main/queue-api/helpers.ts:11-19` | Auto-generate API key when none configured |
-| **Modify** | `src/main/queue-api/router.ts:18-27` | Add CORS headers to all responses |
-| **Modify** | `src/main/queue-api/helpers.ts:54-57` | Add CORS to `sendJson` |
-| **Modify** | `src/main/sprint-pr-poller.ts:62-64` | Add `.catch()` to poll calls |
-| **Modify** | `src/main/pr-poller.ts:96-98` | Add `.catch()` to poll calls |
-| **Modify** | `src/main/queue-api/server.ts:40-42` | Add `server.on('error')` handler |
-| **Modify** | `src/renderer/src/stores/gitTree.ts:65-66` | Fix result access pattern |
+| Action     | File                                                        | Responsibility                                                              |
+| ---------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Create** | `src/main/services/task-terminal-service.ts`                | Unified `onStatusTerminal()` — single entry point for dependency resolution |
+| **Create** | `src/main/services/__tests__/task-terminal-service.test.ts` | Tests for the new service                                                   |
+| **Modify** | `src/main/agent-manager/index.ts:235-241`                   | Replace inline `resolveDependents` call with `onStatusTerminal`             |
+| **Modify** | `src/main/handlers/sprint-local.ts:147-199`                 | Call `onStatusTerminal` on terminal status transitions                      |
+| **Modify** | `src/main/handlers/git-handlers.ts:99-113`                  | Call `onStatusTerminal` after PR merge/close marks                          |
+| **Modify** | `src/main/queue-api/task-handlers.ts:402-415`               | Replace per-request DependencyIndex with shared service                     |
+| **Modify** | `src/main/sprint-pr-poller.ts:75-101`                       | Remove legacy `setOnTaskTerminal` pattern                                   |
+| **Modify** | `src/main/index.ts:104-147`                                 | Wire service into agent manager, PR poller, IPC handlers                    |
+| **Modify** | `src/main/agent-manager/completion.ts:283-296`              | Call `resolveFailure` on push failure                                       |
+| **Modify** | `src/renderer/src/hooks/useSprintTaskActions.ts:102-124`    | Fix kill to use correct IPC channel + task ID                               |
+| **Modify** | `src/main/env-utils.ts:83`                                  | Set file permissions to `0o600`                                             |
+| **Modify** | `src/main/queue-api/helpers.ts:11-19`                       | Auto-generate API key when none configured                                  |
+| **Modify** | `src/main/queue-api/router.ts:18-27`                        | Add CORS headers to all responses                                           |
+| **Modify** | `src/main/queue-api/helpers.ts:54-57`                       | Add CORS to `sendJson`                                                      |
+| **Modify** | `src/main/sprint-pr-poller.ts:62-64`                        | Add `.catch()` to poll calls                                                |
+| **Modify** | `src/main/pr-poller.ts:96-98`                               | Add `.catch()` to poll calls                                                |
+| **Modify** | `src/main/queue-api/server.ts:40-42`                        | Add `server.on('error')` handler                                            |
+| **Modify** | `src/renderer/src/stores/gitTree.ts:65-66`                  | Fix result access pattern                                                   |
 
 ---
 
@@ -42,6 +42,7 @@
 The core fix. Create a single service function that wraps dependency resolution, called from all terminal-status paths.
 
 **Files:**
+
 - Create: `src/main/services/task-terminal-service.ts`
 - Create: `src/main/services/__tests__/task-terminal-service.test.ts`
 - Reference: `src/main/agent-manager/resolve-dependents.ts` (signature)
@@ -68,19 +69,28 @@ function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTermina
 describe('createTaskTerminalService', () => {
   it('calls resolveDependents when task reaches terminal status', () => {
     const deps = makeDeps({
-      getTasksWithDependencies: vi.fn().mockReturnValue([
-        { id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }
-      ]),
+      getTasksWithDependencies: vi
+        .fn()
+        .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }]),
       getTask: vi.fn().mockImplementation((id: string) => {
         if (id === 't1') return { id: 't1', status: 'done', depends_on: null, notes: null }
-        if (id === 't2') return { id: 't2', status: 'blocked', depends_on: [{ id: 't1', type: 'hard' }], notes: null }
+        if (id === 't2')
+          return {
+            id: 't2',
+            status: 'blocked',
+            depends_on: [{ id: 't1', type: 'hard' }],
+            notes: null
+          }
         return null
       })
     })
     const service = createTaskTerminalService(deps)
     service.onStatusTerminal('t1', 'done')
     // t2 should be unblocked -> queued
-    expect(deps.updateTask).toHaveBeenCalledWith('t2', expect.objectContaining({ status: 'queued' }))
+    expect(deps.updateTask).toHaveBeenCalledWith(
+      't2',
+      expect.objectContaining({ status: 'queued' })
+    )
   })
 
   it('does nothing for non-terminal statuses', () => {
@@ -92,7 +102,9 @@ describe('createTaskTerminalService', () => {
 
   it('swallows errors and logs them', () => {
     const deps = makeDeps({
-      getTasksWithDependencies: vi.fn().mockImplementation(() => { throw new Error('db boom') })
+      getTasksWithDependencies: vi.fn().mockImplementation(() => {
+        throw new Error('db boom')
+      })
     })
     const service = createTaskTerminalService(deps)
     // Should not throw
@@ -118,7 +130,9 @@ import type { SprintTask, TaskDependency } from '../../shared/types'
 
 const TERMINAL_STATUSES = new Set(['done', 'failed', 'error', 'cancelled'])
 
-type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes'> & { depends_on: TaskDependency[] | null }
+type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes'> & {
+  depends_on: TaskDependency[] | null
+}
 
 export interface TaskTerminalServiceDeps {
   getTask: (id: string) => TaskSlice | null
@@ -172,6 +186,7 @@ git commit -m "feat: extract onStatusTerminal service for unified dependency res
 Replace the 3 inconsistent resolution paths with the unified service.
 
 **Files:**
+
 - Modify: `src/main/index.ts:104-147` (create service, pass to consumers)
 - Modify: `src/main/agent-manager/index.ts:235-241` (use service instead of inline resolveDependents)
 - Modify: `src/main/handlers/sprint-local.ts:147-199` (add terminal check + service call)
@@ -227,6 +242,7 @@ const terminalService = createTaskTerminalService({
 ```
 
 Pass `terminalService.onStatusTerminal` to:
+
 1. Agent manager config (replace inline `resolveDependents` call)
 2. Sprint PR poller (via `onTaskTerminal` dep)
 3. Sprint local handlers (via setter or parameter)
@@ -373,6 +389,7 @@ git commit -m "feat: wire onStatusTerminal service into all terminal-status path
 When `git push` fails, the task stays `active` forever. It should transition to `error` and trigger dependency resolution.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/completion.ts:283-296`
 - Modify: `src/main/agent-manager/__tests__/completion.test.ts`
 
@@ -448,6 +465,7 @@ git commit -m "fix: transition task to error on push failure, trigger dependency
 The UI calls `agent:kill` with `agent_run_id`, but the AgentManager indexes active agents by `taskId`. Pipeline agents can't be stopped.
 
 **Files:**
+
 - Modify: `src/renderer/src/hooks/useSprintTaskActions.ts:102-124`
 - Modify: `src/renderer/src/hooks/__tests__/useSprintTaskActions.test.ts` (if exists, or create)
 
@@ -500,6 +518,7 @@ git commit -m "fix: use task ID with agent-manager:kill to stop pipeline agents"
 ### Task 5: OAuth Token File Permissions
 
 **Files:**
+
 - Modify: `src/main/env-utils.ts:83`
 - Modify: `src/main/__tests__/env-utils.test.ts`
 
@@ -553,6 +572,7 @@ git commit -m "fix: write OAuth token file with owner-only permissions (0o600)"
 ### Task 6: Queue API Auth — Auto-Generate Key
 
 **Files:**
+
 - Modify: `src/main/queue-api/helpers.ts:11-19`
 - Modify: `src/main/queue-api/__tests__/queue-api.test.ts` (update auth tests)
 
@@ -608,6 +628,7 @@ git commit -m "fix: auto-generate Queue API key when none configured"
 ### Task 7: CORS Headers on All Responses
 
 **Files:**
+
 - Modify: `src/main/queue-api/helpers.ts:54-57` (sendJson)
 - Modify: `src/main/queue-api/router.ts:18-27` (preflight)
 
@@ -660,6 +681,7 @@ git commit -m "fix: add CORS headers to all Queue API responses, not just OPTION
 ### Task 8: Poller Crash Prevention
 
 **Files:**
+
 - Modify: `src/main/sprint-pr-poller.ts:62-64`
 - Modify: `src/main/pr-poller.ts:96-98`
 - Modify: `src/main/__tests__/sprint-pr-poller.test.ts` (verify no unhandled rejection)
@@ -695,7 +717,7 @@ In `src/main/pr-poller.ts`, same pattern:
 ```typescript
 // Add near the top of the module, after poll() is defined:
 function safePoll(): void {
-  poll().catch(err => console.error('[pr-poller] poll error:', err))
+  poll().catch((err) => console.error('[pr-poller] poll error:', err))
 }
 
 // Replace startPrPoller():
@@ -729,6 +751,7 @@ git commit -m "fix: catch unhandled promise rejections in poller start() calls"
 ### Task 9: Queue API Port Conflict Handler
 
 **Files:**
+
 - Modify: `src/main/queue-api/server.ts:40-42`
 
 - [ ] **Step 1: Add error handler**
@@ -738,7 +761,9 @@ In `src/main/queue-api/server.ts`, after `server = http.createServer(...)` and b
 ```typescript
 server.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
-    logger.error(`Port ${port} is already in use — Queue API not started. Is another BDE instance running?`)
+    logger.error(
+      `Port ${port} is already in use — Queue API not started. Is another BDE instance running?`
+    )
   } else {
     logger.error(`Queue API server error: ${err.message}`)
   }

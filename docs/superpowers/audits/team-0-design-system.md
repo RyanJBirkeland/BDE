@@ -10,55 +10,56 @@ BDE has a solid dual-layer design system (CSS variables in `base.css` + TypeScri
 
 **Backgrounds — need to go deeper and bluer:**
 
-| Token | Current BDE | feast-site Target | Delta |
-|-------|------------|-------------------|-------|
-| `--bde-bg` | `#0A0A0A` | `#050505` | Need near-true-black. v2 `--bg-void: #050507` is close but unused by body. |
-| `--bde-surface` | `#141414` | `#111113` | Shift to cooler tone with blue undertone. v2 `--bg-surface: #111118` is correct. |
-| `--bde-surface-high` | `#1E1E1E` | `#1A1A1D` | Slightly darker, add cool undertone. v2 `--bg-card: #16161F` is close. |
-| Body `background` | Uses `--bde-bg` | Should use `--bg-void` | Body CSS in base.css references old token. |
+| Token                | Current BDE     | feast-site Target      | Delta                                                                            |
+| -------------------- | --------------- | ---------------------- | -------------------------------------------------------------------------------- |
+| `--bde-bg`           | `#0A0A0A`       | `#050505`              | Need near-true-black. v2 `--bg-void: #050507` is close but unused by body.       |
+| `--bde-surface`      | `#141414`       | `#111113`              | Shift to cooler tone with blue undertone. v2 `--bg-surface: #111118` is correct. |
+| `--bde-surface-high` | `#1E1E1E`       | `#1A1A1D`              | Slightly darker, add cool undertone. v2 `--bg-card: #16161F` is close.           |
+| Body `background`    | Uses `--bde-bg` | Should use `--bg-void` | Body CSS in base.css references old token.                                       |
 
 **Text — need Apple-style off-white:**
 
-| Token | Current BDE | feast-site Target | Action |
-|-------|------------|-------------------|--------|
-| `--bde-text` | `#E8E8E8` | `#F5F5F7` | Bump brightness, slight warm shift. v2 `--text-primary: #F5F5F7` exists but is unused by primitives. |
-| `--bde-text-muted` | `#888888` | `#98989F` | Slightly brighter, cooler. v2 `--text-secondary: #98989F` exists. |
-| `--bde-text-dim` | `#555555` | `#5C5C63` | Slight blue shift. v2 `--text-muted: #5C5C63` exists. |
-| (missing) | n/a | `#3A3A42` | Need ghost/placeholder text. v2 `--text-ghost: #3A3A42` exists. |
+| Token              | Current BDE | feast-site Target | Action                                                                                               |
+| ------------------ | ----------- | ----------------- | ---------------------------------------------------------------------------------------------------- |
+| `--bde-text`       | `#E8E8E8`   | `#F5F5F7`         | Bump brightness, slight warm shift. v2 `--text-primary: #F5F5F7` exists but is unused by primitives. |
+| `--bde-text-muted` | `#888888`   | `#98989F`         | Slightly brighter, cooler. v2 `--text-secondary: #98989F` exists.                                    |
+| `--bde-text-dim`   | `#555555`   | `#5C5C63`         | Slight blue shift. v2 `--text-muted: #5C5C63` exists.                                                |
+| (missing)          | n/a         | `#3A3A42`         | Need ghost/placeholder text. v2 `--text-ghost: #3A3A42` exists.                                      |
 
 **Borders — need cooler, subtler:**
 
-| Token | Current BDE | feast-site Target | Action |
-|-------|------------|-------------------|--------|
-| `--bde-border` | `#333333` | `rgba(255,255,255,0.04)` / `#1E1E2A` | feast-site uses ultra-low-opacity white borders. v2 `--border: #1E1E2A` is correct direction. |
-| `--bde-border-hover` | `#444444` | `#2A2A3A` | v2 `--border-light: #2A2A3A` exists. |
-| (missing) | n/a | `rgba(255,255,255,0.04)` | Need `--border-subtle` for inner-element borders (feast-site `border-white/[0.04]`). |
+| Token                | Current BDE | feast-site Target                    | Action                                                                                        |
+| -------------------- | ----------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `--bde-border`       | `#333333`   | `rgba(255,255,255,0.04)` / `#1E1E2A` | feast-site uses ultra-low-opacity white borders. v2 `--border: #1E1E2A` is correct direction. |
+| `--bde-border-hover` | `#444444`   | `#2A2A3A`                            | v2 `--border-light: #2A2A3A` exists.                                                          |
+| (missing)            | n/a         | `rgba(255,255,255,0.04)`             | Need `--border-subtle` for inner-element borders (feast-site `border-white/[0.04]`).          |
 
 **Accent — mostly aligned, expand glow range:**
 
-| Token | Current | Target | Note |
-|-------|---------|--------|------|
-| `--bde-accent` | `#00D37F` | `#00D37F` | Exact match. |
-| (missing) | n/a | `#00A863` | Need darker accent for gradient endpoint. v2 `--accent-dim: #00A863` exists. |
-| (missing) | n/a | `rgba(0,211,127,0.3)` | Need CTA glow shadow token. v2 `--accent-glow: rgba(0,211,127,0.25)` is close. |
+| Token          | Current   | Target                | Note                                                                           |
+| -------------- | --------- | --------------------- | ------------------------------------------------------------------------------ |
+| `--bde-accent` | `#00D37F` | `#00D37F`             | Exact match.                                                                   |
+| (missing)      | n/a       | `#00A863`             | Need darker accent for gradient endpoint. v2 `--accent-dim: #00A863` exists.   |
+| (missing)      | n/a       | `rgba(0,211,127,0.3)` | Need CTA glow shadow token. v2 `--accent-glow: rgba(0,211,127,0.25)` is close. |
 
 ### Border Radius Overhaul
 
 This is the single most visually impactful change. feast-site uses aggressively rounded corners that give the premium consumer feel. Current BDE values are typical dev-tool conservative.
 
-| Token | Current | feast-site Target | Usage |
-|-------|---------|-------------------|-------|
-| `--bde-radius-sm` | `4px` | `8px` | Badges, small chips, inline elements |
-| `--bde-radius-md` | `6px` | `12px` | Buttons, inputs, textareas |
-| `--bde-radius-lg` | `8px` | `16px` | Cards, panels, dropdowns |
-| `--bde-radius-xl` | `12px` | `20px` | Modals, large containers |
-| (new) `--bde-radius-2xl` | n/a | `24px` | Hero cards, feature panels |
-| (new) `--bde-radius-3xl` | n/a | `32px` | Large containers, section wrappers |
-| `--bde-radius-full` | `9999px` | `9999px` | No change (pills) |
+| Token                    | Current  | feast-site Target | Usage                                |
+| ------------------------ | -------- | ----------------- | ------------------------------------ |
+| `--bde-radius-sm`        | `4px`    | `8px`             | Badges, small chips, inline elements |
+| `--bde-radius-md`        | `6px`    | `12px`            | Buttons, inputs, textareas           |
+| `--bde-radius-lg`        | `8px`    | `16px`            | Cards, panels, dropdowns             |
+| `--bde-radius-xl`        | `12px`   | `20px`            | Modals, large containers             |
+| (new) `--bde-radius-2xl` | n/a      | `24px`            | Hero cards, feature panels           |
+| (new) `--bde-radius-3xl` | n/a      | `32px`            | Large containers, section wrappers   |
+| `--bde-radius-full`      | `9999px` | `9999px`          | No change (pills)                    |
 
 **Impact analysis:** 87 CSS variable references + 30+ hardcoded `border-radius` values in CSS files + ~50 inline `borderRadius` references in TSX files all need updating. The token-based approach means changing the 5 CSS variables propagates to all token users automatically — but hardcoded values in `.css` and inline styles will need manual migration.
 
 **Hardcoded radius hotspots (non-token values in CSS):**
+
 - `settings.css`: `10px` (1 occurrence)
 - `cost.css`: `10px`, `4px` (3 occurrences)
 - `sprint.css`: `12px`, `4px`, `3px`, `8px` (8 occurrences)
@@ -77,21 +78,23 @@ This is the single most visually impactful change. feast-site uses aggressively 
 
 ```css
 /* Replace existing */
---bde-shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
---bde-shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2);
---bde-shadow-lg: 0 8px 32px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+--bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+--bde-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+--bde-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
 
 /* New accent-glow shadows */
---bde-shadow-glow-sm: 0 0 8px rgba(0,211,127,0.15), 0 0 0 1px rgba(0,211,127,0.2);
---bde-shadow-glow-md: 0 4px 16px rgba(0,211,127,0.2), 0 0 8px rgba(0,211,127,0.15);
---bde-shadow-glow-lg: 0 8px 32px rgba(0,211,127,0.15), 0 4px 16px rgba(0,0,0,0.4);
+--bde-shadow-glow-sm: 0 0 8px rgba(0, 211, 127, 0.15), 0 0 0 1px rgba(0, 211, 127, 0.2);
+--bde-shadow-glow-md: 0 4px 16px rgba(0, 211, 127, 0.2), 0 0 8px rgba(0, 211, 127, 0.15);
+--bde-shadow-glow-lg: 0 8px 32px rgba(0, 211, 127, 0.15), 0 4px 16px rgba(0, 0, 0, 0.4);
 
 /* CTA button shadow */
---bde-shadow-cta: 0 4px 16px rgba(0,211,127,0.3);
---bde-shadow-cta-hover: 0 4px 24px rgba(0,211,127,0.4), 0 0 8px rgba(0,211,127,0.3);
+--bde-shadow-cta: 0 4px 16px rgba(0, 211, 127, 0.3);
+--bde-shadow-cta-hover: 0 4px 24px rgba(0, 211, 127, 0.4), 0 0 8px rgba(0, 211, 127, 0.3);
 
 /* Elevation shadow (modals, popovers) */
---bde-shadow-elevation: 0 24px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.08) inset;
+--bde-shadow-elevation:
+  0 24px 80px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.25),
+  0 0 0 0.5px rgba(255, 255, 255, 0.08) inset;
 ```
 
 **Note:** `design-system.css` already has `.glow-accent-sm` and `.glow-pulse` classes from the v2 work, but they are not wired into any UI primitives (Button, Card, Badge).
@@ -104,7 +107,7 @@ This is the single most visually impactful change. feast-site uses aggressively 
 
 ```css
 /* The exact feast-site CTA gradient */
---gradient-cta: linear-gradient(135deg, #00D37F, #00A863);
+--gradient-cta: linear-gradient(135deg, #00d37f, #00a863);
 ```
 
 Currently `--gradient-aurora` (`#00D37F -> #00B4D8`) adds a teal endpoint, which diverges from feast-site's pure green-to-dark-green. Need a dedicated CTA gradient that matches feast-site exactly.
@@ -113,8 +116,8 @@ Currently `--gradient-aurora` (`#00D37F -> #00B4D8`) adds a teal endpoint, which
 
 ```css
 /* Section ambient glow — "lit from within" */
---gradient-ambient: radial-gradient(circle, rgba(0,211,127,0.08) 0%, transparent 70%);
---gradient-ambient-sm: radial-gradient(circle, rgba(0,211,127,0.05) 0%, transparent 50%);
+--gradient-ambient: radial-gradient(circle, rgba(0, 211, 127, 0.08) 0%, transparent 70%);
+--gradient-ambient-sm: radial-gradient(circle, rgba(0, 211, 127, 0.05) 0%, transparent 50%);
 ```
 
 The v2 `--gradient-horizon` is a close cousin but uses a linear gradient (160deg) rather than the radial glow that gives feast-site its signature look.
@@ -122,11 +125,13 @@ The v2 `--gradient-horizon` is a close cousin but uses a linear gradient (160deg
 ### Animation & Micro-interaction Gaps
 
 **feast-site patterns present in BDE:**
+
 - `active:scale(0.97)` on `.bde-btn` — present
 - `filter: brightness(1.1)` on hover — present on `.bde-btn--primary`
 - `transition-all` — present via `--bde-transition-base`
 
 **feast-site patterns MISSING from BDE:**
+
 1. **Border brightening on hover** — feast-site cards brighten their border from `white/[0.04]` to `white/[0.08]` on hover. BDE cards change to `--bde-border-hover` (#444) which is too aggressive.
 2. **Hover glow on CTA buttons** — feast-site adds expanding glow shadow on hover. `.btn-primary:hover` has this but `.bde-btn--primary:hover` only does `filter: brightness(1.1)`.
 3. **Stagger animations for lists** — feast-site staggers card entrance animations. BDE has `bde-slide-up-fade` but no stagger utility.
@@ -138,13 +143,24 @@ The v2 `--gradient-horizon` is a close cousin but uses a linear gradient (160deg
 
 ```css
 @keyframes bde-glow-breathe {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes bde-stagger-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 ```
 
@@ -153,6 +169,7 @@ The v2 `--gradient-horizon` is a close cousin but uses a linear gradient (160deg
 ### Design System Adoption Gaps
 
 **Dual-system confusion:** The codebase has two parallel token systems that are both active:
+
 - **v1 (`--bde-*`)**: Powers all 15 UI primitives, used in body styles, referenced by 87+ CSS occurrences. This is the "real" system.
 - **v2 (`--bg-*`, `--border`, `--text-*`, `--accent-*`)**: Only used by glass/elevation/glow/gradient utility classes and logotype. Also creates naming collisions — `--border` and `--border-light` are v2 tokens but also legacy aliases in the same `:root` block.
 
@@ -161,6 +178,7 @@ The v2 `--gradient-horizon` is a close cousin but uses a linear gradient (160deg
 **Inline style epidemic:** 356 `style={` occurrences across 58 component files. Many reference `tokens.radius.*` and `tokens.color.*` from the TypeScript tokens object, which means they get the OLD v1 values, not the CSS variable values. If CSS variables are updated, these inline styles won't change.
 
 Top offenders by inline style count:
+
 - `EventCard.tsx` (33), `TicketEditor.tsx` (29), `WorkbenchForm.tsx` (16), `Onboarding.tsx` (17), `AgentDetail.tsx` (15), `AgentList.tsx` (14), `WorkbenchCopilot.tsx` (13), `ToolCallBlock.tsx` (12), `TaskMonitorPanel.tsx` (12)
 
 **Hardcoded hex colors in components:** 3 instances of `#000` for button text, plus hardcoded rgba values in `InlineDiffDrawer.tsx`. These bypass both token systems.
@@ -216,38 +234,38 @@ Top offenders by inline style count:
 
 ```css
 /* Colors — align with feast-site */
---bde-bg: #050507;                          /* was #0A0A0A */
---bde-surface: #111118;                     /* was #141414 */
---bde-surface-high: #16161F;                /* was #1E1E1E */
---bde-border: #1E1E2A;                      /* was #333333 */
---bde-border-hover: #2A2A3A;                /* was #444444 */
---bde-text: #F5F5F7;                        /* was #E8E8E8 */
---bde-text-muted: #98989F;                  /* was #888888 */
---bde-text-dim: #5C5C63;                    /* was #555555 */
+--bde-bg: #050507; /* was #0A0A0A */
+--bde-surface: #111118; /* was #141414 */
+--bde-surface-high: #16161f; /* was #1E1E1E */
+--bde-border: #1e1e2a; /* was #333333 */
+--bde-border-hover: #2a2a3a; /* was #444444 */
+--bde-text: #f5f5f7; /* was #E8E8E8 */
+--bde-text-muted: #98989f; /* was #888888 */
+--bde-text-dim: #5c5c63; /* was #555555 */
 
 /* Radii — aggressive rounding */
---bde-radius-sm: 8px;                       /* was 4px */
---bde-radius-md: 12px;                      /* was 6px */
---bde-radius-lg: 16px;                      /* was 8px */
---bde-radius-xl: 20px;                      /* was 12px */
+--bde-radius-sm: 8px; /* was 4px */
+--bde-radius-md: 12px; /* was 6px */
+--bde-radius-lg: 16px; /* was 8px */
+--bde-radius-xl: 20px; /* was 12px */
 
 /* New radius tokens */
 --bde-radius-2xl: 24px;
 --bde-radius-3xl: 32px;
 
 /* Shadows — layered with accent tint */
---bde-shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
---bde-shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2);
---bde-shadow-lg: 0 8px 32px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+--bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+--bde-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2);
+--bde-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
 
 /* New tokens */
---bde-shadow-glow: 0 4px 16px rgba(0,211,127,0.3);
---bde-shadow-glow-hover: 0 4px 24px rgba(0,211,127,0.4), 0 0 8px rgba(0,211,127,0.3);
---bde-shadow-elevation: 0 24px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.25);
---bde-border-subtle: rgba(255,255,255,0.04);
---bde-text-ghost: #3A3A42;
---bde-gradient-cta: linear-gradient(135deg, #00D37F, #00A863);
---bde-gradient-ambient: radial-gradient(circle, rgba(0,211,127,0.08) 0%, transparent 70%);
+--bde-shadow-glow: 0 4px 16px rgba(0, 211, 127, 0.3);
+--bde-shadow-glow-hover: 0 4px 24px rgba(0, 211, 127, 0.4), 0 0 8px rgba(0, 211, 127, 0.3);
+--bde-shadow-elevation: 0 24px 80px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.25);
+--bde-border-subtle: rgba(255, 255, 255, 0.04);
+--bde-text-ghost: #3a3a42;
+--bde-gradient-cta: linear-gradient(135deg, #00d37f, #00a863);
+--bde-gradient-ambient: radial-gradient(circle, rgba(0, 211, 127, 0.08) 0%, transparent 70%);
 ```
 
 **Phase 1b: Update `tokens.ts` to match:**
@@ -283,6 +301,7 @@ radius: {
 ```
 
 And in `tokens.ts`:
+
 ```typescript
 font: {
   ui: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -311,7 +330,7 @@ Add to `design-system.css`:
   width: 120%;
   height: 120%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(0,211,127,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 211, 127, 0.08) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -321,20 +340,22 @@ Add to `design-system.css`:
   background: rgba(10, 10, 18, 0.75);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 /* ── CTA Glow Button ─────────────────────────────── */
 .btn-cta {
-  background: linear-gradient(135deg, #00D37F, #00A863);
+  background: linear-gradient(135deg, #00d37f, #00a863);
   color: #000;
   border: none;
   border-radius: var(--bde-radius-md);
-  box-shadow: 0 4px 16px rgba(0,211,127,0.3);
+  box-shadow: 0 4px 16px rgba(0, 211, 127, 0.3);
   transition: all 200ms ease-out;
 }
 .btn-cta:hover {
-  box-shadow: 0 4px 24px rgba(0,211,127,0.4), 0 0 8px rgba(0,211,127,0.3);
+  box-shadow:
+    0 4px 24px rgba(0, 211, 127, 0.4),
+    0 0 8px rgba(0, 211, 127, 0.3);
   filter: brightness(1.1);
 }
 .btn-cta:active {
@@ -353,39 +374,60 @@ Add to `design-system.css`:
 
 /* ── Hover Border Brighten ────────────────────────── */
 .hover-border-brighten {
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   transition: border-color 200ms ease-out;
 }
 .hover-border-brighten:hover {
-  border-color: rgba(255,255,255,0.08);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ── Stagger Animation ────────────────────────────── */
 .stagger-child {
   animation: bde-slide-up-fade 300ms ease-out both;
 }
-.stagger-child:nth-child(1) { animation-delay: 0ms; }
-.stagger-child:nth-child(2) { animation-delay: 40ms; }
-.stagger-child:nth-child(3) { animation-delay: 80ms; }
-.stagger-child:nth-child(4) { animation-delay: 120ms; }
-.stagger-child:nth-child(5) { animation-delay: 160ms; }
-.stagger-child:nth-child(6) { animation-delay: 200ms; }
-.stagger-child:nth-child(7) { animation-delay: 240ms; }
-.stagger-child:nth-child(8) { animation-delay: 280ms; }
+.stagger-child:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger-child:nth-child(2) {
+  animation-delay: 40ms;
+}
+.stagger-child:nth-child(3) {
+  animation-delay: 80ms;
+}
+.stagger-child:nth-child(4) {
+  animation-delay: 120ms;
+}
+.stagger-child:nth-child(5) {
+  animation-delay: 160ms;
+}
+.stagger-child:nth-child(6) {
+  animation-delay: 200ms;
+}
+.stagger-child:nth-child(7) {
+  animation-delay: 240ms;
+}
+.stagger-child:nth-child(8) {
+  animation-delay: 280ms;
+}
 
 /* ── Card Hover Lift ──────────────────────────────── */
 .card-hover-lift {
-  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+  transition:
+    transform 200ms ease-out,
+    box-shadow 200ms ease-out;
 }
 .card-hover-lift:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 4px 16px rgba(0,211,127,0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 211, 127, 0.08);
 }
 ```
 
 ### Migration Path
 
 **Phase 1 — Token value swap (low risk, high impact)**
+
 - Update the 8 color values, 4 radius values, 3 shadow values, and font-ui in `base.css` `:root`.
 - Update matching values in `tokens.ts`.
 - Add new tokens (`--bde-radius-2xl`, `--bde-radius-3xl`, `--bde-shadow-glow`, etc.).
@@ -394,11 +436,13 @@ Add to `design-system.css`:
 - **Estimated scope:** ~15 lines changed in `base.css`, ~15 lines in `tokens.ts`.
 
 **Phase 2 — Hardcoded value cleanup (medium risk, medium effort)**
+
 - Grep all CSS files for hardcoded `border-radius` values and replace with `var(--bde-radius-*)`.
 - Grep all TSX files for hardcoded `#000` button text and `rgba()` values; replace with token references.
 - **Estimated scope:** ~30 CSS fixes, ~5 TSX fixes.
 
 **Phase 3 — v2 token consolidation (medium risk, important for DX)**
+
 - Remove v2 duplicate tokens (`--bg-*`, `--border`, `--text-*`, `--accent-*`) from `:root`.
 - Update ~20 references in `design-system.css` utility classes to use `--bde-*` equivalents.
 - Update v2 gradient and glass tokens to use `--bde-*` references internally.
@@ -406,12 +450,14 @@ Add to `design-system.css`:
 - **Estimated scope:** ~60 lines removed from `base.css`, ~30 reference updates.
 
 **Phase 4 — Button class unification**
+
 - Remove `.btn-primary` and `.btn-glass` from `design-system.css`.
 - Merge their styles into `.bde-btn--primary` and `.bde-btn--ghost` respectively.
 - Remove dual-class application from `Button.tsx` (lines 42-43).
 - **Estimated scope:** ~40 lines CSS, 2 lines TSX.
 
 **Phase 5 — Inline style extraction (high effort, phased over time)**
+
 - Prioritize the 10 highest-count files (356 total inline styles across 58 files).
 - Extract to CSS classes or CSS module files.
 - This is ongoing work, not a single PR.
@@ -437,21 +483,21 @@ Add to `design-system.css`:
 
 ## Priority Matrix
 
-| Change | Impact | Effort | Priority |
-|--------|--------|--------|----------|
-| Update `--bde-radius-*` values (4 tokens) | **HIGH** — transforms entire UI feel | **LOW** — 4 lines in base.css | **P0** |
-| Update `--bde-bg/surface/text` colors (8 tokens) | **HIGH** — feast-site depth and warmth | **LOW** — 8 lines in base.css | **P0** |
-| Update `--bde-font-ui` to Inter-first | **MEDIUM** — brand alignment | **LOW** — 1 line | **P0** |
-| Update `tokens.ts` to match CSS vars | **HIGH** — fixes inline styles | **LOW** — 15 lines | **P0** |
-| Add `--bde-shadow-glow*` tokens | **MEDIUM** — CTA prominence | **LOW** — 5 lines | **P1** |
-| Add `--bde-gradient-cta` token | **MEDIUM** — feast-site CTA match | **LOW** — 1 line | **P1** |
-| Add ambient glow utility class | **MEDIUM** — "lit from within" feel | **LOW** — 10 lines CSS | **P1** |
-| Unify Button dual-class problem | **HIGH** — fixes specificity bugs | **MEDIUM** — 40 lines | **P1** |
-| Add `--bde-radius-2xl/3xl` tokens | **LOW** — future use | **LOW** — 2 lines | **P1** |
-| Add stagger animation utility | **MEDIUM** — list polish | **LOW** — 12 lines CSS | **P2** |
-| Hardcoded border-radius cleanup | **MEDIUM** — consistency | **MEDIUM** — 30 file edits | **P2** |
-| v2 token consolidation/removal | **HIGH** — DX clarity | **MEDIUM** — 90 line delta | **P2** |
-| Inline style extraction (58 files) | **HIGH** — maintainability | **HIGH** — 356 occurrences | **P3** |
-| Add missing primitives (Toggle, Select, etc.) | **MEDIUM** — feature enablement | **HIGH** — new components | **P3** |
-| Add `hover-border-brighten` utility | **LOW** — subtle polish | **LOW** — 6 lines CSS | **P2** |
-| Add `card-hover-lift` utility | **LOW** — interaction polish | **LOW** — 6 lines CSS | **P2** |
+| Change                                           | Impact                                 | Effort                        | Priority |
+| ------------------------------------------------ | -------------------------------------- | ----------------------------- | -------- |
+| Update `--bde-radius-*` values (4 tokens)        | **HIGH** — transforms entire UI feel   | **LOW** — 4 lines in base.css | **P0**   |
+| Update `--bde-bg/surface/text` colors (8 tokens) | **HIGH** — feast-site depth and warmth | **LOW** — 8 lines in base.css | **P0**   |
+| Update `--bde-font-ui` to Inter-first            | **MEDIUM** — brand alignment           | **LOW** — 1 line              | **P0**   |
+| Update `tokens.ts` to match CSS vars             | **HIGH** — fixes inline styles         | **LOW** — 15 lines            | **P0**   |
+| Add `--bde-shadow-glow*` tokens                  | **MEDIUM** — CTA prominence            | **LOW** — 5 lines             | **P1**   |
+| Add `--bde-gradient-cta` token                   | **MEDIUM** — feast-site CTA match      | **LOW** — 1 line              | **P1**   |
+| Add ambient glow utility class                   | **MEDIUM** — "lit from within" feel    | **LOW** — 10 lines CSS        | **P1**   |
+| Unify Button dual-class problem                  | **HIGH** — fixes specificity bugs      | **MEDIUM** — 40 lines         | **P1**   |
+| Add `--bde-radius-2xl/3xl` tokens                | **LOW** — future use                   | **LOW** — 2 lines             | **P1**   |
+| Add stagger animation utility                    | **MEDIUM** — list polish               | **LOW** — 12 lines CSS        | **P2**   |
+| Hardcoded border-radius cleanup                  | **MEDIUM** — consistency               | **MEDIUM** — 30 file edits    | **P2**   |
+| v2 token consolidation/removal                   | **HIGH** — DX clarity                  | **MEDIUM** — 90 line delta    | **P2**   |
+| Inline style extraction (58 files)               | **HIGH** — maintainability             | **HIGH** — 356 occurrences    | **P3**   |
+| Add missing primitives (Toggle, Select, etc.)    | **MEDIUM** — feature enablement        | **HIGH** — new components     | **P3**   |
+| Add `hover-border-brighten` utility              | **LOW** — subtle polish                | **LOW** — 6 lines CSS         | **P2**   |
+| Add `card-hover-lift` utility                    | **LOW** — interaction polish           | **LOW** — 6 lines CSS         | **P2**   |

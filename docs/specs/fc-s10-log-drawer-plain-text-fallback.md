@@ -11,11 +11,14 @@ When a task runner agent's log is opened in `LogDrawer`, `parseStreamJson` finds
 ### Option A — Switch task runner to stream-json (preferred)
 
 In `life-os/scripts/task-runner.js`, change the spawn args from:
+
 ```js
 '--permission-mode', 'bypassPermissions',
 '--print',
 ```
+
 to:
+
 ```js
 '--permission-mode', 'bypassPermissions',
 '--output-format', 'stream-json',
@@ -39,21 +42,25 @@ const hasPlainText = !hasStreamJson && logContent.trim().length > 0
 ```
 
 In the body:
+
 ```tsx
-{task.agent_run_id ? (
-  hasStreamJson ? (
-    <ChatThread messages={messages} isStreaming={agentStatus === 'running' && isStreaming} />
-  ) : hasPlainText ? (
-    <pre className="log-drawer__plain-text">{logContent}</pre>
+{
+  task.agent_run_id ? (
+    hasStreamJson ? (
+      <ChatThread messages={messages} isStreaming={agentStatus === 'running' && isStreaming} />
+    ) : hasPlainText ? (
+      <pre className="log-drawer__plain-text">{logContent}</pre>
+    ) : (
+      <div className="log-drawer__empty">Agent is starting up...</div>
+    )
   ) : (
-    <div className="log-drawer__empty">Agent is starting up...</div>
+    <div className="log-drawer__no-session">No agent session linked to this task.</div>
   )
-) : (
-  <div className="log-drawer__no-session">No agent session linked to this task.</div>
-)}
+}
 ```
 
 Add CSS for `.log-drawer__plain-text`:
+
 ```css
 .log-drawer__plain-text {
   padding: 12px 16px;
@@ -82,11 +89,11 @@ Add CSS for `.log-drawer__plain-text`:
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `life-os/scripts/task-runner.js` | Change spawn flags to `--output-format stream-json --verbose` |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | Add plain text fallback render path |
-| `src/renderer/src/assets/sprint.css` | Add `.log-drawer__plain-text` + `.log-drawer__empty` styles |
+| File                                               | Change                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------- |
+| `life-os/scripts/task-runner.js`                   | Change spawn flags to `--output-format stream-json --verbose` |
+| `src/renderer/src/components/sprint/LogDrawer.tsx` | Add plain text fallback render path                           |
+| `src/renderer/src/assets/sprint.css`               | Add `.log-drawer__plain-text` + `.log-drawer__empty` styles   |
 
 > Note: `task-runner.js` lives in the `life-os` repo — the agent will need `--add-dir` to reach it. The prompt should include the full path: `~/Documents/Repositories/life-os/scripts/task-runner.js`.
 

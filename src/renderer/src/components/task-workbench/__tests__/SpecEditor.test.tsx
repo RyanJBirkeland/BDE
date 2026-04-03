@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 import { SpecEditor } from '../SpecEditor'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
@@ -141,15 +141,42 @@ describe('SpecEditor', () => {
     expect(spec).toContain('## Coverage Target')
   })
 
-  it('overwrites existing spec when template is applied', () => {
+  it('shows confirmation dialog when overwriting existing spec', async () => {
     useTaskWorkbenchStore.setState({ spec: 'Existing content' })
     render(<SpecEditor {...defaultProps} />)
 
     const button = screen.getByText('Feature')
     fireEvent.click(button)
 
+    // Confirmation dialog should appear
+    await waitFor(() => {
+      expect(screen.getByText('Overwrite spec?')).toBeInTheDocument()
+    })
+
+    // Click the confirm button
+    const confirmButton = screen.getByText('Overwrite')
+    fireEvent.click(confirmButton)
+
+    // Spec should be overwritten
+    await waitFor(() => {
+      const spec = useTaskWorkbenchStore.getState().spec
+      expect(spec).not.toContain('Existing content')
+      expect(spec).toContain('## Problem')
+    })
+  })
+
+  it('applies template immediately when spec is empty', () => {
+    useTaskWorkbenchStore.setState({ spec: '' })
+    render(<SpecEditor {...defaultProps} />)
+
+    const button = screen.getByText('Feature')
+    fireEvent.click(button)
+
+    // No confirmation dialog should appear
+    expect(screen.queryByText('Overwrite spec?')).not.toBeInTheDocument()
+
+    // Spec should be updated immediately
     const spec = useTaskWorkbenchStore.getState().spec
-    expect(spec).not.toContain('Existing content')
     expect(spec).toContain('## Problem')
   })
 

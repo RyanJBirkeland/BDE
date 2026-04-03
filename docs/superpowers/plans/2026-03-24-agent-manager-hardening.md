@@ -12,18 +12,18 @@
 
 ## File Map
 
-| File | Responsibility | Tasks |
-|------|---------------|-------|
-| `src/main/env-utils.ts` | OAuth token cache | 1 |
-| `src/main/agent-manager/index.ts` | Drain loop, orchestration, error paths | 2, 3, 4 |
-| `src/main/agent-manager/completion.ts` | Post-agent success/failure resolution | 5 |
-| `src/main/agent-manager/worktree.ts` | Branch naming, worktree lifecycle | 6 |
-| `src/main/agent-manager/run-agent.ts` | Agent record creation, execution | 7 |
-| `src/main/agent-manager/types.ts` | Shared constants | 1 |
-| `src/main/__tests__/env-utils.test.ts` | Tests for token cache | 1 |
-| `src/main/agent-manager/__tests__/index.test.ts` | Tests for drain loop | 2, 3, 4 |
-| `src/main/agent-manager/__tests__/completion.test.ts` | Tests for completion handler | 5 |
-| `src/main/agent-manager/__tests__/worktree.test.ts` | Tests for worktree cleanup | 6 |
+| File                                                  | Responsibility                         | Tasks   |
+| ----------------------------------------------------- | -------------------------------------- | ------- |
+| `src/main/env-utils.ts`                               | OAuth token cache                      | 1       |
+| `src/main/agent-manager/index.ts`                     | Drain loop, orchestration, error paths | 2, 3, 4 |
+| `src/main/agent-manager/completion.ts`                | Post-agent success/failure resolution  | 5       |
+| `src/main/agent-manager/worktree.ts`                  | Branch naming, worktree lifecycle      | 6       |
+| `src/main/agent-manager/run-agent.ts`                 | Agent record creation, execution       | 7       |
+| `src/main/agent-manager/types.ts`                     | Shared constants                       | 1       |
+| `src/main/__tests__/env-utils.test.ts`                | Tests for token cache                  | 1       |
+| `src/main/agent-manager/__tests__/index.test.ts`      | Tests for drain loop                   | 2, 3, 4 |
+| `src/main/agent-manager/__tests__/completion.test.ts` | Tests for completion handler           | 5       |
+| `src/main/agent-manager/__tests__/worktree.test.ts`   | Tests for worktree cleanup             | 6       |
 
 ---
 
@@ -32,6 +32,7 @@
 **Problem:** `getOAuthToken()` in `env-utils.ts` caches the token for 30 minutes. If the token expires or is refreshed on disk, agents silently fail with "Invalid API key" in a fast-fail loop until the cache TTL expires.
 
 **Files:**
+
 - Modify: `src/main/env-utils.ts:24-44`
 - Modify: `src/main/agent-manager/run-agent.ts:147-149`
 - Modify: `src/main/agent-manager/types.ts` (add constant)
@@ -140,6 +141,7 @@ fail with auth errors, preventing a 30-minute fast-fail loop."
 **Problem:** When `setupWorktree` fails in the drain loop (`index.ts:208`), the task is marked `error` but the error message is NOT written to `notes`. Users see tasks fail with no explanation.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:206-210`
 - Test: `src/main/agent-manager/__tests__/index.test.ts`
 
@@ -158,10 +160,13 @@ it('writes error details to task notes when setupWorktree fails', async () => {
   mgr.start()
   await vi.advanceTimersByTimeAsync(INITIAL_DRAIN_DEFER_MS + 100)
 
-  expect(updateTask).toHaveBeenCalledWith(mockTask.id, expect.objectContaining({
-    status: 'error',
-    notes: expect.stringContaining('Worktree lock held by PID 12345'),
-  }))
+  expect(updateTask).toHaveBeenCalledWith(
+    mockTask.id,
+    expect.objectContaining({
+      status: 'error',
+      notes: expect.stringContaining('Worktree lock held by PID 12345')
+    })
+  )
 })
 ```
 
@@ -188,7 +193,7 @@ await updateTask(task.id, {
   status: 'error',
   completed_at: new Date().toISOString(),
   notes: `Worktree setup failed: ${errMsg}`.slice(0, 500),
-  claimed_by: null,
+  claimed_by: null
 })
 ```
 
@@ -216,6 +221,7 @@ making failures invisible in the Sprint Center UI."
 **Problem:** When a task transitions to `error` or `failed`, `claimed_by` stays set to `"bde-embedded"`. If the task is externally reset to `queued`, the drain loop's `claimTask` call skips it because the Supabase conditional update requires `status = 'queued'` AND the row must not be claimed.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:206-210` (already partially done in Task 2)
 - Modify: `src/main/agent-manager/run-agent.ts:64,83,185`
 - Modify: `src/main/agent-manager/completion.ts:74,83,117,230`
@@ -242,10 +248,13 @@ In `src/main/agent-manager/__tests__/completion.test.ts`, add:
 it('clears claimed_by when marking task as error for no commits', async () => {
   // ... setup mocks for no-commits path
   await resolveSuccess(opts, logger)
-  expect(updateTask).toHaveBeenCalledWith(taskId, expect.objectContaining({
-    status: 'error',
-    claimed_by: null,
-  }))
+  expect(updateTask).toHaveBeenCalledWith(
+    taskId,
+    expect.objectContaining({
+      status: 'error',
+      claimed_by: null
+    })
+  )
 })
 ```
 
@@ -258,7 +267,7 @@ await updateTask(taskId, {
   status: 'error',
   completed_at: new Date().toISOString(),
   notes: 'Agent produced no commits',
-  claimed_by: null,
+  claimed_by: null
 })
 ```
 
@@ -269,7 +278,7 @@ await updateTask(task.id, {
   status: 'error',
   completed_at: new Date().toISOString(),
   notes: `Spawn failed: ${err instanceof Error ? err.message : String(err)}`,
-  claimed_by: null,
+  claimed_by: null
 })
 ```
 
@@ -296,6 +305,7 @@ update skips rows that are still claimed."
 **Problem:** While `drainInFlight` correctly prevents concurrent drains in a single-threaded JS context, the real issue is that multiple Electron windows each create their own agent manager, producing truly concurrent drain loops that race for the same worktree lock. Adding a synchronous boolean guard is a defense-in-depth measure, and logging makes it easier to diagnose when multiple instances are running.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:140-145,312-324`
 - Test: `src/main/agent-manager/__tests__/index.test.ts`
 
@@ -307,7 +317,7 @@ it('prevents initial drain from overlapping with interval drain', async () => {
   // Spy on the internal drain to count concurrent runs
   vi.mocked(getQueuedTasks).mockImplementation(async () => {
     drainCallCount++
-    await new Promise(r => setTimeout(r, 100)) // simulate slow fetch
+    await new Promise((r) => setTimeout(r, 100)) // simulate slow fetch
     return []
   })
 
@@ -338,7 +348,7 @@ async function drainLoop(): Promise<void> {
 To:
 
 ```typescript
-let drainRunning = false  // Add near line 112 with other state variables
+let drainRunning = false // Add near line 112 with other state variables
 
 async function drainLoop(): Promise<void> {
   if (drainRunning) {
@@ -347,7 +357,9 @@ async function drainLoop(): Promise<void> {
   }
   drainRunning = true
   try {
-    logger.info(`[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`)
+    logger.info(
+      `[agent-manager] Drain loop starting (shuttingDown=${shuttingDown}, slots=${availableSlots(concurrency, activeAgents.size)})`
+    )
     if (shuttingDown) return
     // ... rest of function unchanged
   } finally {
@@ -381,6 +393,7 @@ the deferred initial drain and interval-triggered drains."
 **Problem:** `orphanRecoveryRunning` flag causes `Skipping drain loop - orphan recovery in progress` on alternating 30s cycles, halving agent pickup throughput.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:144-148,262-278`
 - Test: `src/main/agent-manager/__tests__/index.test.ts`
 
@@ -425,6 +438,7 @@ effective drain throughput by skipping every other cycle."
 **Problem:** `branchNameForTask(title)` generates branch names from the task title slug. Two tasks with the same title (e.g., retries) create the same branch name, causing `git worktree add` failures. Stale branches from previous runs also block new runs.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/worktree.ts:10-17,77-94`
 - Test: `src/main/agent-manager/__tests__/worktree.test.ts` (create if needed)
 
@@ -504,6 +518,7 @@ Stale branches from previous runs of different tasks don't block new runs."
 **Problem:** "Agent produced no commits" covers 4+ distinct scenarios with no way to distinguish them in the UI. Agents that run successfully but decide no changes are needed look identical to agents that crashed.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/run-agent.ts:130-149`
 - Modify: `src/main/agent-manager/completion.ts:115-122`
 - Create: `src/main/agent-manager/__tests__/run-agent-summary.test.ts`
@@ -552,14 +567,17 @@ Then in the normal-exit path (around line 196-212), if `resolveSuccess` would ma
 Pass `agentSummary` as part of opts:
 
 ```typescript
-await resolveSuccess({
-  taskId: task.id,
-  worktreePath: worktree.worktreePath,
-  title: task.title,
-  ghRepo,
-  onTaskTerminal,
-  agentSummary,
-}, logger)
+await resolveSuccess(
+  {
+    taskId: task.id,
+    worktreePath: worktree.worktreePath,
+    title: task.title,
+    ghRepo,
+    onTaskTerminal,
+    agentSummary
+  },
+  logger
+)
 ```
 
 - [ ] **Step 3: Use agent summary in completion "no commits" path**
@@ -587,7 +605,7 @@ await updateTask(taskId, {
   status: 'error',
   completed_at: new Date().toISOString(),
   notes: summaryNote,
-  claimed_by: null,
+  claimed_by: null
 })
 ```
 
@@ -614,6 +632,7 @@ agents that decided no changes were needed vs agents that failed."
 **Problem:** Agent records are created with `pid: null` (SDK agents don't expose a PID). The watchdog checks `process.kill(pid, 0)` which can't work on null PIDs. Records accumulate as `running` indefinitely.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/run-agent.ts:108-127`
 - Modify: `src/main/agent-history.ts` (add cleanup function)
 - Test: `src/main/agent-manager/__tests__/run-agent.test.ts`
@@ -652,7 +671,9 @@ try {
   const { finalizeStaleAgentRuns } = await import('../agent-history')
   const cleaned = finalizeStaleAgentRuns()
   if (cleaned > 0) logger.info(`[agent-manager] Finalized ${cleaned} stale agent_runs records`)
-} catch { /* best-effort */ }
+} catch {
+  /* best-effort */
+}
 ```
 
 - [ ] **Step 4: Run tests**
@@ -686,6 +707,7 @@ Tasks are independent and can be parallelized, but if executing sequentially, th
 7. **Task 8** (stale records) — standalone
 
 **Recommended parallel groupings:**
+
 - Group A: Tasks 1, 6, 8 (completely independent files)
 - Group B: Tasks 2+3 (same error path in index.ts)
 - Group C: Tasks 4+5 (drain loop in index.ts)

@@ -45,7 +45,12 @@ function getFailureInfo(
   return { icon: XCircle, label: 'Agent failed', className: 'task-pill__fail--agent' }
 }
 
-export function TaskPill({ task, selected, multiSelected, onClick }: TaskPillProps): React.JSX.Element {
+export function TaskPill({
+  task,
+  selected,
+  multiSelected,
+  onClick
+}: TaskPillProps): React.JSX.Element {
   const [elapsed, setElapsed] = useState('')
   const [arriving, setArriving] = useState(false)
   const prevStatusRef = useRef(task.status)

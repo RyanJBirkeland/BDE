@@ -9,13 +9,13 @@ BDE has 5 separate SDK spawn points that each assemble agent prompts independent
 
 ### Current Spawn Points
 
-| File | Purpose | Gets CLAUDE.md? | Gets preamble? |
-|------|---------|-----------------|----------------|
-| `src/main/agent-manager/sdk-adapter.ts` | Pipeline task agents | No | No |
-| `src/main/adhoc-agent.ts` | User-spawned interactive agents | No | No |
-| `src/main/handlers/workbench.ts` | Spec chat/generation (copilot) | No | No |
-| `src/main/services/spec-synthesizer.ts` | AI spec synthesis | Manual fs.readFile hack | No |
-| `src/main/spec-semantic-check.ts` | Spec validation | No | No |
+| File                                    | Purpose                         | Gets CLAUDE.md?         | Gets preamble? |
+| --------------------------------------- | ------------------------------- | ----------------------- | -------------- |
+| `src/main/agent-manager/sdk-adapter.ts` | Pipeline task agents            | No                      | No             |
+| `src/main/adhoc-agent.ts`               | User-spawned interactive agents | No                      | No             |
+| `src/main/handlers/workbench.ts`        | Spec chat/generation (copilot)  | No                      | No             |
+| `src/main/services/spec-synthesizer.ts` | AI spec synthesis               | Manual fs.readFile hack | No             |
+| `src/main/spec-semantic-check.ts`       | Spec validation                 | No                      | No             |
 
 ## Solution
 
@@ -40,22 +40,24 @@ prompt-composer.ts: buildAgentPrompt({ agentType, task?, branch?, ... })
 
 ### Agent Types
 
-| Type | Role | Used by | Tools? | Interactive? |
-|------|------|---------|--------|-------------|
-| `pipeline` | Autonomous task execution | `run-agent.ts` | Yes | No |
-| `assistant` | Interactive BDE helper | `adhoc-agent.ts` | Yes | Yes |
-| `adhoc` | User-spawned single task | `adhoc-agent.ts` | Yes | Yes |
-| `copilot` | Workbench spec helper | `workbench.ts` | No | No |
-| `synthesizer` | Spec generation | `spec-synthesizer.ts` | No | No |
+| Type          | Role                      | Used by               | Tools? | Interactive? |
+| ------------- | ------------------------- | --------------------- | ------ | ------------ |
+| `pipeline`    | Autonomous task execution | `run-agent.ts`        | Yes    | No           |
+| `assistant`   | Interactive BDE helper    | `adhoc-agent.ts`      | Yes    | Yes          |
+| `adhoc`       | User-spawned single task  | `adhoc-agent.ts`      | Yes    | Yes          |
+| `copilot`     | Workbench spec helper     | `workbench.ts`        | No     | No           |
+| `synthesizer` | Spec generation           | `spec-synthesizer.ts` | No     | No           |
 
 ### Preamble Content
 
 **Universal section** (all agents):
+
 - Identity: "You are a BDE agent"
 - Hard rules: never push to main, never commit secrets, run tests, use project commit format
 - Environment: npm install if needed, project uses TypeScript strict mode
 
 **Role-specific sections**:
+
 - `pipeline`: Execute the sprint task spec. Commit, push to assigned branch. Run tests before pushing.
 - `assistant`: Interactive helper. Help the user understand the codebase, debug, explore, answer questions. Full tool access.
 - `adhoc`: Execute the user's request. Commit, push to assigned branch.
@@ -121,16 +123,16 @@ The assistant is an adhoc agent spawned with `agentType: 'assistant'`. No new sp
 
 ## File Changes Summary
 
-| File | Change |
-|------|--------|
-| `src/main/agent-manager/prompt-composer.ts` | **New** — buildAgentPrompt() + preamble templates |
-| `src/main/agent-manager/sdk-adapter.ts` | Add `settingSources` to SDK options |
-| `src/main/agent-manager/run-agent.ts` | Use buildAgentPrompt(), remove inline augmentation |
-| `src/main/adhoc-agent.ts` | Use buildAgentPrompt(), add assistant flag |
-| `src/main/handlers/workbench.ts` | Use buildAgentPrompt() for copilot preamble |
-| `src/main/services/spec-synthesizer.ts` | Use buildAgentPrompt(), remove manual CLAUDE.md read |
-| `src/shared/types.ts` | Add `AgentType` type, `assistant` flag to spawn args |
-| `src/preload/index.ts` + `.d.ts` | Expose assistant spawn option |
+| File                                        | Change                                               |
+| ------------------------------------------- | ---------------------------------------------------- |
+| `src/main/agent-manager/prompt-composer.ts` | **New** — buildAgentPrompt() + preamble templates    |
+| `src/main/agent-manager/sdk-adapter.ts`     | Add `settingSources` to SDK options                  |
+| `src/main/agent-manager/run-agent.ts`       | Use buildAgentPrompt(), remove inline augmentation   |
+| `src/main/adhoc-agent.ts`                   | Use buildAgentPrompt(), add assistant flag           |
+| `src/main/handlers/workbench.ts`            | Use buildAgentPrompt() for copilot preamble          |
+| `src/main/services/spec-synthesizer.ts`     | Use buildAgentPrompt(), remove manual CLAUDE.md read |
+| `src/shared/types.ts`                       | Add `AgentType` type, `assistant` flag to spawn args |
+| `src/preload/index.ts` + `.d.ts`            | Expose assistant spawn option                        |
 
 ## YAGNI — Explicitly Out of Scope
 

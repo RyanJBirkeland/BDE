@@ -10,8 +10,8 @@ The event dispatch was added to `CommandPalette` but the corresponding `addEvent
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
+| File                                      | Change                                                                                                    |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `src/renderer/src/views/SessionsView.tsx` | Add a `useEffect` that listens for the `bde:open-spawn-modal` custom event and sets `spawnOpen` to `true` |
 
 ## Implementation Notes

@@ -18,29 +18,29 @@ Raw hex color values are scattered through TSX and CSS files instead of referenc
 
 #### In TSX files
 
-| File | Line(s) | Color | Should Be |
-|------|---------|-------|-----------|
-| `TerminalView.tsx` | 144, 159 | `#a78bfa` | `var(--color-ai)` — addressed in DP-S4 |
-| `CostView.tsx` | 35 | `#3B82F6` (haiku) | `var(--color-info)` |
-| `CostView.tsx` | 36 | `#00D37F` (sonnet) | `var(--accent)` |
-| `CostView.tsx` | 37 | `#F59E0B` (opus) | `var(--color-warning)` |
-| `SettingsView.tsx` | 18-23 | 6 accent presets | Acceptable — these are literal color values for a color picker |
+| File               | Line(s)  | Color              | Should Be                                                      |
+| ------------------ | -------- | ------------------ | -------------------------------------------------------------- |
+| `TerminalView.tsx` | 144, 159 | `#a78bfa`          | `var(--color-ai)` — addressed in DP-S4                         |
+| `CostView.tsx`     | 35       | `#3B82F6` (haiku)  | `var(--color-info)`                                            |
+| `CostView.tsx`     | 36       | `#00D37F` (sonnet) | `var(--accent)`                                                |
+| `CostView.tsx`     | 37       | `#F59E0B` (opus)   | `var(--color-warning)`                                         |
+| `SettingsView.tsx` | 18-23    | 6 accent presets   | Acceptable — these are literal color values for a color picker |
 
 #### In CSS files
 
-| File | Line(s) | Color | Should Be |
-|------|---------|-------|-----------|
-| `sprint.css:685` | `#60a5fa` | Blue column icon | `var(--color-info)` |
-| `sprint.css:849` | `#888` | Agent chip idle dot | `var(--text-secondary)` |
-| `sprint.css:853` | `#00D37F` | Agent chip running dot | `var(--color-running)` |
-| `sprint.css:858` | `#6C8EEF` | Agent chip done dot | `var(--color-queued)` |
-| `sprint.css:862` | `#FF453A` | Agent chip error dot | `var(--color-error)` |
-| `main.css:771` | `#ef4444` | Toast error background | `var(--color-error)` |
-| `main.css:776` | `#fff` | Toast error text | `var(--text-primary)` (or white via a semantic var) |
-| `main.css:778` | `#2a2a2a` | Toast info background | `var(--bg-card)` |
-| `main.css:714` | `#000` | Memory editor toast text | Should use semantic color |
-| `design-system.css:47` | `#000` | Primary button text | `var(--bg-void)` or keep as literal (intentional contrast) |
-| `sprint.css:425-426` | `#60a5fa`, `rgba(96,165,250,0.3)` | PR row open button hover | `var(--color-info)`, `rgba(91, 158, 255, 0.15)` |
+| File                   | Line(s)                           | Color                    | Should Be                                                  |
+| ---------------------- | --------------------------------- | ------------------------ | ---------------------------------------------------------- |
+| `sprint.css:685`       | `#60a5fa`                         | Blue column icon         | `var(--color-info)`                                        |
+| `sprint.css:849`       | `#888`                            | Agent chip idle dot      | `var(--text-secondary)`                                    |
+| `sprint.css:853`       | `#00D37F`                         | Agent chip running dot   | `var(--color-running)`                                     |
+| `sprint.css:858`       | `#6C8EEF`                         | Agent chip done dot      | `var(--color-queued)`                                      |
+| `sprint.css:862`       | `#FF453A`                         | Agent chip error dot     | `var(--color-error)`                                       |
+| `main.css:771`         | `#ef4444`                         | Toast error background   | `var(--color-error)`                                       |
+| `main.css:776`         | `#fff`                            | Toast error text         | `var(--text-primary)` (or white via a semantic var)        |
+| `main.css:778`         | `#2a2a2a`                         | Toast info background    | `var(--bg-card)`                                           |
+| `main.css:714`         | `#000`                            | Memory editor toast text | Should use semantic color                                  |
+| `design-system.css:47` | `#000`                            | Primary button text      | `var(--bg-void)` or keep as literal (intentional contrast) |
+| `sprint.css:425-426`   | `#60a5fa`, `rgba(96,165,250,0.3)` | PR row open button hover | `var(--color-info)`, `rgba(91, 158, 255, 0.15)`            |
 
 ---
 
@@ -52,9 +52,9 @@ Replace the JS object with CSS custom properties:
 
 ```css
 /* base.css — add model-specific colors */
---color-model-haiku:  var(--color-info);
+--color-model-haiku: var(--color-info);
 --color-model-sonnet: var(--accent);
---color-model-opus:   var(--color-warning);
+--color-model-opus: var(--color-warning);
 ```
 
 In `CostView.tsx`, read these via `getComputedStyle` or pass as CSS class modifiers on SVG elements.
@@ -65,24 +65,45 @@ Replace each hardcoded hex with the appropriate CSS variable reference:
 
 ```css
 /* Before */
-.agent-chip--idle .agent-chip__dot { background: #888; }
-.agent-chip--running .agent-chip__dot { background: #00D37F; }
+.agent-chip--idle .agent-chip__dot {
+  background: #888;
+}
+.agent-chip--running .agent-chip__dot {
+  background: #00d37f;
+}
 
 /* After */
-.agent-chip--idle .agent-chip__dot { background: var(--text-secondary); }
-.agent-chip--running .agent-chip__dot { background: var(--color-running); }
+.agent-chip--idle .agent-chip__dot {
+  background: var(--text-secondary);
+}
+.agent-chip--running .agent-chip__dot {
+  background: var(--color-running);
+}
 ```
 
 ### 3. Toast colors in main.css
 
 ```css
 /* Before */
-.toast--error { background: #ef4444; color: #fff; }
-.toast--info { background: #2a2a2a; color: var(--bde-text); }
+.toast--error {
+  background: #ef4444;
+  color: #fff;
+}
+.toast--info {
+  background: #2a2a2a;
+  color: var(--bde-text);
+}
 
 /* After */
-.toast--error { background: var(--color-error); color: var(--text-primary); }
-.toast--info { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
+.toast--error {
+  background: var(--color-error);
+  color: var(--text-primary);
+}
+.toast--info {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
 ```
 
 ### 4. Allowlist
@@ -97,12 +118,12 @@ The following hardcoded colors are **intentional** and should NOT be changed:
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/assets/base.css` | Add `--color-model-*` variables |
-| `src/renderer/src/assets/sprint.css` | Replace 6 hardcoded hex values |
-| `src/renderer/src/assets/main.css` | Replace toast hex values, memory editor toast |
-| `src/renderer/src/views/CostView.tsx` | Replace MODEL_COLORS with CSS var references |
+| File                                  | Change                                        |
+| ------------------------------------- | --------------------------------------------- |
+| `src/renderer/src/assets/base.css`    | Add `--color-model-*` variables               |
+| `src/renderer/src/assets/sprint.css`  | Replace 6 hardcoded hex values                |
+| `src/renderer/src/assets/main.css`    | Replace toast hex values, memory editor toast |
+| `src/renderer/src/views/CostView.tsx` | Replace MODEL_COLORS with CSS var references  |
 
 ## Acceptance Criteria
 

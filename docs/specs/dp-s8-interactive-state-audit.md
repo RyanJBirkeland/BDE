@@ -14,48 +14,48 @@ Interactive elements (buttons, links, cards, list items) have inconsistent hover
 
 #### Missing hover states
 
-| Element | File | Line | Issue |
-|---------|------|------|-------|
-| SettingsView theme buttons | `SettingsView.tsx:223-231` | Uses `bde-btn` classes directly instead of `<Button>` component | Inconsistent with rest of app |
-| Memory file list items | `main.css:630-631` | `:hover` uses `var(--bde-border)` as background — blends with `--active` state | Should use `var(--bg-hover)` |
-| Git file items | `main.css:1248-1249` | `:hover` uses `var(--bde-hover-subtle)` — inconsistent with memory files | Should use same hover token |
-| Diff file items | `main.css:970-971` | `:hover` uses `var(--bde-border)` — same as active state | Active and hover are indistinguishable |
-| Cost table rows | `cost.css:203-204` | `:hover` uses `rgba(255,255,255,0.02)` — hardcoded, nearly invisible | Should use `var(--bg-hover)` |
-| Sprint cards | `sprint.css:786-794` | No `:hover` state at all | Should show subtle border glow or background lift |
-| Task cards | `sprint.css:786` | No `:hover` state | Should highlight on hover (cursor is `grab`) |
+| Element                    | File                       | Line                                                                           | Issue                                             |
+| -------------------------- | -------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
+| SettingsView theme buttons | `SettingsView.tsx:223-231` | Uses `bde-btn` classes directly instead of `<Button>` component                | Inconsistent with rest of app                     |
+| Memory file list items     | `main.css:630-631`         | `:hover` uses `var(--bde-border)` as background — blends with `--active` state | Should use `var(--bg-hover)`                      |
+| Git file items             | `main.css:1248-1249`       | `:hover` uses `var(--bde-hover-subtle)` — inconsistent with memory files       | Should use same hover token                       |
+| Diff file items            | `main.css:970-971`         | `:hover` uses `var(--bde-border)` — same as active state                       | Active and hover are indistinguishable            |
+| Cost table rows            | `cost.css:203-204`         | `:hover` uses `rgba(255,255,255,0.02)` — hardcoded, nearly invisible           | Should use `var(--bg-hover)`                      |
+| Sprint cards               | `sprint.css:786-794`       | No `:hover` state at all                                                       | Should show subtle border glow or background lift |
+| Task cards                 | `sprint.css:786`           | No `:hover` state                                                              | Should highlight on hover (cursor is `grab`)      |
 
 #### Missing focus states
 
-| Element | Issue |
-|---------|-------|
-| Memory file buttons | Use `:focus-visible` outline but custom `.memory-file--focused` for keyboard nav — two competing focus indicators |
-| Git sidebar action buttons | No focus ring (`git-sidebar__action`) |
-| Sprint task action buttons | No focus ring (`sprint-tasks__action-btn`) |
-| PR row buttons | No focus ring (`pr-row__btn`) |
-| Command palette items | Have `:hover` and `--selected` but no `:focus-visible` |
+| Element                    | Issue                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Memory file buttons        | Use `:focus-visible` outline but custom `.memory-file--focused` for keyboard nav — two competing focus indicators |
+| Git sidebar action buttons | No focus ring (`git-sidebar__action`)                                                                             |
+| Sprint task action buttons | No focus ring (`sprint-tasks__action-btn`)                                                                        |
+| PR row buttons             | No focus ring (`pr-row__btn`)                                                                                     |
+| Command palette items      | Have `:hover` and `--selected` but no `:focus-visible`                                                            |
 
 #### Missing active states
 
-| Element | Issue |
-|---------|-------|
+| Element                                          | Issue                           |
+| ------------------------------------------------ | ------------------------------- |
 | Most custom buttons outside `<Button>` component | No `:active` transform/feedback |
-| `git-sidebar__action` | No active state |
-| `sprint-tasks__action-btn` | No active state |
-| `pr-row__btn` | No active state |
-| DiffView repo chips | No active press feedback |
+| `git-sidebar__action`                            | No active state                 |
+| `sprint-tasks__action-btn`                       | No active state                 |
+| `pr-row__btn`                                    | No active state                 |
+| DiffView repo chips                              | No active press feedback        |
 
 #### Inconsistent hover tokens
 
 The codebase uses at least 5 different hover background values:
 
-| Token | Value | Used By |
-|-------|-------|---------|
-| `--bde-hover` | `rgba(255,255,255,0.04)` | Activity bar items, sprint board repo chip active |
-| `--bde-hover-strong` | `rgba(255,255,255,0.06)` | Button ghost hover, command palette selected |
-| `--bde-hover-subtle` | `rgba(255,255,255,0.03)` | Git file item hover |
-| `--bde-border` | `#333333` | Memory file hover, diff file hover (wrong — this is a border color used as bg) |
-| `var(--bg-hover)` | `#1C1C27` (v2) | Not used in any component |
-| Hardcoded `rgba(255,255,255,0.02)` | — | Cost table row hover |
+| Token                              | Value                    | Used By                                                                        |
+| ---------------------------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| `--bde-hover`                      | `rgba(255,255,255,0.04)` | Activity bar items, sprint board repo chip active                              |
+| `--bde-hover-strong`               | `rgba(255,255,255,0.06)` | Button ghost hover, command palette selected                                   |
+| `--bde-hover-subtle`               | `rgba(255,255,255,0.03)` | Git file item hover                                                            |
+| `--bde-border`                     | `#333333`                | Memory file hover, diff file hover (wrong — this is a border color used as bg) |
+| `var(--bg-hover)`                  | `#1C1C27` (v2)           | Not used in any component                                                      |
+| Hardcoded `rgba(255,255,255,0.02)` | —                        | Cost table row hover                                                           |
 
 ---
 
@@ -124,22 +124,28 @@ Any `<button>` element that isn't using the `<Button>` component should get:
 For `memory-file`, `diff-file-item`, and `git-file-item`, ensure hover and active (selected) states are visually distinct:
 
 ```css
-.memory-file:hover { background: var(--bg-hover); }
-.memory-file--active { background: var(--bg-active); }
-.memory-file--active:hover { background: var(--bg-active); } /* active wins */
+.memory-file:hover {
+  background: var(--bg-hover);
+}
+.memory-file--active {
+  background: var(--bg-active);
+}
+.memory-file--active:hover {
+  background: var(--bg-active);
+} /* active wins */
 ```
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/assets/main.css` | Fix hover tokens for memory/diff/git file items, add focus rings |
-| `src/renderer/src/assets/sprint.css` | Add hover to task-card/sprint-card, focus rings to action buttons |
-| `src/renderer/src/assets/cost.css` | Replace hardcoded hover with `var(--bg-hover)` |
-| `src/renderer/src/assets/design-system.css` | Add `.bde-focusable` utility class |
-| `src/renderer/src/views/SettingsView.tsx` | Replace manual `bde-btn` with `<Button>` component |
+| File                                        | Change                                                            |
+| ------------------------------------------- | ----------------------------------------------------------------- |
+| `src/renderer/src/assets/main.css`          | Fix hover tokens for memory/diff/git file items, add focus rings  |
+| `src/renderer/src/assets/sprint.css`        | Add hover to task-card/sprint-card, focus rings to action buttons |
+| `src/renderer/src/assets/cost.css`          | Replace hardcoded hover with `var(--bg-hover)`                    |
+| `src/renderer/src/assets/design-system.css` | Add `.bde-focusable` utility class                                |
+| `src/renderer/src/views/SettingsView.tsx`   | Replace manual `bde-btn` with `<Button>` component                |
 
 ## Acceptance Criteria
 

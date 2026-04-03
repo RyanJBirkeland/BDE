@@ -12,6 +12,7 @@
 The Source Control view provides a clean, functional git workflow interface with good component separation and solid test coverage. The neon design system is consistently applied, and accessibility features are present throughout. However, there are several areas for improvement around error handling UX, visual feedback, keyboard navigation, and performance optimizations.
 
 **Strengths:**
+
 - Clean component architecture with single-responsibility components
 - Comprehensive test coverage (100% coverage on all components except view-level orchestration)
 - Consistent use of design tokens
@@ -19,15 +20,19 @@ The Source Control view provides a clean, functional git workflow interface with
 - Effective error state management with persistent banner
 
 **Critical Issues:**
+
 - 0 critical issues
 
 **High Priority Issues:**
+
 - 3 high-priority UX improvements needed
 
 **Medium Priority Issues:**
+
 - 8 medium-priority enhancements
 
 **Low Priority Issues:**
+
 - 5 polish/nice-to-have items
 
 ---
@@ -37,6 +42,7 @@ The Source Control view provides a clean, functional git workflow interface with
 ### 1.1 Header Organization ✅ GOOD
 
 The header uses a clear left-to-right flow:
+
 - Title (left, gradient text)
 - Spacer
 - Repo selector (if multiple repos)
@@ -44,11 +50,13 @@ The header uses a clear left-to-right flow:
 - Refresh button
 
 **Strengths:**
+
 - Clean visual separation with borders
 - Gradient text on title provides visual anchor
 - Flex-wrap allows responsive stacking
 
 **Issue #1 — MEDIUM:** No visual indicator for when refresh is needed
+
 - **Finding:** The refresh button doesn't show when the view is stale (e.g., after external git operations)
 - **Impact:** Users don't know if data is outdated
 - **Recommendation:** Add a subtle indicator (badge, color change) when status is >30s old
@@ -58,11 +66,13 @@ The header uses a clear left-to-right flow:
 The three-section structure (Staged → Modified → Untracked) is clear and follows git conventions.
 
 **Issue #2 — LOW:** Section order doesn't match workflow
+
 - **Finding:** Commit box appears before file sections, but users need to stage files first
 - **Impact:** Slight workflow friction
 - **Recommendation:** Consider moving CommitBox below file sections, or add visual cues connecting sections
 
 **Strengths:**
+
 - Collapsible sections reduce clutter
 - File count badges provide quick overview
 - Status letters (M/A/D/?) are color-coded
@@ -70,11 +80,13 @@ The three-section structure (Staged → Modified → Untracked) is clear and fol
 ### 1.3 Diff Drawer Layout ✅ GOOD
 
 **Strengths:**
+
 - Expands to fullscreen on demand
 - Sticky header with file path
 - Clean expand/collapse icons
 
 **Issue #3 — LOW:** No visual indicator of available actions
+
 - **Finding:** Users may not discover the expand button
 - **Impact:** Reduced discoverability
 - **Recommendation:** Add tooltip on first render or subtle hint text
@@ -86,6 +98,7 @@ The three-section structure (Staged → Modified → Untracked) is clear and fol
 ### 2.1 Design Tokens ✅ EXCELLENT
 
 All CSS uses design tokens consistently:
+
 - `var(--bde-surface)`, `var(--bde-border)`, `var(--bde-text-muted)`, etc.
 - No hardcoded colors found (✅ clean audit)
 - Proper use of spacing tokens (`var(--bde-space-1/2/3)`)
@@ -93,11 +106,13 @@ All CSS uses design tokens consistently:
 ### 2.2 Component Patterns ✅ GOOD
 
 **Strengths:**
+
 - BEM-like naming (`.git-tree-view__header`, `.git-commit-box__textarea`)
 - Consistent button patterns (ghost buttons for secondary actions)
 - Proper disabled states on all interactive elements
 
 **Issue #4 — MEDIUM:** Inconsistent focus states
+
 - **Finding:** Some buttons have focus outlines, others don't
 - **Impact:** Keyboard navigation visibility
 - **Recommendation:** Add consistent `:focus-visible` styles to all buttons
@@ -106,6 +121,7 @@ All CSS uses design tokens consistently:
 ### 2.3 Motion & Animation ✅ GOOD
 
 **Strengths:**
+
 - Respects reduced motion preference (`useReducedMotion()`)
 - Smooth transitions on diff drawer expansion
 - Loading spinner uses CSS keyframes
@@ -119,6 +135,7 @@ All CSS uses design tokens consistently:
 ### 3.1 ARIA & Semantics ✅ EXCELLENT
 
 **Strengths:**
+
 - Proper `role="region"` on diff drawer with `aria-label`
 - `role="alert"` on error banner
 - `aria-expanded` on collapsible sections
@@ -129,6 +146,7 @@ All CSS uses design tokens consistently:
 ### 3.2 Keyboard Navigation ⚠️ NEEDS WORK
 
 **Issue #5 — HIGH:** No keyboard shortcuts for common actions
+
 - **Finding:** Users must tab through all elements to stage/unstage files
 - **Impact:** Slow workflow for keyboard users
 - **Recommendation:** Add shortcuts:
@@ -138,11 +156,13 @@ All CSS uses design tokens consistently:
   - `⌘↵` already works in commit box ✅
 
 **Issue #6 — MEDIUM:** File row keyboard selection is cumbersome
+
 - **Finding:** Must Tab to each file, then Tab to the +/- button, then click
 - **Impact:** Slow for keyboard-only users
 - **Recommendation:** Arrow keys to navigate files, Space to stage/unstage, Enter to view diff
 
 **Issue #7 — MEDIUM:** Branch selector dropdown doesn't support arrow key navigation
+
 - **Finding:** Clicking a branch requires precise mouse targeting
 - **Impact:** Keyboard users struggle with branch switching
 - **Recommendation:** Add arrow key navigation within dropdown, Enter to select
@@ -151,11 +171,13 @@ All CSS uses design tokens consistently:
 ### 3.3 Screen Reader Support ✅ GOOD
 
 **Strengths:**
+
 - All buttons have descriptive labels
 - File status letters have `aria-label="status: M"`
 - Commit loading state announces via `aria-busy`
 
 **Issue #8 — LOW:** No live region for file count changes
+
 - **Finding:** When files are staged/unstaged, count badge updates silently
 - **Impact:** Screen reader users don't know the operation succeeded
 - **Recommendation:** Add `aria-live="polite"` to section count badges
@@ -167,6 +189,7 @@ All CSS uses design tokens consistently:
 ### 4.1 Re-render Optimization ⚠️ NEEDS ATTENTION
 
 **Issue #9 — HIGH:** View re-renders on every store update
+
 - **Finding:** `GitTreeView.tsx` uses 13 separate `useGitTreeStore()` calls (lines 14-27)
 - **Impact:** Unnecessary re-renders when unrelated state changes
 - **Recommendation:** Use `useShallow()` to batch selectors:
@@ -182,6 +205,7 @@ All CSS uses design tokens consistently:
 - **Location:** `GitTreeView.tsx` lines 14-27
 
 **Issue #10 — MEDIUM:** `getState()` called inside component body
+
 - **Finding:** Line 43 calls `useGitTreeStore.getState()` in component body
 - **Impact:** Gets stale references if store updates during render
 - **Recommendation:** Use selectors for data, only use `getState()` in event handlers
@@ -190,6 +214,7 @@ All CSS uses design tokens consistently:
 ### 4.2 Network Calls ✅ EFFICIENT
 
 **Strengths:**
+
 - Single `fetchStatus()` call per user action
 - Debouncing not needed (operations are user-triggered)
 - No polling observed
@@ -205,6 +230,7 @@ File lists are typically <100 items (git changed files), so virtualization is un
 ### 5.1 Component Architecture ✅ EXCELLENT
 
 **Strengths:**
+
 - Clean separation: View orchestrates, components handle presentation
 - Single Responsibility Principle throughout
 - Props interfaces well-typed
@@ -213,11 +239,13 @@ File lists are typically <100 items (git changed files), so virtualization is un
 ### 5.2 Error Handling ✅ GOOD
 
 **Strengths:**
+
 - Persistent error banner with Retry/Dismiss actions
 - Store tracks `commitLoading`, `pushLoading`, `lastError` separately
 - Smart retry logic (detects "Push" vs "Commit" errors)
 
 **Issue #11 — MEDIUM:** Error banner retry logic is fragile
+
 - **Finding:** Uses `lastError.startsWith('Push')` to decide whether to retry push or commit
 - **Impact:** If error message format changes, retry breaks
 - **Recommendation:** Store error type separately in store:
@@ -233,6 +261,7 @@ All components have proper TypeScript interfaces. No `any` types found in produc
 ### 5.4 Code Duplication
 
 **Issue #12 — LOW:** Stage All handlers duplicated
+
 - **Finding:** Lines 229-237 and 251-259 have identical lambda functions for `onStageAll`
 - **Impact:** Maintenance burden if logic changes
 - **Recommendation:** Extract to named function or move to store action
@@ -245,11 +274,13 @@ All components have proper TypeScript interfaces. No `any` types found in produc
 ### 6.1 Loading States ✅ GOOD
 
 **Strengths:**
+
 - Commit button shows "Committing..." with spinner
 - Push button shows "Pushing..." with spinner
 - Refresh button shows spinning icon
 
 **Issue #13 — LOW:** No skeleton state during initial load
+
 - **Finding:** View shows "No changes" briefly before data loads
 - **Impact:** Flash of incorrect state
 - **Recommendation:** Add `loading` check to empty state condition (line 267)
@@ -262,23 +293,27 @@ Clear "No changes" message when no files. Handled correctly with loading check.
 ### 6.3 Success Feedback ⚠️ NEEDS WORK
 
 **Issue #14 — HIGH:** No visual feedback for stage/unstage actions
+
 - **Finding:** Files move between sections silently
 - **Impact:** Users unsure if action succeeded
 - **Recommendation:** Add toast notifications for stage/unstage operations (similar to commit/push)
 - **Location:** `gitTree.ts` `stageFile`/`unstageFile` actions (lines 116-132)
 
 **Strengths:**
+
 - Commit and push show success toasts (`toast.success()`)
 
 ### 6.4 Commit Message UX ✅ GOOD
 
 **Strengths:**
+
 - Character counter shows "15/72" when typing
 - Warning color when first line exceeds 72 chars
 - Keyboard shortcut (⌘↵) for commit
 - Placeholder text includes shortcut hint
 
 **Issue #15 — MEDIUM:** No validation for conventional commit format
+
 - **Finding:** BDE uses `{type}: {description}` format, but commit box doesn't enforce it
 - **Impact:** Users may create non-standard commits
 - **Recommendation:** Add optional validation or autocomplete for `feat:`, `fix:`, `chore:` prefixes
@@ -287,11 +322,13 @@ Clear "No changes" message when no files. Handled correctly with loading check.
 ### 6.5 Branch Switching UX ✅ GOOD
 
 **Strengths:**
+
 - Branch selector disabled when uncommitted changes exist
 - Helpful tooltip: "Commit or stash changes before switching branches"
 - Dropdown closes on Escape key
 
 **Issue #16 — LOW:** No confirmation before checkout
+
 - **Finding:** Clicking a branch immediately checks out
 - **Impact:** Accidental branch switches
 - **Recommendation:** Add confirmation modal if there are uncommitted changes (even if zero staged)
@@ -342,6 +379,7 @@ All git-tree components have comprehensive tests:
 ### 7.2 View-Level Tests ✅ EXCELLENT
 
 **GitTreeView.test.tsx:** 579 lines, 36 tests organized into 9 describe blocks:
+
 - ✅ Basic rendering
 - ✅ Empty states
 - ✅ Loading states
@@ -357,6 +395,7 @@ All git-tree components have comprehensive tests:
 ### 7.3 Integration Test Gaps
 
 **Issue #17 — MEDIUM:** No integration tests for store actions
+
 - **Finding:** `gitTree.ts` store actions are not tested in isolation
 - **Impact:** Regression risk when modifying store logic
 - **Recommendation:** Add `gitTree.test.ts` to test:
@@ -366,6 +405,7 @@ All git-tree components have comprehensive tests:
   - `loadRepoPaths()` logic
 
 **Issue #18 — LOW:** No E2E test for full workflow
+
 - **Finding:** No E2E test for stage → commit → push flow
 - **Impact:** Can't verify real git operations work
 - **Recommendation:** Add Playwright test that:
@@ -419,15 +459,18 @@ All git-tree components have comprehensive tests:
 ### vs. IDE View Audit
 
 **Source Control is BETTER at:**
+
 - ✅ Test coverage (100% component coverage vs IDE's ~85%)
 - ✅ Error handling (persistent banner with smart retry)
 - ✅ Accessibility baseline (better ARIA labels)
 
 **Source Control is WORSE at:**
+
 - ⚠️ Keyboard navigation (no shortcuts, awkward file navigation)
 - ⚠️ Performance (more store selectors → more re-renders)
 
 **Both share:**
+
 - ❌ Lack of keyboard shortcut documentation overlay
 - ❌ No integration/E2E tests
 - ✅ Excellent use of design tokens
@@ -467,16 +510,16 @@ All git-tree components have comprehensive tests:
 
 ## 11. Appendix: File Inventory
 
-| File | Lines | Purpose | Test Coverage |
-|------|-------|---------|---------------|
-| `GitTreeView.tsx` | 289 | Main view orchestration | ✅ 36 tests |
-| `gitTree.ts` | 212 | Zustand store | ❌ Not tested |
-| `source-control-neon.css` | 840 | Neon styling | N/A |
-| `CommitBox.tsx` | 110 | Commit message input | ✅ 35 tests |
-| `FileTreeSection.tsx` | 107 | Collapsible file sections | ✅ 22 tests |
-| `GitFileRow.tsx` | 108 | Individual file display | ✅ 14 tests |
-| `BranchSelector.tsx` | 96 | Branch dropdown | ✅ 16 tests |
-| `InlineDiffDrawer.tsx` | 88 | Diff preview pane | ✅ 19 tests |
+| File                      | Lines | Purpose                   | Test Coverage |
+| ------------------------- | ----- | ------------------------- | ------------- |
+| `GitTreeView.tsx`         | 289   | Main view orchestration   | ✅ 36 tests   |
+| `gitTree.ts`              | 212   | Zustand store             | ❌ Not tested |
+| `source-control-neon.css` | 840   | Neon styling              | N/A           |
+| `CommitBox.tsx`           | 110   | Commit message input      | ✅ 35 tests   |
+| `FileTreeSection.tsx`     | 107   | Collapsible file sections | ✅ 22 tests   |
+| `GitFileRow.tsx`          | 108   | Individual file display   | ✅ 14 tests   |
+| `BranchSelector.tsx`      | 96    | Branch dropdown           | ✅ 16 tests   |
+| `InlineDiffDrawer.tsx`    | 88    | Diff preview pane         | ✅ 19 tests   |
 
 **Total:** 1,850 lines (code + tests)
 **Test Coverage:** ~85% (missing store tests)
@@ -488,6 +531,7 @@ All git-tree components have comprehensive tests:
 ### Color Usage ✅ COMPLIANT
 
 All colors reference design tokens:
+
 - Text: `var(--bde-text)`, `var(--bde-text-muted)`, `var(--bde-text-dim)`
 - Surfaces: `var(--bde-surface)`, `var(--bde-surface-high)`, `var(--bde-bg)`
 - Borders: `var(--bde-border)`, `var(--bde-border-hover)`
@@ -495,11 +539,13 @@ All colors reference design tokens:
 - Diff: `var(--bde-diff-add)`, `var(--bde-diff-del)`, `var(--bde-diff-add-bg)`, `var(--bde-diff-del-bg)`
 
 **Exception:** Error banner uses fallback colors:
+
 ```css
 background: var(--neon-red-surface, rgba(255, 50, 50, 0.1));
 border: var(--neon-red-border, rgba(255, 50, 50, 0.3));
 color: var(--neon-red, #ff5050);
 ```
+
 **Recommendation:** Define these in `neon.css` to ensure consistency.
 
 ### Typography ✅ COMPLIANT

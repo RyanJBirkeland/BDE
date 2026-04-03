@@ -138,8 +138,8 @@ Export `RECONCILE_INTERVAL_MS` to `constants.ts` or keep it module-local (prefer
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
+| File                       | Change                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------- |
 | `src/main/local-agents.ts` | Extract 4 functions, simplify `getAgentProcesses()`, add reconciliation throttle |
 
 No other files change — the public API (`getAgentProcesses()`) signature is unchanged.

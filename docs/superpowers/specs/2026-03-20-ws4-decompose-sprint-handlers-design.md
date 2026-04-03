@@ -23,6 +23,7 @@ src/main/handlers/
 ```
 
 Combined with WS2:
+
 ```
 src/main/data/
   sprint-queries.ts         — CRUD queries (from WS2)
@@ -35,7 +36,15 @@ src/main/data/
 Thin dispatcher. Registers IPC handlers, delegates to query functions and spec module:
 
 ```typescript
-import { getTask, listTasks, createTask, updateTask, deleteTask, claimTask, releaseTask } from '../data/sprint-queries'
+import {
+  getTask,
+  listTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+  claimTask,
+  releaseTask
+} from '../data/sprint-queries'
 import { readSpecFile, generatePrompt } from './sprint-spec'
 import { notifySprintMutation } from './sprint-listeners'
 
@@ -46,7 +55,7 @@ export function registerSprintHandlers(): void {
   safeHandle('sprint:get', (_e, id) => getTask(db, id))
   safeHandle('sprint:create', async (_e, input) => {
     const task = createTask(db, input)
-    notifySprintMutation('created', task)  // uses structured event signature
+    notifySprintMutation('created', task) // uses structured event signature
     return task
   })
   safeHandle('sprint:update', async (_e, id, patch) => {
@@ -109,7 +118,11 @@ export function onSprintMutation(cb: SprintMutationListener): () => void {
 export function notifySprintMutation(type: SprintMutationEvent['type'], task: SprintTask): void {
   const event = { type, task }
   for (const cb of listeners) {
-    try { cb(event) } catch { /* log */ }
+    try {
+      cb(event)
+    } catch {
+      /* log */
+    }
   }
 }
 ```
@@ -119,6 +132,7 @@ export function notifySprintMutation(type: SprintMutationEvent['type'], task: Sp
 ### 1. Create `src/main/handlers/sprint-spec.ts`
 
 Extract from sprint-local.ts:
+
 - `readSpecFile()`
 - `buildQuickSpecPrompt()`
 - `getTemplateScaffold()`
@@ -127,6 +141,7 @@ Extract from sprint-local.ts:
 ### 2. Create `src/main/handlers/sprint-listeners.ts`
 
 Extract from sprint-local.ts:
+
 - `onSprintMutation()` function
 - `notifySprintMutation()` (rename from internal `notifyMutation()`)
 - The `listeners` Set
@@ -140,13 +155,21 @@ Rename file. Keep only `registerSprintHandlers()` function. Import queries from 
 Currently imports 6 functions from `../handlers/sprint-local`. After refactor:
 
 ```typescript
-import { getTask, listTasks, claimTask, updateTask, releaseTask, getQueueStats } from '../data/sprint-queries'
+import {
+  getTask,
+  listTasks,
+  claimTask,
+  updateTask,
+  releaseTask,
+  getQueueStats
+} from '../data/sprint-queries'
 import { onSprintMutation } from '../handlers/sprint-listeners'
 ```
 
 ### 5. Update other importers
 
 Check all files importing from `sprint-local`:
+
 - `src/main/sprint-pr-poller.ts` — uses `markTaskDoneByPrNumber`, `markTaskCancelledByPrNumber`, `listTasksWithOpenPrs`, `updateTaskMergeableState` → import from `../data/sprint-queries`
 - `src/main/handlers/git-handlers.ts` — uses `markTaskDoneByPrNumber`, `markTaskCancelledByPrNumber`, `updateTaskMergeableState` → import from `../data/sprint-queries`
 - `src/main/agent-history.ts` — uses `clearSprintTaskFk` → import from `../data/sprint-queries`
@@ -156,6 +179,7 @@ All of these functions (`listTasksWithOpenPrs`, `updateTaskMergeableState`, `cle
 ### 6. Update `src/main/index.ts`
 
 Change handler registration call:
+
 ```typescript
 // Before
 import { registerSprintLocalHandlers } from './handlers/sprint-local'
@@ -165,12 +189,12 @@ import { registerSprintHandlers } from './handlers/sprint-handlers'
 
 ## File Size Targets
 
-| File | Target LOC |
-|------|-----------|
-| `sprint-handlers.ts` | ~80 |
-| `sprint-spec.ts` | ~120 |
-| `sprint-listeners.ts` | ~40 |
-| `data/sprint-queries.ts` (from WS2) | ~150 |
+| File                                | Target LOC |
+| ----------------------------------- | ---------- |
+| `sprint-handlers.ts`                | ~80        |
+| `sprint-spec.ts`                    | ~120       |
+| `sprint-listeners.ts`               | ~40        |
+| `data/sprint-queries.ts` (from WS2) | ~150       |
 
 Total: ~390 (down from 469 in one file, but with better separation)
 

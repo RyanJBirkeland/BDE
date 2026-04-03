@@ -12,21 +12,22 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Create | `src/renderer/src/components/pr-station/PRStationFilters.tsx` | Filter bar (repo, status, checks) |
-| Create | `src/renderer/src/components/pr-station/__tests__/PRStationFilters.test.tsx` | Filter tests |
-| Modify | `src/renderer/src/components/pr-station/PRStationList.tsx` | Accept filters, sort options |
-| Modify | `src/renderer/src/views/PRStationView.tsx` | Wire filters, add merge button to detail |
-| Modify | `src/renderer/src/components/pr-station/PRStationDetail.tsx` | Add merge button and strategy picker |
-| Create | `src/renderer/src/components/pr-station/MergeButton.tsx` | Merge button with strategy dropdown |
-| Create | `src/renderer/src/components/pr-station/__tests__/MergeButton.test.tsx` | Merge button tests |
+| Action | File                                                                         | Responsibility                           |
+| ------ | ---------------------------------------------------------------------------- | ---------------------------------------- |
+| Create | `src/renderer/src/components/pr-station/PRStationFilters.tsx`                | Filter bar (repo, status, checks)        |
+| Create | `src/renderer/src/components/pr-station/__tests__/PRStationFilters.test.tsx` | Filter tests                             |
+| Modify | `src/renderer/src/components/pr-station/PRStationList.tsx`                   | Accept filters, sort options             |
+| Modify | `src/renderer/src/views/PRStationView.tsx`                                   | Wire filters, add merge button to detail |
+| Modify | `src/renderer/src/components/pr-station/PRStationDetail.tsx`                 | Add merge button and strategy picker     |
+| Create | `src/renderer/src/components/pr-station/MergeButton.tsx`                     | Merge button with strategy dropdown      |
+| Create | `src/renderer/src/components/pr-station/__tests__/MergeButton.test.tsx`      | Merge button tests                       |
 
 ---
 
 ### Task 1: Build PR Filter Bar
 
 **Files:**
+
 - Create: `src/renderer/src/components/pr-station/PRStationFilters.tsx`
 - Create: `src/renderer/src/components/pr-station/__tests__/PRStationFilters.test.tsx`
 
@@ -167,6 +168,7 @@ git commit -m "feat: add PR Station filter bar with repo and sort options"
 ### Task 2: Wire Filters into PRStationView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/PRStationView.tsx`
 - Modify: `src/renderer/src/components/pr-station/PRStationList.tsx`
 
@@ -199,10 +201,13 @@ const filteredPrs = useMemo(() => {
   // Sort
   result.sort((a, b) => {
     switch (filters.sort) {
-      case 'created': return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      case 'title': return a.title.localeCompare(b.title)
+      case 'created':
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      case 'title':
+        return a.title.localeCompare(b.title)
       case 'updated':
-      default: return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      default:
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     }
   })
 
@@ -234,6 +239,7 @@ git commit -m "feat: wire PR filters and sorting into PR Station view"
 ### Task 3: Add Merge Button to PR Detail
 
 **Files:**
+
 - Create: `src/renderer/src/components/pr-station/MergeButton.tsx`
 - Create: `src/renderer/src/components/pr-station/__tests__/MergeButton.test.tsx`
 - Modify: `src/renderer/src/components/pr-station/PRStationDetail.tsx`

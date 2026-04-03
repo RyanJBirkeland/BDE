@@ -13,6 +13,7 @@
 **Problem:** `AgentEvent`, `AgentEventType`, `AgentSpawnOptions`, `AgentHandle`, `AgentProvider` are defined in `src/main/agents/types.ts`. This causes 8 dependency-direction violations where shared/, preload/, and renderer/ import from main/.
 
 **Fix:**
+
 - Move all types from `src/main/agents/types.ts` to `src/shared/types.ts`
 - Delete `src/main/agents/types.ts` (or keep as re-export barrel)
 - Update all 8+ imports across: `src/shared/ipc-channels.ts`, `src/preload/index.ts`, `src/preload/index.d.ts`, renderer stores/components, `src/main/agent-manager/agent-manager.ts`, `src/main/agents/event-bus.ts`, etc.
@@ -22,6 +23,7 @@
 **Problem:** `AgentManagerDeps.updateTask` and `handleCompletion` use `Record<string, unknown>` — erasing type safety near dynamic SQL.
 
 **Fix:**
+
 - Define `TaskUpdate` type with fields from `UPDATE_ALLOWLIST` + `error`, `started_at`, `completed_at`
 - Type `handleCompletion` to accept `CompletionContext` (already defined in completion-handler.ts) instead of `Record<string, unknown>`
 - Update `emitEvent` from `(agentId: string, event: unknown)` to `(agentId: string, event: AgentEvent)`
@@ -31,6 +33,7 @@
 **Problem:** `src/main/index.ts:150-181` contains two inline `db.prepare()` lambdas that duplicate the SQL update pattern from `data/sprint-queries.ts` and bypass the UPDATE_ALLOWLIST.
 
 **Fix:**
+
 - Add `getQueuedTasks(db)` function to `data/sprint-queries.ts`
 - Use existing `updateTask(db, id, patch)` from `data/sprint-queries.ts` (which enforces the allowlist) in the AgentManager dep wiring
 - Remove inline SQL from index.ts
@@ -62,6 +65,7 @@
 **Problem:** git.ts has 4 concerns: local git CLI ops, GitHub REST PR status polling, conflict detection, and repo path lookup.
 
 **Fix:**
+
 - Keep `src/main/git.ts` for local git operations (status, diff, stage, unstage, commit, push, branches, checkout)
 - Extract `src/main/github-pr-status.ts` for `fetchPrStatusRest`, `pollPrStatuses`, `PrStatusInput`, `PrStatusResult`
 - Extract `src/main/github-conflict-check.ts` for `checkConflictFiles`, `ConflictFilesInput`, `ConflictFilesResult`
@@ -73,6 +77,7 @@
 **Problem:** local-agents.ts has 6 concerns: spawning, event consumption, log tailing, log cleanup, PID tracking, cost extraction.
 
 **Fix:**
+
 - Keep `src/main/local-agents.ts` for: spawn, kill, steer, sendTo, PID maps, and the re-exports from agent-scanner
 - Extract `src/main/agent-cost-parser.ts` for `extractAgentCost`, `AgentCost`, `updateAgentRunCost`
 - Extract `src/main/agent-log-manager.ts` for `tailAgentLog`, `cleanupOldLogs`, `TailLogArgs`, `TailLogResult`
@@ -84,6 +89,7 @@
 **Problem:** Imports from handler layer (`handlers/sprint-local`) — wrong dependency direction. Module-level state makes it untestable.
 
 **Fix:**
+
 - Define `SprintPrPollerDeps` interface:
   ```ts
   interface SprintPrPollerDeps {
@@ -103,6 +109,7 @@
 **Problem:** event-bus.ts imports `broadcast` from `../broadcast` — permanently coupling the event bus to Electron's BrowserWindow.
 
 **Fix:**
+
 - Add `notify?: (channel: string, data: unknown) => void` to `createEventBus` options
 - Default to `broadcast` when not provided (backwards compat)
 - In tests, pass `notify: vi.fn()` to decouple from Electron
@@ -112,11 +119,16 @@
 **Problem:** `pushBranchAndOpenPr` hardcodes `execFileAsync('git'/'gh')` — inconsistent with AgentManager's DI.
 
 **Fix:**
+
 - Define `VcsOps` interface:
   ```ts
   interface VcsOps {
     pushBranch: (cwd: string, branch: string) => Promise<void>
-    createPr: (cwd: string, ghRepo: string, branch: string) => Promise<{ prUrl: string | null; prNumber: number | null }>
+    createPr: (
+      cwd: string,
+      ghRepo: string,
+      branch: string
+    ) => Promise<{ prUrl: string | null; prNumber: number | null }>
     getActualBranch: (cwd: string) => Promise<string>
     removeWorktree: (repoPath: string, worktreePath: string) => Promise<void>
   }
@@ -134,6 +146,7 @@
 **Problem:** Monolithic `IpcChannelMap` with ~50 entries — all consumers pull the entire map.
 
 **Fix:**
+
 - Split into domain maps: `SettingsChannels`, `GitChannels`, `PrChannels`, `AgentChannels`, `SprintChannels`, `CostChannels`, `MemoryChannels`, `FsChannels`, `TerminalChannels`, `AuthChannels`, `AgentManagerChannels`, `TemplateChannels`, `WindowChannels`
 - Compose: `type IpcChannelMap = SettingsChannels & GitChannels & PrChannels & ...`
 - Backward compatible — `IpcChannelMap` stays as the union type
@@ -144,6 +157,7 @@
 **Problem:** `app.whenReady()` in index.ts has 5 distinct responsibilities.
 
 **Fix:**
+
 - Extract `src/main/bootstrap.ts` with:
   - `bootstrapDatabase()` — getDb() + startDbWatcher()
   - `bootstrapPollers()` — startPrPoller() + startSprintPrPoller()
@@ -157,11 +171,30 @@
 **Problem:** `UnifiedAgent` carries optional fields from both `local` and `history` sources.
 
 **Fix:**
+
 - Define:
   ```ts
-  interface UnifiedAgentBase { id: string; label: string; status: UnifiedAgentStatus; model: string; updatedAt: number; startedAt: number }
-  interface LocalAgent extends UnifiedAgentBase { source: 'local'; pid: number; canSteer: boolean; canKill: boolean; isBlocked?: boolean; task?: string }
-  interface HistoryAgent extends UnifiedAgentBase { source: 'history'; historyId: string; sessionKey?: string }
+  interface UnifiedAgentBase {
+    id: string
+    label: string
+    status: UnifiedAgentStatus
+    model: string
+    updatedAt: number
+    startedAt: number
+  }
+  interface LocalAgent extends UnifiedAgentBase {
+    source: 'local'
+    pid: number
+    canSteer: boolean
+    canKill: boolean
+    isBlocked?: boolean
+    task?: string
+  }
+  interface HistoryAgent extends UnifiedAgentBase {
+    source: 'history'
+    historyId: string
+    sessionKey?: string
+  }
   type UnifiedAgent = LocalAgent | HistoryAgent
   ```
 - Update consumers to use discriminated union narrowing instead of optional checks
@@ -171,6 +204,7 @@
 **Problem:** `auth-guard.ts` hardcodes macOS `security` command. Can't unit test without OS mocking. Can't port to Linux.
 
 **Fix:**
+
 - Define:
   ```ts
   interface CredentialStore {

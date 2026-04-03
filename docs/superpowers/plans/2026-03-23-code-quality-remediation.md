@@ -12,31 +12,32 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|---------------|
-| Create | `src/main/globals.d.ts` | Declare `__agentManager` on `globalThis` |
-| Modify | `src/main/agent-manager/types.ts` | Add missing timeout constants (`SPAWN_TIMEOUT_MS`, `QUEUE_TIMEOUT_MS`, `INITIAL_DRAIN_DEFER_MS`) |
-| Modify | `src/main/agent-manager/index.ts` | Wire dep index updates, fix swallowed errors, use named constants, pass logger to sub-modules |
-| Modify | `src/main/agent-manager/completion.ts` | Accept logger param, replace console.*, fix PR status on failure |
-| Modify | `src/main/agent-manager/worktree.ts` | Accept logger param, replace console.* |
-| Modify | `src/main/agent-manager/resolve-dependents.ts` | Accept logger param, replace console.warn |
-| Modify | `src/main/agent-manager/sdk-adapter.ts` | Remove dead code, replace console.warn, add stdin error handling |
-| Modify | `src/main/index.ts` | Use proper import for fs, use LOG_PATH from paths, use typed global |
-| Modify | `src/main/paths.ts` | Add `BDE_AGENT_LOG_PATH` constant |
-| Modify | `src/main/handlers/workbench.ts` | Remove unused import, use typed global |
-| Modify | `src/shared/ipc-channels.ts` | Rename kebab-case channels to camelCase |
-| Modify | `src/main/handlers/sprint-local.ts` | Update channel references |
-| Modify | `src/preload/index.ts` | Update channel references |
-| Modify | `src/renderer/src/components/sprint/TaskCard.tsx` | Add error handling to unblockTask |
-| Modify | `src/main/agent-manager/__tests__/resolve-dependents.test.ts` | Add edge case tests |
-| Modify | `src/main/handlers/__tests__/workbench.test.ts` | Remove duplicate mock |
-| Modify | `src/main/agent-manager/__tests__/index.test.ts` | Add error-path tests |
+| Action | File                                                          | Responsibility                                                                                   |
+| ------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Create | `src/main/globals.d.ts`                                       | Declare `__agentManager` on `globalThis`                                                         |
+| Modify | `src/main/agent-manager/types.ts`                             | Add missing timeout constants (`SPAWN_TIMEOUT_MS`, `QUEUE_TIMEOUT_MS`, `INITIAL_DRAIN_DEFER_MS`) |
+| Modify | `src/main/agent-manager/index.ts`                             | Wire dep index updates, fix swallowed errors, use named constants, pass logger to sub-modules    |
+| Modify | `src/main/agent-manager/completion.ts`                        | Accept logger param, replace console.\*, fix PR status on failure                                |
+| Modify | `src/main/agent-manager/worktree.ts`                          | Accept logger param, replace console.\*                                                          |
+| Modify | `src/main/agent-manager/resolve-dependents.ts`                | Accept logger param, replace console.warn                                                        |
+| Modify | `src/main/agent-manager/sdk-adapter.ts`                       | Remove dead code, replace console.warn, add stdin error handling                                 |
+| Modify | `src/main/index.ts`                                           | Use proper import for fs, use LOG_PATH from paths, use typed global                              |
+| Modify | `src/main/paths.ts`                                           | Add `BDE_AGENT_LOG_PATH` constant                                                                |
+| Modify | `src/main/handlers/workbench.ts`                              | Remove unused import, use typed global                                                           |
+| Modify | `src/shared/ipc-channels.ts`                                  | Rename kebab-case channels to camelCase                                                          |
+| Modify | `src/main/handlers/sprint-local.ts`                           | Update channel references                                                                        |
+| Modify | `src/preload/index.ts`                                        | Update channel references                                                                        |
+| Modify | `src/renderer/src/components/sprint/TaskCard.tsx`             | Add error handling to unblockTask                                                                |
+| Modify | `src/main/agent-manager/__tests__/resolve-dependents.test.ts` | Add edge case tests                                                                              |
+| Modify | `src/main/handlers/__tests__/workbench.test.ts`               | Remove duplicate mock                                                                            |
+| Modify | `src/main/agent-manager/__tests__/index.test.ts`              | Add error-path tests                                                                             |
 
 ---
 
 ### Task 1: Add Missing Constants to `types.ts`
 
 **Files:**
+
 - Modify: `src/main/agent-manager/types.ts:22-28`
 - Test: Existing tests reference these; no new test needed.
 
@@ -67,6 +68,7 @@ git commit -m "chore: extract hardcoded timeouts into named constants"
 ### Task 2: Create Global Type Declaration for `__agentManager`
 
 **Files:**
+
 - Create: `src/main/globals.d.ts`
 
 - [ ] **Step 1: Create the declaration file**
@@ -83,10 +85,13 @@ declare global {
 - [ ] **Step 2: Update `src/main/index.ts:125` — replace `(global as any)` with typed global**
 
 Change:
+
 ```typescript
 ;(global as any).__agentManager = am
 ```
+
 To:
+
 ```typescript
 globalThis.__agentManager = am
 ```
@@ -94,10 +99,13 @@ globalThis.__agentManager = am
 - [ ] **Step 3: Update `src/main/handlers/workbench.ts:94` — replace `(global as any)` with typed global**
 
 Change:
+
 ```typescript
 const am = (global as any).__agentManager
 ```
+
 To:
+
 ```typescript
 const am = globalThis.__agentManager
 ```
@@ -123,6 +131,7 @@ git commit -m "fix: type-safe global for __agentManager, remove unused import"
 ### Task 3: Fix Hardcoded `/tmp` Log Path in `main/index.ts`
 
 **Files:**
+
 - Modify: `src/main/paths.ts:9`
 - Modify: `src/main/index.ts:111-121`
 
@@ -141,10 +150,13 @@ The `appendFileSync` calls at lines 111-112, 118, 121 are debug logging added du
 Remove lines 111-112, 118, 121 (the `require` and all three `appendFileSync` calls).
 
 Also update `src/main/agent-manager/index.ts:61` — change:
+
 ```typescript
 const LOG_PATH = '/tmp/bde-agent-manager.log'
 ```
+
 To:
+
 ```typescript
 import { BDE_AGENT_LOG_PATH } from '../paths'
 const LOG_PATH = BDE_AGENT_LOG_PATH
@@ -169,6 +181,7 @@ git commit -m "fix: use ~/.bde/ for agent-manager log, remove debug logging from
 This is the highest-impact fix. Every `.catch(() => {})` becomes `.catch((err) => logger.warn(...))`.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:183, 387, 391, 394, 451, 459`
 
 - [ ] **Step 1: Write a failing test for error visibility**
@@ -193,6 +206,7 @@ Expected: FAIL — error is currently swallowed
 - [ ] **Step 3: Fix all swallowed catches in `index.ts`**
 
 **Line 183** — spawn failure updateTask catch:
+
 ```typescript
 // Before:
 .catch(() => {})
@@ -201,6 +215,7 @@ Expected: FAIL — error is currently swallowed
 ```
 
 **Lines 385-387** — watchdog max-runtime:
+
 ```typescript
 // Before:
 .catch(() => {})
@@ -209,6 +224,7 @@ Expected: FAIL — error is currently swallowed
 ```
 
 **Lines 389-391** — watchdog idle:
+
 ```typescript
 // Before:
 .catch(() => {})
@@ -217,6 +233,7 @@ Expected: FAIL — error is currently swallowed
 ```
 
 **Line 394** — watchdog rate-limit requeue:
+
 ```typescript
 // Before:
 .catch(() => {})
@@ -225,6 +242,7 @@ Expected: FAIL — error is currently swallowed
 ```
 
 **Line 451** — drain loop catch:
+
 ```typescript
 // Before:
 drainInFlight = drainLoop().catch(() => {}).finally(...)
@@ -233,6 +251,7 @@ drainInFlight = drainLoop().catch((err) => logger.warn(`[agent-manager] Drain lo
 ```
 
 **Line 459** — initial drain catch:
+
 ```typescript
 // Before:
 drainInFlight = drainLoop().catch(() => {}).finally(...)
@@ -257,11 +276,13 @@ git commit -m "fix: log errors instead of silently swallowing in agent-manager"
 ### Task 5: Replace Hardcoded Timeouts with Named Constants
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:37, 45, 179, 460`
 
 - [ ] **Step 1: Add imports for new constants**
 
 At the top of `index.ts`, add to the existing import from `./types`:
+
 ```typescript
 import {
   EXECUTOR_ID,
@@ -271,7 +292,7 @@ import {
   WORKTREE_PRUNE_INTERVAL_MS,
   SPAWN_TIMEOUT_MS,
   QUEUE_TIMEOUT_MS,
-  INITIAL_DRAIN_DEFER_MS,
+  INITIAL_DRAIN_DEFER_MS
 } from './types'
 ```
 
@@ -301,6 +322,7 @@ git commit -m "chore: replace magic timeout numbers with named constants"
 This is the critical bug fix — the dependency index becomes stale because it's only built at startup.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/index.ts:122-130, 436-441`
 - Modify: `src/main/agent-manager/dependency-index.ts` (no changes needed — `update()` and `remove()` already exist)
 
@@ -368,6 +390,7 @@ git commit -m "fix: refresh dependency index each drain cycle to prevent stale b
 Replace all direct `console.*` calls with the Logger interface.
 
 **Files:**
+
 - Modify: `src/main/agent-manager/completion.ts:43, 61`
 - Modify: `src/main/agent-manager/worktree.ts:53`
 - Modify: `src/main/agent-manager/resolve-dependents.ts:52`
@@ -379,6 +402,7 @@ Replace all direct `console.*` calls with the Logger interface.
 Move the `Logger` interface from `index.ts` to `types.ts` so sub-modules can import it:
 
 In `types.ts`, add:
+
 ```typescript
 export interface Logger {
   info(msg: string): void
@@ -405,6 +429,7 @@ Replace line 61: `console.error(...)` → `logger.warn(...)`
 - [ ] **Step 3: Add logger param to `worktree.ts`**
 
 Add to `acquireLock`:
+
 ```typescript
 function acquireLock(worktreeBase: string, repoPath: string, logger?: Logger): void {
 ```
@@ -437,6 +462,7 @@ Replace line 52: `console.warn(...)` → `(logger ?? console).warn(...)`
 - [ ] **Step 5: Add logger param to `sdk-adapter.ts`**
 
 In `spawnAgent`, accept optional logger:
+
 ```typescript
 export async function spawnAgent(opts: {
   prompt: string
@@ -451,6 +477,7 @@ Pass through to `spawnViaSdk`. Replace line 97: `console.warn(...)` → `(opts.l
 - [ ] **Step 6: Update all call sites in `index.ts`**
 
 Pass `logger` to:
+
 - `resolveSuccess(opts, logger)` (line 261)
 - `resolveFailure(opts)` — no logger needed (only calls updateTask)
 - `resolveDependents(taskId, status, depIndex, getTask, updateTask, logger)` (line 126)
@@ -476,6 +503,7 @@ git commit -m "fix: thread logger through agent-manager sub-modules, remove cons
 ### Task 8: Clean Up `sdk-adapter.ts` — Dead Code and stdin Handling
 
 **Files:**
+
 - Modify: `src/main/agent-manager/sdk-adapter.ts:102, 162-163`
 
 - [ ] **Step 1: Remove dead `void message` line**
@@ -526,6 +554,7 @@ git commit -m "fix: remove dead code in sdk-adapter, add stdin/stderr guards"
 ### Task 9: Fix IPC Channel Naming Inconsistency
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts:242-249`
 - Modify: `src/main/handlers/sprint-local.ts` (channel registration)
 - Modify: `src/preload/index.ts` (channel references)
@@ -577,17 +606,21 @@ git commit -m "chore: standardize IPC channel names to camelCase"
 ### Task 10: Add Error Handling to `unblockTask` in TaskCard
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/TaskCard.tsx:164-166`
 
 - [ ] **Step 1: Add error handling**
 
 Replace (around line 164):
+
 ```tsx
 onClick={() => {
   window.api?.sprint?.unblockTask?.(task.id)
 }}
 ```
+
 With:
+
 ```tsx
 onClick={() => {
   window.api?.sprint?.unblockTask?.(task.id).catch((err: unknown) => {
@@ -613,6 +646,7 @@ git commit -m "fix: add error handling to unblockTask call in TaskCard"
 ### Task 11: Fix Test Quality — Remove Duplicate Mock in workbench.test.ts
 
 **Files:**
+
 - Modify: `src/main/handlers/__tests__/workbench.test.ts`
 
 - [ ] **Step 1: Remove the duplicate mock declaration**
@@ -636,6 +670,7 @@ git commit -m "fix: remove duplicate mock declaration in workbench test"
 ### Task 12: Add Missing Edge Case Tests for resolve-dependents
 
 **Files:**
+
 - Modify: `src/main/agent-manager/__tests__/resolve-dependents.test.ts`
 
 - [ ] **Step 1: Add test for dependent already in terminal state (should skip)**
@@ -643,10 +678,10 @@ git commit -m "fix: remove duplicate mock declaration in workbench test"
 ```typescript
 it('skips dependents that are not in blocked status', async () => {
   const index = createDependencyIndex()
-  index.rebuild([
-    { id: 'A', depends_on: [{ id: 'B', type: 'hard' }] },
-  ])
-  const getTask = vi.fn().mockResolvedValue({ id: 'A', status: 'done', depends_on: [{ id: 'B', type: 'hard' }] })
+  index.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
+  const getTask = vi
+    .fn()
+    .mockResolvedValue({ id: 'A', status: 'done', depends_on: [{ id: 'B', type: 'hard' }] })
   const update = vi.fn()
 
   await resolveDependents('B', 'done', index, getTask, update)
@@ -659,9 +694,7 @@ it('skips dependents that are not in blocked status', async () => {
 ```typescript
 it('handles getTask throwing without crashing', async () => {
   const index = createDependencyIndex()
-  index.rebuild([
-    { id: 'A', depends_on: [{ id: 'B', type: 'hard' }] },
-  ])
+  index.rebuild([{ id: 'A', depends_on: [{ id: 'B', type: 'hard' }] }])
   const getTask = vi.fn().mockRejectedValue(new Error('DB error'))
   const update = vi.fn()
 
@@ -678,14 +711,16 @@ it('handles updateTask throwing during unblock without crashing', async () => {
   const index = createDependencyIndex()
   index.rebuild([
     { id: 'A', depends_on: [{ id: 'B', type: 'hard' }] },
-    { id: 'C', depends_on: [{ id: 'B', type: 'soft' }] },
+    { id: 'C', depends_on: [{ id: 'B', type: 'soft' }] }
   ])
-  const getTask = vi.fn()
+  const getTask = vi
+    .fn()
     .mockResolvedValueOnce({ id: 'A', status: 'blocked', depends_on: [{ id: 'B', type: 'hard' }] })
     .mockResolvedValueOnce({ id: 'B', status: 'done', depends_on: null }) // for status cache
     .mockResolvedValueOnce({ id: 'C', status: 'blocked', depends_on: [{ id: 'B', type: 'soft' }] })
     .mockResolvedValueOnce({ id: 'B', status: 'done', depends_on: null }) // for status cache
-  const update = vi.fn()
+  const update = vi
+    .fn()
     .mockRejectedValueOnce(new Error('DB error')) // A fails
     .mockResolvedValueOnce(null) // C succeeds
 
@@ -701,14 +736,27 @@ it('handles updateTask throwing during unblock without crashing', async () => {
 it('treats deleted dependency as satisfied', async () => {
   const index = createDependencyIndex()
   index.rebuild([
-    { id: 'A', depends_on: [{ id: 'B', type: 'hard' }, { id: 'DELETED', type: 'hard' }] },
+    {
+      id: 'A',
+      depends_on: [
+        { id: 'B', type: 'hard' },
+        { id: 'DELETED', type: 'hard' }
+      ]
+    }
   ])
-  const getTask = vi.fn()
-    .mockImplementation((id: string) => {
-      if (id === 'A') return Promise.resolve({ id: 'A', status: 'blocked', depends_on: [{ id: 'B', type: 'hard' }, { id: 'DELETED', type: 'hard' }] })
-      if (id === 'B') return Promise.resolve({ id: 'B', status: 'done', depends_on: null })
-      return Promise.resolve(null) // DELETED task doesn't exist
-    })
+  const getTask = vi.fn().mockImplementation((id: string) => {
+    if (id === 'A')
+      return Promise.resolve({
+        id: 'A',
+        status: 'blocked',
+        depends_on: [
+          { id: 'B', type: 'hard' },
+          { id: 'DELETED', type: 'hard' }
+        ]
+      })
+    if (id === 'B') return Promise.resolve({ id: 'B', status: 'done', depends_on: null })
+    return Promise.resolve(null) // DELETED task doesn't exist
+  })
   const update = vi.fn()
 
   await resolveDependents('B', 'done', index, getTask, update)
@@ -736,6 +784,7 @@ git commit -m "test: add edge case coverage for resolve-dependents"
 ### Task 13: Add Error-Path Tests for Agent Manager
 
 **Files:**
+
 - Modify: `src/main/agent-manager/__tests__/index.test.ts`
 
 - [ ] **Step 1: Add test for drain loop DB failure**
@@ -792,6 +841,7 @@ git commit -m "test: add error-path coverage for agent manager drain and spawn"
 ### Task 14: Fix PR Status Set Incorrectly on Failure in completion.ts
 
 **Files:**
+
 - Modify: `src/main/agent-manager/completion.ts:60-69`
 
 - [ ] **Step 1: Write failing test**
@@ -801,15 +851,18 @@ In `src/main/agent-manager/__tests__/completion.test.ts`, verify that when `gh p
 ```typescript
 it('does not set pr_status to open when gh pr create fails', async () => {
   mockExecFileSequence([
-    { stdout: 'agent/my-branch\n', stderr: '' },  // git rev-parse
-    { stdout: 'push ok\n', stderr: '' },            // git push
+    { stdout: 'agent/my-branch\n', stderr: '' }, // git rev-parse
+    { stdout: 'push ok\n', stderr: '' } // git push
   ])
   // gh pr create throws
   vi.mocked(execFileMock).mockRejectedValueOnce(new Error('gh auth failed'))
 
   await resolveSuccess({ taskId: 't1', worktreePath: '/tmp/wt', title: 'Test', ghRepo: 'o/r' })
 
-  expect(updateTaskMock).toHaveBeenCalledWith('t1', expect.not.objectContaining({ pr_status: 'open' }))
+  expect(updateTaskMock).toHaveBeenCalledWith(
+    't1',
+    expect.not.objectContaining({ pr_status: 'open' })
+  )
 })
 ```
 
@@ -820,6 +873,7 @@ Expected: FAIL — currently `pr_status: 'open'` is always set.
 - [ ] **Step 3: Fix the logic in `completion.ts`**
 
 Replace lines 65-69:
+
 ```typescript
 // Before:
 const patch: Record<string, unknown> = { pr_status: 'open' }
@@ -868,19 +922,19 @@ git commit -m "fix: don't mark task pr_status=open when PR creation fails"
 
 ## Summary
 
-| Task | Issue # | Severity | Est. |
-|------|---------|----------|------|
-| 1. Named constants | #13 | Medium | 2 min |
-| 2. Typed global | #4 | Medium | 5 min |
-| 3. Fix /tmp log path | #7 | Medium | 5 min |
-| 4. Fix swallowed errors | #2 | HIGH | 10 min |
-| 5. Replace magic numbers | #13 | Medium | 3 min |
-| 6. Wire dep index refresh | #1 | HIGH | 10 min |
-| 7. Thread logger | #6 | Medium | 15 min |
-| 8. Clean sdk-adapter | #14 | Low | 5 min |
-| 9. IPC naming | #9 | Medium | 5 min |
-| 10. TaskCard error handling | #10 | Medium | 2 min |
-| 11. Fix duplicate mock | T3 | Low | 2 min |
-| 12. Dep resolver edge cases | T2 | Medium | 10 min |
-| 13. Error-path tests | T1 | Medium | 10 min |
-| 14. Fix PR status bug | #3 (completion) | Medium | 10 min |
+| Task                        | Issue #         | Severity | Est.   |
+| --------------------------- | --------------- | -------- | ------ |
+| 1. Named constants          | #13             | Medium   | 2 min  |
+| 2. Typed global             | #4              | Medium   | 5 min  |
+| 3. Fix /tmp log path        | #7              | Medium   | 5 min  |
+| 4. Fix swallowed errors     | #2              | HIGH     | 10 min |
+| 5. Replace magic numbers    | #13             | Medium   | 3 min  |
+| 6. Wire dep index refresh   | #1              | HIGH     | 10 min |
+| 7. Thread logger            | #6              | Medium   | 15 min |
+| 8. Clean sdk-adapter        | #14             | Low      | 5 min  |
+| 9. IPC naming               | #9              | Medium   | 5 min  |
+| 10. TaskCard error handling | #10             | Medium   | 2 min  |
+| 11. Fix duplicate mock      | T3              | Low      | 2 min  |
+| 12. Dep resolver edge cases | T2              | Medium   | 10 min |
+| 13. Error-path tests        | T1              | Medium   | 10 min |
+| 14. Fix PR status bug       | #3 (completion) | Medium   | 10 min |

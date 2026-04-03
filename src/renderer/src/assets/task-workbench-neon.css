@@ -28,7 +28,9 @@
   padding: 4px 12px;
   font-size: 12px;
   cursor: pointer;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb__copilot-toggle button:hover {
@@ -97,7 +99,9 @@
   outline: none;
   width: 100%;
   font-family: inherit;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb-form__input::placeholder {
@@ -120,7 +124,9 @@
   width: 100%;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb-form__select:focus {
@@ -156,7 +162,7 @@
   gap: 8px;
 }
 
-.wb-form__checkbox-row input[type="checkbox"] {
+.wb-form__checkbox-row input[type='checkbox'] {
   cursor: pointer;
 }
 
@@ -189,7 +195,10 @@
   font-size: 12px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
 }
 
 .wb-spec__btn:hover {
@@ -232,7 +241,9 @@
   line-height: 1.6;
   outline: none;
   width: 100%;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb-spec__textarea::placeholder {
@@ -313,17 +324,27 @@
   height: 18px;
 }
 
-.wb-check-icon--pass { color: var(--neon-cyan); }
-.wb-check-icon--warn { color: var(--bde-warning, #ffa500); }
-.wb-check-icon--fail { color: var(--neon-red); }
+.wb-check-icon--pass {
+  color: var(--neon-cyan);
+}
+.wb-check-icon--warn {
+  color: var(--bde-warning, #ffa500);
+}
+.wb-check-icon--fail {
+  color: var(--neon-red);
+}
 .wb-check-icon--pending {
   color: var(--neon-text-dim);
   animation: bde-spin 1.5s linear infinite;
 }
 
 @keyframes bde-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Actions ── */
@@ -338,7 +359,10 @@
   padding: 8px 16px;
   font-size: 13px;
   font-family: inherit;
-  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb-actions__btn--secondary {
@@ -510,7 +534,9 @@
   font-size: 11px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb-copilot__insert-btn:hover {
@@ -541,7 +567,9 @@
   font-size: 11px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .wb-copilot__cancel-btn:hover {
@@ -568,7 +596,9 @@
   font-size: 13px;
   font-family: inherit;
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb-copilot__input:focus {
@@ -584,7 +614,9 @@
   font-size: 12px;
   font-weight: 600;
   font-family: inherit;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .wb-copilot__send-btn--active {

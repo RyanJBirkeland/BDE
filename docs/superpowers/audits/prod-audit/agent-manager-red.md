@@ -43,7 +43,7 @@
     prompt: opts.prompt,
     options: {
       permissionMode: 'bypassPermissions',
-      allowDangerouslySkipPermissions: true,
+      allowDangerouslySkipPermissions: true
     }
   })
   ```
@@ -95,7 +95,8 @@
   ```typescript
   // completion.ts:323
   await execFile('git', ['push', '--no-verify', 'origin', branch], {
-    cwd: worktreePath, env: buildAgentEnv()
+    cwd: worktreePath,
+    env: buildAgentEnv()
   })
   ```
 - **Recommendation:** Remove `--no-verify` from the push command, or add a dedicated secret-scanning step in `resolveSuccess()` between `autoCommitIfDirty()` and the push. For example, add a `scanForSecrets(worktreePath, logger)` function that runs `git diff --cached --name-only` and rejects files matching patterns like `*.pem`, `*.key`, `.env*`. The CLAUDE.md documents `--no-verify` as intentional ("agent code is reviewed via PR"), but the risk is that secrets are visible in the remote branch before PR review.
@@ -107,6 +108,7 @@
 - **File(s):** `src/main/agent-manager/run-agent.ts:89-125`
 - **Description:** `tryEmitPlaygroundEvent()` reads arbitrary HTML files written by the agent and broadcasts them via IPC as `agent:playground` events. The HTML content is read raw and sent to the renderer without any sanitization. Combined with SEC-1 (renderer sandbox disabled), agent-generated HTML with malicious scripts could gain full Node.js access in the renderer. A malicious task spec could instruct the agent to write an HTML file containing script tags that spawn processes.
 - **Evidence:**
+
   ```typescript
   // run-agent.ts:107-108
   const html = await readFile(absolutePath, 'utf-8')
@@ -115,12 +117,13 @@
   const event: AgentEvent = {
     type: 'agent:playground',
     filename,
-    html,  // unsanitized raw HTML
+    html, // unsanitized raw HTML
     sizeBytes: stats.size,
     timestamp: Date.now()
   }
   broadcast('agent:event', { agentId: taskId, event })
   ```
+
 - **Recommendation:** Sanitize HTML in `tryEmitPlaygroundEvent()` before broadcasting. Use DOMPurify or a similar library to strip script tags, event handlers (`onclick`, `onerror`, etc.), and `javascript:` URLs. Alternatively, ensure the renderer's PlaygroundModal uses `sandbox="allow-same-origin"` without `allow-scripts`. This finding compounds SEC-4 from the March audit.
 
 ### AM-RED-6: Worktree Lock Race Between Cleanup and Re-Acquire
@@ -134,12 +137,14 @@
   // worktree.ts:78-83
   try {
     rmSync(lockFile)
-  } catch { /* already gone */ }
+  } catch {
+    /* already gone */
+  }
   writeFileSync(lockFile, String(process.pid), { flag: 'wx' })
   ```
 - **Recommendation:** Use atomic rename instead: `writeFileSync(lockFile + '.tmp', String(process.pid)); renameSync(lockFile + '.tmp', lockFile)`. `renameSync` is atomic on POSIX filesystems and overwrites the target, eliminating the TOCTOU window. Implement this in `acquireLock()` at `worktree.ts:41`.
 
-### AM-RED-7: _checkAndBlockDeps Silently Proceeds on Parse Failure (Dependency Bypass)
+### AM-RED-7: \_checkAndBlockDeps Silently Proceeds on Parse Failure (Dependency Bypass)
 
 - **Severity:** medium
 - **Effort:** S (< 1hr)
@@ -167,7 +172,7 @@
   // env-utils.ts:18-23
   export function buildAgentEnv(): Record<string, string | undefined> {
     if (_cachedEnv) return { ..._cachedEnv }
-    const env = { ...process.env }  // copies ALL env vars
+    const env = { ...process.env } // copies ALL env vars
     // ...only modifies PATH...
     _cachedEnv = env
     return { ..._cachedEnv }
@@ -184,8 +189,7 @@
 - **Evidence:**
   ```typescript
   // completion.ts:105
-  await execFile('git', ['add', '-A'],
-    { cwd: worktreePath, env: buildAgentEnv() })
+  await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
   ```
 - **Recommendation:** Add a pre-push scan after `git add -A` in `autoCommitIfDirty()` that checks staged files for secret patterns. After the `git add -A` call, run `git diff --cached --name-only` and check filenames against a deny-list (`*.pem`, `*.key`, `*credential*`, `*secret*`, `.env*`, `oauth-token`). If matches are found, unstage them with `git reset HEAD -- <file>` and log a warning. Implement as a `scanStagedFiles(worktreePath: string, logger: Logger)` function in `completion.ts`.
 
@@ -216,7 +220,7 @@
   ```typescript
   // sdk-streaming.ts:25-26
   const sdk = await import('@anthropic-ai/claude-agent-sdk')
-  const env = buildAgentEnv()  // no auth token
+  const env = buildAgentEnv() // no auth token
   ```
   vs. `sdk-adapter.ts:12-18` which adds `env.ANTHROPIC_API_KEY = token`.
 - **Recommendation:** Change `sdk-streaming.ts:26` to use `buildAgentEnvWithAuth()` from `env-utils.ts` instead of `buildAgentEnv()`. This ensures consistent auth behavior across all SDK entry points.
@@ -248,9 +252,7 @@
 - **Evidence:**
   ```typescript
   // run-agent.ts:96-97
-  const absolutePath = filePath.startsWith('/')
-    ? filePath
-    : join(worktreePath, filePath)
+  const absolutePath = filePath.startsWith('/') ? filePath : join(worktreePath, filePath)
   ```
   No test in `run-agent-playground.test.ts` validates path containment.
 - **Recommendation:** Add path validation after resolving: `const resolved = path.resolve(absolutePath); if (!resolved.startsWith(path.resolve(worktreePath))) { logger.warn('[playground] Path traversal blocked: ' + filePath); return; }`. Add test cases in `run-agent-playground.test.ts` for absolute paths outside worktree and `../` traversal inputs.
@@ -260,11 +262,11 @@
 ## Summary
 
 | Severity | Count |
-|----------|-------|
-| Critical | 1 |
-| High | 2 |
-| Medium | 5 |
-| Low | 4 |
+| -------- | ----- |
+| Critical | 1     |
+| High     | 2     |
+| Medium   | 5     |
+| Low      | 4     |
 
 ---
 

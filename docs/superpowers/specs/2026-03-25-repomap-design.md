@@ -10,7 +10,7 @@
 
 ### Motivation
 
-As AI accelerates code production, engineers increasingly operate at the architecture level rather than the code level. Understanding *what you've built* becomes the bottleneck. repomap solves this by giving developers an always-current, interactive map of their codebase — the architectural equivalent of Google Maps for code.
+As AI accelerates code production, engineers increasingly operate at the architecture level rather than the code level. Understanding _what you've built_ becomes the bottleneck. repomap solves this by giving developers an always-current, interactive map of their codebase — the architectural equivalent of Google Maps for code.
 
 ### Core Beliefs
 
@@ -103,34 +103,34 @@ interface RepoGraph {
 }
 
 interface GraphNode {
-  id: string                    // unique path-based ID: "src/main/agent-manager"
-  label: string                 // display name: "agent-manager"
+  id: string // unique path-based ID: "src/main/agent-manager"
+  label: string // display name: "agent-manager"
   type: 'directory' | 'file' | 'export'
-  children: string[]            // IDs of child nodes (for expand/collapse)
-  parent: string | null         // ID of parent node
+  children: string[] // IDs of child nodes (for expand/collapse)
+  parent: string | null // ID of parent node
   // AST-derived
-  exports: string[]             // exported symbols
+  exports: string[] // exported symbols
   lineCount: number
   // LLM-enriched (nullable until enrichment runs)
-  summary?: string              // "Orchestrates agent lifecycle and task execution"
-  domain?: string               // "Agent Pipeline"
-  tags?: string[]               // ["orchestration", "side-effects", "core"]
+  summary?: string // "Orchestrates agent lifecycle and task execution"
+  domain?: string // "Agent Pipeline"
+  tags?: string[] // ["orchestration", "side-effects", "core"]
 }
 
 interface GraphEdge {
-  source: string                // node ID
-  target: string                // node ID
+  source: string // node ID
+  target: string // node ID
   type: 'import' | 'type-import' | 're-export'
   // LLM-enriched
-  description?: string          // "agent events flow through IPC to renderer"
-  weight?: number               // coupling strength (import count)
+  description?: string // "agent events flow through IPC to renderer"
+  weight?: number // coupling strength (import count)
 }
 
 interface RepoMetadata {
-  schemaVersion: number         // increment on breaking graph model changes
+  schemaVersion: number // increment on breaking graph model changes
   name: string
   rootPath: string
-  analyzedAt: string            // ISO timestamp
+  analyzedAt: string // ISO timestamp
   languages: string[]
   nodeCount: number
   edgeCount: number
@@ -139,8 +139,8 @@ interface RepoMetadata {
 // Pushed via WebSocket when files change
 interface GraphDelta {
   nodesAdded: GraphNode[]
-  nodesRemoved: string[]        // node IDs
-  nodesUpdated: GraphNode[]     // full replacement for changed nodes
+  nodesRemoved: string[] // node IDs
+  nodesUpdated: GraphNode[] // full replacement for changed nodes
   edgesAdded: GraphEdge[]
   edgesRemoved: Array<{ source: string; target: string }>
   edgesUpdated: GraphEdge[]
@@ -148,6 +148,7 @@ interface GraphDelta {
 ```
 
 Key decisions:
+
 - `export` as a node type — expanding a file shows its exported functions/classes/types as leaf nodes (deepest zoom level). Edges always target file-level nodes; export nodes are visual children only (no edge retargeting on expand).
 - `domain` on nodes — LLM-assigned grouping enabling domain-colored overlay
 - `weight` on edges — derived from import count, rendered as edge thickness to highlight coupling hotspots
@@ -227,6 +228,7 @@ Ignore patterns go in `.repomapignore` at repo root (same convention as `.gitign
 ### Fixture Repo
 
 Small, purpose-built TypeScript project at `test/fixtures/sample-repo/`:
+
 - 3 directories, 8 files
 - Deliberate circular dependency
 - Re-exports, type-only imports
@@ -240,6 +242,7 @@ Small, purpose-built TypeScript project at `test/fixtures/sample-repo/`:
 ## BDE Integration Path (Future)
 
 repomap is standalone. BDE integration options for later:
+
 - Embed via webview/iframe in a BDE panel
 - BDE spawns `repomap` CLI process, points a panel at the local URL
 - Share repo configs from BDE settings so repomap doesn't need separate setup

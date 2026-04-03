@@ -35,28 +35,28 @@ A ticket that lands in Backlog with a prompt good enough that an agent can pick 
 
 ### What Works
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| 4-column Kanban (backlog → queued → active → done) | **Shipped** | Solid. D&D works, status transitions are correct. |
-| New Ticket modal with title, repo, priority | **Shipped** | Clean, focused. Enter-to-submit is nice. |
-| 6 template chips (Feature, Bug Fix, Refactor, Audit, UX Polish, Infra) | **Shipped** | Pre-fill spec textarea with markdown scaffolds. Toggle behavior works. |
-| "Ask Paul" AI spec generation | **Shipped** | Calls OpenClaw gateway, generates markdown spec from title + repo + notes. 30s timeout. |
-| SpecDrawer view/edit/save | **Shipped** | Markdown rendering, edit mode, Cmd+S save, dirty-state tracking. |
-| SpecDrawer "Ask Paul" for existing tasks | **Shipped** | Can regenerate/improve spec for backlog tasks. |
-| Optimistic create with toast | **Shipped** | Card appears instantly in Backlog. |
-| Agent launch from queued tasks | **Shipped** | Spawns Claude CLI with stream-json I/O. |
+| Feature                                                                | Status      | Notes                                                                                   |
+| ---------------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
+| 4-column Kanban (backlog → queued → active → done)                     | **Shipped** | Solid. D&D works, status transitions are correct.                                       |
+| New Ticket modal with title, repo, priority                            | **Shipped** | Clean, focused. Enter-to-submit is nice.                                                |
+| 6 template chips (Feature, Bug Fix, Refactor, Audit, UX Polish, Infra) | **Shipped** | Pre-fill spec textarea with markdown scaffolds. Toggle behavior works.                  |
+| "Ask Paul" AI spec generation                                          | **Shipped** | Calls OpenClaw gateway, generates markdown spec from title + repo + notes. 30s timeout. |
+| SpecDrawer view/edit/save                                              | **Shipped** | Markdown rendering, edit mode, Cmd+S save, dirty-state tracking.                        |
+| SpecDrawer "Ask Paul" for existing tasks                               | **Shipped** | Can regenerate/improve spec for backlog tasks.                                          |
+| Optimistic create with toast                                           | **Shipped** | Card appears instantly in Backlog.                                                      |
+| Agent launch from queued tasks                                         | **Shipped** | Spawns Claude CLI with stream-json I/O.                                                 |
 
 ### What's MVP-Incomplete
 
-| Gap | Impact | Severity |
-|-----|--------|----------|
-| **Template + AI don't compose.** Selecting "Bug Fix" then hitting "Ask Paul" doesn't use the template structure — Paul generates freeform. | Spec quality variance. Templates exist but don't influence AI output. | Medium |
-| **One-shot generation only.** No back-and-forth with Paul. If the spec needs refinement, user manually edits. | Friction on complex tasks. Ryan becomes a spec editor instead of a spec director. | High |
-| **No quick-capture mode.** Even a trivial fix requires opening the full modal, picking a repo, and hitting save. | Slows down idea capture. Ryan might context-switch to a text file instead. | Medium |
-| **No spec quality signal.** No "this spec is missing files to change" or "this is ready to launch." | Under-specified tasks get launched and fail, wasting agent time + API cost. | High |
-| **Description field is a no-op.** `description` is accepted in the type but never persisted to SQLite (no column). Dead code path. | Confusing for anyone reading the code. No user impact since it's not in the UI. | Low |
-| **`column_order` not persisted.** TypeScript type has it, DB doesn't. Within-column reorder is wired but nonfunctional. | No user impact yet — priority + created_at provides adequate ordering. | Low |
-| **Spec file path loading is fragile.** SpecDrawer regex-extracts `docs/specs/*.md` from the prompt field. If prompt format changes, spec display breaks. | Brittleness, not a UX issue today. | Low |
+| Gap                                                                                                                                                      | Impact                                                                            | Severity |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------- |
+| **Template + AI don't compose.** Selecting "Bug Fix" then hitting "Ask Paul" doesn't use the template structure — Paul generates freeform.               | Spec quality variance. Templates exist but don't influence AI output.             | Medium   |
+| **One-shot generation only.** No back-and-forth with Paul. If the spec needs refinement, user manually edits.                                            | Friction on complex tasks. Ryan becomes a spec editor instead of a spec director. | High     |
+| **No quick-capture mode.** Even a trivial fix requires opening the full modal, picking a repo, and hitting save.                                         | Slows down idea capture. Ryan might context-switch to a text file instead.        | Medium   |
+| **No spec quality signal.** No "this spec is missing files to change" or "this is ready to launch."                                                      | Under-specified tasks get launched and fail, wasting agent time + API cost.       | High     |
+| **Description field is a no-op.** `description` is accepted in the type but never persisted to SQLite (no column). Dead code path.                       | Confusing for anyone reading the code. No user impact since it's not in the UI.   | Low      |
+| **`column_order` not persisted.** TypeScript type has it, DB doesn't. Within-column reorder is wired but nonfunctional.                                  | No user impact yet — priority + created_at provides adequate ordering.            | Low      |
+| **Spec file path loading is fragile.** SpecDrawer regex-extracts `docs/specs/*.md` from the prompt field. If prompt format changes, spec display breaks. | Brittleness, not a UX issue today.                                                | Low      |
 
 ---
 
@@ -179,14 +179,14 @@ Default mode: **Quick** (fastest path to a backlog card).
 
 #### Template Roster (Expanded from Current 6)
 
-| Template | Pre-filled Sections | When to Use |
-|----------|-------------------|-------------|
-| **Feature** | Problem, Solution, Files to Change, Out of Scope | New functionality |
-| **Bug Fix** | Bug Description, Steps to Reproduce, Root Cause, Fix, Files to Change, How to Test | Something is broken |
-| **Refactor** | What's Being Refactored, Why, Target State, Files to Change, Out of Scope | Code quality improvement |
-| **Test Coverage** | What to Test, Test Strategy (unit/integration/e2e), Files to Create, Coverage Target | Adding tests |
-| **Performance** | Bottleneck Description, Current Metrics, Target Metrics, Approach, Files to Change | Speed/memory optimization |
-| **Design Polish** | UX Problem, Target Design (ASCII wireframe), Files to Change (CSS + TSX), Visual References | UI/CSS improvements |
+| Template          | Pre-filled Sections                                                                         | When to Use               |
+| ----------------- | ------------------------------------------------------------------------------------------- | ------------------------- |
+| **Feature**       | Problem, Solution, Files to Change, Out of Scope                                            | New functionality         |
+| **Bug Fix**       | Bug Description, Steps to Reproduce, Root Cause, Fix, Files to Change, How to Test          | Something is broken       |
+| **Refactor**      | What's Being Refactored, Why, Target State, Files to Change, Out of Scope                   | Code quality improvement  |
+| **Test Coverage** | What to Test, Test Strategy (unit/integration/e2e), Files to Create, Coverage Target        | Adding tests              |
+| **Performance**   | Bottleneck Description, Current Metrics, Target Metrics, Approach, Files to Change          | Speed/memory optimization |
+| **Design Polish** | UX Problem, Target Design (ASCII wireframe), Files to Change (CSS + TSX), Visual References | UI/CSS improvements       |
 
 #### "Ask Paul" Improvement: Template-Aware Generation
 
@@ -287,6 +287,7 @@ This is the **signature feature** of BDE's ticket creation flow. It's what makes
 **Phase 1 — Discovery (1-3 exchanges)**
 
 Paul's system prompt:
+
 ```
 You are Paul, a senior product engineer helping design a coding task for BDE.
 Your job is to understand what the user wants to build, ask 2-3 clarifying
@@ -351,11 +352,11 @@ When the user is satisfied, they click "Save Spec to Backlog." The conversation 
 
 ### Shipping Order
 
-| Phase | Mode | Effort | Impact | Ship Target |
-|-------|------|--------|--------|-------------|
-| **Phase 1** | Template Mode improvements | Small (2-3 tickets) | Medium | This week |
-| **Phase 2** | Quick Mode | Medium (3-4 tickets) | High | Next week |
-| **Phase 3** | Design Mode | Large (5-8 tickets) | Very High | 2 weeks |
+| Phase       | Mode                       | Effort               | Impact    | Ship Target |
+| ----------- | -------------------------- | -------------------- | --------- | ----------- |
+| **Phase 1** | Template Mode improvements | Small (2-3 tickets)  | Medium    | This week   |
+| **Phase 2** | Quick Mode                 | Medium (3-4 tickets) | High      | Next week   |
+| **Phase 3** | Design Mode                | Large (5-8 tickets)  | Very High | 2 weeks     |
 
 ### Rationale
 
@@ -364,6 +365,7 @@ When the user is satisfied, they click "Save Spec to Backlog." The conversation 
 The current Template Mode is 90% there. The main fix is making "Ask Paul" template-aware — when a user selects "Bug Fix" and hits "Ask Paul", the AI should generate within the Bug Fix scaffold, not freeform. This is a prompt engineering change + minor UI wiring. Also: add "Test Coverage" and "Performance" templates. Low risk, immediate quality improvement.
 
 Tickets:
+
 1. Make "Ask Paul" template-aware (pass selected template structure in system prompt)
 2. Add "Test Coverage" and "Performance" templates
 3. Confirmation dialog when switching templates with dirty spec
@@ -373,6 +375,7 @@ Tickets:
 Quick Mode unlocks the "idea capture" use case. Ryan should be able to fire off 5 task ideas in 60 seconds without stopping to write specs. Background spec generation means the specs are ready by the time he circles back to review them. This changes BDE from "a tool you sit down to use" to "a tool you capture ideas into throughout the day."
 
 Tickets:
+
 1. Add mode tab switcher to NewTicketModal
 2. Implement Quick Mode UI (title + repo only)
 3. Background spec generation after save (with shimmer loading state on card)
@@ -383,6 +386,7 @@ Tickets:
 Design Mode is the differentiator. It turns ticket creation from a _form-filling exercise_ into a _thinking exercise_. Paul becomes a product thinking partner, not just a spec writer. This is what makes BDE an AI pair-programmer rather than a fancy task board.
 
 Tickets:
+
 1. Design Mode split-panel layout (chat + spec preview)
 2. Conversation state management + message rendering
 3. Paul system prompt engineering (discovery → proposal → refinement flow)
@@ -425,6 +429,7 @@ Better specs → Better agent PRs → Less review time → More time for design 
 ```
 
 When specs are higher quality:
+
 1. Agents produce cleaner PRs (fewer rounds of "fix this")
 2. Ryan spends less time reviewing/correcting agent output
 3. Ryan has more time and energy for the _next_ design conversation
@@ -436,6 +441,7 @@ When specs are higher quality:
 "Why not just open Claude.ai and have this conversation there?"
 
 Because Design Mode is **contextual**. Paul knows:
+
 - Which repo the task targets
 - What the file structure looks like
 - What the spec template format is
@@ -450,22 +456,22 @@ Design Mode isn't a generic chatbot — it's a purpose-built product design tool
 
 ### Leading Indicators (measure immediately)
 
-| Metric | Baseline (current) | Target (90 days) | How to Measure |
-|--------|-------------------|-------------------|----------------|
-| **Time to create a ticket** | ~45 seconds (modal → save) | < 10s (Quick), < 60s (Template), < 3 min (Design) | Timestamp delta: modal open → task created_at |
-| **Spec fill rate** | ~60% of tasks have specs | > 90% of tasks have specs | `SELECT COUNT(*) WHERE spec IS NOT NULL / COUNT(*)` |
-| **Mode usage distribution** | N/A (one mode) | 50% Quick, 30% Template, 20% Design | Track which mode tab was active at save |
-| **"Ask Paul" usage** | Unknown | > 40% of template-mode tickets use "Ask Paul" | Count invokeTool calls per ticket creation |
+| Metric                      | Baseline (current)         | Target (90 days)                                  | How to Measure                                      |
+| --------------------------- | -------------------------- | ------------------------------------------------- | --------------------------------------------------- |
+| **Time to create a ticket** | ~45 seconds (modal → save) | < 10s (Quick), < 60s (Template), < 3 min (Design) | Timestamp delta: modal open → task created_at       |
+| **Spec fill rate**          | ~60% of tasks have specs   | > 90% of tasks have specs                         | `SELECT COUNT(*) WHERE spec IS NOT NULL / COUNT(*)` |
+| **Mode usage distribution** | N/A (one mode)             | 50% Quick, 30% Template, 20% Design               | Track which mode tab was active at save             |
+| **"Ask Paul" usage**        | Unknown                    | > 40% of template-mode tickets use "Ask Paul"     | Count invokeTool calls per ticket creation          |
 
 ### Lagging Indicators (measure over weeks)
 
-| Metric | Baseline | Target | How to Measure |
-|--------|----------|--------|----------------|
-| **Agent first-try success rate** | Unknown (estimate ~50%) | > 70% | Tasks that go active → done without manual intervention or re-launch |
-| **Spec revision count** | Unknown | < 2 revisions before launch | Count sprint:update calls that modify `spec` field per task |
-| **Time in Backlog** | Unknown | < 24 hours median | `started_at - created_at` for tasks that reach active |
-| **Tasks completed per week** | ~5-8 (estimate) | > 12 | Count tasks entering `done` status per week |
-| **PR rejection rate** | Unknown | < 20% | Tasks where PR is closed (not merged) / total PRs |
+| Metric                           | Baseline                | Target                      | How to Measure                                                       |
+| -------------------------------- | ----------------------- | --------------------------- | -------------------------------------------------------------------- |
+| **Agent first-try success rate** | Unknown (estimate ~50%) | > 70%                       | Tasks that go active → done without manual intervention or re-launch |
+| **Spec revision count**          | Unknown                 | < 2 revisions before launch | Count sprint:update calls that modify `spec` field per task          |
+| **Time in Backlog**              | Unknown                 | < 24 hours median           | `started_at - created_at` for tasks that reach active                |
+| **Tasks completed per week**     | ~5-8 (estimate)         | > 12                        | Count tasks entering `done` status per week                          |
+| **PR rejection rate**            | Unknown                 | < 20%                       | Tasks where PR is closed (not merged) / total PRs                    |
 
 ### Qualitative Signals
 
@@ -478,13 +484,13 @@ Design Mode isn't a generic chatbot — it's a purpose-built product design tool
 
 ## 7. Risks & Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| **Design Mode conversations take too long** — Paul asks too many questions, user gets impatient | Medium | High | Cap at 3 clarifying questions. Paul should propose a spec after 2 user messages, even if uncertain. "Good enough now, refine later" > "perfect but slow." |
-| **Quick Mode auto-specs are low quality** — title heuristics pick wrong template, generated spec is generic | Medium | Medium | Always show a "Review spec" prompt on the card after generation. Make it easy to jump into SpecDrawer. Quick Mode is capture, not finalization. |
-| **Gateway latency makes AI features feel slow** — 5-10s waits for Paul responses | Medium | High | Streaming responses. Show Paul typing indicator. For Quick Mode, background generation means the user never waits. |
-| **Mode switching is confusing** — users don't understand when to use which mode | Low | Medium | Default to Quick Mode (most common). Tooltip on each mode tab explaining when to use it. Mode choice doesn't lock you in — you can always edit in SpecDrawer later. |
-| **Scope creep on Design Mode** — temptation to add memory, persistent sessions, etc. | High | Medium | Design Mode conversations are ephemeral. The output is the spec. V1 has no conversation history, no "resume last design session." Keep it simple. |
+| Risk                                                                                                        | Likelihood | Impact | Mitigation                                                                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Design Mode conversations take too long** — Paul asks too many questions, user gets impatient             | Medium     | High   | Cap at 3 clarifying questions. Paul should propose a spec after 2 user messages, even if uncertain. "Good enough now, refine later" > "perfect but slow."           |
+| **Quick Mode auto-specs are low quality** — title heuristics pick wrong template, generated spec is generic | Medium     | Medium | Always show a "Review spec" prompt on the card after generation. Make it easy to jump into SpecDrawer. Quick Mode is capture, not finalization.                     |
+| **Gateway latency makes AI features feel slow** — 5-10s waits for Paul responses                            | Medium     | High   | Streaming responses. Show Paul typing indicator. For Quick Mode, background generation means the user never waits.                                                  |
+| **Mode switching is confusing** — users don't understand when to use which mode                             | Low        | Medium | Default to Quick Mode (most common). Tooltip on each mode tab explaining when to use it. Mode choice doesn't lock you in — you can always edit in SpecDrawer later. |
+| **Scope creep on Design Mode** — temptation to add memory, persistent sessions, etc.                        | High       | Medium | Design Mode conversations are ephemeral. The output is the spec. V1 has no conversation history, no "resume last design session." Keep it simple.                   |
 
 ---
 
@@ -506,18 +512,18 @@ Design Mode isn't a generic chatbot — it's a purpose-built product design tool
 
 These are the 6 templates currently shipped in `NewTicketModal.tsx`:
 
-| Template | Sections |
-|----------|----------|
-| Feature | Problem, Solution, Files to Change, Out of Scope |
-| Bug Fix | Bug Description, Root Cause, Fix, Files to Change, How to Test |
-| Refactor | What's Being Refactored, Target State, Files to Change, Out of Scope |
-| Audit | Audit Scope, Criteria, Deliverable |
+| Template  | Sections                                                                  |
+| --------- | ------------------------------------------------------------------------- |
+| Feature   | Problem, Solution, Files to Change, Out of Scope                          |
+| Bug Fix   | Bug Description, Root Cause, Fix, Files to Change, How to Test            |
+| Refactor  | What's Being Refactored, Target State, Files to Change, Out of Scope      |
+| Audit     | Audit Scope, Criteria, Deliverable                                        |
 | UX Polish | UX Problem, Target Design, Files to Change (CSS + TSX), Visual References |
-| Infra | Infrastructure Task, Steps, Verification |
+| Infra     | Infrastructure Task, Steps, Verification                                  |
 
 Proposed additions for Phase 1:
 
-| Template | Sections |
-|----------|----------|
+| Template      | Sections                                                                                           |
+| ------------- | -------------------------------------------------------------------------------------------------- |
 | Test Coverage | What to Test, Test Strategy (unit/integration/e2e), Files to Create, Coverage Target, Out of Scope |
-| Performance | Bottleneck Description, Current Metrics, Target Metrics, Approach, Files to Change, How to Verify |
+| Performance   | Bottleneck Description, Current Metrics, Target Metrics, Approach, Files to Change, How to Verify  |

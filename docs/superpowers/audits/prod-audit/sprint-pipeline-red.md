@@ -10,18 +10,18 @@
 
 ### Previously Reported — Now Fixed
 
-| # | Issue | Evidence |
-|---|-------|----------|
-| SEC-5 | **CORS `*` on Queue API** — `helpers.ts` now exports `CORS_HEADERS = {}` (empty object). The wildcard `Access-Control-Allow-Origin: *` header has been removed. | `src/main/queue-api/helpers.ts:57` — `export const CORS_HEADERS = {}` |
-| UX-3 | **Pipeline "Edit" button navigates to blank Workbench** — Now calls `loadTask(selectedTask)` before `setView('task-workbench')`. | `src/renderer/src/components/sprint/SprintPipeline.tsx:278` — `useTaskWorkbenchStore.getState().loadTask(selectedTask)` |
+| #     | Issue                                                                                                                                                           | Evidence                                                                                                                |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| SEC-5 | **CORS `*` on Queue API** — `helpers.ts` now exports `CORS_HEADERS = {}` (empty object). The wildcard `Access-Control-Allow-Origin: *` header has been removed. | `src/main/queue-api/helpers.ts:57` — `export const CORS_HEADERS = {}`                                                   |
+| UX-3  | **Pipeline "Edit" button navigates to blank Workbench** — Now calls `loadTask(selectedTask)` before `setView('task-workbench')`.                                | `src/renderer/src/components/sprint/SprintPipeline.tsx:278` — `useTaskWorkbenchStore.getState().loadTask(selectedTask)` |
 
 ### Previously Reported — Still Open
 
-| # | Issue | Status |
-|---|-------|--------|
-| SEC-6 | **SQL string interpolation in `backupDatabase()`** — `VACUUM INTO '${backupPath}'` in `db.ts`. Not in this audit's scope files but still referenced by sprint-queries via `getDb()`. | Still open — outside Sprint Pipeline scope but affects same DB. |
-| ARCH-2 | **Repository pattern inconsistently applied** — IPC handlers (`sprint-local.ts`) call `_createTask`, `_updateTask`, `_deleteTask` directly from sprint-queries in some paths, and `updateTask` from sprint-service in others. Three different write paths with different side effects remain. | Still open — `sprint-local.ts` lines 92, 149, 199, 242 show mixed usage. |
-| main-process-sd S7 | **SQL column allowlist needs regex assertion** — Column names from `UPDATE_ALLOWLIST` are interpolated into SQL (`${key} = ?`). While the allowlist is a hardcoded Set of safe names, there is no runtime assertion that values are valid SQL identifiers. | Still open — `sprint-queries.ts:200`. See SP-RED-1 below. |
+| #                  | Issue                                                                                                                                                                                                                                                                                         | Status                                                                   |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| SEC-6              | **SQL string interpolation in `backupDatabase()`** — `VACUUM INTO '${backupPath}'` in `db.ts`. Not in this audit's scope files but still referenced by sprint-queries via `getDb()`.                                                                                                          | Still open — outside Sprint Pipeline scope but affects same DB.          |
+| ARCH-2             | **Repository pattern inconsistently applied** — IPC handlers (`sprint-local.ts`) call `_createTask`, `_updateTask`, `_deleteTask` directly from sprint-queries in some paths, and `updateTask` from sprint-service in others. Three different write paths with different side effects remain. | Still open — `sprint-local.ts` lines 92, 149, 199, 242 show mixed usage. |
+| main-process-sd S7 | **SQL column allowlist needs regex assertion** — Column names from `UPDATE_ALLOWLIST` are interpolated into SQL (`${key} = ?`). While the allowlist is a hardcoded Set of safe names, there is no runtime assertion that values are valid SQL identifiers.                                    | Still open — `sprint-queries.ts:200`. See SP-RED-1 below.                |
 
 ---
 
@@ -238,7 +238,12 @@
   ```typescript
   // queue-api-contract.ts:43-50
   export const RUNNER_WRITABLE_STATUSES = new Set([
-    'queued', 'active', 'done', 'failed', 'cancelled', 'error'
+    'queued',
+    'active',
+    'done',
+    'failed',
+    'cancelled',
+    'error'
     // 'blocked' is excluded but queued is allowed — so blocked->queued is permitted
   ])
   ```
@@ -249,11 +254,11 @@
 ## Summary
 
 | Severity | Count |
-|----------|-------|
-| Critical | 0 |
-| High | 1 |
-| Medium | 5 |
-| Low | 5 |
+| -------- | ----- |
+| Critical | 0     |
+| High     | 1     |
+| Medium   | 5     |
+| Low      | 5     |
 
 **Overall assessment:** The Sprint Pipeline has solid fundamentals — parameterized SQL queries, field allowlists, dependency cycle detection, and input validation on the Queue API path. The main security gaps are:
 

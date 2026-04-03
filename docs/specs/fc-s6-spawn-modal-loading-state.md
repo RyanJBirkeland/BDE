@@ -16,10 +16,10 @@ Two related UX issues in the agent spawn flow:
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
+| File                                                  | Change                                                                                                            |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `src/renderer/src/components/sessions/SpawnModal.tsx` | Add `repoPathsLoading` state; disable submit button while loading; call `fetchProcesses()` after successful spawn |
-| `src/renderer/src/stores/localAgents.ts` | Export `fetchProcesses` or provide a `refreshProcesses()` action that can be called imperatively |
+| `src/renderer/src/stores/localAgents.ts`              | Export `fetchProcesses` or provide a `refreshProcesses()` action that can be called imperatively                  |
 
 ## Implementation Notes
 
@@ -29,7 +29,8 @@ Two related UX issues in the agent spawn flow:
 const [repoPathsLoading, setRepoPathsLoading] = useState(true)
 
 useEffect(() => {
-  window.api.getRepoPaths()
+  window.api
+    .getRepoPaths()
     .then(setRepoPaths)
     .catch(() => toast.error('Failed to load repo paths'))
     .finally(() => setRepoPathsLoading(false))
@@ -37,6 +38,7 @@ useEffect(() => {
 ```
 
 Disable the submit button:
+
 ```typescript
 <button disabled={repoPathsLoading || isSpawning || !task.trim()}>
   {repoPathsLoading ? 'Loading...' : isSpawning ? 'Spawning...' : 'Spawn Agent'}
@@ -48,6 +50,7 @@ Disable the submit button:
 After the `spawnLocalAgent` call resolves successfully, trigger a process list refresh. Either:
 
 **Option A:** Import and call `fetchProcesses` from `localAgentsStore`:
+
 ```typescript
 await useLocalAgentsStore.getState().fetchProcesses()
 ```

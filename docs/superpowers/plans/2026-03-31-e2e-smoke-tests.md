@@ -13,6 +13,7 @@
 ## File Structure
 
 ### Modified files
+
 - `e2e/navigation.spec.ts` — Fix 4 `.sprint-center__title` → `.sprint-pipeline__title` selectors
 - `e2e/sprint.spec.ts` — Full rewrite for SprintPipeline UI
 - `e2e/helpers/seed-data.ts` — Verify/update IPC calls match current API
@@ -27,6 +28,7 @@
 ## Task 1: Fix navigation.spec.ts selectors
 
 **Files:**
+
 - Modify: `e2e/navigation.spec.ts`
 
 - [ ] **Step 1: Fix all `.sprint-center` references**
@@ -50,6 +52,7 @@ git commit -m "fix: update navigation e2e selectors for SprintPipeline rename"
 ## Task 2: Add data-testid attributes to sprint components
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/SprintPipeline.tsx`
 - Modify: `src/renderer/src/components/sprint/PipelineStage.tsx`
 - Modify: `src/renderer/src/components/sprint/PipelineBacklog.tsx`
@@ -95,6 +98,7 @@ git commit -m "chore: add data-testid attributes to sprint pipeline components f
 ## Task 3: Rewrite sprint.spec.ts
 
 **Files:**
+
 - Modify: `e2e/sprint.spec.ts`
 - Modify: `e2e/helpers/seed-data.ts` (verify IPC calls)
 
@@ -159,7 +163,11 @@ test.describe('Sprint Pipeline', () => {
 
   test('blocked task shows blocked badge', async ({ bde }) => {
     const { window } = bde
-    const dep = await seedTask(window, { title: `${PREFIX}dep-task`, status: 'queued', spec: '## A\nA\n## B\nB' })
+    const dep = await seedTask(window, {
+      title: `${PREFIX}dep-task`,
+      status: 'queued',
+      spec: '## A\nA\n## B\nB'
+    })
     const blocked = await seedTask(window, {
       title: `${PREFIX}blocked-task`,
       status: 'blocked',
@@ -173,6 +181,7 @@ test.describe('Sprint Pipeline', () => {
 ```
 
 Adapt the test code based on what the actual `seedTask` helper returns and how the IPC creates tasks. The key patterns:
+
 - Use `data-testid` selectors for structural elements (pipeline, backlog, drawer)
 - Use CSS class selectors for stage-specific elements (`.pipeline-stage__name--queued`)
 - Use text selectors for task titles
@@ -190,11 +199,12 @@ git commit -m "test: rewrite sprint e2e tests for SprintPipeline UI"
 ## Task 4: Verify all other E2E specs
 
 **Files:**
+
 - Review: `e2e/dashboard.spec.ts`, `e2e/agents.spec.ts`, `e2e/settings.spec.ts`, `e2e/ide.spec.ts`, `e2e/source-control.spec.ts`, `e2e/command-palette.spec.ts`, `e2e/cost.spec.ts`, `e2e/terminal.spec.ts`, `e2e/memory.spec.ts`, `e2e/pr-station.spec.ts`
 
 - [ ] **Step 1: Read each spec and check for stale selectors**
 
-Grep all e2e/*.spec.ts files for `.sprint-center`, `.kanban-`, `.new-ticket-modal`, `.spec-drawer`, `.bde-task-table` — any stale class from the old SprintCenter component tree. Fix any found.
+Grep all e2e/\*.spec.ts files for `.sprint-center`, `.kanban-`, `.new-ticket-modal`, `.spec-drawer`, `.bde-task-table` — any stale class from the old SprintCenter component tree. Fix any found.
 
 - [ ] **Step 2: Build the app for E2E**
 
@@ -212,6 +222,7 @@ Note: E2E tests may need the app to be buildable, which requires `npm run build`
 - [ ] **Step 4: Fix any failing specs**
 
 Address failures iteratively. Common issues:
+
 - Selectors for elements that render asynchronously need `await expect(...).toBeVisible({ timeout: 10_000 })`
 - Text content may have changed — update expected strings
 - Modal/drawer animations may need wait times

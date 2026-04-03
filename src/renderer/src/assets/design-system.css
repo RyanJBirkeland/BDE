@@ -522,7 +522,12 @@
 /* ── Skeleton ────────────────────────────────────────── */
 
 .bde-skeleton {
-  background: linear-gradient(90deg, var(--bde-surface) 25%, var(--bde-surface-high) 50%, var(--bde-surface) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--bde-surface) 25%,
+    var(--bde-surface-high) 50%,
+    var(--bde-surface) 75%
+  );
   background-size: 200% 100%;
   animation: bde-shimmer 1.5s ease-in-out infinite;
   border-radius: var(--bde-radius-md);
@@ -590,7 +595,7 @@
   -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
   border: 1px solid var(--border-glow);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.60),
+    0 24px 80px rgba(0, 0, 0, 0.6),
     0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
     0 0 60px rgba(0, 211, 127, 0.03);
 }
@@ -623,11 +628,7 @@
 
 .elevation-0 {
   background:
-    radial-gradient(
-      ellipse 60% 40% at 50% 0%,
-      rgba(0, 211, 127, 0.015) 0%,
-      transparent 100%
-    ),
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 211, 127, 0.015) 0%, transparent 100%),
     var(--bg-void);
 }
 
@@ -642,7 +643,7 @@
 }
 
 .elevation-3-backdrop {
-  background: rgba(0, 0, 0, 0.50);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px) saturate(120%);
   -webkit-backdrop-filter: blur(8px) saturate(120%);
 }
@@ -653,21 +654,22 @@
 .glow-accent-sm {
   box-shadow:
     0 0 8px rgba(0, 211, 127, 0.15),
-    0 0 0 1px rgba(0, 211, 127, 0.20);
+    0 0 0 1px rgba(0, 211, 127, 0.2);
 }
 
 /* 6.3 Pulsing glow */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 8px rgba(0, 211, 127, 0.15),
-      0 0 0 1px rgba(0, 211, 127, 0.20);
+      0 0 0 1px rgba(0, 211, 127, 0.2);
   }
   50% {
     box-shadow:
       0 0 20px rgba(0, 211, 127, 0.25),
       0 0 4px rgba(0, 211, 127, 0.35),
-      0 0 0 1px rgba(0, 211, 127, 0.40);
+      0 0 0 1px rgba(0, 211, 127, 0.4);
   }
 }
 
@@ -746,13 +748,13 @@
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-out;
-  box-shadow: 0 0 16px rgba(0, 211, 127, 0.20);
+  box-shadow: 0 0 16px rgba(0, 211, 127, 0.2);
 }
 
 .btn-primary:hover {
   box-shadow:
-    0 0 24px rgba(0, 211, 127, 0.30),
-    0 0 8px rgba(0, 211, 127, 0.40);
+    0 0 24px rgba(0, 211, 127, 0.3),
+    0 0 8px rgba(0, 211, 127, 0.4);
   filter: brightness(1.1);
 }
 
@@ -935,7 +937,7 @@ html.theme-light .glass::after {
 
 html.theme-light .elevation-3 {
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.10),
+    0 8px 32px rgba(0, 0, 0, 0.1),
     0 2px 8px rgba(0, 0, 0, 0.06),
     0 0 0 0.5px rgba(0, 0, 0, 0.05) inset;
 }

@@ -16,33 +16,34 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/main/db.ts` | Modify | Add migration v15 (create table + Supabase import) |
-| `src/main/data/supabase-import.ts` | Create | One-time async Supabase import at startup |
-| `src/main/data/sprint-queries.ts` | Rewrite | All 19 query functions: Supabase to SQLite, async to sync |
-| `src/main/data/sprint-task-repository.ts` | Modify | Interface + impl: `Promise<T>` to `T` |
-| `src/main/data/supabase-client.ts` | Delete | No longer needed |
-| `src/main/handlers/sprint-local.ts` | Modify | Drop async/await on wrappers + handlers |
-| `src/main/handlers/workbench.ts` | Modify | Replace `getSupabaseClient()` query with `listTasks()` |
-| `src/main/queue-api/task-handlers.ts` | Modify | Drop async/await |
-| `src/main/queue-api/field-mapper.ts` | Modify | `JSON.stringify()` for depends_on in `toSnakeCase()` |
-| `src/main/agent-manager/index.ts` | Modify | Drop await on repo calls |
-| `src/main/agent-manager/run-agent.ts` | Modify | Drop await on repo.updateTask |
-| `src/main/agent-manager/completion.ts` | Modify | Drop await on repo.updateTask |
-| `src/main/agent-manager/dependency-helpers.ts` | Modify | `checkTaskDependencies` sync, drop await on `listTasks` |
-| `src/main/agent-manager/resolve-dependents.ts` | Modify | Function params + body: `Promise<T>` to `T` |
-| `src/main/agent-manager/orphan-recovery.ts` | Modify | Drop await on repo calls |
-| `src/main/sprint-pr-poller.ts` | Modify | `SprintPrPollerDeps` types + body: `Promise<T>` to `T` |
-| `src/main/agent-history.ts` | Modify | Drop `await` on `clearSprintTaskFk` (becomes sync after Task 2) |
-| `package.json` | Modify | Remove `@supabase/supabase-js` |
-| Tests (multiple) | Modify | Swap Supabase mocks for `getDb` mocks |
+| File                                           | Action  | Responsibility                                                  |
+| ---------------------------------------------- | ------- | --------------------------------------------------------------- |
+| `src/main/db.ts`                               | Modify  | Add migration v15 (create table + Supabase import)              |
+| `src/main/data/supabase-import.ts`             | Create  | One-time async Supabase import at startup                       |
+| `src/main/data/sprint-queries.ts`              | Rewrite | All 19 query functions: Supabase to SQLite, async to sync       |
+| `src/main/data/sprint-task-repository.ts`      | Modify  | Interface + impl: `Promise<T>` to `T`                           |
+| `src/main/data/supabase-client.ts`             | Delete  | No longer needed                                                |
+| `src/main/handlers/sprint-local.ts`            | Modify  | Drop async/await on wrappers + handlers                         |
+| `src/main/handlers/workbench.ts`               | Modify  | Replace `getSupabaseClient()` query with `listTasks()`          |
+| `src/main/queue-api/task-handlers.ts`          | Modify  | Drop async/await                                                |
+| `src/main/queue-api/field-mapper.ts`           | Modify  | `JSON.stringify()` for depends_on in `toSnakeCase()`            |
+| `src/main/agent-manager/index.ts`              | Modify  | Drop await on repo calls                                        |
+| `src/main/agent-manager/run-agent.ts`          | Modify  | Drop await on repo.updateTask                                   |
+| `src/main/agent-manager/completion.ts`         | Modify  | Drop await on repo.updateTask                                   |
+| `src/main/agent-manager/dependency-helpers.ts` | Modify  | `checkTaskDependencies` sync, drop await on `listTasks`         |
+| `src/main/agent-manager/resolve-dependents.ts` | Modify  | Function params + body: `Promise<T>` to `T`                     |
+| `src/main/agent-manager/orphan-recovery.ts`    | Modify  | Drop await on repo calls                                        |
+| `src/main/sprint-pr-poller.ts`                 | Modify  | `SprintPrPollerDeps` types + body: `Promise<T>` to `T`          |
+| `src/main/agent-history.ts`                    | Modify  | Drop `await` on `clearSprintTaskFk` (becomes sync after Task 2) |
+| `package.json`                                 | Modify  | Remove `@supabase/supabase-js`                                  |
+| Tests (multiple)                               | Modify  | Swap Supabase mocks for `getDb` mocks                           |
 
 ---
 
 ## Task 1: Migration v15 — Recreate sprint_tasks Table
 
 **Files:**
+
 - Modify: `src/main/db.ts` (append to migrations array)
 - Create: `src/main/data/supabase-import.ts`
 - Create: `src/main/data/__tests__/migration-v15.test.ts`
@@ -50,6 +51,7 @@
 - [ ] **Step 1: Write failing test for migration v15**
 
 Create `src/main/data/__tests__/migration-v15.test.ts` with tests for:
+
 - Table creation with all expected columns (id, title, status, depends_on, playground_enabled, needs_review, max_runtime_ms, claimed_by)
 - All 8 valid statuses accepted (backlog, queued, blocked, active, done, cancelled, failed, error)
 - Invalid status rejected by CHECK constraint
@@ -65,6 +67,7 @@ Expected: FAIL — sprint_tasks table doesn't exist (dropped in v12)
 - [ ] **Step 3: Write migration v15 in db.ts**
 
 Add to the `migrations` array. Creates the table with:
+
 - Full column set matching `SprintTask` type in `src/shared/types.ts`
 - `blocked` status in CHECK constraint (wasn't in original v6-v10)
 - Indexes on `status`, `claimed_by`, `pr_number`
@@ -74,6 +77,7 @@ Add to the `migrations` array. Creates the table with:
 - [ ] **Step 4: Create supabase-import.ts**
 
 Create `src/main/data/supabase-import.ts` — async one-time import function:
+
 - Only runs if local `sprint_tasks` table is empty
 - Reads `supabase.url` and `supabase.serviceKey` from settings table via `getSetting()`
 - Uses raw `fetch()` to `{url}/rest/v1/sprint_tasks?select=*`
@@ -100,6 +104,7 @@ git commit -m "feat: add migration v15 — recreate sprint_tasks in SQLite with 
 ## Task 2: Rewrite sprint-queries.ts (Supabase to SQLite)
 
 **Files:**
+
 - Rewrite: `src/main/data/sprint-queries.ts`
 - Rewrite: `src/main/data/__tests__/sprint-queries.test.ts`
 
@@ -129,6 +134,7 @@ Expected: FAIL — sprint-queries still imports Supabase
 - [ ] **Step 3: Rewrite sprint-queries.ts**
 
 Replace entire file. Key patterns:
+
 - Import `getDb` from `../db` instead of `getSupabaseClient`
 - All functions sync (drop `async`, return `T` not `Promise<T>`)
 - `sanitizeTask()` adds: `playground_enabled: !!row.playground_enabled`, `needs_review: !!row.needs_review`, plus existing `sanitizeDependsOn()` for `depends_on`
@@ -158,6 +164,7 @@ git commit -m "feat: rewrite sprint-queries from Supabase to SQLite (sync)"
 ## Task 3: Update Repository Interface (sync)
 
 **Files:**
+
 - Modify: `src/main/data/sprint-task-repository.ts`
 - Modify: `src/main/agent-manager/resolve-dependents.ts`
 - Modify: `src/main/agent-manager/dependency-helpers.ts`
@@ -212,6 +219,7 @@ git commit -m "feat: sync repository interface + agent manager callers"
 ## Task 4: Update IPC Handlers + Sprint PR Poller
 
 **Files:**
+
 - Modify: `src/main/handlers/sprint-local.ts`
 - Modify: `src/main/handlers/workbench.ts`
 - Modify: `src/main/sprint-pr-poller.ts`
@@ -224,6 +232,7 @@ Thin wrappers (lines 45-101): drop `async`, return values directly. `notifySprin
 Handler registrations: drop `async` where the handler body only calls sync functions.
 
 **Keep async on these handlers** (they have genuinely async operations):
+
 - `sprint:update` — uses `await import('../spec-semantic-check')` and `await checkSpecSemantic()`
 - `sprint:generatePrompt` — calls `await generatePrompt()` (spawns CLI)
 - `sprint:readLog` — calls `await readLog()` (file I/O)
@@ -235,9 +244,10 @@ Update comment on line 45: remove "Supabase" reference.
 Replace `import { getSupabaseClient } from '../data/supabase-client'` with `import { listTasks } from '../data/sprint-queries'`.
 
 Replace the Supabase query (~lines 223-231) with a sync `listTasks()` call filtered in JS:
+
 ```typescript
 const tasks = listTasks()
-const conflicting = tasks.filter(t => t.repo === repo && ['active', 'queued'].includes(t.status))
+const conflicting = tasks.filter((t) => t.repo === repo && ['active', 'queued'].includes(t.status))
 ```
 
 - [ ] **Step 3: Update sprint-pr-poller.ts**
@@ -268,6 +278,7 @@ git commit -m "feat: sync IPC handlers, PR poller, and agent-history callers"
 ## Task 5: Update Queue API Handlers + Field Mapper
 
 **Files:**
+
 - Modify: `src/main/queue-api/task-handlers.ts`
 - Modify: `src/main/queue-api/field-mapper.ts`
 
@@ -301,6 +312,7 @@ git commit -m "feat: sync Queue API handlers + fix field-mapper for SQLite"
 ## Task 6: Update Tests
 
 **Files:**
+
 - Modify: `src/main/handlers/__tests__/sprint-local.test.ts`
 - Modify: `src/main/handlers/__tests__/workbench.test.ts` (mocks `supabase-client`)
 - Modify: `src/main/agent-manager/__tests__/index.test.ts`
@@ -350,6 +362,7 @@ git commit -m "test: update all mocks for sync SQLite sprint-queries"
 ## Task 7: Remove Supabase Dependency + Wire Import
 
 **Files:**
+
 - Delete: `src/main/data/supabase-client.ts`
 - Modify: `package.json` (remove `@supabase/supabase-js`)
 - Modify: `src/main/index.ts` (call `importFromSupabase()` at startup)
@@ -373,7 +386,7 @@ In `src/main/index.ts`, after DB init / `getDb()` call and before agent manager 
 ```typescript
 import { importFromSupabase } from './data/supabase-import'
 // Fire-and-forget — doesn't block startup
-importFromSupabase().catch(err => console.warn('[startup] Supabase import skipped:', err))
+importFromSupabase().catch((err) => console.warn('[startup] Supabase import skipped:', err))
 ```
 
 - [ ] **Step 4: Run typecheck + full tests**
@@ -381,6 +394,7 @@ importFromSupabase().catch(err => console.warn('[startup] Supabase import skippe
 ```bash
 cd ~/worktrees/bde/feat-sqlite-sprint-tasks && npm run typecheck && npm test && npm run test:main
 ```
+
 Expected: PASS
 
 - [ ] **Step 5: Verify no dangling Supabase imports**
@@ -400,11 +414,13 @@ git commit -m "chore: remove Supabase dependency, wire one-time import at startu
 ## Task 8: Documentation Updates
 
 **Files:**
+
 - Modify: `CLAUDE.md` (project root)
 
 - [ ] **Step 1: Update CLAUDE.md**
 
 Key changes:
+
 - Data layer: "`sprint_tasks` lives in local SQLite alongside `agent_runs`, `settings`, etc."
 - Remove: "Sprint tasks live in **Supabase**" from Architecture Notes
 - Remove: "Four writers to sprint_tasks" — replace with "Two writers: BDE main process + Queue API (port 18790)"

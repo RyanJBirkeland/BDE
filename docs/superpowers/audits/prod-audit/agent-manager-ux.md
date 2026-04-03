@@ -11,14 +11,14 @@
 ### Previously Reported — Now Fixed
 
 1. **UX-1 (partial): Agent failure notes are not actionable** — The March 28 synthesis flagged `main-process-pm C1` noting that users see "Fast-fail exhausted", "Idle timeout", "Empty prompt" with no recovery guidance. This has been **substantially improved**:
-   - Fast-fail exhausted (`run-agent.ts:377-379`) now says: *"Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to 'queued' and clear claimed_by."*
-   - Idle timeout (`index.ts:164-166`) now says: *"Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to 'queued'."*
-   - Max runtime (`index.ts:146-148`) now says: *"Agent exceeded the maximum runtime of N minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks."*
-   - Empty prompt (`run-agent.ts:145`) now says: *"Agent failed to start: task has no prompt, spec, or title. To fix: edit the task and provide a prompt or spec describing what the agent should do."*
+   - Fast-fail exhausted (`run-agent.ts:377-379`) now says: _"Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to 'queued' and clear claimed_by."_
+   - Idle timeout (`index.ts:164-166`) now says: _"Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to 'queued'."_
+   - Max runtime (`index.ts:146-148`) now says: _"Agent exceeded the maximum runtime of N minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks."_
+   - Empty prompt (`run-agent.ts:145`) now says: _"Agent failed to start: task has no prompt, spec, or title. To fix: edit the task and provide a prompt or spec describing what the agent should do."_
 
-2. **main-process-pm C2 (partial): Orphan recovery sets notes explaining re-queue** — `orphan-recovery.ts:31` now writes: *"Task was re-queued by orphan recovery (was claimed but agent is no longer running)."*
+2. **main-process-pm C2 (partial): Orphan recovery sets notes explaining re-queue** — `orphan-recovery.ts:31` now writes: _"Task was re-queued by orphan recovery (was claimed but agent is no longer running)."_
 
-3. **main-process-pm C3 (partial): Shutdown re-queue sets notes** — `index.ts:647` now writes: *"Task was re-queued due to BDE shutdown while agent was running."*
+3. **main-process-pm C3 (partial): Shutdown re-queue sets notes** — `index.ts:647` now writes: _"Task was re-queued due to BDE shutdown while agent was running."_
 
 ### Previously Reported — Still Open
 
@@ -82,7 +82,7 @@
   const repoPath = this.resolveRepoPath(task.repo)
   if (!repoPath) {
     this.logger.warn(`[agent-manager] No repo path for "${task.repo}" — skipping task ${task.id}`)
-    return  // <-- task stays queued silently
+    return // <-- task stays queued silently
   }
   ```
 - **Recommendation:** Update the task with an error status and notes: `repo.updateTask(task.id, { status: 'error', notes: 'Repo "${task.repo}" is not configured in BDE settings. Add it in Settings > Repos, then reset this task to queued.', claimed_by: null })`. Then call `onTaskTerminal(task.id, 'error')`.
@@ -260,21 +260,23 @@
 
 ## Summary
 
-| Severity | Count |
-|----------|-------|
+| Severity | Count      |
+| -------- | ---------- |
 | Critical | None found |
-| High | 3 |
-| Medium | 7 |
-| Low | 4 |
+| High     | 3          |
+| Medium   | 7          |
+| Low      | 4          |
 
 **Total findings: 14**
 
 ### High severity findings:
+
 - **AM-UX-2**: Steer returns misleading "delivered: true" when message is never sent (SDK mode)
 - **AM-UX-4**: Missing `claimed_by: null` on watchdog kills causes task state inconsistency
 - **AM-UX-6**: `resolveFailure` DB error leaves task stuck in active state with no feedback
 
 ### Key positive observations:
+
 - Agent failure notes have been substantially improved since the March 28 audit, with actionable recovery guidance for all major failure modes (fast-fail, idle, max-runtime, empty prompt)
 - Orphan recovery and shutdown now set explanatory notes
 - The completion handler has robust PR creation retry logic with race condition handling
@@ -282,4 +284,5 @@
 - Test coverage is thorough across all modules (17 test files covering edge cases, error paths, and race conditions)
 
 ### Architectural note:
+
 The Agent Manager is fundamentally a main-process orchestrator. Most "UX" concerns manifest as: (a) what notes/status get written to the task record (visible in Pipeline view), and (b) what events get emitted via `emitAgentEvent` (visible in Agent console). The findings above primarily address gaps in these two feedback channels.

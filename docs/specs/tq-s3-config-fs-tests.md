@@ -18,6 +18,7 @@
 - **Credential leakage** if environment variable fallbacks behave unexpectedly
 
 Currently untested error paths:
+
 - Missing config file (`ENOENT`)
 - Corrupt JSON (parse error)
 - Missing required fields (gatewayToken absent)
@@ -28,6 +29,7 @@ Currently untested error paths:
 `src/main/fs.ts` provides IPC handlers for reading/writing agent memory files. The `normalizePath()` function is the sole defense against path traversal attacks.
 
 **Current implementation (`fs.ts:60-65`):**
+
 ```ts
 function normalizePath(relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/').replace(/\.\./g, '')
@@ -37,6 +39,7 @@ function normalizePath(relativePath: string): string {
 ```
 
 **Known weaknesses:**
+
 - Regex `replace(/\.\./g, '')` strips `..` but allows `....` → `..` after one pass (double-dot reconstruction)
 - No symlink resolution — a symlink in memory root could point anywhere
 - No canonicalization — `./foo/../../../etc/passwd` after one strip becomes `./foo/etc/passwd` (safe by accident, but fragile)
@@ -54,11 +57,11 @@ function normalizePath(relativePath: string): string {
 ```ts
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
-  writeFileSync: vi.fn(),
+  writeFileSync: vi.fn()
 }))
 vi.mock('electron', () => ({
   dialog: { showErrorBox: vi.fn() },
-  app: { quit: vi.fn() },
+  app: { quit: vi.fn() }
 }))
 vi.mock('os', () => ({ homedir: () => '/mock-home' }))
 ```
@@ -117,10 +120,12 @@ vi.mock('fs/promises', () => ({
   readdir: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
-  stat: vi.fn(),
+  stat: vi.fn()
 }))
 vi.mock('./ipc-utils', () => ({
-  safeHandle: vi.fn((channel, handler) => { /* store handler for direct testing */ }),
+  safeHandle: vi.fn((channel, handler) => {
+    /* store handler for direct testing */
+  })
 }))
 vi.mock('os', () => ({ homedir: () => '/mock-home' }))
 ```
@@ -169,15 +174,15 @@ vi.mock('os', () => ({ homedir: () => '/mock-home' }))
 
 ## Files to Create
 
-| File | Purpose | Estimated LOC |
-|------|---------|---------------|
-| `src/main/__tests__/config.test.ts` | Config parsing + error path tests | ~120 |
-| `src/main/__tests__/fs.test.ts` | Filesystem + path traversal tests | ~130 |
+| File                                | Purpose                           | Estimated LOC |
+| ----------------------------------- | --------------------------------- | ------------- |
+| `src/main/__tests__/config.test.ts` | Config parsing + error path tests | ~120          |
+| `src/main/__tests__/fs.test.ts`     | Filesystem + path traversal tests | ~130          |
 
 ## Files to Modify
 
-| File | Change | Reason |
-|------|--------|--------|
+| File             | Change                 | Reason                                               |
+| ---------------- | ---------------------- | ---------------------------------------------------- |
 | `src/main/fs.ts` | Export `normalizePath` | Enable direct unit testing of path traversal defense |
 
 ---

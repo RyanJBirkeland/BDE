@@ -34,12 +34,16 @@ Three phases, each producing a shippable improvement:
 **Bug:** `SprintPipeline.tsx:137` filters with `['awaiting-review', 'in-progress'].includes(t.status)`. These are UI partition labels, not DB statuses (`active`, `done`, `queued`, etc.). The filter always returns an empty array — ConflictDrawer never shows any conflicts.
 
 **Fix:** Change the filter to use actual DB statuses + PR mergeable state:
+
 ```ts
 const conflictingTasks = useMemo(
-  () => tasks.filter(
-    (t) => t.pr_url && t.pr_mergeable_state === 'dirty' &&
-           (t.status === 'active' || t.status === 'done')
-  ),
+  () =>
+    tasks.filter(
+      (t) =>
+        t.pr_url &&
+        t.pr_mergeable_state === 'dirty' &&
+        (t.status === 'active' || t.status === 'done')
+    ),
   [tasks]
 )
 ```
@@ -51,6 +55,7 @@ const conflictingTasks = useMemo(
 **Bug:** `sprintTasks.ts` `createTask()` accepts `depends_on` in the input but never passes it to `window.api.sprint.create()`. Dependencies are silently lost.
 
 **Fix:** Add `depends_on` to the IPC payload:
+
 ```ts
 const created = await window.api.sprint.create({
   title: data.title,
@@ -59,6 +64,7 @@ const created = await window.api.sprint.create({
   depends_on: data.depends_on || undefined
 })
 ```
+
 Also set the optimistic task's `depends_on` to `data.depends_on ?? null` instead of hardcoded `null`.
 
 **Files:** `src/renderer/src/stores/sprintTasks.ts`
@@ -68,6 +74,7 @@ Also set the optimistic task's `depends_on` to `data.depends_on ?? null` instead
 **Problem:** Both drawers exist but have no visible buttons, badges, or indicators in the pipeline UI. HealthCheckDrawer only auto-opens when stuck tasks are detected. ConflictDrawer has no trigger at all.
 
 **Fix:** Add indicator badges in the pipeline header:
+
 - Heart-pulse icon + count for stuck tasks (from HealthCheck detection)
 - Git-merge icon + count for conflicting PRs (from conflict filter)
 - Clicking opens the respective drawer
@@ -81,6 +88,7 @@ Also set the optimistic task's `depends_on` to `data.depends_on ?? null` instead
 **Bug:** `sprintTasks.ts` `mergeSseUpdate()` directly overwrites task fields without checking the `pendingUpdates` TTL map. If a user makes an optimistic update and an SSE event arrives within 2 seconds, the user sees their change briefly revert.
 
 **Fix:** Apply the same pending-field protection from `loadData()` inside `mergeSseUpdate()`:
+
 ```ts
 mergeSseUpdate: (update) => {
   set((s) => {
@@ -91,7 +99,7 @@ mergeSseUpdate: (update) => {
         const merged = { ...t, ...update }
         if (pending && Date.now() - pending.ts <= PENDING_UPDATE_TTL) {
           for (const field of pending.fields) {
-            (merged as any)[field] = (t as any)[field]
+            ;(merged as any)[field] = (t as any)[field]
           }
         }
         return merged
@@ -146,8 +154,9 @@ mergeSseUpdate: (update) => {
 **Problem:** `useSprintPolling` selects `s.tasks` just to derive `hasActiveTasks`. Every task mutation triggers re-evaluation.
 
 **Fix:** Use a derived boolean selector:
+
 ```ts
-const hasActiveTasks = useSprintTasks((s) => s.tasks.some(t => t.status === 'active'))
+const hasActiveTasks = useSprintTasks((s) => s.tasks.some((t) => t.status === 'active'))
 ```
 
 **Files:** `src/renderer/src/hooks/useSprintPolling.ts`
@@ -157,10 +166,14 @@ const hasActiveTasks = useSprintTasks((s) => s.tasks.some(t => t.status === 'act
 **Problem:** Subscribes to `s.tasks` for dependency stats even when unrelated tasks change.
 
 **Fix:** Extract dependency computation into a memoized selector that only triggers when dependency task statuses change:
+
 ```ts
-const depIds = useMemo(() => task.depends_on?.map(d => d.id) ?? [], [task.depends_on])
+const depIds = useMemo(() => task.depends_on?.map((d) => d.id) ?? [], [task.depends_on])
 const depsDone = useSprintTasks(
-  useCallback((s) => s.tasks.filter(t => depIds.includes(t.id) && t.status === 'done').length, [depIds])
+  useCallback(
+    (s) => s.tasks.filter((t) => depIds.includes(t.id) && t.status === 'done').length,
+    [depIds]
+  )
 )
 ```
 
@@ -175,6 +188,7 @@ const depsDone = useSprintTasks(
 ### L2: Escape key inconsistency
 
 **Fix:** Update `useSprintKeyboardShortcuts` Escape handler to progressively close layers:
+
 1. If spec panel open → let it handle
 2. If drawer open → close drawer, deselect task
 3. If neither → close log/conflict/health drawers
@@ -192,6 +206,7 @@ const depsDone = useSprintTasks(
 **Problem:** Tasks where agents finished + PR opened but status stuck at `active` look identical to actively running tasks. This was the #1 stress test issue.
 
 **Design:** Add a visual indicator on TaskPill for zombie states:
+
 - If task is `active` AND has `pr_url` or `pr_status` set → show a warning badge (amber clock icon) and change pill border to amber
 - If task is `active` AND elapsed time > `max_runtime_ms` (or default 60min) → show stale indicator (red clock icon)
 - Add CSS class `.task-pill--zombie` with amber border and pulsing warning icon
@@ -203,6 +218,7 @@ const depsDone = useSprintTasks(
 ### C4: Retry action for errored tasks
 
 **Design:** Add a "Retry" button to `ActionButtons` for `failed`/`error` status tasks. This is distinct from "Clone & Queue" — it resets the SAME task:
+
 - Resets: `status=queued, claimed_by=null, notes=null, started_at=null, completed_at=null, fast_fail_count=0, agent_run_id=null`
 - Requires a new IPC endpoint `sprint:retry` that atomically resets all fields + cleans up stale worktree/branch
 - Show confirm dialog: "Retry this task? Previous agent work and logs will be cleared."
@@ -219,6 +235,7 @@ const depsDone = useSprintTasks(
 ### H8: Dependency chain visibility
 
 **Design:** Make the dependency line in TaskDetailDrawer interactive:
+
 - Instead of "2 deps — 1/2 complete", show a list:
   - "→ Task A (done ✓)" — clickable, navigates to that task
   - "→ Task B (active ⟳)" — clickable, shows why this task is blocked
@@ -230,6 +247,7 @@ const depsDone = useSprintTasks(
 ### H9: Failure mode visibility on pills
 
 **Design:** Add a failure-mode badge or icon to failed TaskPills:
+
 - Push failed (branch exists, no PR): git-branch icon + "push failed" tooltip
 - Agent failed (no branch): x-circle icon + "agent failed" tooltip
 - Fast-fail exhausted (3 quick failures): zap icon + "fast-fail" tooltip
@@ -242,6 +260,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### H11: Filter/search UI
 
 **Design:** Add a filter bar below the pipeline header:
+
 - Text search input (filters by task title, case-insensitive)
 - Repo filter chips (like PR Station): "All" + one chip per repo
 - Status filter chips: "All" / "Active" / "Blocked" / "Failed" (quick-filter to a stage)
@@ -253,6 +272,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### H12: Header stats expansion
 
 **Fix:** Add blocked, failed, and review counts to the header alongside existing active/queued/done:
+
 - Blocked: orange accent
 - Failed: red accent
 - Review: blue accent
@@ -270,6 +290,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### M2: Cost/duration on completed tasks
 
 **Design:** Show total duration and cost on completed task pills and in the detail drawer:
+
 - TaskPill (done): show "23m / $1.40" badge below title
 - TaskDetailDrawer: add Duration and Cost fields for completed tasks
 - Data source: `started_at` → `completed_at` for duration, `cost_events` table for cost (may need new IPC to aggregate)
@@ -279,6 +300,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### M3: Progress indicator for active tasks
 
 **Design:** Add a subtle activity indicator to active TaskPills:
+
 - Show "last event: 30s ago" or a mini pulsing dot that dims when no recent events
 - Source: agent events store (already available), check timestamp of latest event for this task's `agent_run_id`
 - If no events in 5+ minutes: dim the dot and show "idle" label
@@ -288,6 +310,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### M6: Keyboard shortcuts
 
 **Design:** Add to `useSprintKeyboardShortcuts`:
+
 - Arrow Up/Down: navigate between tasks within current stage
 - Arrow Left/Right: move selection between stages
 - `R`: retry selected task (if failed/error)
@@ -315,6 +338,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 **Problem:** Store state exists (`selectedTaskIds`, `toggleTaskSelection`, `selectRange`, `clearSelection`) but no UI wires it up. The stress test showed frequent need for bulk intervention on errored tasks.
 
 **Design:** Wire up multi-select:
+
 - Shift+Click for range select, Cmd+Click for toggle
 - Bulk action bar appears when 2+ tasks selected (floats at bottom of pipeline center)
 - Actions: Bulk Re-queue, Bulk Cancel, Bulk Delete
@@ -332,6 +356,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### H1: Font size minimums
 
 **Fix:** Bump all 8-9px instances to 10px minimum:
+
 - `.pipeline-sidebar__label`: 9px → 10px
 - `.pipeline-sidebar__count`: 9px → 10px
 - `.backlog-card__meta`: 9px → 10px
@@ -347,6 +372,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### H2: Inline styles → CSS classes
 
 **Fix:** Extract all inline `style={{}}` props to CSS classes in `sprint-pipeline-neon.css`:
+
 - `PipelineBacklog.tsx`: 5 inline style blocks → `.pipeline-sidebar__label--backlog`, `.pipeline-sidebar__label--failed`, `.pipeline-sidebar__empty`, `.failed-card__meta`, `.failed-card__action`
 - `TaskPill.tsx`: badge colors → `.task-pill__badge--{repo}`
 - `DoneHistoryPanel.tsx`: 3 inline style blocks → `.done-history__badge`, `.done-history__empty`
@@ -359,6 +385,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### H3: Migrate drawer CSS to neon tokens
 
 **Fix:** Move ConflictDrawer and HealthCheckDrawer styles from `sprint.css` (legacy `--glass-*` tokens) to `sprint-pipeline-neon.css` (neon `--neon-*` tokens):
+
 - `--glass-tint-dark` → `var(--neon-surface-deep)`
 - `--glass-tint-mid` → `var(--neon-purple-surface)`
 - `--glass-blur-lg` → `var(--neon-glass-blur)`
@@ -372,6 +399,7 @@ Determine mode from: `pr_status`, `pr_url`, `fast_fail_count`, `notes` content.
 ### H4: Adopt neon primitives
 
 **Fix:** Replace bespoke elements with neon primitives:
+
 - Header stats → `StatCounter` components (or `StatusBar` wrapper)
 - Stage cards → wrap in `NeonCard` where appropriate
 - Header → consider `StatusBar` primitive
@@ -383,6 +411,7 @@ This is the single highest-impact change for visual consistency across views.
 ### H5: Focus indicators
 
 **Fix:** Add `:focus-visible` rules to `sprint-pipeline-neon.css` for all interactive elements:
+
 ```css
 .task-pill:focus-visible,
 .backlog-card:focus-visible,
@@ -411,6 +440,7 @@ This is the single highest-impact change for visual consistency across views.
 ### M12: ARIA semantics
 
 **Fix:**
+
 - Conflict rows: add `role="button"`, `tabIndex={0}`, `aria-expanded`, `onKeyDown` for Enter/Space
 - Pipeline stages: add `role="region"`, `aria-label={stageName}`
 - Pipeline center: `role="region"`, `aria-label="Pipeline stages"`
@@ -427,6 +457,7 @@ This is the single highest-impact change for visual consistency across views.
 ### M14 + C6: Missing tests
 
 **Fix:** Create test files for:
+
 - `src/renderer/src/stores/__tests__/sprintTasks.test.ts` — optimistic updates, SSE merge, pending-field TTL, `createTask` with deps, WIP limits
 - `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts` — pure function, every status mapping, `awaitingReview` override, done sorting
 - `src/renderer/src/hooks/__tests__/useSprintPolling.test.ts` — adaptive interval, SSE refresh
@@ -468,15 +499,16 @@ This is the single highest-impact change for visual consistency across views.
 
 ## Summary
 
-| Phase | Findings | Focus |
-|-------|----------|-------|
-| 1 | 12 | Fix broken features, remove dead code, data correctness |
-| 2 | 14 | Operational UX for unattended pipeline monitoring |
-| 3 | 16 | Design system alignment, accessibility, tests |
+| Phase | Findings | Focus                                                   |
+| ----- | -------- | ------------------------------------------------------- |
+| 1     | 12       | Fix broken features, remove dead code, data correctness |
+| 2     | 14       | Operational UX for unattended pipeline monitoring       |
+| 3     | 16       | Design system alignment, accessibility, tests           |
 
 **Key new IPC needed:** `sprint:retry` (Phase 2, C4) — atomic task reset with worktree cleanup.
 
 **Key architectural decisions:**
+
 - Wire up multi-select with bulk actions (M5) rather than removing dead code
 - Remove dead DnD callbacks (L3) since DnD is not a priority
 - Use neon primitives in header (H4) for cross-view consistency

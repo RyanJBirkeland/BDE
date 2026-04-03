@@ -10,18 +10,18 @@
 
 ### Previously Reported -- Now Fixed
 
-| Original ID | Issue | Status |
-|---|---|---|
+| Original ID                                        | Issue                                                         | Status                                                                                                                                                                       |
+| -------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Synthesis 3.5 / workspace-sd 3.5, workspace-pm 2.2 | Terminal `fontSize`/zoom state never consumed by TerminalPane | **Fixed.** `TerminalPane.tsx` now reads `fontSize` from the terminal store and applies it to xterm via `term.options.fontSize` with a dedicated `useEffect` (lines 119-126). |
-| Synthesis Quick Win #7 / workspace-sd 4.3 | `window.confirm()` / `window.prompt()` used in FileSidebar | **Fixed.** `FileSidebar.tsx` now uses `useConfirm()` and `usePrompt()` from the `ui/` modal components (lines 7-8, 19-20). No native browser dialogs remain in IDE code. |
+| Synthesis Quick Win #7 / workspace-sd 4.3          | `window.confirm()` / `window.prompt()` used in FileSidebar    | **Fixed.** `FileSidebar.tsx` now uses `useConfirm()` and `usePrompt()` from the `ui/` modal components (lines 7-8, 19-20). No native browser dialogs remain in IDE code.     |
 
 ### Previously Reported -- Still Open
 
-| Original ID | Issue | Status |
-|---|---|---|
-| SEC-2 / workspace-sd 2.1 | Symlink-based path traversal bypass in IDE `validateIdePath()` | **Partially fixed.** `validateIdePath()` now calls `fs.realpathSync()` on both root and target (lines 19-47 of `ide-fs-handlers.ts`). However, when `realpathSync` fails for a non-existent path, the fallback logic (lines 34-41) does a string `.replace(root, rootReal)` which only replaces the first occurrence and may not handle edge cases where `root` appears as a substring elsewhere in the path. The fix is substantially better than the original but the fallback deserves hardening. |
-| Synthesis 6 Sprint 3 | Move `fileContents` from IDEView local state to IDE store | **Still open.** `fileContents` remains in `useState` at `IDEView.tsx:103`. See IDE-UX-1 below. |
-| UX-5 / shell-design-sd 2.1 | Keyboard shortcuts fire in contentEditable (Monaco) | **Still open in scope of IDE.** The IDE adds its own `keydown` handler on `window` (IDEView.tsx:170-276) with `capture: true`. While Monaco's `Cmd+S` is separately wired via `editor.addCommand` (EditorPane.tsx:57), the app-level `Cmd+S` guard requires `focusedPanel === 'editor'` which is correct, but `Cmd+B` and `Cmd+J` fire unconditionally when IDE is active (lines 172-182) and will intercept those keys even when Monaco has focus and the user might expect different behavior. |
+| Original ID                | Issue                                                          | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SEC-2 / workspace-sd 2.1   | Symlink-based path traversal bypass in IDE `validateIdePath()` | **Partially fixed.** `validateIdePath()` now calls `fs.realpathSync()` on both root and target (lines 19-47 of `ide-fs-handlers.ts`). However, when `realpathSync` fails for a non-existent path, the fallback logic (lines 34-41) does a string `.replace(root, rootReal)` which only replaces the first occurrence and may not handle edge cases where `root` appears as a substring elsewhere in the path. The fix is substantially better than the original but the fallback deserves hardening. |
+| Synthesis 6 Sprint 3       | Move `fileContents` from IDEView local state to IDE store      | **Still open.** `fileContents` remains in `useState` at `IDEView.tsx:103`. See IDE-UX-1 below.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| UX-5 / shell-design-sd 2.1 | Keyboard shortcuts fire in contentEditable (Monaco)            | **Still open in scope of IDE.** The IDE adds its own `keydown` handler on `window` (IDEView.tsx:170-276) with `capture: true`. While Monaco's `Cmd+S` is separately wired via `editor.addCommand` (EditorPane.tsx:57), the app-level `Cmd+S` guard requires `focusedPanel === 'editor'` which is correct, but `Cmd+B` and `Cmd+J` fire unconditionally when IDE is active (lines 172-182) and will intercept those keys even when Monaco has focus and the user might expect different behavior.     |
 
 ---
 
@@ -37,6 +37,7 @@ None found.
 
 **File:** `src/renderer/src/views/IDEView.tsx:113-114`
 **Code:**
+
 ```typescript
 .catch(() => setFileContents((prev) => ({ ...prev, [filePath]: '' })))
 ```
@@ -71,11 +72,13 @@ None found.
 
 **File:** `src/renderer/src/views/IDEView.tsx:103`
 **Code:**
+
 ```typescript
 const [fileContents, setFileContents] = useState<Record<string, string>>({})
 ```
 
 **Problem:** File contents are stored in React local state, not in the Zustand store. This causes two issues:
+
 1. **Memory leak**: When a tab is closed (`closeTab`), the file content remains in `fileContents` forever -- there is no cleanup. Over a session with many files opened and closed, this accumulates unbounded memory.
 2. **Stale content on re-open**: If a file is closed and reopened, the stale cached content is served from `fileContents` (line 110: `if (fileContents[filePath] !== undefined) return`), even if the file changed on disk. The user sees outdated content with no indication it may be stale.
 
@@ -97,6 +100,7 @@ const [fileContents, setFileContents] = useState<Record<string, string>>({})
 
 **File:** `src/renderer/src/views/IDEView.tsx:190-195`
 **Code:**
+
 ```typescript
 if (e.key === 's' && focusedPanel === 'editor') {
   e.preventDefault()
@@ -118,6 +122,7 @@ if (e.key === 's' && focusedPanel === 'editor') {
 
 **File:** `src/renderer/src/components/ide/FileSidebar.tsx:80-82`
 **Code:**
+
 ```typescript
 function handleCopyPath(path: string): void {
   void navigator.clipboard.writeText(path)
@@ -144,6 +149,7 @@ function handleCopyPath(path: string): void {
 
 **File:** `src/renderer/src/components/ide/FileSidebar.tsx:68-69`
 **Code:**
+
 ```typescript
 const confirmed = await confirm({
   message: `Delete "${name}"? This cannot be undone.`,
@@ -151,6 +157,7 @@ const confirmed = await confirm({
 
 **File:** `src/main/handlers/ide-fs-handlers.ts:199`
 **Code:**
+
 ```typescript
 await shell.trashItem(safe)
 ```
@@ -185,6 +192,7 @@ await shell.trashItem(safe)
 
 **File:** `src/renderer/src/components/ide/FileContextMenu.tsx:51`
 **Code:**
+
 ```typescript
 style={{ top: target.y, left: target.x }}
 ```
@@ -199,6 +207,7 @@ style={{ top: target.y, left: target.x }}
 
 **File:** `src/renderer/src/components/ide/FileTree.tsx:34-37`
 **Code:**
+
 ```typescript
 useEffect(() => {
   const unsubscribe = window.api.onDirChanged(() => loadEntries())
@@ -218,6 +227,7 @@ useEffect(() => {
 
 **File:** `src/renderer/src/components/ide/IDEEmptyState.tsx:12-15`
 **Code:**
+
 ```typescript
 async function handleRecentFolder(folderPath: string): Promise<void> {
   setRootPath(folderPath)
@@ -247,6 +257,7 @@ async function handleRecentFolder(folderPath: string): Promise<void> {
 
 **File:** `src/renderer/src/stores/ide.ts:229-232`
 **Code:**
+
 ```typescript
 persistTimer = setTimeout(() => {
   window.api.settings.setJson('ide.state', toSave)
@@ -263,6 +274,7 @@ persistTimer = setTimeout(() => {
 
 **File:** `src/renderer/src/views/IDEView.tsx:110`
 **Code:**
+
 ```typescript
 if (fileContents[filePath] !== undefined) return
 ```
@@ -277,6 +289,7 @@ if (fileContents[filePath] !== undefined) return
 
 **File:** `src/renderer/src/stores/ide.ts:61-64`
 **Code:**
+
 ```typescript
 function getDisplayName(filePath: string): string {
   const parts = filePath.split('/')
@@ -294,9 +307,16 @@ function getDisplayName(filePath: string): string {
 
 **File:** `src/renderer/src/components/ide/file-tree-constants.ts:1-9`
 **Code:**
+
 ```typescript
 export const HIDDEN_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', '.next', 'out', '.cache'
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  '.next',
+  'out',
+  '.cache'
 ])
 ```
 
@@ -318,49 +338,49 @@ export const HIDDEN_DIRS = new Set([
 
 ## Summary Table
 
-| ID | Severity | Category | Summary |
-|---|---|---|---|
-| IDE-UX-1 | Significant | Error handling | File read error silently shows empty content |
-| IDE-UX-2 | Significant | Loading state | No loading indicator while file content is fetched |
-| IDE-UX-3 | Significant | Data loss | No `beforeunload` guard for unsaved changes on app close |
-| IDE-UX-4 | Significant | Memory / Staleness | `fileContents` in local state causes memory leak and stale content |
-| IDE-UX-5 | Significant | State persistence | Expanded directories not persisted across restart |
-| IDE-UX-6 | Significant | Keyboard UX | `Cmd+S` silently fails when terminal panel is focused |
-| IDE-UX-7 | Moderate | Feedback | Copy Path has no success/error feedback |
-| IDE-UX-8 | Moderate | Accessibility | File tree nodes not keyboard-navigable |
-| IDE-UX-9 | Moderate | Misleading copy | Delete says "cannot be undone" but uses system trash |
-| IDE-UX-10 | Moderate | Dead code / Missing feature | Tab reorder action in store but not in UI |
-| IDE-UX-11 | Moderate | Dead code | `sidebarWidth`/`terminalHeight` store fields unused |
-| IDE-UX-12 | Moderate | Layout | Context menu can render off-screen |
-| IDE-UX-13 | Moderate | Performance | All expanded dirs reload on any filesystem change |
-| IDE-UX-14 | Moderate | Error handling | Recent folder click fails silently if folder deleted |
-| IDE-UX-15 | Low | Accessibility | Context menu has no keyboard navigation |
-| IDE-UX-16 | Low | State persistence | 2s debounce with no flush on unmount/close |
-| IDE-UX-17 | Low | Staleness | No external file change detection |
-| IDE-UX-18 | Low | Ambiguity | Same-named files in different dirs show identical tab labels |
-| IDE-UX-19 | Low | Configuration | Hidden directory list is not configurable |
-| IDE-UX-20 | Low | Filtering | Hidden items filter only covers directories, not files |
+| ID        | Severity    | Category                    | Summary                                                            |
+| --------- | ----------- | --------------------------- | ------------------------------------------------------------------ |
+| IDE-UX-1  | Significant | Error handling              | File read error silently shows empty content                       |
+| IDE-UX-2  | Significant | Loading state               | No loading indicator while file content is fetched                 |
+| IDE-UX-3  | Significant | Data loss                   | No `beforeunload` guard for unsaved changes on app close           |
+| IDE-UX-4  | Significant | Memory / Staleness          | `fileContents` in local state causes memory leak and stale content |
+| IDE-UX-5  | Significant | State persistence           | Expanded directories not persisted across restart                  |
+| IDE-UX-6  | Significant | Keyboard UX                 | `Cmd+S` silently fails when terminal panel is focused              |
+| IDE-UX-7  | Moderate    | Feedback                    | Copy Path has no success/error feedback                            |
+| IDE-UX-8  | Moderate    | Accessibility               | File tree nodes not keyboard-navigable                             |
+| IDE-UX-9  | Moderate    | Misleading copy             | Delete says "cannot be undone" but uses system trash               |
+| IDE-UX-10 | Moderate    | Dead code / Missing feature | Tab reorder action in store but not in UI                          |
+| IDE-UX-11 | Moderate    | Dead code                   | `sidebarWidth`/`terminalHeight` store fields unused                |
+| IDE-UX-12 | Moderate    | Layout                      | Context menu can render off-screen                                 |
+| IDE-UX-13 | Moderate    | Performance                 | All expanded dirs reload on any filesystem change                  |
+| IDE-UX-14 | Moderate    | Error handling              | Recent folder click fails silently if folder deleted               |
+| IDE-UX-15 | Low         | Accessibility               | Context menu has no keyboard navigation                            |
+| IDE-UX-16 | Low         | State persistence           | 2s debounce with no flush on unmount/close                         |
+| IDE-UX-17 | Low         | Staleness                   | No external file change detection                                  |
+| IDE-UX-18 | Low         | Ambiguity                   | Same-named files in different dirs show identical tab labels       |
+| IDE-UX-19 | Low         | Configuration               | Hidden directory list is not configurable                          |
+| IDE-UX-20 | Low         | Filtering                   | Hidden items filter only covers directories, not files             |
 
 ---
 
 ## Severity Distribution
 
-| Severity | Count |
-|---|---|
-| Critical | 0 |
-| Significant | 6 |
-| Moderate | 8 |
-| Low | 6 |
-| **Total** | **20** |
+| Severity    | Count  |
+| ----------- | ------ |
+| Critical    | 0      |
+| Significant | 6      |
+| Moderate    | 8      |
+| Low         | 6      |
+| **Total**   | **20** |
 
 ---
 
 ## Top 5 Quick Wins
 
-| Priority | Finding | Effort | Impact |
-|---|---|---|---|
-| 1 | IDE-UX-1: Add toast on file read failure instead of empty content | S | Prevents accidental data loss from saving "empty" over real files |
-| 2 | IDE-UX-6: Remove `focusedPanel` guard from `Cmd+S` | S | Eliminates silent save failures that confuse users |
-| 3 | IDE-UX-9: Fix delete confirmation copy to mention Trash | S | Reduces user anxiety, matches actual behavior |
-| 4 | IDE-UX-7: Add toast on Copy Path | S | Completes the feedback loop for a common action |
-| 5 | IDE-UX-5: Persist `expandedDirs` in IDE state | S | Eliminates tedious re-expansion after every restart |
+| Priority | Finding                                                           | Effort | Impact                                                            |
+| -------- | ----------------------------------------------------------------- | ------ | ----------------------------------------------------------------- |
+| 1        | IDE-UX-1: Add toast on file read failure instead of empty content | S      | Prevents accidental data loss from saving "empty" over real files |
+| 2        | IDE-UX-6: Remove `focusedPanel` guard from `Cmd+S`                | S      | Eliminates silent save failures that confuse users                |
+| 3        | IDE-UX-9: Fix delete confirmation copy to mention Trash           | S      | Reduces user anxiety, matches actual behavior                     |
+| 4        | IDE-UX-7: Add toast on Copy Path                                  | S      | Completes the feedback loop for a common action                   |
+| 5        | IDE-UX-5: Persist `expandedDirs` in IDE state                     | S      | Eliminates tedious re-expansion after every restart               |

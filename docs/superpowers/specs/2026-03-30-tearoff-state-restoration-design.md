@@ -23,10 +23,11 @@ Automatically restore tear-off windows on app restart. Each tear-off's views and
 **Setting key:** `tearoff.windows` (JSON array in SQLite settings table)
 
 **Schema:**
+
 ```typescript
 interface PersistedTearoff {
   windowId: string
-  views: string[]       // View keys (e.g., ['agents', 'settings'])
+  views: string[] // View keys (e.g., ['agents', 'settings'])
   bounds: {
     x: number
     y: number
@@ -37,6 +38,7 @@ interface PersistedTearoff {
 ```
 
 **When to persist:** On every change that affects tear-off state:
+
 - Tear-off created → add to array
 - Tear-off closed (close action, not return) → remove from array
 - Tear-off returned to main → remove from array
@@ -70,12 +72,17 @@ This is simpler than the alternative (main process querying renderer), and the t
 ### Bounds Validation
 
 On restore, check if the saved bounds overlap with any display:
+
 ```typescript
 function isOnScreen(bounds: Rectangle): boolean {
-  return screen.getAllDisplays().some(display => {
+  return screen.getAllDisplays().some((display) => {
     const db = display.bounds
-    return bounds.x < db.x + db.width && bounds.x + bounds.width > db.x &&
-           bounds.y < db.y + db.height && bounds.y + bounds.height > db.y
+    return (
+      bounds.x < db.x + db.width &&
+      bounds.x + bounds.width > db.x &&
+      bounds.y < db.y + db.height &&
+      bounds.y + bounds.height > db.y
+    )
   })
 }
 ```
@@ -84,13 +91,13 @@ If not on screen (e.g., external monitor disconnected), fall back to centering o
 
 ### What Changes
 
-| File | Change |
-|------|--------|
-| `src/main/tearoff-manager.ts` | Extend TearoffEntry with views, add persistTearoffState(), restoreTearoffWindows(), handle tearoff:viewsChanged, update persist on create/close/return |
-| `src/main/index.ts` | Call restoreTearoffWindows() after createWindow() in app.whenReady() |
-| `src/renderer/src/components/layout/TearoffShell.tsx` | Read `restore` query param, initialize store with multiple views, send tearoff:viewsChanged on store changes |
-| `src/preload/index.ts` + `.d.ts` | Add `viewsChanged` method |
-| `src/shared/ipc-channels.ts` | No change (send channel, not in typed map) |
+| File                                                  | Change                                                                                                                                                 |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/main/tearoff-manager.ts`                         | Extend TearoffEntry with views, add persistTearoffState(), restoreTearoffWindows(), handle tearoff:viewsChanged, update persist on create/close/return |
+| `src/main/index.ts`                                   | Call restoreTearoffWindows() after createWindow() in app.whenReady()                                                                                   |
+| `src/renderer/src/components/layout/TearoffShell.tsx` | Read `restore` query param, initialize store with multiple views, send tearoff:viewsChanged on store changes                                           |
+| `src/preload/index.ts` + `.d.ts`                      | Add `viewsChanged` method                                                                                                                              |
+| `src/shared/ipc-channels.ts`                          | No change (send channel, not in typed map)                                                                                                             |
 
 ### What Does NOT Change
 
@@ -116,15 +123,18 @@ If not on screen (e.g., external monitor disconnected), fall back to centering o
 ## Testing Strategy
 
 **Unit tests:**
+
 - `persistTearoffState()`: serializes current map to setting correctly
 - `restoreTearoffWindows()`: creates windows from persisted state, skips invalid entries
 - Bounds validation: on-screen → keep, off-screen → recenter
 - `tearoff:viewsChanged` handler updates entry
 
 **Integration tests:**
+
 - Full cycle: create tear-off → quit → restore → verify window created with correct views
 
 **Manual tests:**
+
 - Open 2 tear-offs with different views → quit → restart → both reappear
 - Open tear-off on second monitor → disconnect monitor → restart → window on primary display
 - Close a tear-off → quit → restart → only remaining tear-off restored

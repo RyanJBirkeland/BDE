@@ -13,6 +13,7 @@
 ## File Structure
 
 ### New files
+
 - `src/main/__tests__/dependency-index.test.ts` — Pure function tests for cycle detection and dependency satisfaction
 - `src/main/__tests__/resolve-dependents.test.ts` — Dependency resolution logic tests
 - `src/main/__tests__/prompt-composer.test.ts` — Agent prompt assembly tests
@@ -26,6 +27,7 @@
 ## Task 1: Test dependency-index.ts
 
 **Files:**
+
 - Create: `src/main/__tests__/dependency-index.test.ts`
 - Reference: `src/main/agent-manager/dependency-index.ts`
 
@@ -46,9 +48,7 @@ describe('createDependencyIndex', () => {
 
   it('builds reverse map from task dependencies', () => {
     const index = createDependencyIndex()
-    index.rebuild([
-      { id: 'child', depends_on: [{ id: 'parent', type: 'hard' }] }
-    ] as any)
+    index.rebuild([{ id: 'child', depends_on: [{ id: 'parent', type: 'hard' }] }] as any)
     const deps = index.getDependents('parent')
     expect(deps.has('child')).toBe(true)
   })
@@ -149,6 +149,7 @@ git commit -m "test: add unit tests for dependency-index (cycle detection, satis
 ## Task 2: Test resolve-dependents.ts
 
 **Files:**
+
 - Create: `src/main/__tests__/resolve-dependents.test.ts`
 - Reference: `src/main/agent-manager/resolve-dependents.ts`
 
@@ -220,9 +221,7 @@ describe('resolveDependents', () => {
     await resolveDependents('dep-1', 'done', index, getTask, updateTask)
 
     // Should not transition to queued
-    const statusCalls = updateTask.mock.calls.filter(
-      ([, patch]) => patch.status === 'queued'
-    )
+    const statusCalls = updateTask.mock.calls.filter(([, patch]) => patch.status === 'queued')
     expect(statusCalls.length).toBe(0)
   })
 
@@ -242,11 +241,13 @@ describe('resolveDependents', () => {
   it('handles multiple dependents independently', async () => {
     const index = mockIndex({
       getDependents: vi.fn().mockReturnValue(new Set(['task-1', 'task-2'])),
-      areDependenciesSatisfied: vi.fn()
-        .mockReturnValueOnce(true)  // task-1: satisfied
+      areDependenciesSatisfied: vi
+        .fn()
+        .mockReturnValueOnce(true) // task-1: satisfied
         .mockReturnValueOnce(false) // task-2: not satisfied
     })
-    const getTask = vi.fn()
+    const getTask = vi
+      .fn()
       .mockResolvedValueOnce(mockTask({ id: 'task-1', status: 'blocked' }))
       .mockResolvedValueOnce(mockTask({ id: 'task-2', status: 'blocked' }))
     const updateTask = vi.fn().mockResolvedValue(undefined)
@@ -280,6 +281,7 @@ git commit -m "test: add unit tests for resolve-dependents (dependency unblockin
 ## Task 3: Test prompt-composer.ts
 
 **Files:**
+
 - Create: `src/main/__tests__/prompt-composer.test.ts`
 - Reference: `src/main/agent-manager/prompt-composer.ts`
 
@@ -375,6 +377,7 @@ git commit -m "test: add unit tests for prompt-composer (agent prompt assembly)"
 ## Task 4: Test pr-poller.ts
 
 **Files:**
+
 - Create: `src/main/__tests__/pr-poller.test.ts`
 - Reference: `src/main/pr-poller.ts`
 
@@ -389,9 +392,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('../broadcast', () => ({ broadcast: vi.fn() }))
 vi.mock('../settings', () => ({
   getGitHubToken: vi.fn().mockReturnValue('test-token'),
-  getConfiguredRepos: vi.fn().mockReturnValue([
-    { name: 'BDE', githubOwner: 'TestOwner', githubRepo: 'BDE' }
-  ])
+  getConfiguredRepos: vi
+    .fn()
+    .mockReturnValue([{ name: 'BDE', githubOwner: 'TestOwner', githubRepo: 'BDE' }])
 }))
 vi.mock('../handlers/github-fetch', () => ({
   githubFetch: vi.fn().mockResolvedValue({ check_runs: [] }),
@@ -491,6 +494,7 @@ git commit -m "test: add unit tests for pr-poller (PR fetching, broadcast, cachi
 ## Task 5: Test worktree.ts pure functions
 
 **Files:**
+
 - Create: `src/main/__tests__/worktree-unit.test.ts`
 - Reference: `src/main/agent-manager/worktree.ts`
 

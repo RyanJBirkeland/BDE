@@ -27,20 +27,21 @@
 
 ## File Structure (Remaining Work)
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Create | `src/renderer/src/hooks/useFocusTrap.ts` | Reusable focus trap hook |
-| Create | `src/renderer/src/hooks/__tests__/useFocusTrap.test.ts` | Test focus trap hook |
-| Modify | `src/renderer/src/components/ui/ConfirmModal.tsx` | Integrate focus trap |
+| Action | File                                                                  | Responsibility                  |
+| ------ | --------------------------------------------------------------------- | ------------------------------- |
+| Create | `src/renderer/src/hooks/useFocusTrap.ts`                              | Reusable focus trap hook        |
+| Create | `src/renderer/src/hooks/__tests__/useFocusTrap.test.ts`               | Test focus trap hook            |
+| Modify | `src/renderer/src/components/ui/ConfirmModal.tsx`                     | Integrate focus trap            |
 | Create | `src/renderer/src/components/ui/__tests__/ConfirmModal-a11y.test.tsx` | Test focus trap in ConfirmModal |
-| Modify | `src/renderer/src/components/layout/CommandPalette.tsx` | Integrate focus trap |
-| Modify | `src/renderer/src/assets/base.css` | Fix light theme contrast ratios |
+| Modify | `src/renderer/src/components/layout/CommandPalette.tsx`               | Integrate focus trap            |
+| Modify | `src/renderer/src/assets/base.css`                                    | Fix light theme contrast ratios |
 
 ---
 
 ### Task 1: Create Reusable Focus Trap Hook
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/__tests__/useFocusTrap.test.ts`
 - Create: `src/renderer/src/hooks/useFocusTrap.ts`
 
@@ -124,7 +125,8 @@ Expected: FAIL — module not found
 // src/renderer/src/hooks/useFocusTrap.ts
 import { useEffect, useRef, type RefObject } from 'react'
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active: boolean) {
   const previousFocus = useRef<HTMLElement | null>(null)
@@ -182,6 +184,7 @@ git commit -m "feat: add reusable useFocusTrap hook for modal accessibility"
 ### Task 2: Add Focus Trap to ConfirmModal
 
 **Files:**
+
 - Modify: `src/renderer/src/components/ui/ConfirmModal.tsx`
 - Create: `src/renderer/src/components/ui/__tests__/ConfirmModal-a11y.test.tsx`
 
@@ -269,6 +272,7 @@ git commit -m "feat: add focus trap to ConfirmModal"
 ### Task 3: Add Focus Trap to CommandPalette
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/CommandPalette.tsx`
 
 **Context:** PR #350 already added `role="dialog"`, `aria-modal="true"`, `aria-label`, `role="listbox"`, `role="option"`, and `aria-selected` to CommandPalette. This task only adds focus trap integration.
@@ -308,9 +312,11 @@ git commit -m "feat: add focus trap to CommandPalette"
 ### Task 4: Fix Light Theme Contrast Ratios
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/base.css`
 
 **Context:** Light theme has contrast failures that were not addressed in PR #350:
+
 - `--bde-text-dim: #999999` on `#FAFAFA` bg = 2.85:1 ratio (fails WCAG AA 4.5:1)
 - Warning color may fail with small text
 
@@ -330,10 +336,10 @@ In `src/renderer/src/assets/base.css`, in the `html.theme-light` block:
 
 ```css
 /* BEFORE */
---bde-warning: #D97706;
+--bde-warning: #d97706;
 
 /* AFTER — higher contrast for light bg */
---bde-warning: #B45309;
+--bde-warning: #b45309;
 ```
 
 - [ ] **Step 3: Run full test suite**

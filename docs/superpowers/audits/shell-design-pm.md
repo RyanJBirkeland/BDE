@@ -25,6 +25,7 @@ The panel system supports splitting (Cmd+\), drag-and-drop docking (5-zone hit t
 ### 2.2 Dashboard has no empty state guidance
 
 When a new user passes onboarding, the default layout opens to Dashboard (`panelLayout.ts` line 354: `DEFAULT_LAYOUT = createLeaf('dashboard')`). With zero tasks, zero agents, and zero cost data, the dashboard shows:
+
 - All StatCounters at 0
 - Empty MiniCharts (no data bars)
 - "No completions yet" in Recent Completions

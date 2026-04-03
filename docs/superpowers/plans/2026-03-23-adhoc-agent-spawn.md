@@ -33,6 +33,7 @@ src/main/__tests__/handlers.test.ts          # Update test that expects throw �
 ## Task 1: Add 'adhoc' to AgentMeta.source type
 
 **Files:**
+
 - Modify: `src/shared/types.ts:19`
 
 - [ ] **Step 1: Update the source union**
@@ -64,6 +65,7 @@ git commit -m "feat: add 'adhoc' to AgentMeta.source union type"
 ## Task 2: Create adhoc-agent.ts — core spawn + event streaming logic
 
 **Files:**
+
 - Create: `src/main/adhoc-agent.ts`
 - Test: `src/main/__tests__/adhoc-agent.test.ts`
 
@@ -78,20 +80,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock dependencies before imports
 vi.mock('../agent-manager/sdk-adapter', () => ({
-  spawnAgent: vi.fn(),
+  spawnAgent: vi.fn()
 }))
 vi.mock('../agent-history', () => ({
   importAgent: vi.fn(),
-  updateAgentMeta: vi.fn(),
+  updateAgentMeta: vi.fn()
 }))
 vi.mock('../data/event-queries', () => ({
-  appendEvent: vi.fn(),
+  appendEvent: vi.fn()
 }))
 vi.mock('../db', () => ({
-  getDb: vi.fn(() => ({})),
+  getDb: vi.fn(() => ({}))
 }))
 vi.mock('../broadcast', () => ({
-  broadcast: vi.fn(),
+  broadcast: vi.fn()
 }))
 
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
@@ -109,8 +111,10 @@ function createMockHandle(messages: unknown[] = []) {
       }
     })(),
     sessionId: 'test-session',
-    abort() { aborted = true },
-    async steer(_msg: string) {},
+    abort() {
+      aborted = true
+    },
+    async steer(_msg: string) {}
   }
 }
 
@@ -130,7 +134,7 @@ describe('spawnAdhocAgent', () => {
       exitCode: null,
       status: 'running',
       source: 'adhoc',
-      logPath: '/tmp/logs/agent-1/log.jsonl',
+      logPath: '/tmp/logs/agent-1/log.jsonl'
     })
   })
 
@@ -141,13 +145,13 @@ describe('spawnAdhocAgent', () => {
     const result = await spawnAdhocAgent({
       task: 'fix the bug',
       repoPath: '/tmp/test-repo',
-      model: 'sonnet',
+      model: 'sonnet'
     })
 
     expect(spawnAgent).toHaveBeenCalledWith({
       prompt: 'fix the bug',
       cwd: '/tmp/test-repo',
-      model: 'sonnet',
+      model: 'sonnet'
     })
     expect(importAgent).toHaveBeenCalled()
     expect(result.id).toBe('agent-1')
@@ -166,7 +170,7 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:started', model: 'sonnet' }),
+      event: expect.objectContaining({ type: 'agent:started', model: 'sonnet' })
     })
   })
 
@@ -179,14 +183,17 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:completed' }),
+      event: expect.objectContaining({ type: 'agent:completed' })
     })
-    expect(updateAgentMeta).toHaveBeenCalledWith('agent-1', expect.objectContaining({ status: 'done' }))
+    expect(updateAgentMeta).toHaveBeenCalledWith(
+      'agent-1',
+      expect.objectContaining({ status: 'done' })
+    )
   })
 
   it('maps assistant text messages to agent:text events', async () => {
     const handle = createMockHandle([
-      { type: 'assistant', message: { content: [{ type: 'text', text: 'Hello' }] } },
+      { type: 'assistant', message: { content: [{ type: 'text', text: 'Hello' }] } }
     ])
     vi.mocked(spawnAgent).mockResolvedValue(handle)
 
@@ -195,7 +202,7 @@ describe('spawnAdhocAgent', () => {
 
     expect(broadcast).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:text', text: 'Hello' }),
+      event: expect.objectContaining({ type: 'agent:text', text: 'Hello' })
     })
   })
 
@@ -219,9 +226,7 @@ describe('spawnAdhocAgent', () => {
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
 
-    expect(spawnAgent).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'claude-sonnet-4-5' }),
-    )
+    expect(spawnAgent).toHaveBeenCalledWith(expect.objectContaining({ model: 'claude-sonnet-4-5' }))
   })
 })
 ```
@@ -266,7 +271,7 @@ export async function spawnAdhocAgent(args: {
   const handle = await spawnAgent({
     prompt: args.task,
     cwd: args.repoPath,
-    model,
+    model
   })
 
   // Record in agent_runs
@@ -281,9 +286,9 @@ export async function spawnAdhocAgent(args: {
       repoPath: args.repoPath,
       task: args.task,
       status: 'running',
-      source: 'adhoc',
+      source: 'adhoc'
     },
-    '', // No initial log content
+    '' // No initial log content
   )
 
   // Track for steering
@@ -296,17 +301,13 @@ export async function spawnAdhocAgent(args: {
     id: meta.id,
     pid: 0,
     logPath: meta.logPath ?? '',
-    interactive: true,
+    interactive: true
   }
 }
 
 // ---- Background message consumer ----
 
-async function consumeMessages(
-  agentId: string,
-  model: string,
-  handle: AgentHandle,
-): Promise<void> {
+async function consumeMessages(agentId: string, model: string, handle: AgentHandle): Promise<void> {
   const startedAt = Date.now()
   let costUsd = 0
   let tokensIn = 0
@@ -336,7 +337,7 @@ async function consumeMessages(
     emitEvent(agentId, {
       type: 'agent:error',
       message: err instanceof Error ? err.message : String(err),
-      timestamp: Date.now(),
+      timestamp: Date.now()
     })
   }
 
@@ -349,14 +350,14 @@ async function consumeMessages(
     tokensIn,
     tokensOut,
     durationMs,
-    timestamp: Date.now(),
+    timestamp: Date.now()
   })
 
   // Update agent_runs
   await updateAgentMeta(agentId, {
     status: 'done',
     finishedAt: new Date().toISOString(),
-    exitCode,
+    exitCode
   }).catch(() => {})
 
   // Cleanup
@@ -398,7 +399,7 @@ function mapRawMessage(raw: unknown): AgentEvent[] {
               tool: (b.name as string) ?? 'unknown',
               summary: (b.name as string) ?? '',
               input: b.input,
-              timestamp: now,
+              timestamp: now
             })
           }
         }
@@ -412,7 +413,7 @@ function mapRawMessage(raw: unknown): AgentEvent[] {
       success: msg.is_error !== true,
       summary: typeof content === 'string' ? content.slice(0, 200) : '',
       output: content,
-      timestamp: now,
+      timestamp: now
     })
   }
 
@@ -437,6 +438,7 @@ git commit -m "feat: add adhoc-agent.ts — SDK-based ad-hoc agent spawning with
 ## Task 3: Wire handler to adhoc-agent + update steer
 
 **Files:**
+
 - Modify: `src/main/handlers/agent-handlers.ts:5-6,32-36,42-50`
 
 - [ ] **Step 1: Update agent-handlers.ts**
@@ -451,19 +453,21 @@ import type { SpawnLocalAgentArgs } from '../../shared/types'
 Replace the `local:spawnClaudeAgent` handler (lines 32-36):
 
 ```typescript
-  safeHandle('local:spawnClaudeAgent', async (_e, args: SpawnLocalAgentArgs) => {
-    return spawnAdhocAgent({
-      task: args.task,
-      repoPath: args.repoPath,
-      model: args.model,
-    })
+safeHandle('local:spawnClaudeAgent', async (_e, args: SpawnLocalAgentArgs) => {
+  return spawnAdhocAgent({
+    task: args.task,
+    repoPath: args.repoPath,
+    model: args.model
   })
+})
 ```
 
 Update the `agent:steer` handler (lines 42-50) — add adhoc check before Agent Manager:
 
 ```typescript
-  safeHandle('agent:steer', async (_e, { agentId, message }: { agentId: string; message: string }) => {
+safeHandle(
+  'agent:steer',
+  async (_e, { agentId, message }: { agentId: string; message: string }) => {
     // Try ad-hoc agents first
     const adhocHandle = getAdhocHandle(agentId)
     if (adhocHandle) {
@@ -473,29 +477,40 @@ Update the `agent:steer` handler (lines 42-50) — add adhoc check before Agent 
     // Try local AgentManager
     const am = (global as any).__agentManager
     if (am) {
-      try { await am.steerAgent(agentId, message); return { ok: true } } catch { /* fall through */ }
+      try {
+        await am.steerAgent(agentId, message)
+        return { ok: true }
+      } catch {
+        /* fall through */
+      }
     }
     // Fall back to runner-client
     return steerAgent(agentId, message)
-  })
+  }
+)
 ```
 
 Update the `agent:kill` handler (lines 51-57) — add adhoc check before Agent Manager:
 
 ```typescript
-  safeHandle('agent:kill', async (_e, agentId: string) => {
-    // Try ad-hoc agents first
-    const adhocHandle = getAdhocHandle(agentId)
-    if (adhocHandle) {
-      adhocHandle.abort()
+safeHandle('agent:kill', async (_e, agentId: string) => {
+  // Try ad-hoc agents first
+  const adhocHandle = getAdhocHandle(agentId)
+  if (adhocHandle) {
+    adhocHandle.abort()
+    return { ok: true }
+  }
+  const am = (global as any).__agentManager
+  if (am) {
+    try {
+      am.killAgent(agentId)
       return { ok: true }
+    } catch {
+      /* fall through */
     }
-    const am = (global as any).__agentManager
-    if (am) {
-      try { am.killAgent(agentId); return { ok: true } } catch { /* fall through */ }
-    }
-    return killAgent(agentId)
-  })
+  }
+  return killAgent(agentId)
+})
 ```
 
 - [ ] **Step 2: Verify typecheck**
@@ -508,6 +523,7 @@ Expected: PASS
 #### Handler test updates (must be done together with handler changes)
 
 **Files:**
+
 - Modify: `src/main/__tests__/handlers.test.ts:209-258`
 
 - [ ] **Step 1: Update tests**
@@ -515,26 +531,27 @@ Expected: PASS
 The existing tests expect `local:spawnClaudeAgent` to throw. These need updating:
 
 Find the test at line 209-213 (`'re-throws errors to the renderer'`). This test uses `local:spawnClaudeAgent` as a convenient way to test error propagation. Since the handler no longer throws, either:
+
 - Change it to use a different handler that throws, OR
 - Replace it with a test that verifies the new spawn behavior
 
 Find the test at line 254-258 (`'"local:spawnClaudeAgent" rejects (spawning removed from BDE)'`). Replace with:
 
 ```typescript
-    it('"local:spawnClaudeAgent" calls spawnAdhocAgent', async () => {
-      const result = await invoke('local:spawnClaudeAgent', { repoPath: '/tmp/bde', task: 'fix bug' })
-      expect(result).toBeDefined()
-    })
+it('"local:spawnClaudeAgent" calls spawnAdhocAgent', async () => {
+  const result = await invoke('local:spawnClaudeAgent', { repoPath: '/tmp/bde', task: 'fix bug' })
+  expect(result).toBeDefined()
+})
 ```
 
 For the error propagation test (lines 209-213), find another handler that can throw, or create a dedicated test. For example, use the `agents:readLog` handler with a bad ID:
 
 ```typescript
-    it('re-throws errors to the renderer (does not swallow)', async () => {
-      // Force an error via agents:readLog with a non-existent agent
-      vi.mocked(agentHistory.readLog).mockRejectedValueOnce(new Error('not found'))
-      await expect(invoke('agents:readLog', { id: 'nonexistent' })).rejects.toThrow('not found')
-    })
+it('re-throws errors to the renderer (does not swallow)', async () => {
+  // Force an error via agents:readLog with a non-existent agent
+  vi.mocked(agentHistory.readLog).mockRejectedValueOnce(new Error('not found'))
+  await expect(invoke('agents:readLog', { id: 'nonexistent' })).rejects.toThrow('not found')
+})
 ```
 
 Also update the console.error test (lines 216-224) similarly.
@@ -543,8 +560,10 @@ You will also need to mock `spawnAdhocAgent` in the test file. Add to the mocks 
 
 ```typescript
 vi.mock('../adhoc-agent', () => ({
-  spawnAdhocAgent: vi.fn().mockResolvedValue({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true }),
-  getAdhocHandle: vi.fn(),
+  spawnAdhocAgent: vi
+    .fn()
+    .mockResolvedValue({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true }),
+  getAdhocHandle: vi.fn()
 }))
 ```
 
@@ -569,11 +588,11 @@ git commit -m "feat: wire local:spawnClaudeAgent to adhoc-agent, add adhoc steer
 
 ## Execution Summary
 
-| Task | What | Files |
-|------|------|-------|
-| 1 | Add `'adhoc'` to source type | `types.ts` |
-| 2 | Create `adhoc-agent.ts` — spawn + event streaming + tests | `adhoc-agent.ts`, `adhoc-agent.test.ts` |
-| 3 | Wire handler + update steer/kill + update handler tests | `agent-handlers.ts`, `handlers.test.ts` |
+| Task | What                                                      | Files                                   |
+| ---- | --------------------------------------------------------- | --------------------------------------- |
+| 1    | Add `'adhoc'` to source type                              | `types.ts`                              |
+| 2    | Create `adhoc-agent.ts` — spawn + event streaming + tests | `adhoc-agent.ts`, `adhoc-agent.test.ts` |
+| 3    | Wire handler + update steer/kill + update handler tests   | `agent-handlers.ts`, `handlers.test.ts` |
 
 **Total tasks:** 3
 **New files:** 2 (`adhoc-agent.ts`, `adhoc-agent.test.ts`)

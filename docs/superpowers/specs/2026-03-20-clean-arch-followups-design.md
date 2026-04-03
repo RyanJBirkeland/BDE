@@ -18,6 +18,7 @@ Four follow-up items from the clean architecture remediation reviews. All are sm
 `src/main/handlers/sprint-spec.ts:10` imports `updateTask` from `./sprint-local`, while `sprint-local.ts:11` imports `generatePrompt` from `./sprint-spec`. This creates a bidirectional module dependency.
 
 The `updateTask` call in `sprint-spec.ts:138` persists the generated spec as a side effect inside `generatePrompt`:
+
 ```typescript
 updateTask(taskId, { spec: text, prompt: text })
 ```
@@ -29,12 +30,15 @@ Make `generatePrompt` a pure function that returns results without persisting. M
 ### Changes
 
 **`src/main/handlers/sprint-spec.ts`:**
+
 - Remove `import { updateTask } from './sprint-local'` (line 10)
 - Remove the `updateTask(taskId, { spec: text, prompt: text })` call (line 138)
 - `generatePrompt` now only returns `{ taskId, spec, prompt }` — no side effects
 
 **`src/main/handlers/sprint-local.ts`:**
+
 - Update the `sprint:generatePrompt` handler to persist after calling `generatePrompt`:
+
 ```typescript
 safeHandle('sprint:generatePrompt', async (_e, args) => {
   const result = await generatePrompt(args)
@@ -66,6 +70,7 @@ Two extractions:
 **1. Expand `useSprintTaskActions` hook**
 
 Move these remaining inline callbacks from SprintCenter into the existing hook:
+
 - `handleDragEnd` (lines 138-153) — Kanban drag-and-drop with WIP limit check
 - `handleReorder` (lines 157-169) — within-column reorder
 - `handlePushToSprint` (lines 171-177) — push backlog task to queue
@@ -79,6 +84,7 @@ These all follow the same pattern: call `updateTask` with a patch. They belong w
 **2. Create `useHealthCheck` hook**
 
 Extract from SprintCenter:
+
 - `stuckTasks` state (currently `useState<string[]>([])`)
 - `runHealthCheck` callback (lines 267-274)
 - Initial load effect (line 276)
@@ -93,10 +99,14 @@ export function useHealthCheck() {
     try {
       const stuck = await window.api.sprint.healthCheck()
       setStuckTasks(stuck.map((t) => t.id))
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   }, [])
 
-  useEffect(() => { runHealthCheck() }, [runHealthCheck])
+  useEffect(() => {
+    runHealthCheck()
+  }, [runHealthCheck])
   useVisibilityAwareInterval(runHealthCheck, POLL_HEALTH_CHECK_MS)
 
   return { stuckTasks }
@@ -127,10 +137,12 @@ export function useHealthCheck() {
 Two data layer modules lack tests, and `event-store.ts` has direct DB queries that bypass the data layer.
 
 **Missing tests:**
+
 - `src/main/data/agent-queries.ts` — 12+ exported functions, zero tests
 - `src/main/data/cost-queries.ts` — 2 exported functions, zero tests
 
 **Missing module:**
+
 - `src/main/agents/event-store.ts` calls `getDb().prepare(...)` directly for `appendEvent`, `getHistory`, and `pruneOldEvents`
 
 ### Solution
@@ -138,6 +150,7 @@ Two data layer modules lack tests, and `event-store.ts` has direct DB queries th
 **1. Create `src/main/data/__tests__/agent-queries.test.ts`**
 
 Test with in-memory SQLite:
+
 - `insertAgentRecord` — insert and verify
 - `getAgentMeta` — found + not found
 - `listAgents` — ordering, status filter
@@ -149,19 +162,31 @@ Test with in-memory SQLite:
 **2. Create `src/main/data/__tests__/cost-queries.test.ts`**
 
 Test with in-memory SQLite:
+
 - `getCostSummary` — with and without data
 - `getRecentAgentRunsWithCost` — pagination, ordering
 
 **3. Create `src/main/data/event-queries.ts`**
 
 Extract from `src/main/agents/event-store.ts`:
+
 ```typescript
-export function appendEvent(db: Database, agentId: string, eventType: string, payload: string, timestamp: number): void {
-  db.prepare('INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)').run(agentId, eventType, payload, timestamp)
+export function appendEvent(
+  db: Database,
+  agentId: string,
+  eventType: string,
+  payload: string,
+  timestamp: number
+): void {
+  db.prepare(
+    'INSERT INTO agent_events (agent_id, event_type, payload, timestamp) VALUES (?, ?, ?, ?)'
+  ).run(agentId, eventType, payload, timestamp)
 }
 
 export function getEventHistory(db: Database, agentId: string): { payload: string }[] {
-  return db.prepare('SELECT payload FROM agent_events WHERE agent_id = ? ORDER BY timestamp ASC').all(agentId) as { payload: string }[]
+  return db
+    .prepare('SELECT payload FROM agent_events WHERE agent_id = ? ORDER BY timestamp ASC')
+    .all(agentId) as { payload: string }[]
 }
 
 export function pruneOldEvents(db: Database, agentId: string, keepCount: number): void {
@@ -172,6 +197,7 @@ export function pruneOldEvents(db: Database, agentId: string, keepCount: number)
 **4. Update `src/main/agents/event-store.ts`**
 
 Delegate to event-queries with `getDb()`:
+
 ```typescript
 import { appendEvent as _appendEvent, getEventHistory } from '../data/event-queries'
 import { getDb } from '../db'
@@ -223,8 +249,8 @@ Instead of forcing `AgentEvent` into `TaskOutputEvent`, accept a union type for 
 type AnyTaskEvent = TaskOutputEvent | AgentEvent
 
 interface SprintEventsState {
-  taskEvents: Record<string, AnyTaskEvent[]>  // was TaskOutputEvent[]
-  latestEvents: Record<string, AnyTaskEvent>  // was TaskOutputEvent
+  taskEvents: Record<string, AnyTaskEvent[]> // was TaskOutputEvent[]
+  latestEvents: Record<string, AnyTaskEvent> // was TaskOutputEvent
   // ...
 }
 ```

@@ -14,11 +14,13 @@
 Vitest's default test discovery walks the entire project tree. BDE has 20+ `.worktrees/` directories (and `.claude/worktrees/`), each containing their own `node_modules/`. Some dependencies ship `.spec.ts` files (e.g., `exponential-backoff/src/backoff.spec.ts`) that use Jest globals. When Vitest encounters these, it fails with `jest is not defined`.
 
 **Current exclusion in `vitest.config.ts:8`:**
+
 ```ts
 exclude: ['src/main/**/*.test.ts', 'node_modules'],
 ```
 
 This excludes the root `node_modules/` but NOT:
+
 - `.worktrees/*/node_modules/`
 - `.worktrees/*/**/*.spec.ts`
 - `.claude/worktrees/*/node_modules/`
@@ -26,6 +28,7 @@ This excludes the root `node_modules/` but NOT:
 ### 2. Coverage Thresholds Too Low
 
 Current thresholds (`vitest.config.ts:14-19`):
+
 ```ts
 thresholds: {
   statements: 40,
@@ -98,19 +101,15 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/main/**/*.test.ts'],
-    exclude: [
-      'node_modules/**',
-      '.worktrees/**',
-      '.claude/**',
-    ],
+    exclude: ['node_modules/**', '.worktrees/**', '.claude/**'],
     globals: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
       include: ['src/main/**/*.ts'],
-      exclude: ['**/__tests__/**', '**/*.d.ts'],
-    },
-  },
+      exclude: ['**/__tests__/**', '**/*.d.ts']
+    }
+  }
 })
 ```
 
@@ -127,11 +126,11 @@ export default defineConfig({
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `vitest.config.ts` | Add `.worktrees/**`, `.claude/**` to exclude; raise thresholds |
-| `vitest.node.config.ts` | Add exclude list, add coverage config |
-| `package.json` | Add `test:all` and `test:coverage:all` scripts |
+| File                    | Change                                                         |
+| ----------------------- | -------------------------------------------------------------- |
+| `vitest.config.ts`      | Add `.worktrees/**`, `.claude/**` to exclude; raise thresholds |
+| `vitest.node.config.ts` | Add exclude list, add coverage config                          |
+| `package.json`          | Add `test:all` and `test:coverage:all` scripts                 |
 
 ## Files to Create
 

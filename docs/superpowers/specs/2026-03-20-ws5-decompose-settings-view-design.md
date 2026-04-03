@@ -69,22 +69,29 @@ Eliminates the repeated test/save/show pattern. Supports both single-field (toke
 // src/renderer/src/components/settings/CredentialForm.tsx
 
 interface CredentialField {
-  key: string               // field identifier
-  label: string             // "URL", "Token", etc.
-  type: 'url' | 'token'    // Controls input type and masking
+  key: string // field identifier
+  label: string // "URL", "Token", etc.
+  type: 'url' | 'token' // Controls input type and masking
   placeholder?: string
 }
 
 interface CredentialFormProps {
-  title: string                          // "Gateway", "GitHub", etc.
-  fields: CredentialField[]              // 1 field for GitHub/TaskRunner, 2 for Gateway
-  values: Record<string, string>         // current values keyed by field.key
+  title: string // "Gateway", "GitHub", etc.
+  fields: CredentialField[] // 1 field for GitHub/TaskRunner, 2 for Gateway
+  values: Record<string, string> // current values keyed by field.key
   onChange: (key: string, value: string) => void
   onSave: (values: Record<string, string>) => Promise<void>
   onTest?: (values: Record<string, string>) => Promise<{ ok: boolean; message: string }>
 }
 
-export function CredentialForm({ title, fields, values, onChange, onSave, onTest }: CredentialFormProps) {
+export function CredentialForm({
+  title,
+  fields,
+  values,
+  onChange,
+  onSave,
+  onTest
+}: CredentialFormProps) {
   const [showValues, setShowValues] = useState<Record<string, boolean>>({})
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
@@ -154,6 +161,7 @@ The Gateway credential has 2 fields (URL + token) while GitHub and Task Runner e
 ### 2. Extract `AppearanceSection`
 
 Move from SettingsView:
+
 - Theme toggle (dark/light)
 - Accent color picker
 - `useAccentColor()` hook (move to `src/renderer/src/hooks/useAccentColor.ts` or keep inline)
@@ -189,6 +197,7 @@ Replace 841 LOC with ~60 LOC tab container that lazy-renders section components.
 ### 9. Update tests
 
 Split existing SettingsView tests (if any) into per-section test files:
+
 ```
 src/renderer/src/components/settings/__tests__/
   CredentialForm.test.tsx
@@ -199,16 +208,16 @@ src/renderer/src/components/settings/__tests__/
 
 ## File Size Targets
 
-| File | Target LOC | Current Equivalent |
-|------|-----------|-------------------|
-| `SettingsView.tsx` | ~60 | 841 |
-| `AppearanceSection.tsx` | ~80 | (embedded) |
-| `ConnectionsSection.tsx` | ~120 | 335 (with duplication) |
-| `CredentialForm.tsx` | ~120 | (new, replaces 3x pattern) |
-| `RepositoriesSection.tsx` | ~170 | 166 |
-| `TaskTemplatesSection.tsx` | ~150 | 108 |
-| `AgentRuntimeSection.tsx` | ~80 | (embedded) |
-| `AboutSection.tsx` | ~30 | (embedded, lines 816-838) |
+| File                       | Target LOC | Current Equivalent         |
+| -------------------------- | ---------- | -------------------------- |
+| `SettingsView.tsx`         | ~60        | 841                        |
+| `AppearanceSection.tsx`    | ~80        | (embedded)                 |
+| `ConnectionsSection.tsx`   | ~120       | 335 (with duplication)     |
+| `CredentialForm.tsx`       | ~120       | (new, replaces 3x pattern) |
+| `RepositoriesSection.tsx`  | ~170       | 166                        |
+| `TaskTemplatesSection.tsx` | ~150       | 108                        |
+| `AgentRuntimeSection.tsx`  | ~80        | (embedded)                 |
+| `AboutSection.tsx`         | ~30        | (embedded, lines 816-838)  |
 
 Total: ~810 LOC across 8 files (down from 841 in one file, with better separation and deduplication).
 

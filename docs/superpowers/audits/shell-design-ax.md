@@ -17,6 +17,7 @@ BDE has **two co-existing design systems** -- `ui/` (BEM classes via `design-sys
 ### 2.1 VIEW_LABELS / VIEW_ICONS / VIEW_TITLES Duplicated 4x
 
 **Files:**
+
 - `src/renderer/src/stores/panelLayout.ts` (line 43) -- canonical `VIEW_LABELS`
 - `src/renderer/src/components/layout/NeonSidebar.tsx` (lines 20-51) -- duplicates `VIEW_ICONS`, `VIEW_LABELS`, `VIEW_SHORTCUTS`
 - `src/renderer/src/components/layout/OverflowMenu.tsx` (lines 19-39) -- duplicates `VIEW_ICONS`, `VIEW_LABELS`
@@ -29,6 +30,7 @@ Adding or renaming a view requires updating **all four files** in lockstep. The 
 ### 2.2 Two Competing Tooltip Implementations
 
 **Files:**
+
 - `src/renderer/src/components/ui/Tooltip.tsx` -- CSS pseudo-element (`data-tooltip` attribute, styled in `design-system.css` lines 452-502)
 - `src/renderer/src/components/neon/NeonTooltip.tsx` -- React portal with position calculation, styled in `neon-shell.css` lines 218-252
 
@@ -39,6 +41,7 @@ Both are in active use. `NeonTooltip` is used by `SidebarItem.tsx`; `Tooltip` fr
 ### 2.3 Two Competing Badge Implementations
 
 **Files:**
+
 - `src/renderer/src/components/ui/Badge.tsx` -- uses `bde-badge--{variant}` CSS classes with `--bde-*` variables
 - `src/renderer/src/components/neon/NeonBadge.tsx` -- uses inline styles with `neonVar()` and `tokens.*`
 
@@ -55,6 +58,7 @@ Same problem as tooltips: two components, two visual languages, no guidance on w
 **File:** `src/renderer/src/views/DashboardView.tsx`
 
 This file contains:
+
 - The entire dashboard layout (lines 211-451) as one giant JSX tree
 - `SuccessRing` SVG component (lines 455-522)
 - Three utility functions (`formatDuration`, `truncate`, `timeAgo`) at lines 525-552
@@ -75,6 +79,7 @@ Every neon component builds its visual appearance via inline `style={{}}` object
 - `ActivityFeed.tsx` (lines 45-88) -- inline styles on every element
 
 This approach:
+
 1. Defeats CSS specificity overrides (neon views can't customize NeonCard's border-radius via scoped CSS)
 2. Prevents pseudo-class styling (`:hover`, `:focus-visible` can't be applied to inline styles)
 3. Makes theme switching harder (inline `tokens.neon.text` resolves to a CSS var string, but layout values like `tokens.radius.xl = '12px'` are hardcoded)
@@ -84,6 +89,7 @@ This approach:
 ### 3.3 Dual Token System: `tokens.ts` vs CSS Custom Properties
 
 **Files:**
+
 - `src/renderer/src/design-system/tokens.ts` (95 lines)
 - `src/renderer/src/assets/base.css` (`:root` block, lines 10-256)
 - `src/renderer/src/assets/neon.css` (`:root` block, lines 7-73)
@@ -101,6 +107,7 @@ Meanwhile, `base.css` defines `--bde-space-3: 12px`, `--bde-radius-xl: 12px` -- 
 **File:** `src/renderer/src/App.tsx` (312 lines)
 
 `App.tsx` handles:
+
 1. Onboarding gate (lines 268-269)
 2. Keyboard shortcut registration (lines 175-266)
 3. View title management (lines 155-159)
@@ -117,6 +124,7 @@ Meanwhile, `base.css` defines `--bde-space-3: 12px`, `--bde-radius-xl: 12px` -- 
 **File:** `src/renderer/src/components/layout/SidebarItem.tsx` (lines 88-140)
 
 The context menu is built with 100% inline styles and `onMouseEnter`/`onMouseLeave` event handlers for hover effects. This:
+
 - Cannot use CSS pseudo-classes (`:hover`)
 - Has hardcoded `rgba()` values (lines 95-96, 124-127, 130-131, 134-135)
 - Does not use any design system tokens or CSS classes
@@ -128,6 +136,7 @@ The context menu is built with 100% inline styles and `onMouseEnter`/`onMouseLea
 The CLAUDE.md states: _"Never use hardcoded `rgba()` for overlays or `box-shadow`."_
 
 Violations found:
+
 - `DashboardView.tsx` lines 346, 368, 376, 420-425, 438, 443, 487, 516: hardcoded `rgba(255, 255, 255, 0.3)`, `rgba(255, 255, 255, 0.4)`, etc.
 - `SidebarItem.tsx` lines 95, 124, 130, 134: hardcoded `rgba(255, 255, 255, 0.6)`, `rgba(10, 0, 21, 0.9)`
 - `OverflowMenu.tsx` lines 120-122, 159: hardcoded `rgba(255, 255, 255, 0.4)`, `rgba(191, 90, 242, 0.2)`
@@ -175,50 +184,50 @@ Each of the 18 particles gets `willChange: 'transform'`, promoting all to compos
 
 ## 5. Design System Inventory
 
-| Component | System | Token Source | Styling Method |
-|---|---|---|---|
-| **ui/Button** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-btn--*`) + `.btn-primary` / `.btn-glass` overlay from design-system.css |
-| **ui/Badge** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-badge--*`) |
-| **ui/Card** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-card--*`) |
-| **ui/Input** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-input`) |
-| **ui/Textarea** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-textarea`) |
-| **ui/Spinner** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-spinner--*`) |
-| **ui/Kbd** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS class (`.bde-kbd`) |
-| **ui/Divider** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-divider--*`) |
-| **ui/EmptyState** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-empty`) |
-| **ui/ErrorBanner** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS class (`.bde-error-banner`) |
-| **ui/ErrorBoundary** | Hybrid | `tokens.ts` (inline) | Inline styles with `tokens.color.*`, `tokens.font.*`, `tokens.size.*`, `tokens.space.*` |
-| **ui/Tooltip** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS pseudo-element (`.bde-tooltip::after`) |
-| **ui/Panel** | ui/ (BEM) | CSS vars (`--bde-*`) | CSS classes (`.bde-panel`) |
-| **ui/ConfirmModal** | Hybrid | CSS vars (`--bde-*`) | CSS classes (`.confirm-modal`) + `.glass-modal` from v2 system |
-| **ui/ElapsedTime** | None | N/A | Renderless (text only) |
-| **neon/NeonCard** | neon/ | `tokens.ts` + `neonVar()` | Inline styles with CSS custom property passthrough |
-| **neon/NeonBadge** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/GlassPanel** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/StatCounter** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/ActivityFeed** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/NeonProgress** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/PipelineFlow** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/MiniChart** | neon/ | `tokens.ts` + `neonVar()` | Inline styles + SVG |
-| **neon/CircuitPipeline** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/StatusBar** | neon/ | `tokens.ts` + `neonVar()` | Inline styles |
-| **neon/ScanlineOverlay** | neon/ (CSS) | CSS vars (`--neon-*`) | Inline styles + CSS class for opacity |
-| **neon/ParticleField** | neon/ | `neonVar()` | Inline styles |
-| **neon/NeonTooltip** | neon/ (CSS) | N/A | CSS classes in `neon-shell.css` (`.neon-tooltip`) |
-| **layout/UnifiedHeader** | neon/ (CSS) | N/A | CSS classes in `neon-shell.css` (`.unified-header`) |
-| **layout/NeonSidebar** | neon/ (CSS) | N/A | CSS classes in `neon-shell.css` (`.neon-sidebar`, `.sidebar-item`) |
-| **layout/SidebarItem** | Hybrid | neon/ (CSS) + inline | CSS classes (`.sidebar-item`) + inline context menu |
-| **layout/HeaderTab** | neon/ (CSS) | N/A | CSS classes in `neon-shell.css` (`.header-tab`) |
-| **layout/CommandPalette** | Hybrid | N/A | CSS classes (`.command-palette__*`) + `.glass-modal` |
-| **layout/ToastContainer** | ui/ (CSS) | N/A | CSS classes (`.toast-container`, `.toast--*`) |
-| **layout/NotificationBell** | Hybrid | N/A | CSS classes (`.notification-bell__*`) + `.glass-modal` |
-| **layout/OverflowMenu** | Hybrid | neon/ `GlassPanel` | CSS classes (`.overflow-menu__*`) + inline styles |
-| **panels/PanelRenderer** | External lib | N/A | `react-resizable-panels` `Group`/`Panel` |
-| **panels/PanelLeaf** | Hybrid | `tokens.ts` (inline) | Inline styles + CSS class (`.panel-label-slim` from neon-shell) |
-| **panels/PanelDropOverlay** | ui/ (CSS vars) | `--bde-info-dim` | Inline styles with one CSS var |
-| **panels/PanelResizeHandle** | Hybrid | `tokens.ts` | `react-resizable-panels` `Separator` + inline transition token |
-| **DashboardView** | neon/ | `tokens.ts` + `neonVar()` | ~95% inline styles, no CSS file |
-| **SettingsView** | ui/ (CSS) | N/A | CSS classes (`.settings-view`, `.settings-tab`) |
+| Component                    | System         | Token Source              | Styling Method                                                                             |
+| ---------------------------- | -------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| **ui/Button**                | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-btn--*`) + `.btn-primary` / `.btn-glass` overlay from design-system.css |
+| **ui/Badge**                 | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-badge--*`)                                                              |
+| **ui/Card**                  | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-card--*`)                                                               |
+| **ui/Input**                 | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-input`)                                                                 |
+| **ui/Textarea**              | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-textarea`)                                                              |
+| **ui/Spinner**               | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-spinner--*`)                                                            |
+| **ui/Kbd**                   | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS class (`.bde-kbd`)                                                                     |
+| **ui/Divider**               | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-divider--*`)                                                            |
+| **ui/EmptyState**            | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-empty`)                                                                 |
+| **ui/ErrorBanner**           | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS class (`.bde-error-banner`)                                                            |
+| **ui/ErrorBoundary**         | Hybrid         | `tokens.ts` (inline)      | Inline styles with `tokens.color.*`, `tokens.font.*`, `tokens.size.*`, `tokens.space.*`    |
+| **ui/Tooltip**               | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS pseudo-element (`.bde-tooltip::after`)                                                 |
+| **ui/Panel**                 | ui/ (BEM)      | CSS vars (`--bde-*`)      | CSS classes (`.bde-panel`)                                                                 |
+| **ui/ConfirmModal**          | Hybrid         | CSS vars (`--bde-*`)      | CSS classes (`.confirm-modal`) + `.glass-modal` from v2 system                             |
+| **ui/ElapsedTime**           | None           | N/A                       | Renderless (text only)                                                                     |
+| **neon/NeonCard**            | neon/          | `tokens.ts` + `neonVar()` | Inline styles with CSS custom property passthrough                                         |
+| **neon/NeonBadge**           | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/GlassPanel**          | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/StatCounter**         | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/ActivityFeed**        | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/NeonProgress**        | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/PipelineFlow**        | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/MiniChart**           | neon/          | `tokens.ts` + `neonVar()` | Inline styles + SVG                                                                        |
+| **neon/CircuitPipeline**     | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/StatusBar**           | neon/          | `tokens.ts` + `neonVar()` | Inline styles                                                                              |
+| **neon/ScanlineOverlay**     | neon/ (CSS)    | CSS vars (`--neon-*`)     | Inline styles + CSS class for opacity                                                      |
+| **neon/ParticleField**       | neon/          | `neonVar()`               | Inline styles                                                                              |
+| **neon/NeonTooltip**         | neon/ (CSS)    | N/A                       | CSS classes in `neon-shell.css` (`.neon-tooltip`)                                          |
+| **layout/UnifiedHeader**     | neon/ (CSS)    | N/A                       | CSS classes in `neon-shell.css` (`.unified-header`)                                        |
+| **layout/NeonSidebar**       | neon/ (CSS)    | N/A                       | CSS classes in `neon-shell.css` (`.neon-sidebar`, `.sidebar-item`)                         |
+| **layout/SidebarItem**       | Hybrid         | neon/ (CSS) + inline      | CSS classes (`.sidebar-item`) + inline context menu                                        |
+| **layout/HeaderTab**         | neon/ (CSS)    | N/A                       | CSS classes in `neon-shell.css` (`.header-tab`)                                            |
+| **layout/CommandPalette**    | Hybrid         | N/A                       | CSS classes (`.command-palette__*`) + `.glass-modal`                                       |
+| **layout/ToastContainer**    | ui/ (CSS)      | N/A                       | CSS classes (`.toast-container`, `.toast--*`)                                              |
+| **layout/NotificationBell**  | Hybrid         | N/A                       | CSS classes (`.notification-bell__*`) + `.glass-modal`                                     |
+| **layout/OverflowMenu**      | Hybrid         | neon/ `GlassPanel`        | CSS classes (`.overflow-menu__*`) + inline styles                                          |
+| **panels/PanelRenderer**     | External lib   | N/A                       | `react-resizable-panels` `Group`/`Panel`                                                   |
+| **panels/PanelLeaf**         | Hybrid         | `tokens.ts` (inline)      | Inline styles + CSS class (`.panel-label-slim` from neon-shell)                            |
+| **panels/PanelDropOverlay**  | ui/ (CSS vars) | `--bde-info-dim`          | Inline styles with one CSS var                                                             |
+| **panels/PanelResizeHandle** | Hybrid         | `tokens.ts`               | `react-resizable-panels` `Separator` + inline transition token                             |
+| **DashboardView**            | neon/          | `tokens.ts` + `neonVar()` | ~95% inline styles, no CSS file                                                            |
+| **SettingsView**             | ui/ (CSS)      | N/A                       | CSS classes (`.settings-view`, `.settings-tab`)                                            |
 
 ### Summary Counts
 
@@ -231,6 +240,7 @@ Each of the 18 particles gets `willChange: 'transform'`, promoting all to compos
 ### Panel Layout Architecture Assessment
 
 The `PanelNode` tree in `panelLayout.ts` is well-designed:
+
 - Clean ADT: `PanelLeafNode | PanelSplitNode` discriminated union
 - Pure mutation functions (`splitNode`, `closeTab`, `addTab`, `moveTab`) that return new trees without mutating input
 - Proper tree collapse on last-tab close (split node replaced by surviving child)

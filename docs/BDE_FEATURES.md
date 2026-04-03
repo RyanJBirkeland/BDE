@@ -73,13 +73,13 @@ Local HTTP server on port 18790 for external task management. Used by Life OS, c
 
 BDE spawns five types of AI agents, each with different capabilities and contexts:
 
-| Type | Spawned by | Interactive | Tool access | Worktree | Playground |
-|------|-----------|------------|-------------|----------|------------|
-| Pipeline | Agent Manager (auto) | No | Full | Yes (isolated) | If enabled |
-| Adhoc | User (Agents view) | Yes (multi-turn) | Full | No (repo dir) | Always |
-| Assistant | User (Agents view) | Yes (multi-turn) | Full | No (repo dir) | Always |
-| Copilot | Task Workbench | Yes (chat) | None (text-only) | No | No |
-| Synthesizer | Task Workbench | No (single-turn) | None | No | No |
+| Type        | Spawned by           | Interactive      | Tool access      | Worktree       | Playground |
+| ----------- | -------------------- | ---------------- | ---------------- | -------------- | ---------- |
+| Pipeline    | Agent Manager (auto) | No               | Full             | Yes (isolated) | If enabled |
+| Adhoc       | User (Agents view)   | Yes (multi-turn) | Full             | No (repo dir)  | Always     |
+| Assistant   | User (Agents view)   | Yes (multi-turn) | Full             | No (repo dir)  | Always     |
+| Copilot     | Task Workbench       | Yes (chat)       | None (text-only) | No             | No         |
+| Synthesizer | Task Workbench       | No (single-turn) | None             | No             | No         |
 
 - **Pipeline**: Executes sprint tasks autonomously. Works in isolated git worktree. Commits changes and transitions to `review` status, preserving worktree for human inspection. Prompt includes task spec/prompt and branch name
 - **Adhoc**: User-spawned one-off tasks from the Agents view. Multi-turn sessions via SDK `query()` with session resumption (`resume: sessionId`). Works in repo directory directly

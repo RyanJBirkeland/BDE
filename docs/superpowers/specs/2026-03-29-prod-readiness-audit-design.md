@@ -13,22 +13,22 @@ Systematically audit BDE's six highest-risk features through three specialized p
 
 ### Features (6)
 
-| # | Feature | Risk Profile |
-|---|---------|-------------|
-| 1 | Agent Manager | Auth, worktree escape, env leaks, spawn races, retry logic |
-| 2 | Queue API | Auth bypass, CORS, injection, SSE token, claim races, WIP enforcement |
-| 3 | Sprint Pipeline | Dependency manipulation, status bypass, transition guards, poller edge cases |
-| 4 | IDE | Path traversal, symlink, sandbox, file watcher races, binary detection |
-| 5 | PR Station | GitHub proxy scope, token exposure, cache staleness, merge UX |
-| 6 | Data Layer | SQL injection, backup path, migration safety, WAL corruption, concurrent access |
+| #   | Feature         | Risk Profile                                                                    |
+| --- | --------------- | ------------------------------------------------------------------------------- |
+| 1   | Agent Manager   | Auth, worktree escape, env leaks, spawn races, retry logic                      |
+| 2   | Queue API       | Auth bypass, CORS, injection, SSE token, claim races, WIP enforcement           |
+| 3   | Sprint Pipeline | Dependency manipulation, status bypass, transition guards, poller edge cases    |
+| 4   | IDE             | Path traversal, symlink, sandbox, file watcher races, binary detection          |
+| 5   | PR Station      | GitHub proxy scope, token exposure, cache staleness, merge UX                   |
+| 6   | Data Layer      | SQL injection, backup path, migration safety, WAL corruption, concurrent access |
 
 ### Personas (3)
 
-| Persona | Lens | Focus Areas |
-|---------|------|-------------|
-| **Red Team** | Adversarial | Injection, auth bypass, token leaks, sandbox escape, CORS, path traversal, privilege escalation, environment variable exposure |
-| **Reliability Engineer** | Defensive | Race conditions, error swallowing, missing validation, uncaught promises, edge cases, data corruption paths, test coverage gaps, resource leaks |
-| **UX QA** | User-facing | Broken flows, missing error/loading/empty states, dead UI, misleading feedback, accessibility gaps, recovery guidance |
+| Persona                  | Lens        | Focus Areas                                                                                                                                     |
+| ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Red Team**             | Adversarial | Injection, auth bypass, token leaks, sandbox escape, CORS, path traversal, privilege escalation, environment variable exposure                  |
+| **Reliability Engineer** | Defensive   | Race conditions, error swallowing, missing validation, uncaught promises, edge cases, data corruption paths, test coverage gaps, resource leaks |
+| **UX QA**                | User-facing | Broken flows, missing error/loading/empty states, dead UI, misleading feedback, accessibility gaps, recovery guidance                           |
 
 ### Out of Scope
 
@@ -43,17 +43,18 @@ Systematically audit BDE's six highest-risk features through three specialized p
 
 Agents run in 3 batches of 6 (respecting ~6 concurrent agent limit):
 
-| Batch | Feature A | Feature B |
-|-------|-----------|-----------|
-| **1** | Agent Manager (Red, Reliability, UX) | Queue API (Red, Reliability, UX) |
-| **2** | Sprint Pipeline (Red, Reliability, UX) | IDE (Red, Reliability, UX) |
-| **3** | PR Station (Red, Reliability, UX) | Data Layer (Red, Reliability, UX) |
+| Batch | Feature A                              | Feature B                         |
+| ----- | -------------------------------------- | --------------------------------- |
+| **1** | Agent Manager (Red, Reliability, UX)   | Queue API (Red, Reliability, UX)  |
+| **2** | Sprint Pipeline (Red, Reliability, UX) | IDE (Red, Reliability, UX)        |
+| **3** | PR Station (Red, Reliability, UX)      | Data Layer (Red, Reliability, UX) |
 
 Each batch must complete before the next starts (findings from earlier batches may inform later ones, and we avoid rate limits).
 
 ### 3.2 Agent Inputs
 
 Each agent receives:
+
 1. **Feature-scoped file list** (see Section 7)
 2. **Persona-specific prompt** with instructions on what to look for and what to ignore
 3. **Output template** (see Section 3.3)
@@ -74,17 +75,21 @@ Each agent writes to `docs/superpowers/audits/prod-audit/{feature}-{persona}.md`
 ## Cross-Reference with March 28 Audit
 
 ### Previously Reported — Now Fixed
+
 - {ID}: {description} — verified fixed in {commit/PR}
 
 ### Previously Reported — Still Open
+
 - {ID}: {description} — still present at {file:line}
 
 ### New Findings
+
 (See below)
 
 ## Findings
 
 ### {FEAT-PERSONA-N}: {Title}
+
 - **Severity:** critical | high | medium | low
 - **Effort:** S (< 1hr) | M (1-4hr) | L (4hr+)
 - **File(s):** {exact paths with line numbers}
@@ -95,11 +100,11 @@ Each agent writes to `docs/superpowers/audits/prod-audit/{feature}-{persona}.md`
 ## Summary
 
 | Severity | Count |
-|----------|-------|
-| Critical | N |
-| High | N |
-| Medium | N |
-| Low | N |
+| -------- | ----- |
+| Critical | N     |
+| High     | N     |
+| Medium   | N     |
+| Low      | N     |
 
 **Total findings:** N
 **Previously reported (fixed):** N
@@ -114,6 +119,7 @@ Each agent writes to `docs/superpowers/audits/prod-audit/{feature}-{persona}.md`
 You are a security auditor performing a penetration-test-style code review. Your goal is to find every exploitable vulnerability.
 
 **Look for:**
+
 - Injection vectors (SQL, command, path, HTML/JS)
 - Authentication/authorization bypass
 - Token/credential exposure (env vars, logs, IPC, error messages)
@@ -124,6 +130,7 @@ You are a security auditor performing a penetration-test-style code review. Your
 - Missing input validation at trust boundaries (IPC, HTTP, file system)
 
 **Ignore:**
+
 - Code style, naming, documentation
 - Performance optimizations
 - UX issues that don't have security implications
@@ -134,6 +141,7 @@ You are a security auditor performing a penetration-test-style code review. Your
 You are a reliability engineer reviewing code for production readiness. Your goal is to find every path that leads to data loss, crashes, or silent failures.
 
 **Look for:**
+
 - Unhandled promise rejections and uncaught exceptions
 - Race conditions (TOCTOU, concurrent writes, stale reads)
 - Error swallowing (empty catch blocks, ignored return values)
@@ -146,6 +154,7 @@ You are a reliability engineer reviewing code for production readiness. Your goa
 - Test coverage gaps for critical paths
 
 **Ignore:**
+
 - Security vulnerabilities (Red Team covers this)
 - UI/UX issues
 - Code style beyond what affects reliability
@@ -155,6 +164,7 @@ You are a reliability engineer reviewing code for production readiness. Your goa
 You are a QA engineer focused on user experience. Your goal is to find every broken flow, missing feedback, and confusing interaction.
 
 **Look for:**
+
 - Dead UI elements (buttons that do nothing, unreachable states)
 - Missing loading states (skeleton, spinner, or text)
 - Missing error states (what does the user see when things fail?)
@@ -166,6 +176,7 @@ You are a QA engineer focused on user experience. Your goal is to find every bro
 - Recovery guidance (can the user fix the problem from the error state?)
 
 **Ignore:**
+
 - Visual design, color choices, spacing
 - Security vulnerabilities
 - Internal code quality that doesn't affect UX
@@ -189,48 +200,66 @@ Output: `docs/superpowers/audits/prod-audit/synthesis.md`
 **Sources:** 18 audit reports (6 features × 3 personas)
 
 ## Executive Summary
+
 {2-3 paragraph overview}
 
 ## Delta from March 28 Audit
+
 ### Fixed Since Last Audit
+
 - {list}
+
 ### Still Open from Last Audit
+
 - {list}
+
 ### New Findings
+
 - {list}
 
 ## Findings by Feature × Severity
 
 ### Agent Manager
+
 #### Critical/High
+
 | ID | Title | Severity | Effort | Sources | File(s) |
+
 #### Medium
+
 | ID | Title | Severity | Effort | Sources | File(s) |
+
 #### Low
+
 | ID | Title | Severity | Effort | Sources | File(s) |
 
 ### Queue API
+
 {same structure}
 
 ### Sprint Pipeline
+
 {same structure}
 
 ### IDE
+
 {same structure}
 
 ### PR Station
+
 {same structure}
 
 ### Data Layer
+
 {same structure}
 
 ## Remediation Task Map
 
-| Task | Feature | Severity Bucket | Finding IDs | Est. Effort | Dependencies |
-|------|---------|----------------|-------------|-------------|--------------|
-| {task title} | Agent Manager | Critical/High | AM-RED-1, AM-REL-3 | M | none |
-| {task title} | Agent Manager | Medium | AM-UX-2, AM-REL-5 | S | above |
-| ... | ... | ... | ... | ... | ... |
+| Task         | Feature       | Severity Bucket | Finding IDs        | Est. Effort | Dependencies |
+| ------------ | ------------- | --------------- | ------------------ | ----------- | ------------ |
+| {task title} | Agent Manager | Critical/High   | AM-RED-1, AM-REL-3 | M           | none         |
+| {task title} | Agent Manager | Medium          | AM-UX-2, AM-REL-5  | S           | above        |
+| ...          | ...           | ...             | ...                | ...         | ...          |
 ```
 
 ## 5. Phase 3: Task Creation & Queuing
@@ -239,14 +268,14 @@ Output: `docs/superpowers/audits/prod-audit/synthesis.md`
 
 One task per **feature × severity bucket**:
 
-| Feature | Critical/High | Medium | Low |
-|---------|--------------|--------|-----|
-| Agent Manager | 1 task | 1 task | 1 task |
-| Queue API | 1 task | 1 task | 1 task |
-| Sprint Pipeline | 1 task | 1 task | 1 task |
-| IDE | 1 task | 1 task | 1 task |
-| PR Station | 1 task | 1 task | 1 task |
-| Data Layer | 1 task | 1 task | 1 task |
+| Feature         | Critical/High | Medium | Low    |
+| --------------- | ------------- | ------ | ------ |
+| Agent Manager   | 1 task        | 1 task | 1 task |
+| Queue API       | 1 task        | 1 task | 1 task |
+| Sprint Pipeline | 1 task        | 1 task | 1 task |
+| IDE             | 1 task        | 1 task | 1 task |
+| PR Station      | 1 task        | 1 task | 1 task |
+| Data Layer      | 1 task        | 1 task | 1 task |
 
 **Maximum 18 tasks** (some cells may be empty if no findings at that severity).
 
@@ -256,20 +285,24 @@ Each task created via `sprint:create` IPC with status `queued`:
 
 ```markdown
 ## Overview
+
 Fix {severity} issues in {feature} identified by production readiness audit.
 
 ## Findings to Address
 
 ### {ID}: {Title}
+
 - **File(s):** {paths with line numbers}
 - **Problem:** {description}
 - **Fix:** {concrete approach — function names, patterns, code snippets}
 - **Test:** {what test to write or update to verify}
 
 ### {ID}: {Title}
+
 ...
 
 ## Acceptance Criteria
+
 - [ ] All listed findings addressed
 - [ ] Existing tests still pass (`npm test` + `npm run test:main`)
 - [ ] New tests written for each fix
@@ -277,6 +310,7 @@ Fix {severity} issues in {feature} identified by production readiness audit.
 - [ ] No new lint warnings
 
 ## Files in Scope
+
 {explicit file list from audit findings}
 ```
 
@@ -291,6 +325,7 @@ This ensures priority ordering while allowing Medium/Low tasks to proceed even i
 ### 5.4 Execution
 
 Phase 3 is executed by a **Task Creation Agent** (20th agent) that:
+
 1. Reads `docs/superpowers/audits/prod-audit/synthesis.md`
 2. Parses the Remediation Task Map table
 3. For each row, creates a sprint task via `sprint:create` IPC with status `queued`, a full spec (per Section 5.2 template), and dependency wiring (per Section 5.3)
@@ -318,6 +353,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 ### 7.1 Agent Manager (18 source + 17 test files)
 
 **Source:**
+
 - `src/main/agent-manager/index.ts`
 - `src/main/agent-manager/types.ts`
 - `src/main/agent-manager/concurrency.ts`
@@ -338,6 +374,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 - `src/main/sdk-streaming.ts`
 
 **Tests:**
+
 - `src/main/agent-manager/__tests__/concurrency.test.ts`
 - `src/main/agent-manager/__tests__/dependency-helpers.test.ts`
 - `src/main/agent-manager/__tests__/dependency-index.test.ts`
@@ -359,6 +396,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 ### 7.2 Queue API (9 source + 6 test files)
 
 **Source:**
+
 - `src/main/queue-api/index.ts`
 - `src/main/queue-api/agent-handlers.ts`
 - `src/main/queue-api/event-handlers.ts`
@@ -370,6 +408,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 - `src/main/queue-api/helpers.ts`
 
 **Tests:**
+
 - `src/main/queue-api/__tests__/sse-broadcaster.test.ts`
 - `src/main/queue-api/__tests__/field-mapper.test.ts`
 - `src/main/queue-api/__tests__/queue-api.test.ts`
@@ -380,6 +419,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 ### 7.3 Sprint Pipeline (15 source + 14 test files)
 
 **Source:**
+
 - `src/main/handlers/sprint-local.ts`
 - `src/main/sprint-pr-poller.ts`
 - `src/shared/sanitize-depends-on.ts`
@@ -397,6 +437,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 - `src/renderer/src/stores/sprintTasks.ts`
 
 **Tests:**
+
 - `src/main/handlers/__tests__/sprint-local.test.ts`
 - `src/main/handlers/__tests__/sprint-listeners.test.ts`
 - `src/main/__tests__/sprint.test.ts`
@@ -415,6 +456,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 ### 7.4 IDE (13 source + 9 test files)
 
 **Source:**
+
 - `src/renderer/src/views/IDEView.tsx`
 - `src/renderer/src/stores/ide.ts`
 - `src/main/handlers/ide-fs-handlers.ts`
@@ -430,6 +472,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 - `src/renderer/src/components/ide/file-tree-constants.ts`
 
 **Tests:**
+
 - `src/renderer/src/components/ide/__tests__/EditorPane.test.tsx`
 - `src/renderer/src/components/ide/__tests__/EditorTabBar.test.tsx`
 - `src/renderer/src/components/ide/__tests__/FileContextMenu.test.tsx`
@@ -443,6 +486,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 ### 7.5 PR Station (20 source + 17 test files)
 
 **Source:**
+
 - `src/renderer/src/lib/github-api.ts`
 - `src/renderer/src/lib/github-cache.ts`
 - `src/renderer/src/stores/pendingReview.ts`
@@ -465,6 +509,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 - `src/renderer/src/components/diff/DiffSizeWarning.tsx`
 
 **Tests:**
+
 - `src/renderer/src/components/pr-station/__tests__/PRStationList.test.tsx`
 - `src/renderer/src/components/pr-station/__tests__/PRStationDetail.test.tsx`
 - `src/renderer/src/components/pr-station/__tests__/PRStationDiff.test.tsx`
@@ -486,6 +531,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 ### 7.6 Data Layer (10 source + 9 test files)
 
 **Source:**
+
 - `src/main/db.ts`
 - `src/main/auth-guard.ts`
 - `src/main/data/sprint-queries.ts`
@@ -498,6 +544,7 @@ This agent runs after the synthesis agent completes. It needs access to the BDE 
 - `src/main/data/supabase-import.ts`
 
 **Tests:**
+
 - `src/main/__tests__/db.test.ts`
 - `src/main/data/__tests__/sprint-queries.test.ts`
 - `src/main/data/__tests__/agent-queries.test.ts`

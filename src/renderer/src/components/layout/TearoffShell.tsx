@@ -282,4 +282,3 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
     </div>
   )
 }
-
