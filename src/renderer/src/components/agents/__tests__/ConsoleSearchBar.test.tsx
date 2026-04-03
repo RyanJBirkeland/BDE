@@ -7,6 +7,7 @@ describe('ConsoleSearchBar', () => {
   it('renders search input', () => {
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={0}
@@ -22,6 +23,7 @@ describe('ConsoleSearchBar', () => {
   it('auto-focuses input on mount', () => {
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={0}
@@ -38,6 +40,7 @@ describe('ConsoleSearchBar', () => {
     const onSearch = vi.fn()
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={onSearch}
         onClose={vi.fn()}
         matchCount={0}
@@ -54,6 +57,7 @@ describe('ConsoleSearchBar', () => {
   it('shows match count when matches exist', () => {
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={5}
@@ -68,6 +72,7 @@ describe('ConsoleSearchBar', () => {
   it('does not show match count when no matches', () => {
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={0}
@@ -83,6 +88,7 @@ describe('ConsoleSearchBar', () => {
     const onClose = vi.fn()
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={onClose}
         matchCount={0}
@@ -100,6 +106,7 @@ describe('ConsoleSearchBar', () => {
     const onNext = vi.fn()
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={5}
@@ -117,6 +124,7 @@ describe('ConsoleSearchBar', () => {
     const onPrev = vi.fn()
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={5}
@@ -134,6 +142,7 @@ describe('ConsoleSearchBar', () => {
     const onNext = vi.fn()
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={5}
@@ -151,6 +160,7 @@ describe('ConsoleSearchBar', () => {
     const onPrev = vi.fn()
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={5}
@@ -168,6 +178,7 @@ describe('ConsoleSearchBar', () => {
     const onClose = vi.fn()
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={onClose}
         matchCount={0}
@@ -184,6 +195,7 @@ describe('ConsoleSearchBar', () => {
   it('disables navigation buttons when no matches', () => {
     render(
       <ConsoleSearchBar
+        value=""
         onSearch={vi.fn()}
         onClose={vi.fn()}
         matchCount={0}

@@ -5,6 +5,7 @@ import { useRef, useEffect } from 'react'
 import { Search, X, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface ConsoleSearchBarProps {
+  value: string
   onSearch: (query: string) => void
   onClose: () => void
   matchCount: number
@@ -14,6 +15,7 @@ interface ConsoleSearchBarProps {
 }
 
 export function ConsoleSearchBar({
+  value,
   onSearch,
   onClose,
   matchCount,
@@ -49,6 +51,7 @@ export function ConsoleSearchBar({
         type="text"
         className="console-search-bar__input"
         placeholder="Search console output..."
+        value={value}
         onChange={(e) => onSearch(e.target.value)}
         onKeyDown={handleKeyDown}
       />

@@ -209,6 +209,7 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
 
       {searchOpen && (
         <ConsoleSearchBar
+          value={searchQuery}
           onSearch={handleSearchChange}
           onClose={handleSearchClose}
           matchCount={matchingIndices.length}
