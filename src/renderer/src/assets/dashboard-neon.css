@@ -105,6 +105,11 @@
 }
 
 /* ── Feed Container ── */
+.dashboard-feed-card {
+  flex: 1;
+  min-height: 0;
+}
+
 .dashboard-feed-scroll {
   overflow: auto;
   flex: 1;
@@ -220,7 +225,9 @@
 .dashboard-card-error__retry {
   padding: 4px 12px;
   border-radius: var(--bde-radius-sm);
-  background: rgba(255, 50, 50, 0.1);
+  background: var(--neon-red-surface);
+  border: 1px solid var(--neon-red);
+  color: var(--neon-red);
   font-size: var(--bde-size-xs);
   font-weight: 600;
   cursor: pointer;
@@ -228,7 +235,7 @@
 }
 
 .dashboard-card-error__retry:hover {
-  background: rgba(255, 50, 50, 0.2);
+  background: var(--neon-red-border);
 }
 
 /* ── Status Bar Freshness Indicator ── */

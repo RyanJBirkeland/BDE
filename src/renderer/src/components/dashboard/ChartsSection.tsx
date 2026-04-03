@@ -1,5 +1,4 @@
 import { NeonCard, MiniChart, type ChartBar } from '../neon'
-import { neonVar } from '../neon/types'
 import { useDashboardDataStore } from '../../stores/dashboardData'
 import { SuccessRing } from './SuccessRing'
 import { Zap, Target, Clock } from 'lucide-react'
@@ -47,10 +46,6 @@ export function ChartsSection({
             <button
               className="dashboard-card-error__retry"
               onClick={() => useDashboardDataStore.getState().fetchAll()}
-              style={{
-                border: `1px solid ${neonVar('red', 'color')}`,
-                color: neonVar('red', 'color')
-              }}
             >
               Retry
             </button>

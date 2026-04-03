@@ -165,29 +165,30 @@ describe('PanelLeaf', () => {
     })
     render(<PanelLeaf node={node} />)
 
-    // Agents is active (display: flex), terminal is hidden (display: none)
+    // Agents is active
     const agentsView = await screen.findByTestId('agents-view')
     expect(agentsView).toBeInTheDocument()
+    expect(agentsView.parentElement?.className).toContain('panel-leaf__tabpanel--active')
 
     const ideView = await screen.findByTestId('ide-view')
-    // IDE is rendered but hidden via display:none
-    expect(ideView.parentElement?.style.display).toBe('none')
+    // IDE is rendered but not active (no --active class)
+    expect(ideView.parentElement?.className).not.toContain('panel-leaf__tabpanel--active')
   })
 
-  it('shows focused panel with accent outline', () => {
+  it('shows focused panel with focused class', () => {
     mockFocusedPanelId = 'panel-1'
     const node = makeLeaf({ panelId: 'panel-1' })
     const { container } = render(<PanelLeaf node={node} />)
     const outerDiv = container.firstChild as HTMLElement
-    expect(outerDiv.style.outline).toContain('1px solid')
+    expect(outerDiv.className).toContain('panel-leaf--focused')
   })
 
-  it('shows non-focused panel with transparent outline', () => {
+  it('shows non-focused panel without focused class', () => {
     mockFocusedPanelId = 'panel-other'
     const node = makeLeaf({ panelId: 'panel-1' })
     const { container } = render(<PanelLeaf node={node} />)
     const outerDiv = container.firstChild as HTMLElement
-    expect(outerDiv.style.outline).toBe('1px solid transparent')
+    expect(outerDiv.className).not.toContain('panel-leaf--focused')
   })
 
   it('shows drop overlay when drag enters with bde-panel data type', () => {

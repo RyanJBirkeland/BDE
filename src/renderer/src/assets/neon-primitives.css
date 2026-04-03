@@ -229,3 +229,30 @@
   font-size: var(--bde-size-xs);
   font-family: var(--bde-font-code);
 }
+
+/* ── MiniChart ─────────────────────────────────────── */
+
+.mini-chart-empty {
+  color: var(--neon-text-dim);
+  font-size: var(--bde-size-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-chart-tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background: var(--bde-overlay);
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: var(--bde-size-xs);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}

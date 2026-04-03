@@ -1,7 +1,6 @@
 import { render, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { MiniChart, type ChartBar } from '../MiniChart'
-import { tokens } from '../../../design-system/tokens'
 
 const data: ChartBar[] = [
   { value: 70, accent: 'cyan' },
@@ -28,8 +27,7 @@ describe('MiniChart', () => {
     const { container } = render(<MiniChart data={[]} />)
     expect(container.textContent).toContain('No data')
     const emptyDiv = container.firstElementChild as HTMLElement
-    expect(emptyDiv.style.color).toBe(tokens.neon.textDim)
-    expect(emptyDiv.style.fontSize).toBe(tokens.size.xs)
+    expect(emptyDiv.className).toBe('mini-chart-empty')
   })
 
   it('uses cyan as default accent when bar has no accent', () => {

@@ -413,9 +413,77 @@
   white-space: nowrap;
 }
 
+/* ── View Skeleton Loading State ── */
+.view-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.view-skeleton__pulse {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--bde-radius-full);
+  background: var(--bde-surface-high);
+  animation: bde-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes bde-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Panel Leaf Container ── */
+.panel-leaf {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  background: var(--bde-surface);
+  outline: 1px solid transparent;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.panel-leaf--focused {
+  outline-color: var(--bde-accent);
+}
+
+.panel-leaf__content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-leaf__tabpanel {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+}
+
+.panel-leaf__tabpanel--active {
+  display: flex;
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .neon-tooltip {
+    animation: none;
+  }
+  .view-skeleton__pulse {
     animation: none;
   }
 }

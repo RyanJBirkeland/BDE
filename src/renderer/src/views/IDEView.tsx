@@ -271,18 +271,7 @@ export function IDEView(): React.JSX.Element {
                 <div className="ide-editor-content">
                   {/* IDE-9: Show loading indicator while file is being fetched */}
                   {activeTab && fileLoadingStates[activeTab.filePath] ? (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '100%',
-                        color: 'var(--bde-text-dim)',
-                        fontSize: 'var(--bde-size-sm)'
-                      }}
-                    >
-                      Loading...
-                    </div>
+                    <div className="ide-file-loading">Loading...</div>
                   ) : (
                     <EditorPane
                       filePath={activeTab?.filePath ?? null}

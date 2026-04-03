@@ -53,6 +53,12 @@
   background: var(--neon-purple-border);
 }
 
+.ide-sidebar__empty {
+  padding: 12px 8px;
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-dim);
+}
+
 /* ── File Tree ── */
 .ide-file-node {
   color: var(--neon-text-muted);
@@ -84,6 +90,12 @@
 
 .ide-file-node[data-type='file'] .ide-file-node__name {
   color: var(--neon-text-muted);
+}
+
+.ide-file-tree__error {
+  padding: 8px;
+  color: var(--bde-danger);
+  font-size: var(--bde-size-sm);
 }
 
 /* ── Context Menu ── */
@@ -180,6 +192,15 @@
 .ide-editor-empty {
   color: var(--neon-text-dim);
   background: var(--neon-bg);
+}
+
+.ide-file-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--bde-text-dim);
+  font-size: var(--bde-size-sm);
 }
 
 /* ── IDE Empty State ── */

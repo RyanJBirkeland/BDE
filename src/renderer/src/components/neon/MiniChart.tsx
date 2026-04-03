@@ -1,6 +1,5 @@
 import { useState, useId } from 'react'
 import { type NeonAccent, neonVar } from './types'
-import { tokens } from '../../design-system/tokens'
 
 export interface ChartBar {
   value: number
@@ -36,16 +35,7 @@ export function MiniChart({ data, height = 80 }: MiniChartProps): React.JSX.Elem
 
   if (data.length === 0) {
     return (
-      <div
-        style={{
-          color: tokens.neon.textDim,
-          fontSize: tokens.size.xs,
-          height,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
+      <div className="mini-chart-empty" style={{ height }}>
         No data
       </div>
     )
@@ -138,23 +128,11 @@ export function MiniChart({ data, height = 80 }: MiniChartProps): React.JSX.Elem
       {/* Tooltip */}
       {hover !== null && (
         <div
+          className="mini-chart-tooltip"
           style={{
-            position: 'absolute',
             left: `${(points[hover][0] / SVG_WIDTH) * 100}%`,
-            top: 0,
-            transform: 'translateX(-50%)',
-            background: 'rgba(0, 0, 0, 0.85)',
-            border: `1px solid ${neonVar(accent, 'color')}`,
-            borderRadius: '4px',
-            padding: '3px 8px',
-            fontSize: tokens.size.xs,
-            color: neonVar(accent, 'color'),
-            maxWidth: '280px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none',
-            zIndex: 10
+            borderColor: neonVar(accent, 'color'),
+            color: neonVar(accent, 'color')
           }}
         >
           <strong>{formatValue(data[hover].value)}</strong>

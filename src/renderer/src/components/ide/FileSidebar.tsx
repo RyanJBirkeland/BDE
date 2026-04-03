@@ -163,15 +163,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
         {rootPath ? (
           <FileTree dirPath={rootPath} onOpenFile={onOpenFile} />
         ) : (
-          <div
-            style={{
-              padding: '12px 8px',
-              fontSize: 'var(--bde-size-sm)',
-              color: 'var(--bde-text-dim)'
-            }}
-          >
-            No folder open
-          </div>
+          <div className="ide-sidebar__empty">No folder open</div>
         )}
       </div>
       {contextMenu && (

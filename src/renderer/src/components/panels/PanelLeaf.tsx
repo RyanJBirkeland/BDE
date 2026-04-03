@@ -1,7 +1,6 @@
 import React, { Suspense, useState, useCallback, useRef } from 'react'
 import { PanelLeafNode, View, DropZone, usePanelLayoutStore } from '../../stores/panelLayout'
 import { ErrorBoundary } from '../ui/ErrorBoundary'
-import { tokens } from '../../design-system/tokens'
 import { PanelDropOverlay } from './PanelDropOverlay'
 import { resolveView } from '../../lib/view-resolver'
 
@@ -26,30 +25,8 @@ export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
 
 function ViewSkeleton(): React.ReactElement {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        height: '100%'
-      }}
-    >
-      <div
-        style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: tokens.radius.full,
-          background: tokens.color.surfaceHigh,
-          animation: 'bde-pulse 1.2s ease-in-out infinite'
-        }}
-      />
-      <style>{`
-        @keyframes bde-pulse {
-          0%, 100% { opacity: 0.4; transform: scale(0.9); }
-          50% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+    <div className="view-skeleton">
+      <div className="view-skeleton__pulse" />
     </div>
   )
 }
@@ -112,29 +89,17 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
     <div
       ref={containerRef}
       data-panel-id={node.panelId}
+      className={`panel-leaf ${isFocused ? 'panel-leaf--focused' : ''}`}
       onClick={handlePanelClick}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        width: '100%',
-        height: '100%',
-        flex: 1,
-        minHeight: 0,
-        background: tokens.color.surface,
-        outline: isFocused ? `1px solid ${tokens.color.accent}` : '1px solid transparent',
-        overflow: 'hidden',
-        boxSizing: 'border-box',
-        position: 'relative'
-      }}
     >
       {isFocused ? null : (
         <div className="panel-label-slim" onClick={() => focusPanel(node.panelId)}>
           {node.tabs[node.activeTab]?.label ?? 'Untitled'}
         </div>
       )}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <div className="panel-leaf__content">
         {node.tabs.map((tab, index) => {
           const isActive = index === node.activeTab
           return (
@@ -142,12 +107,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
               key={`${tab.viewKey}-${index}`}
               role="tabpanel"
               aria-labelledby={`panel-tab-${tab.viewKey}-${node.panelId}`}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                display: isActive ? 'flex' : 'none',
-                flexDirection: 'column'
-              }}
+              className={`panel-leaf__tabpanel ${isActive ? 'panel-leaf__tabpanel--active' : ''}`}
             >
               <ErrorBoundary name={tab.label}>
                 <Suspense fallback={<ViewSkeleton />}>{resolveView(tab.viewKey)}</Suspense>
