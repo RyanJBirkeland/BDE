@@ -12,6 +12,7 @@ import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 import * as memoryService from '../../services/memory'
+import { SettingsCard } from './SettingsCard'
 
 interface MemoryFile {
   path: string
@@ -268,7 +269,11 @@ export function MemorySection(): React.JSX.Element {
   }, [focusIndex])
 
   return (
-    <div className="memory-view memory-view--column" style={{ height: '100%' }}>
+    <SettingsCard
+      title="Agent Memory"
+      subtitle="Browse and edit agent memory files"
+      noPadding
+    >
       <div className="memory-view__content">
         <div className="memory-sidebar">
           <div className="memory-sidebar__header">
@@ -472,6 +477,6 @@ export function MemorySection(): React.JSX.Element {
         </div>
       </div>
       <ConfirmModal {...confirmProps} />
-    </div>
+    </SettingsCard>
   )
 }
