@@ -31,4 +31,46 @@ describe('GlassPanel', () => {
     const panel = container.firstChild as HTMLElement
     expect(panel.style.background).toBe('var(--neon-surface-deep)')
   })
+
+  it('uses gradient background with accent', () => {
+    const { container } = render(<GlassPanel accent="cyan">X</GlassPanel>)
+    const panel = container.firstChild as HTMLElement
+    expect(panel.style.background).toContain('linear-gradient')
+    expect(panel.style.background).toContain('var(--neon-cyan-surface)')
+  })
+
+  it('applies sm blur variant', () => {
+    const { container } = render(<GlassPanel blur="sm">X</GlassPanel>)
+    const panel = container.firstChild as HTMLElement
+    expect(panel.style.backdropFilter).toBe('blur(8px) saturate(180%)')
+  })
+
+  it('applies lg blur variant', () => {
+    const { container } = render(<GlassPanel blur="lg">X</GlassPanel>)
+    const panel = container.firstChild as HTMLElement
+    expect(panel.style.backdropFilter).toBe('blur(40px) saturate(180%)')
+  })
+
+  it('defaults to md blur', () => {
+    const { container } = render(<GlassPanel>X</GlassPanel>)
+    const panel = container.firstChild as HTMLElement
+    expect(panel.style.backdropFilter).toBe('blur(16px) saturate(180%)')
+  })
+
+  it('applies custom className', () => {
+    const { container } = render(<GlassPanel className="custom-panel">X</GlassPanel>)
+    expect(container.firstChild).toHaveClass('glass-panel', 'custom-panel')
+  })
+
+  it('applies custom style prop', () => {
+    const { container } = render(<GlassPanel style={{ padding: '20px' }}>X</GlassPanel>)
+    const panel = container.firstChild as HTMLElement
+    expect(panel.style.padding).toBe('20px')
+  })
+
+  it('uses surfaceDim border when no accent', () => {
+    const { container } = render(<GlassPanel>X</GlassPanel>)
+    const panel = container.firstChild as HTMLElement
+    expect(panel.style.border).toContain('var(--neon-surface-dim)')
+  })
 })

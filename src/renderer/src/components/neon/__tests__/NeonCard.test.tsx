@@ -41,4 +41,48 @@ describe('NeonCard', () => {
     const card = container.firstChild as HTMLElement
     expect(card.style.getPropertyValue('--card-accent')).toBe('var(--neon-purple)')
   })
+
+  it('renders action in header when provided', () => {
+    render(
+      <NeonCard accent="cyan" title="Test" action={<button data-testid="action-btn">Click</button>}>
+        Body
+      </NeonCard>
+    )
+    expect(screen.getByTestId('action-btn')).toBeInTheDocument()
+    expect(screen.getByText('Click')).toBeInTheDocument()
+  })
+
+  it('does not render action when not provided', () => {
+    render(
+      <NeonCard accent="cyan" title="Test">
+        Body
+      </NeonCard>
+    )
+    expect(screen.queryByTestId('action-btn')).not.toBeInTheDocument()
+  })
+
+  it('does not render header when title is not provided', () => {
+    const { container } = render(<NeonCard accent="cyan">Body only</NeonCard>)
+    // No title text should be rendered
+    expect(container.querySelectorAll('span')).toHaveLength(0)
+  })
+
+  it('renders without icon in header when icon is not provided', () => {
+    render(
+      <NeonCard accent="cyan" title="No Icon">
+        Body
+      </NeonCard>
+    )
+    expect(screen.getByText('No Icon')).toBeInTheDocument()
+  })
+
+  it('applies custom style prop', () => {
+    const { container } = render(
+      <NeonCard accent="cyan" style={{ marginTop: '10px' }}>
+        Styled
+      </NeonCard>
+    )
+    const card = container.firstChild as HTMLElement
+    expect(card.style.marginTop).toBe('10px')
+  })
 })

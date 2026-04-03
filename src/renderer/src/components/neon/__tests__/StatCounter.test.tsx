@@ -95,4 +95,61 @@ describe('StatCounter', () => {
     render(<StatCounter label="Agents" value={3} accent="cyan" />)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
+
+  it('calls onClick on Enter keydown when clickable', () => {
+    const handleClick = vi.fn()
+    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
+    const button = screen.getByRole('button')
+    fireEvent.keyDown(button, { key: 'Enter' })
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls onClick on Space keydown when clickable', () => {
+    const handleClick = vi.fn()
+    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
+    const button = screen.getByRole('button')
+    fireEvent.keyDown(button, { key: ' ' })
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not call onClick on other keys', () => {
+    const handleClick = vi.fn()
+    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
+    const button = screen.getByRole('button')
+    fireEvent.keyDown(button, { key: 'Tab' })
+    expect(handleClick).not.toHaveBeenCalled()
+  })
+
+  it('has tabIndex=0 when clickable', () => {
+    const handleClick = vi.fn()
+    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
+    const button = screen.getByRole('button')
+    expect(button).toHaveAttribute('tabindex', '0')
+  })
+
+  it('does not have tabIndex when not clickable', () => {
+    render(<StatCounter label="Agents" value={3} accent="cyan" />)
+    const el = screen.getByText('Agents').closest('div[data-role="stat-label"]')?.parentElement
+    expect(el).not.toHaveAttribute('tabindex')
+  })
+
+  it('changes opacity on mouse hover when clickable', () => {
+    const handleClick = vi.fn()
+    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
+    const button = screen.getByRole('button')
+
+    // Initial opacity should be 1
+    expect(button.style.opacity).toBe('1')
+
+    fireEvent.mouseEnter(button)
+    expect(button.style.opacity).toBe('0.85')
+
+    fireEvent.mouseLeave(button)
+    expect(button.style.opacity).toBe('1')
+  })
+
+  it('renders string value correctly', () => {
+    render(<StatCounter label="Cost" value="$12.50" accent="orange" />)
+    expect(screen.getByText('$12.50')).toBeInTheDocument()
+  })
 })
