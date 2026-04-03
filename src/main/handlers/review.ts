@@ -367,6 +367,20 @@ export function registerReviewHandlers(): void {
     if (task.worktree_path) {
       const repoConfig = getRepoConfig(task.repo)
       if (repoConfig) {
+        // Read branch name BEFORE removing worktree
+        let branch: string | null = null
+        try {
+          const { stdout: branchOut } = await execFileAsync(
+            'git',
+            ['rev-parse', '--abbrev-ref', 'HEAD'],
+            { cwd: task.worktree_path, env }
+          )
+          branch = branchOut.trim()
+        } catch {
+          /* best-effort — worktree may not exist */
+        }
+
+        // Remove worktree
         try {
           await execFileAsync('git', ['worktree', 'remove', task.worktree_path, '--force'], {
             cwd: repoConfig.localPath,
@@ -376,22 +390,16 @@ export function registerReviewHandlers(): void {
           /* best-effort */
         }
 
-        // Get and delete the branch
-        try {
-          const { stdout: branchOut } = await execFileAsync(
-            'git',
-            ['rev-parse', '--abbrev-ref', 'HEAD'],
-            { cwd: task.worktree_path, env }
-          )
-          const branch = branchOut.trim()
-          if (branch && branch !== 'HEAD') {
+        // Delete branch
+        if (branch && branch !== 'HEAD') {
+          try {
             await execFileAsync('git', ['branch', '-D', branch], {
               cwd: repoConfig.localPath,
               env
             })
+          } catch {
+            /* best-effort */
           }
-        } catch {
-          /* best-effort — worktree may already be gone */
         }
       }
     }

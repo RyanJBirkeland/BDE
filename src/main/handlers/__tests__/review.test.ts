@@ -4,6 +4,31 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 
+// Track git command calls for ordering tests (hoisted for vi.mock)
+const { gitCommandCalls, mockExecFileAsync } = vi.hoisted(() => {
+  const gitCommandCalls: string[] = []
+
+  const mockExecFileAsync = vi.fn(async (cmd: string, args: string[]) => {
+    if (cmd === 'git') {
+      if (args[0] === 'rev-parse') {
+        gitCommandCalls.push('rev-parse')
+        return { stdout: 'feature-branch\n', stderr: '' }
+      }
+      if (args[0] === 'worktree' && args[1] === 'remove') {
+        gitCommandCalls.push('worktree-remove')
+        return { stdout: '', stderr: '' }
+      }
+      if (args[0] === 'branch' && args[1] === '-D') {
+        gitCommandCalls.push('branch-delete')
+        return { stdout: '', stderr: '' }
+      }
+    }
+    return { stdout: '', stderr: '' }
+  })
+
+  return { gitCommandCalls, mockExecFileAsync }
+})
+
 // Mock dependencies before imports
 vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn()
@@ -39,7 +64,7 @@ vi.mock('child_process', () => ({
 }))
 
 vi.mock('util', () => ({
-  promisify: vi.fn(() => vi.fn())
+  promisify: vi.fn(() => mockExecFileAsync)
 }))
 
 import { registerReviewHandlers, setReviewOnStatusTerminal } from '../review'
@@ -48,6 +73,7 @@ import { safeHandle } from '../../ipc-utils'
 describe('Review handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    gitCommandCalls.length = 0 // Clear command tracking
   })
 
   it('registers all 7 review channels', () => {
@@ -127,6 +153,49 @@ describe('Review handlers', () => {
     it('review:discard handler is registered', () => {
       const handlers = captureHandlers()
       expect(handlers['review:discard']).toBeDefined()
+    })
+
+    it('review:discard reads branch name before removing worktree', async () => {
+      const { getTask, updateTask } = await import('../../data/sprint-queries')
+      const { getSettingJson } = await import('../../settings')
+
+      // Mock task with worktree
+      vi.mocked(getTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        worktree_path: '/tmp/worktrees/test',
+        status: 'active',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+
+      // Mock repo config
+      vi.mocked(getSettingJson).mockReturnValue([
+        { name: 'test-repo', localPath: '/repos/test' }
+      ])
+
+      vi.mocked(updateTask).mockReturnValue({
+        id: 'task-1',
+        repo: 'test-repo',
+        status: 'cancelled',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        completed_at: new Date().toISOString()
+      })
+
+      const handlers = captureHandlers()
+      await handlers['review:discard'](_mockEvent, { taskId: 'task-1' })
+
+      // Verify ordering: rev-parse → worktree-remove → branch-delete
+      expect(gitCommandCalls).toEqual(['rev-parse', 'worktree-remove', 'branch-delete'])
     })
   })
 })
