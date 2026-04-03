@@ -112,7 +112,8 @@ vi.stubGlobal('api', {
     readSpecFile: vi.fn().mockResolvedValue(''),
     generatePrompt: vi.fn().mockResolvedValue({ taskId: '', spec: '', prompt: '' }),
     delete: vi.fn().mockResolvedValue({ ok: true }),
-    healthCheck: vi.fn().mockResolvedValue([])
+    healthCheck: vi.fn().mockResolvedValue([]),
+    unblockTask: vi.fn().mockResolvedValue({})
   },
   cost: {
     summary: vi.fn().mockResolvedValue({
@@ -181,5 +182,15 @@ vi.stubGlobal('api', {
     createPr: vi.fn().mockResolvedValue({ prUrl: 'https://github.com/test/pr/1' }),
     requestRevision: vi.fn().mockResolvedValue(undefined),
     discard: vi.fn().mockResolvedValue(undefined)
+  },
+  watchDir: vi.fn().mockResolvedValue(undefined),
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  readDir: vi.fn().mockResolvedValue([]),
+  readFile: vi.fn().mockResolvedValue(''),
+  onDirChanged: vi.fn().mockReturnValue(() => {}),
+  tearoff: {
+    getWindowInfo: vi.fn().mockResolvedValue(null),
+    notifyReady: vi.fn(),
+    onTabDrop: vi.fn().mockReturnValue(() => {})
   }
 })
