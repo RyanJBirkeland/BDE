@@ -6,6 +6,7 @@ import { Trash2, Plus, RotateCcw } from 'lucide-react'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import type { TaskTemplate } from '../../../../shared/types'
+import { SettingsCard } from './SettingsCard'
 
 export function TaskTemplatesSection(): React.JSX.Element {
   const [templates, setTemplates] = useState<TaskTemplate[]>([])
@@ -79,37 +80,23 @@ export function TaskTemplatesSection(): React.JSX.Element {
     [templates]
   )
 
-  if (!loaded) return <section className="settings-section" />
+  if (!loaded) return <div className="settings-cards-list" />
 
   return (
-    <section className="settings-section">
-      <h2 className="settings-section__title bde-section-title">Task Templates</h2>
-      <div className="settings-templates">
-        {templates.map((t, i) => (
-          <div key={i} className="settings-template-row">
-            <div className="settings-template-row__header">
-              <input
-                className="settings-field__input"
-                placeholder="Template name"
-                value={t.name}
-                disabled={!!t.isBuiltIn}
-                onChange={(e) => handleNameChange(i, e.target.value)}
-              />
-              {t.isBuiltIn && (
-                <span
-                  style={{
-                    fontSize: '11px',
-                    padding: '2px 6px',
-                    borderRadius: '9999px',
-                    background: 'var(--bde-info-dim)',
-                    color: 'var(--bde-info)'
-                  }}
-                >
-                  Built-in
-                </span>
-              )}
+    <div className="settings-cards-list">
+      {templates.length === 0 && (
+        <span className="settings-repos__empty">No templates configured</span>
+      )}
+
+      {templates.map((t, i) => (
+        <SettingsCard
+          key={i}
+          title={t.name || 'Untitled Template'}
+          status={t.isBuiltIn ? { label: 'Built-in', variant: 'info' } : undefined}
+          footer={
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <Button
-                variant="icon"
+                variant="ghost"
                 size="sm"
                 onClick={() => handleRemove(i)}
                 title={t.isBuiltIn ? 'Reset to default' : 'Remove template'}
@@ -117,8 +104,19 @@ export function TaskTemplatesSection(): React.JSX.Element {
                 type="button"
               >
                 {t.isBuiltIn ? <RotateCcw size={14} /> : <Trash2 size={14} />}
+                {t.isBuiltIn ? 'Reset' : 'Delete'}
               </Button>
             </div>
+          }
+        >
+          <div className="settings-template-row">
+            <input
+              className="settings-field__input"
+              placeholder="Template name"
+              value={t.name}
+              disabled={!!t.isBuiltIn}
+              onChange={(e) => handleNameChange(i, e.target.value)}
+            />
             <textarea
               className="settings-field__input settings-template-row__prefix"
               placeholder="Prompt prefix..."
@@ -127,11 +125,9 @@ export function TaskTemplatesSection(): React.JSX.Element {
               rows={3}
             />
           </div>
-        ))}
-        {templates.length === 0 && (
-          <span className="settings-repos__empty">No templates configured</span>
-        )}
-      </div>
+        </SettingsCard>
+      ))}
+
       <Button
         variant="ghost"
         size="sm"
@@ -141,6 +137,6 @@ export function TaskTemplatesSection(): React.JSX.Element {
       >
         <Plus size={14} /> Add Template
       </Button>
-    </section>
+    </div>
   )
 }

@@ -19,10 +19,10 @@ beforeEach(() => {
 import { TaskTemplatesSection } from '../TaskTemplatesSection'
 
 describe('TaskTemplatesSection', () => {
-  it('renders section heading after loading', async () => {
+  it('renders without section heading (uses SettingsCard pattern)', async () => {
     render(<TaskTemplatesSection />)
     await waitFor(() => {
-      expect(screen.getByText('Task Templates')).toBeInTheDocument()
+      expect(screen.getByText(/Add Template/)).toBeInTheDocument()
     })
   })
 

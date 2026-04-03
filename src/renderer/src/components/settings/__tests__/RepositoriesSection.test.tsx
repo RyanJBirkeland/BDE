@@ -22,9 +22,9 @@ beforeEach(() => {
 import { RepositoriesSection } from '../RepositoriesSection'
 
 describe('RepositoriesSection', () => {
-  it('renders section heading', () => {
+  it('renders with no section heading (uses SettingsCard pattern)', () => {
     render(<RepositoriesSection />)
-    expect(screen.getByText('Repositories')).toBeInTheDocument()
+    expect(screen.getByText(/Add Repository/)).toBeInTheDocument()
   })
 
   it('shows empty state when no repos configured', async () => {
