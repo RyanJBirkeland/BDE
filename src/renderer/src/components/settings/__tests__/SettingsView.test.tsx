@@ -1,5 +1,5 @@
 /**
- * SettingsView — tab navigation and section switching tests.
+ * SettingsView — sidebar navigation and section switching tests.
  */
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
@@ -35,13 +35,12 @@ Object.defineProperty(window, 'api', {
 import SettingsView from '../../../views/SettingsView'
 
 describe('SettingsView', () => {
-  it('renders all tab labels', () => {
+  it('renders sidebar section labels', () => {
     render(<SettingsView />)
-    // Use getAllByText since tab labels may also appear as section headings
+    // Use getAllByText since sidebar labels may also appear as section headings
     expect(screen.getAllByText('Connections').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Repositories').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Templates').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText('Agent').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Agent Manager').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Appearance').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('About').length).toBeGreaterThanOrEqual(1)
@@ -52,18 +51,21 @@ describe('SettingsView', () => {
     expect(screen.getByText('Claude CLI Auth')).toBeInTheDocument()
   })
 
-  it('switches to Appearance section on tab click', async () => {
+  it('switches to Appearance section on sidebar click', async () => {
     const user = userEvent.setup()
     render(<SettingsView />)
-    await user.click(screen.getByText('Appearance'))
+    // Click the sidebar item (role="link")
+    const appearanceLinks = screen.getAllByText('Appearance')
+    await user.click(appearanceLinks[0])
     expect(screen.getByText('Theme')).toBeInTheDocument()
     expect(screen.getByText('Accent Color')).toBeInTheDocument()
   })
 
-  it('switches to Repositories section on tab click', async () => {
+  it('switches to Repositories section on sidebar click', async () => {
     const user = userEvent.setup()
     render(<SettingsView />)
-    await user.click(screen.getByText('Repositories'))
+    const repoLinks = screen.getAllByText('Repositories')
+    await user.click(repoLinks[0])
     expect(screen.getByText('Add Repository')).toBeInTheDocument()
   })
 })
