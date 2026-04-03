@@ -34,7 +34,9 @@ describe('ConnectionsSection', () => {
   it('shows auth badge after loading', async () => {
     render(<ConnectionsSection />)
     await waitFor(() => {
-      expect(screen.getByText('Connected')).toBeInTheDocument()
+      // Both StatusPill (card header) and Badge (card body) show 'Connected'
+      const elements = screen.getAllByText('Connected')
+      expect(elements.length).toBeGreaterThanOrEqual(1)
     })
   })
 
@@ -66,7 +68,8 @@ describe('ConnectionsSection', () => {
     render(<ConnectionsSection />)
 
     await waitFor(() => {
-      expect(screen.getByText('Connected')).toBeInTheDocument()
+      const elements = screen.getAllByText('Connected')
+      expect(elements.length).toBeGreaterThanOrEqual(1)
     })
 
     const testButton = screen.getByRole('button', { name: /^test$/i })
@@ -94,7 +97,8 @@ describe('ConnectionsSection', () => {
     render(<ConnectionsSection />)
 
     await waitFor(() => {
-      expect(screen.getByText('Connected')).toBeInTheDocument()
+      const elements = screen.getAllByText('Connected')
+      expect(elements.length).toBeGreaterThanOrEqual(1)
     })
 
     const testButton = screen.getByRole('button', { name: /^test$/i })

@@ -7,6 +7,7 @@ import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { CredentialForm, type CredentialField } from './CredentialForm'
+import { SettingsCard } from './SettingsCard'
 
 // --- Auth Status types ---
 interface AuthStatus {
@@ -108,27 +109,40 @@ export function ConnectionsSection(): React.JSX.Element {
     }
   }, [])
 
-  // --- Derive auth badge ---
+  // --- Derive auth status ---
   let authBadgeVariant: 'success' | 'warning' | 'danger' = 'danger'
   let authBadgeLabel = 'Not Configured'
+  let authCardStatus: { label: string; variant: 'success' | 'info' | 'warning' | 'neutral' | 'error' } = {
+    label: 'Disconnected',
+    variant: 'error'
+  }
   if (authStatus) {
     if (authStatus.tokenFound && !authStatus.tokenExpired) {
       authBadgeVariant = 'success'
       authBadgeLabel = 'Connected'
+      authCardStatus = { label: 'Connected', variant: 'success' }
     } else if (authStatus.tokenFound && authStatus.tokenExpired) {
       authBadgeVariant = 'warning'
       authBadgeLabel = 'Token Expired'
+      authCardStatus = { label: 'Token Expired', variant: 'warning' }
     }
   }
+
+  const ghCardStatus: { label: string; variant: 'success' | 'info' | 'warning' | 'neutral' | 'error' } = hasExistingGhToken
+    ? { label: 'Token Saved', variant: 'success' }
+    : { label: 'Not Configured', variant: 'error' }
 
   return (
     <section className="settings-section">
       <h2 className="settings-section__title bde-section-title">Connections</h2>
 
-      {/* Auth Status */}
-      <div className="settings-connection">
-        <span className="settings-connection__label">Claude CLI Auth</span>
-
+      {/* Claude CLI Auth Card */}
+      <SettingsCard
+        icon={<div className="stg-card__icon stg-card__icon--purple">C</div>}
+        title="Claude CLI Auth"
+        subtitle="OAuth token for agent spawning"
+        status={authCardStatus}
+      >
         <div className="settings-field__row" style={{ marginTop: 0, marginBottom: 12 }}>
           <div className="settings-field__status">
             <Badge variant={authBadgeVariant} size="sm">
@@ -154,24 +168,31 @@ export function ConnectionsSection(): React.JSX.Element {
             </Button>
           </div>
         </div>
-      </div>
+      </SettingsCard>
 
-      {/* GitHub Token */}
-      <CredentialForm
+      {/* GitHub Card */}
+      <SettingsCard
+        icon={<div className="stg-card__icon stg-card__icon--neutral">G</div>}
         title="GitHub"
-        fields={GITHUB_FIELDS}
-        values={{ token: ghToken }}
-        hasExisting={{ token: hasExistingGhToken }}
-        onChange={handleGhChange}
-        onSave={handleGhSave}
-        onTest={handleGhTest}
-        dirty={ghDirty}
-        saveDisabled={!ghDirty || !ghToken}
-        testDisabled={ghTesting || (!ghToken && !hasExistingGhToken)}
-        saving={false}
-        testing={ghTesting}
-        testResult={ghTestResult}
-      />
+        subtitle="Personal Access Token for PR creation"
+        status={ghCardStatus}
+      >
+        <CredentialForm
+          title=""
+          fields={GITHUB_FIELDS}
+          values={{ token: ghToken }}
+          hasExisting={{ token: hasExistingGhToken }}
+          onChange={handleGhChange}
+          onSave={handleGhSave}
+          onTest={handleGhTest}
+          dirty={ghDirty}
+          saveDisabled={!ghDirty || !ghToken}
+          testDisabled={ghTesting || (!ghToken && !hasExistingGhToken)}
+          saving={false}
+          testing={ghTesting}
+          testResult={ghTestResult}
+        />
+      </SettingsCard>
     </section>
   )
 }
