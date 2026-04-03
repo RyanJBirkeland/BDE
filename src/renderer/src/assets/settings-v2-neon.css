@@ -9,16 +9,17 @@
 }
 
 .stg-sidebar {
-  width: 200px;
+  width: 180px;
+  min-width: 180px;
   border-right: 1px solid var(--neon-purple-border);
-  padding: 20px 12px;
+  padding: 16px 8px;
   background: var(--bde-bg-elevated);
   overflow-y: auto;
   flex-shrink: 0;
 }
 
 .stg-sidebar__group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .stg-sidebar__category {
@@ -34,9 +35,9 @@
 .stg-sidebar__item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 6px;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 5px;
   cursor: pointer;
   color: var(--bde-text-muted);
   font-size: 12px;
@@ -67,8 +68,9 @@
 
 .stg-content {
   flex: 1;
-  padding: 28px 36px;
+  padding: 20px 24px;
   overflow-y: auto;
+  min-width: 0;
 }
 
 .stg-content__inner {
@@ -76,17 +78,17 @@
 }
 
 .stg-content__inner--wide {
-  max-width: none;
+  max-width: 100%;
 }
 
 /* ─── Page Header ────────────────────────────────────────────────────────── */
 
 .stg-page-header {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .stg-page-header__title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--bde-text);
 }
@@ -103,8 +105,9 @@
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: 10px;
-  padding: 18px;
+  padding: 16px;
   margin-bottom: 12px;
+  overflow: hidden;
 }
 
 .stg-card--full-bleed {
@@ -115,7 +118,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .stg-card__header-left {
@@ -159,7 +162,13 @@
 }
 
 .stg-card__body {
-  /* content area — no additional styling by default */
+  overflow-x: auto;
+}
+
+/* Tables inside cards should fill width and not overflow */
+.stg-card__body table {
+  width: 100%;
+  table-layout: auto;
 }
 
 .stg-card__footer {
