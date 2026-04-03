@@ -220,7 +220,13 @@ export function AgentConsole({ agentId, onSteer, onCommand }: AgentConsoleProps)
       )}
 
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-        <div ref={parentRef} onScroll={handleScroll} className="console-body">
+        <div
+          ref={parentRef}
+          onScroll={handleScroll}
+          className="console-body"
+          role="log"
+          aria-label="Agent console output"
+        >
           {blocks.length > 0 ? (
             <div
               style={{
