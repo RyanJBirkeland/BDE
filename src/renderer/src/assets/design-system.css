@@ -592,6 +592,25 @@
   border-radius: var(--bde-radius-xl);
 }
 
+/* ── Error Boundary ──────────────────────────────────── */
+
+.error-boundary {
+  padding: var(--bde-space-4);
+  color: var(--bde-danger);
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-sm);
+}
+
+.error-boundary__title {
+  font-weight: 600;
+  margin-bottom: var(--bde-space-1);
+}
+
+.error-boundary__message {
+  opacity: 0.7;
+  margin-bottom: var(--bde-space-3);
+}
+
 /* ════════════════════════════════════════════════════════
    Visual Identity v2 — Glass, Elevation, Glow, Gradients
    ════════════════════════════════════════════════════════ */

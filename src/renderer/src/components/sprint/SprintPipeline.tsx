@@ -364,13 +364,13 @@ export function SprintPipeline(): React.JSX.Element {
 
       {loading && tasks.length === 0 && (
         <div className="sprint-pipeline__body">
-          <div className="pipeline-sidebar" style={{ opacity: 0.3 }}>
-            <div className="bde-skeleton" style={{ height: 200 }} />
+          <div className="pipeline-sidebar pipeline-sidebar--loading">
+            <div className="bde-skeleton pipeline-skeleton--sidebar" />
           </div>
-          <div className="pipeline-center" style={{ opacity: 0.3 }}>
-            <div className="bde-skeleton" style={{ height: 64 }} />
-            <div className="bde-skeleton" style={{ height: 64 }} />
-            <div className="bde-skeleton" style={{ height: 64 }} />
+          <div className="pipeline-center pipeline-center--loading">
+            <div className="bde-skeleton pipeline-skeleton--stage" />
+            <div className="bde-skeleton pipeline-skeleton--stage" />
+            <div className="bde-skeleton pipeline-skeleton--stage" />
           </div>
         </div>
       )}
@@ -388,7 +388,7 @@ export function SprintPipeline(): React.JSX.Element {
       )}
 
       {!loading && !loadError && tasks.length === 0 && (
-        <div style={{ padding: '40px', display: 'flex', justifyContent: 'center' }}>
+        <div className="sprint-pipeline__empty-container">
           <NeonCard accent="purple" title="No tasks yet">
             <p className="sprint-pipeline__empty-text">
               Create your first task to start the pipeline.
@@ -402,8 +402,7 @@ export function SprintPipeline(): React.JSX.Element {
 
       <PipelineErrorBoundary fallbackLabel="Pipeline crashed">
         <div
-          className="sprint-pipeline__body"
-          style={{ display: tasks.length === 0 ? 'none' : undefined }}
+          className={`sprint-pipeline__body ${tasks.length === 0 ? 'sprint-pipeline__body--hidden' : ''}`}
         >
           <PipelineBacklog
             backlog={filteredPartition.backlog}

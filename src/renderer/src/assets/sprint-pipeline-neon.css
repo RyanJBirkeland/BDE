@@ -150,6 +150,31 @@
   min-height: 0;
 }
 
+.sprint-pipeline__body--hidden {
+  display: none;
+}
+
+.sprint-pipeline__empty-container {
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Loading state opacity */
+.pipeline-sidebar--loading,
+.pipeline-center--loading {
+  opacity: 0.3;
+}
+
+/* Skeleton height overrides */
+.pipeline-skeleton--sidebar {
+  height: 200px;
+}
+
+.pipeline-skeleton--stage {
+  height: 64px;
+}
+
 /* ── Left Sidebar (Backlog + Failed) ── */
 .pipeline-sidebar {
   width: 200px;

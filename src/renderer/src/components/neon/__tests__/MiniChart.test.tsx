@@ -28,8 +28,7 @@ describe('MiniChart', () => {
     const { container } = render(<MiniChart data={[]} />)
     expect(container.textContent).toContain('No data')
     const emptyDiv = container.firstElementChild as HTMLElement
-    expect(emptyDiv.style.color).toBe(tokens.neon.textDim)
-    expect(emptyDiv.style.fontSize).toBe(tokens.size.xs)
+    expect(emptyDiv.className).toBe('mini-chart-empty')
   })
 
   it('uses cyan as default accent when bar has no accent', () => {

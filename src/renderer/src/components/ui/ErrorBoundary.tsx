@@ -1,5 +1,4 @@
 import { Component, ErrorInfo, ReactNode } from 'react'
-import { tokens } from '../../design-system/tokens'
 
 interface Props {
   children: ReactNode
@@ -30,33 +29,12 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         this.props.fallback ?? (
-          <div
-            style={{
-              padding: tokens.space[4],
-              color: tokens.color.danger,
-              fontFamily: tokens.font.code,
-              fontSize: tokens.size.sm
-            }}
-          >
-            <div style={{ fontWeight: 600, marginBottom: tokens.space[1] }}>
+          <div className="error-boundary">
+            <div className="error-boundary__title">
               {this.props.name ? `${this.props.name} crashed` : 'Something went wrong'}
             </div>
-            <div style={{ opacity: 0.7, marginBottom: tokens.space[3] }}>
-              {this.state.error.message}
-            </div>
-            <button
-              onClick={this.handleReset}
-              style={{
-                padding: `${tokens.space[1]} ${tokens.space[3]}`,
-                backgroundColor: tokens.color.accent,
-                color: tokens.color.bg,
-                border: 'none',
-                borderRadius: tokens.radius.sm,
-                cursor: 'pointer',
-                fontFamily: tokens.font.ui,
-                fontSize: tokens.size.sm
-              }}
-            >
+            <div className="error-boundary__message">{this.state.error.message}</div>
+            <button className="bde-btn bde-btn--primary bde-btn--sm" onClick={this.handleReset}>
               Try Again
             </button>
           </div>

@@ -17,46 +17,46 @@ const ACCENT_VARS: Record<
   { bg: string; border: string; color: string; glow: string; hover: string }
 > = {
   cyan: {
-    bg: 'rgba(0,255,255,0.06)',
+    bg: 'var(--neon-cyan-surface)',
     border: 'var(--neon-cyan-border)',
     color: 'var(--neon-cyan)',
-    glow: 'rgba(0,255,255,0.15)',
-    hover: 'rgba(0,255,255,0.3)'
+    glow: 'var(--neon-cyan-glow)',
+    hover: 'var(--neon-cyan-border)'
   },
   pink: {
-    bg: 'rgba(255,0,255,0.06)',
+    bg: 'var(--neon-pink-surface)',
     border: 'var(--neon-pink-border)',
     color: 'var(--neon-pink)',
-    glow: 'rgba(255,0,255,0.15)',
-    hover: 'rgba(255,0,255,0.3)'
+    glow: 'var(--neon-pink-glow)',
+    hover: 'var(--neon-pink-border)'
   },
   blue: {
-    bg: 'rgba(100,100,255,0.06)',
+    bg: 'var(--neon-blue-surface)',
     border: 'var(--neon-blue-border)',
     color: 'var(--neon-blue)',
-    glow: 'rgba(100,100,255,0.15)',
-    hover: 'rgba(100,100,255,0.3)'
+    glow: 'var(--neon-blue-glow)',
+    hover: 'var(--neon-blue-border)'
   },
   purple: {
-    bg: 'rgba(138,43,226,0.06)',
+    bg: 'var(--neon-purple-surface)',
     border: 'var(--neon-purple-border)',
     color: 'var(--neon-purple)',
-    glow: 'rgba(138,43,226,0.15)',
-    hover: 'rgba(138,43,226,0.3)'
+    glow: 'var(--neon-purple-glow)',
+    hover: 'var(--neon-purple-border)'
   },
   orange: {
-    bg: 'rgba(255,165,0,0.06)',
+    bg: 'var(--neon-orange-surface)',
     border: 'var(--neon-orange-border)',
     color: 'var(--neon-orange)',
-    glow: 'rgba(255,165,0,0.15)',
-    hover: 'rgba(255,165,0,0.3)'
+    glow: 'var(--neon-orange-glow)',
+    hover: 'var(--neon-orange-border)'
   },
   red: {
-    bg: 'rgba(255,80,80,0.06)',
+    bg: 'var(--neon-red-surface)',
     border: 'var(--neon-red-border)',
     color: 'var(--neon-red)',
-    glow: 'rgba(255,80,80,0.15)',
-    hover: 'rgba(255,80,80,0.3)'
+    glow: 'var(--neon-red-glow)',
+    hover: 'var(--neon-red-border)'
   }
 }
 

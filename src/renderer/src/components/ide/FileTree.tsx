@@ -38,11 +38,8 @@ export function FileTree({ dirPath, onOpenFile }: FileTreeProps): React.JSX.Elem
 
   if (error) {
     return (
-      <div
-        className="ide-file-tree"
-        style={{ padding: '8px', color: 'var(--bde-danger)', fontSize: 'var(--bde-size-sm)' }}
-      >
-        {error}
+      <div className="ide-file-tree">
+        <div className="ide-file-tree__error">{error}</div>
       </div>
     )
   }

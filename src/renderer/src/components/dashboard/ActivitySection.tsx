@@ -1,5 +1,4 @@
 import { NeonCard, ActivityFeed, MiniChart, type ChartBar } from '../neon'
-import { neonVar } from '../neon/types'
 import { useDashboardDataStore } from '../../stores/dashboardData'
 import { timeAgo } from '../../lib/format'
 import { CheckCircle, TrendingUp, DollarSign } from 'lucide-react'
@@ -30,17 +29,13 @@ export function ActivitySection({
 }: ActivitySectionProps): React.JSX.Element {
   return (
     <div className="dashboard-col">
-      <NeonCard accent="blue" title="Feed" style={{ flex: 1, minHeight: 0 }}>
+      <NeonCard accent="blue" title="Feed" className="dashboard-feed-card">
         {cardErrors.feed ? (
           <div className="dashboard-card-error">
             <div className="dashboard-card-error__message">{cardErrors.feed}</div>
             <button
               className="dashboard-card-error__retry"
               onClick={() => useDashboardDataStore.getState().fetchAll()}
-              style={{
-                border: `1px solid ${neonVar('red', 'color')}`,
-                color: neonVar('red', 'color')
-              }}
             >
               Retry
             </button>
