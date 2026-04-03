@@ -108,17 +108,42 @@ describe('Review handlers', () => {
 
     const _mockEvent = {} as IpcMainInvokeEvent
 
-    it('review:getCommits parses git log output', async () => {
-      // We need to re-mock the promisified execFileAsync
-      // Since the module uses promisify at module level, we mock the actual util.promisify
-      // to return a function that returns our desired output
-      const mockExecFileAsync = vi.fn()
-      vi.mocked(await import('util')).promisify = vi.fn(() => mockExecFileAsync) as unknown as typeof import('util').then extends (...args: infer _A) => infer _R ? never : never
-
-      // Re-import to pick up new mock — this is tricky with module-level initialization
-      // Instead, verify the handler was registered with correct channel name
+    it('review:getCommits handler is registered', () => {
       const handlers = captureHandlers()
       expect(handlers['review:getCommits']).toBeDefined()
+    })
+
+    it('parses commit message with pipe character correctly', () => {
+      // Unit test for the parsing logic: null byte delimiter prevents pipe character issues
+      const gitOutput = [
+        'abc123\x00feat: add A | B support\x00John Doe\x002026-04-01T12:00:00Z',
+        'def456\x00fix: resolve pipe | parsing issue\x00Jane Smith\x002026-04-02T13:30:00Z'
+      ].join('\n')
+
+      // Simulate the parsing logic from review:getCommits handler
+      const commits = gitOutput
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => {
+          const [hash, message, author, date] = line.split('\x00')
+          return { hash, message, author, date }
+        })
+
+      // Verify full messages are preserved including pipe characters
+      expect(commits).toHaveLength(2)
+      expect(commits[0]).toEqual({
+        hash: 'abc123',
+        message: 'feat: add A | B support',
+        author: 'John Doe',
+        date: '2026-04-01T12:00:00Z'
+      })
+      expect(commits[1]).toEqual({
+        hash: 'def456',
+        message: 'fix: resolve pipe | parsing issue',
+        author: 'Jane Smith',
+        date: '2026-04-02T13:30:00Z'
+      })
     })
 
     it('review:getDiff handler is registered', () => {

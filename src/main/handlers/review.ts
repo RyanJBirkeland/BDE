@@ -109,7 +109,7 @@ export function registerReviewHandlers(): void {
 
     const { stdout } = await execFileAsync(
       'git',
-      ['log', `${base}..HEAD`, '--format=%H|%s|%an|%aI', '--reverse'],
+      ['log', `${base}..HEAD`, '--format=%H%x00%s%x00%an%x00%aI', '--reverse'],
       { cwd: worktreePath, env }
     )
 
@@ -118,7 +118,7 @@ export function registerReviewHandlers(): void {
       .split('\n')
       .filter(Boolean)
       .map((line) => {
-        const [hash, message, author, date] = line.split('|')
+        const [hash, message, author, date] = line.split('\x00')
         return { hash, message, author, date }
       })
 
