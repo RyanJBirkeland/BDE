@@ -166,12 +166,43 @@ export function AgentList({
 
   const groups = useMemo(() => groupAgents(filtered), [filtered])
 
+  // Flat list of all visible agents for keyboard navigation
+  const visibleAgents = useMemo(() => {
+    const all = [...groups.running, ...groups.recent]
+    if (historyOpen) {
+      all.push(...groups.history)
+    }
+    return all
+  }, [groups, historyOpen])
+
   // Scroll selected agent into view
   useEffect(() => {
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }
   }, [selectedId])
+
+  // Handle arrow key navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+    if (visibleAgents.length === 0) return
+
+    e.preventDefault()
+
+    const currentIndex = visibleAgents.findIndex((a) => a.id === selectedId)
+    let nextIndex: number
+
+    if (currentIndex === -1) {
+      // No selection, select first
+      nextIndex = 0
+    } else if (e.key === 'ArrowDown') {
+      nextIndex = Math.min(currentIndex + 1, visibleAgents.length - 1)
+    } else {
+      nextIndex = Math.max(currentIndex - 1, 0)
+    }
+
+    onSelect(visibleAgents[nextIndex].id)
+  }
 
   return (
     <div
@@ -261,7 +292,13 @@ export function AgentList({
       )}
 
       {/* Agent groups */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div
+        role="listbox"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        aria-label="Agent list"
+        style={{ flex: 1, overflow: 'auto', outline: 'none' }}
+      >
         {fetchError && agents.length === 0 && (
           <div
             style={{
@@ -355,7 +392,13 @@ export function AgentList({
               collapsible={false}
             />
             {groups.running.map((a) => (
-              <div key={a.id} ref={a.id === selectedId ? selectedRef : null}>
+              <div
+                key={a.id}
+                ref={a.id === selectedId ? selectedRef : null}
+                role="option"
+                aria-selected={a.id === selectedId}
+                tabIndex={-1}
+              >
                 <AgentCard
                   agent={a}
                   selected={a.id === selectedId}
@@ -378,7 +421,13 @@ export function AgentList({
               collapsible={false}
             />
             {groups.recent.map((a) => (
-              <div key={a.id} ref={a.id === selectedId ? selectedRef : null}>
+              <div
+                key={a.id}
+                ref={a.id === selectedId ? selectedRef : null}
+                role="option"
+                aria-selected={a.id === selectedId}
+                tabIndex={-1}
+              >
                 <AgentCard
                   agent={a}
                   selected={a.id === selectedId}
@@ -400,7 +449,13 @@ export function AgentList({
             />
             {historyOpen &&
               groups.history.map((a) => (
-                <div key={a.id} ref={a.id === selectedId ? selectedRef : null}>
+                <div
+                  key={a.id}
+                  ref={a.id === selectedId ? selectedRef : null}
+                  role="option"
+                  aria-selected={a.id === selectedId}
+                  tabIndex={-1}
+                >
                   <AgentCard
                     agent={a}
                     selected={a.id === selectedId}
