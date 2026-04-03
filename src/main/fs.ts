@@ -223,6 +223,7 @@ export function registerFsHandlers(): void {
     return getSettingJson<Record<string, boolean>>(ACTIVE_FILES_SETTING) ?? {}
   })
   safeHandle('memory:setFileActive', (_e, path: string, active: boolean) => {
+    validateMemoryPath(path) // Prevent path traversal into agent prompts
     const current = getSettingJson<Record<string, boolean>>(ACTIVE_FILES_SETTING) ?? {}
     if (active) {
       current[path] = true

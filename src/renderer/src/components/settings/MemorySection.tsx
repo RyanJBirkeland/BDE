@@ -420,10 +420,15 @@ export function MemorySection(): React.JSX.Element {
             ) : (
               <>
                 {pinned && (
-                  <button
+                  <div
                     className={`memory-file ${selectedPath === pinned.path ? 'memory-file--active' : ''} ${focusIndex === 0 ? 'memory-file--focused' : ''}`}
                     data-memory-index={0}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleSelectFile(pinned.path)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') handleSelectFile(pinned.path)
+                    }}
                   >
                     <div className="memory-file__info">
                       <span className="memory-file__name">
@@ -453,7 +458,7 @@ export function MemorySection(): React.JSX.Element {
                     >
                       <Brain size={14} />
                     </button>
-                  </button>
+                  </div>
                 )}
 
                 {groups.map((group) => (
@@ -462,11 +467,16 @@ export function MemorySection(): React.JSX.Element {
                     {group.files.map((f) => {
                       const idx = flatFiles.indexOf(f)
                       return (
-                        <button
+                        <div
                           key={f.path}
                           className={`memory-file ${selectedPath === f.path ? 'memory-file--active' : ''} ${focusIndex === idx ? 'memory-file--focused' : ''}`}
                           data-memory-index={idx}
+                          role="button"
+                          tabIndex={0}
                           onClick={() => handleSelectFile(f.path)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') handleSelectFile(f.path)
+                          }}
                         >
                           <div className="memory-file__info">
                             <span className="memory-file__name">{f.name}</span>
@@ -493,7 +503,7 @@ export function MemorySection(): React.JSX.Element {
                           >
                             <Brain size={14} />
                           </button>
-                        </button>
+                        </div>
                       )
                     })}
                   </div>
