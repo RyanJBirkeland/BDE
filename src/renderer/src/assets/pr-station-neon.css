@@ -87,6 +87,11 @@
   box-shadow: 0 0 6px var(--neon-cyan-glow);
 }
 
+.pr-station-filters__sort-select:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .pr-station-filters__sort-icon {
   position: absolute;
   right: 6px;

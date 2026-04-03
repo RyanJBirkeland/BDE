@@ -268,6 +268,11 @@
   border-color: var(--bde-accent);
 }
 
+.sprint-tasks__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .sprint-tasks__input::placeholder {
   color: var(--bde-text-dim);
 }
@@ -286,6 +291,11 @@
 
 .sprint-tasks__select:focus {
   border-color: var(--bde-accent);
+}
+
+.sprint-tasks__select:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .sprint-tasks__select option {
@@ -511,6 +521,11 @@
   border-bottom-color: var(--bde-border);
 }
 
+.spec-drawer__title-input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .spec-drawer__title-input:focus {
   border-bottom-color: var(--bde-accent);
 }
@@ -612,6 +627,11 @@
 
 .spec-drawer__editor:focus {
   border-color: var(--bde-accent);
+}
+
+.spec-drawer__editor:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .spec-drawer__rendered {
@@ -977,6 +997,11 @@
   border-color: var(--bde-accent);
 }
 
+.new-ticket-modal__spec-editor:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .new-ticket-modal__spec-editor::placeholder {
   color: var(--bde-text-dim);
 }
@@ -1329,6 +1354,11 @@ tr:hover .bde-task-table__action-btn--done {
   border-color: var(--bde-accent);
 }
 
+.bde-backlog-search__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .bde-backlog-search__clear {
   position: absolute;
   right: 4px;
@@ -1521,6 +1551,11 @@ tr:hover .bde-task-table__action-btn--done {
 
 .design-mode__input:focus {
   border-color: var(--bde-accent);
+}
+
+.design-mode__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .design-mode__input:disabled {

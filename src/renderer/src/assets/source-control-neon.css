@@ -114,6 +114,11 @@
   border-color: var(--bde-accent);
 }
 
+.git-commit-box__textarea:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .git-commit-box__char-count {
   font-size: 10px;
   color: var(--bde-text-dim);
@@ -596,6 +601,11 @@
   max-width: 200px;
 }
 
+.git-branch-select:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .git-branch-select:hover {
   border-color: var(--bde-text-muted);
 }
@@ -807,6 +817,11 @@
 
 .git-commit-panel__input:focus {
   border-color: var(--bde-accent);
+}
+
+.git-commit-panel__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .git-commit-panel__input::placeholder {
