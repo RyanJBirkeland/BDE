@@ -74,6 +74,7 @@ export function SprintPipeline(): React.JSX.Element {
   const setConflictDrawerOpen = useSprintUI((s) => s.setConflictDrawerOpen)
   const setHealthCheckDrawerOpen = useSprintUI((s) => s.setHealthCheckDrawerOpen)
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
+  const statusFilter = useSprintUI((s) => s.statusFilter)
   const repoFilter = useSprintUI((s) => s.repoFilter)
   const searchQuery = useSprintUI((s) => s.searchQuery)
 
@@ -110,6 +111,31 @@ export function SprintPipeline(): React.JSX.Element {
   }, [tasks, repoFilter, searchQuery])
 
   const partition = useMemo(() => partitionSprintTasks(filteredTasks), [filteredTasks])
+
+  // Apply status filter to partition buckets
+  const filteredPartition = useMemo(() => {
+    if (statusFilter === 'all') return partition
+
+    const emptyBucket: SprintTask[] = []
+    switch (statusFilter) {
+      case 'backlog':
+        return { ...partition, todo: emptyBucket, blocked: emptyBucket, inProgress: emptyBucket, awaitingReview: emptyBucket, done: emptyBucket, failed: emptyBucket }
+      case 'todo':
+        return { ...partition, backlog: emptyBucket, blocked: emptyBucket, inProgress: emptyBucket, awaitingReview: emptyBucket, done: emptyBucket, failed: emptyBucket }
+      case 'blocked':
+        return { ...partition, backlog: emptyBucket, todo: emptyBucket, inProgress: emptyBucket, awaitingReview: emptyBucket, done: emptyBucket, failed: emptyBucket }
+      case 'in-progress':
+        return { ...partition, backlog: emptyBucket, todo: emptyBucket, blocked: emptyBucket, awaitingReview: emptyBucket, done: emptyBucket, failed: emptyBucket }
+      case 'awaiting-review':
+        return { ...partition, backlog: emptyBucket, todo: emptyBucket, blocked: emptyBucket, inProgress: emptyBucket, done: emptyBucket, failed: emptyBucket }
+      case 'done':
+        return { ...partition, backlog: emptyBucket, todo: emptyBucket, blocked: emptyBucket, inProgress: emptyBucket, awaitingReview: emptyBucket, failed: emptyBucket }
+      case 'failed':
+        return { ...partition, backlog: emptyBucket, todo: emptyBucket, blocked: emptyBucket, inProgress: emptyBucket, awaitingReview: emptyBucket, done: emptyBucket }
+      default:
+        return partition
+    }
+  }, [partition, statusFilter])
 
   const selectedTask = useMemo(
     () => (selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null),
@@ -324,8 +350,8 @@ export function SprintPipeline(): React.JSX.Element {
           style={{ display: tasks.length === 0 ? 'none' : undefined }}
         >
           <PipelineBacklog
-            backlog={partition.backlog}
-            failed={partition.failed}
+            backlog={filteredPartition.backlog}
+            failed={filteredPartition.failed}
             onTaskClick={handleTaskClick}
             onAddToQueue={handleAddToQueue}
             onRerun={handleRerun}
@@ -336,49 +362,49 @@ export function SprintPipeline(): React.JSX.Element {
               <PipelineStage
                 name="queued"
                 label="Queued"
-                tasks={partition.todo}
-                count={`${partition.todo.length}`}
+                tasks={filteredPartition.todo}
+                count={`${filteredPartition.todo.length}`}
                 selectedTaskId={selectedTaskId}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
                 name="blocked"
                 label="Blocked"
-                tasks={partition.blocked}
-                count={`${partition.blocked.length}`}
+                tasks={filteredPartition.blocked}
+                count={`${filteredPartition.blocked.length}`}
                 selectedTaskId={selectedTaskId}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
                 name="active"
                 label="Active"
-                tasks={partition.inProgress}
-                count={`${partition.inProgress.length}/5`}
+                tasks={filteredPartition.inProgress}
+                count={`${filteredPartition.inProgress.length}/5`}
                 selectedTaskId={selectedTaskId}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
                 name="review"
                 label="Review"
-                tasks={partition.awaitingReview}
-                count={`${partition.awaitingReview.length}`}
+                tasks={filteredPartition.awaitingReview}
+                count={`${filteredPartition.awaitingReview.length}`}
                 selectedTaskId={selectedTaskId}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
                 name="done"
                 label="Done"
-                tasks={partition.done.slice(0, 3)}
-                count={`${partition.done.length}`}
+                tasks={filteredPartition.done.slice(0, 3)}
+                count={`${filteredPartition.done.length}`}
                 selectedTaskId={selectedTaskId}
                 onTaskClick={handleTaskClick}
                 doneFooter={
-                  partition.done.length > 3 ? (
+                  filteredPartition.done.length > 3 ? (
                     <button
                       className="pipeline-stage__done-summary"
                       onClick={() => setDoneViewOpen(true)}
                     >
-                      {partition.done.length} completed · View all
+                      {filteredPartition.done.length} completed · View all
                     </button>
                   ) : undefined
                 }
@@ -419,7 +445,7 @@ export function SprintPipeline(): React.JSX.Element {
 
       {doneViewOpen && (
         <DoneHistoryPanel
-          tasks={partition.done}
+          tasks={filteredPartition.done}
           onTaskClick={handleTaskClick}
           onClose={() => setDoneViewOpen(false)}
         />

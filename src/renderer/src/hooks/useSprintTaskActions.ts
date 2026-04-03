@@ -9,9 +9,9 @@ import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 
 interface SprintTaskActions {
-  handlePushToSprint: (task: SprintTask) => void
+  handlePushToSprint: (task: SprintTask) => Promise<void>
   handleViewSpec: (task: SprintTask) => void
-  handleSaveSpec: (taskId: string, spec: string) => void
+  handleSaveSpec: (taskId: string, spec: string) => Promise<void>
   handleMarkDone: (task: SprintTask) => Promise<void>
   handleStop: (task: SprintTask) => Promise<void>
   handleRerun: (task: SprintTask) => Promise<void>
@@ -42,9 +42,13 @@ export function useSprintTaskActions(): SprintTaskActions {
 
   // --- Push backlog task to sprint queue ---
   const handlePushToSprint = useCallback(
-    (task: SprintTask) => {
-      updateTask(task.id, { status: TASK_STATUS.QUEUED })
-      toast.success('Pushed to Sprint')
+    async (task: SprintTask) => {
+      try {
+        await updateTask(task.id, { status: TASK_STATUS.QUEUED })
+        toast.success('Pushed to Sprint')
+      } catch (err) {
+        toast.error(`Failed to push: ${err instanceof Error ? err.message : String(err)}`)
+      }
     },
     [updateTask]
   )
@@ -58,7 +62,7 @@ export function useSprintTaskActions(): SprintTaskActions {
   // --- Save spec from drawer ---
   const handleSaveSpec = useCallback(
     (taskId: string, spec: string) => {
-      updateTask(taskId, { spec })
+      return updateTask(taskId, { spec })
     },
     [updateTask]
   )

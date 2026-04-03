@@ -162,7 +162,7 @@ describe('useSprintTaskActions', () => {
     const { toast } = await import('../../stores/toasts')
     const { result } = renderHook(() => useSprintTaskActions())
     const task = makeTask({ status: 'backlog' })
-    result.current.handlePushToSprint(task)
+    await result.current.handlePushToSprint(task)
     expect(mockUpdateTask).toHaveBeenCalledWith(task.id, { status: 'queued' })
     expect(toast.success).toHaveBeenCalledWith('Pushed to Sprint')
   })
