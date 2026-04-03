@@ -126,8 +126,8 @@ export function AgentList({
   fetchError,
   onRetry,
   displayedCount,
-  hasMore: _hasMore,
-  onLoadMore: _onLoadMore
+  hasMore,
+  onLoadMore
 }: AgentListProps): React.JSX.Element {
   const [searchText, setSearchText] = useState(filter ?? '')
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -477,6 +477,38 @@ export function AgentList({
             }}
           >
             No agents found
+          </div>
+        )}
+
+        {hasMore && onLoadMore && (
+          <div
+            style={{
+              padding: tokens.space[2],
+              display: 'flex',
+              justifyContent: 'center'
+            }}
+          >
+            <button
+              onClick={onLoadMore}
+              style={{
+                padding: `${tokens.space[1]} ${tokens.space[3]}`,
+                background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
+                border: `1px solid ${neonVar('cyan', 'border')}`,
+                borderRadius: tokens.radius.sm,
+                color: neonVar('cyan', 'color'),
+                fontSize: tokens.size.sm,
+                cursor: 'pointer',
+                transition: tokens.transition.fast
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = `0 0 12px ${neonVar('cyan', 'glow')}`
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              Load More
+            </button>
           </div>
         )}
       </div>

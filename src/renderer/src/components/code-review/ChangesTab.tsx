@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { Plus, Minus, Edit2 } from 'lucide-react'
+import { parseDiff } from '../../lib/diff-parser'
+import { DiffViewer } from '../diff/DiffViewer'
 
 export function ChangesTab(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -43,6 +45,13 @@ export function ChangesTab(): React.JSX.Element {
       .catch(() => setFileDiff('Failed to load diff'))
   }, [task?.worktree_path, selectedFile])
 
+  // Parse the raw diff text into structured format for DiffViewer
+  // Must be called before early returns (React Hooks rule)
+  const parsedDiff = useMemo(() => {
+    if (!fileDiff) return []
+    return parseDiff(fileDiff)
+  }, [fileDiff])
+
   if (loading.diff) {
     return <div className="cr-placeholder">Loading changes...</div>
   }
@@ -77,9 +86,11 @@ export function ChangesTab(): React.JSX.Element {
         ))}
       </div>
       <div className="cr-changes__diff">
-        <pre className="cr-changes__diff-content">
-          {fileDiff || 'Select a file to view diff'}
-        </pre>
+        {fileDiff ? (
+          <DiffViewer files={parsedDiff} />
+        ) : (
+          <div className="cr-placeholder">Select a file to view diff</div>
+        )}
       </div>
     </div>
   )

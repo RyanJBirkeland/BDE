@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { HeartPulse, RotateCcw, X } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { toast } from '../../stores/toasts'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from '../../../../shared/types'
 
@@ -20,6 +21,22 @@ function minutesAgo(isoDate: string | null): number {
 
 export function HealthCheckDrawer({ open, tasks, onClose, onDismiss }: HealthCheckDrawerProps): React.JSX.Element {
   const [rescuing, setRescuing] = useState<string | null>(null)
+  const drawerRef = useRef<HTMLDivElement>(null)
+
+  useFocusTrap(drawerRef, open)
+
+  // Escape key to close
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
 
   const handleRescue = useCallback(async (task: SprintTask) => {
     setRescuing(task.id)
@@ -40,7 +57,12 @@ export function HealthCheckDrawer({ open, tasks, onClose, onDismiss }: HealthChe
   return (
     <>
       {open && <div className="health-drawer__overlay" onClick={onClose} />}
-      <div className={`health-drawer ${open ? 'health-drawer--open' : ''}`}>
+      <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        className={`health-drawer ${open ? 'health-drawer--open' : ''}`}
+      >
         <div className="health-drawer__header">
           <div className="health-drawer__header-left">
             <HeartPulse size={14} />
