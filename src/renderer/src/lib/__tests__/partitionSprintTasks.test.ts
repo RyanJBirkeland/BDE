@@ -69,11 +69,11 @@ describe('partitionSprintTasks', () => {
     expect(result.inProgress).toEqual([t])
   })
 
-  it('puts done tasks with pr_status=open in awaitingReview', () => {
+  it('puts done tasks with pr_status=open in done (review status is now the canonical review path)', () => {
     const t = makeTask({ status: 'done', pr_status: 'open', pr_url: 'https://github.com/pr/1' })
     const result = partitionSprintTasks([t])
-    expect(result.awaitingReview).toEqual([t])
-    expect(result.done).toHaveLength(0)
+    expect(result.done).toEqual([t])
+    expect(result.awaitingReview).toHaveLength(0)
   })
 
   it('puts done tasks with pr_status=merged in done', () => {
@@ -108,11 +108,11 @@ describe('partitionSprintTasks', () => {
     expect(result.inProgress).toHaveLength(0)
   })
 
-  it('routes done task with pr_status=branch_only to awaitingReview', () => {
+  it('puts done task with pr_status=branch_only in done', () => {
     const t = makeTask({ status: 'done', pr_status: 'branch_only' })
     const result = partitionSprintTasks([t])
-    expect(result.awaitingReview).toHaveLength(1)
-    expect(result.done).toHaveLength(0)
+    expect(result.done).toHaveLength(1)
+    expect(result.awaitingReview).toHaveLength(0)
   })
 
   it('puts blocked tasks into blocked bucket', () => {
@@ -167,8 +167,8 @@ describe('partitionSprintTasks', () => {
     expect(result.backlog).toHaveLength(2)
     expect(result.todo).toHaveLength(1)
     expect(result.inProgress).toHaveLength(2)
-    expect(result.done).toHaveLength(2)
-    expect(result.awaitingReview).toHaveLength(2)
+    expect(result.done).toHaveLength(4)
+    expect(result.awaitingReview).toHaveLength(0)
     expect(result.failed).toHaveLength(1)
   })
 
