@@ -183,7 +183,7 @@ export function AgentList({
   }, [selectedId])
 
   // Handle arrow key navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
     if (visibleAgents.length === 0) return
 
