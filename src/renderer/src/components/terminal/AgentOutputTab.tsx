@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
-import { ChatRenderer } from '../agents/ChatRenderer'
+import { useEffect, useMemo } from 'react'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { tokens } from '../../design-system/tokens'
+import { pairEvents } from '../../lib/pair-events'
+import { ConsoleLine } from '../agents/ConsoleLine'
 
 interface AgentOutputTabProps {
   agentId: string
@@ -23,11 +24,15 @@ export function AgentOutputTab({
     }
   }, [agentId, loadHistory])
 
-  // Agent events available — use ChatRenderer
+  const blocks = useMemo(() => (events ? pairEvents(events) : []), [events])
+
+  // Agent events available — use ConsoleLine renderer
   if (events && events.length > 0) {
     return (
       <div className="terminal-agent-tab">
-        <ChatRenderer events={events} />
+        {blocks.map((block, i) => (
+          <ConsoleLine key={i} block={block} />
+        ))}
       </div>
     )
   }

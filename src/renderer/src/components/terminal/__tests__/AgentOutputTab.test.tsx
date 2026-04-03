@@ -13,11 +13,17 @@ vi.mock('../../../stores/agentEvents', () => ({
     })
 }))
 
-// Mock ChatRenderer
-vi.mock('../../agents/ChatRenderer', () => ({
-  ChatRenderer: ({ events }: { events: unknown[] }) => (
-    <div data-testid="chat-renderer">Events: {events.length}</div>
+// Mock ConsoleLine
+vi.mock('../../agents/ConsoleLine', () => ({
+  ConsoleLine: ({ block }: { block: unknown }) => (
+    <div data-testid="console-line">{JSON.stringify(block)}</div>
   )
+}))
+
+// Mock pairEvents
+vi.mock('../../../lib/pair-events', () => ({
+  pairEvents: (events: unknown[]) =>
+    events.map((e, i) => ({ type: 'text', text: `event-${i}`, timestamp: Date.now() }))
 }))
 
 // Mock design-system tokens
@@ -49,11 +55,10 @@ describe('AgentOutputTab', () => {
     expect(mockLoadHistory).not.toHaveBeenCalled()
   })
 
-  it('renders ChatRenderer when events are available', () => {
+  it('renders ConsoleLine blocks when events are available', () => {
     mockEvents['agent-1'] = [{ type: 'message', text: 'hello' }]
     render(<AgentOutputTab agentId="agent-1" />)
-    expect(screen.getByTestId('chat-renderer')).toBeInTheDocument()
-    expect(screen.getByText('Events: 1')).toBeInTheDocument()
+    expect(screen.getByTestId('console-line')).toBeInTheDocument()
   })
 
   it('renders waiting message when sessionKey is provided but no events', () => {
@@ -81,7 +86,7 @@ describe('AgentOutputTab', () => {
   it('prefers events over sessionKey and agentOutput', () => {
     mockEvents['agent-1'] = [{ type: 'message' }]
     render(<AgentOutputTab agentId="agent-1" sessionKey="sess-123" agentOutput={['text']} />)
-    expect(screen.getByTestId('chat-renderer')).toBeInTheDocument()
+    expect(screen.getByTestId('console-line')).toBeInTheDocument()
     expect(screen.queryByText('text')).not.toBeInTheDocument()
   })
 
