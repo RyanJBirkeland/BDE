@@ -111,7 +111,7 @@ function GroupHeader({
         />
       )}
       {label}
-      <span style={{ color: tokens.color.textDim }}>({count})</span>
+      <span className="agent-list__count-badge">({count})</span>
     </Tag>
   )
 }
@@ -223,6 +223,7 @@ export function AgentList({
         }}
       >
         <div
+          className={searchFocused ? 'agent-list__search-border--focused' : 'agent-list__search-border'}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -230,16 +231,13 @@ export function AgentList({
             padding: `${tokens.space[1]} ${tokens.space[2]}`,
             background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
             borderRadius: tokens.radius.sm,
-            border: searchFocused
-              ? `1px solid ${neonVar('purple', 'color')}`
-              : `1px solid ${tokens.color.border}`,
             boxShadow: searchFocused ? `0 0 12px ${neonVar('purple', 'glow')}` : 'none',
             transition: tokens.transition.fast
           }}
         >
           <Search
             size={12}
-            color={searchFocused ? neonVar('purple', 'color') : tokens.color.textDim}
+            className={searchFocused ? 'agent-list__search-icon--focused' : 'agent-list__search-icon'}
           />
           <input
             type="text"
@@ -249,11 +247,11 @@ export function AgentList({
             onBlur={() => setSearchFocused(false)}
             placeholder="Filter agents..."
             aria-label="Filter agents"
+            className="agent-list__search-input"
             style={{
               flex: 1,
               background: 'none',
               border: 'none',
-              color: tokens.color.text,
               fontSize: tokens.size.sm,
               outline: 'none'
             }}
@@ -469,10 +467,10 @@ export function AgentList({
 
         {filtered.length === 0 && (
           <div
+            className="agent-list__empty-state"
             style={{
               padding: tokens.space[4],
               textAlign: 'center',
-              color: tokens.color.textDim,
               fontSize: tokens.size.sm
             }}
           >

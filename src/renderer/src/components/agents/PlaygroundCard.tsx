@@ -30,6 +30,7 @@ export function PlaygroundCard({
       onClick={onClick}
       aria-label={`Preview ${filename}`}
       data-testid="playground-card"
+      className="playground-card"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -37,47 +38,37 @@ export function PlaygroundCard({
         width: '100%',
         maxWidth: '500px',
         padding: tokens.space[3],
-        background: tokens.color.surfaceHigh,
-        border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.md,
         cursor: 'pointer',
         transition: tokens.transition.fast,
         fontFamily: tokens.font.ui,
         textAlign: 'left'
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = tokens.color.accent
-        e.currentTarget.style.background = tokens.color.accentDim
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = tokens.color.border
-        e.currentTarget.style.background = tokens.color.surfaceHigh
-      }}
     >
       {/* File icon */}
       <div
+        className="playground-card__icon-box"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           width: '40px',
           height: '40px',
-          background: tokens.color.accentDim,
           borderRadius: tokens.radius.sm,
           flexShrink: 0
         }}
       >
-        <FileCode size={20} style={{ color: tokens.color.accent }} />
+        <FileCode size={20} className="playground-card__icon" />
       </div>
 
       {/* Filename and size */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
+          className="playground-card__filename"
           style={{
             fontFamily: tokens.font.code,
             fontSize: tokens.size.sm,
             fontWeight: 500,
-            color: tokens.color.text,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
@@ -86,9 +77,9 @@ export function PlaygroundCard({
           {filename}
         </div>
         <div
+          className="playground-card__filesize"
           style={{
             fontSize: tokens.size.xs,
-            color: tokens.color.textMuted,
             marginTop: tokens.space[1]
           }}
         >
@@ -98,15 +89,14 @@ export function PlaygroundCard({
 
       {/* Preview hint */}
       <div
+        className="playground-card__preview-hint"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: tokens.space[1],
           padding: `${tokens.space[1]} ${tokens.space[2]}`,
-          background: tokens.color.surface,
           borderRadius: tokens.radius.sm,
           fontSize: tokens.size.xs,
-          color: tokens.color.textMuted,
           flexShrink: 0
         }}
       >
