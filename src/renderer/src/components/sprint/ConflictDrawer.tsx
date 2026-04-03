@@ -5,6 +5,7 @@ import { Badge } from '../ui/Badge'
 import { toast } from '../../stores/toasts'
 import { repoColor } from '../../lib/format'
 import { parsePrUrl } from '../../../../shared/github'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import type { SprintTask } from '../../../../shared/types'
 
 type ConflictDrawerProps = {
@@ -25,6 +26,22 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
   const [branchInfo, setBranchInfo] = useState<Record<string, BranchInfo>>({})
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const fetchedRef = useRef<Set<string>>(new Set())
+  const drawerRef = useRef<HTMLDivElement>(null)
+
+  useFocusTrap(drawerRef, open)
+
+  // Escape key to close
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
 
   const fetchBranchInfo = useCallback((taskId: string, task: SprintTask) => {
     if (!task.pr_url || !task.pr_number) return
@@ -132,7 +149,12 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
   return (
     <>
       {open && <div className="conflict-drawer__overlay" onClick={onClose} />}
-      <div className={`conflict-drawer ${open ? 'conflict-drawer--open' : ''}`}>
+      <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        className={`conflict-drawer ${open ? 'conflict-drawer--open' : ''}`}
+      >
         <div className="conflict-drawer__header">
           <div className="conflict-drawer__header-left">
             <GitMerge size={14} />

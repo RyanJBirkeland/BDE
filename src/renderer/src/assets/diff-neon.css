@@ -120,6 +120,10 @@
   border-bottom: 1px solid var(--neon-cyan-border);
 }
 
+.diff-file--active {
+  background: var(--neon-cyan-border);
+}
+
 .diff-file__path {
   color: var(--neon-text);
 }

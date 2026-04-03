@@ -76,7 +76,7 @@ export function CredentialForm({
             {field.label}
             {!hasExisting[field.key] && (
               <span
-                style={{ color: 'var(--bde-color-danger, #ef4444)', marginLeft: 2 }}
+                style={{ color: 'var(--bde-danger)', marginLeft: 2 }}
                 aria-hidden="true"
               >
                 *

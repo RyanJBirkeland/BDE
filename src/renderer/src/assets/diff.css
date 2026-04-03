@@ -247,6 +247,10 @@
   z-index: 1;
 }
 
+.diff-file--active {
+  background: var(--bde-border);
+}
+
 .diff-file__path {
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);

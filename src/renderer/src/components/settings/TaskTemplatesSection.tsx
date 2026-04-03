@@ -10,6 +10,7 @@ import type { TaskTemplate } from '../../../../shared/types'
 export function TaskTemplatesSection(): React.JSX.Element {
   const [templates, setTemplates] = useState<TaskTemplate[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [pendingChanges, setPendingChanges] = useState<Map<number, TaskTemplate>>(new Map())
 
   useEffect(() => {
     window.api.templates.list().then((list) => {
@@ -18,26 +19,42 @@ export function TaskTemplatesSection(): React.JSX.Element {
     })
   }, [])
 
-  const saveTemplate = useCallback(async (template: TaskTemplate) => {
-    await window.api.templates.save(template)
-    const list = await window.api.templates.list()
-    setTemplates(list)
-  }, [])
+  // Debounced save: 500ms after last change
+  useEffect(() => {
+    if (pendingChanges.size === 0) return
+    const timer = setTimeout(async () => {
+      for (const [, template] of pendingChanges) {
+        await window.api.templates.save(template)
+      }
+      const list = await window.api.templates.list()
+      setTemplates(list)
+      setPendingChanges(new Map())
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [pendingChanges])
 
   const handleNameChange = useCallback(
     (index: number, name: string) => {
       const t = templates[index]
-      saveTemplate({ ...t, name })
+      const updated = { ...t, name }
+      // Update local state immediately
+      setTemplates((prev) => prev.map((item, i) => (i === index ? updated : item)))
+      // Mark as pending for debounced save
+      setPendingChanges((prev) => new Map(prev).set(index, updated))
     },
-    [templates, saveTemplate]
+    [templates]
   )
 
   const handlePrefixChange = useCallback(
     (index: number, promptPrefix: string) => {
       const t = templates[index]
-      saveTemplate({ ...t, promptPrefix })
+      const updated = { ...t, promptPrefix }
+      // Update local state immediately
+      setTemplates((prev) => prev.map((item, i) => (i === index ? updated : item)))
+      // Mark as pending for debounced save
+      setPendingChanges((prev) => new Map(prev).set(index, updated))
     },
-    [templates, saveTemplate]
+    [templates]
   )
 
   const handleAdd = useCallback(async () => {
