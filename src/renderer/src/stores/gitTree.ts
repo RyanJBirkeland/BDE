@@ -39,6 +39,7 @@ interface GitTreeState {
   commit: (cwd: string) => Promise<void>
   push: (cwd: string) => Promise<void>
   clearError: () => void
+  setLastError: (error: string) => void
   fetchBranches: (cwd: string) => Promise<void>
   setActiveRepo: (path: string) => void
   loadRepoPaths: () => Promise<void>
@@ -179,6 +180,10 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
 
   clearError: (): void => {
     set({ lastError: null })
+  },
+
+  setLastError: (error: string): void => {
+    set({ lastError: error })
   },
 
   fetchBranches: async (cwd: string): Promise<void> => {

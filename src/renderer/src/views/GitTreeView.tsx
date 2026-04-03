@@ -39,7 +39,8 @@ export default function GitTreeView(): React.ReactElement {
     fetchBranches,
     setActiveRepo,
     loadRepoPaths,
-    clearError
+    clearError,
+    setLastError
   } = useGitTreeStore.getState()
 
   const hasUncommittedChanges = staged.length > 0 || unstaged.length > 0 || untracked.length > 0
@@ -231,7 +232,14 @@ export default function GitTreeView(): React.ReactElement {
                 ? () => {
                     if (!activeRepo) return
                     const paths = unstaged.map((f) => f.path)
-                    window.api.gitStage(activeRepo, paths).then(() => fetchStatus(activeRepo))
+                    window.api
+                      .gitStage(activeRepo, paths)
+                      .then(() => fetchStatus(activeRepo))
+                      .catch((e) => {
+                        setLastError(
+                          `Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`
+                        )
+                      })
                   }
                 : undefined
             }
@@ -253,7 +261,14 @@ export default function GitTreeView(): React.ReactElement {
                 ? () => {
                     if (!activeRepo) return
                     const paths = untracked.map((f) => f.path)
-                    window.api.gitStage(activeRepo, paths).then(() => fetchStatus(activeRepo))
+                    window.api
+                      .gitStage(activeRepo, paths)
+                      .then(() => fetchStatus(activeRepo))
+                      .catch((e) => {
+                        setLastError(
+                          `Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`
+                        )
+                      })
                   }
                 : undefined
             }

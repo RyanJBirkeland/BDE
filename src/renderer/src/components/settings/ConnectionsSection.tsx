@@ -76,10 +76,15 @@ export function ConnectionsSection(): React.JSX.Element {
 
   const handleGhSave = useCallback(async () => {
     if (!ghToken) return
-    await window.api.settings.set('github.token', ghToken)
-    setHasExistingGhToken(true)
-    setGhToken('')
-    setGhDirty(false)
+    try {
+      await window.api.settings.set('github.token', ghToken)
+      setHasExistingGhToken(true)
+      setGhToken('')
+      setGhDirty(false)
+      toast.success('GitHub token saved')
+    } catch (e) {
+      toast.error(`Failed to save GitHub token: ${e instanceof Error ? e.message : 'Unknown error'}`)
+    }
   }, [ghToken])
 
   const handleGhTest = useCallback(async () => {

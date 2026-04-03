@@ -8,6 +8,12 @@ interface CommandBarProps {
   disabledReason?: string
 }
 
+const COMMANDS = [
+  { name: '/stop', description: 'Kill the running agent' },
+  { name: '/retry', description: 'Requeue the sprint task' },
+  { name: '/focus', description: 'Steer to focus on a topic' }
+]
+
 export function CommandBar({
   onSend,
   onCommand,
@@ -15,19 +21,25 @@ export function CommandBar({
   disabledReason
 }: CommandBarProps): React.JSX.Element {
   const [value, setValue] = useState('')
-  const [showAutocomplete, setShowAutocomplete] = useState(false)
+  const [autocompleteHidden, setAutocompleteHidden] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Show autocomplete when typing /
-  /* eslint-disable react-hooks/set-state-in-effect */
+  // Compute filtered commands synchronously to avoid stale state races
+  const filteredCommands =
+    value.startsWith('/') && value.length > 0
+      ? COMMANDS.filter((cmd) => cmd.name.toLowerCase().startsWith(value.toLowerCase()))
+      : []
+
+  // Show autocomplete when there are matches AND it hasn't been manually dismissed
+  const showAutocomplete = filteredCommands.length > 0 && !autocompleteHidden
+
+  // Reset hidden state when value changes (user is typing again)
   useEffect(() => {
-    if (value.startsWith('/') && value.length > 0) {
-      setShowAutocomplete(true)
-    } else {
-      setShowAutocomplete(false)
+    if (autocompleteHidden) {
+      setAutocompleteHidden(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = useCallback((): void => {
     const trimmed = value.trim()
@@ -44,7 +56,6 @@ export function CommandBar({
     }
 
     setValue('')
-    setShowAutocomplete(false)
   }, [value, disabled, onCommand, onSend])
 
   const handleKeyDown = useCallback(
@@ -67,12 +78,11 @@ export function CommandBar({
 
   const handleAutocompleteSelect = useCallback((command: string): void => {
     setValue(command + ' ')
-    setShowAutocomplete(false)
     inputRef.current?.focus()
   }, [])
 
   const handleAutocompleteClose = useCallback((): void => {
-    setShowAutocomplete(false)
+    setAutocompleteHidden(true)
     inputRef.current?.focus()
   }, [])
 
