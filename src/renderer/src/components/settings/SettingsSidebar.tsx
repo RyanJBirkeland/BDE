@@ -34,7 +34,7 @@ function groupByCategory(sections: SettingsSection[]): Array<{ category: string;
   return seen.map(category => ({ category, items: map[category] }))
 }
 
-export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSidebarProps) {
+export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSidebarProps): JSX.Element {
   const navRef = useRef<HTMLElement>(null)
   const groups = groupByCategory(sections)
 
@@ -43,7 +43,7 @@ export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSideba
     return Array.from(navRef.current.querySelectorAll<HTMLElement>('[role="link"]'))
   }
 
-  function handleKeyDown(e: React.KeyboardEvent, id: string) {
+  function handleKeyDown(e: React.KeyboardEvent, id: string): void {
     const items = getAllItems()
     const currentIndex = items.findIndex(el => el.dataset.id === id)
     if (currentIndex === -1) return

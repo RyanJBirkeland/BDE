@@ -26,7 +26,8 @@ describe('AppearanceSection', () => {
 
   it('renders section heading', () => {
     render(<AppearanceSection />)
-    expect(screen.getByText('Appearance')).toBeInTheDocument()
+    expect(screen.getByText('Theme')).toBeInTheDocument()
+    expect(screen.getByText('Accent Color')).toBeInTheDocument()
   })
 
   it('renders theme toggle buttons', () => {

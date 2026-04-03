@@ -22,7 +22,7 @@ import { AgentManagerSection } from '../AgentManagerSection'
 describe('AgentManagerSection', () => {
   it('renders section heading', () => {
     render(<AgentManagerSection />)
-    expect(screen.getByText('Agent Manager')).toBeInTheDocument()
+    expect(screen.getByText('Pipeline Configuration')).toBeInTheDocument()
   })
 
   it('renders config field labels', () => {
@@ -36,7 +36,7 @@ describe('AgentManagerSection', () => {
 
   it('renders restart hint', () => {
     render(<AgentManagerSection />)
-    expect(screen.getByText(/Changes require app restart/)).toBeInTheDocument()
+    expect(screen.getByText(/Changes take effect on next app restart/)).toBeInTheDocument()
   })
 
   it('renders save button (initially disabled)', () => {
