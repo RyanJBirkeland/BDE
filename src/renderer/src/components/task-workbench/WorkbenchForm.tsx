@@ -299,24 +299,28 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
 
       <div className="wb-form__group">
         <div className="wb-form__field">
-          <label className="wb-form__label">Title *</label>
+          <label htmlFor="wb-form-title" className="wb-form__label">
+            Title *
+          </label>
           <input
+            id="wb-form-title"
             ref={titleRef}
             type="text"
             value={title}
             onChange={(e) => setField('title', e.target.value)}
             placeholder='e.g. "Add recipe search to Feast onboarding"'
             className="wb-form__input"
-            aria-label="Task title"
           />
         </div>
         <div className="wb-form__field">
-          <label className="wb-form__label">Repo</label>
+          <label htmlFor="wb-form-repo" className="wb-form__label">
+            Repo
+          </label>
           <select
+            id="wb-form-repo"
             value={repo}
             onChange={(e) => setField('repo', e.target.value)}
             className="wb-form__select"
-            aria-label="Repository"
           >
             {REPO_OPTIONS.map((r) => (
               <option key={r.label} value={r.label}>
@@ -335,12 +339,14 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           <div className="wb-form__advanced">
             <div className="wb-form__field--row">
               <div className="wb-form__field wb-form__field--flex">
-                <label className="wb-form__label">Priority</label>
+                <label htmlFor="wb-form-priority" className="wb-form__label">
+                  Priority
+                </label>
                 <select
+                  id="wb-form-priority"
                   value={priority}
                   onChange={(e) => setField('priority', Number(e.target.value))}
                   className="wb-form__select"
-                  aria-label="Task priority"
                 >
                   {PRIORITY_OPTIONS.map((p) => (
                     <option key={p.value} value={p.value}>
@@ -370,7 +376,9 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       </div>
 
       <div className="wb-form__field">
-        <label className="wb-form__label">Spec</label>
+        <label htmlFor="wb-form-spec" className="wb-form__label">
+          Spec
+        </label>
         <SpecEditor
           onRequestGenerate={handleGenerate}
           onRequestResearch={handleResearch}

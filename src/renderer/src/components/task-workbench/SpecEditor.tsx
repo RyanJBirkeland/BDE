@@ -114,12 +114,12 @@ export function SpecEditor({
         </button>
       </div>
       <textarea
+        id="wb-form-spec"
         value={spec}
         onChange={(e) => setField('spec', e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Describe what the agent should do. The more specific, the better the results."
         className="wb-spec__textarea"
-        aria-label="Task specification"
       />
       <ConfirmModal {...confirmProps} />
     </div>

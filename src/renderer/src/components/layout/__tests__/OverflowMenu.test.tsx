@@ -161,7 +161,7 @@ describe('OverflowMenu', () => {
 
   it('has separator before customize button', () => {
     render(<OverflowMenu {...defaultProps} />)
-    const separator = document.querySelector('div[style*="border-top"]')
+    const separator = document.querySelector('.overflow-menu__separator')
     expect(separator).toBeInTheDocument()
   })
 

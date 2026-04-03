@@ -159,6 +159,11 @@
   color: var(--neon-text);
 }
 
+.wb-form__toggle:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .wb-form__advanced {
   margin-top: 8px;
   display: flex;
@@ -215,6 +220,11 @@
   background: var(--neon-surface-dim);
   border-color: var(--bde-border-hover);
   color: var(--neon-text);
+}
+
+.wb-spec__btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .wb-spec__btn--primary {
@@ -295,6 +305,11 @@
   font-size: 12px;
   padding: 0;
   font-family: inherit;
+}
+
+.wb-checks__summary:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .wb-checks__icons {
@@ -445,6 +460,11 @@
   border-color: var(--neon-purple-border);
 }
 
+.wb-actions__btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 /* ── Copilot ── */
 .wb-copilot {
   display: flex;
@@ -485,6 +505,11 @@
 
 .wb-copilot__close:hover {
   color: var(--neon-text);
+}
+
+.wb-copilot__close:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .wb-copilot__messages {
@@ -559,6 +584,11 @@
   box-shadow: var(--neon-cyan-glow);
 }
 
+.wb-copilot__insert-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .wb-copilot__loading {
   align-self: flex-start;
   padding: 8px 12px;
@@ -590,6 +620,11 @@
 .wb-copilot__cancel-btn:hover {
   background: var(--neon-surface-dim);
   border-color: var(--bde-border-hover);
+}
+
+.wb-copilot__cancel-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .wb-copilot__input-row {
@@ -653,4 +688,9 @@
   background: var(--neon-surface-dim);
   color: var(--neon-text-muted);
   cursor: not-allowed;
+}
+
+.wb-copilot__send-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }

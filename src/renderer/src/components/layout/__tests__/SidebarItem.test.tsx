@@ -229,24 +229,20 @@ describe('SidebarItem', () => {
       expect(overlay).toBeInTheDocument()
     })
 
-    it('renders menu with higher z-index than overlay', () => {
+    it('renders menu with CSS class', () => {
       render(<SidebarItem {...defaultProps} />)
       fireEvent.contextMenu(screen.getByLabelText('Dashboard'))
 
       const menu = screen.getByRole('menu')
-      expect(menu).toHaveStyle({ zIndex: '1000' })
+      expect(menu).toHaveClass('sidebar-context-menu')
     })
 
-    it('applies hover styles to menu items', () => {
+    it('applies CSS classes to menu items', () => {
       render(<SidebarItem {...defaultProps} />)
       fireEvent.contextMenu(screen.getByLabelText('Dashboard'))
 
       const menuItem = screen.getByText('Open to Right')
-      fireEvent.mouseEnter(menuItem)
-      expect(menuItem.style.color).toBe('rgb(255, 255, 255)')
-
-      fireEvent.mouseLeave(menuItem)
-      expect(menuItem.style.color).toBe('rgba(255, 255, 255, 0.6)')
+      expect(menuItem).toHaveClass('sidebar-context-menu__item')
     })
   })
 })

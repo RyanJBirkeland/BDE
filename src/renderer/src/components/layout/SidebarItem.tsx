@@ -171,51 +171,25 @@ export function SidebarItem({
           />
           <div
             ref={menuRef}
+            className="sidebar-context-menu"
             role="menu"
             aria-labelledby={triggerId}
             onKeyDown={handleMenuKeyDown}
             onBlur={handleMenuBlur}
             style={{
-              position: 'fixed',
               top: contextMenu.y,
-              left: contextMenu.x,
-              zIndex: 1000,
-              backgroundColor: 'rgba(10, 0, 21, 0.9)',
-              border: '1px solid var(--neon-purple-border)',
-              borderRadius: '8px',
-              backdropFilter: 'blur(16px) saturate(180%)',
-              padding: '4px 0',
-              minWidth: '200px'
+              left: contextMenu.x
             }}
           >
             {MENU_ITEMS.map(({ label: menuLabel, action }) => (
               <button
                 key={action}
+                className="sidebar-context-menu__item"
                 role="menuitem"
                 tabIndex={-1}
                 onClick={(e) => {
                   e.stopPropagation()
                   handleMenuAction(action)
-                }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '8px 12px',
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  transition: 'background 100ms ease, color 100ms ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--neon-purple-surface)'
-                  e.currentTarget.style.color = '#fff'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'none'
-                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.6)'
                 }}
               >
                 {menuLabel}

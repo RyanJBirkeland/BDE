@@ -212,8 +212,8 @@
 
 .dashboard-card-error__message {
   font-size: var(--bde-size-sm);
-  /* #ff5a7a achieves ~4.8:1 contrast on #0a0015 (WCAG AA) vs --neon-red at ~3.5:1 */
-  color: #ff5a7a;
+  /* --bde-danger achieves WCAG AA contrast on dark backgrounds */
+  color: var(--bde-danger);
   text-align: center;
 }
 

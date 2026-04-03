@@ -38,6 +38,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
           <button
             className={`pipeline-filter-bar__chip${!repoFilter ? ' pipeline-filter-bar__chip--active' : ''}`}
             onClick={() => setRepoFilter(null)}
+            aria-pressed={!repoFilter}
           >
             All
           </button>
@@ -46,6 +47,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
               key={repo}
               className={`pipeline-filter-bar__chip${repoFilter === repo ? ' pipeline-filter-bar__chip--active' : ''}`}
               onClick={() => setRepoFilter(repoFilter === repo ? null : repo)}
+              aria-pressed={repoFilter === repo}
             >
               {repo}
             </button>

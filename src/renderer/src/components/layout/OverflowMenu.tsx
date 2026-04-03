@@ -100,16 +100,7 @@ export function OverflowMenu({
     <div ref={menuRef} className="overflow-menu" style={style}>
       <GlassPanel accent="purple" style={{ padding: '8px' }}>
         {unpinnedViews.length === 0 ? (
-          <div
-            style={{
-              padding: '12px',
-              fontSize: '11px',
-              color: 'rgba(255, 255, 255, 0.4)',
-              textAlign: 'center'
-            }}
-          >
-            All views are pinned
-          </div>
+          <div className="overflow-menu__empty">All views are pinned</div>
         ) : (
           <div role="menu">
             {unpinnedViews.map((view, index) => {
@@ -147,26 +138,8 @@ export function OverflowMenu({
           </div>
         )}
 
-        <div
-          style={{
-            marginTop: '8px',
-            paddingTop: '8px',
-            borderTop: '1px solid rgba(191, 90, 242, 0.2)'
-          }}
-        >
-          <button
-            className="overflow-menu__item"
-            onClick={handleCustomizeClick}
-            style={{
-              width: '100%',
-              textAlign: 'left',
-              border: 'none',
-              background: 'none',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontStyle: 'italic'
-            }}
-          >
+        <div className="overflow-menu__separator">
+          <button className="overflow-menu__customize-btn" onClick={handleCustomizeClick}>
             <Settings size={14} strokeWidth={1.5} />
             <span>Customize sidebar...</span>
           </button>

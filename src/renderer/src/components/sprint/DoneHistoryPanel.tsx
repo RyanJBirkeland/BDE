@@ -76,28 +76,20 @@ export function DoneHistoryPanel({
             ✕
           </button>
         </div>
-        <div className="done-history__list" role="list">
+        <div className="done-history__list">
           {tasks.map((task) => (
-            <div
+            <button
               key={task.id}
               className="done-history__item"
               onClick={() => onTaskClick(task.id)}
-              role="listitem"
-              tabIndex={0}
               aria-label={task.title}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  onTaskClick(task.id)
-                }
-              }}
             >
               <span className="done-history__item-title">{task.title}</span>
               <span className="task-pill__badge done-history__badge">{task.repo}</span>
               <span className="done-history__item-time">
                 {task.completed_at ? new Date(task.completed_at).toLocaleDateString() : ''}
               </span>
-            </div>
+            </button>
           ))}
           {tasks.length === 0 && <div className="done-history__empty">No completed tasks yet</div>}
         </div>

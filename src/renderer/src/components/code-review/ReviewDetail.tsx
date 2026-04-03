@@ -2,6 +2,7 @@ import { useCodeReviewStore, type ReviewTab } from '../../stores/codeReview'
 import { ChangesTab } from './ChangesTab'
 import { CommitsTab } from './CommitsTab'
 import { ConversationTab } from './ConversationTab'
+import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 
 const TABS: { key: ReviewTab; label: string }[] = [
   { key: 'changes', label: 'Changes' },
@@ -14,6 +15,13 @@ export function ReviewDetail(): React.JSX.Element {
   const activeTab = useCodeReviewStore((s) => s.activeTab)
   const setActiveTab = useCodeReviewStore((s) => s.setActiveTab)
 
+  const activeIndex = TABS.findIndex((tab) => tab.key === activeTab)
+  const { getTabProps } = useRovingTabIndex({
+    count: TABS.length,
+    activeIndex,
+    onSelect: (index) => setActiveTab(TABS[index].key)
+  })
+
   if (!selectedTaskId) {
     return <div className="cr-detail cr-detail--empty">Select a task to review</div>
   }
@@ -21,13 +29,14 @@ export function ReviewDetail(): React.JSX.Element {
   return (
     <div className="cr-detail">
       <div className="cr-detail__tabs" role="tablist">
-        {TABS.map((tab) => (
+        {TABS.map((tab, index) => (
           <button
             key={tab.key}
             role="tab"
             aria-selected={activeTab === tab.key}
             className={`cr-detail__tab${activeTab === tab.key ? ' cr-detail__tab--active' : ''}`}
             onClick={() => setActiveTab(tab.key)}
+            {...getTabProps(index)}
           >
             {tab.label}
           </button>

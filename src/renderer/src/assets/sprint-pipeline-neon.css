@@ -1115,14 +1115,24 @@
   cursor: pointer;
   transition: background 100ms ease;
   border-bottom: 1px solid var(--bde-border);
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
 }
 
 .done-history__item:last-child {
   border-bottom: none;
 }
 
-.done-history__item:hover {
+.done-history__item:hover,
+.done-history__item:focus-visible {
   background: var(--neon-surface-dim);
+  outline: none;
 }
 
 .done-history__item-title {
