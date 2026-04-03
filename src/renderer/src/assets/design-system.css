@@ -18,6 +18,11 @@
   outline: none;
 }
 
+.bde-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .bde-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -322,6 +327,11 @@
   font-size: var(--bde-size-md);
 }
 
+.bde-input__field:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .bde-input--has-prefix .bde-input__field {
   padding-left: var(--bde-space-1);
 }
@@ -359,6 +369,11 @@
 
 .bde-textarea:focus {
   border-color: var(--bde-accent);
+}
+
+.bde-textarea:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .bde-textarea::placeholder {
@@ -900,6 +915,11 @@
 
 .prompt-modal__input:focus {
   border-color: var(--bde-accent);
+}
+
+.prompt-modal__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .prompt-modal__actions {

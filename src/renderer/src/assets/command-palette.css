@@ -36,6 +36,11 @@
   outline: none;
 }
 
+.command-palette__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .command-palette__input::placeholder {
   color: var(--bde-text-muted);
 }

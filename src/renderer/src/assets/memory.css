@@ -98,6 +98,11 @@
   border-color: var(--bde-accent);
 }
 
+.memory-sidebar__search-input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .memory-sidebar__search-input::placeholder {
   color: var(--text-secondary);
 }

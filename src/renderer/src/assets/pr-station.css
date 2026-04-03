@@ -856,6 +856,11 @@
   border-color: var(--bde-accent);
 }
 
+.review-dialog__body:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .review-dialog__events {
   display: flex;
   flex-direction: column;

@@ -109,6 +109,11 @@
   box-shadow: var(--neon-cyan-glow);
 }
 
+.wb-form__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .wb-form__select {
   padding: 10px 12px;
   background: var(--bde-overlay);
@@ -126,6 +131,11 @@
 .wb-form__select:focus {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-form__select:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .wb-form__toggle {
@@ -242,6 +252,11 @@
 .wb-spec__textarea:focus {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-spec__textarea:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 /* ── Readiness Checks ── */
@@ -574,6 +589,11 @@
 .wb-copilot__input:focus {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-copilot__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .wb-copilot__send-btn {
