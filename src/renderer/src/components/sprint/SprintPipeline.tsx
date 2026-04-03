@@ -100,6 +100,7 @@ export function SprintPipeline(): React.JSX.Element {
   // --- Local UI state ---
   const [statusAnnouncement, setStatusAnnouncement] = useState('')
   const prevTasksRef = useRef<Map<string, string>>(new Map())
+  const announcementTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Filter + partition tasks
   const filteredTasks = useMemo(() => {
@@ -253,6 +254,13 @@ export function SprintPipeline(): React.JSX.Element {
     }
   }, [tasks, selectedTaskId, partition, setSelectedTaskId])
 
+  // Clean up announcement timer on unmount
+  useEffect(() => {
+    return () => {
+      if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current)
+    }
+  }, [])
+
   // Track status changes for aria-live announcements
   useEffect(() => {
     const prev = prevTasksRef.current
@@ -264,22 +272,11 @@ export function SprintPipeline(): React.JSX.Element {
       if (prevStatus && prevStatus !== status) {
         const task = tasks.find((t) => t.id === id)
         if (task) {
-          const statusLabel =
-            status === 'queued'
-              ? 'queued'
-              : status === 'active'
-                ? 'active'
-                : status === 'blocked'
-                  ? 'blocked'
-                  : status === 'review'
-                    ? 'review'
-                    : status === 'done'
-                      ? 'done'
-                      : status
           // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: announcing external state changes for a11y
-          setStatusAnnouncement(`Task "${task.title}" moved to ${statusLabel}`)
+          setStatusAnnouncement(`Task "${task.title}" moved to ${status}`)
           // Clear after 5 seconds to avoid stale announcements
-          setTimeout(() => setStatusAnnouncement(''), 5000)
+          if (announcementTimerRef.current) clearTimeout(announcementTimerRef.current)
+          announcementTimerRef.current = setTimeout(() => setStatusAnnouncement(''), 5000)
           break // Only announce one change per update
         }
       }
@@ -356,18 +353,7 @@ export function SprintPipeline(): React.JSX.Element {
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
       {/* Visually hidden live region for status announcements */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-        style={{
-          position: 'absolute',
-          left: '-10000px',
-          width: '1px',
-          height: '1px',
-          overflow: 'hidden'
-        }}
-      >
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
         {statusAnnouncement}
       </div>
       <header className="sprint-pipeline__header">
