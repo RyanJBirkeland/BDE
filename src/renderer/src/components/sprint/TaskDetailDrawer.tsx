@@ -22,6 +22,7 @@ export interface TaskDetailDrawerProps {
   onViewAgents: (agentId: string) => void
   onUnblock?: (task: SprintTask) => void
   onRetry?: (task: SprintTask) => void
+  onReviewChanges?: (task: SprintTask) => void
 }
 
 function formatTimestamp(iso: string): string {
@@ -46,7 +47,8 @@ export function TaskDetailDrawer({
   onEdit,
   onViewAgents,
   onUnblock,
-  onRetry
+  onRetry,
+  onReviewChanges
 }: TaskDetailDrawerProps): React.JSX.Element {
   const [elapsed, setElapsed] = useState('')
   const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
@@ -228,6 +230,16 @@ export function TaskDetailDrawer({
             onClick={() => onViewAgents(task.agent_run_id!)}
           >
             ● Running — View in Agents →
+          </button>
+        )}
+
+        {/* Review Changes CTA */}
+        {task.status === 'review' && onReviewChanges && (
+          <button
+            className="task-drawer__btn task-drawer__btn--primary"
+            onClick={() => onReviewChanges(task)}
+          >
+            Review Changes →
           </button>
         )}
 

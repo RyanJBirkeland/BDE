@@ -27,6 +27,7 @@ import { PipelineFilterBar } from './PipelineFilterBar'
 import { PipelineHeader } from './PipelineHeader'
 import { PipelineOverlays } from './PipelineOverlays'
 import { NeonCard } from '../neon'
+import { useCodeReviewStore } from '../../stores/codeReview'
 import type { SprintTask } from '../../../../shared/types'
 
 import '../../assets/sprint-pipeline-neon.css'
@@ -288,6 +289,14 @@ export function SprintPipeline(): React.JSX.Element {
     }
   }, [])
 
+  const handleReviewChanges = useCallback(
+    (task: SprintTask) => {
+      useCodeReviewStore.getState().selectTask(task.id)
+      setView('code-review')
+    },
+    [setView]
+  )
+
   // Stats
   const headerStats = useMemo(
     () => [
@@ -447,6 +456,7 @@ export function SprintPipeline(): React.JSX.Element {
               onViewAgents={() => setView('agents')}
               onUnblock={handleUnblock}
               onRetry={handleRetry}
+              onReviewChanges={handleReviewChanges}
             />
           )}
         </div>
