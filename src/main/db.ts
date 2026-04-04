@@ -634,6 +634,16 @@ export const migrations: Migration[] = [
     }
   },
   {
+    version: 23,
+    description: 'Add next_eligible_at for retry backoff',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('next_eligible_at')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN next_eligible_at TEXT')
+      }
+    }
+  },
+  {
     version: 22,
     description: 'Add session_id column to sprint_tasks and create review_comments table',
     up: (db) => {

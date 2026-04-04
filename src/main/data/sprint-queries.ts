@@ -69,7 +69,8 @@ export const UPDATE_ALLOWLIST = new Set([
   'max_runtime_ms',
   'spec_type',
   'worktree_path',
-  'session_id'
+  'session_id',
+  'next_eligible_at'
 ])
 
 export interface QueueStats {
@@ -632,7 +633,7 @@ export function getQueuedTasks(limit: number): SprintTask[] {
     const rows = getDb()
       .prepare(
         `SELECT * FROM sprint_tasks
-         WHERE status = 'queued' AND claimed_by IS NULL
+         WHERE status = 'queued' AND claimed_by IS NULL AND (next_eligible_at IS NULL OR next_eligible_at <= strftime('%Y-%m-%dT%H:%M:%fZ','now'))
          ORDER BY priority ASC, created_at ASC
          LIMIT ?`
       )

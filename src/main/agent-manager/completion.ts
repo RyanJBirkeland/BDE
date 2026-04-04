@@ -387,10 +387,14 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
 
   try {
     if (!isTerminal) {
+      // Exponential backoff: 30s, 60s, 120s, capped at 5 minutes
+      const backoffMs = Math.min(300000, 30000 * Math.pow(2, retryCount))
+      const nextEligibleAt = new Date(Date.now() + backoffMs).toISOString()
       repo.updateTask(taskId, {
         status: 'queued',
         retry_count: retryCount + 1,
         claimed_by: null,
+        next_eligible_at: nextEligibleAt,
         ...(notes ? { notes } : {})
       })
       return false // not terminal

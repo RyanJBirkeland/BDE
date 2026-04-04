@@ -65,6 +65,8 @@ export interface SprintTask {
   spec_type?: string | null
   needs_review?: boolean
   worktree_path?: string | null
+  session_id?: string | null
+  next_eligible_at?: string | null
   updated_at: string
   created_at: string
 }
