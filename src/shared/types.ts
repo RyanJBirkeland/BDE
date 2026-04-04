@@ -384,7 +384,7 @@ export interface ReviseRequest {
   repoPath: string
 }
 
-// --- Batch Operation Types (relocated from queue-api-contract.ts) ---
+// --- Batch Operation Types ---
 
 export interface BatchOperation {
   op: 'update' | 'delete'
@@ -399,7 +399,7 @@ export interface BatchResult {
   error?: string
 }
 
-// Field allowlist for general task updates (relocated from queue-api-contract.ts)
+// Field allowlist for general task updates
 export const GENERAL_PATCH_FIELDS = new Set([
   'title',
   'prompt',
@@ -412,7 +412,7 @@ export const GENERAL_PATCH_FIELDS = new Set([
   'maxRuntimeMs'
 ])
 
-// --- Task Output Event Types (relocated from queue-api-contract.ts) ---
+// --- Task Output Event Types ---
 
 export type TaskOutputEventType =
   | 'agent:started'

@@ -29,11 +29,10 @@ vi.mock('../../data/sprint-queries', () => ({
   getHealthCheckTasks: vi.fn()
 }))
 
-// Mock sprint-listeners (SSE broadcaster)
+// Mock sprint-listeners
 vi.mock('../sprint-listeners', () => ({
   notifySprintMutation: vi.fn(),
-  onSprintMutation: vi.fn(),
-  sseBroadcaster: { broadcast: vi.fn() }
+  onSprintMutation: vi.fn()
 }))
 
 // Mock sprint-spec
