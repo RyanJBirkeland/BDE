@@ -1,6 +1,8 @@
 import { useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { TaskPill } from './TaskPill'
+import { TaskRow } from './TaskRow'
+import { useSprintUI } from '../../stores/sprintUI'
 import type { SprintTask } from '../../../../shared/types'
 
 interface PipelineStageProps {
@@ -24,6 +26,7 @@ export function PipelineStage({
 }: PipelineStageProps): React.JSX.Element {
   const empty = tasks.length === 0 && !doneFooter
   const cardsRef = useRef<HTMLDivElement>(null)
+  const pipelineDensity = useSprintUI((s) => s.pipelineDensity)
 
   const handleStageKeyDown = (e: React.KeyboardEvent): void => {
     const cards = cardsRef.current?.querySelectorAll(
@@ -76,14 +79,23 @@ export function PipelineStage({
       {!empty && (
         <div className="pipeline-stage__cards" ref={cardsRef} onKeyDown={handleStageKeyDown}>
           <AnimatePresence mode="popLayout">
-            {tasks.map((task) => (
-              <TaskPill
-                key={task.id}
-                task={task}
-                selected={task.id === selectedTaskId}
-                onClick={onTaskClick}
-              />
-            ))}
+            {tasks.map((task) =>
+              pipelineDensity === 'compact' ? (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  selected={task.id === selectedTaskId}
+                  onClick={onTaskClick}
+                />
+              ) : (
+                <TaskPill
+                  key={task.id}
+                  task={task}
+                  selected={task.id === selectedTaskId}
+                  onClick={onTaskClick}
+                />
+              )
+            )}
           </AnimatePresence>
           {doneFooter}
         </div>

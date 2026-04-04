@@ -1,4 +1,5 @@
-import { GitMerge, HeartPulse } from 'lucide-react'
+import { GitMerge, HeartPulse, LayoutGrid, List } from 'lucide-react'
+import { useSprintUI } from '../../stores/sprintUI'
 import type { SprintTask } from '../../../../shared/types'
 
 interface StatBadge {
@@ -24,6 +25,9 @@ export function PipelineHeader({
   onConflictClick,
   onHealthCheckClick
 }: PipelineHeaderProps): React.JSX.Element {
+  const pipelineDensity = useSprintUI((s) => s.pipelineDensity)
+  const setPipelineDensity = useSprintUI((s) => s.setPipelineDensity)
+
   return (
     <header className="sprint-pipeline__header">
       <h1 className="sprint-pipeline__title">Task Pipeline</h1>
@@ -43,6 +47,14 @@ export function PipelineHeader({
           </span>
         ))}
       </div>
+      <button
+        className="sprint-pipeline__density-toggle"
+        onClick={() => setPipelineDensity(pipelineDensity === 'card' ? 'compact' : 'card')}
+        title={pipelineDensity === 'card' ? 'Switch to compact view' : 'Switch to card view'}
+        aria-label={pipelineDensity === 'card' ? 'Switch to compact view' : 'Switch to card view'}
+      >
+        {pipelineDensity === 'card' ? <List size={14} /> : <LayoutGrid size={14} />}
+      </button>
       {conflictingTasks.length > 0 && (
         <button
           className="sprint-pipeline__badge sprint-pipeline__badge--danger"

@@ -10,6 +10,8 @@ export type StatusFilter =
   | 'done'
   | 'failed'
 
+export type PipelineDensity = 'card' | 'compact'
+
 interface SprintUIState {
   // --- State ---
   selectedTaskId: string | null
@@ -25,6 +27,7 @@ interface SprintUIState {
   conflictDrawerOpen: boolean
   healthCheckDrawerOpen: boolean
   quickCreateOpen: boolean
+  pipelineDensity: PipelineDensity
 
   // --- Actions ---
   setSelectedTaskId: (id: string | null) => void
@@ -45,6 +48,7 @@ interface SprintUIState {
   removeGeneratingId: (id: string) => void
   clearTaskIfSelected: (taskId: string) => void
   clearSelection: () => void
+  setPipelineDensity: (density: PipelineDensity) => void
 }
 
 export const useSprintUI = create<SprintUIState>((set, get) => ({
@@ -61,6 +65,7 @@ export const useSprintUI = create<SprintUIState>((set, get) => ({
   conflictDrawerOpen: false,
   healthCheckDrawerOpen: false,
   quickCreateOpen: false,
+  pipelineDensity: 'card',
 
   setSelectedTaskId: (id): void => {
     const current = get().selectedTaskId
@@ -99,5 +104,9 @@ export const useSprintUI = create<SprintUIState>((set, get) => ({
 
   clearSelection: (): void => {
     // No-op for now, kept for TaskPill compatibility
+  },
+
+  setPipelineDensity: (density): void => {
+    set({ pipelineDensity: density })
   }
 }))

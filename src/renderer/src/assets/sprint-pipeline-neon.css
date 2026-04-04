@@ -703,6 +703,112 @@
   flex-shrink: 0;
 }
 
+/* ── Density Toggle ── */
+.sprint-pipeline__density-toggle {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--neon-text-dim);
+  transition: all 150ms ease;
+  margin-left: auto;
+}
+
+.sprint-pipeline__density-toggle:hover {
+  background: var(--neon-surface-subtle);
+  color: var(--neon-cyan);
+}
+
+.sprint-pipeline__density-toggle:active {
+  transform: scale(0.95);
+}
+
+/* ── Task Row (Compact View) ── */
+.task-row {
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--bde-border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 300px;
+  margin-bottom: 2px;
+}
+
+.task-row:hover {
+  background: var(--neon-surface-subtle);
+  border-color: var(--bde-border-hover);
+}
+
+.task-row--selected {
+  border-color: var(--neon-cyan-border);
+  background: var(--neon-cyan-surface);
+  box-shadow: 0 0 8px var(--neon-cyan-glow);
+}
+
+.task-row__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.task-row__title {
+  font-size: var(--font-xs, 11px);
+  color: var(--neon-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.task-row__repo {
+  font-size: var(--font-2xs, 10px);
+  color: var(--neon-cyan);
+  background: var(--neon-cyan-surface);
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.task-row__time {
+  font-size: var(--font-2xs, 10px);
+  color: var(--neon-text-dim);
+  flex-shrink: 0;
+}
+
+.task-row__priority {
+  font-size: var(--font-2xs, 10px);
+  padding: 1px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.task-row__priority[data-priority='1'] {
+  color: var(--neon-red);
+  background: var(--neon-red-surface);
+}
+
+.task-row__priority[data-priority='2'] {
+  color: var(--neon-orange);
+  background: var(--neon-orange-surface);
+}
+
+.task-row__priority[data-priority='3'] {
+  color: var(--neon-yellow);
+  background: var(--neon-yellow-surface);
+}
+
 /* ── Detail Drawer ── */
 .task-drawer {
   flex-shrink: 0;

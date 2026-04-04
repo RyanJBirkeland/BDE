@@ -1019,6 +1019,9 @@ export function registerReviewHandlers(): void {
 
     return { success: true, pushed }
   })
+||||||| 4bec9e91
+||||||| 6807c806
+||||||| 5faba97c
 
   // review:shipIt — merge locally + push to origin + mark done in one action
   safeHandle('review:shipIt', async (_e, payload) => {

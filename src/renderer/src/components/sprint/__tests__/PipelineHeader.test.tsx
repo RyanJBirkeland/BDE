@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PipelineHeader } from '../PipelineHeader'
+import { useSprintUI } from '../../../stores/sprintUI'
 import type { SprintTask } from '../../../../../shared/types'
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -40,6 +41,11 @@ describe('PipelineHeader', () => {
     { label: 'failed', count: 0, filter: 'failed' as const },
     { label: 'done', count: 3, filter: 'done' as const }
   ]
+
+  beforeEach(() => {
+    // Reset store to default state
+    useSprintUI.getState().setPipelineDensity('card')
+  })
 
   it('renders title "Task Pipeline"', () => {
     render(
@@ -232,5 +238,87 @@ describe('PipelineHeader', () => {
     )
     expect(screen.getByLabelText('1 merge conflict')).toBeInTheDocument()
     expect(screen.getByLabelText('1 stuck task')).toBeInTheDocument()
+  })
+
+  it('renders density toggle button', () => {
+    render(
+      <PipelineHeader
+        stats={defaultStats}
+        conflictingTasks={[]}
+        visibleStuckTasks={[]}
+        onFilterClick={vi.fn()}
+        onConflictClick={vi.fn()}
+        onHealthCheckClick={vi.fn()}
+      />
+    )
+    expect(screen.getByLabelText('Switch to compact view')).toBeInTheDocument()
+  })
+
+  it('toggles density from card to compact when clicked', () => {
+    render(
+      <PipelineHeader
+        stats={defaultStats}
+        conflictingTasks={[]}
+        visibleStuckTasks={[]}
+        onFilterClick={vi.fn()}
+        onConflictClick={vi.fn()}
+        onHealthCheckClick={vi.fn()}
+      />
+    )
+    const toggleButton = screen.getByLabelText('Switch to compact view')
+    expect(useSprintUI.getState().pipelineDensity).toBe('card')
+
+    fireEvent.click(toggleButton)
+    expect(useSprintUI.getState().pipelineDensity).toBe('compact')
+  })
+
+  it('toggles density from compact to card when clicked', () => {
+    useSprintUI.getState().setPipelineDensity('compact')
+    render(
+      <PipelineHeader
+        stats={defaultStats}
+        conflictingTasks={[]}
+        visibleStuckTasks={[]}
+        onFilterClick={vi.fn()}
+        onConflictClick={vi.fn()}
+        onHealthCheckClick={vi.fn()}
+      />
+    )
+    const toggleButton = screen.getByLabelText('Switch to card view')
+    expect(useSprintUI.getState().pipelineDensity).toBe('compact')
+
+    fireEvent.click(toggleButton)
+    expect(useSprintUI.getState().pipelineDensity).toBe('card')
+  })
+
+  it('shows correct icon and label for card density', () => {
+    render(
+      <PipelineHeader
+        stats={defaultStats}
+        conflictingTasks={[]}
+        visibleStuckTasks={[]}
+        onFilterClick={vi.fn()}
+        onConflictClick={vi.fn()}
+        onHealthCheckClick={vi.fn()}
+      />
+    )
+    const toggleButton = screen.getByLabelText('Switch to compact view')
+    expect(toggleButton).toHaveAttribute('title', 'Switch to compact view')
+  })
+
+  it('shows correct icon and label for compact density', () => {
+    useSprintUI.getState().setPipelineDensity('compact')
+    render(
+      <PipelineHeader
+        stats={defaultStats}
+        conflictingTasks={[]}
+        visibleStuckTasks={[]}
+        onFilterClick={vi.fn()}
+        onConflictClick={vi.fn()}
+        onHealthCheckClick={vi.fn()}
+      />
+    )
+    const toggleButton = screen.getByLabelText('Switch to card view')
+    expect(toggleButton).toHaveAttribute('title', 'Switch to card view')
   })
 })

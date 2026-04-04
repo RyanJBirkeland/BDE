@@ -14,7 +14,7 @@ import { readFile, stat } from 'node:fs/promises'
 import { extname, basename, join } from 'node:path'
 import { broadcast } from '../broadcast'
 import { mapRawMessage, emitAgentEvent } from '../agent-event-mapper'
-import type { AgentEvent } from '../../shared/types'
+import type { AgentEvent, TaskDependency } from '../../shared/types'
 import { buildAgentPrompt } from './prompt-composer'
 import DOMPurify from 'dompurify'
 import { JSDOM } from 'jsdom'
@@ -38,6 +38,10 @@ export interface RunAgentTask {
   max_runtime_ms?: number | null
   model?: string | null
   depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
+||||||| 4bec9e91
+||||||| 6807c806
+  depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
+  depends_on?: TaskDependency[] | null
 }
 
 export interface RunAgentDeps {

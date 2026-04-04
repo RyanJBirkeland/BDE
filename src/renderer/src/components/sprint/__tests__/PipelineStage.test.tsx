@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { useSprintUI } from '../../../stores/sprintUI'
 import type { SprintTask } from '../../../../../shared/types'
 
 vi.mock('framer-motion', () => ({
@@ -39,6 +40,11 @@ const makeTask = (overrides: Partial<SprintTask> = {}): SprintTask => ({
 })
 
 describe('PipelineStage', () => {
+  beforeEach(() => {
+    // Reset store to default state
+    useSprintUI.getState().setPipelineDensity('card')
+  })
+
   it('renders the stage label', async () => {
     const { PipelineStage } = await import('../PipelineStage')
     render(
@@ -367,5 +373,62 @@ describe('PipelineStage', () => {
     pills[1].focus()
     fireEvent.keyDown(pills[1], { key: 'ArrowDown' })
     expect(pills[1]).toHaveFocus()
+  })
+
+  it('renders TaskPill when density is card', async () => {
+    useSprintUI.getState().setPipelineDensity('card')
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [makeTask({ id: 'task-1', title: 'Test task' })]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="1 task"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    expect(screen.getByTestId('task-pill')).toBeInTheDocument()
+    expect(screen.queryByTestId('task-row')).not.toBeInTheDocument()
+  })
+
+  it('renders TaskRow when density is compact', async () => {
+    useSprintUI.getState().setPipelineDensity('compact')
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [makeTask({ id: 'task-1', title: 'Test task' })]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="1 task"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    expect(screen.getByTestId('task-row')).toBeInTheDocument()
+    expect(screen.queryByTestId('task-pill')).not.toBeInTheDocument()
+  })
+
+  it('renders correct number of TaskRows when density is compact', async () => {
+    useSprintUI.getState().setPipelineDensity('compact')
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [
+      makeTask({ id: 'task-1', title: 'First task' }),
+      makeTask({ id: 'task-2', title: 'Second task' }),
+      makeTask({ id: 'task-3', title: 'Third task' })
+    ]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="3 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    expect(screen.getAllByTestId('task-row')).toHaveLength(3)
   })
 })
