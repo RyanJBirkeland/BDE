@@ -26,7 +26,7 @@ import type {
   ReviseRequest
 } from './types'
 import type { AgentEvent } from './types'
-import type { BatchOperation, BatchResult } from './queue-api-contract'
+import type { BatchOperation, BatchResult } from './types'
 
 /** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
 export interface GitHubFetchInit {

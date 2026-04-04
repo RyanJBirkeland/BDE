@@ -43,23 +43,6 @@ await window.api.sprint.create({
 2. Create child tasks with depends_on → parent
 3. Soft deps between siblings if order doesn't matter
 
-## Queue API Alternative
-http://localhost:18790/queue/tasks
-- POST /queue/tasks — create
-- PATCH /queue/tasks/:id/dependencies — update deps
-- Auth: Bearer token from Settings > Agent Manager
-
-\`\`\`bash
-# Example: Create via Queue API
-curl -X POST http://localhost:18790/queue/tasks \\
-  -H "Authorization: Bearer \${BDE_API_KEY}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "title": "Task title",
-    "repo": "bde",
-    "spec": "## Goal\\n..."
-  }'
-\`\`\`
 `,
-  capabilities: ['ipc-sprint-create', 'queue-api-call']
+  capabilities: ['ipc-sprint-create']
 }

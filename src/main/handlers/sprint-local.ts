@@ -379,7 +379,7 @@ export function registerSprintLocalHandlers(): void {
       _e,
       operations: Array<{ op: 'update' | 'delete'; id: string; patch?: Record<string, unknown> }>
     ) => {
-      const { GENERAL_PATCH_FIELDS } = await import('../../shared/queue-api-contract')
+      const { GENERAL_PATCH_FIELDS } = await import('../../shared/types')
       const results: Array<{ id: string; op: 'update' | 'delete'; ok: boolean; error?: string }> =
         []
 

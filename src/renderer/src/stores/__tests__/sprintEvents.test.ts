@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useSprintEvents } from '../sprintEvents'
 import type { AgentEvent } from '../../../../shared/types'
-import type { TaskOutputEvent } from '../../../../shared/queue-api-contract'
+import type { TaskOutputEvent } from '../../../../shared/types'
 
 const initialState = {
   taskEvents: {},

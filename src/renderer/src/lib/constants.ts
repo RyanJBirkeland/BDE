@@ -55,7 +55,6 @@ export const REPO_OPTIONS: RepoOption[] = [
 ]
 
 // WIP limits (matches task runner concurrency)
-// WIP limit is also enforced server-side via MAX_ACTIVE_TASKS in queue-api-contract
 export const WIP_LIMIT_IN_PROGRESS = 5
 
 // UI

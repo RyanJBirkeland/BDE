@@ -1,13 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Mock dependencies before module import
-const mockBroadcast = vi.fn()
-vi.mock('../../queue-api/router', () => ({
-  sseBroadcaster: {
-    broadcast: (...args: unknown[]) => mockBroadcast(...args)
-  }
-}))
-
 const mockSend = vi.fn()
 vi.mock('electron', () => ({
   BrowserWindow: {
@@ -120,47 +112,6 @@ describe('sprint-listeners', () => {
 
       unsub1()
       unsub2()
-    })
-  })
-
-  describe('SSE broadcast', () => {
-    it('broadcasts task:updated event with id and status', () => {
-      const task = makeTask({ id: 'task-sse', status: 'done' })
-      notifySprintMutation('updated', task)
-
-      expect(mockBroadcast).toHaveBeenCalledWith('task:updated', {
-        id: 'task-sse',
-        status: 'done'
-      })
-    })
-
-    it('broadcasts additional task:queued event when task status is queued', () => {
-      const task = makeTask({
-        id: 'task-q',
-        status: 'queued',
-        title: 'Queued Task',
-        priority: 'high'
-      })
-      notifySprintMutation('updated', task)
-
-      expect(mockBroadcast).toHaveBeenCalledWith('task:updated', {
-        id: 'task-q',
-        status: 'queued'
-      })
-      expect(mockBroadcast).toHaveBeenCalledWith('task:queued', {
-        id: 'task-q',
-        title: 'Queued Task',
-        priority: 'high'
-      })
-      expect(mockBroadcast).toHaveBeenCalledTimes(2)
-    })
-
-    it('does not broadcast task:queued for non-queued statuses', () => {
-      const task = makeTask({ status: 'active' })
-      notifySprintMutation('updated', task)
-
-      expect(mockBroadcast).toHaveBeenCalledTimes(1)
-      expect(mockBroadcast).toHaveBeenCalledWith('task:updated', expect.any(Object))
     })
   })
 

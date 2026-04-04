@@ -29,11 +29,10 @@ vi.mock('../../data/sprint-queries', () => ({
   getHealthCheckTasks: vi.fn()
 }))
 
-// Mock sprint-listeners (SSE broadcaster)
+// Mock sprint-listeners
 vi.mock('../sprint-listeners', () => ({
   notifySprintMutation: vi.fn(),
-  onSprintMutation: vi.fn(),
-  sseBroadcaster: { broadcast: vi.fn() }
+  onSprintMutation: vi.fn()
 }))
 
 // Mock sprint-spec
@@ -85,11 +84,6 @@ vi.mock('../../agent-manager/dependency-index', () => ({
     areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true })
   }),
   detectCycle: vi.fn().mockReturnValue(null)
-}))
-
-// Mock queue-api/router (needed by sprint-listeners)
-vi.mock('../../queue-api/router', () => ({
-  sseBroadcaster: { broadcast: vi.fn() }
 }))
 
 // Mock spec-semantic-check

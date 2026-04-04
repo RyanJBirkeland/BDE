@@ -5,7 +5,6 @@
  */
 import type { SprintTask } from '../../shared/types'
 import { BrowserWindow } from 'electron'
-import { sseBroadcaster } from '../queue-api/router'
 import { createLogger } from '../logger'
 
 const logger = createLogger('sprint-listeners')
@@ -33,15 +32,6 @@ export function notifySprintMutation(type: SprintMutationEvent['type'], task: Sp
     } catch (err) {
       logger.error(`${err}`)
     }
-  }
-
-  sseBroadcaster.broadcast('task:updated', { id: task.id, status: task.status })
-  if (task.status === 'queued') {
-    sseBroadcaster.broadcast('task:queued', {
-      id: task.id,
-      title: task.title,
-      priority: task.priority
-    })
   }
 
   // Push to renderer windows so Dashboard/SprintCenter refresh immediately

@@ -27,7 +27,6 @@ import { getDb, closeDb, backupDatabase } from './db'
 import { importSprintTasksFromSupabase } from './data/supabase-import'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
-import { startQueueApi, stopQueueApi } from './queue-api'
 import { pruneOldEvents } from './data/event-queries'
 import { pruneOldChanges } from './data/task-changes'
 import { getEventRetentionDays } from './config'
@@ -38,7 +37,6 @@ import { getSetting, getSettingJson } from './settings'
 import { createTaskTerminalService } from './services/task-terminal-service'
 import { getTask, updateTask, getTasksWithDependencies } from './data/sprint-queries'
 import { setOnStatusTerminal } from './handlers/sprint-local'
-import { setQueueApiOnStatusTerminal } from './queue-api/task-handlers'
 import { setGitHandlersOnStatusTerminal } from './handlers/git-handlers'
 import { setOnTaskTerminal } from './sprint-pr-poller'
 import { createLogger } from './logger'
@@ -126,7 +124,6 @@ app.whenReady().then(() => {
     logger: createLogger('task-terminal')
   })
   setOnStatusTerminal(terminalService.onStatusTerminal)
-  setQueueApiOnStatusTerminal(terminalService.onStatusTerminal)
   setGitHandlersOnStatusTerminal(terminalService.onStatusTerminal)
   setOnTaskTerminal(terminalService.onStatusTerminal)
   setReviewOnStatusTerminal(terminalService.onStatusTerminal)
@@ -136,9 +133,6 @@ app.whenReady().then(() => {
 
   startSprintPrPoller()
   app.on('will-quit', stopSprintPrPoller)
-
-  startQueueApi({ port: 18790 })
-  app.on('will-quit', () => stopQueueApi())
 
   pruneOldEvents(getDb(), getEventRetentionDays())
 

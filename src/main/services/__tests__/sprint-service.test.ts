@@ -29,11 +29,6 @@ vi.mock('../../handlers/sprint-listeners', () => ({
   notifySprintMutation: vi.fn()
 }))
 
-// Mock queue-api/router (needed by sprint-listeners)
-vi.mock('../../queue-api/router', () => ({
-  sseBroadcaster: { broadcast: vi.fn() }
-}))
-
 import {
   getTask,
   listTasks,
