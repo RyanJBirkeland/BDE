@@ -9,13 +9,6 @@ vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn()
 }))
 
-// Mock runner-client
-vi.mock('../../runner-client', () => ({
-  listAgents: vi.fn(),
-  steerAgent: vi.fn(),
-  killAgent: vi.fn()
-}))
-
 // Mock agent-log-manager
 vi.mock('../../agent-log-manager', () => ({
   tailAgentLog: vi.fn(),
@@ -49,7 +42,6 @@ vi.mock('../../db', () => ({
 
 import { registerAgentHandlers } from '../agent-handlers'
 import { safeHandle } from '../../ipc-utils'
-import { steerAgent as runnerSteer, killAgent as runnerKill } from '../../runner-client'
 import { cleanupOldLogs } from '../../agent-log-manager'
 import { listAgents, readLog, pruneOldAgents } from '../../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../../adhoc-agent'
@@ -166,7 +158,6 @@ describe('agent:kill handler', () => {
 
     expect(mockHandle.close).toHaveBeenCalled()
     expect(result).toEqual({ ok: true })
-    expect(runnerKill).not.toHaveBeenCalled()
   })
 
   it('kills via AgentManager when no adhoc handle', async () => {
@@ -180,15 +171,13 @@ describe('agent:kill handler', () => {
     expect(result).toEqual({ ok: true })
   })
 
-  it('falls back to runner-client when no adhoc or AgentManager', async () => {
+  it('returns error when no adhoc or AgentManager', async () => {
     vi.mocked(getAdhocHandle).mockReturnValue(undefined)
-    vi.mocked(runnerKill).mockResolvedValue({ ok: true } as any)
 
     const handler = captureHandler('agent:kill')
     const result = await handler(mockEvent, 'runner-agent-1')
 
-    expect(runnerKill).toHaveBeenCalledWith('runner-agent-1')
-    expect(result).toEqual({ ok: true })
+    expect(result).toEqual({ ok: false, error: 'Agent not found' })
   })
 })
 
@@ -206,7 +195,6 @@ describe('agent:steer handler', () => {
 
     expect(mockHandle.send).toHaveBeenCalledWith('Do this')
     expect(result).toEqual({ ok: true })
-    expect(runnerSteer).not.toHaveBeenCalled()
   })
 
   it('steers via AgentManager when no adhoc handle', async () => {
@@ -220,15 +208,13 @@ describe('agent:steer handler', () => {
     expect(result).toEqual({ ok: true })
   })
 
-  it('falls back to runner-client steer when no adhoc or AgentManager', async () => {
+  it('returns error when no adhoc or AgentManager', async () => {
     vi.mocked(getAdhocHandle).mockReturnValue(undefined)
-    vi.mocked(runnerSteer).mockResolvedValue({ ok: true } as any)
 
     const handler = captureHandler('agent:steer')
     const result = await handler(mockEvent, { agentId: 'remote-1', message: 'Hello' })
 
-    expect(runnerSteer).toHaveBeenCalledWith('remote-1', 'Hello')
-    expect(result).toEqual({ ok: true })
+    expect(result).toEqual({ ok: false, error: 'No agent manager available' })
   })
 })
 

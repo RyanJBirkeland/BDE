@@ -1,9 +1,8 @@
 /**
- * Agent IPC handlers — proxies agent lifecycle operations through the
- * task-runner's Runner API and provides local history/log access from SQLite.
+ * Agent IPC handlers — manages agent lifecycle operations
+ * and provides local history/log access from SQLite.
  */
 import { safeHandle } from '../ipc-utils'
-import { steerAgent, killAgent, listAgents as listRunnerAgents } from '../runner-client'
 import { tailAgentLog, cleanupOldLogs } from '../agent-log-manager'
 import type { TailLogArgs } from '../agent-log-manager'
 import { listAgents, readLog, importAgent, pruneOldAgents } from '../agent-history'
@@ -13,15 +12,8 @@ import type { SpawnLocalAgentArgs } from '../../shared/types'
 import type { AgentManager } from '../agent-manager'
 
 export function registerAgentHandlers(am?: AgentManager): void {
-  // --- Runner-proxied agent operations ---
   safeHandle('local:getAgentProcesses', async () => {
-    // Process scanning removed — return runner agents instead
-    try {
-      const agents = await listRunnerAgents()
-      return Array.isArray(agents) ? agents : []
-    } catch {
-      return []
-    }
+    return []
   })
   safeHandle('local:spawnClaudeAgent', async (_e, args: SpawnLocalAgentArgs) => {
     return spawnAdhocAgent({
@@ -51,8 +43,7 @@ export function registerAgentHandlers(am?: AgentManager): void {
         if (result.delivered) return { ok: true }
         return { ok: false, error: result.error }
       }
-      // Fall back to runner-client only when no local AgentManager
-      return steerAgent(agentId, message)
+      return { ok: false, error: 'No agent manager available' }
     }
   )
   safeHandle('agent:kill', async (_e, agentId: string) => {
@@ -70,7 +61,7 @@ export function registerAgentHandlers(am?: AgentManager): void {
         /* fall through */
       }
     }
-    return killAgent(agentId)
+    return { ok: false, error: 'Agent not found' }
   })
   safeHandle('agent:history', async (_e, agentId: string) => {
     // Event history from local SQLite — kept for viewing historical runs

@@ -24,18 +24,6 @@ vi.mock('../../auth-guard', () => ({
   checkAuthStatus: mockCheckAuthStatus
 }))
 
-// --- Mock runner-client ---
-
-const { mockListAgents, mockKillAgent } = vi.hoisted(() => ({
-  mockListAgents: vi.fn().mockResolvedValue([]),
-  mockKillAgent: vi.fn().mockResolvedValue({ ok: true })
-}))
-
-vi.mock('../../runner-client', () => ({
-  listAgents: mockListAgents,
-  killAgent: mockKillAgent
-}))
-
 import { registerAuthHandlers } from '../../handlers/auth-handlers'
 import { registerAgentManagerHandlers } from '../../handlers/agent-manager-handlers'
 

@@ -30,6 +30,3 @@ export function setSettingJson<T>(key: string, value: T): void {
 // Well-known setting keys
 export const SETTING_SUPABASE_URL = 'supabase.url'
 export const SETTING_SUPABASE_KEY = 'supabase.serviceKey'
-
-// Runner discovery — JSON array: [{ "name": "local", "url": "http://127.0.0.1:18799", "apiKey": "..." }]
-export const SETTING_RUNNERS = 'runners'

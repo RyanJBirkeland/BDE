@@ -29,12 +29,6 @@ vi.mock('electron', () => ({
 // Mock underlying modules — we're testing wiring, not business logic
 // ---------------------------------------------------------------------------
 
-vi.mock('../runner-client', () => ({
-  listAgents: vi.fn().mockResolvedValue([]),
-  steerAgent: vi.fn().mockResolvedValue({ ok: true }),
-  killAgent: vi.fn().mockResolvedValue({ ok: true })
-}))
-
 vi.mock('../agent-log-manager', () => ({
   tailAgentLog: vi.fn().mockResolvedValue({ content: 'log data', nextByte: 42 }),
   cleanupOldLogs: vi.fn()
@@ -105,7 +99,6 @@ vi.mock('../settings', () => ({
   getSettingJson: vi.fn().mockReturnValue(null),
   setSettingJson: vi.fn(),
   deleteSetting: vi.fn(),
-  SETTING_RUNNERS: 'runners',
   SETTING_SUPABASE_URL: 'supabase.url',
   SETTING_SUPABASE_KEY: 'supabase.serviceKey'
 }))
