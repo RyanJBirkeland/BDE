@@ -38,10 +38,6 @@ export interface RunAgentTask {
   max_runtime_ms?: number | null
   max_cost_usd?: number | null
   model?: string | null
-  depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
-||||||| 4bec9e91
-||||||| 6807c806
-  depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
   depends_on?: TaskDependency[] | null
 }
 
@@ -368,7 +364,11 @@ export async function runAgent(
   // activeCount is derived from activeAgents.size — no manual increment needed
 
   // Emit agent:started event for console display
-  emitAgentEvent(agentRunId, { type: 'agent:started', model: effectiveModel, timestamp: Date.now() })
+  emitAgentEvent(agentRunId, {
+    type: 'agent:started',
+    model: effectiveModel,
+    timestamp: Date.now()
+  })
 
   // Consume messages
   let exitCode: number | undefined

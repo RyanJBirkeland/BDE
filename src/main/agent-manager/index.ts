@@ -155,7 +155,8 @@ export function handleWatchdogVerdict(
         status: 'error',
         completed_at: now,
         claimed_by: null,
-        notes: 'Agent exceeded the cost budget (max_cost_usd). The task consumed more API credits than allowed. Review the task complexity or increase the budget.',
+        notes:
+          'Agent exceeded the cost budget (max_cost_usd). The task consumed more API credits than allowed. Review the task complexity or increase the budget.',
         needs_review: true
       })
       onTerminal(taskId, 'error').catch((err) =>
@@ -164,7 +165,9 @@ export function handleWatchdogVerdict(
         )
       )
     } catch (err) {
-      logger.warn(`[agent-manager] Failed to update task ${taskId} after cost budget exceeded: ${err}`)
+      logger.warn(
+        `[agent-manager] Failed to update task ${taskId} after cost budget exceeded: ${err}`
+      )
     }
   }
   return concurrency

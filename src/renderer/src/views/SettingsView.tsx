@@ -13,7 +13,8 @@ import {
   Cpu,
   DollarSign,
   Brain,
-  Shield
+  Shield,
+  Webhook
 } from 'lucide-react'
 import { SettingsSidebar } from '../components/settings/SettingsSidebar'
 import type { SettingsSection } from '../components/settings/SettingsSidebar'
@@ -27,6 +28,7 @@ import { AgentManagerSection } from '../components/settings/AgentManagerSection'
 import { CostSection } from '../components/settings/CostSection'
 import { MemorySection } from '../components/settings/MemorySection'
 import { AboutSection } from '../components/settings/AboutSection'
+import { WebhooksSection } from '../components/settings/WebhooksSection'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 const SECTIONS: SettingsSection[] = [
@@ -35,6 +37,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'repositories', label: 'Repositories', icon: GitBranch, category: 'Projects' },
   { id: 'templates', label: 'Templates', icon: FileText, category: 'Projects' },
   { id: 'agentManager', label: 'Agent Manager', icon: Cpu, category: 'Pipeline' },
+  { id: 'webhooks', label: 'Webhooks', icon: Webhook, category: 'Pipeline' },
   { id: 'cost', label: 'Cost & Usage', icon: DollarSign, category: 'Pipeline' },
   { id: 'appearance', label: 'Appearance', icon: Palette, category: 'App' },
   { id: 'memory', label: 'Memory', icon: Brain, category: 'App' },
@@ -49,21 +52,24 @@ const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   repositories: RepositoriesSection,
   templates: TaskTemplatesSection,
   agentManager: AgentManagerSection,
+  webhooks: WebhooksSection,
   cost: CostSection,
   memory: MemorySection,
   appearance: AppearanceSection,
   about: AboutSection
 }
 
-const SECTION_META: Record<
-  string,
-  { title: string; subtitle: string; wide: boolean }
-> = {
-  connections: { title: 'Connections', subtitle: 'Manage authentication tokens and API access', wide: false },
+const SECTION_META: Record<string, { title: string; subtitle: string; wide: boolean }> = {
+  connections: {
+    title: 'Connections',
+    subtitle: 'Manage authentication tokens and API access',
+    wide: false
+  },
   permissions: { title: 'Permissions', subtitle: 'Tool access and security rules', wide: false },
   repositories: { title: 'Repositories', subtitle: 'Configure project repositories', wide: false },
   templates: { title: 'Templates', subtitle: 'Task prompt templates', wide: false },
   agentManager: { title: 'Agent Manager', subtitle: 'Pipeline execution settings', wide: false },
+  webhooks: { title: 'Webhooks', subtitle: 'External event notifications', wide: false },
   cost: { title: 'Cost & Usage', subtitle: 'Agent execution costs and history', wide: true },
   memory: { title: 'Memory', subtitle: 'Agent memory files', wide: true },
   appearance: { title: 'Appearance', subtitle: 'Theme and visual preferences', wide: false },

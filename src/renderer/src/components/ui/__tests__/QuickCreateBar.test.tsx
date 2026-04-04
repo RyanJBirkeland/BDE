@@ -20,7 +20,9 @@ vi.mock('../../lib/motion', () => ({
 
 // Mock window.api.sprint
 const mockCreate = vi.fn().mockResolvedValue({ id: 'new-1', title: 'Test' })
-const mockGeneratePrompt = vi.fn().mockResolvedValue({ taskId: 'new-1', spec: '## Spec', prompt: 'Test' })
+const mockGeneratePrompt = vi
+  .fn()
+  .mockResolvedValue({ taskId: 'new-1', spec: '## Spec', prompt: 'Test' })
 
 vi.stubGlobal('window', {
   ...window,
@@ -54,7 +56,7 @@ describe('QuickCreateBar', () => {
     fireEvent.keyDown(input, { key: 'Enter' })
 
     // Wait for the async create to resolve
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Fix bug',
@@ -78,7 +80,7 @@ describe('QuickCreateBar', () => {
     fireEvent.keyDown(input, { key: 'Enter', metaKey: true })
 
     // Wait for the async create to resolve
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Add feature',

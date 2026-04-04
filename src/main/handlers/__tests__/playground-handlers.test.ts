@@ -132,7 +132,12 @@ describe('playground-handlers', () => {
       // Attempt traversal using ../
       await expect(
         capturedHandler!(null, {
-          filePath: join(testDir, '..', 'playground-outside-' + outsideDir.split('-').pop(), 'evil.html'),
+          filePath: join(
+            testDir,
+            '..',
+            'playground-outside-' + outsideDir.split('-').pop(),
+            'evil.html'
+          ),
           rootPath: testDir
         })
       ).rejects.toThrow(/path traversal blocked/i)
@@ -178,9 +183,7 @@ describe('playground-handlers', () => {
     const filePath = join(testDir, 'output.html')
     await writeFile(filePath, '<html><body>OK</body></html>')
 
-    await expect(
-      capturedHandler!(null, { filePath, rootPath: testDir })
-    ).resolves.not.toThrow()
+    await expect(capturedHandler!(null, { filePath, rootPath: testDir })).resolves.not.toThrow()
   })
 
   it('allows nested path within root', async () => {
@@ -189,8 +192,6 @@ describe('playground-handlers', () => {
     const filePath = join(nestedDir, 'nested.html')
     await writeFile(filePath, '<html><body>Nested</body></html>')
 
-    await expect(
-      capturedHandler!(null, { filePath, rootPath: testDir })
-    ).resolves.not.toThrow()
+    await expect(capturedHandler!(null, { filePath, rootPath: testDir })).resolves.not.toThrow()
   })
 })

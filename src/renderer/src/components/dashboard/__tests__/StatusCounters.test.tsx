@@ -13,11 +13,7 @@ vi.mock('../../neon', () => ({
     accent: string
     onClick: () => void
   }) => (
-    <button
-      data-testid={`stat-counter-${label.toLowerCase()}`}
-      onClick={onClick}
-      type="button"
-    >
+    <button data-testid={`stat-counter-${label.toLowerCase()}`} onClick={onClick} type="button">
       {label}: {value}
     </button>
   )

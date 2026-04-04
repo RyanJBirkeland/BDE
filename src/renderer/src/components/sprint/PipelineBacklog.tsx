@@ -40,10 +40,7 @@ export function PipelineBacklog({
                 {task.priority <= 2 && <span>P{task.priority}</span>}
               </div>
             </button>
-            <button
-              className="backlog-card__action"
-              onClick={() => onAddToQueue(task)}
-            >
+            <button className="backlog-card__action" onClick={() => onAddToQueue(task)}>
               → Add to queue
             </button>
           </div>

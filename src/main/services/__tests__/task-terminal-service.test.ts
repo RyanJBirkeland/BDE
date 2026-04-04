@@ -4,15 +4,13 @@ import type { TaskTerminalServiceDeps } from '../task-terminal-service'
 
 function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTerminalServiceDeps {
   return {
-    getTask: vi
-      .fn()
-      .mockReturnValue({
-        id: 't1',
-        title: 'Test Task',
-        status: 'done',
-        depends_on: null,
-        notes: null
-      }),
+    getTask: vi.fn().mockReturnValue({
+      id: 't1',
+      title: 'Test Task',
+      status: 'done',
+      depends_on: null,
+      notes: null
+    }),
     updateTask: vi.fn(),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
     getSetting: vi.fn().mockReturnValue(null),

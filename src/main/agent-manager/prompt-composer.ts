@@ -265,7 +265,8 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     prompt += '\n\n## Upstream Task Context\n\n'
     prompt += 'This task depends on the following completed tasks:\n\n'
     for (const upstream of upstreamContext) {
-      const cappedSpec = upstream.spec.length > 500 ? upstream.spec.slice(0, 500) + '...' : upstream.spec
+      const cappedSpec =
+        upstream.spec.length > 500 ? upstream.spec.slice(0, 500) + '...' : upstream.spec
       prompt += `### ${upstream.title}\n\n${cappedSpec}\n\n`
     }
   }

@@ -48,6 +48,22 @@ const api = {
       typedInvoke('claude:setPermissions', permissions)
   },
 
+  // Webhook management
+  webhooks: {
+    list: () => typedInvoke('webhook:list'),
+    create: (payload: { url: string; events: string[]; secret?: string }) =>
+      typedInvoke('webhook:create', payload),
+    update: (payload: {
+      id: string
+      url?: string
+      events?: string[]
+      secret?: string | null
+      enabled?: boolean
+    }) => typedInvoke('webhook:update', payload),
+    delete: (payload: { id: string }) => typedInvoke('webhook:delete', payload),
+    test: (payload: { id: string }) => typedInvoke('webhook:test', payload)
+  },
+
   // GitHub API proxy — all GitHub REST calls routed through main process
   github: {
     fetch: (path: string, init?: GitHubFetchInit) => typedInvoke('github:fetch', path, init)
@@ -397,8 +413,7 @@ const api = {
       typedInvoke('review:shipIt', payload),
     generateSummary: (payload: { taskId: string }) =>
       typedInvoke('review:generateSummary', payload),
-    checkAutoReview: (payload: { taskId: string }) =>
-      typedInvoke('review:checkAutoReview', payload)
+    checkAutoReview: (payload: { taskId: string }) => typedInvoke('review:checkAutoReview', payload)
   },
 
   // Spec Synthesizer

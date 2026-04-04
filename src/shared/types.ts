@@ -31,7 +31,13 @@ export interface TaskDependency {
   condition?: 'on_success' | 'on_failure' | 'always'
 }
 
-export type FailureReason = 'auth' | 'timeout' | 'test_failure' | 'compilation' | 'spawn' | 'unknown'
+export type FailureReason =
+  | 'auth'
+  | 'timeout'
+  | 'test_failure'
+  | 'compilation'
+  | 'spawn'
+  | 'unknown'
 
 export interface SprintTask {
   id: string
@@ -461,8 +467,8 @@ export interface AutoReviewRule {
   enabled: boolean
   conditions: {
     maxLinesChanged?: number
-    filePatterns?: string[]     // glob patterns — all changed files must match at least one
-    excludePatterns?: string[]  // glob patterns — no changed files may match any
+    filePatterns?: string[] // glob patterns — all changed files must match at least one
+    excludePatterns?: string[] // glob patterns — no changed files may match any
   }
   action: 'auto-merge' | 'auto-approve'
 }

@@ -143,9 +143,7 @@ index abc123..def456 100644
     expect(mockRepo.updateTask).toHaveBeenCalledWith('task-4', {
       partial_diff: largeDiff.slice(0, MAX_SIZE) + '\n\n[... diff truncated at 50KB]'
     })
-    expect(noopLogger.info).toHaveBeenCalledWith(
-      expect.stringContaining('truncated')
-    )
+    expect(noopLogger.info).toHaveBeenCalledWith(expect.stringContaining('truncated'))
   })
 
   it('handles git command failure gracefully', async () => {

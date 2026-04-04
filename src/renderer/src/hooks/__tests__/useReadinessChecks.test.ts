@@ -134,8 +134,7 @@ describe('H2: file path extraction', () => {
   })
 
   it('shows file-paths check in computeStructuralChecks when paths found', () => {
-    const spec =
-      '## Plan\nModify src/main/index.ts\n## Tests\nRun npm test and verify assertions'
+    const spec = '## Plan\nModify src/main/index.ts\n## Tests\nRun npm test and verify assertions'
     const checks = computeStructuralChecks({ title: 'Fix', repo: 'BDE', spec })
     const filePathCheck = checks.find((c) => c.id === 'file-paths')
     expect(filePathCheck?.status).toBe('pass')
@@ -181,9 +180,7 @@ describe('H3: anti-pattern linting', () => {
   })
 
   it('warns on "refactor where appropriate"', () => {
-    const result = checkAntiPatterns(
-      '## Plan\nRefactor where appropriate to improve readability'
-    )
+    const result = checkAntiPatterns('## Plan\nRefactor where appropriate to improve readability')
     expect(result.status).toBe('warn')
   })
 
@@ -267,16 +264,12 @@ describe('H5: handler count awareness', () => {
   })
 
   it('warns when safeHandle mentioned without test mention', () => {
-    const result = checkHandlerCountAwareness(
-      '## Plan\nAdd safeHandle for the new IPC channel'
-    )
+    const result = checkHandlerCountAwareness('## Plan\nAdd safeHandle for the new IPC channel')
     expect(result?.status).toBe('warn')
   })
 
   it('warns when "IPC handler" mentioned without test mention', () => {
-    const result = checkHandlerCountAwareness(
-      '## Plan\nRegister a new IPC handler for file reads'
-    )
+    const result = checkHandlerCountAwareness('## Plan\nRegister a new IPC handler for file reads')
     expect(result?.status).toBe('warn')
   })
 
@@ -336,8 +329,7 @@ describe('H6: preload declaration sync', () => {
   })
 
   it('reflects in computeStructuralChecks', () => {
-    const spec =
-      '## Plan\nAdd method to preload/index.ts\n## Testing\nRun typecheck to verify'
+    const spec = '## Plan\nAdd method to preload/index.ts\n## Testing\nRun typecheck to verify'
     const checks = computeStructuralChecks({ title: 'Fix', repo: 'BDE', spec })
     const preloadCheck = checks.find((c) => c.id === 'preload-sync')
     expect(preloadCheck?.status).toBe('warn')

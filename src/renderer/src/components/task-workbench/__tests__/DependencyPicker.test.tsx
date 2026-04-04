@@ -7,7 +7,7 @@ import type { TaskDependency, SprintTask } from '../../../../../shared/types'
 const mockTasks = [
   { id: '1', title: 'Setup DB', status: 'done', repo: 'bde' },
   { id: '2', title: 'Build API', status: 'queued', repo: 'bde' },
-  { id: '3', title: 'Write Tests', status: 'backlog', repo: 'bde' },
+  { id: '3', title: 'Write Tests', status: 'backlog', repo: 'bde' }
 ] as SprintTask[]
 
 describe('DependencyPicker', () => {

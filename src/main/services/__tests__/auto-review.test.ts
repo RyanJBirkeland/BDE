@@ -48,7 +48,9 @@ describe('evaluateAutoReviewRules', () => {
 
   it('respects excludePatterns', () => {
     const rule: AutoReviewRule = {
-      id: 'r2', name: 'Safe changes', enabled: true,
+      id: 'r2',
+      name: 'Safe changes',
+      enabled: true,
       conditions: { maxLinesChanged: 50, excludePatterns: ['*.ts'] },
       action: 'auto-merge'
     }

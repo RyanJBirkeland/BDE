@@ -173,8 +173,8 @@ export default function DashboardView(): React.JSX.Element {
             <NeonCard accent="cyan" title="Morning Briefing">
               <div className="dashboard-briefing__content">
                 <p className="dashboard-briefing__text">
-                  {briefingTasks.length} task{briefingTasks.length !== 1 ? 's' : ''} completed
-                  since last session
+                  {briefingTasks.length} task{briefingTasks.length !== 1 ? 's' : ''} completed since
+                  last session
                 </p>
                 <div className="dashboard-briefing__actions">
                   <button

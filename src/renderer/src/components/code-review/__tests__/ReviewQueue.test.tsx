@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-const { mockSelectTask, mockToggleBatchId, mockSelectAllBatch, mockClearBatch } = vi.hoisted(() => ({
-  mockSelectTask: vi.fn(),
-  mockToggleBatchId: vi.fn(),
-  mockSelectAllBatch: vi.fn(),
-  mockClearBatch: vi.fn()
-}))
+const { mockSelectTask, mockToggleBatchId, mockSelectAllBatch, mockClearBatch } = vi.hoisted(
+  () => ({
+    mockSelectTask: vi.fn(),
+    mockToggleBatchId: vi.fn(),
+    mockSelectAllBatch: vi.fn(),
+    mockClearBatch: vi.fn()
+  })
+)
 
 vi.mock('../../../stores/codeReview', () => {
   const { create } = require('zustand')

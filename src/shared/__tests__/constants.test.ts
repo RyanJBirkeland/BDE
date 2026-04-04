@@ -19,9 +19,10 @@ describe('DEFAULT_TASK_TEMPLATES', () => {
 
   it('every template has a non-empty promptPrefix', () => {
     for (const template of DEFAULT_TASK_TEMPLATES) {
-      expect(template.promptPrefix.length, `${template.name} promptPrefix is empty`).toBeGreaterThan(
-        0
-      )
+      expect(
+        template.promptPrefix.length,
+        `${template.name} promptPrefix is empty`
+      ).toBeGreaterThan(0)
     }
   })
 

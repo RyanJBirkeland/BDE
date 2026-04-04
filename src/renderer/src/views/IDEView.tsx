@@ -263,7 +263,11 @@ export function IDEView(): React.JSX.Element {
                 }}
               >
                 {sidebarCollapsed && !activeTab && (
-                  <button className="ide-sidebar-toggle" onClick={toggleSidebar} aria-label="Open sidebar">
+                  <button
+                    className="ide-sidebar-toggle"
+                    onClick={toggleSidebar}
+                    aria-label="Open sidebar"
+                  >
                     <PanelLeftOpen size={16} />
                   </button>
                 )}

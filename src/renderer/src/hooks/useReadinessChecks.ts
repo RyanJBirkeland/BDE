@@ -178,8 +178,7 @@ export function checkAntiPatterns(spec: string): CheckResult {
   }
 }
 
-const TEST_HEADING_REGEX =
-  /^## .*(test|testing|verification|how to test|how to verify)/im
+const TEST_HEADING_REGEX = /^## .*(test|testing|verification|how to test|how to verify)/im
 
 export function checkTestSection(spec: string): CheckResult {
   const hasTestSection = TEST_HEADING_REGEX.test(spec)
@@ -207,7 +206,7 @@ export function checkHandlerCountAwareness(spec: string): CheckResult | null {
     status: mentionsTest ? 'pass' : 'warn',
     message: mentionsTest
       ? 'Handler count test update mentioned'
-      : 'Spec mentions adding handlers but doesn\'t mention updating handler count tests.'
+      : "Spec mentions adding handlers but doesn't mention updating handler count tests."
   }
 }
 

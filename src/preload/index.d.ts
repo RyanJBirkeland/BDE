@@ -58,6 +58,25 @@ declare global {
         }) => Promise<IpcResult<'claude:setPermissions'>>
       }
 
+      // Webhook management
+      webhooks: {
+        list: () => Promise<IpcResult<'webhook:list'>>
+        create: (payload: {
+          url: string
+          events: string[]
+          secret?: string
+        }) => Promise<IpcResult<'webhook:create'>>
+        update: (payload: {
+          id: string
+          url?: string
+          events?: string[]
+          secret?: string | null
+          enabled?: boolean
+        }) => Promise<IpcResult<'webhook:update'>>
+        delete: (payload: { id: string }) => Promise<IpcResult<'webhook:delete'>>
+        test: (payload: { id: string }) => Promise<IpcResult<'webhook:test'>>
+      }
+
       // GitHub API proxy — all GitHub REST calls routed through main process
       github: {
         fetch: (path: string, init?: GitHubFetchInit) => Promise<IpcResult<'github:fetch'>>
@@ -321,8 +340,12 @@ declare global {
           taskId: string
           strategy: 'squash' | 'merge' | 'rebase'
         }) => Promise<IpcResult<'review:shipIt'>>
-        generateSummary: (payload: { taskId: string }) => Promise<IpcResult<'review:generateSummary'>>
-        checkAutoReview: (payload: { taskId: string }) => Promise<IpcResult<'review:checkAutoReview'>>
+        generateSummary: (payload: {
+          taskId: string
+        }) => Promise<IpcResult<'review:generateSummary'>>
+        checkAutoReview: (payload: {
+          taskId: string
+        }) => Promise<IpcResult<'review:checkAutoReview'>>
       }
 
       // Spec Synthesizer

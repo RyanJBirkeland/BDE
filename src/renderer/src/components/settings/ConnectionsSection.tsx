@@ -112,7 +112,10 @@ export function ConnectionsSection(): React.JSX.Element {
   // --- Derive auth status ---
   let authBadgeVariant: 'success' | 'warning' | 'danger' = 'danger'
   let authBadgeLabel = 'Not Configured'
-  let authCardStatus: { label: string; variant: 'success' | 'info' | 'warning' | 'neutral' | 'error' } = {
+  let authCardStatus: {
+    label: string
+    variant: 'success' | 'info' | 'warning' | 'neutral' | 'error'
+  } = {
     label: 'Disconnected',
     variant: 'error'
   }
@@ -128,7 +131,10 @@ export function ConnectionsSection(): React.JSX.Element {
     }
   }
 
-  const ghCardStatus: { label: string; variant: 'success' | 'info' | 'warning' | 'neutral' | 'error' } = hasExistingGhToken
+  const ghCardStatus: {
+    label: string
+    variant: 'success' | 'info' | 'warning' | 'neutral' | 'error'
+  } = hasExistingGhToken
     ? { label: 'Token Saved', variant: 'success' }
     : { label: 'Not Configured', variant: 'error' }
 

@@ -537,6 +537,48 @@ export interface ClaudeConfigChannels {
   }
 }
 
+/** Webhook event notifications */
+export interface Webhook {
+  id: string
+  url: string
+  events: string[]
+  secret: string | null
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface WebhookChannels {
+  'webhook:list': {
+    args: []
+    result: Webhook[]
+  }
+  'webhook:create': {
+    args: [payload: { url: string; events: string[]; secret?: string }]
+    result: Webhook
+  }
+  'webhook:update': {
+    args: [
+      payload: {
+        id: string
+        url?: string
+        events?: string[]
+        secret?: string | null
+        enabled?: boolean
+      }
+    ]
+    result: Webhook
+  }
+  'webhook:delete': {
+    args: [payload: { id: string }]
+    result: { success: boolean }
+  }
+  'webhook:test': {
+    args: [payload: { id: string }]
+    result: { success: boolean; status?: number }
+  }
+}
+
 /** Dashboard analytics */
 export interface CompletionBucket {
   hour: string
@@ -659,4 +701,5 @@ export type IpcChannelMap = SettingsChannels &
   SynthesizerChannels &
   ReviewChannels &
   TearoffChannels &
-  ClaudeConfigChannels
+  ClaudeConfigChannels &
+  WebhookChannels

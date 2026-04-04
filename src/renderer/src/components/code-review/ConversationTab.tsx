@@ -33,7 +33,9 @@ function EventItem({ event }: { event: AgentEvent }): React.JSX.Element {
       )
     case 'agent:tool_result':
       return (
-        <div className={`cr-event cr-event--result ${event.success ? '' : 'cr-event--result-fail'}`}>
+        <div
+          className={`cr-event cr-event--result ${event.success ? '' : 'cr-event--result-fail'}`}
+        >
           <Terminal size={12} className="cr-event__icon" />
           <div className="cr-event__body">
             <span className="cr-event__time">{time}</span>
@@ -69,7 +71,8 @@ function EventItem({ event }: { event: AgentEvent }): React.JSX.Element {
           <div className="cr-event__body">
             <span className="cr-event__time">{time}</span>
             <span className="cr-event__summary">
-              Completed (exit {event.exitCode}) — ${event.costUsd.toFixed(2)} · {Math.round(event.durationMs / 1000)}s
+              Completed (exit {event.exitCode}) — ${event.costUsd.toFixed(2)} ·{' '}
+              {Math.round(event.durationMs / 1000)}s
             </span>
           </div>
         </div>
@@ -87,7 +90,7 @@ export function ConversationTab(): React.JSX.Element {
   const task = tasks.find((t) => t.id === selectedTaskId)
 
   const agentRunId = task?.agent_run_id ?? null
-  const agentEvents = agentRunId ? events[agentRunId] ?? null : null
+  const agentEvents = agentRunId ? (events[agentRunId] ?? null) : null
 
   useEffect(() => {
     if (agentRunId) {

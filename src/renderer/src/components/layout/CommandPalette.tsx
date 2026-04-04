@@ -186,7 +186,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   // Fetch recent agents when palette opens
   useEffect(() => {
     if (!open) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setQuery('')
 
     setSelectedIndex(0)
@@ -276,7 +276,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   }, [flatItems, selectedIndex, trackCommandUsage])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIndex(0)
   }, [query])
 

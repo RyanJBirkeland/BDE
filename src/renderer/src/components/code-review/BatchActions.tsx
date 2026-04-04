@@ -62,8 +62,7 @@ export function BatchActions(): React.JSX.Element | null {
         onClick={handleMergeAll}
         disabled={merging}
       >
-        {merging ? <Loader2 size={14} className="spin" /> : <GitMerge size={14} />}
-        {' '}Merge All
+        {merging ? <Loader2 size={14} className="spin" /> : <GitMerge size={14} />} Merge All
       </button>
       <button
         className="cr-actions__btn cr-actions__btn--ghost"

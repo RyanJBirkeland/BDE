@@ -137,9 +137,7 @@ describe('useIDEKeyboard', () => {
 
   it('does not call handleSave on Cmd+S when no activeTabId', () => {
     const mockSave = vi.fn()
-    renderHook(() =>
-      useIDEKeyboard({ ...defaultParams, activeTabId: null, handleSave: mockSave })
-    )
+    renderHook(() => useIDEKeyboard({ ...defaultParams, activeTabId: null, handleSave: mockSave }))
     const event = new KeyboardEvent('keydown', { key: 's', metaKey: true, bubbles: true })
     window.dispatchEvent(event)
     expect(mockSave).not.toHaveBeenCalled()
@@ -217,9 +215,7 @@ describe('useIDEKeyboard', () => {
 
   it('toggles shortcuts overlay on Cmd+/', () => {
     const mockSetShowShortcuts = vi.fn()
-    renderHook(() =>
-      useIDEKeyboard({ ...defaultParams, setShowShortcuts: mockSetShowShortcuts })
-    )
+    renderHook(() => useIDEKeyboard({ ...defaultParams, setShowShortcuts: mockSetShowShortcuts }))
     const event = new KeyboardEvent('keydown', { key: '/', metaKey: true, bubbles: true })
     window.dispatchEvent(event)
     expect(mockSetShowShortcuts).toHaveBeenCalledWith(expect.any(Function))
@@ -228,7 +224,11 @@ describe('useIDEKeyboard', () => {
   it('closes shortcuts overlay on Escape when showShortcuts is true', () => {
     const mockSetShowShortcuts = vi.fn()
     renderHook(() =>
-      useIDEKeyboard({ ...defaultParams, showShortcuts: true, setShowShortcuts: mockSetShowShortcuts })
+      useIDEKeyboard({
+        ...defaultParams,
+        showShortcuts: true,
+        setShowShortcuts: mockSetShowShortcuts
+      })
     )
     const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
     window.dispatchEvent(event)
@@ -238,7 +238,11 @@ describe('useIDEKeyboard', () => {
   it('does not close shortcuts on Escape when showShortcuts is false', () => {
     const mockSetShowShortcuts = vi.fn()
     renderHook(() =>
-      useIDEKeyboard({ ...defaultParams, showShortcuts: false, setShowShortcuts: mockSetShowShortcuts })
+      useIDEKeyboard({
+        ...defaultParams,
+        showShortcuts: false,
+        setShowShortcuts: mockSetShowShortcuts
+      })
     )
     const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
     window.dispatchEvent(event)

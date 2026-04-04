@@ -21,7 +21,9 @@ const { agentEventsState } = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../stores/agentEvents', () => ({
-  useAgentEventsStore: vi.fn((sel: (s: Record<string, unknown>) => unknown) => sel(agentEventsState))
+  useAgentEventsStore: vi.fn((sel: (s: Record<string, unknown>) => unknown) =>
+    sel(agentEventsState)
+  )
 }))
 
 vi.mock('../../../stores/codeReview', () => {
@@ -74,9 +76,7 @@ describe('ConversationTab', () => {
       { id: 't1', title: 'Task', spec: null, notes: null, agent_run_id: 'run-1' }
     ]
     agentEventsState.events = {
-      'run-1': [
-        { type: 'agent:text', text: 'I will fix the bug now.', timestamp: 1000 }
-      ]
+      'run-1': [{ type: 'agent:text', text: 'I will fix the bug now.', timestamp: 1000 }]
     }
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ConversationTab />)
@@ -103,9 +103,7 @@ describe('ConversationTab', () => {
       { id: 't1', title: 'Task', spec: null, notes: null, agent_run_id: 'run-1' }
     ]
     agentEventsState.events = {
-      'run-1': [
-        { type: 'agent:error', message: 'Build failed with exit code 1', timestamp: 3000 }
-      ]
+      'run-1': [{ type: 'agent:error', message: 'Build failed with exit code 1', timestamp: 3000 }]
     }
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
     render(<ConversationTab />)
@@ -118,7 +116,15 @@ describe('ConversationTab', () => {
     ]
     agentEventsState.events = {
       'run-1': [
-        { type: 'agent:completed', exitCode: 0, costUsd: 0.42, tokensIn: 1000, tokensOut: 500, durationMs: 60000, timestamp: 4000 }
+        {
+          type: 'agent:completed',
+          exitCode: 0,
+          costUsd: 0.42,
+          tokensIn: 1000,
+          tokensOut: 500,
+          durationMs: 60000,
+          timestamp: 4000
+        }
       ]
     }
     useCodeReviewStore.setState({ selectedTaskId: 't1' })

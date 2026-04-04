@@ -41,7 +41,10 @@ export function evaluateAutoReviewRules(
     const totalLines = files.reduce((sum, f) => sum + f.additions + f.deletions, 0)
 
     // Check max lines
-    if (rule.conditions.maxLinesChanged !== undefined && totalLines > rule.conditions.maxLinesChanged) {
+    if (
+      rule.conditions.maxLinesChanged !== undefined &&
+      totalLines > rule.conditions.maxLinesChanged
+    ) {
       continue
     }
 

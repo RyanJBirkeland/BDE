@@ -554,12 +554,6 @@ export function registerReviewHandlers(): void {
 
     return { success: true, pushed }
   })
-||||||| 6ddba36b
-||||||| 6807c806
-||||||| 5faba97c
-||||||| 4bec9e91
-||||||| 6807c806
-||||||| 5faba97c
 
   // review:shipIt — merge locally + push to origin + mark done in one action
   safeHandle('review:shipIt', async (_e, payload) => {
@@ -786,13 +780,6 @@ export function registerReviewHandlers(): void {
 
     return { success: true, pushed }
   })
-||||||| 4bec9e91
-||||||| 6807c806
-||||||| 5faba97c
-||||||| 61d03689
-||||||| 6ddba36b
-||||||| 6807c806
-||||||| 5faba97c
 
   // review:shipIt — merge locally + push to origin + mark done in one action
   safeHandle('review:shipIt', async (_e, payload) => {
@@ -1019,9 +1006,6 @@ export function registerReviewHandlers(): void {
 
     return { success: true, pushed }
   })
-||||||| 4bec9e91
-||||||| 6807c806
-||||||| 5faba97c
 
   // review:shipIt — merge locally + push to origin + mark done in one action
   safeHandle('review:shipIt', async (_e, payload) => {
@@ -1843,6 +1827,15 @@ export function registerReviewHandlers(): void {
 ||||||| 6ddba36b
 ||||||| 6807c806
 ||||||| 5faba97c
+||||||| 9db5de37
+||||||| 61d03689
+||||||| 6ddba36b
+||||||| 6807c806
+||||||| 5faba97c
+||||||| 61d03689
+||||||| 6ddba36b
+||||||| 6807c806
+||||||| 5faba97c
 
   // review:shipIt — merge locally + push to origin + mark done in one action
   safeHandle('review:shipIt', async (_e, payload) => {
@@ -2354,5 +2347,97 @@ export function registerReviewHandlers(): void {
     }
 
     return { summary: fullText.trim() }
+  })
+||||||| 9db5de37
+
+  // review:checkAutoReview — evaluate auto-review rules for a task
+  safeHandle('review:checkAutoReview', async (_e, payload) => {
+    const { taskId } = payload
+
+    const task = _getTask(taskId)
+    if (!task) throw new Error(`Task ${taskId} not found`)
+    if (!task.worktree_path) throw new Error('Task has no worktree')
+
+    // Get diff stats
+    const { stdout: numstatOut } = await execFileAsync(
+      'git',
+      ['diff', '--numstat', 'origin/main...HEAD'],
+      { cwd: task.worktree_path, env }
+    )
+
+    const files = numstatOut
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split('\t')
+        const additions = parts[0] === '-' ? 0 : parseInt(parts[0], 10)
+        const deletions = parts[1] === '-' ? 0 : parseInt(parts[1], 10)
+        const path = parts.slice(2).join('\t')
+        return { path, additions, deletions }
+      })
+
+    // Load auto-review rules from settings
+    const rules = getSettingJson<import('../../shared/types').AutoReviewRule[]>('review.autoRules') ?? []
+
+    // Evaluate rules
+    const { evaluateAutoReviewRules } = await import('../services/auto-review')
+    const result = evaluateAutoReviewRules(rules, files)
+
+    if (!result) {
+      return { shouldAutoMerge: false, shouldAutoApprove: false, matchedRule: null }
+    }
+
+    return {
+      shouldAutoMerge: result.action === 'auto-merge',
+      shouldAutoApprove: result.action === 'auto-approve',
+      matchedRule: { id: result.rule.id, name: result.rule.name, action: result.action }
+    }
+  })
+
+  // review:checkAutoReview — evaluate auto-review rules for a task
+  safeHandle('review:checkAutoReview', async (_e, payload) => {
+    const { taskId } = payload
+
+    const task = _getTask(taskId)
+    if (!task) throw new Error(`Task ${taskId} not found`)
+    if (!task.worktree_path) throw new Error('Task has no worktree')
+
+    // Get diff stats
+    const { stdout: numstatOut } = await execFileAsync(
+      'git',
+      ['diff', '--numstat', 'origin/main...HEAD'],
+      { cwd: task.worktree_path, env }
+    )
+
+    const files = numstatOut
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split('\t')
+        const additions = parts[0] === '-' ? 0 : parseInt(parts[0], 10)
+        const deletions = parts[1] === '-' ? 0 : parseInt(parts[1], 10)
+        const path = parts.slice(2).join('\t')
+        return { path, additions, deletions }
+      })
+
+    // Load auto-review rules from settings
+    const rules =
+      getSettingJson<import('../../shared/types').AutoReviewRule[]>('review.autoRules') ?? []
+
+    // Evaluate rules
+    const { evaluateAutoReviewRules } = await import('../services/auto-review')
+    const result = evaluateAutoReviewRules(rules, files)
+
+    if (!result) {
+      return { shouldAutoMerge: false, shouldAutoApprove: false, matchedRule: null }
+    }
+
+    return {
+      shouldAutoMerge: result.action === 'auto-merge',
+      shouldAutoApprove: result.action === 'auto-approve',
+      matchedRule: { id: result.rule.id, name: result.rule.name, action: result.action }
+    }
   })
 }

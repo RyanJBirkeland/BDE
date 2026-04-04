@@ -143,9 +143,7 @@ export function TaskDetailDrawer({
     return agentEvents
       .filter(
         (e) =>
-          e.type === 'agent:text' ||
-          e.type === 'agent:tool_call' ||
-          e.type === 'agent:tool_result'
+          e.type === 'agent:text' || e.type === 'agent:tool_call' || e.type === 'agent:tool_result'
       )
       .map((e, i) => {
         let content = ''
@@ -182,7 +180,9 @@ export function TaskDetailDrawer({
       />
       {/* Header */}
       <div className="task-drawer__head">
-        <h2 className="task-drawer__title" ref={titleRef} tabIndex={-1}>{task.title}</h2>
+        <h2 className="task-drawer__title" ref={titleRef} tabIndex={-1}>
+          {task.title}
+        </h2>
         <div className="task-drawer__status">
           <span
             className="task-drawer__status-dot"

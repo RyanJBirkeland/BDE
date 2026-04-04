@@ -22,6 +22,574 @@ export function extractSearchTerms(text: string): string {
     .trim()
 }
 
+||||||| 9db5de37
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| 4bec9e91
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| cca9d91a
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| cca9d91a
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| 4bec9e91
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| cca9d91a
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| cca9d91a
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+||||||| 61d03689
+||||||| 6807c806
+||||||| 61d03689
+||||||| 6807c806
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
+const RESEARCH_PATTERNS = [/research|search|find|look for|grep|where is|which file|show me/i]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }

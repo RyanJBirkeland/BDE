@@ -20,9 +20,7 @@ export function resolveDependents(
   completedTaskId: string,
   completedStatus: string,
   index: DependencyIndex,
-  getTask: (
-    id: string
-  ) =>
+  getTask: (id: string) =>
     | (Pick<SprintTask, 'id' | 'status' | 'notes' | 'title'> & {
         depends_on: TaskDependency[] | null
       })

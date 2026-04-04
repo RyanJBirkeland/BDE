@@ -49,9 +49,7 @@ export function validateLogPath(p: string): string {
   return resolved
 }
 
-async function listMemoryFiles(
-  activeFiles?: Record<string, boolean>
-): Promise<MemoryFile[]> {
+async function listMemoryFiles(activeFiles?: Record<string, boolean>): Promise<MemoryFile[]> {
   const files: MemoryFile[] = []
   await walkDir(MEMORY_ROOT, '', files, activeFiles)
   files.sort((a, b) => b.modifiedAt - a.modifiedAt)

@@ -21,7 +21,9 @@ describe('Personality System', () => {
       expect(pipelinePersonality.constraints.some((c) => c.includes('NEVER commit secrets'))).toBe(
         true
       )
-      expect(pipelinePersonality.constraints.some((c) => c.includes('Stay within spec scope'))).toBe(true)
+      expect(
+        pipelinePersonality.constraints.some((c) => c.includes('Stay within spec scope'))
+      ).toBe(true)
     })
 
     it('should include reporting patterns', () => {

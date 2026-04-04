@@ -12,7 +12,7 @@ import type { SettingsSection } from '../SettingsSidebar'
 const sections: SettingsSection[] = [
   { id: 'connections', label: 'Connections', icon: Link, category: 'Account' },
   { id: 'security', label: 'Security', icon: Shield, category: 'Account' },
-  { id: 'repos', label: 'Repositories', icon: GitFork, category: 'Projects' },
+  { id: 'repos', label: 'Repositories', icon: GitFork, category: 'Projects' }
 ]
 
 describe('SettingsSidebar', () => {

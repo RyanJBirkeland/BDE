@@ -113,8 +113,8 @@ describe('filterPresets store', () => {
   it('getPresetNames returns array of preset names', () => {
     useFilterPresets.setState({
       presets: {
-        'Alpha': { repoFilter: null, searchQuery: '', statusFilter: 'all' },
-        'Beta': { repoFilter: 'bde', searchQuery: '', statusFilter: 'done' }
+        Alpha: { repoFilter: null, searchQuery: '', statusFilter: 'all' },
+        Beta: { repoFilter: 'bde', searchQuery: '', statusFilter: 'done' }
       }
     })
 
@@ -178,8 +178,8 @@ describe('filterPresets store', () => {
   it('auto-persists when a preset is deleted', () => {
     useFilterPresets.setState({
       presets: {
-        'Keep': { repoFilter: null, searchQuery: '', statusFilter: 'all' },
-        'Remove': { repoFilter: 'bde', searchQuery: '', statusFilter: 'done' }
+        Keep: { repoFilter: null, searchQuery: '', statusFilter: 'all' },
+        Remove: { repoFilter: 'bde', searchQuery: '', statusFilter: 'done' }
       }
     })
 

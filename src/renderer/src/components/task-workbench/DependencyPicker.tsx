@@ -68,9 +68,7 @@ export function DependencyPicker({
 
   const handleChangeCondition = useCallback(
     (id: string, condition: 'on_success' | 'on_failure' | 'always' | undefined) => {
-      onChange(
-        dependencies.map((d) => (d.id === id ? { ...d, condition } : d))
-      )
+      onChange(dependencies.map((d) => (d.id === id ? { ...d, condition } : d)))
     },
     [dependencies, onChange]
   )
@@ -127,7 +125,9 @@ export function DependencyPicker({
                 onChange={(e) =>
                   handleChangeCondition(
                     dep.id,
-                    e.target.value === '' ? undefined : (e.target.value as 'on_success' | 'on_failure' | 'always')
+                    e.target.value === ''
+                      ? undefined
+                      : (e.target.value as 'on_success' | 'on_failure' | 'always')
                   )
                 }
                 aria-label="Dependency condition"

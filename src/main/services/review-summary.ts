@@ -1,9 +1,10 @@
 const MAX_DIFF_CHARS = 12000
 
 export function buildReviewSummaryPrompt(diffStat: string, taskTitle: string): string {
-  const truncated = diffStat.length > MAX_DIFF_CHARS
-    ? diffStat.slice(0, MAX_DIFF_CHARS) + '\n... (truncated)'
-    : diffStat
+  const truncated =
+    diffStat.length > MAX_DIFF_CHARS
+      ? diffStat.slice(0, MAX_DIFF_CHARS) + '\n... (truncated)'
+      : diffStat
 
   return `You are reviewing code changes for a task titled "${taskTitle}".
 

@@ -64,7 +64,7 @@ describe('PipelineFilterBar - Presets', () => {
     useFilterPresets.setState({
       presets: {
         'My View': { repoFilter: 'BDE', searchQuery: 'bug', statusFilter: 'blocked' },
-        'Debug': { repoFilter: null, searchQuery: 'error', statusFilter: 'failed' }
+        Debug: { repoFilter: null, searchQuery: 'error', statusFilter: 'failed' }
       }
     })
     const tasks = [makeTask({ repo: 'BDE' })]

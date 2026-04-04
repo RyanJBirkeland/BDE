@@ -1,7 +1,12 @@
 import type { ActiveAgent, AgentManagerConfig } from './types'
 import { RATE_LIMIT_LOOP_THRESHOLD } from './types'
 
-export type WatchdogVerdict = 'ok' | 'idle' | 'max-runtime' | 'rate-limit-loop' | 'cost-budget-exceeded'
+export type WatchdogVerdict =
+  | 'ok'
+  | 'idle'
+  | 'max-runtime'
+  | 'rate-limit-loop'
+  | 'cost-budget-exceeded'
 
 export function checkAgent(
   agent: ActiveAgent,

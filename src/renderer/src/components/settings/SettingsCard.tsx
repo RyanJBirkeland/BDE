@@ -24,9 +24,7 @@ export function SettingsCard({
   footer,
   noPadding
 }: SettingsCardProps): ReactNode {
-  const cardClass = ['stg-card', noPadding ? 'stg-card--full-bleed' : '']
-    .filter(Boolean)
-    .join(' ')
+  const cardClass = ['stg-card', noPadding ? 'stg-card--full-bleed' : ''].filter(Boolean).join(' ')
 
   return (
     <div className={cardClass}>

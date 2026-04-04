@@ -57,7 +57,14 @@ const initialState = {
 export const useCodeReviewStore = create<CodeReviewState>((set) => ({
   ...initialState,
   selectTask: (taskId): void =>
-    set({ selectedTaskId: taskId, diffFiles: [], commits: [], error: null, reviewSummary: null, summaryLoading: false }),
+    set({
+      selectedTaskId: taskId,
+      diffFiles: [],
+      commits: [],
+      error: null,
+      reviewSummary: null,
+      summaryLoading: false
+    }),
   setActiveTab: (tab): void => set({ activeTab: tab }),
   setDiffFiles: (files): void => set({ diffFiles: files }),
   setCommits: (commits): void => set({ commits }),

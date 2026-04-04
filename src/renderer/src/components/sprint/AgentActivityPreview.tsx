@@ -10,7 +10,10 @@ interface AgentActivityPreviewProps {
 
 const MAX_LINE_LENGTH = 120
 
-export function AgentActivityPreview({ events, maxLines = 5 }: AgentActivityPreviewProps): React.JSX.Element {
+export function AgentActivityPreview({
+  events,
+  maxLines = 5
+}: AgentActivityPreviewProps): React.JSX.Element {
   const recent = events.slice(-maxLines)
 
   if (recent.length === 0) {

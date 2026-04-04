@@ -400,9 +400,7 @@ export function MemorySection(): React.JSX.Element {
                           {result.matches.slice(0, 2).map((match, idx) => (
                             <div key={idx} className="memory-search-result__match">
                               <span className="memory-search-result__line">{match.line}:</span>
-                              <span className="memory-search-result__content">
-                                {match.content}
-                              </span>
+                              <span className="memory-search-result__content">{match.content}</span>
                             </div>
                           ))}
                         </div>
@@ -435,8 +433,7 @@ export function MemorySection(): React.JSX.Element {
                         <span className="memory-file__pin">{'\uD83D\uDCCC'}</span> {pinned.name}
                       </span>
                       <span className="memory-file__meta">
-                        {formatRelativeTime(pinned.modifiedAt)} &middot;{' '}
-                        {formatSize(pinned.size)}
+                        {formatRelativeTime(pinned.modifiedAt)} &middot; {formatSize(pinned.size)}
                       </span>
                     </div>
                     <button
@@ -553,9 +550,7 @@ export function MemorySection(): React.JSX.Element {
                   >
                     <Brain size={14} />
                     <span>
-                      {activeFiles[selectedPath]
-                        ? 'Agent Knowledge: On'
-                        : 'Agent Knowledge: Off'}
+                      {activeFiles[selectedPath] ? 'Agent Knowledge: On' : 'Agent Knowledge: Off'}
                     </span>
                   </button>
                 )}

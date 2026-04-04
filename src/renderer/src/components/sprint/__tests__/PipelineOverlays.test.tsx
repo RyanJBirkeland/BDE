@@ -93,37 +93,19 @@ describe('PipelineOverlays', () => {
 
   it('renders SpecPanel when open and task has spec', () => {
     const task = makeTask({ id: 't1', title: 'Task with spec', spec: 'Some spec content' })
-    render(
-      <PipelineOverlays
-        {...defaultProps}
-        specPanelOpen={true}
-        selectedTask={task}
-      />
-    )
+    render(<PipelineOverlays {...defaultProps} specPanelOpen={true} selectedTask={task} />)
     expect(screen.getByTestId('spec-panel')).toBeInTheDocument()
     expect(screen.getByText('Spec: Task with spec')).toBeInTheDocument()
   })
 
   it('does not render SpecPanel when open but task has no spec', () => {
     const task = makeTask({ id: 't1', title: 'Task without spec', spec: null })
-    render(
-      <PipelineOverlays
-        {...defaultProps}
-        specPanelOpen={true}
-        selectedTask={task}
-      />
-    )
+    render(<PipelineOverlays {...defaultProps} specPanelOpen={true} selectedTask={task} />)
     expect(screen.queryByTestId('spec-panel')).not.toBeInTheDocument()
   })
 
   it('does not render SpecPanel when open but no task selected', () => {
-    render(
-      <PipelineOverlays
-        {...defaultProps}
-        specPanelOpen={true}
-        selectedTask={null}
-      />
-    )
+    render(<PipelineOverlays {...defaultProps} specPanelOpen={true} selectedTask={null} />)
     expect(screen.queryByTestId('spec-panel')).not.toBeInTheDocument()
   })
 
@@ -133,12 +115,7 @@ describe('PipelineOverlays', () => {
   })
 
   it('renders DoneHistoryPanel when open', () => {
-    render(
-      <PipelineOverlays
-        {...defaultProps}
-        doneViewOpen={true}
-      />
-    )
+    render(<PipelineOverlays {...defaultProps} doneViewOpen={true} />)
     expect(screen.getByTestId('done-history-panel')).toBeInTheDocument()
   })
 
@@ -148,12 +125,7 @@ describe('PipelineOverlays', () => {
   })
 
   it('renders ConflictDrawer when open', () => {
-    render(
-      <PipelineOverlays
-        {...defaultProps}
-        conflictDrawerOpen={true}
-      />
-    )
+    render(<PipelineOverlays {...defaultProps} conflictDrawerOpen={true} />)
     expect(screen.getByTestId('conflict-drawer')).toBeInTheDocument()
   })
 
@@ -163,12 +135,7 @@ describe('PipelineOverlays', () => {
   })
 
   it('renders HealthCheckDrawer when open', () => {
-    render(
-      <PipelineOverlays
-        {...defaultProps}
-        healthCheckDrawerOpen={true}
-      />
-    )
+    render(<PipelineOverlays {...defaultProps} healthCheckDrawerOpen={true} />)
     expect(screen.getByTestId('health-check-drawer')).toBeInTheDocument()
   })
 

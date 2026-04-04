@@ -370,7 +370,11 @@ describe('buildAgentPrompt', () => {
 
   describe('time limit injection', () => {
     it('includes time limit when maxRuntimeMs provided', () => {
-      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something', maxRuntimeMs: 3_600_000 })
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Do something',
+        maxRuntimeMs: 3_600_000
+      })
       expect(prompt).toContain('## Time Management')
       expect(prompt).toContain('60 minutes')
     })

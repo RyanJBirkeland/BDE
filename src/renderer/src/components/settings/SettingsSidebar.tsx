@@ -19,7 +19,9 @@ interface SettingsSidebarProps {
 }
 
 /** Groups sections by category, preserving array order */
-function groupByCategory(sections: SettingsSection[]): Array<{ category: string; items: SettingsSection[] }> {
+function groupByCategory(
+  sections: SettingsSection[]
+): Array<{ category: string; items: SettingsSection[] }> {
   const seen: string[] = []
   const map: Record<string, SettingsSection[]> = {}
 
@@ -31,10 +33,14 @@ function groupByCategory(sections: SettingsSection[]): Array<{ category: string;
     map[section.category].push(section)
   }
 
-  return seen.map(category => ({ category, items: map[category] }))
+  return seen.map((category) => ({ category, items: map[category] }))
 }
 
-export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSidebarProps): React.JSX.Element {
+export function SettingsSidebar({
+  sections,
+  activeId,
+  onSelect
+}: SettingsSidebarProps): React.JSX.Element {
   const navRef = useRef<HTMLElement>(null)
   const groups = groupByCategory(sections)
 
@@ -45,7 +51,7 @@ export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSideba
 
   function handleKeyDown(e: React.KeyboardEvent, id: string): void {
     const items = getAllItems()
-    const currentIndex = items.findIndex(el => el.dataset.id === id)
+    const currentIndex = items.findIndex((el) => el.dataset.id === id)
     if (currentIndex === -1) return
 
     let nextIndex: number | null = null
@@ -88,7 +94,7 @@ export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSideba
       {groups.map(({ category, items }) => (
         <div key={category} className="stg-sidebar__group">
           <div className="stg-sidebar__category">{category}</div>
-          {items.map(section => {
+          {items.map((section) => {
             const Icon = section.icon
             const isActive = section.id === activeId
             return (
@@ -100,7 +106,7 @@ export function SettingsSidebar({ sections, activeId, onSelect }: SettingsSideba
                 aria-current={isActive ? 'page' : undefined}
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => onSelect(section.id)}
-                onKeyDown={e => handleKeyDown(e, section.id)}
+                onKeyDown={(e) => handleKeyDown(e, section.id)}
               >
                 <Icon size={14} />
                 <span>{section.label}</span>
