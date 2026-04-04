@@ -376,6 +376,7 @@ describe('AgentManagerImpl — class internals', () => {
         repo: 'myrepo',
         retry_count: 2,
         fast_fail_count: 1,
+        notes: null,
         playground_enabled: true,
         max_runtime_ms: 30000
       })
