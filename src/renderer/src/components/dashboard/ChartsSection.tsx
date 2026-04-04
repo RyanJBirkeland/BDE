@@ -11,7 +11,7 @@ interface ChartsSectionProps {
   chartData: ChartBar[]
   cardErrors: Record<string, string | undefined>
   successRate: number | null
-  stats: { done: number; failed: number }
+  stats: { done: number; failed: number; actualFailed: number }
   avgDuration: number | null
   localAgents: LocalAgent[]
 }
@@ -61,7 +61,7 @@ export function ChartsSection({
       {/* Stats row: Success Rate + Avg Duration */}
       <div className="dashboard-stats-row">
         <NeonCard accent="cyan" title="Success Rate" icon={<Target size={12} />}>
-          <SuccessRing rate={successRate} done={stats.done} failed={stats.failed} />
+          <SuccessRing rate={successRate} done={stats.done} failed={stats.actualFailed} />
         </NeonCard>
 
         <NeonCard accent="blue" title="Avg Duration" icon={<Clock size={12} />}>

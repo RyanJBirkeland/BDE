@@ -6,7 +6,7 @@ vi.mock('../../data/sprint-queries', () => ({
 }))
 
 vi.mock('../../agent-history', () => ({
-  finalizeStaleAgentRuns: vi.fn().mockReturnValue(2)
+  reconcileRunningAgentRuns: vi.fn().mockReturnValue(2)
 }))
 
 import { getOrphanedTasks, updateTask } from '../../data/sprint-queries'
@@ -120,13 +120,14 @@ describe('recoverOrphans', () => {
     expect(updateTaskMock).toHaveBeenCalledWith('task-branch-only', { claimed_by: null })
   })
 
-  it('calls finalizeStaleAgentRuns and logs stale count', async () => {
+  it('calls reconcileRunningAgentRuns and logs stale count', async () => {
     getOrphanedTasksMock.mockReturnValue([])
 
-    await recoverOrphans(() => false, mockRepo, logger)
+    const isActive = (): boolean => false
+    await recoverOrphans(isActive, mockRepo, logger)
 
-    const { finalizeStaleAgentRuns } = await import('../../agent-history')
-    expect(finalizeStaleAgentRuns).toHaveBeenCalled()
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Finalized 2 stale'))
+    const { reconcileRunningAgentRuns } = await import('../../agent-history')
+    expect(reconcileRunningAgentRuns).toHaveBeenCalledWith(isActive)
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Reconciled 2 stale'))
   })
 })

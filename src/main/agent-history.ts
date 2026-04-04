@@ -84,6 +84,18 @@ let _initialized = false
 export function initAgentHistory(): void {
   if (_initialized) return
   _initialized = true
+
+  // Finalize any agent_runs left as 'running' from a previous session —
+  // no agents can be alive when the app process is just starting.
+  try {
+    const cleaned = finalizeAllRunningAgentRuns()
+    if (cleaned > 0) {
+      logger.info(`Finalized ${cleaned} stale agent_runs from previous session`)
+    }
+  } catch {
+    // DB may not be ready yet — orphan recovery will catch these later
+  }
+
   // Fire-and-forget async migration
   migrateFromJson().catch(() => {})
 }
@@ -287,5 +299,46 @@ export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000): n
      WHERE status = 'running' AND started_at < ?`
   )
   const result = stmt.run(cutoff)
+  return result.changes
+}
+
+/**
+ * Reconcile agent_runs marked 'running' in the DB against the actual in-memory active set.
+ * Any record whose sprint_task_id is not in the active set gets finalized as 'failed'.
+ * Called periodically by orphan recovery to catch agents that died without clean shutdown.
+ */
+export function reconcileRunningAgentRuns(
+  isAgentActive: (taskId: string) => boolean
+): number {
+  const db = getDb()
+  const rows = db
+    .prepare(`SELECT id, sprint_task_id FROM agent_runs WHERE status = 'running'`)
+    .all() as Array<{ id: string; sprint_task_id: string | null }>
+
+  let cleaned = 0
+  const finalize = db.prepare(
+    `UPDATE agent_runs SET status = 'failed', finished_at = datetime('now') WHERE id = ?`
+  )
+
+  for (const row of rows) {
+    // If the agent's task is still in the active set, it's genuinely running
+    if (row.sprint_task_id && isAgentActive(row.sprint_task_id)) continue
+    finalize.run(row.id)
+    cleaned++
+  }
+  return cleaned
+}
+
+/**
+ * Finalize ALL agent_runs still marked 'running'.
+ * Called at app startup — no agents can actually be running when the process starts fresh.
+ */
+export function finalizeAllRunningAgentRuns(): number {
+  const db = getDb()
+  const stmt = db.prepare(
+    `UPDATE agent_runs SET status = 'failed', finished_at = datetime('now')
+     WHERE status = 'running'`
+  )
+  const result = stmt.run()
   return result.changes
 }

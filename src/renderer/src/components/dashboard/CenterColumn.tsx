@@ -113,7 +113,7 @@ export function CenterColumn({
         chartData={chartData}
         cardErrors={cardErrors}
         successRate={successRate}
-        stats={{ done: stats.done, failed: stats.failed }}
+        stats={{ done: stats.done, failed: stats.failed, actualFailed: stats.actualFailed }}
         avgDuration={avgDuration}
         localAgents={localAgents}
       />

@@ -46,7 +46,7 @@ describe('ChartsSection', () => {
     chartData: mockChartData,
     cardErrors: {},
     successRate: 85,
-    stats: { done: 17, failed: 3 },
+    stats: { done: 17, failed: 3, actualFailed: 3 },
     avgDuration: 120000,
     localAgents: [{ durationMs: 100000 }, { durationMs: 140000 }]
   }

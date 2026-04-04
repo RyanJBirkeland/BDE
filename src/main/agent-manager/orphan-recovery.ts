@@ -49,11 +49,12 @@ export async function recoverOrphans(
     recovered++
   }
 
-  // Also clean up stale agent_runs records (SDK agents have pid=null)
+  // Reconcile agent_runs: finalize any DB records marked 'running' whose
+  // agent is no longer in the in-memory active set (crashed without cleanup).
   try {
-    const { finalizeStaleAgentRuns } = await import('../agent-history')
-    const cleaned = finalizeStaleAgentRuns()
-    if (cleaned > 0) logger.info(`[agent-manager] Finalized ${cleaned} stale agent_runs records`)
+    const { reconcileRunningAgentRuns } = await import('../agent-history')
+    const cleaned = reconcileRunningAgentRuns(isAgentActive)
+    if (cleaned > 0) logger.info(`[agent-manager] Reconciled ${cleaned} stale agent_runs records`)
   } catch {
     /* best-effort */
   }
