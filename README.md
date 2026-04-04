@@ -10,6 +10,12 @@ You write specs. BDE queues them, spawns Claude Code sessions, monitors progress
 
 [Getting Started](#getting-started) | [How It Works](#how-it-works) | [Features](#features) | [Architecture](#architecture) | [Contributing](#contributing)
 
+<br/>
+
+![BDE Dashboard — pipeline health, status counters, cost tracking, and live activity feed](docs/screenshots/dashboard-dark.png)
+
+*Dashboard: 6 active Claude Code sessions, 21 queued, 225 completed — all visible at a glance.*
+
 </div>
 
 ---
@@ -151,6 +157,9 @@ The core of BDE. Watches the task queue, spawns Claude Code sessions in isolated
 - **Smart retry** — up to 3 attempts, with fast-fail detection (3 failures within 30s = stop trying)
 - **Project context** — every session inherits your `CLAUDE.md` files, so agents know your conventions
 
+![Agents view — multiple concurrent Claude Code sessions with live tool use streams](docs/screenshots/agents-view.png)
+*Agents view: 5 active Claude Code sessions running in parallel. Each shows live tool calls, edits, and bash commands as they happen.*
+
 ### Code Review Station — Human in the Loop
 Agents don't push directly to main. Every completed task lands in a review queue where you inspect diffs, browse commits, read the agent's conversation log, then choose: merge locally, create a PR, request a revision, or discard.
 
@@ -171,7 +180,14 @@ Monaco editor with file explorer, multi-tab interface, and integrated terminal. 
 Git staging, committing, and pushing across multiple repos. Inline diff previews, branch selection, and error handling with retry.
 
 ### Dashboard
-Aggregated metrics at a glance: active/queued/blocked task counts, hourly completion charts, cost-per-run trends, success rate, and recent activity feed.
+Aggregated metrics at a glance: active/queued/blocked task counts, hourly completion charts, cost-per-run trends, success rate, and recent activity feed. Dark and light themes supported.
+
+<p align="center">
+<img src="docs/screenshots/dashboard-dark.png" width="49%" alt="Dashboard — dark neon theme" />
+<img src="docs/screenshots/dashboard-light.png" width="49%" alt="Dashboard — light theme" />
+</p>
+
+*Left: dark neon theme. Right: light theme. Same data, same layout — pick what works for you.*
 
 ---
 
