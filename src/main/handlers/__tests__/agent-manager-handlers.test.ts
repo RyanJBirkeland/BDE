@@ -18,12 +18,13 @@ describe('Agent manager handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers all 2 agent-manager channels', () => {
+  it('registers all 3 agent-manager channels', () => {
     registerAgentManagerHandlers(undefined)
 
-    expect(safeHandle).toHaveBeenCalledTimes(2)
+    expect(safeHandle).toHaveBeenCalledTimes(3)
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:status', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:kill', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('agent-manager:metrics', expect.any(Function))
   })
 
   describe('handler functions', () => {
@@ -95,6 +96,31 @@ describe('Agent manager handlers', () => {
 
         expect(mockKillAgent).toHaveBeenCalledWith('task-123')
         expect(result).toEqual({ ok: true })
+      })
+    })
+    describe('agent-manager:metrics', () => {
+      it('returns null when am is undefined', async () => {
+        const handlers = captureHandlers()
+        const result = await handlers['agent-manager:metrics'](mockEvent)
+        expect(result).toBeNull()
+      })
+
+      it('calls getMetrics and returns snapshot when agent manager is provided', async () => {
+        const mockSnapshot = {
+          drainLoopCount: 5,
+          agentsSpawned: 3,
+          agentsCompleted: 2,
+          agentsFailed: 1,
+          retriesQueued: 0,
+          watchdogVerdicts: {},
+          lastDrainDurationMs: 42,
+          uptimeMs: 1000
+        }
+        const mockAm = { getMetrics: vi.fn().mockReturnValue(mockSnapshot) }
+        const handlers = captureHandlersWithAm(mockAm as any)
+        const result = await handlers['agent-manager:metrics'](mockEvent)
+        expect(mockAm.getMetrics).toHaveBeenCalledTimes(1)
+        expect(result).toBe(mockSnapshot)
       })
     })
   })

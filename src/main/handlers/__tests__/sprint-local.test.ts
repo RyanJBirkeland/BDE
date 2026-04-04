@@ -9,7 +9,7 @@ vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn()
 }))
 
-// Mock sprint-queries (Supabase data layer)
+// Mock sprint-queries (data layer)
 vi.mock('../../data/sprint-queries', () => ({
   UPDATE_ALLOWLIST: new Set(['title', 'status', 'prompt', 'spec', 'notes']),
   getTask: vi.fn(),
@@ -26,7 +26,12 @@ vi.mock('../../data/sprint-queries', () => ({
   listTasksWithOpenPrs: vi.fn(),
   updateTaskMergeableState: vi.fn(),
   clearSprintTaskFk: vi.fn(),
-  getHealthCheckTasks: vi.fn()
+  getHealthCheckTasks: vi.fn(),
+  // Additional methods needed by ISprintTaskRepository
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn(),
+  getOrphanedTasks: vi.fn(),
+  getActiveTaskCount: vi.fn()
 }))
 
 // Mock sprint-listeners

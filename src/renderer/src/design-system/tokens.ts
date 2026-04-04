@@ -37,6 +37,7 @@ export const tokens = {
   },
   /** Font sizes — use semantic names, not raw px */
   size: {
+    '2xs': '10px', // Tiny labels, metadata
     xs: '11px', // Badges, fine print
     sm: '12px', // Secondary labels
     md: '13px', // Default body text

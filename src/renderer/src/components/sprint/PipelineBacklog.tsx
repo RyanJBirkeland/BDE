@@ -28,31 +28,21 @@ export function PipelineBacklog({
           BACKLOG <span className="pipeline-sidebar__count">{backlog.length}</span>
         </div>
         {backlog.map((task) => (
-          <div
-            key={task.id}
-            className="backlog-card"
-            role="button"
-            aria-label={task.title}
-            tabIndex={0}
-            onClick={() => onTaskClick(task.id)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onTaskClick(task.id)
-              }
-            }}
-          >
-            <div className="backlog-card__title">{task.title}</div>
-            <div className="backlog-card__meta">
-              <span>{task.repo}</span>
-              {task.priority <= 2 && <span>P{task.priority}</span>}
-            </div>
+          <div key={task.id} className="backlog-card" data-testid={`backlog-card-${task.id}`}>
+            <button
+              className="backlog-card__select"
+              aria-label={`Select task: ${task.title}`}
+              onClick={() => onTaskClick(task.id)}
+            >
+              <div className="backlog-card__title">{task.title}</div>
+              <div className="backlog-card__meta">
+                <span>{task.repo}</span>
+                {task.priority <= 2 && <span>P{task.priority}</span>}
+              </div>
+            </button>
             <button
               className="backlog-card__action"
-              onClick={(e) => {
-                e.stopPropagation()
-                onAddToQueue(task)
-              }}
+              onClick={() => onAddToQueue(task)}
             >
               → Add to queue
             </button>
@@ -66,33 +56,23 @@ export function PipelineBacklog({
             FAILED <span className="pipeline-sidebar__count">{failed.length}</span>
           </div>
           {visibleFailed.map((task) => (
-            <div
-              key={task.id}
-              className="failed-card"
-              role="button"
-              aria-label={task.title}
-              tabIndex={0}
-              onClick={() => onTaskClick(task.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  onTaskClick(task.id)
-                }
-              }}
-            >
-              <div className="failed-card__title">{task.title}</div>
-              <div
-                className="failed-card__meta failed-card__notes"
-                title={task.notes || 'No details'}
+            <div key={task.id} className="failed-card" data-testid={`failed-card-${task.id}`}>
+              <button
+                className="failed-card__select"
+                aria-label={`Select task: ${task.title}`}
+                onClick={() => onTaskClick(task.id)}
               >
-                {task.notes || 'No details'}
-              </div>
+                <div className="failed-card__title">{task.title}</div>
+                <div
+                  className="failed-card__meta failed-card__notes"
+                  title={task.notes || 'No details'}
+                >
+                  {task.notes || 'No details'}
+                </div>
+              </button>
               <button
                 className="backlog-card__action failed-card__action--rerun"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onRerun(task)
-                }}
+                onClick={() => onRerun(task)}
               >
                 ↻ Re-run
               </button>

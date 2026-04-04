@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import type { SprintTask } from '../../../../../shared/types'
 
 vi.mock('framer-motion', () => ({
@@ -231,5 +231,141 @@ describe('PipelineStage', () => {
     )
     const dot = container.querySelector('.pipeline-stage__dot')
     expect(dot?.textContent).toBe('2')
+  })
+
+  it('moves focus to next pill on ArrowDown', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [
+      makeTask({ id: 'task-1', title: 'First task' }),
+      makeTask({ id: 'task-2', title: 'Second task' }),
+      makeTask({ id: 'task-3', title: 'Third task' })
+    ]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="3 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    const pills = screen.getAllByRole('button')
+    pills[0].focus()
+    expect(pills[0]).toHaveFocus()
+    fireEvent.keyDown(pills[0], { key: 'ArrowDown' })
+    expect(pills[1]).toHaveFocus()
+  })
+
+  it('moves focus to previous pill on ArrowUp', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [
+      makeTask({ id: 'task-1', title: 'First task' }),
+      makeTask({ id: 'task-2', title: 'Second task' })
+    ]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="2 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    const pills = screen.getAllByRole('button')
+    pills[1].focus()
+    fireEvent.keyDown(pills[1], { key: 'ArrowUp' })
+    expect(pills[0]).toHaveFocus()
+  })
+
+  it('moves focus to first pill on Home', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [
+      makeTask({ id: 'task-1', title: 'First task' }),
+      makeTask({ id: 'task-2', title: 'Second task' }),
+      makeTask({ id: 'task-3', title: 'Third task' })
+    ]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="3 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    const pills = screen.getAllByRole('button')
+    pills[2].focus()
+    fireEvent.keyDown(pills[2], { key: 'Home' })
+    expect(pills[0]).toHaveFocus()
+  })
+
+  it('moves focus to last pill on End', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [
+      makeTask({ id: 'task-1', title: 'First task' }),
+      makeTask({ id: 'task-2', title: 'Second task' }),
+      makeTask({ id: 'task-3', title: 'Third task' })
+    ]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="3 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    const pills = screen.getAllByRole('button')
+    pills[0].focus()
+    fireEvent.keyDown(pills[0], { key: 'End' })
+    expect(pills[2]).toHaveFocus()
+  })
+
+  it('does not move focus beyond first pill on ArrowUp', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [
+      makeTask({ id: 'task-1', title: 'First task' }),
+      makeTask({ id: 'task-2', title: 'Second task' })
+    ]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="2 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    const pills = screen.getAllByRole('button')
+    pills[0].focus()
+    fireEvent.keyDown(pills[0], { key: 'ArrowUp' })
+    expect(pills[0]).toHaveFocus()
+  })
+
+  it('does not move focus beyond last pill on ArrowDown', async () => {
+    const { PipelineStage } = await import('../PipelineStage')
+    const tasks = [
+      makeTask({ id: 'task-1', title: 'First task' }),
+      makeTask({ id: 'task-2', title: 'Second task' })
+    ]
+    render(
+      <PipelineStage
+        name="queued"
+        label="Queued"
+        tasks={tasks}
+        count="2 tasks"
+        selectedTaskId={null}
+        onTaskClick={vi.fn()}
+      />
+    )
+    const pills = screen.getAllByRole('button')
+    pills[1].focus()
+    fireEvent.keyDown(pills[1], { key: 'ArrowDown' })
+    expect(pills[1]).toHaveFocus()
   })
 })

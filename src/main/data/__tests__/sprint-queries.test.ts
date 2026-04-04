@@ -284,10 +284,13 @@ describe('claimTask', () => {
   })
 
   it('enforces WIP limit atomically when maxActive is provided', () => {
+    // Use valid transitions: backlog → queued → active (via claimTask)
     const t1 = createTask({ title: 'Active 1', repo: 'bde' })!
-    updateTask(t1.id, { status: 'active' })
+    updateTask(t1.id, { status: 'queued' })
+    claimTask(t1.id, 'setup-exec')
     const t2 = createTask({ title: 'Active 2', repo: 'bde' })!
-    updateTask(t2.id, { status: 'active' })
+    updateTask(t2.id, { status: 'queued' })
+    claimTask(t2.id, 'setup-exec')
 
     const queued = createTask({ title: 'Should be blocked', repo: 'bde' })!
     updateTask(queued.id, { status: 'queued' })
@@ -301,8 +304,10 @@ describe('claimTask', () => {
   })
 
   it('allows claim when active count is below maxActive', () => {
+    // Use valid transitions: backlog → queued → active (via claimTask)
     const active = createTask({ title: 'Active', repo: 'bde' })!
-    updateTask(active.id, { status: 'active' })
+    updateTask(active.id, { status: 'queued' })
+    claimTask(active.id, 'setup-exec')
 
     const queued = createTask({ title: 'Claimable', repo: 'bde' })!
     updateTask(queued.id, { status: 'queued' })

@@ -9,6 +9,7 @@ interface SidebarItemProps {
   shortcut: string
   isActive: boolean
   isOpen: boolean
+  badge?: number
   onActivate: (view: View) => void
   onContextAction: (action: string, view: View) => void
 }
@@ -34,6 +35,7 @@ export function SidebarItem({
   shortcut,
   isActive,
   isOpen,
+  badge,
   onActivate,
   onContextAction
 }: SidebarItemProps): React.JSX.Element {
@@ -151,6 +153,11 @@ export function SidebarItem({
         >
           {icon}
           {isOpen && !isActive && <span className="sidebar-item__open-dot" />}
+          {badge != null && badge > 0 && (
+            <span className="sidebar-item__badge" data-testid={`sidebar-badge-${view}`}>
+              {badge > 9 ? '9+' : badge}
+            </span>
+          )}
         </button>
       </NeonTooltip>
 

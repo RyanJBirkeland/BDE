@@ -439,6 +439,10 @@ export interface AgentManagerChannels {
     args: [taskId: string]
     result: { ok: boolean }
   }
+  'agent-manager:metrics': {
+    args: []
+    result: import('./types').MetricsSnapshot | null
+  }
 }
 
 /** Terminal PTY management */

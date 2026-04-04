@@ -249,6 +249,23 @@
   box-shadow: 0 0 4px var(--neon-cyan);
 }
 
+.sidebar-item__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--neon-orange);
+  color: var(--neon-bg);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
 /* ── Sidebar Context Menu ── */
 .sidebar-context-menu {
   position: fixed;

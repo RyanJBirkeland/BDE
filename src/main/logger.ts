@@ -22,13 +22,25 @@ function rotateIfNeeded(): void {
   try {
     const stats = statSync(LOG_PATH)
     if (stats.size > MAX_LOG_SIZE) {
-      const oldPath = LOG_PATH + '.old'
+      const old1 = LOG_PATH + '.old'
+      const old2 = LOG_PATH + '.old.2'
+      const old3 = LOG_PATH + '.old.3'
       try {
-        rmSync(oldPath)
+        rmSync(old3)
       } catch {
         /* may not exist */
       }
-      renameSync(LOG_PATH, oldPath)
+      try {
+        renameSync(old2, old3)
+      } catch {
+        /* may not exist */
+      }
+      try {
+        renameSync(old1, old2)
+      } catch {
+        /* may not exist */
+      }
+      renameSync(LOG_PATH, old1)
     }
   } catch {
     // File doesn't exist yet — fine

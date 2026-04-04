@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { promisify } from 'node:util'
+import { sanitizeForGit } from '../completion'
 
 // Mock node:fs — existsSync must return true for worktree path guard
 vi.mock('node:fs', async () => {
@@ -385,11 +386,12 @@ describe('resolveFailure', () => {
   it('re-queues task with incremented retry count when retries remain', async () => {
     const result = await resolveFailure({ taskId: 'task-2', retryCount: 1, repo: mockRepo })
 
-    expect(updateTaskMock).toHaveBeenCalledWith('task-2', {
+    expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
       status: 'queued',
       retry_count: 2,
-      claimed_by: null
-    })
+      claimed_by: null,
+      next_eligible_at: expect.any(String)
+    }))
     expect(result).toBe(false) // not terminal
   })
 
@@ -414,11 +416,12 @@ describe('resolveFailure', () => {
       repo: mockRepo
     })
 
-    expect(updateTaskMock).toHaveBeenCalledWith('task-4', {
+    expect(updateTaskMock).toHaveBeenCalledWith('task-4', expect.objectContaining({
       status: 'queued',
       retry_count: MAX_RETRIES,
-      claimed_by: null
-    })
+      claimed_by: null,
+      next_eligible_at: expect.any(String)
+    }))
     expect(result).toBe(false) // not terminal
   })
 
@@ -472,5 +475,31 @@ describe('resolveFailure', () => {
 
     // AM-5 fix: should return true (terminal) even though DB update failed
     expect(result).toBe(true)
+  })
+})
+
+describe('sanitizeForGit', () => {
+  it('strips backticks', () => {
+    expect(sanitizeForGit('hello `world`')).toBe("hello 'world'")
+  })
+
+  it('neutralizes command substitution $()', () => {
+    const input = 'task $(rm -rf /)'
+    const result = sanitizeForGit(input)
+    expect(result).not.toContain('$(')
+  })
+
+  it('neutralizes nested command substitution', () => {
+    const input = 'fix $(echo $(whoami))'
+    const result = sanitizeForGit(input)
+    expect(result).not.toContain('$(')
+  })
+
+  it('strips markdown links keeping text', () => {
+    expect(sanitizeForGit('[click](http://evil.com)')).toBe('click')
+  })
+
+  it('trims whitespace', () => {
+    expect(sanitizeForGit('  hello  ')).toBe('hello')
   })
 })

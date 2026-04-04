@@ -4,7 +4,8 @@ import type {
   PrListPayload,
   SpawnLocalAgentArgs,
   SpawnLocalAgentResult,
-  SprintTask
+  SprintTask,
+  MetricsSnapshot
 } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 import type { AgentEvent } from '../shared/types'
@@ -192,6 +193,7 @@ declare global {
       agentManager: {
         status: () => Promise<IpcResult<'agent-manager:status'>>
         kill: (taskId: string) => Promise<IpcResult<'agent-manager:kill'>>
+        getMetrics: () => Promise<MetricsSnapshot | null>
       }
 
       // Dashboard analytics

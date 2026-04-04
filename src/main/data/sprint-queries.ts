@@ -5,6 +5,7 @@
 import type Database from 'better-sqlite3'
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
+import { isValidTransition } from '../../shared/task-transitions'
 import { getDb } from '../db'
 import { recordTaskChanges } from './task-changes'
 import type { Logger } from '../agent-manager/types'
@@ -68,7 +69,8 @@ export const UPDATE_ALLOWLIST = new Set([
   'max_runtime_ms',
   'spec_type',
   'worktree_path',
-  'session_id'
+  'session_id',
+  'next_eligible_at'
 ])
 
 export interface QueueStats {
@@ -200,6 +202,17 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
       // Fetch current state for change tracking
       const oldTask = getTask(id, db)
       if (!oldTask) return null
+
+      // Enforce status transition state machine
+      if (patch.status && typeof patch.status === 'string') {
+        const currentStatus = oldTask.status as string
+        if (!isValidTransition(currentStatus, patch.status)) {
+          logger.warn(
+            `[sprint-queries] Invalid status transition: ${currentStatus} → ${patch.status} for task ${id}`
+          )
+          return null
+        }
+      }
 
       // Build SET clause with serialized values
       const setClauses: string[] = []
@@ -620,7 +633,7 @@ export function getQueuedTasks(limit: number): SprintTask[] {
     const rows = getDb()
       .prepare(
         `SELECT * FROM sprint_tasks
-         WHERE status = 'queued' AND claimed_by IS NULL
+         WHERE status = 'queued' AND claimed_by IS NULL AND (next_eligible_at IS NULL OR next_eligible_at <= strftime('%Y-%m-%dT%H:%M:%fZ','now'))
          ORDER BY priority ASC, created_at ASC
          LIMIT ?`
       )

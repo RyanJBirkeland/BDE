@@ -151,10 +151,24 @@ app.whenReady().then(() => {
 
   // Prune old audit trail records (non-fatal)
   try {
-    pruneOldChanges(30)
-  } catch {
-    /* non-fatal */
+    const pruned = pruneOldChanges(30)
+    if (pruned > 0) createLogger('startup').info(`Pruned ${pruned} old task change records`)
+  } catch (err) {
+    createLogger('startup').warn(`Failed to prune task changes: ${err}`)
   }
+
+  // Prune task_changes periodically (every 24 hours)
+  const pruneTakeChangesInterval = setInterval(
+    () => {
+      try {
+        pruneOldChanges(30)
+      } catch {
+        /* non-fatal */
+      }
+    },
+    24 * 60 * 60 * 1000
+  )
+  app.on('will-quit', () => clearInterval(pruneTakeChangesInterval))
 
   // --- Agent Manager initialization ---
   const amConfig = {

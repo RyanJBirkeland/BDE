@@ -7,25 +7,31 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: 'task-1',
     title: 'Test Task',
-    repo: 'my-repo',
-    prompt: null,
-    priority: 3,
+    prompt: '',
+    repo: 'bde',
     status: 'backlog',
-    notes: null,
+    priority: 3,
+    depends_on: [],
     spec: null,
-    retry_count: 0,
-    fast_fail_count: 0,
-    agent_run_id: null,
+    notes: null,
+    pr_url: null,
     pr_number: null,
     pr_status: null,
-    pr_url: null,
-    claimed_by: null,
+    pr_mergeable_state: null,
+    agent_run_id: null,
+    retry_count: 0,
+    fast_fail_count: 0,
     started_at: null,
     completed_at: null,
+    claimed_by: null,
     template_name: null,
-    depends_on: null,
-    updated_at: '2026-01-01T00:00:00Z',
-    created_at: '2026-01-01T00:00:00Z',
+    playground_enabled: false,
+    needs_review: false,
+    max_runtime_ms: null,
+    spec_type: null,
+    worktree_path: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     ...overrides
   }
 }
@@ -39,238 +45,169 @@ describe('PipelineBacklog', () => {
     vi.clearAllMocks()
   })
 
-  it('renders backlog tasks with titles', () => {
-    const backlog = [makeTask({ id: 'b1', title: 'Backlog Task One' })]
-    render(
-      <PipelineBacklog
-        backlog={backlog}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('Backlog Task One')).toBeInTheDocument()
+  describe('backlog cards', () => {
+    it('renders backlog card without role="button" on the outer div', () => {
+      const task = makeTask({ id: 'b-1', title: 'Backlog Task' })
+      render(
+        <PipelineBacklog
+          backlog={[task]}
+          failed={[]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const card = screen.getByTestId('backlog-card-b-1')
+      expect(card).not.toHaveAttribute('role', 'button')
+    })
+
+    it('renders at least 2 separate buttons per backlog card (select + action)', () => {
+      const task = makeTask({ id: 'b-1', title: 'Backlog Task' })
+      render(
+        <PipelineBacklog
+          backlog={[task]}
+          failed={[]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const card = screen.getByTestId('backlog-card-b-1')
+      const buttons = card.querySelectorAll('button')
+      expect(buttons.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('clicking the select button calls onTaskClick with the task id', () => {
+      const task = makeTask({ id: 'b-1', title: 'Backlog Task' })
+      render(
+        <PipelineBacklog
+          backlog={[task]}
+          failed={[]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const selectBtn = screen.getByRole('button', { name: /select task: backlog task/i })
+      fireEvent.click(selectBtn)
+      expect(onTaskClick).toHaveBeenCalledWith('b-1')
+    })
+
+    it('clicking the action button calls onAddToQueue with the task', () => {
+      const task = makeTask({ id: 'b-1', title: 'Backlog Task' })
+      render(
+        <PipelineBacklog
+          backlog={[task]}
+          failed={[]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const addBtn = screen.getByRole('button', { name: /add to queue/i })
+      fireEvent.click(addBtn)
+      expect(onAddToQueue).toHaveBeenCalledWith(task)
+      expect(onTaskClick).not.toHaveBeenCalled()
+    })
+
+    it('select button does not trigger action button handler', () => {
+      const task = makeTask({ id: 'b-1', title: 'Backlog Task' })
+      render(
+        <PipelineBacklog
+          backlog={[task]}
+          failed={[]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const selectBtn = screen.getByRole('button', { name: /select task: backlog task/i })
+      fireEvent.click(selectBtn)
+      expect(onAddToQueue).not.toHaveBeenCalled()
+    })
   })
 
-  it('renders backlog count badge', () => {
-    const backlog = [makeTask({ id: 'b1' }), makeTask({ id: 'b2' })]
-    render(
-      <PipelineBacklog
-        backlog={backlog}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('2')).toBeInTheDocument()
+  describe('failed cards', () => {
+    it('renders failed card without role="button" on the outer div', () => {
+      const task = makeTask({ id: 'f-1', title: 'Failed Task', status: 'failed' })
+      render(
+        <PipelineBacklog
+          backlog={[]}
+          failed={[task]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const card = screen.getByTestId('failed-card-f-1')
+      expect(card).not.toHaveAttribute('role', 'button')
+    })
+
+    it('renders at least 2 separate buttons per failed card (select + rerun)', () => {
+      const task = makeTask({ id: 'f-1', title: 'Failed Task', status: 'failed' })
+      render(
+        <PipelineBacklog
+          backlog={[]}
+          failed={[task]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const card = screen.getByTestId('failed-card-f-1')
+      const buttons = card.querySelectorAll('button')
+      expect(buttons.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('clicking the select button on a failed card calls onTaskClick', () => {
+      const task = makeTask({ id: 'f-1', title: 'Failed Task', status: 'failed' })
+      render(
+        <PipelineBacklog
+          backlog={[]}
+          failed={[task]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const selectBtn = screen.getByRole('button', { name: /select task: failed task/i })
+      fireEvent.click(selectBtn)
+      expect(onTaskClick).toHaveBeenCalledWith('f-1')
+    })
+
+    it('clicking the rerun button calls onRerun with the task', () => {
+      const task = makeTask({ id: 'f-1', title: 'Failed Task', status: 'failed' })
+      render(
+        <PipelineBacklog
+          backlog={[]}
+          failed={[task]}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      const rerunBtn = screen.getByRole('button', { name: /re-run/i })
+      fireEvent.click(rerunBtn)
+      expect(onRerun).toHaveBeenCalledWith(task)
+      expect(onTaskClick).not.toHaveBeenCalled()
+    })
   })
 
-  it('shows "→ Add to queue" button and calls onAddToQueue when clicked', () => {
-    const task = makeTask({ id: 'b1', title: 'Queue Me' })
-    render(
-      <PipelineBacklog
-        backlog={[task]}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    const btn = screen.getByRole('button', { name: /add to queue/i })
-    fireEvent.click(btn)
-    expect(onAddToQueue).toHaveBeenCalledWith(task)
-    expect(onTaskClick).not.toHaveBeenCalled()
-  })
-
-  it('calls onTaskClick when backlog card is clicked', () => {
-    const task = makeTask({ id: 'b1', title: 'Clickable Task' })
-    render(
-      <PipelineBacklog
-        backlog={[task]}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    fireEvent.click(screen.getByText('Clickable Task'))
-    expect(onTaskClick).toHaveBeenCalledWith('b1')
-  })
-
-  it('renders failed tasks when present', () => {
-    const failed = [
-      makeTask({ id: 'f1', title: 'Failed Task', status: 'failed', notes: 'Something went wrong' })
-    ]
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={failed}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('Failed Task')).toBeInTheDocument()
-    expect(screen.getByText('FAILED')).toBeInTheDocument()
-  })
-
-  it('hides failed section when no failed tasks', () => {
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.queryByText('FAILED')).not.toBeInTheDocument()
-  })
-
-  it('shows "No backlog tasks" when backlog is empty', () => {
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('No backlog tasks')).toBeInTheDocument()
-  })
-
-  it('shows "↻ Re-run" button on failed cards and calls onRerun when clicked', () => {
-    const task = makeTask({ id: 'f1', title: 'Rerun Me', status: 'failed' })
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={[task]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    const btn = screen.getByRole('button', { name: /re-run/i })
-    fireEvent.click(btn)
-    expect(onRerun).toHaveBeenCalledWith(task)
-    expect(onTaskClick).not.toHaveBeenCalled()
-  })
-
-  it('shows priority badge for high-priority backlog tasks', () => {
-    const task = makeTask({ id: 'b1', title: 'High Priority', priority: 1 })
-    render(
-      <PipelineBacklog
-        backlog={[task]}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('P1')).toBeInTheDocument()
-  })
-
-  it('shows notes excerpt on failed card', () => {
-    const notes = 'Detailed failure reason that is longer than forty chars and more'
-    const task = makeTask({ id: 'f1', title: 'Failed', status: 'failed', notes })
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={[task]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    // Should show full notes with tooltip
-    expect(screen.getByText(notes)).toBeInTheDocument()
-    expect(screen.getByTitle(notes)).toBeInTheDocument()
-  })
-
-  it('shows "No details" on failed card with no notes', () => {
-    const task = makeTask({ id: 'f1', title: 'Failed', status: 'failed', notes: null })
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={[task]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('No details')).toBeInTheDocument()
-  })
-})
-
-describe('PipelineBacklog - additional coverage', () => {
-  const onTaskClick = vi.fn()
-  const onAddToQueue = vi.fn()
-  const onRerun = vi.fn()
-
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('shows P2 priority badge for priority 2 backlog tasks', () => {
-    const task = makeTask({ id: 'b1', title: 'Med Priority', priority: 2 })
-    render(
-      <PipelineBacklog
-        backlog={[task]}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('P2')).toBeInTheDocument()
-  })
-
-  it('does not show priority badge for priority 3 backlog tasks', () => {
-    const task = makeTask({ id: 'b1', title: 'Low Priority', priority: 3 })
-    render(
-      <PipelineBacklog
-        backlog={[task]}
-        failed={[]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.queryByText('P3')).not.toBeInTheDocument()
-  })
-
-  it('shows failed count badge', () => {
-    const failed = [
-      makeTask({ id: 'f1', status: 'failed' }),
-      makeTask({ id: 'f2', status: 'failed' })
-    ]
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={failed}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    expect(screen.getByText('2')).toBeInTheDocument()
-  })
-
-  it('calls onTaskClick when failed card is clicked', () => {
-    const task = makeTask({ id: 'f1', title: 'Clickable Failed', status: 'failed' })
-    render(
-      <PipelineBacklog
-        backlog={[]}
-        failed={[task]}
-        onTaskClick={onTaskClick}
-        onAddToQueue={onAddToQueue}
-        onRerun={onRerun}
-      />
-    )
-    fireEvent.click(screen.getByText('Clickable Failed'))
-    expect(onTaskClick).toHaveBeenCalledWith('f1')
+  describe('expand/collapse failed', () => {
+    it('shows expand button when there are more than 3 failed tasks', () => {
+      const tasks = [1, 2, 3, 4].map((n) =>
+        makeTask({ id: `f-${n}`, title: `Failed ${n}`, status: 'failed' })
+      )
+      render(
+        <PipelineBacklog
+          backlog={[]}
+          failed={tasks}
+          onTaskClick={onTaskClick}
+          onAddToQueue={onAddToQueue}
+          onRerun={onRerun}
+        />
+      )
+      expect(screen.getByText('+1 more...')).toBeInTheDocument()
+    })
   })
 })

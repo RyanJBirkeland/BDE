@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useCodeReviewStore } from '../../stores/codeReview'
 
@@ -9,6 +10,31 @@ export function ReviewQueue(): React.JSX.Element {
   const reviewTasks = tasks
     .filter((t) => t.status === 'review')
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key !== 'j' && e.key !== 'k') return
+
+      e.preventDefault()
+      if (reviewTasks.length === 0) return
+
+      const currentIndex = reviewTasks.findIndex((t) => t.id === selectedTaskId)
+      let nextIndex: number
+
+      if (e.key === 'j') {
+        nextIndex = currentIndex === -1 ? 0 : Math.min(currentIndex + 1, reviewTasks.length - 1)
+      } else {
+        nextIndex = currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0)
+      }
+
+      selectTask(reviewTasks[nextIndex].id)
+    }
+
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [reviewTasks, selectedTaskId, selectTask])
 
   return (
     <aside className="cr-queue">

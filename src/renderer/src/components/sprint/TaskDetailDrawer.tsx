@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
+import { useAgentEventsStore } from '../../stores/agentEvents'
 import { formatElapsed, getDotColor } from '../../lib/task-format'
 import { TaskDetailActionButtons } from './TaskDetailActionButtons'
+import { AgentActivityPreview } from './AgentActivityPreview'
 
 const MIN_DRAWER_WIDTH = 280
 const MAX_DRAWER_WIDTH = 700
@@ -22,6 +24,7 @@ export interface TaskDetailDrawerProps {
   onViewAgents: (agentId: string) => void
   onUnblock?: (task: SprintTask) => void
   onRetry?: (task: SprintTask) => void
+  onReviewChanges?: (task: SprintTask) => void
 }
 
 function formatTimestamp(iso: string): string {
@@ -46,13 +49,19 @@ export function TaskDetailDrawer({
   onEdit,
   onViewAgents,
   onUnblock,
-  onRetry
+  onRetry,
+  onReviewChanges
 }: TaskDetailDrawerProps): React.JSX.Element {
   const [elapsed, setElapsed] = useState('')
   const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_DRAWER_WIDTH)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    titleRef.current?.focus()
+  }, [task.id])
 
   useEffect(() => {
     if (task.status !== 'active' || !task.started_at) return
@@ -124,6 +133,30 @@ export function TaskDetailDrawer({
   )
   const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
 
+  const agentRunId = task.agent_run_id
+  const agentEvents = useAgentEventsStore((s) =>
+    agentRunId !== null ? s.events[agentRunId] : undefined
+  )
+
+  const activityEvents = useMemo(() => {
+    if (!agentEvents) return []
+    return agentEvents
+      .filter(
+        (e) =>
+          e.type === 'agent:text' ||
+          e.type === 'agent:tool_call' ||
+          e.type === 'agent:tool_result'
+      )
+      .map((e, i) => {
+        let content = ''
+        if (e.type === 'agent:text') content = e.text
+        else if (e.type === 'agent:tool_call') content = `[${e.tool}] ${e.summary}`
+        else if (e.type === 'agent:tool_result') content = `[${e.tool}] ${e.summary}`
+        return { id: i, content }
+      })
+      .filter((e) => e.content.length > 0)
+  }, [agentEvents])
+
   return (
     <aside className="task-drawer" data-testid="task-detail-drawer" style={{ width }}>
       {/* Resize handle */}
@@ -149,7 +182,7 @@ export function TaskDetailDrawer({
       />
       {/* Header */}
       <div className="task-drawer__head">
-        <h2 className="task-drawer__title">{task.title}</h2>
+        <h2 className="task-drawer__title" ref={titleRef} tabIndex={-1}>{task.title}</h2>
         <div className="task-drawer__status">
           <span
             className="task-drawer__status-dot"
@@ -228,6 +261,21 @@ export function TaskDetailDrawer({
             onClick={() => onViewAgents(task.agent_run_id!)}
           >
             ● Running — View in Agents →
+          </button>
+        )}
+
+        {/* Agent activity preview for active tasks */}
+        {task.status === 'active' && task.agent_run_id && (
+          <AgentActivityPreview events={activityEvents} />
+        )}
+
+        {/* Review Changes CTA */}
+        {task.status === 'review' && onReviewChanges && (
+          <button
+            className="task-drawer__btn task-drawer__btn--primary"
+            onClick={() => onReviewChanges(task)}
+          >
+            Review Changes →
           </button>
         )}
 

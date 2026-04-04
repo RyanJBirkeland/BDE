@@ -5,6 +5,7 @@ import { useReadinessChecks } from '../../hooks/useReadinessChecks'
 import { SpecEditor } from './SpecEditor'
 import { ReadinessChecks } from './ReadinessChecks'
 import { WorkbenchActions } from './WorkbenchActions'
+import { DependencyPicker } from './DependencyPicker'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { REPO_OPTIONS } from '../../lib/constants'
 import { toast } from '../../stores/toasts'
@@ -35,6 +36,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const resetForm = useTaskWorkbenchStore((s) => s.resetForm)
 
+  const allTasks = useSprintTasks((s) => s.tasks)
   const createTask = useSprintTasks((s) => s.createTask)
   const updateTask = useSprintTasks((s) => s.updateTask)
 
@@ -371,6 +373,12 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
                 Dev Playground
               </label>
             </div>
+            <DependencyPicker
+              dependencies={dependsOn ?? []}
+              availableTasks={allTasks}
+              onChange={(deps) => setField('dependsOn', deps)}
+              currentTaskId={taskId ?? undefined}
+            />
           </div>
         )}
       </div>

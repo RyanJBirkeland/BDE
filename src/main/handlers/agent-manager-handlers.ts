@@ -30,4 +30,8 @@ export function registerAgentManagerHandlers(am: AgentManager | undefined): void
     am.killAgent(taskId)
     return { ok: true }
   })
+
+  safeHandle('agent-manager:metrics', async () => {
+    return am?.getMetrics() ?? null
+  })
 }

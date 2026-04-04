@@ -25,70 +25,18 @@ import { setSprintQueriesLogger } from '../data/sprint-queries'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoPaths } from '../paths'
 import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../env-utils'
+import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
 
 // ---------------------------------------------------------------------------
-// Logger helper — callers can supply their own or fall back to console
+// Logger helper — callers can supply their own or fall back to createLogger
 // ---------------------------------------------------------------------------
 
-import { appendFileSync, statSync, renameSync, rmSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { join as joinPath } from 'node:path'
 import { homedir as home } from 'node:os'
-import { BDE_AGENT_LOG_PATH } from '../paths'
-const LOG_PATH = BDE_AGENT_LOG_PATH
-const AM_MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
-let amWriteCount = 0
-let fileLogFailureCount = 0
+import { createLogger } from '../logger'
 
-function rotateAmLogIfNeeded(): void {
-  try {
-    const stats = statSync(LOG_PATH)
-    if (stats.size > AM_MAX_LOG_SIZE) {
-      const oldPath = LOG_PATH + '.old'
-      try {
-        rmSync(oldPath)
-      } catch {
-        /* may not exist */
-      }
-      renameSync(LOG_PATH, oldPath)
-    }
-  } catch {
-    /* file doesn't exist yet */
-  }
-}
-
-function fileLog(level: string, m: string): void {
-  try {
-    appendFileSync(LOG_PATH, `[${new Date().toISOString()}] [${level}] ${m}\n`)
-    fileLogFailureCount = 0 // Reset on successful write
-    if (++amWriteCount >= 500) {
-      amWriteCount = 0
-      rotateAmLogIfNeeded()
-    }
-  } catch (err) {
-    // Count consecutive failures and log to stderr after threshold
-    fileLogFailureCount++
-    if (fileLogFailureCount === 5) {
-      console.error(`[agent-manager] File logging failed 5 times consecutively: ${err}`)
-      console.error(`[agent-manager] Log path: ${LOG_PATH} — check disk space and permissions`)
-    }
-  }
-}
-
-const defaultLogger: Logger = {
-  info: (m) => {
-    console.log(m)
-    fileLog('INFO', m)
-  },
-  warn: (m) => {
-    console.warn(m)
-    fileLog('WARN', m)
-  },
-  error: (m) => {
-    console.error(m)
-    fileLog('ERROR', m)
-  }
-}
+const defaultLogger: Logger = createLogger('agent-manager')
 
 // ---------------------------------------------------------------------------
 // Extracted pure functions (testable independently)
@@ -230,6 +178,7 @@ export interface AgentManager {
   start(): void
   stop(timeoutMs?: number): Promise<void>
   getStatus(): AgentManagerStatus
+  getMetrics(): MetricsSnapshot
   steerAgent(taskId: string, message: string): Promise<SteerResult>
   killAgent(taskId: string): { killed: boolean; error?: string }
   onTaskTerminal(taskId: string, status: string): Promise<void>
@@ -251,6 +200,7 @@ export class AgentManagerImpl implements AgentManager {
   _drainInFlight: Promise<void> | null = null
   readonly _agentPromises = new Set<Promise<void>>()
   readonly _depIndex: DependencyIndex
+  readonly _metrics: MetricsCollector
 
   // Private timers
   private pollTimer: ReturnType<typeof setInterval> | null = null
@@ -266,10 +216,9 @@ export class AgentManagerImpl implements AgentManager {
     readonly repo: ISprintTaskRepository,
     readonly logger: Logger = defaultLogger
   ) {
-    rotateAmLogIfNeeded()
-
     this._concurrency = makeConcurrencyState(config.maxConcurrent)
     this._depIndex = createDependencyIndex()
+    this._metrics = createMetricsCollector()
 
     // Wire sprint-queries to use the same structured file logger as the agent manager
     setSprintQueriesLogger(logger)
@@ -295,6 +244,11 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   async onTaskTerminal(taskId: string, status: string): Promise<void> {
+    if (status === 'done' || status === 'review') {
+      this._metrics.increment('agentsCompleted')
+    } else if (status === 'failed' || status === 'error') {
+      this._metrics.increment('agentsFailed')
+    }
     if (this.config.onStatusTerminal) {
       this.config.onStatusTerminal(taskId, status)
     } else {
@@ -423,6 +377,7 @@ export class AgentManagerImpl implements AgentManager {
     wt: { worktreePath: string; branch: string },
     repoPath: string
   ): void {
+    this._metrics.increment('agentsSpawned')
     const p = _runAgent(task, wt, repoPath, this.runAgentDeps)
       .catch((err) => {
         this.logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
@@ -517,6 +472,8 @@ export class AgentManagerImpl implements AgentManager {
       `[agent-manager] Drain loop starting (shuttingDown=${this._shuttingDown}, slots=${availableSlots(this._concurrency, this._activeAgents.size)})`
     )
     if (this._shuttingDown) return
+    this._metrics.increment('drainLoopCount')
+    const drainStart = Date.now()
 
     // Refresh dependency index each drain cycle to pick up tasks created
     // since startup or since the last drain. Rebuild is O(n) and cheap.
@@ -560,6 +517,7 @@ export class AgentManagerImpl implements AgentManager {
       this.logger.error(`[agent-manager] Drain loop error: ${err}`)
     }
 
+    this._metrics.setLastDrainDuration(Date.now() - drainStart)
     this._concurrency = tryRecover(this._concurrency, Date.now())
   }
 
@@ -579,6 +537,10 @@ export class AgentManagerImpl implements AgentManager {
     // Process kills
     for (const { agent, verdict } of agentsToKill) {
       this.logger.warn(`[agent-manager] Watchdog killing task ${agent.taskId}: ${verdict}`)
+      this._metrics.recordWatchdogVerdict(verdict)
+      if (verdict === 'rate-limit-loop') {
+        this._metrics.increment('retriesQueued')
+      }
       try {
         agent.handle.abort()
       } catch (err) {
@@ -773,6 +735,10 @@ export class AgentManagerImpl implements AgentManager {
 
     this._running = false
     this.logger.info('[agent-manager] Stopped')
+  }
+
+  getMetrics(): MetricsSnapshot {
+    return this._metrics.snapshot()
   }
 
   getStatus(): AgentManagerStatus {

@@ -24,7 +24,7 @@ function sleep(ms: number): Promise<void> {
 export function sanitizeForGit(title: string): string {
   return title
     .replace(/`/g, "'") // Replace backticks with single quotes
-    .replace(/\$\(/g, '$(') // Escape command substitution (note: still visible but not executable in git commit -m)
+    .replace(/\$\(/g, '(') // Strip the $ from $( to neutralize command substitution
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Strip markdown links, keep text only
     .trim()
 }
@@ -387,10 +387,14 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
 
   try {
     if (!isTerminal) {
+      // Exponential backoff: 30s, 60s, 120s, capped at 5 minutes
+      const backoffMs = Math.min(300000, 30000 * Math.pow(2, retryCount))
+      const nextEligibleAt = new Date(Date.now() + backoffMs).toISOString()
       repo.updateTask(taskId, {
         status: 'queued',
         retry_count: retryCount + 1,
         claimed_by: null,
+        next_eligible_at: nextEligibleAt,
         ...(notes ? { notes } : {})
       })
       return false // not terminal

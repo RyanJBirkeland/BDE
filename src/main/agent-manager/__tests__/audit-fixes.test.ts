@@ -18,9 +18,9 @@ describe('sanitizeForGit (AM-3)', () => {
     expect(sanitizeForGit('Fix `bar` and `baz`')).toBe("Fix 'bar' and 'baz'")
   })
 
-  it('escapes command substitution patterns', () => {
-    expect(sanitizeForGit('Run $(whoami)')).toBe('Run $(whoami)')
-    expect(sanitizeForGit('Execute $(rm -rf /)')).toBe('Execute $(rm -rf /)')
+  it('neutralizes command substitution patterns', () => {
+    expect(sanitizeForGit('Run $(whoami)')).toBe('Run (whoami)')
+    expect(sanitizeForGit('Execute $(rm -rf /)')).toBe('Execute (rm -rf /)')
   })
 
   it('strips markdown links and keeps text only', () => {
@@ -36,7 +36,7 @@ describe('sanitizeForGit (AM-3)', () => {
 
   it('handles combined threats', () => {
     const malicious = 'Run `$(rm -rf /)` see [details](http://evil.com)'
-    expect(sanitizeForGit(malicious)).toBe("Run '$(rm -rf /)' see details")
+    expect(sanitizeForGit(malicious)).toBe("Run '(rm -rf /)' see details")
   })
 
   it('preserves safe text', () => {

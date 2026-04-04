@@ -65,6 +65,8 @@ export interface SprintTask {
   spec_type?: string | null
   needs_review?: boolean
   worktree_path?: string | null
+  session_id?: string | null
+  next_eligible_at?: string | null
   updated_at: string
   created_at: string
 }
@@ -290,6 +292,17 @@ export interface AgentManagerStatus {
   shuttingDown: boolean
   concurrency: AgentManagerConcurrencyState
   activeAgents: AgentManagerActiveAgent[]
+}
+
+export interface MetricsSnapshot {
+  drainLoopCount: number
+  agentsSpawned: number
+  agentsCompleted: number
+  agentsFailed: number
+  retriesQueued: number
+  watchdogVerdicts: Record<string, number>
+  lastDrainDurationMs: number
+  uptimeMs: number
 }
 
 // --- Agent Events (unified event stream for local + remote agents) ---

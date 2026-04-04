@@ -124,4 +124,146 @@ describe('ReviewQueue', () => {
     expect(items[0]).toHaveTextContent('Newer')
     expect(items[1]).toHaveTextContent('Older')
   })
+
+  it('j key selects next task in queue', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'First',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Second',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    useCodeReviewStore.setState({ selectedTaskId: 't1' })
+    render(<ReviewQueue />)
+    fireEvent.keyDown(document, { key: 'j' })
+    expect(mockSelectTask).toHaveBeenCalledWith('t2')
+  })
+
+  it('k key selects previous task in queue', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'First',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Second',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    useCodeReviewStore.setState({ selectedTaskId: 't2' })
+    render(<ReviewQueue />)
+    fireEvent.keyDown(document, { key: 'k' })
+    expect(mockSelectTask).toHaveBeenCalledWith('t1')
+  })
+
+  it('j key selects first task when none selected', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'First',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Second',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    useCodeReviewStore.setState({ selectedTaskId: null })
+    render(<ReviewQueue />)
+    fireEvent.keyDown(document, { key: 'j' })
+    expect(mockSelectTask).toHaveBeenCalledWith('t1')
+  })
+
+  it('j/k do nothing when review queue is empty', () => {
+    sprintState.tasks = []
+    render(<ReviewQueue />)
+    fireEvent.keyDown(document, { key: 'j' })
+    fireEvent.keyDown(document, { key: 'k' })
+    expect(mockSelectTask).not.toHaveBeenCalled()
+  })
+
+  it('j/k do not fire when typing in an input', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'First',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      }
+    ]
+    render(<ReviewQueue />)
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    input.focus()
+    fireEvent.keyDown(input, { key: 'j', target: input })
+    expect(mockSelectTask).not.toHaveBeenCalled()
+    document.body.removeChild(input)
+  })
+
+  it('j does not go past the last task', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'First',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Second',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    useCodeReviewStore.setState({ selectedTaskId: 't2' })
+    render(<ReviewQueue />)
+    fireEvent.keyDown(document, { key: 'j' })
+    expect(mockSelectTask).toHaveBeenCalledWith('t2')
+  })
+
+  it('k does not go before the first task', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'First',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Second',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    useCodeReviewStore.setState({ selectedTaskId: 't1' })
+    render(<ReviewQueue />)
+    fireEvent.keyDown(document, { key: 'k' })
+    expect(mockSelectTask).toHaveBeenCalledWith('t1')
+  })
 })

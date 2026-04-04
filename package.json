@@ -27,6 +27,7 @@
     "pretest:main": "node-gyp rebuild --directory=node_modules/better-sqlite3",
     "test:main": "vitest run --config src/main/vitest.main.config.ts",
     "posttest:main": "electron-rebuild -f -w better-sqlite3",
+    "test:main:coverage": "vitest run --config src/main/vitest.main.config.ts --coverage",
     "test:watch": "vitest",
     "prepare": "husky"
   },

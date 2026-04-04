@@ -99,12 +99,22 @@
   --bde-font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 
   /* Font sizes */
+  --bde-size-2xs: 10px;
   --bde-size-xs: 11px;
   --bde-size-sm: 12px;
   --bde-size-md: 13px;
   --bde-size-lg: 14px;
   --bde-size-xl: 16px;
   --bde-size-xxl: 20px;
+
+  /* Font size shorthand aliases (--font-*) */
+  --font-2xs: var(--bde-size-2xs);
+  --font-xs: var(--bde-size-xs);
+  --font-sm: var(--bde-size-sm);
+  --font-md: var(--bde-size-md);
+  --font-lg: var(--bde-size-lg);
+  --font-xl: var(--bde-size-xl);
+  --font-xxl: var(--bde-size-xxl);
 
   /* Spacing */
   --bde-space-1: 4px;
