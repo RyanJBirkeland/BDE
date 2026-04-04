@@ -274,6 +274,7 @@ const api = {
       formContext: { title: string; repo: string; spec: string }
     }) => typedInvoke('workbench:chatStream', input),
     cancelStream: (streamId: string) => typedInvoke('workbench:cancelStream', streamId),
+    extractPlan: (markdown: string) => typedInvoke('workbench:extractPlan', markdown),
     onChatChunk: (
       cb: (data: {
         streamId: string

@@ -150,10 +150,10 @@ describe('Workbench handlers', () => {
     mockSdkResponse = 'Placeholder response'
   })
 
-  it('registers all 7 workbench handlers', () => {
+  it('registers all 8 workbench handlers', () => {
     registerWorkbenchHandlers(mockAgentManager)
 
-    expect(safeHandle).toHaveBeenCalledTimes(7)
+    expect(safeHandle).toHaveBeenCalledTimes(8)
     expect(safeHandle).toHaveBeenCalledWith('workbench:checkOperational', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:researchRepo', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:chat', expect.any(Function))
@@ -161,6 +161,7 @@ describe('Workbench handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('workbench:cancelStream', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:generateSpec', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:checkSpec', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('workbench:extractPlan', expect.any(Function))
   })
 
   it('checkOperational handler returns all expected fields', async () => {

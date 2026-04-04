@@ -12,6 +12,7 @@ import type { AgentManager } from '../agent-manager'
 import { checkSpecSemantic } from '../spec-semantic-check'
 import { buildAgentPrompt } from '../agent-manager/prompt-composer'
 import { runSdkStreaming } from '../sdk-streaming'
+import { extractTasksFromPlan } from '../services/plan-extractor'
 
 const execFileAsync = promisify(execFile)
 
@@ -350,4 +351,10 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       return summary.results // Returns { clarity, scope, filesExist } — same shape as before
     }
   )
+
+  // --- Plan extraction ---
+  safeHandle('workbench:extractPlan', async (_e, markdown: string) => {
+    const tasks = extractTasksFromPlan(markdown)
+    return { tasks }
+  })
 }

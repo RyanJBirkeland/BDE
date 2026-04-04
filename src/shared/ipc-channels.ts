@@ -515,6 +515,18 @@ export interface WorkbenchChannels {
     args: [streamId: string]
     result: { ok: boolean }
   }
+  'workbench:extractPlan': {
+    args: [markdown: string]
+    result: {
+      tasks: Array<{
+        taskNumber: number
+        title: string
+        spec: string
+        phase: string | null
+        dependsOnTaskNumbers: number[]
+      }>
+    }
+  }
 }
 
 /** Dev Playground operations */

@@ -251,6 +251,9 @@ declare global {
         researchRepo: (
           ...args: IpcArgs<'workbench:researchRepo'>
         ) => Promise<IpcResult<'workbench:researchRepo'>>
+        extractPlan: (
+          ...args: IpcArgs<'workbench:extractPlan'>
+        ) => Promise<IpcResult<'workbench:extractPlan'>>
       }
 
       // Terminal PTY
