@@ -9,7 +9,8 @@ const ALL_VIEWS: View[] = [
   'code-review',
   'git',
   'settings',
-  'task-workbench'
+  'task-workbench',
+  'planner'
 ]
 
 interface SidebarState {
