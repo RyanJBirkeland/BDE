@@ -39,11 +39,7 @@ export default function DashboardView(): React.JSX.Element {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBriefingChecked(true)
       return
-    if (!lastClose) {
-      // Safe to set state here - guarded by briefingChecked to prevent cascading renders
-
-      setBriefingChecked(true)
-      return
+    }
 
     let shouldShowBriefing = false
     let newCompletions: typeof tasks = []
