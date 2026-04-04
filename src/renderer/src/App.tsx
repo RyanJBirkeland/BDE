@@ -26,6 +26,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/m
 import { DEFAULT_MODEL } from '../../shared/models'
 import { VIEW_SHORTCUT_MAP, VIEW_LABELS } from './lib/view-registry'
 import { PollingProvider } from './components/PollingProvider'
+import { AgentMonitor } from './components/ui/AgentMonitor'
 import './assets/neon.css'
 import './assets/neon-shell.css'
 import './assets/agents-neon.css'
@@ -380,6 +381,7 @@ function App(): React.JSX.Element {
           localY={crossDrop.localY}
           onDrop={crossDrop.handleDrop}
         />
+        <AgentMonitor />
       </div>
     </PollingProvider>
   )
