@@ -1,6 +1,6 @@
 <div align="center">
 
-# BDE — Birkeland Development Environment
+# BDE
 
 **A steering system for Claude Code at scale.**
 
