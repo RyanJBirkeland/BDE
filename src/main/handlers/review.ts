@@ -172,6 +172,30 @@ export function registerReviewHandlers(): void {
       return { success: false, error: errMsg }
     }
 
+    // Rebase agent branch onto origin/main before merge
+    try {
+      logger.info(`[review:mergeLocally] Fetching origin/main for task ${taskId}`)
+      await execFileAsync('git', ['fetch', 'origin', 'main'], {
+        cwd: task.worktree_path,
+        env
+      })
+
+      logger.info(`[review:mergeLocally] Rebasing ${branch} onto origin/main`)
+      await execFileAsync('git', ['rebase', 'origin/main'], { cwd: task.worktree_path, env })
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      logger.error(`[review:mergeLocally] Rebase failed for task ${taskId}: ${errMsg}`)
+
+      // Abort the rebase
+      try {
+        await execFileAsync('git', ['rebase', '--abort'], { cwd: task.worktree_path, env })
+      } catch {
+        /* best-effort abort */
+      }
+
+      return { success: false, error: `Rebase failed: ${errMsg}` }
+    }
+
     try {
       if (strategy === 'squash') {
         await execFileAsync('git', ['merge', '--squash', branch], { cwd: repoPath, env })
@@ -473,6 +497,30 @@ export function registerReviewHandlers(): void {
         success: false,
         error: 'Working tree has uncommitted changes. Commit or stash first.'
       }
+    }
+
+    // Rebase agent branch onto origin/main before merge
+    try {
+      logger.info(`[review:shipIt] Fetching origin/main for task ${taskId}`)
+      await execFileAsync('git', ['fetch', 'origin', 'main'], {
+        cwd: task.worktree_path,
+        env
+      })
+
+      logger.info(`[review:shipIt] Rebasing ${branch} onto origin/main`)
+      await execFileAsync('git', ['rebase', 'origin/main'], { cwd: task.worktree_path, env })
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      logger.error(`[review:shipIt] Rebase failed for task ${taskId}: ${errMsg}`)
+
+      // Abort the rebase
+      try {
+        await execFileAsync('git', ['rebase', '--abort'], { cwd: task.worktree_path, env })
+      } catch {
+        /* best-effort abort */
+      }
+
+      return { success: false, error: `Rebase failed: ${errMsg}` }
     }
 
     // Merge
