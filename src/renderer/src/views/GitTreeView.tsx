@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { GitBranch, RefreshCw, AlertCircle, X } from 'lucide-react'
 import { useGitTreeStore } from '../stores/gitTree'
@@ -8,6 +8,7 @@ import { FileTreeSection } from '../components/git-tree/FileTreeSection'
 import { BranchSelector } from '../components/git-tree/BranchSelector'
 import { InlineDiffDrawer } from '../components/git-tree/InlineDiffDrawer'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
 export default function GitTreeView(): React.ReactElement {
   const reduced = useReducedMotion()
@@ -45,6 +46,8 @@ export default function GitTreeView(): React.ReactElement {
   } = useGitTreeStore.getState()
 
   const hasUncommittedChanges = staged.length > 0 || unstaged.length > 0 || untracked.length > 0
+  const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
+  const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
 
   // Load repos and initial status on mount
   useEffect(() => {
@@ -57,6 +60,87 @@ export default function GitTreeView(): React.ReactElement {
     fetchStatus(activeRepo)
     fetchBranches(activeRepo)
   }, [activeRepo])
+
+  // Register git commands in command palette
+  const handleStageAll = useCallback(() => {
+    if (!activeRepo) return
+    const allUnstaged = [...unstaged, ...untracked].map((f) => f.path)
+    if (allUnstaged.length === 0) {
+      toast.info('No unstaged files to stage')
+      return
+    }
+    window.api
+      .gitStage(activeRepo, allUnstaged)
+      .then(() => fetchStatus(activeRepo))
+      .catch((e) => {
+        setLastError(`Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`)
+      })
+  }, [activeRepo, unstaged, untracked, fetchStatus, setLastError])
+
+  const handleSwitchBranch = useCallback(() => {
+    // Focus the branch selector dropdown
+    const selector = document.querySelector('.branch-selector__button') as HTMLElement
+    if (selector) {
+      selector.focus()
+      selector.click()
+    }
+  }, [])
+
+  const handleCommitAction = useCallback(() => {
+    if (!activeRepo) return
+    commit(activeRepo)
+  }, [activeRepo, commit])
+
+  const handlePushAction = useCallback(() => {
+    if (!activeRepo) return
+    push(activeRepo)
+  }, [activeRepo, push])
+
+  useEffect(() => {
+    const commands: Command[] = [
+      {
+        id: 'git-stage-all',
+        label: 'Stage All Changes',
+        category: 'action',
+        keywords: ['stage', 'all', 'changes', 'add'],
+        action: handleStageAll
+      },
+      {
+        id: 'git-commit',
+        label: 'Commit',
+        category: 'action',
+        keywords: ['commit', 'save', 'record'],
+        action: handleCommitAction
+      },
+      {
+        id: 'git-push',
+        label: 'Push',
+        category: 'action',
+        keywords: ['push', 'upload', 'remote'],
+        action: handlePushAction
+      },
+      {
+        id: 'git-switch-branch',
+        label: 'Switch Branch',
+        category: 'action',
+        keywords: ['switch', 'branch', 'checkout'],
+        action: handleSwitchBranch
+      }
+    ]
+
+    registerCommands(commands)
+
+    return () => {
+      unregisterCommands(commands.map((c) => c.id))
+    }
+  }, [
+    handleStageAll,
+    handleCommitAction,
+    handlePushAction,
+    handleSwitchBranch,
+    registerCommands,
+    unregisterCommands
+  ])
 
   function handleRefresh(): void {
     if (!activeRepo) return

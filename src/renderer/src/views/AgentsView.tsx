@@ -19,6 +19,7 @@ import { NeonCard, MiniChart, type ChartBar } from '../components/neon'
 import { tokens } from '../design-system/tokens'
 import { toast } from '../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
 export function AgentsView(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -37,6 +38,8 @@ export function AgentsView(): React.JSX.Element {
   const [showLaunchpad, setShowLaunchpad] = useState(false)
   const [chartCollapsed, setChartCollapsed] = useState(false)
   const cleanupRef = useRef<(() => void) | null>(null)
+  const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
+  const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
 
   // Initialize event listener once
   useEffect(() => {
@@ -73,6 +76,48 @@ export function AgentsView(): React.JSX.Element {
     window.addEventListener('bde:open-spawn-modal', handler)
     return () => window.removeEventListener('bde:open-spawn-modal', handler)
   }, [])
+
+  // Register agent commands in command palette
+  const handleSpawnAgent = useCallback(() => {
+    setSelectedId(null)
+    setShowLaunchpad(true)
+  }, [])
+
+  const handleClearConsole = useCallback(() => {
+    if (!selectedId) {
+      toast.info('No agent selected')
+      return
+    }
+    // Emit event for AgentConsole to handle
+    window.dispatchEvent(
+      new CustomEvent('agent:clear-console', { detail: { agentId: selectedId } })
+    )
+  }, [selectedId])
+
+  useEffect(() => {
+    const commands: Command[] = [
+      {
+        id: 'agent-spawn',
+        label: 'Spawn Agent',
+        category: 'action',
+        keywords: ['spawn', 'new', 'agent', 'create', 'launch'],
+        action: handleSpawnAgent
+      },
+      {
+        id: 'agent-clear-console',
+        label: 'Clear Console',
+        category: 'action',
+        keywords: ['clear', 'console', 'reset', 'clean'],
+        action: handleClearConsole
+      }
+    ]
+
+    registerCommands(commands)
+
+    return () => {
+      unregisterCommands(commands.map((c) => c.id))
+    }
+  }, [handleSpawnAgent, handleClearConsole, registerCommands, unregisterCommands])
 
   const selectedAgent = agents.find((a) => a.id === selectedId)
 

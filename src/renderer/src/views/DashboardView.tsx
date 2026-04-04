@@ -14,14 +14,19 @@ import { partitionSprintTasks } from '../lib/partitionSprintTasks'
 import { StatusCounters, CenterColumn, ActivitySection } from '../components/dashboard'
 import '../assets/dashboard-neon.css'
 import { Plus } from 'lucide-react'
+import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
 export default function DashboardView(): React.JSX.Element {
   const reduced = useReducedMotion()
   const tasks = useSprintTasks((s) => s.tasks)
+  const loadSprintData = useSprintTasks((s) => s.loadData)
   const localAgents = useCostDataStore((s) => s.localAgents)
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
   const setView = usePanelLayoutStore((s) => s.setView)
+  const fetchDashboardData = useDashboardDataStore((s) => s.fetchAll)
+  const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
+  const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
 
   // Morning briefing state
   const [showBriefing, setShowBriefing] = useState(false)
@@ -74,6 +79,30 @@ export default function DashboardView(): React.JSX.Element {
     const interval = setInterval(() => setNow(Date.now()), 10_000)
     return () => clearInterval(interval)
   }, [])
+
+  // Register dashboard commands in command palette
+  const handleRefreshDashboard = useCallback(() => {
+    loadSprintData()
+    fetchDashboardData()
+  }, [loadSprintData, fetchDashboardData])
+
+  useEffect(() => {
+    const commands: Command[] = [
+      {
+        id: 'dashboard-refresh',
+        label: 'Refresh Dashboard',
+        category: 'action',
+        keywords: ['refresh', 'reload', 'dashboard', 'update'],
+        action: handleRefreshDashboard
+      }
+    ]
+
+    registerCommands(commands)
+
+    return () => {
+      unregisterCommands(commands.map((c) => c.id))
+    }
+  }, [handleRefreshDashboard, registerCommands, unregisterCommands])
 
   // Freshness: how long ago data was last fetched, and whether it's stale (>2min)
   const freshness = useMemo(() => {

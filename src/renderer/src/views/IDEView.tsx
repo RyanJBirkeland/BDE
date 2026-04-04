@@ -15,6 +15,7 @@ import { useIDEKeyboard } from '../hooks/useIDEKeyboard'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { toast } from '../stores/toasts'
 import '../assets/ide-neon.css'
+import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
 const IDE_SHORTCUTS = [
   { keys: '⌘B', desc: 'Toggle sidebar' },
@@ -119,6 +120,8 @@ export function IDEView(): React.JSX.Element {
   const activeTab = openTabs.find((t) => t.id === activeTabId) ?? null
   const { confirmUnsaved, confirmProps } = useUnsavedDialog()
   const savingPaths = useRef(new Set<string>())
+  const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
+  const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
 
   // IDE-5, IDE-7, IDE-8, IDE-9: Load file content from store with proper error handling and loading states
   useEffect(() => {
@@ -210,6 +213,58 @@ export function IDEView(): React.JSX.Element {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [openTabs])
+
+  // Register IDE commands in command palette
+  const handleNewTerminalTab = useCallback(() => {
+    // Dispatch custom event for terminal to handle
+    window.dispatchEvent(new CustomEvent('ide:new-terminal-tab'))
+  }, [])
+
+  useEffect(() => {
+    const commands: Command[] = [
+      {
+        id: 'ide-open-folder',
+        label: 'Open Folder',
+        category: 'action',
+        keywords: ['open', 'folder', 'directory', 'workspace'],
+        action: () => void handleOpenFolder()
+      },
+      {
+        id: 'ide-toggle-sidebar',
+        label: 'Toggle Sidebar',
+        category: 'panel',
+        keywords: ['toggle', 'sidebar', 'explorer', 'files'],
+        action: toggleSidebar
+      },
+      {
+        id: 'ide-toggle-terminal',
+        label: 'Toggle Terminal',
+        category: 'panel',
+        keywords: ['toggle', 'terminal', 'console', 'shell'],
+        action: toggleTerminal
+      },
+      {
+        id: 'ide-new-terminal-tab',
+        label: 'New Terminal Tab',
+        category: 'action',
+        keywords: ['new', 'terminal', 'tab', 'create'],
+        action: handleNewTerminalTab
+      }
+    ]
+
+    registerCommands(commands)
+
+    return () => {
+      unregisterCommands(commands.map((c) => c.id))
+    }
+  }, [
+    handleOpenFolder,
+    toggleSidebar,
+    toggleTerminal,
+    handleNewTerminalTab,
+    registerCommands,
+    unregisterCommands
+  ])
 
   useIDEKeyboard({
     activeView,
