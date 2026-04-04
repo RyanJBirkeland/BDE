@@ -6,6 +6,7 @@ import { tokens } from '../../design-system/tokens'
 export interface EpicDetailProps {
   group: TaskGroup
   tasks: SprintTask[]
+  loading?: boolean
   onQueueAll: () => void
   onAddTask: () => void
   onEditTask: (taskId: string) => void
@@ -25,6 +26,7 @@ interface StatusCounts {
 export function EpicDetail({
   group,
   tasks,
+  loading = false,
   onQueueAll,
   onAddTask,
   onEditTask,
@@ -314,48 +316,56 @@ export function EpicDetail({
 
       {/* Task List */}
       <div className="epic-detail__tasks">
-        {tasks.map((task) => {
-          const hasSpec = task.spec && task.spec.trim() !== ''
-          const hasDeps = task.depends_on && task.depends_on.length > 0
+        {loading ? (
+          <div className="planner-empty">
+            <p className="planner-empty__text">Loading tasks...</p>
+          </div>
+        ) : (
+          <>
+            {tasks.map((task) => {
+              const hasSpec = task.spec && task.spec.trim() !== ''
+              const hasDeps = task.depends_on && task.depends_on.length > 0
 
-          return (
-            <div key={task.id} className="epic-detail__task-row">
-              <div
-                className="epic-detail__task-status-dot"
-                style={{ background: getStatusColor(task.status) }}
-              />
-              <span className="epic-detail__task-title">{task.title}</span>
-              {!hasSpec && task.status === 'backlog' && (
-                <span className="epic-detail__task-flag epic-detail__task-flag--warning">
-                  no spec
-                </span>
-              )}
-              {hasDeps && task.depends_on && (
-                <span className="epic-detail__task-dep-ref">
-                  {task.depends_on.length} dep{task.depends_on.length === 1 ? '' : 's'}
-                </span>
-              )}
-              <span
-                className="epic-detail__task-status-badge"
-                style={{ color: getStatusColor(task.status) }}
-              >
-                {getStatusLabel(task.status)}
-              </span>
-              <button
-                type="button"
-                className="epic-detail__task-edit-btn"
-                onClick={() => onEditTask(task.id)}
-                aria-label={`Edit ${task.title}`}
-              >
-                <Edit2 size={14} />
-              </button>
-            </div>
-          )
-        })}
+              return (
+                <div key={task.id} className="epic-detail__task-row">
+                  <div
+                    className="epic-detail__task-status-dot"
+                    style={{ background: getStatusColor(task.status) }}
+                  />
+                  <span className="epic-detail__task-title">{task.title}</span>
+                  {!hasSpec && task.status === 'backlog' && (
+                    <span className="epic-detail__task-flag epic-detail__task-flag--warning">
+                      no spec
+                    </span>
+                  )}
+                  {hasDeps && task.depends_on && (
+                    <span className="epic-detail__task-dep-ref">
+                      {task.depends_on.length} dep{task.depends_on.length === 1 ? '' : 's'}
+                    </span>
+                  )}
+                  <span
+                    className="epic-detail__task-status-badge"
+                    style={{ color: getStatusColor(task.status) }}
+                  >
+                    {getStatusLabel(task.status)}
+                  </span>
+                  <button
+                    type="button"
+                    className="epic-detail__task-edit-btn"
+                    onClick={() => onEditTask(task.id)}
+                    aria-label={`Edit ${task.title}`}
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                </div>
+              )
+            })}
 
-        <button type="button" className="epic-detail__add-task-row" onClick={onAddTask}>
-          + Add task
-        </button>
+            <button type="button" className="epic-detail__add-task-row" onClick={onAddTask}>
+              + Add task
+            </button>
+          </>
+        )}
       </div>
 
       {/* Queue Bar (sticky bottom) */}

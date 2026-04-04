@@ -118,6 +118,7 @@ export default function PlannerView(): React.JSX.Element {
           <EpicDetail
             group={selectedGroup}
             tasks={groupTasks}
+            loading={loading}
             onQueueAll={handleQueueAll}
             onAddTask={handleAddTask}
             onEditTask={handleEditTask}
