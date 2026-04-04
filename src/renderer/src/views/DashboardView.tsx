@@ -38,22 +38,6 @@ export default function DashboardView(): React.JSX.Element {
 
     const lastCloseTime = parseInt(lastClose, 10)
     if (isNaN(lastCloseTime)) return
-    if (!lastClose) {
-      // Safe to set state here - guarded by briefingChecked to prevent cascading renders
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setBriefingChecked(true)
-      return
-    if (!lastClose) {
-      // Safe to set state here - guarded by briefingChecked to prevent cascading renders
-
-      setBriefingChecked(true)
-      return
-    if (!lastClose) {
-      // Safe to set state here - guarded by briefingChecked to prevent cascading renders
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setBriefingChecked(true)
-      return
-    }
 
     const newCompletions = tasks.filter((task) => {
       if (!task.completed_at) return false
