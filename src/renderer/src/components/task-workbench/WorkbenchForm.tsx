@@ -33,6 +33,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   const specType = useTaskWorkbenchStore((s) => s.specType)
   const dependsOn = useTaskWorkbenchStore((s) => s.dependsOn)
   const playgroundEnabled = useTaskWorkbenchStore((s) => s.playgroundEnabled)
+  const model = useTaskWorkbenchStore((s) => s.model)
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const resetForm = useTaskWorkbenchStore((s) => s.resetForm)
 
@@ -63,6 +64,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           spec,
           depends_on: dependsOn.length > 0 ? dependsOn : null,
           playground_enabled: playgroundEnabled || undefined,
+          model: model || undefined,
           status: targetStatus,
           spec_type: specType ?? undefined
         })
@@ -75,6 +77,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           priority,
           depends_on: dependsOn.length > 0 ? dependsOn : undefined,
           playground_enabled: playgroundEnabled || undefined,
+          model: model || undefined,
           spec_type: specType ?? undefined
         }
         const createdId = await createTask(input)
@@ -93,6 +96,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       spec,
       dependsOn,
       playgroundEnabled,
+      model,
       createTask,
       updateTask
     ]
@@ -355,6 +359,22 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
                       {p.label}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div className="wb-form__field wb-form__field--flex">
+                <label htmlFor="wb-form-model" className="wb-form__label">
+                  Model
+                </label>
+                <select
+                  id="wb-form-model"
+                  value={model}
+                  onChange={(e) => setField('model', e.target.value)}
+                  className="wb-form__select"
+                >
+                  <option value="">Default (Sonnet)</option>
+                  <option value="claude-opus-4">Claude Opus 4</option>
+                  <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                  <option value="claude-haiku-3-5">Claude Haiku 3.5</option>
                 </select>
               </div>
             </div>

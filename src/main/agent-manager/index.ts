@@ -290,6 +290,7 @@ export class AgentManagerImpl implements AgentManager {
     notes: string | null
     playground_enabled: boolean
     max_runtime_ms: number | null
+    model: string | null
   } | null {
     // Validate required fields
     if (!raw.id || typeof raw.id !== 'string') {
@@ -315,7 +316,8 @@ export class AgentManagerImpl implements AgentManager {
       fast_fail_count: Number(raw.fastFailCount) || 0,
       notes: (raw.notes as string) ?? null,
       playground_enabled: Boolean(raw.playgroundEnabled),
-      max_runtime_ms: Number(raw.maxRuntimeMs) || null
+      max_runtime_ms: Number(raw.maxRuntimeMs) || null,
+      model: (raw.model as string) ?? null
     }
   }
 

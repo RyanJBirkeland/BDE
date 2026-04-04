@@ -580,4 +580,28 @@ describe('runAgent — prompt composer integration', () => {
       })
     )
   })
+
+  it('uses task.model when provided, otherwise falls back to defaultModel', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
+
+    const deps = makeDeps()
+
+    // Test 1: task with explicit model
+    await runAgent(makeTask({ model: 'claude-haiku-3-5' }), worktree, repoPath, deps)
+    expect(spawnAgent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'claude-haiku-3-5'
+      })
+    )
+
+    // Test 2: task without model (should use defaultModel)
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockClear()
+    await runAgent(makeTask({ model: null }), worktree, repoPath, deps)
+    expect(spawnAgent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'claude-sonnet-4-5' // defaultModel from makeDeps
+      })
+    )
+  })
 })

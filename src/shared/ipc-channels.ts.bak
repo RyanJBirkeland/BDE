@@ -600,6 +600,11 @@ export interface ReviewChannels {
     args: [payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }]
     result: { success: boolean; pushed?: boolean; error?: string }
   }
+||||||| 5faba97c
+  'review:shipIt': {
+    args: [payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }]
+    result: { success: boolean; pushed?: boolean; error?: string }
+  }
   'review:generateSummary': {
     args: [payload: { taskId: string }]
     result: { summary: string }

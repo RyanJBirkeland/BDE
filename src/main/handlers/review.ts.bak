@@ -554,6 +554,120 @@ export function registerReviewHandlers(): void {
 
     return { success: true, pushed }
   })
+||||||| 5faba97c
+
+  // review:shipIt — merge locally + push to origin + mark done in one action
+  safeHandle('review:shipIt', async (_e, payload) => {
+    const { taskId, strategy } = payload
+
+    const task = _getTask(taskId)
+    if (!task) throw new Error(`Task ${taskId} not found`)
+    if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
+
+    // Get branch name from the worktree
+    const { stdout: branchName } = await execFileAsync(
+      'git',
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      { cwd: task.worktree_path, env }
+    )
+    const branch = branchName.trim()
+
+    // Resolve repo local path
+    const repoConfig = getRepoConfig(task.repo)
+    if (!repoConfig) throw new Error(`Repo "${task.repo}" not found in settings`)
+    const repoPath = repoConfig.localPath
+
+    // Verify clean working tree
+    const { stdout: statusOut } = await execFileAsync('git', ['status', '--porcelain'], {
+      cwd: repoPath,
+      env
+    })
+    if (statusOut.trim()) {
+      return {
+        success: false,
+        error: 'Working tree has uncommitted changes. Commit or stash first.'
+      }
+    }
+
+    // Merge
+    try {
+      if (strategy === 'squash') {
+        await execFileAsync('git', ['merge', '--squash', branch], { cwd: repoPath, env })
+        try {
+          await execFileAsync('git', ['commit', '-m', `${task.title} (#${taskId})`], {
+            cwd: repoPath,
+            env
+          })
+        } catch (commitErr) {
+          try {
+            await execFileAsync('git', ['reset', 'HEAD'], { cwd: repoPath, env })
+          } catch {
+            /* best-effort */
+          }
+          throw commitErr
+        }
+      } else if (strategy === 'rebase') {
+        await execFileAsync('git', ['rebase', 'HEAD', branch], { cwd: repoPath, env })
+        await execFileAsync('git', ['merge', '--ff-only', branch], { cwd: repoPath, env })
+      } else {
+        await execFileAsync(
+          'git',
+          ['merge', '--no-ff', branch, '-m', `Merge: ${task.title} (#${taskId})`],
+          { cwd: repoPath, env }
+        )
+      }
+    } catch (err) {
+      // Abort failed merge/rebase
+      try {
+        if (strategy === 'rebase') {
+          await execFileAsync('git', ['rebase', '--abort'], { cwd: repoPath, env })
+        } else {
+          await execFileAsync('git', ['merge', '--abort'], { cwd: repoPath, env })
+        }
+      } catch {
+        /* best-effort */
+      }
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+
+    // Push
+    let pushed = false
+    try {
+      await execFileAsync('git', ['push', 'origin', 'HEAD'], { cwd: repoPath, env })
+      pushed = true
+    } catch (pushErr) {
+      logger.warn(`[review:shipIt] Push failed for task ${taskId}: ${pushErr}`)
+      // Merge succeeded, push failed — still mark done but warn user
+    }
+
+    // Clean up worktree + branch
+    try {
+      await execFileAsync('git', ['worktree', 'remove', task.worktree_path, '--force'], {
+        cwd: repoPath,
+        env
+      })
+    } catch {
+      /* best-effort */
+    }
+    try {
+      await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
+    } catch {
+      /* best-effort */
+    }
+
+    // Mark task done
+    const updated = _updateTask(taskId, {
+      status: 'done',
+      completed_at: new Date().toISOString(),
+      worktree_path: null
+    })
+    if (updated) notifySprintMutation('updated', updated)
+    if (_onStatusTerminal) {
+      _onStatusTerminal(taskId, 'done')
+    }
+
+    return { success: true, pushed }
+  })
 
   // review:generateSummary — generate AI review summary for a task
   safeHandle('review:generateSummary', async (_e, payload) => {

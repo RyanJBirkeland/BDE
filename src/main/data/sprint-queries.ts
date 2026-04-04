@@ -70,7 +70,12 @@ export const UPDATE_ALLOWLIST = new Set([
   'spec_type',
   'worktree_path',
   'session_id',
-  'next_eligible_at'
+  'next_eligible_at',
+  'model',
+  'retry_context',
+  'failure_reason',
+  'max_cost_usd',
+  'partial_diff'
 ])
 
 export interface QueueStats {
@@ -97,6 +102,7 @@ export interface CreateTaskInput {
   template_name?: string
   depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
   playground_enabled?: boolean
+  model?: string
 }
 
 /**
@@ -164,8 +170,8 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
 
     const result = db
       .prepare(
-        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING *`
       )
       .get(
@@ -178,7 +184,8 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
         input.status ?? 'backlog',
         input.template_name ?? null,
         dependsOn ? JSON.stringify(dependsOn) : null,
-        input.playground_enabled ? 1 : 0
+        input.playground_enabled ? 1 : 0,
+        input.model ?? null
       ) as Record<string, unknown> | undefined
 
     return result ? sanitizeTask(result) : null

@@ -32,6 +32,7 @@ export interface RunAgentTask {
   notes?: string | null
   playground_enabled?: boolean
   max_runtime_ms?: number | null
+  model?: string | null
 }
 
 export interface RunAgentDeps {
@@ -152,6 +153,7 @@ export async function runAgent(
   deps: RunAgentDeps
 ): Promise<void> {
   const { activeAgents, defaultModel, logger, onTaskTerminal, repo } = deps
+  const effectiveModel = task.model || defaultModel
 
   const taskContent = (task.prompt || task.spec || task.title || '').trim()
   if (!taskContent) {
@@ -201,7 +203,7 @@ export async function runAgent(
       spawnAgent({
         prompt,
         cwd: worktree.worktreePath,
-        model: defaultModel,
+        model: effectiveModel,
         logger
       }),
       timeoutPromise
@@ -254,7 +256,7 @@ export async function runAgent(
     taskId: task.id,
     agentRunId,
     handle,
-    model: defaultModel,
+    model: effectiveModel,
     startedAt: Date.now(),
     lastOutputAt: Date.now(),
     rateLimitCount: 0,
@@ -276,7 +278,7 @@ export async function runAgent(
     id: agentRunId,
     pid: null,
     bin: 'claude',
-    model: defaultModel,
+    model: effectiveModel,
     repo: task.repo,
     repoPath: worktree.worktreePath,
     task: prompt,
@@ -295,7 +297,7 @@ export async function runAgent(
   // activeCount is derived from activeAgents.size — no manual increment needed
 
   // Emit agent:started event for console display
-  emitAgentEvent(agentRunId, { type: 'agent:started', model: defaultModel, timestamp: Date.now() })
+  emitAgentEvent(agentRunId, { type: 'agent:started', model: effectiveModel, timestamp: Date.now() })
 
   // Consume messages
   let exitCode: number | undefined

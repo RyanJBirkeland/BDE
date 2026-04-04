@@ -172,6 +172,11 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     template_name: null,
     depends_on: null,
     playground_enabled: false,
+    model: null,
+    retry_context: null,
+    failure_reason: null,
+    max_cost_usd: null,
+    partial_diff: null,
     updated_at: '2025-01-01T00:00:00Z',
     created_at: '2025-01-01T00:00:00Z',
     ...overrides
@@ -217,6 +222,28 @@ describe('Sprint IPC handlers — integration', () => {
     it('rejects creation when repo is missing', async () => {
       await expect(invoke('sprint:create', { title: 'Some task', repo: '' })).rejects.toThrow(
         'Spec quality checks failed'
+      )
+    })
+
+    it('creates a task with model field and persists it', async () => {
+      const created = makeTask({
+        id: 'task-with-model',
+        status: 'backlog',
+        model: 'claude-haiku-3-5'
+      })
+      mockCreateTask.mockReturnValue(created)
+
+      const result = await invoke('sprint:create', {
+        title: 'Fix login bug',
+        repo: 'BDE',
+        status: 'backlog',
+        model: 'claude-haiku-3-5'
+      })
+
+      expect(result).toEqual(created)
+      expect(result).toHaveProperty('model', 'claude-haiku-3-5')
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'claude-haiku-3-5' })
       )
     })
   })

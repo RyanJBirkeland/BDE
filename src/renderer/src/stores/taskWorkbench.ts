@@ -34,6 +34,7 @@ interface TaskWorkbenchState {
   advancedOpen: boolean
   dependsOn: TaskDependency[]
   playgroundEnabled: boolean
+  model: string
   specType: SpecType | null
 
   // --- Copilot ---
@@ -116,6 +117,7 @@ function defaults(): Pick<
   | 'advancedOpen'
   | 'dependsOn'
   | 'playgroundEnabled'
+  | 'model'
   | 'specType'
   | 'copilotVisible'
   | 'copilotMessages'
@@ -140,6 +142,7 @@ function defaults(): Pick<
     advancedOpen: false,
     dependsOn: [],
     playgroundEnabled: false,
+    model: '',
     specType: null,
     copilotVisible: true,
     copilotMessages: (() => {
@@ -182,6 +185,7 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       taskTemplateName: task.template_name ?? '',
       dependsOn: task.depends_on ?? [],
       playgroundEnabled: task.playground_enabled ?? false,
+      model: task.model ?? '',
       specType: (task.spec_type as SpecType) ?? null,
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
       streamingMessageId: null,
