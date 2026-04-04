@@ -30,6 +30,8 @@ export interface TaskDependency {
   type: 'hard' | 'soft'
 }
 
+export type FailureReason = 'auth' | 'timeout' | 'test_failure' | 'compilation' | 'spawn' | 'unknown'
+
 export interface SprintTask {
   id: string
   title: string
@@ -67,6 +69,11 @@ export interface SprintTask {
   worktree_path?: string | null
   session_id?: string | null
   next_eligible_at?: string | null
+  model?: string | null
+  retry_context?: string | null
+  failure_reason?: 'auth' | 'timeout' | 'test_failure' | 'compilation' | 'spawn' | 'unknown' | null
+  max_cost_usd?: number | null
+  partial_diff?: string | null
   updated_at: string
   created_at: string
 }
@@ -422,7 +429,9 @@ export const GENERAL_PATCH_FIELDS = new Set([
   'priority',
   'templateName',
   'playgroundEnabled',
-  'maxRuntimeMs'
+  'maxRuntimeMs',
+  'model',
+  'maxCostUsd'
 ])
 
 // --- Task Output Event Types ---
