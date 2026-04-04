@@ -116,18 +116,17 @@ describe('EpicDetail', () => {
     expect(screen.getByText('🔐'.charAt(0).toUpperCase())).toBeInTheDocument()
   })
 
-  it('should render edit button when onEditGroup is provided', () => {
-    const onEditGroup = vi.fn()
-    render(<EpicDetail {...defaultProps} onEditGroup={onEditGroup} />)
+  it('should render overflow menu button', () => {
+    render(<EpicDetail {...defaultProps} onEditGroup={vi.fn()} />)
 
-    const editButton = screen.getByLabelText('Edit epic')
-    expect(editButton).toBeInTheDocument()
+    const menuButton = screen.getByLabelText('More options')
+    expect(menuButton).toBeInTheDocument()
   })
 
-  it('should not render edit button when onEditGroup is not provided', () => {
+  it('should always render overflow menu button', () => {
     render(<EpicDetail {...defaultProps} />)
 
-    expect(screen.queryByLabelText('Edit epic')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('More options')).toBeInTheDocument()
   })
 
   it('should display status breakdown correctly', () => {

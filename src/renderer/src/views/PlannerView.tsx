@@ -8,8 +8,17 @@ import { CreateEpicModal } from '../components/planner/CreateEpicModal'
 import { Search } from 'lucide-react'
 
 export default function PlannerView(): React.JSX.Element {
-  const { groups, selectedGroupId, groupTasks, loading, loadGroups, selectGroup, queueAllTasks } =
-    useTaskGroups()
+  const {
+    groups,
+    selectedGroupId,
+    groupTasks,
+    loading,
+    loadGroups,
+    selectGroup,
+    queueAllTasks,
+    updateGroup,
+    deleteGroup
+  } = useTaskGroups()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -59,9 +68,20 @@ export default function PlannerView(): React.JSX.Element {
     [groupTasks]
   )
 
-  const handleEditGroup = (): void => {
-    // TODO: Open edit group modal/form
-    console.log('Edit group clicked')
+  const handleEditGroup = async (name: string, goal: string): Promise<void> => {
+    if (!selectedGroupId) return
+    await updateGroup(selectedGroupId, { name, goal })
+  }
+
+  const handleDeleteGroup = async (): Promise<void> => {
+    if (!selectedGroupId) return
+    await deleteGroup(selectedGroupId)
+  }
+
+  const handleToggleReady = async (): Promise<void> => {
+    if (!selectedGroup) return
+    const newStatus = selectedGroup.status === 'ready' ? 'draft' : 'ready'
+    await updateGroup(selectedGroup.id, { status: newStatus })
   }
 
   const handleQueueAll = async (): Promise<void> => {
@@ -102,6 +122,8 @@ export default function PlannerView(): React.JSX.Element {
             onAddTask={handleAddTask}
             onEditTask={handleEditTask}
             onEditGroup={handleEditGroup}
+            onDeleteGroup={handleDeleteGroup}
+            onToggleReady={handleToggleReady}
           />
         )}
         {!selectedGroup && !loading && (

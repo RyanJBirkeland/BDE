@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useRef, useEffect } from 'react'
 import { Edit2, MoreVertical, AlertTriangle } from 'lucide-react'
 import type { TaskGroup, SprintTask } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
@@ -9,7 +9,9 @@ export interface EpicDetailProps {
   onQueueAll: () => void
   onAddTask: () => void
   onEditTask: (taskId: string) => void
-  onEditGroup?: () => void
+  onEditGroup?: (name: string, goal: string) => void
+  onDeleteGroup?: () => void
+  onToggleReady?: () => void
 }
 
 interface StatusCounts {
@@ -26,8 +28,27 @@ export function EpicDetail({
   onQueueAll,
   onAddTask,
   onEditTask,
-  onEditGroup
+  onEditGroup,
+  onDeleteGroup,
+  onToggleReady
 }: EpicDetailProps): React.JSX.Element {
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent): void => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowOverflowMenu(false)
+      }
+    }
+    if (showOverflowMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+    return undefined
+  }, [showOverflowMenu])
+
   // Calculate status breakdown
   const counts: StatusCounts = useMemo(() => {
     const initial: StatusCounts = { done: 0, active: 0, queued: 0, blocked: 0, draft: 0 }
@@ -115,6 +136,34 @@ export function EpicDetail({
 
   const queueDisabled = tasksNeedingSpecs > 0
 
+  // Overflow menu handlers
+  const handleEdit = (): void => {
+    setShowOverflowMenu(false)
+    if (!onEditGroup) return
+    const name = window.prompt('Epic name:', group.name)
+    if (name === null) return // User cancelled
+    const goal = window.prompt('Epic goal (optional):', group.goal || '')
+    if (goal === null) return // User cancelled
+    onEditGroup(name.trim(), goal.trim())
+  }
+
+  const handleDelete = (): void => {
+    setShowOverflowMenu(false)
+    if (!onDeleteGroup) return
+    const confirmed = window.confirm(`Delete epic "${group.name}"? This cannot be undone.`)
+    if (confirmed) {
+      onDeleteGroup()
+    }
+  }
+
+  const handleToggleReady = (): void => {
+    setShowOverflowMenu(false)
+    if (!onToggleReady) return
+    onToggleReady()
+  }
+
+  const isReady = group.status === 'ready'
+
   return (
     <div className="epic-detail">
       {/* Header */}
@@ -133,20 +182,94 @@ export function EpicDetail({
           <h2 className="epic-detail__name">{group.name}</h2>
           {group.goal && <p className="epic-detail__goal">{group.goal}</p>}
         </div>
-        <div className="epic-detail__header-actions">
-          {onEditGroup && (
-            <button
-              type="button"
-              className="epic-detail__header-btn"
-              onClick={onEditGroup}
-              aria-label="Edit epic"
-            >
-              <Edit2 size={16} />
-            </button>
-          )}
-          <button type="button" className="epic-detail__header-btn" aria-label="More options">
+        <div className="epic-detail__header-actions" style={{ position: 'relative' }} ref={menuRef}>
+          <button
+            type="button"
+            className="epic-detail__header-btn"
+            onClick={() => setShowOverflowMenu(!showOverflowMenu)}
+            aria-label="More options"
+          >
             <MoreVertical size={16} />
           </button>
+          {showOverflowMenu && (
+            <div
+              className="epic-detail__overflow-menu"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                background: tokens.neon.surfaceDeep,
+                border: `1px solid ${tokens.neon.cyan}40`,
+                borderRadius: '4px',
+                minWidth: '160px',
+                zIndex: 100,
+                boxShadow: `0 0 12px ${tokens.neon.cyan}20`
+              }}
+            >
+              <button
+                type="button"
+                className="epic-detail__overflow-item"
+                onClick={handleEdit}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: tokens.neon.text,
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  textAlign: 'left'
+                }}
+              >
+                <Edit2 size={14} />
+                Edit
+              </button>
+              <button
+                type="button"
+                className="epic-detail__overflow-item"
+                onClick={handleToggleReady}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: tokens.neon.text,
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  textAlign: 'left'
+                }}
+              >
+                {isReady ? 'Mark as Draft' : 'Mark as Ready'}
+              </button>
+              <button
+                type="button"
+                className="epic-detail__overflow-item"
+                onClick={handleDelete}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: tokens.neon.red,
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  textAlign: 'left'
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
