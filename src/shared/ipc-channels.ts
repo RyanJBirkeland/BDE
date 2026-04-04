@@ -71,6 +71,26 @@ export interface SettingsChannels {
     args: [key: string]
     result: void
   }
+  'settings:saveProfile': {
+    args: [name: string]
+    result: void
+  }
+  'settings:loadProfile': {
+    args: [name: string]
+    result: Record<string, string | null> | null
+  }
+  'settings:applyProfile': {
+    args: [name: string]
+    result: boolean
+  }
+  'settings:listProfiles': {
+    args: []
+    result: string[]
+  }
+  'settings:deleteProfile': {
+    args: [name: string]
+    result: void
+  }
 }
 
 /** Git operations */

@@ -554,4 +554,22 @@ export function registerReviewHandlers(): void {
 
     return { success: true, pushed }
   })
+||||||| 6323f85f
+
+
+  // review:generateSummary — AI-generated review summary (stub, not implemented)
+  safeHandle('review:generateSummary', async (_e, _payload) => {
+    logger.warn('review:generateSummary called but not implemented — returning empty summary')
+    return { summary: '' }
+  })
+
+  // review:checkAutoReview — check if task qualifies for auto-review (stub, not implemented)
+  safeHandle('review:checkAutoReview', async (_e, _payload) => {
+    logger.warn('review:checkAutoReview called but not implemented — returning no auto-actions')
+    return {
+      shouldAutoMerge: false,
+      shouldAutoApprove: false,
+      matchedRule: null
+    }
+  })
 }

@@ -47,6 +47,19 @@ declare global {
         getJson: (...args: IpcArgs<'settings:getJson'>) => Promise<IpcResult<'settings:getJson'>>
         setJson: (...args: IpcArgs<'settings:setJson'>) => Promise<IpcResult<'settings:setJson'>>
         delete: (...args: IpcArgs<'settings:delete'>) => Promise<IpcResult<'settings:delete'>>
+        saveProfile: (
+          ...args: IpcArgs<'settings:saveProfile'>
+        ) => Promise<IpcResult<'settings:saveProfile'>>
+        loadProfile: (
+          ...args: IpcArgs<'settings:loadProfile'>
+        ) => Promise<IpcResult<'settings:loadProfile'>>
+        applyProfile: (
+          ...args: IpcArgs<'settings:applyProfile'>
+        ) => Promise<IpcResult<'settings:applyProfile'>>
+        listProfiles: () => Promise<IpcResult<'settings:listProfiles'>>
+        deleteProfile: (
+          ...args: IpcArgs<'settings:deleteProfile'>
+        ) => Promise<IpcResult<'settings:deleteProfile'>>
       }
 
       // Claude CLI config (~/.claude/settings.json)

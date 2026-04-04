@@ -77,9 +77,15 @@ describe('Review handlers', () => {
   })
 
   it('registers all 8 review channels', () => {
+||||||| 6323f85f
+  it('registers all 16 review channels', () => {
+  it('registers all 10 review channels', () => {
     registerReviewHandlers()
 
     expect(safeHandle).toHaveBeenCalledTimes(8)
+||||||| 6323f85f
+    expect(safeHandle).toHaveBeenCalledTimes(16)
+    expect(safeHandle).toHaveBeenCalledTimes(10)
     expect(safeHandle).toHaveBeenCalledWith('review:getDiff', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getCommits', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getFileDiff', expect.any(Function))
