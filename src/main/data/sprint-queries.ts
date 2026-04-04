@@ -10,6 +10,7 @@ import { isValidTransition } from '../../shared/task-transitions'
 import { getDb } from '../db'
 import { recordTaskChanges } from './task-changes'
 import type { Logger } from '../agent-manager/types'
+import { withRetry } from './sqlite-retry'
 
 // Module-level logger — defaults to console, injectable for testing/structured logging
 let logger: Logger = {
@@ -215,71 +216,73 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
   try {
     const db = getDb()
 
-    // Wrap read, update, and audit in a single transaction
-    return db.transaction(() => {
-      // Fetch current state for change tracking
-      const oldTask = getTask(id, db)
-      if (!oldTask) return null
+    // Wrap read, update, and audit in a single transaction with retry on SQLITE_BUSY
+    return withRetry(() =>
+      db.transaction(() => {
+        // Fetch current state for change tracking
+        const oldTask = getTask(id, db)
+        if (!oldTask) return null
 
-      // Enforce status transition state machine
-      if (patch.status && typeof patch.status === 'string') {
-        const currentStatus = oldTask.status as string
-        if (!isValidTransition(currentStatus, patch.status)) {
-          logger.warn(
-            `[sprint-queries] Invalid status transition: ${currentStatus} → ${patch.status} for task ${id}`
+        // Enforce status transition state machine
+        if (patch.status && typeof patch.status === 'string') {
+          const currentStatus = oldTask.status as string
+          if (!isValidTransition(currentStatus, patch.status)) {
+            logger.warn(
+              `[sprint-queries] Invalid status transition: ${currentStatus} → ${patch.status} for task ${id}`
+            )
+            return null
+          }
+        }
+
+        // Build SET clause with serialized values
+        const setClauses: string[] = []
+        const values: unknown[] = []
+        const auditPatch: Record<string, unknown> = {}
+
+        for (const [key, value] of entries) {
+          // QA-18: Defense-in-depth regex assertion for SQL column names
+          if (!/^[a-z_]+$/.test(key)) {
+            throw new Error(`Invalid column name: ${key}`)
+          }
+          setClauses.push(`${key} = ?`)
+          const serialized = serializeField(key, value)
+          values.push(serialized)
+          // For audit, store the sanitized form for depends_on/tags but original for others
+          if (key === 'depends_on') {
+            auditPatch[key] = sanitizeDependsOn(value)
+          } else if (key === 'tags') {
+            auditPatch[key] = sanitizeTags(value)
+          } else {
+            auditPatch[key] = value
+          }
+        }
+
+        values.push(id)
+
+        const result = db
+          .prepare(`UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`)
+          .get(...values) as Record<string, unknown> | undefined
+
+        if (!result) return null
+
+        // Record changes for audit trail (within transaction)
+        try {
+          recordTaskChanges(
+            id,
+            oldTask as unknown as Record<string, unknown>,
+            auditPatch,
+            'unknown',
+            db
           )
-          return null
+        } catch (err) {
+          logger.warn(`[sprint-queries] Failed to record task changes: ${err}`)
+          // Re-throw to abort transaction
+          throw err
         }
-      }
 
-      // Build SET clause with serialized values
-      const setClauses: string[] = []
-      const values: unknown[] = []
-      const auditPatch: Record<string, unknown> = {}
-
-      for (const [key, value] of entries) {
-        // QA-18: Defense-in-depth regex assertion for SQL column names
-        if (!/^[a-z_]+$/.test(key)) {
-          throw new Error(`Invalid column name: ${key}`)
-        }
-        setClauses.push(`${key} = ?`)
-        const serialized = serializeField(key, value)
-        values.push(serialized)
-        // For audit, store the sanitized form for depends_on/tags but original for others
-        if (key === 'depends_on') {
-          auditPatch[key] = sanitizeDependsOn(value)
-        } else if (key === 'tags') {
-          auditPatch[key] = sanitizeTags(value)
-        } else {
-          auditPatch[key] = value
-        }
-      }
-
-      values.push(id)
-
-      const result = db
-        .prepare(`UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ? RETURNING *`)
-        .get(...values) as Record<string, unknown> | undefined
-
-      if (!result) return null
-
-      // Record changes for audit trail (within transaction)
-      try {
-        recordTaskChanges(
-          id,
-          oldTask as unknown as Record<string, unknown>,
-          auditPatch,
-          'unknown',
-          db
-        )
-      } catch (err) {
-        logger.warn(`[sprint-queries] Failed to record task changes: ${err}`)
-        // Re-throw to abort transaction
-        throw err
-      }
-
-      return sanitizeTask(result)
-    })()
+        return sanitizeTask(result)
+      })()
+    )
   } catch (err) {
     // DL-17: Standardize error message format
     const msg = err instanceof Error ? err.message : String(err)
@@ -316,18 +319,51 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number): Sp
     const now = new Date().toISOString()
 
     if (maxActive !== undefined) {
-      // Atomic WIP check — single transaction prevents TOCTOU race
-      const result = db.transaction(() => {
-        const { count } = db
-          .prepare("SELECT COUNT(*) as count FROM sprint_tasks WHERE status = 'active'")
-          .get() as { count: number }
-        if (count >= maxActive) return null
+      // Atomic WIP check — single transaction prevents TOCTOU race, with retry on SQLITE_BUSY
+      const result = withRetry(() =>
+        db.transaction(() => {
+          const { count } = db
+            .prepare("SELECT COUNT(*) as count FROM sprint_tasks WHERE status = 'active'")
+            .get() as { count: number }
+          if (count >= maxActive) return null
 
-        // DL-13 & DL-18: Record audit trail before update (pass db for consistency)
+          // DL-13 & DL-18: Record audit trail before update (pass db for consistency)
+          const oldTask = getTask(id, db)
+          if (!oldTask) return null
+
+          const updated = db
+            .prepare(
+              `UPDATE sprint_tasks
+               SET status = 'active', claimed_by = ?, started_at = ?
+               WHERE id = ? AND status = 'queued'
+               RETURNING *`
+            )
+            .get(claimedBy, now, id) as Record<string, unknown> | undefined
+
+          if (updated) {
+            recordTaskChanges(
+              id,
+              oldTask as unknown as Record<string, unknown>,
+              { status: 'active', claimed_by: claimedBy, started_at: now },
+              claimedBy,
+              db
+            )
+          }
+
+          return updated
+        })()
+      )
+
+      return result ? sanitizeTask(result) : null
+    }
+
+    // No WIP limit — original behavior with audit trail, with retry on SQLITE_BUSY
+    return withRetry(() =>
+      db.transaction(() => {
         const oldTask = getTask(id, db)
         if (!oldTask) return null
 
-        const updated = db
+        const result = db
           .prepare(
             `UPDATE sprint_tasks
              SET status = 'active', claimed_by = ?, started_at = ?
@@ -336,7 +372,7 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number): Sp
           )
           .get(claimedBy, now, id) as Record<string, unknown> | undefined
 
-        if (updated) {
+        if (result) {
           recordTaskChanges(
             id,
             oldTask as unknown as Record<string, unknown>,
@@ -344,41 +380,12 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number): Sp
             claimedBy,
             db
           )
+          return sanitizeTask(result)
         }
 
-        return updated
+        return null
       })()
-
-      return result ? sanitizeTask(result) : null
-    }
-
-    // No WIP limit — original behavior with audit trail
-    return db.transaction(() => {
-      const oldTask = getTask(id, db)
-      if (!oldTask) return null
-
-      const result = db
-        .prepare(
-          `UPDATE sprint_tasks
-           SET status = 'active', claimed_by = ?, started_at = ?
-           WHERE id = ? AND status = 'queued'
-           RETURNING *`
-        )
-        .get(claimedBy, now, id) as Record<string, unknown> | undefined
-
-      if (result) {
-        recordTaskChanges(
-          id,
-          oldTask as unknown as Record<string, unknown>,
-          { status: 'active', claimed_by: claimedBy, started_at: now },
-          claimedBy,
-          db
-        )
-        return sanitizeTask(result)
-      }
-
-      return null
-    })()
+    )
   } catch (err) {
     // DL-17: Standardize error message format
     const msg = err instanceof Error ? err.message : String(err)

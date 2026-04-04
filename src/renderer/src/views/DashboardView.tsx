@@ -36,7 +36,7 @@ export default function DashboardView(): React.JSX.Element {
     const lastClose = localStorage.getItem('bde:last-window-close')
     if (!lastClose) {
       // Safe to set state here - guarded by briefingChecked to prevent cascading renders
-
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBriefingChecked(true)
       return
     }
