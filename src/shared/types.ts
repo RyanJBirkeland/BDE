@@ -94,11 +94,23 @@ export interface SprintTask {
   partial_diff?: string | null
   tags?: string[] | null
   group_id?: string | null
+  sprint_id?: string | null
   updated_at: string
   created_at: string
 }
 
 /** Task template — named prompt prefix resolved at claim time. */
+export interface Sprint {
+  id: string
+  name: string
+  goal: string | null
+  start_date: string
+  end_date: string
+  status: 'planning' | 'active' | 'completed' | 'cancelled'
+  created_at: string
+  updated_at: string
+}
+
 export interface TaskTemplate {
   name: string
   promptPrefix: string

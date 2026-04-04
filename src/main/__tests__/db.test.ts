@@ -60,6 +60,7 @@ describe('db schema migrations', () => {
       'review_comments',
       'settings',
       'sprint_tasks',
+      'sprints',
       'task_changes',
       'task_groups',
       'webhooks'
@@ -87,6 +88,7 @@ describe('db schema migrations', () => {
       'idx_agent_runs_status',
       'idx_review_comments_task_id',
       'idx_sprint_tasks_group',
+      'idx_sprint_tasks_sprint',
       'idx_sprint_tasks_status',
       'idx_task_changes_changed_at',
       'idx_task_changes_task_id'

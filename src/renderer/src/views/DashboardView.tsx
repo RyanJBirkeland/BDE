@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
@@ -26,18 +26,22 @@ export default function DashboardView(): React.JSX.Element {
   // Morning briefing state
   const [showBriefing, setShowBriefing] = useState(false)
   const [briefingTasks, setBriefingTasks] = useState<typeof tasks>([])
-  const [briefingChecked, setBriefingChecked] = useState(false)
+  const briefingChecked = useRef(false)
 
   // Check for new completions when tasks load
   useEffect(() => {
     // Only check once, when tasks are available
-    if (briefingChecked || tasks.length === 0) return
+    if (briefingChecked.current || tasks.length === 0) return
 
     const lastClose = localStorage.getItem('bde:last-window-close')
     if (!lastClose) {
       // Safe to set state here - guarded by briefingChecked to prevent cascading renders
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBriefingChecked(true)
+      // Safe to set state here - guarded by briefingChecked to prevent cascading renders
+
+      setBriefingChecked(true)
+      briefingChecked.current = true
       return
     }
 
@@ -54,6 +58,14 @@ export default function DashboardView(): React.JSX.Element {
         })
         shouldShowBriefing = newCompletions.length > 0
       }
+    const lastCloseTime = parseInt(lastClose, 10)
+    if (isNaN(lastCloseTime)) {
+      setBriefingChecked(true)
+      return
+    const lastCloseTime = parseInt(lastClose, 10)
+    if (isNaN(lastCloseTime)) {
+      briefingChecked.current = true
+      return
     }
 
     // Batch all state updates at the end to avoid cascading renders
@@ -62,10 +74,37 @@ export default function DashboardView(): React.JSX.Element {
     if (shouldShowBriefing) {
       setBriefingTasks(newCompletions)
       setShowBriefing(true)
+    const newCompletions = tasks.filter((task) => {
+      if (!task.completed_at) return false
+      const completedTime = new Date(task.completed_at).getTime()
+      return completedTime > lastCloseTime
+    })
+
+    if (newCompletions.length > 0) {
+      setBriefingTasks(newCompletions)
+      setShowBriefing(true)
+    const newCompletions = tasks.filter((task) => {
+      if (!task.completed_at) return false
+      const completedTime = new Date(task.completed_at).getTime()
+      return completedTime > lastCloseTime
+    })
+
+    if (newCompletions.length > 0) {
+      // Defer state updates to avoid cascading renders
+      setTimeout(() => {
+        setBriefingTasks(newCompletions)
+        setShowBriefing(true)
+      }, 0)
     }
     setBriefingChecked(true)
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [tasks, briefingChecked])
+
+    setBriefingChecked(true)
+  }, [tasks, briefingChecked])
+
+    briefingChecked.current = true
+  }, [tasks])
 
   const handleDismissBriefing = useCallback(() => {
     localStorage.setItem('bde:last-window-close', Date.now().toString())
