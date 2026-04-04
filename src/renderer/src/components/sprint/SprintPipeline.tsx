@@ -74,6 +74,7 @@ export function SprintPipeline(): React.JSX.Element {
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
   const statusFilter = useSprintUI((s) => s.statusFilter)
   const repoFilter = useSprintUI((s) => s.repoFilter)
+  const tagFilter = useSprintUI((s) => s.tagFilter)
   const searchQuery = useSprintUI((s) => s.searchQuery)
 
   const setView = usePanelLayoutStore((s) => s.setView)
@@ -225,12 +226,13 @@ export function SprintPipeline(): React.JSX.Element {
   const filteredTasks = useMemo(() => {
     let result = tasks
     if (repoFilter) result = result.filter((t) => t.repo === repoFilter)
+    if (tagFilter) result = result.filter((t) => t.tags?.includes(tagFilter))
     if (searchQuery) {
       const lower = searchQuery.toLowerCase()
       result = result.filter((t) => t.title.toLowerCase().includes(lower))
     }
     return result
-  }, [tasks, repoFilter, searchQuery])
+  }, [tasks, repoFilter, tagFilter, searchQuery])
 
   const partition = useMemo(() => partitionSprintTasks(filteredTasks), [filteredTasks])
 

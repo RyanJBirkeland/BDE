@@ -696,6 +696,16 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN assigned_reviewer TEXT DEFAULT NULL')
       }
     }
+  },
+  {
+    version: 25,
+    description: 'Add tags column to sprint_tasks for categorization',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('tags')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN tags TEXT DEFAULT NULL')
+      }
+    }
   }
 ]
 

@@ -15,6 +15,7 @@ interface SprintUIState {
   selectedTaskId: string | null
   logDrawerTaskId: string | null
   repoFilter: string | null
+  tagFilter: string | null
   searchQuery: string
   statusFilter: StatusFilter
   generatingIds: string[]
@@ -36,6 +37,7 @@ interface SprintUIState {
   setQuickCreateOpen: (open: boolean) => void
   toggleQuickCreate: () => void
   setRepoFilter: (filter: string | null) => void
+  setTagFilter: (filter: string | null) => void
   setSearchQuery: (query: string) => void
   setStatusFilter: (filter: StatusFilter) => void
   setGeneratingIds: (updater: (prev: string[]) => string[]) => void
@@ -49,6 +51,7 @@ export const useSprintUI = create<SprintUIState>((set, get) => ({
   selectedTaskId: null,
   logDrawerTaskId: null,
   repoFilter: null,
+  tagFilter: null,
   searchQuery: '',
   statusFilter: 'all',
   generatingIds: [],
@@ -76,6 +79,7 @@ export const useSprintUI = create<SprintUIState>((set, get) => ({
   setQuickCreateOpen: (open): void => set({ quickCreateOpen: open }),
   toggleQuickCreate: (): void => set((s) => ({ quickCreateOpen: !s.quickCreateOpen })),
   setRepoFilter: (filter): void => set({ repoFilter: filter }),
+  setTagFilter: (filter): void => set({ tagFilter: filter }),
   setSearchQuery: (query): void => set({ searchQuery: query }),
   setStatusFilter: (filter): void => set({ statusFilter: filter }),
   setGeneratingIds: (updater): void => {

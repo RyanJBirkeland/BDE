@@ -8,6 +8,7 @@ import { formatElapsed, getDotColor } from '../../lib/task-format'
 import { useSprintUI } from '../../stores/sprintUI'
 import { formatDuration } from '../../lib/format'
 import { useTaskCost } from '../../hooks/useTaskCost'
+import { TagBadge } from '../ui/TagBadge'
 
 interface TaskPillProps {
   task: SprintTask
@@ -141,6 +142,13 @@ export function TaskPill({
       >
         {task.repo}
       </span>
+      {task.tags && task.tags.length > 0 && (
+        <div className="task-pill__tags">
+          {task.tags.map((tag) => (
+            <TagBadge key={tag} tag={tag} size="sm" />
+          ))}
+        </div>
+      )}
       {elapsed && <span className="task-pill__time">{elapsed}</span>}
       {task.status === 'done' && task.started_at && task.completed_at && (
         <span className="task-pill__duration">

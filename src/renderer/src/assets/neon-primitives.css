@@ -185,6 +185,91 @@
   animation: neon-pulse 3s ease-in-out infinite;
 }
 
+/* ── TagBadge & TagInput ──────────────────────────── */
+
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--bde-radius-full);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.tag-badge--sm {
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+.tag-badge--md {
+  padding: 3px 10px;
+  font-size: 11px;
+}
+
+.tag-badge__remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  margin: 0 -2px 0 2px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.tag-badge__remove:hover {
+  opacity: 1;
+}
+
+.tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bde-bg-secondary);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  transition: border-color 0.15s ease;
+}
+
+.tag-input:focus-within {
+  border-color: var(--neon-cyan-border);
+}
+
+.tag-input__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-input__field {
+  flex: 1;
+  min-width: 100px;
+  background: none;
+  border: none;
+  color: var(--neon-text);
+  font-size: var(--bde-size-sm);
+  outline: none;
+}
+
+.tag-input__field::placeholder {
+  color: var(--neon-text-dim);
+}
+
+.tag-input__field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── StatusBar ────────────────────────────────────── */
 
 .status-bar {

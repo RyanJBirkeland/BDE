@@ -75,6 +75,7 @@ export interface SprintTask {
   failure_reason?: 'auth' | 'timeout' | 'test_failure' | 'compilation' | 'spawn' | 'unknown' | null
   max_cost_usd?: number | null
   partial_diff?: string | null
+  tags?: string[] | null
   updated_at: string
   created_at: string
 }

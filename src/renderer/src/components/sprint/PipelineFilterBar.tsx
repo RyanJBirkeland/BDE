@@ -12,13 +12,25 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
   const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
   const repoFilter = useSprintUI((s) => s.repoFilter)
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
+  const tagFilter = useSprintUI((s) => s.tagFilter)
+  const setTagFilter = useSprintUI((s) => s.setTagFilter)
 
   const repos = useMemo(() => {
     const set = new Set(tasks.map((t) => t.repo))
     return Array.from(set).sort()
   }, [tasks])
 
-  if (repos.length <= 1 && !searchQuery) return null
+  const allTags = useMemo(() => {
+    const set = new Set<string>()
+    tasks.forEach((t) => {
+      if (t.tags) {
+        t.tags.forEach((tag) => set.add(tag))
+      }
+    })
+    return Array.from(set).sort()
+  }, [tasks])
+
+  if (repos.length <= 1 && allTags.length === 0 && !searchQuery) return null
 
   return (
     <div className="pipeline-filter-bar">
@@ -50,6 +62,28 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
               aria-pressed={repoFilter === repo}
             >
               {repo}
+            </button>
+          ))}
+        </div>
+      )}
+      {allTags.length > 0 && (
+        <div className="pipeline-filter-bar__chips">
+          <span className="pipeline-filter-bar__label">Tags:</span>
+          <button
+            className={`pipeline-filter-bar__chip${!tagFilter ? ' pipeline-filter-bar__chip--active' : ''}`}
+            onClick={() => setTagFilter(null)}
+            aria-pressed={!tagFilter}
+          >
+            All
+          </button>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              className={`pipeline-filter-bar__chip${tagFilter === tag ? ' pipeline-filter-bar__chip--active' : ''}`}
+              onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+              aria-pressed={tagFilter === tag}
+            >
+              {tag}
             </button>
           ))}
         </div>

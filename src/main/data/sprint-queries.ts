@@ -5,6 +5,7 @@
 import type Database from 'better-sqlite3'
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
+import { sanitizeTags } from '../../shared/sanitize-tags'
 import { isValidTransition } from '../../shared/task-transitions'
 import { getDb } from '../db'
 import { recordTaskChanges } from './task-changes'
@@ -25,11 +26,13 @@ export function setSprintQueriesLogger(l: Logger): void {
  * Sanitize a single task row from SQLite.
  * - Coerces INTEGER 0/1 to boolean for playground_enabled, needs_review
  * - Deserializes depends_on from JSON string
+ * - Deserializes tags from JSON string
  */
 function sanitizeTask(row: Record<string, unknown>): SprintTask {
   return {
     ...row,
     depends_on: sanitizeDependsOn(row.depends_on),
+    tags: sanitizeTags(row.tags),
     playground_enabled: !!row.playground_enabled,
     needs_review: !!row.needs_review
   } as SprintTask
@@ -72,6 +75,7 @@ export const UPDATE_ALLOWLIST = new Set([
   'session_id',
   'next_eligible_at',
   'model',
+  'tags',
   'retry_context',
   'failure_reason',
   'max_cost_usd',
@@ -103,6 +107,7 @@ export interface CreateTaskInput {
   depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
   playground_enabled?: boolean
   model?: string
+  tags?: string[] | null
 }
 
 /**
@@ -114,6 +119,10 @@ export interface CreateTaskInput {
 function serializeField(key: string, value: unknown): unknown {
   if (key === 'depends_on') {
     const sanitized = sanitizeDependsOn(value)
+    return sanitized ? JSON.stringify(sanitized) : null
+  }
+  if (key === 'tags') {
+    const sanitized = sanitizeTags(value)
     return sanitized ? JSON.stringify(sanitized) : null
   }
   if (key === 'playground_enabled' || key === 'needs_review') {
@@ -167,11 +176,12 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
   try {
     const db = getDb()
     const dependsOn = sanitizeDependsOn(input.depends_on)
+    const tags = sanitizeTags(input.tags)
 
     const result = db
       .prepare(
-        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING *`
       )
       .get(
@@ -185,7 +195,8 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
         input.template_name ?? null,
         dependsOn ? JSON.stringify(dependsOn) : null,
         input.playground_enabled ? 1 : 0,
-        input.model ?? null
+        input.model ?? null,
+        tags ? JSON.stringify(tags) : null
       ) as Record<string, unknown> | undefined
 
     return result ? sanitizeTask(result) : null
@@ -234,8 +245,14 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
         setClauses.push(`${key} = ?`)
         const serialized = serializeField(key, value)
         values.push(serialized)
-        // For audit, store the serialized form for depends_on but original for others
-        auditPatch[key] = key === 'depends_on' ? sanitizeDependsOn(value) : value
+        // For audit, store the sanitized form for depends_on/tags but original for others
+        if (key === 'depends_on') {
+          auditPatch[key] = sanitizeDependsOn(value)
+        } else if (key === 'tags') {
+          auditPatch[key] = sanitizeTags(value)
+        } else {
+          auditPatch[key] = value
+        }
       }
 
       values.push(id)
