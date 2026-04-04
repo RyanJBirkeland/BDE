@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useCommandPaletteStore } from './stores/commandPalette'
 import { useCostDataStore } from './stores/costData'
 import { useSprintUI } from './stores/sprintUI'
+import { useKeybindingsStore } from './stores/keybindings'
 import { CommandPalette } from './components/layout/CommandPalette'
 import { QuickCreateBar } from './components/ui/QuickCreateBar'
 import { ToastContainer } from './components/layout/ToastContainer'
@@ -25,7 +26,7 @@ import type { View } from './stores/panelLayout'
 import { TearoffShell } from './components/layout/TearoffShell'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/motion'
 import { DEFAULT_MODEL } from '../../shared/models'
-import { VIEW_SHORTCUT_MAP, VIEW_LABELS } from './lib/view-registry'
+import { VIEW_LABELS } from './lib/view-registry'
 import { PollingProvider } from './components/PollingProvider'
 import { AgentMonitor } from './components/ui/AgentMonitor'
 import './assets/neon.css'
@@ -134,10 +135,15 @@ function App(): React.JSX.Element {
   const loadLayout = usePanelLayoutStore((s) => s.loadSavedLayout)
   const restorePendingReview = usePendingReviewStore((s) => s.restoreFromStorage)
   const restoreFilterPresets = useFilterPresets((s) => s.restoreFromStorage)
+  const initKeybindings = useKeybindingsStore((s) => s.init)
 
   useEffect(() => {
     fetchLocalAgents()
   }, [fetchLocalAgents])
+
+  useEffect(() => {
+    initKeybindings()
+  }, [initKeybindings])
 
   useEffect(() => {
     window.api.settings.get('onboarding.completed').then((val) => {
@@ -256,25 +262,73 @@ function App(): React.JSX.Element {
 
       if (inInput && !e.metaKey) return
 
-      if (e.metaKey && e.key >= '0' && e.key <= '9') {
-        const target = VIEW_SHORTCUT_MAP[e.key]
-        if (target) {
-          e.preventDefault()
-          setView(target)
-        }
+      // Build current key combo for matching against keybindings
+      const parts: string[] = []
+      if (e.metaKey) parts.push('⌘')
+      if (e.ctrlKey && !e.metaKey) parts.push('Ctrl')
+      if (e.altKey) parts.push('⌥')
+      if (e.shiftKey) parts.push('⇧')
+      parts.push(e.key.toUpperCase())
+      const combo = parts.join('')
+
+      const bindings = useKeybindingsStore.getState().bindings
+
+      // View navigation shortcuts
+      if (combo === bindings['view.dashboard']) {
+        e.preventDefault()
+        setView('dashboard')
+        return
+      }
+      if (combo === bindings['view.agents']) {
+        e.preventDefault()
+        setView('agents')
+        return
+      }
+      if (combo === bindings['view.ide']) {
+        e.preventDefault()
+        setView('ide')
+        return
+      }
+      if (combo === bindings['view.sprint']) {
+        e.preventDefault()
+        setView('sprint')
+        return
+      }
+      if (combo === bindings['view.codeReview']) {
+        e.preventDefault()
+        setView('code-review')
+        return
+      }
+      if (combo === bindings['view.git']) {
+        e.preventDefault()
+        setView('git')
+        return
+      }
+      if (combo === bindings['view.settings']) {
+        e.preventDefault()
+        setView('settings')
+        return
+      }
+      if (combo === bindings['view.taskWorkbench']) {
+        e.preventDefault()
+        setView('task-workbench')
+        return
+      }
+      if (combo === bindings['view.planner']) {
+        e.preventDefault()
+        setView('planner')
         return
       }
 
-      // Cmd+\ — Split focused panel right
-      if (e.metaKey && e.key === '\\') {
+      // Panel shortcuts
+      if (combo === bindings['panel.splitRight']) {
         e.preventDefault()
         const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
         if (focusedPanelId) splitPanel(focusedPanelId, 'horizontal', 'agents')
         return
       }
 
-      // Cmd+W — Close focused panel's active tab
-      if (e.metaKey && e.key === 'w') {
+      if (combo === bindings['panel.closeTab']) {
         e.preventDefault()
         const { focusedPanelId, root } = usePanelLayoutStore.getState()
         if (focusedPanelId) {
@@ -284,14 +338,13 @@ function App(): React.JSX.Element {
         return
       }
 
-      // Cmd+Shift+[ / ] — Cycle tabs within focused panel
-      if (e.metaKey && e.shiftKey && (e.key === '[' || e.key === ']')) {
+      if (combo === bindings['panel.nextTab'] || combo === bindings['panel.prevTab']) {
         e.preventDefault()
         const { focusedPanelId, root, setActiveTab } = usePanelLayoutStore.getState()
         if (focusedPanelId) {
           const leaf = findLeaf(root, focusedPanelId)
           if (leaf && leaf.tabs.length > 1) {
-            const delta = e.key === ']' ? 1 : -1
+            const delta = combo === bindings['panel.nextTab'] ? 1 : -1
             const next = (leaf.activeTab + delta + leaf.tabs.length) % leaf.tabs.length
             setActiveTab(focusedPanelId, next)
           }
@@ -299,24 +352,28 @@ function App(): React.JSX.Element {
         return
       }
 
-      if (e.metaKey && e.key === 'p') {
+      // Command palette
+      if (combo === bindings['palette.toggle']) {
         e.preventDefault()
         togglePalette()
         return
       }
 
-      if (e.metaKey && e.key === 'r') {
+      // Refresh
+      if (combo === bindings['refresh']) {
         e.preventDefault()
         window.dispatchEvent(new CustomEvent('bde:refresh'))
         return
       }
 
-      if (e.metaKey && e.key === 'n') {
+      // Quick create
+      if (combo === bindings['quickCreate.toggle']) {
         e.preventDefault()
         toggleQuickCreate()
         return
       }
 
+      // Shortcuts overlay (special case - no modifiers)
       if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         setShortcutsOpen((prev) => !prev)

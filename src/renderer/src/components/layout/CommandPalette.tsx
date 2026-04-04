@@ -13,6 +13,7 @@ import {
   type CommandCategory,
   type Command
 } from '../../stores/commandPalette'
+import { useKeybindingsStore } from '../../stores/keybindings'
 
 const CATEGORY_LABELS: Record<CommandCategory, string> = {
   navigation: 'Navigate',
@@ -52,22 +53,24 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
 
   // Register core commands on mount (commands capture setView/onClose from closure)
   useEffect(() => {
-    const navCommands: { view: View; label: string; hint: string }[] = [
-      { view: 'dashboard', label: 'Go to Dashboard', hint: '⌘1' },
-      { view: 'agents', label: 'Go to Agents', hint: '⌘2' },
-      { view: 'ide', label: 'Go to IDE', hint: '⌘3' },
-      { view: 'sprint', label: 'Go to Task Pipeline', hint: '⌘4' },
-      { view: 'code-review', label: 'Go to Code Review', hint: '⌘5' },
-      { view: 'git', label: 'Go to Source Control', hint: '⌘6' },
-      { view: 'settings', label: 'Go to Settings', hint: '⌘7' },
-      { view: 'task-workbench', label: 'Go to Task Workbench', hint: '⌘0' }
+    const bindings = useKeybindingsStore.getState().bindings
+
+    const navCommands: { view: View; label: string; actionId: keyof typeof bindings }[] = [
+      { view: 'dashboard', label: 'Go to Dashboard', actionId: 'view.dashboard' },
+      { view: 'agents', label: 'Go to Agents', actionId: 'view.agents' },
+      { view: 'ide', label: 'Go to IDE', actionId: 'view.ide' },
+      { view: 'sprint', label: 'Go to Task Pipeline', actionId: 'view.sprint' },
+      { view: 'code-review', label: 'Go to Code Review', actionId: 'view.codeReview' },
+      { view: 'git', label: 'Go to Source Control', actionId: 'view.git' },
+      { view: 'settings', label: 'Go to Settings', actionId: 'view.settings' },
+      { view: 'task-workbench', label: 'Go to Task Workbench', actionId: 'view.taskWorkbench' }
     ]
 
     const nav: Command[] = navCommands.map((v) => ({
       id: `nav-${v.view}`,
       label: v.label,
       category: 'navigation',
-      hint: v.hint,
+      hint: bindings[v.actionId],
       keywords: [v.view, 'goto', 'open'],
       action: () => {
         setView(v.view)
@@ -127,7 +130,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         id: 'panel-split-right',
         label: 'Split Right',
         category: 'panel',
-        hint: '⌘\\',
+        hint: bindings['panel.splitRight'],
         keywords: ['split', 'horizontal', 'panel'],
         action: () => {
           const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
@@ -150,7 +153,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         id: 'panel-close',
         label: 'Close Panel',
         category: 'panel',
-        hint: '⌘W',
+        hint: bindings['panel.closeTab'],
         keywords: ['close', 'panel', 'tab'],
         action: () => {
           const { focusedPanelId, root, closeTab } = usePanelLayoutStore.getState()

@@ -14,7 +14,8 @@ import {
   DollarSign,
   Brain,
   Shield,
-  Webhook
+  Webhook,
+  Keyboard
 } from 'lucide-react'
 import { SettingsSidebar } from '../components/settings/SettingsSidebar'
 import type { SettingsSection } from '../components/settings/SettingsSidebar'
@@ -29,6 +30,7 @@ import { CostSection } from '../components/settings/CostSection'
 import { MemorySection } from '../components/settings/MemorySection'
 import { AboutSection } from '../components/settings/AboutSection'
 import { WebhooksSection } from '../components/settings/WebhooksSection'
+import { KeybindingsSettings } from '../components/settings/KeybindingsSettings'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 const SECTIONS: SettingsSection[] = [
@@ -40,6 +42,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'webhooks', label: 'Webhooks', icon: Webhook, category: 'Pipeline' },
   { id: 'cost', label: 'Cost & Usage', icon: DollarSign, category: 'Pipeline' },
   { id: 'appearance', label: 'Appearance', icon: Palette, category: 'App' },
+  { id: 'keybindings', label: 'Keybindings', icon: Keyboard, category: 'App' },
   { id: 'memory', label: 'Memory', icon: Brain, category: 'App' },
   { id: 'about', label: 'About', icon: Info, category: 'App' }
 ]
@@ -56,6 +59,7 @@ const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   cost: CostSection,
   memory: MemorySection,
   appearance: AppearanceSection,
+  keybindings: KeybindingsSettings,
   about: AboutSection
 }
 
@@ -73,6 +77,7 @@ const SECTION_META: Record<string, { title: string; subtitle: string; wide: bool
   cost: { title: 'Cost & Usage', subtitle: 'Agent execution costs and history', wide: true },
   memory: { title: 'Memory', subtitle: 'Agent memory files', wide: true },
   appearance: { title: 'Appearance', subtitle: 'Theme and visual preferences', wide: false },
+  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
   about: { title: 'About', subtitle: 'Version and application info', wide: false }
 }
 

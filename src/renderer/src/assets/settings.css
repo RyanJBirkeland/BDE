@@ -101,3 +101,109 @@
   background: var(--bde-surface);
   border-color: var(--bde-border);
 }
+
+/* ── Keybindings Settings ───────────────────── */
+
+.stg-keybindings__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.stg-keybindings__table thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bde-border);
+}
+
+.stg-keybindings__table tbody tr {
+  border-bottom: 1px solid var(--bde-border);
+  transition: background 0.15s;
+}
+
+.stg-keybindings__table tbody tr:hover {
+  background: var(--bde-surface);
+}
+
+.stg-keybindings__row--warning {
+  background: rgba(255, 165, 0, 0.05);
+}
+
+.stg-keybindings__label {
+  font-size: 13px;
+  color: var(--bde-text);
+  padding: 10px 12px;
+}
+
+.stg-keybindings__value {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stg-keybindings__recorder {
+  min-width: 100px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--bde-text);
+  background: var(--glass-tint-dark);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.stg-keybindings__recorder:hover {
+  border-color: var(--color-queued);
+  background: var(--bde-surface);
+}
+
+.stg-keybindings__recorder--active {
+  border-color: var(--color-queued);
+  background: var(--bde-surface);
+  color: var(--color-queued);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.stg-keybindings__warning {
+  color: orange;
+  display: flex;
+  align-items: center;
+}
+
+.stg-keybindings__actions {
+  padding: 10px 12px;
+  text-align: right;
+}
+
+.stg-keybindings__duplicates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 165, 0, 0.1);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: var(--bde-radius-sm);
+  font-size: 13px;
+  color: orange;
+}
