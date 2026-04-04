@@ -766,7 +766,7 @@ export const migrations: Migration[] = [
     }
   },
   {
-    version: 27,
+    version: 28,
     description: 'Add sprints table and sprint_id to sprint_tasks',
     up: (db) => {
       db.exec(`

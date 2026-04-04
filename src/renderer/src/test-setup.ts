@@ -195,5 +195,16 @@ vi.stubGlobal('api', {
     getWindowInfo: vi.fn().mockResolvedValue(null),
     notifyReady: vi.fn(),
     onTabDrop: vi.fn().mockReturnValue(() => {})
+  },
+  groups: {
+    create: vi.fn().mockResolvedValue({}),
+    list: vi.fn().mockResolvedValue([]),
+    get: vi.fn().mockResolvedValue(null),
+    update: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue(undefined),
+    addTask: vi.fn().mockResolvedValue(true),
+    removeTask: vi.fn().mockResolvedValue(true),
+    getGroupTasks: vi.fn().mockResolvedValue([]),
+    queueAll: vi.fn().mockResolvedValue(0)
   }
 })
