@@ -56,6 +56,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     expect(screen.getByText('Task Pipeline')).toBeInTheDocument()
@@ -70,6 +72,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     expect(screen.getByText('2')).toBeInTheDocument()
@@ -90,6 +94,8 @@ describe('PipelineHeader', () => {
         onFilterClick={mockFilterClick}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     const activeElement = screen.getByText('active').closest('[role="button"]') as HTMLElement
@@ -107,6 +113,8 @@ describe('PipelineHeader', () => {
         onFilterClick={mockFilterClick}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     const queuedElement = screen.getByText('queued').closest('[role="button"]') as HTMLElement
@@ -124,6 +132,8 @@ describe('PipelineHeader', () => {
         onFilterClick={mockFilterClick}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     const blockedElement = screen.getByText('blocked').closest('[role="button"]') as HTMLElement
@@ -140,6 +150,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     expect(screen.queryByLabelText(/merge conflict/)).not.toBeInTheDocument()
@@ -155,6 +167,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     expect(screen.getByLabelText('2 merge conflicts')).toBeInTheDocument()
@@ -171,6 +185,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={mockConflictClick}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     fireEvent.click(screen.getByLabelText('1 merge conflict'))
@@ -186,6 +202,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     expect(screen.queryByLabelText(/stuck task/)).not.toBeInTheDocument()
@@ -201,6 +219,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     expect(screen.getByLabelText('3 stuck tasks')).toBeInTheDocument()
@@ -217,6 +237,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={mockHealthCheckClick}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     fireEvent.click(screen.getByLabelText('1 stuck task'))
@@ -234,6 +256,8 @@ describe('PipelineHeader', () => {
         onFilterClick={vi.fn()}
         onConflictClick={vi.fn()}
         onHealthCheckClick={vi.fn()}
+        onDagToggle={vi.fn()}
+        dagOpen={false}
       />
     )
     expect(screen.getByLabelText('1 merge conflict')).toBeInTheDocument()

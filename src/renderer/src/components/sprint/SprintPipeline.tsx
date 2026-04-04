@@ -2,7 +2,7 @@
  * SprintPipeline — Three-zone neon pipeline layout:
  * Left: PipelineBacklog | Center: Pipeline stages | Right: TaskDetailDrawer (conditional)
  */
-import { useEffect, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, LayoutGroup } from 'framer-motion'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
@@ -26,6 +26,7 @@ import { PipelineErrorBoundary } from './PipelineErrorBoundary'
 import { PipelineFilterBar } from './PipelineFilterBar'
 import { PipelineHeader } from './PipelineHeader'
 import { PipelineOverlays } from './PipelineOverlays'
+import { DagOverlay } from './DagOverlay'
 import { NeonCard } from '../neon'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import type { SprintTask } from '../../../../shared/types'
@@ -221,6 +222,7 @@ export function SprintPipeline(): React.JSX.Element {
   ])
 
   // --- Local UI state ---
+  const [dagOpen, setDagOpen] = useState(false)
 
   // Filter + partition tasks
   const filteredTasks = useMemo(() => {
@@ -462,6 +464,8 @@ export function SprintPipeline(): React.JSX.Element {
         onFilterClick={setStatusFilter}
         onConflictClick={() => setConflictDrawerOpen(true)}
         onHealthCheckClick={() => setHealthCheckDrawerOpen(true)}
+        onDagToggle={() => setDagOpen(!dagOpen)}
+        dagOpen={dagOpen}
       />
 
       <PipelineFilterBar tasks={tasks} />
@@ -612,6 +616,18 @@ export function SprintPipeline(): React.JSX.Element {
         onDismissStuckTask={dismissTask}
         confirmProps={confirmProps}
       />
+
+      {dagOpen && (
+        <DagOverlay
+          tasks={tasks}
+          selectedTaskId={selectedTaskId}
+          onSelectTask={(taskId) => {
+            setSelectedTaskId(taskId)
+            setDrawerOpen(true)
+          }}
+          onClose={() => setDagOpen(false)}
+        />
+      )}
     </motion.div>
   )
 }

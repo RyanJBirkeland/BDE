@@ -1256,6 +1256,10 @@ export function registerReviewHandlers(): void {
 ||||||| 6ddba36b
 ||||||| 6807c806
 ||||||| 5faba97c
+||||||| 61d03689
+||||||| 6ddba36b
+||||||| 6807c806
+||||||| 5faba97c
 
   // review:shipIt — merge locally + push to origin + mark done in one action
   safeHandle('review:shipIt', async (_e, payload) => {

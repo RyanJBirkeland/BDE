@@ -2109,3 +2109,122 @@
 .agent-preview__text {
   color: var(--neon-text-dim, #888);
 }
+
+/* ═══════════════════════════════════════════════════════
+   DAG Overlay — Dependency Graph Visualization
+   ═══════════════════════════════════════════════════════ */
+
+.sprint-pipeline__badge--active {
+  background: var(--neon-purple-surface);
+  border-color: var(--neon-purple);
+  color: var(--neon-purple);
+}
+
+.dag-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--neon-bg);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--bde-font-code);
+}
+
+.dag-overlay__header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  border-bottom: 1px solid var(--neon-purple-border);
+  flex-shrink: 0;
+}
+
+.dag-overlay__title {
+  color: var(--neon-cyan);
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0;
+  flex: 1;
+}
+
+.dag-overlay__legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--neon-text-dim);
+}
+
+.dag-overlay__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dag-overlay__legend-line {
+  width: 20px;
+  height: 2px;
+  display: inline-block;
+}
+
+.dag-overlay__legend-line--hard {
+  background: var(--neon-purple);
+}
+
+.dag-overlay__legend-line--soft {
+  background: var(--neon-text-dim);
+  opacity: 0.4;
+}
+
+.dag-overlay__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--neon-text-dim);
+  background: transparent;
+  border-radius: 6px;
+  color: var(--neon-text);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.dag-overlay__close:hover {
+  background: var(--neon-purple-surface);
+  border-color: var(--neon-purple);
+  color: var(--neon-purple);
+}
+
+.dag-overlay__canvas {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  background: var(--neon-bg);
+}
+
+.dag-overlay__svg {
+  display: block;
+}
+
+.dag-overlay__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--neon-text-dim);
+  font-size: 14px;
+}
+
+.dag-overlay__node {
+  transition: opacity 150ms ease;
+}
+
+.dag-overlay__node:hover {
+  opacity: 1 !important;
+}

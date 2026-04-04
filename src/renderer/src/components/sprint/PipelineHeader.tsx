@@ -1,5 +1,8 @@
 import { GitMerge, HeartPulse, LayoutGrid, List } from 'lucide-react'
 import { useSprintUI } from '../../stores/sprintUI'
+||||||| 61d03689
+import { GitMerge, HeartPulse } from 'lucide-react'
+import { GitMerge, HeartPulse, Network } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 
 interface StatBadge {
@@ -15,6 +18,8 @@ interface PipelineHeaderProps {
   onFilterClick: (filter: StatBadge['filter']) => void
   onConflictClick: () => void
   onHealthCheckClick: () => void
+  onDagToggle: () => void
+  dagOpen: boolean
 }
 
 export function PipelineHeader({
@@ -23,7 +28,9 @@ export function PipelineHeader({
   visibleStuckTasks,
   onFilterClick,
   onConflictClick,
-  onHealthCheckClick
+  onHealthCheckClick,
+  onDagToggle,
+  dagOpen
 }: PipelineHeaderProps): React.JSX.Element {
   const pipelineDensity = useSprintUI((s) => s.pipelineDensity)
   const setPipelineDensity = useSprintUI((s) => s.setPipelineDensity)
@@ -54,6 +61,16 @@ export function PipelineHeader({
         aria-label={pipelineDensity === 'card' ? 'Switch to compact view' : 'Switch to card view'}
       >
         {pipelineDensity === 'card' ? <List size={14} /> : <LayoutGrid size={14} />}
+      </button>
+||||||| 61d03689
+      <button
+        className={`sprint-pipeline__badge ${dagOpen ? 'sprint-pipeline__badge--active' : ''}`}
+        onClick={onDagToggle}
+        title="Toggle dependency graph"
+        aria-label="Toggle dependency graph visualization"
+      >
+        <Network size={12} />
+        <span>DAG</span>
       </button>
       {conflictingTasks.length > 0 && (
         <button
