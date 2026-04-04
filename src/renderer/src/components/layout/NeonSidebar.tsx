@@ -6,6 +6,7 @@ import { OverflowMenu } from './OverflowMenu'
 import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar'
 import { usePanelLayoutStore, getOpenViews, type View } from '../../stores/panelLayout'
 import { VIEW_ICONS, VIEW_LABELS, VIEW_SHORTCUTS } from '../../lib/view-registry'
+import { useSprintTasks } from '../../stores/sprintTasks'
 
 interface NeonSidebarProps {
   model?: string
@@ -40,6 +41,8 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
       findPanelByView: s.findPanelByView
     }))
   )
+
+  const reviewCount = useSprintTasks((s) => s.tasks.filter((t) => t.status === 'review').length)
 
   const openViews = getOpenViews(root)
   const unpinnedViews = getUnpinnedViews(pinnedViews)
@@ -130,6 +133,7 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
               shortcut={shortcut}
               isActive={isActive}
               isOpen={isOpen}
+              badge={view === 'code-review' ? reviewCount : undefined}
               onActivate={handleActivate}
               onContextAction={handleContextAction}
             />
