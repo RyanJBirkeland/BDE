@@ -2,9 +2,11 @@
 
 # BDE — Birkeland Development Environment
 
-**The desktop IDE that runs your engineering team while you sleep.**
+**A steering system for Claude Code at scale.**
 
-BDE is an Electron app that orchestrates autonomous AI agents to execute sprint tasks — from spec creation through code, review, and merge. You define what needs building. BDE handles the rest.
+Claude Code is a powerful coding agent. BDE is the desktop app that turns it into a managed engineering pipeline — orchestrating multiple Claude Code sessions in parallel, each working in isolated git worktrees, with human review gates before anything touches your codebase.
+
+You write specs. BDE queues them, spawns Claude Code sessions, monitors progress, and presents finished work for review. You stay in control. Claude Code does the building.
 
 [Getting Started](#getting-started) | [How It Works](#how-it-works) | [Features](#features) | [Architecture](#architecture) | [Contributing](#contributing)
 
@@ -14,19 +16,27 @@ BDE is an Electron app that orchestrates autonomous AI agents to execute sprint 
 
 ## Why BDE?
 
-Most AI coding tools bolt a chatbot onto an editor and call it a day. BDE takes a fundamentally different approach:
+Claude Code is already great at writing code. What it doesn't have out of the box is:
 
-| | Traditional AI IDEs | BDE |
+- **A task queue** — feed it 20 specs and walk away
+- **Parallel execution** — multiple Claude Code sessions running simultaneously on different tasks
+- **Git worktree isolation** — each session works on its own branch in its own directory, your working tree stays clean
+- **A review gate** — nothing merges without human approval
+- **Dependency management** — "task B waits for task A" with automatic blocking and unblocking
+- **Observability** — real-time pipeline view, cost tracking, event streams across all sessions
+- **Retry and failure handling** — automatic retries, fast-fail detection, watchdog timers
+
+BDE adds all of this. It doesn't replace Claude Code — it wraps it in the infrastructure needed to run it as a development pipeline.
+
+| | Using Claude Code directly | Using Claude Code via BDE |
 |---|---|---|
-| **Agent model** | Single assistant, one conversation | Fleet of autonomous agents running in parallel |
-| **Isolation** | Agents edit your working tree directly | Each agent works in its own git worktree — your code stays clean |
-| **Lifecycle** | Chat → copy-paste → hope it works | Spec → queue → execute → code review → merge |
-| **Concurrency** | One agent at a time | Multiple agents executing different tasks simultaneously |
-| **Review** | Trust the AI output blindly | Human-in-the-loop code review before any merge |
-| **Dependencies** | Manual coordination | Declarative task dependencies with automatic blocking/unblocking |
-| **Observability** | Chat logs | Real-time pipeline view, cost tracking, agent event streams |
-
-BDE doesn't replace your IDE — it replaces the manual overhead of turning specs into shipped code.
+| **Sessions** | One at a time, manually started | Fleet running in parallel, auto-claimed from queue |
+| **Isolation** | Works in your current checkout | Each session gets its own git worktree |
+| **Lifecycle** | Open terminal → chat → hope it works | Spec → queue → execute → review → merge |
+| **After completion** | You manually check the diff, commit, PR | Code Review Station: inspect diffs, merge/PR/revise in one click |
+| **Coordination** | You remember which tasks depend on which | Declarative hard/soft dependencies with auto-resolution |
+| **When it fails** | You notice, restart manually | Auto-retry (up to 3x), fast-fail detection, watchdog kill |
+| **Observability** | Scroll through terminal output | Dashboard, pipeline view, cost charts, event streams |
 
 ---
 
@@ -76,27 +86,27 @@ flowchart TD
     style J fill:#1a1a2e,stroke:#ef4444,color:#ef4444
 ```
 
-### Agent Execution Flow
+### What Happens When a Task Runs
 
-When a task is queued, here's what happens under the hood:
+Each task becomes a Claude Code session. BDE handles everything around it:
 
 ```mermaid
 sequenceDiagram
-    participant AM as Agent Manager
+    participant AM as BDE Agent Manager
     participant WT as Git Worktree
-    participant SDK as Claude Agent SDK
+    participant CC as Claude Code Session
     participant CR as Code Review
 
     AM->>AM: Drain loop detects queued task
     AM->>WT: Create isolated worktree<br/>~/worktrees/bde/agent/<task-slug>
-    AM->>SDK: Spawn agent with task spec +<br/>project context (CLAUDE.md)
+    AM->>CC: Spawn Claude Code with task spec +<br/>CLAUDE.md project context
 
-    loop Agent works autonomously
-        SDK->>WT: Read files, write code, run tests
-        SDK-->>AM: Stream events (tool use, output, errors)
+    loop Claude Code works autonomously
+        CC->>WT: Read files, write code, run tests
+        CC-->>AM: Stream events (tool use, output, errors)
     end
 
-    SDK->>WT: Final commit
+    CC->>WT: Final commit
     AM->>CR: Transition task → review
     Note over CR: Worktree preserved for<br/>human inspection
 
@@ -105,9 +115,11 @@ sequenceDiagram
     else Human creates PR
         CR->>AM: Push branch → open PR
     else Human requests revision
-        CR->>AM: Return to queue → agent retries
+        CR->>AM: Return to queue → Claude Code retries
     end
 ```
+
+> **BDE doesn't have its own AI.** Every agent is a Claude Code session spawned via the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/sdk). BDE's job is steering: what runs, where it runs, when it retries, and what happens with the output.
 
 ---
 
@@ -119,13 +131,14 @@ Draft task specs with an AI copilot, define dependencies between tasks, and run 
 ### Sprint Pipeline — Watch Work Flow
 Real-time monitoring of tasks flowing through stages. Seven visual buckets (backlog, todo, blocked, in-progress, awaiting review, done, failed) give you instant visibility into your entire pipeline.
 
-### Agent Manager — Autonomous Execution
-The engine behind BDE. Runs a continuous drain loop that claims queued tasks, spawns agents in isolated git worktrees, monitors health via watchdogs, and handles retries on failure.
+### Agent Manager — Orchestrating Claude Code Sessions
+The core of BDE. Watches the task queue, spawns Claude Code sessions in isolated git worktrees, monitors their health, and handles the full lifecycle from start to review.
 
-- **Parallel execution** — configurable WIP limit for concurrent agents
-- **Worktree isolation** — each agent gets its own copy of the repo
+- **Parallel execution** — configurable WIP limit for concurrent Claude Code sessions
+- **Worktree isolation** — each session gets its own branch in its own directory
 - **Watchdog timers** — per-task runtime limits (default 1 hour)
 - **Smart retry** — up to 3 attempts, with fast-fail detection (3 failures within 30s = stop trying)
+- **Project context** — every session inherits your `CLAUDE.md` files, so agents know your conventions
 
 ### Code Review Station — Human in the Loop
 Agents don't push directly to main. Every completed task lands in a review queue where you inspect diffs, browse commits, read the agent's conversation log, then choose: merge locally, create a PR, request a revision, or discard.
@@ -175,15 +188,16 @@ graph TB
         end
     end
 
-    subgraph External["External"]
-        SDK[Claude Agent SDK]
+    subgraph External["Claude Code + External"]
+        SDK["Claude Code
+        (via Agent SDK)"]
         GH[GitHub API]
         WT[Git Worktrees<br/>~/worktrees/bde/]
     end
 
     Main <-->|IPC| Bridge
     Bridge <-->|contextBridge| Renderer
-    AM -->|Spawn| SDK
+    AM -->|"Spawn sessions"| SDK
     AM -->|Create/cleanup| WT
     SDK -->|Code in| WT
     PRP -->|Poll PRs| GH
@@ -206,7 +220,7 @@ graph TB
 | Frontend | React, TypeScript, Zustand |
 | Editor | Monaco (ESM, not CDN) |
 | Database | SQLite (better-sqlite3, WAL mode) |
-| AI | Claude Agent SDK (@anthropic-ai/claude-agent-sdk) |
+| AI Engine | Claude Code (spawned via @anthropic-ai/claude-agent-sdk) |
 | Icons | lucide-react |
 | Layout | react-resizable-panels |
 | Testing | Vitest (unit + integration), Playwright (E2E) |
@@ -284,48 +298,57 @@ The panel system supports split panes, drag-and-drop docking, and tear-off windo
 
 ---
 
-## Agent Types
+## Session Types
 
-BDE spawns five types of AI agents, each suited to different workflows:
+BDE spawns Claude Code in five different modes, depending on the context:
 
-| Type | Interactive | Worktree | Use case |
+| Type | Interactive | Worktree | What it does |
 |------|-----------|----------|----------|
 | **Pipeline** | No | Isolated | Autonomous task execution from the sprint queue |
-| **Adhoc** | Yes (multi-turn) | Repo dir | User-spawned one-off tasks |
+| **Adhoc** | Yes (multi-turn) | Repo dir | User-spawned one-off Claude Code sessions |
 | **Assistant** | Yes (multi-turn) | Repo dir | Conversational help and recommendations |
 | **Copilot** | Yes (chat) | None | Text-only spec drafting in Task Workbench |
 | **Synthesizer** | No | None | Structured spec generation from codebase context |
 
-All agents inherit project knowledge from `CLAUDE.md` files via the SDK's settings sources.
+All sessions inherit your project knowledge from `CLAUDE.md` files — same as running Claude Code in your terminal, but managed.
 
 ---
 
-## How BDE Is Different
+## The Mental Model
+
+Think of it like this:
 
 ```mermaid
 graph LR
-    subgraph Traditional["Traditional AI Coding"]
-        T1[Open editor] --> T2[Chat with AI]
-        T2 --> T3[Copy-paste suggestion]
-        T3 --> T4[Manually test]
-        T4 --> T5[Manually commit + PR]
+    subgraph You["What you do"]
+        Y1["Write specs"] --> Y2["Queue tasks"]
+        Y2 --> Y3["Review finished work"]
+        Y3 --> Y4["Merge / PR / Revise"]
     end
 
-    subgraph BDE["BDE Workflow"]
-        B1[Write spec] --> B2[Queue task]
-        B2 --> B3["Agent executes autonomously
-        (isolated worktree)"]
-        B3 --> B4["Review diffs in
-        Code Review Station"]
-        B4 --> B5["Merge / PR / Revise
-        (one click)"]
+    subgraph BDE["What BDE does"]
+        B1["Claim tasks from queue"] --> B2["Create git worktree"]
+        B2 --> B3["Spawn Claude Code session"]
+        B3 --> B4["Monitor health + stream events"]
+        B4 --> B5["Handle completion / retry / failure"]
     end
 
-    style Traditional fill:#1a1a2e,stroke:#6b7280,color:#9ca3af
-    style BDE fill:#1a1a2e,stroke:#00ffcc,color:#00ffcc
+    subgraph CC["What Claude Code does"]
+        C1["Read codebase"] --> C2["Write code"]
+        C2 --> C3["Run tests"]
+        C3 --> C4["Commit to branch"]
+    end
+
+    You -.->|specs| BDE
+    BDE -.->|sessions| CC
+    CC -.->|finished work| You
+
+    style You fill:#1a1a2e,stroke:#00ffcc,color:#00ffcc
+    style BDE fill:#1a1a2e,stroke:#ff9f43,color:#ff9f43
+    style CC fill:#1a1a2e,stroke:#a855f7,color:#a855f7
 ```
 
-**The core insight:** AI agents are more useful when they run autonomously against well-defined specs than when they answer questions in a chat window. BDE provides the infrastructure to make that work safely — isolation, review gates, dependency management, and observability.
+**Claude Code is the engine. BDE is the steering system.** You wouldn't manually start 8 terminal sessions, create worktrees, track which tasks depend on which, retry failures, and review diffs across branches. BDE does that so you can focus on specs and review.
 
 ---
 
@@ -376,6 +399,6 @@ MIT
 
 <div align="center">
 
-Built by [Ryan](https://github.com/rbtechbot) with help from a fleet of autonomous agents.
+Built by [Ryan](https://github.com/rbtechbot) — and yes, most of BDE was built by Claude Code sessions orchestrated through BDE itself.
 
 </div>
