@@ -35,7 +35,7 @@
 }
 
 .sprint-pipeline__stat {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   display: flex;
   align-items: center;
@@ -50,7 +50,7 @@
 
 .sprint-pipeline__stat b {
   color: var(--neon-text);
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
 }
 
 .sprint-pipeline__stat--active .sprint-pipeline__stat-count {
@@ -87,7 +87,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   font-weight: 600;
   font-family: var(--bde-font-code);
   border: 1px solid;
@@ -120,17 +120,17 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 1rem;
+  gap: 16px;
   color: var(--neon-text-dim);
   font-family: var(--bde-font-code);
 }
 
 .pipeline-empty-state__title {
-  font-size: 1.1rem;
+  font-size: 18px;
 }
 
 .pipeline-empty-state__hint {
-  font-size: 0.85rem;
+  font-size: 14px;
   opacity: 0.7;
 }
 
@@ -140,7 +140,7 @@
 
 .sprint-pipeline__empty-text {
   color: var(--neon-text-dim);
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   margin: 0 0 12px;
 }
 
@@ -205,7 +205,7 @@
 }
 
 .pipeline-sidebar__label {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -223,7 +223,7 @@
 }
 
 .pipeline-sidebar__empty {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   padding: 8px 0;
 }
@@ -232,7 +232,7 @@
   background: var(--neon-surface-subtle);
   padding: 1px 6px;
   border-radius: 8px;
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   font-weight: 600;
 }
 
@@ -262,7 +262,7 @@
 }
 
 .backlog-card__title {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-muted);
   margin-bottom: 3px;
   white-space: nowrap;
@@ -271,14 +271,14 @@
 }
 
 .backlog-card__meta {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   display: flex;
   gap: 8px;
 }
 
 .backlog-card__action {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   font-weight: 600;
   color: var(--neon-cyan);
   background: var(--neon-cyan-surface);
@@ -326,12 +326,12 @@
 }
 
 .failed-card__title {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-red);
 }
 
 .failed-card__meta {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   margin-top: 2px;
 }
@@ -351,7 +351,7 @@
   background: none;
   border: none;
   color: var(--neon-text-dim);
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   font-family: var(--bde-font-code);
   padding: 4px 0;
   cursor: pointer;
@@ -411,9 +411,9 @@
   opacity: 0.4;
 }
 
-.pipeline-stage__dot--dim {
+.pipeline-stage .pipeline-stage__dot--dim {
   opacity: 0.4;
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .pipeline-stage:last-child {
@@ -432,7 +432,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   font-weight: 700;
   color: var(--neon-bg);
 }
@@ -479,7 +479,7 @@
 }
 
 .pipeline-stage__name {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -502,7 +502,7 @@
 }
 
 .pipeline-stage__count {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   margin-top: 1px;
 }
@@ -535,9 +535,9 @@
   transform: translateY(-1px);
 }
 
-.task-pill--selected {
-  border-color: var(--neon-cyan-border) !important;
-  background: var(--neon-cyan-surface) !important;
+.pipeline-center .task-pill--selected {
+  border-color: var(--neon-cyan-border);
+  background: var(--neon-cyan-surface);
   box-shadow: 0 0 12px var(--neon-cyan-glow);
 }
 
@@ -584,7 +584,7 @@
 }
 
 .task-pill__title {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -594,7 +594,7 @@
 }
 
 .task-pill__badge {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   padding: 1px 5px;
   border-radius: 4px;
   flex-shrink: 0;
@@ -602,14 +602,14 @@
 }
 
 .task-pill__time {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   flex-shrink: 0;
 }
 
 /* Done footer */
 .pipeline-stage__done-footer {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   margin-top: 6px;
   width: 100%;
@@ -629,7 +629,7 @@
 }
 
 .pipeline-stage__subtitle {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   font-style: italic;
 }
@@ -640,7 +640,7 @@
   border: 1px solid var(--neon-pink-border);
   border-radius: 8px;
   color: var(--neon-pink);
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   font-family: var(--bde-font-code);
   cursor: pointer;
   transition: background 150ms ease;
@@ -745,7 +745,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   color: var(--neon-text-muted);
 }
 
@@ -790,7 +790,7 @@
 
 .task-drawer__label {
   display: block;
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--neon-text-dim);
@@ -807,7 +807,7 @@
 /* Prompt block */
 .task-drawer__prompt-label {
   display: block;
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--neon-text-dim);
@@ -821,7 +821,7 @@
   border-radius: 6px;
   padding: 12px 14px;
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   color: var(--neon-text-muted);
   white-space: pre-wrap;
   word-break: break-word;
@@ -833,7 +833,7 @@
 /* Spec link */
 .task-drawer__spec-link {
   color: var(--neon-cyan);
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   cursor: pointer;
   background: none;
   border: none;
@@ -858,7 +858,7 @@
 }
 
 .task-drawer__deps-label {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -873,7 +873,7 @@
   border: 1px solid var(--neon-purple-border);
   background: var(--neon-surface-dim);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   font-family: var(--bde-font-code);
   color: var(--neon-text-muted);
   transition: background 150ms ease;
@@ -916,14 +916,14 @@
 }
 
 .task-drawer__dep-status {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
 }
 
 /* Agent link */
 .task-drawer__agent-link {
   color: var(--neon-cyan);
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   cursor: pointer;
   background: none;
   border: none;
@@ -944,7 +944,7 @@
 .task-drawer__btn {
   padding: 8px 16px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   font-weight: 600;
   border: 1px solid;
   cursor: pointer;
@@ -1043,7 +1043,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   line-height: 1.7;
   color: var(--neon-text-muted);
 }
@@ -1056,7 +1056,7 @@
   border-radius: 6px;
   color: var(--neon-text-muted);
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   padding: 12px;
   resize: none;
   outline: none;
@@ -1070,7 +1070,7 @@
 .spec-panel__rendered {
   padding: 12px;
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--font-sm, 12px);
   color: var(--neon-text-muted);
   line-height: 1.6;
   overflow-y: auto;
@@ -1176,7 +1176,7 @@
 
 .done-history__item-title {
   flex: 1;
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-muted);
   min-width: 0;
 }
@@ -1190,11 +1190,11 @@
   padding: 16px;
   text-align: center;
   color: var(--neon-text-dim);
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
 }
 
 .done-history__item-time {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   flex-shrink: 0;
 }
@@ -1217,7 +1217,7 @@
 }
 
 .pipeline-error-boundary__message {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   max-width: 400px;
   text-align: center;
 }
@@ -1228,7 +1228,7 @@
   border-radius: 6px;
   background: transparent;
   color: var(--neon-cyan);
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   cursor: pointer;
 }
 
@@ -1258,7 +1258,7 @@
   border: none;
   color: var(--neon-text);
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   outline: none;
   width: 120px;
 }
@@ -1284,7 +1284,7 @@
   border: 1px solid var(--neon-purple-border);
   background: transparent;
   color: var(--neon-text-dim);
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   font-family: var(--bde-font-code);
   cursor: pointer;
   white-space: nowrap;
@@ -1302,7 +1302,7 @@
 
 /* ── Task Pill: Duration (completed tasks) ── */
 .task-pill__duration {
-  font-size: 10px;
+  font-size: var(--font-2xs, 10px);
   color: var(--neon-text-dim);
   font-family: var(--bde-font-code);
 }
@@ -1409,7 +1409,7 @@
 }
 
 .conflict-drawer__hint {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-dim);
 }
 
@@ -1460,13 +1460,13 @@
 }
 
 .conflict-row__meta {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-muted);
   font-family: var(--bde-font-code);
 }
 
 .conflict-row__chevron {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-dim);
   flex-shrink: 0;
   width: 14px;
@@ -1478,13 +1478,13 @@
 }
 
 .conflict-row__loading {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-dim);
   padding: 4px 0;
 }
 
 .conflict-row__files-label {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-muted);
   margin-bottom: 4px;
 }
@@ -1496,7 +1496,7 @@
 }
 
 .conflict-row__files-list li {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   font-family: var(--bde-font-code);
   color: var(--neon-text-dim);
   line-height: 1.7;
@@ -1607,7 +1607,7 @@
 }
 
 .health-drawer__hint {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-text-dim);
 }
 
@@ -1640,7 +1640,7 @@
 }
 
 .health-row__meta {
-  font-size: 11px;
+  font-size: var(--font-xs, 11px);
   color: var(--neon-orange);
 }
 

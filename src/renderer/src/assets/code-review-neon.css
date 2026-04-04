@@ -11,7 +11,7 @@
 .cr-queue {
   width: 260px;
   min-width: 200px;
-  border-right: 1px solid var(--neon-purple-border);
+  border-right: 1px solid var(--bde-border);
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
@@ -22,7 +22,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px;
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-border);
 }
 
 .cr-queue__title {
@@ -51,7 +51,7 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-border);
   cursor: pointer;
   text-align: left;
   transition: background 150ms ease;
@@ -118,7 +118,7 @@
 .cr-detail__tabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
 }
 
@@ -171,7 +171,7 @@
   display: flex;
   gap: 10px;
   padding: 8px 16px;
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-border);
 }
 .cr-commits__icon {
   color: var(--neon-purple);
@@ -234,7 +234,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 10px 16px;
-  border-top: 1px solid var(--neon-purple-border);
+  border-top: 1px solid var(--bde-border);
   background: linear-gradient(180deg, var(--neon-surface-dim) 0%, var(--neon-purple-surface) 100%);
   flex-shrink: 0;
 }
@@ -347,7 +347,7 @@
 .cr-changes__files {
   width: 260px;
   min-width: 200px;
-  border-right: 1px solid var(--neon-purple-border);
+  border-right: 1px solid var(--bde-border);
   overflow-y: auto;
   flex-shrink: 0;
 }
@@ -360,7 +360,7 @@
   padding: 6px 10px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-border);
   color: var(--neon-text-muted);
   font-size: 11px;
   font-family: var(--bde-font-code);
@@ -447,7 +447,7 @@
   .cr-queue {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid var(--neon-purple-border);
+    border-bottom: 1px solid var(--bde-border);
     max-height: 200px;
   }
 
@@ -458,7 +458,7 @@
   .cr-changes__files {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid var(--neon-purple-border);
+    border-bottom: 1px solid var(--bde-border);
     max-height: 150px;
   }
 }
