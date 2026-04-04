@@ -1,5 +1,7 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useTaskGroups } from '../stores/taskGroups'
+import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
+import { usePanelLayoutStore } from '../stores/panelLayout'
 import { EpicList } from '../components/planner/EpicList'
 import { EpicDetail } from '../components/planner/EpicDetail'
 import { CreateEpicModal } from '../components/planner/CreateEpicModal'
@@ -42,10 +44,16 @@ export default function PlannerView(): React.JSX.Element {
     console.log('Add task clicked')
   }
 
-  const handleEditTask = (taskId: string): void => {
-    // TODO: Open edit task modal/form
-    console.log('Edit task clicked:', taskId)
-  }
+  const handleEditTask = useCallback(
+    (taskId: string): void => {
+      const task = groupTasks.find((t) => t.id === taskId)
+      if (task) {
+        useTaskWorkbenchStore.getState().loadTask(task)
+        usePanelLayoutStore.getState().setView('task-workbench')
+      }
+    },
+    [groupTasks]
+  )
 
   const handleEditGroup = (): void => {
     // TODO: Open edit group modal/form

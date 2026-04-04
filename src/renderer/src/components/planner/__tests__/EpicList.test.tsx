@@ -126,7 +126,7 @@ describe('EpicList', () => {
     )
 
     expect(screen.getByText('Epics')).toBeInTheDocument()
-    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument() // Only active groups (not completed)
   })
 
   it('renders all groups', async () => {
@@ -139,7 +139,7 @@ describe('EpicList', () => {
     await waitFor(() => {
       expect(screen.getByText('Auth System')).toBeInTheDocument()
       expect(screen.getByText('Dashboard')).toBeInTheDocument()
-      expect(screen.getByText('Completed Epic')).toBeInTheDocument()
+      // Completed groups are hidden by default
     })
   })
 
@@ -200,7 +200,7 @@ describe('EpicList', () => {
 
     await waitFor(() => {
       const taskCounts = screen.getAllByText('0/0 tasks')
-      expect(taskCounts.length).toBe(mockGroups.length)
+      expect(taskCounts.length).toBe(2) // Only active groups shown (not completed)
     })
   })
 
@@ -301,6 +301,12 @@ describe('EpicList', () => {
     const { container } = render(
       <EpicList groups={mockGroups} selectedId={null} onSelect={vi.fn()} onCreateNew={vi.fn()} />
     )
+
+    // Expand completed section to see the completed group
+    await waitFor(() => {
+      expect(screen.getByText('Completed')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Completed'))
 
     await waitFor(() => {
       const progressFills = container.querySelectorAll('.planner-epic-item__progress-fill')
