@@ -415,6 +415,31 @@ describe('setupWorktree', () => {
       })
     ).rejects.toThrow(`Worktree lock held by PID ${process.pid}`)
   })
+
+  it('fetches latest main before creating worktree', async () => {
+    const calls: string[][] = []
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+      calls.push(gitArgs)
+      if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), {
+        child: null
+      }) as unknown as ChildProcess
+    })
+
+    await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'abc',
+      title: 'test'
+    })
+
+    const fetchIdx = calls.findIndex((a) => a[0] === 'fetch' && a.includes('origin'))
+    const worktreeIdx = calls.findIndex((a) => a[0] === 'worktree' && a[1] === 'add')
+    expect(fetchIdx).toBeGreaterThanOrEqual(0)
+    expect(worktreeIdx).toBeGreaterThan(fetchIdx)
+  })
 })
 
 describe('cleanupWorktree', () => {

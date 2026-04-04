@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BDE Task Planner — New View Playground</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0f;color:#e0e0e0;display:flex;height:100vh;overflow:hidden}
+
+/* Controls */
+.controls{width:290px;min-width:290px;background:#111118;border-right:1px solid #2a2a3a;overflow-y:auto;padding:16px}
+.controls h2{font-size:12px;color:#00ffcc;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
+.controls h2:first-child{margin-top:0}
+.cg{margin-bottom:10px}
+.cg label{display:block;font-size:11px;color:#888;margin-bottom:3px}
+.cg select,.cg input[type=text]{width:100%;background:#1a1a24;border:1px solid #333;color:#e0e0e0;padding:5px 8px;border-radius:4px;font-size:12px}
+.cg input[type=range]{width:100%;accent-color:#00ffcc}
+.cg input[type=checkbox]{accent-color:#00ffcc}
+.crow{display:flex;gap:8px;align-items:center}
+.val{font-size:11px;color:#00ffcc;min-width:28px;text-align:right}
+.presets{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.pbtn{background:#1a1a24;border:1px solid #333;color:#aaa;padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer}
+.pbtn:hover,.pbtn.on{background:#00ffcc22;border-color:#00ffcc;color:#00ffcc}
+hr.sd{border:none;border-top:1px solid #222;margin:14px 0}
+
+/* Preview */
+.preview-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* App Shell Mock */
+.app-shell{display:flex;flex:1;overflow:hidden}
+.mock-sidebar{width:52px;background:#0d0d14;border-right:1px solid #1a1a24;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px}
+.mock-nav{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#555;cursor:pointer;position:relative}
+.mock-nav:hover{background:#1a1a24;color:#aaa}
+.mock-nav.active{background:#00ffcc15;color:#00ffcc}
+.mock-nav .tooltip{display:none;position:absolute;left:48px;background:#1a1a24;border:1px solid #333;padding:3px 8px;border-radius:4px;font-size:10px;white-space:nowrap;color:#aaa;z-index:10}
+.mock-nav:hover .tooltip{display:block}
+.mock-nav .badge{position:absolute;top:2px;right:2px;min-width:14px;height:14px;border-radius:7px;background:#ff6644;color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Planner Header */
+.planner-header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:#111118;border-bottom:1px solid #2a2a3a}
+.planner-title{font-size:16px;font-weight:700;flex:1}
+.planner-search{background:#1a1a24;border:1px solid #333;color:#e0e0e0;padding:5px 10px;border-radius:6px;font-size:12px;width:200px}
+.planner-btn{padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;border:none}
+.planner-btn.primary{background:#00ffcc22;border:1px solid #00ffcc;color:#00ffcc}
+.planner-btn.ghost{background:none;border:1px solid #333;color:#aaa}
+.planner-btn:hover{filter:brightness(1.2)}
+
+/* Planner Body — split view */
+.planner-body{display:flex;flex:1;overflow:hidden}
+
+/* Epic List (left) */
+.epic-list{width:280px;min-width:280px;background:#0d0d14;border-right:1px solid #1a1a24;overflow-y:auto;display:flex;flex-direction:column}
+.epic-list-header{padding:10px 14px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a1a24;display:flex;justify-content:space-between;align-items:center}
+.epic-item{padding:10px 14px;border-bottom:1px solid #111118;cursor:pointer;transition:background .1s}
+.epic-item:hover{background:#111118}
+.epic-item.selected{background:#00ffcc08;border-left:2px solid #00ffcc}
+.epic-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.epic-icon{width:18px;height:18px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.epic-meta{display:flex;gap:8px;font-size:10px;color:#666;margin-top:4px}
+.epic-progress-mini{width:60px;height:3px;background:#1a1a24;border-radius:2px;overflow:hidden;margin-top:6px}
+.epic-progress-mini-fill{height:100%;border-radius:2px}
+.epic-status-tag{font-size:9px;padding:1px 6px;border-radius:8px;margin-left:auto}
+
+/* Epic Detail (right) */
+.epic-detail{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.epic-detail-header{display:flex;align-items:flex-start;gap:12px}
+.epic-detail-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.epic-detail-info{flex:1}
+.epic-detail-title{font-size:20px;font-weight:700;margin-bottom:4px}
+.epic-detail-goal{font-size:13px;color:#888;font-style:italic}
+.epic-detail-actions{display:flex;gap:6px;flex-shrink:0;align-self:flex-start}
+
+/* Progress Section */
+.epic-progress-section{background:#111118;border-radius:8px;border:1px solid #2a2a3a;padding:14px}
+.epic-progress-bar-lg{height:8px;background:#1a1a24;border-radius:4px;overflow:hidden;margin:8px 0}
+.epic-progress-bar-lg-fill{height:100%;border-radius:4px;transition:width .3s}
+.epic-progress-stats{display:flex;gap:16px;font-size:11px;color:#888}
+.epic-progress-stats .dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:3px}
+
+/* Task List */
+.task-section{background:#111118;border-radius:8px;border:1px solid #2a2a3a;overflow:hidden}
+.task-section-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1a1a24}
+.task-section-title{font-size:12px;font-weight:600}
+.task-section-count{font-size:11px;color:#888}
+.task-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid #0d0d14;transition:background .1s}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:#1a1a2a}
+.task-row .handle{color:#333;cursor:grab;font-size:10px;flex-shrink:0}
+.task-row .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.task-row .name{flex:1;font-size:12px}
+.task-row .dep-ref{font-size:9px;color:#555;display:flex;align-items:center;gap:2px}
+.task-row .badge{font-size:9px;padding:1px 6px;border-radius:6px;background:#1a1a24}
+.task-row .edit-btn{background:none;border:none;color:#555;cursor:pointer;font-size:11px}
+.task-row .edit-btn:hover{color:#00ffcc}
+.add-task-row{padding:8px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;color:#555;font-size:12px;transition:color .1s}
+.add-task-row:hover{color:#00ffcc;background:#00ffcc08}
+
+/* Queue Action Bar */
+.queue-bar{background:#111118;border-top:1px solid #2a2a3a;padding:10px 20px;display:flex;align-items:center;gap:12px}
+.queue-bar .info{font-size:11px;color:#888;flex:1}
+.queue-bar .queue-btn{padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:linear-gradient(135deg,#00ffcc,#00ccaa);color:#0a0a0f;transition:filter .1s}
+.queue-bar .queue-btn:hover{filter:brightness(1.1)}
+.queue-bar .queue-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Prompt */
+.prompt-area{background:#111118;border-top:1px solid #2a2a3a;padding:12px 20px;max-height:180px;overflow-y:auto}
+.prompt-area h3{font-size:11px;color:#00ffcc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.prompt-text{font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#ccc;line-height:1.5;white-space:pre-wrap}
+.cbtn{background:#00ffcc22;border:1px solid #00ffcc;color:#00ffcc;padding:4px 12px;border-radius:4px;font-size:11px;cursor:pointer;float:right;margin-top:-20px}
+.cbtn.copied{background:#00ff8833;border-color:#00ff88;color:#00ff88}
+</style>
+</head>
+<body>
+<div class="controls">
+  <h2>Presets</h2>
+  <div class="presets" id="presetBar"></div>
+
+  <h2>View Layout</h2>
+  <div class="cg"><label>Epic List Width</label><div class="crow"><input type="range" id="epicListWidth" min="200" max="380" value="280"><span class="val" id="epicListWidthVal">280</span></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showSidebar" checked> Show App Sidebar</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showSearch" checked> Search Bar</label></div></div>
+
+  <hr class="sd">
+  <h2>Epic List</h2>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showEpicProgress" checked> Mini Progress Bar</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showEpicIcon" checked> Epic Icon</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showEpicStatus" checked> Status Tag (draft/ready/in-pipeline)</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showEpicMeta" checked> Task Count + Date</label></div></div>
+
+  <hr class="sd">
+  <h2>Epic Detail</h2>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showProgressSection" checked> Progress Section</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showDepRefs" checked> Dependency References</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showDragHandles" checked> Drag Handles (reorder)</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showEditButtons" checked> Edit Buttons per Task</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showAddTask" checked> "+ Add Task" Row</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showStatusBadges" checked> Status Badges</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="groupTasksByStatus"> Group Tasks by Status</label></div></div>
+
+  <hr class="sd">
+  <h2>Queue Bar</h2>
+  <div class="cg"><label>Queue Button Style</label><select id="queueBtnStyle"><option value="gradient">Gradient (prominent)</option><option value="outline">Outline (subtle)</option><option value="split">Split (Queue / Queue & Run)</option></select></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showReadinessGate" checked> Readiness Gate (block if specs missing)</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showQueueInfo" checked> Queue Info Text</label></div></div>
+
+  <hr class="sd">
+  <h2>Mock Data</h2>
+  <div class="cg"><label>Number of Epics</label><div class="crow"><input type="range" id="numEpics" min="2" max="6" value="4"><span class="val" id="numEpicsVal">4</span></div></div>
+</div>
+
+<div class="preview-area">
+  <div class="app-shell" id="appShell">
+    <!-- Rendered by JS -->
+  </div>
+  <div class="prompt-area">
+    <h3>Implementation Prompt</h3>
+    <button class="cbtn" id="copyBtn">Copy</button>
+    <div class="prompt-text" id="promptOutput"></div>
+  </div>
+</div>
+
+<script>
+const D=document;
+const DEFAULTS={epicListWidth:280,showSidebar:true,showSearch:true,showEpicProgress:true,showEpicIcon:true,showEpicStatus:true,showEpicMeta:true,showProgressSection:true,showDepRefs:true,showDragHandles:true,showEditButtons:true,showAddTask:true,showStatusBadges:true,groupTasksByStatus:false,queueBtnStyle:'gradient',showReadinessGate:true,showQueueInfo:true,numEpics:4};
+const state={...DEFAULTS};
+let selectedEpic=0;
+const SC={done:'#00ff88',active:'#00ffcc',queued:'#ffaa00',blocked:'#ff4466',failed:'#ff2244',review:'#4488ff',draft:'#888',backlog:'#888'};
+
+const epics=[
+  {name:'Review Flow Overhaul',icon:'R',accent:'#4488ff',goal:'Ship batch merge, auto-review rules, and AI review summary',status:'in-pipeline',
+   tasks:[{t:'Fix ConversationTab',s:'done',spec:true,dep:null},{t:'Ship It button',s:'done',spec:true,dep:null},{t:'Batch review actions',s:'active',spec:true,dep:0},{t:'Auto-review rules',s:'queued',spec:true,dep:2},{t:'AI review summary',s:'queued',spec:true,dep:null}]},
+  {name:'Agent Intelligence',icon:'A',accent:'#ff88cc',goal:'Context propagation, failure diagnostics, cost budgets',status:'in-pipeline',
+   tasks:[{t:'Per-task model selection',s:'done',spec:true,dep:null},{t:'Context propagation',s:'done',spec:true,dep:null},{t:'Retry with context',s:'active',spec:true,dep:null},{t:'Failure diagnostics',s:'review',spec:true,dep:2},{t:'Cost budgets',s:'blocked',spec:false,dep:0},{t:'Worktree checkpoint',s:'queued',spec:true,dep:3}]},
+  {name:'Bug Bash: Post-Merge',icon:'B',accent:'#ff6644',goal:'Fix integration issues from 42-feature batch merge',status:'ready',
+   tasks:[{t:'Deduplicate review.ts',s:'done',spec:true,dep:null},{t:'Fix camelCase mapping',s:'done',spec:true,dep:null},{t:'Wire filter preset UI',s:'done',spec:true,dep:null},{t:'Clean test-results artifacts',s:'backlog',spec:true,dep:null},{t:'Check CSS token mismatches',s:'backlog',spec:false,dep:null}]},
+  {name:'Task Planner View',icon:'P',accent:'#00ddff',goal:'This feature — epic/group planning with queue-to-pipeline flow',status:'draft',
+   tasks:[{t:'task_groups table + migration',s:'backlog',spec:false,dep:null},{t:'Group CRUD IPC handlers',s:'backlog',spec:false,dep:0},{t:'Epic list sidebar component',s:'backlog',spec:false,dep:1},{t:'Epic detail panel',s:'backlog',spec:false,dep:1},{t:'Queue bar with readiness gate',s:'backlog',spec:false,dep:3},{t:'Register as new view (Cmd+8)',s:'backlog',spec:false,dep:4}]},
+  {name:'Pipeline Infrastructure',icon:'I',accent:'#ffaa00',goal:'Sequential branching, spec extractor, status endpoint',status:'ready',
+   tasks:[{t:'Sequential agent branching',s:'backlog',spec:true,dep:null},{t:'Plan-to-task spec extractor',s:'backlog',spec:true,dep:null},{t:'GET /status endpoint',s:'backlog',spec:true,dep:null},{t:'Agent log correlation IDs',s:'backlog',spec:true,dep:0}]},
+  {name:'Team Features',icon:'T',accent:'#aa88ff',goal:'Reviewer assignment, webhooks, plugin system',status:'draft',
+   tasks:[{t:'Reviewer assignment field',s:'done',spec:true,dep:null},{t:'Webhook event push',s:'active',spec:true,dep:null},{t:'Plugin system foundation',s:'backlog',spec:false,dep:1},{t:'Sprint planning queries',s:'backlog',spec:false,dep:null}]}
+];
+
+function el(tag,attrs,...ch){const e=D.createElement(tag);if(attrs)for(const[k,v]of Object.entries(attrs)){if(k==='style'&&typeof v==='object')Object.assign(e.style,v);else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else e.setAttribute(k,v)}for(const c of ch){if(typeof c==='string')e.appendChild(D.createTextNode(c));else if(c)e.appendChild(c)}return e}
+
+function getEpics(){return epics.slice(0,state.numEpics)}
+function epicStats(tasks){const s={};for(const t of tasks)s[t.s]=(s[t.s]||0)+1;const done=(s.done||0);return{...s,total:tasks.length,done,pct:tasks.length?Math.round(done/tasks.length*100):0,specd:tasks.filter(t=>t.spec).length,unspecd:tasks.filter(t=>!t.spec).length}}
+function statusTagColor(s){return s==='in-pipeline'?'#00ffcc':s==='ready'?'#00ff88':'#888'}
+
+function renderPreview(){
+  const shell=D.getElementById('appShell');
+  shell.textContent='';
+
+  // Mock sidebar
+  if(state.showSidebar){
+    const sb=el('div',{class:'mock-sidebar'});
+    const navItems=[
+      {icon:'\u25A3',label:'Dashboard',key:'1'},
+      {icon:'\u25B7',label:'Agents',key:'2'},
+      {icon:'\u2630',label:'IDE',key:'3'},
+      {icon:'\u25C9',label:'Pipeline',key:'4',badge:null},
+      {icon:'\u2714',label:'Code Review',key:'5'},
+      {icon:'\u2387',label:'Source Control',key:'6'},
+      {icon:'\u2699',label:'Settings',key:'7'},
+      {icon:'\u2B21',label:'Task Planner',key:'8',active:true}
+    ];
+    for(const n of navItems){
+      const nav=el('div',{class:'mock-nav'+(n.active?' active':'')});
+      nav.appendChild(D.createTextNode(n.icon));
+      nav.appendChild(el('span',{class:'tooltip'},n.label+' \u2318'+n.key));
+      if(n.badge)nav.appendChild(el('span',{class:'badge'},String(n.badge)));
+      sb.appendChild(nav);
+    }
+    shell.appendChild(sb);
+  }
+
+  const main=el('div',{class:'main-content'});
+
+  // Planner Header
+  const hdr=el('div',{class:'planner-header'});
+  hdr.appendChild(el('div',{class:'planner-title'},'Task Planner'));
+  if(state.showSearch)hdr.appendChild(el('input',{class:'planner-search',type:'text',placeholder:'Search epics and tasks\u2026'}));
+  hdr.appendChild(el('button',{class:'planner-btn primary'},'+ New Epic'));
+  main.appendChild(hdr);
+
+  // Body: Epic List + Detail
+  const body=el('div',{class:'planner-body'});
+  const list=el('div',{class:'epic-list',style:{width:state.epicListWidth+'px',minWidth:state.epicListWidth+'px'}});
+
+  // Epic list header
+  const lh=el('div',{class:'epic-list-header'});
+  lh.appendChild(el('span',null,'Epics'));
+  lh.appendChild(el('span',null,getEpics().length+' total'));
+  list.appendChild(lh);
+
+  // Epic items
+  getEpics().forEach((ep,i)=>{
+    const stats=epicStats(ep.tasks);
+    const item=el('div',{class:'epic-item'+(i===selectedEpic?' selected':''),onclick:()=>{selectedEpic=i;renderPreview()}});
+    const nameRow=el('div',{class:'epic-name'});
+    if(state.showEpicIcon){
+      nameRow.appendChild(el('div',{class:'epic-icon',style:{background:ep.accent+'22',color:ep.accent,border:'1px solid '+ep.accent+'44'}},ep.icon));
+    }
+    nameRow.appendChild(D.createTextNode(ep.name));
+    if(state.showEpicStatus){
+      nameRow.appendChild(el('span',{class:'epic-status-tag',style:{background:statusTagColor(ep.status)+'22',color:statusTagColor(ep.status),border:'1px solid '+statusTagColor(ep.status)+'44'}},ep.status));
+    }
+    item.appendChild(nameRow);
+    if(state.showEpicMeta){
+      item.appendChild(el('div',{class:'epic-meta'},el('span',null,stats.total+' tasks'),el('span',null,stats.done+' done')));
+    }
+    if(state.showEpicProgress){
+      const bar=el('div',{class:'epic-progress-mini'});
+      const pc=stats.pct>=100?'#00ff88':stats.pct>=50?'#00ffcc':stats.pct>0?'#ffaa00':'#333';
+      bar.appendChild(el('div',{class:'epic-progress-mini-fill',style:{width:stats.pct+'%',background:pc}}));
+      item.appendChild(bar);
+    }
+    list.appendChild(item);
+  });
+  body.appendChild(list);
+
+  // Epic Detail
+  const detail=el('div',{class:'epic-detail'});
+  const ep=getEpics()[selectedEpic];
+  if(ep){
+    const stats=epicStats(ep.tasks);
+
+    // Header
+    const dh=el('div',{class:'epic-detail-header'});
+    const di=el('div',{class:'epic-detail-icon',style:{background:ep.accent+'22',color:ep.accent,border:'2px solid '+ep.accent+'44'}},ep.icon);
+    dh.appendChild(di);
+    const dinfo=el('div',{class:'epic-detail-info'});
+    dinfo.appendChild(el('div',{class:'epic-detail-title'},ep.name));
+    dinfo.appendChild(el('div',{class:'epic-detail-goal'},ep.goal));
+    dh.appendChild(dinfo);
+    const dacts=el('div',{class:'epic-detail-actions'});
+    dacts.appendChild(el('button',{class:'planner-btn ghost'},'\u270E Edit'));
+    dacts.appendChild(el('button',{class:'planner-btn ghost'},'\u22EF'));
+    dh.appendChild(dacts);
+    detail.appendChild(dh);
+
+    // Progress
+    if(state.showProgressSection){
+      const ps=el('div',{class:'epic-progress-section'});
+      const ph=el('div',{style:{display:'flex',justifyContent:'space-between',fontSize:'12px'}});
+      ph.appendChild(el('span',{style:{color:'#888'}},'Progress'));
+      ph.appendChild(el('span',{style:{color:stats.pct>=100?'#00ff88':'#00ffcc',fontWeight:'600'}},stats.pct+'%'));
+      ps.appendChild(ph);
+      const bar=el('div',{class:'epic-progress-bar-lg'});
+      bar.appendChild(el('div',{class:'epic-progress-bar-lg-fill',style:{width:stats.pct+'%',background:stats.pct>=100?'#00ff88':'#00ffcc'}}));
+      ps.appendChild(bar);
+      const pstats=el('div',{class:'epic-progress-stats'});
+      if(stats.done)pstats.appendChild(el('span',null,el('span',{class:'dot',style:{background:SC.done}}),stats.done+' done'));
+      if(stats.active)pstats.appendChild(el('span',null,el('span',{class:'dot',style:{background:SC.active}}),stats.active+' active'));
+      if(stats.queued)pstats.appendChild(el('span',null,el('span',{class:'dot',style:{background:SC.queued}}),stats.queued+' queued'));
+      if(stats.blocked)pstats.appendChild(el('span',null,el('span',{class:'dot',style:{background:SC.blocked}}),stats.blocked+' blocked'));
+      if(stats.backlog)pstats.appendChild(el('span',null,el('span',{class:'dot',style:{background:'#888'}}),stats.backlog+' draft'));
+      if(stats.review)pstats.appendChild(el('span',null,el('span',{class:'dot',style:{background:SC.review}}),stats.review+' review'));
+      ps.appendChild(pstats);
+      if(state.showReadinessGate && stats.unspecd > 0){
+        ps.appendChild(el('div',{style:{marginTop:'8px',fontSize:'11px',color:'#ff6644',display:'flex',alignItems:'center',gap:'4px'}},'\u26A0 '+stats.unspecd+' task'+(stats.unspecd>1?'s':'')+' missing specs \u2014 write specs before queuing'));
+      }
+      detail.appendChild(ps);
+    }
+
+    // Task List
+    const ts=el('div',{class:'task-section'});
+    const tsh=el('div',{class:'task-section-header'});
+    tsh.appendChild(el('span',{class:'task-section-title'},'Tasks'));
+    tsh.appendChild(el('span',{class:'task-section-count'},stats.total+' tasks'));
+    ts.appendChild(tsh);
+
+    const renderTask=(t,ti)=>{
+      const row=el('div',{class:'task-row'});
+      if(state.showDragHandles)row.appendChild(el('span',{class:'handle'},'\u2630'));
+      row.appendChild(el('div',{class:'dot',style:{background:SC[t.s]||'#888'}}));
+      row.appendChild(el('span',{class:'name'},t.t));
+      if(!t.spec)row.appendChild(el('span',{style:{fontSize:'9px',color:'#ff6644',border:'1px solid #ff664444',padding:'0 4px',borderRadius:'4px'}},'no spec'));
+      if(state.showDepRefs&&t.dep!==null&&ep.tasks[t.dep]){
+        row.appendChild(el('span',{class:'dep-ref'},'\u2190 '+ep.tasks[t.dep].t.slice(0,18)));
+      }
+      if(state.showStatusBadges)row.appendChild(el('span',{class:'badge',style:{color:SC[t.s]||'#888'}},t.s));
+      if(state.showEditButtons)row.appendChild(el('button',{class:'edit-btn'},'\u270E'));
+      return row;
+    };
+
+    if(state.groupTasksByStatus){
+      const groups={};
+      ep.tasks.forEach((t,i)=>(groups[t.s]=groups[t.s]||[]).push({...t,_i:i}));
+      for(const[status,tasks]of Object.entries(groups)){
+        ts.appendChild(el('div',{style:{padding:'6px 14px',fontSize:'10px',color:'#888',textTransform:'uppercase',letterSpacing:'1px',background:'#0d0d14'}},status+' ('+tasks.length+')'));
+        for(const t of tasks)ts.appendChild(renderTask(t,t._i));
+      }
+    }else{
+      ep.tasks.forEach((t,i)=>ts.appendChild(renderTask(t,i)));
+    }
+
+    if(state.showAddTask){
+      ts.appendChild(el('div',{class:'add-task-row'},'+ Add task'));
+    }
+    detail.appendChild(ts);
+  }
+  body.appendChild(detail);
+  main.appendChild(body);
+
+  // Queue Bar
+  if(ep){
+    const stats=epicStats(ep.tasks);
+    const qbar=el('div',{class:'queue-bar'});
+    if(state.showQueueInfo){
+      const ready=ep.tasks.filter(t=>t.spec&&(t.s==='backlog'||t.s==='draft')).length;
+      const notReady=ep.tasks.filter(t=>!t.spec&&(t.s==='backlog'||t.s==='draft')).length;
+      qbar.appendChild(el('span',{class:'info'},ready+' tasks ready to queue'+(notReady>0?', '+notReady+' need specs':'')));
+    }
+    if(state.queueBtnStyle==='split'){
+      qbar.appendChild(el('button',{class:'planner-btn ghost',style:{padding:'8px 14px',fontSize:'13px'}},'Queue All'));
+      qbar.appendChild(el('button',{class:'queue-btn',disabled:state.showReadinessGate&&stats.unspecd>0},'Queue & Run \u25B6'));
+    }else if(state.queueBtnStyle==='outline'){
+      qbar.appendChild(el('button',{class:'planner-btn ghost',style:{padding:'8px 20px',fontSize:'13px',fontWeight:'600'},disabled:state.showReadinessGate&&stats.unspecd>0},'Send to Pipeline \u2192'));
+    }else{
+      qbar.appendChild(el('button',{class:'queue-btn',disabled:state.showReadinessGate&&stats.unspecd>0},'Send to Pipeline \u2192'));
+    }
+    main.appendChild(qbar);
+  }
+
+  shell.appendChild(main);
+}
+
+function updatePrompt(){
+  const parts=[];
+  parts.push('Build a **Task Planner** view for BDE \u2014 a dedicated planning screen (Cmd+8) separate from the Pipeline execution view.\n');
+  parts.push('**Purpose:** Organize work into epics/groups, spec out tasks, wire dependencies, then send batches to the Pipeline for agent execution. Reduces cognitive load by separating planning from monitoring.\n');
+
+  parts.push('**Data Model:**');
+  parts.push('- `task_groups` table: id, name, icon (single char), accent_color, goal, status (draft/ready/in-pipeline/completed)');
+  parts.push('- `group_id` FK on sprint_tasks \u2014 tasks belong to at most one group');
+  parts.push('- IPC: groups:create, groups:list, groups:update, groups:delete, groups:addTask, groups:removeTask, groups:queueAll\n');
+
+  parts.push('**Layout:** Master-detail split view');
+  parts.push('- Left: Epic list sidebar ('+state.epicListWidth+'px)'+(state.showEpicIcon?' with colored icons':'')+
+    (state.showEpicProgress?', mini progress bars':'')+
+    (state.showEpicStatus?', status tags (draft/ready/in-pipeline)':''));
+  parts.push('- Right: Epic detail panel with goal, progress, task list, queue bar\n');
+
+  parts.push('**Epic Detail Panel:**');
+  if(state.showProgressSection) parts.push('- Progress section: large progress bar, status breakdown dots, '+(state.showReadinessGate?'readiness gate warning for tasks without specs':''));
+  parts.push('- Task list: '+(state.showDragHandles?'draggable rows, ':'')+
+    (state.showDepRefs?'dependency references, ':'')+
+    (state.showStatusBadges?'status badges, ':'')+
+    (state.showEditButtons?'edit buttons, ':'')+
+    'spec status indicators (highlight tasks missing specs)');
+  if(state.groupTasksByStatus) parts.push('- Tasks grouped by status with section headers');
+  if(state.showAddTask) parts.push('- "+ Add task" row at bottom\n');
+
+  parts.push('**Queue Bar** (bottom of detail panel):');
+  if(state.queueBtnStyle==='split') parts.push('- Split buttons: "Queue All" (backlog only) + "Queue & Run" (queue + start agents)');
+  else if(state.queueBtnStyle==='outline') parts.push('- Outline button: "Send to Pipeline"');
+  else parts.push('- Gradient CTA: "Send to Pipeline" \u2014 queues all draft/backlog tasks in the epic');
+  if(state.showReadinessGate) parts.push('- Disabled when tasks are missing specs (readiness gate)');
+  if(state.showQueueInfo) parts.push('- Info text: "N tasks ready to queue, M need specs"');
+
+  parts.push('\n**View Registration:**');
+  parts.push('- New view type "planner" in panelLayout.ts View union');
+  parts.push('- Sidebar icon: hexagon or similar, Cmd+8 shortcut');
+  parts.push('- Lazy import in view-resolver.tsx');
+  parts.push('- Update VIEW_REGISTRY, NeonSidebar, CommandPalette, App.tsx shortcut map\n');
+
+  parts.push('**Key UX:**');
+  parts.push('- Clicking "Send to Pipeline" transitions tasks from backlog \u2192 queued and sets group status to "in-pipeline"');
+  parts.push('- Tasks already in the pipeline (active/review/done) show status but can\u2019t be re-queued');
+  parts.push('- Epic progress updates live as pipeline agents complete tasks');
+  parts.push('- This view is for PLANNING. Pipeline view (Cmd+4) is for MONITORING execution.');
+
+  parts.push('\n**Tech:** React + Zustand store (`taskGroups`), BEM CSS (`.planner-*`), neon tokens');
+
+  D.getElementById('promptOutput').textContent=parts.join('\n');
+}
+
+function updateAll(){renderPreview();updatePrompt()}
+
+const presetDefs={
+  default:{...DEFAULTS},
+  compact:{...DEFAULTS,epicListWidth:220,showEpicMeta:false,showProgressSection:false,showDragHandles:false,showEditButtons:false,showQueueInfo:false},
+  detailed:{...DEFAULTS,epicListWidth:320,showDepRefs:true,groupTasksByStatus:true,queueBtnStyle:'split',numEpics:5},
+  minimal:{...DEFAULTS,showSidebar:false,showSearch:false,showEpicProgress:false,showEpicStatus:false,showEpicMeta:false,showProgressSection:false,showDragHandles:false,showEditButtons:false,showStatusBadges:false,showAddTask:false,showQueueInfo:false,queueBtnStyle:'outline'}
+};
+
+function applyPreset(name){
+  D.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('on',b.dataset.p===name));
+  Object.assign(state,presetDefs[name]);selectedEpic=0;syncControls();updateAll();
+}
+
+function syncControls(){
+  const ids=Object.keys(DEFAULTS);
+  for(const id of ids){const e=D.getElementById(id);if(!e)continue;if(e.type==='checkbox')e.checked=state[id];else if(e.type==='range'){e.value=state[id];const v=D.getElementById(id+'Val');if(v)v.textContent=String(state[id])}else e.value=state[id]}
+}
+
+D.querySelectorAll('.controls input,.controls select').forEach(e=>{
+  e.addEventListener('input',()=>{
+    const id=e.id;
+    if(e.type==='checkbox')state[id]=e.checked;
+    else if(e.type==='range'){state[id]=+e.value;const v=D.getElementById(id+'Val');if(v)v.textContent=String(e.value)}
+    else state[id]=e.value;
+    updateAll();
+  });
+});
+
+const bar=D.getElementById('presetBar');
+for(const name of Object.keys(presetDefs)){
+  const btn=el('button',{class:'pbtn'+(name==='default'?' on':''),'data-p':name},name.charAt(0).toUpperCase()+name.slice(1));
+  btn.addEventListener('click',()=>applyPreset(name));
+  bar.appendChild(btn);
+}
+
+D.getElementById('copyBtn').addEventListener('click',()=>{
+  navigator.clipboard.writeText(D.getElementById('promptOutput').textContent).then(()=>{
+    const b=D.getElementById('copyBtn');b.textContent='Copied!';b.classList.add('copied');
+    setTimeout(()=>{b.textContent='Copy';b.classList.remove('copied')},1500);
+  });
+});
+
+updateAll();
+</script>
+</body>
+</html>

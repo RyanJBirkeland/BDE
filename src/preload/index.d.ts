@@ -340,12 +340,6 @@ declare global {
           taskId: string
           strategy: 'squash' | 'merge' | 'rebase'
         }) => Promise<IpcResult<'review:shipIt'>>
-        generateSummary: (payload: {
-          taskId: string
-        }) => Promise<IpcResult<'review:generateSummary'>>
-        checkAutoReview: (payload: {
-          taskId: string
-        }) => Promise<IpcResult<'review:checkAutoReview'>>
       }
 
       // Spec Synthesizer

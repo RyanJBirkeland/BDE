@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BDE Task Groups — Pipeline Playground</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0f;color:#e0e0e0;display:flex;height:100vh;overflow:hidden}
+
+.controls{width:300px;min-width:300px;background:#111118;border-right:1px solid #2a2a3a;overflow-y:auto;padding:16px}
+.controls h2{font-size:12px;color:#00ffcc;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
+.controls h2:first-child{margin-top:0}
+.cg{margin-bottom:10px}
+.cg label{display:block;font-size:11px;color:#888;margin-bottom:3px}
+.cg select,.cg input[type=text]{width:100%;background:#1a1a24;border:1px solid #333;color:#e0e0e0;padding:5px 8px;border-radius:4px;font-size:12px}
+.cg input[type=range]{width:100%;accent-color:#00ffcc}
+.cg input[type=checkbox]{accent-color:#00ffcc}
+.crow{display:flex;gap:8px;align-items:center}
+.val{font-size:11px;color:#00ffcc;min-width:28px;text-align:right}
+.presets{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.pbtn{background:#1a1a24;border:1px solid #333;color:#aaa;padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer}
+.pbtn:hover,.pbtn.on{background:#00ffcc22;border-color:#00ffcc;color:#00ffcc}
+hr.sd{border:none;border-top:1px solid #222;margin:14px 0}
+
+.preview-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.preview-main{flex:1;overflow-y:auto;padding:20px;background:#0d0d14}
+.prompt-area{background:#111118;border-top:1px solid #2a2a3a;padding:12px 20px;max-height:200px;overflow-y:auto}
+.prompt-area h3{font-size:11px;color:#00ffcc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.prompt-text{font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#ccc;line-height:1.5;white-space:pre-wrap}
+.cbtn{background:#00ffcc22;border:1px solid #00ffcc;color:#00ffcc;padding:4px 12px;border-radius:4px;font-size:11px;cursor:pointer;float:right;margin-top:-20px}
+.cbtn:hover{background:#00ffcc33}
+.cbtn.copied{background:#00ff8833;border-color:#00ff88;color:#00ff88}
+
+/* Group Card Styles */
+.group-card{background:#111118;border:1px solid #2a2a3a;border-radius:8px;margin-bottom:12px;overflow:hidden;transition:border-color .2s}
+.group-card:hover{border-color:#333}
+.group-card.expanded{border-color:#2a2a3a}
+.group-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
+.group-chevron{font-size:10px;color:#555;transition:transform .2s;width:14px;text-align:center}
+.group-chevron.open{transform:rotate(90deg)}
+.group-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.group-name{font-size:13px;font-weight:600;flex:1}
+.group-progress{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.group-progress-text{font-size:11px;color:#888}
+.group-progress-bar{width:80px;height:4px;background:#1a1a24;border-radius:2px;overflow:hidden}
+.group-progress-fill{height:100%;border-radius:2px;transition:width .3s}
+.group-status-dots{display:flex;gap:3px;flex-shrink:0}
+.group-status-dot{width:6px;height:6px;border-radius:50%}
+.group-actions{display:flex;gap:4px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.group-header:hover .group-actions{opacity:1}
+.group-action{background:none;border:1px solid #333;color:#888;width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center}
+.group-action:hover{border-color:#00ffcc;color:#00ffcc}
+.group-body{border-top:1px solid #1a1a24}
+.group-body.collapsed{display:none}
+.group-tasks{padding:4px 8px 8px}
+.group-task{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;font-size:12px}
+.group-task:hover{background:#1a1a2a}
+.task-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.task-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-badge{font-size:9px;padding:1px 5px;border-radius:6px;background:#1a1a24;white-space:nowrap}
+.task-dep-line{width:12px;border-left:1px solid #333;border-bottom:1px solid #333;height:12px;margin-left:3px;flex-shrink:0;border-radius:0 0 0 4px}
+.group-footer{padding:6px 14px;border-top:1px solid #1a1a24;display:flex;gap:12px;font-size:10px;color:#666}
+.group-footer span{display:flex;align-items:center;gap:3px}
+
+/* Pipeline Header with Group Filter */
+.pipeline-header{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#111118;border-radius:8px;margin-bottom:16px;border:1px solid #2a2a3a;flex-wrap:wrap}
+.pipeline-title{font-size:15px;font-weight:700;flex:1}
+.filter-chip{font-size:11px;padding:3px 10px;border-radius:10px;border:1px solid #333;background:#1a1a24;color:#aaa;cursor:pointer}
+.filter-chip:hover,.filter-chip.on{border-color:#00ffcc;color:#00ffcc;background:#00ffcc11}
+.new-group-btn{font-size:11px;padding:4px 10px;border-radius:4px;border:1px solid #00ffcc;background:#00ffcc22;color:#00ffcc;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="controls">
+  <h2>Presets</h2>
+  <div class="presets" id="presetBar"></div>
+
+  <h2>Group Card Layout</h2>
+  <div class="cg"><label>Card Style</label><select id="cardStyle"><option value="full">Full (progress + dots + footer)</option><option value="compact">Compact (progress only)</option><option value="minimal">Minimal (name + count)</option></select></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showProgressBar" checked> Progress Bar</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showStatusDots" checked> Status Dots</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showFooterStats" checked> Footer Stats</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showGroupIcon" checked> Group Icon</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showHoverActions" checked> Hover Actions</label></div></div>
+
+  <hr class="sd">
+  <h2>Task Display</h2>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showDepLines" checked> Dependency Lines</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showTaskBadge" checked> Status Badges</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="indentDeps"> Indent Dependent Tasks</label></div></div>
+  <div class="cg"><label>Default Expand</label><select id="defaultExpand"><option value="first">First group only</option><option value="all">All expanded</option><option value="none">All collapsed</option><option value="active">Groups with active tasks</option></select></div>
+
+  <hr class="sd">
+  <h2>Pipeline Integration</h2>
+  <div class="cg"><label>Group Placement</label><select id="placement"><option value="above">Above pipeline stages</option><option value="sidebar">Left sidebar panel</option><option value="replace">Replace pipeline (groups only)</option></select></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showFilterChips" checked> Filter Chips in Header</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showUngrouped" checked> Show "Ungrouped" section</label></div></div>
+  <div class="cg"><div class="crow"><label><input type="checkbox" id="showNewGroupBtn" checked> "+ New Group" Button</label></div></div>
+
+  <hr class="sd">
+  <h2>Visual Style</h2>
+  <div class="cg"><label>Progress Color</label><select id="progressColor"><option value="status">By completion %</option><option value="accent">Group accent color</option><option value="cyan">Always cyan</option></select></div>
+  <div class="cg"><label>Corner Radius</label><div class="crow"><input type="range" id="cardRadius" min="0" max="16" value="8"><span class="val" id="cardRadiusVal">8</span></div></div>
+  <div class="cg"><label>Spacing</label><div class="crow"><input type="range" id="cardSpacing" min="4" max="20" value="12"><span class="val" id="cardSpacingVal">12</span></div></div>
+
+  <hr class="sd">
+  <h2>Mock Groups</h2>
+  <div class="cg"><label>Number of Groups</label><div class="crow"><input type="range" id="numGroups" min="1" max="6" value="3"><span class="val" id="numGroupsVal">3</span></div></div>
+  <div class="cg"><label>Tasks per Group</label><div class="crow"><input type="range" id="tasksPerGroup" min="2" max="10" value="5"><span class="val" id="tasksPerGroupVal">5</span></div></div>
+</div>
+
+<div class="preview-area">
+  <div class="preview-main" id="previewMain"></div>
+  <div class="prompt-area">
+    <h3>Implementation Prompt</h3>
+    <button class="cbtn" id="copyBtn">Copy</button>
+    <div class="prompt-text" id="promptOutput"></div>
+  </div>
+</div>
+
+<script>
+const D=document;
+const DEFAULTS={cardStyle:'full',showProgressBar:true,showStatusDots:true,showFooterStats:true,showGroupIcon:true,showHoverActions:true,showDepLines:true,showTaskBadge:true,indentDeps:false,defaultExpand:'first',placement:'above',showFilterChips:true,showUngrouped:true,showNewGroupBtn:true,progressColor:'status',cardRadius:8,cardSpacing:12,numGroups:3,tasksPerGroup:5};
+const state={...DEFAULTS};
+const SC={done:'#00ff88',active:'#00ffcc',queued:'#ffaa00',blocked:'#ff4466',failed:'#ff2244',review:'#4488ff'};
+const expandedGroups=new Set([0]);
+
+const mockGroups=[
+  {name:'Review Flow Overhaul',icon:'R',accent:'#4488ff',goal:'Ship batch merge, auto-review, and AI summary',
+   tasks:[{t:'Fix ConversationTab',s:'done',dep:null},{t:'Ship It button (merge+push)',s:'done',dep:null},{t:'Batch review actions',s:'active',dep:0},{t:'Auto-review rules engine',s:'queued',dep:2},{t:'AI review summary',s:'queued',dep:null}]},
+  {name:'Agent Intelligence',icon:'A',accent:'#ff88cc',goal:'Make agents smarter with context, diagnostics, and cost control',
+   tasks:[{t:'Per-task model selection',s:'done',dep:null},{t:'Context propagation',s:'done',dep:null},{t:'Retry with context',s:'active',dep:null},{t:'Failure diagnostics panel',s:'review',dep:2},{t:'Cost budgets (max_cost_usd)',s:'blocked',dep:0},{t:'Worktree checkpoint',s:'queued',dep:3}]},
+  {name:'Bug Bash: Post-Merge Cleanup',icon:'B',accent:'#ff6644',goal:'Fix integration issues from batch merge session',
+   tasks:[{t:'Deduplicate review.ts handlers',s:'done',dep:null},{t:'Fix camelCase field mapping',s:'done',dep:null},{t:'Wire filter preset UI',s:'done',dep:null},{t:'Clean test-results artifacts',s:'active',dep:null},{t:'Fix CSS token mismatches',s:'queued',dep:null}]},
+  {name:'Pipeline Infrastructure',icon:'P',accent:'#ffaa00',goal:'Make the pipeline more reliable and observable',
+   tasks:[{t:'Sequential agent branching',s:'active',dep:null},{t:'Plan-to-task spec extractor',s:'queued',dep:null},{t:'Status endpoint (GET /status)',s:'queued',dep:null},{t:'Agent log correlation IDs',s:'queued',dep:0}]},
+  {name:'Power User Tools',icon:'U',accent:'#aa88ff',goal:'Keyboard shortcuts, query language, and command palette',
+   tasks:[{t:'Enhanced command palette',s:'done',dep:null},{t:'Task search query language',s:'done',dep:null},{t:'Floating agent monitor',s:'review',dep:null},{t:'Settings profiles',s:'queued',dep:null},{t:'Morning briefing card',s:'done',dep:null},{t:'Task tags with filter chips',s:'done',dep:null}]},
+  {name:'Team Features',icon:'T',accent:'#00ddff',goal:'Reviewer assignment, webhooks, plugin foundation',
+   tasks:[{t:'Reviewer assignment field+UI',s:'done',dep:null},{t:'Webhook event push',s:'active',dep:null},{t:'Plugin system foundation',s:'blocked',dep:1},{t:'Sprint planning module',s:'queued',dep:null}]}
+];
+
+function el(tag,attrs,...ch){const e=D.createElement(tag);if(attrs)for(const[k,v]of Object.entries(attrs)){if(k==='style'&&typeof v==='object')Object.assign(e.style,v);else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else e.setAttribute(k,v)}for(const c of ch){if(typeof c==='string')e.appendChild(D.createTextNode(c));else if(c)e.appendChild(c)}return e}
+
+function getGroups(){return mockGroups.slice(0,state.numGroups).map(g=>({...g,tasks:g.tasks.slice(0,state.tasksPerGroup)}))}
+
+function groupStats(tasks){
+  const s={done:0,active:0,queued:0,blocked:0,failed:0,review:0};
+  for(const t of tasks)s[t.s]=(s[t.s]||0)+1;
+  return{...s,total:tasks.length,pct:tasks.length?Math.round(s.done/tasks.length*100):0};
+}
+
+function progressColor(pct,accent){
+  if(state.progressColor==='cyan')return'#00ffcc';
+  if(state.progressColor==='accent')return accent;
+  if(pct>=100)return'#00ff88';
+  if(pct>=60)return'#00ffcc';
+  if(pct>=30)return'#ffaa00';
+  return'#ff6644';
+}
+
+function shouldExpand(i,stats){
+  if(state.defaultExpand==='all')return true;
+  if(state.defaultExpand==='none')return false;
+  if(state.defaultExpand==='first')return i===0;
+  if(state.defaultExpand==='active')return stats.active>0||stats.review>0;
+  return false;
+}
+
+function renderPreview(){
+  const p=D.getElementById('previewMain');
+  p.textContent='';
+  const groups=getGroups();
+
+  // Pipeline Header
+  const hdr=el('div',{class:'pipeline-header'});
+  hdr.appendChild(el('div',{class:'pipeline-title'},'Task Pipeline'));
+  if(state.showFilterChips){
+    hdr.appendChild(el('button',{class:'filter-chip on'},'All'));
+    for(const g of groups){
+      const chip=el('button',{class:'filter-chip'},g.name);
+      hdr.appendChild(chip);
+    }
+    if(state.showUngrouped)hdr.appendChild(el('button',{class:'filter-chip'},'Ungrouped'));
+  }
+  if(state.showNewGroupBtn)hdr.appendChild(el('button',{class:'new-group-btn'},'+ New Group'));
+  p.appendChild(hdr);
+
+  // Group Cards
+  const container=el('div',{style:{display:'flex',flexDirection:'column',gap:state.cardSpacing+'px'}});
+
+  groups.forEach((g,i)=>{
+    const stats=groupStats(g.tasks);
+    const expanded=expandedGroups.has(i);
+    const card=el('div',{class:'group-card'+(expanded?' expanded':''),style:{borderRadius:state.cardRadius+'px'}});
+
+    // Header
+    const header=el('div',{class:'group-header',onclick:()=>{if(expandedGroups.has(i))expandedGroups.delete(i);else expandedGroups.add(i);renderPreview()}});
+
+    header.appendChild(el('span',{class:'group-chevron'+(expanded?' open':'')},'\u25B6'));
+
+    if(state.showGroupIcon){
+      header.appendChild(el('div',{class:'group-icon',style:{background:g.accent+'22',color:g.accent,border:'1px solid '+g.accent+'44'}},g.icon));
+    }
+
+    header.appendChild(el('div',{class:'group-name'},g.name));
+
+    // Progress section
+    const prog=el('div',{class:'group-progress'});
+    const pc=progressColor(stats.pct,g.accent);
+    prog.appendChild(el('span',{class:'group-progress-text'},stats.done+'/'+stats.total));
+
+    if(state.showProgressBar && state.cardStyle!=='minimal'){
+      const bar=el('div',{class:'group-progress-bar'});
+      bar.appendChild(el('div',{class:'group-progress-fill',style:{width:stats.pct+'%',background:pc}}));
+      prog.appendChild(bar);
+    }
+    header.appendChild(prog);
+
+    // Status dots
+    if(state.showStatusDots && state.cardStyle==='full'){
+      const dots=el('div',{class:'group-status-dots'});
+      for(const t of g.tasks){
+        dots.appendChild(el('div',{class:'group-status-dot',style:{background:SC[t.s]||'#888'},title:t.t+' ('+t.s+')'}));
+      }
+      header.appendChild(dots);
+    }
+
+    // Hover actions
+    if(state.showHoverActions){
+      const acts=el('div',{class:'group-actions'});
+      acts.appendChild(el('button',{class:'group-action',title:'Queue all',onclick:e=>{e.stopPropagation()}},'\u25B6'));
+      acts.appendChild(el('button',{class:'group-action',title:'Edit group',onclick:e=>{e.stopPropagation()}},'\u270E'));
+      acts.appendChild(el('button',{class:'group-action',title:'More',onclick:e=>{e.stopPropagation()}},'\u22EF'));
+      header.appendChild(acts);
+    }
+
+    card.appendChild(header);
+
+    // Body (tasks)
+    const body=el('div',{class:'group-body'+(expanded?'':' collapsed')});
+    const taskList=el('div',{class:'group-tasks'});
+
+    for(let ti=0;ti<g.tasks.length;ti++){
+      const t=g.tasks[ti];
+      const hasDep=t.dep!==null&&t.dep!==undefined;
+      const row=el('div',{class:'group-task'});
+
+      if(state.showDepLines&&hasDep&&state.indentDeps){
+        row.appendChild(el('div',{class:'task-dep-line'}));
+      }
+
+      row.appendChild(el('div',{class:'task-dot',style:{background:SC[t.s]||'#888'}}));
+      row.appendChild(el('div',{class:'task-name',style:{marginLeft:(state.indentDeps&&hasDep&&!state.showDepLines)?'16px':'0'}},t.t));
+
+      if(state.showDepLines&&hasDep&&!state.indentDeps){
+        const depName=g.tasks[t.dep]?g.tasks[t.dep].t:'?';
+        row.appendChild(el('span',{style:{fontSize:'9px',color:'#555'}},'\u2190 '+depName.slice(0,15)));
+      }
+
+      if(state.showTaskBadge){
+        row.appendChild(el('span',{class:'task-badge',style:{color:SC[t.s]||'#888'}},t.s));
+      }
+      taskList.appendChild(row);
+    }
+    body.appendChild(taskList);
+
+    // Footer
+    if(state.showFooterStats && state.cardStyle==='full' && expanded){
+      const footer=el('div',{class:'group-footer'});
+      if(stats.active)footer.appendChild(el('span',null,el('span',{style:{color:SC.active}},'\u25CF'),` ${stats.active} active`));
+      if(stats.queued)footer.appendChild(el('span',null,el('span',{style:{color:SC.queued}},'\u25CF'),` ${stats.queued} queued`));
+      if(stats.blocked)footer.appendChild(el('span',null,el('span',{style:{color:SC.blocked}},'\u25CF'),` ${stats.blocked} blocked`));
+      if(stats.review)footer.appendChild(el('span',null,el('span',{style:{color:SC.review}},'\u25CF'),` ${stats.review} review`));
+      if(g.goal)footer.appendChild(el('span',{style:{fontStyle:'italic',color:'#555',marginLeft:'auto'}},g.goal));
+      body.appendChild(footer);
+    }
+
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+
+  // Ungrouped section
+  if(state.showUngrouped){
+    const ug=el('div',{style:{marginTop:'8px',padding:'10px 14px',background:'#111118',borderRadius:state.cardRadius+'px',border:'1px solid #1a1a24',fontSize:'12px',color:'#555'}});
+    ug.appendChild(D.createTextNode('3 ungrouped tasks'));
+    container.appendChild(ug);
+  }
+
+  p.appendChild(container);
+}
+
+function updatePrompt(){
+  const parts=[];
+  parts.push('Build a Task Groups feature for BDE\'s Pipeline view.\n');
+  parts.push('**Concept:** Lightweight named containers for organizing tasks. Users create a group (e.g., "Review Flow Overhaul"), add tasks to it, and the group card shows aggregate progress. Groups reduce cognitive load without adding process.\n');
+
+  parts.push('**Data Model:**');
+  parts.push('- New `task_groups` table: id, name, icon (single char), accent_color, goal, created_at');
+  parts.push('- Add `group_id TEXT REFERENCES task_groups(id)` to sprint_tasks');
+  parts.push('- Tasks without a group_id show in "Ungrouped" section\n');
+
+  parts.push('**Group Card UI** (collapsible cards in Pipeline view):');
+  const style=state.cardStyle;
+  parts.push('- Card style: '+style);
+  parts.push('- Header: chevron toggle'+(state.showGroupIcon?', colored icon':'')+ ', group name, '+
+    (state.showProgressBar?'progress bar, ':'')+'done/total count'+
+    (state.showStatusDots?', per-task status dots':'')+
+    (state.showHoverActions?', hover action buttons (queue all, edit, more)':''));
+  parts.push('- Body: expandable task list with status dots and names');
+  if(state.showDepLines) parts.push('- Show dependency references '+(state.indentDeps?'with indentation':'inline after task name'));
+  if(state.showTaskBadge) parts.push('- Status badges on each task');
+  if(state.showFooterStats && style==='full') parts.push('- Footer: active/queued/blocked/review counts + goal text');
+  parts.push('- Default expand: '+state.defaultExpand+'\n');
+
+  parts.push('**Pipeline Integration:**');
+  parts.push('- Placement: '+state.placement);
+  if(state.showFilterChips) parts.push('- Filter chips in PipelineHeader: "All", one per group'+(state.showUngrouped?', "Ungrouped"':''));
+  if(state.showNewGroupBtn) parts.push('- "+ New Group" button in header');
+  parts.push('- Clicking a filter chip shows only that group\'s tasks in the pipeline stages\n');
+
+  parts.push('**Visual:**');
+  parts.push('- Corner radius: '+state.cardRadius+'px, spacing: '+state.cardSpacing+'px');
+  parts.push('- Progress color: '+(state.progressColor==='status'?'by completion % (red<30, orange<60, cyan<100, green=100)':state.progressColor==='accent'?'group accent color':'always cyan'));
+  parts.push('\n**IPC Handlers:** groups:create, groups:list, groups:delete, groups:addTask, groups:removeTask');
+  parts.push('**Store:** new `taskGroups` Zustand store');
+  parts.push('**CSS:** `.group-*` BEM classes in `sprint-pipeline-neon.css`');
+
+  D.getElementById('promptOutput').textContent=parts.join('\n');
+}
+
+function updateAll(){renderPreview();updatePrompt()}
+
+const presetDefs={
+  default:{...DEFAULTS},
+  compact:{...DEFAULTS,cardStyle:'compact',showStatusDots:false,showFooterStats:false,showHoverActions:false,cardSpacing:6},
+  detailed:{...DEFAULTS,cardStyle:'full',showDepLines:true,indentDeps:true,defaultExpand:'all',showStatusDots:true,numGroups:4},
+  kanban:{...DEFAULTS,placement:'replace',showFilterChips:false,defaultExpand:'active',cardStyle:'full',showGroupIcon:true,numGroups:5,tasksPerGroup:6},
+  minimal:{...DEFAULTS,cardStyle:'minimal',showProgressBar:false,showStatusDots:false,showFooterStats:false,showHoverActions:false,showGroupIcon:false,showDepLines:false,showTaskBadge:false,cardSpacing:4,cardRadius:4}
+};
+
+function applyPreset(name){
+  D.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('on',b.dataset.p===name));
+  Object.assign(state,presetDefs[name]);
+  expandedGroups.clear();
+  if(state.defaultExpand==='all')for(let i=0;i<state.numGroups;i++)expandedGroups.add(i);
+  else if(state.defaultExpand==='first')expandedGroups.add(0);
+  else if(state.defaultExpand==='active'){const gs=getGroups();gs.forEach((g,i)=>{if(groupStats(g.tasks).active>0)expandedGroups.add(i)})}
+  syncControls();updateAll();
+}
+
+function syncControls(){
+  const ids=['cardStyle','showProgressBar','showStatusDots','showFooterStats','showGroupIcon','showHoverActions','showDepLines','showTaskBadge','indentDeps','defaultExpand','placement','showFilterChips','showUngrouped','showNewGroupBtn','progressColor','cardRadius','cardSpacing','numGroups','tasksPerGroup'];
+  for(const id of ids){
+    const el=D.getElementById(id);if(!el)continue;
+    if(el.type==='checkbox')el.checked=state[id];
+    else if(el.type==='range'){el.value=state[id];const v=D.getElementById(id+'Val');if(v)v.textContent=String(state[id])}
+    else el.value=state[id];
+  }
+}
+
+// Wire controls
+D.querySelectorAll('.controls input,.controls select').forEach(e=>{
+  e.addEventListener('input',()=>{
+    const id=e.id;
+    if(e.type==='checkbox')state[id]=e.checked;
+    else if(e.type==='range'){state[id]=+e.value;const v=D.getElementById(id+'Val');if(v)v.textContent=String(e.value)}
+    else if(e.tagName==='SELECT'&&['cardRadius','cardSpacing','numGroups','tasksPerGroup','statCols'].includes(id))state[id]=+e.value;
+    else state[id]=e.value;
+    updateAll();
+  });
+});
+
+// Build presets
+const bar=D.getElementById('presetBar');
+for(const name of Object.keys(presetDefs)){
+  const btn=el('button',{class:'pbtn'+(name==='default'?' on':''),'data-p':name},name.charAt(0).toUpperCase()+name.slice(1));
+  btn.addEventListener('click',()=>applyPreset(name));
+  bar.appendChild(btn);
+}
+
+D.getElementById('copyBtn').addEventListener('click',()=>{
+  navigator.clipboard.writeText(D.getElementById('promptOutput').textContent).then(()=>{
+    const b=D.getElementById('copyBtn');b.textContent='Copied!';b.classList.add('copied');
+    setTimeout(()=>{b.textContent='Copy';b.classList.remove('copied')},1500);
+  });
+});
+
+expandedGroups.add(0);
+updateAll();
+</script>
+</body>
+</html>

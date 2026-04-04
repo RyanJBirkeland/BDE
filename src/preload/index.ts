@@ -410,10 +410,7 @@ const api = {
       typedInvoke('review:requestRevision', payload),
     discard: (payload: { taskId: string }) => typedInvoke('review:discard', payload),
     shipIt: (payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }) =>
-      typedInvoke('review:shipIt', payload),
-    generateSummary: (payload: { taskId: string }) =>
-      typedInvoke('review:generateSummary', payload),
-    checkAutoReview: (payload: { taskId: string }) => typedInvoke('review:checkAutoReview', payload)
+      typedInvoke('review:shipIt', payload)
   },
 
   // Spec Synthesizer

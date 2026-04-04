@@ -642,22 +642,6 @@ export interface ReviewChannels {
     args: [payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }]
     result: { success: boolean; pushed?: boolean; error?: string }
   }
-  'review:generateSummary': {
-    args: [payload: { taskId: string }]
-    result: { summary: string }
-  }
-  'review:checkAutoReview': {
-    args: [
-      payload: {
-        taskId: string
-      }
-    ]
-    result: {
-      shouldAutoMerge: boolean
-      shouldAutoApprove: boolean
-      matchedRule: { id: string; name: string; action: 'auto-merge' | 'auto-approve' } | null
-    }
-  }
 }
 
 /** Spec synthesizer AI-powered generation */

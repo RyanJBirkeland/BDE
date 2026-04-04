@@ -211,7 +211,26 @@ export async function setupWorktree(
     // Agent branches are throwaway; never try to preserve commits.
     await nukeStaleState(repoPath, worktreePath, branch, env, log)
 
-    // Step 2: Create fresh worktree + branch
+    // Step 2: Fetch latest main to reduce merge conflicts on agent branches
+    try {
+      await execFileAsync('git', ['fetch', 'origin', 'main', '--no-tags'], {
+        cwd: repoPath,
+        env,
+        timeout: 30_000
+      })
+      // Fast-forward local main to match origin (non-destructive — only if it's a fast-forward)
+      await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], {
+        cwd: repoPath,
+        env,
+        timeout: 10_000
+      })
+      log.info(`[worktree] Fetched and fast-forwarded main for task ${taskId}`)
+    } catch (err) {
+      // Non-fatal — proceed with whatever HEAD we have
+      log.warn(`[worktree] Failed to fetch/ff main (proceeding anyway): ${err}`)
+    }
+
+    // Step 3: Create fresh worktree + branch
     await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], {
       cwd: repoPath,
       env

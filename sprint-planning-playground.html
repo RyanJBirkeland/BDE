@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BDE Sprint Planning UI Playground</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
+  .controls { width: 320px; min-width: 320px; background: #111118; border-right: 1px solid #2a2a3a; overflow-y: auto; padding: 16px; }
+  .controls h2 { font-size: 13px; color: #00ffcc; text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; }
+  .controls h2:first-child { margin-top: 0; }
+  .control-group { margin-bottom: 12px; }
+  .control-group label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; }
+  .control-group input[type="range"] { width: 100%; accent-color: #00ffcc; }
+  .control-group input[type="text"], .control-group select { width: 100%; background: #1a1a24; border: 1px solid #333; color: #e0e0e0; padding: 6px 8px; border-radius: 4px; font-size: 12px; }
+  .control-group input[type="checkbox"] { accent-color: #00ffcc; }
+  .control-row { display: flex; gap: 8px; align-items: center; }
+  .val { font-size: 11px; color: #00ffcc; min-width: 30px; text-align: right; }
+  .presets { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+  .preset-btn { background: #1a1a24; border: 1px solid #333; color: #aaa; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; }
+  .preset-btn:hover, .preset-btn.active { background: #00ffcc22; border-color: #00ffcc; color: #00ffcc; }
+  hr.section-divider { border: none; border-top: 1px solid #222; margin: 16px 0; }
+  .preview-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .preview-main { flex: 1; overflow-y: auto; padding: 20px; background: #0d0d14; }
+  .prompt-area { background: #111118; border-top: 1px solid #2a2a3a; padding: 12px 20px; max-height: 180px; overflow-y: auto; }
+  .prompt-area h3 { font-size: 11px; color: #00ffcc; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .prompt-text { font-family: 'SF Mono', Menlo, monospace; font-size: 11px; color: #ccc; line-height: 1.5; white-space: pre-wrap; }
+  .copy-btn { background: #00ffcc22; border: 1px solid #00ffcc; color: #00ffcc; padding: 4px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; float: right; margin-top: -20px; }
+  .copy-btn:hover { background: #00ffcc33; }
+  .copy-btn.copied { background: #00ff8833; border-color: #00ff88; color: #00ff88; }
+</style>
+</head>
+<body>
+<div class="controls">
+  <h2>Presets</h2>
+  <div class="presets" id="presetBar"></div>
+  <h2>Sprint Header</h2>
+  <div class="control-group"><label>Selector Style</label><select id="selectorStyle"><option value="dropdown">Dropdown</option><option value="tabs">Tab Strip</option><option value="breadcrumb">Breadcrumb</option></select></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showGoal" checked> Show Sprint Goal</label></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showProgress" checked> Progress Bar</label></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showActions" checked> Action Buttons</label></div></div>
+  <div class="control-group"><label>Progress Color</label><select id="progressColor"><option value="#00ffcc">Cyan (neon)</option><option value="#00ff88">Green</option><option value="gradient">Gradient (red to green)</option></select></div>
+  <hr class="section-divider">
+  <h2>Burn-down Chart</h2>
+  <div class="control-group"><label>Chart Height</label><div class="control-row"><input type="range" id="chartHeight" min="120" max="300" value="180"><span class="val" id="chartHeightVal">180px</span></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showIdealLine" checked> Ideal Trend Line</label></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showCompletedArea" checked> Completed Area Fill</label></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showDayMarkers" checked> Day Markers</label></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showToday" checked> Today Indicator</label></div></div>
+  <div class="control-group"><label>Chart Style</label><select id="chartStyle"><option value="line">Line</option><option value="area">Area</option><option value="stepped">Stepped</option></select></div>
+  <hr class="section-divider">
+  <h2>Stats Cards</h2>
+  <div class="control-group"><label>Grid Columns</label><select id="statCols"><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option></select></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showVelocity" checked> Velocity</label></div><div class="control-row"><label><input type="checkbox" id="showCycleTime" checked> Cycle Time</label></div><div class="control-row"><label><input type="checkbox" id="showCost" checked> Sprint Cost</label></div><div class="control-row"><label><input type="checkbox" id="showSuccessRate" checked> Success Rate</label></div></div>
+  <hr class="section-divider">
+  <h2>Task List</h2>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showTaskList" checked> Show Task List</label></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="showAssignee"> Show Assignee</label></div></div>
+  <div class="control-group"><div class="control-row"><label><input type="checkbox" id="groupByStatus" checked> Group by Status</label></div></div>
+  <hr class="section-divider">
+  <h2>Mock Data</h2>
+  <div class="control-group"><label>Sprint Name</label><input type="text" id="sprintName" value="Sprint 12"></div>
+  <div class="control-group"><label>Total Tasks</label><div class="control-row"><input type="range" id="totalTasks" min="5" max="30" value="18"><span class="val" id="totalTasksVal">18</span></div></div>
+  <div class="control-group"><label>Completion %</label><div class="control-row"><input type="range" id="completionPct" min="0" max="100" value="67"><span class="val" id="completionPctVal">67%</span></div></div>
+  <div class="control-group"><label>Days Into Sprint</label><div class="control-row"><input type="range" id="daysIn" min="1" max="14" value="8"><span class="val" id="daysInVal">8</span></div></div>
+</div>
+<div class="preview-area">
+  <div class="preview-main" id="previewMain"></div>
+  <div class="prompt-area"><h3>Implementation Prompt</h3><button class="copy-btn" id="copyBtn">Copy</button><div class="prompt-text" id="promptOutput"></div></div>
+</div>
+<script>
+const D = document;
+const DEFAULTS = { selectorStyle:'dropdown', showGoal:true, showProgress:true, showActions:true, progressColor:'#00ffcc', chartHeight:180, showIdealLine:true, showCompletedArea:true, showDayMarkers:true, showToday:true, chartStyle:'line', statCols:4, showVelocity:true, showCycleTime:true, showCost:true, showSuccessRate:true, showTaskList:true, showAssignee:false, groupByStatus:true, sprintName:'Sprint 12', totalTasks:18, completionPct:67, daysIn:8 };
+const state = {...DEFAULTS};
+let mockData = {};
+const statusColors = { done:'#00ff88', active:'#00ffcc', queued:'#ffaa00', blocked:'#ff4466', failed:'#ff2244', review:'#4488ff' };
+const taskNames = ['Fix auth middleware','Add rate limiting','Update dashboard charts','Refactor sprint queries','Add cost badges','DAG overlay','Wire research to Copilot','Keyboard shortcuts','Fix merge conflicts','Update CLAUDE.md','Add retry context','Density toggle','Morning briefing','Fix CSS tokens','Filter presets','Command palette','Webhook system','Plugin foundation','Sprint planning UI','Onboarding wizard','React.memo pipeline','SQLite retry','Batch import','Settings profiles','Workflow templates','Agent monitor','Query language','Reviewer assignment','Auto-review rules','ConversationTab fix'];
+
+function regenerateData() {
+  const total = state.totalTasks, done = Math.round(total * state.completionPct / 100);
+  const active = Math.min(3, total - done), queued = Math.max(0, total - done - active - 2), blocked = Math.max(0, total - done - active - queued);
+  const burndown = [];
+  for (let i = 0; i <= state.daysIn; i++) {
+    const ideal = total - (total / 14) * i, noise = Math.random() * 2 - 1;
+    const comp = Math.round((done / state.daysIn) * i + noise);
+    burndown.push({ day: i, ideal: Math.max(0, Math.round(ideal)), remaining: Math.max(0, total - Math.min(comp, done)), completed: Math.min(comp, done) });
+  }
+  const sts = ['done','done','done','active','active','queued','queued','blocked','failed'];
+  const tasks = Array.from({length:total}, (_, i) => ({ title: taskNames[i % taskNames.length], status: i < done ? 'done' : sts[Math.min(i-done+3, sts.length-1)] || 'queued', assignee: state.showAssignee ? ['Ryan','Alice','Bob'][i%3] : null }));
+  mockData = { total, done, active, queued, blocked, failed: Math.max(0, total-done-active-queued-blocked), burndown, tasks };
+}
+
+function el(tag, attrs, ...children) {
+  const e = D.createElement(tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)) {
+    if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of children) { if (typeof c === 'string') e.appendChild(D.createTextNode(c)); else if (c) e.appendChild(c); }
+  return e;
+}
+
+function renderPreview() {
+  const p = D.getElementById('previewMain');
+  p.textContent = '';
+
+  // Sprint Header
+  const header = el('div', {style:{display:'flex',alignItems:'center',gap:'12px',padding:'12px 16px',background:'#111118',borderRadius:'8px',marginBottom:'16px',border:'1px solid #2a2a3a',flexWrap:'wrap'}});
+  if (state.selectorStyle === 'dropdown') {
+    const sel = el('select', {style:{background:'#1a1a24',border:'1px solid #333',color:'#e0e0e0',padding:'6px 12px',borderRadius:'6px',fontSize:'13px',minWidth:'180px'}});
+    [state.sprintName, 'Sprint 11', 'Sprint 10'].forEach(n => sel.appendChild(el('option', null, n)));
+    header.appendChild(sel);
+  } else if (state.selectorStyle === 'tabs') {
+    const tabs = el('div', {style:{display:'flex',gap:'2px'}});
+    [state.sprintName, 'Sprint 11', 'Sprint 10'].forEach((n,i) => {
+      const btn = el('button', {style:{background:i===0?'#00ffcc22':'none',border:'1px solid '+(i===0?'#00ffcc':'#333'),color:i===0?'#00ffcc':'#aaa',padding:'4px 10px',borderRadius:'4px',fontSize:'11px',cursor:'pointer'}}, n);
+      tabs.appendChild(btn);
+    });
+    header.appendChild(tabs);
+  } else {
+    header.appendChild(el('div', {style:{fontSize:'12px',color:'#888'}}, 'Sprints / ', el('span', {style:{color:'#00ffcc'}}, state.sprintName)));
+  }
+
+  const meta = el('div', {style:{display:'flex',gap:'16px',fontSize:'12px',color:'#888'}});
+  meta.appendChild(el('span', null, 'Apr 1-14'));
+  const ct = el('span'); ct.appendChild(el('span', {style:{color:'#00ffcc',fontWeight:'600'}}, `${mockData.done}/${mockData.total}`)); ct.appendChild(D.createTextNode(' tasks')); meta.appendChild(ct);
+  meta.appendChild(el('span', null, `Day ${state.daysIn}/14`));
+  header.appendChild(meta);
+
+  if (state.showProgress) {
+    const pct = Math.round(mockData.done / mockData.total * 100);
+    let fillColor = state.progressColor;
+    if (fillColor === 'gradient') fillColor = `hsl(${Math.round(pct*1.2)}, 80%, 50%)`;
+    const prog = el('div', {style:{flex:'1',minWidth:'120px'}});
+    const progHeader = el('div', {style:{display:'flex',justifyContent:'space-between',fontSize:'11px',color:'#888'}});
+    progHeader.appendChild(el('span', null, 'Progress'));
+    progHeader.appendChild(el('span', {style:{color:fillColor}}, pct+'%'));
+    prog.appendChild(progHeader);
+    const bar = el('div', {style:{height:'6px',background:'#1a1a24',borderRadius:'3px',overflow:'hidden',marginTop:'4px'}});
+    bar.appendChild(el('div', {style:{height:'100%',width:pct+'%',background:fillColor,borderRadius:'3px',transition:'width 0.3s'}}));
+    prog.appendChild(bar);
+    header.appendChild(prog);
+  }
+  if (state.showActions) {
+    const acts = el('div', {style:{display:'flex',gap:'6px'}});
+    acts.appendChild(el('button', {style:{background:'#00ffcc22',border:'1px solid #00ffcc',color:'#00ffcc',padding:'4px 10px',borderRadius:'4px',fontSize:'11px',cursor:'pointer'}}, '+ Add Task'));
+    acts.appendChild(el('button', {style:{background:'none',border:'1px solid #333',color:'#aaa',padding:'4px 10px',borderRadius:'4px',fontSize:'11px',cursor:'pointer'}}, 'Complete Sprint'));
+    header.appendChild(acts);
+  }
+  p.appendChild(header);
+  if (state.showGoal) p.appendChild(el('div', {style:{fontSize:'11px',color:'#666',fontStyle:'italic',margin:'-8px 0 16px 16px'}}, 'Goal: Ship review flow overhaul + agent intelligence features'));
+
+  // Stats Cards
+  const stats = [];
+  stats.push({value:`${mockData.done}/${mockData.total}`,label:'Completed',color:'#00ff88'});
+  stats.push({value:String(mockData.active),label:'In Progress',color:'#00ffcc'});
+  if (state.showVelocity) stats.push({value:(mockData.done/state.daysIn).toFixed(1),label:'Tasks/Day',color:'#4488ff',trend:'+12%',up:true});
+  if (state.showCycleTime) stats.push({value:'2.3h',label:'Avg Cycle Time',color:'#ffaa00',trend:'-8%',up:true});
+  if (state.showCost) stats.push({value:'$47.20',label:'Sprint Cost',color:'#ff88cc'});
+  if (state.showSuccessRate) stats.push({value:Math.round(mockData.done/(mockData.done+(mockData.failed||1))*100)+'%',label:'Success Rate',color:'#00ff88',trend:'+3%',up:true});
+
+  const grid = el('div', {style:{display:'grid',gridTemplateColumns:`repeat(${state.statCols},1fr)`,gap:'12px',marginBottom:'16px'}});
+  for (const s of stats) {
+    const card = el('div', {style:{background:'#111118',borderRadius:'8px',border:'1px solid #2a2a3a',padding:'14px',textAlign:'center'}});
+    card.appendChild(el('div', {style:{fontSize:'24px',fontWeight:'700',color:s.color}}, s.value));
+    card.appendChild(el('div', {style:{fontSize:'11px',color:'#888',marginTop:'2px'}}, s.label));
+    if (s.trend) card.appendChild(el('div', {style:{fontSize:'10px',marginTop:'4px',color:s.up?'#00ff88':'#ff4466'}}, (s.up?'\u2191':'\u2193')+' '+s.trend+' vs last sprint'));
+    grid.appendChild(card);
+  }
+  p.appendChild(grid);
+
+  // Burn-down Chart
+  const burnCard = el('div', {style:{background:'#111118',borderRadius:'8px',border:'1px solid #2a2a3a',padding:'16px',marginBottom:'16px'}});
+  burnCard.appendChild(el('h3', {style:{fontSize:'13px',color:'#e0e0e0',marginBottom:'12px'}}, 'Sprint Burn-down'));
+  const canvas = el('canvas', {width:'800',height:String(state.chartHeight)});
+  canvas.style.width = '100%';
+  canvas.style.display = 'block';
+  burnCard.appendChild(canvas);
+  const legend = el('div', {style:{display:'flex',gap:'16px',marginTop:'8px',fontSize:'11px'}});
+  function legendItem(color, label) {
+    const item = el('div', {style:{display:'flex',alignItems:'center',gap:'4px'}});
+    item.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:color}}));
+    item.appendChild(el('span', null, label));
+    return item;
+  }
+  legend.appendChild(legendItem('#ff6644','Remaining'));
+  if (state.showIdealLine) legend.appendChild(legendItem('#ffffff44','Ideal'));
+  if (state.showCompletedArea) legend.appendChild(legendItem('#00ff8844','Completed'));
+  if (state.showToday) legend.appendChild(legendItem('#00ffcc','Today'));
+  burnCard.appendChild(legend);
+  p.appendChild(burnCard);
+
+  // Task List
+  if (state.showTaskList) {
+    const taskCard = el('div', {style:{background:'#111118',borderRadius:'8px',border:'1px solid #2a2a3a',padding:'16px'}});
+    taskCard.appendChild(el('h3', {style:{fontSize:'13px',marginBottom:'12px'}}, 'Sprint Tasks'));
+    const tasks = [...mockData.tasks];
+    if (state.groupByStatus) {
+      const groups = {};
+      for (const t of tasks) (groups[t.status] = groups[t.status] || []).push(t);
+      for (const [status, group] of Object.entries(groups)) {
+        taskCard.appendChild(el('div', {style:{fontSize:'11px',color:'#888',textTransform:'uppercase',letterSpacing:'1px',margin:'12px 0 4px',padding:'0 8px'}}, `${status} (${group.length})`));
+        for (const t of group) taskCard.appendChild(makeTaskRow(t));
+      }
+    } else {
+      for (const t of tasks) taskCard.appendChild(makeTaskRow(t));
+    }
+    p.appendChild(taskCard);
+  }
+
+  requestAnimationFrame(() => drawBurndown(canvas));
+}
+
+function makeTaskRow(t) {
+  const row = el('div', {style:{display:'flex',alignItems:'center',gap:'8px',padding:'8px',borderRadius:'4px',marginBottom:'4px'}});
+  row.appendChild(el('div', {style:{width:'8px',height:'8px',borderRadius:'50%',background:statusColors[t.status]||'#888',flexShrink:'0'}}));
+  row.appendChild(el('div', {style:{flex:'1',fontSize:'12px'}}, t.title));
+  row.appendChild(el('span', {style:{fontSize:'10px',padding:'2px 6px',borderRadius:'8px',background:'#1a1a24',color:statusColors[t.status]||'#888'}}, t.status));
+  if (state.showAssignee && t.assignee) row.appendChild(el('span', {style:{fontSize:'10px',color:'#666'}}, t.assignee));
+  return row;
+}
+
+function drawBurndown(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height, data = mockData.burndown;
+  if (!data || data.length < 2) return;
+  ctx.clearRect(0,0,W,H);
+  const pad = {t:10,r:20,b:30,l:40}, cw = W-pad.l-pad.r, ch = H-pad.t-pad.b, maxVal = mockData.total;
+  const x = i => pad.l + (i/14)*cw, y = v => pad.t + (1 - v/maxVal)*ch;
+
+  ctx.strokeStyle = '#ffffff11'; ctx.lineWidth = 1;
+  for (let i=0;i<=4;i++) { const gy=pad.t+(i/4)*ch; ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(W-pad.r,gy); ctx.stroke(); }
+
+  ctx.fillStyle = '#666'; ctx.font = '10px -apple-system, sans-serif';
+  if (state.showDayMarkers) { ctx.textAlign='center'; for(let i=0;i<=14;i+=2) ctx.fillText('Day '+i, x(i), H-8); }
+  ctx.textAlign='right'; for(let i=0;i<=4;i++) ctx.fillText(String(Math.round(maxVal*(1-i/4))), pad.l-6, pad.t+(i/4)*ch+4);
+
+  if (state.showIdealLine) { ctx.strokeStyle='#ffffff33'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(x(0),y(maxVal)); ctx.lineTo(x(14),y(0)); ctx.stroke(); ctx.setLineDash([]); }
+  if (state.showCompletedArea) { ctx.fillStyle='#00ff8815'; ctx.beginPath(); ctx.moveTo(x(0),y(0)); for(const p of data) ctx.lineTo(x(p.day),y(p.completed)); ctx.lineTo(x(data[data.length-1].day),y(0)); ctx.fill(); }
+
+  ctx.strokeStyle='#ff6644'; ctx.lineWidth=2; ctx.beginPath();
+  for(let i=0;i<data.length;i++) { const px=x(data[i].day), py=y(data[i].remaining); if(state.chartStyle==='stepped'&&i>0) ctx.lineTo(px,y(data[i-1].remaining)); i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); }
+  ctx.stroke();
+
+  if (state.chartStyle==='area') { ctx.fillStyle='#ff664422'; ctx.beginPath(); ctx.moveTo(x(0),y(maxVal)); for(const p of data) ctx.lineTo(x(p.day),y(p.remaining)); ctx.lineTo(x(data[data.length-1].day),y(maxVal)); ctx.fill(); }
+
+  ctx.fillStyle='#ff6644'; for(const p of data) { ctx.beginPath(); ctx.arc(x(p.day),y(p.remaining),3,0,Math.PI*2); ctx.fill(); }
+
+  if (state.showToday) { ctx.strokeStyle='#00ffcc88'; ctx.lineWidth=1; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(x(state.daysIn),pad.t); ctx.lineTo(x(state.daysIn),H-pad.b); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle='#00ffcc'; ctx.font='10px -apple-system, sans-serif'; ctx.textAlign='center'; ctx.fillText('Today',x(state.daysIn),pad.t-2); }
+}
+
+function updatePrompt() {
+  const parts = [];
+  parts.push('Build the Sprint Planning UI for BDE\'s Dashboard and Pipeline views.\n');
+  parts.push('**Sprint Header** (in PipelineHeader.tsx):');
+  if (state.selectorStyle==='dropdown') parts.push('- Dropdown sprint selector showing active sprint name');
+  else if (state.selectorStyle==='tabs') parts.push('- Tab strip sprint selector with active sprint highlighted');
+  else parts.push('- Breadcrumb-style sprint navigation');
+  parts.push('- Sprint metadata: date range, task count (done/total), day N of 14');
+  if (state.showProgress) parts.push('- Progress bar with '+(state.progressColor==='gradient'?'gradient (red to green)':'neon')+' fill');
+  if (state.showGoal) parts.push('- Sprint goal text below header');
+  if (state.showActions) parts.push('- Action buttons: "+ Add Task" and "Complete Sprint"');
+  parts.push('\n**Burn-down Chart** (in DashboardView.tsx):');
+  parts.push('- Canvas chart, '+state.chartHeight+'px height, '+state.chartStyle+' style');
+  if (state.showIdealLine) parts.push('- Dashed ideal trend line');
+  if (state.showCompletedArea) parts.push('- Green fill for completed area');
+  if (state.showToday) parts.push('- Today indicator line');
+  parts.push('- Data from sprints:burndown IPC');
+  const visStats = ['completed/total','in-progress'];
+  if (state.showVelocity) visStats.push('velocity');
+  if (state.showCycleTime) visStats.push('cycle time');
+  if (state.showCost) visStats.push('sprint cost');
+  if (state.showSuccessRate) visStats.push('success rate');
+  parts.push('\n**Stats Cards** ('+state.statCols+'-col grid): '+visStats.join(', '));
+  if (state.showTaskList) { parts.push('\n**Task List**: '+(state.groupByStatus?'grouped by status':'flat list')+(state.showAssignee?', with assignee':''));  }
+  parts.push('\nUse neon CSS tokens, BEM naming (.sprint-plan-*), data from sprint planning IPC handlers.');
+  D.getElementById('promptOutput').textContent = parts.join('\n');
+}
+
+function updateAll() { renderPreview(); updatePrompt(); }
+
+const presetDefs = {
+  default: {...DEFAULTS},
+  compact: {...DEFAULTS, chartHeight:140, statCols:6, showGoal:false, showActions:false, showTaskList:false},
+  detailed: {...DEFAULTS, chartHeight:240, statCols:4, showAssignee:true, chartStyle:'area', progressColor:'gradient'},
+  minimal: {...DEFAULTS, showProgress:false, showGoal:false, showActions:false, showVelocity:false, showCycleTime:false, showCost:false, showSuccessRate:false, chartHeight:150, showCompletedArea:false, showIdealLine:false, showDayMarkers:false}
+};
+
+function applyPreset(name) {
+  D.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === name));
+  Object.assign(state, presetDefs[name]);
+  syncControls(); regenerateData(); updateAll();
+}
+
+function syncControls() {
+  const ids = ['selectorStyle','showGoal','showProgress','showActions','progressColor','chartHeight','showIdealLine','showCompletedArea','showDayMarkers','showToday','chartStyle','statCols','showVelocity','showCycleTime','showCost','showSuccessRate','showTaskList','showAssignee','groupByStatus','sprintName','totalTasks','completionPct','daysIn'];
+  for (const id of ids) {
+    const el = D.getElementById(id);
+    if (el.type==='checkbox') el.checked = state[id];
+    else if (el.type==='range') { el.value = state[id]; const valEl = D.getElementById(id+'Val'); if(valEl) valEl.textContent = id==='completionPct'?state[id]+'%':id==='chartHeight'?state[id]+'px':String(state[id]); }
+    else el.value = state[id];
+  }
+}
+
+// Wire controls
+D.querySelectorAll('.controls input, .controls select').forEach(el => {
+  el.addEventListener('input', () => {
+    const id = el.id;
+    if (el.type==='checkbox') state[id] = el.checked;
+    else if (el.type==='range') { state[id] = +el.value; const valEl = D.getElementById(id+'Val'); if(valEl) valEl.textContent = id==='completionPct'?el.value+'%':id==='chartHeight'?el.value+'px':el.value; }
+    else if (el.tagName==='SELECT' && !isNaN(+el.value) && id==='statCols') state[id] = +el.value;
+    else state[id] = el.value;
+    if (['totalTasks','completionPct','daysIn'].includes(id)) regenerateData();
+    updateAll();
+  });
+});
+
+// Build preset buttons
+const bar = D.getElementById('presetBar');
+for (const name of Object.keys(presetDefs)) {
+  const btn = el('button', {class:'preset-btn'+(name==='default'?' active':''), 'data-preset':name}, name.charAt(0).toUpperCase()+name.slice(1));
+  btn.addEventListener('click', () => applyPreset(name));
+  bar.appendChild(btn);
+}
+
+D.getElementById('copyBtn').addEventListener('click', () => {
+  navigator.clipboard.writeText(D.getElementById('promptOutput').textContent).then(() => {
+    const btn = D.getElementById('copyBtn');
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+});
+
+regenerateData(); updateAll();
+</script>
+</body>
+</html>
