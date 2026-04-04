@@ -317,6 +317,10 @@ declare global {
           mode: 'resume' | 'fresh'
         }) => Promise<IpcResult<'review:requestRevision'>>
         discard: (payload: { taskId: string }) => Promise<IpcResult<'review:discard'>>
+        shipIt: (payload: {
+          taskId: string
+          strategy: 'squash' | 'merge' | 'rebase'
+        }) => Promise<IpcResult<'review:shipIt'>>
       }
 
       // Spec Synthesizer

@@ -159,4 +159,37 @@ describe('ReviewActions', () => {
       })
     })
   })
+
+  it('shows Ship It button when review task selected', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'Review task',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    useCodeReviewStore.setState({ selectedTaskId: 't1' })
+    render(<ReviewActions />)
+    expect(screen.getByText('Ship It')).toBeInTheDocument()
+  })
+
+  it('Ship It triggers confirm dialog with merge+push description', async () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'Review task',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    useCodeReviewStore.setState({ selectedTaskId: 't1' })
+    render(<ReviewActions />)
+    fireEvent.click(screen.getByText('Ship It'))
+    await waitFor(() => {
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    })
+  })
 })

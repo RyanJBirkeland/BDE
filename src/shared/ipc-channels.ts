@@ -596,6 +596,10 @@ export interface ReviewChannels {
     args: [payload: { taskId: string }]
     result: { success: boolean }
   }
+  'review:shipIt': {
+    args: [payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }]
+    result: { success: boolean; pushed?: boolean; error?: string }
+  }
 }
 
 /** Spec synthesizer AI-powered generation */

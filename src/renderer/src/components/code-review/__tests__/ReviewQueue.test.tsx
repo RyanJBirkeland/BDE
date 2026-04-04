@@ -1,13 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-const { mockSelectTask } = vi.hoisted(() => ({ mockSelectTask: vi.fn() }))
+const { mockSelectTask, mockToggleBatchId, mockSelectAllBatch, mockClearBatch } = vi.hoisted(() => ({
+  mockSelectTask: vi.fn(),
+  mockToggleBatchId: vi.fn(),
+  mockSelectAllBatch: vi.fn(),
+  mockClearBatch: vi.fn()
+}))
 
 vi.mock('../../../stores/codeReview', () => {
   const { create } = require('zustand')
   const store = create(() => ({
     selectedTaskId: null,
-    selectTask: mockSelectTask
+    selectTask: mockSelectTask,
+    selectedBatchIds: new Set<string>(),
+    toggleBatchId: mockToggleBatchId,
+    selectAllBatch: mockSelectAllBatch,
+    clearBatch: mockClearBatch
   }))
   return { useCodeReviewStore: store }
 })
@@ -31,7 +40,14 @@ describe('ReviewQueue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sprintState.tasks = []
-    useCodeReviewStore.setState({ selectedTaskId: null, selectTask: mockSelectTask })
+    useCodeReviewStore.setState({
+      selectedTaskId: null,
+      selectTask: mockSelectTask,
+      selectedBatchIds: new Set(),
+      toggleBatchId: mockToggleBatchId,
+      selectAllBatch: mockSelectAllBatch,
+      clearBatch: mockClearBatch
+    })
   })
 
   it('renders empty state when no review tasks', () => {
@@ -265,5 +281,61 @@ describe('ReviewQueue', () => {
     render(<ReviewQueue />)
     fireEvent.keyDown(document, { key: 'k' })
     expect(mockSelectTask).toHaveBeenCalledWith('t1')
+  })
+
+  it('renders checkboxes for each review task', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'Fix bug',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    render(<ReviewQueue />)
+    const checkboxes = screen.getAllByRole('checkbox')
+    expect(checkboxes).toHaveLength(2) // 1 select-all + 1 task checkbox
+  })
+
+  it('clicking checkbox toggles batch selection', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'Fix bug',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      }
+    ]
+    render(<ReviewQueue />)
+    const checkboxes = screen.getAllByRole('checkbox')
+    // Skip first checkbox (select all), click second (task checkbox)
+    fireEvent.click(checkboxes[1])
+    expect(mockToggleBatchId).toHaveBeenCalledWith('t1')
+  })
+
+  it('select all checkbox selects all review tasks', () => {
+    sprintState.tasks = [
+      {
+        id: 't1',
+        title: 'Fix bug',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-01T00:00:00Z'
+      },
+      {
+        id: 't2',
+        title: 'Add feature',
+        repo: 'bde',
+        status: 'review',
+        updated_at: '2026-04-02T00:00:00Z'
+      }
+    ]
+    render(<ReviewQueue />)
+    const checkboxes = screen.getAllByRole('checkbox')
+    // First checkbox is select-all
+    fireEvent.click(checkboxes[0])
+    expect(mockSelectAllBatch).toHaveBeenCalledWith(['t2', 't1']) // sorted by updated_at desc
   })
 })

@@ -392,7 +392,9 @@ const api = {
       typedInvoke('review:createPr', payload),
     requestRevision: (payload: { taskId: string; feedback: string; mode: 'resume' | 'fresh' }) =>
       typedInvoke('review:requestRevision', payload),
-    discard: (payload: { taskId: string }) => typedInvoke('review:discard', payload)
+    discard: (payload: { taskId: string }) => typedInvoke('review:discard', payload),
+    shipIt: (payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }) =>
+      typedInvoke('review:shipIt', payload)
   },
 
   // Spec Synthesizer
