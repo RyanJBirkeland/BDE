@@ -8,32 +8,21 @@ import { Kbd } from '../ui/Kbd'
 import { timeAgo } from '../../lib/format'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
-
-type CommandCategory = 'navigation' | 'action' | 'panel' | 'session'
-
-interface Command {
-  id: string
-  label: string
-  category: CommandCategory
-  hint?: string
-  action: () => void
-}
+import {
+  useCommandPaletteStore,
+  type CommandCategory,
+  type Command
+} from '../../stores/commandPalette'
 
 const CATEGORY_LABELS: Record<CommandCategory, string> = {
   navigation: 'Navigate',
+  task: 'Tasks',
+  review: 'Code Review',
+  filter: 'Filters',
+  settings: 'Settings',
   action: 'Agent Actions',
   panel: 'Panels',
   session: 'Recent Agents'
-}
-
-function fuzzyMatch(query: string, text: string): boolean {
-  const q = query.toLowerCase()
-  const t = text.toLowerCase()
-  let qi = 0
-  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
-    if (t[ti] === q[qi]) qi++
-  }
-  return qi === q.length
 }
 
 interface CommandPaletteProps {
@@ -54,40 +43,24 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   const selectAgent = useAgentHistoryStore((s) => s.selectAgent)
   const { confirmProps } = useConfirm()
 
-  // Fetch recent agents when palette opens
+  // Command registry hooks
+  const registeredCommands = useCommandPaletteStore((s) => s.commands)
+  const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
+  const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
+  const fuzzySearch = useCommandPaletteStore((s) => s.fuzzySearch)
+  const trackCommandUsage = useCommandPaletteStore((s) => s.trackCommandUsage)
+
+  // Register core commands on mount (commands capture setView/onClose from closure)
   useEffect(() => {
-    if (!open) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setQuery('')
-
-    setSelectedIndex(0)
-    requestAnimationFrame(() => inputRef.current?.focus())
-
-    const agents = useAgentHistoryStore.getState().agents
-    setRecentAgents(agents.slice(0, 5))
-
-    // Also try a fresh fetch
-    useAgentHistoryStore
-      .getState()
-      .fetchAgents()
-      .then(() => {
-        setRecentAgents(useAgentHistoryStore.getState().agents.slice(0, 5))
-      })
-      .catch(() => {
-        // ignore — we already have cached agents
-      })
-  }, [open])
-
-  const commands = useMemo<Command[]>(() => {
     const navCommands: { view: View; label: string; hint: string }[] = [
-      { view: 'dashboard', label: 'Go to Dashboard', hint: '\u23181' },
-      { view: 'agents', label: 'Go to Agents', hint: '\u23182' },
-      { view: 'ide', label: 'Go to IDE', hint: '\u23183' },
-      { view: 'sprint', label: 'Go to Task Pipeline', hint: '\u23184' },
-      { view: 'code-review', label: 'Go to Code Review', hint: '\u23185' },
-      { view: 'git', label: 'Go to Source Control', hint: '\u23186' },
-      { view: 'settings', label: 'Go to Settings', hint: '\u23187' },
-      { view: 'task-workbench', label: 'Go to Task Workbench', hint: '\u23180' }
+      { view: 'dashboard', label: 'Go to Dashboard', hint: '⌘1' },
+      { view: 'agents', label: 'Go to Agents', hint: '⌘2' },
+      { view: 'ide', label: 'Go to IDE', hint: '⌘3' },
+      { view: 'sprint', label: 'Go to Task Pipeline', hint: '⌘4' },
+      { view: 'code-review', label: 'Go to Code Review', hint: '⌘5' },
+      { view: 'git', label: 'Go to Source Control', hint: '⌘6' },
+      { view: 'settings', label: 'Go to Settings', hint: '⌘7' },
+      { view: 'task-workbench', label: 'Go to Task Workbench', hint: '⌘0' }
     ]
 
     const nav: Command[] = navCommands.map((v) => ({
@@ -95,6 +68,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       label: v.label,
       category: 'navigation',
       hint: v.hint,
+      keywords: [v.view, 'goto', 'open'],
       action: () => {
         setView(v.view)
         onClose()
@@ -107,6 +81,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         label: 'Launch BDE Assistant',
         category: 'action',
         hint: 'Interactive helper',
+        keywords: ['assistant', 'help', 'agent', 'spawn'],
         action: async () => {
           onClose()
           try {
@@ -135,6 +110,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         label: 'Spawn Agent',
         category: 'action',
         hint: 'Open spawn modal',
+        keywords: ['agent', 'spawn', 'adhoc'],
         action: () => {
           setView('agents')
           onClose()
@@ -151,7 +127,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         id: 'panel-split-right',
         label: 'Split Right',
         category: 'panel',
-        hint: '\u2318\\',
+        hint: '⌘\\',
+        keywords: ['split', 'horizontal', 'panel'],
         action: () => {
           const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
           if (focusedPanelId) splitPanel(focusedPanelId, 'horizontal', 'agents')
@@ -162,6 +139,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         id: 'panel-split-below',
         label: 'Split Below',
         category: 'panel',
+        keywords: ['split', 'vertical', 'panel'],
         action: () => {
           const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
           if (focusedPanelId) splitPanel(focusedPanelId, 'vertical', 'agents')
@@ -172,7 +150,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         id: 'panel-close',
         label: 'Close Panel',
         category: 'panel',
-        hint: '\u2318W',
+        hint: '⌘W',
+        keywords: ['close', 'panel', 'tab'],
         action: () => {
           const { focusedPanelId, root, closeTab } = usePanelLayoutStore.getState()
           if (focusedPanelId) {
@@ -186,6 +165,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         id: 'panel-reset',
         label: 'Reset Layout',
         category: 'panel',
+        keywords: ['reset', 'layout', 'default'],
         action: () => {
           usePanelLayoutStore.getState().resetLayout()
           onClose()
@@ -193,31 +173,78 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       }
     ]
 
-    const agentItems: Command[] = recentAgents.map((agent) => {
-      return {
-        id: `agent-${agent.id}`,
-        label: `${agent.repo || agent.task.slice(0, 30)}`,
-        category: 'session',
-        hint: `${agent.model} ${timeAgo(agent.startedAt)}`,
-        action: () => {
-          setView('agents')
-          selectAgent(agent.id)
-          onClose()
-        }
-      }
-    })
+    const coreCommands = [...nav, ...actions, ...panelCommands]
+    registerCommands(coreCommands)
 
-    return [...nav, ...actions, ...panelCommands, ...agentItems]
-  }, [setView, onClose, selectAgent, recentAgents])
+    return () => {
+      unregisterCommands(coreCommands.map((c) => c.id))
+    }
+    // Commands capture setView/onClose from closure - only register once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Fetch recent agents when palette opens
+  useEffect(() => {
+    if (!open) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQuery('')
+
+    setSelectedIndex(0)
+    requestAnimationFrame(() => inputRef.current?.focus())
+
+    const agents = useAgentHistoryStore.getState().agents
+    setRecentAgents(agents.slice(0, 5))
+
+    // Also try a fresh fetch
+    useAgentHistoryStore
+      .getState()
+      .fetchAgents()
+      .then(() => {
+        setRecentAgents(useAgentHistoryStore.getState().agents.slice(0, 5))
+      })
+      .catch(() => {
+        // ignore — we already have cached agents
+      })
+  }, [open])
+
+  // Combine registered commands with dynamic session commands
+  const commands = useMemo<Command[]>(() => {
+    const agentItems: Command[] = recentAgents.map((agent) => ({
+      id: `agent-${agent.id}`,
+      label: `${agent.repo || agent.task.slice(0, 30)}`,
+      category: 'session' as CommandCategory,
+      hint: `${agent.model} ${timeAgo(agent.startedAt)}`,
+      keywords: ['agent', 'session', 'recent'],
+      action: () => {
+        setView('agents')
+        selectAgent(agent.id)
+        onClose()
+      }
+    }))
+
+    return [...registeredCommands, ...agentItems]
+    // recentAgents changes frequently, registeredCommands is stable
+    // setView/selectAgent/onClose captured from closure
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registeredCommands, recentAgents])
 
   const filtered = useMemo(() => {
-    if (!query) return commands
-    return commands.filter((cmd) => fuzzyMatch(query, cmd.label))
-  }, [commands, query])
+    if (!query.trim()) return commands
+    return fuzzySearch(query, commands)
+  }, [commands, query, fuzzySearch])
 
   // Group filtered items by category for rendering
   const groups = useMemo(() => {
-    const order: CommandCategory[] = ['navigation', 'action', 'panel', 'session']
+    const order: CommandCategory[] = [
+      'navigation',
+      'task',
+      'review',
+      'filter',
+      'settings',
+      'action',
+      'panel',
+      'session'
+    ]
     return order
       .map((cat) => ({
         category: cat,
@@ -241,10 +268,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   }, [groups])
 
   const runSelected = useCallback(() => {
-    if (flatItems[selectedIndex]) {
-      flatItems[selectedIndex].action()
+    const cmd = flatItems[selectedIndex]
+    if (cmd) {
+      trackCommandUsage(cmd.id)
+      cmd.action()
     }
-  }, [flatItems, selectedIndex])
+  }, [flatItems, selectedIndex, trackCommandUsage])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -318,7 +347,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
                         className={`command-palette__item ${idx === selectedIndex ? 'command-palette__item--selected' : ''}`}
                         role="option"
                         aria-selected={idx === selectedIndex}
-                        onClick={() => cmd.action()}
+                        onClick={() => {
+                          trackCommandUsage(cmd.id)
+                          cmd.action()
+                        }}
                         onMouseEnter={() => setSelectedIndex(idx)}
                       >
                         <span className="command-palette__label">{cmd.label}</span>

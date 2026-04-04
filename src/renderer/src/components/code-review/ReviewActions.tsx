@@ -241,6 +241,70 @@ export function ReviewActions(): React.JSX.Element {
     }
   }
 
+||||||| cca9d91a
+
+||||||| 6807c806
+  const handleShipIt = async (): Promise<void> => {
+    const ok = await confirm({
+      title: 'Ship It',
+      message: `Merge "${task.title.slice(0, 50)}" into main using ${mergeStrategy}, push to origin, and mark done?\n\nThis will merge + push in one step.`,
+      confirmLabel: 'Ship It',
+      variant: 'default'
+    })
+    if (!ok) return
+    setActionInFlight('shipIt')
+    try {
+      const result = await window.api.review.shipIt({
+        taskId: task.id,
+        strategy: mergeStrategy
+      })
+      if (result.success) {
+        toast.success(
+          result.pushed ? 'Merged & pushed!' : 'Merged locally (push failed — push manually)'
+        )
+        selectTask(null)
+        loadData()
+      } else {
+        toast.error(`Ship It failed: ${result.error || 'unknown error'}`)
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Ship It failed')
+    } finally {
+      setActionInFlight(null)
+    }
+  }
+
+||||||| 6807c806
+  const handleShipIt = async (): Promise<void> => {
+    const ok = await confirm({
+      title: 'Ship It',
+      message: `Merge "${task.title.slice(0, 50)}" into main using ${mergeStrategy}, push to origin, and mark done?\n\nThis will merge + push in one step.`,
+      confirmLabel: 'Ship It',
+      variant: 'default'
+    })
+    if (!ok) return
+    setActionInFlight('shipIt')
+    try {
+      const result = await window.api.review.shipIt({
+        taskId: task.id,
+        strategy: mergeStrategy
+      })
+      if (result.success) {
+        toast.success(
+          result.pushed ? 'Merged & pushed!' : 'Merged locally (push failed — push manually)'
+        )
+        selectTask(null)
+        loadData()
+      } else {
+        toast.error(`Ship It failed: ${result.error || 'unknown error'}`)
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Ship It failed')
+    } finally {
+      setActionInFlight(null)
+    }
+  }
+
   const handleCreatePr = async (): Promise<void> => {
     const ok = await confirm({
       title: 'Create Pull Request',
