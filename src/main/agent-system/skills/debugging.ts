@@ -21,12 +21,9 @@ SELECT id, title, status, notes FROM sprint_tasks WHERE status IN ('error', 'fai
 \`\`\`
 
 ## Reset Errored Tasks
-Must clear BOTH status AND claimed_by:
-\`\`\`bash
-curl -X PATCH "http://localhost:18790/queue/tasks/<id>/status" \\
-  -H "Authorization: Bearer $BDE_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{"status": "queued", "claimed_by": null, "notes": null, "started_at": null, "completed_at": null, "fast_fail_count": 0}'
+Must clear BOTH status AND claimed_by via SQLite:
+\`\`\`sql
+UPDATE sprint_tasks SET status='queued', claimed_by=NULL, notes=NULL, started_at=NULL, completed_at=NULL, fast_fail_count=0 WHERE id='...';
 \`\`\`
 
 ## Clean Stale Worktrees & Branches
@@ -41,5 +38,5 @@ git branch | grep agent/ | xargs git branch -D
 - **Watchdog timeout (1hr)**: Increase max_runtime_ms or reduce task scope
 - **Worktree conflicts**: Run prune + delete stale branches first
 `,
-  capabilities: ['file-read-logs', 'sqlite-query', 'git-worktree', 'queue-api-call']
+  capabilities: ['file-read-logs', 'sqlite-query', 'git-worktree']
 }

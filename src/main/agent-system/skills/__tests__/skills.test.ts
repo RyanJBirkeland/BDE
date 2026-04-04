@@ -43,7 +43,6 @@ describe('Skills System', () => {
 
     it('task orchestration should have capabilities', () => {
       expect(taskOrchestrationSkill.capabilities).toContain('ipc-sprint-create')
-      expect(taskOrchestrationSkill.capabilities).toContain('queue-api-call')
     })
 
     it('code patterns should have capability', () => {
@@ -60,7 +59,6 @@ describe('Skills System', () => {
       expect(debuggingSkill.capabilities).toContain('file-read-logs')
       expect(debuggingSkill.capabilities).toContain('sqlite-query')
       expect(debuggingSkill.capabilities).toContain('git-worktree')
-      expect(debuggingSkill.capabilities).toContain('queue-api-call')
     })
 
     it('all skills should have required fields', () => {
