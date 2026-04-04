@@ -22,7 +22,7 @@ describe('buildAgentPrompt', () => {
         expect(prompt).toContain('## Who You Are')
         expect(prompt).toContain('## Hard Rules')
         expect(prompt).toContain('NEVER push to, checkout, or merge into `main`')
-        expect(prompt).toContain('Run `npm install` if node_modules/ is missing')
+        expect(prompt).toContain('npm install')
         expect(prompt).toContain('## MANDATORY Pre-Commit Verification')
         expect(prompt).toContain('`npm run typecheck`')
         expect(prompt).toContain('`npm test`')
@@ -365,6 +365,67 @@ describe('buildAgentPrompt', () => {
         previousNotes: 'some failure'
       })
       expect(prompt).not.toContain('## Retry Context')
+    })
+  })
+
+  describe('time limit injection', () => {
+    it('includes time limit when maxRuntimeMs provided', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something', maxRuntimeMs: 3_600_000 })
+      expect(prompt).toContain('## Time Management')
+      expect(prompt).toContain('60 minutes')
+    })
+
+    it('does not include time limit when maxRuntimeMs is undefined', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).not.toContain('## Time Management')
+    })
+
+    it('does not include time limit for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant', maxRuntimeMs: 3_600_000 })
+      expect(prompt).not.toContain('## Time Management')
+    })
+  })
+
+  describe('idle timeout warning', () => {
+    it('includes idle warning for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('15 minutes')
+      expect(prompt).toContain('TERMINATED')
+    })
+
+    it('does not include idle warning for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant' })
+      expect(prompt).not.toContain('Idle Timeout')
+    })
+  })
+
+  describe('definition of done', () => {
+    it('includes definition of done for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('## Definition of Done')
+      expect(prompt).toContain('npm run typecheck')
+      expect(prompt).toContain('npm test')
+      expect(prompt).toContain('npm run lint')
+    })
+
+    it('does not include definition of done for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant' })
+      expect(prompt).not.toContain('## Definition of Done')
+    })
+  })
+
+  describe('npm install preamble', () => {
+    it('tells agent npm install is mandatory first action', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('FIRST action')
+      expect(prompt).toContain('npm install')
+    })
+  })
+
+  describe('scope enforcement', () => {
+    it('includes scope boundaries for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('Only modify files directly required')
     })
   })
 

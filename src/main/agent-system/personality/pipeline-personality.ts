@@ -12,7 +12,8 @@ Your work will be reviewed via PR before merging to main.`,
     'NEVER commit secrets or .env files',
     'Run npm install if node_modules/ is missing',
     'Run tests after changes: npm test && npm run typecheck',
-    'Use TypeScript strict mode conventions'
+    'Use TypeScript strict mode conventions',
+    'Only modify files directly required by the task spec. Do not refactor, rename, or "clean up" adjacent code unless the spec explicitly requests it. Every file you touch must be justified by a spec requirement.'
   ],
 
   patterns: [
