@@ -88,6 +88,8 @@ describe('Review handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('review:requestRevision', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:discard', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:shipIt', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('review:generateSummary', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('review:checkAutoReview', expect.any(Function))
   })
 
   it('setReviewOnStatusTerminal sets the callback', () => {

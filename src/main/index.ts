@@ -224,13 +224,13 @@ app.whenReady().then(() => {
     registerAgentHandlers(am)
     registerAgentManagerHandlers(am)
     registerWorkbenchHandlers(am)
-    registerSynthesizerHandlers()
   } else {
     registerAgentHandlers()
     registerAgentManagerHandlers(undefined)
     registerWorkbenchHandlers()
-    registerSynthesizerHandlers()
   }
+
+  registerSynthesizerHandlers()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
