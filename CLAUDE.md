@@ -229,6 +229,8 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **Tear-off `persistable` flag**: `panelLayout.ts` has `persistable: boolean` — tear-off windows set it to `false` on mount to prevent their store mutations from overwriting the main window's saved layout in `panel.layout` setting.
 - **Tearoff `window.api` guards**: All `window.api.tearoff.*` calls in `TearoffShell.tsx` MUST use optional chaining (`window.api?.tearoff?.method()`). The preload script can fail to load in tearoff windows, making `window.api` undefined. Missing guards crash the component and render a blank white screen.
 - **Hardcoded `#fff` in agents CSS**: `agents-neon.css` has hardcoded `#fff` in `.agent-pill__name`, `.command-bar__input`, and `.command-autocomplete__item--active`. These are invisible in light/warm themes — replace with `var(--neon-text)` when fixing light mode styling.
+- **macOS traffic light clearance**: Do NOT use `padding-left` on `.unified-header` for traffic lights — it misaligns tabs with the content area. Traffic lights are handled by `padding-top: 28px` on `.app-shell` with a `::before` pseudo-element (draggable, gradient background, `z-index: 11`). The header itself has no traffic-light padding.
+- **Header/sidebar border alignment**: The header's left zone (`.unified-header__traffic-lights`) must be exactly 52px wide to match `.neon-sidebar` width, so the vertical border visually aligns. If you change sidebar width, update the header left zone to match.
 - **Shared view resolver**: `src/renderer/src/lib/view-resolver.tsx` has lazy view imports and `resolveView()`. Both `PanelLeaf.tsx` and `TearoffShell.tsx` import from here — don't duplicate lazy imports.
 
 ## Packaging
