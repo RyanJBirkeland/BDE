@@ -2,7 +2,7 @@
  * SprintPipeline — Three-zone neon pipeline layout:
  * Left: PipelineBacklog | Center: Pipeline stages | Right: TaskDetailDrawer (conditional)
  */
-import { useEffect, useCallback, useMemo } from 'react'
+import { useEffect, useCallback, useMemo, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, LayoutGroup } from 'framer-motion'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
@@ -93,6 +93,9 @@ export function SprintPipeline(): React.JSX.Element {
   // SP-7: Extract health check results for HealthCheckDrawer
   useHealthCheckPolling()
   const { visibleStuckTasks, dismissTask } = useVisibleStuckTasks()
+
+  // --- Focus management ---
+  const triggerRef = useRef<HTMLElement | null>(null)
 
   // --- Local UI state ---
 
@@ -251,6 +254,7 @@ export function SprintPipeline(): React.JSX.Element {
   // --- Callbacks ---
   const handleTaskClick = useCallback(
     (id: string) => {
+      triggerRef.current = document.activeElement as HTMLElement
       setSelectedTaskId(id)
     },
     [setSelectedTaskId]
@@ -271,6 +275,10 @@ export function SprintPipeline(): React.JSX.Element {
   const handleCloseDrawer = useCallback(() => {
     setDrawerOpen(false)
     setSelectedTaskId(null)
+    requestAnimationFrame(() => {
+      triggerRef.current?.focus()
+      triggerRef.current = null
+    })
   }, [setDrawerOpen, setSelectedTaskId])
 
   const handleDeleteTask = useCallback(

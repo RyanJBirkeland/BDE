@@ -582,6 +582,32 @@ describe('TaskDetailDrawer - loading states', () => {
   })
 })
 
+describe('TaskDetailDrawer - focus management', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-01T12:00:00Z'))
+    useSprintTasks.setState({ tasks: [] })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('focuses the title heading when mounted', () => {
+    const task: SprintTask = { ...baseTask, status: 'active' }
+    render(<TaskDetailDrawer {...makeProps({ task })} />)
+    const heading = screen.getByRole('heading', { name: task.title })
+    expect(heading).toHaveFocus()
+  })
+
+  it('title heading has tabIndex -1 for programmatic focus', () => {
+    const task: SprintTask = { ...baseTask, status: 'active' }
+    render(<TaskDetailDrawer {...makeProps({ task })} />)
+    const heading = screen.getByRole('heading', { name: task.title })
+    expect(heading).toHaveAttribute('tabindex', '-1')
+  })
+})
+
 describe('TaskDetailDrawer - Review Changes button', () => {
   beforeEach(() => {
     vi.useFakeTimers()

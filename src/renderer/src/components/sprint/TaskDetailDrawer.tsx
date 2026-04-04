@@ -55,6 +55,11 @@ export function TaskDetailDrawer({
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_DRAWER_WIDTH)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    titleRef.current?.focus()
+  }, [task.id])
 
   useEffect(() => {
     if (task.status !== 'active' || !task.started_at) return
@@ -151,7 +156,7 @@ export function TaskDetailDrawer({
       />
       {/* Header */}
       <div className="task-drawer__head">
-        <h2 className="task-drawer__title">{task.title}</h2>
+        <h2 className="task-drawer__title" ref={titleRef} tabIndex={-1}>{task.title}</h2>
         <div className="task-drawer__status">
           <span
             className="task-drawer__status-dot"
