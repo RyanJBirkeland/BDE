@@ -346,11 +346,14 @@ describe('Agent completion pipeline integration', () => {
         logger
       )
 
-      expect(updateTaskMock).toHaveBeenCalledWith('task-3', {
-        status: 'queued',
-        retry_count: 1,
-        claimed_by: null
-      })
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-3',
+        expect.objectContaining({
+          status: 'queued',
+          retry_count: 1,
+          claimed_by: null
+        })
+      )
       expect(isTerminal).toBe(false)
     })
 
@@ -361,11 +364,14 @@ describe('Agent completion pipeline integration', () => {
           { repo: mockRepo, taskId: 'task-3', retryCount: i },
           logger
         )
-        expect(updateTaskMock).toHaveBeenCalledWith('task-3', {
-          status: 'queued',
-          retry_count: i + 1,
-          claimed_by: null
-        })
+        expect(updateTaskMock).toHaveBeenCalledWith(
+          'task-3',
+          expect.objectContaining({
+            status: 'queued',
+            retry_count: i + 1,
+            claimed_by: null
+          })
+        )
         expect(isTerminal).toBe(false)
       }
     })

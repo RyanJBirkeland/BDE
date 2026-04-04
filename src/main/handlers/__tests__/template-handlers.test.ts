@@ -61,12 +61,12 @@ describe('Template handlers', () => {
 
     it('applies overrides to built-in templates', () => {
       vi.mocked(getSettingJson).mockImplementation((key: string) => {
-        if (key === 'templates.overrides') return { bugfix: 'Custom bugfix prefix' }
+        if (key === 'templates.overrides') return { 'Bug Fix': 'Custom bugfix prefix' }
         return null
       })
       const handler = captureHandler('templates:list')
       const result = handler(mockEvent)
-      const bugfix = result.find((t: any) => t.name === 'bugfix')
+      const bugfix = result.find((t: any) => t.name === 'Bug Fix')
       expect(bugfix).toBeDefined()
       expect(bugfix.promptPrefix).toBe('Custom bugfix prefix')
       expect(bugfix.isBuiltIn).toBe(true)

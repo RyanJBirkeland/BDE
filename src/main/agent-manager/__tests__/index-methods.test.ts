@@ -378,7 +378,8 @@ describe('AgentManagerImpl — class internals', () => {
         fast_fail_count: 1,
         notes: null,
         playground_enabled: true,
-        max_runtime_ms: 30000
+        max_runtime_ms: 30000,
+        model: null
       })
     })
 

@@ -76,10 +76,10 @@ describe('Review handlers', () => {
     gitCommandCalls.length = 0 // Clear command tracking
   })
 
-  it('registers all 9 review channels', () => {
+  it('registers all 10 review channels', () => {
     registerReviewHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(9)
+    expect(safeHandle).toHaveBeenCalledTimes(10)
     expect(safeHandle).toHaveBeenCalledWith('review:getDiff', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getCommits', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getFileDiff', expect.any(Function))
@@ -89,6 +89,7 @@ describe('Review handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('review:discard', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:shipIt', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:generateSummary', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('review:checkAutoReview', expect.any(Function))
   })
 
   it('setReviewOnStatusTerminal sets the callback', () => {

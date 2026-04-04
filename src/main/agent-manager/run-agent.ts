@@ -33,7 +33,6 @@ export interface RunAgentTask {
   playground_enabled?: boolean
   max_runtime_ms?: number | null
   model?: string | null
-||||||| 6807c806
   depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
 }
 

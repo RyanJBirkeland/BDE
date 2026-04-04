@@ -396,7 +396,9 @@ const api = {
     shipIt: (payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }) =>
       typedInvoke('review:shipIt', payload),
     generateSummary: (payload: { taskId: string }) =>
-      typedInvoke('review:generateSummary', payload)
+      typedInvoke('review:generateSummary', payload),
+    checkAutoReview: (payload: { taskId: string }) =>
+      typedInvoke('review:checkAutoReview', payload)
   },
 
   // Spec Synthesizer
