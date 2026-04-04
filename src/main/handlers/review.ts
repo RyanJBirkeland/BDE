@@ -554,8 +554,6 @@ export function registerReviewHandlers(): void {
 
     return { success: true, pushed }
   })
-||||||| 6323f85f
-
 
   // review:generateSummary — AI-generated review summary (stub, not implemented)
   safeHandle('review:generateSummary', async (_e, _payload) => {
