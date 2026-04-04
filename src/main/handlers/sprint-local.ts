@@ -10,7 +10,6 @@ import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import { validateStructural } from '../../shared/spec-validation'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
-import { notifySprintMutation } from './sprint-listeners'
 import { buildBlockedNotes, checkTaskDependencies } from '../agent-manager/dependency-helpers'
 import { detectCycle } from '../agent-manager/dependency-index'
 import {
@@ -21,16 +20,11 @@ import {
 } from './sprint-spec'
 import { validateTaskCreation } from '../services/task-validation'
 import {
-  getTask as _getTask,
-  listTasks as _listTasks,
-  createTask as _createTask,
-  updateTask as _updateTask,
-  deleteTask as _deleteTask,
-  getHealthCheckTasks as _getHealthCheckTasks
-} from '../data/sprint-queries'
-import {
   getTask,
   updateTask,
+  createTask,
+  deleteTask,
+  getHealthCheckTasks,
   listTasks,
   claimTask,
   releaseTask,
@@ -82,20 +76,20 @@ export function setOnStatusTerminal(fn: (taskId: string, status: string) => void
 
 export function registerSprintLocalHandlers(): void {
   safeHandle('sprint:list', () => {
-    return _listTasks()
+    return listTasks()
   })
 
   safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
     const validation = validateTaskCreation(task, {
       logger: { warn: (...args: unknown[]) => logger.warn(String(args[0])) },
-      listTasks: _listTasks
+      listTasks
     })
     if (!validation.valid) {
       throw new Error(`Spec quality checks failed: ${validation.errors.join('; ')}`)
     }
-    const row = _createTask(validation.task)
+    // createTask (service) handles notifySprintMutation internally
+    const row = createTask(validation.task)
     if (!row) throw new Error('Failed to create task')
-    notifySprintMutation('created', row)
     return row
   })
 
@@ -115,7 +109,7 @@ export function registerSprintLocalHandlers(): void {
     // SP-1: Read task inside validation block to reduce TOCTOU window
     // If transitioning to queued, run quality checks
     if (patch.status === 'queued') {
-      const task = _getTask(id)
+      const task = getTask(id)
       if (!task) {
         throw new Error(`Task ${id} not found`)
       }
@@ -151,7 +145,7 @@ export function registerSprintLocalHandlers(): void {
       // Dependency check (existing logic)
       const taskDeps = task.depends_on
       if (taskDeps && taskDeps.length > 0) {
-        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, logger, _listTasks)
+        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, logger, listTasks)
         if (shouldBlock) {
           // Auto-block and record which dependencies are blocking, preserving user notes
           patch = {
@@ -166,6 +160,7 @@ export function registerSprintLocalHandlers(): void {
       patch.needs_review = false
     }
 
+    // updateTask (service) handles notifySprintMutation internally
     const result = updateTask(id, patch)
     // SP-2: Throw error if _onStatusTerminal is not set when reaching terminal status
     if (result && patch.status && TERMINAL_STATUSES.has(patch.status as string)) {
@@ -189,8 +184,8 @@ export function registerSprintLocalHandlers(): void {
     if (task.status === 'active') {
       throw new Error(`Cannot delete active task ${id} — stop the agent first`)
     }
-    _deleteTask(id)
-    notifySprintMutation('deleted', task)
+    // deleteTask (service) handles notifySprintMutation internally
+    deleteTask(id)
     return { ok: true }
   })
 
@@ -205,7 +200,7 @@ export function registerSprintLocalHandlers(): void {
   )
 
   safeHandle('sprint:claimTask', async (_e, taskId: string): Promise<ClaimedTask | null> => {
-    const task = _getTask(taskId)
+    const task = getTask(taskId)
     if (!task) return null
 
     let templatePromptPrefix: string | null = null
@@ -223,7 +218,7 @@ export function registerSprintLocalHandlers(): void {
   safeHandle('sprint:healthCheck', async () => {
     try {
       const db = getDb()
-      const allTasks = _listTasks()
+      const allTasks = listTasks()
       const oneHourAgo = Date.now() - 3600000
       const tasksToUpdate = allTasks.filter(
         (task) =>
@@ -243,7 +238,7 @@ export function registerSprintLocalHandlers(): void {
     } catch (err) {
       logger.warn(`[sprint:healthCheck] Failed to flag stuck tasks: ${err}`)
     }
-    return _getHealthCheckTasks()
+    return getHealthCheckTasks()
   })
 
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
@@ -265,12 +260,12 @@ export function registerSprintLocalHandlers(): void {
     async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
       // Validate all dep targets exist
       for (const dep of proposedDeps) {
-        const target = _getTask(dep.id)
+        const target = getTask(dep.id)
         if (!target) return { valid: false, error: `Task ${dep.id} not found` }
       }
 
       // Check for cycles
-      const allTasks = _listTasks()
+      const allTasks = listTasks()
       const depsMap = new Map(allTasks.map((t) => [t.id, t.depends_on]))
       const cycle = detectCycle(taskId, proposedDeps, (id) => depsMap.get(id) ?? null)
       if (cycle) return { valid: false, cycle }
@@ -280,7 +275,7 @@ export function registerSprintLocalHandlers(): void {
   )
 
   safeHandle('sprint:unblockTask', async (_e, taskId: string) => {
-    const task = _getTask(taskId)
+    const task = getTask(taskId)
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (task.status !== 'blocked')
       throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
@@ -312,8 +307,8 @@ export function registerSprintLocalHandlers(): void {
       }
     }
 
-    const updated = _updateTask(taskId, { status: 'queued' })
-    if (updated) notifySprintMutation('updated', updated)
+    // updateTask (service) handles notifySprintMutation internally
+    const updated = updateTask(taskId, { status: 'queued' })
     return updated
   })
 
@@ -323,7 +318,7 @@ export function registerSprintLocalHandlers(): void {
   })
 
   safeHandle('sprint:retry', async (_e, taskId: string) => {
-    const task = _getTask(taskId)
+    const task = getTask(taskId)
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (task.status !== 'failed' && task.status !== 'error') {
       throw new Error(`Cannot retry task with status ${task.status}`)
@@ -358,7 +353,7 @@ export function registerSprintLocalHandlers(): void {
       }
     }
 
-    // Reset task fields
+    // Reset task fields — updateTask (service) handles notifySprintMutation internally
     const updated = updateTask(taskId, {
       status: 'queued',
       claimed_by: null,
@@ -369,7 +364,6 @@ export function registerSprintLocalHandlers(): void {
       agent_run_id: null
     })
     if (!updated) throw new Error(`Failed to update task ${taskId}`)
-    notifySprintMutation('updated', updated)
     return updated
   })
 
@@ -416,7 +410,7 @@ export function registerSprintLocalHandlers(): void {
 
             // If transitioning to queued, validate spec quality
             if (filtered.status === 'queued') {
-              const task = _getTask(id)
+              const task = getTask(id)
               if (task) {
                 const structural = validateStructural({
                   title: task.title,
@@ -454,8 +448,8 @@ export function registerSprintLocalHandlers(): void {
               }
             }
 
+            // updateTask (service) handles notifySprintMutation internally
             const updated = updateTask(id, filtered)
-            if (updated) notifySprintMutation('updated', updated)
             // SP-4: Call onStatusTerminal for terminal status changes in batch updates
             if (
               updated &&
@@ -478,9 +472,8 @@ export function registerSprintLocalHandlers(): void {
               error: updated ? undefined : 'Task not found'
             })
           } else if (op === 'delete') {
-            const task = getTask(id)
-            _deleteTask(id)
-            if (task) notifySprintMutation('deleted', task)
+            // deleteTask (service) handles notifySprintMutation internally
+            deleteTask(id)
             results.push({ id, op: 'delete', ok: true })
           } else {
             results.push({ id, op, ok: false, error: `Unknown operation: ${op}` })

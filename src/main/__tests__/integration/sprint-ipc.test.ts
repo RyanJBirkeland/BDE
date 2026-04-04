@@ -41,6 +41,11 @@ vi.mock('../../data/sprint-queries', () => ({
   listTasksWithOpenPrs: (...args: unknown[]) => mockListTasksWithOpenPrs(...args),
   updateTaskMergeableState: (...args: unknown[]) => mockUpdateTaskMergeableState(...args),
   getHealthCheckTasks: (...args: unknown[]) => mockGetHealthCheckTasks(...args),
+  // Additional methods needed by ISprintTaskRepository
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn(),
+  getOrphanedTasks: vi.fn(),
+  getActiveTaskCount: vi.fn(),
   UPDATE_ALLOWLIST: new Set([
     'title',
     'prompt',

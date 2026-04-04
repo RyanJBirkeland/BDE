@@ -62,7 +62,24 @@ vi.mock('../data/sprint-queries', () => ({
     'template_name',
     'claimed_by',
     'depends_on'
-  ])
+  ]),
+  // Additional methods needed by ISprintTaskRepository
+  updateTask: vi.fn(),
+  createTask: vi.fn(),
+  deleteTask: vi.fn(),
+  claimTask: vi.fn(),
+  releaseTask: vi.fn(),
+  getQueueStats: vi.fn(),
+  getDoneTodayCount: vi.fn(),
+  markTaskDoneByPrNumber: vi.fn(),
+  markTaskCancelledByPrNumber: vi.fn(),
+  listTasksWithOpenPrs: vi.fn(),
+  updateTaskMergeableState: vi.fn(),
+  getHealthCheckTasks: vi.fn(),
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn(),
+  getOrphanedTasks: vi.fn(),
+  getActiveTaskCount: vi.fn()
 }))
 
 import { getSettingJson } from '../settings'

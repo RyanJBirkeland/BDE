@@ -21,7 +21,12 @@ vi.mock('../../data/sprint-queries', () => ({
   markTaskCancelledByPrNumber: vi.fn(),
   listTasksWithOpenPrs: vi.fn(),
   updateTaskMergeableState: vi.fn(),
-  getHealthCheckTasks: vi.fn()
+  getHealthCheckTasks: vi.fn(),
+  // Additional methods needed by ISprintTaskRepository
+  getQueuedTasks: vi.fn(),
+  getTasksWithDependencies: vi.fn(),
+  getOrphanedTasks: vi.fn(),
+  getActiveTaskCount: vi.fn()
 }))
 
 // Mock sprint-listeners (SSE broadcaster)
