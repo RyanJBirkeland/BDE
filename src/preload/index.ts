@@ -139,7 +139,23 @@ const api = {
     validateDependencies: (taskId: string, deps: Array<{ id: string; type: 'hard' | 'soft' }>) =>
       typedInvoke('sprint:validateDependencies', taskId, deps),
     unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId),
-    retry: (taskId: string) => typedInvoke('sprint:retry', taskId)
+    retry: (taskId: string) => typedInvoke('sprint:retry', taskId),
+    batchImport: (
+      tasks: Array<{
+        title: string
+        repo: string
+        prompt?: string
+        spec?: string
+        status?: string
+        dependsOnIndices?: number[]
+        depType?: 'hard' | 'soft'
+        playgroundEnabled?: boolean
+        model?: string
+        tags?: string[]
+        priority?: number
+        templateName?: string
+      }>
+    ) => typedInvoke('sprint:batchImport', tasks)
   },
 
   // File attachments

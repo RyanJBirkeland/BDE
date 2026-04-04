@@ -506,4 +506,30 @@ export function registerSprintLocalHandlers(): void {
       return { results }
     }
   )
+
+  safeHandle(
+    'sprint:batchImport',
+    async (
+      _e,
+      tasks: Array<{
+        title: string
+        repo: string
+        prompt?: string
+        spec?: string
+        status?: string
+        dependsOnIndices?: number[]
+        depType?: 'hard' | 'soft'
+        playgroundEnabled?: boolean
+        model?: string
+        tags?: string[]
+        priority?: number
+        templateName?: string
+      }>
+    ) => {
+      const { batchImportTasks } = await import('../services/batch-import')
+      const { createSprintTaskRepository } = await import('../data/sprint-task-repository')
+      const repo = createSprintTaskRepository()
+      return batchImportTasks(tasks, repo)
+    }
+  )
 }

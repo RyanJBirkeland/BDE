@@ -289,6 +289,28 @@ export interface SprintChannels {
     args: [operations: BatchOperation[]]
     result: { results: BatchResult[] }
   }
+  'sprint:batchImport': {
+    args: [
+      tasks: Array<{
+        title: string
+        repo: string
+        prompt?: string
+        spec?: string
+        status?: string
+        dependsOnIndices?: number[]
+        depType?: 'hard' | 'soft'
+        playgroundEnabled?: boolean
+        model?: string
+        tags?: string[]
+        priority?: number
+        templateName?: string
+      }>
+    ]
+    result: {
+      created: SprintTask[]
+      errors: string[]
+    }
+  }
   'sprint:retry': {
     args: [taskId: string]
     result: SprintTask

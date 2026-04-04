@@ -167,6 +167,9 @@ declare global {
           ...args: IpcArgs<'sprint:unblockTask'>
         ) => Promise<IpcResult<'sprint:unblockTask'>>
         retry: (taskId: string) => Promise<IpcResult<'sprint:retry'>>
+        batchImport: (
+          ...args: IpcArgs<'sprint:batchImport'>
+        ) => Promise<IpcResult<'sprint:batchImport'>>
       }
 
       // File attachments
