@@ -7,6 +7,7 @@ import { SPRINGS } from '../../lib/motion'
 import { formatElapsed, getDotColor } from '../../lib/task-format'
 import { useSprintUI } from '../../stores/sprintUI'
 import { formatDuration } from '../../lib/format'
+import { useTaskCost } from '../../hooks/useTaskCost'
 
 interface TaskPillProps {
   task: SprintTask
@@ -47,6 +48,7 @@ export function TaskPill({
   const [elapsed, setElapsed] = useState('')
   const [arriving, setArriving] = useState(false)
   const prevStatusRef = useRef(task.status)
+  const { costUsd } = useTaskCost(task.agent_run_id)
 
   useEffect(() => {
     if (task.status !== prevStatusRef.current) {
@@ -145,6 +147,13 @@ export function TaskPill({
           {formatDuration(task.started_at, task.completed_at)}
         </span>
       )}
+      {(task.status === 'done' || task.status === 'review') &&
+        task.agent_run_id &&
+        costUsd !== null && (
+          <span className="task-pill__cost" title={`Agent execution cost: $${costUsd.toFixed(2)}`}>
+            ${costUsd.toFixed(2)}
+          </span>
+        )}
       {task.status === 'active' && !isZombie && <span className="task-pill__activity" />}
     </motion.div>
   )

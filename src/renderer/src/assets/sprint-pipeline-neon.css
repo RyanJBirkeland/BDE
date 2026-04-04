@@ -1307,6 +1307,13 @@
   font-family: var(--bde-font-code);
 }
 
+/* ── Task Pill: Cost Badge (done/review tasks) ── */
+.task-pill__cost {
+  font-size: var(--font-2xs, 10px);
+  color: var(--neon-text-dim);
+  font-family: var(--bde-font-code);
+}
+
 /* ── Task Pill: Activity Dot (active tasks) ── */
 .task-pill__activity {
   width: 6px;
