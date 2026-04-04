@@ -455,6 +455,129 @@ describe('buildAgentPrompt', () => {
     })
   })
 
+  describe('upstream context injection', () => {
+    it('includes upstream context when provided', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Build feature B that uses feature A',
+        upstreamContext: [
+          {
+            title: 'Feature A Implementation',
+            spec: 'This task implemented the base authentication system with JWT tokens.'
+          }
+        ]
+      })
+
+      expect(prompt).toContain('## Upstream Task Context')
+      expect(prompt).toContain('This task depends on the following completed tasks')
+      expect(prompt).toContain('### Feature A Implementation')
+      expect(prompt).toContain('base authentication system with JWT tokens')
+    })
+
+    it('does not include upstream context when array is empty', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Build standalone feature',
+        upstreamContext: []
+      })
+
+      expect(prompt).not.toContain('## Upstream Task Context')
+    })
+
+    it('does not include upstream context when undefined', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Build standalone feature'
+      })
+
+      expect(prompt).not.toContain('## Upstream Task Context')
+    })
+
+    it('caps upstream specs at 500 characters', () => {
+      const longSpec = 'A'.repeat(600)
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Build next feature',
+        upstreamContext: [
+          {
+            title: 'Long Spec Task',
+            spec: longSpec
+          }
+        ]
+      })
+
+      expect(prompt).toContain('## Upstream Task Context')
+      expect(prompt).toContain('### Long Spec Task')
+      // Should be capped at 500 chars + '...'
+      expect(prompt).toContain('A'.repeat(500) + '...')
+      // Should not contain the full 600 chars
+      expect(prompt).not.toContain('A'.repeat(600))
+    })
+
+    it('does not cap specs under 500 characters', () => {
+      const shortSpec = 'This is a short spec about authentication'
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Build next feature',
+        upstreamContext: [
+          {
+            title: 'Short Spec Task',
+            spec: shortSpec
+          }
+        ]
+      })
+
+      expect(prompt).toContain('## Upstream Task Context')
+      expect(prompt).toContain('### Short Spec Task')
+      expect(prompt).toContain(shortSpec)
+      expect(prompt).not.toContain('...')
+    })
+
+    it('handles multiple upstream tasks', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Build feature C that uses A and B',
+        upstreamContext: [
+          {
+            title: 'Feature A',
+            spec: 'Implemented auth system'
+          },
+          {
+            title: 'Feature B',
+            spec: 'Implemented user profile endpoints'
+          }
+        ]
+      })
+
+      expect(prompt).toContain('## Upstream Task Context')
+      expect(prompt).toContain('### Feature A')
+      expect(prompt).toContain('Implemented auth system')
+      expect(prompt).toContain('### Feature B')
+      expect(prompt).toContain('Implemented user profile endpoints')
+    })
+
+    it('works with all agent types', () => {
+      const types: AgentType[] = ['pipeline', 'assistant', 'adhoc', 'copilot', 'synthesizer']
+
+      for (const agentType of types) {
+        const prompt = buildAgentPrompt({
+          agentType,
+          taskContent: 'Do something',
+          upstreamContext: [
+            {
+              title: 'Upstream Task',
+              spec: 'Some context'
+            }
+          ]
+        })
+
+        expect(prompt).toContain('## Upstream Task Context')
+        expect(prompt).toContain('### Upstream Task')
+        expect(prompt).toContain('Some context')
+      }
+    })
+  })
+
   describe('complete integration scenarios', () => {
     it('builds complete prompt for pipeline agent with all options', () => {
       const prompt = buildAgentPrompt({

@@ -28,6 +28,7 @@ export interface BuildPromptInput {
   retryCount?: number // 0-based retry count
   previousNotes?: string // failure notes from previous attempt
   maxRuntimeMs?: number | null // max runtime in ms
+  upstreamContext?: Array<{ title: string; spec: string }> // completed upstream task specs
 }
 
 // ---------------------------------------------------------------------------
@@ -181,7 +182,8 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     codebaseContext,
     retryCount,
     previousNotes,
-    maxRuntimeMs
+    maxRuntimeMs,
+    upstreamContext
   } = input
 
   // Start with universal preamble
@@ -256,6 +258,16 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
   } else if (taskContent) {
     // For pipeline, assistant, adhoc: append task content
     prompt += '\n\n' + taskContent
+  }
+
+  // Inject upstream task context when provided
+  if (upstreamContext && upstreamContext.length > 0) {
+    prompt += '\n\n## Upstream Task Context\n\n'
+    prompt += 'This task depends on the following completed tasks:\n\n'
+    for (const upstream of upstreamContext) {
+      const cappedSpec = upstream.spec.length > 500 ? upstream.spec.slice(0, 500) + '...' : upstream.spec
+      prompt += `### ${upstream.title}\n\n${cappedSpec}\n\n`
+    }
   }
 
   // Inject retry context for pipeline agents on retry attempts

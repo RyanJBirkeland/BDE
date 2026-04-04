@@ -33,6 +33,8 @@ export interface RunAgentTask {
   playground_enabled?: boolean
   max_runtime_ms?: number | null
   model?: string | null
+||||||| 6807c806
+  depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
 }
 
 export interface RunAgentDeps {
@@ -181,13 +183,36 @@ export async function runAgent(
     return
   }
 
+  // Fetch upstream task specs for context propagation
+  const upstreamContext: Array<{ title: string; spec: string }> = []
+  if (task.depends_on && task.depends_on.length > 0) {
+    for (const dep of task.depends_on) {
+      try {
+        const upstreamTask = repo.getTask(dep.id)
+        if (upstreamTask && upstreamTask.status === 'done') {
+          const spec = upstreamTask.spec || upstreamTask.prompt || ''
+          if (spec.trim()) {
+            upstreamContext.push({
+              title: upstreamTask.title,
+              spec: spec.trim()
+            })
+          }
+        }
+      } catch (err) {
+        logger.warn(`[agent-manager] Failed to fetch upstream task ${dep.id}: ${err}`)
+        // Continue with other dependencies
+      }
+    }
+  }
+
   const prompt = buildAgentPrompt({
     agentType: 'pipeline',
     taskContent,
     branch: worktree.branch,
     playgroundEnabled: task.playground_enabled,
     retryCount: task.retry_count ?? 0,
-    previousNotes: task.notes ?? undefined
+    previousNotes: task.notes ?? undefined,
+    upstreamContext: upstreamContext.length > 0 ? upstreamContext : undefined
   })
 
   let handle: AgentHandle
