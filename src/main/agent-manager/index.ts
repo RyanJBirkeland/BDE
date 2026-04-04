@@ -287,6 +287,7 @@ export class AgentManagerImpl implements AgentManager {
     repo: string
     retry_count: number
     fast_fail_count: number
+    notes: string | null
     playground_enabled: boolean
     max_runtime_ms: number | null
   } | null {
@@ -312,6 +313,7 @@ export class AgentManagerImpl implements AgentManager {
       repo: raw.repo,
       retry_count: Number(raw.retryCount) || 0,
       fast_fail_count: Number(raw.fastFailCount) || 0,
+      notes: (raw.notes as string) ?? null,
       playground_enabled: Boolean(raw.playgroundEnabled),
       max_runtime_ms: Number(raw.maxRuntimeMs) || null
     }

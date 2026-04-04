@@ -17,11 +17,11 @@ describe('Personality System', () => {
       expect(pipelinePersonality.roleFrame).toContain('sprint task')
     })
 
-    it('should include git constraints', () => {
-      expect(pipelinePersonality.constraints.some((c) => c.includes('NEVER push to main'))).toBe(
+    it('should include pipeline-specific constraints', () => {
+      expect(pipelinePersonality.constraints.some((c) => c.includes('NEVER commit secrets'))).toBe(
         true
       )
-      expect(pipelinePersonality.constraints.some((c) => c.includes('Run tests'))).toBe(true)
+      expect(pipelinePersonality.constraints.some((c) => c.includes('Stay within spec scope'))).toBe(true)
     })
 
     it('should include reporting patterns', () => {

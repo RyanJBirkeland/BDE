@@ -204,7 +204,7 @@ describe('task template resolution in claimTask', () => {
 
   it('falls back to DEFAULT_TASK_TEMPLATES when settings key does not exist', async () => {
     db.prepare(
-      "INSERT INTO sprint_tasks (id, title, template_name) VALUES ('t4', 'Build it', 'feature')"
+      "INSERT INTO sprint_tasks (id, title, template_name) VALUES ('t4', 'Build it', 'Bug Fix')"
     ).run()
 
     vi.mocked(getSettingJson).mockReturnValue(null)
@@ -212,7 +212,7 @@ describe('task template resolution in claimTask', () => {
     const result = await registerAndClaim('t4')
 
     expect(result).not.toBeNull()
-    const expected = DEFAULT_TASK_TEMPLATES.find((t) => t.name === 'feature')
+    const expected = DEFAULT_TASK_TEMPLATES.find((t) => t.name === 'Bug Fix')
     expect(result!.templatePromptPrefix).toBe(expected!.promptPrefix)
   })
 

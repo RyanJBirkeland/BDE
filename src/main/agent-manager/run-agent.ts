@@ -29,6 +29,7 @@ export interface RunAgentTask {
   repo: string
   retry_count: number
   fast_fail_count: number
+  notes?: string | null
   playground_enabled?: boolean
   max_runtime_ms?: number | null
 }
@@ -182,7 +183,9 @@ export async function runAgent(
     agentType: 'pipeline',
     taskContent,
     branch: worktree.branch,
-    playgroundEnabled: task.playground_enabled
+    playgroundEnabled: task.playground_enabled,
+    retryCount: task.retry_count ?? 0,
+    previousNotes: task.notes ?? undefined
   })
 
   let handle: AgentHandle

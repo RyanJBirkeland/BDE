@@ -559,7 +559,9 @@ describe('runAgent — prompt composer integration', () => {
       agentType: 'pipeline',
       taskContent: 'Fix the bug',
       branch: 'agent/test',
-      playgroundEnabled: true
+      playgroundEnabled: true,
+      retryCount: 0,
+      previousNotes: undefined
     })
   })
 

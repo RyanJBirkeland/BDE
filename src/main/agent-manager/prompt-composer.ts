@@ -25,6 +25,9 @@ export interface BuildPromptInput {
   messages?: Array<{ role: string; content: string }> // for copilot chat
   formContext?: { title: string; repo: string; spec: string } // for copilot
   codebaseContext?: string // for synthesizer (file tree, relevant files)
+  retryCount?: number // 0-based retry count
+  previousNotes?: string // failure notes from previous attempt
+  maxRuntimeMs?: number | null // max runtime in ms
 }
 
 // ---------------------------------------------------------------------------
@@ -41,7 +44,7 @@ const UNIVERSAL_PREAMBLE = `You are a BDE (Birkeland Development Environment) ag
 ## Hard Rules
 - NEVER push to, checkout, or merge into \`main\`. Only push to your assigned branch.
 - NEVER commit secrets, .env files, or oauth tokens
-- Run \`npm install\` if node_modules/ is missing or incomplete before starting work
+- Your worktree has NO node_modules. Run \`npm install\` as your FIRST action before reading any files or running any commands.
 - Use the project's commit format: \`{type}: {description}\` (feat:, fix:, chore:)
 - Prefer editing existing files over creating new ones
 - Use TypeScript strict mode conventions
@@ -72,6 +75,21 @@ Do NOT checkout, merge to, or push to \`main\`. The CI/PR system handles integra
 If you need to push, use: \`git push origin ${branch}\``
 }
 
+// ---------------------------------------------------------------------------
+// Retry Context
+// ---------------------------------------------------------------------------
+
+const MAX_RETRIES_FOR_DISPLAY = 3
+
+function buildRetryContext(retryCount: number, previousNotes?: string): string {
+  const attemptNum = retryCount + 1
+  const maxAttempts = MAX_RETRIES_FOR_DISPLAY + 1
+  const notesText = previousNotes
+    ? `Previous attempt failed: ${previousNotes}`
+    : 'No failure notes from previous attempt.'
+  return `\n\n## Retry Context\nThis is attempt ${attemptNum} of ${maxAttempts}. ${notesText}\nDo NOT repeat the same approach. Analyze what went wrong and try a different strategy.\nIf the previous failure was a test/typecheck error, fix that specific error first.`
+}
+
 const PLAYGROUND_INSTRUCTIONS = `
 
 ## Dev Playground
@@ -84,6 +102,19 @@ When you want to show a visual preview:
 
 Keep playgrounds focused on one component or layout at a time. Do NOT run
 \`open\` or start a localhost server — BDE renders the HTML natively.`
+
+// ---------------------------------------------------------------------------
+// Pipeline-Specific Sections
+// ---------------------------------------------------------------------------
+
+function buildTimeLimitSection(maxRuntimeMs: number): string {
+  const minutes = Math.round(maxRuntimeMs / 60_000)
+  return `\n\n## Time Management\nYou have a maximum of ${minutes} minutes. You will be killed with NO WARNING if you exceed this.\nBudget 70% for implementation, 30% for testing and verification.\nCommit early — uncommitted work is LOST if you are terminated.`
+}
+
+const IDLE_TIMEOUT_WARNING = `\n\n## Idle Timeout Warning\nYou will be TERMINATED if you produce no output for 15 minutes. If running long commands (npm install, test suites), emit a progress message before and after.`
+
+const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npm test\` passes\n4. \`npm run lint\` passes with zero errors\nDo NOT exit without running all four checks.`
 
 // ---------------------------------------------------------------------------
 // Native System Support
@@ -141,7 +172,17 @@ function getPersonality(agentType: AgentType): AgentPersonality {
  * @returns Complete prompt string ready for agent spawning
  */
 export function buildAgentPrompt(input: BuildPromptInput): string {
-  const { agentType, taskContent, branch, playgroundEnabled, messages, codebaseContext } = input
+  const {
+    agentType,
+    taskContent,
+    branch,
+    playgroundEnabled,
+    messages,
+    codebaseContext,
+    retryCount,
+    previousNotes,
+    maxRuntimeMs
+  } = input
 
   // Start with universal preamble
   let prompt = UNIVERSAL_PREAMBLE
@@ -151,6 +192,11 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
   prompt += '\n\n## Voice\n' + personality.voice
   prompt += '\n\n## Your Role\n' + personality.roleFrame
   prompt += '\n\n## Constraints\n' + personality.constraints.map((c) => `- ${c}`).join('\n')
+
+  // Inject behavioral patterns if defined
+  if (personality.patterns && personality.patterns.length > 0) {
+    prompt += '\n\n## Behavioral Patterns\n' + personality.patterns.map((p) => `- ${p}`).join('\n')
+  }
 
   // Inject memory (all agents get this)
   prompt += '\n\n## BDE Conventions\n'
@@ -210,6 +256,32 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
   } else if (taskContent) {
     // For pipeline, assistant, adhoc: append task content
     prompt += '\n\n' + taskContent
+  }
+
+  // Inject retry context for pipeline agents on retry attempts
+  if (agentType === 'pipeline' && retryCount && retryCount > 0) {
+    prompt += buildRetryContext(retryCount, previousNotes)
+  }
+
+  // Self-review checklist (pipeline only)
+  if (agentType === 'pipeline') {
+    prompt += `\n\n## Self-Review Checklist
+Before your final push, verify:
+- [ ] Every changed file is required by the spec
+- [ ] No console.log, commented-out code, or TODO left behind
+- [ ] No hardcoded colors, magic numbers, or secrets
+- [ ] Tests cover error states, not just happy paths
+- [ ] Commit messages explain WHY, not just WHAT
+- [ ] Preload .d.ts updated if IPC channels changed`
+  }
+
+  // Pipeline-only sections: time limit, idle warning, definition of done
+  if (agentType === 'pipeline') {
+    if (maxRuntimeMs && maxRuntimeMs > 0) {
+      prompt += buildTimeLimitSection(maxRuntimeMs)
+    }
+    prompt += IDLE_TIMEOUT_WARNING
+    prompt += DEFINITION_OF_DONE
   }
 
   return prompt

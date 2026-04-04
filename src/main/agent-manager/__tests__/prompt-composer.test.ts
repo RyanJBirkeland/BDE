@@ -22,7 +22,7 @@ describe('buildAgentPrompt', () => {
         expect(prompt).toContain('## Who You Are')
         expect(prompt).toContain('## Hard Rules')
         expect(prompt).toContain('NEVER push to, checkout, or merge into `main`')
-        expect(prompt).toContain('Run `npm install` if node_modules/ is missing')
+        expect(prompt).toContain('npm install')
         expect(prompt).toContain('## MANDATORY Pre-Commit Verification')
         expect(prompt).toContain('`npm run typecheck`')
         expect(prompt).toContain('`npm test`')
@@ -38,7 +38,7 @@ describe('buildAgentPrompt', () => {
       expect(prompt).toContain('## Your Role')
       expect(prompt).toContain('pipeline agent')
       expect(prompt).toContain('concise and action-oriented')
-      expect(prompt).toContain('NEVER push to main')
+      expect(prompt).toContain('NEVER push to, checkout, or merge into')
     })
 
     it('includes assistant-specific personality for assistant agent', () => {
@@ -316,6 +316,142 @@ describe('buildAgentPrompt', () => {
         expect(prompt).toContain('## User Knowledge')
         expect(prompt).toContain('### test.md')
       }
+    })
+  })
+
+  describe('retry context injection', () => {
+    it('does not include retry section when retryCount is 0', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Do something',
+        retryCount: 0
+      })
+      expect(prompt).not.toContain('## Retry Context')
+    })
+
+    it('does not include retry section when retryCount is undefined', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).not.toContain('## Retry Context')
+    })
+
+    it('includes retry section when retryCount > 0', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Do something',
+        retryCount: 2,
+        previousNotes: 'npm test failed'
+      })
+      expect(prompt).toContain('## Retry Context')
+      expect(prompt).toContain('attempt 3 of 4')
+      expect(prompt).toContain('npm test failed')
+      expect(prompt).toContain('Do NOT repeat the same approach')
+    })
+
+    it('handles retryCount > 0 with no previousNotes', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Do something',
+        retryCount: 1
+      })
+      expect(prompt).toContain('## Retry Context')
+      expect(prompt).toContain('attempt 2 of 4')
+      expect(prompt).toContain('No failure notes from previous attempt')
+    })
+
+    it('does not include retry section for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'assistant',
+        retryCount: 2,
+        previousNotes: 'some failure'
+      })
+      expect(prompt).not.toContain('## Retry Context')
+    })
+  })
+
+  describe('time limit injection', () => {
+    it('includes time limit when maxRuntimeMs provided', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something', maxRuntimeMs: 3_600_000 })
+      expect(prompt).toContain('## Time Management')
+      expect(prompt).toContain('60 minutes')
+    })
+
+    it('does not include time limit when maxRuntimeMs is undefined', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).not.toContain('## Time Management')
+    })
+
+    it('does not include time limit for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant', maxRuntimeMs: 3_600_000 })
+      expect(prompt).not.toContain('## Time Management')
+    })
+  })
+
+  describe('idle timeout warning', () => {
+    it('includes idle warning for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('15 minutes')
+      expect(prompt).toContain('TERMINATED')
+    })
+
+    it('does not include idle warning for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant' })
+      expect(prompt).not.toContain('Idle Timeout')
+    })
+  })
+
+  describe('definition of done', () => {
+    it('includes definition of done for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('## Definition of Done')
+      expect(prompt).toContain('npm run typecheck')
+      expect(prompt).toContain('npm test')
+      expect(prompt).toContain('npm run lint')
+    })
+
+    it('does not include definition of done for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant' })
+      expect(prompt).not.toContain('## Definition of Done')
+    })
+  })
+
+  describe('npm install preamble', () => {
+    it('tells agent npm install is mandatory first action', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('FIRST action')
+      expect(prompt).toContain('npm install')
+    })
+  })
+
+  describe('scope enforcement', () => {
+    it('includes scope boundaries for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('Stay within spec scope')
+    })
+  })
+
+  describe('prompt optimization', () => {
+    it('injects behavioral patterns for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('## Behavioral Patterns')
+    })
+
+    it('includes self-review checklist for pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('## Self-Review Checklist')
+      expect(prompt).toContain('console.log')
+      expect(prompt).toContain('Preload .d.ts')
+    })
+
+    it('does not include self-review checklist for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant' })
+      expect(prompt).not.toContain('## Self-Review Checklist')
+    })
+
+    it('does not duplicate preamble rules in pipeline personality constraints', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      // Count occurrences of "NEVER push to" — should appear only ONCE (from preamble)
+      const matches = prompt.match(/NEVER push to/g) || []
+      expect(matches.length).toBe(1)
     })
   })
 

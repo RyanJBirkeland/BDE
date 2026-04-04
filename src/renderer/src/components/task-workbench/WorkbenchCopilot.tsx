@@ -5,6 +5,23 @@ interface WorkbenchCopilotProps {
   onClose: () => void
 }
 
+const RESEARCH_PATTERNS = [
+  /research|search|find|look for|grep|where is|which file|show me/i
+]
+
+export function isResearchQuery(text: string): boolean {
+  return RESEARCH_PATTERNS.some((p) => p.test(text))
+}
+
+export function extractSearchTerms(text: string): string {
+  return text
+    .replace(
+      /^(research|search|find|look for|grep|where is|which file|show me)\s*(the\s+)?(codebase\s+)?(for\s+)?/i,
+      ''
+    )
+    .trim()
+}
+
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
@@ -111,6 +128,27 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
     setInput('')
 
     addMessage({ id: `user-${Date.now()}`, role: 'user', content: text, timestamp: Date.now() })
+
+    // Inject codebase research results as a system message before sending to AI
+    if (isResearchQuery(text) && repo) {
+      try {
+        const results = await window.api.workbench.researchRepo({
+          query: extractSearchTerms(text),
+          repo
+        })
+        if (results?.content) {
+          const researchMsg: CopilotMessage = {
+            id: `research-${Date.now()}`,
+            role: 'system',
+            content: `Codebase research results:\n${results.content}`,
+            timestamp: Date.now()
+          }
+          addMessage(researchMsg)
+        }
+      } catch {
+        // Research failed — proceed without it
+      }
+    }
 
     const allMessages = [...useTaskWorkbenchStore.getState().copilotMessages]
       .filter((m) => m.role !== 'system')

@@ -14,7 +14,7 @@ describe('Agent System Integration', () => {
       expect(pipelinePersonality).toBeDefined()
       expect(pipelinePersonality.voice).toContain('concise')
       expect(pipelinePersonality.roleFrame).toContain('pipeline agent')
-      expect(pipelinePersonality.constraints[0]).toContain('NEVER push to main')
+      expect(pipelinePersonality.constraints[0]).toContain('NEVER commit secrets')
       expect(pipelinePersonality.patterns.length).toBeGreaterThan(0)
     })
 
@@ -69,7 +69,7 @@ describe('Agent System Integration', () => {
       expect(prompt).toContain('concise')
       expect(prompt).toContain('## Your Role')
       expect(prompt).toContain('## Constraints')
-      expect(prompt).toContain('NEVER push to main')
+      expect(prompt).toContain('NEVER push to, checkout, or merge into')
       expect(prompt).toContain('## BDE Conventions')
       expect(prompt).toContain('IPC Conventions')
       expect(prompt).toContain('Build feature X')
