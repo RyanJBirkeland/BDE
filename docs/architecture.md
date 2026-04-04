@@ -21,11 +21,6 @@ BDE is an Electron desktop app with three process layers:
 │  │  │ WAL mode │  │ ops      │  │ spawn +  │  │ IPC      ││     │
 │  │  └──────────┘  └──────────┘  │ detect   │  └──────────┘│     │
 │  │                               └──────────┘               │     │
-│  │  ┌──────────────┐                                        │     │
-│  │  │ queue-api/   │  TaskQueueAPI (HTTP on port 18790)     │     │
-│  │  │ server.ts    │  SSE broadcaster for task runners      │     │
-│  │  └──────────────┘                                        │     │
-│  │                                                           │     │
 │  │  fs.watch(bde.db) ──push──▶ 'sprint:externalChange'     │     │
 │  └────────────────────────────┬──────────────────────────────┘     │
 │                               │ IPC (invoke/handle)                 │
@@ -44,11 +39,11 @@ BDE is an Electron desktop app with three process layers:
 │  └───────────────────────────────────────────────────────────┘     │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
-        │                            │                      │
-        │ WebSocket (port 18789)     │ HTTP (port 18790)    │ GitHub REST API
-        ▼                            ▼                      ▼
-   OpenClaw Gateway          TaskQueueAPI             api.github.com
-   (optional)                (localhost)
+        │                                                 │
+        │ WebSocket (port 18789)                          │ GitHub REST API
+        ▼                                                 ▼
+   OpenClaw Gateway                                 api.github.com
+   (optional)
 ```
 
 ---
@@ -87,43 +82,7 @@ All handlers use the `safeHandle()` wrapper (`src/main/ipc-utils.ts`) for centra
 | `sprint:externalChange` | `fs.watch()` on `~/.bde/bde.db` + WAL (500ms debounce) | Notify renderer of external DB writes             |
 | `terminal:data:{id}`    | PTY stdout                                             | Stream terminal output to renderer                |
 | `terminal:exit:{id}`    | PTY process exit                                       | Notify terminal tab of process end                |
-| `task:output`           | `POST /queue/tasks/:id/output` via TaskQueueAPI        | Forward task runner output events to renderer     |
 | `pr:listUpdated`        | PR poller (60s interval)                               | Push updated PR list to renderer                  |
-| `sprint:sseEvent`       | External SSE connection (`sprint-sse.ts`)              | Relay external task runner SSE events to renderer |
-
----
-
-## TaskQueueAPI
-
-**Module:** `src/main/queue-api/`
-**Port:** 18790 (default, configurable via `taskRunner.queuePort` setting)
-**Bind:** `127.0.0.1` only (localhost)
-
-The TaskQueueAPI is an HTTP server that allows external task runners to claim and execute sprint tasks. It starts automatically when BDE launches.
-
-### Endpoints
-
-| Method  | Path                      | Description                                                               |
-| ------- | ------------------------- | ------------------------------------------------------------------------- |
-| `GET`   | `/queue/health`           | Health check with queue stats and API version                             |
-| `GET`   | `/queue/tasks`            | List tasks (optional `?status=` filter)                                   |
-| `GET`   | `/queue/tasks/:id`        | Get a single task by ID                                                   |
-| `POST`  | `/queue/tasks/:id/claim`  | Claim a queued task (body: `{ executorId }`)                              |
-| `PATCH` | `/queue/tasks/:id/status` | Update task status and fields                                             |
-| `POST`  | `/queue/tasks/:id/output` | Post output events for a task (body: `{ events }`)                        |
-| `GET`   | `/queue/events`           | SSE stream of task mutations (`task:queued`, `task:updated`, `heartbeat`) |
-
-### SSE Events
-
-The `/queue/events` endpoint streams real-time task mutations to connected runners:
-
-- `task:queued` — a task entered the `queued` status (fields: `id`, `title`, `priority`)
-- `task:updated` — a task status changed (fields: `id`, `status`, `claimed_by`)
-- `heartbeat` — keepalive every 30s
-
-### Event Store
-
-`queue-api/event-store.ts` provides in-memory storage for task output events (max 500 per task). Events are auto-cleared when tasks reach terminal status (`done`, `failed`, `cancelled`).
 
 ---
 
@@ -306,21 +265,19 @@ backlog ──→ queued ──→ active ──→ done
 | ----------- | ---------------------------- | ------------------------------------------------------------------------ |
 | `backlog`   | Draft idea, spec in progress | User creates ticket via New Ticket modal                                 |
 | `queued`    | Ready for agent pickup       | User drags to Sprint column or clicks "Push to Sprint"                   |
-| `active`    | Agent working on task        | User clicks "Launch" (spawns Claude agent) or task runner claims via API |
+| `active`    | Agent working on task        | Agent Manager claims queued task and spawns Claude agent                  |
 | `done`      | PR merged                    | `pollPrStatuses` detects merge via GitHub API                            |
 | `cancelled` | PR closed without merge      | `pollPrStatuses` detects close via GitHub API                            |
-| `failed`    | Agent exited with error      | Agent process exits non-zero or task runner reports failure              |
+| `failed`    | Agent exited with error      | Agent process exits non-zero                                            |
 
 ---
 
-## SSE
+## Real-time Updates
 
-BDE uses SSE in two directions:
+BDE uses multiple mechanisms for real-time data flow:
 
-1. **SSE Server** — The TaskQueueAPI (`queue-api/sse.ts`) broadcasts task mutations to connected external task runners via `GET /queue/events`.
-2. **SSE Client** — `sprint-sse.ts` connects to an external task runner's `/events` endpoint (if configured) and relays events to the renderer via `sprint:sseEvent` push events. Reconnects with exponential backoff (1s base, 30s max).
-3. **File watcher** — `fs.watch()` on `~/.bde/bde.db` and WAL file, debounced at 500ms, pushes `sprint:externalChange` IPC event for external DB writes.
-4. **Adaptive polling** — sprint data refreshes every 120s (idle) or 30s (active tasks).
+1. **File watcher** — `fs.watch()` on `~/.bde/bde.db` and WAL file, debounced at 500ms, pushes `sprint:externalChange` IPC event for external DB writes.
+2. **Adaptive polling** — sprint data refreshes every 120s (idle) or 30s (active tasks).
 
 ---
 
@@ -352,7 +309,6 @@ PR list polling runs at 60s from `src/main/pr-poller.ts` (main-process poller, n
 | Dependency                  | Purpose                                 | Where Used                                              |
 | --------------------------- | --------------------------------------- | ------------------------------------------------------- |
 | OpenClaw Gateway (optional) | AI agent sessions, tool invocation, RPC | WebSocket on port 18789                                 |
-| TaskQueueAPI                | Task queue for external runners         | HTTP on port 18790 (localhost)                          |
 | GitHub REST API             | PR status polling, PR list              | `git.ts`, `pr-poller.ts`, `git-handlers.ts`             |
 | Claude CLI                  | Agent execution                         | `local-agents.ts:spawnClaudeAgent()`                    |
 | better-sqlite3              | Local database                          | `db.ts`, `agent-history.ts`, `handlers/sprint-local.ts` |

@@ -113,7 +113,7 @@ Skills provide actionable guidance for interactive agents:
 | Skill                | Trigger                                         | Capabilities                      |
 | -------------------- | ----------------------------------------------- | --------------------------------- |
 | System Introspection | Agent needs to query system state               | sqlite-query, file-read-logs      |
-| Task Orchestration   | Agent needs to create tasks or set dependencies | ipc-sprint-create, queue-api-call |
+| Task Orchestration   | Agent needs to create tasks or set dependencies | ipc-sprint-create               |
 | Code Patterns        | Agent needs to generate BDE-idiomatic code      | code-generation                   |
 
 Each skill defines:

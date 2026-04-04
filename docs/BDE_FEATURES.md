@@ -7,7 +7,7 @@ This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.m
 ## How Work Flows Through BDE
 
 1. **Create** — Task Workbench: draft specs with AI copilot assistance, define dependencies between tasks, run readiness checks before queuing
-2. **Queue** — Tasks enter the Sprint Pipeline with status `queued`. External services (Life OS, claude-chat-service, claude-task-runner) can submit tasks via the Queue API on port 18790
+2. **Queue** — Tasks enter the Sprint Pipeline with status `queued` via the BDE UI (Task Workbench or Sprint Pipeline)
 3. **Execute** — Agent Manager claims queued tasks, spawns pipeline agents in isolated git worktrees. Agents write code, run tests, and commit. If `playground_enabled` is set, HTML file writes render inline via Dev Playground
 4. **Review** — Agents complete work and transition tasks to `review` status, preserving the worktree. Code Review Station provides diff inspection, commit history, and action buttons (merge locally, create PR, request revision, discard). Users review changes before integration
 5. **Complete** — Merged PRs or local merges mark tasks `done`. Dependency resolution automatically unblocks downstream tasks with satisfied dependencies
@@ -44,28 +44,10 @@ Tasks can declare dependencies on other tasks with `hard` or `soft` edges.
 - **Hard dependency**: Downstream task is `blocked` until upstream completes successfully. If upstream fails, downstream stays blocked
 - **Soft dependency**: Downstream unblocks regardless of upstream outcome (success or failure)
 - **Auto-blocking**: Tasks with unsatisfied hard dependencies are automatically set to `blocked` status at creation time (handled in `sprint-local.ts` IPC handler)
-- **Auto-resolution**: All terminal status paths (agent completion, manual status change, Queue API, PR poller) route through `TaskTerminalService` which triggers `resolve-dependents.ts` to unblock waiting tasks. Direct SQLite writes bypass this — always use IPC or Queue API
+- **Auto-resolution**: All terminal status paths (agent completion, manual status change, PR poller) route through `TaskTerminalService` which triggers `resolve-dependents.ts` to unblock waiting tasks. Direct SQLite writes bypass this — always use IPC handlers
 - **Dependency format**: `{id, type}` where `type` is `"hard"` or `"soft"`. Note: uses `id` not `taskId`
 - **Cycle detection**: `dependency-index.ts` maintains an in-memory reverse index and rejects cycles at creation time
-- Related: Sprint Pipeline, Queue API
-
-### Queue API
-
-Local HTTP server on port 18790 for external task management. Used by Life OS, claude-chat-service, and claude-task-runner.
-
-- **Auth**: Bearer token via `Authorization` header or `?token=` query param. Key auto-generated on first access (`randomBytes(32)`, persisted to `taskRunner.apiKey` setting). If no key exists yet, unauthenticated requests are accepted
-- **Base path**: All task endpoints use `/queue/tasks` prefix (not `/tasks`)
-- **Endpoints**:
-  - `POST /queue/tasks` — create task (requires `repo` field; `status=queued` requires `spec` or `?skipValidation=true`)
-  - `GET /queue/tasks` — list tasks (supports `?status=` filter)
-  - `GET /queue/tasks/:id` — get single task
-  - `PATCH /queue/tasks/:id` — update safe fields only (`GENERAL_PATCH_FIELDS`)
-  - `PATCH /queue/tasks/:id/status` — status transitions (validated)
-  - `PATCH /queue/tasks/:id/dependencies` — update dependencies
-- **WIP limit**: `MAX_ACTIVE_TASKS=5` enforced at claim endpoint — prevents overloading the agent pipeline
-- **SSE**: `GET /queue/events` for real-time task update streaming
-- **Field format**: API uses camelCase; internal SQLite uses snake_case. Mapping handled automatically
-- Related: Task Dependencies, Agent Manager, Sprint Pipeline
+- Related: Sprint Pipeline
 
 ## Agent System
 
@@ -94,13 +76,13 @@ All agent types inherit project knowledge from CLAUDE.md (and this file) via SDK
 Orchestrates pipeline agent lifecycle. Core module: `src/main/agent-manager/`.
 
 - **Drain loop**: Continuously watches for `queued` tasks, claims them (sets `claimed_by`), spawns agents in git worktrees via SDK
-- **WIP limit**: `MAX_ACTIVE_TASKS` concurrent agents, enforced at Queue API claim endpoint
+- **WIP limit**: `MAX_ACTIVE_TASKS` concurrent agents, enforced at agent manager drain loop
 - **Watchdog**: Monitors agent health with configurable timeout. Default 1 hour, overridable per-task via `max_runtime_ms` field
 - **Completion flow**: Agent exits normally → classify exit → mark task `review` → preserve worktree for human review. On failure: retry up to 3x, then mark `failed`. Human actions in Code Review Station (merge locally, create PR, revise, discard) determine final task status
 - **Fast-fail detection**: 3 failures within 30s of starting = exhausted. Task marked `error` with diagnostic notes pointing to `~/.bde/agent-manager.log`
 - **Worktree isolation**: Each pipeline agent gets `~/worktrees/bde/agent/<task-slug>`. Worktree cleaned up after completion (success or failure). Stale worktrees from previous runs should be cleaned with `git worktree prune`
 - **Config**: Max concurrent agents, worktree base path, and max runtime are read once at startup. Changes via Settings UI take effect on next app restart
-- Related: Sprint Pipeline, Task Dependencies, Queue API
+- Related: Sprint Pipeline, Task Dependencies
 
 ### Dev Playground
 
@@ -140,7 +122,7 @@ Background process that automatically tracks PR outcomes for sprint tasks.
 - **Runs every 60s** in main process (independent of renderer — works even if no window is focused)
 - **Watches**: Tasks with `pr_status=open` — polls their GitHub PR for merge/close events
 - **Auto-transitions**: Merged PR → task marked `done`. Closed PR → task marked `cancelled`. Both trigger dependency resolution via `TaskTerminalService`
-- **PR fields** (`pr_url`, `pr_number`, `pr_status`): Set internally by completion handler and poller — NOT patchable via Queue API `GENERAL_PATCH_FIELDS`
+- **PR fields** (`pr_url`, `pr_number`, `pr_status`): Set internally by completion handler and poller — not directly editable via IPC
 - Related: Code Review Station, Agent Manager (completion flow)
 
 ## Development Tools
@@ -207,4 +189,4 @@ Application configuration organized into 9 tabs. Most settings persisted to SQLi
 - **Appearance**: Theme toggle (dark/light), motion preferences
 - **About**: Version info, log file locations, GitHub link
 - **Keyboard navigation**: Arrow Left/Right, Home/End to cycle tabs
-- Related: Agent Manager, Queue API (API key)
+- Related: Agent Manager
