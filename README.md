@@ -1,177 +1,381 @@
+<div align="center">
+
 # BDE — Birkeland Development Environment
 
-A desktop Electron app for managing OpenClaw AI agent sessions, sprint task queues, git workflows, cost tracking, and agent memory. Built with React, TypeScript, Zustand, and SQLite.
+**The desktop IDE that runs your engineering team while you sleep.**
 
-## Prerequisites
+BDE is an Electron app that orchestrates autonomous AI agents to execute sprint tasks — from spec creation through code, review, and merge. You define what needs building. BDE handles the rest.
 
-- **Node.js** v22+ (managed via nvm)
-- **npm** for dependency management
-- **OpenClaw gateway** running locally — BDE reads config from `~/.openclaw/openclaw.json` to connect on port 18789
+[Getting Started](#getting-started) | [How It Works](#how-it-works) | [Features](#features) | [Architecture](#architecture) | [Contributing](#contributing)
 
-## Installation
+</div>
 
-### Development (recommended)
+---
+
+## Why BDE?
+
+Most AI coding tools bolt a chatbot onto an editor and call it a day. BDE takes a fundamentally different approach:
+
+| | Traditional AI IDEs | BDE |
+|---|---|---|
+| **Agent model** | Single assistant, one conversation | Fleet of autonomous agents running in parallel |
+| **Isolation** | Agents edit your working tree directly | Each agent works in its own git worktree — your code stays clean |
+| **Lifecycle** | Chat → copy-paste → hope it works | Spec → queue → execute → code review → merge |
+| **Concurrency** | One agent at a time | Multiple agents executing different tasks simultaneously |
+| **Review** | Trust the AI output blindly | Human-in-the-loop code review before any merge |
+| **Dependencies** | Manual coordination | Declarative task dependencies with automatic blocking/unblocking |
+| **Observability** | Chat logs | Real-time pipeline view, cost tracking, agent event streams |
+
+BDE doesn't replace your IDE — it replaces the manual overhead of turning specs into shipped code.
+
+---
+
+## How It Works
+
+### The Task Lifecycle
+
+Every piece of work flows through a structured pipeline. Tasks start as ideas and end as merged code — with human review gates at every critical point.
+
+```mermaid
+flowchart TD
+    A["Backlog
+    Draft specs with AI copilot"] -->|Queue| B["Queued
+    Ready for agent pickup"]
+    B -->|Agent claims| C["Active
+    Agent coding in isolated worktree"]
+    C -->|Work complete| D["Review
+    Human inspects diffs + commits"]
+
+    D -->|"Merge locally"| E["Done"]
+    D -->|"Create PR"| F["PR Open
+    Awaiting CI + merge"]
+    D -->|"Request revision"| B
+    D -->|"Discard"| G["Cancelled"]
+
+    F -->|PR merged| E
+    F -->|PR closed| G
+
+    C -->|Agent failure| H{"Retry?"}
+    H -->|"< 3 attempts"| B
+    H -->|"3 fast failures"| I["Error"]
+
+    subgraph blocked ["Dependency System"]
+        J["Blocked
+        Waiting on upstream tasks"] -->|"Dependencies satisfied"| B
+    end
+
+    style A fill:#1a1a2e,stroke:#00ffcc,color:#00ffcc
+    style B fill:#1a1a2e,stroke:#ff9f43,color:#ff9f43
+    style C fill:#1a1a2e,stroke:#00d4ff,color:#00d4ff
+    style D fill:#1a1a2e,stroke:#a855f7,color:#a855f7
+    style E fill:#1a1a2e,stroke:#00ffcc,color:#00ffcc
+    style F fill:#1a1a2e,stroke:#3b82f6,color:#3b82f6
+    style G fill:#1a1a2e,stroke:#6b7280,color:#6b7280
+    style H fill:#1a1a2e,stroke:#ff9f43,color:#ff9f43
+    style I fill:#1a1a2e,stroke:#ef4444,color:#ef4444
+    style J fill:#1a1a2e,stroke:#ef4444,color:#ef4444
+```
+
+### Agent Execution Flow
+
+When a task is queued, here's what happens under the hood:
+
+```mermaid
+sequenceDiagram
+    participant AM as Agent Manager
+    participant WT as Git Worktree
+    participant SDK as Claude Agent SDK
+    participant CR as Code Review
+
+    AM->>AM: Drain loop detects queued task
+    AM->>WT: Create isolated worktree<br/>~/worktrees/bde/agent/<task-slug>
+    AM->>SDK: Spawn agent with task spec +<br/>project context (CLAUDE.md)
+
+    loop Agent works autonomously
+        SDK->>WT: Read files, write code, run tests
+        SDK-->>AM: Stream events (tool use, output, errors)
+    end
+
+    SDK->>WT: Final commit
+    AM->>CR: Transition task → review
+    Note over CR: Worktree preserved for<br/>human inspection
+
+    alt Human merges
+        CR->>AM: Fast-forward merge → done
+    else Human creates PR
+        CR->>AM: Push branch → open PR
+    else Human requests revision
+        CR->>AM: Return to queue → agent retries
+    end
+```
+
+---
+
+## Features
+
+### Task Workbench — Plan Before You Build
+Draft task specs with an AI copilot, define dependencies between tasks, and run readiness checks before queuing. The copilot helps refine specs through conversation. A synthesizer can generate structured specs from codebase context.
+
+### Sprint Pipeline — Watch Work Flow
+Real-time monitoring of tasks flowing through stages. Seven visual buckets (backlog, todo, blocked, in-progress, awaiting review, done, failed) give you instant visibility into your entire pipeline.
+
+### Agent Manager — Autonomous Execution
+The engine behind BDE. Runs a continuous drain loop that claims queued tasks, spawns agents in isolated git worktrees, monitors health via watchdogs, and handles retries on failure.
+
+- **Parallel execution** — configurable WIP limit for concurrent agents
+- **Worktree isolation** — each agent gets its own copy of the repo
+- **Watchdog timers** — per-task runtime limits (default 1 hour)
+- **Smart retry** — up to 3 attempts, with fast-fail detection (3 failures within 30s = stop trying)
+
+### Code Review Station — Human in the Loop
+Agents don't push directly to main. Every completed task lands in a review queue where you inspect diffs, browse commits, read the agent's conversation log, then choose: merge locally, create a PR, request a revision, or discard.
+
+### Task Dependencies — Declarative Coordination
+Tasks can declare `hard` or `soft` dependencies on other tasks:
+- **Hard** — downstream blocks until upstream succeeds
+- **Soft** — downstream unblocks regardless of upstream outcome
+
+Cycle detection at creation time. Automatic resolution when tasks complete. No manual coordination needed.
+
+### Dev Playground — Visual Output in the IDE
+When agents write HTML files, BDE renders them inline — sandboxed with DOMPurify. Build CSS theme explorers, component playgrounds, data visualizations, and architecture diagrams without leaving the app.
+
+### Integrated IDE
+Monaco editor with file explorer, multi-tab interface, and integrated terminal. Syntax highlighting, dirty state tracking, keyboard shortcuts. Not a replacement for VS Code — a companion for quick edits and agent output inspection.
+
+### Source Control
+Git staging, committing, and pushing across multiple repos. Inline diff previews, branch selection, and error handling with retry.
+
+### Dashboard
+Aggregated metrics at a glance: active/queued/blocked task counts, hourly completion charts, cost-per-run trends, success rate, and recent activity feed.
+
+---
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph Electron["Electron App"]
+        subgraph Main["Main Process"]
+            AM[Agent Manager]
+            DB[(SQLite<br/>WAL mode)]
+            IPC[IPC Handlers<br/>86 typed channels]
+            PRP[PR Poller]
+            TTS[Task Terminal<br/>Service]
+        end
+
+        subgraph Renderer["Renderer Process (React)"]
+            Views["8 Views<br/>Dashboard · Agents · IDE<br/>Pipeline · Code Review<br/>Source Control · Settings<br/>Task Workbench"]
+            Stores[Zustand Stores]
+            Panels[Panel System<br/>Split panes · Drag-and-drop<br/>Tear-off windows]
+        end
+
+        subgraph Preload["Preload Bridge"]
+            Bridge[Type-safe window.api]
+        end
+    end
+
+    subgraph External["External"]
+        SDK[Claude Agent SDK]
+        GH[GitHub API]
+        WT[Git Worktrees<br/>~/worktrees/bde/]
+    end
+
+    Main <-->|IPC| Bridge
+    Bridge <-->|contextBridge| Renderer
+    AM -->|Spawn| SDK
+    AM -->|Create/cleanup| WT
+    SDK -->|Code in| WT
+    PRP -->|Poll PRs| GH
+    AM -->|Read/write| DB
+    IPC -->|Read/write| DB
+    TTS -->|Resolve deps| AM
+
+    style Electron fill:#0d1117,stroke:#30363d,color:#e6edf3
+    style Main fill:#161b22,stroke:#00ffcc,color:#e6edf3
+    style Renderer fill:#161b22,stroke:#00d4ff,color:#e6edf3
+    style Preload fill:#161b22,stroke:#ff9f43,color:#e6edf3
+    style External fill:#161b22,stroke:#a855f7,color:#e6edf3
+```
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Electron + electron-vite |
+| Frontend | React, TypeScript, Zustand |
+| Editor | Monaco (ESM, not CDN) |
+| Database | SQLite (better-sqlite3, WAL mode) |
+| AI | Claude Agent SDK (@anthropic-ai/claude-agent-sdk) |
+| Icons | lucide-react |
+| Layout | react-resizable-panels |
+| Testing | Vitest (unit + integration), Playwright (E2E) |
+| CI | GitHub Actions (typecheck + lint + coverage-gated tests) |
+
+### Data Model
+
+All state lives in a local SQLite database at `~/.bde/bde.db`. No cloud dependencies for core functionality.
+
+| Table | Purpose |
+|-------|---------|
+| `sprint_tasks` | Task specs, status, dependencies, PR links, agent assignments |
+| `agent_runs` | Agent execution audit trail — model, status, timing |
+| `agent_events` | Streaming agent events (tool use, output, errors) |
+| `cost_events` | Token usage and cost tracking per agent run |
+| `task_changes` | Field-level audit trail on every task mutation |
+| `settings` | Key-value app configuration |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** v22+
+- **Claude Code CLI** — installed and authenticated (`claude login`)
+- **Git** and **GitHub CLI** (`gh`)
+- macOS (Apple Silicon recommended; Intel supported)
+
+### Install
 
 ```bash
+git clone https://github.com/rbtechbot/bde.git
+cd bde
 npm install
 npm run dev
 ```
 
-### Production Install (BDE.app + auto-start)
+On first launch, BDE checks for Claude Code authentication and guides you through setup.
 
-Builds a .dmg, installs to /Applications, and registers a launchd service that auto-starts BDE on login and restarts it on crash.
-
-```bash
-chmod +x scripts/install-bde.sh
-./scripts/install-bde.sh
-```
-
-Requirements: macOS arm64, Xcode command line tools.
-
-To uninstall:
+### Build for Production
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.rbtechbot.bde.plist
-rm -rf /Applications/BDE.app
-rm ~/Library/LaunchAgents/com.rbtechbot.bde.plist
+npm run build:mac    # → release/BDE-*.dmg (unsigned)
 ```
 
-## Data Layer
+> **Note:** The app is unsigned. Right-click → Open to bypass macOS Gatekeeper on first launch.
 
-All persistent state lives in a local SQLite database at `~/.bde/bde.db` (WAL mode, foreign keys enforced). Three tables:
+### Run Tests
 
-| Table          | Purpose                                                                        |
-| -------------- | ------------------------------------------------------------------------------ |
-| `sprint_tasks` | Kanban board tasks — title, prompt, repo, status, PR link, agent run reference |
-| `agent_runs`   | Audit trail for spawned agents — PID, binary, model, status, log path          |
-| `settings`     | Key-value app configuration                                                    |
-
-The main process watches the DB file for external writes (e.g. from the task runner) and pushes `sprint:external-change` events to the renderer via IPC, so the UI stays in sync without polling the database.
-
-## Views
-
-| View             | Shortcut | Description                                                                                                                                                      |
-| ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Sessions**     | `Cmd+1`  | Multi-panel workspace — session list, task composer, live feed, agent director, log viewer. Polls gateway every 10s.                                             |
-| **Sprint / PRs** | `Cmd+2`  | Kanban board (backlog → queued → active → done) and GitHub PR list. Polls PRs via GitHub REST API every 60s. Auto-marks tasks done on merge, cancelled on close. |
-| **Diff**         | `Cmd+3`  | Full git client — file staging/unstaging, diff viewer, commit composer, push. Multi-repo support (BDE, life-os, feast).                                          |
-| **Memory**       | `Cmd+4`  | File browser + editor for OpenClaw agent memory at `~/.openclaw/workspace/memory/`.                                                                              |
-| **Cost Tracker** | `Cmd+5`  | Token cost analytics — daily spend chart, model breakdown, per-session table, CSV export. Polls every 30s.                                                       |
-| **Settings**     | `Cmd+6`  | Gateway URL/token config, theme switcher (dark/light), accent color presets.                                                                                     |
-
-## Agent Spawning
-
-BDE spawns Claude CLI agents directly from the Electron main process:
-
-1. User creates a sprint task (backlog) and pushes it to the sprint queue (queued)
-2. User clicks "Launch" — BDE spawns `claude --output-format stream-json --input-format stream-json` in the target repo directory
-3. Agent runs with `--dangerously-skip-permissions` as a detached child process
-4. stdout/stderr stream to a persistent log file; the renderer polls the log via incremental byte-offset reads
-5. Users can steer running agents via stdin messaging from the Sprint LogDrawer
-6. On exit, the agent record in `agent_runs` is marked `done` (exit 0) or `failed`
-
-Agent logs are stored under `/tmp/bde-agents/` with 7-day automatic cleanup.
-
-## Task Lifecycle
-
-```
-backlog → queued → active → done
-                         ↘ cancelled
+```bash
+npm test             # Unit tests (vitest)
+npm run test:main    # Main process integration tests
+npm run test:e2e     # E2E tests (requires built app)
+npm run typecheck    # TypeScript checking
+npm run lint         # ESLint
 ```
 
-| Transition         | Trigger                                                      |
-| ------------------ | ------------------------------------------------------------ |
-| backlog → queued   | User drags card or clicks "Push to Sprint"                   |
-| queued → active    | User clicks "Launch" (spawns agent)                          |
-| active → done      | PR merged (detected by `pollPrStatuses` via GitHub REST API) |
-| active → cancelled | PR closed without merge                                      |
+---
 
-PR polling runs every 60s (`POLL_PR_STATUS_MS`). On merge, `markTaskDoneOnMerge` updates the SQLite row. On close without merge, `markTaskCancelled` fires.
+## Views at a Glance
 
-## Gateway Config
+| View | Shortcut | What it does |
+|------|----------|-------------|
+| Dashboard | `Cmd+1` | Pipeline health, metrics, activity feed |
+| Agents | `Cmd+2` | Spawn and interact with AI agents |
+| IDE | `Cmd+3` | Monaco editor + file explorer + terminal |
+| Task Pipeline | `Cmd+4` | Real-time task execution monitoring |
+| Code Review | `Cmd+5` | Review agent diffs before merging |
+| Source Control | `Cmd+6` | Git staging, commits, push |
+| Settings | `Cmd+7` | 9 config tabs (connections, repos, agents, appearance, etc.) |
+| Task Workbench | — | Spec drafting with AI copilot + readiness checks |
 
-BDE requires `~/.openclaw/openclaw.json` to exist with at minimum:
+The panel system supports split panes, drag-and-drop docking, and tear-off windows for multi-monitor setups.
 
-```json
-{
-  "gateway": {
-    "url": "ws://127.0.0.1:18789",
-    "token": "your-gateway-token"
-  }
-}
+---
+
+## Agent Types
+
+BDE spawns five types of AI agents, each suited to different workflows:
+
+| Type | Interactive | Worktree | Use case |
+|------|-----------|----------|----------|
+| **Pipeline** | No | Isolated | Autonomous task execution from the sprint queue |
+| **Adhoc** | Yes (multi-turn) | Repo dir | User-spawned one-off tasks |
+| **Assistant** | Yes (multi-turn) | Repo dir | Conversational help and recommendations |
+| **Copilot** | Yes (chat) | None | Text-only spec drafting in Task Workbench |
+| **Synthesizer** | No | None | Structured spec generation from codebase context |
+
+All agents inherit project knowledge from `CLAUDE.md` files via the SDK's settings sources.
+
+---
+
+## How BDE Is Different
+
+```mermaid
+graph LR
+    subgraph Traditional["Traditional AI Coding"]
+        T1[Open editor] --> T2[Chat with AI]
+        T2 --> T3[Copy-paste suggestion]
+        T3 --> T4[Manually test]
+        T4 --> T5[Manually commit + PR]
+    end
+
+    subgraph BDE["BDE Workflow"]
+        B1[Write spec] --> B2[Queue task]
+        B2 --> B3["Agent executes autonomously
+        (isolated worktree)"]
+        B3 --> B4["Review diffs in
+        Code Review Station"]
+        B4 --> B5["Merge / PR / Revise
+        (one click)"]
+    end
+
+    style Traditional fill:#1a1a2e,stroke:#6b7280,color:#9ca3af
+    style BDE fill:#1a1a2e,stroke:#00ffcc,color:#00ffcc
 ```
 
-GitHub token is also read from this config for PR status polling.
+**The core insight:** AI agents are more useful when they run autonomously against well-defined specs than when they answer questions in a chat window. BDE provides the infrastructure to make that work safely — isolation, review gates, dependency management, and observability.
 
-## Scripts
+---
 
-| Script                | Purpose                                    |
-| --------------------- | ------------------------------------------ |
-| `npm run dev`         | Electron-vite dev server with HMR          |
-| `npm run build`       | Type-check + build for production          |
-| `npm start`           | Preview the built app                      |
-| `npm test`            | Run unit tests once (vitest)               |
-| `npm run test:watch`  | Vitest in watch mode                       |
-| `npm run typecheck`   | TypeScript type checking (also runs in CI) |
-| `npm run lint`        | ESLint with cache                          |
-| `npm run format`      | Prettier                                   |
-| `npm run build:mac`   | macOS app bundle                           |
-| `npm run build:win`   | Windows executable                         |
-| `npm run build:linux` | Linux AppImage                             |
-
-## Architecture
+## Project Structure
 
 ```
-~/.bde/
-  bde.db              # SQLite database (WAL mode)
-
 src/
-  main/               # Electron main process
-    index.ts           #   App entry — DB init, file watcher, IPC handler registration
-    db.ts              #   SQLite schema, migrations, WAL config
-    git.ts             #   Git operations, PR status polling via GitHub REST API
-    local-agents.ts    #   Agent process scanning, spawning, stdin steering, log tailing
-    config.ts          #   Gateway/GitHub token config from ~/.openclaw/openclaw.json
-    handlers/          #   IPC handler modules (agent, config, gateway, git, sprint, terminal, window)
-    fs.ts              #   Memory file I/O, file system handlers
-  preload/             # Preload bridge — type-safe window.api surface
-    index.ts           #   contextBridge exposing all IPC channels to renderer
+  main/                  # Electron main process
+    agent-manager/       #   Task orchestration, worktree management, retry logic
+    agent-system/        #   Native agent personalities and skills
+    data/                #   Repository pattern, audit trail
+    handlers/            #   17 IPC handler modules
+    services/            #   Task terminal service, dependency resolution
+    db.ts                #   SQLite schema + migrations
+  preload/               # Type-safe IPC bridge
   renderer/src/
-    views/             # 6 top-level views (Sessions, Sprint, Diff, Memory, Cost, Settings)
-    stores/            # Zustand stores (chat, gateway, sessions, toasts, ui, theme)
-    components/        # UI components (layout, sessions, sprint, diff, ui primitives)
-    design-system/     # Design tokens (colors, spacing, typography, etc.)
-    lib/               # RPC client, diff parser, constants, utilities
-  shared/              # Types and IPC channel definitions shared between main/renderer
+    views/               # 8 top-level views
+    stores/              # Zustand state management
+    components/          # UI components (neon design system)
+    hooks/               # Shared React hooks
+    lib/                 # Utilities, constants, GitHub cache
+  shared/                # Types + IPC channel definitions
+docs/
+  architecture.md        # Full architecture documentation
+  BDE_FEATURES.md        # Detailed feature reference
 ```
 
-## Polling Intervals
+---
 
-| What                    | Interval | Constant                   |
-| ----------------------- | -------- | -------------------------- |
-| Agent process scan      | 5s       | `POLL_PROCESSES_INTERVAL`  |
-| Gateway sessions        | 10s      | `POLL_SESSIONS_INTERVAL`   |
-| Sprint tasks (idle)     | 30s      | `POLL_SPRINT_INTERVAL`     |
-| Sprint tasks (active)   | 5s       | `POLL_SPRINT_ACTIVE_MS`    |
-| PR status (GitHub REST) | 60s      | `POLL_PR_STATUS_MS`        |
-| Git status              | 30s      | `POLL_GIT_STATUS_INTERVAL` |
-| Agent log tail          | 1s       | `POLL_LOG_INTERVAL`        |
+## Contributing
 
-## CI
+BDE is in active development. If you're interested in contributing:
 
-GitHub Actions runs on every push to `main` and every PR:
+1. Fork the repo and create a feature branch (`feat/your-feature`)
+2. Run `npm run typecheck && npm test && npm run lint` before committing
+3. Keep PRs focused — one feature or fix per PR
+4. No new npm packages without discussion in an issue first
 
-- **Typecheck**: `npm run typecheck`
-- **Unit tests**: `npm test`
+See [CLAUDE.md](./CLAUDE.md) for detailed development conventions, gotchas, and architecture notes.
 
-Both must pass before merging.
+---
 
-## Keyboard Shortcuts
+## License
 
-| Key       | Action            |
-| --------- | ----------------- |
-| `Cmd+1–6` | Switch views      |
-| `Cmd+K`   | Command palette   |
-| `Cmd+R`   | Refresh sessions  |
-| `?`       | Shortcuts overlay |
-| `Esc`     | Close overlays    |
+MIT
+
+---
+
+<div align="center">
+
+Built by [Ryan](https://github.com/rbtechbot) with help from a fleet of autonomous agents.
+
+</div>
