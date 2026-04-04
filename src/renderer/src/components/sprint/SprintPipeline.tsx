@@ -17,6 +17,7 @@ import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useHealthCheckPolling } from '../../hooks/useHealthCheck'
 import { useVisibleStuckTasks } from '../../stores/healthCheck'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
+import { parseTaskQuery, applyPredicates } from '../../lib/task-query'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
 import { PipelineBacklog } from './PipelineBacklog'
@@ -227,11 +228,13 @@ export function SprintPipeline(): React.JSX.Element {
   // Filter + partition tasks
   const filteredTasks = useMemo(() => {
     let result = tasks
+    // Apply UI chip filters
     if (repoFilter) result = result.filter((t) => t.repo === repoFilter)
     if (tagFilter) result = result.filter((t) => t.tags?.includes(tagFilter))
+    // Apply structured query language
     if (searchQuery) {
-      const lower = searchQuery.toLowerCase()
-      result = result.filter((t) => t.title.toLowerCase().includes(lower))
+      const predicates = parseTaskQuery(searchQuery)
+      result = applyPredicates(result, predicates)
     }
     return result
   }, [tasks, repoFilter, tagFilter, searchQuery])
