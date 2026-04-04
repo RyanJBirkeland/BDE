@@ -386,11 +386,12 @@ describe('resolveFailure', () => {
   it('re-queues task with incremented retry count when retries remain', async () => {
     const result = await resolveFailure({ taskId: 'task-2', retryCount: 1, repo: mockRepo })
 
-    expect(updateTaskMock).toHaveBeenCalledWith('task-2', {
+    expect(updateTaskMock).toHaveBeenCalledWith('task-2', expect.objectContaining({
       status: 'queued',
       retry_count: 2,
-      claimed_by: null
-    })
+      claimed_by: null,
+      next_eligible_at: expect.any(String)
+    }))
     expect(result).toBe(false) // not terminal
   })
 
@@ -415,11 +416,12 @@ describe('resolveFailure', () => {
       repo: mockRepo
     })
 
-    expect(updateTaskMock).toHaveBeenCalledWith('task-4', {
+    expect(updateTaskMock).toHaveBeenCalledWith('task-4', expect.objectContaining({
       status: 'queued',
       retry_count: MAX_RETRIES,
-      claimed_by: null
-    })
+      claimed_by: null,
+      next_eligible_at: expect.any(String)
+    }))
     expect(result).toBe(false) // not terminal
   })
 

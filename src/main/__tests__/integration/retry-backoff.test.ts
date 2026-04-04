@@ -5,6 +5,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Database from 'better-sqlite3'
 
+// Mock broadcast to prevent Electron import
+vi.mock('../../broadcast', () => ({
+  broadcast: vi.fn()
+}))
+
 vi.mock('../../db', () => {
   let _db: Database.Database | null = null
   return {
@@ -69,7 +74,10 @@ function insertTask(
     `INSERT INTO sprint_tasks (id, title, repo, prompt, status, claimed_by, next_eligible_at, retry_count)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
-    id, 'Test task', 'bde', 'Test prompt',
+    id,
+    'Test task',
+    'bde',
+    'Test prompt',
     overrides.status ?? 'queued',
     overrides.claimed_by ?? null,
     overrides.next_eligible_at ?? null,
@@ -86,15 +94,21 @@ function clearTasks(): void {
 function makeMockRepo(): { repo: ISprintTaskRepository; updateTaskMock: ReturnType<typeof vi.fn> } {
   const updateTaskMock = vi.fn().mockReturnValue(null)
   const repo: ISprintTaskRepository = {
-    getTask: vi.fn(), updateTask: updateTaskMock,
-    getQueuedTasks: vi.fn(), getTasksWithDependencies: vi.fn(),
-    getOrphanedTasks: vi.fn(), getActiveTaskCount: vi.fn(), claimTask: vi.fn()
+    getTask: vi.fn(),
+    updateTask: updateTaskMock,
+    getQueuedTasks: vi.fn(),
+    getTasksWithDependencies: vi.fn(),
+    getOrphanedTasks: vi.fn(),
+    getActiveTaskCount: vi.fn(),
+    claimTask: vi.fn()
   }
   return { repo, updateTaskMock }
 }
 
 describe('retry backoff: getQueuedTasks filtering', () => {
-  beforeEach(() => { clearTasks() })
+  beforeEach(() => {
+    clearTasks()
+  })
 
   it('returns tasks with next_eligible_at = NULL (backward compatibility)', () => {
     insertTask({ next_eligible_at: null })
@@ -128,7 +142,9 @@ describe('retry backoff: getQueuedTasks filtering', () => {
 })
 
 describe('retry backoff: resolveFailure sets next_eligible_at', () => {
-  beforeEach(() => { vi.clearAllMocks() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
   it('sets next_eligible_at when requeuing on first retry (retry_count=0, 30s backoff)', () => {
     const { repo, updateTaskMock } = makeMockRepo()
@@ -136,9 +152,15 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
     resolveFailure({ taskId: 'task-1', retryCount: 0, repo })
     const after = Date.now()
 
-    expect(updateTaskMock).toHaveBeenCalledWith('task-1', expect.objectContaining({
-      status: 'queued', retry_count: 1, claimed_by: null, next_eligible_at: expect.any(String)
-    }))
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({
+        status: 'queued',
+        retry_count: 1,
+        claimed_by: null,
+        next_eligible_at: expect.any(String)
+      })
+    )
 
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     const eligibleAt = new Date(patch.next_eligible_at as string).getTime()
@@ -166,9 +188,13 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
     resolveFailure({ taskId: 'task-1', retryCount: 2, repo })
     const after = Date.now()
 
-    expect(updateTaskMock).toHaveBeenCalledWith('task-1', expect.objectContaining({
-      status: 'queued', retry_count: 3
-    }))
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({
+        status: 'queued',
+        retry_count: 3
+      })
+    )
 
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     const eligibleAt = new Date(patch.next_eligible_at as string).getTime()
@@ -182,7 +208,10 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
     // MAX_RETRIES is 3
     resolveFailure({ taskId: 'task-1', retryCount: 3, repo })
 
-    expect(updateTaskMock).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'failed' }))
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'failed' })
+    )
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     expect(patch.next_eligible_at).toBeUndefined()
   })
