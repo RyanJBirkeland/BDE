@@ -562,3 +562,39 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Completed section toggle */
+.planner-epic-list__section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--bde-border, #1a1a24);
+  color: var(--neon-text-dim, #888);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.planner-epic-list__section-toggle:hover {
+  color: var(--neon-text, #e0e0e0);
+}
+.planner-epic-list__section-chevron {
+  font-size: 8px;
+  width: 12px;
+}
+.planner-epic-list__section-count {
+  margin-left: auto;
+  opacity: 0.5;
+}
+.planner-epic-list__empty {
+  padding: 16px 14px;
+  font-size: 12px;
+  color: var(--neon-text-dim, #888);
+  text-align: center;
+  font-style: italic;
+}

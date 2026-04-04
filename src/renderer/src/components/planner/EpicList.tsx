@@ -87,75 +87,101 @@ export function EpicList({
     return tokens.neon.textDim
   }
 
+  const activeGroups = groups.filter((g) => g.status !== 'completed')
+  const completedGroups = groups.filter((g) => g.status === 'completed')
+  const [completedExpanded, setCompletedExpanded] = useState(false)
+
+  const renderEpicItem = (group: TaskGroup): React.JSX.Element => {
+    const isSelected = group.id === selectedId
+    const groupCounts = counts.get(group.id) || { total: 0, done: 0 }
+    const progressPercent = getProgressPercent(group.id)
+    const progressColor = getProgressColor(progressPercent)
+
+    return (
+      <button
+        key={group.id}
+        className={`planner-epic-item ${isSelected ? 'planner-epic-item--selected' : ''}`}
+        onClick={() => onSelect(group.id)}
+        type="button"
+      >
+        {isSelected && (
+          <div
+            className="planner-epic-item__accent"
+            style={{ background: group.accent_color }}
+          />
+        )}
+
+        <div
+          className="planner-epic-item__icon"
+          style={{
+            background: `${group.accent_color}20`,
+            color: group.accent_color,
+            borderColor: `${group.accent_color}40`
+          }}
+        >
+          {group.icon.charAt(0).toUpperCase()}
+        </div>
+
+        <div className="planner-epic-item__content">
+          <div className="planner-epic-item__row">
+            <span className="planner-epic-item__name">{group.name}</span>
+            <span
+              className="planner-epic-item__status"
+              style={{ color: getStatusColor(group.status) }}
+            >
+              {getStatusLabel(group.status)}
+            </span>
+          </div>
+
+          <div className="planner-epic-item__row">
+            <span className="planner-epic-item__tasks">
+              {groupCounts.done}/{groupCounts.total} tasks
+            </span>
+          </div>
+
+          <div className="planner-epic-item__progress-track">
+            <div
+              className="planner-epic-item__progress-fill"
+              style={{
+                width: `${progressPercent}%`,
+                background: progressColor
+              }}
+            />
+          </div>
+        </div>
+      </button>
+    )
+  }
+
   return (
     <div className="planner-epic-list">
       <div className="planner-epic-list__header">
         <span className="planner-epic-list__title">Epics</span>
-        <span className="planner-epic-list__count">{groups.length}</span>
+        <span className="planner-epic-list__count">{activeGroups.length}</span>
       </div>
 
       <div className="planner-epic-list__scroll">
-        {groups.map((group) => {
-          const isSelected = group.id === selectedId
-          const groupCounts = counts.get(group.id) || { total: 0, done: 0 }
-          const progressPercent = getProgressPercent(group.id)
-          const progressColor = getProgressColor(progressPercent)
+        {activeGroups.length === 0 && (
+          <div className="planner-epic-list__empty">No active epics</div>
+        )}
+        {activeGroups.map(renderEpicItem)}
 
-          return (
+        {completedGroups.length > 0 && (
+          <>
             <button
-              key={group.id}
-              className={`planner-epic-item ${isSelected ? 'planner-epic-item--selected' : ''}`}
-              onClick={() => onSelect(group.id)}
+              className="planner-epic-list__section-toggle"
+              onClick={() => setCompletedExpanded(!completedExpanded)}
               type="button"
             >
-              {isSelected && (
-                <div
-                  className="planner-epic-item__accent"
-                  style={{ background: group.accent_color }}
-                />
-              )}
-
-              <div
-                className="planner-epic-item__icon"
-                style={{
-                  background: `${group.accent_color}20`,
-                  color: group.accent_color,
-                  borderColor: `${group.accent_color}40`
-                }}
-              >
-                {group.icon.charAt(0).toUpperCase()}
-              </div>
-
-              <div className="planner-epic-item__content">
-                <div className="planner-epic-item__row">
-                  <span className="planner-epic-item__name">{group.name}</span>
-                  <span
-                    className="planner-epic-item__status"
-                    style={{ color: getStatusColor(group.status) }}
-                  >
-                    {getStatusLabel(group.status)}
-                  </span>
-                </div>
-
-                <div className="planner-epic-item__row">
-                  <span className="planner-epic-item__tasks">
-                    {groupCounts.done}/{groupCounts.total} tasks
-                  </span>
-                </div>
-
-                <div className="planner-epic-item__progress-track">
-                  <div
-                    className="planner-epic-item__progress-fill"
-                    style={{
-                      width: `${progressPercent}%`,
-                      background: progressColor
-                    }}
-                  />
-                </div>
-              </div>
+              <span className="planner-epic-list__section-chevron">
+                {completedExpanded ? '\u25BC' : '\u25B6'}
+              </span>
+              <span>Completed</span>
+              <span className="planner-epic-list__section-count">{completedGroups.length}</span>
             </button>
-          )
-        })}
+            {completedExpanded && completedGroups.map(renderEpicItem)}
+          </>
+        )}
       </div>
 
       <div className="planner-epic-list__footer">
