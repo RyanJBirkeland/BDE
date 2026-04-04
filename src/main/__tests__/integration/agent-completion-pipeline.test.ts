@@ -240,6 +240,8 @@ describe('Agent completion pipeline integration', () => {
       mockExecFileSequence([
         { stdout: 'agent/empty-branch\n' }, // git rev-parse
         { stdout: '' }, // git status --porcelain (clean)
+        { stdout: '' }, // git fetch origin main
+        { stdout: '' }, // git rebase origin/main
         { stdout: '0\n' } // git rev-list (no commits)
       ])
 
@@ -286,6 +288,8 @@ describe('Agent completion pipeline integration', () => {
       mockExecFileSequence([
         { stdout: 'agent/empty-branch\n' }, // git rev-parse
         { stdout: '' }, // git status --porcelain (clean)
+        { stdout: '' }, // git fetch origin main
+        { stdout: '' }, // git rebase origin/main
         { stdout: '0\n' } // git rev-list (no commits)
       ])
 
@@ -316,7 +320,13 @@ describe('Agent completion pipeline integration', () => {
     })
 
     it('includes agent summary in notes when available', async () => {
-      mockExecFileSequence([{ stdout: 'agent/empty-branch\n' }, { stdout: '' }, { stdout: '0\n' }])
+      mockExecFileSequence([
+        { stdout: 'agent/empty-branch\n' }, // git rev-parse
+        { stdout: '' }, // git status --porcelain (clean)
+        { stdout: '' }, // git fetch origin main
+        { stdout: '' }, // git rebase origin/main
+        { stdout: '0\n' } // git rev-list (no commits)
+      ])
 
       await resolveSuccess(
         {
@@ -586,6 +596,8 @@ describe('Agent completion pipeline integration', () => {
       mockExecFileSequence([
         { stdout: 'agent/parent-branch\n' }, // git rev-parse
         { stdout: '' }, // git status --porcelain
+        { stdout: '' }, // git fetch origin main
+        { stdout: '' }, // git rebase origin/main
         { stdout: '0\n' } // git rev-list (no commits)
       ])
 

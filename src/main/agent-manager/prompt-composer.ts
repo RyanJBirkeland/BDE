@@ -28,7 +28,7 @@ export interface BuildPromptInput {
   retryCount?: number // 0-based retry count
   previousNotes?: string // failure notes from previous attempt
   maxRuntimeMs?: number | null // max runtime in ms
-  upstreamContext?: Array<{ title: string; spec: string }> // completed upstream task specs
+  upstreamContext?: Array<{ title: string; spec: string; partial_diff?: string }> // completed upstream task specs + diffs
 }
 
 // ---------------------------------------------------------------------------
@@ -268,6 +268,16 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
       const cappedSpec =
         upstream.spec.length > 500 ? upstream.spec.slice(0, 500) + '...' : upstream.spec
       prompt += `### ${upstream.title}\n\n${cappedSpec}\n\n`
+
+      // Include partial diff if available (salvaged partial progress from upstream task)
+      if (upstream.partial_diff) {
+        const MAX_DIFF_CHARS = 2000
+        const truncated = upstream.partial_diff.length > MAX_DIFF_CHARS
+        const cappedDiff = truncated
+          ? upstream.partial_diff.slice(0, MAX_DIFF_CHARS) + '\n\n[... diff truncated]'
+          : upstream.partial_diff
+        prompt += `<details>\n<summary>Partial changes from upstream task</summary>\n\n\`\`\`diff\n${cappedDiff}\n\`\`\`\n</details>\n\n`
+      }
     }
   }
 

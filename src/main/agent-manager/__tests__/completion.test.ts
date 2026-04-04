@@ -407,6 +407,8 @@ describe('resolveSuccess', () => {
       { stdout: '' }, // git rm --cached *.log
       { stdout: '' }, // git rm --cached playwright-report/
       { stdout: '' }, // git diff --cached --name-only (empty — no changes remain after unstaging)
+      { stdout: '' }, // git fetch origin main
+      { stdout: '' }, // git rebase origin/main
       { stdout: '0\n' } // git rev-list --count (no commits)
     ])
 

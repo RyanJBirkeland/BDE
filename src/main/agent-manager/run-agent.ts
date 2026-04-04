@@ -225,7 +225,7 @@ export async function runAgent(
   }
 
   // Fetch upstream task specs for context propagation
-  const upstreamContext: Array<{ title: string; spec: string }> = []
+  const upstreamContext: Array<{ title: string; spec: string; partial_diff?: string }> = []
   if (task.depends_on && task.depends_on.length > 0) {
     for (const dep of task.depends_on) {
       try {
@@ -235,7 +235,8 @@ export async function runAgent(
           if (spec.trim()) {
             upstreamContext.push({
               title: upstreamTask.title,
-              spec: spec.trim()
+              spec: spec.trim(),
+              partial_diff: upstreamTask.partial_diff || undefined
             })
           }
         }
