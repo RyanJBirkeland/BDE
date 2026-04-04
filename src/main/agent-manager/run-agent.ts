@@ -8,6 +8,8 @@ import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getGhRepo } from '../paths'
 import { createAgentRecord, updateAgentMeta } from '../agent-history'
 import { randomUUID } from 'node:crypto'
+import { execFile as execFileCb } from 'node:child_process'
+import { promisify } from 'node:util'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, basename, join } from 'node:path'
 import { broadcast } from '../broadcast'
@@ -16,6 +18,8 @@ import type { AgentEvent } from '../../shared/types'
 import { buildAgentPrompt } from './prompt-composer'
 import DOMPurify from 'dompurify'
 import { JSDOM } from 'jsdom'
+
+const execFile = promisify(execFileCb)
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,6 +53,7 @@ export interface RunAgentDeps {
 // ---------------------------------------------------------------------------
 
 const MAX_PLAYGROUND_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_PARTIAL_DIFF_SIZE = 50 * 1024 // 50KB
 
 // Create DOMPurify instance for sanitizing playground HTML
 const window = new JSDOM('').window
@@ -140,6 +145,42 @@ export async function tryEmitPlaygroundEvent(
   } catch (err) {
     logger.warn(`[playground] Failed to read HTML file ${filePath}: ${err}`)
     // Silently ignore — file may not exist yet or may be inaccessible
+  }
+}
+
+/**
+ * Capture uncommitted/unstaged changes from a failed agent's worktree.
+ * Runs `git diff HEAD` and stores the result (capped at 50KB) in task.partial_diff.
+ * This preserves partial progress when the worktree is cleaned up after failure.
+ */
+export async function capturePartialDiff(
+  taskId: string,
+  worktreePath: string,
+  repo: ISprintTaskRepository,
+  logger: Logger
+): Promise<void> {
+  try {
+    const { stdout } = await execFile('git', ['diff', 'HEAD'], {
+      cwd: worktreePath,
+      maxBuffer: MAX_PARTIAL_DIFF_SIZE
+    })
+
+    if (stdout.trim()) {
+      // Cap at 50KB
+      const diff = stdout.slice(0, MAX_PARTIAL_DIFF_SIZE)
+      const truncated = stdout.length > MAX_PARTIAL_DIFF_SIZE
+
+      repo.updateTask(taskId, {
+        partial_diff: truncated ? diff + '\n\n[... diff truncated at 50KB]' : diff
+      })
+
+      logger.info(
+        `[agent-manager] Captured partial diff for task ${taskId} (${diff.length} bytes${truncated ? ', truncated' : ''})`
+      )
+    }
+  } catch (err) {
+    // Non-fatal — log and continue with cleanup
+    logger.warn(`[agent-manager] Failed to capture partial diff for task ${taskId}: ${err}`)
   }
 }
 
@@ -422,6 +463,9 @@ export async function runAgent(
   // Check if watchdog already cleaned up this agent
   if (!activeAgents.has(task.id)) {
     logger.info(`[agent-manager] Agent ${task.id} already cleaned up by watchdog`)
+    // Capture partial diff before cleanup (watchdog timeout may have left partial work)
+    await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
+
     cleanupWorktree({
       repoPath,
       worktreePath: worktree.worktreePath,
@@ -516,6 +560,9 @@ export async function runAgent(
   // Cleanup worktree — but skip for review tasks (worktree preserved for code review)
   const currentTask = repo.getTask(task.id)
   if (currentTask?.status !== 'review') {
+    // Before cleanup, capture partial diff for failed tasks (salvage partial progress)
+    await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
+
     cleanupWorktree({
       repoPath,
       worktreePath: worktree.worktreePath,
