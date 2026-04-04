@@ -1316,6 +1316,79 @@
   color: var(--neon-purple);
 }
 
+.pipeline-filter-bar__presets {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  align-items: center;
+}
+
+.pipeline-filter-bar__preset {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: 4px;
+  background: var(--neon-surface-deep);
+}
+
+.pipeline-filter-bar__preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: var(--neon-cyan);
+  font-size: var(--font-2xs, 10px);
+  font-family: var(--bde-font-code);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pipeline-filter-bar__preset-btn:hover {
+  color: var(--neon-cyan-bright);
+}
+
+.pipeline-filter-bar__preset-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--neon-cyan-border);
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.pipeline-filter-bar__preset-delete:hover {
+  opacity: 1;
+  color: var(--neon-red);
+}
+
+.pipeline-filter-bar__save {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--neon-pink-border);
+  background: var(--neon-pink-surface);
+  color: var(--neon-pink);
+  font-size: var(--font-2xs, 10px);
+  font-family: var(--bde-font-code);
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.pipeline-filter-bar__save:hover {
+  background: var(--neon-pink-surface);
+  border-color: var(--neon-pink);
+}
+
 /* ── Task Pill: Duration (completed tasks) ── */
 .task-pill__duration {
   font-size: var(--font-2xs, 10px);

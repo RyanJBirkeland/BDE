@@ -13,6 +13,7 @@ import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
 import { useAgentHistoryStore } from './stores/agentHistory'
 import { usePendingReviewStore } from './stores/pendingReview'
+import { useFilterPresets } from './stores/filterPresets'
 import { useGitHubRateLimitWarning } from './hooks/useGitHubRateLimitWarning'
 import { useDesktopNotifications } from './hooks/useDesktopNotifications'
 import { PanelRenderer } from './components/panels/PanelRenderer'
@@ -129,6 +130,7 @@ function App(): React.JSX.Element {
 
   const loadLayout = usePanelLayoutStore((s) => s.loadSavedLayout)
   const restorePendingReview = usePendingReviewStore((s) => s.restoreFromStorage)
+  const restoreFilterPresets = useFilterPresets((s) => s.restoreFromStorage)
 
   useEffect(() => {
     fetchLocalAgents()
@@ -141,6 +143,10 @@ function App(): React.JSX.Element {
   useEffect(() => {
     restorePendingReview()
   }, [restorePendingReview])
+
+  useEffect(() => {
+    restoreFilterPresets()
+  }, [restoreFilterPresets])
 
   useGitHubRateLimitWarning()
   useDesktopNotifications()
