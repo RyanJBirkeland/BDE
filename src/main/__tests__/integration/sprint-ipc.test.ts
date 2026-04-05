@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // ---------------------------------------------------------------------------
 
 const mockListTasks = vi.fn()
+const mockListTasksRecent = vi.fn()
 const mockGetTask = vi.fn()
 const mockCreateTask = vi.fn()
 const mockUpdateTask = vi.fn()
@@ -28,6 +29,7 @@ const mockGetHealthCheckTasks = vi.fn()
 
 vi.mock('../../data/sprint-queries', () => ({
   listTasks: (...args: unknown[]) => mockListTasks(...args),
+  listTasksRecent: (...args: unknown[]) => mockListTasksRecent(...args),
   getTask: (...args: unknown[]) => mockGetTask(...args),
   createTask: (...args: unknown[]) => mockCreateTask(...args),
   updateTask: (...args: unknown[]) => mockUpdateTask(...args),
@@ -252,17 +254,17 @@ describe('Sprint IPC handlers — integration', () => {
   describe('sprint:list', () => {
     it('returns an array of tasks', async () => {
       const tasks = [makeTask({ id: 'task-1' }), makeTask({ id: 'task-2' })]
-      mockListTasks.mockReturnValue(tasks)
+      mockListTasksRecent.mockReturnValue(tasks)
 
       const result = await invoke('sprint:list')
 
       expect(result).toEqual(tasks)
       expect(result).toHaveLength(2)
-      expect(mockListTasks).toHaveBeenCalledOnce()
+      expect(mockListTasksRecent).toHaveBeenCalledOnce()
     })
 
     it('returns empty array when no tasks exist', async () => {
-      mockListTasks.mockReturnValue([])
+      mockListTasksRecent.mockReturnValue([])
       const result = await invoke('sprint:list')
       expect(result).toEqual([])
     })
@@ -418,7 +420,7 @@ describe('Sprint IPC handlers — integration', () => {
   // 7. Error handling → handler returns structured error on failure
   describe('error handling', () => {
     it('propagates errors from the data layer through safeHandle', async () => {
-      mockListTasks.mockImplementation(() => {
+      mockListTasksRecent.mockImplementation(() => {
         throw new Error('DB connection failed')
       })
 
