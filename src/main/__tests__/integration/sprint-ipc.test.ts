@@ -32,6 +32,7 @@ vi.mock('../../data/sprint-queries', () => ({
   listTasks: (...args: unknown[]) => mockListTasks(...args),
   listTasksRecent: (...args: unknown[]) => mockListTasksRecent(...args),
   listTasksRecent: (...args: unknown[]) => mockListTasks(...args),
+  listTasksRecent: (...args: unknown[]) => mockListTasks(...args),
   getTask: (...args: unknown[]) => mockGetTask(...args),
   createTask: (...args: unknown[]) => mockCreateTask(...args),
   updateTask: (...args: unknown[]) => mockUpdateTask(...args),
@@ -51,6 +52,7 @@ vi.mock('../../data/sprint-queries', () => ({
   getOrphanedTasks: vi.fn(),
   getActiveTaskCount: vi.fn(),
   listTasksRecent: vi.fn(() => []),
+  getSuccessRateBySpecType: vi.fn(),
   UPDATE_ALLOWLIST: new Set([
     'title',
     'prompt',

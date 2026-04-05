@@ -24,7 +24,8 @@ import type {
   TaskGroup,
   AgentManagerStatus,
   SynthesizeRequest,
-  ReviseRequest
+  ReviseRequest,
+  SpecTypeSuccessRate
 } from './types'
 import type { AgentEvent } from './types'
 import type { BatchOperation, BatchResult } from './types'
@@ -347,6 +348,10 @@ export interface SprintChannels {
   'sprint:failureBreakdown': {
     args: []
     result: Array<{ reason: string; count: number }>
+  }
+  'sprint:getSuccessRateBySpecType': {
+    args: []
+    result: SpecTypeSuccessRate[]
   }
 }
 

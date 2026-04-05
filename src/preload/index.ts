@@ -174,6 +174,9 @@ const api = {
     ) => typedInvoke('sprint:batchImport', tasks)
     ) => typedInvoke('sprint:batchImport', tasks),
     failureBreakdown: () => typedInvoke('sprint:failureBreakdown')
+    ) => typedInvoke('sprint:batchImport', tasks)
+    ) => typedInvoke('sprint:batchImport', tasks),
+    getSuccessRateBySpecType: () => typedInvoke('sprint:getSuccessRateBySpecType')
   },
 
   // Task groups

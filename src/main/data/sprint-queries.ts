@@ -960,3 +960,38 @@ export function getTaskRuntimeStats(): TaskRuntimeStats {
     }
   }
 }
+
+export interface SpecTypeSuccessRate {
+  spec_type: string | null
+  done: number
+  total: number
+  success_rate: number
+}
+
+export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
+  try {
+    const db = getDb()
+    const rows = db
+      .prepare(
+        `SELECT
+           COALESCE(spec_type, 'unknown') as spec_type,
+           SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
+           COUNT(*) as total
+         FROM sprint_tasks
+         WHERE status IN ('done', 'failed', 'error', 'cancelled')
+         GROUP BY spec_type`
+      )
+      .all() as Array<{ spec_type: string | null; done: number; total: number }>
+
+    return rows.map((row) => ({
+      spec_type: row.spec_type === 'unknown' ? null : row.spec_type,
+      done: row.done,
+      total: row.total,
+      success_rate: row.total > 0 ? row.done / row.total : 0
+    }))
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    logger.warn(`[sprint-queries] getSuccessRateBySpecType failed: ${msg}`)
+    return []
+  }
+}

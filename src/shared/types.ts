@@ -497,3 +497,12 @@ export interface AutoReviewRule {
   }
   action: 'auto-merge' | 'auto-approve'
 }
+
+// --- Success Rate by Spec Type ---
+
+export interface SpecTypeSuccessRate {
+  spec_type: string | null
+  done: number
+  total: number
+  success_rate: number
+}

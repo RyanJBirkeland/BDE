@@ -191,6 +191,7 @@ declare global {
         ) => Promise<IpcResult<'sprint:exportTasks'>>
         exportTaskHistory: (taskId: string) => Promise<IpcResult<'sprint:exportTaskHistory'>>
         failureBreakdown: () => Promise<IpcResult<'sprint:failureBreakdown'>>
+        getSuccessRateBySpecType: () => Promise<IpcResult<'sprint:getSuccessRateBySpecType'>>
       }
 
       // Task groups

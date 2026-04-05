@@ -5,6 +5,7 @@ import { CheckCircle, TrendingUp, DollarSign } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 import type { FeedEvent } from '../neon/ActivityFeed'
 import { FailureBreakdown } from './FailureBreakdown'
+import { SpecTypeSuccessRate } from './SpecTypeSuccessRate'
 
 interface ActivitySectionProps {
   feedEvents: FeedEvent[]
@@ -76,6 +77,8 @@ export function ActivitySection({
       </NeonCard>
 
       <FailureBreakdown />
+
+      <SpecTypeSuccessRate />
 
       <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
         <MiniChart data={costTrendData} height={80} />

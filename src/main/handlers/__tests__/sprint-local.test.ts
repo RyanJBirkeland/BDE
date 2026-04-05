@@ -32,7 +32,8 @@ vi.mock('../../data/sprint-queries', () => ({
   getQueuedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn(),
   getOrphanedTasks: vi.fn(),
-  getActiveTaskCount: vi.fn()
+  getActiveTaskCount: vi.fn(),
+  getSuccessRateBySpecType: vi.fn()
 }))
 
 // Mock sprint-listeners

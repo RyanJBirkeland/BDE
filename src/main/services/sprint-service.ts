@@ -14,13 +14,14 @@ import {
   createSprintTaskRepository,
   type ISprintTaskRepository,
   type CreateTaskInput,
-  type QueueStats
+  type QueueStats,
+  type SpecTypeSuccessRate
 } from '../data/sprint-task-repository'
 import { UPDATE_ALLOWLIST } from '../data/sprint-queries'
 import type { SprintTask } from '../../shared/types'
 
 export { UPDATE_ALLOWLIST }
-export type { CreateTaskInput, QueueStats }
+export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate }
 
 const repo: ISprintTaskRepository = createSprintTaskRepository()
 
@@ -92,4 +93,8 @@ export function updateTaskMergeableState(prNumber: number, mergeableState: strin
 
 export function getHealthCheckTasks(): SprintTask[] {
   return repo.getHealthCheckTasks()
+}
+
+export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
+  return repo.getSuccessRateBySpecType()
 }

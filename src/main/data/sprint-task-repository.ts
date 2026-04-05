@@ -10,9 +10,9 @@
  */
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import * as queries from './sprint-queries'
-import type { CreateTaskInput, QueueStats } from './sprint-queries'
+import type { CreateTaskInput, QueueStats, SpecTypeSuccessRate } from './sprint-queries'
 
-export type { CreateTaskInput, QueueStats }
+export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate }
 
 export interface ISprintTaskRepository {
   getTask(id: string): SprintTask | null
@@ -38,6 +38,7 @@ export interface ISprintTaskRepository {
   listTasksWithOpenPrs(): SprintTask[]
   updateTaskMergeableState(prNumber: number, mergeableState: string | null): void
   getHealthCheckTasks(): SprintTask[]
+  getSuccessRateBySpecType(): SpecTypeSuccessRate[]
 }
 
 /**
@@ -64,6 +65,7 @@ export function createSprintTaskRepository(): ISprintTaskRepository {
     markTaskCancelledByPrNumber: queries.markTaskCancelledByPrNumber,
     listTasksWithOpenPrs: queries.listTasksWithOpenPrs,
     updateTaskMergeableState: queries.updateTaskMergeableState,
-    getHealthCheckTasks: queries.getHealthCheckTasks
+    getHealthCheckTasks: queries.getHealthCheckTasks,
+    getSuccessRateBySpecType: queries.getSuccessRateBySpecType
   }
 }
