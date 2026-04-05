@@ -11,7 +11,12 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
 import { StatusBar, NeonCard, ParticleField } from '../components/neon'
 import { neonVar } from '../components/neon/types'
 import { partitionSprintTasks } from '../lib/partitionSprintTasks'
-import { StatusCounters, CenterColumn, ActivitySection } from '../components/dashboard'
+import {
+  StatusCounters,
+  CenterColumn,
+  ActivitySection,
+  MorningBriefing
+} from '../components/dashboard'
 import '../assets/dashboard-neon.css'
 import { Plus } from 'lucide-react'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
@@ -218,40 +223,15 @@ export default function DashboardView(): React.JSX.Element {
 
         {/* Morning briefing card */}
         {showBriefing && briefingTasks.length > 0 && (
-          <motion.div
-            className="dashboard-briefing"
-            variants={reduced ? undefined : VARIANTS.fadeIn}
-            initial={reduced ? undefined : 'initial'}
-            animate={reduced ? undefined : 'animate'}
-            exit={reduced ? undefined : 'exit'}
-            transition={transition}
-          >
-            <NeonCard accent="cyan" title="Morning Briefing">
-              <div className="dashboard-briefing__content">
-                <p className="dashboard-briefing__text">
-                  {briefingTasks.length} task{briefingTasks.length !== 1 ? 's' : ''} completed since
-                  last session
-                </p>
-                <div className="dashboard-briefing__actions">
-                  <button
-                    className="dashboard-briefing__button dashboard-briefing__button--primary"
-                    onClick={() => {
-                      setView('code-review')
-                      handleDismissBriefing()
-                    }}
-                  >
-                    Review All
-                  </button>
-                  <button
-                    className="dashboard-briefing__button dashboard-briefing__button--secondary"
-                    onClick={handleDismissBriefing}
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-            </NeonCard>
-          </motion.div>
+          <MorningBriefing
+            tasks={briefingTasks}
+            localAgents={localAgents}
+            onReviewAll={() => {
+              setView('code-review')
+              handleDismissBriefing()
+            }}
+            onDismiss={handleDismissBriefing}
+          />
         )}
 
         {/* 3-column Ops Deck grid or onboarding */}
