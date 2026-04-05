@@ -207,5 +207,20 @@ vi.stubGlobal('api', {
     removeTask: vi.fn().mockResolvedValue(true),
     getGroupTasks: vi.fn().mockResolvedValue([]),
     queueAll: vi.fn().mockResolvedValue(0)
+  },
+  webhooks: {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn().mockResolvedValue({
+      id: 'test-webhook',
+      url: 'https://',
+      events: [],
+      enabled: true,
+      secret: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }),
+    update: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    test: vi.fn().mockResolvedValue(undefined)
   }
 })

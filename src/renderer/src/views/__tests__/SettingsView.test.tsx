@@ -110,6 +110,8 @@ describe('SettingsView', () => {
     render(<SettingsView />)
     const links = screen.getAllByRole('link')
     expect(links).toHaveLength(10) // About section removed
+    expect(links).toHaveLength(11)
+    expect(links).toHaveLength(10)
     // Agent tab should not exist
     expect(screen.queryByText('Agent')).not.toBeInTheDocument()
   })
