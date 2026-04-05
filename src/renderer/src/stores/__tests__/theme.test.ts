@@ -5,7 +5,7 @@ describe('theme store', () => {
   beforeEach(() => {
     useThemeStore.setState({ theme: 'dark' })
     localStorage.clear()
-    document.documentElement.classList.remove('theme-light', 'theme-warm')
+    document.documentElement.classList.remove('theme-light', 'theme-warm', 'theme-pro-dark', 'theme-pro-light')
   })
 
   it('setTheme to dark updates state', () => {
@@ -46,10 +46,10 @@ describe('theme store', () => {
     expect(useThemeStore.getState().theme).toBe('warm')
   })
 
-  it('toggleTheme cycles warm to dark', () => {
+  it('toggleTheme cycles warm to pro-dark', () => {
     useThemeStore.setState({ theme: 'warm' })
     useThemeStore.getState().toggleTheme()
-    expect(useThemeStore.getState().theme).toBe('dark')
+    expect(useThemeStore.getState().theme).toBe('pro-dark')
   })
 
   it('setTheme to warm updates state', () => {
@@ -66,5 +66,48 @@ describe('theme store', () => {
   it('setTheme warm persists to localStorage', () => {
     useThemeStore.getState().setTheme('warm')
     expect(localStorage.getItem('bde-theme')).toBe('warm')
+  })
+
+  it('setTheme to pro-dark updates state', () => {
+    useThemeStore.getState().setTheme('pro-dark')
+    expect(useThemeStore.getState().theme).toBe('pro-dark')
+  })
+
+  it('setTheme to pro-light updates state', () => {
+    useThemeStore.getState().setTheme('pro-light')
+    expect(useThemeStore.getState().theme).toBe('pro-light')
+  })
+
+  it('setTheme pro-dark adds correct class and removes others', () => {
+    document.documentElement.classList.add('theme-light')
+    useThemeStore.getState().setTheme('pro-dark')
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
+  })
+
+  it('setTheme pro-light adds correct class and removes others', () => {
+    document.documentElement.classList.add('theme-warm')
+    useThemeStore.getState().setTheme('pro-light')
+    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+  })
+
+  it('setTheme pro-dark persists to localStorage', () => {
+    useThemeStore.getState().setTheme('pro-dark')
+    expect(localStorage.getItem('bde-theme')).toBe('pro-dark')
+  })
+
+  it('toggleTheme cycles pro-dark to pro-light', () => {
+    useThemeStore.setState({ theme: 'pro-dark' })
+    useThemeStore.getState().toggleTheme()
+    expect(useThemeStore.getState().theme).toBe('pro-light')
+  })
+
+  it('toggleTheme cycles pro-light to dark', () => {
+    useThemeStore.setState({ theme: 'pro-light' })
+    useThemeStore.getState().toggleTheme()
+    expect(useThemeStore.getState().theme).toBe('dark')
   })
 })

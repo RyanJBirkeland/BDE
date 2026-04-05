@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type Theme = 'dark' | 'light' | 'warm'
+type Theme = 'dark' | 'light' | 'warm' | 'pro-dark' | 'pro-light'
 
 interface ThemeStore {
   theme: Theme
@@ -9,9 +9,11 @@ interface ThemeStore {
 }
 
 function applyTheme(t: Theme): void {
-  document.documentElement.classList.remove('theme-light', 'theme-warm')
+  document.documentElement.classList.remove('theme-light', 'theme-warm', 'theme-pro-dark', 'theme-pro-light')
   if (t === 'light') document.documentElement.classList.add('theme-light')
   else if (t === 'warm') document.documentElement.classList.add('theme-warm')
+  else if (t === 'pro-dark') document.documentElement.classList.add('theme-pro-dark')
+  else if (t === 'pro-light') document.documentElement.classList.add('theme-pro-light')
 }
 
 function loadSavedTheme(): Theme {
@@ -29,7 +31,9 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   theme: initialTheme,
   toggleTheme: () =>
     set((s) => {
-      const next = s.theme === 'dark' ? 'light' : s.theme === 'light' ? 'warm' : 'dark'
+      const order: Theme[] = ['dark', 'light', 'warm', 'pro-dark', 'pro-light']
+      const idx = order.indexOf(s.theme)
+      const next = order[(idx + 1) % order.length]
       localStorage.setItem('bde-theme', next)
       applyTheme(next)
       return { theme: next }
