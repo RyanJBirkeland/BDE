@@ -40,6 +40,7 @@ export function NotificationBell(): React.JSX.Element {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const markReadTimerRef = useRef<number | null>(null)
 
   const notifications = useNotificationsStore((s) => s.notifications)
   const markAsRead = useNotificationsStore((s) => s.markAsRead)
@@ -77,6 +78,22 @@ export function NotificationBell(): React.JSX.Element {
       firstItem?.focus()
     }
   }, [isOpen, notifications.length])
+
+  // Auto-mark-read after 1.5s when dropdown is open
+  useEffect(() => {
+    if (isOpen && unreadCount > 0) {
+      markReadTimerRef.current = window.setTimeout(() => {
+        markAllAsRead()
+      }, 1500)
+    }
+
+    return () => {
+      if (markReadTimerRef.current) {
+        clearTimeout(markReadTimerRef.current)
+        markReadTimerRef.current = null
+      }
+    }
+  }, [isOpen, unreadCount, markAllAsRead])
 
   // Keyboard navigation for dropdown
   const handleListKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -164,10 +181,15 @@ export function NotificationBell(): React.JSX.Element {
             className="notification-bell__badge"
             aria-label={`${unreadCount} unread notifications`}
           >
-            {unreadCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
+
+      {/* Screen reader announcements */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {unreadCount > 0 && `${unreadCount} unread notifications`}
+      </div>
 
       {isOpen && (
         <div ref={dropdownRef} className="notification-bell__dropdown glass-modal elevation-3">
