@@ -2,7 +2,8 @@
  * SettingsSidebar — categorized sidebar navigation for Settings.
  * Groups sections by category, supports keyboard navigation with roving tabindex.
  */
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { Search } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export interface SettingsSection {
@@ -42,7 +43,28 @@ export function SettingsSidebar({
   onSelect
 }: SettingsSidebarProps): React.JSX.Element {
   const navRef = useRef<HTMLElement>(null)
-  const groups = groupByCategory(sections)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Filter sections by search query (label + category)
+  const filteredSections = sections.filter((section) => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    return (
+      section.label.toLowerCase().includes(query) || section.category.toLowerCase().includes(query)
+    )
+  })
+
+  const groups = groupByCategory(filteredSections)
+
+  // Auto-select when only one match remains
+  useEffect(() => {
+    if (searchQuery.trim() && filteredSections.length === 1) {
+      const singleMatch = filteredSections[0]
+      if (singleMatch.id !== activeId) {
+        onSelect(singleMatch.id)
+      }
+    }
+  }, [searchQuery, filteredSections, activeId, onSelect])
 
   function getAllItems(): HTMLElement[] {
     if (!navRef.current) return []
@@ -91,6 +113,17 @@ export function SettingsSidebar({
 
   return (
     <nav ref={navRef} role="navigation" aria-label="Settings sections">
+      <div className="stg-sidebar__search">
+        <Search size={14} className="stg-sidebar__search-icon" />
+        <input
+          type="text"
+          placeholder="Search settings..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="stg-sidebar__search-input"
+          aria-label="Search settings sections"
+        />
+      </div>
       {groups.map(({ category, items }) => (
         <div key={category} className="stg-sidebar__group">
           <div className="stg-sidebar__category">{category}</div>
