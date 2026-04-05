@@ -1,4 +1,5 @@
 import type { AgentManagerConfig, ActiveAgent, SteerResult, Logger } from './types'
+import type { TaskDependency } from '../../shared/types'
 import {
   EXECUTOR_ID,
   WATCHDOG_INTERVAL_MS,
@@ -221,6 +222,7 @@ export class AgentManagerImpl implements AgentManager {
   readonly _agentPromises = new Set<Promise<void>>()
   readonly _depIndex: DependencyIndex
   readonly _metrics: MetricsCollector
+  private _lastTaskDeps = new Map<string, TaskDependency[] | null>()
 
   // Private timers
   private pollTimer: ReturnType<typeof setInterval> | null = null
@@ -490,6 +492,30 @@ export class AgentManagerImpl implements AgentManager {
     }
   }
 
+  // ---- drainLoop helpers ----
+
+  /**
+   * Deep-compare two dependency arrays for equality.
+   */
+  private _depsEqual(a: TaskDependency[] | null, b: TaskDependency[] | null): boolean {
+    if (a === b) return true
+    if (!a || !b) return false
+    if (a.length !== b.length) return false
+    // Sort by id for stable comparison
+    const aSorted = [...a].sort((x, y) => x.id.localeCompare(y.id))
+    const bSorted = [...b].sort((x, y) => x.id.localeCompare(y.id))
+    for (let i = 0; i < aSorted.length; i++) {
+      if (
+        aSorted[i].id !== bSorted[i].id ||
+        aSorted[i].type !== bSorted[i].type ||
+        aSorted[i].condition !== bSorted[i].condition
+      ) {
+        return false
+      }
+    }
+    return true
+  }
+
   // ---- drainLoop ----
 
   async _drainLoop(): Promise<void> {
@@ -501,12 +527,30 @@ export class AgentManagerImpl implements AgentManager {
     this._metrics.increment('drainLoopCount')
     const drainStart = Date.now()
 
-    // Refresh dependency index each drain cycle to pick up tasks created
-    // since startup or since the last drain. Rebuild is O(n) and cheap.
+    // Incrementally update dependency index instead of full rebuild
     let taskStatusMap = new Map<string, string>()
     try {
       const allTasks = this.repo.getTasksWithDependencies()
-      this._depIndex.rebuild(allTasks)
+      const currentTaskIds = new Set(allTasks.map((t) => t.id))
+
+      // Remove deleted tasks from index
+      for (const oldId of this._lastTaskDeps.keys()) {
+        if (!currentTaskIds.has(oldId)) {
+          this._depIndex.remove(oldId)
+          this._lastTaskDeps.delete(oldId)
+        }
+      }
+
+      // Update tasks with changed dependencies
+      for (const task of allTasks) {
+        const oldDeps = this._lastTaskDeps.get(task.id) ?? null
+        const newDeps = task.depends_on ?? null
+        if (!this._depsEqual(oldDeps, newDeps)) {
+          this._depIndex.update(task.id, newDeps)
+          this._lastTaskDeps.set(task.id, newDeps)
+        }
+      }
+
       taskStatusMap = new Map(allTasks.map((t) => [t.id, t.status]))
     } catch (err) {
       this.logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
@@ -639,10 +683,15 @@ export class AgentManagerImpl implements AgentManager {
       }
     )
 
-    // Build dependency index
+    // Build dependency index and initialize dependency tracking
     try {
       const tasks = this.repo.getTasksWithDependencies()
       this._depIndex.rebuild(tasks)
+      // Initialize _lastTaskDeps to avoid false positives on first drain
+      this._lastTaskDeps.clear()
+      for (const task of tasks) {
+        this._lastTaskDeps.set(task.id, task.depends_on ?? null)
+      }
       this.logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
     } catch (err) {
       this.logger.error(`[agent-manager] Failed to build dependency index: ${err}`)

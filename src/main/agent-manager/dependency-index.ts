@@ -6,6 +6,8 @@ const FAILURE_STATUSES = new Set(['failed', 'error', 'cancelled'])
 
 export interface DependencyIndex {
   rebuild(tasks: Array<{ id: string; depends_on: TaskDependency[] | null }>): void
+  update(taskId: string, deps: TaskDependency[] | null): void
+  remove(taskId: string): void
   getDependents(taskId: string): Set<string>
   areDependenciesSatisfied(
     taskId: string,
@@ -16,10 +18,16 @@ export interface DependencyIndex {
 
 export function createDependencyIndex(): DependencyIndex {
   const reverseMap = new Map<string, Set<string>>()
+  const forwardMap = new Map<string, Set<string>>()
 
   function addEdges(taskId: string, deps: TaskDependency[] | null): void {
-    if (!deps) return
+    if (!deps || deps.length === 0) {
+      forwardMap.delete(taskId)
+      return
+    }
+    const depIds = new Set<string>()
     for (const dep of deps) {
+      depIds.add(dep.id)
       let set = reverseMap.get(dep.id)
       if (!set) {
         set = new Set()
@@ -27,12 +35,38 @@ export function createDependencyIndex(): DependencyIndex {
       }
       set.add(taskId)
     }
+    forwardMap.set(taskId, depIds)
+  }
+
+  function removeEdges(taskId: string): void {
+    const oldDeps = forwardMap.get(taskId)
+    if (oldDeps) {
+      for (const depId of oldDeps) {
+        const dependents = reverseMap.get(depId)
+        if (dependents) {
+          dependents.delete(taskId)
+          if (dependents.size === 0) {
+            reverseMap.delete(depId)
+          }
+        }
+      }
+    }
+    forwardMap.delete(taskId)
   }
 
   return {
     rebuild(tasks) {
       reverseMap.clear()
+      forwardMap.clear()
       for (const task of tasks) addEdges(task.id, task.depends_on)
+    },
+    update(taskId, deps) {
+      removeEdges(taskId)
+      addEdges(taskId, deps)
+    },
+    remove(taskId) {
+      removeEdges(taskId)
+      reverseMap.delete(taskId)
     },
     getDependents(taskId) {
       return reverseMap.get(taskId) ?? new Set()
