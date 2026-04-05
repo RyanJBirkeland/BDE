@@ -1015,3 +1015,32 @@ html.theme-light .elevation-3 {
 html.theme-light .elevation-3-backdrop {
   background: rgba(0, 0, 0, 0.25);
 }
+
+/* ── Pro Dark theme overrides (zero glass/neon effects) ── */
+
+html.theme-pro-dark .glass-modal {
+  background: #2b2d30;
+  backdrop-filter: none;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(78, 81, 87, 0.5) inset;
+}
+
+html.theme-pro-dark .glass-highlight {
+  display: none;
+}
+
+html.theme-pro-dark .glass::after {
+  display: none;
+}
+
+html.theme-pro-dark .elevation-3 {
+  background: #2b2d30;
+  border: 1px solid #393b40;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+html.theme-pro-dark .elevation-3-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: none;
+}
