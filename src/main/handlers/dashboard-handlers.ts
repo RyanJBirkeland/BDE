@@ -21,9 +21,7 @@ export function getCompletionsPerHour(): { hour: string; count: number }[] {
   return rows
 }
 
-export function getRecentEvents(
-  limit: number = 20
-): {
+export function getRecentEvents(limit: number = 20): {
   id: number
   agent_id: string
   event_type: string

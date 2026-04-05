@@ -37,6 +37,7 @@ interface TaskWorkbenchState {
   maxCostUsd: number | null
   model: string
   specType: SpecType | null
+  crossRepoContract: string | null
   pendingGroupId: string | null
 
   // --- Copilot ---
@@ -122,6 +123,7 @@ function defaults(): Pick<
   | 'maxCostUsd'
   | 'model'
   | 'specType'
+  | 'crossRepoContract'
   | 'pendingGroupId'
   | 'copilotVisible'
   | 'copilotMessages'
@@ -149,6 +151,7 @@ function defaults(): Pick<
     maxCostUsd: null,
     model: '',
     specType: null,
+    crossRepoContract: null,
     pendingGroupId: null,
     copilotVisible: true,
     copilotMessages: (() => {
@@ -194,6 +197,7 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       maxCostUsd: task.max_cost_usd ?? null,
       model: task.model ?? '',
       specType: (task.spec_type as SpecType) ?? null,
+      crossRepoContract: task.cross_repo_contract ?? null,
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
       streamingMessageId: null,
       activeStreamId: null,

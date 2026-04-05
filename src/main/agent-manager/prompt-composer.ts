@@ -29,6 +29,7 @@ export interface BuildPromptInput {
   previousNotes?: string // failure notes from previous attempt
   maxRuntimeMs?: number | null // max runtime in ms
   upstreamContext?: Array<{ title: string; spec: string; partial_diff?: string }> // completed upstream task specs + diffs
+  crossRepoContract?: string | null // cross-repo API contract documentation
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +184,8 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     retryCount,
     previousNotes,
     maxRuntimeMs,
-    upstreamContext
+    upstreamContext,
+    crossRepoContract
   } = input
 
   // Start with universal preamble
@@ -258,6 +260,14 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
   } else if (taskContent) {
     // For pipeline, assistant, adhoc: append task content
     prompt += '\n\n' + taskContent
+  }
+
+  // Inject cross-repo contract documentation when provided
+  if (crossRepoContract && crossRepoContract.trim()) {
+    prompt += '\n\n## Cross-Repo Contract\n\n'
+    prompt += 'This task involves API contracts with other repositories. '
+    prompt += 'Follow these contract specifications exactly:\n\n'
+    prompt += crossRepoContract
   }
 
   // Inject upstream task context when provided

@@ -21,7 +21,9 @@ describe('planner-import', () => {
     // Clean up test data
     // Delete tasks, then nullify group_id references, then delete groups
     db.prepare('DELETE FROM sprint_tasks WHERE title LIKE ?').run('Test:%')
-    db.prepare('UPDATE sprint_tasks SET group_id = NULL WHERE group_id IN (SELECT id FROM task_groups WHERE name LIKE ?)').run('Test:%')
+    db.prepare(
+      'UPDATE sprint_tasks SET group_id = NULL WHERE group_id IN (SELECT id FROM task_groups WHERE name LIKE ?)'
+    ).run('Test:%')
     db.prepare('DELETE FROM task_groups WHERE name LIKE ?').run('Test:%')
   })
 
@@ -29,7 +31,9 @@ describe('planner-import', () => {
     // Clean up test data
     // Delete tasks, then nullify group_id references, then delete groups
     db.prepare('DELETE FROM sprint_tasks WHERE title LIKE ?').run('Test:%')
-    db.prepare('UPDATE sprint_tasks SET group_id = NULL WHERE group_id IN (SELECT id FROM task_groups WHERE name LIKE ?)').run('Test:%')
+    db.prepare(
+      'UPDATE sprint_tasks SET group_id = NULL WHERE group_id IN (SELECT id FROM task_groups WHERE name LIKE ?)'
+    ).run('Test:%')
     db.prepare('DELETE FROM task_groups WHERE name LIKE ?').run('Test:%')
   })
 

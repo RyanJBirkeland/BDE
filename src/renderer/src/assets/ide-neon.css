@@ -563,7 +563,9 @@
   background: var(--neon-surface-deep);
   border: 1px solid var(--neon-purple-border);
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 24px var(--neon-purple-glow);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 0 24px var(--neon-purple-glow);
   overflow: hidden;
 }
 

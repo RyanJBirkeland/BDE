@@ -62,6 +62,10 @@ export function CenterColumn({
   onKeyDownFor
   onFilterClick,
   onKeyDownFor
+  onFilterClick,
+  onKeyDownFor
+  onFilterClick,
+  onKeyDownFor
   onFilterClick
   onFilterClick,
   onKeyDownFor: _onKeyDownFor

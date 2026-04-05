@@ -36,6 +36,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   const maxCostUsd = useTaskWorkbenchStore((s) => s.maxCostUsd)
   const model = useTaskWorkbenchStore((s) => s.model)
   const pendingGroupId = useTaskWorkbenchStore((s) => s.pendingGroupId)
+  const crossRepoContract = useTaskWorkbenchStore((s) => s.crossRepoContract)
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const resetForm = useTaskWorkbenchStore((s) => s.resetForm)
 
@@ -47,6 +48,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   const [generating, setGenerating] = useState(false)
   const [showQueueConfirm, setShowQueueConfirm] = useState(false)
   const [queueConfirmMessage, setQueueConfirmMessage] = useState('')
+  const [contractExpanded, setContractExpanded] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
 
   useReadinessChecks()
@@ -69,7 +71,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           max_cost_usd: maxCostUsd ?? undefined,
           model: model || undefined,
           status: targetStatus,
-          spec_type: specType ?? undefined
+          spec_type: specType ?? undefined,
+          cross_repo_contract: crossRepoContract || undefined
         })
       } else {
         const input: CreateTicketInput = {
@@ -84,6 +87,9 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           model: model || undefined,
           spec_type: specType ?? undefined,
           group_id: pendingGroupId ?? undefined
+          spec_type: specType ?? undefined
+          spec_type: specType ?? undefined,
+          cross_repo_contract: crossRepoContract || undefined
         }
         const createdId = await createTask(input)
         // createTask hardcodes status=backlog. If queuing, promote to queued.
@@ -104,6 +110,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       maxCostUsd,
       model,
       pendingGroupId,
+      crossRepoContract,
       createTask,
       updateTask
     ]
@@ -416,6 +423,35 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
               >
                 Dev Playground
               </label>
+            </div>
+            <div className="wb-form__field" style={{ marginTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => setContractExpanded(!contractExpanded)}
+                className="wb-form__toggle"
+                style={{ marginBottom: '0.5rem' }}
+              >
+                {contractExpanded ? '\u25be' : '\u25b8'} Cross-Repo Contract
+              </button>
+              {contractExpanded && (
+                <div>
+                  <textarea
+                    id="wb-form-contract"
+                    value={crossRepoContract ?? ''}
+                    onChange={(e) => setField('crossRepoContract', e.target.value)}
+                    placeholder="e.g. SprintTask type definition, API endpoint contracts, shared types..."
+                    className="wb-form__textarea"
+                    rows={8}
+                    style={{ fontFamily: 'monospace', fontSize: '0.9em' }}
+                  />
+                  <div
+                    style={{ fontSize: '0.85em', color: 'var(--text-muted)', marginTop: '0.25rem' }}
+                  >
+                    Document API contracts, shared types, or cross-repo dependencies. Will be
+                    injected into the agent prompt.
+                  </div>
+                </div>
+              )}
             </div>
             <DependencyPicker
               dependencies={dependsOn ?? []}

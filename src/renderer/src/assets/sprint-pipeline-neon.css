@@ -1130,7 +1130,9 @@
   background: var(--neon-surface-dim);
   cursor: pointer;
   font-family: var(--bde-font-code);
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .task-drawer__upstream-card:hover {

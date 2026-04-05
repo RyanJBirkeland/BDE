@@ -91,7 +91,9 @@ describe('Dashboard handlers', () => {
 
     it('returns events ordered by timestamp desc', () => {
       getRecentEvents(10)
-      expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY ae.timestamp DESC'))
+      expect(mockPrepare).toHaveBeenCalledWith(
+        expect.stringContaining('ORDER BY ae.timestamp DESC')
+      )
     })
   })
 

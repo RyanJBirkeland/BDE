@@ -5,7 +5,12 @@ describe('theme store', () => {
   beforeEach(() => {
     useThemeStore.setState({ theme: 'dark' })
     localStorage.clear()
-    document.documentElement.classList.remove('theme-light', 'theme-warm', 'theme-pro-dark', 'theme-pro-light')
+    document.documentElement.classList.remove(
+      'theme-light',
+      'theme-warm',
+      'theme-pro-dark',
+      'theme-pro-light'
+    )
   })
 
   it('setTheme to dark updates state', () => {

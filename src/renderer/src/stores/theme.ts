@@ -9,7 +9,12 @@ interface ThemeStore {
 }
 
 function applyTheme(t: Theme): void {
-  document.documentElement.classList.remove('theme-light', 'theme-warm', 'theme-pro-dark', 'theme-pro-light')
+  document.documentElement.classList.remove(
+    'theme-light',
+    'theme-warm',
+    'theme-pro-dark',
+    'theme-pro-light'
+  )
   if (t === 'light') document.documentElement.classList.add('theme-light')
   else if (t === 'warm') document.documentElement.classList.add('theme-warm')
   else if (t === 'pro-dark') document.documentElement.classList.add('theme-pro-dark')

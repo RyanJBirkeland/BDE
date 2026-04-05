@@ -82,7 +82,8 @@ export const UPDATE_ALLOWLIST = new Set([
   'max_cost_usd',
   'partial_diff',
   'group_id',
-  'duration_ms'
+  'duration_ms',
+  'cross_repo_contract'
 ])
 
 export interface QueueStats {
@@ -112,6 +113,7 @@ export interface CreateTaskInput {
   model?: string
   tags?: string[] | null
   group_id?: string | null
+  cross_repo_contract?: string | null
 }
 
 /**
@@ -222,6 +224,22 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
       .prepare(
         `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags, group_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         RETURNING id, title, prompt, repo, status, priority, depends_on, spec, notes,
+         pr_url, pr_number, pr_status, pr_mergeable_state, agent_run_id,
+         retry_count, fast_fail_count, started_at, completed_at, claimed_by,
+         template_name, playground_enabled, needs_review, max_runtime_ms,
+         spec_type, created_at, updated_at, worktree_path, session_id,
+         next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
+         partial_diff, assigned_reviewer, tags, sprint_id, group_id`
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         RETURNING *`
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags, group_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags, group_id, cross_repo_contract)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING *`
       )
       .get(
@@ -237,7 +255,8 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
         input.playground_enabled ? 1 : 0,
         input.model ?? null,
         tags ? JSON.stringify(tags) : null,
-        input.group_id ?? null
+        input.group_id ?? null,
+        input.cross_repo_contract ?? null
       ) as Record<string, unknown> | undefined
 
     return result ? sanitizeTask(result) : null

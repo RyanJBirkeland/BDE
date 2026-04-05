@@ -39,6 +39,7 @@ export interface RunAgentTask {
   max_cost_usd?: number | null
   model?: string | null
   depends_on?: TaskDependency[] | null
+  cross_repo_contract?: string | null
 }
 
 export interface RunAgentDeps {
@@ -254,7 +255,8 @@ export async function runAgent(
     playgroundEnabled: task.playground_enabled,
     retryCount: task.retry_count ?? 0,
     previousNotes: task.notes ?? undefined,
-    upstreamContext: upstreamContext.length > 0 ? upstreamContext : undefined
+    upstreamContext: upstreamContext.length > 0 ? upstreamContext : undefined,
+    crossRepoContract: task.cross_repo_contract ?? undefined
   })
 
   let handle: AgentHandle

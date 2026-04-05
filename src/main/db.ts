@@ -826,6 +826,16 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN sort_order INTEGER DEFAULT 0')
       }
     }
+  },
+  {
+    version: 30,
+    description: 'Add cross_repo_contract column to sprint_tasks for cross-repo API contracts',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('cross_repo_contract')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN cross_repo_contract TEXT DEFAULT NULL')
+      }
+    }
   }
 ]
 
