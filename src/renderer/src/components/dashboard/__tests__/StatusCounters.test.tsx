@@ -26,7 +26,8 @@ describe('StatusCounters', () => {
     blocked: 1,
     failed: 0,
     review: 1,
-    done: 10
+    done: 10,
+    doneToday: 3
   }
 
   it('renders all stat counters with correct values', () => {
@@ -45,6 +46,7 @@ describe('StatusCounters', () => {
     expect(screen.getByTestId('stat-counter-review')).toHaveTextContent('Review: 1')
     expect(screen.getByTestId('stat-counter-prs')).toHaveTextContent('PRs: 5')
     expect(screen.getByTestId('stat-counter-done')).toHaveTextContent('Done: 10')
+    expect(screen.getByTestId('stat-counter-done today')).toHaveTextContent('Done today: 3')
   })
 
   it('calls onFilterClick with correct filter when Active is clicked', () => {
@@ -145,6 +147,20 @@ describe('StatusCounters', () => {
     expect(mockFilterClick).toHaveBeenCalledWith('done')
   })
 
+  it('calls onFilterClick with correct filter when Done today is clicked', () => {
+    const mockFilterClick = vi.fn()
+    render(
+      <StatusCounters
+        stats={defaultStats}
+        awaitingReviewCount={5}
+        onFilterClick={mockFilterClick}
+        onNewTaskClick={vi.fn()}
+      />
+    )
+    fireEvent.click(screen.getByTestId('stat-counter-done today'))
+    expect(mockFilterClick).toHaveBeenCalledWith('done')
+  })
+
   it('renders New Task button', () => {
     render(
       <StatusCounters
@@ -178,7 +194,8 @@ describe('StatusCounters', () => {
       blocked: 0,
       failed: 0,
       review: 0,
-      done: 0
+      done: 0,
+      doneToday: 0
     }
     render(
       <StatusCounters
