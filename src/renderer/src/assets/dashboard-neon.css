@@ -92,6 +92,62 @@
   color: var(--neon-text);
 }
 
+.dashboard-briefing__tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.dashboard-briefing__task-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--neon-surface-dim);
+}
+
+.dashboard-briefing__task-title {
+  color: var(--neon-text);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.dashboard-briefing__task-cost {
+  color: var(--neon-orange);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dashboard-briefing__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--neon-border);
+}
+
+.dashboard-briefing__total-label {
+  color: var(--neon-text-dim);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dashboard-briefing__total-value {
+  color: var(--neon-cyan);
+  font-size: 14px;
+  font-weight: 700;
+  text-shadow: var(--neon-cyan-glow);
+}
+
 .dashboard-status-error {
   display: inline-flex;
   align-items: center;
