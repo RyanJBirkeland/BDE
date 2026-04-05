@@ -122,16 +122,6 @@ export default function DashboardView(): React.JSX.Element {
     [setStatusFilter, setSearchQuery, setView]
   )
 
-  const keyDownFor = useCallback(
-    (filter: StatusFilter) => (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        navigateToSprintWithFilter(filter)
-      }
-    },
-    [navigateToSprintWithFilter]
-  )
-
   const handleCompletionClick = useCallback(() => {
     navigateToSprintWithFilter('done')
   }, [navigateToSprintWithFilter])
@@ -256,7 +246,6 @@ export default function DashboardView(): React.JSX.Element {
               avgDuration={avgDuration}
               localAgents={localAgents}
               onFilterClick={navigateToSprintWithFilter}
-              onKeyDownFor={keyDownFor}
             />
 
             <ActivitySection

@@ -65,8 +65,7 @@ describe('CenterColumn', () => {
     successRate: 85,
     avgDuration: 120000,
     localAgents: [],
-    onFilterClick: vi.fn(),
-    onKeyDownFor: vi.fn(() => vi.fn())
+    onFilterClick: vi.fn()
   }
 
   it('renders Pipeline card', () => {
@@ -218,62 +217,13 @@ describe('CenterColumn', () => {
     expect(mockFilterClick).toHaveBeenCalledWith('blocked')
   })
 
-  it('calls onKeyDownFor for failed item keyboard interaction', () => {
-    const mockKeyDown = vi.fn()
-    const mockOnKeyDownFor = vi.fn(() => mockKeyDown)
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, failed: 1 },
-      onKeyDownFor: mockOnKeyDownFor
-    }
-    render(<CenterColumn {...props} />)
-    const failedItem = screen.getByText('1 failed task')
-    fireEvent.keyDown(failedItem, { key: 'Enter' })
-    expect(mockOnKeyDownFor).toHaveBeenCalledWith('failed')
-    expect(mockKeyDown).toHaveBeenCalled()
-  })
-
-  it('calls onKeyDownFor for PR item keyboard interaction', () => {
-    const mockKeyDown = vi.fn()
-    const mockOnKeyDownFor = vi.fn(() => mockKeyDown)
-    const props = {
-      ...defaultProps,
-      partitions: {
-        ...defaultProps.partitions,
-        awaitingReview: [1]
-      },
-      onKeyDownFor: mockOnKeyDownFor
-    }
-    render(<CenterColumn {...props} />)
-    const prItem = screen.getByText('1 PR awaiting review')
-    fireEvent.keyDown(prItem, { key: 'Enter' })
-    expect(mockOnKeyDownFor).toHaveBeenCalledWith('awaiting-review')
-    expect(mockKeyDown).toHaveBeenCalled()
-  })
-
-  it('calls onKeyDownFor for blocked item keyboard interaction', () => {
-    const mockKeyDown = vi.fn()
-    const mockOnKeyDownFor = vi.fn(() => mockKeyDown)
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, blocked: 1 },
-      onKeyDownFor: mockOnKeyDownFor
-    }
-    render(<CenterColumn {...props} />)
-    const blockedItem = screen.getByText('1 blocked task')
-    fireEvent.keyDown(blockedItem, { key: 'Enter' })
-    expect(mockOnKeyDownFor).toHaveBeenCalledWith('blocked')
-    expect(mockKeyDown).toHaveBeenCalled()
-  })
-
-  it('has correct accessibility attributes for attention items', () => {
+  it('renders attention items as buttons', () => {
     const props = {
       ...defaultProps,
       stats: { ...defaultProps.stats, failed: 1 }
     }
     render(<CenterColumn {...props} />)
     const failedItem = screen.getByText('1 failed task')
-    expect(failedItem.closest('[role="button"]')).toBeInTheDocument()
-    expect(failedItem.closest('[tabIndex="0"]')).toBeInTheDocument()
+    expect(failedItem.closest('button')).toBeInTheDocument()
   })
 })

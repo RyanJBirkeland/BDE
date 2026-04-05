@@ -96,35 +96,11 @@ describe('StatCounter', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('calls onClick on Enter keydown when clickable', () => {
+  it('renders as a native button element when clickable', () => {
     const handleClick = vi.fn()
     render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
     const button = screen.getByRole('button')
-    fireEvent.keyDown(button, { key: 'Enter' })
-    expect(handleClick).toHaveBeenCalledTimes(1)
-  })
-
-  it('calls onClick on Space keydown when clickable', () => {
-    const handleClick = vi.fn()
-    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
-    const button = screen.getByRole('button')
-    fireEvent.keyDown(button, { key: ' ' })
-    expect(handleClick).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not call onClick on other keys', () => {
-    const handleClick = vi.fn()
-    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
-    const button = screen.getByRole('button')
-    fireEvent.keyDown(button, { key: 'Tab' })
-    expect(handleClick).not.toHaveBeenCalled()
-  })
-
-  it('has tabIndex=0 when clickable', () => {
-    const handleClick = vi.fn()
-    render(<StatCounter label="Active" value={5} accent="cyan" onClick={handleClick} />)
-    const button = screen.getByRole('button')
-    expect(button).toHaveAttribute('tabindex', '0')
+    expect(button.tagName).toBe('BUTTON')
   })
 
   it('does not have tabIndex when not clickable', () => {
