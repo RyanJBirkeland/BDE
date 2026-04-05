@@ -19,6 +19,7 @@ interface StatusCountersProps {
     failed: number
     review: number
     done: number
+    doneToday: number
   }
   awaitingReviewCount: number
   onFilterClick: (filter: StatusFilter) => void
@@ -81,6 +82,13 @@ export function StatusCounters({
         label="Done"
         value={stats.done}
         accent="cyan"
+        icon={<CheckCircle size={10} />}
+        onClick={() => onFilterClick('done')}
+      />
+      <StatCounter
+        label="Done today"
+        value={stats.doneToday}
+        accent="purple"
         icon={<CheckCircle size={10} />}
         onClick={() => onFilterClick('done')}
       />

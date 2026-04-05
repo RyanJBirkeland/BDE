@@ -68,6 +68,9 @@ vi.mock('../data/sprint-queries', () => ({
   listTasksRecent: vi.fn(() => {
     return db.prepare('SELECT * FROM sprint_tasks ORDER BY updated_at DESC LIMIT 50').all()
   }),
+  listTasksRecent: vi.fn(() => {
+    return db.prepare('SELECT * FROM sprint_tasks').all()
+  }),
   UPDATE_ALLOWLIST: new Set([
     'title',
     'prompt',

@@ -10,6 +10,7 @@ interface DashboardStats {
   blocked: number
   review: number
   done: number
+  doneToday: number
   failed: number
   actualFailed: number
 }
@@ -30,6 +31,17 @@ interface DashboardMetrics {
 /** Truncate a string to maxLen characters, adding ellipsis if needed. */
 function truncate(str: string, maxLen: number): string {
   return str.length <= maxLen ? str : str.slice(0, maxLen) + '…'
+}
+
+/** Check if a timestamp (ISO string or epoch) is today in local time. */
+function isToday(timestamp: string | number): boolean {
+  const date = new Date(timestamp)
+  const today = new Date()
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  )
 }
 
 /**
@@ -55,6 +67,7 @@ export function useDashboardMetrics(): DashboardMetrics {
       blocked: 0,
       review: 0,
       done: 0,
+      doneToday: 0,
       failed: 0,
       actualFailed: 0
     }
@@ -63,8 +76,12 @@ export function useDashboardMetrics(): DashboardMetrics {
       else if (t.status === 'queued') counts.queued++
       else if (t.status === 'blocked') counts.blocked++
       else if (t.status === 'review') counts.review++
-      else if (t.status === 'done') counts.done++
-      else if (t.status === 'failed' || t.status === 'error' || t.status === 'cancelled') {
+      else if (t.status === 'done') {
+        counts.done++
+        if (t.completed_at && isToday(t.completed_at)) {
+          counts.doneToday++
+        }
+      } else if (t.status === 'failed' || t.status === 'error' || t.status === 'cancelled') {
         counts.failed++
         if (t.status !== 'cancelled') counts.actualFailed++
       }
