@@ -816,6 +816,16 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN duration_ms INTEGER DEFAULT NULL')
       }
     }
+  },
+  {
+    version: 29,
+    description: 'Add sort_order column to sprint_tasks for drag-and-drop ordering within groups',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('sort_order')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN sort_order INTEGER DEFAULT 0')
+      }
+    }
   }
 ]
 

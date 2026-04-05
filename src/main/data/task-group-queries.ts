@@ -186,7 +186,9 @@ export function getGroupTasks(groupId: string, db?: Database.Database): SprintTa
   try {
     const conn = db ?? getDb()
     const rows = conn
-      .prepare('SELECT * FROM sprint_tasks WHERE group_id = ? ORDER BY priority DESC, created_at')
+      .prepare(
+        'SELECT * FROM sprint_tasks WHERE group_id = ? ORDER BY sort_order ASC, priority DESC, created_at'
+      )
       .all(groupId) as Record<string, unknown>[]
     return sanitizeTasks(rows)
   } catch (err) {
@@ -212,5 +214,33 @@ export function queueAllGroupTasks(groupId: string, db?: Database.Database): num
     const msg = err instanceof Error ? err.message : String(err)
     console.error(`[task-group-queries] queueAllGroupTasks failed for group=${groupId}: ${msg}`)
     return 0
+  }
+}
+
+/**
+ * Reorder tasks within a group by setting sort_order values.
+ * Takes an array of task IDs in the desired order.
+ */
+export function reorderGroupTasks(
+  groupId: string,
+  orderedTaskIds: string[],
+  db?: Database.Database
+): boolean {
+  try {
+    const conn = db ?? getDb()
+    const updateStmt = conn.prepare('UPDATE sprint_tasks SET sort_order = ? WHERE id = ?')
+
+    const transaction = conn.transaction(() => {
+      orderedTaskIds.forEach((taskId, index) => {
+        updateStmt.run(index, taskId)
+      })
+    })
+
+    transaction()
+    return true
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error(`[task-group-queries] reorderGroupTasks failed for group=${groupId}: ${msg}`)
+    return false
   }
 }

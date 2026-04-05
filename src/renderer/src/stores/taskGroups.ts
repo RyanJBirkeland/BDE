@@ -31,6 +31,7 @@ interface TaskGroupsState {
   addTaskToGroup: (taskId: string, groupId: string) => Promise<void>
   removeTaskFromGroup: (taskId: string) => Promise<void>
   queueAllTasks: (groupId: string) => Promise<number>
+  reorderTasks: (groupId: string, orderedTaskIds: string[]) => Promise<void>
 }
 
 export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
@@ -170,6 +171,24 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
     } catch (e) {
       toast.error('Failed to queue tasks — ' + (e instanceof Error ? e.message : String(e)))
       return 0
+    }
+  },
+
+  reorderTasks: async (groupId, orderedTaskIds): Promise<void> => {
+    // Optimistic update
+    const currentTasks = get().groupTasks
+    const reorderedTasks = orderedTaskIds
+      .map((id) => currentTasks.find((t) => t.id === id))
+      .filter((t): t is SprintTask => t !== undefined)
+
+    set({ groupTasks: reorderedTasks })
+
+    try {
+      await window.api.groups.reorderTasks(groupId, orderedTaskIds)
+    } catch (e) {
+      toast.error('Failed to reorder tasks — ' + (e instanceof Error ? e.message : String(e)))
+      // Revert by reloading
+      await get().loadGroupTasks(groupId)
     }
   }
 }))

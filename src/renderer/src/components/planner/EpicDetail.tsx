@@ -13,6 +13,7 @@ export interface EpicDetailProps {
   onEditGroup?: (name: string, goal: string) => void
   onDeleteGroup?: () => void
   onToggleReady?: () => void
+  onReorderTasks?: (orderedTaskIds: string[]) => void
 }
 
 interface StatusCounts {
@@ -32,9 +33,12 @@ export function EpicDetail({
   onEditTask,
   onEditGroup,
   onDeleteGroup,
-  onToggleReady
+  onToggleReady,
+  onReorderTasks
 }: EpicDetailProps): React.JSX.Element {
   const [showOverflowMenu, setShowOverflowMenu] = useState(false)
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
+  const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Close menu on click outside
@@ -165,6 +169,50 @@ export function EpicDetail({
   }
 
   const isReady = group.status === 'ready'
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, taskId: string): void => {
+    setDraggedTaskId(taskId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', taskId)
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, taskId: string): void => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (draggedTaskId && draggedTaskId !== taskId) {
+      setDragOverTaskId(taskId)
+    }
+  }
+
+  const handleDragLeave = (): void => {
+    setDragOverTaskId(null)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetTaskId: string): void => {
+    e.preventDefault()
+    setDragOverTaskId(null)
+
+    if (!draggedTaskId || draggedTaskId === targetTaskId || !onReorderTasks) return
+
+    const draggedIndex = tasks.findIndex((t) => t.id === draggedTaskId)
+    const targetIndex = tasks.findIndex((t) => t.id === targetTaskId)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reorder the task list
+    const reordered = [...tasks]
+    const [removed] = reordered.splice(draggedIndex, 1)
+    reordered.splice(targetIndex, 0, removed)
+
+    // Call the reorder callback with new order
+    onReorderTasks(reordered.map((t) => t.id))
+  }
+
+  const handleDragEnd = (): void => {
+    setDraggedTaskId(null)
+    setDragOverTaskId(null)
+  }
 
   return (
     <div className="epic-detail">
@@ -325,9 +373,25 @@ export function EpicDetail({
             {tasks.map((task) => {
               const hasSpec = task.spec && task.spec.trim() !== ''
               const hasDeps = task.depends_on && task.depends_on.length > 0
+              const isDragging = draggedTaskId === task.id
+              const isDragOver = dragOverTaskId === task.id
 
               return (
-                <div key={task.id} className="epic-detail__task-row">
+                <div
+                  key={task.id}
+                  className="epic-detail__task-row"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, task.id)}
+                  onDragOver={(e) => handleDragOver(e, task.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, task.id)}
+                  onDragEnd={handleDragEnd}
+                  style={{
+                    opacity: isDragging ? 0.5 : 1,
+                    borderTop: isDragOver ? `2px solid ${tokens.neon.cyan}` : undefined,
+                    cursor: 'grab'
+                  }}
+                >
                   <div
                     className="epic-detail__task-status-dot"
                     style={{ background: getStatusColor(task.status) }}

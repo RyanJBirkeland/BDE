@@ -17,7 +17,8 @@ export default function PlannerView(): React.JSX.Element {
     selectGroup,
     queueAllTasks,
     updateGroup,
-    deleteGroup
+    deleteGroup,
+    reorderTasks
   } = useTaskGroups()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -89,6 +90,11 @@ export default function PlannerView(): React.JSX.Element {
     await queueAllTasks(selectedGroupId)
   }
 
+  const handleReorderTasks = async (orderedTaskIds: string[]): Promise<void> => {
+    if (!selectedGroupId) return
+    await reorderTasks(selectedGroupId, orderedTaskIds)
+  }
+
   return (
     <div className="planner-view">
       {/* Header */}
@@ -125,6 +131,7 @@ export default function PlannerView(): React.JSX.Element {
             onEditGroup={handleEditGroup}
             onDeleteGroup={handleDeleteGroup}
             onToggleReady={handleToggleReady}
+            onReorderTasks={handleReorderTasks}
           />
         )}
         {!selectedGroup && !loading && (

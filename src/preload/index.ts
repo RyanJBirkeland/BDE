@@ -199,7 +199,9 @@ const api = {
     addTask: (taskId: string, groupId: string) => typedInvoke('groups:addTask', taskId, groupId),
     removeTask: (taskId: string) => typedInvoke('groups:removeTask', taskId),
     getGroupTasks: (groupId: string) => typedInvoke('groups:getGroupTasks', groupId),
-    queueAll: (groupId: string) => typedInvoke('groups:queueAll', groupId)
+    queueAll: (groupId: string) => typedInvoke('groups:queueAll', groupId),
+    reorderTasks: (groupId: string, orderedTaskIds: string[]) =>
+      typedInvoke('groups:reorderTasks', groupId, orderedTaskIds)
   },
 
   // File attachments

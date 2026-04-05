@@ -811,6 +811,10 @@ export interface GroupChannels {
     args: [groupId: string]
     result: number
   }
+  'groups:reorderTasks': {
+    args: [groupId: string, orderedTaskIds: string[]]
+    result: boolean
+  }
 }
 
 // ---------------------------------------------------------------------------

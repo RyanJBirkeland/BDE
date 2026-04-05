@@ -9,6 +9,7 @@ import {
   removeTaskFromGroup,
   getGroupTasks,
   queueAllGroupTasks,
+  reorderGroupTasks,
   type CreateGroupInput,
   type UpdateGroupInput
 } from '../data/task-group-queries'
@@ -56,5 +57,11 @@ export function registerGroupHandlers(): void {
 
   safeHandle('groups:queueAll', (_e, groupId: string) => {
     return queueAllGroupTasks(groupId)
+  })
+
+  safeHandle('groups:reorderTasks', (_e, groupId: string, orderedTaskIds: string[]) => {
+    const success = reorderGroupTasks(groupId, orderedTaskIds)
+    if (!success) throw new Error(`Failed to reorder tasks in group ${groupId}`)
+    return true
   })
 }
