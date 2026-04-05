@@ -81,7 +81,8 @@ export const UPDATE_ALLOWLIST = new Set([
   'failure_reason',
   'max_cost_usd',
   'partial_diff',
-  'group_id'
+  'group_id',
+  'duration_ms'
 ])
 
 export interface QueueStats {
@@ -908,5 +909,54 @@ export function getFailureReasonBreakdown(): FailureReasonBreakdown[] {
     const msg = err instanceof Error ? err.message : String(err)
     logger.warn(`[sprint-queries] getFailureReasonBreakdown failed: ${msg}`)
     return []
+  }
+}
+
+export interface TaskRuntimeStats {
+  avgDurationMs: number | null
+  minDurationMs: number | null
+  maxDurationMs: number | null
+  tasksWithDuration: number
+}
+
+/**
+ * Get runtime statistics from completed tasks with duration_ms populated.
+ * Returns aggregate stats (avg, min, max) for terminal tasks.
+ */
+export function getTaskRuntimeStats(): TaskRuntimeStats {
+  try {
+    const result = getDb()
+      .prepare(
+        `SELECT
+          AVG(duration_ms) as avgDurationMs,
+          MIN(duration_ms) as minDurationMs,
+          MAX(duration_ms) as maxDurationMs,
+          COUNT(*) as tasksWithDuration
+         FROM sprint_tasks
+         WHERE duration_ms IS NOT NULL
+           AND status IN ('done', 'failed', 'review')`
+      )
+      .get() as {
+      avgDurationMs: number | null
+      minDurationMs: number | null
+      maxDurationMs: number | null
+      tasksWithDuration: number
+    }
+
+    return {
+      avgDurationMs: result.avgDurationMs,
+      minDurationMs: result.minDurationMs,
+      maxDurationMs: result.maxDurationMs,
+      tasksWithDuration: result.tasksWithDuration
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    logger.warn(`[sprint-queries] getTaskRuntimeStats failed: ${msg}`)
+    return {
+      avgDurationMs: null,
+      minDurationMs: null,
+      maxDurationMs: null,
+      tasksWithDuration: 0
+    }
   }
 }

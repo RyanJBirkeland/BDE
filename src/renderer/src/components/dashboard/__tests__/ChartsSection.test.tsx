@@ -48,6 +48,8 @@ describe('ChartsSection', () => {
     successRate: 85,
     stats: { done: 17, failed: 3, actualFailed: 3 },
     avgDuration: 120000,
+    avgTaskDuration: 150000,
+    taskDurationCount: 5,
     localAgents: [{ durationMs: 100000 }, { durationMs: 140000 }]
   }
 
@@ -72,43 +74,45 @@ describe('ChartsSection', () => {
     expect(screen.getByTestId('success-ring')).toHaveTextContent('Rate: 85, Done: 17, Failed: 3')
   })
 
-  it('renders Avg Duration card', () => {
+  it('renders Avg Task Duration card', () => {
     render(<ChartsSection {...defaultProps} />)
-    expect(screen.getByTestId('neon-card-avg-duration')).toBeInTheDocument()
+    expect(screen.getByTestId('neon-card-avg-task-duration')).toBeInTheDocument()
   })
 
   it('formats duration in seconds', () => {
-    const props = { ...defaultProps, avgDuration: 45000 }
+    const props = { ...defaultProps, avgTaskDuration: 45000 }
     render(<ChartsSection {...props} />)
     expect(screen.getByText('45s')).toBeInTheDocument()
   })
 
   it('formats duration in minutes and seconds', () => {
-    const props = { ...defaultProps, avgDuration: 125000 }
+    const props = { ...defaultProps, avgTaskDuration: 125000 }
     render(<ChartsSection {...props} />)
     expect(screen.getByText('2m 5s')).toBeInTheDocument()
   })
 
   it('formats duration in hours and minutes', () => {
-    const props = { ...defaultProps, avgDuration: 7320000 }
+    const props = { ...defaultProps, avgTaskDuration: 7320000 }
     render(<ChartsSection {...props} />)
     expect(screen.getByText('2h 2m')).toBeInTheDocument()
   })
 
-  it('shows placeholder when avgDuration is null', () => {
-    const props = { ...defaultProps, avgDuration: null }
+  it('shows placeholder when avgTaskDuration and avgDuration are null', () => {
+    const props = { ...defaultProps, avgTaskDuration: null, avgDuration: null }
     render(<ChartsSection {...props} />)
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
-  it('shows count of tracked runs', () => {
+  it('shows count of tracked tasks when task duration available', () => {
     render(<ChartsSection {...defaultProps} />)
-    expect(screen.getByText('2 runs tracked')).toBeInTheDocument()
+    expect(screen.getByText('5 tasks tracked')).toBeInTheDocument()
   })
 
-  it('excludes agents without duration from run count', () => {
+  it('falls back to runs tracked when no task duration', () => {
     const props = {
       ...defaultProps,
+      avgTaskDuration: null,
+      taskDurationCount: 0,
       localAgents: [{ durationMs: 100000 }, { durationMs: null }, { durationMs: undefined }]
     }
     render(<ChartsSection {...props} />)
@@ -151,9 +155,9 @@ describe('ChartsSection', () => {
     expect(screen.getByTestId('success-ring')).toHaveTextContent('Rate: null')
   })
 
-  it('handles empty localAgents array', () => {
-    const props = { ...defaultProps, localAgents: [] }
+  it('handles empty localAgents array with task duration', () => {
+    const props = { ...defaultProps, taskDurationCount: 3, localAgents: [] }
     render(<ChartsSection {...props} />)
-    expect(screen.getByText('0 runs tracked')).toBeInTheDocument()
+    expect(screen.getByText('3 tasks tracked')).toBeInTheDocument()
   })
 })

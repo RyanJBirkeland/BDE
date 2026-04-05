@@ -514,11 +514,22 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   logger.info(
     `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`
   )
+
+  // Calculate duration from started_at to now
+  const task = repo.getTask(taskId)
+  let durationMs: number | undefined
+  if (task?.started_at) {
+    const startTime = new Date(task.started_at).getTime()
+    const endTime = Date.now()
+    durationMs = endTime - startTime
+  }
+
   try {
     repo.updateTask(taskId, {
       status: 'review',
       worktree_path: worktreePath,
       claimed_by: null,
+      ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
       ...(rebaseNote ? { notes: rebaseNote } : {})
     })
   } catch (err) {
@@ -630,11 +641,16 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
               /* best-effort */
             }
 
-            // Mark task done
+            // Mark task done — preserve duration_ms from review status
+            const reviewTask = repo.getTask(taskId)
             repo.updateTask(taskId, {
               status: 'done',
               completed_at: new Date().toISOString(),
-              worktree_path: null
+              worktree_path: null,
+              // Preserve duration_ms calculated at review transition
+              ...(reviewTask?.duration_ms !== undefined
+                ? { duration_ms: reviewTask.duration_ms }
+                : {})
             })
 
             logger.info(`[completion] Task ${taskId} auto-merged successfully`)
@@ -674,6 +690,15 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
   // Determine if this is a terminal state (exhausted retries)
   const isTerminal = retryCount >= MAX_RETRIES
 
+  // Calculate duration from started_at to now (for terminal failures only)
+  const task = repo.getTask(taskId)
+  let durationMs: number | undefined
+  if (isTerminal && task?.started_at) {
+    const startTime = new Date(task.started_at).getTime()
+    const endTime = Date.now()
+    durationMs = endTime - startTime
+  }
+
   try {
     if (!isTerminal) {
       // Exponential backoff: 30s, 60s, 120s, capped at 5 minutes
@@ -695,6 +720,7 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
         claimed_by: null,
         needs_review: true,
         failure_reason: failureReason,
+        ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
         ...(notes ? { notes } : {})
       })
       return true // terminal

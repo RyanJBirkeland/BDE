@@ -18,6 +18,8 @@ interface DashboardMetrics {
   stats: DashboardStats
   successRate: number | null
   avgDuration: number | null
+  avgTaskDuration: number | null
+  taskDurationCount: number
   costTrendData: ChartBar[]
   costAvg: string | null
   recentCompletions: SprintTask[]
@@ -84,6 +86,19 @@ export function useDashboardMetrics(): DashboardMetrics {
     return avg
   }, [localAgents])
 
+  // Average task runtime from sprint_tasks.duration_ms (terminal tasks only)
+  const { avgTaskDuration, taskDurationCount } = useMemo(() => {
+    const terminalStatuses = new Set(['done', 'failed', 'review'])
+    const withDuration = tasks.filter(
+      (t) => terminalStatuses.has(t.status) && t.duration_ms != null && t.duration_ms > 0
+    )
+    if (withDuration.length === 0) {
+      return { avgTaskDuration: null, taskDurationCount: 0 }
+    }
+    const avg = withDuration.reduce((sum, t) => sum + t.duration_ms!, 0) / withDuration.length
+    return { avgTaskDuration: avg, taskDurationCount: withDuration.length }
+  }, [tasks])
+
   // Cost trend sparkline — last 20 agent runs sorted by start time
   const costTrendData = useMemo((): ChartBar[] => {
     const sorted = [...localAgents]
@@ -122,6 +137,8 @@ export function useDashboardMetrics(): DashboardMetrics {
     stats,
     successRate,
     avgDuration,
+    avgTaskDuration,
+    taskDurationCount,
     costTrendData,
     costAvg,
     recentCompletions,

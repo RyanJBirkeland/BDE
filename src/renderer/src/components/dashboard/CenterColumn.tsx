@@ -29,6 +29,8 @@ interface CenterColumnProps {
   cardErrors: Record<string, string | undefined>
   successRate: number | null
   avgDuration: number | null
+  avgTaskDuration: number | null
+  taskDurationCount: number
   localAgents: LocalAgent[]
   onFilterClick: (filter: StatusFilter) => void
   onKeyDownFor: (filter: StatusFilter) => (e: React.KeyboardEvent) => void
@@ -42,6 +44,8 @@ export function CenterColumn({
   cardErrors,
   successRate,
   avgDuration,
+  avgTaskDuration,
+  taskDurationCount,
   localAgents,
   onFilterClick,
   onKeyDownFor
@@ -116,6 +120,8 @@ export function CenterColumn({
         successRate={successRate}
         stats={{ done: stats.done, failed: stats.failed, actualFailed: stats.actualFailed }}
         avgDuration={avgDuration}
+        avgTaskDuration={avgTaskDuration}
+        taskDurationCount={taskDurationCount}
         localAgents={localAgents}
       />
     </div>

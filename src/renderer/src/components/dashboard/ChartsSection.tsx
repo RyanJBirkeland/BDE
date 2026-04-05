@@ -13,6 +13,8 @@ interface ChartsSectionProps {
   successRate: number | null
   stats: { done: number; failed: number; actualFailed: number }
   avgDuration: number | null
+  avgTaskDuration: number | null
+  taskDurationCount: number
   localAgents: LocalAgent[]
 }
 
@@ -34,9 +36,17 @@ export function ChartsSection({
   successRate,
   stats,
   avgDuration,
+  avgTaskDuration,
+  taskDurationCount,
   localAgents
 }: ChartsSectionProps): React.JSX.Element {
-  const avgDurationLabel = `${localAgents.filter((a) => a.durationMs != null).length} runs tracked`
+  // Prefer task-level duration (more accurate for multi-retry tasks), fallback to agent-run duration
+  const displayDuration = avgTaskDuration ?? avgDuration
+  const durationLabel =
+    taskDurationCount > 0
+      ? `${taskDurationCount} task${taskDurationCount !== 1 ? 's' : ''} tracked`
+      : `${localAgents.filter((a) => a.durationMs != null).length} runs tracked`
+
   return (
     <>
       <NeonCard accent="cyan" title="Completions by Hour" icon={<Zap size={12} />}>
@@ -64,11 +74,11 @@ export function ChartsSection({
           <SuccessRing rate={successRate} done={stats.done} failed={stats.actualFailed} />
         </NeonCard>
 
-        <NeonCard accent="blue" title="Avg Duration" icon={<Clock size={12} />}>
+        <NeonCard accent="blue" title="Avg Task Duration" icon={<Clock size={12} />}>
           <div className="dashboard-duration-value">
-            {avgDuration != null ? formatDurationMs(avgDuration) : '—'}
+            {displayDuration != null ? formatDurationMs(displayDuration) : '—'}
           </div>
-          <div className="dashboard-duration-meta">{avgDurationLabel}</div>
+          <div className="dashboard-duration-meta">{durationLabel}</div>
         </NeonCard>
       </div>
     </>

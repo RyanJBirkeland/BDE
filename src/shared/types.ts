@@ -82,6 +82,7 @@ export interface SprintTask {
   depends_on: TaskDependency[] | null
   playground_enabled?: boolean
   max_runtime_ms?: number | null
+  duration_ms?: number | null
   spec_type?: string | null
   needs_review?: boolean
   worktree_path?: string | null

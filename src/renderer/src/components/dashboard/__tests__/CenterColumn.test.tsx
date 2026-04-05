@@ -64,6 +64,8 @@ describe('CenterColumn', () => {
     cardErrors: {},
     successRate: 85,
     avgDuration: 120000,
+    avgTaskDuration: 150000,
+    taskDurationCount: 5,
     localAgents: [],
     onFilterClick: vi.fn(),
     onKeyDownFor: vi.fn(() => vi.fn())

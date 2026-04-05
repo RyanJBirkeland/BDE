@@ -139,8 +139,17 @@ export default function DashboardView(): React.JSX.Element {
   const partitions = useMemo(() => partitionSprintTasks(tasks), [tasks])
 
   // Dashboard metrics — extracted to reusable hook
-  const { stats, successRate, avgDuration, costTrendData, costAvg, recentCompletions, cost24h } =
-    useDashboardMetrics()
+  const {
+    stats,
+    successRate,
+    avgDuration,
+    avgTaskDuration,
+    taskDurationCount,
+    costTrendData,
+    costAvg,
+    recentCompletions,
+    cost24h
+  } = useDashboardMetrics()
 
   const errorCount = useMemo(() => Object.values(cardErrors).filter(Boolean).length, [cardErrors])
 
@@ -254,6 +263,8 @@ export default function DashboardView(): React.JSX.Element {
               cardErrors={cardErrors}
               successRate={successRate}
               avgDuration={avgDuration}
+              avgTaskDuration={avgTaskDuration}
+              taskDurationCount={taskDurationCount}
               localAgents={localAgents}
               onFilterClick={navigateToSprintWithFilter}
               onKeyDownFor={keyDownFor}

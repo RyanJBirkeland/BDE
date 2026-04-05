@@ -806,6 +806,16 @@ export const migrations: Migration[] = [
         db.exec('CREATE INDEX IF NOT EXISTS idx_sprint_tasks_sprint ON sprint_tasks(sprint_id)')
       }
     }
+  },
+  {
+    version: 29,
+    description: 'Add duration_ms column to sprint_tasks for agent runtime tracking',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('duration_ms')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN duration_ms INTEGER DEFAULT NULL')
+      }
+    }
   }
 ]
 
