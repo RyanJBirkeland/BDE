@@ -156,7 +156,7 @@ describe('EpicList', () => {
 
     await waitFor(() => {
     // Completed groups are in a collapsed section - expand it to see them
-    const completedToggle = screen.getByText('Completed')
+    let completedToggle = screen.getByText('Completed')
     fireEvent.click(completedToggle)
 
     await waitFor(() => {
@@ -168,6 +168,8 @@ describe('EpicList', () => {
     await waitFor(() => {
     // Completed groups are in a collapsed section - expand it to see them
     const completedToggle = screen.getByText('Completed')
+    const completedToggle = screen.getByText('Completed')
+    completedToggle = screen.getByText('Completed')
     fireEvent.click(completedToggle)
 
     await waitFor(() => {

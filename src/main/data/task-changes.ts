@@ -62,7 +62,10 @@ export function getTaskChanges(
 ): TaskChange[] {
   const conn = db ?? getDb()
   return conn
-    .prepare('SELECT * FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC LIMIT ?')
+    .prepare(
+      `SELECT id, task_id, field, old_value, new_value, changed_by, changed_at
+       FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC LIMIT ?`
+    )
     .all(taskId, limit) as TaskChange[]
 }
 
