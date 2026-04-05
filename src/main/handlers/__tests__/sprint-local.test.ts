@@ -144,9 +144,9 @@ describe('registerSprintLocalHandlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers 17 handlers', () => {
+  it('registers 20 handlers', () => {
     registerSprintLocalHandlers()
-    expect(safeHandle).toHaveBeenCalledTimes(17)
+    expect(safeHandle).toHaveBeenCalledTimes(20)
   })
 
   it('registers the expected channel names', () => {

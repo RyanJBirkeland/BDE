@@ -818,7 +818,7 @@ export const migrations: Migration[] = [
     }
   },
   {
-    version: 29,
+    version: 30,
     description: 'Add sort_order column to sprint_tasks for drag-and-drop ordering within groups',
     up: (db) => {
       const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
@@ -828,7 +828,7 @@ export const migrations: Migration[] = [
     }
   },
   {
-    version: 30,
+    version: 31,
     description: 'Add cross_repo_contract column to sprint_tasks for cross-repo API contracts',
     up: (db) => {
       const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)

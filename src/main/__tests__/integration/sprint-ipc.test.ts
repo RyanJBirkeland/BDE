@@ -26,7 +26,6 @@ const mockMarkTaskCancelledByPrNumber = vi.fn()
 const mockListTasksWithOpenPrs = vi.fn()
 const mockUpdateTaskMergeableState = vi.fn()
 const mockGetHealthCheckTasks = vi.fn()
-const mockListTasksRecent = vi.fn()
 
 vi.mock('../../data/sprint-queries', () => ({
   listTasks: (...args: unknown[]) => mockListTasks(...args),
