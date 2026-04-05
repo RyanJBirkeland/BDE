@@ -23,6 +23,7 @@ export type ActionId =
   | 'panel.nextTab'
   | 'panel.prevTab'
   | 'shortcuts.show'
+  | 'settings.open'
 
 export interface Keybinding {
   actionId: ActionId
@@ -47,7 +48,8 @@ export const DEFAULT_KEYBINDINGS: Record<ActionId, string> = {
   'panel.closeTab': '⌘W',
   'panel.nextTab': '⌘⇧]',
   'panel.prevTab': '⌘⇧[',
-  'shortcuts.show': '?'
+  'shortcuts.show': '?',
+  'settings.open': '⌘,'
 }
 
 export const ACTION_LABELS: Record<ActionId, string> = {
@@ -67,7 +69,8 @@ export const ACTION_LABELS: Record<ActionId, string> = {
   'panel.closeTab': 'Close Panel Tab',
   'panel.nextTab': 'Next Tab',
   'panel.prevTab': 'Previous Tab',
-  'shortcuts.show': 'Show Keyboard Shortcuts'
+  'shortcuts.show': 'Show Keyboard Shortcuts',
+  'settings.open': 'Open Settings'
 }
 
 interface KeybindingsStore {

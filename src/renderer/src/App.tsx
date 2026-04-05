@@ -28,6 +28,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from './lib/m
 import { DEFAULT_MODEL } from '../../shared/models'
 import { VIEW_LABELS } from './lib/view-registry'
 import { PollingProvider } from './components/PollingProvider'
+import { openSettings } from './lib/settings-nav'
 import { AgentMonitor } from './components/ui/AgentMonitor'
 import { SHORTCUT_CATEGORIES } from './lib/shortcuts-data'
 import { FeatureGuideModal } from './components/help/FeatureGuideModal'
@@ -329,6 +330,13 @@ function App(): React.JSX.Element {
       if (combo === bindings['view.planner']) {
         e.preventDefault()
         setView('planner')
+        return
+      }
+
+      // Settings shortcut with deep linking
+      if (combo === bindings['settings.open']) {
+        e.preventDefault()
+        openSettings()
         return
       }
 

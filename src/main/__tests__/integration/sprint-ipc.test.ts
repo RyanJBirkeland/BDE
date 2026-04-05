@@ -33,6 +33,7 @@ vi.mock('../../data/sprint-queries', () => ({
   listTasksRecent: (...args: unknown[]) => mockListTasksRecent(...args),
   listTasksRecent: (...args: unknown[]) => mockListTasks(...args),
   listTasksRecent: (...args: unknown[]) => mockListTasks(...args),
+  listTasksRecent: (...args: unknown[]) => mockListTasksRecent(...args),
   getTask: (...args: unknown[]) => mockGetTask(...args),
   createTask: (...args: unknown[]) => mockCreateTask(...args),
   updateTask: (...args: unknown[]) => mockUpdateTask(...args),

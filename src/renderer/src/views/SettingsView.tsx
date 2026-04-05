@@ -2,7 +2,6 @@
  * SettingsView -- sidebar + content layout for application configuration.
  * Each section renders a self-contained component. Sections are grouped by category.
  */
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Palette,
@@ -32,6 +31,7 @@ import { WebhooksSection } from '../components/settings/WebhooksSection'
 import { AboutSection } from '../components/settings/AboutSection'
 import { KeybindingsSettings } from '../components/settings/KeybindingsSettings'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { useSettingsNavStore } from '../stores/settingsNav'
 
 const SECTIONS: SettingsSection[] = [
   { id: 'connections', label: 'Connections', icon: Link, category: 'Account' },
@@ -44,8 +44,6 @@ const SECTIONS: SettingsSection[] = [
   { id: 'keybindings', label: 'Keybindings', icon: Keyboard, category: 'App' },
   { id: 'memory', label: 'Memory', icon: Brain, category: 'App' }
 ]
-
-type SectionId = (typeof SECTIONS)[number]['id']
 
 const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   connections: ConnectionsSection,
@@ -77,13 +75,18 @@ const SECTION_META: Record<string, { title: string; subtitle: string; wide: bool
 
 export default function SettingsView(): React.JSX.Element {
   const reduced = useReducedMotion()
-  const [activeId, setActiveId] = useState<SectionId>('connections')
+  const activeId = useSettingsNavStore((s) => s.activeSection)
+  const setActiveSection = useSettingsNavStore((s) => s.setActiveSection)
   const ActiveSection = SECTION_MAP[activeId]
   const meta = SECTION_META[activeId]
 
+  const handleSelect = (id: string): void => {
+    setActiveSection(id as typeof activeId)
+  }
+
   return (
     <div className="stg-layout">
-      <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={setActiveId} />
+      <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
       <motion.div
         className="stg-content"
         key={activeId}

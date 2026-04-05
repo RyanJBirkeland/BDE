@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { useSettingsNavStore } from '../../stores/settingsNav'
 
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
@@ -93,6 +94,11 @@ vi.mock('../../components/settings/MemorySection', () => ({
 import SettingsView from '../SettingsView'
 
 describe('SettingsView', () => {
+  beforeEach(() => {
+    // Reset settings nav store to initial state
+    useSettingsNavStore.setState({ activeSection: 'connections' })
+  })
+
   it('renders sidebar navigation', () => {
     render(<SettingsView />)
     expect(screen.getByRole('navigation', { name: /Settings sections/ })).toBeInTheDocument()
