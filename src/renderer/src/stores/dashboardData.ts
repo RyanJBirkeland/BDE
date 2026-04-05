@@ -14,8 +14,35 @@ interface DashboardDataState {
 
 const ACCENT_CYCLE: ChartBar['accent'][] = ['cyan', 'pink', 'blue', 'orange', 'purple']
 const EVENT_ACCENT: Record<string, FeedEvent['accent']> = {
+  'agent:error': 'red',
+  'agent:completed': 'cyan',
+  'agent:started': 'blue',
+  // Legacy format support
   error: 'red',
   complete: 'cyan'
+}
+
+/**
+ * Maps event_type to human-readable action phrase.
+ * Returns null for noisy events that shouldn't appear in the feed.
+ */
+function formatEventAction(eventType: string): string | null {
+  switch (eventType) {
+    case 'agent:completed':
+      return 'completed'
+    case 'agent:error':
+      return 'failed'
+    case 'agent:started':
+      return 'started'
+    case 'agent:text':
+    case 'agent:tool_call':
+    case 'agent:tool_result':
+      // Too noisy for activity feed
+      return null
+    default:
+      // Unknown event types: show raw type
+      return eventType
+  }
 }
 
 export const useDashboardDataStore = create<DashboardDataState>((set) => ({
@@ -47,12 +74,22 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
     try {
       const events = await window.api.dashboard?.recentEvents(30)
       if (events) {
-        feedEvents = events.map((e) => ({
-          id: String(e.id),
-          label: `${e.event_type}: ${e.agent_id}`,
-          accent: EVENT_ACCENT[e.event_type] ?? ('purple' as const),
-          timestamp: e.timestamp
-        }))
+        feedEvents = events
+          .map((e) => {
+            const action = formatEventAction(e.event_type)
+            // Filter out noisy events (text, tool calls, etc.)
+            if (action === null) return null
+
+            const label = e.task_title ? `Task ${e.task_title} ${action}` : action
+
+            return {
+              id: String(e.id),
+              label,
+              accent: EVENT_ACCENT[e.event_type] ?? ('purple' as const),
+              timestamp: e.timestamp
+            }
+          })
+          .filter((e): e is FeedEvent => e !== null)
       }
     } catch {
       errors.feed = 'Failed to load activity feed'

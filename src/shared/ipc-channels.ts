@@ -655,6 +655,7 @@ export interface DashboardEvent {
   event_type: string
   payload: string
   timestamp: number
+  task_title: string | null
 }
 
 export interface DashboardChannels {

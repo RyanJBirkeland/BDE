@@ -59,15 +59,24 @@ describe('Dashboard handlers', () => {
   })
 
   describe('getRecentEvents', () => {
-    it('queries agent_events with default limit of 20', () => {
+    it('queries agent_events with JOINs and default limit of 20', () => {
       const events = [
-        { id: 1, agent_id: 'a1', event_type: 'output', payload: '{}', timestamp: 1000 }
+        {
+          id: 1,
+          agent_id: 'a1',
+          event_type: 'output',
+          payload: '{}',
+          timestamp: 1000,
+          task_title: 'Fix auth'
+        }
       ]
       mockAll.mockReturnValueOnce(events)
 
       const result = getRecentEvents()
 
       expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('agent_events'))
+      expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN agent_runs'))
+      expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN sprint_tasks'))
       expect(mockAll).toHaveBeenCalledWith(20)
       expect(result).toBe(events)
     })
@@ -82,7 +91,7 @@ describe('Dashboard handlers', () => {
 
     it('returns events ordered by timestamp desc', () => {
       getRecentEvents(10)
-      expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY timestamp DESC'))
+      expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('ORDER BY ae.timestamp DESC'))
     })
   })
 
@@ -110,7 +119,14 @@ describe('Dashboard handlers', () => {
 
     it('agent:recentEvents handler passes limit to getRecentEvents', async () => {
       const events = [
-        { id: 1, agent_id: 'a1', event_type: 'output', payload: '{}', timestamp: 1000 }
+        {
+          id: 1,
+          agent_id: 'a1',
+          event_type: 'output',
+          payload: '{}',
+          timestamp: 1000,
+          task_title: null
+        }
       ]
       mockAll.mockReturnValueOnce(events)
       const handlers = captureHandlers()

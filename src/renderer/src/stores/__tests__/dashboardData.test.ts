@@ -34,8 +34,22 @@ describe('dashboardDataStore', () => {
       { hour: '11:00', count: 3 }
     ])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
-      { id: 1, agent_id: 'a1', event_type: 'complete', payload: '{}', timestamp: 1000 },
-      { id: 2, agent_id: 'a2', event_type: 'error', payload: '{}', timestamp: 2000 }
+      {
+        id: 1,
+        agent_id: 'a1',
+        event_type: 'agent:completed',
+        payload: '{}',
+        timestamp: 1000,
+        task_title: 'Fix auth'
+      },
+      {
+        id: 2,
+        agent_id: 'a2',
+        event_type: 'agent:error',
+        payload: '{}',
+        timestamp: 2000,
+        task_title: null
+      }
     ])
     ;(window.api.getPrList as any).mockResolvedValue({
       prs: [{ number: 1 }, { number: 2 }, { number: 3 }]
@@ -51,13 +65,13 @@ describe('dashboardDataStore', () => {
     expect(state.feedEvents).toHaveLength(2)
     expect(state.feedEvents[0]).toEqual({
       id: '1',
-      label: 'complete: a1',
+      label: 'Task Fix auth completed',
       accent: 'cyan',
       timestamp: 1000
     })
     expect(state.feedEvents[1]).toEqual({
       id: '2',
-      label: 'error: a2',
+      label: 'failed',
       accent: 'red',
       timestamp: 2000
     })
@@ -142,12 +156,89 @@ describe('dashboardDataStore', () => {
   it('fetchAll maps unknown event types to purple accent', async () => {
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
-      { id: 10, agent_id: 'x', event_type: 'unknown_type', payload: '{}', timestamp: 500 }
+      {
+        id: 10,
+        agent_id: 'x',
+        event_type: 'unknown_type',
+        payload: '{}',
+        timestamp: 500,
+        task_title: null
+      }
     ])
     ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 
-    expect(useDashboardDataStore.getState().feedEvents[0].accent).toBe('purple')
+    const event = useDashboardDataStore.getState().feedEvents[0]
+    expect(event.accent).toBe('purple')
+    expect(event.label).toBe('unknown_type')
+  })
+
+  it('fetchAll filters out noisy events (text, tool_call, tool_result)', async () => {
+    ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
+    ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
+      {
+        id: 1,
+        agent_id: 'a1',
+        event_type: 'agent:text',
+        payload: '{}',
+        timestamp: 1000,
+        task_title: null
+      },
+      {
+        id: 2,
+        agent_id: 'a1',
+        event_type: 'agent:tool_call',
+        payload: '{}',
+        timestamp: 2000,
+        task_title: null
+      },
+      {
+        id: 3,
+        agent_id: 'a1',
+        event_type: 'agent:completed',
+        payload: '{}',
+        timestamp: 3000,
+        task_title: 'Fix bug'
+      }
+    ])
+    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+
+    await useDashboardDataStore.getState().fetchAll()
+
+    const events = useDashboardDataStore.getState().feedEvents
+    // Only the 'agent:completed' event should remain
+    expect(events).toHaveLength(1)
+    expect(events[0].label).toBe('Task Fix bug completed')
+  })
+
+  it('fetchAll formats labels with task title when available', async () => {
+    ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
+    ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
+      {
+        id: 1,
+        agent_id: 'a1',
+        event_type: 'agent:started',
+        payload: '{}',
+        timestamp: 1000,
+        task_title: 'Add feature'
+      },
+      {
+        id: 2,
+        agent_id: 'a2',
+        event_type: 'agent:completed',
+        payload: '{}',
+        timestamp: 2000,
+        task_title: null
+      }
+    ])
+    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+
+    await useDashboardDataStore.getState().fetchAll()
+
+    const events = useDashboardDataStore.getState().feedEvents
+    expect(events).toHaveLength(2)
+    expect(events[0].label).toBe('Task Add feature started')
+    expect(events[1].label).toBe('completed')
   })
 })

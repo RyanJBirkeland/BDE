@@ -22,14 +22,29 @@ export function getCompletionsPerHour(): { hour: string; count: number }[] {
 
 export function getRecentEvents(
   limit: number = 20
-): { id: number; agent_id: string; event_type: string; payload: string; timestamp: number }[] {
+): {
+  id: number
+  agent_id: string
+  event_type: string
+  payload: string
+  timestamp: number
+  task_title: string | null
+}[] {
   const db = getDb()
   const rows = db
     .prepare(
       `
-    SELECT id, agent_id, event_type, payload, timestamp
-    FROM agent_events
-    ORDER BY timestamp DESC
+    SELECT
+      ae.id,
+      ae.agent_id,
+      ae.event_type,
+      ae.payload,
+      ae.timestamp,
+      st.title as task_title
+    FROM agent_events ae
+    LEFT JOIN agent_runs ar ON ae.agent_id = ar.id
+    LEFT JOIN sprint_tasks st ON ar.sprint_task_id = st.id
+    ORDER BY ae.timestamp DESC
     LIMIT ?
   `
     )
@@ -39,6 +54,7 @@ export function getRecentEvents(
     event_type: string
     payload: string
     timestamp: number
+    task_title: string | null
   }[]
   return rows
 }
