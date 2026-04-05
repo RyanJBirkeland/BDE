@@ -133,4 +133,24 @@ describe('AppearanceSection', () => {
       .filter((btn) => btn.className.includes('settings-color'))
     expect(colorButtons).toHaveLength(6)
   })
+
+  it('renders Pro Dark and Pro Light theme buttons', () => {
+    render(<AppearanceSection />)
+    expect(screen.getByRole('button', { name: /pro dark/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /pro light/i })).toBeInTheDocument()
+  })
+
+  it('clicking Pro Dark sets theme to pro-dark', async () => {
+    const user = userEvent.setup()
+    render(<AppearanceSection />)
+    await user.click(screen.getByRole('button', { name: /pro dark/i }))
+    expect(mockSetTheme).toHaveBeenCalledWith('pro-dark')
+  })
+
+  it('clicking Pro Light sets theme to pro-light', async () => {
+    const user = userEvent.setup()
+    render(<AppearanceSection />)
+    await user.click(screen.getByRole('button', { name: /pro light/i }))
+    expect(mockSetTheme).toHaveBeenCalledWith('pro-light')
+  })
 })

@@ -61,8 +61,6 @@ describe('ChartsSection', () => {
     avgDuration: 120000,
     avgTaskDuration: 150000,
     taskDurationCount: 5,
-    localAgents: [{ durationMs: 100000 }, { durationMs: 140000 }]
-    localAgents: [{ durationMs: 100000 }, { durationMs: 140000 }]
     localAgents: [{ durationMs: 100000 }, { durationMs: 140000 }],
     successTrendData: []
   }

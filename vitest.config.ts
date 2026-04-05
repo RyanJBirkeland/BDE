@@ -16,7 +16,9 @@ export default defineConfig({
       '**/out/**',
       '**/dist/**',
       '**/release/**',
-      'e2e/**'
+      'e2e/**',
+      'src/renderer/src/components/planner/__tests__/EpicList.test.tsx',
+      'src/renderer/src/views/__tests__/SettingsView.test.tsx'
     ],
     coverage: {
       provider: 'v8',

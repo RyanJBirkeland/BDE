@@ -187,15 +187,13 @@ export function useDesktopNotifications(): void {
 
       // Agent completed: active → done
       if (prev.status === TASK_STATUS.ACTIVE && task.status === TASK_STATUS.DONE) {
-        if (!shouldNotify()) continue
-
         const delivery = shouldDeliverNotification('agent_completed', prefs)
         if (!delivery.desktop && !delivery.inApp) continue
-        if (delivery.desktop && windowNotFocused) continue
 
         const title = 'BDE: Task Completed'
         const message = task.pr_url ? `${task.title} — PR ready` : `${task.title}`
 
+        // Always show in-app notifications
         if (delivery.inApp) {
           addNotification({
             type: 'agent_completed',
@@ -205,7 +203,8 @@ export function useDesktopNotifications(): void {
           })
         }
 
-        if (delivery.desktop) {
+        // Only show desktop notifications when window is not focused
+        if (delivery.desktop && !document.hasFocus()) {
           fireDesktopNotification(title, message, handleNotificationClick)
         }
 
@@ -218,29 +217,13 @@ export function useDesktopNotifications(): void {
 
       // Agent failed: active → failed
       if (prev.status === TASK_STATUS.ACTIVE && task.status === TASK_STATUS.FAILED) {
-        if (!shouldNotify()) continue
-
         const delivery = shouldDeliverNotification('agent_failed', prefs)
         if (!delivery.desktop && !delivery.inApp) continue
-        if (delivery.desktop && windowNotFocused) continue
 
         const title = 'BDE: Task Failed'
         const message = `${task.title}`
 
-        addNotification({
-          type: 'agent_failed',
-          title,
-          message,
-          viewLink: `/sprint/${task.id}`
-        })
-        addNotification({
-          type: 'agent_completed',
-          type: 'agent_completed',
-          type: 'agent_failed',
-          title,
-          message,
-          viewLink: `/sprint/${task.id}`
-        })
+        // Always show in-app notifications
         if (delivery.inApp) {
           addNotification({
             type: 'agent_failed',
@@ -250,14 +233,10 @@ export function useDesktopNotifications(): void {
           })
         }
 
-        if (delivery.desktop) {
+        // Only show desktop notifications when window is not focused
+        if (delivery.desktop && !document.hasFocus()) {
           fireDesktopNotification(title, message, handleNotificationClick)
         }
-
-        if (shouldNotify()) {
-          fireDesktopNotification(title, message, handleNotificationClick)
-        }
-        fireDesktopNotification(title, message, handleNotificationClick)
         notifiedTasksRef.current.add(task.id)
       }
 
@@ -272,20 +251,6 @@ export function useDesktopNotifications(): void {
         const title = 'BDE: Task Error'
         const message = `${task.title}`
 
-        addNotification({
-          type: 'agent_failed',
-          title,
-          message,
-          viewLink: `/sprint/${task.id}`
-        })
-        addNotification({
-          type: 'agent_completed',
-          type: 'agent_completed',
-          type: 'agent_failed',
-          title,
-          message,
-          viewLink: `/sprint/${task.id}`
-        })
         if (delivery.inApp) {
           addNotification({
             type: 'agent_failed',
@@ -298,11 +263,6 @@ export function useDesktopNotifications(): void {
         if (delivery.desktop) {
           fireDesktopNotification(title, message, handleNotificationClick)
         }
-
-        if (shouldNotify()) {
-          fireDesktopNotification(title, message, handleNotificationClick)
-        }
-        fireDesktopNotification(title, message, handleNotificationClick)
         notifiedTasksRef.current.add(task.id)
       }
     }

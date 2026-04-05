@@ -57,10 +57,6 @@ export function CenterColumn({
   taskDurationCount,
   localAgents,
   successTrendData,
-  onFilterClick,
-  onKeyDownFor
-  onFilterClick,
-  onKeyDownFor
   onFilterClick
 }: CenterColumnProps): React.JSX.Element {
   return (

@@ -145,22 +145,14 @@ export default function DashboardView(): React.JSX.Element {
     costTrendData,
     costAvg,
     recentCompletions,
-    cost24h
-  } = useDashboardMetrics()
-  const { stats, successRate, avgDuration, costTrendData, costAvg, recentCompletions, cost24h } =
-    useDashboardMetrics()
-  const {
-    stats,
-    successRate,
-    avgDuration,
-    costTrendData,
-    costAvg,
-    recentCompletions,
     cost24h,
     taskCostMap
   } = useDashboardMetrics()
 
   const errorCount = useMemo(() => Object.values(cardErrors).filter(Boolean).length, [cardErrors])
+
+  // TODO: Compute actual success trend data
+  const successTrendData = useMemo(() => [], [])
 
   const transition = reduced ? REDUCED_TRANSITION : SPRINGS.snappy
 

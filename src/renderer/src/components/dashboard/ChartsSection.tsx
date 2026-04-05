@@ -49,8 +49,6 @@ export function ChartsSection({
   avgDuration,
   avgTaskDuration,
   taskDurationCount,
-  localAgents
-  localAgents
   localAgents,
   successTrendData
 }: ChartsSectionProps): React.JSX.Element {
