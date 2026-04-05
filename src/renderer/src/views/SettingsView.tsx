@@ -30,6 +30,8 @@ import { AboutSection } from '../components/settings/AboutSection'
 import { WebhooksSection } from '../components/settings/WebhooksSection'
 import { AboutSection } from '../components/settings/AboutSection'
 import { AboutSection } from '../components/settings/AboutSection'
+import { WebhooksSection } from '../components/settings/WebhooksSection'
+import { AboutSection } from '../components/settings/AboutSection'
 import { KeybindingsSettings } from '../components/settings/KeybindingsSettings'
 import { NotificationsSection } from '../components/settings/NotificationsSection'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
@@ -62,6 +64,9 @@ const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   keybindings: KeybindingsSettings
   keybindings: KeybindingsSettings,
   about: AboutSection
+  keybindings: KeybindingsSettings
+  keybindings: KeybindingsSettings,
+  about: AboutSection
   notifications: NotificationsSection,
   about: AboutSection
   about: AboutSection
@@ -90,6 +95,9 @@ const SECTION_META: Record<string, { title: string; subtitle: string; wide: bool
   keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false }
   keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
   about: { title: 'About', subtitle: 'Version and application info', wide: false },
+  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false }
+  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
+  about: { title: 'About', subtitle: 'Version and application info', wide: false }
   notifications: {
     title: 'Notifications',
     subtitle: 'Desktop and in-app notification preferences',

@@ -65,6 +65,9 @@ export function CenterColumn({
   onFilterClick
   onFilterClick,
   onKeyDownFor
+  onFilterClick,
+  onKeyDownFor
+  onFilterClick
 }: CenterColumnProps): React.JSX.Element {
   return (
     <div className="dashboard-col dashboard-col--center">

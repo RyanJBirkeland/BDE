@@ -20,6 +20,7 @@ export interface CreateTicketInput {
   max_cost_usd?: number | null
   model?: string
   spec_type?: string | null
+  group_id?: string | null
 }
 
 /** How long (ms) to protect an optimistic update from being overwritten by poll data. */
@@ -260,7 +261,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         status: TASK_STATUS.BACKLOG,
         template_name: data.template_name || undefined,
         playground_enabled: data.playground_enabled || undefined,
-        ...(data.depends_on ? { depends_on: data.depends_on } : {})
+        ...(data.depends_on ? { depends_on: data.depends_on } : {}),
+        ...(data.group_id ? { group_id: data.group_id } : {})
       } as Parameters<typeof window.api.sprint.create>[0])) as SprintTask
 
       if (result?.id) {

@@ -35,6 +35,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   const playgroundEnabled = useTaskWorkbenchStore((s) => s.playgroundEnabled)
   const maxCostUsd = useTaskWorkbenchStore((s) => s.maxCostUsd)
   const model = useTaskWorkbenchStore((s) => s.model)
+  const pendingGroupId = useTaskWorkbenchStore((s) => s.pendingGroupId)
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const resetForm = useTaskWorkbenchStore((s) => s.resetForm)
 
@@ -81,7 +82,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           playground_enabled: playgroundEnabled || undefined,
           max_cost_usd: maxCostUsd ?? undefined,
           model: model || undefined,
-          spec_type: specType ?? undefined
+          spec_type: specType ?? undefined,
+          group_id: pendingGroupId ?? undefined
         }
         const createdId = await createTask(input)
         // createTask hardcodes status=backlog. If queuing, promote to queued.
@@ -101,6 +103,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       playgroundEnabled,
       maxCostUsd,
       model,
+      pendingGroupId,
       createTask,
       updateTask
     ]
