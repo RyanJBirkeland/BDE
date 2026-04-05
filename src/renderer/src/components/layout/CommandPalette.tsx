@@ -176,7 +176,21 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       }
     ]
 
-    const coreCommands = [...nav, ...actions, ...panelCommands]
+    const settingsCommands: Command[] = [
+      {
+        id: 'settings-show-shortcuts',
+        label: 'Show Keyboard Shortcuts',
+        category: 'settings',
+        hint: '?',
+        keywords: ['shortcuts', 'keyboard', 'help', 'keys'],
+        action: () => {
+          onClose()
+          window.dispatchEvent(new CustomEvent('bde:show-shortcuts'))
+        }
+      }
+    ]
+
+    const coreCommands = [...nav, ...actions, ...panelCommands, ...settingsCommands]
     registerCommands(coreCommands)
 
     return () => {

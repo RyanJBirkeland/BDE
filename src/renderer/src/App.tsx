@@ -229,6 +229,14 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener('bde:navigate', handler as EventListener)
   }, [setView])
 
+  useEffect(() => {
+    const handler = (): void => {
+      setShortcutsOpen(true)
+    }
+    window.addEventListener('bde:show-shortcuts', handler)
+    return () => window.removeEventListener('bde:show-shortcuts', handler)
+  }, [])
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
