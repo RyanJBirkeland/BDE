@@ -597,6 +597,161 @@ html.theme-warm {
   --glass-tint-ultra: rgba(245, 241, 234, 0.5);
 }
 
+/* ── Pro Dark — IntelliJ-inspired professional theme ── */
+
+html.theme-pro-dark {
+  /* ── Core palette ───────────────────────────────────── */
+  --bde-bg: #1e1f22;
+  --bde-surface: #2b2d30;
+  --bde-surface-high: #393b40;
+  --bde-border: #393b40;
+  --bde-border-hover: #4e5157;
+  --bde-accent: #4a88c7;
+  --bde-accent-dim: rgba(74, 136, 199, 0.15);
+  --bde-text: #bcbec4;
+  --bde-text-muted: #8c8f94;
+  --bde-text-dim: #6f737a;
+  --bde-danger: #db5c5c;
+  --bde-danger-dim: rgba(219, 92, 92, 0.15);
+
+  /* ── Interaction states ─────────────────────────────── */
+  --bde-hover: rgba(255, 255, 255, 0.04);
+  --bde-hover-strong: rgba(255, 255, 255, 0.06);
+  --bde-selected: #2d4566;
+  --bde-hover-subtle: rgba(255, 255, 255, 0.03);
+  --bde-accent-hover: rgba(74, 136, 199, 0.1);
+  --bde-danger-hover: rgba(219, 92, 92, 0.1);
+  --bde-warning-hover: rgba(230, 162, 53, 0.12);
+  --bde-error-bg: rgba(219, 92, 92, 0.1);
+  --bde-overlay: rgba(0, 0, 0, 0.5);
+  --bde-header-gradient: linear-gradient(
+    90deg,
+    rgba(74, 136, 199, 0.3) 0%,
+    rgba(74, 136, 199, 0.1) 60%,
+    transparent 100%
+  );
+  --bde-danger-gradient: linear-gradient(
+    90deg,
+    rgba(219, 92, 92, 0.3) 0%,
+    rgba(219, 92, 92, 0.1) 60%,
+    transparent 100%
+  );
+  --bde-warning-gradient: linear-gradient(
+    90deg,
+    rgba(230, 162, 53, 0.3) 0%,
+    rgba(230, 162, 53, 0.1) 60%,
+    transparent 100%
+  );
+
+  /* ── Semantic colors ────────────────────────────────── */
+  --bde-danger-text: #db5c5c;
+  --bde-warning: #e6a235;
+  --bde-warning-dim: rgba(230, 162, 53, 0.15);
+  --bde-info: #4a88c7;
+  --bde-info-dim: rgba(74, 136, 199, 0.15);
+  --bde-success: #5fad65;
+  --bde-subagent: #8a7cb5;
+  --bde-purple: #8a7cb5;
+  --bde-purple-dim: rgba(138, 124, 181, 0.15);
+
+  /* ── Diff colors ────────────────────────────────────── */
+  --bde-diff-add: #5fad65;
+  --bde-diff-del: #db5c5c;
+  --bde-diff-mod: #e6a235;
+  --bde-diff-add-bg: rgba(95, 173, 101, 0.15);
+  --bde-diff-del-bg: rgba(219, 92, 92, 0.12);
+
+  /* ── Shadows ────────────────────────────────────────── */
+  --bde-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --bde-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --bde-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+  /* ── Button & glass ───────────────────────────────────── */
+  --bde-btn-primary-text: #ffffff;
+  --bde-glass-bg: rgba(255, 255, 255, 0.04);
+  --bde-glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --bde-glass-bg-active: rgba(255, 255, 255, 0.06);
+
+  /* ── Visual Identity v2 — Backgrounds ───────────────── */
+  --bg-void: #1e1f22;
+  --bg-base: #1e1f22;
+  --bg-surface: #2b2d30;
+  --bg-card: #393b40;
+  --bg-hover: #2f3134;
+  --bg-active: #343639;
+
+  /* ── v2 — Borders ───────────────────────────────────── */
+  --border: #393b40;
+  --border-light: #4e5157;
+  --border-glow: #4a88c7;
+
+  /* ── v2 — Text ──────────────────────────────────────── */
+  --text-primary: #bcbec4;
+  --text-secondary: #8c8f94;
+  --text-muted: #6f737a;
+  --text-ghost: rgba(188, 190, 196, 0.4);
+
+  /* ── v2 — Accent ────────────────────────────────────── */
+  --accent: #4a88c7;
+  --accent-bright: #5a9ad8;
+  --accent-dim: #3a6d9e;
+  --accent-subtle: rgba(74, 136, 199, 0.08);
+  --accent-muted: rgba(74, 136, 199, 0.15);
+  --accent-glow: rgba(74, 136, 199, 0.25);
+  --accent-flare: rgba(74, 136, 199, 0.4);
+
+  /* ── v2 — Semantic ──────────────────────────────────── */
+  --color-running: #5fad65;
+  --color-warning: #e6a235;
+  --color-error: #db5c5c;
+  --color-info: #4a88c7;
+  --color-ai: #8a7cb5;
+  --color-queued: #4a88c7;
+
+  /* ── v2 — Gradients ─────────────────────────────────── */
+  --gradient-aurora: none;
+  --gradient-electric: none;
+  --gradient-solar: none;
+  --gradient-ember: none;
+  --gradient-frost: none;
+  --gradient-midnight: linear-gradient(
+    180deg,
+    rgba(30, 31, 34, 0.95) 0%,
+    rgba(43, 45, 48, 0.98) 100%
+  );
+  --gradient-scanline: none;
+
+  /* ── v2 — Glass tints ───────────────────────────────── */
+  --glass-tint-dark: rgba(43, 45, 48, 0.75);
+  --glass-tint-mid: rgba(43, 45, 48, 0.7);
+  --glass-tint-light: rgba(43, 45, 48, 0.6);
+  --glass-tint-ultra: rgba(43, 45, 48, 0.5);
+
+  /* ── Compact density ────────────────────────────────── */
+  --bde-space-1: 3px;
+  --bde-space-2: 6px;
+  --bde-space-3: 8px;
+  --bde-space-4: 12px;
+  --bde-space-5: 14px;
+  --bde-space-6: 18px;
+  --bde-space-8: 22px;
+
+  /* ── Compact type scale ─────────────────────────────── */
+  --bde-size-2xs: 9px;
+  --bde-size-xs: 10px;
+  --bde-size-sm: 11px;
+  --bde-size-md: 12px;
+  --bde-size-lg: 13px;
+  --bde-size-xl: 15px;
+  --bde-size-xxl: 18px;
+
+  /* ── Compact radii ──────────────────────────────────── */
+  --bde-radius-sm: 3px;
+  --bde-radius-md: 4px;
+  --bde-radius-lg: 6px;
+  --bde-radius-xl: 8px;
+}
+
 /* ── Scrollbars ──────────────────────────────────────── */
 
 ::-webkit-scrollbar {
