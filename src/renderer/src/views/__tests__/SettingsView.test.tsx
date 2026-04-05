@@ -109,10 +109,10 @@ describe('SettingsView', () => {
     expect(screen.getByText('App')).toBeInTheDocument()
   })
 
-  it('renders all sidebar items (11 sections, no Agent tab)', () => {
+  it('renders all sidebar items (10 sections, no Agent tab)', () => {
     render(<SettingsView />)
     const links = screen.getAllByRole('link')
-    expect(links).toHaveLength(11)
+    expect(links).toHaveLength(10)
     // Agent tab should not exist
     expect(screen.queryByText('Agent')).not.toBeInTheDocument()
   })
