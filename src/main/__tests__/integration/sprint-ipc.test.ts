@@ -28,6 +28,7 @@ const mockGetHealthCheckTasks = vi.fn()
 
 vi.mock('../../data/sprint-queries', () => ({
   listTasks: (...args: unknown[]) => mockListTasks(...args),
+  listTasksRecent: (...args: unknown[]) => mockListTasks(...args),
   getTask: (...args: unknown[]) => mockGetTask(...args),
   createTask: (...args: unknown[]) => mockCreateTask(...args),
   updateTask: (...args: unknown[]) => mockUpdateTask(...args),
