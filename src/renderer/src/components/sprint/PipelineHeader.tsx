@@ -1,6 +1,7 @@
-import { GitMerge, HeartPulse, LayoutGrid, List, Network } from 'lucide-react'
+import { GitMerge, HeartPulse, LayoutGrid, List, Network, Download } from 'lucide-react'
 import { useSprintUI } from '../../stores/sprintUI'
 import type { SprintTask } from '../../../../shared/types'
+import { useState, useEffect } from 'react'
 
 interface StatBadge {
   label: string
@@ -31,6 +32,32 @@ export function PipelineHeader({
 }: PipelineHeaderProps): React.JSX.Element {
   const pipelineDensity = useSprintUI((s) => s.pipelineDensity)
   const setPipelineDensity = useSprintUI((s) => s.setPipelineDensity)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = async (format: 'json' | 'csv'): Promise<void> => {
+    setShowExportMenu(false)
+    setExporting(true)
+    try {
+      const result = await window.api.sprint.exportTasks(format)
+      if (!result.canceled && result.filePath) {
+        console.log(`Exported tasks to ${result.filePath}`)
+      }
+    } catch (err) {
+      console.error('Export failed:', err)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!showExportMenu) return
+
+    const handleClickOutside = (): void => setShowExportMenu(false)
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [showExportMenu])
 
   return (
     <header className="sprint-pipeline__header">
@@ -68,6 +95,69 @@ export function PipelineHeader({
         <Network size={12} />
         <span>DAG</span>
       </button>
+      <div style={{ position: 'relative' }}>
+        <button
+          className="sprint-pipeline__badge"
+          onClick={() => setShowExportMenu(!showExportMenu)}
+          disabled={exporting}
+          title="Export tasks"
+          aria-label="Export sprint tasks"
+        >
+          <Download size={12} />
+          <span>{exporting ? '...' : 'Export'}</span>
+        </button>
+        {showExportMenu && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              right: 0,
+              marginTop: '4px',
+              backgroundColor: 'var(--bg-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '4px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+              minWidth: '80px'
+            }}
+          >
+            <button
+              onClick={() => handleExport('json')}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '8px 12px',
+                border: 'none',
+                background: 'transparent',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              JSON
+            </button>
+            <button
+              onClick={() => handleExport('csv')}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '8px 12px',
+                border: 'none',
+                background: 'transparent',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              CSV
+            </button>
+          </div>
+        )}
+      </div>
       {conflictingTasks.length > 0 && (
         <button
           className="sprint-pipeline__badge sprint-pipeline__badge--danger"

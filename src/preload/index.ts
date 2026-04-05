@@ -166,7 +166,8 @@ const api = {
         priority?: number
         templateName?: string
       }>
-    ) => typedInvoke('sprint:batchImport', tasks)
+    ) => typedInvoke('sprint:batchImport', tasks),
+    exportTasks: (format: 'json' | 'csv') => typedInvoke('sprint:exportTasks', format)
   },
 
   // Task groups

@@ -186,6 +186,9 @@ declare global {
         batchImport: (
           ...args: IpcArgs<'sprint:batchImport'>
         ) => Promise<IpcResult<'sprint:batchImport'>>
+        exportTasks: (
+          ...args: IpcArgs<'sprint:exportTasks'>
+        ) => Promise<IpcResult<'sprint:exportTasks'>>
       }
 
       // Task groups

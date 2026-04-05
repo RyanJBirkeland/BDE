@@ -1,9 +1,10 @@
 import { safeHandle } from '../ipc-utils'
 import { getDb } from '../db'
-import { readFile } from 'fs/promises'
+import { readFile, writeFile } from 'fs/promises'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { createLogger } from '../logger'
+import { dialog } from 'electron'
 
 const execFileAsync = promisify(execFile)
 import type { TaskTemplate, ClaimedTask } from '../../shared/types'
@@ -531,6 +532,95 @@ export function registerSprintLocalHandlers(): void {
       const { createSprintTaskRepository } = await import('../data/sprint-task-repository')
       const repo = createSprintTaskRepository()
       return batchImportTasks(tasks, repo)
+    }
+  )
+
+  safeHandle(
+    'sprint:exportTasks',
+    async (_e, format: 'json' | 'csv'): Promise<{ filePath: string | null; canceled: boolean }> => {
+      const tasks = listTasks()
+
+      // Show save dialog
+      const result = await dialog.showSaveDialog({
+        title: 'Export Sprint Tasks',
+        defaultPath: `sprint-tasks-${new Date().toISOString().split('T')[0]}.${format}`,
+        filters: [
+          format === 'json'
+            ? { name: 'JSON Files', extensions: ['json'] }
+            : { name: 'CSV Files', extensions: ['csv'] }
+        ]
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { filePath: null, canceled: true }
+      }
+
+      // Generate export content
+      let content: string
+      if (format === 'json') {
+        content = JSON.stringify(tasks, null, 2)
+      } else {
+        // CSV format
+        const headers = [
+          'id',
+          'title',
+          'repo',
+          'status',
+          'priority',
+          'created_at',
+          'updated_at',
+          'started_at',
+          'completed_at',
+          'claimed_by',
+          'spec',
+          'prompt',
+          'notes',
+          'pr_url',
+          'pr_number',
+          'pr_status',
+          'template_name',
+          'playground_enabled',
+          'depends_on',
+          'tags'
+        ]
+        const csvRows = [headers.join(',')]
+
+        for (const task of tasks) {
+          const row = headers.map((header) => {
+            let value = task[header as keyof typeof task]
+
+            // Handle complex types
+            if (header === 'depends_on' && Array.isArray(value)) {
+              value = JSON.stringify(value)
+            } else if (header === 'tags' && Array.isArray(value)) {
+              value = JSON.stringify(value)
+            } else if (value === null || value === undefined) {
+              value = ''
+            } else if (typeof value === 'boolean') {
+              value = value ? 'true' : 'false'
+            }
+
+            // Escape CSV special characters
+            const stringValue = String(value)
+            if (
+              stringValue.includes(',') ||
+              stringValue.includes('"') ||
+              stringValue.includes('\n')
+            ) {
+              return `"${stringValue.replace(/"/g, '""')}"`
+            }
+            return stringValue
+          })
+          csvRows.push(row.join(','))
+        }
+        content = csvRows.join('\n')
+      }
+
+      // Write to file
+      await writeFile(result.filePath, content, 'utf-8')
+      logger.info(`[sprint:exportTasks] Exported ${tasks.length} tasks to ${result.filePath}`)
+
+      return { filePath: result.filePath, canceled: false }
     }
   )
 }

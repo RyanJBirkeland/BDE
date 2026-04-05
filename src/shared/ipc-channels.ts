@@ -336,6 +336,10 @@ export interface SprintChannels {
     args: [taskId: string]
     result: SprintTask
   }
+  'sprint:exportTasks': {
+    args: [format: 'json' | 'csv']
+    result: { filePath: string | null; canceled: boolean }
+  }
 }
 
 /** Window shell integration */
