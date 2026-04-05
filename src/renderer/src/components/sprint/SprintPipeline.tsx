@@ -28,6 +28,7 @@ import { PipelineFilterBar } from './PipelineFilterBar'
 import { PipelineHeader } from './PipelineHeader'
 import { PipelineOverlays } from './PipelineOverlays'
 import { DagOverlay } from './DagOverlay'
+import { BulkActionBar } from './BulkActionBar'
 import { NeonCard } from '../neon'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import type { SprintTask } from '../../../../shared/types'
@@ -49,6 +50,7 @@ export function SprintPipeline(): React.JSX.Element {
 
   const {
     selectedTaskId,
+    selectedTaskIds,
     drawerOpen,
     specPanelOpen,
     doneViewOpen,
@@ -58,6 +60,7 @@ export function SprintPipeline(): React.JSX.Element {
   } = useSprintUI(
     useShallow((s) => ({
       selectedTaskId: s.selectedTaskId,
+      selectedTaskIds: s.selectedTaskIds,
       drawerOpen: s.drawerOpen,
       specPanelOpen: s.specPanelOpen,
       doneViewOpen: s.doneViewOpen,
@@ -74,6 +77,7 @@ export function SprintPipeline(): React.JSX.Element {
   const setConflictDrawerOpen = useSprintUI((s) => s.setConflictDrawerOpen)
   const setHealthCheckDrawerOpen = useSprintUI((s) => s.setHealthCheckDrawerOpen)
   const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
+  const clearMultiSelection = useSprintUI((s) => s.clearMultiSelection)
   const statusFilter = useSprintUI((s) => s.statusFilter)
   const repoFilter = useSprintUI((s) => s.repoFilter)
   const tagFilter = useSprintUI((s) => s.tagFilter)
@@ -471,6 +475,12 @@ export function SprintPipeline(): React.JSX.Element {
         dagOpen={dagOpen}
       />
 
+      <BulkActionBar
+        selectedCount={selectedTaskIds.size}
+        selectedTaskIds={selectedTaskIds}
+        onClearSelection={clearMultiSelection}
+      />
+
       <PipelineFilterBar tasks={tasks} />
 
       {loading && tasks.length === 0 && (
@@ -531,6 +541,7 @@ export function SprintPipeline(): React.JSX.Element {
                 tasks={filteredPartition.todo}
                 count={`${filteredPartition.todo.length}`}
                 selectedTaskId={selectedTaskId}
+                selectedTaskIds={selectedTaskIds}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
@@ -539,6 +550,7 @@ export function SprintPipeline(): React.JSX.Element {
                 tasks={filteredPartition.blocked}
                 count={`${filteredPartition.blocked.length}`}
                 selectedTaskId={selectedTaskId}
+                selectedTaskIds={selectedTaskIds}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
@@ -547,6 +559,7 @@ export function SprintPipeline(): React.JSX.Element {
                 tasks={filteredPartition.inProgress}
                 count={`${filteredPartition.inProgress.length}/5`}
                 selectedTaskId={selectedTaskId}
+                selectedTaskIds={selectedTaskIds}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
@@ -555,6 +568,7 @@ export function SprintPipeline(): React.JSX.Element {
                 tasks={filteredPartition.awaitingReview}
                 count={`${filteredPartition.awaitingReview.length}`}
                 selectedTaskId={selectedTaskId}
+                selectedTaskIds={selectedTaskIds}
                 onTaskClick={handleTaskClick}
               />
               <PipelineStage
@@ -563,6 +577,7 @@ export function SprintPipeline(): React.JSX.Element {
                 tasks={filteredPartition.done.slice(0, 3)}
                 count={`${filteredPartition.done.length}`}
                 selectedTaskId={selectedTaskId}
+                selectedTaskIds={selectedTaskIds}
                 onTaskClick={handleTaskClick}
                 doneFooter={
                   filteredPartition.done.length > 3 ? (

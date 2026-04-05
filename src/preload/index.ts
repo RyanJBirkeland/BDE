@@ -1,8 +1,13 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AgentMeta, PrListPayload, SpawnLocalAgentArgs } from '../shared/types'
+import type {
+  AgentMeta,
+  PrListPayload,
+  SpawnLocalAgentArgs,
+  AgentEvent,
+  BatchOperation
+} from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
-import type { AgentEvent } from '../shared/types'
 import type { WorkflowTemplate } from '../shared/workflow-types'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
@@ -145,6 +150,7 @@ const api = {
       typedInvoke('sprint:validateDependencies', taskId, deps),
     unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId),
     retry: (taskId: string) => typedInvoke('sprint:retry', taskId),
+    batchUpdate: (operations: BatchOperation[]) => typedInvoke('sprint:batchUpdate', operations),
     batchImport: (
       tasks: Array<{
         title: string

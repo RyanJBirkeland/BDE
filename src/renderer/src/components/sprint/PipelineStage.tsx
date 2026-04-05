@@ -11,6 +11,7 @@ interface PipelineStageProps {
   tasks: SprintTask[]
   count: string
   selectedTaskId: string | null
+  selectedTaskIds?: Set<string>
   onTaskClick: (id: string) => void
   doneFooter?: React.ReactNode
 }
@@ -21,6 +22,7 @@ function PipelineStageInner({
   tasks,
   count,
   selectedTaskId,
+  selectedTaskIds,
   onTaskClick,
   doneFooter
 }: PipelineStageProps): React.JSX.Element {
@@ -92,6 +94,7 @@ function PipelineStageInner({
                   key={task.id}
                   task={task}
                   selected={task.id === selectedTaskId}
+                  multiSelected={selectedTaskIds?.has(task.id)}
                   onClick={onTaskClick}
                 />
               )

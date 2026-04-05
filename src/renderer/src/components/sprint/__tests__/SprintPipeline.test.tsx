@@ -28,6 +28,7 @@ const mocks = vi.hoisted(() => {
 
   const uiState = {
     selectedTaskId: null as string | null,
+    selectedTaskIds: new Set<string>(),
     drawerOpen: false,
     specPanelOpen: false,
     doneViewOpen: false,
@@ -41,7 +42,8 @@ const mocks = vi.hoisted(() => {
     setLogDrawerTaskId: vi.fn(),
     setConflictDrawerOpen: mockSetConflictDrawerOpen,
     setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen,
-    setStatusFilter: mockSetStatusFilter
+    setStatusFilter: mockSetStatusFilter,
+    clearMultiSelection: vi.fn()
   }
 
   return {

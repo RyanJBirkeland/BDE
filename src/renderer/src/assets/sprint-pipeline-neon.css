@@ -1495,6 +1495,43 @@
   border-color: var(--neon-pink);
 }
 
+/* ── Bulk Action Bar ── */
+.bulk-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--neon-surface-deep);
+  border-bottom: 1px solid var(--neon-purple-border);
+  flex-shrink: 0;
+}
+
+.bulk-action-bar__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-action-bar__count {
+  font-size: var(--font-xs, 11px);
+  color: var(--neon-cyan);
+  font-family: var(--bde-font-code);
+  font-weight: 600;
+}
+
+.bulk-action-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-action-bar__actions .bde-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* ── Task Pill: Duration (completed tasks) ── */
 .task-pill__duration {
   font-size: var(--font-2xs, 10px);

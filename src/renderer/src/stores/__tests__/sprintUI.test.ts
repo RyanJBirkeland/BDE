@@ -8,7 +8,7 @@ const initialState = {
   searchQuery: '',
   statusFilter: 'all' as const,
   generatingIds: [] as string[],
-  selectedTaskIds: [] as string[]
+  selectedTaskIds: new Set<string>()
 }
 
 describe('sprintUI store', () => {
@@ -99,10 +99,45 @@ describe('sprintUI store', () => {
     expect(useSprintUI.getState().statusFilter).toBe('all')
   })
 
-  // clearSelection kept for backward compatibility (no-op)
-  it('clearSelection is idempotent', () => {
+  // clearSelection clears multi-selection
+  it('clearSelection clears selectedTaskIds', () => {
+    useSprintUI.getState().toggleTaskSelection('task-1')
+    useSprintUI.getState().toggleTaskSelection('task-2')
+    expect(useSprintUI.getState().selectedTaskIds.size).toBe(2)
     useSprintUI.getState().clearSelection()
-    useSprintUI.getState().clearSelection()
-    // No-op, just shouldn't throw
+    expect(useSprintUI.getState().selectedTaskIds.size).toBe(0)
+  })
+
+  // --- Multi-select tests ---
+
+  it('toggleTaskSelection adds task to selection', () => {
+    useSprintUI.getState().toggleTaskSelection('task-1')
+    expect(useSprintUI.getState().selectedTaskIds.has('task-1')).toBe(true)
+  })
+
+  it('toggleTaskSelection removes task from selection', () => {
+    useSprintUI.getState().toggleTaskSelection('task-1')
+    expect(useSprintUI.getState().selectedTaskIds.has('task-1')).toBe(true)
+    useSprintUI.getState().toggleTaskSelection('task-1')
+    expect(useSprintUI.getState().selectedTaskIds.has('task-1')).toBe(false)
+  })
+
+  it('toggleTaskSelection works with multiple tasks', () => {
+    useSprintUI.getState().toggleTaskSelection('task-1')
+    useSprintUI.getState().toggleTaskSelection('task-2')
+    useSprintUI.getState().toggleTaskSelection('task-3')
+    const selected = useSprintUI.getState().selectedTaskIds
+    expect(selected.size).toBe(3)
+    expect(selected.has('task-1')).toBe(true)
+    expect(selected.has('task-2')).toBe(true)
+    expect(selected.has('task-3')).toBe(true)
+  })
+
+  it('clearMultiSelection clears all selected tasks', () => {
+    useSprintUI.getState().toggleTaskSelection('task-1')
+    useSprintUI.getState().toggleTaskSelection('task-2')
+    expect(useSprintUI.getState().selectedTaskIds.size).toBe(2)
+    useSprintUI.getState().clearMultiSelection()
+    expect(useSprintUI.getState().selectedTaskIds.size).toBe(0)
   })
 })

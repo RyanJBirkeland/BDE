@@ -15,6 +15,7 @@ export type PipelineDensity = 'card' | 'compact'
 interface SprintUIState {
   // --- State ---
   selectedTaskId: string | null
+  selectedTaskIds: Set<string>
   logDrawerTaskId: string | null
   repoFilter: string | null
   tagFilter: string | null
@@ -48,11 +49,14 @@ interface SprintUIState {
   removeGeneratingId: (id: string) => void
   clearTaskIfSelected: (taskId: string) => void
   clearSelection: () => void
+  toggleTaskSelection: (id: string) => void
+  clearMultiSelection: () => void
   setPipelineDensity: (density: PipelineDensity) => void
 }
 
 export const useSprintUI = create<SprintUIState>((set, get) => ({
   selectedTaskId: null,
+  selectedTaskIds: new Set<string>(),
   logDrawerTaskId: null,
   repoFilter: null,
   tagFilter: null,
@@ -103,7 +107,23 @@ export const useSprintUI = create<SprintUIState>((set, get) => ({
   },
 
   clearSelection: (): void => {
-    // No-op for now, kept for TaskPill compatibility
+    set({ selectedTaskIds: new Set<string>() })
+  },
+
+  toggleTaskSelection: (id): void => {
+    set((s) => {
+      const newSelection = new Set(s.selectedTaskIds)
+      if (newSelection.has(id)) {
+        newSelection.delete(id)
+      } else {
+        newSelection.add(id)
+      }
+      return { selectedTaskIds: newSelection }
+    })
+  },
+
+  clearMultiSelection: (): void => {
+    set({ selectedTaskIds: new Set<string>() })
   },
 
   setPipelineDensity: (density): void => {

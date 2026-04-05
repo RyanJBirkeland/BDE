@@ -88,9 +88,14 @@ function TaskPillInner({
     .filter(Boolean)
     .join(' ')
 
-  const handleClick = (): void => {
-    useSprintUI.getState().clearSelection()
-    onClick(task.id)
+  const handleClick = (e: React.MouseEvent): void => {
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      e.preventDefault()
+      useSprintUI.getState().toggleTaskSelection(task.id)
+    } else {
+      useSprintUI.getState().clearSelection()
+      onClick(task.id)
+    }
   }
 
   return (
@@ -104,7 +109,11 @@ function TaskPillInner({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          onClick(task.id)
+          if (e.shiftKey || e.metaKey || e.ctrlKey) {
+            useSprintUI.getState().toggleTaskSelection(task.id)
+          } else {
+            onClick(task.id)
+          }
         }
       }}
       transition={SPRINGS.default}

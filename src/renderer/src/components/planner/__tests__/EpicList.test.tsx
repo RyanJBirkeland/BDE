@@ -163,8 +163,7 @@ describe('EpicList', () => {
     })
 
     // Completed epic is in collapsed section - expand it first
-    const completedToggle = screen.getByText('Completed')
-    fireEvent.click(completedToggle)
+    fireEvent.click(screen.getByText('Completed'))
 
     await waitFor(() => {
     // Completed groups are in a collapsed section - expand it to see them
