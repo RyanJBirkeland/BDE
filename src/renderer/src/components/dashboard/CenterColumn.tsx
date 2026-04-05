@@ -41,7 +41,6 @@ interface CenterColumnProps {
   localAgents: LocalAgent[]
   successTrendData: DailySuccessRate[]
   onFilterClick: (filter: StatusFilter) => void
-  onKeyDownFor: (filter: StatusFilter) => (e: React.KeyboardEvent) => void
 }
 
 /** Center column with attention card, pipeline, and charts. */
@@ -58,53 +57,49 @@ export function CenterColumn({
   successTrendData,
   onFilterClick,
   onKeyDownFor
+  onFilterClick,
+  onKeyDownFor
+  onFilterClick
 }: CenterColumnProps): React.JSX.Element {
   return (
     <div className="dashboard-col dashboard-col--center">
       {(stats.failed > 0 || partitions.awaitingReview.length > 0 || stats.blocked > 0) && (
         <NeonCard accent="red" title="Attention">
           {stats.failed > 0 && (
-            <div
-              className="dashboard-attention-item"
-              role="button"
-              tabIndex={0}
-              onClick={() => onFilterClick('failed')}
-              onKeyDown={onKeyDownFor('failed')}
-            >
+            <button className="dashboard-attention-item" onClick={() => onFilterClick('failed')}>
               <XCircle size={12} />
               <span>
                 {stats.failed} failed task{stats.failed !== 1 ? 's' : ''}
               </span>
-            </div>
+            </button>
           )}
           {partitions.awaitingReview.length > 0 && (
-            <div
-              className="dashboard-attention-item"
-              role="button"
-              tabIndex={0}
-              onClick={() => onFilterClick('awaiting-review')}
-              onKeyDown={onKeyDownFor('awaiting-review')}
-            >
-              <GitPullRequest size={12} />
-              <span>
-                {partitions.awaitingReview.length} PR
-                {partitions.awaitingReview.length !== 1 ? 's' : ''} awaiting review
-              </span>
+            <div className="dashboard-attention-review-section">
+              <button
+                className="dashboard-attention-item"
+                onClick={() => onFilterClick('awaiting-review')}
+              >
+                <GitPullRequest size={12} />
+                <span>
+                  {partitions.awaitingReview.length} PR
+                  {partitions.awaitingReview.length !== 1 ? 's' : ''} awaiting review
+                </span>
+              </button>
+              <button
+                className="dashboard-review-cta"
+                onClick={() => onFilterClick('awaiting-review')}
+              >
+                Review Code
+              </button>
             </div>
           )}
           {stats.blocked > 0 && (
-            <div
-              className="dashboard-attention-item"
-              role="button"
-              tabIndex={0}
-              onClick={() => onFilterClick('blocked')}
-              onKeyDown={onKeyDownFor('blocked')}
-            >
+            <button className="dashboard-attention-item" onClick={() => onFilterClick('blocked')}>
               <AlertTriangle size={12} />
               <span>
                 {stats.blocked} blocked task{stats.blocked !== 1 ? 's' : ''}
               </span>
-            </div>
+            </button>
           )}
         </NeonCard>
       )}

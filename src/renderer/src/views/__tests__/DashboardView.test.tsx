@@ -107,7 +107,7 @@ describe('DashboardView', () => {
 
   it('clicking Active stat navigates to Sprint with in-progress filter', () => {
     render(<DashboardView />)
-    const activeStat = screen.getByText('Active').closest('[role="button"]')!
+    const activeStat = screen.getByText('Active').closest('button')!
     fireEvent.click(activeStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('in-progress')
@@ -116,11 +116,9 @@ describe('DashboardView', () => {
 
   it('clicking Done stat navigates to Sprint with done filter', () => {
     render(<DashboardView />)
-    // "Done" may appear in both stats and pipeline — find the one with role=button
+    // "Done" may appear in both stats and pipeline — find the one in a button
     const doneStats = screen.getAllByText('Done')
-    const doneStat = doneStats
-      .find((el) => el.closest('[role="button"]'))!
-      .closest('[role="button"]')!
+    const doneStat = doneStats.find((el) => el.closest('button'))!.closest('button')!
     fireEvent.click(doneStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('done')
@@ -130,9 +128,7 @@ describe('DashboardView', () => {
   it('clicking Blocked stat navigates to Sprint with blocked filter', () => {
     render(<DashboardView />)
     const blockedElements = screen.getAllByText('Blocked')
-    const blockedStat = blockedElements
-      .find((el) => el.closest('[role="button"]'))!
-      .closest('[role="button"]')!
+    const blockedStat = blockedElements.find((el) => el.closest('button'))!.closest('button')!
     fireEvent.click(blockedStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('blocked')
@@ -387,9 +383,7 @@ describe('DashboardView', () => {
   it('clicking Queued stat navigates to Sprint with todo filter', () => {
     render(<DashboardView />)
     const queuedElements = screen.getAllByText('Queued')
-    const queuedStat = queuedElements
-      .find((el) => el.closest('[role="button"]'))!
-      .closest('[role="button"]')!
+    const queuedStat = queuedElements.find((el) => el.closest('button'))!.closest('button')!
     fireEvent.click(queuedStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('todo')
@@ -399,9 +393,7 @@ describe('DashboardView', () => {
   it('clicking PRs stat navigates to Sprint with awaiting-review filter', () => {
     render(<DashboardView />)
     const prsElements = screen.getAllByText('PRs')
-    const prsStat = prsElements
-      .find((el) => el.closest('[role="button"]'))!
-      .closest('[role="button"]')!
+    const prsStat = prsElements.find((el) => el.closest('button'))!.closest('button')!
     fireEvent.click(prsStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('awaiting-review')

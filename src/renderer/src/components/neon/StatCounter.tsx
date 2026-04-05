@@ -23,23 +23,12 @@ export function StatCounter({
   onClick
 }: StatCounterProps): React.JSX.Element {
   const isClickable = !!onClick
+  const Component = isClickable ? 'button' : 'div'
 
   return (
-    <div
+    <Component
       className={`stat-counter ${isClickable ? 'stat-counter--clickable' : ''}`}
-      role={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
       onClick={onClick}
-      onKeyDown={
-        isClickable
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                onClick?.()
-              }
-            }
-          : undefined
-      }
       style={{
         background: neonVar(accent, 'surface'),
         border: `1px solid ${neonVar(accent, 'border')}`
@@ -80,6 +69,6 @@ export function StatCounter({
           {trend.direction === 'down' ? '↓' : '↑'} {trend.label}
         </div>
       )}
-    </div>
+    </Component>
   )
 }
