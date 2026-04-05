@@ -3,9 +3,10 @@ import { MoreHorizontal } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { SidebarItem } from './SidebarItem'
 import { OverflowMenu } from './OverflowMenu'
+import { NavTooltip } from '../ui/NavTooltip'
 import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar'
 import { usePanelLayoutStore, getOpenViews, type View } from '../../stores/panelLayout'
-import { VIEW_ICONS, VIEW_LABELS, VIEW_SHORTCUTS } from '../../lib/view-registry'
+import { VIEW_REGISTRY } from '../../lib/view-registry'
 import { useSprintTasks } from '../../stores/sprintTasks'
 
 interface NeonSidebarProps {
@@ -118,25 +119,30 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
     <div className="neon-sidebar">
       <nav className="neon-sidebar__nav">
         {pinnedViews.map((view) => {
-          const Icon = VIEW_ICONS[view]
-          const label = VIEW_LABELS[view]
-          const shortcut = VIEW_SHORTCUTS[view]
+          const meta = VIEW_REGISTRY[view]
+          const Icon = meta.icon
           const isActive = activeView === view
           const isOpen = openViews.includes(view) && !isActive
 
           return (
-            <SidebarItem
+            <NavTooltip
               key={view}
-              view={view}
-              icon={<Icon size={18} strokeWidth={1.5} />}
-              label={label}
-              shortcut={shortcut}
-              isActive={isActive}
-              isOpen={isOpen}
-              badge={view === 'code-review' ? reviewCount : undefined}
-              onActivate={handleActivate}
-              onContextAction={handleContextAction}
-            />
+              label={meta.label}
+              description={meta.description}
+              shortcut={meta.shortcut}
+            >
+              <SidebarItem
+                view={view}
+                icon={<Icon size={18} strokeWidth={1.5} />}
+                label={meta.label}
+                shortcut={meta.shortcut}
+                isActive={isActive}
+                isOpen={isOpen}
+                badge={view === 'code-review' ? reviewCount : undefined}
+                onActivate={handleActivate}
+                onContextAction={handleContextAction}
+              />
+            </NavTooltip>
           )
         })}
 
