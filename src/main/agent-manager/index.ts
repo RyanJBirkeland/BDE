@@ -314,6 +314,7 @@ export class AgentManagerImpl implements AgentManager {
     max_runtime_ms: number | null
     max_cost_usd: number | null
     model: string | null
+    group_id: string | null
   } | null {
     // Validate required fields
     if (!raw.id || typeof raw.id !== 'string') {
@@ -341,7 +342,8 @@ export class AgentManagerImpl implements AgentManager {
       playground_enabled: Boolean(raw.playground_enabled),
       max_runtime_ms: Number(raw.max_runtime_ms) || null,
       max_cost_usd: Number(raw.max_cost_usd) || null,
-      model: (raw.model as string) ?? null
+      model: (raw.model as string) ?? null,
+      group_id: (raw.group_id as string) ?? null
     }
   }
 
@@ -465,6 +467,7 @@ export class AgentManagerImpl implements AgentManager {
           worktreeBase: this.config.worktreeBase,
           taskId: task.id,
           title: task.title,
+          groupId: task.group_id ?? undefined,
           logger: this.logger
         })
       } catch (err) {

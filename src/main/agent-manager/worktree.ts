@@ -16,7 +16,7 @@ import type { Logger } from './types'
 
 const execFileAsync = promisify(execFile)
 
-export function branchNameForTask(title: string, taskId?: string): string {
+export function branchNameForTask(title: string, taskId?: string, groupId?: string): string {
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -24,7 +24,8 @@ export function branchNameForTask(title: string, taskId?: string): string {
     .slice(0, BRANCH_SLUG_MAX_LENGTH)
   // Fallback to 'unnamed-task' if slug is empty (all special chars)
   const finalSlug = slug || 'unnamed-task'
-  const suffix = taskId ? `-${taskId.slice(0, 8)}` : ''
+  // When groupId is present, append group short-id instead of taskId
+  const suffix = groupId ? `-${groupId.slice(0, 8)}` : taskId ? `-${taskId.slice(0, 8)}` : ''
   return `agent/${finalSlug}${suffix}`
 }
 
@@ -33,6 +34,7 @@ export interface SetupWorktreeOpts {
   worktreeBase: string
   taskId: string
   title: string
+  groupId?: string
 }
 
 export interface SetupWorktreeResult {
@@ -188,8 +190,8 @@ async function nukeStaleState(
 export async function setupWorktree(
   opts: SetupWorktreeOpts & { logger?: Logger }
 ): Promise<SetupWorktreeResult> {
-  const { repoPath, worktreeBase, taskId, title, logger } = opts
-  const branch = branchNameForTask(title, taskId)
+  const { repoPath, worktreeBase, taskId, title, groupId, logger } = opts
+  const branch = branchNameForTask(title, taskId, groupId)
   const repoDir = path.join(worktreeBase, repoSlug(repoPath))
   const worktreePath = path.join(repoDir, taskId)
   const env = buildAgentEnv()

@@ -381,7 +381,8 @@ describe('AgentManagerImpl — class internals', () => {
         playground_enabled: true,
         max_runtime_ms: 30000,
         max_cost_usd: null,
-        model: null
+        model: null,
+        group_id: null
       })
     })
 
