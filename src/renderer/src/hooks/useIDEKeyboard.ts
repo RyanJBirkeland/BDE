@@ -14,6 +14,7 @@ interface UseIDEKeyboardParams {
   handleSave: () => Promise<void>
   handleCloseTab: (tabId: string, isDirty: boolean) => Promise<void>
   setShowShortcuts: (show: boolean | ((prev: boolean) => boolean)) => void
+  setShowQuickOpen: (show: boolean | ((prev: boolean) => boolean)) => void
 }
 
 export function useIDEKeyboard({
@@ -27,7 +28,8 @@ export function useIDEKeyboard({
   handleOpenFolder,
   handleSave,
   handleCloseTab,
-  setShowShortcuts
+  setShowShortcuts,
+  setShowQuickOpen
 }: UseIDEKeyboardParams): void {
   const termAddTab = useTerminalStore((s) => s.addTab)
   const termCloseTab = useTerminalStore((s) => s.closeTab)
@@ -58,6 +60,12 @@ export function useIDEKeyboard({
           e.preventDefault()
           e.stopPropagation()
           void handleOpenFolder()
+          return
+        }
+        if (e.key === 'p') {
+          e.preventDefault()
+          e.stopPropagation()
+          setShowQuickOpen(true)
           return
         }
         // IDE-12: Allow Cmd+S to work regardless of focused panel if there's an active tab
@@ -179,6 +187,7 @@ export function useIDEKeyboard({
     termZoomOut,
     termResetZoom,
     showShortcuts,
-    setShowShortcuts
+    setShowShortcuts,
+    setShowQuickOpen
   ])
 }

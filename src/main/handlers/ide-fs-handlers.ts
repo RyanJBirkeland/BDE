@@ -1,6 +1,6 @@
 import fs from 'fs'
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
-import { dirname, join, resolve } from 'path'
+import { dirname, join, resolve, relative } from 'path'
 import { homedir } from 'os'
 import { shell, BrowserWindow } from 'electron'
 import { safeHandle } from '../ipc-utils'
@@ -206,6 +206,32 @@ function stopWatcher(): void {
   }
 }
 
+/**
+ * Recursively lists all files in a directory tree.
+ * Returns file paths relative to rootPath.
+ * Skips common non-source directories to improve performance.
+ */
+async function listAllFiles(rootPath: string): Promise<string[]> {
+  const skipDirs = new Set(['node_modules', '.git', 'dist', 'build', '.next', 'coverage'])
+  const files: string[] = []
+
+  async function walk(dirPath: string): Promise<void> {
+    const entries = await readdir(dirPath, { withFileTypes: true })
+    for (const entry of entries) {
+      if (skipDirs.has(entry.name)) continue
+      const fullPath = join(dirPath, entry.name)
+      if (entry.isDirectory()) {
+        await walk(fullPath)
+      } else if (entry.isFile()) {
+        files.push(relative(rootPath, fullPath))
+      }
+    }
+  }
+
+  await walk(rootPath)
+  return files
+}
+
 export function registerIdeFsHandlers(): void {
   safeHandle('fs:watchDir', async (_e, dirPath: string) => {
     const validatedPath = await validateIdeRoot(dirPath)
@@ -292,5 +318,11 @@ export function registerIdeFsHandlers(): void {
       mtime: info.mtimeMs,
       isDirectory: info.isDirectory()
     }
+  })
+
+  safeHandle('fs:listFiles', async (_e, rootPath: string) => {
+    if (!ideRootPath) throw new Error('No IDE root path set — call fs:watchDir first')
+    const safe = validateIdePath(rootPath, ideRootPath)
+    return listAllFiles(safe)
   })
 }

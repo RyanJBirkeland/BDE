@@ -69,7 +69,8 @@ describe('useIDEKeyboard', () => {
     handleOpenFolder: vi.fn(),
     handleSave: vi.fn(),
     handleCloseTab: vi.fn(),
-    setShowShortcuts: vi.fn()
+    setShowShortcuts: vi.fn(),
+    setShowQuickOpen: vi.fn()
   }
 
   beforeEach(() => {

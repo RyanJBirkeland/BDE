@@ -225,6 +225,7 @@ const api = {
   rename: (oldPath: string, newPath: string) => typedInvoke('fs:rename', oldPath, newPath),
   deletePath: (targetPath: string) => typedInvoke('fs:delete', targetPath),
   stat: (targetPath: string) => typedInvoke('fs:stat', targetPath),
+  listFiles: (rootPath: string) => typedInvoke('fs:listFiles', rootPath),
   onDirChanged: (callback: (dirPath: string) => void) => {
     const handler = (_event: unknown, dirPath: string): void => callback(dirPath)
     ipcRenderer.on('fs:dirChanged', handler)

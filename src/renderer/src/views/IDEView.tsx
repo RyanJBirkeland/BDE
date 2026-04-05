@@ -11,6 +11,7 @@ import { FileSidebar } from '../components/ide/FileSidebar'
 import { TerminalPanel } from '../components/ide/TerminalPanel'
 import { IDEEmptyState } from '../components/ide/IDEEmptyState'
 import { useUnsavedDialog, UnsavedDialogModal } from '../components/ide/UnsavedDialog'
+import { QuickOpenPalette } from '../components/ide/QuickOpenPalette'
 import { useIDEKeyboard } from '../hooks/useIDEKeyboard'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { toast } from '../stores/toasts'
@@ -21,6 +22,7 @@ const IDE_SHORTCUTS = [
   { keys: '⌘B', desc: 'Toggle sidebar' },
   { keys: '⌘J', desc: 'Toggle terminal' },
   { keys: '⌘O', desc: 'Open folder' },
+  { keys: '⌘P', desc: 'Quick open file' },
   { keys: '⌘S', desc: 'Save file' },
   { keys: '⌘W', desc: 'Close tab' },
   { keys: '⌘T', desc: 'New terminal tab' },
@@ -35,6 +37,7 @@ const IDE_SHORTCUTS = [
 export function IDEView(): React.JSX.Element {
   const reduced = useReducedMotion()
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showQuickOpen, setShowQuickOpen] = useState(false)
   useEffect(() => {
     const restore = async (): Promise<void> => {
       try {
@@ -277,7 +280,8 @@ export function IDEView(): React.JSX.Element {
     handleOpenFolder,
     handleSave,
     handleCloseTab,
-    setShowShortcuts
+    setShowShortcuts,
+    setShowQuickOpen
   })
 
   if (!rootPath) {
@@ -363,6 +367,15 @@ export function IDEView(): React.JSX.Element {
         </Panel>
       </Group>
       <UnsavedDialogModal {...confirmProps} />
+
+      {/* Quick Open Palette */}
+      {showQuickOpen && rootPath && (
+        <QuickOpenPalette
+          rootPath={rootPath}
+          onClose={() => setShowQuickOpen(false)}
+          onSelectFile={handleOpenFile}
+        />
+      )}
 
       {/* Keyboard shortcuts help overlay */}
       {showShortcuts && (

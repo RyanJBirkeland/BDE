@@ -456,6 +456,10 @@ export interface FsChannels {
     args: [targetPath: string]
     result: { size: number; mtime: number; isDirectory: boolean }
   }
+  'fs:listFiles': {
+    args: [rootPath: string]
+    result: string[]
+  }
 }
 
 /** Agent event streaming */

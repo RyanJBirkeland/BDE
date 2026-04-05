@@ -240,6 +240,7 @@ declare global {
       rename: (...args: IpcArgs<'fs:rename'>) => Promise<IpcResult<'fs:rename'>>
       deletePath: (...args: IpcArgs<'fs:delete'>) => Promise<IpcResult<'fs:delete'>>
       stat: (...args: IpcArgs<'fs:stat'>) => Promise<IpcResult<'fs:stat'>>
+      listFiles: (...args: IpcArgs<'fs:listFiles'>) => Promise<IpcResult<'fs:listFiles'>>
       onDirChanged: (callback: (dirPath: string) => void) => () => void
 
       // GitHub rate-limit warning push events
