@@ -74,6 +74,7 @@ describe('DashboardView', () => {
       chartData: [],
       feedEvents: [],
       prCount: 0,
+      successTrendData: [],
       cardErrors: {},
       loading: false,
       fetchAll: mockFetchAll

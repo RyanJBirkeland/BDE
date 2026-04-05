@@ -315,7 +315,8 @@ const api = {
   // Dashboard analytics
   dashboard: {
     completionsPerHour: () => typedInvoke('agent:completionsPerHour'),
-    recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit)
+    recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit),
+    dailySuccessRate: (days?: number) => typedInvoke('dashboard:dailySuccessRate', days)
   },
 
   // Task Workbench

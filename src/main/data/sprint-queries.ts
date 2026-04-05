@@ -995,3 +995,64 @@ export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
     return []
   }
 }
+
+export interface DailySuccessRate {
+  date: string
+  successRate: number | null
+  doneCount: number
+  failedCount: number
+}
+
+/**
+ * Get daily success rates for the last N days with gap-filling.
+ * Success rate = done / (done + failed + error) per day.
+ * Days with no terminal tasks return null success rate but are included in results.
+ */
+export function getDailySuccessRate(days: number = 14): DailySuccessRate[] {
+  try {
+    const db = getDb()
+    // Generate continuous date range for last N days, then LEFT JOIN with task stats
+    const rows = db
+      .prepare(
+        `WITH RECURSIVE dates(date) AS (
+          SELECT date('now', '-${days - 1} days')
+          UNION ALL
+          SELECT date(date, '+1 day')
+          FROM dates
+          WHERE date < date('now')
+        ),
+        daily_stats AS (
+          SELECT
+            date(completed_at) as date,
+            COUNT(CASE WHEN status = 'done' THEN 1 END) as done,
+            COUNT(CASE WHEN status IN ('failed', 'error') THEN 1 END) as failed
+          FROM sprint_tasks
+          WHERE completed_at IS NOT NULL
+            AND date(completed_at) >= date('now', '-${days} days')
+          GROUP BY date(completed_at)
+        )
+        SELECT
+          dates.date,
+          COALESCE(daily_stats.done, 0) as done,
+          COALESCE(daily_stats.failed, 0) as failed
+        FROM dates
+        LEFT JOIN daily_stats ON dates.date = daily_stats.date
+        ORDER BY dates.date ASC`
+      )
+      .all() as Array<{ date: string; done: number; failed: number }>
+
+    return rows.map((row) => {
+      const total = row.done + row.failed
+      return {
+        date: row.date,
+        successRate: total > 0 ? (row.done / total) * 100 : null,
+        doneCount: row.done,
+        failedCount: row.failed
+      }
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    logger.warn(`[sprint-queries] getDailySuccessRate failed: ${msg}`)
+    return []
+  }
+}

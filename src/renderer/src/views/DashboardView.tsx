@@ -63,15 +63,17 @@ export default function DashboardView(): React.JSX.Element {
   }, [])
 
   // Dashboard data from centralized polling
-  const { chartData, feedEvents, loading, cardErrors, lastFetchedAt } = useDashboardDataStore(
-    useShallow((s) => ({
-      chartData: s.chartData,
-      feedEvents: s.feedEvents,
-      loading: s.loading,
-      cardErrors: s.cardErrors,
-      lastFetchedAt: s.lastFetchedAt
-    }))
-  )
+  const { chartData, feedEvents, successTrendData, loading, cardErrors, lastFetchedAt } =
+    useDashboardDataStore(
+      useShallow((s) => ({
+        chartData: s.chartData,
+        feedEvents: s.feedEvents,
+        successTrendData: s.successTrendData,
+        loading: s.loading,
+        cardErrors: s.cardErrors,
+        lastFetchedAt: s.lastFetchedAt
+      }))
+    )
 
   // Timestamp counter to re-evaluate freshness every 10s
   const [now, setNow] = useState(() => Date.now())
@@ -266,6 +268,7 @@ export default function DashboardView(): React.JSX.Element {
               avgTaskDuration={avgTaskDuration}
               taskDurationCount={taskDurationCount}
               localAgents={localAgents}
+              successTrendData={successTrendData}
               onFilterClick={navigateToSprintWithFilter}
               onKeyDownFor={keyDownFor}
             />

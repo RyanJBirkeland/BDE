@@ -1,5 +1,6 @@
 import { getDb } from '../db'
 import { safeHandle } from '../ipc-utils'
+import { getDailySuccessRate } from '../data/sprint-queries'
 
 export function getCompletionsPerHour(): { hour: string; count: number }[] {
   const db = getDb()
@@ -50,5 +51,9 @@ export function registerDashboardHandlers(): void {
 
   safeHandle('agent:recentEvents', async (_e: unknown, limit?: number) => {
     return getRecentEvents(limit)
+  })
+
+  safeHandle('dashboard:dailySuccessRate', async (_e: unknown, days?: number) => {
+    return getDailySuccessRate(days)
   })
 }

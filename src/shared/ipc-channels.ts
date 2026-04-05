@@ -674,9 +674,17 @@ export interface DashboardEvent {
   timestamp: number
 }
 
+export interface DailySuccessRate {
+  date: string
+  successRate: number | null
+  doneCount: number
+  failedCount: number
+}
+
 export interface DashboardChannels {
   'agent:completionsPerHour': { args: []; result: CompletionBucket[] }
   'agent:recentEvents': { args: [limit?: number]; result: DashboardEvent[] }
+  'dashboard:dailySuccessRate': { args: [days?: number]; result: DailySuccessRate[] }
 }
 
 /** Code review operations */

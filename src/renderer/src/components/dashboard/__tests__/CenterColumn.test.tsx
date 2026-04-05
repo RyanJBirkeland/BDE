@@ -67,6 +67,7 @@ describe('CenterColumn', () => {
     avgTaskDuration: 150000,
     taskDurationCount: 5,
     localAgents: [],
+    successTrendData: [],
     onFilterClick: vi.fn(),
     onKeyDownFor: vi.fn(() => vi.fn())
   }

@@ -2,10 +2,18 @@ import { create } from 'zustand'
 import type { ChartBar } from '../components/neon/MiniChart'
 import type { FeedEvent } from '../components/neon/ActivityFeed'
 
+interface DailySuccessRate {
+  date: string
+  successRate: number | null
+  doneCount: number
+  failedCount: number
+}
+
 interface DashboardDataState {
   chartData: ChartBar[]
   feedEvents: FeedEvent[]
   prCount: number
+  successTrendData: DailySuccessRate[]
   cardErrors: Record<string, string | undefined>
   loading: boolean
   lastFetchedAt: number | null
@@ -22,6 +30,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
   chartData: [],
   feedEvents: [],
   prCount: 0,
+  successTrendData: [],
   cardErrors: {},
   loading: true,
   lastFetchedAt: null,
@@ -66,10 +75,21 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
       errors.prs = 'Failed to load PR data'
     }
 
+    let successTrendData: DailySuccessRate[] = []
+    try {
+      const data = await window.api.dashboard?.dailySuccessRate(14)
+      if (data) {
+        successTrendData = data
+      }
+    } catch {
+      errors.successTrend = 'Failed to load success trend'
+    }
+
     set({
       chartData,
       feedEvents,
       prCount,
+      successTrendData,
       cardErrors: Object.keys(errors).length > 0 ? errors : {},
       loading: false,
       lastFetchedAt: Date.now()

@@ -264,6 +264,7 @@ declare global {
       dashboard: {
         completionsPerHour: () => Promise<IpcResult<'agent:completionsPerHour'>>
         recentEvents: (limit?: number) => Promise<IpcResult<'agent:recentEvents'>>
+        dailySuccessRate: (days?: number) => Promise<IpcResult<'dashboard:dailySuccessRate'>>
       }
 
       // Task Workbench

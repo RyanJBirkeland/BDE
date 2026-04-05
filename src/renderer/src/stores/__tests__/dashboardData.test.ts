@@ -7,6 +7,7 @@ describe('dashboardDataStore', () => {
     // Reset mocks to default values
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
+    ;(window.api.dashboard.dailySuccessRate as any).mockResolvedValue([])
     ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
 
     // Reset store to initial state
@@ -14,6 +15,7 @@ describe('dashboardDataStore', () => {
       chartData: [],
       feedEvents: [],
       prCount: 0,
+      successTrendData: [],
       cardErrors: {},
       loading: true
     })

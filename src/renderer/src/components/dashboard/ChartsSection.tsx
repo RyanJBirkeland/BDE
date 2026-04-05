@@ -1,10 +1,18 @@
 import { NeonCard, MiniChart, type ChartBar } from '../neon'
 import { useDashboardDataStore } from '../../stores/dashboardData'
 import { SuccessRing } from './SuccessRing'
-import { Zap, Target, Clock } from 'lucide-react'
+import { SuccessTrendChart } from './SuccessTrendChart'
+import { Zap, Target, Clock, TrendingUp } from 'lucide-react'
 
 interface LocalAgent {
   durationMs?: number | null
+}
+
+interface DailySuccessRate {
+  date: string
+  successRate: number | null
+  doneCount: number
+  failedCount: number
 }
 
 interface ChartsSectionProps {
@@ -16,6 +24,7 @@ interface ChartsSectionProps {
   avgTaskDuration: number | null
   taskDurationCount: number
   localAgents: LocalAgent[]
+  successTrendData: DailySuccessRate[]
 }
 
 /** Format milliseconds to human-readable duration. */
@@ -39,6 +48,9 @@ export function ChartsSection({
   avgTaskDuration,
   taskDurationCount,
   localAgents
+  localAgents
+  localAgents,
+  successTrendData
 }: ChartsSectionProps): React.JSX.Element {
   // Prefer task-level duration (more accurate for multi-retry tasks), fallback to agent-run duration
   const displayDuration = avgTaskDuration ?? avgDuration
@@ -65,6 +77,22 @@ export function ChartsSection({
             <MiniChart data={chartData} height={120} />
             <div className="dashboard-chart-caption">completions per hour, last 24h</div>
           </>
+        )}
+      </NeonCard>
+
+      <NeonCard accent="cyan" title="Success Trend" icon={<TrendingUp size={12} />}>
+        {cardErrors.successTrend ? (
+          <div className="dashboard-card-error">
+            <div className="dashboard-card-error__message">{cardErrors.successTrend}</div>
+            <button
+              className="dashboard-card-error__retry"
+              onClick={() => useDashboardDataStore.getState().fetchAll()}
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <SuccessTrendChart data={successTrendData} />
         )}
       </NeonCard>
 
