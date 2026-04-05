@@ -248,4 +248,3 @@ describe('SettingsView', () => {
     expect(inner?.className).not.toContain('stg-content__inner--wide')
   })
 })
-}

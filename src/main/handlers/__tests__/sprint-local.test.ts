@@ -144,9 +144,9 @@ describe('registerSprintLocalHandlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers 17 handlers', () => {
+  it('registers 20 handlers', () => {
     registerSprintLocalHandlers()
-    expect(safeHandle).toHaveBeenCalledTimes(17)
+    expect(safeHandle).toHaveBeenCalledTimes(20)
   })
 
   it('registers the expected channel names', () => {
@@ -170,6 +170,8 @@ describe('registerSprintLocalHandlers', () => {
     expect(channels).toContain('sprint:batchUpdate')
     expect(channels).toContain('sprint:batchImport')
     expect(channels).toContain('sprint:failureBreakdown')
+    expect(channels).toContain('sprint:exportTaskHistory')
+    expect(channels).toContain('sprint:getSuccessRateBySpecType')
   })
 })
 
