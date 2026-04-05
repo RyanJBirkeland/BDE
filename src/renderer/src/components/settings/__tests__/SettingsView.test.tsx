@@ -43,7 +43,6 @@ describe('SettingsView', () => {
     expect(screen.getAllByText('Templates').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Agent Manager').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Appearance').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText('About').length).toBeGreaterThanOrEqual(1)
   })
 
   it('shows Connections section by default', () => {

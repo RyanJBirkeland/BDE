@@ -2,12 +2,15 @@
  * ConnectionsSection — auth status and GitHub credential management.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, ExternalLink } from 'lucide-react'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { CredentialForm, type CredentialField } from './CredentialForm'
 import { SettingsCard } from './SettingsCard'
+
+const APP_VERSION = __APP_VERSION__
+const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE'
 
 // --- Auth Status types ---
 interface AuthStatus {
@@ -198,6 +201,28 @@ export function ConnectionsSection(): React.JSX.Element {
           testing={ghTesting}
           testResult={ghTestResult}
         />
+      </SettingsCard>
+
+      {/* About Card */}
+      <SettingsCard title="About BDE">
+        <div className="settings-about">
+          <div className="settings-about__row">
+            <span className="settings-about__label">Version</span>
+            <span className="settings-about__value">{APP_VERSION}</span>
+          </div>
+          <div className="settings-about__row">
+            <span className="settings-about__label">Source</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="settings-about__link"
+              onClick={() => window.api.openExternal(GITHUB_URL)}
+              type="button"
+            >
+              GitHub <ExternalLink size={12} />
+            </Button>
+          </div>
+        </div>
       </SettingsCard>
     </section>
   )

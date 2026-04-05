@@ -89,9 +89,6 @@ vi.mock('../../components/settings/CostSection', () => ({
 vi.mock('../../components/settings/MemorySection', () => ({
   MemorySection: () => <div data-testid="section-memory">Memory</div>
 }))
-vi.mock('../../components/settings/AboutSection', () => ({
-  AboutSection: () => <div data-testid="section-about">About</div>
-}))
 
 import SettingsView from '../SettingsView'
 
@@ -109,10 +106,10 @@ describe('SettingsView', () => {
     expect(screen.getByText('App')).toBeInTheDocument()
   })
 
-  it('renders all sidebar items (11 sections, no Agent tab)', () => {
+  it('renders all sidebar items (10 sections, no Agent tab)', () => {
     render(<SettingsView />)
     const links = screen.getAllByRole('link')
-    expect(links).toHaveLength(11)
+    expect(links).toHaveLength(10) // About section removed
     // Agent tab should not exist
     expect(screen.queryByText('Agent')).not.toBeInTheDocument()
   })
@@ -140,10 +137,10 @@ describe('SettingsView', () => {
     expect(screen.queryByTestId('section-connections')).not.toBeInTheDocument()
   })
 
-  it('switches to About section on click', () => {
+  it('switches to Memory section on click', () => {
     render(<SettingsView />)
-    fireEvent.click(screen.getByRole('link', { name: /About/ }))
-    expect(screen.getByTestId('section-about')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: /Memory/ }))
+    expect(screen.getByTestId('section-memory')).toBeInTheDocument()
   })
 
   // ---------- Branch coverage: tabIndex roving ----------
@@ -151,17 +148,17 @@ describe('SettingsView', () => {
   it('active item has tabIndex 0, others have tabIndex -1', () => {
     render(<SettingsView />)
     const connectionsLink = screen.getByRole('link', { name: /Connections/ })
-    const aboutLink = screen.getByRole('link', { name: /About/ })
+    const memoryLink = screen.getByRole('link', { name: /Memory/ })
     expect(connectionsLink).toHaveAttribute('tabindex', '0')
-    expect(aboutLink).toHaveAttribute('tabindex', '-1')
+    expect(memoryLink).toHaveAttribute('tabindex', '-1')
   })
 
   it('updates tabIndex when section changes', () => {
     render(<SettingsView />)
-    fireEvent.click(screen.getByRole('link', { name: /About/ }))
+    fireEvent.click(screen.getByRole('link', { name: /Memory/ }))
     const connectionsLink = screen.getByRole('link', { name: /Connections/ })
-    const aboutLink = screen.getByRole('link', { name: /About/ })
-    expect(aboutLink).toHaveAttribute('tabindex', '0')
+    const memoryLink = screen.getByRole('link', { name: /Memory/ })
+    expect(memoryLink).toHaveAttribute('tabindex', '0')
     expect(connectionsLink).toHaveAttribute('tabindex', '-1')
   })
 
@@ -226,8 +223,8 @@ describe('SettingsView', () => {
 
   it('aria-live updates when section changes', () => {
     render(<SettingsView />)
-    fireEvent.click(screen.getByRole('link', { name: /About/ }))
-    expect(screen.getByText('About settings')).toHaveAttribute('aria-live', 'polite')
+    fireEvent.click(screen.getByRole('link', { name: /Memory/ }))
+    expect(screen.getByText('Memory settings')).toHaveAttribute('aria-live', 'polite')
   })
 
   // ---------- Wide layout ----------

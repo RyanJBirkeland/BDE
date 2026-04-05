@@ -9,7 +9,6 @@ import {
   Link,
   GitBranch,
   FileText,
-  Info,
   Cpu,
   DollarSign,
   Brain,
@@ -28,7 +27,6 @@ import { AgentPermissionsSection } from '../components/settings/AgentPermissions
 import { AgentManagerSection } from '../components/settings/AgentManagerSection'
 import { CostSection } from '../components/settings/CostSection'
 import { MemorySection } from '../components/settings/MemorySection'
-import { AboutSection } from '../components/settings/AboutSection'
 import { WebhooksSection } from '../components/settings/WebhooksSection'
 import { KeybindingsSettings } from '../components/settings/KeybindingsSettings'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
@@ -43,8 +41,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'cost', label: 'Cost & Usage', icon: DollarSign, category: 'Pipeline' },
   { id: 'appearance', label: 'Appearance', icon: Palette, category: 'App' },
   { id: 'keybindings', label: 'Keybindings', icon: Keyboard, category: 'App' },
-  { id: 'memory', label: 'Memory', icon: Brain, category: 'App' },
-  { id: 'about', label: 'About', icon: Info, category: 'App' }
+  { id: 'memory', label: 'Memory', icon: Brain, category: 'App' }
 ]
 
 type SectionId = (typeof SECTIONS)[number]['id']
@@ -59,8 +56,7 @@ const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   cost: CostSection,
   memory: MemorySection,
   appearance: AppearanceSection,
-  keybindings: KeybindingsSettings,
-  about: AboutSection
+  keybindings: KeybindingsSettings
 }
 
 const SECTION_META: Record<string, { title: string; subtitle: string; wide: boolean }> = {
@@ -77,8 +73,7 @@ const SECTION_META: Record<string, { title: string; subtitle: string; wide: bool
   cost: { title: 'Cost & Usage', subtitle: 'Agent execution costs and history', wide: true },
   memory: { title: 'Memory', subtitle: 'Agent memory files', wide: true },
   appearance: { title: 'Appearance', subtitle: 'Theme and visual preferences', wide: false },
-  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
-  about: { title: 'About', subtitle: 'Version and application info', wide: false }
+  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false }
 }
 
 export default function SettingsView(): React.JSX.Element {
