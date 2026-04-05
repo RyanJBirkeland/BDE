@@ -450,6 +450,17 @@ export function SprintPipeline(): React.JSX.Element {
     void batchRequeueTasks(failedIds)
   }, [filteredPartition.failed, batchRequeueTasks])
 
+  const handleExport = useCallback(async (task: SprintTask) => {
+    try {
+      const result = await window.api.sprint.exportTaskHistory(task.id)
+      if (result.success) {
+        toast.success(`Task history exported to ${result.path}`)
+      }
+    } catch (err) {
+      toast.error(`Failed to export: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }, [])
+
   // Stats
   const headerStats = useMemo(
     () => [
@@ -625,6 +636,7 @@ export function SprintPipeline(): React.JSX.Element {
               onUnblock={handleUnblock}
               onRetry={handleRetry}
               onReviewChanges={handleReviewChanges}
+              onExport={handleExport}
             />
           )}
         </div>

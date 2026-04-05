@@ -339,6 +339,48 @@ export function registerSprintLocalHandlers(): void {
     return getTaskChanges(taskId)
   })
 
+  safeHandle('sprint:exportTaskHistory', async (_e, taskId: string) => {
+    const { dialog } = await import('electron')
+    const { getTaskChanges } = await import('../data/task-changes')
+    const { writeFile } = await import('fs/promises')
+
+    // Get task to use title in filename suggestion
+    const task = getTask(taskId)
+    if (!task) throw new Error(`Task ${taskId} not found`)
+
+    // Get task change history
+    const changes = getTaskChanges(taskId)
+
+    // Show save dialog
+    const result = await dialog.showSaveDialog({
+      title: 'Export Task History',
+      defaultPath: `task-history-${task.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    })
+
+    if (result.canceled || !result.filePath) {
+      return { success: false }
+    }
+
+    // Prepare export data
+    const exportData = {
+      task: {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        created_at: task.created_at,
+        updated_at: task.updated_at
+      },
+      changes,
+      exportedAt: new Date().toISOString()
+    }
+
+    // Write to file
+    await writeFile(result.filePath, JSON.stringify(exportData, null, 2), 'utf-8')
+
+    return { success: true, path: result.filePath }
+  })
+
   safeHandle('sprint:retry', async (_e, taskId: string) => {
     const task = getTask(taskId)
     if (!task) throw new Error(`Task ${taskId} not found`)

@@ -162,6 +162,13 @@ describe('EpicList', () => {
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument() // Only active groups (not completed)
+    expect(screen.getByText('2')).toBeInTheDocument() // Only active groups (not completed)
+    expect(screen.getByText('3')).toBeInTheDocument()
+    // Count shows only active groups (not completed)
+    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
     // Count shows only active groups (not completed)
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument() // Only active groups (not completed)
@@ -271,6 +278,22 @@ describe('EpicList', () => {
     })
 
     // Completed epic is in collapsed section - expand it first
+    const completedToggle = screen.getByText('Completed')
+    fireEvent.click(completedToggle)
+
+    await waitFor(() => {
+    // Completed groups are in a collapsed section - expand it to see them
+    const completedToggle = screen.getByText('Completed')
+    fireEvent.click(completedToggle)
+
+    await waitFor(() => {
+    })
+
+    // Completed epic is in collapsed section - expand it first
+    fireEvent.click(screen.getByText('Completed'))
+
+    await waitFor(() => {
+    // Completed groups are in a collapsed section - expand it to see them
     const completedToggle = screen.getByText('Completed')
     fireEvent.click(completedToggle)
 
@@ -496,22 +519,6 @@ describe('EpicList', () => {
     await waitFor(() => {
       expect(screen.getByText('Completed')).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByText('Completed'))
-
-    fireEvent.click(screen.getByText('Completed'))
-
-    // Expand completed section to see the completed epic
-    await waitFor(() => {
-      expect(screen.getByText('Completed')).toBeInTheDocument()
-    })
-    fireEvent.click(screen.getByText('Completed'))
-
-    // Expand completed section first
-    await waitFor(() => {
-      expect(screen.getByText('Completed')).toBeInTheDocument()
-    })
-    fireEvent.click(screen.getByText('Completed'))
-
     fireEvent.click(screen.getByText('Completed'))
 
     await waitFor(() => {

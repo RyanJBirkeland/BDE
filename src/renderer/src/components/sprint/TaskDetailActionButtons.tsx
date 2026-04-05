@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { RefreshCw, Loader2 } from 'lucide-react'
+import { RefreshCw, Loader2, Download } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 
 interface ActionButtonsProps {
@@ -12,6 +12,7 @@ interface ActionButtonsProps {
   onEdit: (t: SprintTask) => void
   onUnblock?: (t: SprintTask) => void
   onRetry?: (t: SprintTask) => void
+  onExport?: (t: SprintTask) => void
 }
 
 export function TaskDetailActionButtons({
@@ -23,7 +24,8 @@ export function TaskDetailActionButtons({
   onViewLogs,
   onEdit,
   onUnblock,
-  onRetry
+  onRetry,
+  onExport
 }: ActionButtonsProps): React.JSX.Element {
   const [loadingAction, setLoadingAction] = useState<string | null>(null)
   const isLoading = loadingAction !== null
@@ -65,6 +67,22 @@ export function TaskDetailActionButtons({
             {loadingAction === 'edit' && <Loader2 size={12} className="spinner" />}
             Edit
           </button>
+          {onExport && (
+            <button
+              className="task-drawer__btn task-drawer__btn--secondary"
+              onClick={() => handleAction('export', onExport)}
+              disabled={isLoading}
+              aria-busy={loadingAction === 'export'}
+              title="Export task history"
+            >
+              {loadingAction === 'export' ? (
+                <Loader2 size={12} className="spinner" />
+              ) : (
+                <Download size={12} />
+              )}{' '}
+              Export
+            </button>
+          )}
           <button
             className="task-drawer__btn task-drawer__btn--danger"
             onClick={() => handleAction('delete', onDelete)}
@@ -97,6 +115,22 @@ export function TaskDetailActionButtons({
             {loadingAction === 'edit' && <Loader2 size={12} className="spinner" />}
             Edit
           </button>
+          {onExport && (
+            <button
+              className="task-drawer__btn task-drawer__btn--secondary"
+              onClick={() => handleAction('export', onExport)}
+              disabled={isLoading}
+              aria-busy={loadingAction === 'export'}
+              title="Export task history"
+            >
+              {loadingAction === 'export' ? (
+                <Loader2 size={12} className="spinner" />
+              ) : (
+                <Download size={12} />
+              )}{' '}
+              Export
+            </button>
+          )}
           <button
             className="task-drawer__btn task-drawer__btn--danger"
             onClick={() => handleAction('delete', onDelete)}
@@ -129,6 +163,22 @@ export function TaskDetailActionButtons({
             {loadingAction === 'edit' && <Loader2 size={12} className="spinner" />}
             Edit
           </button>
+          {onExport && (
+            <button
+              className="task-drawer__btn task-drawer__btn--secondary"
+              onClick={() => handleAction('export', onExport)}
+              disabled={isLoading}
+              aria-busy={loadingAction === 'export'}
+              title="Export task history"
+            >
+              {loadingAction === 'export' ? (
+                <Loader2 size={12} className="spinner" />
+              ) : (
+                <Download size={12} />
+              )}{' '}
+              Export
+            </button>
+          )}
         </>
       )
     case 'active':
@@ -152,6 +202,22 @@ export function TaskDetailActionButtons({
             {loadingAction === 'edit' && <Loader2 size={12} className="spinner" />}
             Edit
           </button>
+          {onExport && (
+            <button
+              className="task-drawer__btn task-drawer__btn--secondary"
+              onClick={() => handleAction('export', onExport)}
+              disabled={isLoading}
+              aria-busy={loadingAction === 'export'}
+              title="Export task history"
+            >
+              {loadingAction === 'export' ? (
+                <Loader2 size={12} className="spinner" />
+              ) : (
+                <Download size={12} />
+              )}{' '}
+              Export
+            </button>
+          )}
           <button
             className="task-drawer__btn task-drawer__btn--danger"
             onClick={() => handleAction('stop', onStop)}
@@ -195,6 +261,22 @@ export function TaskDetailActionButtons({
             {loadingAction === 'clone' && <Loader2 size={12} className="spinner" />}
             Clone & Queue
           </button>
+          {onExport && (
+            <button
+              className="task-drawer__btn task-drawer__btn--secondary"
+              onClick={() => handleAction('export', onExport)}
+              disabled={isLoading}
+              aria-busy={loadingAction === 'export'}
+              title="Export task history"
+            >
+              {loadingAction === 'export' ? (
+                <Loader2 size={12} className="spinner" />
+              ) : (
+                <Download size={12} />
+              )}{' '}
+              Export
+            </button>
+          )}
         </>
       )
     case 'failed':
@@ -235,6 +317,22 @@ export function TaskDetailActionButtons({
             {loadingAction === 'edit' && <Loader2 size={12} className="spinner" />}
             Edit
           </button>
+          {onExport && (
+            <button
+              className="task-drawer__btn task-drawer__btn--secondary"
+              onClick={() => handleAction('export', onExport)}
+              disabled={isLoading}
+              aria-busy={loadingAction === 'export'}
+              title="Export task history"
+            >
+              {loadingAction === 'export' ? (
+                <Loader2 size={12} className="spinner" />
+              ) : (
+                <Download size={12} />
+              )}{' '}
+              Export
+            </button>
+          )}
           <button
             className="task-drawer__btn task-drawer__btn--danger"
             onClick={() => handleAction('delete', onDelete)}

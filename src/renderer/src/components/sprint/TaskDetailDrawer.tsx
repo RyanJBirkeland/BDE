@@ -26,6 +26,7 @@ export interface TaskDetailDrawerProps {
   onUnblock?: (task: SprintTask) => void
   onRetry?: (task: SprintTask) => void
   onReviewChanges?: (task: SprintTask) => void
+  onExport?: (task: SprintTask) => void
 }
 
 function formatTimestamp(iso: string): string {
@@ -51,7 +52,8 @@ export function TaskDetailDrawer({
   onViewAgents,
   onUnblock,
   onRetry,
-  onReviewChanges
+  onReviewChanges,
+  onExport
 }: TaskDetailDrawerProps): React.JSX.Element {
   const [elapsed, setElapsed] = useState('')
   const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
@@ -335,6 +337,7 @@ export function TaskDetailDrawer({
           onEdit={onEdit}
           onUnblock={onUnblock}
           onRetry={onRetry}
+          onExport={onExport}
         />
       </div>
     </aside>

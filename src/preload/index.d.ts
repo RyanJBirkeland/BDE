@@ -189,6 +189,7 @@ declare global {
         exportTasks: (
           ...args: IpcArgs<'sprint:exportTasks'>
         ) => Promise<IpcResult<'sprint:exportTasks'>>
+        exportTaskHistory: (taskId: string) => Promise<IpcResult<'sprint:exportTaskHistory'>>
       }
 
       // Task groups

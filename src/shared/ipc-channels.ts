@@ -340,6 +340,10 @@ export interface SprintChannels {
     args: [format: 'json' | 'csv']
     result: { filePath: string | null; canceled: boolean }
   }
+  'sprint:exportTaskHistory': {
+    args: [taskId: string]
+    result: { success: boolean; path?: string }
+  }
 }
 
 /** Window shell integration */

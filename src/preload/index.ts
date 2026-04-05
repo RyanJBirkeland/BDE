@@ -168,6 +168,9 @@ const api = {
       }>
     ) => typedInvoke('sprint:batchImport', tasks),
     exportTasks: (format: 'json' | 'csv') => typedInvoke('sprint:exportTasks', format)
+    ) => typedInvoke('sprint:batchImport', tasks)
+    ) => typedInvoke('sprint:batchImport', tasks),
+    exportTaskHistory: (taskId: string) => typedInvoke('sprint:exportTaskHistory', taskId)
   },
 
   // Task groups

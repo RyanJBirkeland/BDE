@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // ---------------------------------------------------------------------------
 
 const mockListTasks = vi.fn()
+const mockListTasksRecent = vi.fn()
 const mockGetTask = vi.fn()
 const mockCreateTask = vi.fn()
 const mockUpdateTask = vi.fn()
