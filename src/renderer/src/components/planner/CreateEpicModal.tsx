@@ -9,6 +9,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../l
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { useTaskGroups } from '../../stores/taskGroups'
 import { EPIC_TEMPLATES, type EpicTemplate } from './epicTemplates'
+import { tokens } from '../../design-system/tokens'
 import type { TaskGroup } from '../../../../shared/types'
 
 interface CreateEpicModalProps {
@@ -16,12 +17,22 @@ interface CreateEpicModalProps {
   onClose: () => void
 }
 
+const ACCENT_COLORS = [
+  { name: 'Cyan', value: tokens.neon.cyan },
+  { name: 'Pink', value: tokens.neon.pink },
+  { name: 'Blue', value: tokens.neon.blue },
+  { name: 'Purple', value: tokens.neon.purple },
+  { name: 'Orange', value: tokens.neon.orange },
+  { name: 'Red', value: tokens.neon.red }
+]
+
 export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.JSX.Element {
   const reduced = useReducedMotion()
   const { createGroup, createGroupFromTemplate, selectGroup } = useTaskGroups()
 
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('E')
+  const [accentColor, setAccentColor] = useState(tokens.neon.cyan)
   const [goal, setGoal] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<EpicTemplate | null>(null)
@@ -38,6 +49,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
       // Reset form on open
       setName('')
       setIcon('E')
+      setAccentColor(tokens.neon.cyan)
       setGoal('')
       setSubmitting(false)
       setSelectedTemplate(null)
@@ -69,6 +81,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
           {
             name: name.trim(),
             icon: icon.trim() || selectedTemplate.icon,
+            accent_color: accentColor,
             goal: goal.trim() || selectedTemplate.goal,
             tasks: selectedTemplate.tasks
           },
@@ -79,6 +92,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
         newGroup = await createGroup({
           name: name.trim(),
           icon: icon.trim() || 'E',
+          accent_color: accentColor,
           goal: goal.trim() || undefined
         })
       }
@@ -94,6 +108,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
   }, [
     name,
     icon,
+    accentColor,
     goal,
     submitting,
     selectedTemplate,
@@ -236,6 +251,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
                     setSelectedTemplate(null)
                     setName('')
                     setIcon('E')
+                    setAccentColor(tokens.neon.cyan)
                     setGoal('')
                   }}
                 >
@@ -273,6 +289,42 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
               placeholder="E"
               style={{ width: '60px', textAlign: 'center' }}
             />
+
+            {/* Accent color picker */}
+            <label className="prompt-modal__label">Accent Color</label>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                marginBottom: '8px'
+              }}
+            >
+              {ACCENT_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setAccentColor(color.value)}
+                  title={color.name}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '4px',
+                    background: color.value,
+                    border:
+                      accentColor === color.value
+                        ? `2px solid ${color.value}`
+                        : '1px solid var(--bde-border)',
+                    boxShadow: accentColor === color.value ? `0 0 12px ${color.value}40` : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                    opacity: accentColor === color.value ? 1 : 0.6
+                  }}
+                  aria-label={`Select ${color.name} accent color`}
+                  aria-pressed={accentColor === color.value}
+                />
+              ))}
+            </div>
 
             {/* Goal field */}
             <label className="prompt-modal__label" htmlFor="epic-goal">

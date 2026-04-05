@@ -36,6 +36,7 @@ interface TaskGroupsState {
     template: {
       name: string
       icon: string
+      accent_color?: string
       goal: string
       tasks: Array<{
         title: string
@@ -212,6 +213,7 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
       const newGroup = await window.api.groups.create({
         name: template.name,
         icon: template.icon,
+        accent_color: template.accent_color,
         goal: template.goal
       })
       set((s) => ({ groups: [...s.groups, newGroup] }))

@@ -26,9 +26,6 @@ import { AgentPermissionsSection } from '../components/settings/AgentPermissions
 import { AgentManagerSection } from '../components/settings/AgentManagerSection'
 import { CostSection } from '../components/settings/CostSection'
 import { MemorySection } from '../components/settings/MemorySection'
-import { WebhooksSection } from '../components/settings/WebhooksSection'
-import { AboutSection } from '../components/settings/AboutSection'
-import { WebhooksSection } from '../components/settings/WebhooksSection'
 import { AboutSection } from '../components/settings/AboutSection'
 import { WebhooksSection } from '../components/settings/WebhooksSection'
 import { AboutSection } from '../components/settings/AboutSection'
@@ -62,10 +59,17 @@ const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   appearance: AppearanceSection,
   keybindings: KeybindingsSettings,
   keybindings: KeybindingsSettings
+  keybindings: KeybindingsSettings
   keybindings: KeybindingsSettings,
   about: AboutSection
   notifications: NotificationsSection,
   about: AboutSection
+  about: AboutSection
+  notifications: NotificationsSection,
+  keybindings: KeybindingsSettings,
+  about: AboutSection
+  about: AboutSection,
+  notifications: NotificationsSection
 }
 
 const SECTION_META: Record<string, { title: string; subtitle: string; wide: boolean }> = {
@@ -83,14 +87,19 @@ const SECTION_META: Record<string, { title: string; subtitle: string; wide: bool
   appearance: { title: 'Appearance', subtitle: 'Theme and visual preferences', wide: false },
   keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
   keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false }
+  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false }
   keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
-  about: { title: 'About', subtitle: 'Version and application info', wide: false }
+  about: { title: 'About', subtitle: 'Version and application info', wide: false },
   notifications: {
     title: 'Notifications',
     subtitle: 'Desktop and in-app notification preferences',
     wide: false
   },
   about: { title: 'About', subtitle: 'Version and application info', wide: false }
+  },
+  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
+  about: { title: 'About', subtitle: 'Version and application info', wide: false }
+  }
 }
 
 export default function SettingsView(): React.JSX.Element {

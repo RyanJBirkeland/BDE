@@ -98,6 +98,7 @@ describe('CreateEpicModal', () => {
       expect(mockCreateGroup).toHaveBeenCalledWith({
         name: 'Test Epic',
         icon: 'E',
+        accent_color: 'var(--neon-cyan)',
         goal: undefined
       })
     })
@@ -123,6 +124,7 @@ describe('CreateEpicModal', () => {
       expect(mockCreateGroup).toHaveBeenCalledWith({
         name: 'My Epic',
         icon: 'M',
+        accent_color: 'var(--neon-cyan)',
         goal: 'Build stuff'
       })
     })
@@ -157,6 +159,7 @@ describe('CreateEpicModal', () => {
       expect(mockCreateGroup).toHaveBeenCalledWith({
         name: 'Epic',
         icon: 'E',
+        accent_color: 'var(--neon-cyan)',
         goal: 'Goal'
       })
     })
@@ -216,6 +219,7 @@ describe('CreateEpicModal', () => {
       expect(mockCreateGroup).toHaveBeenCalledWith({
         name: 'Cmd Epic',
         icon: 'E',
+        accent_color: 'var(--neon-cyan)',
         goal: undefined
       })
     })
