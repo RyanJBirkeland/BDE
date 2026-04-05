@@ -16,7 +16,6 @@ interface CenterColumnProps {
     actualFailed: number
     review: number
     done: number
-    actualFailed: number
   }
   partitions: {
     todo: unknown[]

@@ -50,8 +50,7 @@ describe('CenterColumn', () => {
       failed: 0,
       actualFailed: 0,
       review: 0,
-      done: 0,
-      actualFailed: 0
+      done: 0
     },
     partitions: {
       todo: [],

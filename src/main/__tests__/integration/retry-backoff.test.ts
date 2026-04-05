@@ -35,6 +35,9 @@ vi.mock('../../db', () => {
             pr_url TEXT, pr_number INTEGER, pr_status TEXT, pr_mergeable_state TEXT,
             claimed_by TEXT, started_at TEXT, completed_at TEXT,
             worktree_path TEXT, session_id TEXT, next_eligible_at TEXT,
+            model TEXT, retry_context TEXT, failure_reason TEXT,
+            max_cost_usd REAL, partial_diff TEXT, assigned_reviewer TEXT,
+            tags TEXT, sprint_id TEXT, group_id TEXT,
             created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
             updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
           )
