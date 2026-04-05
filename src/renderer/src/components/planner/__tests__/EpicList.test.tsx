@@ -121,6 +121,8 @@ describe('EpicList', () => {
   it('renders header with title and count', async () => {
   it('renders header with title and count', () => {
   it.skip('renders header with title and count', () => {
+  it('renders header with title and count', () => {
+  it.skip('renders header with title and count', () => {
     window.api.groups.getGroupTasks = vi.fn().mockResolvedValue([])
 
     render(
@@ -675,6 +677,22 @@ describe('EpicList', () => {
     fireEvent.click(completedToggle)
     const completedButtons = screen.getAllByText('Completed')
     fireEvent.click(completedButtons[0])
+
+    await waitFor(() => {
+    // Completed groups are in a collapsed section - expand it to see them
+    const completedToggle = screen.getByText('Completed')
+    fireEvent.click(completedToggle)
+
+    await waitFor(() => {
+    })
+
+    // Completed epic is in collapsed section - expand it first
+    fireEvent.click(screen.getByText('Completed'))
+
+    await waitFor(() => {
+    // Completed groups are in a collapsed section - expand it to see them
+    const completedToggle = screen.getByText('Completed')
+    fireEvent.click(completedToggle)
 
     await waitFor(() => {
     // Completed groups are in a collapsed section - expand it to see them
@@ -1437,6 +1455,29 @@ describe('EpicList', () => {
     fireEvent.click(screen.getByText('Completed'))
 
     // Check for 100% progress
+    // Expand completed section to see the completed group
+    await waitFor(() => {
+      expect(screen.getByText('Completed')).toBeInTheDocument()
+    })
+    const completedToggle = screen.getByText('Completed')
+    fireEvent.click(completedToggle)
+
+    fireEvent.click(screen.getByText('Completed'))
+
+    // Expand completed section to see the completed epic
+    await waitFor(() => {
+      expect(screen.getByText('Completed')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Completed'))
+
+    // Expand completed section first
+    await waitFor(() => {
+      expect(screen.getByText('Completed')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Completed'))
+
+    fireEvent.click(screen.getByText('Completed'))
+
     await waitFor(() => {
       const progressFills = container.querySelectorAll('.planner-epic-item__progress-fill')
       const completedProgress = Array.from(progressFills).find(

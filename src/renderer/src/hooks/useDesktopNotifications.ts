@@ -235,6 +235,8 @@ export function useDesktopNotifications(): void {
         })
         addNotification({
           type: 'agent_completed',
+          type: 'agent_completed',
+          type: 'agent_failed',
           title,
           message,
           viewLink: `/sprint/${task.id}`
@@ -278,6 +280,8 @@ export function useDesktopNotifications(): void {
         })
         addNotification({
           type: 'agent_completed',
+          type: 'agent_completed',
+          type: 'agent_failed',
           title,
           message,
           viewLink: `/sprint/${task.id}`

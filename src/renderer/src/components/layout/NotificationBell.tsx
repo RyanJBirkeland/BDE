@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
 import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
+import { useSprintUI } from '../../stores/sprintUI'
+import { useCodeReviewStore } from '../../stores/codeReview'
 import { VIEW_LABELS } from '../../lib/view-registry'
 import { timeAgo } from '../../lib/format'
 
@@ -44,6 +46,8 @@ export function NotificationBell(): React.JSX.Element {
   const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead)
   const getUnreadCount = useNotificationsStore((s) => s.getUnreadCount)
   const setView = usePanelLayoutStore((s) => s.setView)
+  const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
+  const selectCodeReviewTask = useCodeReviewStore((s) => s.selectTask)
 
   const unreadCount = getUnreadCount()
 
@@ -113,11 +117,24 @@ export function NotificationBell(): React.JSX.Element {
       if (viewLink.startsWith('http')) {
         window.open(viewLink, '_blank')
       } else {
-        // Internal path like '/sprint/task-id' — extract the view name segment
-        const viewName = viewLink.replace(/^\//, '').split('/')[0]
+        // Internal path like '/sprint/task-id' or '/code-review/task-id'
+        const segments = viewLink.replace(/^\//, '').split('/')
+        const viewName = segments[0]
+        const taskId = segments[1]
+
         // Validate viewName against known views before casting to View type
         if (viewName in VIEW_LABELS) {
           setView(viewName as View)
+
+          // Select task in appropriate store based on view type
+          if (taskId) {
+            if (viewName === 'sprint') {
+              setSelectedTaskId(taskId)
+            } else if (viewName === 'code-review') {
+              selectCodeReviewTask(taskId)
+            }
+          }
+
           setIsOpen(false)
         }
       }
