@@ -12,10 +12,6 @@ import {
   DollarSign,
   Brain,
   Shield,
-  Keyboard
-  Webhook,
-  Keyboard
-  Webhook,
   Keyboard,
   Bell
 } from 'lucide-react'
@@ -30,8 +26,6 @@ import { AgentPermissionsSection } from '../components/settings/AgentPermissions
 import { AgentManagerSection } from '../components/settings/AgentManagerSection'
 import { CostSection } from '../components/settings/CostSection'
 import { MemorySection } from '../components/settings/MemorySection'
-import { WebhooksSection } from '../components/settings/WebhooksSection'
-import { AboutSection } from '../components/settings/AboutSection'
 import { WebhooksSection } from '../components/settings/WebhooksSection'
 import { AboutSection } from '../components/settings/AboutSection'
 import { KeybindingsSettings } from '../components/settings/KeybindingsSettings'
@@ -61,11 +55,8 @@ const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   cost: CostSection,
   memory: MemorySection,
   appearance: AppearanceSection,
-  keybindings: KeybindingsSettings
   keybindings: KeybindingsSettings,
-  about: AboutSection
   notifications: NotificationsSection,
-  keybindings: KeybindingsSettings,
   about: AboutSection
 }
 
@@ -82,15 +73,12 @@ const SECTION_META: Record<string, { title: string; subtitle: string; wide: bool
   cost: { title: 'Cost & Usage', subtitle: 'Agent execution costs and history', wide: true },
   memory: { title: 'Memory', subtitle: 'Agent memory files', wide: true },
   appearance: { title: 'Appearance', subtitle: 'Theme and visual preferences', wide: false },
-  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false }
   keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
-  about: { title: 'About', subtitle: 'Version and application info', wide: false }
   notifications: {
     title: 'Notifications',
     subtitle: 'Desktop and in-app notification preferences',
     wide: false
   },
-  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
   about: { title: 'About', subtitle: 'Version and application info', wide: false }
 }
 

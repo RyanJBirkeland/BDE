@@ -442,22 +442,6 @@ export function EpicDetail({
                     className="epic-detail__task-status-dot"
                     style={{ background: getStatusColor(task.status) }}
                   />
-                  <span className="epic-detail__task-title">{task.title}</span>
-                  {!hasSpec && task.status === 'backlog' && (
-                    <span className="epic-detail__task-flag epic-detail__task-flag--warning">
-                      no spec
-                    </span>
-                <div key={task.id} className="epic-detail__task-row">
-                  <div
-                    className="epic-detail__task-status-dot"
-                    style={{ background: getStatusColor(task.status) }}
-                  />
-                  <span className="epic-detail__task-title">{task.title}</span>
-                  {!hasSpec && task.status === 'backlog' && (
-                    <span className="epic-detail__task-flag epic-detail__task-flag--warning">
-                      no spec
-                    </span>
-                <div key={task.id} className="epic-detail__task-row">
                   {!isEditing ? (
                     <>
                       <div

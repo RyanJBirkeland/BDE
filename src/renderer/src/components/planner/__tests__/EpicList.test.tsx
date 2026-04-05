@@ -1655,4 +1655,3 @@ describe('EpicList', () => {
     })
   })
 })
-))

@@ -45,19 +45,7 @@ function PipelineBacklogInner({
         <div className="pipeline-sidebar__label pipeline-sidebar__label--backlog">
           BACKLOG <span className="pipeline-sidebar__count">{backlog.length}</span>
         </div>
-        {visibleBacklog.map((task) => (
-          <div key={task.id} className="backlog-card" data-testid={`backlog-card-${task.id}`}>
-            <button
-              className="backlog-card__select"
-              aria-label={`Select task: ${task.title}`}
-              onClick={() => onTaskClick(task.id)}
-        {backlog.map((task) => (
-          <div key={task.id} className="backlog-card" data-testid={`backlog-card-${task.id}`}>
-            <button
-              className="backlog-card__select"
-              aria-label={`Select task: ${task.title}`}
-              onClick={() => onTaskClick(task.id)}
-        {backlog.map((task) => {
+        {visibleBacklog.map((task) => {
           const isSelected = selectedTaskIds.has(task.id)
           return (
             <div
@@ -75,28 +63,6 @@ function PipelineBacklogInner({
                   aria-label={`Select ${task.title}`}
                 />
               </div>
-            </button>
-            <button className="backlog-card__action" onClick={() => onAddToQueue(task)}>
-              → Add to queue
-            </button>
-          </div>
-        ))}
-        {!backlogExpanded && hiddenBacklogCount > 0 && (
-          <button className="pipeline-sidebar__expand" onClick={() => setBacklogExpanded(true)}>
-            Show {hiddenBacklogCount} more
-          </button>
-        )}
-        {backlogExpanded && backlog.length > BACKLOG_VISIBLE_LIMIT && (
-          <button className="pipeline-sidebar__expand" onClick={() => setBacklogExpanded(false)}>
-            Show less
-          </button>
-        )}
-            </button>
-            <button className="backlog-card__action" onClick={() => onAddToQueue(task)}>
-              → Add to queue
-            </button>
-          </div>
-        ))}
               <button
                 className="backlog-card__select"
                 aria-label={`Select task: ${task.title}`}
@@ -114,6 +80,16 @@ function PipelineBacklogInner({
             </div>
           )
         })}
+        {!backlogExpanded && hiddenBacklogCount > 0 && (
+          <button className="pipeline-sidebar__expand" onClick={() => setBacklogExpanded(true)}>
+            Show {hiddenBacklogCount} more
+          </button>
+        )}
+        {backlogExpanded && backlog.length > BACKLOG_VISIBLE_LIMIT && (
+          <button className="pipeline-sidebar__expand" onClick={() => setBacklogExpanded(false)}>
+            Show less
+          </button>
+        )}
         {backlog.length === 0 && <div className="pipeline-sidebar__empty">No backlog tasks</div>}
       </div>
       {failed.length > 0 && (

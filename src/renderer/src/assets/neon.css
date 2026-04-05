@@ -174,6 +174,62 @@ html.theme-warm {
   --neon-surface-deep: rgba(212, 145, 92, 0.2);
 }
 
+/* ── Pro Light theme overrides (zero neon effects) ── */
+html.theme-pro-light {
+  --neon-cyan: #2675bf;
+  --neon-cyan-glow: transparent;
+  --neon-cyan-surface: rgba(38, 117, 191, 0.08);
+  --neon-cyan-border: rgba(38, 117, 191, 0.2);
+
+  --neon-pink: #8e4fa0;
+  --neon-pink-glow: transparent;
+  --neon-pink-surface: rgba(142, 79, 160, 0.08);
+  --neon-pink-border: rgba(142, 79, 160, 0.2);
+
+  --neon-blue: #2675bf;
+  --neon-blue-glow: transparent;
+  --neon-blue-surface: rgba(38, 117, 191, 0.08);
+  --neon-blue-border: rgba(38, 117, 191, 0.2);
+
+  --neon-purple: #6b5fa0;
+  --neon-purple-glow: transparent;
+  --neon-purple-surface: rgba(107, 95, 160, 0.08);
+  --neon-purple-border: rgba(107, 95, 160, 0.2);
+
+  --neon-orange: #b07818;
+  --neon-orange-glow: transparent;
+  --neon-orange-surface: rgba(176, 120, 24, 0.08);
+  --neon-orange-border: rgba(176, 120, 24, 0.2);
+
+  --neon-red: #b83c3c;
+  --neon-red-glow: transparent;
+  --neon-red-surface: rgba(184, 60, 60, 0.08);
+  --neon-red-border: rgba(184, 60, 60, 0.2);
+
+  --neon-bg: #f7f8fa;
+  --neon-bg-gradient: none;
+
+  --neon-glass-blur: none;
+  --neon-glass-edge: none;
+  --neon-glass-shadow: none;
+
+  --neon-scanline-opacity: 0;
+  --neon-particle-count: 0;
+
+  --neon-text: #1e1f22;
+  --neon-text-muted: rgba(30, 31, 34, 0.6);
+  --neon-text-dim: rgba(30, 31, 34, 0.3);
+  --neon-surface-dim: rgba(0, 0, 0, 0.04);
+  --neon-surface-subtle: rgba(0, 0, 0, 0.08);
+  --neon-surface-deep: #f7f8fa;
+  --neon-surface-base: #ffffff;
+  --neon-surface-mid: #ebedf0;
+  --neon-border-base: #d4d5d8;
+  --neon-text-primary: #1e1f22;
+  --neon-text-secondary: #5e6166;
+  --neon-text-tertiary: #818388;
+}
+
 /* ═══════════════════════════════════════════════════════
    Keyframe Animations
    ═══════════════════════════════════════════════════════ */
