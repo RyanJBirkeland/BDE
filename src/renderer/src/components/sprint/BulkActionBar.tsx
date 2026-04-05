@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { XCircle, RotateCcw, Trash2, X } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
+import { AssignEpicPopover } from './AssignEpicPopover'
 import type { BatchOperation } from '../../../../shared/types'
 
 interface BulkActionBarProps {
@@ -65,6 +66,7 @@ export function BulkActionBar({
         </span>
       </div>
       <div className="bulk-action-bar__actions">
+        <AssignEpicPopover selectedTaskIds={selectedTaskIds} onAssignComplete={onClearSelection} />
         <Button
           variant="ghost"
           size="sm"

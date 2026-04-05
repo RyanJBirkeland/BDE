@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
+import { useSprintUI } from '../../stores/sprintUI'
 
 interface PipelineBacklogProps {
   backlog: SprintTask[]
@@ -19,32 +20,58 @@ function PipelineBacklogInner({
   onRerun
 }: PipelineBacklogProps): React.JSX.Element {
   const [failedExpanded, setFailedExpanded] = useState(false)
+  const selectedTaskIds = useSprintUI((s) => s.selectedTaskIds)
+  const toggleTaskSelection = useSprintUI((s) => s.toggleTaskSelection)
+
   const visibleFailed = failedExpanded ? failed : failed.slice(0, FAILED_VISIBLE_LIMIT)
   const hiddenCount = failed.length - FAILED_VISIBLE_LIMIT
+
+  const handleCheckboxClick = (e: React.MouseEvent, taskId: string): void => {
+    e.stopPropagation()
+    toggleTaskSelection(taskId)
+  }
+
   return (
     <div className="pipeline-sidebar" data-testid="pipeline-backlog">
       <div className="pipeline-sidebar__section pipeline-sidebar__section--grow">
         <div className="pipeline-sidebar__label pipeline-sidebar__label--backlog">
           BACKLOG <span className="pipeline-sidebar__count">{backlog.length}</span>
         </div>
-        {backlog.map((task) => (
-          <div key={task.id} className="backlog-card" data-testid={`backlog-card-${task.id}`}>
-            <button
-              className="backlog-card__select"
-              aria-label={`Select task: ${task.title}`}
-              onClick={() => onTaskClick(task.id)}
+        {backlog.map((task) => {
+          const isSelected = selectedTaskIds.has(task.id)
+          return (
+            <div
+              key={task.id}
+              className={`backlog-card ${isSelected ? 'backlog-card--selected' : ''}`}
+              data-testid={`backlog-card-${task.id}`}
             >
-              <div className="backlog-card__title">{task.title}</div>
-              <div className="backlog-card__meta">
-                <span>{task.repo}</span>
-                {task.priority <= 2 && <span>P{task.priority}</span>}
+              <div className="backlog-card__checkbox-wrapper">
+                <input
+                  type="checkbox"
+                  className="backlog-card__checkbox"
+                  checked={isSelected}
+                  onChange={(e) => handleCheckboxClick(e as unknown as React.MouseEvent, task.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Select ${task.title}`}
+                />
               </div>
-            </button>
-            <button className="backlog-card__action" onClick={() => onAddToQueue(task)}>
-              → Add to queue
-            </button>
-          </div>
-        ))}
+              <button
+                className="backlog-card__select"
+                aria-label={`Select task: ${task.title}`}
+                onClick={() => onTaskClick(task.id)}
+              >
+                <div className="backlog-card__title">{task.title}</div>
+                <div className="backlog-card__meta">
+                  <span>{task.repo}</span>
+                  {task.priority <= 2 && <span>P{task.priority}</span>}
+                </div>
+              </button>
+              <button className="backlog-card__action" onClick={() => onAddToQueue(task)}>
+                → Add to queue
+              </button>
+            </div>
+          )
+        })}
         {backlog.length === 0 && <div className="pipeline-sidebar__empty">No backlog tasks</div>}
       </div>
       {failed.length > 0 && (

@@ -243,22 +243,50 @@
   border-radius: 6px;
   padding: 8px 10px;
   margin-bottom: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   transition:
     border-color 150ms ease,
     background 150ms ease;
 }
 
+.backlog-card--selected {
+  border-color: var(--neon-purple-border);
+  background: var(--neon-purple-surface);
+}
+
+.backlog-card__checkbox-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.backlog-card__checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--neon-purple);
+}
+
 .backlog-card__select {
   all: unset;
   display: block;
-  width: 100%;
+  flex: 1;
   cursor: pointer;
   text-align: left;
+  min-width: 0;
 }
 
 .backlog-card:hover {
   border-color: var(--neon-cyan-border);
   background: var(--neon-cyan-surface);
+}
+
+.backlog-card--selected:hover {
+  border-color: var(--neon-purple-border);
+  background: var(--neon-purple-surface);
 }
 
 .backlog-card__title {
@@ -1530,6 +1558,62 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* ── Assign Epic Popover ── */
+.assign-epic-popover {
+  position: relative;
+}
+
+.assign-epic-popover__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--neon-surface-deep);
+  border: 1px solid var(--neon-purple-border);
+  border-radius: 6px;
+  padding: 12px;
+  min-width: 240px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.assign-epic-popover__header {
+  font-size: var(--font-xs, 11px);
+  font-weight: 600;
+  color: var(--neon-text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.assign-epic-popover__select {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--bde-border);
+  border-radius: 4px;
+  color: var(--neon-text-muted);
+  font-size: var(--font-xs, 11px);
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.assign-epic-popover__select:focus {
+  outline: none;
+  border-color: var(--neon-purple-border);
+  box-shadow: 0 0 0 2px var(--neon-purple-glow);
+}
+
+.assign-epic-popover__select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.assign-epic-popover__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 /* ── Task Pill: Duration (completed tasks) ── */
