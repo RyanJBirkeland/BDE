@@ -87,7 +87,26 @@ export default function PlannerView(): React.JSX.Element {
   }
 
   const handleQueueAll = async (): Promise<void> => {
-    if (!selectedGroupId) return
+    if (!selectedGroupId || !selectedGroup) return
+
+    // Count tasks ready to queue (backlog tasks with specs)
+    const tasksToQueue = groupTasks.filter(
+      (t) => t.status === 'backlog' && t.spec && t.spec.trim() !== ''
+    )
+
+    if (tasksToQueue.length === 0) {
+      toast.error('No tasks ready to queue')
+      return
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Queue ${tasksToQueue.length} task${tasksToQueue.length === 1 ? '' : 's'} to the pipeline?\n\n` +
+        `This will transition all draft tasks with specs to queued status.`
+    )
+
+    if (!confirmed) return
+
     await queueAllTasks(selectedGroupId)
   }
 

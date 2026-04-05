@@ -181,7 +181,19 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
   queueAllTasks: async (groupId): Promise<number> => {
     try {
       const count = await window.api.groups.queueAll(groupId)
+
+      // Update group status to 'in-pipeline' after successful queuing
+      if (count > 0) {
+        await get().updateGroup(groupId, { status: 'in-pipeline' })
+      }
+
       toast.success(`Queued ${count} task${count === 1 ? '' : 's'}`)
+
+      // Reload group tasks to reflect new statuses
+      if (get().selectedGroupId === groupId) {
+        await get().loadGroupTasks(groupId)
+      }
+
       return count
     } catch (e) {
       toast.error('Failed to queue tasks — ' + (e instanceof Error ? e.message : String(e)))
