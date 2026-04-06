@@ -412,7 +412,7 @@ describe('IDEView', () => {
       })
 
       render(<IDEView />)
-      expect(screen.getByText('foo.ts')).toBeInTheDocument()
+      expect(screen.getAllByText('foo.ts').length).toBeGreaterThanOrEqual(1)
       expect(screen.getByText('bar.ts')).toBeInTheDocument()
     })
 

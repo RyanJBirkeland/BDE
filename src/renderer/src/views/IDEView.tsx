@@ -7,6 +7,7 @@ import { useIDEStore } from '../stores/ide'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { EditorPane } from '../components/ide/EditorPane'
 import { EditorTabBar } from '../components/ide/EditorTabBar'
+import { EditorBreadcrumb } from '../components/ide/EditorBreadcrumb'
 import { EditorToolbar } from '../components/ide/EditorToolbar'
 import { FileSidebar } from '../components/ide/FileSidebar'
 import { TerminalPanel } from '../components/ide/TerminalPanel'
@@ -344,6 +345,7 @@ export function IDEView(): React.JSX.Element {
                   </button>
                 )}
                 <EditorTabBar onCloseTab={(id, dirty) => void handleCloseTab(id, dirty)} />
+                <EditorBreadcrumb />
                 <EditorToolbar />
                 <div className="ide-editor-content">
                   {/* IDE-9: Show loading indicator while file is being fetched */}
