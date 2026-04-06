@@ -8,6 +8,12 @@ import type { IpcMainInvokeEvent } from 'electron'
 // Mock SDK response (can be controlled per test)
 let mockSdkResponse: string | Error = 'Placeholder response'
 
+// Captured runSdkStreaming calls for assertions on tool restrictions etc.
+const runSdkStreamingCalls: Array<{
+  prompt: string
+  options: Record<string, unknown> | undefined
+}> = []
+
 // Mock the Agent SDK
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: vi.fn(() => {
@@ -42,12 +48,37 @@ vi.mock('../../auth-guard', () => ({
   })
 }))
 
+// Underlying repo map is keyed by lowercased name (mirrors paths.ts behavior)
+const mockRepoMap: Record<string, string> = {
+  bde: '/Users/test/projects/BDE',
+  testrepo: '/Users/test/projects/TestRepo'
+}
 vi.mock('../../git', () => ({
-  getRepoPaths: vi.fn().mockReturnValue({
-    BDE: '/Users/test/projects/BDE',
-    TestRepo: '/Users/test/projects/TestRepo'
-  })
+  getRepoPaths: vi.fn(() => mockRepoMap),
+  getRepoPath: vi.fn((name: string) => (name ? mockRepoMap[name.toLowerCase()] : undefined))
 }))
+
+// Spy on runSdkStreaming so we can assert the options it receives.
+vi.mock('../../sdk-streaming', async () => {
+  const actual = await vi.importActual<typeof import('../../sdk-streaming')>('../../sdk-streaming')
+  return {
+    ...actual,
+    runSdkStreaming: vi.fn(
+      async (
+        prompt: string,
+        _onChunk: (chunk: string) => void,
+        _activeStreams: Map<string, { close: () => void }>,
+        _streamId: string,
+        _timeoutMs?: number,
+        options?: Record<string, unknown>
+      ) => {
+        runSdkStreamingCalls.push({ prompt, options })
+        if (mockSdkResponse instanceof Error) throw mockSdkResponse
+        return typeof mockSdkResponse === 'string' ? mockSdkResponse : ''
+      }
+    )
+  }
+})
 
 vi.mock('../../env-utils', () => ({
   buildAgentEnv: () => ({ ...process.env }),
@@ -141,27 +172,45 @@ const mockAgentManager = {
 } as any
 
 // Import handlers after mocks are set up
-import { registerWorkbenchHandlers } from '../workbench'
+import {
+  registerWorkbenchHandlers,
+  COPILOT_ALLOWED_TOOLS,
+  COPILOT_DISALLOWED_TOOLS,
+  COPILOT_MAX_BUDGET_USD,
+  COPILOT_MAX_TURNS,
+  getCopilotSdkOptions,
+  buildChatPrompt
+} from '../workbench'
 import { safeHandle } from '../../ipc-utils'
 
 describe('Workbench handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Reset safeHandle to a noop so prior `mockImplementation` calls don't leak.
+    vi.mocked(safeHandle).mockImplementation(() => {})
+    runSdkStreamingCalls.length = 0
     mockSdkResponse = 'Placeholder response'
   })
 
-  it('registers all 8 workbench handlers', () => {
+  it('registers exactly the 7 workbench handlers (chat removed)', () => {
     registerWorkbenchHandlers(mockAgentManager)
 
-    expect(safeHandle).toHaveBeenCalledTimes(8)
+    expect(safeHandle).toHaveBeenCalledTimes(7)
     expect(safeHandle).toHaveBeenCalledWith('workbench:checkOperational', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:researchRepo', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:chat', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:chatStream', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:cancelStream', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:generateSpec', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:checkSpec', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:extractPlan', expect.any(Function))
+  })
+
+  it('does NOT register the legacy non-streaming workbench:chat handler', () => {
+    // This is a regression guard for C1: the non-streaming path used to bypass
+    // the copilot tool restrictions, granting full Edit/Write/Bash access.
+    registerWorkbenchHandlers(mockAgentManager)
+    const channels = vi.mocked(safeHandle).mock.calls.map((call) => call[0])
+    expect(channels).not.toContain('workbench:chat')
   })
 
   it('checkOperational handler returns all expected fields', async () => {
@@ -213,28 +262,90 @@ describe('Workbench handlers', () => {
     expect(Array.isArray(result.filesSearched)).toBe(true)
   })
 
-  it('chat stub returns placeholder', async () => {
-    let chatHandler: any
+  describe('workbench:chatStream handler', () => {
+    function getChatStreamHandler(): any {
+      let chatStreamHandler: any
+      vi.mocked(safeHandle).mockImplementation((channel, handler) => {
+        if (channel === 'workbench:chatStream') chatStreamHandler = handler
+      })
+      registerWorkbenchHandlers(mockAgentManager)
+      return chatStreamHandler
+    }
 
-    vi.mocked(safeHandle).mockImplementation((channel, handler) => {
-      if (channel === 'workbench:chat') {
-        chatHandler = handler
+    function makeMockEvent() {
+      const sent: any[] = []
+      return {
+        sender: { send: vi.fn((_channel: string, payload: any) => sent.push(payload)) },
+        sent
       }
+    }
+
+    it('passes restricted copilot SDK options to runSdkStreaming', async () => {
+      const handler = getChatStreamHandler()
+      const mockEvent = makeMockEvent()
+      mockSdkResponse = 'ok'
+
+      await handler(mockEvent, {
+        messages: [{ role: 'user', content: 'where is auth?' }],
+        // Renderer sends uppercase — handler must look up case-insensitively.
+        formContext: { title: 'T', repo: 'BDE', spec: '' }
+      })
+
+      // Wait a microtask for the fire-and-forget runSdkStreaming to be invoked.
+      await new Promise((r) => setTimeout(r, 0))
+
+      expect(runSdkStreamingCalls.length).toBeGreaterThanOrEqual(1)
+      const opts = runSdkStreamingCalls[0].options as any
+      expect(opts).toBeDefined()
+      // C2: cwd is the configured repo path, not undefined
+      expect(opts.cwd).toBe('/Users/test/projects/BDE')
+      // C1: tool restrictions actually flow through
+      expect(opts.tools).toEqual([...COPILOT_ALLOWED_TOOLS])
+      expect(opts.disallowedTools).toEqual([...COPILOT_DISALLOWED_TOOLS])
+      expect(opts.disallowedTools).toContain('Edit')
+      expect(opts.disallowedTools).toContain('Write')
+      expect(opts.disallowedTools).toContain('Bash')
+      // I1: budget ceiling
+      expect(opts.maxBudgetUsd).toBe(COPILOT_MAX_BUDGET_USD)
+      expect(opts.maxTurns).toBe(COPILOT_MAX_TURNS)
     })
 
-    registerWorkbenchHandlers(mockAgentManager)
+    it('returns an error chunk when the repo is not configured (N1)', async () => {
+      const handler = getChatStreamHandler()
+      const mockEvent = makeMockEvent()
+      mockSdkResponse = 'ok'
 
-    // Set SDK response for chat
-    mockSdkResponse = 'Placeholder response about "Test Task".'
+      const result = await handler(mockEvent, {
+        messages: [{ role: 'user', content: 'hi' }],
+        formContext: { title: 'T', repo: 'NotARealRepo', spec: '' }
+      })
 
-    const mockEvent = {} as IpcMainInvokeEvent
-    const result = await chatHandler(mockEvent, {
-      messages: [{ role: 'user', content: 'test' }],
-      formContext: { title: 'Test Task', repo: 'BDE', spec: 'test spec' }
+      expect(result.streamId).toBeDefined()
+      // Should NOT have invoked the SDK at all — we fail fast.
+      expect(runSdkStreamingCalls.length).toBe(0)
+      // Should have sent a done+error chunk to the renderer.
+      expect(mockEvent.sender.send).toHaveBeenCalled()
+      const lastPayload = mockEvent.sent.at(-1)
+      expect(lastPayload.done).toBe(true)
+      expect(lastPayload.error).toMatch(/not configured/i)
+    })
+  })
+
+  describe('getCopilotSdkOptions helper', () => {
+    it('produces the expected restricted option set', () => {
+      const opts = getCopilotSdkOptions('/some/repo')
+      expect(opts.cwd).toBe('/some/repo')
+      expect(opts.tools).toEqual([...COPILOT_ALLOWED_TOOLS])
+      expect(opts.disallowedTools).toEqual([...COPILOT_DISALLOWED_TOOLS])
+      expect(opts.maxTurns).toBe(COPILOT_MAX_TURNS)
+      expect(opts.maxBudgetUsd).toBe(COPILOT_MAX_BUDGET_USD)
     })
 
-    expect(result.content).toContain('Placeholder')
-    expect(result.content).toContain('Test Task')
+    it('forwards the optional onToolUse callback', () => {
+      const cb = vi.fn()
+      const opts = getCopilotSdkOptions('/some/repo', { onToolUse: cb })
+      expect(opts.onToolUse).toBe(cb)
+    })
   })
 
   it('generateSpec stub returns placeholder', async () => {
@@ -260,6 +371,71 @@ describe('Workbench handlers', () => {
 
     expect(result.spec).toContain('Test Task')
     expect(result.spec).toContain('Placeholder')
+  })
+
+  describe('copilot read-only tool restrictions', () => {
+    it('COPILOT_ALLOWED_TOOLS exposes only read-only tools', () => {
+      expect([...COPILOT_ALLOWED_TOOLS]).toEqual(['Read', 'Grep', 'Glob'])
+    })
+
+    it('COPILOT_DISALLOWED_TOOLS forbids every mutation/escape vector', () => {
+      // Defense-in-depth: even if the SDK shifts defaults, these are blocked.
+      const expected = [
+        'Edit',
+        'Write',
+        'Bash',
+        'KillBash',
+        'BashOutput',
+        'NotebookEdit',
+        'WebFetch',
+        'WebSearch',
+        'Task',
+        'ExitPlanMode',
+        'TodoWrite',
+        'SlashCommand'
+      ]
+      for (const tool of expected) {
+        expect(COPILOT_DISALLOWED_TOOLS).toContain(tool)
+      }
+    })
+
+    it('does not include any mutation tool in the allowed list', () => {
+      const allowed = new Set<string>([...COPILOT_ALLOWED_TOOLS])
+      for (const forbidden of ['Edit', 'Write', 'Bash', 'NotebookEdit', 'WebFetch']) {
+        expect(allowed.has(forbidden)).toBe(false)
+      }
+    })
+  })
+
+  describe('buildChatPrompt for copilot', () => {
+    it('includes spec-drafting mode framing', () => {
+      const prompt = buildChatPrompt([{ role: 'user', content: 'help' }], {
+        title: 'T',
+        repo: 'BDE',
+        spec: ''
+      })
+      expect(prompt).toContain('## Mode: Spec Drafting')
+      expect(prompt).toContain('not execute the task')
+    })
+
+    it('includes target repository path when provided', () => {
+      const prompt = buildChatPrompt(
+        [{ role: 'user', content: 'where is auth?' }],
+        { title: 'T', repo: 'BDE', spec: '' },
+        '/Users/test/projects/BDE'
+      )
+      expect(prompt).toContain('## Target Repository')
+      expect(prompt).toContain('/Users/test/projects/BDE')
+    })
+
+    it('omits target repository section when repoPath is undefined', () => {
+      const prompt = buildChatPrompt([{ role: 'user', content: 'hi' }], {
+        title: 'T',
+        repo: 'BDE',
+        spec: ''
+      })
+      expect(prompt).not.toContain('## Target Repository')
+    })
   })
 
   it('checkSpec stub returns all expected fields', async () => {

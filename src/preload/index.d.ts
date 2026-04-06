@@ -280,7 +280,6 @@ declare global {
 
       // Task Workbench
       workbench: {
-        chat: (...args: IpcArgs<'workbench:chat'>) => Promise<IpcResult<'workbench:chat'>>
         chatStream: (
           ...args: IpcArgs<'workbench:chatStream'>
         ) => Promise<IpcResult<'workbench:chatStream'>>
@@ -294,6 +293,7 @@ declare global {
             done: boolean
             fullText?: string
             error?: string
+            toolUse?: { name: string; input: Record<string, unknown> }
           }) => void
         ) => () => void
         generateSpec: (

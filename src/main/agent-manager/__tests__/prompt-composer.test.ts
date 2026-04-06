@@ -63,6 +63,10 @@ describe('buildAgentPrompt', () => {
 
       expect(prompt).toContain('## Your Role')
       expect(prompt).toContain('spec drafting')
+      // Copilot is now code-aware with read-only Read/Grep/Glob access
+      expect(prompt).toContain('READ-ONLY')
+      expect(prompt).toContain('Read, Grep, and Glob')
+      expect(prompt).toContain('Read-only tool access')
       expect(prompt).toContain('directly executable by a pipeline')
       expect(prompt).toContain('under 500 words')
     })
@@ -216,6 +220,38 @@ describe('buildAgentPrompt', () => {
 
       expect(prompt).toContain('## Conversation')
       expect(prompt).toContain('You are a BDE')
+    })
+
+    it('includes spec-drafting mode framing for copilot', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'copilot',
+        messages: [{ role: 'user', content: 'hi' }]
+      })
+
+      expect(prompt).toContain('## Mode: Spec Drafting')
+      expect(prompt).toContain('not execute the task')
+      expect(prompt).toContain('read-only Read, Grep, and Glob tools')
+    })
+
+    it('includes target repository path for copilot when provided', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'copilot',
+        messages: [{ role: 'user', content: 'where is auth?' }],
+        repoPath: '/Users/ryan/projects/BDE'
+      })
+
+      expect(prompt).toContain('## Target Repository')
+      expect(prompt).toContain('/Users/ryan/projects/BDE')
+      expect(prompt).toContain('scope searches to this path')
+    })
+
+    it('omits target repository section when repoPath is not provided', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'copilot',
+        messages: [{ role: 'user', content: 'hi' }]
+      })
+
+      expect(prompt).not.toContain('## Target Repository')
     })
   })
 

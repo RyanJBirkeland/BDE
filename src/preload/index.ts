@@ -326,10 +326,6 @@ const api = {
 
   // Task Workbench
   workbench: {
-    chat: (input: {
-      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-      formContext: { title: string; repo: string; spec: string }
-    }) => typedInvoke('workbench:chat', input),
     generateSpec: (input: { title: string; repo: string; templateHint: string }) =>
       typedInvoke('workbench:generateSpec', input),
     checkSpec: (input: { title: string; repo: string; spec: string; specType?: string | null }) =>
@@ -350,6 +346,7 @@ const api = {
         done: boolean
         fullText?: string
         error?: string
+        toolUse?: { name: string; input: Record<string, unknown> }
       }) => void
     ): (() => void) => {
       const listener = (
@@ -360,6 +357,7 @@ const api = {
           done: boolean
           fullText?: string
           error?: string
+          toolUse?: { name: string; input: Record<string, unknown> }
         }
       ): void => cb(data)
       ipcRenderer.on('workbench:chatChunk', listener)
@@ -485,8 +483,7 @@ const api = {
     checkAutoReview: (payload: { taskId: string }) =>
       typedInvoke('review:checkAutoReview', payload),
     rebase: (payload: { taskId: string }) => typedInvoke('review:rebase', payload),
-    checkFreshness: (payload: { taskId: string }) =>
-      typedInvoke('review:checkFreshness', payload)
+    checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload)
   },
 
   // Spec Synthesizer

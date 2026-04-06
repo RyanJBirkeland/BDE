@@ -12,6 +12,12 @@ export interface CopilotMessage {
   content: string
   timestamp: number
   insertable?: boolean
+  /**
+   * Optional kind discriminator for system messages. `tool-use` indicates the
+   * copilot invoked a read-only tool (Read/Grep/Glob) — rendered compactly so
+   * users can see what the copilot is grounding its answer in.
+   */
+  kind?: 'tool-use'
 }
 
 export interface CheckResult {

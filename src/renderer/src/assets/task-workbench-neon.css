@@ -589,6 +589,25 @@
   font-size: 12px;
 }
 
+/*
+ * Tool-use system bubbles — shown when the copilot invokes a read-only
+ * Read/Grep/Glob tool. Compact, monospace, dimmed, with a leading marker so
+ * users can see what the copilot is grounding its answer in.
+ */
+.wb-copilot__bubble--tool-use {
+  font-family: var(--bde-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-style: normal;
+  font-size: 11px;
+  padding: 4px 8px;
+  opacity: 0.85;
+}
+
+.wb-copilot__bubble--tool-use::before {
+  content: '› ';
+  color: var(--bde-accent, currentColor);
+  font-weight: 600;
+}
+
 .wb-copilot__bubble-footer {
   display: flex;
   justify-content: space-between;

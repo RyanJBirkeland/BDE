@@ -3,7 +3,7 @@
  */
 import { safeHandle } from '../ipc-utils'
 import { checkAuthStatus } from '../auth-guard'
-import { getRepoPaths } from '../git'
+import { getRepoPath } from '../git'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { listTasks } from '../data/sprint-queries'
@@ -11,7 +11,7 @@ import { buildQuickSpecPrompt, getTemplateScaffold } from './sprint-spec'
 import type { AgentManager } from '../agent-manager'
 import { checkSpecSemantic } from '../spec-semantic-check'
 import { buildAgentPrompt } from '../agent-manager/prompt-composer'
-import { runSdkStreaming } from '../sdk-streaming'
+import { runSdkStreaming, type SdkStreamingOptions } from '../sdk-streaming'
 import { extractTasksFromPlan } from '../services/plan-extractor'
 
 const execFileAsync = promisify(execFile)
@@ -20,19 +20,82 @@ const execFileAsync = promisify(execFile)
 const activeStreams = new Map<string, { close: () => void }>()
 
 /** Run a single-turn SDK query (non-streaming). Returns the text response. */
-async function runSdkPrint(prompt: string, timeoutMs = 120_000): Promise<string> {
-  return runSdkStreaming(prompt, () => {}, activeStreams, `print-${Date.now()}`, timeoutMs)
+async function runSdkPrint(
+  prompt: string,
+  timeoutMs = 120_000,
+  options?: SdkStreamingOptions
+): Promise<string> {
+  return runSdkStreaming(prompt, () => {}, activeStreams, `print-${Date.now()}`, timeoutMs, options)
 }
 
 export function buildChatPrompt(
   messages: Array<{ role: string; content: string }>,
-  formContext: { title: string; repo: string; spec: string }
+  formContext: { title: string; repo: string; spec: string },
+  repoPath?: string
 ): string {
   return buildAgentPrompt({
     agentType: 'copilot',
     messages,
-    formContext
+    formContext,
+    repoPath
   })
+}
+
+/**
+ * Read-only tools the copilot may use against the target repo.
+ * Anything not in this list (Edit, Write, Bash, etc.) is unavailable.
+ */
+export const COPILOT_ALLOWED_TOOLS = ['Read', 'Grep', 'Glob'] as const
+
+/**
+ * Defense-in-depth: tools the copilot must NEVER run, even if the SDK
+ * defaults shift. Pairs with COPILOT_ALLOWED_TOOLS for read-only enforcement.
+ * The denylist is intentionally broad — anything that mutates files, executes
+ * commands, fetches the network, spawns subagents, or escapes the chat loop
+ * must be explicitly listed here, not just absent from the allowlist.
+ */
+export const COPILOT_DISALLOWED_TOOLS = [
+  'Edit',
+  'Write',
+  'Bash',
+  'KillBash',
+  'BashOutput',
+  'NotebookEdit',
+  'WebFetch',
+  'WebSearch',
+  'Task',
+  'ExitPlanMode',
+  'TodoWrite',
+  'SlashCommand'
+] as const
+
+/**
+ * Hard ceiling on per-turn copilot spend. With `maxTurns: 8` the copilot can
+ * chain Read/Grep many times — without a dollar cap, a prompt-injected loop
+ * could rack up real cost. The SDK aborts the query if exceeded.
+ */
+export const COPILOT_MAX_BUDGET_USD = 0.5
+
+/** Maximum turns for the copilot — enough to chain Grep → Read → answer. */
+export const COPILOT_MAX_TURNS = 8
+
+/**
+ * Build the SDK options used for every copilot invocation. Centralized so
+ * that all IPC paths (streaming and non-streaming) get the same restricted
+ * tool list, dollar ceiling, and turn limit. NEVER bypass this helper.
+ */
+export function getCopilotSdkOptions(
+  repoPath: string | undefined,
+  extras?: Pick<SdkStreamingOptions, 'onToolUse'>
+): SdkStreamingOptions {
+  return {
+    cwd: repoPath,
+    tools: [...COPILOT_ALLOWED_TOOLS],
+    disallowedTools: [...COPILOT_DISALLOWED_TOOLS],
+    maxTurns: COPILOT_MAX_TURNS,
+    maxBudgetUsd: COPILOT_MAX_BUDGET_USD,
+    ...(extras?.onToolUse ? { onToolUse: extras.onToolUse } : {})
+  }
 }
 
 export function buildSpecGenerationPrompt(input: {
@@ -76,9 +139,8 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       authResult = { status: 'pass', message: 'Authentication valid' }
     }
 
-    // Repo path check
-    const repoPaths = getRepoPaths()
-    const repoPath = repoPaths[repo]
+    // Repo path check (case-insensitive — renderer may send 'BDE')
+    const repoPath = getRepoPath(repo)
     let repoPathResult: { status: 'pass' | 'fail'; message: string; path?: string }
     if (!repoPath) {
       repoPathResult = { status: 'fail', message: `No path configured for repo "${repo}"` }
@@ -197,8 +259,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
   safeHandle('workbench:researchRepo', async (_e, input: { query: string; repo: string }) => {
     const { query, repo } = input
 
-    const repoPaths = getRepoPaths()
-    const repoPath = repoPaths[repo]
+    const repoPath = getRepoPath(repo)
     if (!repoPath) {
       return {
         content: `Error: No path configured for repo "${repo}"`,
@@ -254,30 +315,40 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     }
   })
 
-  // --- AI-powered chat ---
-  safeHandle(
-    'workbench:chat',
-    async (
-      _e,
-      input: {
-        messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-        formContext: { title: string; repo: string; spec: string }
-      }
-    ) => {
-      const prompt = buildChatPrompt(input.messages, input.formContext)
-      try {
-        const result = await runSdkPrint(prompt)
-        return { content: result || 'No response received.' }
-      } catch (err) {
-        return { content: `Error: ${(err as Error).message}` }
-      }
-    }
-  )
+  // NOTE: The non-streaming `workbench:chat` IPC handler was removed.
+  // It is fully superseded by `workbench:chatStream`, which is the only
+  // path the renderer uses. Removing the handler also removes a defense-
+  // in-depth gap: the old non-streaming path did not pass the copilot
+  // tool restrictions through to the SDK, so it would have run with
+  // `bypassPermissions` and full Edit/Write/Bash access. Do not re-add
+  // this channel without routing it through `getCopilotSdkOptions`.
 
   // --- AI-powered streaming chat ---
   safeHandle('workbench:chatStream', async (e, input) => {
-    const prompt = buildChatPrompt(input.messages, input.formContext)
+    // Case-insensitive lookup — the renderer sends e.g. `repo: 'BDE'` but
+    // the underlying map is keyed by lowercase name.
+    const repoPath = getRepoPath(input.formContext.repo)
     const streamId = `copilot-${Date.now()}`
+
+    // Fail fast if the repo is not configured: code-awareness depends on a
+    // valid `cwd`, and silently falling back to `process.cwd()` (the BDE app
+    // directory) means the copilot would operate on the wrong codebase.
+    if (!repoPath) {
+      const message = `Repo "${input.formContext.repo}" is not configured — code-awareness unavailable. Add the repo in Settings → Repositories.`
+      try {
+        e.sender.send('workbench:chatChunk', {
+          streamId,
+          chunk: '',
+          done: true,
+          error: message
+        })
+      } catch {
+        /* window may have closed */
+      }
+      return { streamId }
+    }
+
+    const prompt = buildChatPrompt(input.messages, input.formContext, repoPath)
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer
     runSdkStreaming(
@@ -290,7 +361,22 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
         }
       },
       activeStreams,
-      streamId
+      streamId,
+      undefined,
+      getCopilotSdkOptions(repoPath, {
+        onToolUse: (event) => {
+          try {
+            e.sender.send('workbench:chatChunk', {
+              streamId,
+              chunk: '',
+              done: false,
+              toolUse: { name: event.name, input: event.input }
+            })
+          } catch {
+            /* window may have closed */
+          }
+        }
+      })
     )
       .then((fullText) => {
         try {

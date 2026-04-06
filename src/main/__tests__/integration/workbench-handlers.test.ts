@@ -9,8 +9,23 @@ describe('workbench handlers', () => {
         repo: 'BDE',
         spec: ''
       })
-      expect(prompt).toContain('text-only spec drafting')
+      // Copilot is now code-aware (Phase 2): read-only Read/Grep/Glob access
+      expect(prompt).toContain('code-aware spec drafting assistant')
+      expect(prompt).toContain('Read-only tool access')
+      expect(prompt).toContain('NEVER use Edit, Write, Bash')
+      // Positive guidance constraint preserved from Phase 1
       expect(prompt).toContain('directly executable by a pipeline')
+    })
+
+    it('includes spec-drafting mode framing and target repo when provided', () => {
+      const prompt = buildChatPrompt(
+        [{ role: 'user', content: 'Hello' }],
+        { title: 'Test', repo: 'BDE', spec: '' },
+        '/Users/test/projects/BDE'
+      )
+      expect(prompt).toContain('## Mode: Spec Drafting')
+      expect(prompt).toContain('## Target Repository')
+      expect(prompt).toContain('/Users/test/projects/BDE')
     })
 
     it('includes conversation history', () => {

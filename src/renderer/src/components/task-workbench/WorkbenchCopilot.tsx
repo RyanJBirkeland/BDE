@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTaskWorkbenchStore, type CopilotMessage } from '../../stores/taskWorkbench'
-import { isResearchQuery, extractSearchTerms } from './copilot-utils'
+import { formatToolUse } from './copilot-utils'
 
 interface WorkbenchCopilotProps {
   onClose: () => void
@@ -20,11 +20,14 @@ function MessageBubble({
   const isUser = msg.role === 'user'
   const isSystem = msg.role === 'system'
 
+  const isToolUse = msg.kind === 'tool-use'
   const className = `wb-copilot__bubble ${
     isUser
       ? 'wb-copilot__bubble--user'
       : isSystem
-        ? 'wb-copilot__bubble--system'
+        ? isToolUse
+          ? 'wb-copilot__bubble--system wb-copilot__bubble--tool-use'
+          : 'wb-copilot__bubble--system'
         : 'wb-copilot__bubble--assistant'
   }`
 
@@ -75,6 +78,19 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
         return // Not streaming at all, ignore
       }
 
+      // Tool-use events: surface what the copilot is reading/searching so the
+      // user can see it is grounded in the actual code.
+      if (data.toolUse) {
+        store().addCopilotMessage({
+          id: `tool-${data.streamId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          role: 'system',
+          kind: 'tool-use',
+          content: formatToolUse(data.toolUse.name, data.toolUse.input),
+          timestamp: Date.now()
+        })
+        return
+      }
+
       if (!data.done) {
         store().appendToStreamingMessage(data.chunk)
       } else {
@@ -113,26 +129,10 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
 
     addMessage({ id: `user-${Date.now()}`, role: 'user', content: text, timestamp: Date.now() })
 
-    // Inject codebase research results as a system message before sending to AI
-    if (isResearchQuery(text) && repo) {
-      try {
-        const results = await window.api.workbench.researchRepo({
-          query: extractSearchTerms(text),
-          repo
-        })
-        if (results?.content) {
-          const researchMsg: CopilotMessage = {
-            id: `research-${Date.now()}`,
-            role: 'system',
-            content: `Codebase research results:\n${results.content}`,
-            timestamp: Date.now()
-          }
-          addMessage(researchMsg)
-        }
-      } catch {
-        // Research failed — proceed without it
-      }
-    }
+    // The copilot now has read-only Read/Grep/Glob tool access against the
+    // target repo, so it does its own research natively. The legacy
+    // keyword-matched `workbench:researchRepo` injection has been removed —
+    // the underlying IPC handler is kept as a fallback for other callers.
 
     const allMessages = [...useTaskWorkbenchStore.getState().copilotMessages]
       .filter((m) => m.role !== 'system')
