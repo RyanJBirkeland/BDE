@@ -8,10 +8,10 @@ Output well-structured markdown specs with ## headings.`,
 (file tree, relevant code) and user answers, and produce structured task specifications.`,
 
   constraints: [
-    'Single turn only (maxTurns: 1)',
+    'Every section must map to concrete implementation steps',
+    'Include file paths discovered from the codebase context provided to you',
     'Output must be markdown with at least 2 ## heading sections',
-    'No tool access — text generation only',
-    'Work only from provided codebase context'
+    'Single turn only (maxTurns: 1) — get the spec right on the first pass'
   ],
 
   patterns: [

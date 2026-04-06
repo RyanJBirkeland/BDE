@@ -42,10 +42,17 @@ describe('Personality System', () => {
       expect(assistantPersonality.roleFrame).toContain('BDE assistant')
     })
 
-    it('should include full tool access', () => {
-      expect(assistantPersonality.constraints.some((c) => c.includes('Full tool access'))).toBe(
-        true
-      )
+    it('should describe full tool access in role frame', () => {
+      expect(assistantPersonality.roleFrame).toContain('full tool access')
+    })
+
+    it('should include behavioral boundaries (not capability descriptions)', () => {
+      expect(
+        assistantPersonality.constraints.some((c) => c.includes('Confirm before destructive'))
+      ).toBe(true)
+      expect(
+        assistantPersonality.constraints.some((c) => c.includes("user's current request"))
+      ).toBe(true)
     })
 
     it('should include BDE-specific patterns', () => {
@@ -65,10 +72,11 @@ describe('Personality System', () => {
       expect(copilotPersonality.roleFrame).toContain('Task Workbench')
     })
 
-    it('should constrain to text-only responses', () => {
-      expect(copilotPersonality.constraints.some((c) => c.includes('text responses only'))).toBe(
-        true
-      )
+    it('should include behavioral guidance and length cap', () => {
+      expect(
+        copilotPersonality.constraints.some((c) => c.includes('directly executable by a pipeline'))
+      ).toBe(true)
+      expect(copilotPersonality.constraints.some((c) => c.includes('exact file paths'))).toBe(true)
       expect(copilotPersonality.constraints.some((c) => c.includes('500 words'))).toBe(true)
     })
 

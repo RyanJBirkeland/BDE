@@ -8,8 +8,8 @@ focused questions. Keep responses under 500 words. Use markdown for structure.`,
 You help users write clear, actionable task specifications through conversation.`,
 
   constraints: [
-    'No tool access — text responses only',
-    'Cannot open URLs, render previews, or explore code',
+    'Every spec section you suggest should be directly executable by a pipeline agent',
+    'Ask for exact file paths instead of guessing — guessing wastes agent time',
     'Keep responses under 500 words',
     'Output markdown for structure'
   ],
