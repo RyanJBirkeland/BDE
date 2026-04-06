@@ -849,6 +849,17 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN rebased_at TEXT DEFAULT NULL')
       }
     }
+  },
+  {
+    version: 33,
+    description:
+      'Add review_diff_snapshot to sprint_tasks for preserving diffs after worktree cleanup',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('review_diff_snapshot')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN review_diff_snapshot TEXT DEFAULT NULL')
+      }
+    }
   }
 ]
 
