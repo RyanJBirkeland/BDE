@@ -2,6 +2,7 @@ import { useCodeReviewStore, type ReviewTab } from '../../stores/codeReview'
 import { ChangesTab } from './ChangesTab'
 import { CommitsTab } from './CommitsTab'
 import { ConversationTab } from './ConversationTab'
+import { EmptyState } from '../ui/EmptyState'
 import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 
 const TABS: { key: ReviewTab; label: string }[] = [
@@ -23,7 +24,14 @@ export function ReviewDetail(): React.JSX.Element {
   })
 
   if (!selectedTaskId) {
-    return <div className="cr-detail cr-detail--empty">Select a task to review</div>
+    return (
+      <div className="cr-detail cr-detail--empty">
+        <EmptyState
+          title="No task selected"
+          description="Select a task from the review queue to inspect changes, commits, and conversation."
+        />
+      </div>
+    )
   }
 
   return (

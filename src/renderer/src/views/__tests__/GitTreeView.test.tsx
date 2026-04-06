@@ -155,7 +155,7 @@ describe('GitTreeView', () => {
   describe('Empty states', () => {
     it('shows empty state when no changes exist', () => {
       render(<GitTreeView />)
-      expect(screen.getByText('No changes')).toBeInTheDocument()
+      expect(screen.getByText('Working tree clean')).toBeInTheDocument()
     })
 
     it('hides empty state when staged files exist', () => {
@@ -170,7 +170,7 @@ describe('GitTreeView', () => {
       })
 
       render(<GitTreeView />)
-      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+      expect(screen.queryByText('Working tree clean')).not.toBeInTheDocument()
     })
 
     it('hides empty state when unstaged files exist', () => {
@@ -185,7 +185,7 @@ describe('GitTreeView', () => {
       })
 
       render(<GitTreeView />)
-      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+      expect(screen.queryByText('Working tree clean')).not.toBeInTheDocument()
     })
 
     it('hides empty state when untracked files exist', () => {
@@ -200,7 +200,7 @@ describe('GitTreeView', () => {
       })
 
       render(<GitTreeView />)
-      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+      expect(screen.queryByText('Working tree clean')).not.toBeInTheDocument()
     })
 
     it('does not show empty state when loading', () => {
@@ -215,7 +215,7 @@ describe('GitTreeView', () => {
       })
 
       render(<GitTreeView />)
-      expect(screen.queryByText('No changes')).not.toBeInTheDocument()
+      expect(screen.queryByText('Working tree clean')).not.toBeInTheDocument()
     })
   })
 

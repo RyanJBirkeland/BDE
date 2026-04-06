@@ -3,6 +3,7 @@ import { useSprintTasks } from '../../stores/sprintTasks'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { renderAgentMarkdown } from '../../lib/render-agent-markdown'
+import { EmptyState } from '../ui/EmptyState'
 import type { AgentEvent } from '../../../../shared/types'
 import { Terminal, Wrench, AlertTriangle, CheckCircle, MessageSquare, Brain } from 'lucide-react'
 
@@ -127,12 +128,19 @@ export function ConversationTab(): React.JSX.Element {
 
   // Loading state: agent_run_id exists but events not loaded yet
   if (!agentEvents) {
-    return <div className="cr-placeholder">Loading conversation...</div>
+    return (
+      <div className="cr-conversation" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
+        <div className="bde-skeleton" style={{ height: 40 }} />
+        <div className="bde-skeleton" style={{ height: 40 }} />
+        <div className="bde-skeleton" style={{ height: 40 }} />
+        <div className="bde-skeleton" style={{ height: 40 }} />
+      </div>
+    )
   }
 
   // Empty events
   if (agentEvents.length === 0) {
-    return <div className="cr-placeholder">No conversation events recorded</div>
+    return <EmptyState message="No conversation events recorded for this agent run." />
   }
 
   return (

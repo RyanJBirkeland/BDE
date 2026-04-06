@@ -128,7 +128,7 @@ describe('AgentList', () => {
 
   it('shows no agents message when list is empty', () => {
     render(<AgentList {...defaultProps} />)
-    expect(screen.getByText('No agents match your filter. Try adjusting the search or clearing filters.')).toBeInTheDocument()
+    expect(screen.getByText('No agents yet')).toBeInTheDocument()
   })
 
   it('renders running group header when running agents exist', () => {

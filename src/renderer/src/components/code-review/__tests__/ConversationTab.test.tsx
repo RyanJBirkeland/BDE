@@ -138,7 +138,7 @@ describe('ConversationTab', () => {
     ]
     agentEventsState.events = {} // no events loaded yet
     useCodeReviewStore.setState({ selectedTaskId: 't1' })
-    render(<ConversationTab />)
-    expect(screen.getByText('Loading conversation...')).toBeInTheDocument()
+    const { container } = render(<ConversationTab />)
+    expect(container.querySelectorAll('.bde-skeleton').length).toBeGreaterThan(0)
   })
 })

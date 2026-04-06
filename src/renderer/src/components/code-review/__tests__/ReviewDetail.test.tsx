@@ -43,7 +43,7 @@ describe('ReviewDetail', () => {
   it('shows empty state when no task selected', () => {
     useCodeReviewStore.setState({ selectedTaskId: null })
     render(<ReviewDetail />)
-    expect(screen.getByText('Select a task to review')).toBeInTheDocument()
+    expect(screen.getByText('No task selected')).toBeInTheDocument()
   })
 
   it('renders 3 tabs', () => {

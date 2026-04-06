@@ -1,12 +1,13 @@
 import React, { useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { GitBranch, RefreshCw, AlertCircle, X } from 'lucide-react'
+import { GitBranch, RefreshCw, AlertCircle, X, CheckCircle } from 'lucide-react'
 import { useGitTreeStore } from '../stores/gitTree'
 import { toast } from '../stores/toasts'
 import { CommitBox } from '../components/git-tree/CommitBox'
 import { FileTreeSection } from '../components/git-tree/FileTreeSection'
 import { BranchSelector } from '../components/git-tree/BranchSelector'
 import { InlineDiffDrawer } from '../components/git-tree/InlineDiffDrawer'
+import { EmptyState } from '../components/ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
@@ -363,9 +364,23 @@ export default function GitTreeView(): React.ReactElement {
           />
         )}
 
+        {/* Loading skeleton */}
+        {loading && staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && (
+          <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="bde-skeleton" style={{ height: 24, width: '60%' }} />
+            <div className="bde-skeleton" style={{ height: 32 }} />
+            <div className="bde-skeleton" style={{ height: 32 }} />
+            <div className="bde-skeleton" style={{ height: 32 }} />
+          </div>
+        )}
+
         {/* Empty state */}
         {staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && !loading && (
-          <div className="git-tree-view__empty">No changes</div>
+          <EmptyState
+            icon={<CheckCircle size={24} />}
+            title="Working tree clean"
+            description="No uncommitted changes. Edit files or pull updates to see changes here."
+          />
         )}
       </div>
 

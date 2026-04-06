@@ -57,14 +57,14 @@ describe('CommitsTab', () => {
 
   it('shows loading state', () => {
     useCodeReviewStore.setState({ loading: { commits: true } })
-    render(<CommitsTab />)
-    expect(screen.getByText('Loading commits...')).toBeInTheDocument()
+    const { container } = render(<CommitsTab />)
+    expect(container.querySelectorAll('.bde-skeleton').length).toBeGreaterThan(0)
   })
 
   it('shows empty state when no commits', () => {
     useCodeReviewStore.setState({ commits: [], loading: {} })
     render(<CommitsTab />)
-    expect(screen.getByText('No commits found')).toBeInTheDocument()
+    expect(screen.getByText('No commits found on this branch.')).toBeInTheDocument()
   })
 
   it('renders commit list after loading', () => {

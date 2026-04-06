@@ -57,14 +57,14 @@ describe('ChangesTab', () => {
 
   it('shows loading state', () => {
     useCodeReviewStore.setState({ loading: { diff: true } })
-    render(<ChangesTab />)
-    expect(screen.getByText('Loading changes...')).toBeInTheDocument()
+    const { container } = render(<ChangesTab />)
+    expect(container.querySelectorAll('.bde-skeleton').length).toBeGreaterThan(0)
   })
 
   it('shows empty state when no files', () => {
     useCodeReviewStore.setState({ diffFiles: [], loading: {} })
     render(<ChangesTab />)
-    expect(screen.getByText('No changes found')).toBeInTheDocument()
+    expect(screen.getByText('No changes found in this branch.')).toBeInTheDocument()
   })
 
   it('shows file list after loading', () => {

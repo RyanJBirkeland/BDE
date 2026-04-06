@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { GitCommit } from 'lucide-react'
+import { EmptyState } from '../ui/EmptyState'
 
 export function CommitsTab(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -23,8 +24,16 @@ export function CommitsTab(): React.JSX.Element {
       .finally(() => setLoading('commits', false))
   }, [task?.worktree_path, task?.id, setCommits, setLoading])
 
-  if (loading.commits) return <div className="cr-placeholder">Loading commits...</div>
-  if (commits.length === 0) return <div className="cr-placeholder">No commits found</div>
+  if (loading.commits) {
+    return (
+      <div className="cr-commits" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
+        <div className="bde-skeleton" style={{ height: 48 }} />
+        <div className="bde-skeleton" style={{ height: 48 }} />
+        <div className="bde-skeleton" style={{ height: 48 }} />
+      </div>
+    )
+  }
+  if (commits.length === 0) return <EmptyState message="No commits found on this branch." />
 
   return (
     <div className="cr-commits">

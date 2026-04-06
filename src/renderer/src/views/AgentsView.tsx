@@ -15,8 +15,8 @@ import { AgentList } from '../components/agents/AgentList'
 import { AgentConsole } from '../components/agents/AgentConsole'
 import { LiveActivityStrip } from '../components/agents/LiveActivityStrip'
 import { AgentLaunchpad } from '../components/agents/AgentLaunchpad'
+import { EmptyState } from '../components/ui/EmptyState'
 import { NeonCard, MiniChart, type ChartBar } from '../components/neon'
-import { tokens } from '../design-system/tokens'
 import { toast } from '../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
@@ -303,13 +303,13 @@ export function AgentsView(): React.JSX.Element {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: '100%',
-                color: 'var(--neon-text-dim, rgba(255,255,255,0.2))',
-                fontSize: tokens.size.md,
-                fontFamily: 'var(--bde-font-code)'
+                height: '100%'
               }}
             >
-              {'> Select an agent to view console.'}
+              <EmptyState
+                title="No agent selected"
+                description="Select an agent from the fleet list to view its console output."
+              />
             </div>
           )}
         </div>

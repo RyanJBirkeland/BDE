@@ -470,7 +470,14 @@ export function AgentList({
           </div>
         )}
 
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loading && !fetchError && agents.length === 0 && (
+          <EmptyState
+            title="No agents yet"
+            description="Spawn an agent to get started. Agents execute tasks, answer questions, and write code."
+          />
+        )}
+
+        {filtered.length === 0 && agents.length > 0 && (
           <EmptyState message="No agents match your filter. Try adjusting the search or clearing filters." />
         )}
 

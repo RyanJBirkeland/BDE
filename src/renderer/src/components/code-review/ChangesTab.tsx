@@ -4,6 +4,7 @@ import { useSprintTasks } from '../../stores/sprintTasks'
 import { Plus, Minus, Edit2 } from 'lucide-react'
 import { parseDiff } from '../../lib/diff-parser'
 import { DiffViewer } from '../diff/DiffViewer'
+import { EmptyState } from '../ui/EmptyState'
 
 export function ChangesTab(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -53,11 +54,26 @@ export function ChangesTab(): React.JSX.Element {
   }, [fileDiff])
 
   if (loading.diff) {
-    return <div className="cr-placeholder">Loading changes...</div>
+    return (
+      <div className="cr-changes">
+        <div className="cr-changes__files" style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8 }}>
+          <div className="bde-skeleton" style={{ height: 28 }} />
+          <div className="bde-skeleton" style={{ height: 28 }} />
+          <div className="bde-skeleton" style={{ height: 28 }} />
+        </div>
+        <div className="cr-changes__diff" style={{ padding: 16 }}>
+          <div className="bde-skeleton" style={{ height: 200 }} />
+        </div>
+      </div>
+    )
   }
 
   if (diffFiles.length === 0) {
-    return <div className="cr-placeholder">No changes found</div>
+    return (
+      <div className="cr-changes">
+        <EmptyState message="No changes found in this branch." />
+      </div>
+    )
   }
 
   const statusIcon = (status: string): React.JSX.Element => {
