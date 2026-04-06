@@ -44,9 +44,13 @@
     border-color 0.12s ease;
 }
 
-.agents-view__spawn-btn:hover {
+.agents-view__spawn-btn:hover:not(:disabled) {
   color: var(--bde-text);
   border-color: var(--bde-text-muted);
+}
+
+.agents-view__spawn-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Playground Modal ──────────────────────────────────── */

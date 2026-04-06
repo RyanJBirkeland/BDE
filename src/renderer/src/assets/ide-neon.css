@@ -44,7 +44,7 @@
   color: var(--neon-text-muted);
 }
 
-.ide-sidebar__action-btn:hover {
+.ide-sidebar__action-btn:hover:not(:disabled) {
   color: var(--neon-text);
   background: var(--neon-surface-dim);
 }
@@ -230,8 +230,12 @@
     opacity 0.15s ease;
 }
 
-.ide-empty-state__open-btn:hover {
+.ide-empty-state__open-btn:hover:not(:disabled) {
   box-shadow: 0 0 16px var(--neon-cyan-glow);
+}
+
+.ide-empty-state__open-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .ide-empty-state__recent-label {
@@ -297,7 +301,7 @@
   color: var(--neon-text-dim);
 }
 
-.terminal-tab__close:hover {
+.terminal-tab__close:hover:not(:disabled) {
   background: var(--neon-surface-subtle);
   color: var(--neon-text);
 }
@@ -307,7 +311,7 @@
   color: var(--neon-text-muted);
 }
 
-.terminal-tab-bar__btn:hover {
+.terminal-tab-bar__btn:hover:not(:disabled) {
   color: var(--neon-text);
   background: var(--neon-surface-subtle);
 }
@@ -322,7 +326,7 @@
   color: var(--neon-text-muted);
 }
 
-.terminal-toolbar__btn:hover {
+.terminal-toolbar__btn:hover:not(:disabled) {
   color: var(--neon-text);
   background: var(--neon-surface-subtle);
 }
@@ -361,7 +365,7 @@
   color: var(--neon-text-muted);
 }
 
-.terminal-find__btn:hover {
+.terminal-find__btn:hover:not(:disabled) {
   background: var(--neon-surface-subtle);
   color: var(--neon-text);
 }
@@ -395,7 +399,7 @@
   color: var(--neon-text);
 }
 
-.shell-picker__custom-input:focus {
+.shell-picker__custom-input:focus-visible {
   border-color: var(--neon-cyan);
 }
 
@@ -470,7 +474,7 @@
     box-shadow 0.15s;
 }
 
-.ide-sidebar-toggle:hover {
+.ide-sidebar-toggle:hover:not(:disabled) {
   color: var(--neon-cyan);
   border-color: var(--neon-cyan-border);
   box-shadow: 0 0 8px var(--neon-cyan-glow);
@@ -589,7 +593,7 @@
   outline: none;
 }
 
-.quick-open-palette__input:focus {
+.quick-open-palette__input:focus-visible {
   border-color: var(--neon-cyan);
   box-shadow: 0 0 8px var(--neon-cyan-glow);
 }
@@ -611,9 +615,13 @@
   border-radius: 4px;
 }
 
-.quick-open-palette__close:hover {
+.quick-open-palette__close:hover:not(:disabled) {
   background: var(--neon-surface-dim);
   color: var(--neon-text);
+}
+
+.quick-open-palette__close:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .quick-open-palette__list {

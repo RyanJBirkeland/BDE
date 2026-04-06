@@ -241,7 +241,7 @@
   color: var(--neon-red);
 }
 
-.diff-pending-comment__remove:hover {
+.diff-pending-comment__remove:hover:not(:disabled) {
   background: var(--neon-cyan-surface);
 }
 

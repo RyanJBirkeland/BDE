@@ -33,7 +33,7 @@
     box-shadow 150ms ease;
 }
 
-.wb__copilot-toggle button:hover {
+.wb__copilot-toggle button:hover:not(:disabled) {
   background: var(--neon-cyan-surface);
   box-shadow: var(--neon-cyan-glow);
 }
@@ -108,7 +108,7 @@
   color: var(--neon-text-dim);
 }
 
-.wb-form__input:focus {
+.wb-form__input:focus-visible {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
 }
@@ -134,7 +134,7 @@
     box-shadow 150ms ease;
 }
 
-.wb-form__select:focus {
+.wb-form__select:focus-visible {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
 }
@@ -155,8 +155,12 @@
   transition: color 150ms ease;
 }
 
-.wb-form__toggle:hover {
+.wb-form__toggle:hover:not(:disabled) {
   color: var(--neon-text);
+}
+
+.wb-form__toggle:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-form__toggle:focus-visible {
@@ -216,10 +220,14 @@
     color 150ms ease;
 }
 
-.wb-spec__btn:hover {
+.wb-spec__btn:hover:not(:disabled) {
   background: var(--neon-surface-dim);
   border-color: var(--bde-border-hover);
   color: var(--neon-text);
+}
+
+.wb-spec__btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-spec__btn:focus-visible {
@@ -233,9 +241,13 @@
   color: var(--neon-cyan);
 }
 
-.wb-spec__btn--primary:hover {
+.wb-spec__btn--primary:hover:not(:disabled) {
   background: var(--neon-cyan-surface);
   box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-spec__btn--primary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-spec__btn--primary:disabled {
@@ -270,7 +282,7 @@
   color: var(--neon-text-dim);
 }
 
-.wb-spec__textarea:focus {
+.wb-spec__textarea:focus-visible {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
 }
@@ -398,6 +410,10 @@
   background: var(--neon-surface-dim);
 }
 
+.wb-actions__btn--secondary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 .wb-actions__btn--secondary:disabled {
   color: var(--neon-text-dim);
   cursor: not-allowed;
@@ -413,6 +429,10 @@
 
 .wb-actions__btn--primary:hover:not(:disabled) {
   box-shadow: var(--neon-purple-glow);
+}
+
+.wb-actions__btn--primary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-actions__btn--primary:disabled {
@@ -433,6 +453,10 @@
   box-shadow: var(--neon-cyan-glow);
 }
 
+.wb-actions__btn--launch:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 .wb-actions__btn--launch:disabled {
   background: var(--neon-surface-dim);
   color: var(--neon-text-dim);
@@ -449,6 +473,10 @@
 .wb-actions__btn--ghost:hover:not(:disabled) {
   color: var(--neon-text);
   border-color: var(--neon-purple-border);
+}
+
+.wb-actions__btn--ghost:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-actions__btn:focus-visible {
@@ -507,8 +535,12 @@
   transition: color 150ms ease;
 }
 
-.wb-copilot__close:hover {
+.wb-copilot__close:hover:not(:disabled) {
   color: var(--neon-text);
+}
+
+.wb-copilot__close:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-copilot__close:focus-visible {
@@ -583,9 +615,13 @@
     box-shadow 150ms ease;
 }
 
-.wb-copilot__insert-btn:hover {
+.wb-copilot__insert-btn:hover:not(:disabled) {
   background: var(--neon-cyan-surface);
   box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-copilot__insert-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-copilot__insert-btn:focus-visible {
@@ -621,9 +657,13 @@
     border-color 150ms ease;
 }
 
-.wb-copilot__cancel-btn:hover {
+.wb-copilot__cancel-btn:hover:not(:disabled) {
   background: var(--neon-surface-dim);
   border-color: var(--bde-border-hover);
+}
+
+.wb-copilot__cancel-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-copilot__cancel-btn:focus-visible {
@@ -655,7 +695,7 @@
     box-shadow 150ms ease;
 }
 
-.wb-copilot__input:focus {
+.wb-copilot__input:focus-visible {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
 }
@@ -684,8 +724,12 @@
   cursor: pointer;
 }
 
-.wb-copilot__send-btn--active:hover {
+.wb-copilot__send-btn--active:hover:not(:disabled) {
   box-shadow: var(--neon-cyan-glow);
+}
+
+.wb-copilot__send-btn--active:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .wb-copilot__send-btn--disabled {
@@ -789,7 +833,7 @@
   transition: color 150ms ease;
 }
 
-.wb-deps__remove:hover {
+.wb-deps__remove:hover:not(:disabled) {
   color: var(--neon-text);
 }
 
@@ -816,7 +860,7 @@
     color 150ms ease;
 }
 
-.wb-deps__add:hover {
+.wb-deps__add:hover:not(:disabled) {
   border-color: var(--neon-cyan);
   color: var(--neon-cyan);
 }
@@ -851,7 +895,7 @@
   color: var(--neon-text-dim);
 }
 
-.wb-deps__search:focus {
+.wb-deps__search:focus-visible {
   border-bottom-color: var(--neon-cyan);
 }
 

@@ -66,8 +66,12 @@
   cursor: wait;
 }
 
-.git-tree-view__refresh-btn:hover {
+.git-tree-view__refresh-btn:hover:not(:disabled) {
   color: var(--bde-text);
+}
+
+.git-tree-view__refresh-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Scrollable file sections ── */
@@ -110,7 +114,7 @@
   line-height: 1.5;
 }
 
-.git-commit-box__textarea:focus {
+.git-commit-box__textarea:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -181,8 +185,12 @@
   cursor: pointer;
 }
 
-.git-commit-box__push-btn:hover {
+.git-commit-box__push-btn:hover:not(:disabled) {
   border-color: var(--bde-border-hover);
+}
+
+.git-commit-box__push-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── File Tree Section ── */
@@ -241,7 +249,7 @@
   border-radius: var(--bde-radius-sm);
 }
 
-.git-section__action-btn:hover {
+.git-section__action-btn:hover:not(:disabled) {
   color: var(--bde-text);
   background-color: var(--bde-surface-high);
 }
@@ -478,8 +486,12 @@
   flex-shrink: 0;
 }
 
-.git-diff-drawer__close-btn:hover {
+.git-diff-drawer__close-btn:hover:not(:disabled) {
   color: var(--bde-text);
+}
+
+.git-diff-drawer__close-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .git-diff-drawer__content {
@@ -554,8 +566,12 @@
   transition: background 100ms ease;
 }
 
-.git-tree-view__error-retry:hover {
+.git-tree-view__error-retry:hover:not(:disabled) {
   background: var(--neon-red-border, rgba(255, 50, 50, 0.3));
+}
+
+.git-tree-view__error-retry:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .git-tree-view__error-dismiss {
@@ -568,7 +584,7 @@
   transition: opacity 100ms ease;
 }
 
-.git-tree-view__error-dismiss:hover {
+.git-tree-view__error-dismiss:hover:not(:disabled) {
   opacity: 1;
 }
 
@@ -635,8 +651,12 @@
   flex-shrink: 0;
 }
 
-.git-push-output__close:hover {
+.git-push-output__close:hover:not(:disabled) {
   color: var(--bde-text);
+}
+
+.git-push-output__close:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .git-client {
@@ -698,7 +718,7 @@
   border-radius: 3px;
 }
 
-.git-sidebar__action:hover {
+.git-sidebar__action:hover:not(:disabled) {
   background: var(--bde-accent-hover);
 }
 
@@ -806,7 +826,7 @@
   resize: none;
 }
 
-.git-commit-panel__input:focus {
+.git-commit-panel__input:focus-visible {
   border-color: var(--bde-accent);
 }
 

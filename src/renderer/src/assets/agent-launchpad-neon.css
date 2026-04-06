@@ -155,7 +155,7 @@
   color: var(--neon-text-dim);
 }
 
-.launchpad__prompt-input:focus {
+.launchpad__prompt-input:focus-visible {
   border-color: var(--neon-cyan-border);
 }
 

@@ -47,7 +47,7 @@
   color: var(--bde-text-muted);
 }
 
-.stg-sidebar__search-input:focus {
+.stg-sidebar__search-input:focus-visible {
   outline: none;
   border-color: var(--neon-purple);
 }

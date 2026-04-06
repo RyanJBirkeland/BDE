@@ -148,32 +148,10 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
               </span>
               {isRunning && (
                 <button
+                  className="agent-card__kill-btn"
                   onClick={handleKill}
                   title="Stop agent"
                   aria-label="Stop agent"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 18,
-                    height: 18,
-                    padding: 0,
-                    background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
-                    border: `1px solid ${neonVar('red', 'border')}`,
-                    borderRadius: tokens.radius.sm,
-                    cursor: 'pointer',
-                    color: neonVar('red', 'color'),
-                    flexShrink: 0,
-                    transition: tokens.transition.fast
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = neonVar('red', 'surface')
-                    e.currentTarget.style.boxShadow = `0 0 8px ${neonVar('red', 'glow')}`
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'var(--neon-surface-deep, rgba(10,0,21,0.4))'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
                 >
                   <X size={12} />
                 </button>

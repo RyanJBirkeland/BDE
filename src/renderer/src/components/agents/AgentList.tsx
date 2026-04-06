@@ -490,23 +490,8 @@ export function AgentList({
             }}
           >
             <button
+              className="agent-list__load-more"
               onClick={onLoadMore}
-              style={{
-                padding: `${tokens.space[1]} ${tokens.space[3]}`,
-                background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
-                border: `1px solid ${neonVar('cyan', 'border')}`,
-                borderRadius: tokens.radius.sm,
-                color: neonVar('cyan', 'color'),
-                fontSize: tokens.size.sm,
-                cursor: 'pointer',
-                transition: tokens.transition.fast
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = `0 0 12px ${neonVar('cyan', 'glow')}`
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none'
-              }}
             >
               Load More
             </button>

@@ -164,9 +164,13 @@
     background 0.15s;
 }
 
-.stg-keybindings__recorder:hover {
+.stg-keybindings__recorder:hover:not(:disabled) {
   border-color: var(--bde-queued);
   background: var(--bde-surface);
+}
+
+.stg-keybindings__recorder:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .stg-keybindings__recorder--active {

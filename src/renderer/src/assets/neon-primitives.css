@@ -225,7 +225,7 @@
   transition: opacity 0.15s ease;
 }
 
-.tag-badge__remove:hover {
+.tag-badge__remove:hover:not(:disabled) {
   opacity: 1;
 }
 

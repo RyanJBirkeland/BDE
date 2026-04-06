@@ -171,7 +171,7 @@
   opacity: 1;
 }
 
-.header-tab__close:hover {
+.header-tab__close:hover:not(:disabled) {
   color: var(--neon-text);
   background: var(--neon-surface-subtle);
 }
@@ -417,7 +417,7 @@
   border-radius: 6px;
 }
 
-.overflow-menu__customize-btn:hover,
+.overflow-menu__customize-btn:hover:not(:disabled),
 .overflow-menu__customize-btn:focus-visible {
   background: var(--neon-purple-surface);
   color: var(--neon-text);

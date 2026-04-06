@@ -228,7 +228,7 @@
     color 100ms ease;
 }
 
-.console-header__action-btn:hover {
+.console-header__action-btn:hover:not(:disabled) {
   background: var(--neon-surface-dim);
   color: var(--neon-text-muted);
 }
@@ -282,7 +282,7 @@
     transform 150ms ease;
 }
 
-.console-jump-to-latest:hover {
+.console-jump-to-latest:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--neon-purple-border), var(--neon-surface-deep));
   transform: translateX(-50%) translateY(-2px);
 }
@@ -624,9 +624,13 @@
   flex-shrink: 0;
 }
 
-.console-search-bar__close-btn:hover {
+.console-search-bar__close-btn:hover:not(:disabled) {
   background: var(--neon-red-surface);
   color: var(--neon-red);
+}
+
+.console-search-bar__close-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Console Search Highlighting ── */
@@ -1152,6 +1156,31 @@
   color: var(--neon-text-muted);
 }
 
+.agent-card__kill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: var(--neon-surface-deep, rgba(10,0,21,0.4));
+  border: 1px solid var(--neon-red-border);
+  border-radius: var(--bde-radius-sm, 4px);
+  cursor: pointer;
+  color: var(--neon-red);
+  flex-shrink: 0;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.agent-card__kill-btn:hover:not(:disabled) {
+  background: var(--neon-red-surface);
+  box-shadow: 0 0 8px var(--neon-red-glow);
+}
+
+.agent-card__kill-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 /* ── Agent List Components ── */
 .agent-list__search-border {
   border: 1px solid var(--bde-border);
@@ -1315,4 +1344,24 @@
   .console-line__chevron {
     transition: none;
   }
+}
+
+/* ── Load More button ── */
+.agent-list__load-more {
+  padding: 4px 12px;
+  background: var(--neon-surface-deep, rgba(10,0,21,0.4));
+  border: 1px solid var(--neon-cyan-border);
+  border-radius: var(--bde-radius-sm, 4px);
+  color: var(--neon-cyan);
+  font-size: var(--font-sm, 12px);
+  cursor: pointer;
+  transition: box-shadow 150ms ease;
+}
+
+.agent-list__load-more:hover:not(:disabled) {
+  box-shadow: 0 0 12px var(--neon-cyan-glow);
+}
+
+.agent-list__load-more:active:not(:disabled) {
+  transform: scale(0.97);
 }

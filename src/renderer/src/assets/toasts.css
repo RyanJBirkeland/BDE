@@ -72,9 +72,13 @@
     border-color 0.15s;
 }
 
-.toast__action-btn:hover {
+.toast__action-btn:hover:not(:disabled) {
   background: var(--bde-selected);
   border-color: var(--bde-accent);
+}
+
+.toast__action-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 @keyframes toast-slide-in {

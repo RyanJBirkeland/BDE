@@ -578,7 +578,7 @@ html.theme-pro-light {
   transition: all 0.15s ease;
 }
 
-.agent-monitor__collapse-btn:hover {
+.agent-monitor__collapse-btn:hover:not(:disabled) {
   background: var(--neon-surface-subtle);
   color: var(--neon-text);
 }

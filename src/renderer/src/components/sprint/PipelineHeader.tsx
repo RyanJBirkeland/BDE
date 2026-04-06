@@ -124,44 +124,16 @@ export function PipelineHeader({
             }}
           >
             <button
+              className="sprint-pipeline__export-option"
               onClick={() => handleExport('json')}
               disabled={exporting}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '8px 12px',
-                border: 'none',
-                background: 'transparent',
-                textAlign: 'left',
-                cursor: exporting ? 'not-allowed' : 'pointer',
-                fontSize: '12px',
-                opacity: exporting ? 0.5 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (!exporting) e.currentTarget.style.backgroundColor = 'var(--bde-hover)'
-              }}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               {exporting ? 'Exporting…' : 'JSON'}
             </button>
             <button
+              className="sprint-pipeline__export-option"
               onClick={() => handleExport('csv')}
               disabled={exporting}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '8px 12px',
-                border: 'none',
-                background: 'transparent',
-                textAlign: 'left',
-                cursor: exporting ? 'not-allowed' : 'pointer',
-                fontSize: '12px',
-                opacity: exporting ? 0.5 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (!exporting) e.currentTarget.style.backgroundColor = 'var(--bde-hover)'
-              }}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               {exporting ? 'Exporting…' : 'CSV'}
             </button>

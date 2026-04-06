@@ -83,7 +83,7 @@
     color 0.12s ease,
     background 0.12s ease;
 }
-.ide-sidebar__action-btn:hover {
+.ide-sidebar__action-btn:hover:not(:disabled) {
   color: var(--bde-text);
   background: var(--bde-hover);
 }
@@ -355,8 +355,12 @@
   font-weight: 500;
   transition: opacity 0.15s ease;
 }
-.ide-empty-state__open-btn:hover {
+.ide-empty-state__open-btn:hover:not(:disabled) {
   opacity: 0.85;
+}
+
+.ide-empty-state__open-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .ide-empty-state__recent {
   display: flex;

@@ -188,9 +188,13 @@
     border-color 0.15s;
 }
 
-.pr-row__btn:hover {
+.pr-row__btn:hover:not(:disabled) {
   background: var(--bde-hover-strong);
   color: var(--bde-text);
+}
+
+.pr-row__btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .pr-row__btn:disabled {
@@ -198,9 +202,13 @@
   cursor: default;
 }
 
-.pr-row__btn--open:hover {
+.pr-row__btn--open:hover:not(:disabled) {
   color: var(--bde-info);
   border-color: var(--bde-info);
+}
+
+.pr-row__btn--open:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .pr-row__btn--merge {
@@ -208,8 +216,12 @@
   border-color: var(--bde-accent);
 }
 
-.pr-row__btn--merge:hover {
+.pr-row__btn--merge:hover:not(:disabled) {
   background: var(--bde-accent-hover);
+}
+
+.pr-row__btn--merge:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── PR Confirm Dialog ───────────────────────────────── */
@@ -264,7 +276,7 @@
   outline: none;
 }
 
-.sprint-tasks__input:focus {
+.sprint-tasks__input:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -289,7 +301,7 @@
   cursor: pointer;
 }
 
-.sprint-tasks__select:focus {
+.sprint-tasks__select:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -526,7 +538,7 @@
   outline-offset: 2px;
 }
 
-.spec-drawer__title-input:focus {
+.spec-drawer__title-input:focus-visible {
   border-bottom-color: var(--bde-accent);
 }
 
@@ -575,8 +587,12 @@
   padding: 0;
 }
 
-.spec-drawer__prompt-toggle:hover {
+.spec-drawer__prompt-toggle:hover:not(:disabled) {
   color: var(--bde-text);
+}
+
+.spec-drawer__prompt-toggle:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .spec-drawer__prompt-body {
@@ -607,8 +623,12 @@
   gap: 4px;
 }
 
-.spec-drawer__delete-btn:hover {
+.spec-drawer__delete-btn:hover:not(:disabled) {
   background: var(--bde-danger-hover) !important;
+}
+
+.spec-drawer__delete-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .spec-drawer__editor {
@@ -625,7 +645,7 @@
   outline: none;
 }
 
-.spec-drawer__editor:focus {
+.spec-drawer__editor:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -958,7 +978,7 @@
   outline: none;
 }
 
-.new-ticket-modal__spec-editor:focus {
+.new-ticket-modal__spec-editor:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -1123,7 +1143,7 @@
   display: block;
 }
 
-.bde-task-table__title-btn:hover {
+.bde-task-table__title-btn:hover:not(:disabled) {
   color: var(--bde-accent);
 }
 
@@ -1145,7 +1165,7 @@
   white-space: nowrap;
 }
 
-.bde-task-table__pr-link:hover {
+.bde-task-table__pr-link:hover:not(:disabled) {
   text-decoration: underline;
 }
 
@@ -1171,16 +1191,20 @@
     background 0.15s;
 }
 
-.bde-task-table__action-btn:hover {
+.bde-task-table__action-btn:hover:not(:disabled) {
   color: var(--bde-text);
   background: var(--bde-hover);
+}
+
+.bde-task-table__action-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .bde-task-table__action-btn--sprint {
   color: var(--bde-accent);
 }
 
-.bde-task-table__action-btn--sprint:hover {
+.bde-task-table__action-btn--sprint:hover:not(:disabled) {
   color: var(--bde-accent);
   background: var(--bde-accent-hover);
 }
@@ -1204,7 +1228,7 @@ tr:hover .bde-task-table__action-btn--done {
   opacity: 1;
 }
 
-.bde-task-table__action-btn--done:hover {
+.bde-task-table__action-btn--done:hover:not(:disabled) {
   color: var(--bde-success, #4ade80);
   background: var(--bde-hover);
 }
@@ -1238,7 +1262,7 @@ tr:hover .bde-task-table__action-btn--done {
   font-family: var(--bde-font-ui);
 }
 
-.bde-task-section__show-more:hover {
+.bde-task-section__show-more:hover:not(:disabled) {
   color: var(--bde-accent);
 }
 
@@ -1315,7 +1339,7 @@ tr:hover .bde-task-table__action-btn--done {
   color: var(--bde-text-dim);
 }
 
-.bde-backlog-search__input:focus {
+.bde-backlog-search__input:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -1338,7 +1362,7 @@ tr:hover .bde-task-table__action-btn--done {
   padding: 2px 6px;
 }
 
-.bde-backlog-search__clear:hover {
+.bde-backlog-search__clear:hover:not(:disabled) {
   color: var(--bde-text);
 }
 
@@ -1514,7 +1538,7 @@ tr:hover .bde-task-table__action-btn--done {
   font-family: inherit;
 }
 
-.design-mode__input:focus {
+.design-mode__input:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -1578,9 +1602,13 @@ tr:hover .bde-task-table__action-btn--done {
   cursor: pointer;
 }
 
-.design-mode__copy-btn:hover {
+.design-mode__copy-btn:hover:not(:disabled) {
   color: var(--bde-text);
   border-color: var(--bde-text-dim);
+}
+
+.design-mode__copy-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .design-mode__spec-content {
@@ -1615,8 +1643,12 @@ tr:hover .bde-task-table__action-btn--done {
   transition: opacity 0.15s ease;
 }
 
-.design-mode__save-btn:hover {
+.design-mode__save-btn:hover:not(:disabled) {
   opacity: 0.9;
+}
+
+.design-mode__save-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* Override modal width for design mode — needs more space */

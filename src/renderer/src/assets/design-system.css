@@ -367,7 +367,7 @@
   transition: border-color var(--bde-transition-base);
 }
 
-.bde-textarea:focus {
+.bde-textarea:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -785,7 +785,7 @@
   box-shadow: 0 0 16px rgba(0, 211, 127, 0.2);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   box-shadow:
     0 0 24px rgba(0, 211, 127, 0.3),
     0 0 8px rgba(0, 211, 127, 0.4);
@@ -812,7 +812,7 @@
   transition: all 0.15s ease-out;
 }
 
-.btn-glass:hover {
+.btn-glass:hover:not(:disabled) {
   background: var(--bde-glass-bg-hover);
   border-color: var(--bde-border-hover);
   color: var(--bde-text);
@@ -934,7 +934,7 @@
   transition: border-color 0.15s ease;
 }
 
-.prompt-modal__input:focus {
+.prompt-modal__input:focus-visible {
   border-color: var(--bde-accent);
 }
 
@@ -959,7 +959,7 @@
   min-height: 120px;
 }
 
-.prompt-modal__textarea:focus {
+.prompt-modal__textarea:focus-visible {
   border-color: var(--bde-accent);
 }
 

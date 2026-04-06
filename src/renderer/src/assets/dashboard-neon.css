@@ -77,8 +77,12 @@
   color: var(--neon-cyan);
 }
 
-.dashboard-briefing__button--primary:hover {
+.dashboard-briefing__button--primary:hover:not(:disabled) {
   background: var(--neon-cyan-border);
+}
+
+.dashboard-briefing__button--primary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .dashboard-briefing__button--secondary {
@@ -87,9 +91,13 @@
   color: var(--neon-text-dim);
 }
 
-.dashboard-briefing__button--secondary:hover {
+.dashboard-briefing__button--secondary:hover:not(:disabled) {
   border-color: var(--neon-text);
   color: var(--neon-text);
+}
+
+.dashboard-briefing__button--secondary:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .dashboard-briefing__tasks {
@@ -415,8 +423,12 @@
   transition: background var(--bde-transition-fast);
 }
 
-.dashboard-card-error__retry:hover {
+.dashboard-card-error__retry:hover:not(:disabled) {
   background: var(--neon-red-border);
+}
+
+.dashboard-card-error__retry:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Status Bar Freshness Indicator ── */
@@ -457,9 +469,13 @@
     border-color 0.15s ease;
 }
 
-.dashboard-new-task-btn:hover {
+.dashboard-new-task-btn:hover:not(:disabled) {
   opacity: 1;
   border-style: solid;
+}
+
+.dashboard-new-task-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Onboarding State ── */
@@ -501,8 +517,12 @@
   transition: background 0.15s ease;
 }
 
-.dashboard-onboarding__cta:hover {
+.dashboard-onboarding__cta:hover:not(:disabled) {
   background: var(--neon-cyan-border);
+}
+
+.dashboard-onboarding__cta:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Attention Card ── */
@@ -548,6 +568,10 @@
 
 .dashboard-review-cta:hover {
   background: var(--neon-cyan-border);
+}
+
+.dashboard-review-cta:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Responsive Breakpoints ── */

@@ -188,24 +188,8 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
                     <button
                       key={template.id}
                       type="button"
+                      className="planner-template-card"
                       onClick={() => handleTemplateSelect(template)}
-                      style={{
-                        padding: '12px',
-                        border: '1px solid var(--bde-border)',
-                        borderRadius: '6px',
-                        background: 'var(--bde-surface)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--bde-accent)'
-                        e.currentTarget.style.background = 'var(--bde-surface-high)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--bde-border)'
-                        e.currentTarget.style.background = 'var(--bde-surface)'
-                      }}
                     >
                       <div style={{ fontSize: '24px', marginBottom: '6px' }}>{template.icon}</div>
                       <div style={{ fontWeight: 600, marginBottom: '4px' }}>{template.name}</div>

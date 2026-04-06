@@ -47,9 +47,13 @@
     background 100ms ease;
 }
 
-.tearoff-shell__btn:hover {
+.tearoff-shell__btn:hover:not(:disabled) {
   color: var(--neon-text);
   background: var(--neon-surface-subtle);
+}
+
+.tearoff-shell__btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .tearoff-shell__content {
@@ -140,7 +144,7 @@
 .tearoff-tab:hover .tearoff-tab__close {
   opacity: 0.6;
 }
-.tearoff-tab__close:hover {
+.tearoff-tab__close:hover:not(:disabled) {
   opacity: 1;
   background: var(--neon-surface-subtle);
 }

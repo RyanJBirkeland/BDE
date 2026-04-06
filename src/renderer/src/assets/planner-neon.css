@@ -62,7 +62,7 @@
     box-shadow 150ms ease;
 }
 
-.planner-header__search-input:focus {
+.planner-header__search-input:focus-visible {
   border-color: var(--neon-cyan);
   box-shadow: var(--neon-cyan-glow);
 }
@@ -156,9 +156,13 @@
     box-shadow 150ms ease;
 }
 
-.planner-epic-list__new-button:hover {
+.planner-epic-list__new-button:hover:not(:disabled) {
   background: var(--neon-cyan-surface);
   box-shadow: var(--neon-cyan-glow);
+}
+
+.planner-epic-list__new-button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Epic Item ── */
@@ -335,9 +339,13 @@
     background 100ms ease;
 }
 
-.epic-detail__header-btn:hover {
+.epic-detail__header-btn:hover:not(:disabled) {
   color: var(--neon-cyan);
   background: var(--neon-surface-dim);
+}
+
+.epic-detail__header-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* ── Progress Section ── */
@@ -478,7 +486,7 @@
     background 100ms ease;
 }
 
-.epic-detail__task-edit-btn:hover {
+.epic-detail__task-edit-btn:hover:not(:disabled) {
   color: var(--neon-cyan);
   background: var(--neon-surface-dim);
 }
@@ -597,4 +605,24 @@
   color: var(--neon-text-dim);
   text-align: center;
   font-style: italic;
+}
+
+/* ── Template card (CreateEpicModal) ── */
+.planner-template-card {
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.planner-template-card:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-surface-hover);
+}
+
+.planner-template-card:active:not(:disabled) {
+  transform: scale(0.97);
 }

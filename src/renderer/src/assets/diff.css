@@ -91,7 +91,7 @@
   cursor: pointer;
 }
 
-.diff-view__pr-link:hover {
+.diff-view__pr-link:hover:not(:disabled) {
   text-decoration: underline;
 }
 
@@ -499,7 +499,7 @@
   cursor: pointer;
 }
 
-.diff-pending-comment__remove:hover {
+.diff-pending-comment__remove:hover:not(:disabled) {
   background: var(--bde-surface);
 }
 
