@@ -2354,7 +2354,7 @@
   background: var(--neon-surface);
   border: 1px solid var(--bde-border);
   border-radius: 4px;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--bde-font-code, monospace);
   font-size: var(--font-2xs, 10px);
   max-height: 120px;
   overflow-y: auto;

@@ -31,7 +31,7 @@
 }
 
 .settings-view__header-title {
-  background: linear-gradient(90deg, var(--color-queued) 0%, var(--color-ai) 100%);
+  background: linear-gradient(90deg, var(--bde-queued) 0%, var(--bde-subagent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -153,7 +153,7 @@
   min-width: 100px;
   padding: 4px 12px;
   font-size: 12px;
-  font-family: var(--font-mono);
+  font-family: var(--bde-font-code);
   color: var(--bde-text);
   background: var(--glass-tint-dark);
   border: 1px solid var(--bde-border);
@@ -165,14 +165,14 @@
 }
 
 .stg-keybindings__recorder:hover {
-  border-color: var(--color-queued);
+  border-color: var(--bde-queued);
   background: var(--bde-surface);
 }
 
 .stg-keybindings__recorder--active {
-  border-color: var(--color-queued);
+  border-color: var(--bde-queued);
   background: var(--bde-surface);
-  color: var(--color-queued);
+  color: var(--bde-queued);
   animation: pulse 1.5s infinite;
 }
 

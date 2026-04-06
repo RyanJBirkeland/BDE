@@ -199,7 +199,7 @@
 }
 
 .pr-row__btn--open:hover {
-  color: var(--color-info);
+  color: var(--bde-info);
   border-color: var(--bde-info);
 }
 
@@ -384,13 +384,13 @@
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 4px;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  background: var(--bde-surface);
+  color: var(--bde-text-muted);
+  border: 1px solid var(--bde-border);
 }
 
 .task-card__dep-chip--hard {
-  background: var(--color-surface-raised);
+  background: var(--bde-surface-high);
 }
 
 /* ── Agent Status Chip ────────────────────────────────── */
@@ -411,20 +411,20 @@
 }
 
 .agent-chip--idle .agent-chip__dot {
-  background: var(--text-secondary);
+  background: var(--bde-text-muted);
 }
 
 .agent-chip--running .agent-chip__dot {
-  background: var(--color-running);
+  background: var(--bde-running);
   animation: bde-pulse 1.5s ease-in-out infinite;
 }
 
 .agent-chip--done .agent-chip__dot {
-  background: var(--color-queued);
+  background: var(--bde-queued);
 }
 
 .agent-chip--error .agent-chip__dot {
-  background: var(--color-error);
+  background: var(--bde-danger);
 }
 
 @keyframes bde-pulse {

@@ -596,7 +596,7 @@
   bottom: 16px;
   right: 16px;
   background: var(--bde-accent);
-  color: var(--bg-void);
+  color: var(--bde-void);
   font-size: var(--bde-size-sm);
   font-weight: 600;
   padding: 6px 14px;

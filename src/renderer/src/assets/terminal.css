@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg-base, var(--bde-bg));
+  background: var(--bde-bg);
 }
 
 /* Header title bar */
@@ -14,8 +14,8 @@
   display: flex;
   align-items: center;
   padding: 0 16px;
-  border-bottom: 1px solid var(--border, var(--bde-border));
-  background: var(--glass-tint-dark, var(--bde-surface));
+  border-bottom: 1px solid var(--bde-border);
+  background: var(--glass-tint-dark);
   flex-shrink: 0;
 }
 
@@ -42,8 +42,8 @@
   display: flex;
   align-items: center;
   height: 36px;
-  background: var(--glass-tint-dark, var(--bde-surface));
-  border-bottom: 1px solid var(--border, var(--bde-border));
+  background: var(--glass-tint-dark);
+  border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
 }
 
@@ -71,7 +71,7 @@
   border-radius: var(--bde-radius-sm, 4px);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-secondary, var(--bde-text-muted));
+  color: var(--bde-text-muted);
   font-size: var(--bde-size-sm, 12px);
   font-family: var(--bde-font-ui);
   cursor: pointer;
@@ -82,14 +82,14 @@
 }
 
 .terminal-tab:hover {
-  background: var(--bg-hover, var(--bde-hover-strong));
-  color: var(--text-primary, var(--bde-text));
+  background: var(--bde-hover-strong);
+  color: var(--bde-text);
 }
 
 .terminal-tab--active {
-  background: var(--glass-tint-mid, var(--bde-selected));
-  border-color: var(--border-light, var(--bde-border));
-  color: var(--text-primary, var(--bde-text));
+  background: var(--glass-tint-mid);
+  border-color: var(--bde-border-hover);
+  color: var(--bde-text);
 }
 
 /* Active tab green dot indicator */
@@ -99,13 +99,13 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent, var(--bde-accent));
+  background: var(--bde-accent);
   flex-shrink: 0;
 }
 
 /* Agent tab purple dot (overrides green) */
 .terminal-tab--agent.terminal-tab--active::before {
-  background: var(--color-ai);
+  background: var(--bde-subagent);
 }
 
 .terminal-tab--agent {
@@ -124,7 +124,7 @@
   border-radius: 2px;
   border: none;
   background: transparent;
-  color: var(--text-ghost, var(--bde-text-dim));
+  color: var(--bde-text-dim);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -143,8 +143,8 @@
 }
 
 .terminal-tab__close:hover {
-  background: var(--bg-hover, var(--bde-hover-strong));
-  color: var(--text-primary, var(--bde-text));
+  background: var(--bde-hover-strong);
+  color: var(--bde-text);
 }
 
 /* Tab bar actions (new tab, shell picker, agent picker) */
@@ -169,15 +169,15 @@
   height: 28px;
   border: none;
   background: transparent;
-  color: var(--text-secondary, var(--bde-text-muted));
+  color: var(--bde-text-muted);
   cursor: pointer;
   transition: all 0.12s ease;
   padding: 0;
 }
 
 .terminal-tab-bar__btn:hover {
-  color: var(--text-primary, var(--bde-text));
-  background: var(--bg-hover, var(--bde-hover-strong));
+  color: var(--bde-text);
+  background: var(--bde-hover-strong);
 }
 
 .terminal-tab-bar__btn--add {
@@ -216,7 +216,7 @@
   padding: 0 8px;
   border: none;
   background: transparent;
-  color: var(--text-secondary, var(--bde-text-muted));
+  color: var(--bde-text-muted);
   font-size: var(--bde-size-xs, 11px);
   font-family: var(--bde-font-ui);
   cursor: pointer;
@@ -225,13 +225,13 @@
 }
 
 .terminal-toolbar__btn:hover {
-  color: var(--text-primary, var(--bde-text));
-  background: var(--bg-hover, var(--bde-hover-strong));
+  color: var(--bde-text);
+  background: var(--bde-hover-strong);
 }
 
 .terminal-toolbar__btn--active {
-  background: var(--bg-hover, var(--bde-hover-strong));
-  color: var(--accent, var(--bde-accent));
+  background: var(--bde-hover-strong);
+  color: var(--bde-accent);
 }
 
 .terminal-toolbar__btn--icon {
@@ -267,7 +267,7 @@
 }
 
 .terminal-content__agent-session-key {
-  color: var(--text-ghost, var(--bde-text-dim));
+  color: var(--bde-text-dim);
   font-size: var(--bde-size-xs, 11px);
 }
 
@@ -278,14 +278,14 @@
 
 .terminal-content__separator {
   width: 4px;
-  background: var(--border, var(--bde-border));
+  background: var(--bde-border);
   cursor: col-resize;
   transition: background 0.12s ease;
   flex-shrink: 0;
 }
 
 .terminal-content__separator:hover {
-  background: var(--accent, var(--bde-accent));
+  background: var(--bde-accent);
 }
 
 /* ── Terminal: Find bar ────────────────────────────────── */

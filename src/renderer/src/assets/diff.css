@@ -64,7 +64,7 @@
 
 .diff-view__chip--active {
   background: var(--bde-accent);
-  color: var(--bg-void);
+  color: var(--bde-void);
   border-color: var(--bde-accent);
 }
 

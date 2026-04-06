@@ -8,29 +8,6 @@
 @import '@fontsource/jetbrains-mono/700.css';
 
 :root {
-  /* ── Legacy Token Aliases ──────────────────────────────── */
-  /* Point old names to canonical --bde-* tokens.             */
-  /* Zero-risk: existing code still works, new code uses --bde-*. */
-  --bg: var(--bde-bg);
-  --bg-secondary: var(--bde-surface);
-  --bg-hover: var(--bde-surface-hover, var(--bde-hover));
-  --border: var(--bde-border);
-  --border-light: var(--bde-border-light, var(--bde-border-hover));
-  --text: var(--bde-text);
-  --text-muted: var(--bde-text-muted);
-  --text-dim: var(--bde-text-dim);
-  --accent: var(--bde-accent);
-  --accent-dim: var(--bde-accent-dim);
-  --color-error: var(--bde-error, var(--bde-danger));
-  --color-warning: var(--bde-warning);
-  --color-ai: var(--bde-subagent);
-  --radius-sm: var(--bde-radius-sm);
-  --radius-md: var(--bde-radius-md);
-  --size-sm: var(--bde-size-sm);
-  --size-xs: var(--bde-size-xs);
-  --font-ui: var(--bde-font-ui);
-  --font-mono: var(--bde-font-code);
-
   /* Colors */
   --bde-bg: #0a0a0a;
   --bde-surface: #141414;
@@ -49,6 +26,10 @@
   --bde-info: #3b82f6;
   --bde-info-dim: rgba(59, 130, 246, 0.15);
   --bde-success: #00d37f;
+  --bde-void: #050507;
+  --bde-border-glow: #3a3a52;
+  --bde-queued: #6c8eef;
+  --bde-running: #00d37f;
 
   /* Interaction states */
   --bde-hover: rgba(255, 255, 255, 0.04);
@@ -141,49 +122,6 @@
   --bde-transition-fast: 100ms ease;
   --bde-transition-base: 150ms ease;
   --bde-transition-slow: 200ms ease;
-
-  /* ── Visual Identity v2 ──────────────────────────────── */
-
-  /* Backgrounds — deeper and more layered */
-  --bg-void: #050507;
-  --bg-base: #0a0a0f;
-  --bg-surface: #111118;
-  --bg-card: #16161f;
-  --bg-hover: #1c1c27;
-  --bg-active: #222230;
-
-  /* Borders — cooler, hint of blue */
-  --border: #1e1e2a;
-  --border-light: #2a2a3a;
-  --border-glow: #3a3a52;
-
-  /* Text */
-  --text-primary: #f5f5f7;
-  --text-secondary: #98989f;
-  --text-muted: #5c5c63;
-  --text-ghost: #3a3a42;
-
-  /* Accent — Feast green, expanded range */
-  --accent: #00d37f;
-  --accent-bright: #33edaa;
-  --accent-dim: #00a863;
-  --accent-subtle: rgba(0, 211, 127, 0.08);
-  --accent-muted: rgba(0, 211, 127, 0.15);
-  --accent-glow: rgba(0, 211, 127, 0.25);
-  --accent-flare: rgba(0, 211, 127, 0.4);
-
-  /* Semantic */
-  --color-running: #00d37f;
-  --color-warning: #ffaa33;
-  --color-error: #ff453a;
-  --color-info: #5b9eff;
-  --color-ai: #a78bfa;
-  --color-queued: #6c8eef;
-
-  /* Model-specific colors */
-  --color-model-haiku: var(--color-info);
-  --color-model-sonnet: var(--accent);
-  --color-model-opus: var(--color-warning);
 
   /* ── Named Gradient Palette ──────────────────────────── */
 
