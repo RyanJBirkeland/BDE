@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { GitMerge, GitPullRequest, RotateCcw, Trash2, Loader2, Rocket } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { GitMerge, GitPullRequest, RotateCcw, Trash2, Loader2, Rocket, RefreshCw } from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
@@ -16,6 +16,19 @@ export function ReviewActions(): React.JSX.Element {
   const { prompt, promptProps } = useTextareaPrompt()
   const [mergeStrategy, setMergeStrategy] = useState<'squash' | 'merge' | 'rebase'>('squash')
   const [actionInFlight, setActionInFlight] = useState<string | null>(null)
+  const [freshness, setFreshness] = useState<{
+    status: 'fresh' | 'stale' | 'conflict' | 'unknown' | 'loading'
+    commitsBehind?: number
+  }>({ status: 'loading' })
+
+  useEffect(() => {
+    if (!task || task.status !== 'review') return
+    setFreshness({ status: 'loading' })
+    window.api.review
+      .checkFreshness({ taskId: task.id })
+      .then(setFreshness)
+      .catch(() => setFreshness({ status: 'unknown' }))
+  }, [task?.id, task?.rebased_at])
 
   if (!task || task.status !== 'review') {
     return (
@@ -135,6 +148,25 @@ export function ReviewActions(): React.JSX.Element {
     }
   }
 
+  const handleRebase = async (): Promise<void> => {
+    setActionInFlight('rebase')
+    try {
+      const result = await window.api.review.rebase({ taskId: task.id })
+      if (result.success) {
+        toast.success('Rebased onto main')
+        setFreshness({ status: 'fresh', commitsBehind: 0 })
+        loadData()
+      } else {
+        toast.error(`Rebase failed: ${result.error || 'conflicts detected'}`)
+        setFreshness({ status: 'conflict' })
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Rebase failed')
+    } finally {
+      setActionInFlight(null)
+    }
+  }
+
   const handleDiscard = async (): Promise<void> => {
     const ok = await confirm({
       title: 'Discard Changes',
@@ -158,6 +190,40 @@ export function ReviewActions(): React.JSX.Element {
 
   return (
     <div className="cr-actions">
+      <div className="cr-actions__rebase-status">
+        <span
+          className={`cr-actions__freshness cr-actions__freshness--${freshness.status}`}
+          title={
+            freshness.status === 'stale'
+              ? `${freshness.commitsBehind} commit(s) behind main`
+              : freshness.status === 'conflict'
+                ? 'Last rebase had conflicts'
+                : freshness.status === 'fresh'
+                  ? 'Up to date with main'
+                  : 'Checking...'
+          }
+        >
+          {freshness.status === 'fresh' && 'Fresh'}
+          {freshness.status === 'stale' && `Stale (${freshness.commitsBehind} behind)`}
+          {freshness.status === 'conflict' && 'Conflict'}
+          {freshness.status === 'unknown' && 'Unknown'}
+          {freshness.status === 'loading' && '...'}
+        </span>
+        <button
+          className="cr-actions__btn cr-actions__btn--ghost"
+          onClick={handleRebase}
+          disabled={!!actionInFlight || freshness.status === 'fresh'}
+          title="Rebase agent branch onto current main"
+        >
+          {actionInFlight === 'rebase' ? (
+            <Loader2 size={14} className="spin" />
+          ) : (
+            <RefreshCw size={14} />
+          )}{' '}
+          Rebase
+        </button>
+      </div>
+      <div className="cr-actions__buttons-row">
       <div className="cr-actions__primary">
         <button
           className="cr-actions__btn cr-actions__btn--ship"
@@ -233,6 +299,7 @@ export function ReviewActions(): React.JSX.Element {
           )}{' '}
           Discard
         </button>
+      </div>
       </div>
       <ConfirmModal {...confirmProps} />
       <TextareaPromptModal {...promptProps} />
