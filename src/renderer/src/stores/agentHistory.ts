@@ -17,6 +17,7 @@ import { AGENT_LIST_FETCH_LIMIT } from '../lib/constants'
 interface AgentHistoryState extends LogPollerState {
   agents: AgentMeta[]
   selectedId: string | null
+  fetched: boolean
   fetchError: string | null
   hasMore: boolean
   displayedCount: number
@@ -41,6 +42,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
   return {
     agents: [],
     selectedId: null,
+    fetched: false,
     logContent: '',
     logNextByte: 0,
     logTrimmedLines: 0,
@@ -54,6 +56,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
         const agents = await window.api.agents.list({ limit: AGENT_LIST_FETCH_LIMIT })
         set({
           agents,
+          fetched: true,
           hasMore: agents.length > INITIAL_DISPLAY_COUNT,
           displayedCount: INITIAL_DISPLAY_COUNT
         })

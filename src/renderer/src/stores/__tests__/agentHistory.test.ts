@@ -22,6 +22,15 @@ describe('agentHistory store', () => {
     vi.useRealTimers()
   })
 
+  it('fetched starts false and becomes true after fetch', async () => {
+    expect(useAgentHistoryStore.getState().fetched).toBe(false)
+
+    vi.mocked(window.api.agents.list).mockResolvedValue([])
+    await useAgentHistoryStore.getState().fetchAgents()
+
+    expect(useAgentHistoryStore.getState().fetched).toBe(true)
+  })
+
   it('fetchAgents calls window.api.agents.list and sets state', async () => {
     const mockAgents = [
       {
