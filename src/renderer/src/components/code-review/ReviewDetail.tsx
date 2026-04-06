@@ -1,6 +1,7 @@
 import { useCodeReviewStore, type ReviewTab } from '../../stores/codeReview'
 import { ChangesTab } from './ChangesTab'
 import { CommitsTab } from './CommitsTab'
+import { TestsTab } from './TestsTab'
 import { ConversationTab } from './ConversationTab'
 import { EmptyState } from '../ui/EmptyState'
 import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
@@ -8,6 +9,7 @@ import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 const TABS: { key: ReviewTab; label: string }[] = [
   { key: 'changes', label: 'Changes' },
   { key: 'commits', label: 'Commits' },
+  { key: 'tests', label: 'Tests' },
   { key: 'conversation', label: 'Conversation' }
 ]
 
@@ -53,6 +55,7 @@ export function ReviewDetail(): React.JSX.Element {
       <div className="cr-detail__content" role="tabpanel">
         {activeTab === 'changes' && <ChangesTab />}
         {activeTab === 'commits' && <CommitsTab />}
+        {activeTab === 'tests' && <TestsTab />}
         {activeTab === 'conversation' && <ConversationTab />}
       </div>
     </div>

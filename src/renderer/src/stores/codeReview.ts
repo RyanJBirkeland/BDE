@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ReviewTab = 'changes' | 'commits' | 'conversation'
+export type ReviewTab = 'changes' | 'commits' | 'tests' | 'conversation'
 
 export interface DiffFile {
   path: string
