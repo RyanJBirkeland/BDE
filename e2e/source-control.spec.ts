@@ -3,7 +3,7 @@
  * Uses a temporary git repo with staged, unstaged, and committed files
  * to verify the git status display, section visibility, and commit input.
  */
-import { test, expect } from './fixtures'
+import { test, expect, waitForAppShell } from './fixtures'
 import { createMockGitRepo } from './helpers/mock-git-repo'
 
 let mockRepo: { path: string; cleanup: () => void }
@@ -16,11 +16,6 @@ test.afterAll(() => {
   mockRepo.cleanup()
 })
 
-/** Wait for the app shell to finish loading. */
-async function waitForAppShell(window: import('@playwright/test').Page): Promise<void> {
-  await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-}
-
 /**
  * Navigate to Source Control and set the active repo to the mock repo path.
  * The gitTree store needs an activeRepo to trigger fetchStatus.
@@ -31,6 +26,9 @@ async function openSourceControlWithRepo(
 ): Promise<void> {
   // Navigate to Source Control view
   await window.keyboard.press('Meta+6')
+
+  // Wait for the git tree view to render
+  await expect(window.locator('.git-tree-view')).toBeVisible({ timeout: 5_000 })
 
   // Set the active repo in the gitTree Zustand store
   await window.evaluate(async (path: string) => {
@@ -51,7 +49,9 @@ test.describe('Source Control view — repo status', () => {
     await openSourceControlWithRepo(window, mockRepo.path)
 
     // The "Source Control" header text should be visible
-    await expect(window.getByText('Source Control')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.git-tree-view__title')).toContainText('Source Control', {
+      timeout: 5_000
+    })
 
     // Staged Changes section should be visible — the mock repo has staged.txt
     // FileTreeSection uses aria-label on the section's collapse button
@@ -65,11 +65,11 @@ test.describe('Source Control view — repo status', () => {
     // The file list groups should contain the expected files
     const stagedGroup = window.getByRole('rowgroup', { name: 'Staged Changes' })
     await expect(stagedGroup).toBeVisible({ timeout: 5_000 })
-    await expect(stagedGroup.getByText('staged.txt')).toBeVisible()
+    await expect(stagedGroup.getByText('staged.txt')).toBeVisible({ timeout: 3_000 })
 
     const changesGroup = window.getByRole('rowgroup', { name: 'Changes' })
     await expect(changesGroup).toBeVisible({ timeout: 5_000 })
-    await expect(changesGroup.getByText('unstaged.txt')).toBeVisible()
+    await expect(changesGroup.getByText('unstaged.txt')).toBeVisible({ timeout: 3_000 })
   })
 
   test('Commit message input is visible and accepts text', async ({ bde }) => {
@@ -88,10 +88,10 @@ test.describe('Source Control view — repo status', () => {
 
     // Commit button should be visible with the staged count
     const commitBtn = window.getByLabel('Commit staged changes')
-    await expect(commitBtn).toBeVisible()
+    await expect(commitBtn).toBeVisible({ timeout: 3_000 })
 
     // Push button should also be visible
     const pushBtn = window.getByLabel('Push to remote')
-    await expect(pushBtn).toBeVisible()
+    await expect(pushBtn).toBeVisible({ timeout: 3_000 })
   })
 })

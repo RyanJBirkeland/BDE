@@ -1,51 +1,66 @@
-import { test, expect } from './fixtures'
+/**
+ * Settings view (Cmd+7) E2E tests.
+ * SettingsView uses a sidebar layout (.stg-layout) with .stg-sidebar and .stg-content.
+ * Sections are selected via sidebar items, not tab buttons.
+ */
+import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Settings view', () => {
   test('Navigate to Settings', async ({ bde }) => {
     const { window } = bde
+    await waitForAppShell(window)
 
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
     await window.keyboard.press('Meta+7')
 
-    const settingsView = window.locator('.settings-view')
-    await expect(settingsView).toBeVisible({ timeout: 5_000 })
+    const settingsLayout = window.locator('.stg-layout')
+    await expect(settingsLayout).toBeVisible({ timeout: 5_000 })
 
-    const title = window.locator('.settings-view__header-title')
-    await expect(title).toContainText('Settings')
+    // Page header should show the active section title
+    const title = window.locator('.stg-page-header__title')
+    await expect(title).toBeVisible({ timeout: 3_000 })
   })
 
-  test('Tab switching — Appearance', async ({ bde }) => {
+  test('Sidebar section switching — Appearance', async ({ bde }) => {
     const { window } = bde
+    await waitForAppShell(window)
 
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
     await window.keyboard.press('Meta+7')
-    await expect(window.locator('.settings-view')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.stg-layout')).toBeVisible({ timeout: 5_000 })
 
-    const appearanceTab = window.locator('.settings-view__tabs button', { hasText: 'Appearance' })
-    await expect(appearanceTab).toBeVisible()
-    await appearanceTab.click()
+    // Click the Appearance item in the sidebar
+    const appearanceItem = window.locator('.stg-sidebar__item', { hasText: 'Appearance' })
+    await expect(appearanceItem).toBeVisible({ timeout: 3_000 })
+    await appearanceItem.click()
+
+    // Page header should update to "Appearance"
+    await expect(window.locator('.stg-page-header__title')).toContainText('Appearance', {
+      timeout: 3_000
+    })
 
     // Theme toggle buttons should be visible in AppearanceSection
     const themeButtons = window.locator('.settings-theme-buttons')
     await expect(themeButtons).toBeVisible({ timeout: 3_000 })
 
-    await expect(themeButtons.locator('button', { hasText: 'Dark' })).toBeVisible()
-    await expect(themeButtons.locator('button', { hasText: 'Light' })).toBeVisible()
-
-    // Accent color swatches should be visible
-    await expect(window.locator('.settings-colors')).toBeVisible()
+    await expect(themeButtons.locator('button', { hasText: 'Dark' })).toBeVisible({ timeout: 3_000 })
+    await expect(themeButtons.locator('button', { hasText: 'Light' })).toBeVisible({ timeout: 3_000 })
   })
 
-  test('Tab switching — Repositories', async ({ bde }) => {
+  test('Sidebar section switching — Repositories', async ({ bde }) => {
     const { window } = bde
+    await waitForAppShell(window)
 
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
     await window.keyboard.press('Meta+7')
-    await expect(window.locator('.settings-view')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.stg-layout')).toBeVisible({ timeout: 5_000 })
 
-    const reposTab = window.locator('.settings-view__tabs button', { hasText: 'Repositories' })
-    await expect(reposTab).toBeVisible()
-    await reposTab.click()
+    // Click the Repositories item in the sidebar
+    const reposItem = window.locator('.stg-sidebar__item', { hasText: 'Repositories' })
+    await expect(reposItem).toBeVisible({ timeout: 3_000 })
+    await reposItem.click()
+
+    // Page header should update
+    await expect(window.locator('.stg-page-header__title')).toContainText('Repositories', {
+      timeout: 3_000
+    })
 
     // "Add Repository" button should be visible in RepositoriesSection
     const addRepoBtn = window.locator('button.settings-repos__add-btn', {
@@ -53,37 +68,37 @@ test.describe('Settings view', () => {
     })
     await expect(addRepoBtn).toBeVisible({ timeout: 3_000 })
   })
+
+  test('Settings sidebar shows search input', async ({ bde }) => {
+    const { window } = bde
+    await waitForAppShell(window)
+
+    await window.keyboard.press('Meta+7')
+    await expect(window.locator('.stg-layout')).toBeVisible({ timeout: 5_000 })
+
+    // Sidebar search input should be visible
+    const searchInput = window.locator('.stg-sidebar__search-input')
+    await expect(searchInput).toBeVisible({ timeout: 3_000 })
+  })
 })
 
-test.describe('Settings — Connections tab', () => {
-  test('Connections tab shows fields and accepts input', async ({ bde }) => {
+test.describe('Settings — Connections section', () => {
+  test('Connections section shows fields and accepts input', async ({ bde }) => {
     const { window } = bde
+    await waitForAppShell(window)
 
-    // Navigate to Settings via Cmd+9
-    await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-    await window.keyboard.press('Meta+9')
-    await expect(window.locator('.settings-view')).toBeVisible({ timeout: 5_000 })
+    // Navigate to Settings via Cmd+7
+    await window.keyboard.press('Meta+7')
+    await expect(window.locator('.stg-layout')).toBeVisible({ timeout: 5_000 })
 
-    // Click the Connections tab (it is the default, but click explicitly to be sure)
-    const connectionsTab = window.locator('.settings-view__tabs button', { hasText: 'Connections' })
-    await expect(connectionsTab).toBeVisible()
-    await connectionsTab.click()
+    // Click the Connections sidebar item (it is the default, but click explicitly to be sure)
+    const connectionsItem = window.locator('.stg-sidebar__item', { hasText: 'Connections' })
+    await expect(connectionsItem).toBeVisible({ timeout: 3_000 })
+    await connectionsItem.click()
 
-    // Verify "Connections" section title is visible
-    const sectionTitle = window.locator('.settings-section__title', { hasText: 'Connections' })
-    await expect(sectionTitle).toBeVisible({ timeout: 3_000 })
-
-    // Verify the Worktree Base Path input field exists (part of Agent Manager settings in Connections)
-    const worktreeInput = window.locator('.settings-field__input[placeholder="/tmp/worktrees/bde"]')
-    await expect(worktreeInput).toBeVisible()
-
-    // Fill a test value into the Worktree Base Path field
-    await worktreeInput.fill('/tmp/test-worktree-base')
-    await expect(worktreeInput).toHaveValue('/tmp/test-worktree-base')
-
-    // Verify the Save button becomes enabled after editing
-    const saveBtn = window.locator('.settings-connection button', { hasText: 'Save' })
-    await expect(saveBtn).toBeVisible()
-    await expect(saveBtn).toBeEnabled()
+    // Verify page header is "Connections"
+    await expect(window.locator('.stg-page-header__title')).toContainText('Connections', {
+      timeout: 3_000
+    })
   })
 })

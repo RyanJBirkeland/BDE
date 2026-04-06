@@ -7,14 +7,14 @@
  * `.pipeline-stage__name--{status}` for stage columns.
  * Test tasks are prefixed with `e2e-sprint-` and cleaned up after each test.
  */
-import { test, expect } from './fixtures'
+import { test, expect, waitForAppShell } from './fixtures'
 import { seedTask, cleanupTestTasks } from './helpers/seed-data'
 
 const TEST_PREFIX = 'e2e-sprint-'
 
 /** Navigate to Sprint view and wait for pipeline to render. */
 async function navigateToSprint(window: import('@playwright/test').Page): Promise<void> {
-  await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+  await waitForAppShell(window)
   await window.keyboard.press('Meta+4')
   await expect(window.locator('[data-testid="sprint-pipeline"]')).toBeVisible({ timeout: 5_000 })
 }

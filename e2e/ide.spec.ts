@@ -3,7 +3,7 @@
  * Uses a temporary git repo with known file state to exercise the file
  * explorer, tab opening, and empty-state flows.
  */
-import { test, expect } from './fixtures'
+import { test, expect, waitForAppShell } from './fixtures'
 import { createMockGitRepo } from './helpers/mock-git-repo'
 
 let mockRepo: { path: string; cleanup: () => void }
@@ -15,11 +15,6 @@ test.beforeAll(() => {
 test.afterAll(() => {
   mockRepo.cleanup()
 })
-
-/** Wait for the app shell to finish loading. */
-async function waitForAppShell(window: import('@playwright/test').Page): Promise<void> {
-  await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
-}
 
 test.describe('IDE view — empty state', () => {
   test('Cmd+3 navigates to IDE and shows empty state with "Open Folder" prompt', async ({
@@ -42,7 +37,7 @@ test.describe('IDE view — empty state', () => {
 
     // "Open Folder" button is visible
     const openBtn = window.locator('.ide-empty-state__open-btn')
-    await expect(openBtn).toBeVisible()
+    await expect(openBtn).toBeVisible({ timeout: 3_000 })
     await expect(openBtn).toContainText('Open Folder')
   })
 })
@@ -83,8 +78,10 @@ test.describe('IDE view — file explorer', () => {
     })
     await expect(
       fileTree.locator('.ide-file-node__name', { hasText: 'unstaged.txt' })
-    ).toBeVisible()
-    await expect(fileTree.locator('.ide-file-node__name', { hasText: 'staged.txt' })).toBeVisible()
+    ).toBeVisible({ timeout: 5_000 })
+    await expect(
+      fileTree.locator('.ide-file-node__name', { hasText: 'staged.txt' })
+    ).toBeVisible({ timeout: 5_000 })
   })
 
   test('Clicking a file in the tree opens an editor tab with the file name', async ({ bde }) => {
@@ -121,7 +118,7 @@ test.describe('IDE view — file explorer', () => {
 
     // The tab should be active (its parent has the --active modifier)
     const activeTab = tabBar.locator('.ide-editor-tab--active')
-    await expect(activeTab).toBeVisible()
+    await expect(activeTab).toBeVisible({ timeout: 3_000 })
     await expect(activeTab.locator('.ide-editor-tab__name')).toContainText('README.md')
   })
 })

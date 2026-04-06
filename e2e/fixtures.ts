@@ -39,3 +39,8 @@ export const test = base.extend<TestFixtures>({
 })
 
 export { expect } from '@playwright/test'
+
+/** Wait for the app shell to finish loading before asserting anything. */
+export async function waitForAppShell(window: Page): Promise<void> {
+  await expect(window.locator('.app-shell')).toBeVisible({ timeout: 15_000 })
+}
