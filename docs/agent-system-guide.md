@@ -18,12 +18,15 @@ src/main/agent-system/
 ├── personality/
 │   ├── types.ts                    # AgentPersonality interface
 │   ├── pipeline-personality.ts     # Pipeline agent personality
-│   └── assistant-personality.ts    # Assistant/adhoc agent personality
+│   ├── adhoc-personality.ts        # Adhoc (user-spawned executor)
+│   ├── assistant-personality.ts    # Interactive assistant
+│   ├── copilot-personality.ts     # Workbench spec-drafting copilot
+│   └── synthesizer-personality.ts # Single-turn spec generator
 ├── memory/
 │   ├── ipc-conventions.ts          # IPC handler patterns, safeHandle() usage
-│   ├── testing-patterns.ts         # Coverage thresholds, test organization
+│   ├── testing-patterns.ts         # Coverage workflow, test organization
 │   ├── architecture-rules.ts       # Process boundaries, Zustand conventions
-│   └── index.ts                    # getAllMemory() aggregator
+│   └── index.ts                    # getAllMemory() aggregator (repo-aware)
 └── skills/
     ├── types.ts                    # BDESkill interface
     ├── system-introspection.ts     # Skill for querying SQLite, reading logs
@@ -74,11 +77,9 @@ Report progress briefly. Don't ask for confirmation on routine operations.`,
 Your work will be reviewed via PR before merging to main.`,
 
   constraints: [
-    'NEVER push to main - only to your assigned branch',
     'NEVER commit secrets or .env files',
-    'Run npm install if node_modules/ is missing',
-    'Run tests after changes: npm test && npm run typecheck',
-    'Use TypeScript strict mode conventions'
+    'Stay within spec scope — do not refactor unrelated code',
+    'If the spec lists ## Files to Change, restrict modifications to those files'
   ],
 
   patterns: [
@@ -94,16 +95,21 @@ Your work will be reviewed via PR before merging to main.`,
 Memory modules document BDE conventions that all agents should internalize:
 
 - **IPC Conventions** — `safeHandle()` wrapper usage, handler registration patterns, testing IPC handlers
-- **Testing Patterns** — Coverage thresholds (72% stmts, 66% branches, 70% functions, 74% lines), test organization
+- **Testing Patterns** — Coverage workflow (`npm run test:coverage` runs the same checks CI enforces; thresholds live in `vitest.config.ts`, never hardcoded in prompts), test organization
 - **Architecture Rules** — Process boundaries (main/preload/renderer), Zustand store patterns, IPC surface minimalism
 
-Call `getAllMemory()` to get concatenated convention text:
+Call `getAllMemory({ repoName })` to get the concatenated convention text for
+the agent's target repo. Pass `repoName: 'bde'` (or omit it) to receive all
+modules; pass any other repo name to receive an empty string:
 
 ```typescript
 import { getAllMemory } from './agent-system/memory'
 
-const conventions = getAllMemory()
-// Returns: "IPC Conventions\n...\n\n---\n\nTesting Patterns\n...\n\n---\n\nArchitecture Rules\n..."
+const bdeConventions = getAllMemory({ repoName: 'bde' })
+// "IPC Conventions\n...\n\n---\n\nTesting Patterns\n...\n\n---\n\nArchitecture Rules\n..."
+
+const nonBdeConventions = getAllMemory({ repoName: 'life-os' })
+// ""
 ```
 
 ## Skills Module
@@ -158,93 +164,65 @@ export interface BuildPromptInput {
   messages?: Array<{ role: string; content: string }> // For copilot chat
   formContext?: { title: string; repo: string; spec: string } // For copilot
   codebaseContext?: string // For synthesizer (file tree, relevant files)
-  useNativeSystem?: boolean // Enable BDE-native personality + memory + skills (default: false)
+  retryCount?: number // 0-based retry count
+  previousNotes?: string // failure notes from previous attempt
+  maxRuntimeMs?: number | null // max runtime in ms — emits time budget warning
+  upstreamContext?: Array<{ title: string; spec: string; partial_diff?: string }>
+  crossRepoContract?: string | null
+  repoName?: string | null // target repo — scopes BDE-specific memory injection
 }
 ```
 
 **Behavior:**
 
-- **When `useNativeSystem` is `true`:**
-  - Injects personality (voice, role, constraints) for the agent type
-  - Injects all memory modules (IPC conventions, testing patterns, architecture rules)
-  - Injects skills ONLY for assistant/adhoc agents (not pipeline)
-  - Adds note: "You have BDE-native skills and conventions loaded..."
+The native agent system is always active. Every prompt produced by
+`buildAgentPrompt()` includes:
 
-- **When `useNativeSystem` is `false` or `undefined`:**
-  - Uses legacy `ROLE_INSTRUCTIONS` per agent type
-  - No personality, memory, or skills injection
-  - Backward compatible with existing behavior
+- The universal preamble (hard rules, npm install, pre-commit verification)
+- The agent-type personality (voice, role frame, constraints, behavioral patterns)
+- Memory modules — but only when targeting the BDE repo (`repoName === 'bde'` or
+  unset for legacy callers). Non-BDE repos skip BDE-specific guidance to avoid
+  misleading agents working elsewhere.
+- Skills — ONLY for assistant/adhoc agents. Pipeline agents execute specs and
+  don't need open-ended exploration guidance.
+- Conditional sections: branch info, playground instructions, retry context,
+  upstream task context, cross-repo contract docs, time budget, idle timeout
+  warning, and a definition-of-done checklist (pipeline only).
 
 **Example usage (pipeline agent):**
 
 ```typescript
 import { buildAgentPrompt } from './agent-manager/prompt-composer'
-import { getSettingJson } from './settings'
-
-const useNativeSystem = getSettingJson<boolean>('agentManager.useNativeSystem') ?? false
 
 const prompt = buildAgentPrompt({
   agentType: 'pipeline',
   taskContent: task.spec || task.prompt || '',
   branch: worktree.branch,
   playgroundEnabled: task.playground_enabled,
-  useNativeSystem
+  maxRuntimeMs: task.max_runtime_ms ?? undefined,
+  repoName: task.repo
 })
 ```
 
 **Example usage (adhoc agent):**
 
 ```typescript
-const useNativeSystem = getSettingJson<boolean>('agentManager.useNativeSystem') ?? false
-
 const prompt = buildAgentPrompt({
   agentType: args.assistant ? 'assistant' : 'adhoc',
-  taskContent: args.task,
-  useNativeSystem
+  taskContent: args.task
 })
 ```
 
-## Migration Guide
-
-### Phase 1: Gradual Rollout (Current)
-
-The `useNativeSystem` flag defaults to **false**. All existing agents use legacy prompts. Users can opt-in via **Settings > Agent Manager > Use native agent system**.
-
-**How to enable:**
-
-1. Open BDE Settings (Cmd+7)
-2. Navigate to Agent Manager tab
-3. Check "Use native agent system"
-4. Click Save
-5. Restart BDE
-
-After restart, all spawned agents (pipeline, adhoc, assistant) will receive BDE-specific personality, memory, and skills.
-
-### Phase 2: Monitor and Iterate
-
-- Collect feedback from agents running with native system enabled
-- Refine personality voice and constraints based on agent behavior
-- Expand memory modules with new conventions as patterns emerge
-- Add new skills for common agent tasks (e.g., PR review, dependency analysis)
-
-### Phase 3: Deprecate Legacy (Future)
-
-Once native system is proven stable:
-
-1. Flip default to `useNativeSystem: true` in migration v19
-2. Remove toggle from Settings UI
-3. Delete `ROLE_INSTRUCTIONS` map from prompt-composer.ts
-4. Remove `useNativeSystem` parameter (always inject native system)
-
 ## Testing
 
-Integration tests live in `src/main/agent-manager/__tests__/integration.test.ts`:
+Integration tests live in `src/main/agent-manager/__tests__/integration.test.ts`
+and `src/main/agent-system/memory/__tests__/memory.test.ts`:
 
 - Verify personality module exports for all agent types
-- Verify memory aggregation returns all conventions
+- Verify memory aggregation returns all conventions for BDE and an empty
+  string for non-BDE repos
 - Verify skills system exports formatted guidance and skill objects
-- Verify prompt composer conditionally injects native system based on flag
-- Verify backward compatibility when flag is false/undefined
+- Verify prompt composer wraps pipeline task content in `## Task Specification`
 
 Run with:
 
@@ -280,23 +258,19 @@ npm run test:main -- src/main/agent-manager/__tests__/integration.test.ts
 
 **Q: Why not just improve CLAUDE.md?**
 
-A: CLAUDE.md is loaded by the SDK for all sessions. The native agent system allows us to inject different contexts per agent type (pipeline vs assistant), control skill availability, and gradually migrate without affecting all agents at once.
+A: CLAUDE.md is loaded by the SDK for all sessions. The native agent system allows us to inject different contexts per agent type (pipeline vs assistant), control skill availability, and target memory modules to specific repos.
 
 **Q: Do pipeline agents get skills?**
 
 A: No. Skills are only for assistant and adhoc agents. Pipeline agents execute specs, so they don't need open-ended exploration guidance.
 
-**Q: Can I force an agent to use native system without changing settings?**
+**Q: Why doesn't a non-BDE agent see BDE Conventions?**
 
-A: Yes. When calling `buildAgentPrompt()` directly, pass `useNativeSystem: true`. The setting is just a convenience for user-spawned agents.
+A: The IPC, testing, and architecture memory modules are tightly coupled to the BDE codebase. Injecting them into agents working on other repos wastes tokens and produces irrelevant guidance. The composer checks `repoName` via `isBdeRepo()` and skips those modules outside BDE.
 
-**Q: What happens if I enable native system mid-sprint?**
+**Q: How do I know an agent is using the native system?**
 
-A: Active pipeline agents keep their original prompt. Only newly spawned agents (after the setting change + app restart) will use native system.
-
-**Q: How do I know if an agent is using native system?**
-
-A: Check the agent's initial prompt in the Agents view console. Native system prompts have `## Voice`, `## Your Role`, `## Constraints`, and `## BDE Conventions` sections. Legacy prompts have `## Your Mission`.
+A: All agent prompts use it — there is no opt-out. Check the agent's initial prompt in the Agents view console. You should see `## Voice`, `## Your Role`, `## Constraints`, and (for BDE tasks) `## BDE Conventions` sections.
 
 ---
 
