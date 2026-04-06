@@ -115,4 +115,44 @@ describe('theme store', () => {
     useThemeStore.getState().toggleTheme()
     expect(useThemeStore.getState().theme).toBe('dark')
   })
+
+  it('setTheme dark removes all theme classes', () => {
+    document.documentElement.classList.add('theme-light', 'theme-warm', 'theme-pro-dark', 'theme-pro-light')
+    useThemeStore.getState().setTheme('dark')
+    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(false)
+  })
+
+  it('responds to storage events for cross-window sync', () => {
+    // Simulate a storage event from another window
+    const event = new StorageEvent('storage', {
+      key: 'bde-theme',
+      newValue: 'warm'
+    })
+    window.dispatchEvent(event)
+    expect(useThemeStore.getState().theme).toBe('warm')
+    expect(document.documentElement.classList.contains('theme-warm')).toBe(true)
+  })
+
+  it('ignores storage events for other keys', () => {
+    useThemeStore.setState({ theme: 'dark' })
+    const event = new StorageEvent('storage', {
+      key: 'other-key',
+      newValue: 'light'
+    })
+    window.dispatchEvent(event)
+    expect(useThemeStore.getState().theme).toBe('dark')
+  })
+
+  it('ignores storage events with null value', () => {
+    useThemeStore.setState({ theme: 'dark' })
+    const event = new StorageEvent('storage', {
+      key: 'bde-theme',
+      newValue: null
+    })
+    window.dispatchEvent(event)
+    expect(useThemeStore.getState().theme).toBe('dark')
+  })
 })

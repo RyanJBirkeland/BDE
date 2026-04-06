@@ -120,6 +120,24 @@ describe('notifications store', () => {
     expect(notifications).toHaveLength(0)
   })
 
+  it('persists notifications to localStorage', () => {
+    const { addNotification } = useNotificationsStore.getState()
+    addNotification({ type: 'agent_completed', title: 'Persist Test', message: 'msg' })
+    const stored = localStorage.getItem('bde:notifications')
+    expect(stored).not.toBeNull()
+    const parsed = JSON.parse(stored!)
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0].title).toBe('Persist Test')
+  })
+
+  it('clearAll also clears localStorage', () => {
+    const { addNotification, clearAll } = useNotificationsStore.getState()
+    addNotification({ type: 'agent_completed', title: 'Test', message: 'msg' })
+    clearAll()
+    const stored = localStorage.getItem('bde:notifications')
+    expect(stored).toBe('[]')
+  })
+
   it('handles different notification types', () => {
     const { addNotification } = useNotificationsStore.getState()
     addNotification({ type: 'agent_completed', title: 'Completed', message: 'Done' })

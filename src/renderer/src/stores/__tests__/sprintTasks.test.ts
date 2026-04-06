@@ -678,6 +678,142 @@ describe('sprintTasks store', () => {
     })
   })
 
+  describe('setPrMergedMap', () => {
+    it('updates prMergedMap via updater function', () => {
+      useSprintTasks.setState({ prMergedMap: {} })
+      useSprintTasks.getState().setPrMergedMap((prev) => ({ ...prev, 'pr-1': true }))
+      expect(useSprintTasks.getState().prMergedMap).toEqual({ 'pr-1': true })
+    })
+  })
+
+  describe('setTasks', () => {
+    it('sets tasks and sanitizes depends_on', () => {
+      const tasks = [makeTask('t1', { depends_on: null }), makeTask('t2')]
+      useSprintTasks.getState().setTasks(tasks)
+      const result = useSprintTasks.getState().tasks
+      expect(result).toHaveLength(2)
+      expect(result[0].id).toBe('t1')
+    })
+  })
+
+  describe('batchDeleteTasks', () => {
+    beforeEach(() => {
+      ;(window.api.sprint as unknown as Record<string, unknown>).batchUpdate = vi
+        .fn()
+        .mockResolvedValue({
+          results: [
+            { id: 't1', ok: true },
+            { id: 't2', ok: true }
+          ]
+        })
+    })
+
+    it('does nothing for empty array', async () => {
+      await useSprintTasks.getState().batchDeleteTasks([])
+      expect(
+        (window.api.sprint as unknown as Record<string, ReturnType<typeof vi.fn>>).batchUpdate
+      ).not.toHaveBeenCalled()
+    })
+
+    it('deletes tasks and removes them from state', async () => {
+      const t1 = makeTask('t1')
+      const t2 = makeTask('t2')
+      const t3 = makeTask('t3')
+      useSprintTasks.setState({ tasks: [t1, t2, t3] })
+
+      await useSprintTasks.getState().batchDeleteTasks(['t1', 't2'])
+
+      expect(toast.success).toHaveBeenCalledWith('Deleted 2 task(s)')
+      expect(useSprintTasks.getState().tasks.map((t) => t.id)).toEqual(['t3'])
+    })
+
+    it('shows error when some deletions fail', async () => {
+      ;(window.api.sprint as unknown as Record<string, unknown>).batchUpdate = vi
+        .fn()
+        .mockResolvedValue({
+          results: [
+            { id: 't1', ok: true },
+            { id: 't2', ok: false, error: 'blocked' }
+          ]
+        })
+
+      const t1 = makeTask('t1')
+      const t2 = makeTask('t2')
+      useSprintTasks.setState({ tasks: [t1, t2] })
+
+      await useSprintTasks.getState().batchDeleteTasks(['t1', 't2'])
+
+      expect(toast.error).toHaveBeenCalledWith('Failed to delete 1 task(s)')
+      // Only t1 should be removed (it was ok)
+      expect(useSprintTasks.getState().tasks.map((t) => t.id)).toEqual(['t2'])
+    })
+
+    it('shows error toast when IPC throws', async () => {
+      ;(window.api.sprint as unknown as Record<string, unknown>).batchUpdate = vi
+        .fn()
+        .mockRejectedValue(new Error('network error'))
+
+      useSprintTasks.setState({ tasks: [makeTask('t1')] })
+
+      await useSprintTasks.getState().batchDeleteTasks(['t1'])
+
+      expect(toast.error).toHaveBeenCalledWith('network error')
+    })
+  })
+
+  describe('batchRequeueTasks', () => {
+    beforeEach(() => {
+      ;(window.api.sprint as unknown as Record<string, unknown>).batchUpdate = vi
+        .fn()
+        .mockResolvedValue({
+          results: [{ id: 't1', ok: true }]
+        })
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue([])
+    })
+
+    it('does nothing for empty array', async () => {
+      await useSprintTasks.getState().batchRequeueTasks([])
+      expect(
+        (window.api.sprint as unknown as Record<string, ReturnType<typeof vi.fn>>).batchUpdate
+      ).not.toHaveBeenCalled()
+    })
+
+    it('requeues tasks and reloads data', async () => {
+      useSprintTasks.setState({ tasks: [makeTask('t1', { status: 'failed' })] })
+
+      await useSprintTasks.getState().batchRequeueTasks(['t1'])
+
+      expect(toast.success).toHaveBeenCalledWith('Requeued 1 task(s)')
+      expect(window.api.sprint.list).toHaveBeenCalled() // loadData called
+    })
+
+    it('shows error when some requeues fail', async () => {
+      ;(window.api.sprint as unknown as Record<string, unknown>).batchUpdate = vi
+        .fn()
+        .mockResolvedValue({
+          results: [{ id: 't1', ok: false, error: 'invalid transition' }]
+        })
+
+      useSprintTasks.setState({ tasks: [makeTask('t1')] })
+
+      await useSprintTasks.getState().batchRequeueTasks(['t1'])
+
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('invalid transition'))
+    })
+
+    it('shows error toast when IPC throws', async () => {
+      ;(window.api.sprint as unknown as Record<string, unknown>).batchUpdate = vi
+        .fn()
+        .mockRejectedValue(new Error('batch failed'))
+
+      useSprintTasks.setState({ tasks: [makeTask('t1')] })
+
+      await useSprintTasks.getState().batchRequeueTasks(['t1'])
+
+      expect(toast.error).toHaveBeenCalledWith('batch failed')
+    })
+  })
+
   describe('mergeSseUpdate — pr_status auto-set', () => {
     it('does not set pr_status when task is not done', () => {
       const task = makeTask('t1', { status: 'active', pr_url: null, pr_status: null })

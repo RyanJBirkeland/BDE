@@ -320,6 +320,140 @@ describe('taskGroups store', () => {
     })
   })
 
+  describe('reorderTasks', () => {
+    it('reorders tasks optimistically', async () => {
+      const t1 = makeTask('t1')
+      const t2 = makeTask('t2')
+      const t3 = makeTask('t3')
+      useTaskGroups.setState({ groupTasks: [t1, t2, t3] })
+
+      const reorderMock = vi.fn().mockResolvedValue(undefined)
+      ;(window.api.groups as unknown as Record<string, unknown>).reorderTasks = reorderMock
+
+      await useTaskGroups.getState().reorderTasks('g1', ['t3', 't1', 't2'])
+
+      const state = useTaskGroups.getState()
+      expect(state.groupTasks.map((t) => t.id)).toEqual(['t3', 't1', 't2'])
+      expect(reorderMock).toHaveBeenCalledWith('g1', ['t3', 't1', 't2'])
+    })
+
+    it('reverts on error by reloading', async () => {
+      const t1 = makeTask('t1')
+      const t2 = makeTask('t2')
+      useTaskGroups.setState({ groupTasks: [t1, t2] })
+
+      const reorderMock = vi.fn().mockRejectedValue(new Error('reorder failed'))
+      ;(window.api.groups as unknown as Record<string, unknown>).reorderTasks = reorderMock
+
+      const loadGroupTasksSpy = vi
+        .spyOn(useTaskGroups.getState(), 'loadGroupTasks')
+        .mockResolvedValue(undefined)
+
+      await useTaskGroups.getState().reorderTasks('g1', ['t2', 't1'])
+
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('reorder failed'))
+      expect(loadGroupTasksSpy).toHaveBeenCalledWith('g1')
+    })
+
+    it('filters out unknown task ids during reorder', async () => {
+      const t1 = makeTask('t1')
+      useTaskGroups.setState({ groupTasks: [t1] })
+
+      const reorderMock = vi.fn().mockResolvedValue(undefined)
+      ;(window.api.groups as unknown as Record<string, unknown>).reorderTasks = reorderMock
+
+      await useTaskGroups.getState().reorderTasks('g1', ['t1', 'unknown-id'])
+
+      // Only t1 should be in the result (unknown-id filtered out)
+      expect(useTaskGroups.getState().groupTasks).toHaveLength(1)
+      expect(useTaskGroups.getState().groupTasks[0].id).toBe('t1')
+    })
+  })
+
+  describe('createGroupFromTemplate', () => {
+    it('creates group and tasks from template', async () => {
+      const newGroup = makeGroup('g-new', { name: 'Template Group' })
+      ;(window.api.groups.create as ReturnType<typeof vi.fn>).mockResolvedValue(newGroup)
+
+      const createdTask = makeTask('t-new')
+      ;(window.api.sprint.create as ReturnType<typeof vi.fn>).mockResolvedValue(createdTask)
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockResolvedValue(createdTask)
+      ;(window.api.groups.addTask as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+
+      const template = {
+        name: 'Template Group',
+        icon: '🚀',
+        accent_color: '#ff0000',
+        goal: 'Test goal',
+        tasks: [
+          { title: 'Task 1', spec: '## Spec\nDo stuff', spec_type: 'spec', priority: 1 },
+          { title: 'Task 2', spec: '## Spec\nMore stuff', spec_type: 'prompt' }
+        ]
+      }
+
+      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'bde')
+
+      expect(result).toEqual(newGroup)
+      expect(window.api.groups.create).toHaveBeenCalledWith({
+        name: 'Template Group',
+        icon: '🚀',
+        accent_color: '#ff0000',
+        goal: 'Test goal'
+      })
+      expect(window.api.sprint.create).toHaveBeenCalledTimes(2)
+      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('2 tasks'))
+    })
+
+    it('returns null and shows error on group create failure', async () => {
+      ;(window.api.groups.create as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('create failed')
+      )
+
+      const template = {
+        name: 'Test',
+        icon: '📁',
+        goal: 'g',
+        tasks: []
+      }
+
+      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'bde')
+
+      expect(result).toBeNull()
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('create failed'))
+    })
+
+    it('continues creating tasks when one task creation fails', async () => {
+      const newGroup = makeGroup('g-new')
+      ;(window.api.groups.create as ReturnType<typeof vi.fn>).mockResolvedValue(newGroup)
+
+      const createdTask = makeTask('t-ok')
+      ;(window.api.sprint.create as ReturnType<typeof vi.fn>)
+        .mockRejectedValueOnce(new Error('task 1 failed'))
+        .mockResolvedValueOnce(createdTask)
+      ;(window.api.sprint.update as ReturnType<typeof vi.fn>).mockResolvedValue(createdTask)
+      ;(window.api.groups.addTask as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const template = {
+        name: 'Test',
+        icon: '📁',
+        goal: 'g',
+        tasks: [
+          { title: 'Fail', spec: 's', spec_type: 'spec' },
+          { title: 'OK', spec: 's', spec_type: 'spec' }
+        ]
+      }
+
+      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'bde')
+
+      expect(result).toEqual(newGroup)
+      // Second task should still be created
+      expect(window.api.sprint.create).toHaveBeenCalledTimes(2)
+      consoleSpy.mockRestore()
+    })
+  })
+
   describe('queueAllTasks', () => {
     it('queues all tasks and shows success message', async () => {
       ;(window.api.groups.queueAll as ReturnType<typeof vi.fn>).mockResolvedValue(3)

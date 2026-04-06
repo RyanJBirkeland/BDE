@@ -158,6 +158,100 @@ describe('agentHistory store', () => {
     expect(useAgentHistoryStore.getState().agents).toEqual([])
   })
 
+  it('fetchAgents sets fetchError on failure', async () => {
+    vi.mocked(window.api.agents.list).mockRejectedValue(new Error('network'))
+
+    await useAgentHistoryStore.getState().fetchAgents()
+
+    expect(useAgentHistoryStore.getState().fetchError).toBe('Failed to load agent list')
+    expect(useAgentHistoryStore.getState().loading).toBe(false)
+  })
+
+  it('clearSelection stops polling and resets state', () => {
+    useAgentHistoryStore.setState({
+      selectedId: 'agent-1',
+      logContent: 'some log',
+      logNextByte: 100,
+      logTrimmedLines: 5
+    })
+
+    useAgentHistoryStore.getState().clearSelection()
+
+    const state = useAgentHistoryStore.getState()
+    expect(state.selectedId).toBeNull()
+    expect(state.logContent).toBe('')
+    expect(state.logNextByte).toBe(0)
+    expect(state.logTrimmedLines).toBe(0)
+  })
+
+  it('loadMore increments displayedCount', () => {
+    // Simulate 50 agents to test loadMore
+    const agents = Array.from({ length: 50 }, (_, i) => ({
+      id: `a${i}`,
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'BDE',
+      repoPath: '/tmp',
+      task: `task ${i}`,
+      startedAt: '2026-01-01',
+      finishedAt: null,
+      exitCode: null,
+      status: 'done' as const,
+      logPath: '/tmp/log',
+      source: 'bde' as const,
+      costUsd: null,
+      tokensIn: null,
+      tokensOut: null,
+      sprintTaskId: null
+    }))
+
+    useAgentHistoryStore.setState({
+      agents,
+      displayedCount: 30,
+      hasMore: true
+    })
+
+    useAgentHistoryStore.getState().loadMore()
+
+    const state = useAgentHistoryStore.getState()
+    expect(state.displayedCount).toBe(50)
+    expect(state.hasMore).toBe(false)
+  })
+
+  it('loadMore caps at agents length', () => {
+    const agents = Array.from({ length: 35 }, (_, i) => ({
+      id: `a${i}`,
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'BDE',
+      repoPath: '/tmp',
+      task: `task ${i}`,
+      startedAt: '2026-01-01',
+      finishedAt: null,
+      exitCode: null,
+      status: 'done' as const,
+      logPath: '/tmp/log',
+      source: 'bde' as const,
+      costUsd: null,
+      tokensIn: null,
+      tokensOut: null,
+      sprintTaskId: null
+    }))
+
+    useAgentHistoryStore.setState({
+      agents,
+      displayedCount: 30,
+      hasMore: true
+    })
+
+    useAgentHistoryStore.getState().loadMore()
+
+    expect(useAgentHistoryStore.getState().displayedCount).toBe(35)
+    expect(useAgentHistoryStore.getState().hasMore).toBe(false)
+  })
+
   it('importExternal calls api and refetches agents', async () => {
     const imported = {
       id: 'ext-1',

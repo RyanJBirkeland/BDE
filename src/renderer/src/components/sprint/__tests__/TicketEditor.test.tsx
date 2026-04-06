@@ -65,4 +65,20 @@ describe('TicketEditor', () => {
     render(<TicketEditor initialTickets={[]} />)
     expect(screen.getByText('+ Add Ticket')).toBeInTheDocument()
   })
+
+  it('can remove a ticket', () => {
+    const tickets = makeTickets([{ title: 'A' }, { title: 'B' }])
+    render(<TicketEditor initialTickets={tickets} />)
+    const removeButtons = screen.getAllByTitle('Remove ticket')
+    fireEvent.click(removeButtons[0])
+    expect(screen.queryByDisplayValue('A')).not.toBeInTheDocument()
+    expect(screen.getByDisplayValue('B')).toBeInTheDocument()
+  })
+
+  it('dismisses the editor and shows raw JSON', () => {
+    const tickets = makeTickets([{ title: 'Test' }])
+    render(<TicketEditor initialTickets={tickets} />)
+    fireEvent.click(screen.getByText('Dismiss'))
+    expect(screen.queryByText('Create All (1)')).not.toBeInTheDocument()
+  })
 })

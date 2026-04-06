@@ -60,4 +60,69 @@ describe('codeReviewStore', () => {
     useCodeReviewStore.getState().selectTask(null)
     expect(useCodeReviewStore.getState().selectedTaskId).toBeNull()
   })
+
+  // --- Batch selection ---
+
+  it('toggleBatchId adds an id', () => {
+    useCodeReviewStore.getState().toggleBatchId('task-1')
+    expect(useCodeReviewStore.getState().selectedBatchIds.has('task-1')).toBe(true)
+  })
+
+  it('toggleBatchId removes an already-selected id', () => {
+    useCodeReviewStore.getState().toggleBatchId('task-1')
+    useCodeReviewStore.getState().toggleBatchId('task-1')
+    expect(useCodeReviewStore.getState().selectedBatchIds.has('task-1')).toBe(false)
+  })
+
+  it('toggleBatchId handles multiple ids', () => {
+    useCodeReviewStore.getState().toggleBatchId('task-1')
+    useCodeReviewStore.getState().toggleBatchId('task-2')
+    const batch = useCodeReviewStore.getState().selectedBatchIds
+    expect(batch.size).toBe(2)
+    expect(batch.has('task-1')).toBe(true)
+    expect(batch.has('task-2')).toBe(true)
+  })
+
+  it('selectAllBatch sets all provided ids', () => {
+    useCodeReviewStore.getState().selectAllBatch(['a', 'b', 'c'])
+    const batch = useCodeReviewStore.getState().selectedBatchIds
+    expect(batch.size).toBe(3)
+    expect(batch.has('a')).toBe(true)
+    expect(batch.has('b')).toBe(true)
+    expect(batch.has('c')).toBe(true)
+  })
+
+  it('clearBatch empties the selection', () => {
+    useCodeReviewStore.getState().selectAllBatch(['a', 'b'])
+    useCodeReviewStore.getState().clearBatch()
+    expect(useCodeReviewStore.getState().selectedBatchIds.size).toBe(0)
+  })
+
+  // --- Review summary ---
+
+  it('setReviewSummary stores the summary', () => {
+    useCodeReviewStore.getState().setReviewSummary('Looks good!')
+    expect(useCodeReviewStore.getState().reviewSummary).toBe('Looks good!')
+  })
+
+  it('setReviewSummary can clear summary with null', () => {
+    useCodeReviewStore.getState().setReviewSummary('text')
+    useCodeReviewStore.getState().setReviewSummary(null)
+    expect(useCodeReviewStore.getState().reviewSummary).toBeNull()
+  })
+
+  it('setSummaryLoading updates loading flag', () => {
+    useCodeReviewStore.getState().setSummaryLoading(true)
+    expect(useCodeReviewStore.getState().summaryLoading).toBe(true)
+    useCodeReviewStore.getState().setSummaryLoading(false)
+    expect(useCodeReviewStore.getState().summaryLoading).toBe(false)
+  })
+
+  it('selectTask clears reviewSummary and summaryLoading', () => {
+    useCodeReviewStore.getState().setReviewSummary('text')
+    useCodeReviewStore.getState().setSummaryLoading(true)
+    useCodeReviewStore.getState().selectTask('task-new')
+    expect(useCodeReviewStore.getState().reviewSummary).toBeNull()
+    expect(useCodeReviewStore.getState().summaryLoading).toBe(false)
+  })
 })
