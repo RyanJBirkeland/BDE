@@ -2,6 +2,7 @@ import { GitMerge, HeartPulse, LayoutGrid, List, Network, Download } from 'lucid
 import { useSprintUI } from '../../stores/sprintUI'
 import type { SprintTask } from '../../../../shared/types'
 import { useState, useEffect } from 'react'
+import { toast } from '../../stores/toasts'
 
 interface StatBadge {
   label: string
@@ -45,6 +46,7 @@ export function PipelineHeader({
       }
     } catch (err) {
       console.error('Export failed:', err)
+      toast.error('Export failed')
     } finally {
       setExporting(false)
     }

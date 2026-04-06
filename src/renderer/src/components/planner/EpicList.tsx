@@ -136,7 +136,14 @@ export function EpicList({
             </span>
           </div>
 
-          <div className="planner-epic-item__progress-track">
+          <div
+            className="planner-epic-item__progress-track"
+            role="progressbar"
+            aria-valuenow={progressPercent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${group.name} progress: ${progressPercent}%`}
+          >
             <div
               className="planner-epic-item__progress-fill"
               style={{

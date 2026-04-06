@@ -100,19 +100,19 @@ export function EpicDetail({
     return tokens.neon.textDim
   }, [progressPercent])
 
-  // Helper to get status dot color
+  // Helper to get status dot color — delegates to shared getDotColor
   const getStatusColor = (status: SprintTask['status']): string => {
     switch (status) {
       case 'done':
-        return tokens.neon.cyan
+        return tokens.neon.pink
       case 'active':
-        return tokens.neon.blue
-      case 'queued':
-        return tokens.neon.orange
-      case 'blocked':
-        return tokens.neon.red
-      case 'review':
         return tokens.neon.purple
+      case 'queued':
+        return tokens.neon.cyan
+      case 'blocked':
+        return tokens.neon.orange
+      case 'review':
+        return tokens.neon.blue
       case 'failed':
       case 'error':
         return tokens.neon.red

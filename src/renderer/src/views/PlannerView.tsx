@@ -142,6 +142,7 @@ export default function PlannerView(): React.JSX.Element {
           <input
             type="text"
             placeholder="Search epics..."
+            aria-label="Search epics"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="planner-header__search-input"

@@ -14,7 +14,6 @@ import { useSprintEvents } from '../../stores/sprintEvents'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
 import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
-import { useHealthCheckPolling } from '../../hooks/useHealthCheck'
 import { useVisibleStuckTasks } from '../../stores/healthCheck'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 import { parseTaskQuery, applyPredicates } from '../../lib/task-query'
@@ -100,8 +99,7 @@ export function SprintPipeline(): React.JSX.Element {
     confirmProps
   } = useSprintTaskActions()
 
-  // SP-7: Extract health check results for HealthCheckDrawer
-  useHealthCheckPolling()
+  // SP-7: Health check polling runs in PollingProvider; just read results here
   const { visibleStuckTasks, dismissTask } = useVisibleStuckTasks()
 
   // --- Focus management ---

@@ -7,6 +7,7 @@ import { useDashboardDataStore } from '../stores/dashboardData'
 import { useSprintUI, type StatusFilter } from '../stores/sprintUI'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics'
+import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
 import { StatusBar, NeonCard, ParticleField } from '../components/neon'
 import { neonVar } from '../components/neon/types'
@@ -80,12 +81,9 @@ export default function DashboardView(): React.JSX.Element {
       }))
     )
 
-  // Timestamp counter to re-evaluate freshness every 10s
+  // Timestamp counter to re-evaluate freshness every 10s (pauses when tab hidden)
   const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 10_000)
-    return () => clearInterval(interval)
-  }, [])
+  useVisibilityAwareInterval(() => setNow(Date.now()), 10_000)
 
   // Register dashboard commands in command palette
   const handleRefreshDashboard = useCallback(() => {
