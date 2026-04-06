@@ -8,6 +8,7 @@ import { NeonBadge, type NeonAccent } from '../neon'
 import { useTerminalStore } from '../../stores/terminal'
 import { toast } from '../../stores/toasts'
 import { formatDuration, formatElapsed } from '../../lib/format'
+import { derivePhaseLabel } from '../../lib/agent-phase'
 
 interface ConsoleHeaderProps {
   agent: AgentMeta
@@ -112,6 +113,16 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
       {/* Meta info */}
       <div className="console-header__meta">
         <span>{duration}</span>
+        {isRunning && (
+          <span
+            className="console-header__phase"
+            data-testid="console-header-phase"
+            aria-label={`Agent phase: ${derivePhaseLabel(events)}`}
+            style={{ opacity: 0.8 }}
+          >
+            {derivePhaseLabel(events)}
+          </span>
+        )}
         {costUsd != null && <span>${costUsd.toFixed(4)}</span>}
         {estimatedCost != null && (
           <span
