@@ -32,16 +32,16 @@
 
 .toast--success {
   background: var(--bde-accent);
-  color: var(--bg-void);
+  color: var(--bde-void);
 }
 
 .toast--error {
-  background: var(--color-error);
-  color: var(--text-primary);
+  background: var(--bde-danger);
+  color: var(--bde-text);
 }
 
 .toast--info {
-  background: var(--bg-card);
+  background: var(--bde-surface);
   color: var(--bde-text);
   border: 1px solid var(--bde-border);
 }

@@ -8,29 +8,6 @@
 @import '@fontsource/jetbrains-mono/700.css';
 
 :root {
-  /* ── Legacy Token Aliases ──────────────────────────────── */
-  /* Point old names to canonical --bde-* tokens.             */
-  /* Zero-risk: existing code still works, new code uses --bde-*. */
-  --bg: var(--bde-bg);
-  --bg-secondary: var(--bde-surface);
-  --bg-hover: var(--bde-surface-hover, var(--bde-hover));
-  --border: var(--bde-border);
-  --border-light: var(--bde-border-light, var(--bde-border-hover));
-  --text: var(--bde-text);
-  --text-muted: var(--bde-text-muted);
-  --text-dim: var(--bde-text-dim);
-  --accent: var(--bde-accent);
-  --accent-dim: var(--bde-accent-dim);
-  --color-error: var(--bde-error, var(--bde-danger));
-  --color-warning: var(--bde-warning);
-  --color-ai: var(--bde-subagent);
-  --radius-sm: var(--bde-radius-sm);
-  --radius-md: var(--bde-radius-md);
-  --size-sm: var(--bde-size-sm);
-  --size-xs: var(--bde-size-xs);
-  --font-ui: var(--bde-font-ui);
-  --font-mono: var(--bde-font-code);
-
   /* Colors */
   --bde-bg: #0a0a0a;
   --bde-surface: #141414;
@@ -49,6 +26,10 @@
   --bde-info: #3b82f6;
   --bde-info-dim: rgba(59, 130, 246, 0.15);
   --bde-success: #00d37f;
+  --bde-void: #050507;
+  --bde-border-glow: #3a3a52;
+  --bde-queued: #6c8eef;
+  --bde-running: #00d37f;
 
   /* Interaction states */
   --bde-hover: rgba(255, 255, 255, 0.04);
@@ -141,49 +122,6 @@
   --bde-transition-fast: 100ms ease;
   --bde-transition-base: 150ms ease;
   --bde-transition-slow: 200ms ease;
-
-  /* ── Visual Identity v2 ──────────────────────────────── */
-
-  /* Backgrounds — deeper and more layered */
-  --bg-void: #050507;
-  --bg-base: #0a0a0f;
-  --bg-surface: #111118;
-  --bg-card: #16161f;
-  --bg-hover: #1c1c27;
-  --bg-active: #222230;
-
-  /* Borders — cooler, hint of blue */
-  --border: #1e1e2a;
-  --border-light: #2a2a3a;
-  --border-glow: #3a3a52;
-
-  /* Text */
-  --text-primary: #f5f5f7;
-  --text-secondary: #98989f;
-  --text-muted: #5c5c63;
-  --text-ghost: #3a3a42;
-
-  /* Accent — Feast green, expanded range */
-  --accent: #00d37f;
-  --accent-bright: #33edaa;
-  --accent-dim: #00a863;
-  --accent-subtle: rgba(0, 211, 127, 0.08);
-  --accent-muted: rgba(0, 211, 127, 0.15);
-  --accent-glow: rgba(0, 211, 127, 0.25);
-  --accent-flare: rgba(0, 211, 127, 0.4);
-
-  /* Semantic */
-  --color-running: #00d37f;
-  --color-warning: #ffaa33;
-  --color-error: #ff453a;
-  --color-info: #5b9eff;
-  --color-ai: #a78bfa;
-  --color-queued: #6c8eef;
-
-  /* Model-specific colors */
-  --color-model-haiku: var(--color-info);
-  --color-model-sonnet: var(--accent);
-  --color-model-opus: var(--color-warning);
 
   /* ── Named Gradient Palette ──────────────────────────── */
 
@@ -327,6 +265,10 @@ html.theme-light {
   --bde-text-dim: #767676;
   --bde-danger: #dc2626;
   --bde-danger-dim: rgba(220, 38, 38, 0.1);
+  --bde-void: #f8f8fa;
+  --bde-border-glow: #b0b0ba;
+  --bde-queued: #4f6cd6;
+  --bde-running: #00a863;
 
   /* ── Interaction states ─────────────────────────────── */
   --bde-hover: rgba(0, 0, 0, 0.04);
@@ -386,42 +328,6 @@ html.theme-light {
   --bde-glass-bg-hover: rgba(0, 0, 0, 0.08);
   --bde-glass-bg-active: rgba(0, 0, 0, 0.06);
 
-  /* ── Visual Identity v2 — Backgrounds ───────────────── */
-  --bg-void: #f8f8fa;
-  --bg-base: #f5f5f7;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #ebebef;
-  --bg-active: #e0e0e6;
-
-  /* ── v2 — Borders ───────────────────────────────────── */
-  --border: #dcdce0;
-  --border-light: #c8c8ce;
-  --border-glow: #b0b0ba;
-
-  /* ── v2 — Text ─────────────────────────────────────── */
-  --text-primary: #111111;
-  --text-secondary: #555555;
-  --text-muted: #888888;
-  --text-ghost: #bbbbbb;
-
-  /* ── v2 — Accent ────────────────────────────────────── */
-  --accent: #00a863;
-  --accent-bright: #00c574;
-  --accent-dim: #007a48;
-  --accent-subtle: rgba(0, 168, 99, 0.06);
-  --accent-muted: rgba(0, 168, 99, 0.12);
-  --accent-glow: rgba(0, 168, 99, 0.2);
-  --accent-flare: rgba(0, 168, 99, 0.35);
-
-  /* ── v2 — Semantic ──────────────────────────────────── */
-  --color-running: #00a863;
-  --color-warning: #d97706;
-  --color-error: #dc2626;
-  --color-info: #2563eb;
-  --color-ai: #7c3aed;
-  --color-queued: #4f6cd6;
-
   /* ── v2 — Gradients ─────────────────────────────────── */
   --gradient-aurora: linear-gradient(135deg, #00a863 0%, #0891b2 100%);
   --gradient-electric: linear-gradient(135deg, #4f6cd6 0%, #7c3aed 50%, #a855f6 100%);
@@ -473,6 +379,10 @@ html.theme-warm {
   --bde-text-dim: #9b9489;
   --bde-danger: #c44a3d;
   --bde-danger-dim: rgba(196, 74, 61, 0.15);
+  --bde-void: #e0dad1;
+  --bde-border-glow: #d4915c;
+  --bde-queued: #d4915c;
+  --bde-running: #d4915c;
 
   /* ── Interaction states ─────────────────────────────── */
   --bde-hover: rgba(62, 56, 50, 0.04);
@@ -532,42 +442,6 @@ html.theme-warm {
   --bde-glass-bg-hover: rgba(62, 56, 50, 0.08);
   --bde-glass-bg-active: rgba(62, 56, 50, 0.06);
 
-  /* ── Visual Identity v2 — Backgrounds ───────────────── */
-  --bg-void: #e0dad1;
-  --bg-base: #eae4db;
-  --bg-surface: #f5f1ea;
-  --bg-card: #fffbf5;
-  --bg-hover: rgba(62, 56, 50, 0.04);
-  --bg-active: rgba(62, 56, 50, 0.06);
-
-  /* ── v2 — Borders ───────────────────────────────────── */
-  --border: #d4cbbf;
-  --border-light: #bfb5a9;
-  --border-glow: #d4915c;
-
-  /* ── v2 — Text ──────────────────────────────────────── */
-  --text-primary: #3e3832;
-  --text-secondary: #6b6459;
-  --text-muted: #9b9489;
-  --text-ghost: rgba(62, 56, 50, 0.4);
-
-  /* ── v2 — Accent ────────────────────────────────────── */
-  --accent: #d4915c;
-  --accent-bright: #e4a16c;
-  --accent-dim: #a87448;
-  --accent-subtle: rgba(212, 145, 92, 0.08);
-  --accent-muted: rgba(212, 145, 92, 0.15);
-  --accent-glow: rgba(212, 145, 92, 0.25);
-  --accent-flare: rgba(212, 145, 92, 0.4);
-
-  /* ── v2 — Semantic ──────────────────────────────────── */
-  --color-running: #d4915c;
-  --color-warning: #d89b4a;
-  --color-error: #c44a3d;
-  --color-info: #d4915c;
-  --color-ai: #d4915c;
-  --color-queued: #d4915c;
-
   /* ── v2 — Gradients ─────────────────────────────────── */
   --gradient-aurora: linear-gradient(135deg, #d4915c 0%, #c88050 100%);
   --gradient-electric: linear-gradient(135deg, #d4915c 0%, #c88050 50%, #b87044 100%);
@@ -613,6 +487,10 @@ html.theme-pro-dark {
   --bde-text-dim: #6f737a;
   --bde-danger: #db5c5c;
   --bde-danger-dim: rgba(219, 92, 92, 0.15);
+  --bde-void: #1e1f22;
+  --bde-border-glow: #4a88c7;
+  --bde-queued: #4a88c7;
+  --bde-running: #5fad65;
 
   /* ── Interaction states ─────────────────────────────── */
   --bde-hover: rgba(255, 255, 255, 0.04);
@@ -671,42 +549,6 @@ html.theme-pro-dark {
   --bde-glass-bg: rgba(255, 255, 255, 0.04);
   --bde-glass-bg-hover: rgba(255, 255, 255, 0.08);
   --bde-glass-bg-active: rgba(255, 255, 255, 0.06);
-
-  /* ── Visual Identity v2 — Backgrounds ───────────────── */
-  --bg-void: #1e1f22;
-  --bg-base: #1e1f22;
-  --bg-surface: #2b2d30;
-  --bg-card: #393b40;
-  --bg-hover: #2f3134;
-  --bg-active: #343639;
-
-  /* ── v2 — Borders ───────────────────────────────────── */
-  --border: #393b40;
-  --border-light: #4e5157;
-  --border-glow: #4a88c7;
-
-  /* ── v2 — Text ──────────────────────────────────────── */
-  --text-primary: #bcbec4;
-  --text-secondary: #8c8f94;
-  --text-muted: #6f737a;
-  --text-ghost: rgba(188, 190, 196, 0.4);
-
-  /* ── v2 — Accent ────────────────────────────────────── */
-  --accent: #4a88c7;
-  --accent-bright: #5a9ad8;
-  --accent-dim: #3a6d9e;
-  --accent-subtle: rgba(74, 136, 199, 0.08);
-  --accent-muted: rgba(74, 136, 199, 0.15);
-  --accent-glow: rgba(74, 136, 199, 0.25);
-  --accent-flare: rgba(74, 136, 199, 0.4);
-
-  /* ── v2 — Semantic ──────────────────────────────────── */
-  --color-running: #5fad65;
-  --color-warning: #e6a235;
-  --color-error: #db5c5c;
-  --color-info: #4a88c7;
-  --color-ai: #8a7cb5;
-  --color-queued: #4a88c7;
 
   /* ── v2 — Gradients ─────────────────────────────────── */
   --gradient-aurora: none;
@@ -768,6 +610,10 @@ html.theme-pro-light {
   --bde-text-dim: #818388;
   --bde-danger: #cc4848;
   --bde-danger-dim: rgba(204, 72, 72, 0.1);
+  --bde-void: #ebedf0;
+  --bde-border-glow: #9ca0a8;
+  --bde-queued: #2675bf;
+  --bde-running: #2675bf;
 
   /* ── Interaction states ─────────────────────────────── */
   --bde-hover: rgba(0, 0, 0, 0.04);
@@ -826,42 +672,6 @@ html.theme-pro-light {
   --bde-glass-bg: rgba(0, 0, 0, 0.04);
   --bde-glass-bg-hover: rgba(0, 0, 0, 0.08);
   --bde-glass-bg-active: rgba(0, 0, 0, 0.06);
-
-  /* ── Visual Identity v2 — Backgrounds ───────────────── */
-  --bg-void: #ebedf0;
-  --bg-base: #f7f8fa;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #eef0f3;
-  --bg-active: #e4e6ea;
-
-  /* ── v2 — Borders ───────────────────────────────────── */
-  --border: #d4d5d8;
-  --border-light: #b8bac0;
-  --border-glow: #9ca0a8;
-
-  /* ── v2 — Text ──────────────────────────────────────── */
-  --text-primary: #1e1f22;
-  --text-secondary: #5e6166;
-  --text-muted: #818388;
-  --text-ghost: #b8bac0;
-
-  /* ── v2 — Accent ────────────────────────────────────── */
-  --accent: #2675bf;
-  --accent-bright: #3085cf;
-  --accent-dim: #1a5c99;
-  --accent-subtle: rgba(38, 117, 191, 0.06);
-  --accent-muted: rgba(38, 117, 191, 0.12);
-  --accent-glow: rgba(38, 117, 191, 0.2);
-  --accent-flare: rgba(38, 117, 191, 0.35);
-
-  /* ── v2 — Semantic ──────────────────────────────────── */
-  --color-running: #2675bf;
-  --color-warning: #c97a1a;
-  --color-error: #cc4848;
-  --color-info: #2675bf;
-  --color-ai: #6b5fa0;
-  --color-queued: #2675bf;
 
   /* ── v2 — Gradients ─────────────────────────────────── */
   --gradient-aurora: none;

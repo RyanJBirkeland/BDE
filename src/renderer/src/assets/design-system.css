@@ -620,14 +620,14 @@
 .glass {
   position: relative;
   background: var(--glass-tint-dark);
-  border: 1px solid var(--border);
+  border: 1px solid var(--bde-border);
 }
 
 .glass-modal {
   background: var(--glass-tint-light);
   backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
   -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
-  border: 1px solid var(--border-glow);
+  border: 1px solid var(--bde-border-glow);
   box-shadow:
     0 24px 80px rgba(0, 0, 0, 0.6),
     0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
@@ -663,12 +663,12 @@
 .elevation-0 {
   background:
     radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 211, 127, 0.015) 0%, transparent 100%),
-    var(--bg-void);
+    var(--bde-void);
 }
 
 .elevation-3 {
   background: var(--glass-tint-light);
-  border: 1px solid var(--border-glow);
+  border: 1px solid var(--bde-border-glow);
   border-radius: 16px;
   box-shadow:
     0 24px 80px rgba(0, 0, 0, 0.55),
@@ -725,7 +725,7 @@
 .gradient-border {
   position: relative;
   border-radius: 10px;
-  background: var(--bg-card);
+  background: var(--bde-surface);
 }
 
 .gradient-border::before {
@@ -746,7 +746,7 @@
 /* ── 4.4 Logotype ────────────────────────────────────── */
 
 .logotype {
-  font-family: var(--font-mono);
+  font-family: var(--bde-font-code);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
@@ -758,11 +758,11 @@
 
 .logotype-glow {
   position: absolute;
-  font-family: var(--font-mono);
+  font-family: var(--bde-font-code);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
-  color: var(--accent);
+  color: var(--bde-accent);
   filter: blur(8px);
   opacity: 0.4;
   pointer-events: none;
@@ -774,7 +774,7 @@
 .btn-primary {
   background: var(--gradient-aurora);
   color: var(--bde-btn-primary-text);
-  font-family: var(--font-ui);
+  font-family: var(--bde-font-ui);
   font-size: 13px;
   font-weight: 600;
   padding: 8px 20px;
@@ -801,21 +801,21 @@
 
 .btn-glass {
   background: var(--bde-glass-bg);
-  color: var(--text-secondary);
-  font-family: var(--font-ui);
+  color: var(--bde-text-muted);
+  font-family: var(--bde-font-ui);
   font-size: 13px;
   font-weight: 500;
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--bde-border);
   cursor: pointer;
   transition: all 0.15s ease-out;
 }
 
 .btn-glass:hover {
   background: var(--bde-glass-bg-hover);
-  border-color: var(--border-light);
-  color: var(--text-primary);
+  border-color: var(--bde-border-hover);
+  color: var(--bde-text);
 }
 
 .btn-glass:active {

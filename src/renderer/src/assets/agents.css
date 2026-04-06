@@ -7,7 +7,7 @@
   justify-content: space-between;
   padding: 0 12px;
   height: 36px;
-  border-bottom: 1px solid var(--border, var(--bde-border));
+  border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
 }
 
@@ -35,18 +35,18 @@
   width: 24px;
   height: 24px;
   background: none;
-  border: 1px solid var(--border, var(--bde-border));
-  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
   cursor: pointer;
-  color: var(--text-secondary, var(--bde-text-muted));
+  color: var(--bde-text-muted);
   transition:
     color 0.12s ease,
     border-color 0.12s ease;
 }
 
 .agents-view__spawn-btn:hover {
-  color: var(--text-primary, var(--bde-text));
-  border-color: var(--text-secondary, var(--bde-text-muted));
+  color: var(--bde-text);
+  border-color: var(--bde-text-muted);
 }
 
 /* ── Playground Modal ──────────────────────────────────── */

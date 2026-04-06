@@ -115,8 +115,8 @@ export function PipelineHeader({
               top: '100%',
               right: 0,
               marginTop: '4px',
-              backgroundColor: 'var(--bg-primary)',
-              border: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bde-surface)',
+              border: '1px solid var(--bde-border)',
               borderRadius: '4px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
               zIndex: 1000,
@@ -138,7 +138,7 @@ export function PipelineHeader({
                 opacity: exporting ? 0.5 : 1
               }}
               onMouseEnter={(e) => {
-                if (!exporting) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+                if (!exporting) e.currentTarget.style.backgroundColor = 'var(--bde-hover)'
               }}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
@@ -159,7 +159,7 @@ export function PipelineHeader({
                 opacity: exporting ? 0.5 : 1
               }}
               onMouseEnter={(e) => {
-                if (!exporting) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'
+                if (!exporting) e.currentTarget.style.backgroundColor = 'var(--bde-hover)'
               }}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >

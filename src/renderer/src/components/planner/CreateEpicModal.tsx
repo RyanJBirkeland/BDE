@@ -191,20 +191,20 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
                       onClick={() => handleTemplateSelect(template)}
                       style={{
                         padding: '12px',
-                        border: '1px solid var(--color-border)',
+                        border: '1px solid var(--bde-border)',
                         borderRadius: '6px',
-                        background: 'var(--color-surface)',
+                        background: 'var(--bde-surface)',
                         cursor: 'pointer',
                         textAlign: 'left',
                         transition: 'all 0.15s ease'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--color-primary)'
-                        e.currentTarget.style.background = 'var(--color-surface-hover)'
+                        e.currentTarget.style.borderColor = 'var(--bde-accent)'
+                        e.currentTarget.style.background = 'var(--bde-surface-high)'
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--color-border)'
-                        e.currentTarget.style.background = 'var(--color-surface)'
+                        e.currentTarget.style.borderColor = 'var(--bde-border)'
+                        e.currentTarget.style.background = 'var(--bde-surface)'
                       }}
                     >
                       <div style={{ fontSize: '24px', marginBottom: '6px' }}>{template.icon}</div>
@@ -225,8 +225,8 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
               <div
                 style={{
                   padding: '12px',
-                  background: 'var(--color-surface)',
-                  border: '1px solid var(--color-primary)',
+                  background: 'var(--bde-surface)',
+                  border: '1px solid var(--bde-accent)',
                   borderRadius: '6px',
                   marginBottom: '16px',
                   display: 'flex',
@@ -262,7 +262,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
 
             {/* Name field */}
             <label className="prompt-modal__label" htmlFor="epic-name">
-              Name <span style={{ color: 'var(--color-error)' }}>*</span>
+              Name <span style={{ color: 'var(--bde-danger)' }}>*</span>
             </label>
             <input
               ref={nameRef}
