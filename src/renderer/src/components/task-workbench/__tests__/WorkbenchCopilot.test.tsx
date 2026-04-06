@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 import { WorkbenchCopilot } from '../WorkbenchCopilot'
-import { isResearchQuery, extractSearchTerms } from '../copilot-utils'
+import { isResearchQuery, extractSearchTerms, formatToolUse } from '../copilot-utils'
 import { useTaskWorkbenchStore, type CopilotMessage } from '../../../stores/taskWorkbench'
 
 describe('WorkbenchCopilot', () => {
@@ -340,6 +340,45 @@ describe('research integration', () => {
     expect(extractSearchTerms('grep for safeHandle')).toBe('safeHandle')
   })
 
+  describe('formatToolUse', () => {
+    it('formats Read tool calls with file_path', () => {
+      // Short paths (≤3 segments) are shown verbatim
+      expect(formatToolUse('Read', { file_path: 'src/main/git.ts' })).toBe(
+        'Reading src/main/git.ts'
+      )
+    })
+
+    it('shortens deep paths to last 3 segments', () => {
+      expect(
+        formatToolUse('Read', { file_path: '/Users/ryan/projects/BDE/src/main/handlers/git.ts' })
+      ).toBe('Reading …/main/handlers/git.ts')
+    })
+
+    it('formats Grep tool calls with pattern', () => {
+      expect(formatToolUse('Grep', { pattern: 'safeHandle' })).toBe('Searching for "safeHandle"')
+    })
+
+    it('formats Grep with pattern and path', () => {
+      expect(formatToolUse('Grep', { pattern: 'IPC', path: 'src/main' })).toBe(
+        'Searching for "IPC" in src/main'
+      )
+    })
+
+    it('formats Glob tool calls', () => {
+      expect(formatToolUse('Glob', { pattern: '**/*.ts' })).toBe('Globbing **/*.ts')
+    })
+
+    it('falls back to generic message for unknown tools', () => {
+      expect(formatToolUse('Unknown', {})).toBe('Using Unknown')
+    })
+
+    it('handles missing input fields gracefully', () => {
+      expect(formatToolUse('Read', {})).toBe('Reading file')
+      expect(formatToolUse('Grep', {})).toBe('Searching for "?"')
+      expect(formatToolUse('Glob', {})).toBe('Globbing ?')
+    })
+  })
+
   describe('component integration', () => {
     const mockOnClose = vi.fn()
     let chunkCb: ((data: any) => void) | null = null
@@ -372,24 +411,63 @@ describe('research integration', () => {
       }
     })
 
-    it('calls researchRepo and adds system message for research queries', async () => {
+    it('does NOT call researchRepo for research queries (copilot uses native tools now)', async () => {
       render(<WorkbenchCopilot onClose={mockOnClose} />)
       const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
       fireEvent.change(textarea, { target: { value: 'where is the auth module?' } })
       fireEvent.click(screen.getByText('Send'))
 
       await waitFor(() => {
-        expect((window.api as any).workbench.researchRepo).toHaveBeenCalledWith({
-          query: 'auth module?',
-          repo: 'bde'
-        })
+        expect((window.api as any).workbench.chatStream).toHaveBeenCalled()
+      })
+
+      // The keyword-matched research hack has been removed — the copilot now
+      // has read-only Read/Grep/Glob tool access and does its own research.
+      expect((window.api as any).workbench.researchRepo).not.toHaveBeenCalled()
+      expect(screen.queryByText(/Codebase research results/)).not.toBeInTheDocument()
+
+      // Complete the stream so test can finish cleanly
+      chunkCb?.({
+        streamId: 'test-stream-1',
+        chunk: '',
+        done: true,
+        fullText: 'Here is what I found.'
+      })
+    })
+
+    it('renders tool-use events as compact system bubbles', async () => {
+      render(<WorkbenchCopilot onClose={mockOnClose} />)
+      const textarea = screen.getByPlaceholderText(/Ask about the codebase/)
+      fireEvent.change(textarea, { target: { value: 'inspect the auth module' } })
+      fireEvent.click(screen.getByText('Send'))
+
+      await waitFor(() => {
+        expect((window.api as any).workbench.chatStream).toHaveBeenCalled()
+      })
+
+      // Simulate the main process forwarding a tool_use event
+      chunkCb?.({
+        streamId: 'test-stream-1',
+        chunk: '',
+        done: false,
+        toolUse: { name: 'Grep', input: { pattern: 'safeHandle' } }
       })
 
       await waitFor(() => {
-        expect(screen.getByText(/Codebase research results/)).toBeInTheDocument()
+        expect(screen.getByText(/Searching for "safeHandle"/)).toBeInTheDocument()
       })
 
-      // Complete the stream so test can finish cleanly
+      chunkCb?.({
+        streamId: 'test-stream-1',
+        chunk: '',
+        done: false,
+        toolUse: { name: 'Read', input: { file_path: '/repo/src/main/handlers/git-handlers.ts' } }
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/Reading.*git-handlers\.ts/)).toBeInTheDocument()
+      })
+
       chunkCb?.({
         streamId: 'test-stream-1',
         chunk: '',

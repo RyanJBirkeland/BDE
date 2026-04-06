@@ -294,6 +294,7 @@ declare global {
             done: boolean
             fullText?: string
             error?: string
+            toolUse?: { name: string; input: Record<string, unknown> }
           }) => void
         ) => () => void
         generateSpec: (

@@ -350,6 +350,7 @@ const api = {
         done: boolean
         fullText?: string
         error?: string
+        toolUse?: { name: string; input: Record<string, unknown> }
       }) => void
     ): (() => void) => {
       const listener = (
@@ -360,6 +361,7 @@ const api = {
           done: boolean
           fullText?: string
           error?: string
+          toolUse?: { name: string; input: Record<string, unknown> }
         }
       ): void => cb(data)
       ipcRenderer.on('workbench:chatChunk', listener)
@@ -485,8 +487,7 @@ const api = {
     checkAutoReview: (payload: { taskId: string }) =>
       typedInvoke('review:checkAutoReview', payload),
     rebase: (payload: { taskId: string }) => typedInvoke('review:rebase', payload),
-    checkFreshness: (payload: { taskId: string }) =>
-      typedInvoke('review:checkFreshness', payload)
+    checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload)
   },
 
   // Spec Synthesizer
