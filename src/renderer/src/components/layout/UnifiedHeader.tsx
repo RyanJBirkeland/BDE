@@ -1,10 +1,13 @@
+import { useMemo } from 'react'
 import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../stores/theme'
 import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
 import { useCostDataStore } from '../../stores/costData'
+import { useSprintTasks } from '../../stores/sprintTasks'
 import { NeonBadge } from '../neon/NeonBadge'
 import { NotificationBell } from './NotificationBell'
 import { HeaderTab } from './HeaderTab'
+import { HealthStrip } from './HealthStrip'
 import { useTearoffDrag } from '../../hooks/useTearoffDrag'
 import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 
@@ -13,6 +16,27 @@ export function UnifiedHeader(): React.JSX.Element {
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
   const totalCost = useCostDataStore((s) => s.totalCost)
   const setView = usePanelLayoutStore((s) => s.setView)
+
+  // Health strip counts — single-pass reduction so we don't traverse the
+  // task list three times on every render (matters at thousands of tasks).
+  const tasks = useSprintTasks((s) => s.tasks)
+  const { activeCount, queuedCount, failedCount } = useMemo(() => {
+    let active = 0
+    let queued = 0
+    let failed = 0
+    for (const t of tasks) {
+      if (t.status === 'active') active++
+      else if (t.status === 'queued') queued++
+      else if (t.status === 'failed' || t.status === 'error') failed++
+    }
+    return { activeCount: active, queuedCount: queued, failedCount: failed }
+  }, [tasks])
+  const hasError = failedCount > 0
+  const managerState: 'running' | 'error' | 'idle' = hasError
+    ? 'error'
+    : activeCount > 0
+      ? 'running'
+      : 'idle'
 
   const root = usePanelLayoutStore((s) => s.root)
   const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
@@ -104,6 +128,13 @@ export function UnifiedHeader(): React.JSX.Element {
 
       {/* Action buttons */}
       <div className="unified-header__actions">
+        <HealthStrip
+          managerState={managerState}
+          activeCount={activeCount}
+          queuedCount={queuedCount}
+          failedCount={failedCount}
+          onClick={() => setView('sprint')}
+        />
         <NeonBadge accent="cyan" label={`$${totalCost.toFixed(2)}`} />
         <NotificationBell />
         <button

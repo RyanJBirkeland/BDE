@@ -94,7 +94,8 @@ export const UPDATE_ALLOWLIST = new Set([
   'group_id',
   'duration_ms',
   'cross_repo_contract',
-  'revision_feedback'
+  'revision_feedback',
+  'review_diff_snapshot'
 ])
 
 export interface QueueStats {
@@ -168,7 +169,7 @@ export function getTask(id: string, db?: Database.Database): SprintTask | null {
          spec_type, created_at, updated_at, worktree_path, session_id,
          next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
          partial_diff, assigned_reviewer, tags, sprint_id, group_id,
-         revision_feedback
+         revision_feedback, review_diff_snapshot
          FROM sprint_tasks WHERE id = ?`
       )
       .get(id) as Record<string, unknown> | undefined
@@ -191,7 +192,7 @@ export function listTasks(status?: string): SprintTask[] {
       spec_type, created_at, updated_at, worktree_path, session_id,
       next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
       partial_diff, assigned_reviewer, tags, sprint_id, group_id,
-      revision_feedback`
+      revision_feedback, review_diff_snapshot`
     if (status) {
       const rows = db
         .prepare(
@@ -329,7 +330,7 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
              template_name, playground_enabled, needs_review, max_runtime_ms,
              spec_type, created_at, updated_at, worktree_path, session_id,
              next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-             partial_diff, tags, group_id, sprint_id`
+             partial_diff, tags, group_id, sprint_id, review_diff_snapshot`
           )
           .get(...values) as Record<string, unknown> | undefined
 
@@ -412,7 +413,7 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number): Sp
                template_name, playground_enabled, needs_review, max_runtime_ms,
                spec_type, created_at, updated_at, worktree_path, session_id,
                next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-               partial_diff, tags, group_id, sprint_id`
+               partial_diff, tags, group_id, sprint_id, review_diff_snapshot`
             )
             .get(claimedBy, now, id) as Record<string, unknown> | undefined
 
@@ -450,7 +451,7 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number): Sp
              template_name, playground_enabled, needs_review, max_runtime_ms,
              spec_type, created_at, updated_at, worktree_path, session_id,
              next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-             partial_diff, tags, group_id, sprint_id`
+             partial_diff, tags, group_id, sprint_id, review_diff_snapshot`
           )
           .get(claimedBy, now, id) as Record<string, unknown> | undefined
 
@@ -495,7 +496,7 @@ export function releaseTask(id: string, claimedBy: string): SprintTask | null {
            template_name, playground_enabled, needs_review, max_runtime_ms,
            spec_type, created_at, updated_at, worktree_path, session_id,
            next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-           partial_diff, tags, group_id, sprint_id`
+           partial_diff, tags, group_id, sprint_id, review_diff_snapshot`
         )
         .get(id, claimedBy) as Record<string, unknown> | undefined
 
@@ -583,7 +584,7 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
            template_name, playground_enabled, needs_review, max_runtime_ms,
            spec_type, created_at, updated_at, worktree_path, session_id,
            next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-           partial_diff, tags, group_id, sprint_id
+           partial_diff, tags, group_id, sprint_id, review_diff_snapshot
            FROM sprint_tasks WHERE pr_number = ? AND status = ?`
         )
         .all(prNumber, 'active') as Array<Record<string, unknown>>
@@ -623,7 +624,7 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
            template_name, playground_enabled, needs_review, max_runtime_ms,
            spec_type, created_at, updated_at, worktree_path, session_id,
            next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-           partial_diff, tags, group_id, sprint_id
+           partial_diff, tags, group_id, sprint_id, review_diff_snapshot
            FROM sprint_tasks WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'`
         )
         .all(prNumber) as Array<Record<string, unknown>>
@@ -667,7 +668,7 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
            template_name, playground_enabled, needs_review, max_runtime_ms,
            spec_type, created_at, updated_at, worktree_path, session_id,
            next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-           partial_diff, tags, group_id, sprint_id
+           partial_diff, tags, group_id, sprint_id, review_diff_snapshot
            FROM sprint_tasks WHERE pr_number = ? AND status = ?`
         )
         .all(prNumber, 'active') as Array<Record<string, unknown>>
@@ -707,7 +708,7 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
            template_name, playground_enabled, needs_review, max_runtime_ms,
            spec_type, created_at, updated_at, worktree_path, session_id,
            next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-           partial_diff, tags, group_id, sprint_id
+           partial_diff, tags, group_id, sprint_id, review_diff_snapshot
            FROM sprint_tasks WHERE pr_number = ? AND pr_status = 'open'`
         )
         .all(prNumber) as Array<Record<string, unknown>>
@@ -748,7 +749,7 @@ export function listTasksWithOpenPrs(): SprintTask[] {
          template_name, playground_enabled, needs_review, max_runtime_ms,
          spec_type, created_at, updated_at, worktree_path, session_id,
          next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-         partial_diff, assigned_reviewer, tags, sprint_id, group_id
+         partial_diff, assigned_reviewer, tags, sprint_id, group_id, review_diff_snapshot
          FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'`
       )
       .all() as Record<string, unknown>[]
@@ -800,7 +801,7 @@ export function getQueuedTasks(limit: number): SprintTask[] {
          template_name, playground_enabled, needs_review, max_runtime_ms,
          spec_type, created_at, updated_at, worktree_path, session_id,
          next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-         partial_diff, assigned_reviewer, tags, sprint_id, group_id
+         partial_diff, assigned_reviewer, tags, sprint_id, group_id, review_diff_snapshot
          FROM sprint_tasks
          WHERE status = 'queued' AND claimed_by IS NULL AND (next_eligible_at IS NULL OR next_eligible_at <= strftime('%Y-%m-%dT%H:%M:%fZ','now'))
          ORDER BY priority ASC, created_at ASC
@@ -826,7 +827,7 @@ export function getOrphanedTasks(claimedBy: string): SprintTask[] {
          template_name, playground_enabled, needs_review, max_runtime_ms,
          spec_type, created_at, updated_at, worktree_path, session_id,
          next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-         partial_diff, assigned_reviewer, tags, sprint_id, group_id
+         partial_diff, assigned_reviewer, tags, sprint_id, group_id, review_diff_snapshot
          FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?`
       )
       .all(claimedBy) as Record<string, unknown>[]
@@ -862,7 +863,7 @@ export function getHealthCheckTasks(): SprintTask[] {
          template_name, playground_enabled, needs_review, max_runtime_ms,
          spec_type, created_at, updated_at, worktree_path, session_id,
          next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-         partial_diff, assigned_reviewer, tags, sprint_id, group_id
+         partial_diff, assigned_reviewer, tags, sprint_id, group_id, review_diff_snapshot
          FROM sprint_tasks WHERE status = 'active' AND started_at < ?`
       )
       .all(oneHourAgo) as Record<string, unknown>[]
@@ -1072,4 +1073,39 @@ export function getDailySuccessRate(days: number = 14): DailySuccessRate[] {
     logger.warn(`[sprint-queries] getDailySuccessRate failed: ${msg}`)
     return []
   }
+}
+
+/**
+ * How many days to retain `review_diff_snapshot` blobs for tasks in terminal
+ * states. Snapshots are only useful while a task is in `review` — once
+ * merged/discarded their value drops sharply, but at ~500KB per row they can
+ * cause significant database bloat over time. Tunable here.
+ */
+export const DIFF_SNAPSHOT_RETENTION_DAYS = 30
+
+/**
+ * Null out `review_diff_snapshot` for tasks in terminal states older than
+ * `retentionDays` days. Returns the number of rows updated.
+ *
+ * Snapshots on tasks still in `review` (or any non-terminal state) are
+ * preserved unconditionally — the cleanup only targets done / cancelled /
+ * failed / error tasks where the worktree is long gone and the snapshot is
+ * unlikely to be useful.
+ */
+export function pruneOldDiffSnapshots(
+  retentionDays: number = DIFF_SNAPSHOT_RETENTION_DAYS,
+  db?: Database.Database
+): number {
+  const conn = db ?? getDb()
+  const cutoff = new Date(Date.now() - retentionDays * 86400000).toISOString()
+  const result = conn
+    .prepare(
+      `UPDATE sprint_tasks
+       SET review_diff_snapshot = NULL
+       WHERE review_diff_snapshot IS NOT NULL
+         AND status IN ('done', 'cancelled', 'failed', 'error')
+         AND updated_at < ?`
+    )
+    .run(cutoff)
+  return result.changes
 }

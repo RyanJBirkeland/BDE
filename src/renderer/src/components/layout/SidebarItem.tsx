@@ -10,6 +10,7 @@ interface SidebarItemProps {
   isActive: boolean
   isOpen: boolean
   badge?: number
+  badgeAccent?: 'red' | 'blue' | 'orange'
   onActivate: (view: View) => void
   onContextAction: (action: string, view: View) => void
 }
@@ -36,6 +37,7 @@ export function SidebarItem({
   isActive,
   isOpen,
   badge,
+  badgeAccent = 'orange',
   onActivate,
   onContextAction
 }: SidebarItemProps): React.JSX.Element {
@@ -146,7 +148,9 @@ export function SidebarItem({
           }}
           onContextMenu={handleContextMenu}
           onKeyDown={handleKeyDown}
-          aria-label={label}
+          aria-label={
+            badge != null && badge > 0 ? `${label} — ${badge} items needing attention` : label
+          }
           aria-haspopup="menu"
           aria-expanded={contextMenu !== null}
           aria-current={isActive ? 'page' : undefined}
@@ -154,7 +158,12 @@ export function SidebarItem({
           {icon}
           {isOpen && !isActive && <span className="sidebar-item__open-dot" />}
           {badge != null && badge > 0 && (
-            <span className="sidebar-item__badge" data-testid={`sidebar-badge-${view}`}>
+            <span
+              className={`sidebar-item__badge sidebar-item__badge--${badgeAccent}`}
+              data-testid={`sidebar-badge-${view}`}
+              data-accent={badgeAccent}
+              aria-hidden="true"
+            >
               {badge > 9 ? '9+' : badge}
             </span>
           )}

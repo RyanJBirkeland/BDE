@@ -4,6 +4,7 @@ import { useSprintTasks } from '../../stores/sprintTasks'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { EmptyState } from '../ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
+import { timeAgo } from '../../lib/format'
 
 export function ReviewQueue(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -88,6 +89,18 @@ export function ReviewQueue(): React.JSX.Element {
             />
             <span className="cr-queue__item-title">{task.title}</span>
             <span className="cr-queue__item-repo">{task.repo}</span>
+            <span
+              className="cr-queue__item-age"
+              data-testid={`cr-queue-age-${task.id}`}
+              title={new Date(task.completed_at ?? task.updated_at).toLocaleString()}
+              style={{
+                marginLeft: 'auto',
+                fontSize: 10,
+                color: 'var(--bde-text-dim, rgba(255,255,255,0.5))'
+              }}
+            >
+              {timeAgo(task.completed_at ?? task.updated_at)}
+            </span>
           </motion.button>
         ))}
         {reviewTasks.length === 0 && (

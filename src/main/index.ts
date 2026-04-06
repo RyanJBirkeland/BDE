@@ -39,7 +39,13 @@ import { getOAuthToken } from './env-utils'
 import { getSetting, getSettingJson } from './settings'
 import { createTaskTerminalService } from './services/task-terminal-service'
 import { createStatusServer } from './services/status-server'
-import { getTask, updateTask, getTasksWithDependencies } from './data/sprint-queries'
+import {
+  getTask,
+  updateTask,
+  getTasksWithDependencies,
+  pruneOldDiffSnapshots,
+  DIFF_SNAPSHOT_RETENTION_DAYS
+} from './data/sprint-queries'
 import { setOnStatusTerminal } from './handlers/sprint-local'
 import { setGitHandlersOnStatusTerminal } from './handlers/git-handlers'
 import { setOnTaskTerminal } from './sprint-pr-poller'
@@ -166,6 +172,18 @@ app.whenReady().then(() => {
     createLogger('startup').warn(`Failed to prune task changes: ${err}`)
   }
 
+  // Null out review_diff_snapshot blobs on long-completed tasks (non-fatal).
+  // Snapshots can be ~500KB each — without this, the DB grows unbounded.
+  try {
+    const pruned = pruneOldDiffSnapshots(DIFF_SNAPSHOT_RETENTION_DAYS)
+    if (pruned > 0)
+      createLogger('startup').info(
+        `Cleared review_diff_snapshot on ${pruned} terminal tasks older than ${DIFF_SNAPSHOT_RETENTION_DAYS} days`
+      )
+  } catch (err) {
+    createLogger('startup').warn(`Failed to prune diff snapshots: ${err}`)
+  }
+
   // Clean up test task artifacts (agents running tests create "Test task" records)
   try {
     const db = getDb()
@@ -189,6 +207,21 @@ app.whenReady().then(() => {
     24 * 60 * 60 * 1000
   )
   app.on('will-quit', () => clearInterval(pruneTakeChangesInterval))
+
+  // Prune review_diff_snapshot periodically (every 24 hours)
+  const pruneDiffSnapshotsInterval = setInterval(
+    () => {
+      try {
+        const cleared = pruneOldDiffSnapshots(DIFF_SNAPSHOT_RETENTION_DAYS)
+        if (cleared > 0)
+          createLogger('startup').info(`Cleared review_diff_snapshot on ${cleared} terminal tasks`)
+      } catch {
+        /* non-fatal */
+      }
+    },
+    24 * 60 * 60 * 1000
+  )
+  app.on('will-quit', () => clearInterval(pruneDiffSnapshotsInterval))
 
   // --- Agent Manager initialization ---
   const amConfig = {

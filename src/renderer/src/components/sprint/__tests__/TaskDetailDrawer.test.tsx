@@ -647,4 +647,49 @@ describe('TaskDetailDrawer - Review Changes button', () => {
     fireEvent.click(screen.getByRole('button', { name: /review changes/i }))
     expect(onReviewChanges).toHaveBeenCalledWith(task)
   })
+
+  describe('failure details', () => {
+    it('renders notes prominently when task status is failed', () => {
+      const task: SprintTask = {
+        ...baseTask,
+        status: 'failed',
+        notes: 'npm test exited with code 1\nAssertionError in src/foo.test.ts'
+      }
+      render(<TaskDetailDrawer {...makeProps({ task })} />)
+      const block = screen.getByTestId('task-drawer-failure')
+      expect(block).toBeInTheDocument()
+      expect(screen.getByTestId('task-drawer-failure-notes').textContent).toContain(
+        'npm test exited with code 1'
+      )
+      expect(screen.getByText('Failure Details')).toBeInTheDocument()
+    })
+
+    it('renders notes block when task status is error', () => {
+      const task: SprintTask = {
+        ...baseTask,
+        status: 'error',
+        notes: 'Worktree evicted before completion',
+        failure_reason: 'unknown'
+      }
+      render(<TaskDetailDrawer {...makeProps({ task })} />)
+      expect(screen.getByTestId('task-drawer-failure')).toBeInTheDocument()
+      expect(screen.getByTestId('task-drawer-failure-reason').textContent).toContain('unknown')
+    })
+
+    it('does not render failure block for non-failed statuses', () => {
+      for (const status of ['queued', 'active', 'done', 'review'] as const) {
+        const { unmount } = render(
+          <TaskDetailDrawer {...makeProps({ task: { ...baseTask, status, notes: 'x' } })} />
+        )
+        expect(screen.queryByTestId('task-drawer-failure')).toBeNull()
+        unmount()
+      }
+    })
+
+    it('shows placeholder text when failed task has no notes', () => {
+      const task: SprintTask = { ...baseTask, status: 'failed', notes: null }
+      render(<TaskDetailDrawer {...makeProps({ task })} />)
+      expect(screen.getByText(/No diagnostic notes captured/)).toBeInTheDocument()
+    })
+  })
 })

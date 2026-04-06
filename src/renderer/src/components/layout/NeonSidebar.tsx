@@ -45,6 +45,9 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
   )
 
   const reviewCount = useSprintTasks((s) => s.tasks.filter((t) => t.status === 'review').length)
+  const failedCount = useSprintTasks(
+    (s) => s.tasks.filter((t) => t.status === 'failed' || t.status === 'error').length
+  )
 
   const openViews = getOpenViews(root)
   const unpinnedViews = getUnpinnedViews(pinnedViews)
@@ -139,7 +142,12 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
                 shortcut={meta.shortcut}
                 isActive={isActive}
                 isOpen={isOpen}
-                badge={view === 'code-review' ? reviewCount : undefined}
+                badge={
+                  view === 'code-review' ? reviewCount : view === 'sprint' ? failedCount : undefined
+                }
+                badgeAccent={
+                  view === 'code-review' ? 'blue' : view === 'sprint' ? 'red' : undefined
+                }
                 onActivate={handleActivate}
                 onContextAction={handleContextAction}
               />

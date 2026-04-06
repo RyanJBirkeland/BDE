@@ -33,6 +33,11 @@ vi.mock('../../../stores/theme', () => ({
   useThemeStore: vi.fn((sel: any) => sel({ theme: 'dark', toggleTheme: vi.fn() }))
 }))
 
+let mockTasks: Array<{ id: string; status: string }> = []
+vi.mock('../../../stores/sprintTasks', () => ({
+  useSprintTasks: vi.fn((sel: any) => sel({ tasks: mockTasks }))
+}))
+
 describe('UnifiedHeader', () => {
   it('renders the logo', async () => {
     const { UnifiedHeader } = await import('../UnifiedHeader')
@@ -113,6 +118,68 @@ describe('UnifiedHeader', () => {
     render(<UnifiedHeader />)
     // No tabs should render but no crash
     expect(screen.getByText('B')).toBeInTheDocument()
+  })
+
+  describe('health strip', () => {
+    it('renders active/queued counts and omits failed pill when zero', async () => {
+      mockTasks = [
+        { id: '1', status: 'active' },
+        { id: '2', status: 'active' },
+        { id: '3', status: 'queued' },
+        { id: '4', status: 'queued' },
+        { id: '5', status: 'queued' },
+        { id: '6', status: 'done' }
+      ]
+      const { UnifiedHeader } = await import('../UnifiedHeader')
+      render(<UnifiedHeader />)
+      expect(screen.getByTestId('health-strip-active')).toHaveTextContent('2')
+      expect(screen.getByTestId('health-strip-queued')).toHaveTextContent('3')
+      expect(screen.queryByTestId('health-strip-failed')).toBeNull()
+      expect(screen.getByTestId('health-strip-dot')).toHaveAttribute('data-state', 'running')
+      mockTasks = []
+    })
+
+    it('renders failed count and sets dot to error state when any task failed', async () => {
+      mockTasks = [
+        { id: '1', status: 'failed' },
+        { id: '2', status: 'error' }
+      ]
+      const { UnifiedHeader } = await import('../UnifiedHeader')
+      render(<UnifiedHeader />)
+      expect(screen.getByTestId('health-strip-failed')).toHaveTextContent('!2')
+      expect(screen.getByTestId('health-strip-dot')).toHaveAttribute('data-state', 'error')
+      mockTasks = []
+    })
+
+    it('shows idle dot state when no active/failed tasks', async () => {
+      mockTasks = [{ id: '1', status: 'done' }]
+      const { UnifiedHeader } = await import('../UnifiedHeader')
+      render(<UnifiedHeader />)
+      expect(screen.getByTestId('health-strip-dot')).toHaveAttribute('data-state', 'idle')
+      mockTasks = []
+    })
+
+    it('navigates to sprint pipeline on click', async () => {
+      const panelModule = await import('../../../stores/panelLayout')
+      const mockSetView = vi.fn()
+      vi.mocked(panelModule.usePanelLayoutStore).mockImplementation((sel: any) =>
+        sel({
+          root: mockLeaf,
+          focusedPanelId: 'p1',
+          activeView: 'dashboard',
+          closeTab: vi.fn(),
+          setActiveTab: vi.fn(),
+          setView: mockSetView
+        })
+      )
+      vi.mocked(panelModule.findLeaf).mockReturnValue(mockLeaf)
+      mockTasks = [{ id: '1', status: 'active' }]
+      const { UnifiedHeader } = await import('../UnifiedHeader')
+      render(<UnifiedHeader />)
+      fireEvent.click(screen.getByTestId('unified-header-health-strip'))
+      expect(mockSetView).toHaveBeenCalledWith('sprint')
+      mockTasks = []
+    })
   })
 
   it('renders multiple tabs with correct active state', async () => {

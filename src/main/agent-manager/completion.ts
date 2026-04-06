@@ -8,6 +8,7 @@ import type { Logger } from './types'
 import { broadcast } from '../broadcast'
 import type { AgentEvent, FailureReason } from '../../shared/types'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
+import { captureDiffSnapshot } from './diff-snapshot'
 
 const execFile = promisify(execFileCb)
 
@@ -535,6 +536,18 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     durationMs = endTime - startTime
   }
 
+  // Capture diff snapshot BEFORE any cleanup so review UI can fall back to it
+  // if the worktree is later removed (e.g. after merge or discard).
+  let diffSnapshotJson: string | null = null
+  try {
+    const snapshot = await captureDiffSnapshot(worktreePath, 'origin/main', logger)
+    if (snapshot) {
+      diffSnapshotJson = JSON.stringify(snapshot)
+    }
+  } catch (err) {
+    logger.warn(`[completion] Diff snapshot capture failed for task ${taskId}: ${err}`)
+  }
+
   try {
     repo.updateTask(taskId, {
       status: 'review',
@@ -542,6 +555,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       claimed_by: null,
       ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
       ...(rebaseNote ? { notes: rebaseNote } : {}),
+      ...(diffSnapshotJson ? { review_diff_snapshot: diffSnapshotJson } : {}),
       rebase_base_sha: rebaseBaseSha ?? null,
       rebased_at: rebaseSucceeded ? new Date().toISOString() : null
     })

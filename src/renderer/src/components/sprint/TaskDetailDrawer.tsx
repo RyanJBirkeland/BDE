@@ -199,7 +199,12 @@ export function TaskDetailDrawer({
           <span>{task.status}</span>
           {elapsed && <span> — {elapsed}</span>}
         </div>
-        <button className="task-drawer__close" onClick={onClose} aria-label="Close drawer" title="Close drawer">
+        <button
+          className="task-drawer__close"
+          onClick={onClose}
+          aria-label="Close drawer"
+          title="Close drawer"
+        >
           ✕
         </button>
       </div>
@@ -289,6 +294,102 @@ export function TaskDetailDrawer({
           </button>
         )}
 
+        {/* Failure details — show prominently when task failed/errored */}
+        {(task.status === 'failed' || task.status === 'error') && (
+          <div
+            className="task-drawer__failure"
+            data-testid="task-drawer-failure"
+            style={{
+              marginTop: 12,
+              padding: 10,
+              borderRadius: 6,
+              border: '1px solid var(--neon-red-border, rgba(255,70,70,0.4))',
+              background: 'var(--neon-red-surface, rgba(255,70,70,0.08))'
+            }}
+          >
+            <div
+              className="task-drawer__failure-label"
+              style={{
+                fontSize: 11,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                color: 'var(--neon-red, #ff5c5c)',
+                fontWeight: 600,
+                marginBottom: 6
+              }}
+            >
+              Failure Details
+            </div>
+            {task.failure_reason && (
+              <div
+                style={{
+                  fontSize: 11,
+                  opacity: 0.8,
+                  marginBottom: 6,
+                  fontFamily: 'var(--bde-font-mono, monospace)'
+                }}
+                data-testid="task-drawer-failure-reason"
+              >
+                reason: {task.failure_reason}
+              </div>
+            )}
+            {task.notes ? (
+              <pre
+                data-testid="task-drawer-failure-notes"
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  fontFamily: 'var(--bde-font-mono, monospace)',
+                  color: 'var(--bde-text, rgba(255,255,255,0.85))'
+                }}
+              >
+                {task.notes}
+              </pre>
+            ) : (
+              <div style={{ fontSize: 12, opacity: 0.6 }}>
+                No diagnostic notes captured. Check the Agents view for details.
+              </div>
+            )}
+            {agentEvents &&
+              agentEvents.length > 0 &&
+              (() => {
+                const errors = agentEvents.filter((e) => e.type === 'agent:error').slice(-3)
+                if (errors.length === 0) return null
+                return (
+                  <div
+                    data-testid="task-drawer-failure-errors"
+                    style={{ marginTop: 8, fontSize: 12 }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        textTransform: 'uppercase',
+                        opacity: 0.6,
+                        marginBottom: 4
+                      }}
+                    >
+                      Recent errors
+                    </div>
+                    {errors.map((e, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          fontFamily: 'var(--bde-font-mono, monospace)',
+                          opacity: 0.85,
+                          marginTop: 2
+                        }}
+                      >
+                        {e.type === 'agent:error' ? e.message : ''}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+          </div>
+        )}
+
         {/* PR section */}
         {task.pr_url && task.pr_number && (
           <div className="task-drawer__field">
@@ -306,7 +407,8 @@ export function TaskDetailDrawer({
             <span className="task-drawer__value task-drawer__value--warning">
               PR creation failed after retries
             </span>
-            {ghConfigured && task.notes &&
+            {ghConfigured &&
+              task.notes &&
               (() => {
                 const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
                 if (!match) return null

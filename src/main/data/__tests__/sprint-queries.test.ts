@@ -42,6 +42,8 @@ import {
   getHealthCheckTasks,
   getTasksWithDependencies,
   clearSprintTaskFk,
+  pruneOldDiffSnapshots,
+  DIFF_SNAPSHOT_RETENTION_DAYS,
   UPDATE_ALLOWLIST
 } from '../sprint-queries'
 
@@ -694,5 +696,75 @@ describe('clearSprintTaskFk', () => {
     // Other task unchanged
     const t2 = getTask('fk-2')!
     expect(t2.agent_run_id).toBe('run-456')
+  })
+})
+
+describe('pruneOldDiffSnapshots', () => {
+  // Helper to insert a task with a specific updated_at (bypasses the trigger).
+  function insertWithUpdatedAt(
+    id: string,
+    status: string,
+    updatedAt: string,
+    snapshot: string | null
+  ): void {
+    db.prepare(
+      `INSERT INTO sprint_tasks (id, title, prompt, repo, status, priority, review_diff_snapshot, updated_at)
+       VALUES (?, 'T', '', 'bde', ?, 1, ?, ?)`
+    ).run(id, status, snapshot, updatedAt)
+  }
+
+  it('exports a default retention constant', () => {
+    expect(DIFF_SNAPSHOT_RETENTION_DAYS).toBe(30)
+  })
+
+  it('clears review_diff_snapshot on terminal tasks older than retention window', () => {
+    const old = new Date(Date.now() - 60 * 86400000).toISOString()
+    insertWithUpdatedAt('old-done', 'done', old, '{"capturedAt":"x","totals":{},"files":[]}')
+    insertWithUpdatedAt('old-failed', 'failed', old, '{"x":1}')
+    insertWithUpdatedAt('old-cancelled', 'cancelled', old, '{"x":1}')
+    insertWithUpdatedAt('old-error', 'error', old, '{"x":1}')
+
+    const cleared = pruneOldDiffSnapshots(30)
+    expect(cleared).toBe(4)
+
+    for (const id of ['old-done', 'old-failed', 'old-cancelled', 'old-error']) {
+      const t = getTask(id)!
+      expect(t.review_diff_snapshot).toBeNull()
+    }
+  })
+
+  it('preserves snapshots on tasks still in review status', () => {
+    const old = new Date(Date.now() - 60 * 86400000).toISOString()
+    insertWithUpdatedAt('still-review', 'review', old, '{"capturedAt":"x"}')
+
+    const cleared = pruneOldDiffSnapshots(30)
+    expect(cleared).toBe(0)
+
+    const t = getTask('still-review')!
+    expect(t.review_diff_snapshot).toBe('{"capturedAt":"x"}')
+  })
+
+  it('preserves recent terminal tasks', () => {
+    const recent = new Date(Date.now() - 5 * 86400000).toISOString()
+    insertWithUpdatedAt('recent-done', 'done', recent, '{"capturedAt":"x"}')
+
+    const cleared = pruneOldDiffSnapshots(30)
+    expect(cleared).toBe(0)
+
+    const t = getTask('recent-done')!
+    expect(t.review_diff_snapshot).toBe('{"capturedAt":"x"}')
+  })
+
+  it('respects custom retention window', () => {
+    const tenDaysAgo = new Date(Date.now() - 10 * 86400000).toISOString()
+    insertWithUpdatedAt('mid-done', 'done', tenDaysAgo, '{"capturedAt":"x"}')
+
+    // 30-day window — should NOT prune
+    expect(pruneOldDiffSnapshots(30)).toBe(0)
+    expect(getTask('mid-done')!.review_diff_snapshot).toBe('{"capturedAt":"x"}')
+
+    // 5-day window — SHOULD prune
+    expect(pruneOldDiffSnapshots(5)).toBe(1)
+    expect(getTask('mid-done')!.review_diff_snapshot).toBeNull()
   })
 })

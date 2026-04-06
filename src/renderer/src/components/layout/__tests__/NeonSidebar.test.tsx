@@ -8,16 +8,23 @@ vi.mock('framer-motion', () => ({
 }))
 
 let mockReviewCount = 0
+let mockFailedCount = 0
 
 vi.mock('../../../stores/sprintTasks', () => ({
   useSprintTasks: vi.fn((sel?: any) => {
-    const state = {
-      tasks: Array.from({ length: mockReviewCount }, (_, i) => ({
-        id: String(i),
+    const tasks = [
+      ...Array.from({ length: mockReviewCount }, (_, i) => ({
+        id: `r${i}`,
         status: 'review',
         title: `Task ${i}`
+      })),
+      ...Array.from({ length: mockFailedCount }, (_, i) => ({
+        id: `f${i}`,
+        status: i % 2 === 0 ? 'failed' : 'error',
+        title: `Failed ${i}`
       }))
-    }
+    ]
+    const state = { tasks }
     return sel ? sel(state) : state
   })
 }))
@@ -58,7 +65,7 @@ vi.mock('../../../stores/panelLayout', () => {
 })
 
 describe('NeonSidebar', () => {
-  it('shows badge count on Code Review when tasks are in review status', async () => {
+  it('shows blue badge count on Code Review when tasks are in review status', async () => {
     mockReviewCount = 2
     // pin code-review so the badge-bearing item renders
     const { useSidebarStore } = await import('../../../stores/sidebar')
@@ -72,8 +79,45 @@ describe('NeonSidebar', () => {
     })
     const { NeonSidebar } = await import('../NeonSidebar')
     render(<NeonSidebar />)
-    expect(screen.getByTestId('sidebar-badge-code-review')).toHaveTextContent('2')
+    const badge = screen.getByTestId('sidebar-badge-code-review')
+    expect(badge).toHaveTextContent('2')
+    expect(badge).toHaveAttribute('data-accent', 'blue')
     mockReviewCount = 0
+  })
+
+  it('shows red badge on Sprint Pipeline when tasks are failed/error', async () => {
+    mockFailedCount = 3
+    const { useSidebarStore } = await import('../../../stores/sidebar')
+    vi.mocked(useSidebarStore).mockImplementation((sel?: any) => {
+      const state = {
+        pinnedViews: ['dashboard', 'sprint', 'ide'],
+        pinView: vi.fn(),
+        unpinView: vi.fn()
+      }
+      return sel ? sel(state) : state
+    })
+    const { NeonSidebar } = await import('../NeonSidebar')
+    render(<NeonSidebar />)
+    const badge = screen.getByTestId('sidebar-badge-sprint')
+    expect(badge).toHaveTextContent('3')
+    expect(badge).toHaveAttribute('data-accent', 'red')
+    mockFailedCount = 0
+  })
+
+  it('hides Sprint Pipeline badge when no failed tasks', async () => {
+    mockFailedCount = 0
+    const { useSidebarStore } = await import('../../../stores/sidebar')
+    vi.mocked(useSidebarStore).mockImplementation((sel?: any) => {
+      const state = {
+        pinnedViews: ['dashboard', 'sprint', 'ide'],
+        pinView: vi.fn(),
+        unpinView: vi.fn()
+      }
+      return sel ? sel(state) : state
+    })
+    const { NeonSidebar } = await import('../NeonSidebar')
+    render(<NeonSidebar />)
+    expect(screen.queryByTestId('sidebar-badge-sprint')).toBeNull()
   })
 
   it('renders pinned view icons', async () => {

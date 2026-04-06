@@ -111,8 +111,32 @@ export interface SprintTask {
    * "Previous revision requests" section when reviewing a retry attempt.
    */
   revision_feedback?: RevisionFeedbackEntry[] | null
+  /**
+   * Serialized JSON snapshot of the diff captured at review transition,
+   * so Code Review can still show changes after the worktree is cleaned up.
+   * Shape: { capturedAt: string; totals: { additions, deletions, files };
+   *          files: Array<{ path; status; additions; deletions; patch? }>;
+   *          truncated?: boolean }
+   */
+  review_diff_snapshot?: string | null
   updated_at: string
   created_at: string
+}
+
+/** Shape of the `review_diff_snapshot` JSON blob. */
+export interface ReviewDiffSnapshot {
+  capturedAt: string
+  totals: { additions: number; deletions: number; files: number }
+  files: Array<{
+    path: string
+    status: 'A' | 'M' | 'D' | 'R' | string
+    additions: number
+    deletions: number
+    /** Raw unified diff for this file. Omitted when truncated. */
+    patch?: string
+  }>
+  /** True if per-file patches were dropped because the diff was too large. */
+  truncated?: boolean
 }
 
 /** Task template — named prompt prefix resolved at claim time. */

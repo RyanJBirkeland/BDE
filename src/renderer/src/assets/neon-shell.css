@@ -264,6 +264,21 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  padding: 0 4px;
+}
+
+.sidebar-item__badge--red {
+  background: var(--neon-red);
+  box-shadow: 0 0 6px var(--neon-red-border, rgba(255, 70, 70, 0.6));
+}
+
+.sidebar-item__badge--blue {
+  background: var(--neon-blue);
+  box-shadow: 0 0 6px var(--neon-blue-border, rgba(70, 130, 255, 0.6));
+}
+
+.sidebar-item__badge--orange {
+  background: var(--neon-orange);
 }
 
 /* ── Sidebar Context Menu ── */
