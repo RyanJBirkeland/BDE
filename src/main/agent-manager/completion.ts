@@ -156,12 +156,12 @@ async function autoCommitIfDirty(
 
 /**
  * Rebase the agent's branch onto origin/main to ensure it's up-to-date.
- * Returns { success: true } if rebase succeeds, { success: false, notes: string } if it fails.
+ * Returns { success: true, baseSha } if rebase succeeds, { success: false, notes: string } if it fails.
  */
 async function rebaseOntoMain(
   worktreePath: string,
   logger: Logger
-): Promise<{ success: boolean; notes?: string }> {
+): Promise<{ success: boolean; notes?: string; baseSha?: string }> {
   try {
     // Fetch origin/main
     logger.info(`[completion] fetching origin/main for rebase`)
@@ -177,8 +177,13 @@ async function rebaseOntoMain(
       env: buildAgentEnv()
     })
 
+    const { stdout: shaOut } = await execFile('git', ['rev-parse', 'origin/main'], {
+      cwd: worktreePath,
+      env: buildAgentEnv()
+    })
+
     logger.info(`[completion] rebase onto main succeeded`)
-    return { success: true }
+    return { success: true, baseSha: shaOut.trim() }
   } catch (err) {
     // Rebase failed — abort to restore clean state
     logger.warn(`[completion] rebase onto main failed: ${err}`)
@@ -471,10 +476,15 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
 
   // 3. Rebase onto origin/main to prevent stale branch merge conflicts
   let rebaseNote: string | undefined
+  let rebaseBaseSha: string | undefined
+  let rebaseSucceeded = false
   try {
     const rebaseResult = await rebaseOntoMain(worktreePath, logger)
     if (!rebaseResult.success) {
       rebaseNote = rebaseResult.notes
+    } else {
+      rebaseBaseSha = rebaseResult.baseSha
+      rebaseSucceeded = true
     }
   } catch (err) {
     logger.warn(`[completion] Rebase step failed for task ${taskId}: ${err}`)
@@ -530,7 +540,9 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       worktree_path: worktreePath,
       claimed_by: null,
       ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
-      ...(rebaseNote ? { notes: rebaseNote } : {})
+      ...(rebaseNote ? { notes: rebaseNote } : {}),
+      rebase_base_sha: rebaseBaseSha ?? null,
+      rebased_at: rebaseSucceeded ? new Date().toISOString() : null
     })
   } catch (err) {
     logger.error(`[completion] Failed to update task ${taskId} to review status: ${err}`)
