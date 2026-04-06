@@ -10,6 +10,7 @@ import {
 } from './types'
 import {
   makeConcurrencyState,
+  setMaxSlots,
   availableSlots,
   applyBackpressure,
   tryRecover,
@@ -874,8 +875,11 @@ export class AgentManagerImpl implements AgentManager {
     const newMaxConcurrent = getSettingJson<number>('agentManager.maxConcurrent')
     if (typeof newMaxConcurrent === 'number' && newMaxConcurrent !== this.config.maxConcurrent) {
       this.config.maxConcurrent = newMaxConcurrent
-      // Resize the concurrency state so new slots become available immediately.
-      this._concurrency = makeConcurrencyState(newMaxConcurrent)
+      // Update the cap in place — preserving activeCount so in-flight agents
+      // are still accounted for. If lowered below activeCount, availableSlots
+      // returns 0 until enough agents drain. If raised, new slots are
+      // immediately available. See `setMaxSlots` for the contract.
+      setMaxSlots(this._concurrency, newMaxConcurrent)
       updated.push('maxConcurrent')
     }
 

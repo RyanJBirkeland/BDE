@@ -1,5 +1,11 @@
 import { describe, test, expect } from 'vitest'
-import { makeConcurrencyState, availableSlots, applyBackpressure, tryRecover } from '../concurrency'
+import {
+  makeConcurrencyState,
+  setMaxSlots,
+  availableSlots,
+  applyBackpressure,
+  tryRecover
+} from '../concurrency'
 
 describe('concurrency', () => {
   test('availableSlots returns effective minus active', () => {
@@ -42,5 +48,62 @@ describe('concurrency', () => {
     s = applyBackpressure(s, 0)
     s = tryRecover(s, 30_000)
     expect(s.effectiveSlots).toBe(2)
+  })
+
+  describe('setMaxSlots (reloadConfig)', () => {
+    test('lowering cap below activeCount yields zero available slots', () => {
+      // Simulate 5 agents in flight with previous cap of 8.
+      const s = makeConcurrencyState(8)
+      s.activeCount = 5
+      // Lower to 2 — drain loop should NOT spawn more.
+      setMaxSlots(s, 2)
+      expect(s.maxSlots).toBe(2)
+      expect(s.effectiveSlots).toBe(2)
+      expect(availableSlots(s)).toBe(0)
+      // activeCount preserved — in-flight agents still tracked.
+      expect(s.activeCount).toBe(5)
+    })
+
+    test('lowering cap then draining gradually frees slots', () => {
+      const s = makeConcurrencyState(8)
+      s.activeCount = 5
+      setMaxSlots(s, 2)
+      expect(availableSlots(s)).toBe(0)
+      // 4 agents finish → activeCount=1 → 1 slot available (max=2).
+      s.activeCount = 1
+      expect(availableSlots(s)).toBe(1)
+    })
+
+    test('raising cap immediately makes new slots available', () => {
+      const s = makeConcurrencyState(2)
+      s.activeCount = 2
+      expect(availableSlots(s)).toBe(0)
+      setMaxSlots(s, 8)
+      expect(s.maxSlots).toBe(8)
+      expect(s.effectiveSlots).toBe(8)
+      expect(availableSlots(s)).toBe(6)
+    })
+
+    test('atFloor flag tracks new effectiveSlots after lowering', () => {
+      const s = makeConcurrencyState(8)
+      setMaxSlots(s, 1)
+      expect(s.effectiveSlots).toBe(1)
+      expect(s.atFloor).toBe(true)
+    })
+
+    test('lowering does not clobber rate-limited effectiveSlots when below new cap', () => {
+      // Rate-limited from 8 down to 3.
+      let s = makeConcurrencyState(8)
+      s = applyBackpressure(s, 0)
+      s = applyBackpressure(s, 0)
+      s = applyBackpressure(s, 0)
+      s = applyBackpressure(s, 0)
+      s = applyBackpressure(s, 0)
+      expect(s.effectiveSlots).toBe(3)
+      // User sets max=5. effectiveSlots (3) is already below 5 — leave it.
+      setMaxSlots(s, 5)
+      expect(s.maxSlots).toBe(5)
+      expect(s.effectiveSlots).toBe(3)
+    })
   })
 })
