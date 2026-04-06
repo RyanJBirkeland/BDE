@@ -20,20 +20,48 @@ const execFileAsync = promisify(execFile)
 const activeStreams = new Map<string, { close: () => void }>()
 
 /** Run a single-turn SDK query (non-streaming). Returns the text response. */
-async function runSdkPrint(prompt: string, timeoutMs = 120_000): Promise<string> {
-  return runSdkStreaming(prompt, () => {}, activeStreams, `print-${Date.now()}`, timeoutMs)
+async function runSdkPrint(prompt: string, timeoutMs = 120_000, cwd?: string): Promise<string> {
+  return runSdkStreaming(
+    prompt,
+    () => {},
+    activeStreams,
+    `print-${Date.now()}`,
+    timeoutMs,
+    cwd ? { cwd } : undefined
+  )
 }
 
 export function buildChatPrompt(
   messages: Array<{ role: string; content: string }>,
-  formContext: { title: string; repo: string; spec: string }
+  formContext: { title: string; repo: string; spec: string },
+  repoPath?: string
 ): string {
   return buildAgentPrompt({
     agentType: 'copilot',
     messages,
-    formContext
+    formContext,
+    repoPath
   })
 }
+
+/**
+ * Read-only tools the copilot may use against the target repo.
+ * Anything not in this list (Edit, Write, Bash, etc.) is unavailable.
+ */
+export const COPILOT_ALLOWED_TOOLS = ['Read', 'Grep', 'Glob'] as const
+
+/**
+ * Defense-in-depth: tools the copilot must NEVER run, even if the SDK
+ * defaults shift. Pairs with COPILOT_ALLOWED_TOOLS for read-only enforcement.
+ */
+export const COPILOT_DISALLOWED_TOOLS = [
+  'Edit',
+  'Write',
+  'Bash',
+  'NotebookEdit',
+  'WebFetch',
+  'WebSearch'
+] as const
 
 export function buildSpecGenerationPrompt(input: {
   title: string
@@ -264,9 +292,10 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
         formContext: { title: string; repo: string; spec: string }
       }
     ) => {
-      const prompt = buildChatPrompt(input.messages, input.formContext)
+      const repoPath = getRepoPaths()[input.formContext.repo]
+      const prompt = buildChatPrompt(input.messages, input.formContext, repoPath)
       try {
-        const result = await runSdkPrint(prompt)
+        const result = await runSdkPrint(prompt, 120_000, repoPath)
         return { content: result || 'No response received.' }
       } catch (err) {
         return { content: `Error: ${(err as Error).message}` }
@@ -276,7 +305,8 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
 
   // --- AI-powered streaming chat ---
   safeHandle('workbench:chatStream', async (e, input) => {
-    const prompt = buildChatPrompt(input.messages, input.formContext)
+    const repoPath = getRepoPaths()[input.formContext.repo]
+    const prompt = buildChatPrompt(input.messages, input.formContext, repoPath)
     const streamId = `copilot-${Date.now()}`
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer
@@ -290,7 +320,29 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
         }
       },
       activeStreams,
-      streamId
+      streamId,
+      undefined,
+      {
+        // Code-aware copilot: read-only tools rooted at the target repo.
+        // Defense-in-depth: explicit allowlist + disallowlist for mutators.
+        cwd: repoPath,
+        tools: [...COPILOT_ALLOWED_TOOLS],
+        disallowedTools: [...COPILOT_DISALLOWED_TOOLS],
+        // Multiple turns so the copilot can chain tool calls (Grep → Read → answer)
+        maxTurns: 8,
+        onToolUse: (event) => {
+          try {
+            e.sender.send('workbench:chatChunk', {
+              streamId,
+              chunk: '',
+              done: false,
+              toolUse: { name: event.name, input: event.input }
+            })
+          } catch {
+            /* window may have closed */
+          }
+        }
+      }
     )
       .then((fullText) => {
         try {

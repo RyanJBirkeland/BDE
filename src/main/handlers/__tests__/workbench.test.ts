@@ -141,7 +141,12 @@ const mockAgentManager = {
 } as any
 
 // Import handlers after mocks are set up
-import { registerWorkbenchHandlers } from '../workbench'
+import {
+  registerWorkbenchHandlers,
+  COPILOT_ALLOWED_TOOLS,
+  COPILOT_DISALLOWED_TOOLS,
+  buildChatPrompt
+} from '../workbench'
 import { safeHandle } from '../../ipc-utils'
 
 describe('Workbench handlers', () => {
@@ -260,6 +265,57 @@ describe('Workbench handlers', () => {
 
     expect(result.spec).toContain('Test Task')
     expect(result.spec).toContain('Placeholder')
+  })
+
+  describe('copilot read-only tool restrictions', () => {
+    it('COPILOT_ALLOWED_TOOLS exposes only read-only tools', () => {
+      expect([...COPILOT_ALLOWED_TOOLS]).toEqual(['Read', 'Grep', 'Glob'])
+    })
+
+    it('COPILOT_DISALLOWED_TOOLS forbids every mutation/escape vector', () => {
+      // Defense-in-depth: even if the SDK shifts defaults, these are blocked.
+      expect(COPILOT_DISALLOWED_TOOLS).toContain('Edit')
+      expect(COPILOT_DISALLOWED_TOOLS).toContain('Write')
+      expect(COPILOT_DISALLOWED_TOOLS).toContain('Bash')
+    })
+
+    it('does not include any mutation tool in the allowed list', () => {
+      const allowed = new Set<string>([...COPILOT_ALLOWED_TOOLS])
+      for (const forbidden of ['Edit', 'Write', 'Bash', 'NotebookEdit', 'WebFetch']) {
+        expect(allowed.has(forbidden)).toBe(false)
+      }
+    })
+  })
+
+  describe('buildChatPrompt for copilot', () => {
+    it('includes spec-drafting mode framing', () => {
+      const prompt = buildChatPrompt([{ role: 'user', content: 'help' }], {
+        title: 'T',
+        repo: 'BDE',
+        spec: ''
+      })
+      expect(prompt).toContain('## Mode: Spec Drafting')
+      expect(prompt).toContain('not execute the task')
+    })
+
+    it('includes target repository path when provided', () => {
+      const prompt = buildChatPrompt(
+        [{ role: 'user', content: 'where is auth?' }],
+        { title: 'T', repo: 'BDE', spec: '' },
+        '/Users/test/projects/BDE'
+      )
+      expect(prompt).toContain('## Target Repository')
+      expect(prompt).toContain('/Users/test/projects/BDE')
+    })
+
+    it('omits target repository section when repoPath is undefined', () => {
+      const prompt = buildChatPrompt([{ role: 'user', content: 'hi' }], {
+        title: 'T',
+        repo: 'BDE',
+        spec: ''
+      })
+      expect(prompt).not.toContain('## Target Repository')
+    })
   })
 
   it('checkSpec stub returns all expected fields', async () => {
