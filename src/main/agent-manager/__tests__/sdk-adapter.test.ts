@@ -131,6 +131,14 @@ describe('spawnAgent (CLI fallback)', () => {
     expect(spawnEnv).toHaveProperty('ANTHROPIC_API_KEY')
   })
 
+  it('caps V8 old-space heap via NODE_OPTIONS for CLI fallback (PHASE3-3.1)', async () => {
+    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5' })
+
+    const spawnEnv = (mockSpawn as unknown as MockInstance).mock.calls[0][2].env
+    expect(spawnEnv.NODE_OPTIONS).toBeDefined()
+    expect(spawnEnv.NODE_OPTIONS).toContain('--max-old-space-size=1024')
+  })
+
   it('abort() sends SIGTERM to the child process', async () => {
     const handle = await spawnAgent({
       prompt: 'test',
@@ -286,5 +294,28 @@ describe('spawnAgent (CLI fallback)', () => {
 
     expect(collected).toHaveLength(1)
     expect(collected[0]).toEqual({ type: 'ok' })
+  })
+})
+
+describe('withMaxOldSpaceOption (PHASE3-3.1)', () => {
+  it('returns the flag alone when no existing NODE_OPTIONS', async () => {
+    const { withMaxOldSpaceOption } = await import('../sdk-adapter')
+    expect(withMaxOldSpaceOption(undefined, 1024)).toBe('--max-old-space-size=1024')
+    expect(withMaxOldSpaceOption('', 1024)).toBe('--max-old-space-size=1024')
+    expect(withMaxOldSpaceOption('   ', 1024)).toBe('--max-old-space-size=1024')
+  })
+
+  it('appends to existing NODE_OPTIONS without removing them', async () => {
+    const { withMaxOldSpaceOption } = await import('../sdk-adapter')
+    expect(withMaxOldSpaceOption('--enable-source-maps', 1024)).toBe(
+      '--enable-source-maps --max-old-space-size=1024'
+    )
+  })
+
+  it('does not duplicate when caller already specified --max-old-space-size', async () => {
+    const { withMaxOldSpaceOption } = await import('../sdk-adapter')
+    expect(withMaxOldSpaceOption('--max-old-space-size=2048', 1024)).toBe(
+      '--max-old-space-size=2048'
+    )
   })
 })

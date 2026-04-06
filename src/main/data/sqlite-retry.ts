@@ -1,6 +1,17 @@
 /**
  * SQLite retry wrapper with exponential backoff for SQLITE_BUSY errors.
  * Common in WAL mode under concurrent access from multiple processes.
+ *
+ * Two variants are provided:
+ *
+ * - `withRetry` (sync) — uses `Atomics.wait` for backoff. Kept for the
+ *   many synchronous query helpers that already exist (sprint-queries
+ *   et al). DO NOT call from hot paths on the Electron main thread:
+ *   under contention this can block the event loop for up to ~5s.
+ *
+ * - `withRetryAsync` (async) — uses `setTimeout` for backoff so the
+ *   event loop keeps spinning. Use this from hot paths like the agent
+ *   manager drain loop, watchdog, and task claiming.
  */
 
 interface RetryOptions {
@@ -19,14 +30,14 @@ function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
 }
 
+function computeBackoff(attempt: number, baseDelayMs: number, maxDelayMs: number): number {
+  return Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs)
+}
+
 /**
- * Wraps a synchronous function with automatic retry + exponential backoff
- * when SQLITE_BUSY is encountered.
- *
- * @param fn - The function to execute
- * @param opts - Retry configuration
- * @returns The result of the function
- * @throws The last error if all retries are exhausted or a non-BUSY error
+ * Synchronous retry wrapper. Blocks the calling thread on backoff via
+ * `Atomics.wait`. Prefer `withRetryAsync` from anywhere on the Electron
+ * main thread that can tolerate yielding to the event loop.
  */
 export function withRetry<T>(fn: () => T, opts: RetryOptions = {}): T {
   const { maxRetries = 5, baseDelayMs = 10, maxDelayMs = 1000 } = opts
@@ -38,8 +49,33 @@ export function withRetry<T>(fn: () => T, opts: RetryOptions = {}): T {
     } catch (err) {
       lastError = err
       if (!isBusyError(err) || attempt === maxRetries) throw err
-      const delay = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs)
-      sleepSync(delay)
+      sleepSync(computeBackoff(attempt, baseDelayMs, maxDelayMs))
+    }
+  }
+
+  throw lastError
+}
+
+/**
+ * Async retry wrapper. Yields to the event loop on backoff via `setTimeout`,
+ * so the Electron main thread stays responsive even under heavy SQLite
+ * contention. The wrapped `fn` may itself be sync or async.
+ */
+export async function withRetryAsync<T>(
+  fn: () => T | Promise<T>,
+  opts: RetryOptions = {}
+): Promise<T> {
+  const { maxRetries = 5, baseDelayMs = 10, maxDelayMs = 1000 } = opts
+  let lastError: unknown
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastError = err
+      if (!isBusyError(err) || attempt === maxRetries) throw err
+      const delay = computeBackoff(attempt, baseDelayMs, maxDelayMs)
+      await new Promise<void>((resolve) => setTimeout(resolve, delay))
     }
   }
 

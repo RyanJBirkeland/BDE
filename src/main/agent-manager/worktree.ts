@@ -8,6 +8,7 @@ import {
   rmSync,
   renameSync
 } from 'node:fs'
+import { statfs as statfsAsync } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { buildAgentEnv } from '../env-utils'
@@ -15,6 +16,59 @@ import { BRANCH_SLUG_MAX_LENGTH } from './types'
 import type { Logger } from './types'
 
 const execFileAsync = promisify(execFile)
+
+/**
+ * Minimum free disk space required (bytes) before creating a worktree.
+ * Worktrees + node_modules can consume 1-3GB each; 5GB ensures headroom
+ * for at least one agent run plus build artifacts.
+ */
+export const MIN_FREE_DISK_BYTES = 5 * 1024 * 1024 * 1024 // 5 GiB
+
+/**
+ * Tagged error thrown by `ensureFreeDiskSpace` when the requested path has
+ * less than the required free bytes available. Use `instanceof` to
+ * distinguish from platform errors (ENOSYS, EACCES, etc.) which the
+ * caller treats as non-fatal.
+ */
+export class InsufficientDiskSpaceError extends Error {
+  constructor(
+    public readonly path: string,
+    public readonly availableBytes: number,
+    public readonly requiredBytes: number
+  ) {
+    super(
+      `Insufficient disk space at ${path}: ${availableBytes} bytes available, ${requiredBytes} required`
+    )
+    this.name = 'InsufficientDiskSpaceError'
+  }
+}
+
+/**
+ * Check available disk space at the given path. Throws
+ * `InsufficientDiskSpaceError` if free space is below `minFreeBytes`.
+ * Best-effort — silently succeeds if statfs is unsupported on the platform
+ * (e.g. ENOSYS) or other platform errors occur during the check.
+ */
+export async function ensureFreeDiskSpace(
+  checkPath: string,
+  minFreeBytes: number = MIN_FREE_DISK_BYTES,
+  log?: Logger | Console
+): Promise<void> {
+  try {
+    const stats = await statfsAsync(checkPath)
+    const free = Number(stats.bavail) * Number(stats.bsize)
+    if (free < minFreeBytes) {
+      throw new InsufficientDiskSpaceError(checkPath, free, minFreeBytes)
+    }
+  } catch (err) {
+    // Re-throw our own tagged error; swallow platform errors (statfs not
+    // supported, permission denied, etc.) so the check stays best-effort.
+    if (err instanceof InsufficientDiskSpaceError) {
+      throw err
+    }
+    ;(log ?? console).warn(`[worktree] Disk space check failed (continuing): ${err}`)
+  }
+}
 
 export function branchNameForTask(title: string, taskId?: string, groupId?: string): string {
   const slug = title
@@ -199,40 +253,57 @@ export async function setupWorktree(
 
   mkdirSync(repoDir, { recursive: true })
 
-  acquireLock(worktreeBase, repoPath, logger)
-
-  // Validate repo path exists and is a git repository
+  // Validate repo path exists and is a git repository (no lock needed — read-only)
   if (!existsSync(repoPath) || !existsSync(path.join(repoPath, '.git'))) {
-    releaseLock(worktreeBase, repoPath)
     throw new Error(`Repo path does not exist or is not a git repository: ${repoPath}`)
   }
 
+  // Pre-check: ensure enough free disk space at the worktree base.
+  // Worktrees + node_modules can consume 1-3GB each. Failing fast here gives
+  // a clearer error than git's downstream "no space left on device" failure.
+  await ensureFreeDiskSpace(worktreeBase, MIN_FREE_DISK_BYTES, log)
+
+  // Step 1: Fetch latest main OUTSIDE the per-repo lock.
+  // git fetch is safe to run concurrently from multiple processes — git
+  // handles locking on its own packed-refs / fetch-head writes. Holding our
+  // own lock through 30s of network I/O fully serialized worktree setup
+  // for multiple agents on the same repo (10 tasks → 5+ minute startup).
   try {
-    // Step 1: Unconditionally clean any stale state for this task/branch.
-    // This runs BEFORE attempting creation — not in an error handler.
-    // Agent branches are throwaway; never try to preserve commits.
+    await execFileAsync('git', ['fetch', 'origin', 'main', '--no-tags'], {
+      cwd: repoPath,
+      env,
+      timeout: 30_000
+    })
+    log.info(`[worktree] Fetched origin/main for task ${taskId}`)
+  } catch (err) {
+    // Non-fatal — proceed with whatever HEAD we have
+    log.warn(`[worktree] Failed to fetch origin/main (proceeding anyway): ${err}`)
+  }
+
+  // Step 2: Acquire the per-repo lock for the conflict-sensitive operations.
+  // The lock guards `git worktree add`, branch creation, and the merge --ff-only
+  // (which mutates the main checkout's HEAD) — these races corrupted state in
+  // testing when multiple agents started simultaneously on the same repo.
+  acquireLock(worktreeBase, repoPath, logger)
+
+  try {
+    // Clean any stale state for this task/branch (other worktrees with the
+    // same branch name, leftover dirs, dangling refs).
     await nukeStaleState(repoPath, worktreePath, branch, env, log)
 
-    // Step 2: Fetch latest main to reduce merge conflicts on agent branches
+    // Fast-forward local main to match origin so the new worktree branches
+    // off the latest commit. Non-destructive — only succeeds for true ff.
     try {
-      await execFileAsync('git', ['fetch', 'origin', 'main', '--no-tags'], {
-        cwd: repoPath,
-        env,
-        timeout: 30_000
-      })
-      // Fast-forward local main to match origin (non-destructive — only if it's a fast-forward)
       await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], {
         cwd: repoPath,
         env,
         timeout: 10_000
       })
-      log.info(`[worktree] Fetched and fast-forwarded main for task ${taskId}`)
     } catch (err) {
-      // Non-fatal — proceed with whatever HEAD we have
-      log.warn(`[worktree] Failed to fetch/ff main (proceeding anyway): ${err}`)
+      log.warn(`[worktree] Failed to ff-merge origin/main (proceeding anyway): ${err}`)
     }
 
-    // Step 3: Create fresh worktree + branch
+    // Create fresh worktree + branch
     await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], {
       cwd: repoPath,
       env

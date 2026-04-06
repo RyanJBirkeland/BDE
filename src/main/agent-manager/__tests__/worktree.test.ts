@@ -440,6 +440,85 @@ describe('setupWorktree', () => {
     expect(fetchIdx).toBeGreaterThanOrEqual(0)
     expect(worktreeIdx).toBeGreaterThan(fetchIdx)
   })
+
+  it('runs fetch BEFORE acquiring the per-repo lock (PHASE3-3.2)', async () => {
+    // Verify the lock file does not exist while git fetch is running.
+    // This proves fetch is outside the lock scope so other agents can
+    // proceed concurrently with their own fetches.
+    const lockFile = path.join(tmpDir, '.locks', `${path.basename(mockRepoPath)}.lock`)
+    // Note the actual lockPath uses repoSlug — recompute the same way:
+    const slug = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
+    const expectedLock = path.join(tmpDir, '.locks', `${slug}.lock`)
+    void lockFile
+
+    let lockExistedDuringFetch = false
+    let lockExistedDuringAdd = false
+
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+      if (gitArgs[0] === 'fetch') {
+        lockExistedDuringFetch = existsSync(expectedLock)
+      }
+      if (gitArgs[0] === 'worktree' && gitArgs[1] === 'add') {
+        lockExistedDuringAdd = existsSync(expectedLock)
+      }
+      if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), {
+        child: null
+      }) as unknown as ChildProcess
+    })
+
+    await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'lock-scope',
+      title: 'Lock scope'
+    })
+
+    expect(lockExistedDuringFetch).toBe(false)
+    expect(lockExistedDuringAdd).toBe(true)
+  })
+})
+
+describe('ensureFreeDiskSpace', () => {
+  it('throws InsufficientDiskSpaceError when free space is below the threshold', async () => {
+    const { ensureFreeDiskSpace, InsufficientDiskSpaceError } = await import('../worktree')
+    // Use an absurdly large threshold so any real disk fails
+    const required = Number.MAX_SAFE_INTEGER
+    await expect(ensureFreeDiskSpace(os.tmpdir(), required)).rejects.toBeInstanceOf(
+      InsufficientDiskSpaceError
+    )
+
+    // Validate the error fields carry through
+    try {
+      await ensureFreeDiskSpace(os.tmpdir(), required)
+      throw new Error('expected ensureFreeDiskSpace to throw')
+    } catch (err) {
+      expect(err).toBeInstanceOf(InsufficientDiskSpaceError)
+      const ide = err as InstanceType<typeof InsufficientDiskSpaceError>
+      expect(ide.path).toBe(os.tmpdir())
+      expect(ide.requiredBytes).toBe(required)
+      expect(ide.availableBytes).toBeGreaterThanOrEqual(0)
+      expect(ide.availableBytes).toBeLessThan(required)
+      expect(ide.name).toBe('InsufficientDiskSpaceError')
+    }
+  })
+
+  it('succeeds when there is plenty of space', async () => {
+    const { ensureFreeDiskSpace } = await import('../worktree')
+    // 1 byte threshold — always satisfied on a working system
+    await expect(ensureFreeDiskSpace(os.tmpdir(), 1)).resolves.toBeUndefined()
+  })
+
+  it('does not throw when statfs fails on a non-existent path', async () => {
+    const { ensureFreeDiskSpace } = await import('../worktree')
+    const log = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
+    await expect(
+      ensureFreeDiskSpace('/definitely/not/a/real/path', 1, log)
+    ).resolves.toBeUndefined()
+    expect(log.warn).toHaveBeenCalled()
+  })
 })
 
 describe('cleanupWorktree', () => {

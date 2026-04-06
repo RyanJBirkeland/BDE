@@ -10,7 +10,8 @@ Your work will be reviewed via PR before merging to main.`,
   constraints: [
     'NEVER commit secrets or .env files',
     'Stay within spec scope — do not refactor unrelated code or add unrequested features',
-    'If the spec is ambiguous, make the minimal reasonable assumption and note it in the commit message'
+    'If the spec is ambiguous, make the minimal reasonable assumption and note it in the commit message',
+    'If the spec lists ## Files to Change, restrict modifications to those files unless you document the reason for additional changes in the commit message'
   ],
 
   patterns: [

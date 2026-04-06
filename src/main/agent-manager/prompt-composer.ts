@@ -30,6 +30,7 @@ export interface BuildPromptInput {
   maxRuntimeMs?: number | null // max runtime in ms
   upstreamContext?: Array<{ title: string; spec: string; partial_diff?: string }> // completed upstream task specs + diffs
   crossRepoContract?: string | null // cross-repo API contract documentation
+  repoName?: string | null // target repo name (used to scope BDE-specific memory injection)
 }
 
 // ---------------------------------------------------------------------------
@@ -47,6 +48,7 @@ const UNIVERSAL_PREAMBLE = `You are a BDE (Birkeland Development Environment) ag
 - NEVER push to, checkout, or merge into \`main\`. Only push to your assigned branch.
 - NEVER commit secrets, .env files, or oauth tokens
 - Your worktree has NO node_modules. Run \`npm install\` as your FIRST action before reading any files or running any commands.
+- If \`npm install\` fails, report the error clearly and exit immediately. Do not proceed without dependencies.
 - Use the project's commit format: \`{type}: {description}\` (feat:, fix:, chore:)
 - Prefer editing existing files over creating new ones
 - Use TypeScript strict mode conventions
@@ -185,7 +187,8 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     previousNotes,
     maxRuntimeMs,
     upstreamContext,
-    crossRepoContract
+    crossRepoContract,
+    repoName
   } = input
 
   // Start with universal preamble
@@ -202,9 +205,12 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     prompt += '\n\n## Behavioral Patterns\n' + personality.patterns.map((p) => `- ${p}`).join('\n')
   }
 
-  // Inject memory (all agents get this)
-  prompt += '\n\n## BDE Conventions\n'
-  prompt += getAllMemory()
+  // Inject memory (BDE-specific modules only when targeting the BDE repo)
+  const memoryText = getAllMemory({ repoName: repoName ?? undefined })
+  if (memoryText.trim()) {
+    prompt += '\n\n## BDE Conventions\n'
+    prompt += memoryText
+  }
 
   // Inject user memory (files toggled active in Settings > Memory)
   const userMem = getUserMemory()
@@ -258,8 +264,18 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
       prompt += '\n\n## Generation Instructions\n\n' + taskContent
     }
   } else if (taskContent) {
-    // For pipeline, assistant, adhoc: append task content
-    prompt += '\n\n' + taskContent
+    // For pipeline agents (which have code tools), wrap the spec in a clear
+    // header so the agent knows it must read and address every section.
+    // Copilot/synthesizer have no code tools and use their own task framing.
+    if (agentType === 'pipeline') {
+      prompt += '\n\n## Task Specification\n\n'
+      prompt += 'Read this entire specification before writing any code. '
+      prompt += 'Address every section.\n\n'
+      prompt += taskContent
+    } else {
+      // For assistant, adhoc: append task content as-is
+      prompt += '\n\n' + taskContent
+    }
   }
 
   // Inject cross-repo contract documentation when provided

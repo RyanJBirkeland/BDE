@@ -10,7 +10,7 @@ describe('workbench handlers', () => {
         spec: ''
       })
       expect(prompt).toContain('text-only spec drafting')
-      expect(prompt).toContain('Cannot open URLs')
+      expect(prompt).toContain('directly executable by a pipeline')
     })
 
     it('includes conversation history', () => {

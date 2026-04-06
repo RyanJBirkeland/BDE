@@ -540,6 +540,55 @@ describe('runAgent — updateTask.catch error handlers', () => {
   })
 })
 
+describe('runAgent — circuit breaker hook wiring', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('invokes onSpawnSuccess (and not onSpawnFailure) when spawn resolves', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
+
+    const onSpawnSuccess = vi.fn()
+    const onSpawnFailure = vi.fn()
+    const deps = makeDeps({ onSpawnSuccess, onSpawnFailure })
+    await runAgent(makeTask(), worktree, repoPath, deps)
+
+    expect(onSpawnSuccess).toHaveBeenCalledTimes(1)
+    expect(onSpawnFailure).not.toHaveBeenCalled()
+  })
+
+  it('invokes onSpawnFailure (and not onSpawnSuccess) when spawn rejects', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('ENOENT: claude binary not found')
+    )
+
+    const onSpawnSuccess = vi.fn()
+    const onSpawnFailure = vi.fn()
+    const deps = makeDeps({ onSpawnSuccess, onSpawnFailure })
+    await runAgent(makeTask(), worktree, repoPath, deps)
+
+    expect(onSpawnFailure).toHaveBeenCalledTimes(1)
+    expect(onSpawnSuccess).not.toHaveBeenCalled()
+  })
+
+  it('invokes onSpawnFailure on spawn timeout', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+    // Simulate the timeout race winning by rejecting with the timeout message
+    // (mirrors what the Promise.race timeout branch produces).
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('Spawn timed out after 60s')
+    )
+
+    const onSpawnSuccess = vi.fn()
+    const onSpawnFailure = vi.fn()
+    const deps = makeDeps({ onSpawnSuccess, onSpawnFailure })
+    await runAgent(makeTask(), worktree, repoPath, deps)
+
+    expect(onSpawnFailure).toHaveBeenCalledTimes(1)
+    expect(onSpawnSuccess).not.toHaveBeenCalled()
+  })
+})
+
 describe('runAgent — prompt composer integration', () => {
   beforeEach(() => vi.clearAllMocks())
   it('calls buildAgentPrompt with pipeline agentType, taskContent, branch, and playground flag', async () => {
@@ -561,7 +610,11 @@ describe('runAgent — prompt composer integration', () => {
       branch: 'agent/test',
       playgroundEnabled: true,
       retryCount: 0,
-      previousNotes: undefined
+      previousNotes: undefined,
+      maxRuntimeMs: undefined,
+      upstreamContext: undefined,
+      crossRepoContract: undefined,
+      repoName: 'BDE'
     })
   })
 

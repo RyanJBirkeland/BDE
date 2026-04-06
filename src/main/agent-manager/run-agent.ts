@@ -48,6 +48,10 @@ export interface RunAgentDeps {
   logger: Logger
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
   repo: ISprintTaskRepository
+  /** Optional hook called when an agent process is successfully spawned. */
+  onSpawnSuccess?: () => void
+  /** Optional hook called when spawnAgent throws (broken SDK/CLI, etc). */
+  onSpawnFailure?: () => void
 }
 
 // ---------------------------------------------------------------------------
@@ -196,7 +200,8 @@ export async function runAgent(
   repoPath: string,
   deps: RunAgentDeps
 ): Promise<void> {
-  const { activeAgents, defaultModel, logger, onTaskTerminal, repo } = deps
+  const { activeAgents, defaultModel, logger, onTaskTerminal, repo, onSpawnSuccess, onSpawnFailure } =
+    deps
   const effectiveModel = task.model || defaultModel
 
   const taskContent = (task.prompt || task.spec || task.title || '').trim()
@@ -255,8 +260,10 @@ export async function runAgent(
     playgroundEnabled: task.playground_enabled,
     retryCount: task.retry_count ?? 0,
     previousNotes: task.notes ?? undefined,
+    maxRuntimeMs: task.max_runtime_ms ?? undefined,
     upstreamContext: upstreamContext.length > 0 ? upstreamContext : undefined,
-    crossRepoContract: task.cross_repo_contract ?? undefined
+    crossRepoContract: task.cross_repo_contract ?? undefined,
+    repoName: task.repo
   })
 
   let handle: AgentHandle
@@ -277,7 +284,18 @@ export async function runAgent(
       }),
       timeoutPromise
     ]).finally(() => clearTimeout(timer!))
+    // Notify circuit breaker that spawn succeeded — resets failure counter.
+    try {
+      onSpawnSuccess?.()
+    } catch (cbErr) {
+      logger.warn(`[agent-manager] onSpawnSuccess hook threw: ${cbErr}`)
+    }
   } catch (err) {
+    try {
+      onSpawnFailure?.()
+    } catch (cbErr) {
+      logger.warn(`[agent-manager] onSpawnFailure hook threw: ${cbErr}`)
+    }
     logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
     const errMsg = err instanceof Error ? err.message : String(err)
     // Emit agent:error event so the failure is visible in agent console

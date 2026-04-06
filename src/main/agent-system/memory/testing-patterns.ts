@@ -3,11 +3,16 @@
  */
 export const testingPatterns = `## Testing Patterns
 
-### Coverage Requirements (CI enforced)
-- 72% statements
-- 66% branches (tightest — test ALL conditionals)
-- 70% functions
-- 74% lines
+### Coverage Requirements
+Coverage thresholds are enforced by CI via vitest config — do NOT hardcode
+threshold numbers in code, prompts, or docs (they drift). To verify your
+changes meet the bar, run:
+
+\`\`\`
+npm run test:coverage
+\`\`\`
+
+This is the same command CI runs. If it passes locally, it will pass in CI.
 
 ### Critical Test Cases
 - Conditional branches (if/else, ternaries)

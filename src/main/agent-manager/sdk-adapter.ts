@@ -3,6 +3,33 @@ import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { buildAgentEnv, getOAuthToken } from '../env-utils'
 
+/**
+ * Per-agent V8 old-space heap cap (MB) applied to spawned Claude CLI
+ * processes via NODE_OPTIONS=--max-old-space-size. Prevents 16GB machines
+ * from OOMing under 8+ concurrent agents (each agent could otherwise
+ * grow to 1-2GB RSS unbounded).
+ */
+export const AGENT_PROCESS_MAX_OLD_SPACE_MB = 1024
+
+/**
+ * Appends --max-old-space-size=<MB> to NODE_OPTIONS if not already present.
+ * If the upstream env already specifies --max-old-space-size, the upstream
+ * value is honored verbatim — even if it's higher OR lower than the cap.
+ * This preserves caller intent (e.g. a debug session with a larger heap).
+ *
+ * Exported for testing.
+ */
+export function withMaxOldSpaceOption(
+  existing: string | undefined,
+  maxOldSpaceMb: number
+): string {
+  const flag = `--max-old-space-size=${maxOldSpaceMb}`
+  if (!existing || !existing.trim()) return flag
+  // Avoid duplicate flag if caller already specified one
+  if (/--max-old-space-size=/.test(existing)) return existing
+  return `${existing} ${flag}`
+}
+
 export async function spawnAgent(opts: {
   prompt: string
   cwd: string
@@ -91,6 +118,13 @@ function spawnViaCli(
   // Set ANTHROPIC_API_KEY in env for CLI (CLI doesn't support auth parameter)
   if (token) {
     env = { ...env, ANTHROPIC_API_KEY: token }
+  }
+
+  // Cap V8 old-space heap per agent process to prevent OOM at scale.
+  // Append to any pre-existing NODE_OPTIONS rather than overwriting.
+  env = {
+    ...env,
+    NODE_OPTIONS: withMaxOldSpaceOption(env.NODE_OPTIONS, AGENT_PROCESS_MAX_OLD_SPACE_MB)
   }
 
   const child = spawn(

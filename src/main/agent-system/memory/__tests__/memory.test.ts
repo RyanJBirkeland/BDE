@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getAllMemory } from '../index'
+import { getAllMemory, isBdeRepo } from '../index'
 import { ipcConventions } from '../ipc-conventions'
 import { testingPatterns } from '../testing-patterns'
 import { architectureRules } from '../architecture-rules'
@@ -23,12 +23,72 @@ describe('Memory System', () => {
   })
 
   it('should include testing patterns content', () => {
-    expect(testingPatterns).toContain('72%')
     expect(testingPatterns).toContain('Coverage Requirements')
+    expect(testingPatterns).toContain('npm run test:coverage')
+    // Thresholds must NOT be hardcoded — they live in vitest config only
+    expect(testingPatterns).not.toMatch(/\d{2}%\s+(statements|branches|functions|lines)/)
   })
 
   it('should include architecture rules content', () => {
     expect(architectureRules).toContain('Process Boundaries')
     expect(architectureRules).toContain('Zustand')
+  })
+
+  describe('repo-aware memory injection', () => {
+    it('returns full BDE memory when repoName is "bde"', () => {
+      const memory = getAllMemory({ repoName: 'bde' })
+      expect(memory).toContain('IPC Conventions')
+      expect(memory).toContain('Testing Patterns')
+      expect(memory).toContain('Architecture Rules')
+    })
+
+    it('returns full BDE memory when repoName is undefined (legacy callers)', () => {
+      const memory = getAllMemory()
+      expect(memory).toContain('IPC Conventions')
+    })
+
+    it('returns full BDE memory when repoName is null', () => {
+      const memory = getAllMemory({ repoName: null })
+      expect(memory).toContain('IPC Conventions')
+    })
+
+    it('returns empty string for non-BDE repos', () => {
+      expect(getAllMemory({ repoName: 'life-os' })).toBe('')
+      expect(getAllMemory({ repoName: 'claude-task-runner' })).toBe('')
+      expect(getAllMemory({ repoName: 'bde-site' })).toBe('')
+    })
+
+    it('matches BDE case-insensitively', () => {
+      expect(getAllMemory({ repoName: 'BDE' })).toContain('IPC Conventions')
+      expect(getAllMemory({ repoName: 'Bde' })).toContain('IPC Conventions')
+    })
+
+    it('matches owner-prefixed BDE repo names', () => {
+      expect(getAllMemory({ repoName: 'rbirkeland/bde' })).toContain('IPC Conventions')
+    })
+  })
+
+  describe('isBdeRepo helper', () => {
+    it('returns true for "bde" (any case)', () => {
+      expect(isBdeRepo('bde')).toBe(true)
+      expect(isBdeRepo('BDE')).toBe(true)
+      expect(isBdeRepo('  bde  ')).toBe(true)
+    })
+
+    it('returns true for owner-prefixed bde', () => {
+      expect(isBdeRepo('owner/bde')).toBe(true)
+    })
+
+    it('returns true for null/undefined/empty (legacy default)', () => {
+      expect(isBdeRepo(null)).toBe(true)
+      expect(isBdeRepo(undefined)).toBe(true)
+      expect(isBdeRepo('')).toBe(true)
+    })
+
+    it('returns false for unrelated repos', () => {
+      expect(isBdeRepo('life-os')).toBe(false)
+      expect(isBdeRepo('bde-site')).toBe(false)
+      expect(isBdeRepo('repomap')).toBe(false)
+    })
   })
 })
