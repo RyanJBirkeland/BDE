@@ -628,6 +628,102 @@ export function registerReviewHandlers(): void {
     return { success: true, pushed }
   })
 
+  // review:rebase — manually rebase agent branch onto current origin/main
+  safeHandle('review:rebase', async (_e, payload) => {
+    const { taskId } = payload
+
+    const task = _getTask(taskId)
+    if (!task) throw new Error(`Task ${taskId} not found`)
+    if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
+
+    try {
+      await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: task.worktree_path, env })
+      await execFileAsync('git', ['rebase', 'origin/main'], { cwd: task.worktree_path, env })
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      logger.error(`[review:rebase] Rebase failed for task ${taskId}: ${errMsg}`)
+
+      // Abort the rebase (best-effort)
+      try {
+        await execFileAsync('git', ['rebase', '--abort'], { cwd: task.worktree_path, env })
+      } catch {
+        /* best-effort abort */
+      }
+
+      // Extract conflict files
+      const conflicts: string[] = []
+      try {
+        const { stdout: conflictOut } = await execFileAsync(
+          'git',
+          ['diff', '--name-only', '--diff-filter=U'],
+          { cwd: task.worktree_path, env }
+        )
+        conflicts.push(...conflictOut.trim().split('\n').filter(Boolean))
+      } catch {
+        /* best-effort */
+      }
+
+      return { success: false, error: errMsg, conflicts }
+    }
+
+    // Get the new base SHA and persist it
+    const { stdout: baseShaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
+      cwd: task.worktree_path,
+      env
+    })
+    const baseSha = baseShaOut.trim()
+
+    const updated = _updateTask(taskId, {
+      rebase_base_sha: baseSha,
+      rebased_at: new Date().toISOString()
+    })
+    if (updated) notifySprintMutation('updated', updated)
+
+    return { success: true, baseSha }
+  })
+
+  // review:checkFreshness — check if task's rebase is current with origin/main
+  safeHandle('review:checkFreshness', async (_e, payload) => {
+    const { taskId } = payload
+
+    const task = _getTask(taskId)
+    if (!task) return { status: 'unknown' as const }
+    if (!task.rebase_base_sha) return { status: 'unknown' as const }
+
+    try {
+      const repoConfig = getRepoConfig(task.repo)
+      if (!repoConfig) return { status: 'unknown' as const }
+
+      await execFileAsync('git', ['fetch', 'origin', 'main'], {
+        cwd: repoConfig.localPath,
+        env
+      })
+
+      const { stdout: currentShaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
+        cwd: repoConfig.localPath,
+        env
+      })
+      const currentSha = currentShaOut.trim()
+
+      if (currentSha === task.rebase_base_sha) {
+        return { status: 'fresh' as const, commitsBehind: 0 }
+      }
+
+      // Count commits between task's base and current origin/main
+      const { stdout: countOut } = await execFileAsync(
+        'git',
+        ['rev-list', '--count', `${task.rebase_base_sha}..origin/main`],
+        { cwd: repoConfig.localPath, env }
+      )
+      const commitsBehind = parseInt(countOut.trim(), 10)
+
+      return { status: 'stale' as const, commitsBehind }
+    } catch (err: unknown) {
+      logger.warn(`[review:checkFreshness] Error for task ${taskId}: ${err}`)
+      return { status: 'unknown' as const }
+    }
+  })
+
   // review:generateSummary — AI-generated review summary (stub, not implemented)
   safeHandle('review:generateSummary', async (_e, _payload) => {
     logger.warn('review:generateSummary called but not implemented — returning empty summary')

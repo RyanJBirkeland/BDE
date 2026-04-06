@@ -482,7 +482,10 @@ const api = {
     generateSummary: (payload: { taskId: string }) =>
       typedInvoke('review:generateSummary', payload),
     checkAutoReview: (payload: { taskId: string }) =>
-      typedInvoke('review:checkAutoReview', payload)
+      typedInvoke('review:checkAutoReview', payload),
+    rebase: (payload: { taskId: string }) => typedInvoke('review:rebase', payload),
+    checkFreshness: (payload: { taskId: string }) =>
+      typedInvoke('review:checkFreshness', payload)
   },
 
   // Spec Synthesizer

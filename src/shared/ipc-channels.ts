@@ -750,6 +750,14 @@ export interface ReviewChannels {
     args: [payload: { taskId: string }]
     result: { shouldAutoMerge: boolean; shouldAutoApprove: boolean; matchedRule: string | null }
   }
+  'review:rebase': {
+    args: [payload: { taskId: string }]
+    result: { success: boolean; baseSha?: string; error?: string; conflicts?: string[] }
+  }
+  'review:checkFreshness': {
+    args: [payload: { taskId: string }]
+    result: { status: 'fresh' | 'stale' | 'conflict' | 'unknown'; commitsBehind?: number }
+  }
 }
 
 /** Spec synthesizer AI-powered generation */
