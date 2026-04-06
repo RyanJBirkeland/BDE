@@ -138,7 +138,8 @@ vi.stubGlobal('api', {
     delete: vi.fn().mockResolvedValue(undefined)
   },
   github: {
-    fetch: vi.fn().mockResolvedValue({ ok: true, status: 200, body: {}, linkNext: null })
+    fetch: vi.fn().mockResolvedValue({ ok: true, status: 200, body: {}, linkNext: null }),
+    isConfigured: vi.fn().mockResolvedValue(true)
   },
   openDirectoryDialog: vi.fn().mockResolvedValue(null),
   pollPrStatuses: vi.fn().mockResolvedValue([]),

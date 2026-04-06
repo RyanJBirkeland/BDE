@@ -138,11 +138,22 @@ export function setGitHandlersOnStatusTerminal(fn: (taskId: string, status: stri
 }
 
 export function registerGitHandlers(): void {
+  // --- GitHub token availability check ---
+  safeHandle('github:isConfigured', () => {
+    return getGitHubToken() !== null
+  })
+
   // --- GitHub API proxy (renderer -> main -> api.github.com) ---
   safeHandle('github:fetch', async (_e, path: string, init?: GitHubFetchInit) => {
     const token = getGitHubToken()
-    if (!token)
-      throw new Error('GitHub token not configured. Set it in Settings \u2192 Connections.')
+    if (!token) {
+      return {
+        ok: false,
+        status: 0,
+        body: { error: 'GitHub token not configured. Set it in Settings \u2192 Connections.' },
+        linkNext: null
+      }
+    }
 
     let url: string
     let apiPath: string

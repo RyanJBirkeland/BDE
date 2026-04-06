@@ -77,7 +77,8 @@ const api = {
 
   // GitHub API proxy — all GitHub REST calls routed through main process
   github: {
-    fetch: (path: string, init?: GitHubFetchInit) => typedInvoke('github:fetch', path, init)
+    fetch: (path: string, init?: GitHubFetchInit) => typedInvoke('github:fetch', path, init),
+    isConfigured: () => typedInvoke('github:isConfigured')
   },
 
   // Git client

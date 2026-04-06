@@ -119,6 +119,7 @@ describe('registerGitHandlers', () => {
     registerGitHandlers()
     const channels = vi.mocked(safeHandle).mock.calls.map(([ch]) => ch)
     expect(channels).toContain('github:fetch')
+    expect(channels).toContain('github:isConfigured')
     expect(channels).toContain('git:getRepoPaths')
     expect(channels).toContain('git:status')
     expect(channels).toContain('git:diff')
@@ -217,18 +218,43 @@ describe('git:commit handler', () => {
   })
 })
 
+describe('github:isConfigured handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns true when token is present', () => {
+    vi.mocked(getGitHubToken).mockReturnValue('ghp_token')
+
+    const handler = captureHandler('github:isConfigured')
+    expect(handler(mockEvent)).toBe(true)
+  })
+
+  it('returns false when token is null', () => {
+    vi.mocked(getGitHubToken).mockReturnValue(null)
+
+    const handler = captureHandler('github:isConfigured')
+    expect(handler(mockEvent)).toBe(false)
+  })
+})
+
 describe('github:fetch handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('throws when GitHub token is not configured', async () => {
+  it('returns error object when GitHub token is not configured', async () => {
     vi.mocked(getGitHubToken).mockReturnValue(null)
 
     const handler = captureHandler('github:fetch')
-    await expect(handler(mockEvent, '/repos/owner/repo/pulls')).rejects.toThrow(
-      'GitHub token not configured'
-    )
+    const result = await handler(mockEvent, '/repos/owner/repo/pulls')
+
+    expect(result).toMatchObject({
+      ok: false,
+      status: 0,
+      body: { error: expect.stringContaining('GitHub token not configured') },
+      linkNext: null
+    })
   })
 
   it('fetches JSON and returns structured response', async () => {

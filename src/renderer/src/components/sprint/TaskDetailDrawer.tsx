@@ -8,6 +8,7 @@ import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterv
 import { TaskDetailActionButtons } from './TaskDetailActionButtons'
 import { AgentActivityPreview } from './AgentActivityPreview'
 import { UpstreamOutcomes } from './UpstreamOutcomes'
+import { useGitHubStatus } from '../../hooks/useGitHubStatus'
 
 const MIN_DRAWER_WIDTH = 280
 const MAX_DRAWER_WIDTH = 700
@@ -58,6 +59,7 @@ export function TaskDetailDrawer({
 }: TaskDetailDrawerProps): React.JSX.Element {
   const [elapsed, setElapsed] = useState('')
   const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
+  const { configured: ghConfigured } = useGitHubStatus()
   const dragging = useRef(false)
   const startX = useRef(0)
   const startWidth = useRef(DEFAULT_DRAWER_WIDTH)
@@ -304,7 +306,7 @@ export function TaskDetailDrawer({
             <span className="task-drawer__value task-drawer__value--warning">
               PR creation failed after retries
             </span>
-            {task.notes &&
+            {ghConfigured && task.notes &&
               (() => {
                 const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
                 if (!match) return null

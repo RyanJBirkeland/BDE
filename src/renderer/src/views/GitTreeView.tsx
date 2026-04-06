@@ -10,9 +10,11 @@ import { InlineDiffDrawer } from '../components/git-tree/InlineDiffDrawer'
 import { EmptyState } from '../components/ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
+import { useGitHubStatus } from '../hooks/useGitHubStatus'
 
 export default function GitTreeView(): React.ReactElement {
   const reduced = useReducedMotion()
+  const { configured: ghConfigured } = useGitHubStatus()
   const branch = useGitTreeStore((s) => s.branch)
   const staged = useGitTreeStore((s) => s.staged)
   const unstaged = useGitTreeStore((s) => s.unstaged)
@@ -261,6 +263,8 @@ export default function GitTreeView(): React.ReactElement {
         stagedCount={staged.length}
         commitLoading={commitLoading}
         pushLoading={pushLoading}
+        pushDisabled={!ghConfigured}
+        pushDisabledTitle="Configure GitHub in Settings → Connections"
         onMessageChange={setCommitMessage}
         onCommit={handleCommit}
         onPush={handlePush}
