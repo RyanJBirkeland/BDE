@@ -25,9 +25,29 @@ const execFileAsync = promisify(execFile)
 export const MIN_FREE_DISK_BYTES = 5 * 1024 * 1024 * 1024 // 5 GiB
 
 /**
- * Check available disk space at the given path. Throws an Error with a
- * clear message if free space is below `minFreeBytes`. Best-effort —
- * silently succeeds if statfs is unsupported on the platform.
+ * Tagged error thrown by `ensureFreeDiskSpace` when the requested path has
+ * less than the required free bytes available. Use `instanceof` to
+ * distinguish from platform errors (ENOSYS, EACCES, etc.) which the
+ * caller treats as non-fatal.
+ */
+export class InsufficientDiskSpaceError extends Error {
+  constructor(
+    public readonly path: string,
+    public readonly availableBytes: number,
+    public readonly requiredBytes: number
+  ) {
+    super(
+      `Insufficient disk space at ${path}: ${availableBytes} bytes available, ${requiredBytes} required`
+    )
+    this.name = 'InsufficientDiskSpaceError'
+  }
+}
+
+/**
+ * Check available disk space at the given path. Throws
+ * `InsufficientDiskSpaceError` if free space is below `minFreeBytes`.
+ * Best-effort — silently succeeds if statfs is unsupported on the platform
+ * (e.g. ENOSYS) or other platform errors occur during the check.
  */
 export async function ensureFreeDiskSpace(
   checkPath: string,
@@ -38,16 +58,12 @@ export async function ensureFreeDiskSpace(
     const stats = await statfsAsync(checkPath)
     const free = Number(stats.bavail) * Number(stats.bsize)
     if (free < minFreeBytes) {
-      const freeGb = (free / (1024 * 1024 * 1024)).toFixed(2)
-      const minGb = (minFreeBytes / (1024 * 1024 * 1024)).toFixed(2)
-      throw new Error(
-        `Insufficient disk space at ${checkPath}: ${freeGb}GB free, need at least ${minGb}GB. ` +
-          `Free up disk space (e.g. clean stale worktrees, prune docker images) and retry.`
-      )
+      throw new InsufficientDiskSpaceError(checkPath, free, minFreeBytes)
     }
   } catch (err) {
-    // statfs failures other than our own threshold error are non-fatal
-    if (err instanceof Error && err.message.startsWith('Insufficient disk space')) {
+    // Re-throw our own tagged error; swallow platform errors (statfs not
+    // supported, permission denied, etc.) so the check stays best-effort.
+    if (err instanceof InsufficientDiskSpaceError) {
       throw err
     }
     ;(log ?? console).warn(`[worktree] Disk space check failed (continuing): ${err}`)

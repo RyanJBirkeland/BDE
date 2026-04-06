@@ -12,8 +12,12 @@ import { buildAgentEnv, getOAuthToken } from '../env-utils'
 export const AGENT_PROCESS_MAX_OLD_SPACE_MB = 1024
 
 /**
- * Append `--max-old-space-size=<mb>` to an existing NODE_OPTIONS env value
- * (or create one). Exported for testing.
+ * Appends --max-old-space-size=<MB> to NODE_OPTIONS if not already present.
+ * If the upstream env already specifies --max-old-space-size, the upstream
+ * value is honored verbatim — even if it's higher OR lower than the cap.
+ * This preserves caller intent (e.g. a debug session with a larger heap).
+ *
+ * Exported for testing.
  */
 export function withMaxOldSpaceOption(
   existing: string | undefined,

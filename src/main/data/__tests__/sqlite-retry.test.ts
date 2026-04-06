@@ -123,9 +123,12 @@ describe('withRetryAsync', () => {
     try {
       const result = await withRetryAsync(fn, { baseDelayMs: 20 })
       expect(result).toBe('ok')
-      // We had at least two backoffs of >=20ms each, so the interval should
-      // have ticked multiple times if the loop was free.
-      expect(eventLoopTicks).toBeGreaterThan(0)
+      // Two backoffs of 20ms + 40ms = ~60ms total. With a 1ms interval the
+      // event loop should tick well over 10 times if the loop is free. A
+      // regression where backoff collapses to 1ms (or blocks the loop) would
+      // produce far fewer ticks. Threshold picked to be robust under CI
+      // jitter while still catching real regressions.
+      expect(eventLoopTicks).toBeGreaterThan(10)
     } finally {
       clearInterval(interval)
     }

@@ -482,12 +482,27 @@ describe('setupWorktree', () => {
 })
 
 describe('ensureFreeDiskSpace', () => {
-  it('throws a clear error when free space is below the threshold', async () => {
-    const { ensureFreeDiskSpace } = await import('../worktree')
+  it('throws InsufficientDiskSpaceError when free space is below the threshold', async () => {
+    const { ensureFreeDiskSpace, InsufficientDiskSpaceError } = await import('../worktree')
     // Use an absurdly large threshold so any real disk fails
-    await expect(
-      ensureFreeDiskSpace(os.tmpdir(), Number.MAX_SAFE_INTEGER)
-    ).rejects.toThrow(/Insufficient disk space/)
+    const required = Number.MAX_SAFE_INTEGER
+    await expect(ensureFreeDiskSpace(os.tmpdir(), required)).rejects.toBeInstanceOf(
+      InsufficientDiskSpaceError
+    )
+
+    // Validate the error fields carry through
+    try {
+      await ensureFreeDiskSpace(os.tmpdir(), required)
+      throw new Error('expected ensureFreeDiskSpace to throw')
+    } catch (err) {
+      expect(err).toBeInstanceOf(InsufficientDiskSpaceError)
+      const ide = err as InstanceType<typeof InsufficientDiskSpaceError>
+      expect(ide.path).toBe(os.tmpdir())
+      expect(ide.requiredBytes).toBe(required)
+      expect(ide.availableBytes).toBeGreaterThanOrEqual(0)
+      expect(ide.availableBytes).toBeLessThan(required)
+      expect(ide.name).toBe('InsufficientDiskSpaceError')
+    }
   })
 
   it('succeeds when there is plenty of space', async () => {
