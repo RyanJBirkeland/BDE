@@ -12,6 +12,7 @@ import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { runPostMergeDedup } from '../services/post-merge-dedup'
 
 const execFileAsync = promisify(execFile)
 const logger = createLogger('review-handlers')
@@ -255,6 +256,18 @@ export function registerReviewHandlers(): void {
       }
 
       return { success: false, conflicts, error: errMsg }
+    }
+
+    // Post-merge CSS dedup
+    try {
+      const dedupReport = await runPostMergeDedup(repoPath)
+      if (dedupReport?.warnings.length) {
+        const existing = _getTask(taskId)
+        const warnText = `\n\n## CSS Near-Duplicate Warnings\n${dedupReport.warnings.join('\n')}`
+        _updateTask(taskId, { notes: (existing?.notes || '') + warnText })
+      }
+    } catch (err) {
+      logger.warn(`[review:mergeLocally] Post-merge dedup failed (non-fatal): ${err}`)
     }
 
     // Clean up worktree + branch
@@ -562,6 +575,18 @@ export function registerReviewHandlers(): void {
         /* best-effort */
       }
       return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+
+    // Post-merge CSS dedup (must run before push so dedup commit is included)
+    try {
+      const dedupReport = await runPostMergeDedup(repoPath)
+      if (dedupReport?.warnings.length) {
+        const existing = _getTask(taskId)
+        const warnText = `\n\n## CSS Near-Duplicate Warnings\n${dedupReport.warnings.join('\n')}`
+        _updateTask(taskId, { notes: (existing?.notes || '') + warnText })
+      }
+    } catch (err) {
+      logger.warn(`[review:shipIt] Post-merge dedup failed (non-fatal): ${err}`)
     }
 
     // Push

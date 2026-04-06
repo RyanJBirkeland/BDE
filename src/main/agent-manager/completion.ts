@@ -7,6 +7,7 @@ import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
 import type { Logger } from './types'
 import { broadcast } from '../broadcast'
 import type { AgentEvent, FailureReason } from '../../shared/types'
+import { runPostMergeDedup } from '../services/post-merge-dedup'
 
 const execFile = promisify(execFileCb)
 
@@ -634,6 +635,12 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
               cwd: repoPath,
               env: buildAgentEnv()
             })
+
+            try {
+              await runPostMergeDedup(repoPath)
+            } catch {
+              // Non-fatal
+            }
 
             // Clean up worktree + branch
             try {
