@@ -388,6 +388,32 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'assistant', maxRuntimeMs: 3_600_000 })
       expect(prompt).not.toContain('## Time Management')
     })
+
+    // End-to-end wiring guard: lock in that maxRuntimeMs flowing into
+    // buildAgentPrompt actually produces the time-budget section in the
+    // final assembled prompt. Prevents a regression where the call-site
+    // passes maxRuntimeMs but buildTimeLimitSection gets disconnected.
+    it('end-to-end: maxRuntimeMs of 30 minutes produces a 30-minute time budget section', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Implement something',
+        maxRuntimeMs: 1_800_000 // 30 minutes
+      })
+      expect(prompt).toContain('## Time Management')
+      expect(prompt).toContain('30 minutes')
+      expect(prompt).toContain('70% for implementation')
+      expect(prompt).toContain('Commit early')
+    })
+
+    it('end-to-end: omitting maxRuntimeMs leaves the time-budget section out of the final prompt', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Implement something',
+        maxRuntimeMs: undefined
+      })
+      expect(prompt).not.toContain('## Time Management')
+      expect(prompt).not.toContain('70% for implementation')
+    })
   })
 
   describe('idle timeout warning', () => {
@@ -502,6 +528,39 @@ describe('buildAgentPrompt', () => {
       expect(prompt).not.toContain('## BDE Conventions')
       // The universal preamble should still be present
       expect(prompt).toContain('You are a BDE')
+    })
+
+    // End-to-end integration check: assert that distinctive BDE memory
+    // module content (Zustand store rules, safeHandle IPC pattern) is
+    // actually absent from a non-BDE prompt and present in a BDE prompt.
+    // The unit test in memory.test.ts covers getAllMemory directly; this
+    // locks in the wiring through buildAgentPrompt so that a future change
+    // to memory injection cannot silently leak BDE guidance into life-os
+    // agents.
+    it('end-to-end: non-BDE repo (life-os) gets a slimmer prompt without BDE-specific memory phrases', () => {
+      const lifeOsPrompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Do something',
+        repoName: 'life-os'
+      })
+      const bdePrompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Do something',
+        repoName: 'bde'
+      })
+
+      // Distinctive BDE memory phrases that come from the BDE memory modules
+      expect(bdePrompt).toContain('Zustand')
+      expect(bdePrompt).toContain('safeHandle')
+      expect(bdePrompt).toContain('## IPC Conventions')
+
+      // None of those should leak into a non-BDE prompt
+      expect(lifeOsPrompt).not.toContain('Zustand')
+      expect(lifeOsPrompt).not.toContain('safeHandle')
+      expect(lifeOsPrompt).not.toContain('## IPC Conventions')
+
+      // And the life-os prompt should be measurably smaller than the BDE prompt
+      expect(lifeOsPrompt.length).toBeLessThan(bdePrompt.length)
     })
   })
 

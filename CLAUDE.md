@@ -26,7 +26,7 @@ GitHub Actions runs on every push to `main` and every PR targeting `main`:
 
 - `npm run lint` — must pass
 - `npm run typecheck` — must pass
-- `npm run test:coverage` — must pass (enforces coverage thresholds: 73% stmts, 65% branches, 73% functions, 74% lines)
+- `npm run test:coverage` — must pass (coverage thresholds enforced in vitest config — don't hardcode them elsewhere)
 - `npm run test:main` — must pass (main process integration tests)
 
 All checks are required before merge.
