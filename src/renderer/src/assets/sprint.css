@@ -689,35 +689,6 @@
   margin: 8px 0;
 }
 
-.spec-drawer__prompt-section {
-  margin-top: 16px;
-  border-top: 1px solid var(--bde-border);
-  padding-top: 12px;
-}
-
-.spec-drawer__prompt-toggle {
-  background: none;
-  border: none;
-  color: var(--bde-text-dim);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.spec-drawer__prompt-toggle:hover {
-  color: var(--bde-text);
-}
-
-.spec-drawer__prompt-body {
-  font-size: 12px;
-  font-family: var(--bde-font-mono);
-  white-space: pre-wrap;
-  color: var(--bde-text-dim);
-  margin-top: 8px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
 /* ── PR Section ───────────────────────────────────────── */
 
 .pr-section {

@@ -186,7 +186,10 @@ vi.stubGlobal('api', {
     mergeLocally: vi.fn().mockResolvedValue({ success: true }),
     createPr: vi.fn().mockResolvedValue({ prUrl: 'https://github.com/test/pr/1' }),
     requestRevision: vi.fn().mockResolvedValue(undefined),
-    discard: vi.fn().mockResolvedValue(undefined)
+    discard: vi.fn().mockResolvedValue(undefined),
+    checkFreshness: vi.fn().mockResolvedValue({ status: 'fresh', commitsBehind: 0 }),
+    shipIt: vi.fn().mockResolvedValue({ success: true, pushed: true }),
+    rebase: vi.fn().mockResolvedValue({ success: true })
   },
   watchDir: vi.fn().mockResolvedValue(undefined),
   writeFile: vi.fn().mockResolvedValue(undefined),

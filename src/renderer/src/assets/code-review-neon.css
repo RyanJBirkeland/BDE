@@ -602,18 +602,6 @@
   color: var(--neon-red);
 }
 
-/* Ship It button */
-.cr-actions__btn--ship {
-  background: linear-gradient(135deg, var(--neon-cyan-surface) 0%, var(--neon-blue-surface) 100%);
-  border-color: var(--neon-cyan-border);
-  color: var(--neon-cyan);
-}
-
-.cr-actions__btn--ship:hover {
-  box-shadow: 0 0 16px var(--neon-cyan-glow);
-  transform: translateY(-1px);
-}
-
 /* Batch actions bar */
 .cr-batch {
   display: flex;
