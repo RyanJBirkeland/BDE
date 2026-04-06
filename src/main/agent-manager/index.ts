@@ -27,6 +27,25 @@ import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoPaths } from '../paths'
 import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../env-utils'
 import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
+import { broadcast } from '../broadcast'
+
+// ---------------------------------------------------------------------------
+// Circuit breaker constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Number of consecutive spawn failures that trips the circuit breaker.
+ * Tuned for "broken Claude SDK/CLI" failures rather than transient blips —
+ * 5 in a row across distinct tasks strongly suggests a global problem.
+ */
+export const SPAWN_CIRCUIT_FAILURE_THRESHOLD = 5
+
+/**
+ * How long the drain loop pauses spawning new agents once the circuit
+ * is open. Long enough that an upstream incident (network blip, expired
+ * token, busted CLI install) is unlikely to still be present.
+ */
+export const SPAWN_CIRCUIT_PAUSE_MS = 5 * 60 * 1000 // 5 minutes
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to createLogger
@@ -224,6 +243,10 @@ export class AgentManagerImpl implements AgentManager {
   readonly _metrics: MetricsCollector
   private _lastTaskDeps = new Map<string, TaskDependency[] | null>()
 
+  // Circuit breaker state — pauses drain loop after consecutive spawn failures.
+  _consecutiveSpawnFailures = 0
+  _circuitOpenUntil = 0
+
   // Private timers
   private pollTimer: ReturnType<typeof setInterval> | null = null
   private watchdogTimer: ReturnType<typeof setInterval> | null = null
@@ -251,8 +274,69 @@ export class AgentManagerImpl implements AgentManager {
       defaultModel: config.defaultModel,
       logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
-      repo
+      repo,
+      onSpawnSuccess: () => this._recordSpawnSuccess(),
+      onSpawnFailure: () => this._recordSpawnFailure()
     }
+  }
+
+  /**
+   * Reset the circuit breaker counter on a successful agent spawn.
+   * If the circuit was open, also clear the open-until timestamp.
+   */
+  _recordSpawnSuccess(): void {
+    if (this._consecutiveSpawnFailures > 0 || this._circuitOpenUntil > 0) {
+      this.logger.info(
+        `[agent-manager] Spawn succeeded — resetting circuit breaker (was ${this._consecutiveSpawnFailures} failures)`
+      )
+    }
+    this._consecutiveSpawnFailures = 0
+    this._circuitOpenUntil = 0
+  }
+
+  /**
+   * Track a spawn failure and trip the breaker if the consecutive count
+   * crosses the threshold. Emits a renderer event so the UI can warn.
+   */
+  _recordSpawnFailure(): void {
+    this._consecutiveSpawnFailures += 1
+    this.logger.warn(
+      `[agent-manager] Spawn failure ${this._consecutiveSpawnFailures}/${SPAWN_CIRCUIT_FAILURE_THRESHOLD}`
+    )
+    if (
+      this._consecutiveSpawnFailures >= SPAWN_CIRCUIT_FAILURE_THRESHOLD &&
+      this._circuitOpenUntil === 0
+    ) {
+      this._circuitOpenUntil = Date.now() + SPAWN_CIRCUIT_PAUSE_MS
+      this.logger.error(
+        `[agent-manager] Spawn circuit breaker OPEN — pausing drain for ${Math.round(
+          SPAWN_CIRCUIT_PAUSE_MS / 1000
+        )}s after ${this._consecutiveSpawnFailures} consecutive failures`
+      )
+      try {
+        broadcast('agent-manager:circuit-breaker-open', {
+          consecutiveFailures: this._consecutiveSpawnFailures,
+          openUntil: this._circuitOpenUntil
+        })
+      } catch (err) {
+        this.logger.warn(`[agent-manager] Failed to broadcast circuit-breaker event: ${err}`)
+      }
+    }
+  }
+
+  /**
+   * Returns true if the circuit breaker is currently open. Auto-resets if
+   * the pause window has elapsed.
+   */
+  _isCircuitOpen(now: number = Date.now()): boolean {
+    if (this._circuitOpenUntil === 0) return false
+    if (now >= this._circuitOpenUntil) {
+      this.logger.info('[agent-manager] Circuit breaker pause elapsed — resuming drain')
+      this._circuitOpenUntil = 0
+      this._consecutiveSpawnFailures = 0
+      return false
+    }
+    return true
   }
 
   // ---- Helpers ----
@@ -527,6 +611,14 @@ export class AgentManagerImpl implements AgentManager {
       `[agent-manager] Drain loop starting (shuttingDown=${this._shuttingDown}, slots=${availableSlots(this._concurrency, this._activeAgents.size)})`
     )
     if (this._shuttingDown) return
+    if (this._isCircuitOpen()) {
+      this.logger.warn(
+        `[agent-manager] Skipping drain — circuit breaker open until ${new Date(
+          this._circuitOpenUntil
+        ).toISOString()}`
+      )
+      return
+    }
     this._metrics.increment('drainLoopCount')
     const drainStart = Date.now()
 
