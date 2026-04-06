@@ -85,7 +85,7 @@ describe('MyComponent', () => {
 })
 \`\`\`
 
-Coverage thresholds: 72% stmts, 66% branches, 70% functions, 74% lines
+Coverage thresholds are enforced by CI via vitest config — run \`npm run test:coverage\` to verify locally. Do not hardcode threshold numbers in prompts or code.
 `,
   capabilities: ['code-generation']
 }
