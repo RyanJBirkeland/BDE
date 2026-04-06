@@ -352,14 +352,16 @@
   padding: 3px 8px;
   margin-top: 6px;
   cursor: pointer;
-  opacity: 0;
+  opacity: 0.5;
   transition:
     opacity 150ms ease,
     background 150ms ease,
     box-shadow 150ms ease;
 }
 
-.backlog-card__action:hover {
+.backlog-card__action:hover,
+.backlog-card__action:focus-visible {
+  opacity: 1;
   background: var(--neon-cyan-border);
   box-shadow: 0 0 8px var(--neon-cyan-glow);
 }

@@ -21,7 +21,6 @@ interface DashboardDataState {
   fetchAll: () => Promise<void>
 }
 
-const ACCENT_CYCLE: ChartBar['accent'][] = ['cyan', 'pink', 'blue', 'orange', 'purple']
 const EVENT_ACCENT: Record<string, FeedEvent['accent']> = {
   'agent:error': 'red',
   'agent:completed': 'cyan',
@@ -71,9 +70,9 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
     try {
       const data = await window.api.dashboard?.completionsPerHour()
       if (data) {
-        chartData = data.map((d, i) => ({
+        chartData = data.map((d) => ({
           value: d.count,
-          accent: ACCENT_CYCLE[i % ACCENT_CYCLE.length],
+          accent: 'cyan' as const,
           label: d.hour
         }))
       }

@@ -70,7 +70,7 @@ describe('dashboardDataStore', () => {
     expect(state.loading).toBe(false)
     expect(state.chartData).toHaveLength(2)
     expect(state.chartData[0]).toEqual({ value: 5, accent: 'cyan', label: '10:00' })
-    expect(state.chartData[1]).toEqual({ value: 3, accent: 'pink', label: '11:00' })
+    expect(state.chartData[1]).toEqual({ value: 3, accent: 'cyan', label: '11:00' })
     expect(state.burndownData).toHaveLength(2)
     expect(state.burndownData[0]).toEqual({ value: 2, accent: 'cyan', label: '2026-03-28' })
     expect(state.burndownData[1]).toEqual({ value: 4, accent: 'cyan', label: '2026-03-29' })
@@ -154,7 +154,7 @@ describe('dashboardDataStore', () => {
     expect(state.loading).toBe(false)
   })
 
-  it('fetchAll maps accent cycle correctly for many data points', async () => {
+  it('fetchAll maps all chart bars with cyan accent', async () => {
     const data = Array.from({ length: 7 }, (_, i) => ({ hour: `${i}:00`, count: i + 1 }))
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue(data)
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
@@ -163,8 +163,7 @@ describe('dashboardDataStore', () => {
     await useDashboardDataStore.getState().fetchAll()
 
     const accents = useDashboardDataStore.getState().chartData.map((d) => d.accent)
-    // Cycle repeats after 5
-    expect(accents).toEqual(['cyan', 'pink', 'blue', 'orange', 'purple', 'cyan', 'pink'])
+    expect(accents).toEqual(['cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan'])
   })
 
   it('fetchAll maps unknown event types to purple accent', async () => {

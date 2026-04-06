@@ -973,7 +973,7 @@ export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
     const rows = db
       .prepare(
         `SELECT
-           COALESCE(spec_type, 'unknown') as spec_type,
+           spec_type,
            SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
            COUNT(*) as total
          FROM sprint_tasks
@@ -983,7 +983,7 @@ export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
       .all() as Array<{ spec_type: string | null; done: number; total: number }>
 
     return rows.map((row) => ({
-      spec_type: row.spec_type === 'unknown' ? null : row.spec_type,
+      spec_type: row.spec_type ?? null,
       done: row.done,
       total: row.total,
       success_rate: row.total > 0 ? row.done / row.total : 0
