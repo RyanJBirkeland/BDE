@@ -168,9 +168,7 @@ app.whenReady().then(() => {
   // Clean up test task artifacts (agents running tests create "Test task" records)
   try {
     const db = getDb()
-    const result = db
-      .prepare("DELETE FROM sprint_tasks WHERE title LIKE 'Test task%' AND status = 'backlog'")
-      .run()
+    const result = db.prepare("DELETE FROM sprint_tasks WHERE title LIKE 'Test task%'").run()
     if (result.changes > 0) {
       createLogger('startup').info(`Cleaned ${result.changes} test task artifacts`)
     }

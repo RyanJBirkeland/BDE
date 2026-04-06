@@ -5,6 +5,9 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify('0.0.0-test')
   },
   test: {
+    env: {
+      BDE_TEST_DB: ':memory:'
+    },
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/renderer/src/test-setup.ts'],

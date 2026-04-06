@@ -3,7 +3,8 @@ import { homedir, tmpdir } from 'os'
 
 // --- BDE data directory ---
 export const BDE_DIR = join(homedir(), '.bde')
-export const BDE_DB_PATH = join(BDE_DIR, 'bde.db')
+// Allow tests to redirect the DB to an isolated path (prevents test artifact pollution)
+export const BDE_DB_PATH = process.env.BDE_TEST_DB ?? join(BDE_DIR, 'bde.db')
 export const BDE_AGENTS_INDEX = join(BDE_DIR, 'agents.json')
 export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
 export const BDE_AGENT_TMP_DIR = join(tmpdir(), 'bde-agents')

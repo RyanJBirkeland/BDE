@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
+    env: {
+      BDE_TEST_DB: ':memory:'
+    },
     environment: 'node',
     globals: true,
     include: ['src/main/**/*.test.ts'],
