@@ -31,3 +31,6 @@ release/
 # Supabase local
 supabase/
 .repomap/
+
+# Internal plans/specs — removed from public tree but kept in git history
+docs/superpowers/
