@@ -148,7 +148,9 @@ export function SidebarItem({
           }}
           onContextMenu={handleContextMenu}
           onKeyDown={handleKeyDown}
-          aria-label={label}
+          aria-label={
+            badge != null && badge > 0 ? `${label} — ${badge} items needing attention` : label
+          }
           aria-haspopup="menu"
           aria-expanded={contextMenu !== null}
           aria-current={isActive ? 'page' : undefined}
@@ -160,6 +162,7 @@ export function SidebarItem({
               className={`sidebar-item__badge sidebar-item__badge--${badgeAccent}`}
               data-testid={`sidebar-badge-${view}`}
               data-accent={badgeAccent}
+              aria-hidden="true"
             >
               {badge > 9 ? '9+' : badge}
             </span>

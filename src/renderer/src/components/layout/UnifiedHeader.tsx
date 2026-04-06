@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../stores/theme'
 import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
@@ -16,11 +17,20 @@ export function UnifiedHeader(): React.JSX.Element {
   const totalCost = useCostDataStore((s) => s.totalCost)
   const setView = usePanelLayoutStore((s) => s.setView)
 
-  // Health strip counts (derived from sprint tasks)
+  // Health strip counts — single-pass reduction so we don't traverse the
+  // task list three times on every render (matters at thousands of tasks).
   const tasks = useSprintTasks((s) => s.tasks)
-  const activeCount = tasks.filter((t) => t.status === 'active').length
-  const queuedCount = tasks.filter((t) => t.status === 'queued').length
-  const failedCount = tasks.filter((t) => t.status === 'failed' || t.status === 'error').length
+  const { activeCount, queuedCount, failedCount } = useMemo(() => {
+    let active = 0
+    let queued = 0
+    let failed = 0
+    for (const t of tasks) {
+      if (t.status === 'active') active++
+      else if (t.status === 'queued') queued++
+      else if (t.status === 'failed' || t.status === 'error') failed++
+    }
+    return { activeCount: active, queuedCount: queued, failedCount: failed }
+  }, [tasks])
   const hasError = failedCount > 0
   const managerState: 'running' | 'error' | 'idle' = hasError
     ? 'error'

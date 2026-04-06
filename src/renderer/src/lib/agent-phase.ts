@@ -40,6 +40,9 @@ export function derivePhaseLabel(
   if (!events || events.length === 0) return 'Idle'
 
   // Walk from most recent backward until we find a classifiable event.
+  // Assumes events are loosely time-ordered (the SDK appends in order, so this
+  // holds in practice). If out-of-order events become a concern, sort by
+  // timestamp first — we exit on the first event outside RECENT_WINDOW_MS.
   for (let i = events.length - 1; i >= 0; i--) {
     const ev = events[i]
     if (now - ev.timestamp > RECENT_WINDOW_MS) return 'Idle'
