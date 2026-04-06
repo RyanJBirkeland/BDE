@@ -19,7 +19,8 @@ export function NeonSidebar({ model }: NeonSidebarProps): React.JSX.Element {
   const moreButtonRef = useRef<HTMLButtonElement>(null)
 
   const pinnedViews = useSidebarStore((s) => s.pinnedViews)
-  const { pinView, unpinView } = useSidebarStore()
+  const pinView = useSidebarStore((s) => s.pinView)
+  const unpinView = useSidebarStore((s) => s.unpinView)
 
   const {
     root,

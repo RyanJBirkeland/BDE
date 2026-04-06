@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { useSprintUI } from '../../stores/sprintUI'
 import { useFilterPresets } from '../../stores/filterPresets'
+import { PromptModal } from '../ui/PromptModal'
 import type { SprintTask } from '../../../../shared/types'
 
 interface PipelineFilterBarProps {
@@ -19,6 +20,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
   const savePreset = useFilterPresets((s) => s.savePreset)
   const loadPreset = useFilterPresets((s) => s.loadPreset)
   const deletePreset = useFilterPresets((s) => s.deletePreset)
+  const [showSavePrompt, setShowSavePrompt] = useState(false)
 
   const repos = useMemo(() => {
     const set = new Set(tasks.map((t) => t.repo))
@@ -32,8 +34,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
   if (repos.length <= 1 && !searchQuery && presetNames.length === 0) return null
 
   const handleSaveView = (): void => {
-    const name = window.prompt('Enter a name for this filter preset:')
-    if (name) savePreset(name)
+    setShowSavePrompt(true)
   }
 
   return (
@@ -93,6 +94,18 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
           Save View
         </button>
       )}
+      <PromptModal
+        open={showSavePrompt}
+        title="Save Filter Preset"
+        message="Enter a name for this filter preset:"
+        placeholder="e.g. Active BDE tasks"
+        confirmLabel="Save"
+        onConfirm={(name) => {
+          savePreset(name)
+          setShowSavePrompt(false)
+        }}
+        onCancel={() => setShowSavePrompt(false)}
+      />
     </div>
   )
 }

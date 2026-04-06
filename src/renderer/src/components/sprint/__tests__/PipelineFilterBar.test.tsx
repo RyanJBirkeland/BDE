@@ -94,8 +94,7 @@ describe('PipelineFilterBar - Presets', () => {
     expect(state.statusFilter).toBe('done')
   })
 
-  it('clicking "Save View" button prompts for preset name', () => {
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('New Preset')
+  it('clicking "Save View" button opens prompt modal', () => {
     useSprintUI.setState({ searchQuery: 'test' })
     const tasks = [makeTask({ repo: 'BDE' })]
 
@@ -104,12 +103,11 @@ describe('PipelineFilterBar - Presets', () => {
     const saveButton = screen.getByText('Save View')
     fireEvent.click(saveButton)
 
-    expect(promptSpy).toHaveBeenCalledWith('Enter a name for this filter preset:')
-    promptSpy.mockRestore()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Save Filter Preset')).toBeInTheDocument()
   })
 
-  it('saves current filters as preset when name provided', () => {
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('My Preset')
+  it('saves current filters as preset when name provided via modal', () => {
     useSprintUI.setState({
       repoFilter: 'BDE',
       searchQuery: 'bug',
@@ -122,17 +120,20 @@ describe('PipelineFilterBar - Presets', () => {
     const saveButton = screen.getByText('Save View')
     fireEvent.click(saveButton)
 
+    // Type name in prompt modal and confirm
+    const input = screen.getByLabelText('Enter a name for this filter preset:')
+    fireEvent.change(input, { target: { value: 'My Preset' } })
+    fireEvent.click(screen.getByText('Save'))
+
     const { presets } = useFilterPresets.getState()
     expect(presets['My Preset']).toEqual({
       repoFilter: 'BDE',
       searchQuery: 'bug',
       statusFilter: 'blocked'
     })
-    promptSpy.mockRestore()
   })
 
-  it('does not save preset when prompt is cancelled', () => {
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue(null)
+  it('does not save preset when prompt modal is cancelled', () => {
     useSprintUI.setState({ searchQuery: 'test' })
     const tasks = [makeTask({ repo: 'BDE' })]
 
@@ -140,10 +141,10 @@ describe('PipelineFilterBar - Presets', () => {
 
     const saveButton = screen.getByText('Save View')
     fireEvent.click(saveButton)
+    fireEvent.click(screen.getByText('Cancel'))
 
     const { presets } = useFilterPresets.getState()
     expect(Object.keys(presets).length).toBe(0)
-    promptSpy.mockRestore()
   })
 
   it('deletes preset when X button is clicked', () => {
