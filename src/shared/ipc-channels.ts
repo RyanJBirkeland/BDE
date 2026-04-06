@@ -211,6 +211,10 @@ export interface GitHubApiChannels {
     args: [path: string, init?: GitHubFetchInit]
     result: GitHubFetchResult
   }
+  'github:isConfigured': {
+    args: []
+    result: boolean
+  }
 }
 
 /** Cost tracking */

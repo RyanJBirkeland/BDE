@@ -10,6 +10,8 @@ export interface CommitBoxProps {
   stagedCount: number
   commitLoading?: boolean
   pushLoading?: boolean
+  pushDisabled?: boolean
+  pushDisabledTitle?: string
   onMessageChange: (msg: string) => void
   onCommit: () => void
   onPush: () => void
@@ -24,6 +26,8 @@ export function CommitBox({
   stagedCount,
   commitLoading = false,
   pushLoading = false,
+  pushDisabled = false,
+  pushDisabledTitle,
   onMessageChange,
   onCommit,
   onPush
@@ -94,10 +98,10 @@ export function CommitBox({
         {/* Push button */}
         <button
           onClick={onPush}
-          disabled={pushLoading}
+          disabled={pushLoading || pushDisabled}
           aria-label="Push to remote"
           aria-busy={pushLoading}
-          title={pushLoading ? 'Pushing...' : 'Push to remote'}
+          title={pushDisabled && pushDisabledTitle ? pushDisabledTitle : pushLoading ? 'Pushing...' : 'Push to remote'}
           className="git-commit-box__push-btn"
         >
           {pushLoading ? <Loader2 size={14} className="bde-spin" /> : <Upload size={14} />}

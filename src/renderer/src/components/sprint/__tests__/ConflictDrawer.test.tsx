@@ -13,7 +13,10 @@ beforeEach(() => {
     }),
     openExternal: vi.fn(),
     getRepoPaths: vi.fn().mockResolvedValue({}),
-    spawnLocalAgent: vi.fn().mockResolvedValue(undefined)
+    spawnLocalAgent: vi.fn().mockResolvedValue(undefined),
+    github: {
+      isConfigured: vi.fn().mockResolvedValue(true)
+    }
   } as any
 })
 

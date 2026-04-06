@@ -5,6 +5,7 @@ import { useSprintTasks } from '../../stores/sprintTasks'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
 import { useTextareaPrompt, TextareaPromptModal } from '../ui/TextareaPromptModal'
 import { toast } from '../../stores/toasts'
+import { useGitHubStatus } from '../../hooks/useGitHubStatus'
 
 export function ReviewActions(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -14,6 +15,7 @@ export function ReviewActions(): React.JSX.Element {
   const task = tasks.find((t) => t.id === selectedTaskId)
   const { confirm, confirmProps } = useConfirm()
   const { prompt, promptProps } = useTextareaPrompt()
+  const { configured: ghConfigured } = useGitHubStatus()
   const [mergeStrategy, setMergeStrategy] = useState<'squash' | 'merge' | 'rebase'>('squash')
   const [actionInFlight, setActionInFlight] = useState<string | null>(null)
   const [freshness, setFreshness] = useState<{
@@ -228,7 +230,8 @@ export function ReviewActions(): React.JSX.Element {
         <button
           className="cr-actions__btn cr-actions__btn--ship"
           onClick={handleShipIt}
-          disabled={!!actionInFlight}
+          disabled={!!actionInFlight || !ghConfigured}
+          title={!ghConfigured ? 'Configure GitHub in Settings \u2192 Connections' : undefined}
         >
           {actionInFlight === 'shipIt' ? (
             <Loader2 size={14} className="spin" />
@@ -264,7 +267,8 @@ export function ReviewActions(): React.JSX.Element {
         <button
           className="cr-actions__btn cr-actions__btn--secondary"
           onClick={handleCreatePr}
-          disabled={!!actionInFlight}
+          disabled={!!actionInFlight || !ghConfigured}
+          title={!ghConfigured ? 'Configure GitHub in Settings \u2192 Connections' : undefined}
         >
           {actionInFlight === 'createPr' ? (
             <Loader2 size={14} className="spin" />

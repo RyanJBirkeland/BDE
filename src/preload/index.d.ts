@@ -93,6 +93,7 @@ declare global {
       // GitHub API proxy — all GitHub REST calls routed through main process
       github: {
         fetch: (path: string, init?: GitHubFetchInit) => Promise<IpcResult<'github:fetch'>>
+        isConfigured: () => Promise<IpcResult<'github:isConfigured'>>
       }
 
       // Local agent process detection + spawning

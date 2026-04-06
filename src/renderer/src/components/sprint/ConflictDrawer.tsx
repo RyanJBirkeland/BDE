@@ -6,6 +6,7 @@ import { toast } from '../../stores/toasts'
 import { repoColor } from '../../lib/format'
 import { parsePrUrl } from '../../../../shared/github'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { useGitHubStatus } from '../../hooks/useGitHubStatus'
 import type { SprintTask } from '../../../../shared/types'
 
 type ConflictDrawerProps = {
@@ -27,6 +28,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const fetchedRef = useRef<Set<string>>(new Set())
   const drawerRef = useRef<HTMLDivElement>(null)
+  const { configured: ghConfigured } = useGitHubStatus()
 
   useFocusTrap(drawerRef, open)
 
@@ -169,7 +171,9 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
         </div>
 
         <div className="conflict-drawer__body">
-          {tasks.length === 0 ? (
+          {!ghConfigured ? (
+            <div className="conflict-drawer__empty">Conflict detection requires GitHub. Configure a token in Settings &rarr; Connections.</div>
+          ) : tasks.length === 0 ? (
             <div className="conflict-drawer__empty">No merge conflicts detected.</div>
           ) : (
             tasks.map((task) => {
