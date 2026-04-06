@@ -31,6 +31,11 @@ export interface SdkStreamingOptions {
   disallowedTools?: string[]
   /** Maximum number of agent turns. Defaults to 1 (single-shot). */
   maxTurns?: number
+  /**
+   * Maximum spend in USD for this query. The SDK aborts if exceeded. Use this
+   * as a hard ceiling on prompt-injected loops or runaway tool chains.
+   */
+  maxBudgetUsd?: number
   /** Optional callback fired whenever the agent invokes a tool. */
   onToolUse?: (event: ToolUseEvent) => void
 }
@@ -69,9 +74,12 @@ export async function runSdkStreaming(
       settingSources: ['user', 'project', 'local'],
       ...(options.cwd ? { cwd: options.cwd } : {}),
       ...(options.tools !== undefined ? { tools: options.tools } : {}),
-      ...(options.disallowedTools && options.disallowedTools.length > 0
+      // Always forward disallowedTools when provided — empty array is a valid
+      // (no-op) denylist and we want call sites to be explicit.
+      ...(options.disallowedTools !== undefined
         ? { disallowedTools: options.disallowedTools }
-        : {})
+        : {}),
+      ...(options.maxBudgetUsd !== undefined ? { maxBudgetUsd: options.maxBudgetUsd } : {})
     }
   })
 

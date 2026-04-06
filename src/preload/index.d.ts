@@ -280,7 +280,6 @@ declare global {
 
       // Task Workbench
       workbench: {
-        chat: (...args: IpcArgs<'workbench:chat'>) => Promise<IpcResult<'workbench:chat'>>
         chatStream: (
           ...args: IpcArgs<'workbench:chatStream'>
         ) => Promise<IpcResult<'workbench:chatStream'>>

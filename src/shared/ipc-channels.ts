@@ -540,15 +540,6 @@ export interface TerminalChannels {
 
 /** Task Workbench AI-assisted creation */
 export interface WorkbenchChannels {
-  'workbench:chat': {
-    args: [
-      input: {
-        messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-        formContext: { title: string; repo: string; spec: string }
-      }
-    ]
-    result: { content: string }
-  }
   'workbench:generateSpec': {
     args: [input: { title: string; repo: string; templateHint: string }]
     result: { spec: string }

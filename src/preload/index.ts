@@ -326,10 +326,6 @@ const api = {
 
   // Task Workbench
   workbench: {
-    chat: (input: {
-      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-      formContext: { title: string; repo: string; spec: string }
-    }) => typedInvoke('workbench:chat', input),
     generateSpec: (input: { title: string; repo: string; templateHint: string }) =>
       typedInvoke('workbench:generateSpec', input),
     checkSpec: (input: { title: string; repo: string; spec: string; specType?: string | null }) =>

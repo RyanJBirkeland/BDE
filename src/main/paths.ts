@@ -36,6 +36,18 @@ export function getRepoPaths(): Record<string, string> {
   return result
 }
 
+/**
+ * Look up a configured repo's local path by name. Case-insensitive — callers
+ * may pass `'BDE'`, `'bde'`, etc. Returns `undefined` if no repo is configured
+ * with that name. Prefer this helper over `getRepoPaths()[name]`, which is
+ * easy to use incorrectly because the underlying map is keyed by lowercased
+ * name (and a mismatched-case lookup silently returns `undefined`).
+ */
+export function getRepoPath(name: string): string | undefined {
+  if (!name) return undefined
+  return getRepoPaths()[name.toLowerCase()]
+}
+
 export function getGhRepo(repoSlug: string): string | null {
   const repos = getConfiguredRepos()
   const repo = repos.find((r) => r.name.toLowerCase() === repoSlug.toLowerCase())

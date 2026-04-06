@@ -2,7 +2,10 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 
 import type { Result } from '../shared/types'
-import { getRepoPaths as getRepoPathsFromSettings } from './paths'
+import {
+  getRepoPaths as getRepoPathsFromSettings,
+  getRepoPath as getRepoPathFromSettings
+} from './paths'
 
 const execFileAsync = promisify(execFile)
 
@@ -10,6 +13,11 @@ const MAX_BUFFER = 10 * 1024 * 1024
 
 export function getRepoPaths(): Record<string, string> {
   return getRepoPathsFromSettings()
+}
+
+/** Case-insensitive single-repo lookup. See `paths.ts:getRepoPath`. */
+export function getRepoPath(name: string): string | undefined {
+  return getRepoPathFromSettings(name)
 }
 
 export interface GitFileStatus {
