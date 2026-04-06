@@ -108,6 +108,8 @@ export function DagOverlay({
           width={layout.width}
           height={layout.height}
           viewBox={`0 0 ${layout.width} ${layout.height}`}
+          role="group"
+          aria-label="Task dependency graph"
         >
           {/* Render edges first (so they appear behind nodes) */}
           <g className="dag-overlay__edges">
@@ -136,6 +138,15 @@ export function DagOverlay({
                   className="dag-overlay__node"
                   transform={`translate(${node.x}, ${node.y})`}
                   onClick={() => handleNodeClick(node.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleNodeClick(node.id)
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${node.task.title}: ${node.task.status}`}
                   style={{ cursor: 'pointer' }}
                 >
                   <rect

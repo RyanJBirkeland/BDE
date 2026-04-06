@@ -284,25 +284,41 @@
   margin-bottom: 16px;
 }
 
-.shortcuts-overlay__columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+.shortcuts-overlay__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--bde-border);
+  padding-bottom: 8px;
 }
 
-.shortcuts-overlay__col {
+.shortcuts-overlay__tab {
+  padding: 4px 12px;
+  font-size: var(--bde-size-sm);
+  font-family: var(--bde-font-ui);
+  color: var(--bde-text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+}
+
+.shortcuts-overlay__tab:hover {
+  color: var(--bde-text);
+  background: var(--bde-hover);
+}
+
+.shortcuts-overlay__tab--active {
+  color: var(--bde-text);
+  background: var(--bde-hover-strong);
+  border-color: var(--bde-border);
+}
+
+.shortcuts-overlay__content {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.shortcuts-overlay__col-title {
-  font-size: var(--bde-size-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--bde-text-muted);
-  margin-bottom: 4px;
+  min-height: 200px;
 }
 
 .shortcuts-overlay__row {

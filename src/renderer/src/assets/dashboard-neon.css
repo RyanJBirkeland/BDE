@@ -571,3 +571,62 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Spec Type Success Rate ── */
+.spec-rate__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--neon-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.spec-rate__empty {
+  color: var(--neon-text-dim);
+  font-size: 11px;
+}
+
+.spec-rate__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spec-rate__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spec-rate__info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spec-rate__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neon-text);
+  text-transform: capitalize;
+}
+
+.spec-rate__value {
+  font-size: 11px;
+  color: var(--neon-text-muted);
+}
+
+.spec-rate__track {
+  height: 6px;
+  background: var(--neon-surface-deep);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.spec-rate__bar {
+  height: 100%;
+  background: var(--neon-cyan);
+  border-radius: 3px;
+  transition: width 300ms ease;
+}

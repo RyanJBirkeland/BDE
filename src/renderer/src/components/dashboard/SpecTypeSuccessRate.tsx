@@ -25,47 +25,40 @@ export function SpecTypeSuccessRate(): React.JSX.Element {
 
   if (loading) {
     return (
-      <NeonCard className="p-4">
-        <h3 className="text-sm font-semibold text-gray-400 mb-3">Success Rate by Spec Type</h3>
-        <div className="text-gray-500 text-sm">Loading...</div>
+      <NeonCard>
+        <h3 className="spec-rate__title">Success Rate by Spec Type</h3>
+        <div className="spec-rate__empty">Loading...</div>
       </NeonCard>
     )
   }
 
   if (data.length === 0) {
     return (
-      <NeonCard className="p-4">
-        <h3 className="text-sm font-semibold text-gray-400 mb-3">Success Rate by Spec Type</h3>
-        <div className="text-gray-500 text-sm">No completed tasks yet</div>
+      <NeonCard>
+        <h3 className="spec-rate__title">Success Rate by Spec Type</h3>
+        <div className="spec-rate__empty">No completed tasks yet</div>
       </NeonCard>
     )
   }
 
   return (
-    <NeonCard className="p-4">
-      <h3 className="text-sm font-semibold text-gray-400 mb-3">Success Rate by Spec Type</h3>
-      <div className="space-y-3">
+    <NeonCard>
+      <h3 className="spec-rate__title">Success Rate by Spec Type</h3>
+      <div className="spec-rate__list">
         {data.map((item, i) => {
           const displayName = item.spec_type === null ? 'Unknown' : item.spec_type
           const percentage = Math.round(item.success_rate * 100)
 
           return (
-            <div key={i} className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-gray-300 capitalize">
-                    {displayName}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {item.done}/{item.total} ({percentage}%)
-                  </span>
-                </div>
-                <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-cyan-500 rounded-full transition-all duration-300"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
+            <div key={i} className="spec-rate__row">
+              <div className="spec-rate__info">
+                <span className="spec-rate__label">{displayName}</span>
+                <span className="spec-rate__value">
+                  {item.done}/{item.total} ({percentage}%)
+                </span>
+              </div>
+              <div className="spec-rate__track">
+                <div className="spec-rate__bar" style={{ width: `${percentage}%` }} />
               </div>
             </div>
           )

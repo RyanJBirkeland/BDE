@@ -26,7 +26,9 @@ export function EditorBreadcrumb(): React.JSX.Element | null {
     <nav className="editor-breadcrumb" aria-label="File path">
       {segments.map((segment, i) => (
         <span key={i} className="editor-breadcrumb__item">
-          {i > 0 && <ChevronRight size={12} className="editor-breadcrumb__sep" />}
+          {i > 0 && (
+            <ChevronRight size={12} className="editor-breadcrumb__sep" aria-hidden="true" />
+          )}
           <span
             className={
               i === segments.length - 1

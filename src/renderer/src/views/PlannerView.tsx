@@ -7,6 +7,7 @@ import { EpicDetail } from '../components/planner/EpicDetail'
 import { CreateEpicModal } from '../components/planner/CreateEpicModal'
 import { Search, FileUp } from 'lucide-react'
 import { toast } from '../stores/toasts'
+import { useConfirm, ConfirmModal } from '../components/ui/ConfirmModal'
 
 export default function PlannerView(): React.JSX.Element {
   const {
@@ -24,6 +25,7 @@ export default function PlannerView(): React.JSX.Element {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const { confirm, confirmProps } = useConfirm()
 
   // Load groups on mount
   useEffect(() => {
@@ -99,11 +101,11 @@ export default function PlannerView(): React.JSX.Element {
       return
     }
 
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      `Queue ${tasksToQueue.length} task${tasksToQueue.length === 1 ? '' : 's'} to the pipeline?\n\n` +
-        `This will transition all draft tasks with specs to queued status.`
-    )
+    const confirmed = await confirm({
+      title: 'Queue Tasks',
+      message: `Queue ${tasksToQueue.length} task${tasksToQueue.length === 1 ? '' : 's'} to the pipeline? This will transition all draft tasks with specs to queued status.`,
+      confirmLabel: 'Queue'
+    })
 
     if (!confirmed) return
 
@@ -185,6 +187,7 @@ export default function PlannerView(): React.JSX.Element {
       </div>
 
       <CreateEpicModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />
+      <ConfirmModal {...confirmProps} />
     </div>
   )
 }

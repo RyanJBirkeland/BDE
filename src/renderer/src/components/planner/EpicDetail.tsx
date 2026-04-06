@@ -2,6 +2,9 @@ import React, { useMemo, useState, useRef, useEffect } from 'react'
 import { Edit2, MoreVertical, AlertTriangle } from 'lucide-react'
 import type { TaskGroup, SprintTask } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
+import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
+import { usePrompt, PromptModal } from '../ui/PromptModal'
+import { toast } from '../../stores/toasts'
 
 export interface EpicDetailProps {
   group: TaskGroup
@@ -44,6 +47,8 @@ export function EpicDetail({
   const [saving, setSaving] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { confirm, confirmProps } = useConfirm()
+  const { prompt, promptProps } = usePrompt()
 
   // Close menu on click outside
   useEffect(() => {
@@ -147,20 +152,35 @@ export function EpicDetail({
   const queueDisabled = tasksNeedingSpecs > 0
 
   // Overflow menu handlers
-  const handleEdit = (): void => {
+  const handleEdit = async (): Promise<void> => {
     setShowOverflowMenu(false)
     if (!onEditGroup) return
-    const name = window.prompt('Epic name:', group.name)
-    if (name === null) return // User cancelled
-    const goal = window.prompt('Epic goal (optional):', group.goal || '')
-    if (goal === null) return // User cancelled
+    const name = await prompt({
+      message: 'Epic name:',
+      title: 'Edit Epic',
+      defaultValue: group.name,
+      confirmLabel: 'Next'
+    })
+    if (name === null) return
+    const goal = await prompt({
+      message: 'Epic goal (optional):',
+      title: 'Edit Epic',
+      defaultValue: group.goal || '',
+      confirmLabel: 'Save'
+    })
+    if (goal === null) return
     onEditGroup(name.trim(), goal.trim())
   }
 
-  const handleDelete = (): void => {
+  const handleDelete = async (): Promise<void> => {
     setShowOverflowMenu(false)
     if (!onDeleteGroup) return
-    const confirmed = window.confirm(`Delete epic "${group.name}"? This cannot be undone.`)
+    const confirmed = await confirm({
+      message: `Delete epic "${group.name}"? This cannot be undone.`,
+      title: 'Delete Epic',
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })
     if (confirmed) {
       onDeleteGroup()
     }
@@ -193,7 +213,7 @@ export function EpicDetail({
       setEditingSpec('')
     } catch (err) {
       console.error('Failed to update task spec:', err)
-      alert('Failed to save spec. Please try again.')
+      toast.error('Failed to save spec. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -580,6 +600,8 @@ export function EpicDetail({
           Send to Pipeline
         </button>
       </div>
+      <ConfirmModal {...confirmProps} />
+      <PromptModal {...promptProps} />
     </div>
   )
 }
