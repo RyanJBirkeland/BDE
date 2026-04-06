@@ -42,6 +42,12 @@ export interface TaskGroup {
   updated_at: string
 }
 
+export interface RevisionFeedbackEntry {
+  timestamp: string
+  feedback: string
+  attempt: number
+}
+
 export type FailureReason =
   | 'auth'
   | 'timeout'
@@ -99,6 +105,12 @@ export interface SprintTask {
   cross_repo_contract?: string | null
   rebase_base_sha?: string | null
   rebased_at?: string | null
+  /**
+   * Audit trail of revision requests — appended each time a reviewer clicks
+   * "Request Revision" in the Code Review station. Shown as a collapsible
+   * "Previous revision requests" section when reviewing a retry attempt.
+   */
+  revision_feedback?: RevisionFeedbackEntry[] | null
   /**
    * Serialized JSON snapshot of the diff captured at review transition,
    * so Code Review can still show changes after the worktree is cleaned up.

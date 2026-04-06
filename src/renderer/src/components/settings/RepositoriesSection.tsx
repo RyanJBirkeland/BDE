@@ -99,8 +99,30 @@ export function RepositoriesSection(): React.JSX.Element {
 
   const handleBrowse = useCallback(async () => {
     const dir = await window.api.openDirectoryDialog()
-    if (dir) setNewPath(dir)
-  }, [])
+    if (!dir) return
+    setNewPath(dir)
+
+    // Auto-derive the local name from the directory basename when the user
+    // hasn't typed one yet.
+    const basename = dir.split('/').filter(Boolean).pop() ?? ''
+    if (!newName.trim() && basename) {
+      setNewName(basename)
+    }
+
+    // Best-effort: detect GitHub remote and pre-fill owner/repo.
+    try {
+      const detected = await window.api.gitDetectRemote(dir)
+      if (detected.isGitRepo && detected.owner && detected.repo) {
+        if (!newOwner.trim()) setNewOwner(detected.owner)
+        if (!newRepo.trim()) setNewRepo(detected.repo)
+        toast.success(`Detected ${detected.owner}/${detected.repo}`)
+      } else if (!detected.isGitRepo) {
+        toast.info('Not a git repository (you can still add it manually)')
+      }
+    } catch {
+      // Non-fatal — user can still fill fields manually.
+    }
+  }, [newName, newOwner, newRepo])
 
   return (
     <>

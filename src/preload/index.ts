@@ -90,6 +90,7 @@ const api = {
   gitPush: (cwd: string) => typedInvoke('git:push', cwd),
   gitBranches: (cwd: string) => typedInvoke('git:branches', cwd),
   gitCheckout: (cwd: string, branch: string) => typedInvoke('git:checkout', cwd, branch),
+  gitDetectRemote: (cwd: string) => typedInvoke('git:detectRemote', cwd),
 
   // Local agent process detection + spawning
   getAgentProcesses: () => typedInvoke('local:getAgentProcesses'),
@@ -286,7 +287,10 @@ const api = {
   agentManager: {
     status: () => typedInvoke('agent-manager:status'),
     kill: (taskId: string) => typedInvoke('agent-manager:kill', taskId),
-    getMetrics: () => typedInvoke('agent-manager:metrics')
+    getMetrics: () => typedInvoke('agent-manager:metrics'),
+    reloadConfig: () => typedInvoke('agent-manager:reloadConfig'),
+    checkpoint: (taskId: string, message?: string) =>
+      typedInvoke('agent-manager:checkpoint', taskId, message)
   },
 
   // Template CRUD (Phase 2)

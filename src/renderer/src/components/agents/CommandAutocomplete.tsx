@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react'
+import { AGENT_COMMANDS } from './commands'
 
-interface Command {
-  name: string
-  description: string
-}
-
-const COMMANDS: Command[] = [
-  { name: '/stop', description: 'Kill the running agent' },
-  { name: '/retry', description: 'Requeue the sprint task' },
-  { name: '/focus', description: 'Steer to focus on a topic' }
-]
+const COMMANDS = AGENT_COMMANDS
 
 interface CommandAutocompleteProps {
   query: string

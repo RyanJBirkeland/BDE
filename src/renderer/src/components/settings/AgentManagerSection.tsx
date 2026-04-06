@@ -78,7 +78,22 @@ export function AgentManagerSection(): React.JSX.Element {
         window.api.settings.setJson('agentManager.autoStart', autoStart)
       ])
       setDirty(false)
-      toast.success('Agent Manager settings saved')
+      // Hot-reload safe fields in the running agent manager. worktreeBase and
+      // autoStart still require restart; the helper tells us which changed.
+      try {
+        const result = await window.api.agentManager.reloadConfig()
+        if (result.requiresRestart.length > 0) {
+          toast.info(
+            `Saved. Restart required for: ${result.requiresRestart.join(', ')}`
+          )
+        } else if (result.updated.length > 0) {
+          toast.success(`Settings saved and applied: ${result.updated.join(', ')}`)
+        } else {
+          toast.success('Agent Manager settings saved')
+        }
+      } catch {
+        toast.success('Agent Manager settings saved (restart to apply)')
+      }
     } catch {
       toast.error('Failed to save Agent Manager settings')
     } finally {
@@ -230,7 +245,7 @@ export function AgentManagerSection(): React.JSX.Element {
     <div className="settings-cards-list">
       <SettingsCard
         title="Pipeline Configuration"
-        subtitle="Changes take effect on next app restart"
+        subtitle="Most fields hot-reload instantly. Worktree base and Auto-start require a restart."
         footer={
           <Button
             variant="primary"

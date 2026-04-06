@@ -91,6 +91,23 @@ const WELCOME_MESSAGE: CopilotMessage = {
 }
 
 const COPILOT_STORAGE_KEY = 'bde:copilot-messages'
+const ADVANCED_OPEN_STORAGE_KEY = 'bde:workbench-advanced-open'
+
+function loadAdvancedOpen(): boolean {
+  try {
+    return localStorage.getItem(ADVANCED_OPEN_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function persistAdvancedOpen(open: boolean): void {
+  try {
+    localStorage.setItem(ADVANCED_OPEN_STORAGE_KEY, open ? 'true' : 'false')
+  } catch {
+    // Ignore quota errors
+  }
+}
 
 function loadPersistedMessages(): CopilotMessage[] {
   try {
@@ -151,7 +168,7 @@ function defaults(): Pick<
     priority: 3,
     spec: '',
     taskTemplateName: '',
-    advancedOpen: false,
+    advancedOpen: loadAdvancedOpen(),
     dependsOn: [],
     playgroundEnabled: false,
     maxCostUsd: null,
@@ -261,5 +278,8 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
 useTaskWorkbenchStore.subscribe((state, prev) => {
   if (state.copilotMessages !== prev.copilotMessages && !state.streamingMessageId) {
     persistMessages(state.copilotMessages)
+  }
+  if (state.advancedOpen !== prev.advancedOpen) {
+    persistAdvancedOpen(state.advancedOpen)
   }
 })

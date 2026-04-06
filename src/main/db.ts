@@ -860,6 +860,16 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN review_diff_snapshot TEXT DEFAULT NULL')
       }
     }
+  },
+  {
+    version: 34,
+    description: 'Add revision_feedback JSON column to sprint_tasks',
+    up: (db) => {
+      const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('revision_feedback')) {
+        db.exec('ALTER TABLE sprint_tasks ADD COLUMN revision_feedback TEXT DEFAULT NULL')
+      }
+    }
   }
 ]
 

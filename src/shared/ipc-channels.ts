@@ -133,6 +133,15 @@ export interface GitChannels {
     args: [cwd: string, branch: string]
     result: void
   }
+  'git:detectRemote': {
+    args: [cwd: string]
+    result: {
+      isGitRepo: boolean
+      remoteUrl: string | null
+      owner: string | null
+      repo: string | null
+    }
+  }
 }
 
 /** Pull request operations */
@@ -519,6 +528,14 @@ export interface AgentManagerChannels {
   'agent-manager:metrics': {
     args: []
     result: import('./types').MetricsSnapshot | null
+  }
+  'agent-manager:reloadConfig': {
+    args: []
+    result: { updated: string[]; requiresRestart: string[] }
+  }
+  'agent-manager:checkpoint': {
+    args: [taskId: string, message?: string]
+    result: { ok: boolean; committed: boolean; error?: string }
   }
 }
 

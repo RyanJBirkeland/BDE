@@ -353,11 +353,17 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       </div>
 
       <div>
-        <button onClick={() => setField('advancedOpen', !advancedOpen)} className="wb-form__toggle">
-          {advancedOpen ? '\u25be' : '\u25b8'} More options
+        <button
+          onClick={() => setField('advancedOpen', !advancedOpen)}
+          className="wb-form__toggle"
+          aria-expanded={advancedOpen}
+          aria-controls="wb-form-advanced"
+        >
+          {advancedOpen ? '\u25be' : '\u25b8'} Advanced (priority, dependencies, cost, model,
+          playground)
         </button>
         {advancedOpen && (
-          <div className="wb-form__advanced">
+          <div className="wb-form__advanced" id="wb-form-advanced">
             <div className="wb-form__field--row">
               <div className="wb-form__field wb-form__field--flex">
                 <label htmlFor="wb-form-priority" className="wb-form__label">

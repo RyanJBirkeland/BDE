@@ -34,9 +34,11 @@ describe('AgentManagerSection', () => {
     expect(screen.getByText('Auto-start')).toBeInTheDocument()
   })
 
-  it('renders restart hint', () => {
+  it('renders hot-reload / restart hint', () => {
     render(<AgentManagerSection />)
-    expect(screen.getByText(/Changes take effect on next app restart/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Most fields hot-reload instantly\. Worktree base and Auto-start require a restart\./)
+    ).toBeInTheDocument()
   })
 
   it('renders save button (initially disabled)', () => {

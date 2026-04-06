@@ -30,12 +30,22 @@ export function setSprintQueriesLogger(l: Logger): void {
  * - Deserializes tags from JSON string
  */
 export function sanitizeTask(row: Record<string, unknown>): SprintTask {
+  let revisionFeedback: unknown = row.revision_feedback
+  if (typeof revisionFeedback === 'string') {
+    try {
+      revisionFeedback = JSON.parse(revisionFeedback)
+    } catch {
+      revisionFeedback = null
+    }
+  }
+  if (!Array.isArray(revisionFeedback)) revisionFeedback = null
   return {
     ...row,
     depends_on: sanitizeDependsOn(row.depends_on),
     tags: sanitizeTags(row.tags),
     playground_enabled: !!row.playground_enabled,
-    needs_review: !!row.needs_review
+    needs_review: !!row.needs_review,
+    revision_feedback: revisionFeedback
   } as SprintTask
 }
 
@@ -84,6 +94,7 @@ export const UPDATE_ALLOWLIST = new Set([
   'group_id',
   'duration_ms',
   'cross_repo_contract',
+  'revision_feedback',
   'review_diff_snapshot'
 ])
 
@@ -132,6 +143,11 @@ function serializeField(key: string, value: unknown): unknown {
     const sanitized = sanitizeTags(value)
     return sanitized ? JSON.stringify(sanitized) : null
   }
+  if (key === 'revision_feedback') {
+    if (value == null) return null
+    if (typeof value === 'string') return value
+    return JSON.stringify(value)
+  }
   if (key === 'playground_enabled' || key === 'needs_review') {
     return value ? 1 : 0
   }
@@ -152,7 +168,8 @@ export function getTask(id: string, db?: Database.Database): SprintTask | null {
          template_name, playground_enabled, needs_review, max_runtime_ms,
          spec_type, created_at, updated_at, worktree_path, session_id,
          next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-         partial_diff, assigned_reviewer, tags, sprint_id, group_id, review_diff_snapshot
+         partial_diff, assigned_reviewer, tags, sprint_id, group_id,
+         revision_feedback, review_diff_snapshot
          FROM sprint_tasks WHERE id = ?`
       )
       .get(id) as Record<string, unknown> | undefined
@@ -174,7 +191,8 @@ export function listTasks(status?: string): SprintTask[] {
       template_name, playground_enabled, needs_review, max_runtime_ms,
       spec_type, created_at, updated_at, worktree_path, session_id,
       next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-      partial_diff, assigned_reviewer, tags, sprint_id, group_id, review_diff_snapshot`
+      partial_diff, assigned_reviewer, tags, sprint_id, group_id,
+      revision_feedback, review_diff_snapshot`
     if (status) {
       const rows = db
         .prepare(

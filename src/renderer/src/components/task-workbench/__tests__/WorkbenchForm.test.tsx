@@ -139,11 +139,11 @@ describe('WorkbenchForm', () => {
     expect(screen.getByTestId('workbench-actions')).toBeInTheDocument()
   })
 
-  it('toggles advanced options when "More options" clicked', () => {
+  it('toggles advanced options when "Advanced" clicked', () => {
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
     expect(screen.queryByText('Priority')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByText(/More options/))
+    fireEvent.click(screen.getByText(/Advanced/))
     expect(screen.getByText('Priority')).toBeInTheDocument()
     expect(screen.getByText('Dev Playground')).toBeInTheDocument()
   })

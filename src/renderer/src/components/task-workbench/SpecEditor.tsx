@@ -1,8 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import type { SpecType } from '../../../../shared/spec-validation'
 import { useConfirm } from '../ui/ConfirmModal'
 import { ConfirmModal } from '../ui/ConfirmModal'
+import { analyzeSpec } from './spec-quality'
 
 const SPEC_TEMPLATES: Record<string, { label: string; spec: string; specType: SpecType }> = {
   feature: {
@@ -112,6 +113,7 @@ export function SpecEditor({
         >
           Research Codebase
         </button>
+        <SpecQualityHints spec={spec} />
       </div>
       <textarea
         id="wb-form-spec"
@@ -122,6 +124,70 @@ export function SpecEditor({
         className="wb-spec__textarea"
       />
       <ConfirmModal {...confirmProps} />
+    </div>
+  )
+}
+
+function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
+  const indicators = useMemo(() => analyzeSpec(spec), [spec])
+  const dotStyle = (on: boolean): React.CSSProperties => ({
+    display: 'inline-block',
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: on ? 'var(--neon-cyan, #2fc3b5)' : 'var(--neon-text-dim, #888)',
+    marginRight: 4
+  })
+  return (
+    <div
+      className="wb-spec__quality"
+      aria-label="Spec quality hints"
+      role="group"
+      data-testid="spec-quality"
+      style={{
+        marginLeft: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        fontSize: '0.75rem',
+        color: 'var(--neon-text-muted, #999)'
+      }}
+    >
+      <span
+        className="wb-spec__quality-word-count"
+        title="Total words in the spec. Longer isn't always better — aim for clarity."
+        data-testid="spec-quality-words"
+      >
+        {indicators.wordCount} words
+      </span>
+      <span
+        title={
+          indicators.hasFilePaths
+            ? 'Spec mentions specific file paths — agents waste fewer tokens exploring.'
+            : 'No file paths detected. Add paths like `src/foo/bar.ts` to focus the agent.'
+        }
+        data-testid="spec-quality-files"
+        aria-label={indicators.hasFilePaths ? 'File paths: present' : 'File paths: missing'}
+        style={{ display: 'inline-flex', alignItems: 'center' }}
+      >
+        <span style={dotStyle(indicators.hasFilePaths)} />
+        files
+      </span>
+      <span
+        title={
+          indicators.hasTestSection
+            ? 'Spec mentions testing — the agent is more likely to verify its work.'
+            : "No testing guidance detected. Add a '## How to Test' section."
+        }
+        data-testid="spec-quality-tests"
+        aria-label={
+          indicators.hasTestSection ? 'Test section: present' : 'Test section: missing'
+        }
+        style={{ display: 'inline-flex', alignItems: 'center' }}
+      >
+        <span style={dotStyle(indicators.hasTestSection)} />
+        tests
+      </span>
     </div>
   )
 }

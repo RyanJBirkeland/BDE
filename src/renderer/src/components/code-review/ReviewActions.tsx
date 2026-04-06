@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react'
-import { GitMerge, GitPullRequest, RotateCcw, Trash2, Loader2, Rocket, RefreshCw } from 'lucide-react'
+import {
+  GitMerge,
+  GitPullRequest,
+  RotateCcw,
+  Trash2,
+  Loader2,
+  Rocket,
+  RefreshCw
+} from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
@@ -135,6 +143,27 @@ export function ReviewActions(): React.JSX.Element {
     if (!feedback) return
     setActionInFlight('revise')
     try {
+      // Append this revision request to the task's audit trail BEFORE we
+      // re-queue, so it's available the next time the reviewer opens this
+      // task in ConversationTab.
+      const priorEntries = Array.isArray(task.revision_feedback) ? task.revision_feedback : []
+      const attempt = priorEntries.length + 1
+      const nextEntries = [
+        ...priorEntries,
+        {
+          timestamp: new Date().toISOString(),
+          feedback,
+          attempt
+        }
+      ]
+      try {
+        await window.api.sprint.update(task.id, { revision_feedback: nextEntries })
+      } catch (err) {
+        // Non-fatal: audit trail is a hint, not a gate. Continue with the
+        // actual revision request — but log so we have visibility when it
+        // happens.
+        console.warn('[review] Failed to persist revision feedback (audit trail only):', err)
+      }
       await window.api.review.requestRevision({
         taskId: task.id,
         feedback,
@@ -226,84 +255,84 @@ export function ReviewActions(): React.JSX.Element {
         </button>
       </div>
       <div className="cr-actions__buttons-row">
-      <div className="cr-actions__primary">
-        <button
-          className="cr-actions__btn cr-actions__btn--ship"
-          onClick={handleShipIt}
-          disabled={!!actionInFlight || !ghConfigured}
-          title={!ghConfigured ? 'Configure GitHub in Settings \u2192 Connections' : undefined}
-        >
-          {actionInFlight === 'shipIt' ? (
-            <Loader2 size={14} className="spin" />
-          ) : (
-            <Rocket size={14} />
-          )}{' '}
-          Ship It
-        </button>
-        <div className="cr-actions__merge-group">
+        <div className="cr-actions__primary">
           <button
-            className="cr-actions__btn cr-actions__btn--primary"
-            onClick={handleMergeLocally}
-            disabled={!!actionInFlight}
+            className="cr-actions__btn cr-actions__btn--ship"
+            onClick={handleShipIt}
+            disabled={!!actionInFlight || !ghConfigured}
+            title={!ghConfigured ? 'Configure GitHub in Settings \u2192 Connections' : undefined}
           >
-            {actionInFlight === 'merge' ? (
+            {actionInFlight === 'shipIt' ? (
               <Loader2 size={14} className="spin" />
             ) : (
-              <GitMerge size={14} />
+              <Rocket size={14} />
             )}{' '}
-            Merge Locally
+            Ship It
           </button>
-          <select
-            className="cr-actions__strategy"
-            value={mergeStrategy}
-            onChange={(e) => setMergeStrategy(e.target.value as 'squash' | 'merge' | 'rebase')}
+          <div className="cr-actions__merge-group">
+            <button
+              className="cr-actions__btn cr-actions__btn--primary"
+              onClick={handleMergeLocally}
+              disabled={!!actionInFlight}
+            >
+              {actionInFlight === 'merge' ? (
+                <Loader2 size={14} className="spin" />
+              ) : (
+                <GitMerge size={14} />
+              )}{' '}
+              Merge Locally
+            </button>
+            <select
+              className="cr-actions__strategy"
+              value={mergeStrategy}
+              onChange={(e) => setMergeStrategy(e.target.value as 'squash' | 'merge' | 'rebase')}
+              disabled={!!actionInFlight}
+            >
+              <option value="squash">Squash</option>
+              <option value="merge">Merge</option>
+              <option value="rebase">Rebase</option>
+            </select>
+          </div>
+          <button
+            className="cr-actions__btn cr-actions__btn--secondary"
+            onClick={handleCreatePr}
+            disabled={!!actionInFlight || !ghConfigured}
+            title={!ghConfigured ? 'Configure GitHub in Settings \u2192 Connections' : undefined}
+          >
+            {actionInFlight === 'createPr' ? (
+              <Loader2 size={14} className="spin" />
+            ) : (
+              <GitPullRequest size={14} />
+            )}{' '}
+            Create PR
+          </button>
+        </div>
+        <div className="cr-actions__secondary">
+          <button
+            className="cr-actions__btn cr-actions__btn--ghost"
+            onClick={handleRequestRevision}
             disabled={!!actionInFlight}
           >
-            <option value="squash">Squash</option>
-            <option value="merge">Merge</option>
-            <option value="rebase">Rebase</option>
-          </select>
+            {actionInFlight === 'revise' ? (
+              <Loader2 size={14} className="spin" />
+            ) : (
+              <RotateCcw size={14} />
+            )}{' '}
+            Revise
+          </button>
+          <button
+            className="cr-actions__btn cr-actions__btn--danger"
+            onClick={handleDiscard}
+            disabled={!!actionInFlight}
+          >
+            {actionInFlight === 'discard' ? (
+              <Loader2 size={14} className="spin" />
+            ) : (
+              <Trash2 size={14} />
+            )}{' '}
+            Discard
+          </button>
         </div>
-        <button
-          className="cr-actions__btn cr-actions__btn--secondary"
-          onClick={handleCreatePr}
-          disabled={!!actionInFlight || !ghConfigured}
-          title={!ghConfigured ? 'Configure GitHub in Settings \u2192 Connections' : undefined}
-        >
-          {actionInFlight === 'createPr' ? (
-            <Loader2 size={14} className="spin" />
-          ) : (
-            <GitPullRequest size={14} />
-          )}{' '}
-          Create PR
-        </button>
-      </div>
-      <div className="cr-actions__secondary">
-        <button
-          className="cr-actions__btn cr-actions__btn--ghost"
-          onClick={handleRequestRevision}
-          disabled={!!actionInFlight}
-        >
-          {actionInFlight === 'revise' ? (
-            <Loader2 size={14} className="spin" />
-          ) : (
-            <RotateCcw size={14} />
-          )}{' '}
-          Revise
-        </button>
-        <button
-          className="cr-actions__btn cr-actions__btn--danger"
-          onClick={handleDiscard}
-          disabled={!!actionInFlight}
-        >
-          {actionInFlight === 'discard' ? (
-            <Loader2 size={14} className="spin" />
-          ) : (
-            <Trash2 size={14} />
-          )}{' '}
-          Discard
-        </button>
-      </div>
       </div>
       <ConfirmModal {...confirmProps} />
       <TextareaPromptModal {...promptProps} />

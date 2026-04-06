@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { CommandAutocomplete } from './CommandAutocomplete'
+import { AGENT_COMMANDS } from './commands'
 
 interface CommandBarProps {
   onSend: (message: string) => void
@@ -8,11 +9,7 @@ interface CommandBarProps {
   disabledReason?: string
 }
 
-const COMMANDS = [
-  { name: '/stop', description: 'Kill the running agent' },
-  { name: '/retry', description: 'Requeue the sprint task' },
-  { name: '/focus', description: 'Steer to focus on a topic' }
-]
+const COMMANDS = AGENT_COMMANDS
 
 export function CommandBar({
   onSend,

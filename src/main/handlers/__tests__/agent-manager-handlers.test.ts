@@ -8,8 +8,26 @@ vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn()
 }))
 
+// Mock execFile so checkpoint tests can drive git outcomes deterministically.
+// Note: agent-manager-handlers wraps this with promisify(), so the mock must
+// be a (cmd, args, opts, cb) callback-style function.
+const mockExecFile = vi.fn()
+vi.mock('node:child_process', () => ({
+  execFile: (
+    cmd: string,
+    args: readonly string[],
+    opts: unknown,
+    cb: (err: Error | null, result?: { stdout: string; stderr: string }) => void
+  ) => mockExecFile(cmd, args, opts, cb)
+}))
+
+vi.mock('../../data/sprint-queries', () => ({
+  getTask: vi.fn()
+}))
+
 import { registerAgentManagerHandlers } from '../agent-manager-handlers'
 import { safeHandle } from '../../ipc-utils'
+import { getTask } from '../../data/sprint-queries'
 
 describe('Agent manager handlers', () => {
   const mockEvent = {} as IpcMainInvokeEvent
@@ -18,13 +36,15 @@ describe('Agent manager handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers all 3 agent-manager channels', () => {
+  it('registers all 5 agent-manager channels', () => {
     registerAgentManagerHandlers(undefined)
 
-    expect(safeHandle).toHaveBeenCalledTimes(3)
+    expect(safeHandle).toHaveBeenCalledTimes(5)
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:status', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:kill', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:metrics', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('agent-manager:reloadConfig', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('agent-manager:checkpoint', expect.any(Function))
   })
 
   describe('handler functions', () => {
@@ -98,6 +118,103 @@ describe('Agent manager handlers', () => {
         expect(result).toEqual({ ok: true })
       })
     })
+    describe('agent-manager:checkpoint', () => {
+      // Tiny helper: queue an execFile result for the next call.
+      function queueExec(result: { stdout: string; stderr?: string } | { error: Error }): void {
+        mockExecFile.mockImplementationOnce((_cmd, _args, _opts, cb) => {
+          if ('error' in result) {
+            cb(result.error)
+          } else {
+            cb(null, { stdout: result.stdout, stderr: result.stderr ?? '' })
+          }
+        })
+      }
+
+      beforeEach(() => {
+        mockExecFile.mockReset()
+        vi.mocked(getTask).mockReset()
+      })
+
+      it('returns error when task has no worktree', async () => {
+        vi.mocked(getTask).mockReturnValue({
+          id: 'task-1',
+          worktree_path: null
+        } as never)
+        const handlers = captureHandlers()
+
+        const result = await handlers['agent-manager:checkpoint'](mockEvent, 'task-1')
+
+        expect(result).toEqual({
+          ok: false,
+          committed: false,
+          error: expect.stringMatching(/no worktree/i)
+        })
+        expect(mockExecFile).not.toHaveBeenCalled()
+      })
+
+      it('returns committed=false when nothing to commit', async () => {
+        vi.mocked(getTask).mockReturnValue({
+          id: 'task-1',
+          worktree_path: '/tmp/wt'
+        } as never)
+        // git add -A
+        queueExec({ stdout: '' })
+        // git diff --cached --name-only → empty
+        queueExec({ stdout: '' })
+
+        const handlers = captureHandlers()
+        const result = await handlers['agent-manager:checkpoint'](mockEvent, 'task-1')
+
+        expect(result).toEqual({
+          ok: true,
+          committed: false,
+          error: 'Nothing to commit'
+        })
+      })
+
+      it('returns committed=true on successful commit', async () => {
+        vi.mocked(getTask).mockReturnValue({
+          id: 'task-1',
+          worktree_path: '/tmp/wt'
+        } as never)
+        // git add -A
+        queueExec({ stdout: '' })
+        // git diff --cached --name-only → some file
+        queueExec({ stdout: 'src/foo.ts\n' })
+        // git commit
+        queueExec({ stdout: '[main abc123] checkpoint' })
+
+        const handlers = captureHandlers()
+        const result = await handlers['agent-manager:checkpoint'](mockEvent, 'task-1', 'wip')
+
+        expect(result).toEqual({ ok: true, committed: true })
+        // Verify the commit message was passed through.
+        const commitCall = mockExecFile.mock.calls.find((c) => c[1][0] === 'commit')
+        expect(commitCall).toBeDefined()
+        expect(commitCall![1]).toEqual(['commit', '-m', 'wip'])
+      })
+
+      it('returns friendly message when git reports index.lock', async () => {
+        vi.mocked(getTask).mockReturnValue({
+          id: 'task-1',
+          worktree_path: '/tmp/wt'
+        } as never)
+        // git add -A fails with index.lock
+        queueExec({
+          error: new Error('fatal: Unable to create /tmp/wt/.git/index.lock: File exists.')
+        })
+
+        const handlers = captureHandlers()
+        const result = await handlers['agent-manager:checkpoint'](mockEvent, 'task-1')
+
+        expect(result).toEqual({
+          ok: false,
+          committed: false,
+          error: 'Agent is currently writing — try again in a moment'
+        })
+      })
+    })
+
     describe('agent-manager:metrics', () => {
       it('returns null when am is undefined', async () => {
         const handlers = captureHandlers()

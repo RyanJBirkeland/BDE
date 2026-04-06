@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { safeHandle } from '../ipc-utils'
 import { parsePrUrl } from '../../shared/github'
 import { validateRepoPath } from '../validation'
@@ -10,7 +11,8 @@ import {
   gitCommit,
   gitPush,
   gitBranches,
-  gitCheckout
+  gitCheckout,
+  detectGitRemote
 } from '../git'
 import { pollPrStatuses, type PrStatusInput } from '../github-pr-status'
 import { checkConflictFiles, type ConflictFilesInput } from '../github-conflict-check'
@@ -228,6 +230,26 @@ export function registerGitHandlers(): void {
   safeHandle('git:checkout', (_e, cwd: string, branch: string) =>
     gitCheckout(validateRepoPath(cwd), branch)
   )
+
+  // --- Detect GitHub remote for a directory picked by the user.
+  // NOTE: validateRepoPath is intentionally NOT used here — this is called
+  // BEFORE a repo is configured in settings (e.g. Settings > Add Repository
+  // or the onboarding inline repo form), so the path is not yet on the
+  // allowlist. We still require an absolute path and sanity-check it.
+  safeHandle('git:detectRemote', async (_e, cwd: string) => {
+    if (typeof cwd !== 'string' || !cwd.startsWith('/')) {
+      return { isGitRepo: false, remoteUrl: null, owner: null, repo: null }
+    }
+    // Defense in depth: reject anything that doesn't normalize to itself or
+    // contains parent-traversal segments. The operation is read-only via
+    // execFile (no shell, no writes), so blast radius is small — this just
+    // closes traversal tricks.
+    const resolved = path.resolve(cwd)
+    if (resolved !== cwd || cwd.includes('..')) {
+      return { isGitRepo: false, remoteUrl: null, owner: null, repo: null }
+    }
+    return detectGitRemote(cwd)
+  })
 
   // --- PR status polling ---
   safeHandle('pr:pollStatuses', async (_e, prs: PrStatusInput[]) => {

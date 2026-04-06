@@ -68,6 +68,48 @@ export async function gitStatus(
   }
 }
 
+/**
+ * Detect a GitHub remote for the given local directory.
+ *
+ * - Checks `<dir>/.git` exists (works for both regular repos and worktrees).
+ * - Runs `git remote get-url origin` via execFile (no shell interpolation).
+ * - Parses the URL via `parseGitHubRemote` in shared/git-remote.
+ */
+export async function detectGitRemote(cwd: string): Promise<{
+  isGitRepo: boolean
+  remoteUrl: string | null
+  owner: string | null
+  repo: string | null
+}> {
+  try {
+    // Confirm .git exists (file for worktrees, dir for regular repos)
+    const { stat } = await import('node:fs/promises')
+    try {
+      await stat(`${cwd}/.git`)
+    } catch {
+      return { isGitRepo: false, remoteUrl: null, owner: null, repo: null }
+    }
+
+    const { stdout } = await execFileAsync('git', ['remote', 'get-url', 'origin'], {
+      cwd,
+      encoding: 'utf-8' as const,
+      maxBuffer: MAX_BUFFER
+    })
+    const remoteUrl = stdout.trim() || null
+    const { parseGitHubRemote } = await import('../shared/git-remote')
+    const parsed = parseGitHubRemote(remoteUrl)
+    return {
+      isGitRepo: true,
+      remoteUrl,
+      owner: parsed?.owner ?? null,
+      repo: parsed?.repo ?? null
+    }
+  } catch {
+    // `git remote get-url origin` exits non-zero if no remote
+    return { isGitRepo: true, remoteUrl: null, owner: null, repo: null }
+  }
+}
+
 export async function gitDiffFile(cwd: string, file?: string): Promise<Result<string>> {
   try {
     const unstagedArgs = file ? ['diff', '--', file] : ['diff']
