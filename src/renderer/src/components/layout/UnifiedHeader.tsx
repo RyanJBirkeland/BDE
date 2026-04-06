@@ -2,9 +2,11 @@ import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../stores/theme'
 import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
 import { useCostDataStore } from '../../stores/costData'
+import { useSprintTasks } from '../../stores/sprintTasks'
 import { NeonBadge } from '../neon/NeonBadge'
 import { NotificationBell } from './NotificationBell'
 import { HeaderTab } from './HeaderTab'
+import { HealthStrip } from './HealthStrip'
 import { useTearoffDrag } from '../../hooks/useTearoffDrag'
 import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 
@@ -13,6 +15,18 @@ export function UnifiedHeader(): React.JSX.Element {
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
   const totalCost = useCostDataStore((s) => s.totalCost)
   const setView = usePanelLayoutStore((s) => s.setView)
+
+  // Health strip counts (derived from sprint tasks)
+  const tasks = useSprintTasks((s) => s.tasks)
+  const activeCount = tasks.filter((t) => t.status === 'active').length
+  const queuedCount = tasks.filter((t) => t.status === 'queued').length
+  const failedCount = tasks.filter((t) => t.status === 'failed' || t.status === 'error').length
+  const hasError = failedCount > 0
+  const managerState: 'running' | 'error' | 'idle' = hasError
+    ? 'error'
+    : activeCount > 0
+      ? 'running'
+      : 'idle'
 
   const root = usePanelLayoutStore((s) => s.root)
   const focusedPanelId = usePanelLayoutStore((s) => s.focusedPanelId)
@@ -104,6 +118,13 @@ export function UnifiedHeader(): React.JSX.Element {
 
       {/* Action buttons */}
       <div className="unified-header__actions">
+        <HealthStrip
+          managerState={managerState}
+          activeCount={activeCount}
+          queuedCount={queuedCount}
+          failedCount={failedCount}
+          onClick={() => setView('sprint')}
+        />
         <NeonBadge accent="cyan" label={`$${totalCost.toFixed(2)}`} />
         <NotificationBell />
         <button
