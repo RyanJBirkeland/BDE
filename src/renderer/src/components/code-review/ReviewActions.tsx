@@ -135,6 +135,25 @@ export function ReviewActions(): React.JSX.Element {
     if (!feedback) return
     setActionInFlight('revise')
     try {
+      // Append this revision request to the task's audit trail BEFORE we
+      // re-queue, so it's available the next time the reviewer opens this
+      // task in ConversationTab.
+      const priorEntries = Array.isArray(task.revision_feedback) ? task.revision_feedback : []
+      const attempt = priorEntries.length + 1
+      const nextEntries = [
+        ...priorEntries,
+        {
+          timestamp: new Date().toISOString(),
+          feedback,
+          attempt
+        }
+      ]
+      try {
+        await window.api.sprint.update(task.id, { revision_feedback: nextEntries })
+      } catch {
+        // Non-fatal: audit trail is a hint, not a gate. Continue with the
+        // actual revision request.
+      }
       await window.api.review.requestRevision({
         taskId: task.id,
         feedback,

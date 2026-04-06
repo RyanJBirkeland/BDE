@@ -1,11 +1,96 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { renderAgentMarkdown } from '../../lib/render-agent-markdown'
 import { EmptyState } from '../ui/EmptyState'
 import type { AgentEvent } from '../../../../shared/types'
-import { Terminal, Wrench, AlertTriangle, CheckCircle, MessageSquare, Brain } from 'lucide-react'
+import {
+  Terminal,
+  Wrench,
+  AlertTriangle,
+  CheckCircle,
+  MessageSquare,
+  Brain,
+  RotateCcw
+} from 'lucide-react'
+import type { RevisionFeedbackEntry } from '../../../../shared/types'
+
+function RevisionFeedbackHistory({
+  entries
+}: {
+  entries: RevisionFeedbackEntry[]
+}): React.JSX.Element {
+  const [expanded, setExpanded] = useState(false)
+  if (entries.length === 0) return <></>
+  return (
+    <div className="cr-revision-history" data-testid="revision-history">
+      <button
+        type="button"
+        className="cr-revision-history__toggle"
+        onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
+        aria-controls="cr-revision-history-list"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'none',
+          border: '1px solid var(--neon-orange-border, #ccc)',
+          color: 'var(--neon-orange, #c77)',
+          padding: '6px 10px',
+          borderRadius: 4,
+          cursor: 'pointer',
+          fontSize: '0.85rem',
+          width: '100%',
+          textAlign: 'left'
+        }}
+      >
+        <RotateCcw size={12} />
+        {expanded ? '▾' : '▸'} Previous revision requests ({entries.length})
+      </button>
+      {expanded && (
+        <ol
+          id="cr-revision-history-list"
+          style={{
+            listStyle: 'none',
+            padding: '8px 0 0 0',
+            margin: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8
+          }}
+        >
+          {entries.map((entry, i) => (
+            <li
+              key={`${entry.timestamp}-${i}`}
+              style={{
+                padding: 8,
+                borderLeft: '2px solid var(--neon-orange, #c77)',
+                background: 'var(--neon-surface-dim, rgba(0,0,0,0.05))',
+                fontSize: '0.85rem'
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  color: 'var(--neon-text-muted)',
+                  fontSize: '0.75rem',
+                  marginBottom: 4
+                }}
+              >
+                <span>Attempt #{entry.attempt}</span>
+                <span>{new Date(entry.timestamp).toLocaleString()}</span>
+              </div>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{entry.feedback}</div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  )
+}
 
 function EventItem({ event }: { event: AgentEvent }): React.JSX.Element {
   const time = new Date(event.timestamp).toLocaleTimeString()
@@ -102,10 +187,15 @@ export function ConversationTab(): React.JSX.Element {
 
   if (!task) return <div className="cr-placeholder">No task selected</div>
 
+  const revisionEntries: RevisionFeedbackEntry[] = Array.isArray(task.revision_feedback)
+    ? task.revision_feedback
+    : []
+
   // If no agent_run_id, fall back to spec/notes display
   if (!agentRunId) {
     return (
       <div className="cr-conversation">
+        <RevisionFeedbackHistory entries={revisionEntries} />
         <div className="cr-conversation__section">
           <h4 className="cr-conversation__heading">Task Spec</h4>
           <div className="cr-conversation__spec">
@@ -145,6 +235,7 @@ export function ConversationTab(): React.JSX.Element {
 
   return (
     <div className="cr-conversation cr-conversation--events">
+      <RevisionFeedbackHistory entries={revisionEntries} />
       {agentEvents.map((event, i) => (
         <EventItem key={`${event.type}-${event.timestamp}-${i}`} event={event} />
       ))}
