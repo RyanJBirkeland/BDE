@@ -24,6 +24,7 @@ export interface BuildPromptInput {
   playgroundEnabled?: boolean // whether to include playground instructions
   messages?: Array<{ role: string; content: string }> // for copilot chat
   formContext?: { title: string; repo: string; spec: string } // for copilot
+  repoPath?: string // absolute filesystem path to the target repo (copilot tool grounding)
   codebaseContext?: string // for synthesizer (file tree, relevant files)
   retryCount?: number // 0-based retry count
   previousNotes?: string // failure notes from previous attempt
@@ -235,6 +236,24 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
 
   // Add task content based on agent type
   if (agentType === 'copilot' && messages) {
+    // Spec-drafting framing — make it explicit the copilot is NOT executing
+    prompt += '\n\n## Mode: Spec Drafting\n\n'
+    prompt +=
+      'You are helping the user draft a task SPEC, not execute the task. ' +
+      'Your goal is to help them write a clear, complete spec that a pipeline ' +
+      'agent can later execute. Use your read-only Read, Grep, and Glob tools ' +
+      'to explore the target repo whenever you need ground-truth answers about ' +
+      'files, APIs, or existing patterns.'
+
+    // Pin the target repo so the copilot knows which path to inspect
+    if (input.repoPath) {
+      prompt += '\n\n## Target Repository\n\n'
+      prompt += `All your tool calls operate inside this repository:\n\n\`${input.repoPath}\`\n\n`
+      prompt +=
+        'When using Grep or Glob, scope searches to this path. ' +
+        'When using Read, prefer paths relative to this root.'
+    }
+
     // For copilot, add form context if available, then message history
     if (input.formContext) {
       const { title, repo, spec } = input.formContext
