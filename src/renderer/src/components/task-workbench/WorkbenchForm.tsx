@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { useSprintTasks, type CreateTicketInput } from '../../stores/sprintTasks'
 import { useReadinessChecks } from '../../hooks/useReadinessChecks'
+import { useDebouncedAsync } from '../../hooks/useDebouncedAsync'
 import { SpecEditor } from './SpecEditor'
 import { ReadinessChecks } from './ReadinessChecks'
 import { WorkbenchActions } from './WorkbenchActions'
@@ -141,12 +142,13 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   )
 
   // Debounced semantic checks (Tier 2) — runs 2s after spec stops changing
-  useEffect(() => {
-    if (!spec.trim() || spec.length < 50) return
+  useDebouncedAsync(
+    async () => {
+      if (!spec.trim() || spec.length < 50) {
+        setSemanticChecks([])
+        return
+      }
 
-    useTaskWorkbenchStore.setState({ semanticLoading: true })
-
-    const timer = setTimeout(async () => {
       try {
         const result = await window.api.workbench.checkSpec({ title, repo, spec, specType })
         setSemanticChecks([
@@ -203,10 +205,17 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           }
         ])
       }
-    }, 2000)
-
-    return () => clearTimeout(timer)
-  }, [spec, title, repo, specType, setSemanticChecks])
+    },
+    [spec, title, repo, specType],
+    {
+      delayMs: 2000,
+      onStart: () => {
+        if (spec.trim() && spec.length >= 50) {
+          useTaskWorkbenchStore.setState({ semanticLoading: true })
+        }
+      }
+    }
+  )
 
   useEffect(() => {
     const t = setTimeout(() => titleRef.current?.focus(), 100)
