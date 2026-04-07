@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock env-utils
 vi.mock('../env-utils', () => ({
-  buildAgentEnv: () => ({ ...process.env })
+  buildAgentEnv: () => ({ ...process.env }),
+  // spec-semantic-check now passes pathToClaudeCodeExecutable into the SDK
+  // options. Without this mock export the named import resolves to undefined
+  // and the runSdkQuery call throws "getClaudeCliPath is not a function".
+  getClaudeCliPath: () => '/mock/path/to/claude-agent-sdk/cli.js'
 }))
 
 // Mock the SDK with an async iterable that can be controlled per test

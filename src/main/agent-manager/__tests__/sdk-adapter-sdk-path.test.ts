@@ -4,7 +4,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../../env-utils', () => ({
   buildAgentEnv: vi.fn(() => ({ PATH: '/usr/local/bin' })),
-  getOAuthToken: vi.fn(() => 'mock-oauth-token')
+  getOAuthToken: vi.fn(() => 'mock-oauth-token'),
+  // sdk-adapter.spawnViaSdk now passes pathToClaudeCodeExecutable into the
+  // SDK options. The mock must export this so the named import resolves —
+  // otherwise spawnViaSdk throws inside its options object construction
+  // and spawnAgent silently falls through to spawnViaCli.
+  getClaudeCliPath: vi.fn(() => '/mock/path/to/claude-agent-sdk/cli.js')
 }))
 
 // We also need child_process mocked so the CLI fallback (if it were hit) wouldn't crash.
