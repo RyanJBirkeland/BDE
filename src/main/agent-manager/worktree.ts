@@ -357,6 +357,27 @@ export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> 
   }
 }
 
+/**
+ * UUID v4 / v5 format that BDE uses for sprint task IDs (and therefore
+ * for the leaf directory name of every BDE-created worktree). The pruner
+ * uses this to filter out anything that doesn't look like a task ID, so
+ * it never deletes human-created worktrees, source directories, etc.
+ *
+ * Pattern: 8-4-4-4-12 hex with dashes, case-insensitive.
+ */
+const TASK_ID_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Returns true if the given path looks like a real git worktree:
+ * it must contain a `.git` entry (file or directory). BDE-created
+ * worktrees always have a `.git` *file* (added by `git worktree add`),
+ * so this rules out plain non-worktree directories that just happen
+ * to have a UUID-shaped name.
+ */
+function looksLikeWorktree(dirPath: string): boolean {
+  return existsSync(path.join(dirPath, '.git'))
+}
+
 export async function pruneStaleWorktrees(
   worktreeBase: string,
   isActive: (taskId: string) => boolean,
@@ -384,13 +405,32 @@ export async function pruneStaleWorktrees(
     }
 
     for (const taskId of taskDirs) {
+      // Safety: only consider directories whose name matches BDE's task-ID
+      // UUID format. The default `worktreeBase` (`~/worktrees/bde/`) is
+      // shared with human-created git worktrees per the documented
+      // ~/worktrees/<project>/<branch> convention, so we MUST NOT delete
+      // anything that doesn't look like a BDE-managed task directory.
+      // Without this guard the pruner would `rm -rf` `src/`, `docs/`, etc.
+      // inside human worktree branches.
+      if (!TASK_ID_UUID_PATTERN.test(taskId)) continue
+
+      const worktreePath = path.join(repoDir, taskId)
+
+      // Defense-in-depth: a UUID-named directory that has no `.git` is not
+      // a worktree we created — refuse to delete it.
+      if (!looksLikeWorktree(worktreePath)) {
+        log.warn(
+          `[worktree] Skipping prune of ${worktreePath}: UUID-named but not a git worktree (no .git entry)`
+        )
+        continue
+      }
+
       if (isActive(taskId)) continue
       // Skip worktrees belonging to tasks in review status
       if (isReview?.(taskId)) {
         log.info(`[worktree] Skipping prune of review worktree for task ${taskId}`)
         continue
       }
-      const worktreePath = path.join(repoDir, taskId)
       try {
         // Use shell rm -rf instead of rmSync to avoid Electron's ASAR
         // interception, which treats .asar files as directories and

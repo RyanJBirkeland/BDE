@@ -587,9 +587,22 @@ describe('pruneStaleWorktrees', () => {
     rmSync(tmpDir, { recursive: true, force: true })
   })
 
+  // Realistic UUID v4 fixtures — the pruner now requires the leaf
+  // directory name to look like a sprint task UUID before considering
+  // it for deletion.
+  const UUID_A = 'aaaaaaaa-1111-4111-8111-111111111111'
+  const UUID_B = 'bbbbbbbb-2222-4222-8222-222222222222'
+  const UUID_C = 'cccccccc-3333-4333-8333-333333333333'
+
+  /**
+   * Creates a realistic BDE worktree directory: <tmp>/<repoSlug>/<uuid>/
+   * with a `.git` file inside, mimicking what `git worktree add` produces.
+   * The pruner's defense-in-depth check requires the .git entry to exist.
+   */
   function makeWorktreeDir(repoSlug: string, taskId: string): string {
     const dir = path.join(tmpDir, repoSlug, taskId)
     mkdirSync(dir, { recursive: true })
+    writeFileSync(path.join(dir, '.git'), 'gitdir: /fake/path\n')
     return dir
   }
 
@@ -599,19 +612,19 @@ describe('pruneStaleWorktrees', () => {
   })
 
   it('removes directories for inactive tasks and returns count', async () => {
-    makeWorktreeDir('repo-a', 'task-inactive-1')
-    makeWorktreeDir('repo-a', 'task-inactive-2')
+    makeWorktreeDir('repo-a', UUID_A)
+    makeWorktreeDir('repo-a', UUID_B)
 
     const count = await pruneStaleWorktrees(tmpDir, () => false)
     expect(count).toBe(2)
   })
 
   it('keeps directories for active tasks', async () => {
-    const activeDir = makeWorktreeDir('repo-b', 'task-active-1')
-    makeWorktreeDir('repo-b', 'task-inactive-1')
+    const activeDir = makeWorktreeDir('repo-b', UUID_A)
+    makeWorktreeDir('repo-b', UUID_B)
 
     const { existsSync } = await import('node:fs')
-    const count = await pruneStaleWorktrees(tmpDir, (id) => id === 'task-active-1')
+    const count = await pruneStaleWorktrees(tmpDir, (id) => id === UUID_A)
     expect(count).toBe(1)
     expect(existsSync(activeDir)).toBe(true)
   })
@@ -625,10 +638,94 @@ describe('pruneStaleWorktrees', () => {
   })
 
   it('returns 0 when all tasks are active', async () => {
-    makeWorktreeDir('repo-c', 'task-1')
-    makeWorktreeDir('repo-c', 'task-2')
+    makeWorktreeDir('repo-c', UUID_A)
+    makeWorktreeDir('repo-c', UUID_B)
 
     const count = await pruneStaleWorktrees(tmpDir, () => true)
     expect(count).toBe(0)
+  })
+
+  // Regression: the prune base (~/worktrees/bde/) is shared with human
+  // git worktrees per the documented ~/worktrees/<project>/<branch>
+  // convention. Without UUID + .git guards the pruner deletes src/,
+  // docs/, etc. inside human worktree branches. These tests lock in the
+  // safety guards.
+
+  it('does NOT delete non-UUID directories (human worktree branches)', async () => {
+    // Simulate a human worktree at ~/worktrees/bde/fix-some-bug/ with
+    // src/, docs/, .github/ inside — exactly the structure that got
+    // nuked previously.
+    const humanWorktree = path.join(tmpDir, 'fix-some-bug')
+    const humanSrc = path.join(humanWorktree, 'src')
+    const humanDocs = path.join(humanWorktree, 'docs')
+    mkdirSync(humanSrc, { recursive: true })
+    mkdirSync(humanDocs, { recursive: true })
+    writeFileSync(path.join(humanWorktree, '.git'), 'gitdir: /real/path\n')
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    expect(count).toBe(0)
+    const { existsSync } = await import('node:fs')
+    expect(existsSync(humanSrc)).toBe(true)
+    expect(existsSync(humanDocs)).toBe(true)
+  })
+
+  it('does NOT delete UUID-named directories without a .git entry', async () => {
+    // Defense-in-depth: a directory whose name happens to match a UUID
+    // but isn't actually a git worktree (e.g. user has a UUID-named
+    // backup folder) must be left alone.
+    const repoDir = path.join(tmpDir, 'repo-d')
+    const fakeUuidDir = path.join(repoDir, UUID_C)
+    mkdirSync(fakeUuidDir, { recursive: true })
+    // Note: NO .git file written
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    expect(count).toBe(0)
+    const { existsSync } = await import('node:fs')
+    expect(existsSync(fakeUuidDir)).toBe(true)
+  })
+
+  it('coexists safely with mixed BDE and human worktrees in same base', async () => {
+    // Realistic scenario: ~/worktrees/bde/ contains both BDE-managed
+    // task worktrees and human-created branch worktrees side by side.
+    // The pruner should only issue rm -rf for BDE-managed inactive ones,
+    // never for human worktree subdirectories.
+    const bdeActive = makeWorktreeDir('bde', UUID_A)
+    const bdeInactive = makeWorktreeDir('bde', UUID_B)
+    const humanWorktree = path.join(tmpDir, 'fix-my-feature')
+    const humanSrc = path.join(humanWorktree, 'src')
+    const humanDocs = path.join(humanWorktree, 'docs')
+    mkdirSync(humanSrc, { recursive: true })
+    mkdirSync(humanDocs, { recursive: true })
+    writeFileSync(path.join(humanWorktree, '.git'), 'gitdir: /real/path\n')
+
+    // execFile is mocked at the top of this file. Clear call history
+    // (the prune-test beforeEach doesn't reset, so calls from earlier
+    // tests in this file would otherwise leak in) and wire it to succeed.
+    execFileMock.mockClear()
+    mockExecFileSuccess()
+
+    const count = await pruneStaleWorktrees(tmpDir, (id) => id === UUID_A)
+
+    expect(count).toBe(1) // only the inactive BDE worktree
+
+    // Inspect every rm invocation. The only acceptable target is the
+    // inactive BDE worktree path. Anything inside the human worktree
+    // (src, docs) or the active BDE worktree is a regression.
+    const rmCalls = execFileMock.mock.calls.filter((c) => c[0] === 'rm')
+    expect(rmCalls).toHaveLength(1)
+    const rmArgs = rmCalls[0][1] as string[]
+    expect(rmArgs).toEqual(['-rf', bdeInactive])
+
+    // Belt-and-suspenders: assert nothing under the human worktree was targeted.
+    for (const call of rmCalls) {
+      const args = call[1] as string[]
+      const target = args[args.length - 1]
+      expect(target).not.toContain(humanSrc)
+      expect(target).not.toContain(humanDocs)
+      expect(target).not.toContain(humanWorktree)
+      expect(target).not.toBe(bdeActive)
+    }
   })
 })
