@@ -63,6 +63,7 @@ import {
   restoreTearoffWindows
 } from './tearoff-manager'
 import { loadPlugins } from './services/plugin-loader'
+import { startLoadSampler, stopLoadSampler } from './services/load-sampler'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -134,6 +135,10 @@ app.whenReady().then(() => {
 
   // Load plugins from ~/.bde/plugins/
   loadPlugins()
+
+  // Start system load sampler (ring buffer, 120 samples × 5s = 10 min of history)
+  startLoadSampler()
+  app.on('will-quit', stopLoadSampler)
 
   // --- Task terminal service (unified dependency resolution) ---
   const terminalService = createTaskTerminalService({

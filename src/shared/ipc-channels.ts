@@ -715,6 +715,23 @@ export interface DashboardChannels {
   'sprint:burndown': { args: []; result: BurndownBucket[] }
 }
 
+/** System metrics */
+export interface LoadSample {
+  t: number
+  load1: number
+  load5: number
+  load15: number
+}
+
+export interface LoadSnapshot {
+  samples: LoadSample[]
+  cpuCount: number
+}
+
+export interface SystemChannels {
+  'system:loadAverage': { args: []; result: LoadSnapshot }
+}
+
 /** Code review operations */
 export interface ReviewChannels {
   'review:getDiff': {
@@ -886,4 +903,5 @@ export type IpcChannelMap = SettingsChannels &
   ClaudeConfigChannels &
   WebhookChannels &
   GroupChannels &
-  PlannerChannels
+  PlannerChannels &
+  SystemChannels

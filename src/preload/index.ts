@@ -329,6 +329,11 @@ const api = {
     burndown: () => typedInvoke('sprint:burndown')
   },
 
+  // System metrics
+  system: {
+    loadAverage: () => typedInvoke('system:loadAverage')
+  },
+
   // Task Workbench
   workbench: {
     generateSpec: (input: { title: string; repo: string; templateHint: string }) =>

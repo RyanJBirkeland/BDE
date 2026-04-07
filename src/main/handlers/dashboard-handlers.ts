@@ -1,6 +1,7 @@
 import { getDb } from '../db'
 import { safeHandle } from '../ipc-utils'
 import { getDailySuccessRate } from '../data/sprint-queries'
+import { getLoadSnapshot } from '../services/load-sampler'
 
 export function getCompletionsPerHour(): {
   hour: string
@@ -98,5 +99,9 @@ export function registerDashboardHandlers(): void {
 
   safeHandle('sprint:burndown', async () => {
     return getTaskBurndown()
+  })
+
+  safeHandle('system:loadAverage', async () => {
+    return getLoadSnapshot()
   })
 }

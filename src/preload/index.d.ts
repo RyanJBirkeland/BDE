@@ -289,6 +289,11 @@ declare global {
         burndown: () => Promise<IpcResult<'sprint:burndown'>>
       }
 
+      // System metrics
+      system: {
+        loadAverage: () => Promise<IpcResult<'system:loadAverage'>>
+      }
+
       // Task Workbench
       workbench: {
         chatStream: (
