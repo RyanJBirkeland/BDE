@@ -112,7 +112,7 @@ export function SettingsSidebar({
   }
 
   return (
-    <nav ref={navRef} role="navigation" aria-label="Settings sections">
+    <nav ref={navRef} role="navigation" aria-label="Settings sections" className="stg-sidebar">
       <div className="stg-sidebar__search">
         <Search size={14} className="stg-sidebar__search-icon" />
         <input

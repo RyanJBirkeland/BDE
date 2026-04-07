@@ -256,6 +256,10 @@
 }
 
 /* Row cost tiers */
+.cost-table__row {
+  cursor: pointer;
+}
+
 .cost-table__row--green td:first-child {
   border-left: 3px solid var(--bde-success);
 }

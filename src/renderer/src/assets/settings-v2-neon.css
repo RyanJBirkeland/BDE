@@ -298,3 +298,376 @@
   gap: 8px;
   align-items: center;
 }
+
+/* ─── Permissions Section ────────────────────────────────────────────────── */
+
+.permissions-banner {
+  border: 1px solid var(--neon-purple-border);
+  background: var(--neon-purple-surface);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.permissions-banner__text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--bde-text);
+}
+
+.permissions-banner__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.permissions-presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Tool checkbox list — see design decision below for layout direction */
+.permissions-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.permissions-tool {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--bde-border);
+  background: var(--bde-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.permissions-tool:hover {
+  border-color: var(--neon-purple-border);
+}
+
+.permissions-tool input[type='checkbox'] {
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--neon-purple);
+}
+
+.permissions-tool__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bde-text);
+  font-family: var(--bde-font-code);
+  min-width: 96px;
+}
+
+.permissions-tool__desc {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+}
+
+.permissions-info {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--bde-text-muted);
+  padding-top: 12px;
+  border-top: 1px solid var(--bde-border);
+}
+
+.permissions-deny-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.permissions-deny-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bde-bg-elevated);
+  border: 1px solid var(--bde-border);
+}
+
+.permissions-deny-rule code {
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  color: var(--bde-text);
+  background: transparent;
+}
+
+.permissions-deny-add {
+  margin-top: 8px;
+}
+
+/* ─── Card list wrapper (used by Repositories, Templates, Webhooks, AgentMgr) ── */
+
+.settings-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-repos__add-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* ─── Repository form ────────────────────────────────────────────────────── */
+
+.settings-repo__dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin: auto;
+}
+
+.settings-repo__github {
+  display: inline-block;
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bde-bg-elevated);
+  border: 1px solid var(--bde-border);
+}
+
+.settings-repo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-repo-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.settings-repo-form__path-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.settings-repo-form__path-row .settings-field__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-repo-form__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* ─── Templates form ─────────────────────────────────────────────────────── */
+
+.settings-template-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-template-row__prefix {
+  font-family: var(--bde-font-code);
+  resize: vertical;
+  min-height: 64px;
+}
+
+/* ─── Webhook form ───────────────────────────────────────────────────────── */
+
+.settings-webhook-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-secret-input {
+  position: relative;
+}
+
+.settings-secret-input .settings-field__input {
+  padding-right: 36px;
+}
+
+.settings-secret-input__toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--bde-text-muted);
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.settings-secret-input__toggle:hover {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+}
+
+.settings-event-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.settings-event-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--bde-text);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.settings-event-option input[type='checkbox'] {
+  accent-color: var(--neon-purple);
+  margin: 0;
+}
+
+.settings-fieldset-bare {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ─── Footer action group (used in card footers across sections) ─────────── */
+
+.settings-card-footer-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* ─── Section wrapper (used by KeybindingsSettings) ──────────────────────── */
+
+.stg-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stg-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.stg-section__description {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--bde-text-muted);
+}
+
+.stg-section__description kbd {
+  font-family: var(--bde-font-code);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bde-bg-elevated);
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text);
+}
+
+.stg-keybindings {
+  border: 1px solid var(--bde-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bde-surface);
+}
+
+/* ─── Layout utility classes (replace ad-hoc inline styles) ──────────────── */
+
+.settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-stack--lg {
+  gap: 16px;
+}
+
+.settings-stack--sm {
+  gap: 8px;
+}
+
+.settings-help-text {
+  font-size: 12px;
+  color: var(--bde-text-muted);
+  line-height: 1.5;
+}
+
+.settings-help-text--dim {
+  color: var(--bde-text-dim);
+}
+
+.settings-status-line {
+  font-size: 12px;
+  color: var(--bde-text-muted);
+}
+
+.settings-status-line__value {
+  font-weight: 500;
+}
+
+.settings-status-line__value--granted {
+  color: var(--bde-success);
+}
+
+.settings-status-line__value--denied {
+  color: var(--bde-error);
+}
+
+.settings-event-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--bde-text);
+}
+
+/* ─── Credential form (Connections section) ──────────────────────────────── */
+
+.settings-connection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-connection__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--bde-text-muted);
+}
+
+.settings-required-marker {
+  color: var(--bde-danger);
+  margin-left: 2px;
+}

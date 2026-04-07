@@ -128,7 +128,7 @@ export function AppearanceSection(): React.JSX.Element {
         <div className="settings-theme-buttons">
           {tearoffPref ? (
             <>
-              <span style={{ fontSize: 12, color: 'var(--bde-text-muted)' }}>
+              <span className="settings-help-text">
                 Always {tearoffPref === 'return' ? 'return to main' : 'close'}
               </span>
               <button
@@ -140,7 +140,7 @@ export function AppearanceSection(): React.JSX.Element {
               </button>
             </>
           ) : (
-            <span style={{ fontSize: 12, color: 'var(--bde-text-dim)' }}>Ask each time</span>
+            <span className="settings-help-text settings-help-text--dim">Ask each time</span>
           )}
         </div>
       </SettingsCard>

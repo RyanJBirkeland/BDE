@@ -94,7 +94,7 @@ export function TaskTemplatesSection(): React.JSX.Element {
           title={t.name || 'Untitled Template'}
           status={t.isBuiltIn ? { label: 'Built-in', variant: 'info' } : undefined}
           footer={
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <div className="settings-card-footer-actions">
               <Button
                 variant="ghost"
                 size="sm"

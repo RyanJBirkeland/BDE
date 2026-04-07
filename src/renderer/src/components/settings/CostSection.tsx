@@ -184,7 +184,6 @@ function TaskTable({
                   }
                 }}
                 tabIndex={0}
-                style={{ cursor: 'pointer' }}
               >
                 <td className="cost-table__session" title={r.task || r.id}>
                   <span className="cost-table__key">

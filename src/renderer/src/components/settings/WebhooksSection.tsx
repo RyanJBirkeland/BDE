@@ -189,7 +189,7 @@ export function WebhooksSection(): React.JSX.Element {
               : { label: 'Disabled', variant: 'neutral' }
           }
           footer={
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <div className="settings-card-footer-actions">
               <Button
                 variant="ghost"
                 size="sm"
@@ -236,7 +236,7 @@ export function WebhooksSection(): React.JSX.Element {
 
             <label className="settings-field">
               <span className="settings-field__label">Secret (optional)</span>
-              <div style={{ position: 'relative' }}>
+              <div className="settings-secret-input">
                 <input
                   className="settings-field__input"
                   type={visibleSecrets.has(webhook.id) ? 'text' : 'password'}
@@ -244,23 +244,12 @@ export function WebhooksSection(): React.JSX.Element {
                   value={webhook.secret || ''}
                   onChange={(e) => handleSecretChange(webhook.id, e.target.value)}
                   onBlur={() => handleSecretBlur(webhook.id)}
-                  style={{ paddingRight: '36px' }}
                 />
                 {webhook.secret && (
                   <button
                     type="button"
+                    className="settings-secret-input__toggle"
                     onClick={() => toggleSecretVisibility(webhook.id)}
-                    style={{
-                      position: 'absolute',
-                      right: '8px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--bde-text-secondary)',
-                      padding: '4px'
-                    }}
                     aria-label={visibleSecrets.has(webhook.id) ? 'Hide secret' : 'Show secret'}
                   >
                     {visibleSecrets.has(webhook.id) ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -269,20 +258,11 @@ export function WebhooksSection(): React.JSX.Element {
               </div>
             </label>
 
-            <fieldset className="settings-field" style={{ border: 'none', padding: 0 }}>
+            <fieldset className="settings-field settings-fieldset-bare">
               <legend className="settings-field__label">Events</legend>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              <div className="settings-event-grid">
                 {EVENT_OPTIONS.map((option) => (
-                  <label
-                    key={option.value}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      fontSize: '13px',
-                      cursor: 'pointer'
-                    }}
-                  >
+                  <label key={option.value} className="settings-event-option">
                     <input
                       type="checkbox"
                       checked={webhook.events.includes(option.value)}

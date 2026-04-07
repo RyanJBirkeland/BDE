@@ -163,19 +163,17 @@ export function NotificationsSection(): React.JSX.Element {
       </SettingsCard>
 
       <SettingsCard title="Desktop Notifications" subtitle="Request system notification permission">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontSize: 13, color: 'var(--bde-text-dim)' }}>
+        <div className="settings-stack">
+          <div className="settings-status-line">
             Status:{' '}
             <span
-              style={{
-                fontWeight: 500,
-                color:
-                  permissionStatus === 'granted'
-                    ? 'var(--bde-success)'
-                    : permissionStatus === 'denied'
-                      ? 'var(--bde-error)'
-                      : 'var(--bde-text-muted)'
-              }}
+              className={`settings-status-line__value${
+                permissionStatus === 'granted'
+                  ? ' settings-status-line__value--granted'
+                  : permissionStatus === 'denied'
+                    ? ' settings-status-line__value--denied'
+                    : ''
+              }`}
             >
               {permissionStatus}
             </span>
@@ -192,12 +190,10 @@ export function NotificationsSection(): React.JSX.Element {
       </SettingsCard>
 
       <SettingsCard title="Event Preferences" subtitle="Configure delivery mode per event type">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="settings-stack settings-stack--lg">
           {eventTypes.map((event) => (
-            <div key={event} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--bde-text)' }}>
-                {EVENT_LABELS[event]}
-              </span>
+            <div key={event} className="settings-stack settings-stack--sm">
+              <span className="settings-event-label">{EVENT_LABELS[event]}</span>
               <div className="settings-theme-buttons">
                 <button
                   className={`bde-btn bde-btn--sm ${prefs[event] === 'desktop' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}

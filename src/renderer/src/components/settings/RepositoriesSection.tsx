@@ -140,18 +140,11 @@ export function RepositoriesSection(): React.JSX.Element {
             icon={
               <span
                 className="settings-repo__dot"
-                style={{
-                  background: r.color ?? 'var(--bde-text-dim)',
-                  display: 'block',
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  margin: 'auto'
-                }}
+                style={{ background: r.color ?? 'var(--bde-text-dim)' }}
               />
             }
             footer={
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <div className="settings-card-footer-actions">
                 <Button
                   variant="ghost"
                   size="sm"
