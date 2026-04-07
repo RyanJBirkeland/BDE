@@ -8,7 +8,7 @@ import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
-import { homedir } from 'node:os'
+import { homedir, userInfo } from 'node:os'
 
 const EXTRA_PATHS = ['/usr/local/bin', '/opt/homebrew/bin', `${homedir()}/.local/bin`]
 
@@ -126,29 +126,183 @@ export function invalidateOAuthToken(): void {
 
 const execFilePromise = promisify(execFileCb)
 
+// ---------------------------------------------------------------------------
+// OAuth refresh — Anthropic's published OAuth token endpoint and Claude Code's
+// public client id. We refresh the access token via this endpoint when the
+// keychain copy is expired/near-expiry, instead of just rewriting the same
+// dead token from the keychain (which is what this module did before).
+// ---------------------------------------------------------------------------
+
+const KEYCHAIN_SERVICE = 'Claude Code-credentials'
+const OAUTH_TOKEN_URL = 'https://console.anthropic.com/v1/oauth/token'
+const OAUTH_CLIENT_ID = '9d1c250a-e61b-44d9-88ed-5944d1962f5e'
+const REFRESH_BUFFER_MS = 5 * 60 * 1000 // refresh 5 minutes before expiry
+
+interface ClaudeOauth {
+  accessToken: string
+  refreshToken?: string
+  /** Stored as a string in keychain. Format is ms since epoch (sometimes seconds). */
+  expiresAt?: string
+}
+
+interface ClaudeCreds {
+  claudeAiOauth?: ClaudeOauth
+  [key: string]: unknown
+}
+
+interface RefreshResponse {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+}
+
 /**
- * Attempts to refresh ~/.bde/oauth-token from the macOS Keychain.
- * Spawns the `security` CLI asynchronously (never blocks main thread).
- * Returns true if token was refreshed, false on failure.
+ * Parse the keychain `expiresAt` field into ms-since-epoch.
+ * Handles both seconds-since-epoch and ms-since-epoch storage formats —
+ * Claude Code has historically used both.
+ */
+export function parseExpiresAt(raw: unknown): number | null {
+  if (raw == null) return null
+  const n = typeof raw === 'number' ? raw : parseInt(String(raw), 10)
+  if (!Number.isFinite(n)) return null
+  // Heuristic: anything below 1e12 must be in seconds (ms-since-epoch in
+  // year 2001 is already well above 1e12).
+  return n < 1e12 ? n * 1000 : n
+}
+
+/** Returns true if the keychain access token is expired or within the refresh buffer. */
+export function shouldRefresh(expiresAtMs: number | null): boolean {
+  if (expiresAtMs == null) return false // unknown expiry — don't gamble on a refresh
+  return Date.now() >= expiresAtMs - REFRESH_BUFFER_MS
+}
+
+/**
+ * POST to Anthropic's OAuth token endpoint to exchange a refresh_token for a
+ * fresh access_token (and a rotated refresh_token).
+ */
+async function postOAuthRefresh(refreshToken: string): Promise<RefreshResponse> {
+  const response = await fetch(OAUTH_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: OAUTH_CLIENT_ID
+    })
+  })
+  if (!response.ok) {
+    throw new Error(`OAuth refresh failed: HTTP ${response.status}`)
+  }
+  const data = (await response.json()) as RefreshResponse
+  if (!data.access_token || !data.refresh_token) {
+    throw new Error('OAuth refresh response missing access_token or refresh_token')
+  }
+  return data
+}
+
+/**
+ * Update the macOS Keychain entry for Claude Code with refreshed credentials.
+ * Uses `add-generic-password -U` (update if exists). Best-effort — failures
+ * are surfaced as thrown errors so the caller can decide whether to fall back.
+ */
+async function writeKeychainCreds(account: string, creds: ClaudeCreds): Promise<void> {
+  await execFilePromise(
+    'security',
+    [
+      'add-generic-password',
+      '-U',
+      '-s',
+      KEYCHAIN_SERVICE,
+      '-a',
+      account,
+      '-w',
+      JSON.stringify(creds)
+    ],
+    { timeout: 10_000, env: buildAgentEnv() }
+  )
+}
+
+/**
+ * Attempts to refresh ~/.bde/oauth-token using the macOS Keychain as the
+ * source of truth for credentials.
+ *
+ * Flow:
+ *   1. Read full credential JSON from keychain (`find-generic-password`).
+ *   2. Inspect `expiresAt`. If still valid, write the existing accessToken
+ *      to the file (preserves prior behavior for the happy path).
+ *   3. If expired/near-expiry AND a refreshToken is present, POST to the
+ *      Anthropic OAuth endpoint to mint a fresh accessToken (and rotated
+ *      refreshToken). Persist the rotated credentials back to the keychain
+ *      so subsequent refreshes don't reuse a stale refreshToken.
+ *   4. Write the (possibly fresh) accessToken to ~/.bde/oauth-token.
+ *
+ * Always uses `execFile` (never `execSync`) so the main thread is never
+ * blocked. Returns true if a token was written to disk; false only on hard
+ * read failures.
  */
 export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
+  let creds: ClaudeCreds
   try {
     const { stdout: credJson } = await execFilePromise(
       'security',
-      ['find-generic-password', '-s', 'Claude Code-credentials', '-w'],
+      ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-w'],
       { timeout: 10_000, env: buildAgentEnv() }
     )
-    const creds = JSON.parse(credJson.trim())
-    const token = creds?.claudeAiOauth?.accessToken
-    if (!token || typeof token !== 'string') return false
+    creds = JSON.parse(credJson.trim()) as ClaudeCreds
+  } catch {
+    // Keychain access can fail (locked, not found, permissions)
+    return false
+  }
 
+  const oauth = creds?.claudeAiOauth
+  if (!oauth?.accessToken || typeof oauth.accessToken !== 'string') return false
+
+  let tokenToWrite = oauth.accessToken
+  const expiresAtMs = parseExpiresAt(oauth.expiresAt)
+
+  if (shouldRefresh(expiresAtMs) && oauth.refreshToken) {
+    try {
+      const refreshed = await postOAuthRefresh(oauth.refreshToken)
+      const newExpiresAtMs = Date.now() + refreshed.expires_in * 1000
+      const updatedCreds: ClaudeCreds = {
+        ...creds,
+        claudeAiOauth: {
+          ...oauth,
+          accessToken: refreshed.access_token,
+          refreshToken: refreshed.refresh_token,
+          expiresAt: String(newExpiresAtMs)
+        }
+      }
+      // Persist rotated credentials so the next refresh doesn't reuse the
+      // (now-invalidated) old refresh token. If this fails we still write
+      // the fresh accessToken to the file — the user just ends up with a
+      // stale keychain that they can fix via `claude login`.
+      try {
+        const account = userInfo().username
+        await writeKeychainCreds(account, updatedCreds)
+      } catch {
+        console.warn(
+          '[env-utils] OAuth refresh succeeded but writing rotated credentials back to Keychain failed — run `claude login` if subsequent refreshes start failing'
+        )
+      }
+      tokenToWrite = refreshed.access_token
+    } catch (err) {
+      // Refresh failed (network error, 4xx from OAuth endpoint, malformed
+      // response). Fall through to writing the existing — possibly expired —
+      // accessToken so the agent fails with a visible 401 instead of this
+      // function silently doing nothing.
+      const msg = err instanceof Error ? err.message : String(err)
+      console.warn(`[env-utils] OAuth token refresh failed: ${msg}`)
+    }
+  }
+
+  try {
     const tokenPath = join(homedir(), '.bde', 'oauth-token')
     // DL-7: Enforce restrictive permissions (user-only read/write)
-    writeFileSync(tokenPath, token, { encoding: 'utf8', mode: 0o600 })
+    writeFileSync(tokenPath, tokenToWrite, { encoding: 'utf8', mode: 0o600 })
     invalidateOAuthToken() // Force re-read on next call
     return true
   } catch {
-    // Keychain access can fail (locked, not found, permissions)
     return false
   }
 }
