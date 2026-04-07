@@ -134,23 +134,38 @@ describe('AppearanceSection', () => {
     expect(colorButtons).toHaveLength(6)
   })
 
-  it('renders Pro Dark and Pro Light theme buttons', () => {
+  it('does NOT render the retired Pro Dark / Pro Light buttons', () => {
+    // After the default-themes-pro PR, Dark and Light buttons render the
+    // pro variants directly, so the standalone Pro buttons are gone.
     render(<AppearanceSection />)
-    expect(screen.getByRole('button', { name: /pro dark/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /pro light/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pro dark/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pro light/i })).not.toBeInTheDocument()
   })
 
-  it('clicking Pro Dark sets theme to pro-dark', async () => {
-    const user = userEvent.setup()
+  it('renders the System theme button', () => {
     render(<AppearanceSection />)
-    await user.click(screen.getByRole('button', { name: /pro dark/i }))
-    expect(mockSetTheme).toHaveBeenCalledWith('pro-dark')
+    expect(screen.getByRole('button', { name: 'System' })).toBeInTheDocument()
   })
 
-  it('clicking Pro Light sets theme to pro-light', async () => {
+  it('clicking System sets theme to system', async () => {
     const user = userEvent.setup()
     render(<AppearanceSection />)
-    await user.click(screen.getByRole('button', { name: /pro light/i }))
-    expect(mockSetTheme).toHaveBeenCalledWith('pro-light')
+    await user.click(screen.getByRole('button', { name: 'System' }))
+    expect(mockSetTheme).toHaveBeenCalledWith('system')
+  })
+
+  it('System button has primary class when theme is system', async () => {
+    mockTheme = 'system'
+    const { useThemeStore } = await import('../../../stores/theme')
+    vi.mocked(useThemeStore).mockImplementation((selector) =>
+      (selector as unknown as (s: Record<string, unknown>) => unknown)({
+        theme: 'system',
+        toggleTheme: vi.fn(),
+        setTheme: mockSetTheme
+      })
+    )
+    render(<AppearanceSection />)
+    const systemBtn = screen.getByRole('button', { name: 'System' })
+    expect(systemBtn.className).toContain('bde-btn--primary')
   })
 })

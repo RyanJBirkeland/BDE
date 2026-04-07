@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useThemeStore } from '../theme'
 
 describe('theme store', () => {
@@ -28,44 +28,58 @@ describe('theme store', () => {
     expect(localStorage.getItem('bde-theme')).toBe('light')
   })
 
-  it('setTheme light adds theme-light class to document', () => {
-    useThemeStore.getState().setTheme('light')
-    expect(document.documentElement.classList.contains('theme-light')).toBe(true)
+  it('setTheme dark applies the pro-dark class (default Dark = pro-dark)', () => {
+    useThemeStore.getState().setTheme('dark')
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(false)
   })
 
-  it('setTheme dark removes theme-light class', () => {
-    document.documentElement.classList.add('theme-light')
+  it('setTheme light applies the pro-light class (default Light = pro-light)', () => {
+    useThemeStore.getState().setTheme('light')
+    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
+  })
+
+  it('setTheme dark removes any pre-existing theme classes', () => {
+    document.documentElement.classList.add('theme-light', 'theme-warm', 'theme-pro-light')
     useThemeStore.getState().setTheme('dark')
     expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
   })
 
-  it('toggleTheme flips dark to light', () => {
+  it('toggleTheme cycles system → dark', () => {
+    useThemeStore.setState({ theme: 'system' })
+    useThemeStore.getState().toggleTheme()
+    expect(useThemeStore.getState().theme).toBe('dark')
+  })
+
+  it('toggleTheme cycles dark → light', () => {
     useThemeStore.setState({ theme: 'dark' })
     useThemeStore.getState().toggleTheme()
     expect(useThemeStore.getState().theme).toBe('light')
   })
 
-  it('toggleTheme cycles light to warm', () => {
+  it('toggleTheme cycles light → warm', () => {
     useThemeStore.setState({ theme: 'light' })
     useThemeStore.getState().toggleTheme()
     expect(useThemeStore.getState().theme).toBe('warm')
   })
 
-  it('toggleTheme cycles warm to pro-dark', () => {
+  it('toggleTheme cycles warm → system (full loop)', () => {
     useThemeStore.setState({ theme: 'warm' })
     useThemeStore.getState().toggleTheme()
-    expect(useThemeStore.getState().theme).toBe('pro-dark')
+    expect(useThemeStore.getState().theme).toBe('system')
   })
 
-  it('setTheme to warm updates state', () => {
+  it('setTheme to warm updates state and applies theme-warm class', () => {
     useThemeStore.getState().setTheme('warm')
     expect(useThemeStore.getState().theme).toBe('warm')
-  })
-
-  it('setTheme warm adds theme-warm class to document', () => {
-    useThemeStore.getState().setTheme('warm')
     expect(document.documentElement.classList.contains('theme-warm')).toBe(true)
-    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(false)
   })
 
   it('setTheme warm persists to localStorage', () => {
@@ -73,60 +87,7 @@ describe('theme store', () => {
     expect(localStorage.getItem('bde-theme')).toBe('warm')
   })
 
-  it('setTheme to pro-dark updates state', () => {
-    useThemeStore.getState().setTheme('pro-dark')
-    expect(useThemeStore.getState().theme).toBe('pro-dark')
-  })
-
-  it('setTheme to pro-light updates state', () => {
-    useThemeStore.getState().setTheme('pro-light')
-    expect(useThemeStore.getState().theme).toBe('pro-light')
-  })
-
-  it('setTheme pro-dark adds correct class and removes others', () => {
-    document.documentElement.classList.add('theme-light')
-    useThemeStore.getState().setTheme('pro-dark')
-    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
-    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
-    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
-  })
-
-  it('setTheme pro-light adds correct class and removes others', () => {
-    document.documentElement.classList.add('theme-warm')
-    useThemeStore.getState().setTheme('pro-light')
-    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(true)
-    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
-    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
-  })
-
-  it('setTheme pro-dark persists to localStorage', () => {
-    useThemeStore.getState().setTheme('pro-dark')
-    expect(localStorage.getItem('bde-theme')).toBe('pro-dark')
-  })
-
-  it('toggleTheme cycles pro-dark to pro-light', () => {
-    useThemeStore.setState({ theme: 'pro-dark' })
-    useThemeStore.getState().toggleTheme()
-    expect(useThemeStore.getState().theme).toBe('pro-light')
-  })
-
-  it('toggleTheme cycles pro-light to dark', () => {
-    useThemeStore.setState({ theme: 'pro-light' })
-    useThemeStore.getState().toggleTheme()
-    expect(useThemeStore.getState().theme).toBe('dark')
-  })
-
-  it('setTheme dark removes all theme classes', () => {
-    document.documentElement.classList.add('theme-light', 'theme-warm', 'theme-pro-dark', 'theme-pro-light')
-    useThemeStore.getState().setTheme('dark')
-    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
-    expect(document.documentElement.classList.contains('theme-warm')).toBe(false)
-    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(false)
-    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(false)
-  })
-
   it('responds to storage events for cross-window sync', () => {
-    // Simulate a storage event from another window
     const event = new StorageEvent('storage', {
       key: 'bde-theme',
       newValue: 'warm'
@@ -134,6 +95,26 @@ describe('theme store', () => {
     window.dispatchEvent(event)
     expect(useThemeStore.getState().theme).toBe('warm')
     expect(document.documentElement.classList.contains('theme-warm')).toBe(true)
+  })
+
+  it('storage event with legacy pro-dark value migrates to dark', () => {
+    const event = new StorageEvent('storage', {
+      key: 'bde-theme',
+      newValue: 'pro-dark'
+    })
+    window.dispatchEvent(event)
+    expect(useThemeStore.getState().theme).toBe('dark')
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
+  })
+
+  it('storage event with legacy pro-light value migrates to light', () => {
+    const event = new StorageEvent('storage', {
+      key: 'bde-theme',
+      newValue: 'pro-light'
+    })
+    window.dispatchEvent(event)
+    expect(useThemeStore.getState().theme).toBe('light')
+    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(true)
   })
 
   it('ignores storage events for other keys', () => {
@@ -154,5 +135,91 @@ describe('theme store', () => {
     })
     window.dispatchEvent(event)
     expect(useThemeStore.getState().theme).toBe('dark')
+  })
+})
+
+describe('theme store — system preference', () => {
+  let mqList: Array<{
+    query: string
+    matches: boolean
+    listeners: Array<() => void>
+  }>
+
+  beforeEach(() => {
+    mqList = []
+    // Provide a controllable matchMedia mock so we can flip prefers-color-scheme.
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => {
+        const entry = {
+          query,
+          matches: query.includes('dark'),
+          media: query,
+          onchange: null,
+          listeners: [] as Array<() => void>,
+          addEventListener: function (_: string, cb: () => void) {
+            this.listeners.push(cb)
+          },
+          removeEventListener: function (_: string, cb: () => void) {
+            this.listeners = this.listeners.filter((l) => l !== cb)
+          },
+          addListener: function (cb: () => void) {
+            this.listeners.push(cb)
+          },
+          removeListener: function (cb: () => void) {
+            this.listeners = this.listeners.filter((l) => l !== cb)
+          },
+          dispatchEvent: () => true
+        }
+        mqList.push(entry)
+        return entry as unknown as MediaQueryList
+      })
+    )
+    localStorage.clear()
+    document.documentElement.classList.remove(
+      'theme-light',
+      'theme-warm',
+      'theme-pro-dark',
+      'theme-pro-light'
+    )
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('setTheme system applies pro-dark when OS prefers dark', () => {
+    useThemeStore.getState().setTheme('system')
+    expect(useThemeStore.getState().theme).toBe('system')
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
+  })
+
+  it('setTheme system applies pro-light when OS prefers light', () => {
+    // Override the mock so the dark query reports false
+    mqList.length = 0
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(
+        (query: string) =>
+          ({
+            query,
+            matches: false, // OS prefers light
+            media: query,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            addListener: () => {},
+            removeListener: () => {},
+            dispatchEvent: () => true
+          }) as unknown as MediaQueryList
+      )
+    )
+    useThemeStore.getState().setTheme('system')
+    expect(document.documentElement.classList.contains('theme-pro-light')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(false)
+  })
+
+  it('setTheme system persists "system" to localStorage (not the resolved value)', () => {
+    useThemeStore.getState().setTheme('system')
+    expect(localStorage.getItem('bde-theme')).toBe('system')
   })
 })
