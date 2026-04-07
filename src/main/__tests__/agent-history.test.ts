@@ -535,4 +535,101 @@ describe('agent-history (SQLite)', () => {
       expect(result.nextByte).toBe(100)
     })
   })
+
+  describe('reconcileRunningAgentRuns', () => {
+    it('skips rows with null sprint_task_id (adhoc/assistant agents)', async () => {
+      // Adhoc agent — no sprint_task_id, owned by adhocSessions map
+      await agentHistory.createAgentRecord({
+        id: 'adhoc-1',
+        pid: null,
+        bin: 'claude',
+        model: 'opus',
+        repo: 'bde',
+        repoPath: '/tmp',
+        task: 'help me',
+        startedAt: new Date().toISOString(),
+        finishedAt: null,
+        exitCode: null,
+        status: 'running',
+        source: 'adhoc',
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        sprintTaskId: null
+      })
+
+      // Reconciler is told no sprint task is active. The adhoc row must
+      // remain 'running' regardless — it isn't a sprint-task agent.
+      const cleaned = agentHistory.reconcileRunningAgentRuns(() => false)
+      expect(cleaned).toBe(0)
+
+      const { getDb } = await import('../db')
+      const row = getDb()
+        .prepare('SELECT status FROM agent_runs WHERE id = ?')
+        .get('adhoc-1') as { status: string }
+      expect(row.status).toBe('running')
+    })
+
+    it('finalizes sprint-task rows whose task is not in the active set', async () => {
+      await agentHistory.createAgentRecord({
+        id: 'sprint-orphan',
+        pid: null,
+        bin: 'claude',
+        model: 'sonnet',
+        repo: 'bde',
+        repoPath: '/tmp',
+        task: 'do thing',
+        startedAt: new Date().toISOString(),
+        finishedAt: null,
+        exitCode: null,
+        status: 'running',
+        source: 'bde',
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        sprintTaskId: 'task-123'
+      })
+
+      const cleaned = agentHistory.reconcileRunningAgentRuns(() => false)
+      expect(cleaned).toBe(1)
+
+      const { getDb } = await import('../db')
+      const row = getDb()
+        .prepare('SELECT status FROM agent_runs WHERE id = ?')
+        .get('sprint-orphan') as { status: string }
+      expect(row.status).toBe('failed')
+    })
+
+    it('keeps sprint-task rows whose task is still in the active set', async () => {
+      await agentHistory.createAgentRecord({
+        id: 'sprint-alive',
+        pid: null,
+        bin: 'claude',
+        model: 'sonnet',
+        repo: 'bde',
+        repoPath: '/tmp',
+        task: 'do thing',
+        startedAt: new Date().toISOString(),
+        finishedAt: null,
+        exitCode: null,
+        status: 'running',
+        source: 'bde',
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        sprintTaskId: 'task-456'
+      })
+
+      const cleaned = agentHistory.reconcileRunningAgentRuns(
+        (taskId) => taskId === 'task-456'
+      )
+      expect(cleaned).toBe(0)
+
+      const { getDb } = await import('../db')
+      const row = getDb()
+        .prepare('SELECT status FROM agent_runs WHERE id = ?')
+        .get('sprint-alive') as { status: string }
+      expect(row.status).toBe('running')
+    })
+  })
 })

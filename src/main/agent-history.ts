@@ -304,8 +304,14 @@ export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000): n
 
 /**
  * Reconcile agent_runs marked 'running' in the DB against the actual in-memory active set.
- * Any record whose sprint_task_id is not in the active set gets finalized as 'failed'.
- * Called periodically by orphan recovery to catch agents that died without clean shutdown.
+ * Any sprint-task agent record whose sprint_task_id is not in the active set gets
+ * finalized as 'failed'. Called periodically by orphan recovery to catch agents that
+ * died without clean shutdown.
+ *
+ * Adhoc/assistant agents have a null sprint_task_id and are managed by the
+ * adhocSessions map (not by agent-manager), so they are skipped here. Their
+ * lifecycle is finalized either by completeSession() during normal close or
+ * by finalizeAllRunningAgentRuns() at the next app startup.
  */
 export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boolean): number {
   const db = getDb()
@@ -319,8 +325,11 @@ export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boo
   )
 
   for (const row of rows) {
-    // If the agent's task is still in the active set, it's genuinely running
-    if (row.sprint_task_id && isAgentActive(row.sprint_task_id)) continue
+    // Skip rows without a sprint_task_id — those are adhoc/assistant agents
+    // owned by the adhocSessions map, not by sprint-task orphan recovery.
+    if (!row.sprint_task_id) continue
+    // Sprint-task agent: keep alive only if its task is still in the active set.
+    if (isAgentActive(row.sprint_task_id)) continue
     finalize.run(row.id)
     cleaned++
   }
