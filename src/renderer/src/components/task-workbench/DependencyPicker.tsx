@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import type { TaskDependency, SprintTask } from '../../../../shared/types'
 import { NeonBadge } from '../neon/NeonBadge'
 
@@ -22,12 +22,33 @@ export function DependencyPicker({
   const searchRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const selectedIds = new Set(dependencies.map((d) => d.id))
+  const selectedIds = useMemo(() => new Set(dependencies.map((d) => d.id)), [dependencies])
 
-  const filteredTasks = availableTasks
-    .filter((t) => t.id !== currentTaskId && !selectedIds.has(t.id))
-    .filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
-    .slice(0, MAX_RESULTS)
+  const filteredTasks = useMemo(() => {
+    const searchLower = search.toLowerCase()
+    const results: SprintTask[] = []
+
+    for (const task of availableTasks) {
+      // Skip current task and already-selected tasks
+      if (task.id === currentTaskId || selectedIds.has(task.id)) {
+        continue
+      }
+
+      // Skip tasks that don't match search
+      if (searchLower && !task.title.toLowerCase().includes(searchLower)) {
+        continue
+      }
+
+      results.push(task)
+
+      // Early exit once we have enough results
+      if (results.length >= MAX_RESULTS) {
+        break
+      }
+    }
+
+    return results
+  }, [availableTasks, currentTaskId, selectedIds, search])
 
   const openDropdown = useCallback(() => {
     setDropdownOpen(true)
