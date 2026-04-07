@@ -883,6 +883,14 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE agent_runs ADD COLUMN branch TEXT DEFAULT NULL')
       }
     }
+  },
+  {
+    version: 36,
+    description: 'Restore idx_sprint_tasks_claimed_by and idx_sprint_tasks_pr_number dropped in v17/v20 table rewrites',
+    up: (db) => {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_sprint_tasks_claimed_by ON sprint_tasks(claimed_by)')
+      db.exec('CREATE INDEX IF NOT EXISTS idx_sprint_tasks_pr_number ON sprint_tasks(pr_number)')
+    }
   }
 ]
 
