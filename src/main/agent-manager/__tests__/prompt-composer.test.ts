@@ -548,6 +548,47 @@ describe('buildAgentPrompt', () => {
     })
   })
 
+  describe('pipeline judgment rules (test flake + push detection)', () => {
+    it('warns about parallel agents causing load-induced flakes', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('## Judging Test Failures and Push Completion')
+      expect(prompt).toContain('Other pipeline agents may be running in parallel')
+      expect(prompt).toContain('CPU-saturated')
+    })
+
+    it('forbids labeling failures pre-existing without proof', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('NEVER label a test failure "pre-existing"')
+      expect(prompt).toContain('without proof')
+      expect(prompt).toContain('re-run just that file in isolation')
+    })
+
+    it('requires git ls-remote for push completion detection', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      expect(prompt).toContain('git ls-remote origin')
+      expect(prompt).toContain('exit code')
+      expect(prompt).toContain('Do NOT tail bash output files')
+    })
+
+    it('adds the push verification step to the Definition of Done', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      // DoD should mention the ls-remote verification
+      const dodIdx = prompt.indexOf('## Definition of Done')
+      expect(dodIdx).toBeGreaterThan(-1)
+      const dod = prompt.slice(dodIdx)
+      expect(dod).toContain('git ls-remote')
+    })
+
+    it('does not include judgment rules for non-pipeline agents', () => {
+      const types: AgentType[] = ['assistant', 'adhoc', 'copilot', 'synthesizer']
+      for (const agentType of types) {
+        const prompt = buildAgentPrompt({ agentType })
+        expect(prompt).not.toContain('## Judging Test Failures and Push Completion')
+        expect(prompt).not.toContain('pre-existing')
+      }
+    })
+  })
+
   describe('task specification wrapper', () => {
     it('wraps pipeline task content in a Task Specification section', () => {
       const prompt = buildAgentPrompt({

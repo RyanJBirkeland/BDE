@@ -119,7 +119,25 @@ const IDLE_TIMEOUT_WARNING = `\n\n## Idle Timeout Warning\nYou will be TERMINATE
 
 const PIPELINE_SETUP_RULE = `\n\n## Pipeline Worktree Setup\nYour worktree has NO \`node_modules\`. Run \`npm install\` before invoking any of the pre-commit verification commands (\`npm run typecheck\`, \`npm run test:coverage\`, \`npm run lint\`). You may read the spec and source files first to plan. If \`npm install\` fails, report the error clearly and exit.`
 
-const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npm run test:coverage\` passes (tests + coverage thresholds)\n4. \`npm run lint\` passes with zero errors\nDo NOT exit without running all four checks.`
+const PIPELINE_JUDGMENT_RULES = `\n\n## Judging Test Failures and Push Completion
+
+**Other pipeline agents may be running in parallel on this machine.** When 2+ agents run \`npm run test:coverage\` simultaneously, the system can become CPU-saturated and tests that normally pass may time out intermittently. This is NOT a reason to declare a failure "pre-existing" or "unrelated".
+
+### Rules for judging test failures
+
+- NEVER label a test failure "pre-existing" or "unrelated" without proof. An agent who pushes broken tests blaming "flakes" is the #1 cause of rejected PRs.
+- If a test fails, **first re-run just that file in isolation**: \`npx vitest run <path-to-failing-test>\`. If it passes in isolation, the full-suite failure was a parallel-load flake — wait 30 seconds, then retry the full suite once more before concluding anything.
+- If the test still fails in isolation, run \`git log -5 -- <test-file>\` to check when it was last modified. If the last commit is not in \`main\`, check out \`origin/main\` in a scratch location and run the same test there. If it fails on main, THEN it's legitimately pre-existing.
+- If the test passes on \`origin/main\` but fails in your worktree, it is YOUR responsibility — even if you don't think you touched it. Something in your changes broke it. Fix it.
+
+### Rules for detecting \`git push\` completion
+
+- \`git push\` reports success or failure via its **exit code**, not via any output file or stdout cache.
+- To verify a push succeeded, run: \`git ls-remote origin refs/heads/<your-branch>\` and compare the returned SHA to your local \`git rev-parse HEAD\`. Matching SHAs = push succeeded.
+- Do NOT tail bash output files, sleep-and-recheck logs, or poll stdout caches to detect push completion. Those files can be stale, truncated, or overwritten, and have caused agents to hang for minutes on pushes that had already succeeded.
+- If \`git push\` appears to be still running when you check, wait 5 seconds and re-run \`git ls-remote\` — not the output file.`
+
+const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npm run test:coverage\` passes (tests + coverage thresholds)\n4. \`npm run lint\` passes with zero errors\n5. Your commit is on \`origin/<your-branch>\` (verified via \`git ls-remote\`, not by reading bash output files)\nDo NOT exit without verifying all five.`
 
 // ---------------------------------------------------------------------------
 // Native System Support
@@ -349,9 +367,10 @@ Before your final push, verify:
 - [ ] Preload .d.ts updated if IPC channels changed`
   }
 
-  // Pipeline-only sections: setup rule, time limit, idle warning, definition of done
+  // Pipeline-only sections: setup rule, judgment rules, time limit, idle warning, DoD
   if (agentType === 'pipeline') {
     prompt += PIPELINE_SETUP_RULE
+    prompt += PIPELINE_JUDGMENT_RULES
     if (maxRuntimeMs && maxRuntimeMs > 0) {
       prompt += buildTimeLimitSection(maxRuntimeMs)
     }
