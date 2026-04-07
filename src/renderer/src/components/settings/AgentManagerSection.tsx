@@ -272,6 +272,40 @@ export function AgentManagerSection(): React.JSX.Element {
               markDirty()
             }}
           />
+          <span
+            className="settings-field__hint"
+            style={{
+              fontSize: '11px',
+              opacity: 0.7,
+              marginTop: '4px',
+              display: 'block',
+              lineHeight: 1.4
+            }}
+          >
+            Each agent runs its own `npm run test:coverage` during verification. Values above{' '}
+            <strong>3</strong> on a typical laptop can oversaturate CPU and cause otherwise-passing
+            tests to time out under load (load avg 140+ observed at 6 concurrent). Raise with
+            caution.
+          </span>
+          {maxConcurrent > 3 && (
+            <span
+              role="alert"
+              style={{
+                display: 'block',
+                marginTop: '6px',
+                padding: '6px 10px',
+                fontSize: '11px',
+                color: 'var(--neon-orange, #ff9f40)',
+                border: '1px solid rgba(255, 159, 64, 0.4)',
+                borderRadius: '4px',
+                background: 'rgba(255, 159, 64, 0.08)'
+              }}
+            >
+              ⚠ {maxConcurrent} concurrent agents may oversaturate this machine. Agents can
+              misjudge load-induced test timeouts as &ldquo;pre-existing failures&rdquo; and push
+              broken work. Recommended: 3 or lower.
+            </span>
+          )}
         </label>
 
         <label className="settings-field">
