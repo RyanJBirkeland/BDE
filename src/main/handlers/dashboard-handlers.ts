@@ -2,14 +2,19 @@ import { getDb } from '../db'
 import { safeHandle } from '../ipc-utils'
 import { getDailySuccessRate } from '../data/sprint-queries'
 
-export function getCompletionsPerHour(): { hour: string; count: number }[] {
+export function getCompletionsPerHour(): {
+  hour: string
+  successCount: number
+  failedCount: number
+}[] {
   const db = getDb()
   const rows = db
     .prepare(
       `
     SELECT
       strftime('%Y-%m-%dT%H:00:00', finished_at / 1000, 'unixepoch', 'localtime') AS hour,
-      COUNT(*) AS count
+      SUM(CASE WHEN status = 'done'   THEN 1 ELSE 0 END) AS successCount,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failedCount
     FROM agent_runs
     WHERE finished_at IS NOT NULL
       AND finished_at > (strftime('%s', 'now', '-24 hours') * 1000)
@@ -17,7 +22,7 @@ export function getCompletionsPerHour(): { hour: string; count: number }[] {
     ORDER BY hour ASC
   `
     )
-    .all() as { hour: string; count: number }[]
+    .all() as { hour: string; successCount: number; failedCount: number }[]
   return rows
 }
 

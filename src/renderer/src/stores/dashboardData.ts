@@ -71,7 +71,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
       const data = await window.api.dashboard?.completionsPerHour()
       if (data) {
         chartData = data.map((d) => ({
-          value: d.count,
+          value: d.successCount + d.failedCount,
           accent: 'cyan' as const,
           label: d.hour
         }))

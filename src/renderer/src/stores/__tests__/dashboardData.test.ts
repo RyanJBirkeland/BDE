@@ -35,8 +35,8 @@ describe('dashboardDataStore', () => {
 
   it('fetchAll populates all fields on success', async () => {
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([
-      { hour: '10:00', count: 5 },
-      { hour: '11:00', count: 3 }
+      { hour: '10:00', successCount: 4, failedCount: 1 },
+      { hour: '11:00', successCount: 2, failedCount: 1 }
     ])
     ;(window.api.dashboard.burndown as any).mockResolvedValue([
       { date: '2026-03-28', count: 2 },
@@ -71,6 +71,7 @@ describe('dashboardDataStore', () => {
     expect(state.chartData).toHaveLength(2)
     expect(state.chartData[0]).toEqual({ value: 5, accent: 'cyan', label: '10:00' })
     expect(state.chartData[1]).toEqual({ value: 3, accent: 'cyan', label: '11:00' })
+    // value = successCount + failedCount (temporary bridge until Task 5)
     expect(state.burndownData).toHaveLength(2)
     expect(state.burndownData[0]).toEqual({ value: 2, accent: 'cyan', label: '2026-03-28' })
     expect(state.burndownData[1]).toEqual({ value: 4, accent: 'cyan', label: '2026-03-29' })
@@ -155,7 +156,7 @@ describe('dashboardDataStore', () => {
   })
 
   it('fetchAll maps all chart bars with cyan accent', async () => {
-    const data = Array.from({ length: 7 }, (_, i) => ({ hour: `${i}:00`, count: i + 1 }))
+    const data = Array.from({ length: 7 }, (_, i) => ({ hour: `${i}:00`, successCount: i + 1, failedCount: 0 }))
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue(data)
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
     ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })

@@ -683,7 +683,8 @@ export interface WebhookChannels {
 /** Dashboard analytics */
 export interface CompletionBucket {
   hour: string
-  count: number
+  successCount: number
+  failedCount: number
 }
 
 export interface DashboardEvent {
