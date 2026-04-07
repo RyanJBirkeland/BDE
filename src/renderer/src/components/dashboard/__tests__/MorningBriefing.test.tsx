@@ -65,11 +65,11 @@ describe('MorningBriefing', () => {
     expect(screen.getByText('Task t2')).toBeInTheDocument()
   })
 
-  it('shows cost when agent data is available', () => {
+  it('shows tokens when agent data is available', () => {
     const agents = [
-      { id: 'a1', sprintTaskId: 't1', costUsd: 0.5 } as AgentCostRecord
+      { id: 'a1', sprintTaskId: 't1', tokensIn: 30000, tokensOut: 5000 } as AgentCostRecord
     ]
     render(<MorningBriefing {...defaultProps} localAgents={agents} />)
-    expect(screen.getAllByText('$0.500').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('35.0K').length).toBeGreaterThan(0)
   })
 })

@@ -21,8 +21,8 @@ describe('getCostSummary', () => {
     expect(summary.tasksThisWeek).toBe(0)
     expect(summary.tasksAllTime).toBe(0)
     expect(summary.totalTokensThisWeek).toBe(0)
-    expect(summary.avgCostPerTask).toBeNull()
-    expect(summary.mostExpensiveTask).toBeNull()
+    expect(summary.avgTokensPerTask).toBeNull()
+    expect(summary.mostTokenIntensiveTask).toBeNull()
   })
 
   it('counts done tasks in summary', () => {
@@ -41,9 +41,9 @@ describe('getCostSummary', () => {
     expect(summary.tasksThisWeek).toBe(2)
     expect(summary.tasksAllTime).toBe(2)
     expect(summary.totalTokensThisWeek).toBe(1100) // 500+200+300+100
-    expect(summary.avgCostPerTask).toBeCloseTo(0.15)
-    expect(summary.mostExpensiveTask).not.toBeNull()
-    expect(summary.mostExpensiveTask!.costUsd).toBe(0.2)
+    expect(summary.avgTokensPerTask).toBeCloseTo(550) // (700+400)/2
+    expect(summary.mostTokenIntensiveTask).not.toBeNull()
+    expect(summary.mostTokenIntensiveTask!.totalTokens).toBe(700) // 500+200
   })
 })
 

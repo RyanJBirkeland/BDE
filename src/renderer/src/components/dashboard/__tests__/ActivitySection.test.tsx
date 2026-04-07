@@ -32,7 +32,13 @@ vi.mock('../../stores/dashboardData', () => ({
 }))
 
 vi.mock('../../lib/format', () => ({
-  timeAgo: vi.fn(() => 'a moment ago')
+  timeAgo: vi.fn(() => 'a moment ago'),
+  formatTokens: vi.fn((n: number | null | undefined) => {
+    if (n == null) return '--'
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+    return n.toLocaleString()
+  })
 }))
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -68,22 +74,21 @@ describe('ActivitySection', () => {
     mockFetchAll.mockClear()
   })
 
-  const mockFeedEvents: FeedEvent[] = [
-    { id: 'e1', label: 'Test error', accent: 'red', timestamp: Date.now() }
-  ]
-  const mockCostTrendData: ChartBar[] = [
-    { label: 'run1', value: 0.5, accent: 'orange' },
-    { label: 'run2', value: 0.7, accent: 'orange' }
+  const mockTokenTrendData: ChartBar[] = [
+    { label: 'run1', value: 50000, accent: 'cyan' },
+    { label: 'run2', value: 75000, accent: 'cyan' }
   ]
 
   const defaultProps = {
-    feedEvents: mockFeedEvents,
+    feedEvents: [
+      { id: 'e1', label: 'Test error', accent: 'red' as const, timestamp: Date.now() }
+    ] as FeedEvent[],
     cardErrors: {},
     recentCompletions: [makeTask({ id: 't1', title: 'Task 1' })],
-    costTrendData: mockCostTrendData,
-    costAvg: '0.60',
-    cost24h: 12.45,
-    taskCostMap: new Map<string, number>(),
+    tokenTrendData: mockTokenTrendData,
+    tokenAvg: '62.5K',
+    tokens24h: 125000,
+    taskTokenMap: new Map<string, number>(),
     onFeedEventClick: vi.fn(),
     onCompletionClick: vi.fn()
   }
@@ -125,7 +130,6 @@ describe('ActivitySection', () => {
       makeTask({ id: 't1', title: 'Unique Task Title', completed_at: '2026-01-01T10:00:00Z' })
     ]
     render(<ActivitySection {...defaultProps} recentCompletions={completions} />)
-    // Check that the completion row renders with title and time
     expect(screen.getByText('Unique Task Title')).toBeInTheDocument()
     const completionRow = screen.getByText('Unique Task Title').closest('.dashboard-completion-row')
     expect(completionRow).toBeInTheDocument()
@@ -169,32 +173,32 @@ describe('ActivitySection', () => {
     expect(screen.getByText('No completions yet')).toBeInTheDocument()
   })
 
-  it('renders Cost / Run card with MiniChart', () => {
+  it('renders Tokens / Run card with MiniChart', () => {
     render(<ActivitySection {...defaultProps} />)
-    expect(screen.getByTestId('neon-card-cost-/-run')).toBeInTheDocument()
+    expect(screen.getByTestId('neon-card-tokens-/-run')).toBeInTheDocument()
     expect(screen.getByTestId('mini-chart')).toHaveTextContent('2 bars')
   })
 
-  it('renders cost trend caption with run count and average', () => {
+  it('renders token trend caption with run count and average', () => {
     render(<ActivitySection {...defaultProps} />)
-    expect(screen.getByText('2 runs · avg $0.60')).toBeInTheDocument()
+    expect(screen.getByText('2 runs · avg 62.5K')).toBeInTheDocument()
   })
 
-  it('renders cost trend caption without average when costAvg is null', () => {
-    render(<ActivitySection {...defaultProps} costAvg={null} />)
+  it('renders token trend caption without average when tokenAvg is null', () => {
+    render(<ActivitySection {...defaultProps} tokenAvg={null} />)
     expect(screen.getByText('2 runs')).toBeInTheDocument()
     expect(screen.queryByText(/avg/)).not.toBeInTheDocument()
   })
 
-  it('renders Cost 24h card', () => {
+  it('renders Tokens 24h card', () => {
     render(<ActivitySection {...defaultProps} />)
-    expect(screen.getByTestId('neon-card-cost-24h')).toBeInTheDocument()
-    expect(screen.getByText('$12.45')).toBeInTheDocument()
+    expect(screen.getByTestId('neon-card-tokens-24h')).toBeInTheDocument()
+    expect(screen.getByText('125.0K')).toBeInTheDocument()
   })
 
-  it('formats cost24h to 2 decimal places', () => {
-    render(<ActivitySection {...defaultProps} cost24h={1.234} />)
-    expect(screen.getByText('$1.23')).toBeInTheDocument()
+  it('formats tokens24h correctly', () => {
+    render(<ActivitySection {...defaultProps} tokens24h={1234567} />)
+    expect(screen.getByText('1.2M')).toBeInTheDocument()
   })
 
   it('renders feed error state', () => {

@@ -26,7 +26,7 @@ vi.mock('../../../stores/panelLayout', () => ({
 }))
 
 vi.mock('../../../stores/costData', () => ({
-  useCostDataStore: vi.fn((sel: any) => sel({ totalCost: 4.2 }))
+  useCostDataStore: vi.fn((sel: any) => sel({ totalTokens: 42000 }))
 }))
 
 vi.mock('../../../stores/theme', () => ({
@@ -52,10 +52,10 @@ describe('UnifiedHeader', () => {
     expect(screen.getByText('IDE')).toBeInTheDocument()
   })
 
-  it('renders cost badge', async () => {
+  it('renders token badge', async () => {
     const { UnifiedHeader } = await import('../UnifiedHeader')
     render(<UnifiedHeader />)
-    expect(screen.getByText('$4.20')).toBeInTheDocument()
+    expect(screen.getByText('42.0K tokens')).toBeInTheDocument()
   })
 
   it('renders theme toggle', async () => {

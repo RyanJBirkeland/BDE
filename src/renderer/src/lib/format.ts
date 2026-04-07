@@ -63,6 +63,17 @@ export function formatDurationMs(ms: number | null | undefined): string {
 }
 
 /**
+ * Format token count to compact human-readable form: 1234567 → "1.2M", 45200 → "45.2K".
+ * Returns "--" for null/undefined/NaN.
+ */
+export function formatTokens(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return '--'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return n.toLocaleString()
+}
+
+/**
  * Short model badge label: "claude-sonnet-4-5-20250929" → "sonnet".
  */
 export function modelBadgeLabel(model: string): string {

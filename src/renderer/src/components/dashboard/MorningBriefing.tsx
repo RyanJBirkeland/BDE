@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { NeonCard } from '../neon'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../../lib/motion'
+import { formatTokens } from '../../lib/format'
 import type { SprintTask, AgentCostRecord } from '../../../../shared/types'
 
 interface MorningBriefingProps {
@@ -11,9 +12,9 @@ interface MorningBriefingProps {
   onDismiss: () => void
 }
 
-interface TaskWithCost {
+interface TaskWithTokens {
   title: string
-  cost: number | null
+  tokens: number | null
 }
 
 export function MorningBriefing({
@@ -25,22 +26,23 @@ export function MorningBriefing({
   const reduced = useReducedMotion()
   const transition = reduced ? REDUCED_TRANSITION : SPRINGS.snappy
 
-  // Match tasks with their cost data
-  const tasksWithCost = useMemo((): TaskWithCost[] => {
+  // Match tasks with their token usage
+  const tasksWithTokens = useMemo((): TaskWithTokens[] => {
     return tasks.slice(0, 5).map((task) => {
       const agent = localAgents.find((a) => a.sprintTaskId === task.id) ??
         localAgents.find((a) => a.id === task.agent_run_id)
+      const tokens = agent ? ((agent.tokensIn ?? 0) + (agent.tokensOut ?? 0)) : null
       return {
         title: task.title,
-        cost: agent?.costUsd ?? null
+        tokens: tokens && tokens > 0 ? tokens : null
       }
     })
   }, [tasks, localAgents])
 
-  // Calculate total cost
-  const totalCost = useMemo(() => {
-    return tasksWithCost.reduce((sum, t) => sum + (t.cost ?? 0), 0)
-  }, [tasksWithCost])
+  // Calculate total tokens
+  const totalTokens = useMemo(() => {
+    return tasksWithTokens.reduce((sum, t) => sum + (t.tokens ?? 0), 0)
+  }, [tasksWithTokens])
 
   return (
     <motion.div
@@ -57,23 +59,23 @@ export function MorningBriefing({
             {tasks.length} task{tasks.length !== 1 ? 's' : ''} completed since last session
           </p>
 
-          {tasksWithCost.length > 0 && (
+          {tasksWithTokens.length > 0 && (
             <div className="dashboard-briefing__tasks">
-              {tasksWithCost.map((task, i) => (
+              {tasksWithTokens.map((task, i) => (
                 <div key={i} className="dashboard-briefing__task-row">
                   <span className="dashboard-briefing__task-title" title={task.title}>{task.title}</span>
                   <span className="dashboard-briefing__task-cost">
-                    {task.cost !== null ? `$${task.cost.toFixed(3)}` : '—'}
+                    {task.tokens !== null ? formatTokens(task.tokens) : '—'}
                   </span>
                 </div>
               ))}
             </div>
           )}
 
-          {totalCost > 0 && (
+          {totalTokens > 0 && (
             <div className="dashboard-briefing__total">
-              <span className="dashboard-briefing__total-label">Total Cost</span>
-              <span className="dashboard-briefing__total-value">${totalCost.toFixed(3)}</span>
+              <span className="dashboard-briefing__total-label">Total Tokens</span>
+              <span className="dashboard-briefing__total-value">{formatTokens(totalTokens)}</span>
             </div>
           )}
 

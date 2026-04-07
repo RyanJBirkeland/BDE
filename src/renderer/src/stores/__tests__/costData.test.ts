@@ -23,7 +23,7 @@ const makeRecord = (id: string, costUsd: number | null): AgentCostRecord => ({
 const initialState = {
   localAgents: [] as AgentCostRecord[],
   isFetching: false,
-  totalCost: 0
+  totalTokens: 0
 }
 
 describe('costData store', () => {
@@ -36,14 +36,14 @@ describe('costData store', () => {
     ).getAgentHistory.mockResolvedValue([])
   })
 
-  it('starts with empty localAgents, isFetching=false, totalCost=0', () => {
+  it('starts with empty localAgents, isFetching=false, totalTokens=0', () => {
     const state = useCostDataStore.getState()
     expect(state.localAgents).toEqual([])
     expect(state.isFetching).toBe(false)
-    expect(state.totalCost).toBe(0)
+    expect(state.totalTokens).toBe(0)
   })
 
-  it('fetchLocalAgents loads agents and computes total cost', async () => {
+  it('fetchLocalAgents loads agents and computes total tokens', async () => {
     const records = [makeRecord('a1', 0.5), makeRecord('a2', 1.25)]
     ;(
       window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>
@@ -53,19 +53,24 @@ describe('costData store', () => {
 
     const state = useCostDataStore.getState()
     expect(state.localAgents).toHaveLength(2)
-    expect(state.totalCost).toBeCloseTo(1.75)
+    // Each record has tokensIn=1000 + tokensOut=500 = 1500, two records = 3000
+    expect(state.totalTokens).toBe(3000)
     expect(state.isFetching).toBe(false)
   })
 
-  it('totalCost treats null costUsd as 0', async () => {
-    const records = [makeRecord('a1', null), makeRecord('a2', 2.0)]
+  it('totalTokens treats null tokens as 0', async () => {
+    const records = [
+      { ...makeRecord('a1', null), tokensIn: null, tokensOut: null },
+      makeRecord('a2', 2.0)
+    ]
     ;(
       window.api.cost as unknown as Record<string, ReturnType<typeof vi.fn>>
     ).getAgentHistory.mockResolvedValue(records)
 
     await useCostDataStore.getState().fetchLocalAgents()
 
-    expect(useCostDataStore.getState().totalCost).toBeCloseTo(2.0)
+    // First record: 0 tokens, second: 1000+500 = 1500
+    expect(useCostDataStore.getState().totalTokens).toBe(1500)
   })
 
   it('prevents concurrent fetches', async () => {

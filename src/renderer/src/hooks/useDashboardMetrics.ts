@@ -16,17 +16,24 @@ interface DashboardStats {
   actualFailed: number
 }
 
+/** Format token count to compact form (e.g. 1.2M, 45.2K). */
+function formatTokensCompact(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return n.toLocaleString()
+}
+
 interface DashboardMetrics {
   stats: DashboardStats
   successRate: number | null
   avgDuration: number | null
   avgTaskDuration: number | null
   taskDurationCount: number
-  costTrendData: ChartBar[]
-  costAvg: string | null
+  tokenTrendData: ChartBar[]
+  tokenAvg: string | null
   recentCompletions: SprintTask[]
-  cost24h: number
-  taskCostMap: Map<string, number>
+  tokens24h: number
+  taskTokenMap: Map<string, number>
 }
 
 /** Truncate a string to maxLen characters, adding ellipsis if needed. */
@@ -46,14 +53,14 @@ function isToday(timestamp: string | number): boolean {
 }
 
 /**
- * Computes derived metrics for the Dashboard view from sprint tasks and cost data.
+ * Computes derived metrics for the Dashboard view from sprint tasks and usage data.
  * Extracts all metric calculations into a single reusable hook.
  */
 export function useDashboardMetrics(): DashboardMetrics {
   const tasks = useSprintTasks((s) => s.tasks)
   const localAgents = useCostDataStore((s) => s.localAgents)
 
-  // Track current time for 24h cost calculation (updates every 60s)
+  // Track current time for 24h token calculation (updates every 60s)
   const [now, setNow] = useState(() => Date.now())
   useVisibilityAwareInterval(() => setNow(Date.now()), 60_000)
 
@@ -115,23 +122,27 @@ export function useDashboardMetrics(): DashboardMetrics {
     return { avgTaskDuration: avg, taskDurationCount: withDuration.length }
   }, [tasks])
 
-  // Cost trend sparkline — last 20 agent runs sorted by start time
-  const costTrendData = useMemo((): ChartBar[] => {
+  // Token trend sparkline — last 20 agent runs sorted by start time
+  const tokenTrendData = useMemo((): ChartBar[] => {
     const sorted = [...localAgents]
-      .filter((a) => a.costUsd != null && a.costUsd > 0)
+      .filter((a) => (a.tokensIn != null || a.tokensOut != null))
       .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
       .slice(-20)
-    return sorted.map((a) => ({
-      value: a.costUsd!,
-      accent: 'orange' as const,
-      label: `$${a.costUsd!.toFixed(2)} — ${truncate(a.taskTitle ?? a.id.slice(0, 8), 40)}`
-    }))
+    return sorted.map((a) => {
+      const total = (a.tokensIn ?? 0) + (a.tokensOut ?? 0)
+      return {
+        value: total,
+        accent: 'cyan' as const,
+        label: `${formatTokensCompact(total)} — ${truncate(a.taskTitle ?? a.id.slice(0, 8), 40)}`
+      }
+    })
   }, [localAgents])
 
-  const costAvg = useMemo(() => {
-    if (costTrendData.length === 0) return null
-    return (costTrendData.reduce((s, d) => s + d.value, 0) / costTrendData.length).toFixed(2)
-  }, [costTrendData])
+  const tokenAvg = useMemo(() => {
+    if (tokenTrendData.length === 0) return null
+    const avg = tokenTrendData.reduce((s, d) => s + d.value, 0) / tokenTrendData.length
+    return formatTokensCompact(Math.round(avg))
+  }, [tokenTrendData])
 
   // Recent completions — last 5 done tasks
   const recentCompletions = useMemo(() => {
@@ -141,20 +152,20 @@ export function useDashboardMetrics(): DashboardMetrics {
       .slice(0, 5)
   }, [tasks])
 
-  // Cost 24h — sum cost of agent runs started within last 24 hours
-  const cost24h = useMemo(() => {
+  // Tokens 24h — sum tokens of agent runs started within last 24 hours
+  const tokens24h = useMemo(() => {
     const cutoff = now - 24 * 60 * 60 * 1000
     return localAgents
       .filter((a) => new Date(a.startedAt).getTime() >= cutoff)
-      .reduce((sum, a) => sum + (a.costUsd ?? 0), 0)
+      .reduce((sum, a) => sum + (a.tokensIn ?? 0) + (a.tokensOut ?? 0), 0)
   }, [localAgents, now])
 
-  // Task cost lookup map — sprintTaskId -> costUsd
-  const taskCostMap = useMemo(() => {
+  // Task token lookup map — sprintTaskId -> totalTokens
+  const taskTokenMap = useMemo(() => {
     const map = new Map<string, number>()
     for (const agent of localAgents) {
-      if (agent.sprintTaskId && agent.costUsd != null) {
-        map.set(agent.sprintTaskId, agent.costUsd)
+      if (agent.sprintTaskId && (agent.tokensIn != null || agent.tokensOut != null)) {
+        map.set(agent.sprintTaskId, (agent.tokensIn ?? 0) + (agent.tokensOut ?? 0))
       }
     }
     return map
@@ -166,10 +177,10 @@ export function useDashboardMetrics(): DashboardMetrics {
     avgDuration,
     avgTaskDuration,
     taskDurationCount,
-    costTrendData,
-    costAvg,
+    tokenTrendData,
+    tokenAvg,
     recentCompletions,
-    cost24h,
-    taskCostMap
+    tokens24h,
+    taskTokenMap
   }
 }

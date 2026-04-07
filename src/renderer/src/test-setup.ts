@@ -124,8 +124,8 @@ vi.stubGlobal('api', {
       tasksThisWeek: 0,
       tasksAllTime: 0,
       totalTokensThisWeek: 0,
-      avgCostPerTask: null,
-      mostExpensiveTask: null
+      avgTokensPerTask: null,
+      mostTokenIntensiveTask: null
     }),
     agentRuns: vi.fn().mockResolvedValue([]),
     getAgentHistory: vi.fn().mockResolvedValue([])

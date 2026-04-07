@@ -21,7 +21,7 @@ vi.mock('../../stores/costData', () => ({
   useCostDataStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({
       localAgents: [],
-      totalCost: 0,
+      totalTokens: 0,
       fetchLocalAgents: vi.fn().mockResolvedValue(undefined)
     })
   )
@@ -101,10 +101,10 @@ describe('DashboardView', () => {
     expect(screen.getByText('Done')).toBeInTheDocument()
   })
 
-  it('renders pipeline and cost sections', () => {
+  it('renders pipeline and token sections', () => {
     render(<DashboardView />)
     expect(screen.getByText('Pipeline')).toBeInTheDocument()
-    expect(screen.getByText('Cost 24h')).toBeInTheDocument()
+    expect(screen.getByText('Tokens 24h')).toBeInTheDocument()
   })
 
   it('clicking Active stat navigates to Sprint with in-progress filter', () => {
@@ -254,7 +254,7 @@ describe('DashboardView', () => {
             taskTitle: 'T2'
           }
         ],
-        totalCost: 0.8,
+        totalTokens: 0.8,
         fetchLocalAgents: vi.fn()
       })
     )
@@ -276,7 +276,7 @@ describe('DashboardView', () => {
             taskTitle: 'T1'
           }
         ],
-        totalCost: 1.0,
+        totalTokens: 1.0,
         fetchLocalAgents: vi.fn()
       })
     )
@@ -297,7 +297,7 @@ describe('DashboardView', () => {
             taskTitle: 'T1'
           }
         ],
-        totalCost: 0.1,
+        totalTokens: 0.1,
         fetchLocalAgents: vi.fn()
       })
     )
@@ -464,31 +464,32 @@ describe('DashboardView', () => {
 
   // ---------- Branch coverage: cost trend data ----------
 
-  it('renders cost trend chart with agent data', () => {
+  it('renders token trend chart with agent data', () => {
     vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
       selector({
         localAgents: [
           {
             id: 'a1',
             durationMs: 60000,
-            costUsd: 0.5,
+            tokensIn: 30000,
+            tokensOut: 5000,
             startedAt: new Date().toISOString(),
             taskTitle: 'Task A'
           },
           {
             id: 'a2',
             durationMs: 120000,
-            costUsd: 1.2,
+            tokensIn: 60000,
+            tokensOut: 10000,
             startedAt: new Date().toISOString(),
             taskTitle: 'Task B'
           }
         ],
-        totalCost: 1.7,
+        totalTokens: 105000,
         fetchLocalAgents: vi.fn()
       })
     )
     render(<DashboardView />)
     expect(screen.getByText(/2 runs · avg/)).toBeInTheDocument()
-    expect(screen.getByText('$1.70')).toBeInTheDocument()
   })
 })

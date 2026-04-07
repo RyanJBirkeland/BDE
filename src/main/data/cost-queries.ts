@@ -18,9 +18,9 @@ interface SummaryAvgRow {
   avg: number | null
 }
 
-interface MostExpensiveRow {
+interface MostTokenIntensiveRow {
   task: string
-  cost_usd: number
+  total_tokens: number
 }
 
 interface AgentRunCostDbRow {
@@ -127,28 +127,28 @@ export function getCostSummary(db: Database.Database): CostSummary {
       .get() as SummaryTokenRow
   ).total
 
-  const avgCostPerTask = (
+  const avgTokensPerTask = (
     db
       .prepare(
-        "SELECT AVG(cost_usd) as avg FROM agent_runs WHERE status = 'done' AND cost_usd IS NOT NULL"
+        "SELECT AVG(COALESCE(tokens_in, 0) + COALESCE(tokens_out, 0)) as avg FROM agent_runs WHERE status = 'done' AND (tokens_in IS NOT NULL OR tokens_out IS NOT NULL)"
       )
       .get() as SummaryAvgRow
   ).avg
 
-  const mostExpensiveRow = db
+  const mostTokenIntensiveRow = db
     .prepare(
-      "SELECT task, cost_usd FROM agent_runs WHERE status = 'done' AND cost_usd IS NOT NULL AND started_at >= date('now', '-7 days') ORDER BY cost_usd DESC LIMIT 1"
+      "SELECT task, (COALESCE(tokens_in, 0) + COALESCE(tokens_out, 0)) as total_tokens FROM agent_runs WHERE status = 'done' AND (tokens_in IS NOT NULL OR tokens_out IS NOT NULL) AND started_at >= date('now', '-7 days') ORDER BY total_tokens DESC LIMIT 1"
     )
-    .get() as MostExpensiveRow | undefined
+    .get() as MostTokenIntensiveRow | undefined
 
   return {
     tasksToday,
     tasksThisWeek,
     tasksAllTime,
     totalTokensThisWeek,
-    avgCostPerTask: avgCostPerTask ?? null,
-    mostExpensiveTask: mostExpensiveRow
-      ? { task: mostExpensiveRow.task, costUsd: mostExpensiveRow.cost_usd }
+    avgTokensPerTask: avgTokensPerTask ?? null,
+    mostTokenIntensiveTask: mostTokenIntensiveRow
+      ? { task: mostTokenIntensiveRow.task, totalTokens: mostTokenIntensiveRow.total_tokens }
       : null
   }
 }

@@ -1,7 +1,7 @@
 import { NeonCard, ActivityFeed, MiniChart, type ChartBar } from '../neon'
 import { useDashboardDataStore } from '../../stores/dashboardData'
-import { timeAgo } from '../../lib/format'
-import { CheckCircle, TrendingUp, DollarSign } from 'lucide-react'
+import { timeAgo, formatTokens } from '../../lib/format'
+import { CheckCircle, TrendingUp, Gauge } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 import type { FeedEvent } from '../neon/ActivityFeed'
 import { FailureBreakdown } from './FailureBreakdown'
@@ -11,23 +11,23 @@ interface ActivitySectionProps {
   feedEvents: FeedEvent[]
   cardErrors: Record<string, string | undefined>
   recentCompletions: SprintTask[]
-  costTrendData: ChartBar[]
-  costAvg: string | null
-  cost24h: number
-  taskCostMap: Map<string, number>
+  tokenTrendData: ChartBar[]
+  tokenAvg: string | null
+  tokens24h: number
+  taskTokenMap: Map<string, number>
   onFeedEventClick: () => void
   onCompletionClick: () => void
 }
 
-/** Right column with activity feed, recent completions, and cost metrics. */
+/** Right column with activity feed, recent completions, and token usage metrics. */
 export function ActivitySection({
   feedEvents,
   cardErrors,
   recentCompletions,
-  costTrendData,
-  costAvg,
-  cost24h,
-  taskCostMap,
+  tokenTrendData,
+  tokenAvg,
+  tokens24h,
+  taskTokenMap,
   onFeedEventClick,
   onCompletionClick
 }: ActivitySectionProps): React.JSX.Element {
@@ -57,7 +57,7 @@ export function ActivitySection({
             <div className="dashboard-completions-empty">No completions yet</div>
           ) : (
             recentCompletions.map((t) => {
-              const cost = taskCostMap.get(t.id)
+              const tokens = taskTokenMap.get(t.id)
               return (
                 <div
                   key={t.id}
@@ -74,8 +74,8 @@ export function ActivitySection({
                 >
                   <span className="dashboard-completion-title">{t.title}</span>
                   <div className="dashboard-completion-meta">
-                    {cost != null && (
-                      <span className="dashboard-completion-cost">${cost.toFixed(2)}</span>
+                    {tokens != null && (
+                      <span className="dashboard-completion-cost">{formatTokens(tokens)}</span>
                     )}
                     <span className="dashboard-completion-time">{timeAgo(t.completed_at!)}</span>
                   </div>
@@ -90,15 +90,15 @@ export function ActivitySection({
 
       <SpecTypeSuccessRate />
 
-      <NeonCard accent="orange" title="Cost / Run" icon={<TrendingUp size={12} />}>
-        <MiniChart data={costTrendData} height={80} />
+      <NeonCard accent="cyan" title="Tokens / Run" icon={<TrendingUp size={12} />}>
+        <MiniChart data={tokenTrendData} height={80} />
         <div className="dashboard-chart-caption">
-          {costTrendData.length} runs{costAvg && ` · avg $${costAvg}`}
+          {tokenTrendData.length} runs{tokenAvg && ` · avg ${tokenAvg}`}
         </div>
       </NeonCard>
 
-      <NeonCard accent="orange" title="Cost 24h" icon={<DollarSign size={12} />}>
-        <div className="dashboard-cost-value">${cost24h.toFixed(2)}</div>
+      <NeonCard accent="cyan" title="Tokens 24h" icon={<Gauge size={12} />}>
+        <div className="dashboard-cost-value">{formatTokens(tokens24h)}</div>
       </NeonCard>
     </div>
   )

@@ -141,11 +141,11 @@ export default function DashboardView(): React.JSX.Element {
     avgDuration,
     avgTaskDuration,
     taskDurationCount,
-    costTrendData,
-    costAvg,
+    tokenTrendData,
+    tokenAvg,
     recentCompletions,
-    cost24h,
-    taskCostMap
+    tokens24h,
+    taskTokenMap
   } = useDashboardMetrics()
 
   const errorCount = useMemo(() => Object.values(cardErrors).filter(Boolean).length, [cardErrors])
@@ -249,10 +249,10 @@ export default function DashboardView(): React.JSX.Element {
               feedEvents={feedEvents}
               cardErrors={cardErrors}
               recentCompletions={recentCompletions}
-              costTrendData={costTrendData}
-              costAvg={costAvg}
-              cost24h={cost24h}
-              taskCostMap={taskCostMap}
+              tokenTrendData={tokenTrendData}
+              tokenAvg={tokenAvg}
+              tokens24h={tokens24h}
+              taskTokenMap={taskTokenMap}
               onFeedEventClick={() => setView('agents')}
               onCompletionClick={handleCompletionClick}
             />

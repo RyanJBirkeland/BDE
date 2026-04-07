@@ -1,7 +1,7 @@
 /**
- * CostSection — real cost analytics from agent_runs DB data.
- * Two-panel layout: Claude Code (subscription, informational) + OpenClaw API (token usage).
- * Task table shows per-run cost, duration, and cache efficiency.
+ * CostSection — token usage analytics from agent_runs DB data.
+ * Claude Code subscription = flat rate, so tokens are the meaningful metric.
+ * Task table shows per-run token usage, duration, and cache efficiency.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AgentRunCostRow, CostSummary } from '../../../../shared/types'
@@ -10,23 +10,10 @@ import { Button } from '../ui/Button'
 import { Download, RefreshCw, BarChart, ExternalLink } from 'lucide-react'
 import { AGENT_HISTORY_LIMIT, FLASH_DURATION_MS } from '../../lib/constants'
 import { useCostDataStore } from '../../stores/costData'
-import { formatDurationMs } from '../../lib/format'
+import { formatDurationMs, formatTokens } from '../../lib/format'
 import { SettingsCard } from './SettingsCard'
 
 // ── Formatting helpers ──────────────────────────────────
-
-function formatCost(cost: number | null | undefined): string {
-  if (cost == null || Number.isNaN(cost)) return '--'
-  if (cost >= 1) return `$${cost.toFixed(2)}`
-  return `$${cost.toFixed(4)}`
-}
-
-function formatTokens(n: number | null | undefined): string {
-  if (n == null || Number.isNaN(n)) return '--'
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-  return n.toLocaleString()
-}
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -47,11 +34,8 @@ function cacheHitPct(row: AgentRunCostRow): number | null {
   return Number.isNaN(pct) ? null : pct
 }
 
-function costTier(cost: number | null | undefined): 'green' | 'yellow' | 'red' | 'gray' {
-  if (cost == null || Number.isNaN(cost)) return 'gray'
-  if (cost < 0.5) return 'green'
-  if (cost <= 1.0) return 'yellow'
-  return 'red'
+function totalTokens(row: AgentRunCostRow): number {
+  return (row.tokens_in ?? 0) + (row.tokens_out ?? 0)
 }
 
 function truncate(s: string, max: number): string {
@@ -80,20 +64,21 @@ function ClaudeCodePanel({ summary }: { summary: CostSummary }): React.JSX.Eleme
           </span>
         </div>
         <div className="cost-panel__stat">
-          <span className="cost-panel__stat-label">Avg cost per task</span>
+          <span className="cost-panel__stat-label">Avg tokens per task</span>
           <span className="cost-panel__stat-value">
-            {summary.avgCostPerTask !== null ? formatCost(summary.avgCostPerTask) : '--'}
+            {summary.avgTokensPerTask !== null
+              ? formatTokens(Math.round(summary.avgTokensPerTask))
+              : '--'}
           </span>
-          <span className="cost-panel__stat-note">est. API equivalent — you pay flat rate</span>
         </div>
-        {summary.mostExpensiveTask && (
+        {summary.mostTokenIntensiveTask && (
           <div className="cost-panel__stat">
-            <span className="cost-panel__stat-label">Most expensive this week</span>
+            <span className="cost-panel__stat-label">Most token-intensive this week</span>
             <span className="cost-panel__stat-value">
-              {formatCost(summary.mostExpensiveTask.costUsd)}
+              {formatTokens(summary.mostTokenIntensiveTask.totalTokens)}
             </span>
             <span className="cost-panel__stat-note">
-              {truncate(summary.mostExpensiveTask.task, 60)}
+              {truncate(summary.mostTokenIntensiveTask.task, 60)}
             </span>
           </div>
         )}
@@ -104,7 +89,7 @@ function ClaudeCodePanel({ summary }: { summary: CostSummary }): React.JSX.Eleme
 
 // ── Task Table ──────────────────────────────────────────
 
-type SortField = 'cost_usd' | 'duration_ms' | 'started_at'
+type SortField = 'tokens' | 'duration_ms' | 'started_at'
 
 function TaskTable({
   runs,
@@ -134,13 +119,13 @@ function TaskTable({
             <th>Task</th>
             <th
               className="cost-table__num cost-table__sortable"
-              onClick={() => onSort('cost_usd')}
-              onKeyDown={handleSortKeyDown('cost_usd')}
+              onClick={() => onSort('tokens')}
+              onKeyDown={handleSortKeyDown('tokens')}
               tabIndex={0}
               role="columnheader"
-              aria-sort={sortField === 'cost_usd' ? 'descending' : 'none'}
+              aria-sort={sortField === 'tokens' ? 'descending' : 'none'}
             >
-              Est. Cost{sortIndicator('cost_usd')}
+              Tokens{sortIndicator('tokens')}
             </th>
             <th
               className="cost-table__num cost-table__sortable"
@@ -170,12 +155,11 @@ function TaskTable({
         </thead>
         <tbody>
           {runs.map((r) => {
-            const tier = costTier(r.cost_usd)
             const cache = cacheHitPct(r)
             return (
               <tr
                 key={r.id}
-                className={`cost-table__row cost-table__row--${tier}`}
+                className="cost-table__row"
                 onClick={() => onRowClick(r)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -191,7 +175,7 @@ function TaskTable({
                     {truncate(r.task || r.id.slice(0, 8), 50)}
                   </span>
                 </td>
-                <td className="cost-table__num cost-table__cost">{formatCost(r.cost_usd)}</td>
+                <td className="cost-table__num">{formatTokens(totalTokens(r))}</td>
                 <td className="cost-table__num">{formatDurationMs(r.duration_ms)}</td>
                 <td className="cost-table__num">{r.num_turns ?? '--'}</td>
                 <td className="cost-table__num">
@@ -231,12 +215,12 @@ function TaskTable({
 
 function exportCsv(runs: AgentRunCostRow[]): void {
   const header =
-    'task,repo,cost_usd,duration_ms,turns,cache_hit_pct,tokens_in,tokens_out,pr_url,date'
+    'task,repo,tokens_total,tokens_in,tokens_out,duration_ms,turns,cache_hit_pct,pr_url,date'
   const rows = runs.map((r) => {
     const cache = cacheHitPct(r)
     const title = (r.task || r.id).replace(/,/g, ' ')
     const date = new Date(r.started_at).toISOString()
-    return `${title},${r.repo},${r.cost_usd ?? ''},${r.duration_ms ?? ''},${r.num_turns ?? ''},${cache !== null ? cache.toFixed(1) : ''},${r.tokens_in ?? ''},${r.tokens_out ?? ''},${r.pr_url ?? ''},${date}`
+    return `${title},${r.repo},${totalTokens(r)},${r.tokens_in ?? ''},${r.tokens_out ?? ''},${r.duration_ms ?? ''},${r.num_turns ?? ''},${cache !== null ? cache.toFixed(1) : ''},${r.pr_url ?? ''},${date}`
   })
   const csv = [header, ...rows].join('\n')
   navigator.clipboard.writeText(csv)
@@ -260,7 +244,7 @@ export function CostSection(): React.JSX.Element {
       ])
       setSummary(s)
       setRuns(r)
-      // Keep the shared cost store in sync so TitleBar totalCost updates
+      // Keep the shared cost store in sync so TitleBar totalTokens updates
       refreshStore()
     } catch {
       // Silently fail — will retry on next poll
@@ -277,6 +261,9 @@ export function CostSection(): React.JSX.Element {
     return [...runs].sort((a, b) => {
       if (sortField === 'started_at') {
         return new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+      }
+      if (sortField === 'tokens') {
+        return totalTokens(b) - totalTokens(a)
       }
       const av = a[sortField] ?? -1
       const bv = b[sortField] ?? -1
@@ -316,7 +303,7 @@ export function CostSection(): React.JSX.Element {
     <div className="cost-view cost-view--glass" style={{ height: '100%' }}>
       <div className="cost-view__scroll">
         {summary && (
-          <SettingsCard title="Claude Code Usage" subtitle="API costs and token usage">
+          <SettingsCard title="Claude Code Usage" subtitle="Token usage and agent metrics">
             <ClaudeCodePanel summary={summary} />
           </SettingsCard>
         )}
@@ -325,7 +312,7 @@ export function CostSection(): React.JSX.Element {
           <EmptyState
             icon={<BarChart size={24} />}
             title="No completed agent runs"
-            description="Complete a task to see cost breakdown"
+            description="Complete a task to see usage breakdown"
           />
         ) : (
           <SettingsCard

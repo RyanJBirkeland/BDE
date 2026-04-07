@@ -5,6 +5,7 @@ import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
 import { useCostDataStore } from '../../stores/costData'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { NeonBadge } from '../neon/NeonBadge'
+import { formatTokens } from '../../lib/format'
 import { NotificationBell } from './NotificationBell'
 import { HeaderTab } from './HeaderTab'
 import { HealthStrip } from './HealthStrip'
@@ -14,7 +15,7 @@ import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 export function UnifiedHeader(): React.JSX.Element {
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
-  const totalCost = useCostDataStore((s) => s.totalCost)
+  const totalTokens = useCostDataStore((s) => s.totalTokens)
   const setView = usePanelLayoutStore((s) => s.setView)
 
   // Health strip counts — single-pass reduction so we don't traverse the
@@ -135,7 +136,7 @@ export function UnifiedHeader(): React.JSX.Element {
           failedCount={failedCount}
           onClick={() => setView('sprint')}
         />
-        <NeonBadge accent="cyan" label={`$${totalCost.toFixed(2)}`} />
+        <NeonBadge accent="cyan" label={`${formatTokens(totalTokens)} tokens`} />
         <NotificationBell />
         <button
           className="bde-btn bde-btn--icon bde-btn--sm"

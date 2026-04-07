@@ -200,8 +200,8 @@ export interface CostSummary {
   tasksThisWeek: number
   tasksAllTime: number
   totalTokensThisWeek: number
-  avgCostPerTask: number | null
-  mostExpensiveTask: { task: string; costUsd: number } | null
+  avgTokensPerTask: number | null
+  mostTokenIntensiveTask: { task: string; totalTokens: number } | null
 }
 
 /** Camel-cased agent cost record returned by cost:getAgentHistory IPC. */

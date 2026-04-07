@@ -5,7 +5,7 @@ vi.mock('../../stores/costData', () => ({
   useCostDataStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({
       localAgents: [],
-      totalCost: 0,
+      totalTokens: 0,
       fetchLocalAgents: vi.fn().mockResolvedValue(undefined)
     })
   )
@@ -21,8 +21,8 @@ describe('CostSection', () => {
       tasksThisWeek: 12,
       tasksAllTime: 50,
       totalTokensThisWeek: 500000,
-      avgCostPerTask: 0.15,
-      mostExpensiveTask: null
+      avgTokensPerTask: 15000,
+      mostTokenIntensiveTask: null
     })
     vi.mocked(window.api.cost.agentRuns).mockResolvedValue([])
   })
@@ -62,26 +62,26 @@ describe('CostSection', () => {
     })
   })
 
-  it('shows most expensive task when available', async () => {
+  it('shows most token-intensive task when available', async () => {
     vi.mocked(window.api.cost.summary).mockResolvedValue({
       tasksToday: 1,
       tasksThisWeek: 1,
       tasksAllTime: 1,
       totalTokensThisWeek: 1000,
-      avgCostPerTask: 0.5,
-      mostExpensiveTask: { costUsd: 2.5, task: 'Expensive task here' }
+      avgTokensPerTask: 250000,
+      mostTokenIntensiveTask: { totalTokens: 500000, task: 'Token-heavy task here' }
     })
     render(<CostSection />)
     await waitFor(() => {
-      expect(screen.getByText('$2.50')).toBeInTheDocument()
-      expect(screen.getByText('Expensive task here')).toBeInTheDocument()
+      expect(screen.getByText('500.0K')).toBeInTheDocument()
+      expect(screen.getByText('Token-heavy task here')).toBeInTheDocument()
     })
   })
 
-  it('shows average cost per task', async () => {
+  it('shows average tokens per task', async () => {
     render(<CostSection />)
     await waitFor(() => {
-      expect(screen.getByText('$0.1500')).toBeInTheDocument()
+      expect(screen.getByText('15.0K')).toBeInTheDocument()
     })
   })
 
@@ -150,7 +150,7 @@ describe('CostSection', () => {
     await waitFor(() => {
       expect(screen.getByText('Task History')).toBeInTheDocument()
     })
-    // Click the sortable Cost header
+    // Click the sortable Tokens header
     const sortableHeaders = container.querySelectorAll('.cost-table__sortable')
     if (sortableHeaders.length > 0) {
       (sortableHeaders[0] as HTMLElement).click()
