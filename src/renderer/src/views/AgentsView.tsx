@@ -20,6 +20,8 @@ import { NeonCard, MiniChart, type ChartBar } from '../components/neon'
 import { toast } from '../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
+import { buildLocalAgentMessage } from '../lib/attachments'
+import type { Attachment } from '../../../shared/types'
 
 export function AgentsView(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -149,9 +151,12 @@ export function AgentsView(): React.JSX.Element {
   }, [agents])
 
   const handleSteer = useCallback(
-    async (message: string) => {
+    async (message: string, attachment?: Attachment) => {
       if (!selectedId) return
-      const result = await window.api.steerAgent(selectedId, message)
+      const formattedMessage = attachment
+        ? buildLocalAgentMessage(message, [attachment])
+        : message
+      const result = await window.api.steerAgent(selectedId, formattedMessage)
       if (!result.ok) {
         toast.error(result.error ?? 'Failed to send message to agent')
       }

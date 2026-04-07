@@ -14,12 +14,13 @@ import { ConsoleLine } from './ConsoleLine'
 import { CommandBar } from './CommandBar'
 import { PlaygroundModal } from './PlaygroundModal'
 import { ConsoleSearchBar } from './ConsoleSearchBar'
+import type { Attachment } from '../../../../shared/types'
 
 const EMPTY_EVENTS: never[] = []
 
 interface AgentConsoleProps {
   agentId: string
-  onSteer: (message: string) => void
+  onSteer: (message: string, attachment?: Attachment) => void
   onCommand: (cmd: string, args?: string) => void
 }
 
@@ -144,9 +145,9 @@ export function AgentConsole({
     }
   }
 
-  const handleSteer = (message: string): void => {
+  const handleSteer = (message: string, attachment?: Attachment): void => {
     setPendingMessages((prev) => [...prev, message])
-    onSteer(message)
+    onSteer(message, attachment)
   }
 
   // Search handlers

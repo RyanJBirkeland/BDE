@@ -47,13 +47,19 @@ vi.mock('@tanstack/react-virtual', () => ({
 
 // Mock CommandBar component
 vi.mock('../CommandBar', () => ({
-  CommandBar: ({ onSend, disabled }: { onSend: (msg: string) => void; disabled: boolean }) => (
+  CommandBar: ({
+    onSend,
+    disabled
+  }: {
+    onSend: (msg: string, attachment?: unknown) => void
+    disabled: boolean
+  }) => (
     <div
       data-testid="command-bar"
       className={`command-bar${disabled ? ' command-bar--disabled' : ''}`}
       data-disabled={disabled}
     >
-      <button onClick={() => onSend('test message')}>Send</button>
+      <button onClick={() => onSend('test message', undefined)}>Send</button>
     </div>
   )
 }))
@@ -213,7 +219,7 @@ describe('AgentConsole', () => {
     fireEvent.click(sendButton)
 
     // Check that onSteer was called
-    expect(onSteer).toHaveBeenCalledWith('test message')
+    expect(onSteer).toHaveBeenCalledWith('test message', undefined)
 
     // Check that pending message appears in the document
     expect(screen.getByText('test message')).toBeInTheDocument()
