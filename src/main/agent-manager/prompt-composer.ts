@@ -236,7 +236,13 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     prompt += buildBranchAppendix(branch)
   }
 
-  if (playgroundEnabled) {
+  // Adhoc/assistant agents default to playground-on (interactive sessions
+  // always have it enabled per BDE_FEATURES.md). Pipeline/copilot/synthesizer
+  // default to off and must opt in explicitly via the task flag. An explicit
+  // `false` from the caller still wins for any agent type.
+  const playgroundDefault = agentType === 'adhoc' || agentType === 'assistant'
+  const effectivePlayground = playgroundEnabled ?? playgroundDefault
+  if (effectivePlayground) {
     prompt += PLAYGROUND_INSTRUCTIONS
   }
 

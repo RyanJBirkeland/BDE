@@ -138,10 +138,40 @@ describe('buildAgentPrompt', () => {
       expect(prompt).not.toContain('previewing frontend UI')
     })
 
-    it('does not include playground instructions when playgroundEnabled is undefined', () => {
+    it('does not include playground instructions when playgroundEnabled is undefined for pipeline', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline' })
 
       expect(prompt).not.toContain('## Dev Playground')
+    })
+
+    it('defaults playground ON for adhoc agents when flag is undefined', () => {
+      const prompt = buildAgentPrompt({ agentType: 'adhoc' })
+
+      expect(prompt).toContain('## Dev Playground')
+      expect(prompt).toContain('BDE renders the HTML natively')
+    })
+
+    it('defaults playground ON for assistant agents when flag is undefined', () => {
+      const prompt = buildAgentPrompt({ agentType: 'assistant' })
+
+      expect(prompt).toContain('## Dev Playground')
+      expect(prompt).toContain('BDE renders the HTML natively')
+    })
+
+    it('allows explicit false to override the adhoc/assistant default', () => {
+      const adhoc = buildAgentPrompt({ agentType: 'adhoc', playgroundEnabled: false })
+      const assistant = buildAgentPrompt({ agentType: 'assistant', playgroundEnabled: false })
+
+      expect(adhoc).not.toContain('## Dev Playground')
+      expect(assistant).not.toContain('## Dev Playground')
+    })
+
+    it('does not default playground ON for copilot or synthesizer', () => {
+      const copilot = buildAgentPrompt({ agentType: 'copilot' })
+      const synth = buildAgentPrompt({ agentType: 'synthesizer' })
+
+      expect(copilot).not.toContain('## Dev Playground')
+      expect(synth).not.toContain('## Dev Playground')
     })
   })
 
