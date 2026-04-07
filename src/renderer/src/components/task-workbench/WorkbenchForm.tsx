@@ -355,8 +355,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   }, [title, repo, onSendCopilotMessage])
 
   // Keyboard shortcuts: Cmd+Enter to submit (with feedback when blocked)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>): void => {
       if (e.key !== 'Enter' || !e.metaKey) return
       e.preventDefault()
 
@@ -373,13 +373,12 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       // Surface why the shortcut was a no-op so users aren't left guessing.
       toast.error(`Can't queue: ${reason}`)
       useTaskWorkbenchStore.setState({ checksExpanded: true })
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [submitting, handleSubmit])
+    },
+    [submitting, handleSubmit]
+  )
 
   return (
-    <div className="wb-form" aria-label="Task creation form">
+    <div className="wb-form" aria-label="Task creation form" onKeyDown={handleKeyDown}>
       <div className="wb-form__heading">
         {mode === 'edit' ? `Edit: ${title || 'Untitled'}` : 'New Task'}
       </div>
