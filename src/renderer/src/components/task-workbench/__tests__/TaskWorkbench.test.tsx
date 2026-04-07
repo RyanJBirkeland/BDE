@@ -30,6 +30,11 @@ describe('TaskWorkbench', () => {
     vi.clearAllMocks()
     useTaskWorkbenchStore.getState().resetForm()
 
+    // Mark the copilot discovery popover as already-seen by default so it
+    // doesn't show up in unrelated tests. Tests that want to exercise the
+    // popover should call localStorage.removeItem() explicitly.
+    window.localStorage.setItem('bde:workbench-copilot-popover-seen', '1')
+
     // Mock workbench API — now uses chatStream instead of chat
     ;(window.api as any).workbench = {
       chatStream: vi.fn().mockResolvedValue({ streamId: 'test-stream-1' })
@@ -239,6 +244,59 @@ describe('TaskWorkbench', () => {
 
     expect(disconnectMock).toHaveBeenCalled()
     global.ResizeObserver = OriginalResizeObserver
+  })
+
+  describe('first-run copilot discovery popover', () => {
+    const POPOVER_KEY = 'bde:workbench-copilot-popover-seen'
+
+    it('shows the popover on first visit when copilot is hidden', () => {
+      window.localStorage.removeItem(POPOVER_KEY)
+      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      render(<TaskWorkbench />)
+      expect(screen.getByRole('dialog', { name: /Meet the AI Copilot/i })).toBeInTheDocument()
+    })
+
+    it('does not show the popover when localStorage flag is set', () => {
+      window.localStorage.setItem(POPOVER_KEY, '1')
+      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      render(<TaskWorkbench />)
+      expect(screen.queryByRole('dialog', { name: /Meet the AI Copilot/i })).not.toBeInTheDocument()
+    })
+
+    it('does not show the popover when copilot is already visible', () => {
+      window.localStorage.removeItem(POPOVER_KEY)
+      useTaskWorkbenchStore.setState({ copilotVisible: true })
+      render(<TaskWorkbench />)
+      expect(screen.queryByRole('dialog', { name: /Meet the AI Copilot/i })).not.toBeInTheDocument()
+    })
+
+    it('persists dismissal to localStorage and hides on "Got it"', async () => {
+      window.localStorage.removeItem(POPOVER_KEY)
+      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      render(<TaskWorkbench />)
+
+      fireEvent.click(screen.getByRole('button', { name: /got it/i }))
+
+      expect(window.localStorage.getItem(POPOVER_KEY)).toBe('1')
+      expect(screen.queryByRole('dialog', { name: /Meet the AI Copilot/i })).not.toBeInTheDocument()
+    })
+
+    it('auto-dismisses when user opens the copilot via the toggle', async () => {
+      window.localStorage.removeItem(POPOVER_KEY)
+      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      render(<TaskWorkbench />)
+
+      // Initially the popover is showing
+      expect(screen.getByRole('dialog', { name: /Meet the AI Copilot/i })).toBeInTheDocument()
+
+      // User clicks the AI Copilot toggle button
+      fireEvent.click(screen.getByText('AI Copilot'))
+
+      // Effect should write the seen key
+      await waitFor(() => {
+        expect(window.localStorage.getItem(POPOVER_KEY)).toBe('1')
+      })
+    })
   })
 
   it('includes form context in chatStream call', async () => {
