@@ -201,7 +201,13 @@
   cursor: not-allowed;
 }
 
-/* ── Repo Chip ── */
+/* ── Repo Selector ── */
+.launchpad__repo-selector {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .launchpad__repo-chip {
   display: flex;
   align-items: center;
@@ -227,6 +233,67 @@
   border-radius: 50%;
   background: var(--neon-cyan);
   opacity: 0.5;
+}
+
+.launchpad__repo-dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.launchpad__repo-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 160px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--neon-surface-dim);
+  border: 1px solid var(--neon-surface-subtle);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  margin-top: 4px;
+}
+
+.launchpad__repo-dropdown-empty {
+  padding: 12px;
+  color: var(--neon-text-dim);
+  font-size: 11px;
+  text-align: center;
+}
+
+.launchpad__repo-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: var(--neon-text-dim);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.launchpad__repo-dropdown-option--current {
+  background: var(--neon-cyan-surface);
+  color: var(--neon-cyan);
+}
+
+.launchpad__repo-dropdown-option:not(.launchpad__repo-dropdown-option--current):hover,
+.launchpad__repo-dropdown-option:focus-visible {
+  background: var(--neon-surface-subtle);
+  color: var(--neon-text);
+  outline: none;
+}
+
+.launchpad__repo-dropdown-option-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Model Pills ── */

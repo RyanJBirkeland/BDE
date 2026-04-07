@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { CLAUDE_MODELS } from '../../../../shared/models'
 import type { PromptTemplate } from '../../lib/launchpad-types'
 import type { NeonAccent } from '../neon/types'
-import { Play } from 'lucide-react'
+import { Play, ChevronDown } from 'lucide-react'
 
 interface LaunchpadGridProps {
   templates: PromptTemplate[]
@@ -70,6 +70,8 @@ export function LaunchpadGrid({
   const [prompt, setPrompt] = useState('')
   const [repo, setRepo] = useState(repos[0]?.label ?? '')
   const [model, setModel] = useState('sonnet')
+  const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false)
+  const repoDropdownRef = useRef<HTMLDivElement>(null)
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -86,6 +88,55 @@ export function LaunchpadGrid({
       onCustomPrompt(prompt.trim(), repo, model)
     }
   }, [prompt, repo, model, onCustomPrompt])
+
+  const toggleRepoDropdown = useCallback(() => {
+    setIsRepoDropdownOpen((prev) => !prev)
+  }, [])
+
+  const handleSelectRepo = useCallback((repoLabel: string) => {
+    setRepo(repoLabel)
+    setIsRepoDropdownOpen(false)
+  }, [])
+
+  // Auto-focus first option when dropdown opens
+  useEffect(() => {
+    if (isRepoDropdownOpen && repoDropdownRef.current) {
+      const firstOption = repoDropdownRef.current.querySelector<HTMLButtonElement>('[role="option"]')
+      firstOption?.focus()
+    }
+  }, [isRepoDropdownOpen])
+
+  // Keyboard navigation for repo dropdown
+  const handleRepoDropdownKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const dropdown = repoDropdownRef.current
+    if (!dropdown) return
+    const items = Array.from(dropdown.querySelectorAll<HTMLElement>('[role="option"]'))
+    const currentIndex = items.indexOf(e.target as HTMLElement)
+
+    switch (e.key) {
+      case 'ArrowDown': {
+        e.preventDefault()
+        const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0
+        items[next]?.focus()
+        break
+      }
+      case 'ArrowUp': {
+        e.preventDefault()
+        const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1
+        items[prev]?.focus()
+        break
+      }
+      case 'Enter':
+      case ' ':
+        e.preventDefault()
+        ;(e.target as HTMLElement).click()
+        break
+      case 'Escape':
+        e.preventDefault()
+        setIsRepoDropdownOpen(false)
+        break
+    }
+  }, [])
 
   return (
     <div className="launchpad" data-testid="launchpad-grid">
@@ -127,17 +178,55 @@ export function LaunchpadGrid({
 
       {/* Repo / Model defaults */}
       <div className="launchpad__defaults-row">
-        <button
-          type="button"
-          className="launchpad__repo-chip"
-          onClick={() => {
-            const idx = repos.findIndex((r) => r.label === repo)
-            setRepo(repos[(idx + 1) % repos.length]?.label ?? repos[0]?.label ?? '')
-          }}
-        >
-          <div className="launchpad__repo-dot" />
-          {repo} &#x25BE;
-        </button>
+        <div className="launchpad__repo-selector">
+          <button
+            type="button"
+            className="launchpad__repo-chip"
+            onClick={toggleRepoDropdown}
+            aria-haspopup="listbox"
+            aria-expanded={isRepoDropdownOpen}
+            aria-label={`Selected repository: ${repo}`}
+          >
+            <div className="launchpad__repo-dot" />
+            {repo}
+            <ChevronDown size={12} />
+          </button>
+
+          {isRepoDropdownOpen && (
+            <>
+              {/* Backdrop to close on outside click */}
+              <div
+                className="launchpad__repo-dropdown-backdrop"
+                onClick={() => setIsRepoDropdownOpen(false)}
+              />
+              <div
+                ref={repoDropdownRef}
+                role="listbox"
+                aria-label="Repositories"
+                className="launchpad__repo-dropdown"
+                onKeyDown={handleRepoDropdownKeyDown}
+              >
+                {repos.length === 0 ? (
+                  <div className="launchpad__repo-dropdown-empty">No repositories configured</div>
+                ) : (
+                  repos.map((r) => (
+                    <button
+                      key={r.label}
+                      role="option"
+                      tabIndex={-1}
+                      aria-selected={r.label === repo}
+                      onClick={() => handleSelectRepo(r.label)}
+                      className={`launchpad__repo-dropdown-option ${r.label === repo ? 'launchpad__repo-dropdown-option--current' : ''}`}
+                    >
+                      <div className="launchpad__repo-dot" />
+                      <span className="launchpad__repo-dropdown-option-name">{r.label}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
         <div className="launchpad__model-pills">
           {CLAUDE_MODELS.map((m) => (
             <button
