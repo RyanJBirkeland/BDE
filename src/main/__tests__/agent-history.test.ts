@@ -632,4 +632,178 @@ describe('agent-history (SQLite)', () => {
       expect(row.status).toBe('running')
     })
   })
+
+  describe('finished_at timestamps are written as parseable UTC ISO-with-Z', () => {
+    // Regression for the "7h 0m" duration bug. SQLite's `datetime('now')`
+    // returns local-time text with no `Z` suffix, which JavaScript's
+    // `new Date(...)` parses as LOCAL time, shifting all duration
+    // computations in the renderer by the user's TZ offset. The finalize
+    // functions now use parameterized JS-side `new Date().toISOString()`.
+    async function createRunningAgent(id: string, sprintTaskId?: string): Promise<void> {
+      await agentHistory.createAgentRecord({
+        id,
+        pid: null,
+        bin: 'claude',
+        model: 'sonnet',
+        repo: 'bde',
+        repoPath: '/tmp',
+        task: 'reg test',
+        startedAt: new Date().toISOString(),
+        finishedAt: null,
+        exitCode: null,
+        status: 'running',
+        source: 'bde',
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        sprintTaskId: sprintTaskId ?? null
+      })
+    }
+
+    async function readFinishedAt(id: string): Promise<string> {
+      const { getDb } = await import('../db')
+      const row = getDb()
+        .prepare('SELECT finished_at FROM agent_runs WHERE id = ?')
+        .get(id) as { finished_at: string }
+      return row.finished_at
+    }
+
+    it('finalizeAllRunningAgentRuns writes ISO-with-Z', async () => {
+      await createRunningAgent('finalize-all-1')
+
+      agentHistory.finalizeAllRunningAgentRuns()
+      const ts = await readFinishedAt('finalize-all-1')
+
+      // Canonical ISO 8601 UTC: ends with Z, has T separator, parseable
+      expect(ts).toMatch(/T/)
+      expect(ts.endsWith('Z')).toBe(true)
+      expect(Number.isNaN(new Date(ts).getTime())).toBe(false)
+    })
+
+    it('finalizeStaleAgentRuns writes ISO-with-Z', async () => {
+      // Create a running row with an old started_at so the staleness cutoff fires
+      const oldStart = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      await agentHistory.createAgentRecord({
+        id: 'finalize-stale-1',
+        pid: null,
+        bin: 'claude',
+        model: 'sonnet',
+        repo: 'bde',
+        repoPath: '/tmp',
+        task: 'old',
+        startedAt: oldStart,
+        finishedAt: null,
+        exitCode: null,
+        status: 'running',
+        source: 'bde',
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        sprintTaskId: null
+      })
+
+      agentHistory.finalizeStaleAgentRuns(60 * 1000) // anything older than 1 min
+      const ts = await readFinishedAt('finalize-stale-1')
+
+      expect(ts).toMatch(/T/)
+      expect(ts.endsWith('Z')).toBe(true)
+      expect(Number.isNaN(new Date(ts).getTime())).toBe(false)
+    })
+
+    it('reconcileRunningAgentRuns writes ISO-with-Z', async () => {
+      await createRunningAgent('reconcile-1', 'task-xyz')
+
+      agentHistory.reconcileRunningAgentRuns(() => false)
+      const ts = await readFinishedAt('reconcile-1')
+
+      expect(ts).toMatch(/T/)
+      expect(ts.endsWith('Z')).toBe(true)
+      expect(Number.isNaN(new Date(ts).getTime())).toBe(false)
+    })
+
+    it('finalize timestamp matches wall-clock UTC within 5s (not shifted by TZ)', async () => {
+      // The bug presented as a 7-hour shift. This test would catch any
+      // shift larger than a few seconds — including the original bug,
+      // any future TZ regression, and any clock-source mistake.
+      await createRunningAgent('clock-check-1')
+
+      const before = Date.now()
+      agentHistory.finalizeAllRunningAgentRuns()
+      const after = Date.now()
+
+      const stored = new Date(await readFinishedAt('clock-check-1')).getTime()
+      // Allow 5 seconds of slack on either side for test scheduling jitter
+      expect(stored).toBeGreaterThanOrEqual(before - 5000)
+      expect(stored).toBeLessThanOrEqual(after + 5000)
+    })
+  })
+
+  describe('backfillUtcTimestamps', () => {
+    it('rewrites broken `YYYY-MM-DD HH:MM:SS` rows to ISO-with-Z', async () => {
+      // Insert a row directly with the broken format that older
+      // datetime('now') writers produced.
+      const { getDb } = await import('../db')
+      const db = getDb()
+      db.prepare(
+        `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
+         VALUES (?, NULL, 'claude', 'broken', 'bde', '/tmp', 'sonnet', 'failed', '/tmp/log', ?, ?, NULL, 'bde')`
+      ).run('broken-ts-1', '2026-04-07T02:29:39.417Z', '2026-04-07 02:30:01')
+
+      const fixed = agentHistory.backfillUtcTimestamps()
+      expect(fixed).toBe(1)
+
+      const row = db
+        .prepare('SELECT finished_at FROM agent_runs WHERE id = ?')
+        .get('broken-ts-1') as { finished_at: string }
+      expect(row.finished_at).toBe('2026-04-07T02:30:01Z')
+      expect(Number.isNaN(new Date(row.finished_at).getTime())).toBe(false)
+    })
+
+    it('does not touch already-canonical ISO-with-Z rows', async () => {
+      const { getDb } = await import('../db')
+      const db = getDb()
+      db.prepare(
+        `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
+         VALUES (?, NULL, 'claude', 'already-fixed', 'bde', '/tmp', 'sonnet', 'done', '/tmp/log', ?, ?, NULL, 'bde')`
+      ).run('already-iso-1', '2026-04-07T02:29:39.417Z', '2026-04-07T02:30:01.000Z')
+
+      const fixed = agentHistory.backfillUtcTimestamps()
+      expect(fixed).toBe(0)
+
+      const row = db
+        .prepare('SELECT finished_at FROM agent_runs WHERE id = ?')
+        .get('already-iso-1') as { finished_at: string }
+      expect(row.finished_at).toBe('2026-04-07T02:30:01.000Z')
+    })
+
+    it('does not touch null finished_at rows', async () => {
+      const { getDb } = await import('../db')
+      const db = getDb()
+      db.prepare(
+        `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
+         VALUES (?, NULL, 'claude', 'still-running', 'bde', '/tmp', 'sonnet', 'running', '/tmp/log', ?, NULL, NULL, 'bde')`
+      ).run('null-ts-1', '2026-04-07T02:29:39.417Z')
+
+      const fixed = agentHistory.backfillUtcTimestamps()
+      expect(fixed).toBe(0)
+
+      const row = db
+        .prepare('SELECT finished_at FROM agent_runs WHERE id = ?')
+        .get('null-ts-1') as { finished_at: string | null }
+      expect(row.finished_at).toBeNull()
+    })
+
+    it('is idempotent', async () => {
+      const { getDb } = await import('../db')
+      const db = getDb()
+      db.prepare(
+        `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
+         VALUES (?, NULL, 'claude', 'broken', 'bde', '/tmp', 'sonnet', 'failed', '/tmp/log', ?, ?, NULL, 'bde')`
+      ).run('idempotent-1', '2026-04-07T02:29:39.417Z', '2026-04-07 02:30:01')
+
+      expect(agentHistory.backfillUtcTimestamps()).toBe(1)
+      expect(agentHistory.backfillUtcTimestamps()).toBe(0)
+      expect(agentHistory.backfillUtcTimestamps()).toBe(0)
+    })
+  })
 })

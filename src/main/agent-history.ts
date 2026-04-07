@@ -96,6 +96,17 @@ export function initAgentHistory(): void {
     // DB may not be ready yet — orphan recovery will catch these later
   }
 
+  // One-time cleanup of finished_at values written without a timezone marker.
+  // See backfillUtcTimestamps() docs for the full story.
+  try {
+    const fixed = backfillUtcTimestamps()
+    if (fixed > 0) {
+      logger.info(`Backfilled ${fixed} agent_runs.finished_at values to ISO-with-Z`)
+    }
+  } catch {
+    // Non-fatal — broken timestamps just keep displaying wrong durations
+  }
+
   // Fire-and-forget async migration
   migrateFromJson().catch(() => {})
 }
@@ -294,11 +305,12 @@ export async function listAgentRunsByTaskId(
 export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000): number {
   const db = getDb()
   const cutoff = new Date(Date.now() - maxAgeMs).toISOString()
+  const nowIso = new Date().toISOString()
   const stmt = db.prepare(
-    `UPDATE agent_runs SET status = 'failed', finished_at = datetime('now')
+    `UPDATE agent_runs SET status = 'failed', finished_at = ?
      WHERE status = 'running' AND started_at < ?`
   )
-  const result = stmt.run(cutoff)
+  const result = stmt.run(nowIso, cutoff)
   return result.changes
 }
 
@@ -320,8 +332,9 @@ export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boo
     .all() as Array<{ id: string; sprint_task_id: string | null }>
 
   let cleaned = 0
+  const nowIso = new Date().toISOString()
   const finalize = db.prepare(
-    `UPDATE agent_runs SET status = 'failed', finished_at = datetime('now') WHERE id = ?`
+    `UPDATE agent_runs SET status = 'failed', finished_at = ? WHERE id = ?`
   )
 
   for (const row of rows) {
@@ -330,7 +343,7 @@ export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boo
     if (!row.sprint_task_id) continue
     // Sprint-task agent: keep alive only if its task is still in the active set.
     if (isAgentActive(row.sprint_task_id)) continue
-    finalize.run(row.id)
+    finalize.run(nowIso, row.id)
     cleaned++
   }
   return cleaned
@@ -342,9 +355,39 @@ export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boo
  */
 export function finalizeAllRunningAgentRuns(): number {
   const db = getDb()
+  const nowIso = new Date().toISOString()
   const stmt = db.prepare(
-    `UPDATE agent_runs SET status = 'failed', finished_at = datetime('now')
+    `UPDATE agent_runs SET status = 'failed', finished_at = ?
      WHERE status = 'running'`
+  )
+  const result = stmt.run(nowIso)
+  return result.changes
+}
+
+/**
+ * One-time cleanup of finished_at values written by the older code path that
+ * used SQLite's `datetime('now')`. That function returns local-time text without
+ * a `Z` suffix (e.g. `2026-04-07 02:30:01`). When the renderer parses such a
+ * string with `new Date(...)`, JavaScript treats it as LOCAL time, shifting
+ * the duration display by the user's timezone offset (causing the famous
+ * "7h 0m" duration on a session that just started).
+ *
+ * This pass finds rows in the broken format and rewrites them to canonical
+ * ISO-with-Z, interpreting the original value as UTC (which is what SQLite's
+ * `datetime('now')` actually meant — it produces UTC text, just without the
+ * marker). Idempotent: the LIKE clause only matches the broken shape, so a
+ * second invocation is a no-op.
+ */
+export function backfillUtcTimestamps(): number {
+  const db = getDb()
+  // Match rows whose finished_at looks like '2026-04-07 02:30:01' (no T, no Z).
+  // SQLite's `||` concatenates; replace ' ' with 'T' and append 'Z' to produce
+  // canonical ISO 8601 UTC.
+  const stmt = db.prepare(
+    `UPDATE agent_runs
+        SET finished_at = REPLACE(finished_at, ' ', 'T') || 'Z'
+      WHERE finished_at IS NOT NULL
+        AND finished_at LIKE '____-__-__ __:__:__'`
   )
   const result = stmt.run()
   return result.changes
