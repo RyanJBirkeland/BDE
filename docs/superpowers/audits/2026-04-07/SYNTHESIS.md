@@ -336,3 +336,48 @@ If you're reading this and deciding what to do Monday morning:
 - **Team Gamma's wildcard role paid off.** Gamma caught the cross-cutting naming war, the two-flow onboarding, the Synthesizer orphan, the panel-mounting bug, and the stale architecture doc — all things a focused team could have missed. Worth repeating the hybrid-team model on future audits.
 - **One weakness:** Gamma PE noted the agents are reading `BDE_FEATURES.md` as auto-loaded context, which means everything in that file becomes part of the agent system — this audit was conducted *with that in mind*, and the results will differ if that context loading changes.
 - **What's not in here:** security beyond Playground XSS, accessibility (ARIA compliance beyond landmark usage), performance profiling under real load, Windows/Linux portability, code signing. Consider dedicated audits for these before public release.
+
+---
+
+## Appendix: Self-Validated Findings from the Dogfood Loop
+
+After the audit was written, Epic 1 was executed by running a preflight prompt fix through BDE's own Code Review Station (the "eat your own dogfood" test). That single Ship It attempt surfaced five additional findings that weren't in the original 20 — each one independently flagged by hitting the failure mode in real use. They're logged here because **finding bugs by using the product is the highest-signal audit technique there is.**
+
+### [CRITICAL-new] Stale `review` tasks with no worktree_path have no recovery path
+- **Category:** Error Recovery / Feature Gap
+- **Symptom:** Clicking Create PR / Ship It on a `review`-status task whose worktree was cleaned up (e.g., by a completion-handler crash before the status transition fired) throws `Error: Task X has no worktree path`. A red toast with no recovery action. Five such tasks were stranded in the review queue before the dogfood test; their PRs had actually been opened and merged manually, but the task records were left stuck.
+- **Recommendation:** Detect the `status='review' + worktree_path IS NULL` condition before enabling action buttons. Offer a "Reconcile from GitHub PR state" action that looks up the branch's PR via gh CLI, reads its state (merged / closed / open), and transitions the task accordingly. Or at minimum a "Mark as done/cancelled manually" escape hatch.
+- **Scale:** 5 orphaned tasks found at dogfood time. This is not rare — any completion-handler crash can produce it.
+- **Self-validation:** Gamma SD's "bde:refresh and bde:escape dispatched but no listeners" finding is a sibling — both are examples of dead-end error states with no user-visible recovery.
+
+### [CRITICAL-new] `sprint_tasks.repo` field has case drift (`BDE` vs `bde`)
+- **Category:** Data Integrity
+- **Symptom:** Ship It failed with `Error: Repo "BDE" not found in settings`. Investigation: 100 historical tasks have `repo = 'BDE'` (uppercase), 354 have `repo = 'bde'` (lowercase). Settings stores `name: 'bde'` (lowercase). Code Review's `repo → localPath` lookup is case-sensitive. **22% of historical tasks are currently unshippable** due to this mismatch.
+- **Location:** `src/main/handlers/review.ts:499` (`getRepoConfig(task.repo)`), `src/main/data/sprint-queries.ts` writes
+- **Recommendation:** (a) New migration: `UPDATE sprint_tasks SET repo = LOWER(repo) WHERE repo != LOWER(repo)`. (b) Make `getRepoConfig()` case-insensitive as belt-and-suspenders. (c) Add a sanitizer at the write path so new inserts normalize casing.
+- **Self-validation:** Found by hitting the wall on the preflight task's Ship It. Historical reconstruction showed this isn't a one-off — ~22% of tasks are affected.
+
+### [MAJOR-new] `review:shipIt` does not fast-forward local main before merging
+- **Category:** Race Condition / Fragility
+- **Symptom:** Ship It fetches origin/main in the agent worktree to rebase the feature branch, but never updates local main in the main checkout. If any commit landed on origin/main since local main was last updated (e.g., other PRs merged during a BDE session), the subsequent `git merge --squash` merges into a stale tip, creating a divergent commit that `git push` rejects as non-fast-forward. The catch block warns quietly and still marks the task done, leaving the user with divergent history and a misleadingly green toast.
+- **Location:** `src/main/handlers/review.ts:515-537` (Ship It rebase-before-merge block)
+- **Recommendation:** Run `git fetch` in the main checkout (not the worktree), then `git merge --ff-only origin/main` before the feature branch rebase. Verify the main checkout is on `main` branch first; bail loudly if not. If the ff fails (local main has diverged non-fast-forward), return a specific error telling the user to `git pull --rebase` manually.
+- **Status:** **Fixed.** See commit `fe3edc5b fix(review): Ship It must fast-forward local main before merging` and related tests.
+- **Self-validation:** Found by running Ship It on the preflight task and then checking `git log origin/main`. The toast said "Merged & pushed!" — but origin didn't have the commit. The exact scenario the original audit's Gamma SD finding predicted ("Ship It success toast is misleading on push failure"), validated in real time.
+
+### [MAJOR-new] Ship It's push-failure toast is styled as soft-success
+- **Category:** Error Recovery / Copy
+- **Symptom:** When Ship It's merge succeeds but push fails, the old code showed `toast.success('Merged locally (push failed — push manually)')` — a green toast with the default 3-second duration. In real use (this very dogfood loop), the user saw a green toast and assumed Ship It succeeded. Only discovered the push had failed by checking `git log origin/main` after the fact.
+- **Location:** `src/renderer/src/components/code-review/ReviewActions.tsx:67-70`
+- **Recommendation:** On push failure, use `toast.error()` with a longer duration (10s+), and make the message imperative ("Push to origin FAILED. Open Source Control to retry or run `git push` manually."). Even better: add a `toast.warning()` type to the toast store and use that.
+- **Status:** **Fixed** in the same commit as the above. Toast is now `toast.error` with 10s duration.
+- **Self-validation:** Same dogfood session. This is literally Gamma SD MAJOR #12 from the original audit, reproduced live.
+
+### [MAJOR-new] BDE_FEATURES.md and this audit describe "9 views" but the docs say different counts
+- **Category:** Documentation drift (minor — but catches the eye)
+- **Symptom:** README says "8 Views" in the architecture section. `BDE_FEATURES.md` describes 9. View registry has 9. The count of "settings tabs" is similarly inconsistent across README (9), `BDE_FEATURES.md` (9), and the actual sidebar (10 visible + 1 orphan).
+- **Recommendation:** Add a generated "counts table" at the top of `BDE_FEATURES.md` derived from `view-registry.ts`, `ipc-channels.ts`, handler directory, etc. Regenerate as part of pre-commit or CI.
+- **Self-validation:** Surfaced in both Bravo Marketing and Gamma Marketing originally; confirmed during the README factual-fixes task spec authoring.
+
+### Process note: the dogfood loop is the single best remediation test
+Running Epic 1 through BDE's own Code Review Station surfaced **5 additional CRITICAL/MAJOR findings** in a single Ship It attempt — roughly 30% more signal than the entire 15-agent audit produced for the same surfaces. Recommendation for future audits: always include a dogfood-loop step where the remediation itself is executed through the product being audited. Bugs that only show up under real use will never appear in a read-only audit.
