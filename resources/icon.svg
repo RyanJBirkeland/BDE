@@ -1,0 +1,83 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Dark background gradient — matches BDE neon shell -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#141420"/>
+    </linearGradient>
+
+    <!-- Cyan-to-mint gradient for the B (matches neon-cyan tokens) -->
+    <linearGradient id="cyanGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00ffc8"/>
+      <stop offset="100%" stop-color="#00d4a8"/>
+    </linearGradient>
+
+    <!-- Outer cyan glow for the B silhouette -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle inner highlight on the B -->
+    <filter id="innerGlow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#00ffc8" flood-opacity="0.4"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded square background, iOS-style corner radius -->
+  <rect width="1024" height="1024" rx="224" ry="224" fill="url(#bgGradient)"/>
+
+  <!-- Subtle border to lift the silhouette off the background -->
+  <rect x="1" y="1" width="1022" height="1022" rx="223" ry="223"
+        fill="none" stroke="#1f2230" stroke-width="2"/>
+
+  <!-- The "B" letterform —
+       Geometric, bold, 124px stem on the left, two rounded bumps on the right.
+       Built as a single path with even-odd fill so the bump interiors punch out.
+       Outer boundary traverses: top edge → top bump arc → middle waist →
+       bottom bump arc → bottom edge → back up the left stem.
+       Two holes are drawn as separate subpaths in the same `d` attribute. -->
+  <g filter="url(#glow)">
+    <path fill-rule="evenodd" fill="url(#cyanGradient)" d="
+      M 280 200
+      L 580 200
+      A 156 156 0 0 1 580 512
+      L 580 512
+      A 168 168 0 0 1 580 848
+      L 280 848
+      Z
+
+      M 408 312
+      L 568 312
+      A 88 88 0 0 1 568 488
+      L 408 488
+      Z
+
+      M 408 568
+      L 580 568
+      A 96 96 0 0 1 580 760
+      L 408 760
+      Z
+    "/>
+  </g>
+
+  <!-- Pink accent corner notch (matches neon-pink #ff64c8) :
+       BDE's secondary brand color, mirrors the cyan B's shoulder -->
+  <rect x="700" y="200" width="48" height="14" fill="#ff64c8" opacity="0.85"/>
+  <rect x="700" y="232" width="32" height="10" fill="#ff64c8" opacity="0.55"/>
+
+  <!-- Bottom-right scanline marker (terminal aesthetic) -->
+  <rect x="780" y="824" width="44" height="4" fill="#00ffc8" opacity="0.6"/>
+  <rect x="780" y="836" width="32" height="4" fill="#00ffc8" opacity="0.4"/>
+  <rect x="780" y="848" width="20" height="4" fill="#00ffc8" opacity="0.2"/>
+</svg>
