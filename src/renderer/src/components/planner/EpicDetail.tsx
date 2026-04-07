@@ -74,35 +74,32 @@ export function EpicDetail({
   }, [showOverflowMenu])
 
   // Keyboard navigation for overflow menu
-  const handleMenuKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>): void => {
-      const items = menuItemsRef.current.filter(Boolean)
-      const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
+  const handleMenuKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>): void => {
+    const items = menuItemsRef.current.filter(Boolean)
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
 
-      switch (e.key) {
-        case 'ArrowDown': {
-          e.preventDefault()
-          const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0
-          items[next]?.focus()
-          break
-        }
-        case 'ArrowUp': {
-          e.preventDefault()
-          const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1
-          items[prev]?.focus()
-          break
-        }
-        case 'Escape':
-          e.preventDefault()
-          setShowOverflowMenu(false)
-          break
-        case 'Tab':
-          setShowOverflowMenu(false)
-          break
+    switch (e.key) {
+      case 'ArrowDown': {
+        e.preventDefault()
+        const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0
+        items[next]?.focus()
+        break
       }
-    },
-    []
-  )
+      case 'ArrowUp': {
+        e.preventDefault()
+        const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1
+        items[prev]?.focus()
+        break
+      }
+      case 'Escape':
+        e.preventDefault()
+        setShowOverflowMenu(false)
+        break
+      case 'Tab':
+        setShowOverflowMenu(false)
+        break
+    }
+  }, [])
 
   // Calculate status breakdown
   const counts: StatusCounts = useMemo(() => {
@@ -524,113 +521,113 @@ export function EpicDetail({
                       cursor: 'grab'
                     }}
                   >
-                  {!isEditing ? (
-                    <>
-                      <div
-                        className="epic-detail__task-status-dot"
-                        style={{ background: getStatusColor(task.status) }}
-                      />
-                      <span
-                        className="epic-detail__task-title"
-                        onClick={() => handleTaskClick(task)}
-                        style={{
-                          cursor: task.status === 'backlog' ? 'pointer' : 'default'
-                        }}
-                      >
-                        {task.title}
-                      </span>
-                      {!hasSpec && task.status === 'backlog' && (
-                        <span className="epic-detail__task-flag epic-detail__task-flag--warning">
-                          no spec
+                    {!isEditing ? (
+                      <>
+                        <div
+                          className="epic-detail__task-status-dot"
+                          style={{ background: getStatusColor(task.status) }}
+                        />
+                        <span
+                          className="epic-detail__task-title"
+                          onClick={() => handleTaskClick(task)}
+                          style={{
+                            cursor: task.status === 'backlog' ? 'pointer' : 'default'
+                          }}
+                        >
+                          {task.title}
                         </span>
-                      )}
-                      {hasDeps && task.depends_on && (
-                        <span className="epic-detail__task-dep-ref">
-                          {task.depends_on.length} dep{task.depends_on.length === 1 ? '' : 's'}
+                        {!hasSpec && task.status === 'backlog' && (
+                          <span className="epic-detail__task-flag epic-detail__task-flag--warning">
+                            no spec
+                          </span>
+                        )}
+                        {hasDeps && task.depends_on && (
+                          <span className="epic-detail__task-dep-ref">
+                            {task.depends_on.length} dep{task.depends_on.length === 1 ? '' : 's'}
+                          </span>
+                        )}
+                        <span
+                          className="epic-detail__task-status-badge"
+                          style={{ color: getStatusColor(task.status) }}
+                        >
+                          {getStatusLabel(task.status)}
                         </span>
-                      )}
-                      <span
-                        className="epic-detail__task-status-badge"
-                        style={{ color: getStatusColor(task.status) }}
-                      >
-                        {getStatusLabel(task.status)}
-                      </span>
-                      <button
-                        type="button"
-                        className="epic-detail__task-edit-btn"
-                        onClick={() => onEditTask(task.id)}
-                        aria-label={`Edit ${task.title}`}
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                    </>
-                  ) : (
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        width: '100%',
-                        padding: '8px'
-                      }}
-                    >
-                      <textarea
-                        ref={textareaRef}
-                        value={editingSpec}
-                        onChange={(e) => setEditingSpec(e.target.value)}
-                        onKeyDown={handleSpecKeyDown}
-                        placeholder="Enter task spec..."
-                        disabled={saving}
-                        style={{
-                          width: '100%',
-                          minHeight: '120px',
-                          padding: '8px',
-                          background: tokens.neon.surfaceDeep,
-                          border: `1px solid ${tokens.neon.cyan}40`,
-                          borderRadius: '4px',
-                          color: tokens.neon.text,
-                          fontFamily: 'monospace',
-                          fontSize: '13px',
-                          resize: 'vertical'
-                        }}
-                      />
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button
                           type="button"
-                          onClick={handleCancelEdit}
+                          className="epic-detail__task-edit-btn"
+                          onClick={() => onEditTask(task.id)}
+                          aria-label={`Edit ${task.title}`}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                          width: '100%',
+                          padding: '8px'
+                        }}
+                      >
+                        <textarea
+                          ref={textareaRef}
+                          value={editingSpec}
+                          onChange={(e) => setEditingSpec(e.target.value)}
+                          onKeyDown={handleSpecKeyDown}
+                          placeholder="Enter task spec..."
                           disabled={saving}
                           style={{
-                            padding: '6px 12px',
-                            background: 'transparent',
-                            border: `1px solid ${tokens.neon.textDim}`,
+                            width: '100%',
+                            minHeight: '120px',
+                            padding: '8px',
+                            background: tokens.neon.surfaceDeep,
+                            border: `1px solid ${tokens.neon.cyan}40`,
                             borderRadius: '4px',
                             color: tokens.neon.text,
-                            cursor: saving ? 'not-allowed' : 'pointer',
-                            fontSize: '13px'
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSaveEdit}
-                          disabled={saving}
-                          style={{
-                            padding: '6px 12px',
-                            background: tokens.neon.cyan,
-                            border: 'none',
-                            borderRadius: '4px',
-                            color: tokens.neon.surfaceDeep,
-                            cursor: saving ? 'not-allowed' : 'pointer',
+                            fontFamily: 'monospace',
                             fontSize: '13px',
-                            fontWeight: 500
+                            resize: 'vertical'
                           }}
-                        >
-                          {saving ? 'Saving...' : 'Save (⌘↵)'}
-                        </button>
+                        />
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            disabled={saving}
+                            style={{
+                              padding: '6px 12px',
+                              background: 'transparent',
+                              border: `1px solid ${tokens.neon.textDim}`,
+                              borderRadius: '4px',
+                              color: tokens.neon.text,
+                              cursor: saving ? 'not-allowed' : 'pointer',
+                              fontSize: '13px'
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveEdit}
+                            disabled={saving}
+                            style={{
+                              padding: '6px 12px',
+                              background: tokens.neon.cyan,
+                              border: 'none',
+                              borderRadius: '4px',
+                              color: tokens.neon.surfaceDeep,
+                              cursor: saving ? 'not-allowed' : 'pointer',
+                              fontSize: '13px',
+                              fontWeight: 500
+                            }}
+                          >
+                            {saving ? 'Saving...' : 'Save (⌘↵)'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   </div>
                 </motion.div>
               )

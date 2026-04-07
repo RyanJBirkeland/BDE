@@ -66,13 +66,8 @@ describe('DagOverlay', () => {
   })
 
   it('renders with dependency tasks', () => {
-    const tasks = [
-      makeTask('t1'),
-      makeTask('t2', { depends_on: [{ id: 't1', type: 'hard' }] })
-    ]
-    render(
-      <DagOverlay {...defaultProps} tasks={tasks} />
-    )
+    const tasks = [makeTask('t1'), makeTask('t2', { depends_on: [{ id: 't1', type: 'hard' }] })]
+    render(<DagOverlay {...defaultProps} tasks={tasks} />)
     // Both tasks should render
     expect(screen.getByText('Task t1')).toBeInTheDocument()
     expect(screen.getByText('Task t2')).toBeInTheDocument()
@@ -84,9 +79,7 @@ describe('DagOverlay', () => {
   })
 
   it('handles empty task list', () => {
-    const { container } = render(
-      <DagOverlay {...defaultProps} tasks={[]} />
-    )
+    const { container } = render(<DagOverlay {...defaultProps} tasks={[]} />)
     expect(container.firstChild).toBeInTheDocument()
   })
 })

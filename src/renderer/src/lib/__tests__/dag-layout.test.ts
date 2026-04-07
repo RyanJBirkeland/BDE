@@ -48,20 +48,14 @@ describe('computeDagLayout', () => {
   })
 
   it('creates edges from dependencies', () => {
-    const tasks = [
-      makeTask('t1'),
-      makeTask('t2', { depends_on: [{ id: 't1', type: 'hard' }] })
-    ]
+    const tasks = [makeTask('t1'), makeTask('t2', { depends_on: [{ id: 't1', type: 'hard' }] })]
     const result = computeDagLayout(tasks)
     expect(result.edges).toHaveLength(1)
     expect(result.edges[0]).toEqual({ from: 't1', to: 't2', type: 'hard' })
   })
 
   it('assigns dependent tasks to later layers', () => {
-    const tasks = [
-      makeTask('t1'),
-      makeTask('t2', { depends_on: [{ id: 't1', type: 'hard' }] })
-    ]
+    const tasks = [makeTask('t1'), makeTask('t2', { depends_on: [{ id: 't1', type: 'hard' }] })]
     const result = computeDagLayout(tasks)
     const t1Node = result.nodes.find((n) => n.id === 't1')!
     const t2Node = result.nodes.find((n) => n.id === 't2')!
@@ -81,10 +75,7 @@ describe('computeDagLayout', () => {
   })
 
   it('handles soft dependencies', () => {
-    const tasks = [
-      makeTask('t1'),
-      makeTask('t2', { depends_on: [{ id: 't1', type: 'soft' }] })
-    ]
+    const tasks = [makeTask('t1'), makeTask('t2', { depends_on: [{ id: 't1', type: 'soft' }] })]
     const result = computeDagLayout(tasks)
     expect(result.edges[0].type).toBe('soft')
   })

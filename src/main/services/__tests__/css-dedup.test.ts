@@ -25,9 +25,7 @@ describe('deduplicateCss', () => {
     const result = deduplicateCss(css)
     expect(result.removed).toHaveLength(0)
     expect(result.warnings).toHaveLength(0)
-    expect(result.deduplicated.replace(/\s+/g, ' ').trim()).toBe(
-      css.replace(/\s+/g, ' ').trim()
-    )
+    expect(result.deduplicated.replace(/\s+/g, ' ').trim()).toBe(css.replace(/\s+/g, ' ').trim())
   })
 
   it('treats rules in different @media contexts as distinct', () => {

@@ -28,7 +28,8 @@ export function MorningBriefing({
   // Match tasks with their cost data
   const tasksWithCost = useMemo((): TaskWithCost[] => {
     return tasks.slice(0, 5).map((task) => {
-      const agent = localAgents.find((a) => a.sprintTaskId === task.id) ??
+      const agent =
+        localAgents.find((a) => a.sprintTaskId === task.id) ??
         localAgents.find((a) => a.id === task.agent_run_id)
       return {
         title: task.title,
@@ -61,7 +62,9 @@ export function MorningBriefing({
             <div className="dashboard-briefing__tasks">
               {tasksWithCost.map((task, i) => (
                 <div key={i} className="dashboard-briefing__task-row">
-                  <span className="dashboard-briefing__task-title" title={task.title}>{task.title}</span>
+                  <span className="dashboard-briefing__task-title" title={task.title}>
+                    {task.title}
+                  </span>
                   <span className="dashboard-briefing__task-cost">
                     {task.cost !== null ? `$${task.cost.toFixed(3)}` : '—'}
                   </span>

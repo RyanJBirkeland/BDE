@@ -69,18 +69,25 @@ export default function DashboardView(): React.JSX.Element {
   }, [])
 
   // Dashboard data from centralized polling
-  const { chartData, burndownData, feedEvents, successTrendData, loading, cardErrors, lastFetchedAt } =
-    useDashboardDataStore(
-      useShallow((s) => ({
-        chartData: s.chartData,
-        burndownData: s.burndownData,
-        feedEvents: s.feedEvents,
-        successTrendData: s.successTrendData,
-        loading: s.loading,
-        cardErrors: s.cardErrors,
-        lastFetchedAt: s.lastFetchedAt
-      }))
-    )
+  const {
+    chartData,
+    burndownData,
+    feedEvents,
+    successTrendData,
+    loading,
+    cardErrors,
+    lastFetchedAt
+  } = useDashboardDataStore(
+    useShallow((s) => ({
+      chartData: s.chartData,
+      burndownData: s.burndownData,
+      feedEvents: s.feedEvents,
+      successTrendData: s.successTrendData,
+      loading: s.loading,
+      cardErrors: s.cardErrors,
+      lastFetchedAt: s.lastFetchedAt
+    }))
+  )
 
   // Timestamp counter to re-evaluate freshness every 10s (pauses when tab hidden)
   const [now, setNow] = useState(() => Date.now())

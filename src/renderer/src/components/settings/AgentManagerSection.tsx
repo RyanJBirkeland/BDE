@@ -83,9 +83,7 @@ export function AgentManagerSection(): React.JSX.Element {
       try {
         const result = await window.api.agentManager.reloadConfig()
         if (result.requiresRestart.length > 0) {
-          toast.info(
-            `Saved. Restart required for: ${result.requiresRestart.join(', ')}`
-          )
+          toast.info(`Saved. Restart required for: ${result.requiresRestart.join(', ')}`)
         } else if (result.updated.length > 0) {
           toast.success(`Settings saved and applied: ${result.updated.join(', ')}`)
         } else {

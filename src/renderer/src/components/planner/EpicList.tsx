@@ -127,7 +127,9 @@ export function EpicList({
 
         <div className="planner-epic-item__content">
           <div className="planner-epic-item__row">
-            <span className="planner-epic-item__name" title={group.name}>{group.name}</span>
+            <span className="planner-epic-item__name" title={group.name}>
+              {group.name}
+            </span>
             <span
               className="planner-epic-item__status"
               style={{ color: getStatusColor(group.status) }}

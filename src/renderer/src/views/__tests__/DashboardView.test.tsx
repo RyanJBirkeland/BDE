@@ -187,7 +187,9 @@ describe('DashboardView', () => {
 
   it('shows "No terminal tasks" when no done/failed tasks', () => {
     render(<DashboardView />)
-    expect(screen.getByText('No terminal tasks yet. Queue and run tasks to see success metrics.')).toBeInTheDocument()
+    expect(
+      screen.getByText('No terminal tasks yet. Queue and run tasks to see success metrics.')
+    ).toBeInTheDocument()
   })
 
   it('shows success ring with percentage when done tasks exist', () => {

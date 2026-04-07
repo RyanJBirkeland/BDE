@@ -10,7 +10,9 @@ interface SuccessRingProps {
 /** SVG donut ring showing success rate. */
 export function SuccessRing({ rate, done, failed }: SuccessRingProps): React.JSX.Element {
   if (rate === null) {
-    return <EmptyState message="No terminal tasks yet. Queue and run tasks to see success metrics." />
+    return (
+      <EmptyState message="No terminal tasks yet. Queue and run tasks to see success metrics." />
+    )
   }
 
   const size = 64

@@ -101,7 +101,13 @@ export function CommitBox({
           disabled={pushLoading || pushDisabled}
           aria-label="Push to remote"
           aria-busy={pushLoading}
-          title={pushDisabled && pushDisabledTitle ? pushDisabledTitle : pushLoading ? 'Pushing...' : 'Push to remote'}
+          title={
+            pushDisabled && pushDisabledTitle
+              ? pushDisabledTitle
+              : pushLoading
+                ? 'Pushing...'
+                : 'Push to remote'
+          }
           className="git-commit-box__push-btn"
         >
           {pushLoading ? <Loader2 size={14} className="bde-spin" /> : <Upload size={14} />}

@@ -76,12 +76,12 @@ test.describe('IDE view — file explorer', () => {
     await expect(fileTree.locator('.ide-file-node__name', { hasText: 'README.md' })).toBeVisible({
       timeout: 5_000
     })
-    await expect(
-      fileTree.locator('.ide-file-node__name', { hasText: 'unstaged.txt' })
-    ).toBeVisible({ timeout: 5_000 })
-    await expect(
-      fileTree.locator('.ide-file-node__name', { hasText: 'staged.txt' })
-    ).toBeVisible({ timeout: 5_000 })
+    await expect(fileTree.locator('.ide-file-node__name', { hasText: 'unstaged.txt' })).toBeVisible(
+      { timeout: 5_000 }
+    )
+    await expect(fileTree.locator('.ide-file-node__name', { hasText: 'staged.txt' })).toBeVisible({
+      timeout: 5_000
+    })
   })
 
   test('Clicking a file in the tree opens an editor tab with the file name', async ({ bde }) => {

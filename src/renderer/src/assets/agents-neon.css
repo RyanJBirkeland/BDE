@@ -1163,13 +1163,15 @@
   width: 18px;
   height: 18px;
   padding: 0;
-  background: var(--neon-surface-deep, rgba(10,0,21,0.4));
+  background: var(--neon-surface-deep, rgba(10, 0, 21, 0.4));
   border: 1px solid var(--neon-red-border);
   border-radius: var(--bde-radius-sm, 4px);
   cursor: pointer;
   color: var(--neon-red);
   flex-shrink: 0;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .agent-card__kill-btn:hover:not(:disabled) {
@@ -1349,7 +1351,7 @@
 /* ── Load More button ── */
 .agent-list__load-more {
   padding: 4px 12px;
-  background: var(--neon-surface-deep, rgba(10,0,21,0.4));
+  background: var(--neon-surface-deep, rgba(10, 0, 21, 0.4));
   border: 1px solid var(--neon-cyan-border);
   border-radius: var(--bde-radius-sm, 4px);
   color: var(--neon-cyan);

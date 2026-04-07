@@ -70,14 +70,7 @@ describe('TerminalContent', () => {
       kind: 'agent',
       agentId: 'agent-abc'
     })
-    render(
-      <TerminalContent
-        {...defaultProps}
-        tabs={[agentTab]}
-        activeTabId="agent-1"
-
-      />
-    )
+    render(<TerminalContent {...defaultProps} tabs={[agentTab]} activeTabId="agent-1" />)
     expect(screen.getByTestId('agent-output-agent-abc')).toBeInTheDocument()
   })
 
@@ -88,14 +81,7 @@ describe('TerminalContent', () => {
       kind: 'agent',
       agentId: 'agent-abc'
     })
-    render(
-      <TerminalContent
-        {...defaultProps}
-        tabs={[agentTab]}
-        activeTabId="agent-1"
-
-      />
-    )
+    render(<TerminalContent {...defaultProps} tabs={[agentTab]} activeTabId="agent-1" />)
     expect(screen.getByText(/Agent Output/)).toBeInTheDocument()
   })
 
@@ -107,13 +93,7 @@ describe('TerminalContent', () => {
   it('does not show FindBar for agent tabs', () => {
     const agentTab = makeTab({ id: 'agent-1', kind: 'agent', agentId: 'a1' })
     render(
-      <TerminalContent
-        {...defaultProps}
-        tabs={[agentTab]}
-        activeTabId="agent-1"
-
-        showFind={true}
-      />
+      <TerminalContent {...defaultProps} tabs={[agentTab]} activeTabId="agent-1" showFind={true} />
     )
     expect(screen.queryByTestId('find-bar')).not.toBeInTheDocument()
   })

@@ -452,7 +452,11 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
                     style={{ fontFamily: 'monospace', fontSize: '0.9em' }}
                   />
                   <div
-                    style={{ fontSize: '0.85em', color: 'var(--bde-text-muted)', marginTop: '0.25rem' }}
+                    style={{
+                      fontSize: '0.85em',
+                      color: 'var(--bde-text-muted)',
+                      marginTop: '0.25rem'
+                    }}
                   >
                     Document API contracts, shared types, or cross-repo dependencies. Will be
                     injected into the agent prompt.

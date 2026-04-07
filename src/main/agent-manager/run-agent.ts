@@ -200,8 +200,15 @@ export async function runAgent(
   repoPath: string,
   deps: RunAgentDeps
 ): Promise<void> {
-  const { activeAgents, defaultModel, logger, onTaskTerminal, repo, onSpawnSuccess, onSpawnFailure } =
-    deps
+  const {
+    activeAgents,
+    defaultModel,
+    logger,
+    onTaskTerminal,
+    repo,
+    onSpawnSuccess,
+    onSpawnFailure
+  } = deps
   const effectiveModel = task.model || defaultModel
 
   const taskContent = (task.prompt || task.spec || task.title || '').trim()

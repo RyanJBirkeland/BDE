@@ -37,9 +37,11 @@ export function hasFilePaths(spec: string): boolean {
  */
 export function hasTestSection(spec: string): boolean {
   if (!spec) return false
-  return /(?:^|\n)\s*#{1,6}\s*(?:how to test|testing|tests?|verification|qa)\b/i.test(spec) ||
+  return (
+    /(?:^|\n)\s*#{1,6}\s*(?:how to test|testing|tests?|verification|qa)\b/i.test(spec) ||
     /\bnpm\s+test\b/i.test(spec) ||
     /\bhow to test\b/i.test(spec)
+  )
 }
 
 /**

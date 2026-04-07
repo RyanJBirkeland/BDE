@@ -19,10 +19,7 @@ export const AGENT_PROCESS_MAX_OLD_SPACE_MB = 1024
  *
  * Exported for testing.
  */
-export function withMaxOldSpaceOption(
-  existing: string | undefined,
-  maxOldSpaceMb: number
-): string {
+export function withMaxOldSpaceOption(existing: string | undefined, maxOldSpaceMb: number): string {
   const flag = `--max-old-space-size=${maxOldSpaceMb}`
   if (!existing || !existing.trim()) return flag
   // Avoid duplicate flag if caller already specified one

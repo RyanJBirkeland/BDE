@@ -489,10 +489,7 @@ export function AgentList({
               justifyContent: 'center'
             }}
           >
-            <button
-              className="agent-list__load-more"
-              onClick={onLoadMore}
-            >
+            <button className="agent-list__load-more" onClick={onLoadMore}>
               Load More
             </button>
           </div>

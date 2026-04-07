@@ -66,9 +66,7 @@ describe('MorningBriefing', () => {
   })
 
   it('shows cost when agent data is available', () => {
-    const agents = [
-      { id: 'a1', sprintTaskId: 't1', costUsd: 0.5 } as AgentCostRecord
-    ]
+    const agents = [{ id: 'a1', sprintTaskId: 't1', costUsd: 0.5 } as AgentCostRecord]
     render(<MorningBriefing {...defaultProps} localAgents={agents} />)
     expect(screen.getAllByText('$0.500').length).toBeGreaterThan(0)
   })

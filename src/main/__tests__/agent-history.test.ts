@@ -564,9 +564,9 @@ describe('agent-history (SQLite)', () => {
       expect(cleaned).toBe(0)
 
       const { getDb } = await import('../db')
-      const row = getDb()
-        .prepare('SELECT status FROM agent_runs WHERE id = ?')
-        .get('adhoc-1') as { status: string }
+      const row = getDb().prepare('SELECT status FROM agent_runs WHERE id = ?').get('adhoc-1') as {
+        status: string
+      }
       expect(row.status).toBe('running')
     })
 
@@ -620,9 +620,7 @@ describe('agent-history (SQLite)', () => {
         sprintTaskId: 'task-456'
       })
 
-      const cleaned = agentHistory.reconcileRunningAgentRuns(
-        (taskId) => taskId === 'task-456'
-      )
+      const cleaned = agentHistory.reconcileRunningAgentRuns((taskId) => taskId === 'task-456')
       expect(cleaned).toBe(0)
 
       const { getDb } = await import('../db')
@@ -662,9 +660,9 @@ describe('agent-history (SQLite)', () => {
 
     async function readFinishedAt(id: string): Promise<string> {
       const { getDb } = await import('../db')
-      const row = getDb()
-        .prepare('SELECT finished_at FROM agent_runs WHERE id = ?')
-        .get(id) as { finished_at: string }
+      const row = getDb().prepare('SELECT finished_at FROM agent_runs WHERE id = ?').get(id) as {
+        finished_at: string
+      }
       return row.finished_at
     }
 
