@@ -72,6 +72,11 @@
   -webkit-backdrop-filter: var(--neon-glass-blur);
   box-shadow: var(--neon-glass-shadow), var(--neon-glass-edge);
   overflow: hidden;
+  /* Don't let flex parents shrink the card below its content height —
+     combined with overflow: hidden (needed for rounded corners + glass clip),
+     shrinking silently clips chart bodies and text. Scrollable parents
+     (e.g. .dashboard-col) handle overflow at the column level. */
+  flex-shrink: 0;
   transition:
     box-shadow var(--bde-transition-base),
     transform var(--bde-transition-base);
