@@ -292,6 +292,51 @@ describe('SpecEditor', () => {
     expect(templateButtons[3].textContent).toBe('Test')
   })
 
+  describe('queue-minimum char warning', () => {
+    it('shows char warning instead of word count when spec is below 50 chars', () => {
+      useTaskWorkbenchStore.setState({ spec: 'short' }) // 5 chars
+      render(<SpecEditor {...defaultProps} />)
+      expect(screen.getByTestId('spec-quality-char-warning')).toHaveTextContent(
+        '5/50 chars to queue'
+      )
+      expect(screen.queryByTestId('spec-quality-words')).not.toBeInTheDocument()
+    })
+
+    it('shows word count once spec reaches 50 chars (boundary)', () => {
+      // exactly 50 chars after trim
+      useTaskWorkbenchStore.setState({ spec: 'a'.repeat(50) })
+      render(<SpecEditor {...defaultProps} />)
+      expect(screen.getByTestId('spec-quality-words')).toBeInTheDocument()
+      expect(screen.queryByTestId('spec-quality-char-warning')).not.toBeInTheDocument()
+    })
+
+    it('shows word count for clearly long specs', () => {
+      useTaskWorkbenchStore.setState({
+        spec: 'This is a much longer spec that has clearly more than fifty characters in it.'
+      })
+      render(<SpecEditor {...defaultProps} />)
+      expect(screen.getByTestId('spec-quality-words')).toBeInTheDocument()
+      expect(screen.queryByTestId('spec-quality-char-warning')).not.toBeInTheDocument()
+    })
+
+    it('counts trimmed length so leading/trailing whitespace does not satisfy the minimum', () => {
+      // 10 visible chars surrounded by lots of whitespace
+      useTaskWorkbenchStore.setState({ spec: '          short text          ' })
+      render(<SpecEditor {...defaultProps} />)
+      expect(screen.getByTestId('spec-quality-char-warning')).toHaveTextContent(
+        '10/50 chars to queue'
+      )
+    })
+
+    it('shows char warning for empty spec as 0/50', () => {
+      useTaskWorkbenchStore.setState({ spec: '' })
+      render(<SpecEditor {...defaultProps} />)
+      expect(screen.getByTestId('spec-quality-char-warning')).toHaveTextContent(
+        '0/50 chars to queue'
+      )
+    })
+  })
+
   it('updates cursor position after Tab insertion', async () => {
     useTaskWorkbenchStore.setState({ spec: 'Test' })
     render(<SpecEditor {...defaultProps} />)

@@ -128,8 +128,12 @@ export function SpecEditor({
   )
 }
 
+const SPEC_QUEUE_MIN_CHARS = 50
+
 function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
   const indicators = useMemo(() => analyzeSpec(spec), [spec])
+  const trimmedLength = useMemo(() => spec.trim().length, [spec])
+  const belowQueueMinimum = trimmedLength < SPEC_QUEUE_MIN_CHARS
   const dotStyle = (on: boolean): React.CSSProperties => ({
     display: 'inline-block',
     width: 6,
@@ -153,13 +157,24 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
         color: 'var(--neon-text-muted, #999)'
       }}
     >
-      <span
-        className="wb-spec__quality-word-count"
-        title="Total words in the spec. Longer isn't always better — aim for clarity."
-        data-testid="spec-quality-words"
-      >
-        {indicators.wordCount} words
-      </span>
+      {belowQueueMinimum ? (
+        <span
+          className="wb-spec__quality-char-warning"
+          title="Specs must be at least 50 characters to queue."
+          data-testid="spec-quality-char-warning"
+          style={{ color: 'var(--neon-orange, #f59e0b)', fontWeight: 600 }}
+        >
+          {trimmedLength}/{SPEC_QUEUE_MIN_CHARS} chars to queue
+        </span>
+      ) : (
+        <span
+          className="wb-spec__quality-word-count"
+          title="Total words in the spec. Longer isn't always better — aim for clarity."
+          data-testid="spec-quality-words"
+        >
+          {indicators.wordCount} words
+        </span>
+      )}
       <span
         title={
           indicators.hasFilePaths
