@@ -432,11 +432,11 @@
 
 /* ── Command Bar ── */
 .command-bar {
-  height: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 8px 12px;
   background: linear-gradient(180deg, var(--neon-surface-dim) 0%, var(--neon-purple-surface) 100%);
   backdrop-filter: var(--neon-glass-blur);
   -webkit-backdrop-filter: var(--neon-glass-blur);

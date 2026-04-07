@@ -61,13 +61,13 @@ describe('CommandBar', () => {
 
   it('renders input field with placeholder', () => {
     render(<CommandBar {...defaultProps} />)
-    expect(screen.getByPlaceholderText('Type a message or / for commands...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')).toBeInTheDocument()
   })
 
   it('shows autocomplete when typing /', async () => {
     const user = userEvent.setup()
     const { container } = render(<CommandBar {...defaultProps} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, '/')
 
@@ -79,7 +79,7 @@ describe('CommandBar', () => {
   it('shows filtered commands in autocomplete', async () => {
     const user = userEvent.setup()
     render(<CommandBar {...defaultProps} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, '/sto')
 
@@ -91,7 +91,7 @@ describe('CommandBar', () => {
   it('hides autocomplete when input does not start with /', async () => {
     const user = userEvent.setup()
     const { container } = render(<CommandBar {...defaultProps} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, 'hello')
 
@@ -102,7 +102,7 @@ describe('CommandBar', () => {
     const user = userEvent.setup()
     const onSend = vi.fn()
     render(<CommandBar {...defaultProps} onSend={onSend} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, 'hello world')
     await user.keyboard('{Enter}')
@@ -114,13 +114,13 @@ describe('CommandBar', () => {
   it('sends slash command with onCommand on Enter', async () => {
     const user = userEvent.setup()
     const onCommand = vi.fn()
-    render(<CommandBar {...defaultProps} onCommand={onCommand} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const { container } = render(<CommandBar {...defaultProps} onCommand={onCommand} />)
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, '/stop')
     // Wait for autocomplete to appear, then press Escape to close it
     await waitFor(() => {
-      expect(screen.getByText('/stop')).toBeInTheDocument()
+      expect(container.querySelector('.command-autocomplete')).toBeInTheDocument()
     })
     await user.keyboard('{Escape}')
     await user.keyboard('{Enter}')
@@ -133,7 +133,7 @@ describe('CommandBar', () => {
     const user = userEvent.setup()
     const onCommand = vi.fn()
     render(<CommandBar {...defaultProps} onCommand={onCommand} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, '/focus authentication')
     // Close autocomplete
@@ -149,7 +149,7 @@ describe('CommandBar', () => {
     const onSend = vi.fn()
     const onCommand = vi.fn()
     render(<CommandBar {...defaultProps} onSend={onSend} onCommand={onCommand} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.click(input)
     await user.keyboard('{Enter}')
@@ -160,7 +160,7 @@ describe('CommandBar', () => {
 
   it('disabled state disables input', () => {
     render(<CommandBar {...defaultProps} disabled={true} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
     expect(input).toBeDisabled()
   })
 
@@ -174,7 +174,7 @@ describe('CommandBar', () => {
     const onSend = vi.fn()
     const onCommand = vi.fn()
     render(<CommandBar {...defaultProps} onSend={onSend} onCommand={onCommand} disabled={true} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     // Try to type and send (should not work due to disabled state)
     await user.type(input, 'test')
@@ -187,7 +187,7 @@ describe('CommandBar', () => {
   it('clears input after sending', async () => {
     const user = userEvent.setup()
     render(<CommandBar {...defaultProps} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, 'test message')
     await user.keyboard('{Enter}')
@@ -198,7 +198,7 @@ describe('CommandBar', () => {
   it('autocomplete selects command on click', async () => {
     const user = userEvent.setup()
     render(<CommandBar {...defaultProps} />)
-    const input = screen.getByPlaceholderText('Type a message or / for commands...')
+    const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
     await user.type(input, '/')
 
@@ -214,7 +214,7 @@ describe('CommandBar', () => {
   describe('clipboard image paste', () => {
     it('shows thumbnail when image is pasted', async () => {
       const { container } = render(<CommandBar {...defaultProps} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       const originalFileReader = window.FileReader
       window.FileReader = mockFileReader('data:image/png;base64,fakebase64data')
@@ -235,7 +235,7 @@ describe('CommandBar', () => {
     it('does not show thumbnail when text is pasted', async () => {
       const user = userEvent.setup()
       const { container } = render(<CommandBar {...defaultProps} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       await user.click(input)
       await user.paste('plain text')
@@ -247,7 +247,7 @@ describe('CommandBar', () => {
     it('removes attachment when X button is clicked', async () => {
       const user = userEvent.setup()
       const { container } = render(<CommandBar {...defaultProps} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       const originalFileReader = window.FileReader
       window.FileReader = mockFileReader('data:image/png;base64,fakebase64data')
@@ -273,7 +273,7 @@ describe('CommandBar', () => {
       const user = userEvent.setup()
       const onSend = vi.fn()
       const { container } = render(<CommandBar {...defaultProps} onSend={onSend} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       const originalFileReader = window.FileReader
       window.FileReader = mockFileReader('data:image/png;base64,fakebase64data')
@@ -303,7 +303,7 @@ describe('CommandBar', () => {
       const user = userEvent.setup()
       const onSend = vi.fn()
       const { container } = render(<CommandBar {...defaultProps} onSend={onSend} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       const originalFileReader = window.FileReader
       window.FileReader = mockFileReader('data:image/png;base64,fakebase64data')
@@ -329,7 +329,7 @@ describe('CommandBar', () => {
     it('shows error toast when pasted image is too large', async () => {
       const { toast } = await import('../../../stores/toasts')
       render(<CommandBar {...defaultProps} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       const largeBlob = new Blob([new ArrayBuffer(6 * 1024 * 1024)], { type: 'image/png' })
       const clipboardEvent = createImagePasteEvent(largeBlob)
@@ -341,7 +341,7 @@ describe('CommandBar', () => {
     it('shows error toast on FileReader error', async () => {
       const { toast } = await import('../../../stores/toasts')
       render(<CommandBar {...defaultProps} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       const originalFileReader = window.FileReader
       window.FileReader = mockFileReader('', true)
@@ -359,7 +359,7 @@ describe('CommandBar', () => {
 
     it('replaces first attachment when second image is pasted', async () => {
       const { container } = render(<CommandBar {...defaultProps} />)
-      const input = screen.getByPlaceholderText('Type a message or / for commands...')
+      const input = screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
 
       const originalFileReader = window.FileReader
 

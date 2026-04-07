@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react'
 import { X } from 'lucide-react'
 import { CommandAutocomplete } from './CommandAutocomplete'
 import { AGENT_COMMANDS } from './commands'
@@ -23,7 +23,7 @@ export function CommandBar({
   const [value, setValue] = useState('')
   const [attachment, setAttachment] = useState<Attachment | null>(null)
   const [autocompleteHidden, setAutocompleteHidden] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   // Compute filtered commands synchronously to avoid stale state races
   const filteredCommands =
@@ -40,6 +40,15 @@ export function CommandBar({
       setAutocompleteHidden(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
+  // Auto-grow textarea with max 6 rows (~120px)
+  useLayoutEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    const newHeight = Math.min(el.scrollHeight, 120)
+    el.style.height = `${newHeight}px`
   }, [value])
 
   const handleSubmit = useCallback((): void => {
@@ -61,19 +70,27 @@ export function CommandBar({
   }, [value, attachment, disabled, onCommand, onSend])
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
       // Let autocomplete handle these keys when shown
       if (showAutocomplete && ['ArrowDown', 'ArrowUp', 'Escape'].includes(e.key)) {
         return
       }
 
+      // Cmd+Enter submits
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        handleSubmit()
+        return
+      }
+
+      // Enter (without Shift) submits, unless autocomplete is handling it
       if (e.key === 'Enter' && !e.shiftKey) {
-        // Don't prevent default if autocomplete is showing - let it handle Enter
         if (!showAutocomplete) {
           e.preventDefault()
           handleSubmit()
         }
       }
+      // Shift+Enter allows default behavior (newline insertion)
     },
     [showAutocomplete, handleSubmit]
   )
@@ -88,7 +105,7 @@ export function CommandBar({
     inputRef.current?.focus()
   }, [])
 
-  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>): void => {
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>): void => {
     const items = e.clipboardData.items
     let imageItem: DataTransferItem | null = null
 
@@ -204,9 +221,8 @@ export function CommandBar({
         </div>
       )}
       <div className="command-bar__prompt">&gt;</div>
-      <input
+      <textarea
         ref={inputRef}
-        type="text"
         className="command-bar__input"
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -214,10 +230,14 @@ export function CommandBar({
         onPaste={handlePaste}
         disabled={disabled}
         placeholder={
-          disabled && disabledReason ? disabledReason : 'Type a message or / for commands...'
+          disabled && disabledReason
+            ? disabledReason
+            : 'Message the agent… (Shift+Enter for newline)'
         }
         aria-label="Agent command input"
         autoFocus
+        rows={1}
+        style={{ resize: 'none', overflow: 'hidden' }}
       />
     </div>
   )
