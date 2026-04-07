@@ -139,6 +139,9 @@ declare global {
         list: (...args: IpcArgs<'agents:list'>) => Promise<IpcResult<'agents:list'>>
         readLog: (...args: IpcArgs<'agents:readLog'>) => Promise<IpcResult<'agents:readLog'>>
         import: (...args: IpcArgs<'agents:import'>) => Promise<IpcResult<'agents:import'>>
+        promoteToReview: (
+          ...args: IpcArgs<'agents:promoteToReview'>
+        ) => Promise<IpcResult<'agents:promoteToReview'>>
       }
 
       // Cost analytics

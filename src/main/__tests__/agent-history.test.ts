@@ -52,7 +52,9 @@ vi.mock('../db', () => {
             cache_create INTEGER,
             duration_ms  INTEGER,
             num_turns    INTEGER,
-            sprint_task_id TEXT
+            sprint_task_id TEXT,
+            worktree_path TEXT,
+            branch       TEXT
           );
           CREATE INDEX IF NOT EXISTS idx_agent_runs_pid    ON agent_runs(pid);
           CREATE INDEX IF NOT EXISTS idx_agent_runs_status ON agent_runs(status);

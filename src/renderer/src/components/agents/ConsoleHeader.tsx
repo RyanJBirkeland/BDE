@@ -2,13 +2,15 @@
  * ConsoleHeader — 32px glass header for AgentConsole with status, model, duration, cost, and actions.
  */
 import { useEffect, useState } from 'react'
-import { Terminal, StopCircle, Copy } from 'lucide-react'
+import { Terminal, StopCircle, Copy, GitPullRequest } from 'lucide-react'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
 import { NeonBadge, type NeonAccent } from '../neon'
 import { useTerminalStore } from '../../stores/terminal'
 import { toast } from '../../stores/toasts'
 import { formatDuration, formatElapsed } from '../../lib/format'
 import { derivePhaseLabel } from '../../lib/agent-phase'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
+import { useCodeReviewStore } from '../../stores/codeReview'
 
 interface ConsoleHeaderProps {
   agent: AgentMeta
@@ -85,6 +87,32 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
     }
   }
 
+  // Promote action: only available for completed adhoc agents that have a worktree.
+  // Pipeline agents already flow through the sprint pipeline and don't need promotion.
+  const canPromote =
+    agent.source === 'adhoc' &&
+    agent.status === 'done' &&
+    !!agent.worktreePath &&
+    !agent.sprintTaskId
+
+  const handlePromote = async (): Promise<void> => {
+    try {
+      const result = await window.api.agents.promoteToReview(agent.id)
+      if (!result.ok || !result.taskId) {
+        toast.error(result.error ?? 'Failed to promote agent to Code Review')
+        return
+      }
+      toast.success('Promoted to Code Review')
+      // Switch the active view to Code Review and select the new task
+      usePanelLayoutStore.getState().setView('code-review')
+      useCodeReviewStore.getState().selectTask(result.taskId)
+    } catch (err) {
+      toast.error(
+        `Failed to promote: ${err instanceof Error ? err.message : 'Unknown error'}`
+      )
+    }
+  }
+
   // Status dot class based on agent status
   const statusDotClass = `console-header__status-dot console-header__status-dot--${agent.status}`
 
@@ -153,6 +181,18 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
             aria-label="Stop agent"
           >
             <StopCircle size={14} />
+          </button>
+        )}
+
+        {canPromote && (
+          <button
+            className="console-header__action-btn"
+            onClick={handlePromote}
+            title="Promote this scratchpad agent's work to Code Review"
+            aria-label="Promote to Code Review"
+            style={{ color: 'var(--neon-cyan)' }}
+          >
+            <GitPullRequest size={14} />
           </button>
         )}
 

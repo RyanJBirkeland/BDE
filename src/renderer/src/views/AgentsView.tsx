@@ -325,6 +325,26 @@ export function AgentsView(): React.JSX.Element {
             </button>
           </div>
 
+          {/* Scratchpad notice — agents spawned here are NOT tracked by the
+              sprint pipeline. Click the Promote button on a completed agent
+              to flow its work into Code Review. */}
+          <div
+            role="note"
+            style={{
+              fontSize: '10px',
+              lineHeight: 1.4,
+              padding: '8px 12px',
+              borderBottom: '1px solid var(--neon-purple-border)',
+              color: 'var(--neon-text-dim)'
+            }}
+          >
+            <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run in
+            isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
+            finishes, click <em>Promote to Code Review</em> in its console header to flow the work
+            into the review queue. For tracked sprint work, queue tasks from{' '}
+            <em>Task Workbench</em>.
+          </div>
+
           <AgentList
             agents={agents}
             selectedId={selectedId}

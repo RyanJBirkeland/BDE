@@ -213,7 +213,9 @@ export async function importAgent(meta: Partial<AgentMeta>, content: string): Pr
     costUsd: meta.costUsd ?? null,
     tokensIn: meta.tokensIn ?? null,
     tokensOut: meta.tokensOut ?? null,
-    sprintTaskId: meta.sprintTaskId ?? null
+    sprintTaskId: meta.sprintTaskId ?? null,
+    worktreePath: meta.worktreePath ?? null,
+    branch: meta.branch ?? null
   }
   const record = await createAgentRecord(full)
   if (content) {

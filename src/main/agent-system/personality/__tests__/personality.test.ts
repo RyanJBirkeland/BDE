@@ -165,9 +165,15 @@ describe('Personality System', () => {
       expect(adhocPersonality.roleFrame).toContain('full tool access')
     })
 
-    it('should include tool access and branch constraints', () => {
+    it('should include tool access and worktree constraints', () => {
       expect(adhocPersonality.constraints.some((c) => c.includes('Full tool access'))).toBe(true)
-      expect(adhocPersonality.constraints.some((c) => c.includes('never to main'))).toBe(true)
+      // Adhoc agents now run in isolated worktrees and must NOT push (push is the
+      // user's decision via Promote to Code Review). The previous "never push to
+      // main" framing was replaced when the Code Review flow was introduced.
+      expect(
+        adhocPersonality.constraints.some((c) => c.toLowerCase().includes('worktree'))
+      ).toBe(true)
+      expect(adhocPersonality.constraints.some((c) => c.includes('git push'))).toBe(true)
     })
 
     it('should include execution-first patterns', () => {

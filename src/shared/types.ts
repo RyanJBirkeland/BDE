@@ -23,6 +23,19 @@ export interface AgentMeta {
   tokensIn: number | null
   tokensOut: number | null
   sprintTaskId: string | null
+  /**
+   * Absolute path to the agent's git worktree.
+   * - Adhoc agents: always set (every adhoc spawn creates a worktree).
+   * - Pipeline agents: set to the pipeline worktree.
+   * - Legacy / external imports: undefined.
+   *
+   * Optional in the type so older test fixtures and JSON imports don't have
+   * to be backfilled — `agent-queries.rowToMeta` always normalizes the DB
+   * column to `string | null`, but constructors may omit it.
+   */
+  worktreePath?: string | null
+  /** Git branch the agent is committing to. Same optionality rules as `worktreePath`. */
+  branch?: string | null
 }
 
 export interface TaskDependency {
