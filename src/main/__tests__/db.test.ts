@@ -42,6 +42,47 @@ describe('db schema migrations', () => {
     expect(version).toBe(latest)
   })
 
+  it('heals drifted DB at v35 that is missing the webhooks table (v37 heal)', () => {
+    // Reproduce the drift: run all migrations EXCEPT v26 (which creates
+    // webhooks), then bump user_version to 35 so the runner thinks it's
+    // up-to-date and only runs v36/v37. This matches the real-world case
+    // where some users' DBs skipped v26 during a botched upgrade path.
+    for (const m of migrations.filter((mig) => mig.version <= 35 && mig.version !== 26)) {
+      m.up(db)
+    }
+    db.pragma('user_version = 35')
+
+    // Confirm the drift: webhooks table does NOT exist
+    const beforeRow = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='webhooks'")
+      .get()
+    expect(beforeRow).toBeUndefined()
+
+    // Run migrations — v36 (indexes) and v37 (heal) should execute
+    runMigrations(db)
+
+    // After healing, the webhooks table must exist
+    const afterRow = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='webhooks'")
+      .get()
+    expect(afterRow).toEqual({ name: 'webhooks' })
+
+    // And version should be latest
+    const version = db.pragma('user_version', { simple: true }) as number
+    expect(version).toBe(migrations[migrations.length - 1].version)
+  })
+
+  it('v37 heal is idempotent on a fresh DB that already has webhooks', () => {
+    // Fresh DB — v26 created the webhooks table, v37 must not error
+    runMigrations(db)
+    // Run migrations a second time (should be a no-op)
+    expect(() => runMigrations(db)).not.toThrow()
+    const row = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='webhooks'")
+      .get()
+    expect(row).toEqual({ name: 'webhooks' })
+  })
+
   it('creates all expected tables', () => {
     runMigrations(db)
 
