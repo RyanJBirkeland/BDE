@@ -173,6 +173,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 16px;
 }
 
 .wb-form__checkbox-row {
@@ -293,35 +294,36 @@
 }
 
 /* ── Readiness Checks ── */
-.wb-checks {
-  border: 1px solid var(--neon-purple-border);
-  border-radius: 8px;
-  padding: 12px;
-  background: var(--bde-overlay);
+.wb-checks-card {
+  margin: 0;
 }
 
-.wb-checks--has-fail {
-  border-color: var(--neon-red);
-  box-shadow: var(--neon-red-glow);
-}
-
-.wb-checks__summary {
+.wb-checks__toggle {
   background: none;
   border: none;
-  color: var(--neon-text);
+  color: currentColor;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  font-size: 12px;
   padding: 0;
+  font-size: 14px;
   font-family: inherit;
+  transition: opacity 150ms ease;
 }
 
-.wb-checks__summary:focus-visible {
+.wb-checks__toggle:hover {
+  opacity: 0.7;
+}
+
+.wb-checks__toggle:focus-visible {
   outline: 2px solid var(--bde-accent);
   outline-offset: 2px;
+}
+
+.wb-checks__summary-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  padding: 4px 0;
 }
 
 .wb-checks__icons {

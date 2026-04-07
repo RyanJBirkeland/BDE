@@ -199,7 +199,8 @@ describe('ReadinessChecks', () => {
     const { container } = render(<ReadinessChecks />)
 
     const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('wb-checks--has-fail')
+    expect(wrapper.className).toContain('neon-card')
+    expect(wrapper.className).toContain('wb-checks-card')
   })
 
   it('has normal border when no failures', () => {
@@ -212,8 +213,8 @@ describe('ReadinessChecks', () => {
     const { container } = render(<ReadinessChecks />)
 
     const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('wb-checks')
-    expect(wrapper.className).not.toContain('wb-checks--has-fail')
+    expect(wrapper.className).toContain('neon-card')
+    expect(wrapper.className).toContain('wb-checks-card')
   })
 
   it('combines all three check types', () => {

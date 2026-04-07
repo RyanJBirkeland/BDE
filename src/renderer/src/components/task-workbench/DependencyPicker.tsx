@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { TaskDependency, SprintTask } from '../../../../shared/types'
+import { NeonBadge } from '../neon/NeonBadge'
 
 interface DependencyPickerProps {
   dependencies: TaskDependency[]
@@ -114,12 +115,13 @@ export function DependencyPicker({
               </span>
               <button
                 type="button"
-                className={`wb-deps__type wb-deps__type--${dep.type}`}
+                className="wb-deps__type-btn"
                 onClick={() => handleToggleType(dep.id)}
                 aria-label={`${dep.type} — click to toggle`}
                 title={`${dep.type === 'hard' ? 'Hard: blocks if upstream fails' : 'Soft: unblocks regardless of upstream outcome'} — click to toggle`}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
               >
-                {dep.type}
+                <NeonBadge accent={dep.type === 'hard' ? 'red' : 'cyan'} label={(dep.type || 'hard').toUpperCase()} />
               </button>
               <select
                 className="wb-deps__condition"

@@ -1,6 +1,8 @@
 import { useCallback } from 'react'
-import { Check, AlertTriangle, X, Loader2 } from 'lucide-react'
+import { Check, AlertTriangle, X, Loader2, CheckCircle2 } from 'lucide-react'
 import { useTaskWorkbenchStore, type CheckResult } from '../../stores/taskWorkbench'
+import { NeonCard } from '../neon/NeonCard'
+import type { NeonAccent } from '../neon/types'
 
 /**
  * Focus a form field by id and scroll it into view. Used by the readiness
@@ -55,6 +57,7 @@ export function ReadinessChecks(): React.JSX.Element | null {
   const passing = allChecks.filter((c) => c.status === 'pass').length
   const total = allChecks.length
   const hasFailures = allChecks.some((c) => c.status === 'fail')
+  const hasWarnings = allChecks.some((c) => c.status === 'warn')
   const isLoading = semanticLoading || operationalLoading
 
   if (total === 0 && !isLoading) return null
@@ -67,23 +70,39 @@ export function ReadinessChecks(): React.JSX.Element | null {
       (failCount > 0 ? `, ${failCount} failing` : '') +
       (warnCount > 0 ? `, ${warnCount} warning${warnCount === 1 ? '' : 's'}` : '')
 
+  // Dynamic accent based on check results
+  const accent: NeonAccent = hasFailures ? 'red' : hasWarnings ? 'orange' : 'cyan'
+
   return (
-    <div
-      className={`wb-checks${hasFailures ? ' wb-checks--has-fail' : ''}`}
-      role="region"
-      aria-label="Readiness checks"
+    <NeonCard
+      accent={accent}
+      title="Readiness Checks"
+      icon={<CheckCircle2 size={14} />}
+      action={
+        <button
+          onClick={toggleExpanded}
+          className="wb-checks__toggle"
+          aria-expanded={expanded}
+          aria-label="Toggle readiness checks details"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'currentColor',
+            cursor: 'pointer',
+            padding: 0,
+            fontSize: '14px'
+          }}
+        >
+          {expanded ? '\u25be' : '\u25b8'}
+        </button>
+      }
+      className="wb-checks-card"
     >
       {/* Screen-reader live announcer — visually hidden, updates on every check change */}
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {liveSummary}
       </div>
-      <button
-        onClick={toggleExpanded}
-        className="wb-checks__summary"
-        aria-expanded={expanded}
-        aria-label="Toggle readiness checks"
-      >
-        <span>{expanded ? '\u25be' : '\u25b8'}</span>
+      <div className="wb-checks__summary-row">
         <span className="wb-checks__icons" aria-hidden="true">
           {isLoading && (
             <span title="Running checks..." className="wb-check-icon wb-check-icon--pending">
@@ -99,7 +118,7 @@ export function ReadinessChecks(): React.JSX.Element | null {
         <span className="wb-checks__count">
           {isLoading ? 'Checking...' : `${passing}/${total} passing`}
         </span>
-      </button>
+      </div>
       {expanded && (
         <ul className="wb-checks__list">
           {allChecks.map((c) => (
@@ -107,7 +126,7 @@ export function ReadinessChecks(): React.JSX.Element | null {
           ))}
         </ul>
       )}
-    </div>
+    </NeonCard>
   )
 }
 
