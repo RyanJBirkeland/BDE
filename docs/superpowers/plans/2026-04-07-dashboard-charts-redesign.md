@@ -1539,11 +1539,12 @@ git commit -m "feat(dashboard): add StatusRail replacing 8-card StatusCounters"
 
 ---
 
-### Task 12: Integration — rewire `DashboardView` + `CenterColumn` + 5s load polling
+### Task 12: Integration — rewire `DashboardView` + `CenterColumn` + `ActivitySection` + 5s load polling
 
 **Files:**
 - Modify: `src/renderer/src/views/DashboardView.tsx`
 - Modify: `src/renderer/src/components/dashboard/CenterColumn.tsx`
+- Modify: `src/renderer/src/components/dashboard/ActivitySection.tsx` — **remove the two `<FailureBreakdown />` and `<SpecTypeSuccessRate />` renders along with their imports**. The "Recent Completions" card, "Tokens / Run" card, and "Tokens 24h" card stay. These two children are subsumed by the FiresStrip and removed from the dashboard per spec. (Task 1 preflight confirmed these are the only consumers of those components.)
 - Modify: `src/renderer/src/components/dashboard/index.ts` (exports)
 
 - [ ] **Step 1: Update `components/dashboard/index.ts` to export the new components**
@@ -1723,6 +1724,8 @@ git commit -m "feat(dashboard): integrate new charts, Fires strip, and StatusRai
 ---
 
 ### Task 13: Delete obsolete code
+
+**Scope note:** The backend data pipelines for `getSuccessRateBySpecType` (sprint-queries → sprint-service → sprint-task-repository → sprint-local IPC handler → preload bridge) and `getFailureBreakdown` (sprint-local IPC handler → preload bridge) are **intentionally left in place** as dead code for this PR. Removing them is a separate scope that touches repository/service layers and their tests. This PR is purely a dashboard redesign; backend cleanup can be a follow-up. Only the renderer-side components and their direct dependencies (burndown handler, burndown IPC type, burndown preload method) are removed here.
 
 **Files:**
 - Delete: `src/renderer/src/components/dashboard/SuccessRing.tsx`
