@@ -8,12 +8,15 @@ import { useSprintUI, type StatusFilter } from '../stores/sprintUI'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics'
 import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
+import { useBackoffInterval } from '../hooks/useBackoffInterval'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
+import { POLL_LOAD_AVERAGE } from '../lib/constants'
 import { StatusBar, NeonCard, ParticleField } from '../components/neon'
 import { neonVar } from '../components/neon/types'
 import { partitionSprintTasks } from '../lib/partitionSprintTasks'
 import {
-  StatusCounters,
+  StatusRail,
+  FiresStrip,
   CenterColumn,
   ActivitySection,
   MorningBriefing
@@ -69,10 +72,11 @@ export default function DashboardView(): React.JSX.Element {
   }, [])
 
   // Dashboard data from centralized polling
-  const { throughputData, feedEvents, successTrendData, loading, cardErrors, lastFetchedAt } =
+  const { throughputData, loadData, feedEvents, successTrendData, loading, cardErrors, lastFetchedAt } =
     useDashboardDataStore(
       useShallow((s) => ({
         throughputData: s.throughputData,
+        loadData: s.loadData,
         feedEvents: s.feedEvents,
         successTrendData: s.successTrendData,
         loading: s.loading,
@@ -80,6 +84,13 @@ export default function DashboardView(): React.JSX.Element {
         lastFetchedAt: s.lastFetchedAt
       }))
     )
+
+  // Load average polling — 5s backoff interval
+  const fetchLoad = useDashboardDataStore((s) => s.fetchLoad)
+  useEffect(() => {
+    fetchLoad()
+  }, [fetchLoad])
+  useBackoffInterval(fetchLoad, POLL_LOAD_AVERAGE)
 
   // Timestamp counter to re-evaluate freshness every 10s (pauses when tab hidden)
   const [now, setNow] = useState(() => Date.now())
@@ -131,20 +142,42 @@ export default function DashboardView(): React.JSX.Element {
     navigateToSprintWithFilter('done')
   }, [navigateToSprintWithFilter])
 
+  /** Maps StatusRail's limited 'active'|'queued'|'done' emissions to real StatusFilter values. */
+  const handleRailFilter = useCallback(
+    (kind: 'active' | 'queued' | 'done') => {
+      const mapped: StatusFilter =
+        kind === 'active' ? 'in-progress' : kind === 'queued' ? 'todo' : 'done'
+      navigateToSprintWithFilter(mapped)
+    },
+    [navigateToSprintWithFilter]
+  )
+
+  const handleFiresClick = useCallback(
+    (kind: 'failed' | 'blocked' | 'stuck' | 'load') => {
+      if (kind === 'failed') navigateToSprintWithFilter('failed')
+      else if (kind === 'blocked') navigateToSprintWithFilter('blocked')
+      else if (kind === 'stuck') navigateToSprintWithFilter('in-progress')
+      else if (kind === 'load') {
+        document
+          .querySelector('[data-chart="load-average"]')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    },
+    [navigateToSprintWithFilter]
+  )
+
   const partitions = useMemo(() => partitionSprintTasks(tasks), [tasks])
 
   // Dashboard metrics — extracted to reusable hook
   const {
     stats,
-    successRate,
-    avgDuration,
-    avgTaskDuration,
-    taskDurationCount,
     tokenTrendData,
     tokenAvg,
     recentCompletions,
     tokens24h,
-    taskTokenMap
+    taskTokenMap,
+    stuckCount,
+    loadSaturated
   } = useDashboardMetrics()
 
   const errorCount = useMemo(() => Object.values(cardErrors).filter(Boolean).length, [cardErrors])
@@ -221,11 +254,19 @@ export default function DashboardView(): React.JSX.Element {
             </NeonCard>
           </div>
         ) : (
+          <>
+            <FiresStrip
+              failed={stats.failed}
+              blocked={stats.blocked}
+              stuck={stuckCount}
+              loadSaturated={loadSaturated}
+              onClick={handleFiresClick}
+            />
           <div className="dashboard-grid" role="region" aria-label="Dashboard overview">
-            <StatusCounters
+            <StatusRail
               stats={stats}
-              awaitingReviewCount={partitions.awaitingReview.length}
-              onFilterClick={navigateToSprintWithFilter}
+              tokens24h={tokens24h}
+              onFilterClick={handleRailFilter}
               onNewTaskClick={() => setView('task-workbench')}
             />
 
@@ -233,13 +274,11 @@ export default function DashboardView(): React.JSX.Element {
               stats={stats}
               partitions={partitions}
               throughputData={throughputData}
-              cardErrors={cardErrors}
-              successRate={successRate}
-              avgDuration={avgDuration}
-              avgTaskDuration={avgTaskDuration}
-              taskDurationCount={taskDurationCount}
-              localAgents={localAgents}
               successTrendData={successTrendData}
+              loadData={loadData}
+              tokenTrendData={tokenTrendData}
+              tokenAvg={tokenAvg}
+              cardErrors={cardErrors}
               onFilterClick={navigateToSprintWithFilter}
             />
 
@@ -255,6 +294,7 @@ export default function DashboardView(): React.JSX.Element {
               onCompletionClick={handleCompletionClick}
             />
           </div>
+          </>
         )}
       </div>
     </motion.div>

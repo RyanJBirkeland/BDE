@@ -93,22 +93,23 @@ describe('DashboardView', () => {
     expect(screen.getByText('BDE Command Center')).toBeInTheDocument()
   })
 
-  it('renders stat counters for key metrics', () => {
+  it('renders stat rail for key metrics', () => {
     render(<DashboardView />)
     expect(screen.getByText('Active')).toBeInTheDocument()
     expect(screen.getByText('Queued')).toBeInTheDocument()
-    expect(screen.getByText('Blocked')).toBeInTheDocument()
-    expect(screen.getByText('PRs')).toBeInTheDocument()
-    expect(screen.getByText('Done')).toBeInTheDocument()
+    // Done label is in a div with subtext siblings — query by role
+    expect(screen.getAllByRole('button', { name: /done/i }).length).toBeGreaterThan(0)
+    // Tokens 24h appears in both StatusRail and ActivitySection
+    expect(screen.getAllByText('Tokens 24h').length).toBeGreaterThan(0)
   })
 
   it('renders pipeline and token sections', () => {
     render(<DashboardView />)
     expect(screen.getByText('Pipeline')).toBeInTheDocument()
-    expect(screen.getByText('Tokens 24h')).toBeInTheDocument()
+    expect(screen.getByText('Throughput · last 24h')).toBeInTheDocument()
   })
 
-  it('clicking Active stat navigates to Sprint with in-progress filter', () => {
+  it('clicking Active rail tile navigates to Sprint with in-progress filter', () => {
     render(<DashboardView />)
     const activeStat = screen.getByText('Active').closest('button')!
     fireEvent.click(activeStat)
@@ -117,24 +118,15 @@ describe('DashboardView', () => {
     expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
-  it('clicking Done stat navigates to Sprint with done filter', () => {
+  it('clicking Done rail tile navigates to Sprint with done filter', () => {
     render(<DashboardView />)
-    // "Done" may appear in both stats and pipeline — find the one in a button
-    const doneStats = screen.getAllByText('Done')
-    const doneStat = doneStats.find((el) => el.closest('button'))!.closest('button')!
-    fireEvent.click(doneStat)
+    // Done tile is a button with data-role="rail-tile"
+    const doneTiles = screen.getAllByRole('button', { name: /done/i })
+    // Find the rail tile (not the pipeline stage button)
+    const doneTile = doneTiles.find((el) => el.getAttribute('data-role') === 'rail-tile')!
+    fireEvent.click(doneTile)
 
     expect(useSprintUI.getState().statusFilter).toBe('done')
-    expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
-  })
-
-  it('clicking Blocked stat navigates to Sprint with blocked filter', () => {
-    render(<DashboardView />)
-    const blockedElements = screen.getAllByText('Blocked')
-    const blockedStat = blockedElements.find((el) => el.closest('button'))!.closest('button')!
-    fireEvent.click(blockedStat)
-
-    expect(useSprintUI.getState().statusFilter).toBe('blocked')
     expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
@@ -147,7 +139,7 @@ describe('DashboardView', () => {
       loading: false
     })
     render(<DashboardView />)
-    expect(screen.getByText('Completions by Hour')).toBeInTheDocument()
+    expect(screen.getByText('Throughput · last 24h')).toBeInTheDocument()
   })
 
   it('renders feed events from recentEvents', () => {
@@ -184,128 +176,22 @@ describe('DashboardView', () => {
     expect(screen.getAllByText('1').length).toBeGreaterThan(0) // Review and Active both show 1
   })
 
-  // ---------- Branch coverage: SuccessRing (rate null vs values) ----------
+  // ---------- Branch coverage: tokens/run card ----------
 
-  it('shows "No terminal tasks" when no done/failed tasks', () => {
+  it('shows dash when no token data available', () => {
     render(<DashboardView />)
-    expect(
-      screen.getByText('No terminal tasks yet. Queue and run tasks to see success metrics.')
-    ).toBeInTheDocument()
-  })
-
-  it('shows success ring with percentage when done tasks exist', () => {
-    vi.mocked(useSprintTasks).mockImplementation((selector: any) =>
-      selector({
-        tasks: [
-          { id: '1', status: 'done', title: 'T1', completed_at: new Date().toISOString() },
-          { id: '2', status: 'done', title: 'T2', completed_at: new Date().toISOString() },
-          { id: '3', status: 'failed', title: 'T3' }
-        ],
-        loading: false,
-        loadData: vi.fn()
-      })
-    )
-    render(<DashboardView />)
-    // 2 done, 1 failed = 67%
-    expect(screen.getByText('67%')).toBeInTheDocument()
-    expect(screen.getByText(/2✓/)).toBeInTheDocument()
-    expect(screen.getByText(/1✗/)).toBeInTheDocument()
-  })
-
-  it('shows success ring with high rate (>=80) cyan accent', () => {
-    vi.mocked(useSprintTasks).mockImplementation((selector: any) =>
-      selector({
-        tasks: [
-          { id: '1', status: 'done', title: 'T1', completed_at: new Date().toISOString() },
-          { id: '2', status: 'done', title: 'T2', completed_at: new Date().toISOString() },
-          { id: '3', status: 'done', title: 'T3', completed_at: new Date().toISOString() },
-          { id: '4', status: 'done', title: 'T4', completed_at: new Date().toISOString() },
-          { id: '5', status: 'failed', title: 'T5' }
-        ],
-        loading: false,
-        loadData: vi.fn()
-      })
-    )
-    render(<DashboardView />)
-    expect(screen.getByText('80%')).toBeInTheDocument()
-  })
-
-  // ---------- Branch coverage: avgDuration (null vs value) ----------
-
-  it('shows dash when no agent durations available', () => {
-    render(<DashboardView />)
-    // avgDuration is null, should show '—'
+    // tokenAvg is null, should show '—' in tokens/run card
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
-  it('shows formatted duration when agent runs have duration', () => {
-    vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
-      selector({
-        localAgents: [
-          {
-            id: 'a1',
-            durationMs: 120000,
-            costUsd: 0.5,
-            startedAt: new Date().toISOString(),
-            taskTitle: 'T1'
-          },
-          {
-            id: 'a2',
-            durationMs: 180000,
-            costUsd: 0.3,
-            startedAt: new Date().toISOString(),
-            taskTitle: 'T2'
-          }
-        ],
-        totalTokens: 0.8,
-        fetchLocalAgents: vi.fn()
-      })
-    )
+  it('shows success rate chart card', () => {
     render(<DashboardView />)
-    // avg = 150000ms = 150s = 2m 30s
-    expect(screen.getByText('2m 30s')).toBeInTheDocument()
-    expect(screen.getByText('2 runs tracked')).toBeInTheDocument()
+    expect(screen.getByText('Success rate · last 14d')).toBeInTheDocument()
   })
 
-  it('shows hours in duration for long runs', () => {
-    vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
-      selector({
-        localAgents: [
-          {
-            id: 'a1',
-            durationMs: 7200000,
-            costUsd: 1.0,
-            startedAt: new Date().toISOString(),
-            taskTitle: 'T1'
-          }
-        ],
-        totalTokens: 1.0,
-        fetchLocalAgents: vi.fn()
-      })
-    )
+  it('shows system load chart card', () => {
     render(<DashboardView />)
-    // 7200000ms = 2h 0m
-    expect(screen.getByText('2h 0m')).toBeInTheDocument()
-  })
-
-  it('shows seconds for short durations', () => {
-    vi.mocked(useCostDataStore).mockImplementation((selector: any) =>
-      selector({
-        localAgents: [
-          {
-            id: 'a1',
-            durationMs: 45000,
-            costUsd: 0.1,
-            startedAt: new Date().toISOString(),
-            taskTitle: 'T1'
-          }
-        ],
-        totalTokens: 0.1,
-        fetchLocalAgents: vi.fn()
-      })
-    )
-    render(<DashboardView />)
-    expect(screen.getByText('45s')).toBeInTheDocument()
+    expect(screen.getByText('System load · last 10m')).toBeInTheDocument()
   })
 
   // ---------- Branch coverage: recentCompletions ----------
@@ -380,28 +266,19 @@ describe('DashboardView', () => {
       throughputData: []
     })
     render(<DashboardView />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    // Multiple "Loading..." elements may appear (status bar + load card)
+    expect(screen.getAllByText('Loading...').length).toBeGreaterThan(0)
   })
 
   // ---------- Branch coverage: clicking Queued and PRs stats ----------
 
-  it('clicking Queued stat navigates to Sprint with todo filter', () => {
+  it('clicking Queued rail tile navigates to Sprint with todo filter', () => {
     render(<DashboardView />)
     const queuedElements = screen.getAllByText('Queued')
     const queuedStat = queuedElements.find((el) => el.closest('button'))!.closest('button')!
     fireEvent.click(queuedStat)
 
     expect(useSprintUI.getState().statusFilter).toBe('todo')
-    expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
-  })
-
-  it('clicking PRs stat navigates to Sprint with awaiting-review filter', () => {
-    render(<DashboardView />)
-    const prsElements = screen.getAllByText('PRs')
-    const prsStat = prsElements.find((el) => el.closest('button'))!.closest('button')!
-    fireEvent.click(prsStat)
-
-    expect(useSprintUI.getState().statusFilter).toBe('awaiting-review')
     expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
@@ -433,9 +310,9 @@ describe('DashboardView', () => {
     expect(usePanelLayoutStore.getState().activeView).toBe('task-workbench')
   })
 
-  // ---------- Branch coverage: attention card ----------
+  // ---------- Branch coverage: fires strip ----------
 
-  it('shows attention card when there are failed tasks', () => {
+  it('shows fires strip when there are failed tasks', () => {
     vi.mocked(useSprintTasks).mockImplementation((selector: any) =>
       selector({
         tasks: [
@@ -447,11 +324,11 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    expect(screen.getByText('Attention')).toBeInTheDocument()
-    expect(screen.getByText('1 failed task')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Dashboard alerts' })).toBeInTheDocument()
+    expect(screen.getByText('1 failed')).toBeInTheDocument()
   })
 
-  it('does not show attention card when no issues', () => {
+  it('does not show fires strip when no issues', () => {
     vi.mocked(useSprintTasks).mockImplementation((selector: any) =>
       selector({
         tasks: [
@@ -462,7 +339,7 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    expect(screen.queryByText('Attention')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Dashboard alerts' })).not.toBeInTheDocument()
   })
 
   // ---------- Branch coverage: cost trend data ----------

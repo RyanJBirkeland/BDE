@@ -40,7 +40,7 @@ describe('dashboardDataStore', () => {
 
   it('store no longer exposes burndownData', () => {
     const s = useDashboardDataStore.getState()
-    expect((s as Record<string, unknown>).burndownData).toBeUndefined()
+    expect((s as unknown as Record<string, unknown>).burndownData).toBeUndefined()
   })
 
   it('fetchAll populates throughputData with hour/success/failed', async () => {

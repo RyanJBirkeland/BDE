@@ -4,8 +4,6 @@ import { timeAgo, formatTokens } from '../../lib/format'
 import { CheckCircle, TrendingUp, Gauge } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 import type { FeedEvent } from '../neon/ActivityFeed'
-import { FailureBreakdown } from './FailureBreakdown'
-import { SpecTypeSuccessRate } from './SpecTypeSuccessRate'
 
 interface ActivitySectionProps {
   feedEvents: FeedEvent[]
@@ -85,10 +83,6 @@ export function ActivitySection({
           )}
         </div>
       </NeonCard>
-
-      <FailureBreakdown />
-
-      <SpecTypeSuccessRate />
 
       <NeonCard accent="cyan" title="Tokens / Run" icon={<TrendingUp size={12} />}>
         <MiniChart data={tokenTrendData} height={80} />
