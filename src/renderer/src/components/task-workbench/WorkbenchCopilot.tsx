@@ -249,6 +249,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
           placeholder="Ask about the codebase, brainstorm approaches..."
           rows={2}
           className="wb-copilot__input"
+          aria-label="Copilot chat input"
         />
         <button
           onClick={handleSend}

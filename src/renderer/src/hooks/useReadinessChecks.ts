@@ -31,7 +31,8 @@ export function computeStructuralChecks(
     label: 'Title',
     tier: 1,
     status: form.title.trim() ? 'pass' : 'fail',
-    message: form.title.trim() ? 'Title provided' : 'Title is required'
+    message: form.title.trim() ? 'Title provided' : 'Title is required',
+    fieldId: 'wb-form-title'
   })
 
   // Repo selected
@@ -40,7 +41,8 @@ export function computeStructuralChecks(
     label: 'Repo',
     tier: 1,
     status: form.repo ? 'pass' : 'fail',
-    message: form.repo ? `Repo: ${form.repo}` : 'No repo selected'
+    message: form.repo ? `Repo: ${form.repo}` : 'No repo selected',
+    fieldId: 'wb-form-repo'
   })
 
   // Spec present
@@ -74,7 +76,14 @@ export function computeStructuralChecks(
       specMsg = `Spec: ${specLen} characters`
     }
   }
-  checks.push({ id: 'spec-present', label: 'Spec', tier: 1, status: specStatus, message: specMsg })
+  checks.push({
+    id: 'spec-present',
+    label: 'Spec',
+    tier: 1,
+    status: specStatus,
+    message: specMsg,
+    fieldId: 'wb-form-spec'
+  })
 
   // Spec has structure (markdown headings)
   const skipStructure = profile && profile.specStructure.behavior === 'skip'
@@ -101,7 +110,8 @@ export function computeStructuralChecks(
       label: 'Structure',
       tier: 1,
       status: structureStatus,
-      message: structureMsg
+      message: structureMsg,
+      fieldId: 'wb-form-spec'
     })
   }
 
@@ -113,7 +123,8 @@ export function computeStructuralChecks(
       label: 'File Paths',
       tier: 1,
       status: 'pass',
-      message: `${filePaths.length} path${filePaths.length === 1 ? '' : 's'} referenced — verify these exist`
+      message: `${filePaths.length} path${filePaths.length === 1 ? '' : 's'} referenced — verify these exist`,
+      fieldId: 'wb-form-spec'
     })
   }
 
@@ -174,7 +185,8 @@ export function checkAntiPatterns(spec: string): CheckResult {
     status: matched ? 'warn' : 'pass',
     message: matched
       ? 'Pipeline agents need explicit execution instructions, not exploration directives.'
-      : 'No exploration language detected'
+      : 'No exploration language detected',
+    fieldId: 'wb-form-spec'
   }
 }
 
@@ -189,7 +201,8 @@ export function checkTestSection(spec: string): CheckResult {
     status: hasTestSection ? 'pass' : 'warn',
     message: hasTestSection
       ? 'Testing section found'
-      : 'No testing section found. Agent may skip tests or write incompatible ones.'
+      : 'No testing section found. Agent may skip tests or write incompatible ones.',
+    fieldId: 'wb-form-spec'
   }
 }
 
@@ -206,7 +219,8 @@ export function checkHandlerCountAwareness(spec: string): CheckResult | null {
     status: mentionsTest ? 'pass' : 'warn',
     message: mentionsTest
       ? 'Handler count test update mentioned'
-      : "Spec mentions adding handlers but doesn't mention updating handler count tests."
+      : "Spec mentions adding handlers but doesn't mention updating handler count tests.",
+    fieldId: 'wb-form-spec'
   }
 }
 
@@ -223,7 +237,8 @@ export function checkPreloadSync(spec: string): CheckResult | null {
     status: mentionsDts ? 'pass' : 'warn',
     message: mentionsDts
       ? 'Type declaration update mentioned'
-      : "Spec modifies preload but doesn't mention updating type declarations (index.d.ts)."
+      : "Spec modifies preload but doesn't mention updating type declarations (index.d.ts).",
+    fieldId: 'wb-form-spec'
   }
 }
 
@@ -239,7 +254,8 @@ export function checkComplexity(spec: string): CheckResult {
       label: 'Complexity',
       tier: 1,
       status: 'fail',
-      message: `Very broad scope (${n} files). Likely too large for one agent session.`
+      message: `Very broad scope (${n} files). Likely too large for one agent session.`,
+      fieldId: 'wb-form-spec'
     }
   }
   if (n >= COMPLEXITY_MED_THRESHOLD) {
@@ -248,7 +264,8 @@ export function checkComplexity(spec: string): CheckResult {
       label: 'Complexity',
       tier: 1,
       status: 'warn',
-      message: `Broad scope (${n} files). Consider splitting into smaller tasks.`
+      message: `Broad scope (${n} files). Consider splitting into smaller tasks.`,
+      fieldId: 'wb-form-spec'
     }
   }
   return {
@@ -256,7 +273,8 @@ export function checkComplexity(spec: string): CheckResult {
     label: 'Complexity',
     tier: 1,
     status: 'pass',
-    message: n === 0 ? 'Reasonable scope' : `Reasonable scope (${n} files)`
+    message: n === 0 ? 'Reasonable scope' : `Reasonable scope (${n} files)`,
+    fieldId: 'wb-form-spec'
   }
 }
 

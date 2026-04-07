@@ -18,6 +18,32 @@ const PRIORITY_OPTIONS = [
   { label: 'P5 Backlog', value: 5 }
 ] as const
 
+const MIN_SPEC_LENGTH_FOR_QUEUE = 50
+
+interface QueueBlockerSnapshot {
+  repo: string
+  spec: string
+  structuralChecks: { status: string; label: string }[]
+  operationalChecks: { status: string; label: string }[]
+}
+
+/**
+ * Returns a human-readable reason the queue action is blocked, or `null` if
+ * it's safe to queue. Used by the Cmd+Enter handler to surface a toast when
+ * the shortcut would otherwise be a silent no-op.
+ */
+function describeQueueBlocker(state: QueueBlockerSnapshot): string | null {
+  if (!state.repo) return 'select a repo'
+  if (state.spec.trim().length < MIN_SPEC_LENGTH_FOR_QUEUE) {
+    return `spec is too short (needs ${MIN_SPEC_LENGTH_FOR_QUEUE}+ characters)`
+  }
+  const structuralFail = state.structuralChecks.find((c) => c.status === 'fail')
+  if (structuralFail) return `${structuralFail.label} check failed`
+  const operationalFail = state.operationalChecks.find((c) => c.status === 'fail')
+  if (operationalFail) return `${operationalFail.label} check failed`
+  return null
+}
+
 interface WorkbenchFormProps {
   onSendCopilotMessage: (message: string) => void
 }
@@ -129,28 +155,52 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
             label: 'Clarity',
             tier: 2,
             status: result.clarity.status,
-            message: result.clarity.message
+            message: result.clarity.message,
+            fieldId: 'wb-form-spec'
           },
           {
             id: 'scope',
             label: 'Scope',
             tier: 2,
             status: result.scope.status,
-            message: result.scope.message
+            message: result.scope.message,
+            fieldId: 'wb-form-spec'
           },
           {
             id: 'files-exist',
             label: 'Files',
             tier: 2,
             status: result.filesExist.status,
-            message: result.filesExist.message
+            message: result.filesExist.message,
+            fieldId: 'wb-form-spec'
           }
         ])
       } catch {
         setSemanticChecks([
-          { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Unable to check' },
-          { id: 'scope', label: 'Scope', tier: 2, status: 'warn', message: 'Unable to check' },
-          { id: 'files-exist', label: 'Files', tier: 2, status: 'warn', message: 'Unable to check' }
+          {
+            id: 'clarity',
+            label: 'Clarity',
+            tier: 2,
+            status: 'warn',
+            message: 'Unable to check',
+            fieldId: 'wb-form-spec'
+          },
+          {
+            id: 'scope',
+            label: 'Scope',
+            tier: 2,
+            status: 'warn',
+            message: 'Unable to check',
+            fieldId: 'wb-form-spec'
+          },
+          {
+            id: 'files-exist',
+            label: 'Files',
+            tier: 2,
+            status: 'warn',
+            message: 'Unable to check',
+            fieldId: 'wb-form-spec'
+          }
         ])
       }
     }, 2000)
@@ -184,21 +234,24 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
               label: 'Repo Path',
               tier: 3 as const,
               status: opResult.repoPath.status,
-              message: opResult.repoPath.message
+              message: opResult.repoPath.message,
+              fieldId: 'wb-form-repo'
             },
             {
               id: 'git-clean',
               label: 'Git Clean',
               tier: 3 as const,
               status: opResult.gitClean.status,
-              message: opResult.gitClean.message
+              message: opResult.gitClean.message,
+              fieldId: 'wb-form-repo'
             },
             {
               id: 'no-conflict',
               label: 'No Conflict',
               tier: 3 as const,
               status: opResult.noConflict.status,
-              message: opResult.noConflict.message
+              message: opResult.noConflict.message,
+              fieldId: 'wb-form-repo'
             },
             {
               id: 'slots',
@@ -237,7 +290,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           }
         }
 
-        // Proceed with create/update
+        // Proceed with create/update — resetForm clears the saved draft too,
+        // so the next create-mode session starts blank.
         await createOrUpdateTask(action === 'queue' ? 'queued' : 'backlog')
         resetForm()
         toast.success(mode === 'edit' && taskId ? 'Task updated' : 'Task created')
@@ -290,23 +344,25 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
     onSendCopilotMessage(`Research the ${repo} codebase for: ${title}`)
   }, [title, repo, onSendCopilotMessage])
 
-  // Keyboard shortcuts: Cmd+Enter to submit
+  // Keyboard shortcuts: Cmd+Enter to submit (with feedback when blocked)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Enter' && e.metaKey) {
-        e.preventDefault()
-        const state = useTaskWorkbenchStore.getState()
-        const structural = state.structuralChecks
-        const operational = state.operationalChecks
-        const noTier1Fails = structural.every((c) => c.status !== 'fail')
-        const tier3HasFails = operational.some((c) => c.status === 'fail')
-        const hasRepo = !!state.repo
-        const specLongEnough = state.spec.trim().length >= 50
-        const canQueue = noTier1Fails && !tier3HasFails && hasRepo && specLongEnough
-        if (canQueue && !submitting) {
-          handleSubmit('queue')
-        }
+      if (e.key !== 'Enter' || !e.metaKey) return
+      e.preventDefault()
+
+      if (submitting) return // ignore while a submit is in flight
+
+      const state = useTaskWorkbenchStore.getState()
+      const reason = describeQueueBlocker(state)
+
+      if (reason === null) {
+        handleSubmit('queue')
+        return
       }
+
+      // Surface why the shortcut was a no-op so users aren't left guessing.
+      toast.error(`Can't queue: ${reason}`)
+      useTaskWorkbenchStore.setState({ checksExpanded: true })
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -434,9 +490,12 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
             <div className="wb-form__field" style={{ marginTop: '1rem' }}>
               <button
                 type="button"
+                id="wb-form-contract-toggle"
                 onClick={() => setContractExpanded(!contractExpanded)}
                 className="wb-form__toggle"
                 style={{ marginBottom: '0.5rem' }}
+                aria-expanded={contractExpanded}
+                aria-controls="wb-form-contract"
               >
                 {contractExpanded ? '\u25be' : '\u25b8'} Cross-Repo Contract
               </button>
@@ -444,6 +503,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
                 <div>
                   <textarea
                     id="wb-form-contract"
+                    aria-labelledby="wb-form-contract-toggle"
                     value={crossRepoContract ?? ''}
                     onChange={(e) => setField('crossRepoContract', e.target.value)}
                     placeholder="e.g. SprintTask type definition, API endpoint contracts, shared types..."

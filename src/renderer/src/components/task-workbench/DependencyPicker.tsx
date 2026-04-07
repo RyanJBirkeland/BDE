@@ -100,8 +100,10 @@ export function DependencyPicker({
   }
 
   return (
-    <div className="wb-deps" ref={containerRef}>
-      <label className="wb-form__label">Dependencies</label>
+    <div className="wb-deps" ref={containerRef} role="group" aria-labelledby="wb-deps-label">
+      <div id="wb-deps-label" className="wb-form__label">
+        Dependencies
+      </div>
 
       {dependencies.length > 0 && (
         <ul className="wb-deps__list" aria-label="Selected dependencies">

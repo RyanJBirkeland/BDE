@@ -1,5 +1,27 @@
+import { useCallback } from 'react'
 import { Check, AlertTriangle, X, Loader2 } from 'lucide-react'
 import { useTaskWorkbenchStore, type CheckResult } from '../../stores/taskWorkbench'
+
+/**
+ * Focus a form field by id and scroll it into view. Used by the readiness
+ * check list so users can click a failure → land on the offending field.
+ * Returns true if a field was found and focused.
+ */
+function focusFieldById(fieldId: string): boolean {
+  const el = document.getElementById(fieldId)
+  if (!el) return false
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  if (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    el instanceof HTMLSelectElement
+  ) {
+    el.focus()
+  } else {
+    ;(el as HTMLElement).focus?.()
+  }
+  return true
+}
 
 const STATUS_ICON_MAP: Record<
   CheckResult['status'],
@@ -37,8 +59,24 @@ export function ReadinessChecks(): React.JSX.Element | null {
 
   if (total === 0 && !isLoading) return null
 
+  const failCount = allChecks.filter((c) => c.status === 'fail').length
+  const warnCount = allChecks.filter((c) => c.status === 'warn').length
+  const liveSummary = isLoading
+    ? 'Running readiness checks…'
+    : `${passing} of ${total} checks passing` +
+      (failCount > 0 ? `, ${failCount} failing` : '') +
+      (warnCount > 0 ? `, ${warnCount} warning${warnCount === 1 ? '' : 's'}` : '')
+
   return (
-    <div className={`wb-checks${hasFailures ? ' wb-checks--has-fail' : ''}`}>
+    <div
+      className={`wb-checks${hasFailures ? ' wb-checks--has-fail' : ''}`}
+      role="region"
+      aria-label="Readiness checks"
+    >
+      {/* Screen-reader live announcer — visually hidden, updates on every check change */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {liveSummary}
+      </div>
       <button
         onClick={toggleExpanded}
         className="wb-checks__summary"
@@ -46,7 +84,7 @@ export function ReadinessChecks(): React.JSX.Element | null {
         aria-label="Toggle readiness checks"
       >
         <span>{expanded ? '\u25be' : '\u25b8'}</span>
-        <span className="wb-checks__icons">
+        <span className="wb-checks__icons" aria-hidden="true">
           {isLoading && (
             <span title="Running checks..." className="wb-check-icon wb-check-icon--pending">
               <Loader2 size={14} className="wb-spinner" />
@@ -63,16 +101,44 @@ export function ReadinessChecks(): React.JSX.Element | null {
         </span>
       </button>
       {expanded && (
-        <div className="wb-checks__list">
+        <ul className="wb-checks__list">
           {allChecks.map((c) => (
-            <div key={c.id} className="wb-checks__item">
-              <CheckIcon status={c.status} />
-              <span className="wb-checks__item-label">{c.label}</span>
-              <span className="wb-checks__item-msg">{c.message}</span>
-            </div>
+            <CheckListItem key={c.id} check={c} />
           ))}
-        </div>
+        </ul>
       )}
     </div>
+  )
+}
+
+function CheckListItem({ check }: { check: CheckResult }): React.JSX.Element {
+  const actionable = (check.status === 'fail' || check.status === 'warn') && !!check.fieldId
+  const handleClick = useCallback(() => {
+    if (check.fieldId) focusFieldById(check.fieldId)
+  }, [check.fieldId])
+
+  if (actionable) {
+    return (
+      <li>
+        <button
+          type="button"
+          className="wb-checks__item wb-checks__item--actionable"
+          onClick={handleClick}
+          aria-label={`${check.status === 'fail' ? 'Failed' : 'Warning'}: ${check.label}. ${check.message}. Click to focus field.`}
+        >
+          <CheckIcon status={check.status} />
+          <span className="wb-checks__item-label">{check.label}</span>
+          <span className="wb-checks__item-msg">{check.message}</span>
+        </button>
+      </li>
+    )
+  }
+
+  return (
+    <li className="wb-checks__item">
+      <CheckIcon status={check.status} />
+      <span className="wb-checks__item-label">{check.label}</span>
+      <span className="wb-checks__item-msg">{check.message}</span>
+    </li>
   )
 }
