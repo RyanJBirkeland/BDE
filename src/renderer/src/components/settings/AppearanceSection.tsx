@@ -70,18 +70,16 @@ export function AppearanceSection(): React.JSX.Element {
   return (
     <>
       <SettingsCard title="Theme" subtitle="Choose your visual theme">
-        <div
-          style={{
-            fontSize: 11,
-            color: 'var(--bde-text-dim)',
-            marginBottom: 6,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}
-        >
-          Fun
-        </div>
         <div className="settings-theme-buttons">
+          <button
+            className={`bde-btn bde-btn--sm ${theme === 'system' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+            onClick={() => setTheme('system')}
+            type="button"
+            aria-pressed={theme === 'system'}
+            title="Follow the OS light/dark mode preference"
+          >
+            System
+          </button>
           <button
             className={`bde-btn bde-btn--sm ${theme === 'dark' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
             onClick={() => setTheme('dark')}
@@ -105,36 +103,6 @@ export function AppearanceSection(): React.JSX.Element {
             aria-pressed={theme === 'warm'}
           >
             Warm
-          </button>
-        </div>
-        <div
-          style={{
-            fontSize: 11,
-            color: 'var(--bde-text-dim)',
-            marginBottom: 6,
-            marginTop: 12,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}
-        >
-          Professional
-        </div>
-        <div className="settings-theme-buttons">
-          <button
-            className={`bde-btn bde-btn--sm ${theme === 'pro-dark' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
-            onClick={() => setTheme('pro-dark')}
-            type="button"
-            aria-pressed={theme === 'pro-dark'}
-          >
-            Pro Dark
-          </button>
-          <button
-            className={`bde-btn bde-btn--sm ${theme === 'pro-light' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
-            onClick={() => setTheme('pro-light')}
-            type="button"
-            aria-pressed={theme === 'pro-light'}
-          >
-            Pro Light
           </button>
         </div>
       </SettingsCard>
