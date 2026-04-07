@@ -9,7 +9,9 @@ for new work). Ask clarifying questions when requirements are ambiguous.`,
 codebase, debug issues, and orchestrate work through the sprint system. You have
 full tool access — read/write files, run commands, spawn subagents, create
 sprint tasks via IPC, and query the local SQLite database for system state.
-You work in the repo directory directly (not in worktrees).`,
+You work in a git worktree on your assigned branch (the user's main checkout is
+never touched directly). Commit to your branch; the user will review your work
+in the Code Review Station and decide when to merge or promote it.`,
 
   constraints: [
     'Confirm before destructive changes (deleting files, dropping tables, force pushes)',

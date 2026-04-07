@@ -22,12 +22,27 @@ describe('buildAgentPrompt', () => {
         expect(prompt).toContain('## Who You Are')
         expect(prompt).toContain('## Hard Rules')
         expect(prompt).toContain('NEVER push to, checkout, or merge into `main`')
-        expect(prompt).toContain('npm install')
         expect(prompt).toContain('## MANDATORY Pre-Commit Verification')
         expect(prompt).toContain('`npm run typecheck`')
-        expect(prompt).toContain('`npm test`')
+        expect(prompt).toContain('`npm run test:coverage`')
         expect(prompt).toContain('`npm run lint`')
       }
+    })
+
+    it('does NOT hardcode a test count in the preamble', () => {
+      // The preamble must not include a brittle "currently N+ tests" string
+      // (drifts as tests are added/removed; violates testing-patterns memory module).
+      const prompt = buildAgentPrompt({ agentType: 'pipeline' })
+      expect(prompt).not.toMatch(/\d{3,}\+?\s*tests/)
+    })
+
+    it('does NOT force npm install on non-pipeline agents', () => {
+      // Copilot and synthesizer have no Bash tool and cannot run npm install.
+      // The install rule belongs only in the pipeline-only appendix.
+      const copilotPrompt = buildAgentPrompt({ agentType: 'copilot' })
+      const synthesizerPrompt = buildAgentPrompt({ agentType: 'synthesizer' })
+      expect(copilotPrompt).not.toContain('npm install')
+      expect(synthesizerPrompt).not.toContain('npm install')
     })
   })
 
@@ -500,7 +515,7 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
       expect(prompt).toContain('## Definition of Done')
       expect(prompt).toContain('npm run typecheck')
-      expect(prompt).toContain('npm test')
+      expect(prompt).toContain('npm run test:coverage')
       expect(prompt).toContain('npm run lint')
     })
 
@@ -510,18 +525,26 @@ describe('buildAgentPrompt', () => {
     })
   })
 
-  describe('npm install preamble', () => {
-    it('tells agent npm install is mandatory first action', () => {
+  describe('pipeline setup rule', () => {
+    it('tells pipeline agent to run npm install before verification commands', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
-      expect(prompt).toContain('FIRST action')
+      expect(prompt).toContain('## Pipeline Worktree Setup')
       expect(prompt).toContain('npm install')
+      expect(prompt).toContain('before invoking')
     })
 
-    it('tells agent to abort if npm install fails', () => {
+    it('tells pipeline agent to report and exit if npm install fails', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
       expect(prompt).toContain('If `npm install` fails')
-      expect(prompt).toContain('exit immediately')
-      expect(prompt).toContain('Do not proceed without dependencies')
+      expect(prompt).toContain('report the error')
+    })
+
+    it('does not include pipeline setup rule for non-pipeline agents', () => {
+      const types: AgentType[] = ['assistant', 'adhoc', 'copilot', 'synthesizer']
+      for (const agentType of types) {
+        const prompt = buildAgentPrompt({ agentType })
+        expect(prompt).not.toContain('## Pipeline Worktree Setup')
+      }
     })
   })
 

@@ -3,7 +3,7 @@ import type { BDESkill } from './types'
 export const prReviewSkill: BDESkill = {
   id: 'pr-review',
   trigger: 'User asks about PR review, merge conflicts, CI failures, or rebasing',
-  description: 'Review PRs, check CI, resolve conflicts using gh CLI and PR Station',
+  description: 'Review PRs, check CI, resolve conflicts using gh CLI and the Code Review Station',
   guidance: `# PR Review & Merge
 
 ## Check PR Status
@@ -32,8 +32,8 @@ gh pr diff <number> --name-only
 - **Merge commit**: Preserves history. Use for large PRs.
 - **Rebase**: Linear history. Use when branch is clean.
 
-## BDE PR Station
-PR Station view (Cmd+5) provides inline code review with CI badges, diff comments, batch review submission, and merge controls.
+## BDE Code Review Station
+The Code Review Station (Cmd+5) provides diff inspection, commit history, conversation tab, and per-task actions: Ship It (merge + push in one click), Merge Locally, Create PR, Request Revision, Rebase, and Discard. Agent worktrees are preserved for human inspection at \`review\` status.
 `,
-  capabilities: ['gh-cli', 'git-rebase', 'pr-station']
+  capabilities: ['gh-cli', 'git-rebase', 'code-review-station']
 }

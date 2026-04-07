@@ -52,7 +52,7 @@ describe('Skills System', () => {
     it('pr review should have capabilities', () => {
       expect(prReviewSkill.capabilities).toContain('gh-cli')
       expect(prReviewSkill.capabilities).toContain('git-rebase')
-      expect(prReviewSkill.capabilities).toContain('pr-station')
+      expect(prReviewSkill.capabilities).toContain('code-review-station')
     })
 
     it('debugging should have capabilities', () => {

@@ -48,8 +48,6 @@ const UNIVERSAL_PREAMBLE = `You are a BDE (Birkeland Development Environment) ag
 ## Hard Rules
 - NEVER push to, checkout, or merge into \`main\`. Only push to your assigned branch.
 - NEVER commit secrets, .env files, or oauth tokens
-- Your worktree has NO node_modules. Run \`npm install\` as your FIRST action before reading any files or running any commands.
-- If \`npm install\` fails, report the error clearly and exit immediately. Do not proceed without dependencies.
 - Use the project's commit format: \`{type}: {description}\` (feat:, fix:, chore:)
 - Prefer editing existing files over creating new ones
 - Use TypeScript strict mode conventions
@@ -57,7 +55,7 @@ const UNIVERSAL_PREAMBLE = `You are a BDE (Birkeland Development Environment) ag
 ## MANDATORY Pre-Commit Verification (DO NOT SKIP)
 Before EVERY commit, you MUST run ALL of these and they MUST pass:
 1. \`npm run typecheck\` — TypeScript must compile with zero errors
-2. \`npm test\` — All renderer tests must pass (currently 2563+ tests)
+2. \`npm run test:coverage\` — Tests must pass and coverage thresholds (enforced in vitest config) must be met
 3. \`npm run lint\` — Must have zero errors (warnings are OK)
 
 If ANY check fails, fix the issue before committing. Do NOT commit with failing tests,
@@ -119,7 +117,9 @@ function buildTimeLimitSection(maxRuntimeMs: number): string {
 
 const IDLE_TIMEOUT_WARNING = `\n\n## Idle Timeout Warning\nYou will be TERMINATED if you produce no output for 15 minutes. If running long commands (npm install, test suites), emit a progress message before and after.`
 
-const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npm test\` passes\n4. \`npm run lint\` passes with zero errors\nDo NOT exit without running all four checks.`
+const PIPELINE_SETUP_RULE = `\n\n## Pipeline Worktree Setup\nYour worktree has NO \`node_modules\`. Run \`npm install\` before invoking any of the pre-commit verification commands (\`npm run typecheck\`, \`npm run test:coverage\`, \`npm run lint\`). You may read the spec and source files first to plan. If \`npm install\` fails, report the error clearly and exit.`
+
+const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npm run test:coverage\` passes (tests + coverage thresholds)\n4. \`npm run lint\` passes with zero errors\nDo NOT exit without running all four checks.`
 
 // ---------------------------------------------------------------------------
 // Native System Support
@@ -349,8 +349,9 @@ Before your final push, verify:
 - [ ] Preload .d.ts updated if IPC channels changed`
   }
 
-  // Pipeline-only sections: time limit, idle warning, definition of done
+  // Pipeline-only sections: setup rule, time limit, idle warning, definition of done
   if (agentType === 'pipeline') {
+    prompt += PIPELINE_SETUP_RULE
     if (maxRuntimeMs && maxRuntimeMs > 0) {
       prompt += buildTimeLimitSection(maxRuntimeMs)
     }
