@@ -8,6 +8,7 @@ import { realpathSync } from 'fs'
 import { safeHandle } from '../ipc-utils'
 import { broadcast } from '../broadcast'
 import type { AgentEvent } from '../../shared/types'
+import { sanitizePlaygroundHtml } from '../playground-sanitize'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -51,8 +52,9 @@ export function registerPlaygroundHandlers(): void {
       )
     }
 
-    // Read file content
-    const html = await readFile(resolvedPath, 'utf-8')
+    // Read and sanitize file content
+    const rawHtml = await readFile(resolvedPath, 'utf-8')
+    const html = sanitizePlaygroundHtml(rawHtml)
     const filename = basename(resolvedPath)
 
     // Broadcast agent:playground event to renderer

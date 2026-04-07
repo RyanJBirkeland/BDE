@@ -76,7 +76,7 @@ describe('playground-handlers', () => {
       event: {
         type: 'agent:playground',
         filename: 'preview.html',
-        html: htmlContent,
+        html: expect.stringContaining('<h1>Test</h1>'), // Sanitized HTML
         sizeBytes: htmlContent.length,
         timestamp: expect.any(Number)
       }
@@ -110,7 +110,7 @@ describe('playground-handlers', () => {
     expect(call[1].event.sizeBytes).toBe(htmlContent.length)
   })
 
-  it('preserves HTML content exactly', async () => {
+  it('sanitizes HTML content', async () => {
     const filePath = join(testDir, 'content.html')
     const htmlContent = '<html>\n  <body>\n    <h1>Test & "quotes"</h1>\n  </body>\n</html>'
     await writeFile(filePath, htmlContent)
@@ -118,7 +118,10 @@ describe('playground-handlers', () => {
     await capturedHandler!(null, { filePath, rootPath: testDir })
 
     const call = mockBroadcast.mock.calls[0]
-    expect(call[1].event.html).toBe(htmlContent)
+    const sanitizedHtml = call[1].event.html
+    // DOMPurify escapes entities: & becomes &amp;
+    expect(sanitizedHtml).toContain('Test &amp; "quotes"')
+    expect(sanitizedHtml).toContain('<h1>')
   })
 
   // Path traversal prevention tests

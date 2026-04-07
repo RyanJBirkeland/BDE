@@ -16,8 +16,7 @@ import { broadcast } from '../broadcast'
 import { mapRawMessage, emitAgentEvent } from '../agent-event-mapper'
 import type { AgentEvent, TaskDependency } from '../../shared/types'
 import { buildAgentPrompt } from './prompt-composer'
-import DOMPurify from 'dompurify'
-import { JSDOM } from 'jsdom'
+import { sanitizePlaygroundHtml } from '../playground-sanitize'
 
 const execFile = promisify(execFileCb)
 
@@ -60,10 +59,6 @@ export interface RunAgentDeps {
 
 const MAX_PLAYGROUND_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_PARTIAL_DIFF_SIZE = 50 * 1024 // 50KB
-
-// Create DOMPurify instance for sanitizing playground HTML
-const window = new JSDOM('').window
-const purify = DOMPurify(window)
 
 export function isRateLimitMessage(msg: unknown): boolean {
   if (typeof msg !== 'object' || msg === null) return false
@@ -134,7 +129,7 @@ export async function tryEmitPlaygroundEvent(
 
     // Read and sanitize file content
     const rawHtml = await readFile(absolutePath, 'utf-8')
-    const sanitizedHtml = purify.sanitize(rawHtml)
+    const sanitizedHtml = sanitizePlaygroundHtml(rawHtml)
     const filename = basename(absolutePath)
 
     // Emit playground event with sanitized HTML
