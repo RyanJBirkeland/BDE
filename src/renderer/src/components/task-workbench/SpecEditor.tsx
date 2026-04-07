@@ -138,6 +138,37 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
     background: on ? 'var(--neon-cyan, #2fc3b5)' : 'var(--neon-text-dim, #888)',
     marginRight: 4
   })
+
+  const getLengthColor = (): string => {
+    switch (indicators.lengthStatus) {
+      case 'good':
+        return 'var(--neon-cyan, #2fc3b5)'
+      case 'too-short':
+        return 'var(--neon-orange, #ff9c42)'
+      case 'warning':
+        return 'var(--neon-yellow, #ffd42a)'
+      case 'danger':
+        return 'var(--neon-red, #ff3864)'
+      default:
+        return 'var(--neon-text-muted, #999)'
+    }
+  }
+
+  const getLengthTooltip = (): string => {
+    switch (indicators.lengthStatus) {
+      case 'good':
+        return 'Spec length is good. Agents complete in 15-30 min with this size.'
+      case 'too-short':
+        return 'Spec is short. Add more detail for better results.'
+      case 'warning':
+        return 'Spec is getting long (400-500 words). Consider splitting into multiple tasks.'
+      case 'danger':
+        return 'Spec is too long (500+ words). This causes timeouts. Split into smaller tasks.'
+      default:
+        return 'Total words in the spec.'
+    }
+  }
+
   return (
     <div
       className="wb-spec__quality"
@@ -155,8 +186,12 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
     >
       <span
         className="wb-spec__quality-word-count"
-        title="Total words in the spec. Longer isn't always better — aim for clarity."
+        title={getLengthTooltip()}
         data-testid="spec-quality-words"
+        style={{
+          color: getLengthColor(),
+          fontWeight: indicators.lengthStatus !== 'good' ? 600 : 400
+        }}
       >
         {indicators.wordCount} words
       </span>

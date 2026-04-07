@@ -3,10 +3,13 @@
  * Pure functions — no DOM, no state — so they are easy to unit test.
  */
 
+export type SpecLengthStatus = 'too-short' | 'good' | 'warning' | 'danger'
+
 export interface SpecQualityIndicators {
   wordCount: number
   hasFilePaths: boolean
   hasTestSection: boolean
+  lengthStatus: SpecLengthStatus
 }
 
 /**
@@ -51,10 +54,28 @@ export function countWords(spec: string): number {
   return trimmed.split(/\s+/).length
 }
 
+/**
+ * Assess spec length based on BDE agent guidelines:
+ * - Ideal: 200-400 words (fast completion, 15-30 min)
+ * - Warning: 400-500 words (getting long)
+ * - Danger: 500+ words (causes timeouts)
+ * - Too short: < 100 words (insufficient detail)
+ */
+export function assessSpecLength(wordCount: number): SpecLengthStatus {
+  if (wordCount < 100) return 'too-short'
+  if (wordCount >= 200 && wordCount <= 400) return 'good'
+  if (wordCount > 400 && wordCount < 500) return 'warning'
+  if (wordCount >= 500) return 'danger'
+  // 100-199 words: acceptable but not ideal
+  return 'good'
+}
+
 export function analyzeSpec(spec: string): SpecQualityIndicators {
+  const wordCount = countWords(spec)
   return {
-    wordCount: countWords(spec),
+    wordCount,
     hasFilePaths: hasFilePaths(spec),
-    hasTestSection: hasTestSection(spec)
+    hasTestSection: hasTestSection(spec),
+    lengthStatus: assessSpecLength(wordCount)
   }
 }
