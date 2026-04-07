@@ -378,7 +378,9 @@ export async function runAgent(
     costUsd: null,
     tokensIn: null,
     tokensOut: null,
-    sprintTaskId: task.id
+    sprintTaskId: task.id,
+    worktreePath: worktree.worktreePath,
+    branch: worktree.branch
   }).catch((err) =>
     logger.warn(`[agent-manager] Failed to create agent record for ${agentRunId}: ${err}`)
   )

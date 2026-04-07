@@ -20,7 +20,8 @@ vi.mock('../../agent-history', () => ({
   listAgents: vi.fn(),
   readLog: vi.fn(),
   importAgent: vi.fn(),
-  pruneOldAgents: vi.fn()
+  pruneOldAgents: vi.fn(),
+  getAgentMeta: vi.fn()
 }))
 
 // Mock adhoc-agent
@@ -28,6 +29,24 @@ vi.mock('../../adhoc-agent', () => ({
   spawnAdhocAgent: vi.fn(),
   getAdhocHandle: vi.fn()
 }))
+
+// Mock sprint-queries (used by promoteToReview)
+vi.mock('../../data/sprint-queries', () => ({
+  createReviewTaskFromAdhoc: vi.fn()
+}))
+
+// Mock env-utils (used by promoteToReview to spawn git)
+vi.mock('../../env-utils', () => ({
+  buildAgentEnv: vi.fn(() => ({ HOME: '/tmp' }))
+}))
+
+// Mock node:fs existsSync used by promoteToReview to validate worktree path.
+// Tests override this per-case via vi.mocked(existsSync).mockReturnValue(...)
+// when they need to assert "worktree gone" behavior.
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return { ...actual, existsSync: vi.fn(() => true) }
+})
 
 // Mock data/event-queries (used lazily in agent:history)
 vi.mock('../../data/event-queries', () => ({
@@ -40,12 +59,14 @@ vi.mock('../../db', () => ({
   getDb: vi.fn().mockReturnValue({})
 }))
 
+import { existsSync } from 'node:fs'
 import { registerAgentHandlers } from '../agent-handlers'
 import { safeHandle } from '../../ipc-utils'
 import { cleanupOldLogs } from '../../agent-log-manager'
-import { listAgents, readLog, pruneOldAgents } from '../../agent-history'
+import { listAgents, readLog, pruneOldAgents, getAgentMeta } from '../../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../../adhoc-agent'
 import { getEventHistory } from '../../data/event-queries'
+import { createReviewTaskFromAdhoc } from '../../data/sprint-queries'
 
 const mockEvent = {} as IpcMainInvokeEvent
 
@@ -79,6 +100,7 @@ describe('registerAgentHandlers', () => {
     expect(channels).toContain('agents:list')
     expect(channels).toContain('agents:readLog')
     expect(channels).toContain('agents:import')
+    expect(channels).toContain('agents:promoteToReview')
   })
 
   it('calls cleanupOldLogs and pruneOldAgents on registration', () => {
@@ -273,5 +295,145 @@ describe('local:spawnClaudeAgent handler', () => {
       assistant: undefined
     })
     expect(result).toEqual(spawnResult)
+  })
+})
+
+describe('agents:promoteToReview handler', () => {
+  // Build a deterministic AgentMeta for an adhoc agent that has finished
+  // with a worktree on disk and committed work — the canonical "ready to
+  // promote" state.
+  function makeAdhocAgent(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'adhoc-1',
+      pid: null,
+      bin: 'claude',
+      model: 'sonnet',
+      repo: 'bde',
+      repoPath: '/Users/test/bde',
+      task: 'Add clipboard image paste\n\nMore details follow.',
+      startedAt: new Date().toISOString(),
+      finishedAt: new Date().toISOString(),
+      exitCode: 0,
+      status: 'done',
+      logPath: '/tmp/logs/adhoc-1/log.jsonl',
+      source: 'adhoc',
+      costUsd: null,
+      tokensIn: null,
+      tokensOut: null,
+      sprintTaskId: null,
+      worktreePath: '/tmp/bde-adhoc/bde/adhoc-1',
+      branch: 'agent/add-clipboard-image-paste-adhoc-1',
+      ...overrides
+    }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Default: worktree directory exists. Tests that need it missing override.
+    vi.mocked(existsSync).mockReturnValue(true)
+  })
+
+  it('returns error when agent is not found', async () => {
+    vi.mocked(getAgentMeta).mockResolvedValue(null)
+
+    const handler = captureHandler('agents:promoteToReview')
+    const result = await handler(mockEvent, 'missing-agent')
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/not found/i)
+    // Must NOT touch sprint_tasks when the agent doesn't exist
+    expect(createReviewTaskFromAdhoc).not.toHaveBeenCalled()
+  })
+
+  it('returns error when agent has no worktree path', async () => {
+    vi.mocked(getAgentMeta).mockResolvedValue(makeAdhocAgent({ worktreePath: null }) as any)
+
+    const handler = captureHandler('agents:promoteToReview')
+    const result = await handler(mockEvent, 'adhoc-1')
+
+    expect(result.ok).toBe(false)
+    // Legacy adhoc agents (spawned before the worktree change) should be
+    // rejected with a clear message rather than silently producing an
+    // unreviewable sprint task with no diff.
+    expect(result.error).toMatch(/no worktree/i)
+    expect(createReviewTaskFromAdhoc).not.toHaveBeenCalled()
+  })
+
+  it('returns error when worktree directory has been deleted', async () => {
+    vi.mocked(getAgentMeta).mockResolvedValue(makeAdhocAgent() as any)
+    vi.mocked(existsSync).mockReturnValue(false)
+
+    const handler = captureHandler('agents:promoteToReview')
+    const result = await handler(mockEvent, 'adhoc-1')
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/no longer exists/i)
+    expect(createReviewTaskFromAdhoc).not.toHaveBeenCalled()
+  })
+
+  it('returns error when agent has no branch recorded', async () => {
+    vi.mocked(getAgentMeta).mockResolvedValue(makeAdhocAgent({ branch: null }) as any)
+
+    const handler = captureHandler('agents:promoteToReview')
+    const result = await handler(mockEvent, 'adhoc-1')
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/no branch/i)
+    expect(createReviewTaskFromAdhoc).not.toHaveBeenCalled()
+  })
+
+  it('creates a review sprint task on the happy path', async () => {
+    vi.mocked(getAgentMeta).mockResolvedValue(makeAdhocAgent() as any)
+    vi.mocked(createReviewTaskFromAdhoc).mockReturnValue({
+      id: 'task-42',
+      status: 'review'
+    } as any)
+
+    const handler = captureHandler('agents:promoteToReview')
+    const result = await handler(mockEvent, 'adhoc-1')
+
+    expect(result.ok).toBe(true)
+    expect(result.taskId).toBe('task-42')
+    // The new sprint task must carry the agent's worktree, branch, and the
+    // full task message as the spec — that's what Code Review reads.
+    expect(createReviewTaskFromAdhoc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repo: 'bde',
+        worktreePath: '/tmp/bde-adhoc/bde/adhoc-1',
+        branch: 'agent/add-clipboard-image-paste-adhoc-1',
+        spec: 'Add clipboard image paste\n\nMore details follow.'
+      })
+    )
+    // Title is derived from the FIRST non-blank line of the task message.
+    // Multi-line task messages must not produce a multi-line title.
+    const call = vi.mocked(createReviewTaskFromAdhoc).mock.calls[0][0]
+    expect(call.title).toBe('Add clipboard image paste')
+  })
+
+  it('caps title at 120 characters with ellipsis when first line is long', async () => {
+    const longLine = 'x'.repeat(200)
+    vi.mocked(getAgentMeta).mockResolvedValue(makeAdhocAgent({ task: longLine }) as any)
+    vi.mocked(createReviewTaskFromAdhoc).mockReturnValue({ id: 'task-43' } as any)
+
+    const handler = captureHandler('agents:promoteToReview')
+    await handler(mockEvent, 'adhoc-1')
+
+    const call = vi.mocked(createReviewTaskFromAdhoc).mock.calls[0][0]
+    // 117 chars + '...' = 120 total — keeps the column width predictable
+    // in the review queue list.
+    expect(call.title.length).toBe(120)
+    expect(call.title.endsWith('...')).toBe(true)
+  })
+
+  it('returns error when sprint task creation fails', async () => {
+    vi.mocked(getAgentMeta).mockResolvedValue(makeAdhocAgent() as any)
+    vi.mocked(createReviewTaskFromAdhoc).mockReturnValue(null)
+
+    const handler = captureHandler('agents:promoteToReview')
+    const result = await handler(mockEvent, 'adhoc-1')
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toMatch(/failed to create/i)
+    expect(result.taskId).toBeUndefined()
   })
 })

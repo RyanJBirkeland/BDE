@@ -9,17 +9,43 @@
  *
  * The v2 Session API (unstable_v2_createSession) doesn't support cwd or
  * settingSources, so agents spawned with it can't find CLAUDE.md or project context.
+ *
+ * **Worktree isolation**: each adhoc agent runs in its own git worktree under a
+ * dedicated adhoc base (`~/worktrees/bde-adhoc/`) so concurrent sessions can't
+ * stomp on each other or on the user's main checkout. The worktree is preserved
+ * after the session ends so the user can review the diff and optionally promote
+ * the work into a sprint task via `agents:promoteToReview`.
  */
 import { randomUUID } from 'node:crypto'
-import { basename } from 'node:path'
+import { basename, join } from 'node:path'
+import { homedir } from 'node:os'
 import { importAgent, updateAgentMeta } from './agent-history'
 import { buildAgentEnvWithAuth, getClaudeCliPath } from './env-utils'
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
 import { buildAgentPrompt } from './agent-manager/prompt-composer'
+import { setupWorktree } from './agent-manager/worktree'
 import { createLogger } from './logger'
 
 const log = createLogger('adhoc-agent')
+
+/**
+ * Dedicated worktree base for adhoc agents. Kept separate from the pipeline
+ * worktree base so the pipeline pruner (which only knows about sprint task IDs)
+ * never accidentally deletes a live adhoc worktree.
+ */
+const ADHOC_WORKTREE_BASE = join(homedir(), 'worktrees', 'bde-adhoc')
+
+/**
+ * Derive a short, branch-safe slug from the user's first task message.
+ * Used by `setupWorktree` to name the agent's branch — keeps the branch
+ * recognisable instead of being a raw UUID.
+ */
+function deriveAdhocTitle(task: string): string {
+  const firstLine = task.split('\n').find((l) => l.trim())?.trim() ?? 'adhoc session'
+  // Cap at ~80 chars so the resulting branch slug stays short
+  return firstLine.length > 80 ? firstLine.slice(0, 80) : firstLine
+}
 
 /** Wrapper around an SDK session for ad-hoc agent management */
 interface AdhocSession {
@@ -45,10 +71,41 @@ export async function spawnAdhocAgent(args: {
 
   const sdk = await import('@anthropic-ai/claude-agent-sdk')
 
-  // Build composed prompt with preamble
+  // Allocate the agent ID up front so the worktree directory name matches
+  // the agent_runs row — keeps debugging straightforward.
+  const agentId = randomUUID()
+
+  // Create an isolated worktree for this session. We use a dedicated base
+  // (ADHOC_WORKTREE_BASE) so the pipeline pruner can't see these and
+  // accidentally remove them. The worktree stays alive after the session
+  // ends so the user can review the diff or promote it to a sprint task.
+  let worktreePath: string
+  let branch: string
+  try {
+    const worktree = await setupWorktree({
+      repoPath: args.repoPath,
+      worktreeBase: ADHOC_WORKTREE_BASE,
+      taskId: agentId,
+      title: deriveAdhocTitle(args.task),
+      logger: log
+    })
+    worktreePath = worktree.worktreePath
+    branch = worktree.branch
+    log.info(`[adhoc] ${agentId} worktree ready at ${worktreePath} on branch ${branch}`)
+  } catch (err) {
+    log.error(`[adhoc] ${agentId} failed to create worktree: ${err}`)
+    throw new Error(
+      `Failed to create adhoc worktree: ${err instanceof Error ? err.message : String(err)}`
+    )
+  }
+
+  // Build composed prompt with preamble. Pass the branch so the agent knows
+  // which branch it owns — the prompt composer wraps this in the standard
+  // branch appendix.
   const prompt = buildAgentPrompt({
     agentType: args.assistant ? 'assistant' : 'adhoc',
-    taskContent: args.task
+    taskContent: args.task,
+    branch
   })
 
   // Shared options for all turns (v1 Options — has cwd + settingSources)
@@ -56,17 +113,18 @@ export async function spawnAdhocAgent(args: {
   // instead of bypassPermissions — agents respect the user's configured guardrails
   const baseOptions = {
     model,
-    cwd: args.repoPath,
+    cwd: worktreePath,
     env: env as Record<string, string>,
     pathToClaudeCodeExecutable: getClaudeCliPath(),
     settingSources: ['user' as const, 'project' as const, 'local' as const]
   }
 
-  // Record in agent_runs
+  // Record in agent_runs (with worktree path + branch persisted so the
+  // Promote handler can find them later)
   const repo = basename(args.repoPath).toLowerCase()
   const meta = await importAgent(
     {
-      id: randomUUID(),
+      id: agentId,
       pid: null,
       bin: 'claude',
       model,
@@ -74,7 +132,9 @@ export async function spawnAdhocAgent(args: {
       repoPath: args.repoPath,
       task: args.task,
       status: 'running',
-      source: 'adhoc'
+      source: 'adhoc',
+      worktreePath,
+      branch
     },
     ''
   )
@@ -137,7 +197,12 @@ export async function spawnAdhocAgent(args: {
     }
   }
 
-  /** Complete the session — emit completed event and clean up */
+  /**
+   * Complete the session — emit completed event and clean up.
+   * Note: the worktree is intentionally preserved so the user can review
+   * the diff or promote it via `agents:promoteToReview`. Cleanup happens
+   * later when the agent_runs row is pruned.
+   */
   function completeSession(): void {
     if (closed) return
     closed = true
@@ -185,7 +250,7 @@ export async function spawnAdhocAgent(args: {
 
   // Start first turn
   emitAgentEvent(meta.id, { type: 'agent:started', model, timestamp: Date.now() })
-  log.info(`[adhoc] ${meta.id} starting session in ${args.repoPath}`)
+  log.info(`[adhoc] ${meta.id} starting session in ${worktreePath}`)
 
   runTurn(prompt).catch((err) => {
     log.error(`[adhoc] ${meta.id} initial turn failed: ${err}`)

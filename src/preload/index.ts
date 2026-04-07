@@ -106,7 +106,8 @@ const api = {
     list: (args: { limit?: number; status?: string }) => typedInvoke('agents:list', args),
     readLog: (args: { id: string; fromByte?: number }) => typedInvoke('agents:readLog', args),
     import: (args: { meta: Partial<AgentMeta>; content: string }) =>
-      typedInvoke('agents:import', args)
+      typedInvoke('agents:import', args),
+    promoteToReview: (agentId: string) => typedInvoke('agents:promoteToReview', agentId)
   },
 
   // Cost analytics

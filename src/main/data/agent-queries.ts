@@ -26,6 +26,8 @@ export interface AgentRunRow {
   tokens_in: number | null
   tokens_out: number | null
   sprint_task_id: string | null
+  worktree_path: string | null
+  branch: string | null
 }
 
 export function rowToMeta(row: AgentRunRow): AgentMeta {
@@ -46,7 +48,9 @@ export function rowToMeta(row: AgentRunRow): AgentMeta {
     costUsd: row.cost_usd ?? null,
     tokensIn: row.tokens_in ?? null,
     tokensOut: row.tokens_out ?? null,
-    sprintTaskId: row.sprint_task_id ?? null
+    sprintTaskId: row.sprint_task_id ?? null,
+    worktreePath: row.worktree_path ?? null,
+    branch: row.branch ?? null
   }
 }
 
@@ -75,8 +79,8 @@ export function insertAgentRecord(
   meta: Omit<AgentMeta, 'logPath'> & { logPath: string }
 ): void {
   db.prepare(
-    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source, sprint_task_id, cost_usd, tokens_in, tokens_out)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source, sprint_task_id, cost_usd, tokens_in, tokens_out, worktree_path, branch)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     meta.id,
     meta.pid,
@@ -94,7 +98,9 @@ export function insertAgentRecord(
     meta.sprintTaskId ?? null,
     meta.costUsd ?? null,
     meta.tokensIn ?? null,
-    meta.tokensOut ?? null
+    meta.tokensOut ?? null,
+    meta.worktreePath ?? null,
+    meta.branch ?? null
   )
 }
 
@@ -114,7 +120,9 @@ const AGENT_COLUMN_MAP: Record<string, string> = {
   costUsd: 'cost_usd',
   tokensIn: 'tokens_in',
   tokensOut: 'tokens_out',
-  sprintTaskId: 'sprint_task_id'
+  sprintTaskId: 'sprint_task_id',
+  worktreePath: 'worktree_path',
+  branch: 'branch'
 }
 
 // DL-33: Return mapped AgentMeta for consistency with other query functions

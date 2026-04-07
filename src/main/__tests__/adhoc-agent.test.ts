@@ -29,11 +29,24 @@ vi.mock('../agent-manager/prompt-composer', () => ({
     return `${preamble}\n\n${input.taskContent}`
   })
 }))
+// Adhoc agents now run inside an isolated git worktree (created by setupWorktree).
+// The real implementation shells out to git — we mock it so unit tests don't
+// need an actual repo. The mock returns a deterministic worktree path so
+// assertions can inspect the cwd that gets passed to sdk.query.
+const TEST_WORKTREE_PATH = '/tmp/bde-adhoc/test-repo/worktree'
+const TEST_BRANCH = 'agent/test-branch-12345678'
+vi.mock('../agent-manager/worktree', () => ({
+  setupWorktree: vi.fn(async () => ({
+    worktreePath: TEST_WORKTREE_PATH,
+    branch: TEST_BRANCH
+  }))
+}))
 
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { importAgent, updateAgentMeta } from '../agent-history'
 import { broadcast } from '../broadcast'
 import { buildAgentPrompt } from '../agent-manager/prompt-composer'
+import { setupWorktree } from '../agent-manager/worktree'
 
 function createMockQueryHandle(messages: unknown[] = []) {
   const handle = {
@@ -71,7 +84,7 @@ describe('spawnAdhocAgent', () => {
     vi.mocked(updateAgentMeta).mockResolvedValue(undefined as any)
   })
 
-  it('calls sdk.query and returns result with agent ID', async () => {
+  it('creates a worktree and uses it as cwd for the SDK query', async () => {
     const handle = createMockQueryHandle([])
     mockQuery.mockReturnValue(handle)
 
@@ -81,16 +94,73 @@ describe('spawnAdhocAgent', () => {
       model: 'sonnet'
     })
 
+    // Worktree must be created BEFORE the SDK is invoked, scoped to the
+    // repo the user picked, with the agent's UUID as the taskId so the
+    // worktree directory matches the agent_runs row.
+    expect(setupWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repoPath: '/tmp/test-repo',
+        // taskId is the freshly-allocated agent UUID — assert it's present
+        // and well-formed rather than pinning a literal value.
+        taskId: expect.stringMatching(/^[0-9a-f-]{36}$/)
+      })
+    )
+
+    // The SDK must be invoked with the worktree path (NOT the repo path)
+    // so the agent never touches the user's main checkout.
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: expect.anything(),
-        options: expect.objectContaining({ model: 'sonnet', cwd: '/tmp/test-repo' })
+        options: expect.objectContaining({ model: 'sonnet', cwd: TEST_WORKTREE_PATH })
       })
     )
     expect(importAgent).toHaveBeenCalled()
     expect(result.id).toBe('agent-1')
     expect(result.interactive).toBe(true)
     expect(result.logPath).toBe('/tmp/logs/agent-1/log.jsonl')
+  })
+
+  it('persists worktree path and branch on the agent_runs row', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({
+      task: 'fix the bug',
+      repoPath: '/tmp/test-repo',
+      model: 'sonnet'
+    })
+
+    // The Promote handler later reads worktreePath + branch off agent_runs,
+    // so they MUST be set at spawn time. Without these the Promote action
+    // would have no way to find the work it's promoting.
+    expect(importAgent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        worktreePath: TEST_WORKTREE_PATH,
+        branch: TEST_BRANCH,
+        source: 'adhoc',
+        status: 'running'
+      }),
+      ''
+    )
+  })
+
+  it('passes the branch to buildAgentPrompt so the agent knows its branch', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({
+      task: 'fix the bug',
+      repoPath: '/tmp/test-repo'
+    })
+
+    // The branch appendix in prompt-composer needs the branch name. Adhoc
+    // agents must NOT receive a stale or empty branch — their prompt tells
+    // them which branch they own.
+    expect(buildAgentPrompt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branch: TEST_BRANCH
+      })
+    )
   })
 
   it('defaults model to claude-sonnet-4-5 when not provided', async () => {
@@ -240,10 +310,12 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
       model: 'sonnet'
     })
 
-    expect(buildAgentPrompt).toHaveBeenCalledWith({
-      agentType: 'adhoc',
-      taskContent: 'fix the bug'
-    })
+    expect(buildAgentPrompt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentType: 'adhoc',
+        taskContent: 'fix the bug'
+      })
+    )
   })
 
   it('calls buildAgentPrompt with assistant agentType when assistant flag is true', async () => {
@@ -257,10 +329,12 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
       assistant: true
     })
 
-    expect(buildAgentPrompt).toHaveBeenCalledWith({
-      agentType: 'assistant',
-      taskContent: 'help me understand the codebase'
-    })
+    expect(buildAgentPrompt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentType: 'assistant',
+        taskContent: 'help me understand the codebase'
+      })
+    )
   })
 
   it('passes composed prompt to sdk.query initial message', async () => {

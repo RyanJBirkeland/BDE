@@ -271,6 +271,52 @@ export function createTask(input: CreateTaskInput): SprintTask | null {
   }
 }
 
+/**
+ * Create a sprint task in `review` status directly, populated from a completed
+ * adhoc agent's worktree. Bypasses the normal `backlog → queued → active → review`
+ * state machine because the work is already done — the agent committed it locally
+ * and the user is explicitly promoting it for review.
+ *
+ * Used by the `agents:promoteToReview` IPC handler. Do not call from anywhere
+ * that should respect the standard task lifecycle.
+ */
+export function createReviewTaskFromAdhoc(input: {
+  title: string
+  repo: string
+  spec: string
+  worktreePath: string
+  branch: string
+}): SprintTask | null {
+  try {
+    const db = getDb()
+    const result = db
+      .prepare(
+        `INSERT INTO sprint_tasks (title, repo, prompt, spec, status, worktree_path, started_at, completed_at)
+         VALUES (?, ?, ?, ?, 'review', ?, datetime('now'), NULL)
+         RETURNING *`
+      )
+      .get(
+        input.title,
+        input.repo,
+        input.spec, // prompt mirrors spec — keeps the agent's full task message accessible
+        input.spec,
+        input.worktreePath
+      ) as Record<string, unknown> | undefined
+
+    if (!result) return null
+
+    const task = sanitizeTask(result)
+    logger.info(
+      `[sprint-queries] Promoted adhoc work to review task ${task.id} (branch ${input.branch})`
+    )
+    return task
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    logger.warn(`[sprint-queries] createReviewTaskFromAdhoc failed: ${msg}`)
+    return null
+  }
+}
+
 export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
   const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
   if (entries.length === 0) return null

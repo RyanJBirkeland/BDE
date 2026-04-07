@@ -212,6 +212,10 @@ export interface AgentChannels {
     args: [args: { meta: Partial<AgentMeta>; content: string }]
     result: AgentMeta
   }
+  'agents:promoteToReview': {
+    args: [agentId: string]
+    result: { ok: boolean; taskId?: string; error?: string }
+  }
 }
 
 /** GitHub API proxy */

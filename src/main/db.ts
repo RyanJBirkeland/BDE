@@ -870,6 +870,19 @@ export const migrations: Migration[] = [
         db.exec('ALTER TABLE sprint_tasks ADD COLUMN revision_feedback TEXT DEFAULT NULL')
       }
     }
+  },
+  {
+    version: 35,
+    description: 'Add worktree_path and branch columns to agent_runs for adhoc worktree tracking',
+    up: (db) => {
+      const cols = (db.pragma('table_info(agent_runs)') as { name: string }[]).map((c) => c.name)
+      if (!cols.includes('worktree_path')) {
+        db.exec('ALTER TABLE agent_runs ADD COLUMN worktree_path TEXT DEFAULT NULL')
+      }
+      if (!cols.includes('branch')) {
+        db.exec('ALTER TABLE agent_runs ADD COLUMN branch TEXT DEFAULT NULL')
+      }
+    }
   }
 ]
 
