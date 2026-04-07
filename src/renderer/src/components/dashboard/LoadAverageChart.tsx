@@ -89,9 +89,7 @@ export function LoadAverageChart({
   const plotH = height - PAD.top - PAD.bottom
 
   const xOf = (i: number): number =>
-    samples.length === 1
-      ? PAD.left + plotW / 2
-      : PAD.left + (i / (samples.length - 1)) * plotW
+    samples.length === 1 ? PAD.left + plotW / 2 : PAD.left + (i / (samples.length - 1)) * plotW
   const yOf = (v: number): number => PAD.top + plotH - (v / yMax) * plotH
 
   const buildPath = (key: 'load1' | 'load5' | 'load15'): string => {
@@ -104,8 +102,7 @@ export function LoadAverageChart({
 
   const trendLabel =
     trend === 'cooling' ? '▼ cooling' : trend === 'climbing' ? '▲ climbing' : '— steady'
-  const trendColor =
-    trend === 'cooling' ? '#4ade80' : trend === 'climbing' ? '#f87171' : '#64748b'
+  const trendColor = trend === 'cooling' ? '#4ade80' : trend === 'climbing' ? '#f87171' : '#64748b'
 
   return (
     <div
@@ -141,17 +138,61 @@ export function LoadAverageChart({
           </div>
         </div>
       </div>
-      <svg viewBox={`0 0 ${SVG_W} ${height}`} width="100%" height={height} style={{ display: 'block' }}>
+      <svg
+        viewBox={`0 0 ${SVG_W} ${height}`}
+        width="100%"
+        height={height}
+        style={{ display: 'block' }}
+      >
         {/* axes */}
         <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={height - PAD.bottom} stroke="#1e293b" />
-        <line x1={PAD.left} y1={height - PAD.bottom} x2={SVG_W - PAD.right} y2={height - PAD.bottom} stroke="#1e293b" />
+        <line
+          x1={PAD.left}
+          y1={height - PAD.bottom}
+          x2={SVG_W - PAD.right}
+          y2={height - PAD.bottom}
+          stroke="#1e293b"
+        />
         {/* gridlines */}
-        <line x1={PAD.left} y1={yOf(yMax)} x2={SVG_W - PAD.right} y2={yOf(yMax)} stroke="#1e293b" strokeDasharray="2 3" />
-        <line x1={PAD.left} y1={yOf(yMax / 2)} x2={SVG_W - PAD.right} y2={yOf(yMax / 2)} stroke="#1e293b" strokeDasharray="2 3" />
+        <line
+          x1={PAD.left}
+          y1={yOf(yMax)}
+          x2={SVG_W - PAD.right}
+          y2={yOf(yMax)}
+          stroke="#1e293b"
+          strokeDasharray="2 3"
+        />
+        <line
+          x1={PAD.left}
+          y1={yOf(yMax / 2)}
+          x2={SVG_W - PAD.right}
+          y2={yOf(yMax / 2)}
+          stroke="#1e293b"
+          strokeDasharray="2 3"
+        />
         {/* Y tick labels */}
-        <text x={PAD.left - 6} y={yOf(yMax) + 3} textAnchor="end" fontSize="9" fill="#64748b" data-testid="y-max-value">{yMax}</text>
-        <text x={PAD.left - 6} y={yOf(yMax / 2) + 3} textAnchor="end" fontSize="9" fill="#64748b">{yMax / 2}</text>
-        <text x={PAD.left - 6} y={height - PAD.bottom + 3} textAnchor="end" fontSize="9" fill="#64748b">0</text>
+        <text
+          x={PAD.left - 6}
+          y={yOf(yMax) + 3}
+          textAnchor="end"
+          fontSize="9"
+          fill="#64748b"
+          data-testid="y-max-value"
+        >
+          {yMax}
+        </text>
+        <text x={PAD.left - 6} y={yOf(yMax / 2) + 3} textAnchor="end" fontSize="9" fill="#64748b">
+          {yMax / 2}
+        </text>
+        <text
+          x={PAD.left - 6}
+          y={height - PAD.bottom + 3}
+          textAnchor="end"
+          fontSize="9"
+          fill="#64748b"
+        >
+          0
+        </text>
         {/* Saturation reference line */}
         <line
           data-role="saturation-line"
@@ -174,18 +215,52 @@ export function LoadAverageChart({
           {cpuCount}
         </text>
         {/* Lines (draw 15 first, then 5, then 1 so 1-min is on top) */}
-        <path data-role="line-15min" d={buildPath('load15')} stroke={LINE15_COLOR} strokeWidth="1.5" fill="none" />
-        <path data-role="line-5min" d={buildPath('load5')} stroke={LINE5_COLOR} strokeWidth="1.5" fill="none" opacity="0.6" />
-        <path data-role="line-1min" d={buildPath('load1')} stroke={LINE1_COLOR} strokeWidth="2" fill="none" />
+        <path
+          data-role="line-15min"
+          d={buildPath('load15')}
+          stroke={LINE15_COLOR}
+          strokeWidth="1.5"
+          fill="none"
+        />
+        <path
+          data-role="line-5min"
+          d={buildPath('load5')}
+          stroke={LINE5_COLOR}
+          strokeWidth="1.5"
+          fill="none"
+          opacity="0.6"
+        />
+        <path
+          data-role="line-1min"
+          d={buildPath('load1')}
+          stroke={LINE1_COLOR}
+          strokeWidth="2"
+          fill="none"
+        />
         {/* X-axis labels: -10m, -5m, now */}
-        <text x={PAD.left} y={height - 4} textAnchor="start" fontSize="9" fill="#64748b">-10m</text>
-        <text x={PAD.left + plotW / 2} y={height - 4} textAnchor="middle" fontSize="9" fill="#64748b">-5m</text>
-        <text x={SVG_W - PAD.right} y={height - 4} textAnchor="end" fontSize="9" fill="#64748b">now</text>
+        <text x={PAD.left} y={height - 4} textAnchor="start" fontSize="9" fill="#64748b">
+          -10m
+        </text>
+        <text
+          x={PAD.left + plotW / 2}
+          y={height - 4}
+          textAnchor="middle"
+          fontSize="9"
+          fill="#64748b"
+        >
+          -5m
+        </text>
+        <text x={SVG_W - PAD.right} y={height - 4} textAnchor="end" fontSize="9" fill="#64748b">
+          now
+        </text>
       </svg>
       <div style={{ marginTop: 6, fontSize: 9, color: '#64748b' }}>
-        <span style={{ color: LINE1_COLOR }}>▪ 1-min</span>{'   '}
-        <span style={{ color: LINE5_COLOR }}>▪ 5-min</span>{'   '}
-        <span style={{ color: LINE15_COLOR }}>▪ 15-min</span>{'   ·   '}
+        <span style={{ color: LINE1_COLOR }}>▪ 1-min</span>
+        {'   '}
+        <span style={{ color: LINE5_COLOR }}>▪ 5-min</span>
+        {'   '}
+        <span style={{ color: LINE15_COLOR }}>▪ 15-min</span>
+        {'   ·   '}
         <span style={{ color: SATURATION_COLOR }}>▪ cores (saturation)</span>
       </div>
     </div>

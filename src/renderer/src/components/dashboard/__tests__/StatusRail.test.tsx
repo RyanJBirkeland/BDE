@@ -18,7 +18,12 @@ describe('StatusRail', () => {
 
   it('renders Active, Queued, Done, Tokens tiles + New Task button', () => {
     const { container } = render(
-      <StatusRail stats={baseStats} tokens24h={628_000} onFilterClick={noop} onNewTaskClick={noop} />
+      <StatusRail
+        stats={baseStats}
+        tokens24h={628_000}
+        onFilterClick={noop}
+        onNewTaskClick={noop}
+      />
     )
     const tiles = container.querySelectorAll('[data-role="rail-tile"]')
     // 4 tiles: Active, Queued, Done, Tokens
@@ -31,27 +36,48 @@ describe('StatusRail', () => {
   })
 
   it('Done tile shows "X today" subtext', () => {
-    render(<StatusRail stats={baseStats} tokens24h={0} onFilterClick={noop} onNewTaskClick={noop} />)
+    render(
+      <StatusRail stats={baseStats} tokens24h={0} onFilterClick={noop} onNewTaskClick={noop} />
+    )
     expect(screen.getByText(/4 today/)).toBeInTheDocument()
   })
 
   it('tokens24h renders in compact form (628.0K)', () => {
-    render(<StatusRail stats={baseStats} tokens24h={628_000} onFilterClick={noop} onNewTaskClick={noop} />)
+    render(
+      <StatusRail
+        stats={baseStats}
+        tokens24h={628_000}
+        onFilterClick={noop}
+        onNewTaskClick={noop}
+      />
+    )
     expect(screen.getByText(/628\.0K/)).toBeInTheDocument()
   })
 
   it('tokens24h handles millions', () => {
-    render(<StatusRail stats={baseStats} tokens24h={1_500_000} onFilterClick={noop} onNewTaskClick={noop} />)
+    render(
+      <StatusRail
+        stats={baseStats}
+        tokens24h={1_500_000}
+        onFilterClick={noop}
+        onNewTaskClick={noop}
+      />
+    )
     expect(screen.getByText(/1\.5M/)).toBeInTheDocument()
   })
 
   it('clicking Active tile calls onFilterClick with "active"', () => {
     const onFilterClick = vi.fn()
     const { container } = render(
-      <StatusRail stats={baseStats} tokens24h={0} onFilterClick={onFilterClick} onNewTaskClick={noop} />
+      <StatusRail
+        stats={baseStats}
+        tokens24h={0}
+        onFilterClick={onFilterClick}
+        onNewTaskClick={noop}
+      />
     )
-    const activeTile = Array.from(container.querySelectorAll('[data-role="rail-tile"]')).find(
-      (t) => t.textContent?.match(/Active/i)
+    const activeTile = Array.from(container.querySelectorAll('[data-role="rail-tile"]')).find((t) =>
+      t.textContent?.match(/Active/i)
     ) as HTMLElement
     fireEvent.click(activeTile)
     expect(onFilterClick).toHaveBeenCalledWith('active')
@@ -60,10 +86,15 @@ describe('StatusRail', () => {
   it('clicking Queued tile calls onFilterClick with "queued"', () => {
     const onFilterClick = vi.fn()
     const { container } = render(
-      <StatusRail stats={baseStats} tokens24h={0} onFilterClick={onFilterClick} onNewTaskClick={noop} />
+      <StatusRail
+        stats={baseStats}
+        tokens24h={0}
+        onFilterClick={onFilterClick}
+        onNewTaskClick={noop}
+      />
     )
-    const queuedTile = Array.from(container.querySelectorAll('[data-role="rail-tile"]')).find(
-      (t) => t.textContent?.match(/Queued/i)
+    const queuedTile = Array.from(container.querySelectorAll('[data-role="rail-tile"]')).find((t) =>
+      t.textContent?.match(/Queued/i)
     ) as HTMLElement
     fireEvent.click(queuedTile)
     expect(onFilterClick).toHaveBeenCalledWith('queued')
@@ -72,10 +103,15 @@ describe('StatusRail', () => {
   it('clicking Done tile calls onFilterClick with "done"', () => {
     const onFilterClick = vi.fn()
     const { container } = render(
-      <StatusRail stats={baseStats} tokens24h={0} onFilterClick={onFilterClick} onNewTaskClick={noop} />
+      <StatusRail
+        stats={baseStats}
+        tokens24h={0}
+        onFilterClick={onFilterClick}
+        onNewTaskClick={noop}
+      />
     )
-    const doneTile = Array.from(container.querySelectorAll('[data-role="rail-tile"]')).find(
-      (t) => t.textContent?.match(/Done/i)
+    const doneTile = Array.from(container.querySelectorAll('[data-role="rail-tile"]')).find((t) =>
+      t.textContent?.match(/Done/i)
     ) as HTMLElement
     fireEvent.click(doneTile)
     expect(onFilterClick).toHaveBeenCalledWith('done')
@@ -84,7 +120,12 @@ describe('StatusRail', () => {
   it('clicking New Task button calls onNewTaskClick', () => {
     const onNewTaskClick = vi.fn()
     render(
-      <StatusRail stats={baseStats} tokens24h={0} onFilterClick={noop} onNewTaskClick={onNewTaskClick} />
+      <StatusRail
+        stats={baseStats}
+        tokens24h={0}
+        onFilterClick={noop}
+        onNewTaskClick={onNewTaskClick}
+      />
     )
     fireEvent.click(screen.getByRole('button', { name: /new task/i }))
     expect(onNewTaskClick).toHaveBeenCalled()

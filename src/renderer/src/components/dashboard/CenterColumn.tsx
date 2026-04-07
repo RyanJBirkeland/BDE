@@ -2,7 +2,11 @@ import { NeonCard, SankeyPipeline, MiniChart, type ChartBar } from '../neon'
 import { ThroughputChart } from './ThroughputChart'
 import { SuccessRateChart } from './SuccessRateChart'
 import { LoadAverageChart } from './LoadAverageChart'
-import type { CompletionBucket, LoadSnapshot, DailySuccessRate } from '../../../../shared/ipc-channels'
+import type {
+  CompletionBucket,
+  LoadSnapshot,
+  DailySuccessRate
+} from '../../../../shared/ipc-channels'
 import type { StatusFilter } from '../../stores/sprintUI'
 import { Activity, Zap, TrendingUp, Cpu, Coins } from 'lucide-react'
 import { useDashboardDataStore } from '../../stores/dashboardData'
@@ -37,11 +41,19 @@ interface CenterColumnProps {
   onFilterClick: (filter: StatusFilter) => void
 }
 
-function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }): React.JSX.Element {
+function ErrorCard({
+  message,
+  onRetry
+}: {
+  message: string
+  onRetry: () => void
+}): React.JSX.Element {
   return (
     <div className="dashboard-card-error">
       <div className="dashboard-card-error__message">{message}</div>
-      <button className="dashboard-card-error__retry" onClick={onRetry}>Retry</button>
+      <button className="dashboard-card-error__retry" onClick={onRetry}>
+        Retry
+      </button>
     </div>
   )
 }
@@ -105,9 +117,19 @@ export function CenterColumn({
       </div>
 
       <NeonCard accent="cyan" title="Tokens / run" icon={<Coins size={12} />}>
-        <div className="tokens-per-run-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <div
+          className="tokens-per-run-row"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12
+          }}
+        >
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <strong style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>{tokenAvg ?? '—'}</strong>
+            <strong style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>
+              {tokenAvg ?? '—'}
+            </strong>
             <span style={{ color: '#64748b', fontSize: 9 }}>last 20 runs</span>
           </div>
           <div style={{ flex: 1, maxWidth: 160 }}>

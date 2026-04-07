@@ -28,13 +28,14 @@ describe('Dashboard handlers', () => {
     mockAll.mockReturnValue([])
   })
 
-  it('registers all 3 dashboard channels', () => {
+  it('registers all 4 dashboard channels', () => {
     registerDashboardHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(3)
+    expect(safeHandle).toHaveBeenCalledTimes(4)
     expect(safeHandle).toHaveBeenCalledWith('agent:completionsPerHour', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent:recentEvents', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('dashboard:dailySuccessRate', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('system:loadAverage', expect.any(Function))
   })
 
   describe('getCompletionsPerHour', () => {

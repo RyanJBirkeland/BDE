@@ -72,18 +72,25 @@ export default function DashboardView(): React.JSX.Element {
   }, [])
 
   // Dashboard data from centralized polling
-  const { throughputData, loadData, feedEvents, successTrendData, loading, cardErrors, lastFetchedAt } =
-    useDashboardDataStore(
-      useShallow((s) => ({
-        throughputData: s.throughputData,
-        loadData: s.loadData,
-        feedEvents: s.feedEvents,
-        successTrendData: s.successTrendData,
-        loading: s.loading,
-        cardErrors: s.cardErrors,
-        lastFetchedAt: s.lastFetchedAt
-      }))
-    )
+  const {
+    throughputData,
+    loadData,
+    feedEvents,
+    successTrendData,
+    loading,
+    cardErrors,
+    lastFetchedAt
+  } = useDashboardDataStore(
+    useShallow((s) => ({
+      throughputData: s.throughputData,
+      loadData: s.loadData,
+      feedEvents: s.feedEvents,
+      successTrendData: s.successTrendData,
+      loading: s.loading,
+      cardErrors: s.cardErrors,
+      lastFetchedAt: s.lastFetchedAt
+    }))
+  )
 
   // Load average polling — 5s backoff interval
   const fetchLoad = useDashboardDataStore((s) => s.fetchLoad)
@@ -262,38 +269,38 @@ export default function DashboardView(): React.JSX.Element {
               loadSaturated={loadSaturated}
               onClick={handleFiresClick}
             />
-          <div className="dashboard-grid" role="region" aria-label="Dashboard overview">
-            <StatusRail
-              stats={stats}
-              tokens24h={tokens24h}
-              onFilterClick={handleRailFilter}
-              onNewTaskClick={() => setView('task-workbench')}
-            />
+            <div className="dashboard-grid" role="region" aria-label="Dashboard overview">
+              <StatusRail
+                stats={stats}
+                tokens24h={tokens24h}
+                onFilterClick={handleRailFilter}
+                onNewTaskClick={() => setView('task-workbench')}
+              />
 
-            <CenterColumn
-              stats={stats}
-              partitions={partitions}
-              throughputData={throughputData}
-              successTrendData={successTrendData}
-              loadData={loadData}
-              tokenTrendData={tokenTrendData}
-              tokenAvg={tokenAvg}
-              cardErrors={cardErrors}
-              onFilterClick={navigateToSprintWithFilter}
-            />
+              <CenterColumn
+                stats={stats}
+                partitions={partitions}
+                throughputData={throughputData}
+                successTrendData={successTrendData}
+                loadData={loadData}
+                tokenTrendData={tokenTrendData}
+                tokenAvg={tokenAvg}
+                cardErrors={cardErrors}
+                onFilterClick={navigateToSprintWithFilter}
+              />
 
-            <ActivitySection
-              feedEvents={feedEvents}
-              cardErrors={cardErrors}
-              recentCompletions={recentCompletions}
-              tokenTrendData={tokenTrendData}
-              tokenAvg={tokenAvg}
-              tokens24h={tokens24h}
-              taskTokenMap={taskTokenMap}
-              onFeedEventClick={() => setView('agents')}
-              onCompletionClick={handleCompletionClick}
-            />
-          </div>
+              <ActivitySection
+                feedEvents={feedEvents}
+                cardErrors={cardErrors}
+                recentCompletions={recentCompletions}
+                tokenTrendData={tokenTrendData}
+                tokenAvg={tokenAvg}
+                tokens24h={tokens24h}
+                taskTokenMap={taskTokenMap}
+                onFeedEventClick={() => setView('agents')}
+                onCompletionClick={handleCompletionClick}
+              />
+            </div>
           </>
         )}
       </div>
