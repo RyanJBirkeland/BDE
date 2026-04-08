@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
 import { useDashboardDataStore } from '../stores/dashboardData'
-import { useVisibilityAwareInterval } from './useVisibilityAwareInterval'
 import type { ChartBar } from '../components/neon'
 import type { SprintTask } from '../../../shared/types'
 
@@ -74,10 +73,6 @@ export function useDashboardMetrics(): DashboardMetrics {
       successTrendData: s.successTrendData
     }))
   )
-
-  // Track current time for 24h token calculation (updates every 60s)
-  const [now, setNow] = useState(() => Date.now())
-  useVisibilityAwareInterval(() => setNow(Date.now()), 60_000)
 
   // Derived stats (single-pass)
   const stats = useMemo((): DashboardStats => {
@@ -167,13 +162,14 @@ export function useDashboardMetrics(): DashboardMetrics {
       .slice(0, 5)
   }, [tasks])
 
-  // Tokens 24h — sum tokens of agent runs started within last 24 hours
+  // Tokens 24h — sum tokens of agent runs started within last 24 hours.
+  // Uses Date.now() inline; recomputes when localAgents changes (on each poll).
   const tokens24h = useMemo(() => {
-    const cutoff = now - 24 * 60 * 60 * 1000
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000
     return localAgents
       .filter((a) => new Date(a.startedAt).getTime() >= cutoff)
       .reduce((sum, a) => sum + (a.tokensIn ?? 0) + (a.tokensOut ?? 0), 0)
-  }, [localAgents, now])
+  }, [localAgents])
 
   // Task token lookup map — sprintTaskId -> totalTokens
   const taskTokenMap = useMemo(() => {
@@ -186,15 +182,17 @@ export function useDashboardMetrics(): DashboardMetrics {
     return map
   }, [localAgents])
 
-  // Stuck tasks — active tasks that have exceeded their runtime threshold
+  // Stuck tasks — active tasks that have exceeded their runtime threshold.
+  // Uses Date.now() inline; recomputes when tasks changes (on each poll).
   const stuckCount = useMemo(() => {
+    const now = Date.now()
     return tasks.filter((t) => {
       if (t.status !== 'active' || !t.started_at) return false
       const elapsed = now - new Date(t.started_at).getTime()
       const threshold = t.max_runtime_ms ?? DEFAULT_STUCK_MS
       return elapsed > threshold
     }).length
-  }, [tasks, now])
+  }, [tasks])
 
   // Load saturation — null if healthy, populated object if load1 >= 2x CPU count
   const loadSaturated = useMemo(() => {

@@ -25,6 +25,25 @@ import '../assets/dashboard-neon.css'
 import { Plus } from 'lucide-react'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
+/**
+ * Renders the "X ago" freshness text with its own 10s ticker.
+ * Isolated so the ticker doesn't cause full DashboardView re-renders.
+ */
+function FreshnessLabel({ lastFetchedAt }: { lastFetchedAt: number }): React.JSX.Element | null {
+  const [now, setNow] = useState(() => Date.now())
+  useVisibilityAwareInterval(() => setNow(Date.now()), 10_000)
+  const ago = Math.floor((now - lastFetchedAt) / 1000)
+  if (ago < 0) return null
+  const text = ago < 10 ? 'just now' : ago < 60 ? `${ago}s ago` : `${Math.floor(ago / 60)}m ago`
+  const stale = ago > 120
+  return (
+    <span className={`dashboard-status-freshness${stale ? ' dashboard-status-freshness--stale' : ''}`}>
+      {' · '}
+      {text}
+    </span>
+  )
+}
+
 export default function DashboardView(): React.JSX.Element {
   const reduced = useReducedMotion()
   const tasks = useSprintTasks((s) => s.tasks)
@@ -99,9 +118,7 @@ export default function DashboardView(): React.JSX.Element {
   }, [fetchLoad])
   useBackoffInterval(fetchLoad, POLL_LOAD_AVERAGE)
 
-  // Timestamp counter to re-evaluate freshness every 10s (pauses when tab hidden)
-  const [now, setNow] = useState(() => Date.now())
-  useVisibilityAwareInterval(() => setNow(Date.now()), 10_000)
+  // `now` is owned by FreshnessLabel below — DashboardView no longer re-renders every 10s
 
   // Register dashboard commands in command palette
   const handleRefreshDashboard = useCallback(() => {
@@ -127,13 +144,8 @@ export default function DashboardView(): React.JSX.Element {
     }
   }, [handleRefreshDashboard, registerCommands, unregisterCommands])
 
-  // Freshness: how long ago data was last fetched, and whether it's stale (>2min)
-  const freshness = useMemo(() => {
-    if (!lastFetchedAt) return { text: '', stale: false }
-    const ago = Math.floor((now - lastFetchedAt) / 1000)
-    const text = ago < 10 ? 'just now' : ago < 60 ? `${ago}s ago` : `${Math.floor(ago / 60)}m ago`
-    return { text, stale: ago > 120 }
-  }, [lastFetchedAt, now])
+  // Staleness for StatusBar status prop — computed inline (cheap, no state ticker needed)
+  const dataStale = lastFetchedAt ? Date.now() - lastFetchedAt > 120_000 : false
 
   /** Navigate to Sprint Center with a pre-applied status filter. */
   const navigateToSprintWithFilter = useCallback(
@@ -207,7 +219,7 @@ export default function DashboardView(): React.JSX.Element {
 
       {/* Content (above effects) */}
       <div className="dashboard-content">
-        <StatusBar title="BDE Command Center" status={freshness.stale ? 'warning' : 'ok'}>
+        <StatusBar title="BDE Command Center" status={dataStale ? 'warning' : 'ok'}>
           {loading && !throughputData.length ? (
             <span className="dashboard-status-loading">Loading...</span>
           ) : errorCount > 0 ? (
@@ -218,14 +230,7 @@ export default function DashboardView(): React.JSX.Element {
           ) : (
             <span className="dashboard-status-ok">
               SYS.OK
-              {freshness.text && (
-                <span
-                  className={`dashboard-status-freshness${freshness.stale ? ' dashboard-status-freshness--stale' : ''}`}
-                >
-                  {' · '}
-                  {freshness.text}
-                </span>
-              )}
+              {lastFetchedAt && <FreshnessLabel lastFetchedAt={lastFetchedAt} />}
             </span>
           )}
         </StatusBar>
