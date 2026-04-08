@@ -114,6 +114,44 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
 \`open\` or start a localhost server — BDE renders the HTML natively.`
 
 // ---------------------------------------------------------------------------
+// Task Class — heuristic classifier + output cap hints
+// ---------------------------------------------------------------------------
+
+export type TaskClass = 'fix' | 'refactor' | 'doc' | 'audit' | 'generate'
+
+/**
+ * Classify a pipeline task based on keywords in its content.
+ * Used to inject a per-class output-token hint so agents don't over-generate.
+ * Classification is heuristic — false negatives default to 'generate'.
+ */
+export function classifyTask(taskContent: string): TaskClass {
+  const lower = taskContent.toLowerCase()
+  if (/\b(bug fix|bugfix|fixes #|fix:|\bfix\b.*issue|\bfix\b.*error|\bfix\b.*crash)/.test(lower))
+    return 'fix'
+  if (/\b(refactor|cleanup|clean up|reorganize|restructure|simplify|consolidate)/.test(lower))
+    return 'refactor'
+  if (/\b(doc(ument|s|umentation)?|readme|changelog|comment|jsdoc|tsdoc|add docs)/.test(lower))
+    return 'doc'
+  if (/\b(audit|review|investigate|profile|measure|benchmark|analyze|analyse)/.test(lower))
+    return 'audit'
+  return 'generate'
+}
+
+/** Soft output-token cap per task class (guidance in the prompt, not enforced by SDK). */
+const TASK_CLASS_CAP: Record<TaskClass, number> = {
+  fix: 4_000,
+  refactor: 4_000,
+  doc: 2_000,
+  audit: 2_000,
+  generate: 8_000
+}
+
+function buildOutputCapHint(taskClass: TaskClass): string {
+  const cap = TASK_CLASS_CAP[taskClass]
+  return `\n\n## Output Budget\nThis task is classified as **${taskClass}**. Aim to produce ≤${cap.toLocaleString()} output tokens. Focus on precise, targeted changes — avoid generating boilerplate, verbose comments, or re-stating existing code that doesn't need to change.`
+}
+
+// ---------------------------------------------------------------------------
 // Pipeline-Specific Sections
 // ---------------------------------------------------------------------------
 
@@ -336,6 +374,10 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     // header so the agent knows it must read and address every section.
     // Copilot/synthesizer have no code tools and use their own task framing.
     if (agentType === 'pipeline') {
+      // Inject per-class output budget hint before the spec
+      const taskClass = classifyTask(taskContent)
+      prompt += buildOutputCapHint(taskClass)
+
       prompt += '\n\n## Task Specification\n\n'
       prompt += 'Read this entire specification before writing any code. '
       prompt += 'Address every section.\n\n'
