@@ -122,6 +122,7 @@ describe('db schema migrations', () => {
 
     expect(indexes).toEqual([
       'idx_agent_events_agent',
+      'idx_agent_events_agent_id',
       'idx_agent_runs_finished',
       'idx_agent_runs_pid',
       'idx_agent_runs_sprint_task',
@@ -271,6 +272,34 @@ describe('db schema migrations', () => {
       repo: string
     }
     expect(after.repo).toBe('bde')
+
+    db.close()
+  })
+
+  it('migration v43 creates covering index on agent_events(agent_id, timestamp)', () => {
+    const db = new Database(':memory:')
+    db.pragma('journal_mode = WAL')
+    db.pragma('foreign_keys = ON')
+
+    // Run all migrations to create agent_events table and v43 index
+    runMigrations(db)
+
+    // Verify the index exists
+    const index = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_agent_events_agent_id'"
+      )
+      .get()
+    expect(index).toEqual({ name: 'idx_agent_events_agent_id' })
+
+    // Verify EXPLAIN QUERY PLAN shows the index is used for the hot query
+    const plan = db
+      .prepare('EXPLAIN QUERY PLAN SELECT payload FROM agent_events WHERE agent_id=? ORDER BY timestamp ASC')
+      .all('test-agent') as Array<{ detail: string }>
+
+    // The query plan should mention the index
+    const usesIndex = plan.some((row) => row.detail.includes('idx_agent_events_agent_id'))
+    expect(usesIndex).toBe(true)
 
     db.close()
   })

@@ -20,6 +20,7 @@ export function getDb(): Database.Database {
       }
     }
     _db.pragma('journal_mode = WAL')
+    _db.pragma('wal_autocheckpoint=200')
     _db.pragma('foreign_keys = ON')
     _db.pragma('synchronous = NORMAL')
     _db.pragma('cache_size = -8000')
@@ -964,6 +965,16 @@ export const migrations: Migration[] = [
       'F-t3-db-6 + F-t3-model-3: Drop unused cost_events table — dark write path, never populated in production after 31K agent events. Phase 0 Q2 confirmed no production writers exist; token/cost data lives in agent_runs columns.',
     up: (db) => {
       db.prepare('DROP TABLE IF EXISTS cost_events').run()
+    }
+  },
+  {
+    version: 43,
+    description:
+      'Add covering index on agent_events(agent_id, timestamp) to optimize agent event queries — hot query path does full table scan with 50K events/day',
+    up: (db) => {
+      const sql = `CREATE INDEX IF NOT EXISTS idx_agent_events_agent_id
+        ON agent_events (agent_id, timestamp ASC)`
+      db.exec(sql)
     }
   }
 ]
