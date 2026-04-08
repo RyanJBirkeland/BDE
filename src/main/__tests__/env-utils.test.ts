@@ -16,7 +16,13 @@ vi.mock('node:child_process', async () => {
   return { ...actual, execFile: vi.fn() }
 })
 
-import { getOAuthToken, invalidateOAuthToken, refreshOAuthTokenFromKeychain } from '../env-utils'
+import {
+  getOAuthToken,
+  invalidateOAuthToken,
+  refreshOAuthTokenFromKeychain,
+  buildAgentEnv,
+  _resetEnvCache
+} from '../env-utils'
 import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 
@@ -271,5 +277,40 @@ describe('refreshOAuthTokenFromKeychain', () => {
       expect(fetchSpy).not.toHaveBeenCalled()
       expect(vi.mocked(writeFileSync)).toHaveBeenCalled()
     })
+  })
+})
+
+describe('buildAgentEnv', () => {
+  beforeEach(() => {
+    _resetEnvCache()
+  })
+
+  it('defaults VITEST_MAX_WORKERS to "2" when not set', () => {
+    const originalValue = process.env.VITEST_MAX_WORKERS
+    delete process.env.VITEST_MAX_WORKERS
+
+    const env = buildAgentEnv()
+
+    expect(env.VITEST_MAX_WORKERS).toBe('2')
+
+    if (originalValue !== undefined) {
+      process.env.VITEST_MAX_WORKERS = originalValue
+    }
+  })
+
+  it('preserves user-set VITEST_MAX_WORKERS value', () => {
+    const originalValue = process.env.VITEST_MAX_WORKERS
+    process.env.VITEST_MAX_WORKERS = '8'
+    _resetEnvCache() // Force re-read
+
+    const env = buildAgentEnv()
+
+    expect(env.VITEST_MAX_WORKERS).toBe('8')
+
+    if (originalValue !== undefined) {
+      process.env.VITEST_MAX_WORKERS = originalValue
+    } else {
+      delete process.env.VITEST_MAX_WORKERS
+    }
   })
 })

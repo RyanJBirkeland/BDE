@@ -30,7 +30,8 @@ const ENV_ALLOWLIST = [
   'GIT_AUTHOR_EMAIL',
   'GIT_COMMITTER_NAME',
   'GIT_COMMITTER_EMAIL',
-  'NODE_PATH'
+  'NODE_PATH',
+  'VITEST_MAX_WORKERS'
 ]
 
 /**
@@ -73,6 +74,12 @@ export function buildAgentEnv(): Record<string, string | undefined> {
   // Prepend extra paths to PATH
   const currentPath = env.PATH ?? ''
   env.PATH = [...EXTRA_PATHS, ...currentPath.split(':')].filter(Boolean).join(':')
+
+  // Cap vitest worker parallelism for agent-spawned test runs. Each agent runs
+  // its own test:coverage; at MAX_ACTIVE_TASKS > 1 the default (CPU-count) causes
+  // CPU oversubscription. Users can override by setting VITEST_MAX_WORKERS
+  // before launching BDE.
+  env.VITEST_MAX_WORKERS = env.VITEST_MAX_WORKERS ?? '2'
 
   _cachedEnv = env
   return { ..._cachedEnv }
