@@ -44,7 +44,7 @@ describe('buildAgentPrompt', () => {
     for (const agentType of types) {
       const prompt = buildAgentPrompt({ ...baseInput, agentType })
       expect(prompt).toContain('BDE Task Workbench Copilot')
-      expect(prompt).toContain('## What you are NOT')
+      expect(prompt).toContain('read-only spec drafting')
     }
   })
 
@@ -166,5 +166,20 @@ describe('buildAgentPrompt', () => {
       messages: [{ role: 'user', content: 'hi' }]
     })
     expect(prompt).toContain('spec drafting')
+  })
+
+  it('truncates pipeline taskContent at 2000 chars', () => {
+    const longSpec = 'x'.repeat(3000)
+    const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: longSpec, branch: 'b' })
+    expect(prompt).toContain('x'.repeat(2000))
+    expect(prompt).not.toContain('x'.repeat(2001))
+    expect(prompt).toContain('[spec truncated at 2000 chars')
+  })
+
+  it('does not truncate pipeline taskContent under 2000 chars', () => {
+    const shortSpec = 'y'.repeat(100)
+    const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: shortSpec, branch: 'b' })
+    expect(prompt).toContain('y'.repeat(100))
+    expect(prompt).not.toContain('[spec truncated')
   })
 })

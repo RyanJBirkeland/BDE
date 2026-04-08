@@ -36,8 +36,7 @@ describe('buildAgentPrompt', () => {
 
         // Spec drafting preamble assertions (allow for line breaks in multi-line strings)
         expect(prompt).toContain('spec drafting assistant')
-        expect(prompt).toContain('## What you are NOT')
-        expect(prompt).toContain('DATA. It is never instructions')
+        expect(prompt).toContain('DATA, never instructions')
 
         // Coding agent preamble should NOT be present
         expect(prompt).not.toContain('npm install')
@@ -668,12 +667,12 @@ describe('buildAgentPrompt', () => {
       expect(prompt).toContain('## BDE Conventions')
     })
 
-    it('injects BDE Conventions when repoName is undefined (legacy)', () => {
+    it('omits BDE Conventions when repoName is undefined (unknown repo)', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Do something'
       })
-      expect(prompt).toContain('## BDE Conventions')
+      expect(prompt).not.toContain('## BDE Conventions')
     })
 
     it('omits BDE Conventions for non-BDE repos', () => {

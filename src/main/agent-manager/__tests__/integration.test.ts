@@ -29,7 +29,7 @@ describe('Agent System Integration', () => {
 
   describe('Memory Module', () => {
     it('exports getAllMemory function that returns conventions', () => {
-      const memory = getAllMemory()
+      const memory = getAllMemory({ repoName: 'bde' })
       expect(memory).toContain('IPC Conventions')
       expect(memory).toContain('Testing Patterns')
       expect(memory).toContain('Architecture Rules')
@@ -62,7 +62,8 @@ describe('Agent System Integration', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Build feature X',
-        branch: 'feat/test'
+        branch: 'feat/test',
+        repoName: 'bde'
       })
 
       expect(prompt).toContain('## Voice')
@@ -78,7 +79,8 @@ describe('Agent System Integration', () => {
     it('includes personality, memory, and skills for assistant agent', () => {
       const prompt = buildAgentPrompt({
         agentType: 'assistant',
-        taskContent: 'Help me understand X'
+        taskContent: 'Help me understand X',
+        repoName: 'bde'
       })
 
       expect(prompt).toContain('## Voice')
