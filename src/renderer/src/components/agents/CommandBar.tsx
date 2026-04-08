@@ -188,7 +188,7 @@ export function CommandBar({
   return (
     <div
       className={`command-bar${disabled ? ' command-bar--disabled' : ''}`}
-      style={{ position: 'relative' }}
+      style={{ position: 'relative', flexDirection: 'column', alignItems: 'stretch', gap: 0 }}
     >
       {showAutocomplete && (
         <CommandAutocomplete
@@ -200,13 +200,8 @@ export function CommandBar({
       {attachment && (
         <div
           style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: 0,
-            right: 0,
-            padding: '8px',
-            background: 'var(--neon-bg)',
-            borderTop: '1px solid var(--neon-purple-border)',
+            padding: '8px 12px',
+            borderBottom: '1px solid var(--neon-purple-border)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
@@ -254,25 +249,27 @@ export function CommandBar({
           </button>
         </div>
       )}
-      <div className="command-bar__prompt">&gt;</div>
-      <textarea
-        ref={inputRef}
-        className="command-bar__input"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        disabled={disabled}
-        placeholder={
-          disabled && disabledReason
-            ? disabledReason
-            : 'Message the agent… (Shift+Enter for newline)'
-        }
-        aria-label="Agent command input"
-        autoFocus
-        rows={1}
-        style={{ resize: 'none', overflow: 'hidden' }}
-      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
+        <div className="command-bar__prompt">&gt;</div>
+        <textarea
+          ref={inputRef}
+          className="command-bar__input"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          disabled={disabled}
+          placeholder={
+            disabled && disabledReason
+              ? disabledReason
+              : 'Message the agent… (Shift+Enter for newline)'
+          }
+          aria-label="Agent command input"
+          autoFocus
+          rows={1}
+          style={{ resize: 'none', overflow: 'hidden' }}
+        />
+      </div>
     </div>
   )
 }
