@@ -8,6 +8,14 @@ import type { AgentMeta } from '../../shared/types'
 
 // --- Column mapping between snake_case DB rows and camelCase AgentMeta ---
 
+export interface TurnRecord {
+  runId: string
+  turn: number
+  tokensIn: number
+  tokensOut: number
+  toolCalls: number
+}
+
 export interface AgentRunRow {
   id: string
   pid: number | null
@@ -259,4 +267,39 @@ export function listAgentRunsByTaskId(
       .prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?')
       .all(limit) as AgentRunRow[]
   ).map(rowToMeta)
+}
+
+export function insertAgentRunTurn(db: Database.Database, record: TurnRecord): void {
+  const stmt = db.prepare(
+    'INSERT INTO agent_run_turns (run_id, turn, tokens_in, tokens_out, tool_calls, recorded_at) VALUES (?, ?, ?, ?, ?, ?)'
+  )
+  stmt.run(
+    record.runId,
+    record.turn,
+    record.tokensIn,
+    record.tokensOut,
+    record.toolCalls,
+    new Date().toISOString()
+  )
+}
+
+export function listAgentRunTurns(db: Database.Database, runId: string): TurnRecord[] {
+  const rows = db
+    .prepare(
+      'SELECT run_id, turn, tokens_in, tokens_out, tool_calls FROM agent_run_turns WHERE run_id = ? ORDER BY turn ASC'
+    )
+    .all(runId) as Array<{
+    run_id: string
+    turn: number
+    tokens_in: number | null
+    tokens_out: number | null
+    tool_calls: number | null
+  }>
+  return rows.map((r) => ({
+    runId: r.run_id,
+    turn: r.turn,
+    tokensIn: r.tokens_in ?? 0,
+    tokensOut: r.tokens_out ?? 0,
+    toolCalls: r.tool_calls ?? 0
+  }))
 }
