@@ -1,13 +1,14 @@
 /**
  * ConsoleHeader — 32px glass header for AgentConsole with status, model, duration, cost, and actions.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Terminal, StopCircle, Copy, GitPullRequest } from 'lucide-react'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
 import { NeonBadge, type NeonAccent } from '../neon'
 import { useTerminalStore } from '../../stores/terminal'
 import { toast } from '../../stores/toasts'
 import { formatDuration, formatElapsed } from '../../lib/format'
+import { useBackoffInterval } from '../../hooks/useBackoffInterval'
 import { derivePhaseLabel } from '../../lib/agent-phase'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useCodeReviewStore } from '../../stores/codeReview'
@@ -36,6 +37,17 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
     return formatElapsed(new Date(agent.startedAt).getTime())
   }
   const [duration, setDuration] = useState(() => getDuration())
+
+  // Live ctx token counter for running agents — polls latest agent_run_turns row
+  const [liveCtxTokens, setLiveCtxTokens] = useState<number | null>(null)
+  const fetchCtx = useCallback(async () => {
+    if (!isRunning) return
+    const result = await window.api.getLatestCacheTokens(agent.id)
+    if (result != null) {
+      setLiveCtxTokens(result.cacheTokensRead)
+    }
+  }, [isRunning, agent.id])
+  useBackoffInterval(fetchCtx, 3000, { maxMs: 10_000 })
 
   // Live duration ticker for running agents
   useEffect(() => {
@@ -186,13 +198,18 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
             </span>
           )}
           {costUsd != null && <span>${costUsd.toFixed(4)}</span>}
-          {agent.cacheRead != null && agent.cacheRead > 0 && (
-            <span title="Peak context window size (cache reads)">
-              ctx {agent.cacheRead >= 1_000_000
-                ? `${(agent.cacheRead / 1_000_000).toFixed(1)}M`
-                : `${Math.round(agent.cacheRead / 1_000)}k`}
-            </span>
-          )}
+          {(() => {
+            const ctxTokens = isRunning ? liveCtxTokens : agent.cacheRead
+            if (ctxTokens == null || ctxTokens === 0) return null
+            const label = ctxTokens >= 1_000_000
+              ? `${(ctxTokens / 1_000_000).toFixed(1)}M`
+              : `${Math.round(ctxTokens / 1_000)}k`
+            return (
+              <span title={isRunning ? 'Current context window size (live)' : 'Peak context window size (cache reads)'}>
+                ctx {label}
+              </span>
+            )
+          })()}
         </div>
 
         {/* Action buttons */}

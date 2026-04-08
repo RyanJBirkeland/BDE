@@ -224,6 +224,10 @@ export interface AgentChannels {
     args: [agentId: string]
     result: { ok: boolean; taskId?: string; error?: string }
   }
+  'agent:latestCacheTokens': {
+    args: [runId: string]
+    result: { cacheTokensRead: number; cacheTokensCreated: number; tokensIn: number; tokensOut: number } | null
+  }
 }
 
 /** GitHub API proxy */

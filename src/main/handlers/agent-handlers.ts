@@ -9,6 +9,8 @@ import { safeHandle } from '../ipc-utils'
 import { tailAgentLog, cleanupOldLogs } from '../agent-log-manager'
 import type { TailLogArgs } from '../agent-log-manager'
 import { listAgents, readLog, importAgent, pruneOldAgents, getAgentMeta } from '../agent-history'
+import { getLatestAgentRunTurn } from '../data/agent-queries'
+import { getDb } from '../db'
 import type { AgentMeta } from '../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { createReviewTaskFromAdhoc } from '../data/sprint-queries'
@@ -172,6 +174,10 @@ export function registerAgentHandlers(am?: AgentManager): void {
       log.error(`[agents:promoteToReview] failed: ${msg}`)
       return { ok: false, error: msg }
     }
+  })
+
+  safeHandle('agent:latestCacheTokens', async (_e, runId: string) => {
+    return getLatestAgentRunTurn(getDb(), runId)
   })
 
   pruneOldAgents()

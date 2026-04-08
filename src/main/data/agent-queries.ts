@@ -291,6 +291,34 @@ export function insertAgentRunTurn(db: Database.Database, record: TurnRecord): v
   )
 }
 
+/**
+ * Returns the cumulative cache token totals from the most recent turn for a
+ * given run. Used to power the live ctx counter in the agent console header
+ * while the agent is still running.
+ */
+export function getLatestAgentRunTurn(
+  db: Database.Database,
+  runId: string
+): { cacheTokensRead: number; cacheTokensCreated: number; tokensIn: number; tokensOut: number } | null {
+  const row = db
+    .prepare(
+      'SELECT cache_tokens_read, cache_tokens_created, tokens_in, tokens_out FROM agent_run_turns WHERE run_id = ? ORDER BY turn DESC LIMIT 1'
+    )
+    .get(runId) as {
+    cache_tokens_read: number | null
+    cache_tokens_created: number | null
+    tokens_in: number | null
+    tokens_out: number | null
+  } | undefined
+  if (!row) return null
+  return {
+    cacheTokensRead: row.cache_tokens_read ?? 0,
+    cacheTokensCreated: row.cache_tokens_created ?? 0,
+    tokensIn: row.tokens_in ?? 0,
+    tokensOut: row.tokens_out ?? 0
+  }
+}
+
 export function listAgentRunTurns(db: Database.Database, runId: string): TurnRecord[] {
   const rows = db
     .prepare(

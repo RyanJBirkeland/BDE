@@ -103,6 +103,7 @@ declare global {
       ) => Promise<IpcResult<'local:spawnClaudeAgent'>>
       steerAgent: (agentId: string, message: string) => Promise<IpcResult<'agent:steer'>>
       killAgent: (...args: IpcArgs<'agent:kill'>) => Promise<IpcResult<'agent:kill'>>
+      getLatestCacheTokens: (runId: string) => Promise<IpcResult<'agent:latestCacheTokens'>>
       tailAgentLog: (
         ...args: IpcArgs<'local:tailAgentLog'>
       ) => Promise<IpcResult<'local:tailAgentLog'>>

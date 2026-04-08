@@ -100,6 +100,7 @@ const api = {
   steerAgent: (agentId: string, message: string) =>
     typedInvoke('agent:steer', { agentId, message }),
   killAgent: (agentId: string) => typedInvoke('agent:kill', agentId),
+  getLatestCacheTokens: (runId: string) => typedInvoke('agent:latestCacheTokens', runId),
   tailAgentLog: (args: { logPath: string; fromByte?: number }) =>
     typedInvoke('local:tailAgentLog', args),
 
