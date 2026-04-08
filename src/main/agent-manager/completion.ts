@@ -5,7 +5,7 @@ import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { buildAgentEnv } from '../env-utils'
 import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
 import type { Logger } from './types'
-import { broadcast } from '../broadcast'
+import { broadcastCoalesced } from '../broadcast'
 import type { AgentEvent, FailureReason } from '../../shared/types'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
 import { captureDiffSnapshot } from './diff-snapshot'
@@ -405,7 +405,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       message: `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
       timestamp: Date.now()
     }
-    broadcast('agent:event', { agentId: taskId, event })
+    broadcastCoalesced('agent:event', { agentId: taskId, event })
     try {
       repo.updateTask(taskId, {
         status: 'error',
@@ -431,7 +431,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       message: 'Failed to detect branch',
       timestamp: Date.now()
     }
-    broadcast('agent:event', { agentId: taskId, event })
+    broadcastCoalesced('agent:event', { agentId: taskId, event })
     try {
       repo.updateTask(taskId, {
         status: 'error',
@@ -453,7 +453,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       message: 'Empty branch name',
       timestamp: Date.now()
     }
-    broadcast('agent:event', { agentId: taskId, event })
+    broadcastCoalesced('agent:event', { agentId: taskId, event })
     try {
       repo.updateTask(taskId, {
         status: 'error',

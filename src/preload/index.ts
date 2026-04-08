@@ -277,8 +277,20 @@ const api = {
         _e: IpcRendererEvent,
         payload: { agentId: string; event: AgentEvent }
       ): void => callback(payload)
+      const batchHandler = (
+        _e: IpcRendererEvent,
+        payloads: Array<{ agentId: string; event: AgentEvent }>
+      ): void => {
+        for (const p of payloads) {
+          callback(p)
+        }
+      }
       ipcRenderer.on('agent:event', handler)
-      return () => ipcRenderer.removeListener('agent:event', handler)
+      ipcRenderer.on('agent:event:batch', batchHandler)
+      return () => {
+        ipcRenderer.removeListener('agent:event', handler)
+        ipcRenderer.removeListener('agent:event:batch', batchHandler)
+      }
     },
     getHistory: (agentId: string) => typedInvoke('agent:history', agentId)
   },

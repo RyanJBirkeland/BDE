@@ -22,9 +22,10 @@ vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn()
 }))
 
-// Mock broadcast — completion.ts calls broadcast() which requires Electron's BrowserWindow
+// Mock broadcast — completion.ts calls broadcastCoalesced() which requires Electron's BrowserWindow
 vi.mock('../../broadcast', () => ({
-  broadcast: vi.fn()
+  broadcast: vi.fn(),
+  broadcastCoalesced: vi.fn()
 }))
 
 import { existsSync } from 'node:fs'
