@@ -324,6 +324,33 @@ describe('buildAgentPrompt', () => {
 
       expect(prompt).not.toContain('## Target Repository')
     })
+
+    it('caps conversation history at 10 turns, keeping the most recent', () => {
+      const messages = Array.from({ length: 15 }, (_, i) => ({
+        role: i % 2 === 0 ? 'user' : 'assistant',
+        content: `turn ${i}`
+      }))
+      const prompt = buildAgentPrompt({ agentType: 'copilot', messages })
+      // Most recent 10 turns (indices 5-14) should be present
+      expect(prompt).toContain('turn 14')
+      expect(prompt).toContain('turn 5')
+      // Oldest turns should be absent
+      expect(prompt).not.toContain('turn 4')
+      expect(prompt).not.toContain('turn 0')
+      // Header should mention truncation
+      expect(prompt).toContain('last 10 of 15 turns')
+    })
+
+    it('does not truncate conversation history at or under 10 turns', () => {
+      const messages = Array.from({ length: 10 }, (_, i) => ({
+        role: 'user',
+        content: `turn ${i}`
+      }))
+      const prompt = buildAgentPrompt({ agentType: 'copilot', messages })
+      expect(prompt).toContain('turn 0')
+      expect(prompt).toContain('turn 9')
+      expect(prompt).not.toContain('last 10 of')
+    })
   })
 
   describe('synthesizer context handling', () => {

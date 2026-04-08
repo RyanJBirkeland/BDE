@@ -306,8 +306,19 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
       }
     }
 
-    prompt += '\n\n## Conversation\n\n'
-    for (const msg of messages) {
+    // Cap conversation history at the 10 most recent turns (5 user + 5 assistant).
+    // Older turns add tokens with diminishing relevance — the spec draft in formContext
+    // already captures the accumulated intent.
+    const MAX_HISTORY_TURNS = 10
+    const recentMessages = messages.length > MAX_HISTORY_TURNS
+      ? messages.slice(messages.length - MAX_HISTORY_TURNS)
+      : messages
+    if (messages.length > MAX_HISTORY_TURNS) {
+      prompt += `\n\n## Conversation (last ${MAX_HISTORY_TURNS} of ${messages.length} turns)\n\n`
+    } else {
+      prompt += '\n\n## Conversation\n\n'
+    }
+    for (const msg of recentMessages) {
       prompt += `**${msg.role}**: ${msg.content}\n\n`
     }
   } else if (agentType === 'synthesizer' && codebaseContext) {
@@ -352,11 +363,14 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     prompt += '\n\n## Upstream Task Context\n\n'
     prompt += 'This task depends on the following completed tasks:\n\n'
     for (const upstream of upstreamContext) {
+      // Cap upstream spec at 500 chars — we only need the intent, not full implementation detail.
       const cappedSpec =
         upstream.spec.length > 500 ? upstream.spec.slice(0, 500) + '...' : upstream.spec
       prompt += `### ${upstream.title}\n\n${cappedSpec}\n\n`
 
-      // Include partial diff if available (salvaged partial progress from upstream task)
+      // Include partial diff if available (salvaged partial progress from upstream task).
+      // Cap at 2000 chars: diffs for large file renames/moves can be enormous; the
+      // downstream agent only needs to understand the shape of the change, not every line.
       if (upstream.partial_diff) {
         const MAX_DIFF_CHARS = 2000
         const truncated = upstream.partial_diff.length > MAX_DIFF_CHARS
