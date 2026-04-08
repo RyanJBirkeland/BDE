@@ -62,11 +62,19 @@ This is **Option B** in the plan's Task 2.3 (conservative retention) **plus a pe
 ### Q6: Is `sprint_tasks.max_cost_usd` ever read?
 *Affects: Phase 6 row F-t4-cost-5*
 
-**Method:**
+**Method:** `Grep max_cost_usd|maxCostUsd|maxCostUSD` across `src/`. Trace each match to determine read/write/enforce status.
 
-**Findings:**
+**Findings — IT IS ALREADY ENFORCED:**
 
-**Decision (enforce or drop):**
+- **`src/main/agent-manager/watchdog.ts:20`** — the watchdog returns `'cost-budget-exceeded'` when `agent.costUsd >= agent.maxCostUsd`. This runs on every health check tick.
+- **`src/main/agent-manager/index.ts:181`** — produces a user-facing error message when budget is exceeded: *"Agent exceeded the cost budget (max_cost_usd). The task consumed more API credits than allowed."*
+- **`src/main/agent-manager/run-agent.ts:349`** — `maxCostUsd: task.max_cost_usd ?? null` plumbs the task field into the agent runtime config.
+- **`src/main/agent-manager/types.ts:66`** — `maxCostUsd: number | null` is part of the agent's runtime type.
+- **`src/main/agent-manager/__tests__/watchdog.test.ts:111-149`** — 4 tests covering the enforcement logic (meets, exceeds, below, null).
+- **`src/renderer/src/components/task-workbench/WorkbenchForm.tsx:477-479`** — Task Workbench UI exposes the field for user input.
+- **`src/main/data/sprint-queries.ts`** — column read in 14 SELECT statements across the file (every query that returns a SprintTask reads it).
+
+**Decision (enforce or drop):** **DONE — already enforced.** Phase 6 Task 6.12 should be marked complete with a doc-only commit (no code change). The audit's `F-t4-cost-5` finding was based on incomplete grep — the column IS wired, the watchdog DOES enforce it. The synthesis ranked this as Med/Med (score 4.5) which made sense if it was unenforced; reality is **closed/no-op** and it should drop off the Phase 6 worklist.
 
 ---
 
