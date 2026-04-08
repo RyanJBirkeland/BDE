@@ -11,6 +11,7 @@ import { formatDuration, formatElapsed } from '../../lib/format'
 import { derivePhaseLabel } from '../../lib/agent-phase'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useCodeReviewStore } from '../../stores/codeReview'
+import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
 
 interface ConsoleHeaderProps {
   agent: AgentMeta
@@ -27,6 +28,7 @@ function getModelAccent(model: string): NeonAccent {
 
 export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.Element {
   const isRunning = agent.status === 'running'
+  const { confirm, confirmProps } = useConfirm()
   const getDuration = (): string => {
     if (agent.finishedAt) {
       return formatDuration(agent.startedAt, agent.finishedAt)
@@ -62,6 +64,46 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
     try {
       // Pipeline agents are keyed by sprintTaskId in AgentManager, adhoc agents by id
       const killId = agent.sprintTaskId ?? agent.id
+
+      // Build confirmation message based on whether agent has a worktree
+      let message = 'This will terminate the SDK session.'
+      let hasUncommittedWork = false
+
+      if (agent.worktreePath) {
+        // Fetch git status to check for uncommitted changes
+        try {
+          const statusResult = await window.api.gitStatus(agent.worktreePath)
+          if (statusResult.files.length > 0) {
+            hasUncommittedWork = true
+            const fileList = statusResult.files
+              .slice(0, 10) // Show first 10 files
+              .map((f) => `  ${f.status} ${f.path}`)
+              .join('\n')
+            const moreFiles =
+              statusResult.files.length > 10
+                ? `\n  ... and ${statusResult.files.length - 10} more`
+                : ''
+            message = `This agent has uncommitted changes in its worktree. Killing it will leave those changes on disk but will not commit or push them.\n\nUncommitted files:\n${fileList}${moreFiles}`
+          } else {
+            message =
+              'This agent has a worktree but no uncommitted changes. The worktree will remain on disk.'
+          }
+        } catch {
+          // If git status fails, show a generic message
+          message =
+            'This agent has a worktree. Killing it may leave uncommitted changes on disk.'
+        }
+      }
+
+      const confirmed = await confirm({
+        title: 'Stop agent?',
+        message,
+        confirmLabel: 'Stop agent',
+        variant: hasUncommittedWork ? 'danger' : 'default'
+      })
+
+      if (!confirmed) return
+
       await window.api.killAgent(killId)
     } catch (err) {
       toast.error(`Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -108,86 +150,89 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
   const statusDotClass = `console-header__status-dot console-header__status-dot--${agent.status}`
 
   return (
-    <div className="console-header">
-      {/* Status dot */}
-      <div className={statusDotClass} />
+    <>
+      <div className="console-header">
+        {/* Status dot */}
+        <div className={statusDotClass} />
 
-      {/* Task name */}
-      <div
-        className="console-header__task-name"
-        style={{
-          flex: 1,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap'
-        }}
-        title={agent.task}
-      >
-        {agent.task}
-      </div>
-
-      {/* Model badge */}
-      <NeonBadge accent={getModelAccent(agent.model)} label={agent.model} pulse={isRunning} />
-
-      {/* Meta info */}
-      <div className="console-header__meta">
-        <span>{duration}</span>
-        {isRunning && (
-          <span
-            className="console-header__phase"
-            data-testid="console-header-phase"
-            aria-label={`Agent phase: ${derivePhaseLabel(events)}`}
-            style={{ opacity: 0.8 }}
-          >
-            {derivePhaseLabel(events)}
-          </span>
-        )}
-        {costUsd != null && <span>${costUsd.toFixed(4)}</span>}
-      </div>
-
-      {/* Action buttons */}
-      <div className="console-header__actions">
-        <button
-          className="console-header__action-btn"
-          onClick={handleOpenShell}
-          title="Open terminal in agent directory"
-          aria-label="Open terminal"
+        {/* Task name */}
+        <div
+          className="console-header__task-name"
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}
+          title={agent.task}
         >
-          <Terminal size={14} />
-        </button>
+          {agent.task}
+        </div>
 
-        {isRunning && (
+        {/* Model badge */}
+        <NeonBadge accent={getModelAccent(agent.model)} label={agent.model} pulse={isRunning} />
+
+        {/* Meta info */}
+        <div className="console-header__meta">
+          <span>{duration}</span>
+          {isRunning && (
+            <span
+              className="console-header__phase"
+              data-testid="console-header-phase"
+              aria-label={`Agent phase: ${derivePhaseLabel(events)}`}
+              style={{ opacity: 0.8 }}
+            >
+              {derivePhaseLabel(events)}
+            </span>
+          )}
+          {costUsd != null && <span>${costUsd.toFixed(4)}</span>}
+        </div>
+
+        {/* Action buttons */}
+        <div className="console-header__actions">
           <button
             className="console-header__action-btn"
-            onClick={handleStop}
-            title="Stop agent"
-            aria-label="Stop agent"
+            onClick={handleOpenShell}
+            title="Open terminal in agent directory"
+            aria-label="Open terminal"
           >
-            <StopCircle size={14} />
+            <Terminal size={14} />
           </button>
-        )}
 
-        {canPromote && (
+          {isRunning && (
+            <button
+              className="console-header__action-btn"
+              onClick={handleStop}
+              title="Stop agent"
+              aria-label="Stop agent"
+            >
+              <StopCircle size={14} />
+            </button>
+          )}
+
+          {canPromote && (
+            <button
+              className="console-header__action-btn"
+              onClick={handlePromote}
+              title="Promote this scratchpad agent's work to Code Review"
+              aria-label="Promote to Code Review"
+              style={{ color: 'var(--neon-cyan)' }}
+            >
+              <GitPullRequest size={14} />
+            </button>
+          )}
+
           <button
             className="console-header__action-btn"
-            onClick={handlePromote}
-            title="Promote this scratchpad agent's work to Code Review"
-            aria-label="Promote to Code Review"
-            style={{ color: 'var(--neon-cyan)' }}
+            onClick={handleCopyLog}
+            title="Copy full log to clipboard"
+            aria-label="Copy log"
           >
-            <GitPullRequest size={14} />
+            <Copy size={14} />
           </button>
-        )}
-
-        <button
-          className="console-header__action-btn"
-          onClick={handleCopyLog}
-          title="Copy full log to clipboard"
-          aria-label="Copy log"
-        >
-          <Copy size={14} />
-        </button>
+        </div>
       </div>
-    </div>
+      <ConfirmModal {...confirmProps} />
+    </>
   )
 }
