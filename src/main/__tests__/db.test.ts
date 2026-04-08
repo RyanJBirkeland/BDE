@@ -232,6 +232,40 @@ describe('db schema migrations', () => {
     expect(cols).toContain('sprint_task_id')
     db.close()
   })
+
+  it('migration v38 normalizes sprint_tasks.repo to lowercase', () => {
+    const db = new Database(':memory:')
+    db.pragma('journal_mode = WAL')
+    db.pragma('foreign_keys = ON')
+
+    // Run migrations up to v37
+    for (const m of migrations.filter((mig) => mig.version <= 37)) {
+      m.up(db)
+    }
+    db.pragma('user_version = 37')
+
+    // Insert a task with uppercase repo
+    db.prepare(
+      `INSERT INTO sprint_tasks (id, title, repo, status) VALUES (?, ?, ?, ?)`
+    ).run('test-task-1', 'Test Task', 'BDE', 'backlog')
+
+    // Verify the repo is uppercase before migration
+    const before = db.prepare('SELECT repo FROM sprint_tasks WHERE id = ?').get('test-task-1') as {
+      repo: string
+    }
+    expect(before.repo).toBe('BDE')
+
+    // Run migration v38
+    runMigrations(db)
+
+    // Verify the repo is now lowercase
+    const after = db.prepare('SELECT repo FROM sprint_tasks WHERE id = ?').get('test-task-1') as {
+      repo: string
+    }
+    expect(after.repo).toBe('bde')
+
+    db.close()
+  })
 })
 
 describe('backupDatabase', () => {

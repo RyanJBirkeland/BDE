@@ -919,6 +919,14 @@ export const migrations: Migration[] = [
       `
       db.exec(sql)
     }
+  },
+  {
+    version: 38,
+    description: 'Normalize sprint_tasks.repo to lowercase for case-insensitive matching',
+    up: (db) => {
+      const stmt = db.prepare('UPDATE sprint_tasks SET repo = lower(repo) WHERE repo <> lower(repo)')
+      stmt.run()
+    }
   }
 ]
 

@@ -61,7 +61,8 @@ function parseNumstat(
 
 function getRepoConfig(repoName: string): RepoConfig | null {
   const repos = getSettingJson<RepoConfig[]>('repos')
-  return repos?.find((r) => r.name === repoName) ?? null
+  const target = repoName.toLowerCase()
+  return repos?.find((r) => r.name.toLowerCase() === target) ?? null
 }
 
 export function registerReviewHandlers(): void {
