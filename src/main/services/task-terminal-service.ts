@@ -24,27 +24,50 @@ export interface TaskTerminalService {
 export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTerminalService {
   const depIndex: DependencyIndex = createDependencyIndex()
 
+  // Pending resolution: taskIds that have reached terminal status and need dep resolution.
+  // setTimeout(0) coalesces multiple synchronous completions into one resolution pass.
+  const _pendingResolution = new Map<string, string>() // taskId → terminal status
+  let _resolveTimer: ReturnType<typeof setTimeout> | null = null
+
   function rebuildIndex(): void {
     const tasks = deps.getTasksWithDependencies()
     depIndex.rebuild(tasks)
   }
 
+  function scheduleResolution(taskId: string, status: string): void {
+    _pendingResolution.set(taskId, status)
+    if (!_resolveTimer) {
+      _resolveTimer = setTimeout(() => {
+        _resolveTimer = null
+        try {
+          rebuildIndex() // Rebuild once for the batch
+          for (const [id, terminalStatus] of _pendingResolution) {
+            try {
+              resolveDependents(
+                id,
+                terminalStatus,
+                depIndex,
+                deps.getTask,
+                deps.updateTask,
+                deps.logger,
+                deps.getSetting
+              )
+            } catch (err) {
+              deps.logger.error(`[task-terminal-service] resolveDependents failed for ${id}: ${err}`)
+            }
+          }
+        } catch (err) {
+          deps.logger.error(`[task-terminal-service] rebuildIndex failed: ${err}`)
+        } finally {
+          _pendingResolution.clear()
+        }
+      }, 0)
+    }
+  }
+
   function onStatusTerminal(taskId: string, status: string): void {
     if (!TERMINAL_STATUSES.has(status)) return
-    try {
-      rebuildIndex()
-      resolveDependents(
-        taskId,
-        status,
-        depIndex,
-        deps.getTask,
-        deps.updateTask,
-        deps.logger,
-        deps.getSetting
-      )
-    } catch (err) {
-      deps.logger.error(`[task-terminal-service] resolveDependents failed for ${taskId}: ${err}`)
-    }
+    scheduleResolution(taskId, status)
   }
 
   return { onStatusTerminal }
