@@ -120,4 +120,124 @@ describe('taskWorkbench store', () => {
     })
     expect(useTaskWorkbenchStore.getState().copilotMessages).toHaveLength(before + 1)
   })
+
+  it('isDirty returns false in pristine create mode', () => {
+    const s = useTaskWorkbenchStore.getState()
+    expect(s.isDirty()).toBe(false)
+  })
+
+  it('isDirty returns false when no changes in edit mode', () => {
+    useTaskWorkbenchStore.getState().loadTask({
+      id: 'task-123',
+      title: 'Existing task',
+      repo: 'life-os',
+      priority: 2,
+      spec: '## Problem\nSomething',
+      prompt: null,
+      notes: null,
+      status: 'backlog',
+      retry_count: 0,
+      fast_fail_count: 0,
+      agent_run_id: null,
+      pr_number: null,
+      pr_status: null,
+      pr_url: null,
+      claimed_by: null,
+      started_at: null,
+      completed_at: null,
+      template_name: null,
+      depends_on: null,
+      updated_at: '2026-01-01',
+      created_at: '2026-01-01'
+    })
+    const s = useTaskWorkbenchStore.getState()
+    expect(s.isDirty()).toBe(false)
+  })
+
+  it('isDirty returns true when title changes in edit mode', () => {
+    useTaskWorkbenchStore.getState().loadTask({
+      id: 'task-123',
+      title: 'Original title',
+      repo: 'life-os',
+      priority: 2,
+      spec: '## Problem\nSomething',
+      prompt: null,
+      notes: null,
+      status: 'backlog',
+      retry_count: 0,
+      fast_fail_count: 0,
+      agent_run_id: null,
+      pr_number: null,
+      pr_status: null,
+      pr_url: null,
+      claimed_by: null,
+      started_at: null,
+      completed_at: null,
+      template_name: null,
+      depends_on: null,
+      updated_at: '2026-01-01',
+      created_at: '2026-01-01'
+    })
+    useTaskWorkbenchStore.getState().setField('title', 'Modified title')
+    const s = useTaskWorkbenchStore.getState()
+    expect(s.isDirty()).toBe(true)
+  })
+
+  it('isDirty returns true when spec changes in edit mode', () => {
+    useTaskWorkbenchStore.getState().loadTask({
+      id: 'task-123',
+      title: 'Task',
+      repo: 'life-os',
+      priority: 2,
+      spec: '## Original spec',
+      prompt: null,
+      notes: null,
+      status: 'backlog',
+      retry_count: 0,
+      fast_fail_count: 0,
+      agent_run_id: null,
+      pr_number: null,
+      pr_status: null,
+      pr_url: null,
+      claimed_by: null,
+      started_at: null,
+      completed_at: null,
+      template_name: null,
+      depends_on: null,
+      updated_at: '2026-01-01',
+      created_at: '2026-01-01'
+    })
+    useTaskWorkbenchStore.getState().setField('spec', '## Modified spec')
+    const s = useTaskWorkbenchStore.getState()
+    expect(s.isDirty()).toBe(true)
+  })
+
+  it('isDirty detects dependency changes in edit mode', () => {
+    useTaskWorkbenchStore.getState().loadTask({
+      id: 'task-123',
+      title: 'Task',
+      repo: 'life-os',
+      priority: 2,
+      spec: '## Spec',
+      prompt: null,
+      notes: null,
+      status: 'backlog',
+      retry_count: 0,
+      fast_fail_count: 0,
+      agent_run_id: null,
+      pr_number: null,
+      pr_status: null,
+      pr_url: null,
+      claimed_by: null,
+      started_at: null,
+      completed_at: null,
+      template_name: null,
+      depends_on: [{ id: 'dep-1', type: 'hard' }],
+      updated_at: '2026-01-01',
+      created_at: '2026-01-01'
+    })
+    useTaskWorkbenchStore.getState().setField('dependsOn', [{ id: 'dep-1', type: 'hard' }, { id: 'dep-2', type: 'soft' }])
+    const s = useTaskWorkbenchStore.getState()
+    expect(s.isDirty()).toBe(true)
+  })
 })

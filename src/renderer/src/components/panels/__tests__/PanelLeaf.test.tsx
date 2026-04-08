@@ -13,6 +13,7 @@ const mockMoveTab = vi.fn()
 const mockAddTab = vi.fn()
 const mockSplitPanel = vi.fn()
 let mockFocusedPanelId = 'panel-1'
+let mockWorkbenchIsDirty = false
 
 vi.mock('../../../stores/panelLayout', async () => {
   const actual = await vi.importActual('../../../stores/panelLayout')
@@ -42,6 +43,17 @@ vi.mock('../../../stores/panelLayout', async () => {
   })
   return { ...(actual as object), usePanelLayoutStore: store }
 })
+
+vi.mock('../../../stores/taskWorkbench', () => ({
+  useTaskWorkbenchStore: vi.fn((sel: (s: unknown) => unknown) => {
+    if (typeof sel === 'function') {
+      return sel({
+        isDirty: () => mockWorkbenchIsDirty
+      })
+    }
+    return mockWorkbenchIsDirty
+  })
+}))
 
 // Mock views used in PanelLeaf
 vi.mock('../../../views/AgentsView', () => ({
@@ -102,6 +114,7 @@ describe('PanelLeaf', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFocusedPanelId = 'panel-1'
+    mockWorkbenchIsDirty = false
   })
 
   it('renders the active view', async () => {
@@ -244,5 +257,55 @@ describe('PanelLeaf', () => {
     const node = makeLeaf({ tabs: [{ viewKey: 'code-review', label: 'Code Review' }] })
     render(<PanelLeaf node={node} />)
     expect(await screen.findByTestId('code-review-view')).toBeInTheDocument()
+  })
+
+  it('shows dirty indicator when task-workbench is active and dirty', () => {
+    mockFocusedPanelId = 'panel-other'
+    mockWorkbenchIsDirty = true
+    const node = makeLeaf({
+      panelId: 'panel-1',
+      tabs: [{ viewKey: 'task-workbench', label: 'Task Workbench' }]
+    })
+    const { container } = render(<PanelLeaf node={node} />)
+
+    const slimLabel = container.querySelector('.panel-label-slim')
+    expect(slimLabel).toBeInTheDocument()
+    expect(slimLabel).toHaveTextContent('Task Workbench')
+
+    const dirtyDot = container.querySelector('.panel-label-dirty-dot')
+    expect(dirtyDot).toBeInTheDocument()
+    expect(dirtyDot).toHaveTextContent('•')
+  })
+
+  it('does not show dirty indicator when task-workbench is clean', () => {
+    mockFocusedPanelId = 'panel-other'
+    mockWorkbenchIsDirty = false
+    const node = makeLeaf({
+      panelId: 'panel-1',
+      tabs: [{ viewKey: 'task-workbench', label: 'Task Workbench' }]
+    })
+    const { container } = render(<PanelLeaf node={node} />)
+
+    const slimLabel = container.querySelector('.panel-label-slim')
+    expect(slimLabel).toBeInTheDocument()
+
+    const dirtyDot = container.querySelector('.panel-label-dirty-dot')
+    expect(dirtyDot).not.toBeInTheDocument()
+  })
+
+  it('does not show dirty indicator for non-workbench views even if dirty flag is true', () => {
+    mockFocusedPanelId = 'panel-other'
+    mockWorkbenchIsDirty = true
+    const node = makeLeaf({
+      panelId: 'panel-1',
+      tabs: [{ viewKey: 'agents', label: 'Agents' }]
+    })
+    const { container } = render(<PanelLeaf node={node} />)
+
+    const slimLabel = container.querySelector('.panel-label-slim')
+    expect(slimLabel).toBeInTheDocument()
+
+    const dirtyDot = container.querySelector('.panel-label-dirty-dot')
+    expect(dirtyDot).not.toBeInTheDocument()
   })
 })

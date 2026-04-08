@@ -52,6 +52,9 @@ interface TaskWorkbenchState {
   crossRepoContract: string | null
   pendingGroupId: string | null
 
+  // --- Dirty state tracking ---
+  originalSnapshot: PersistedDraft | null
+
   // --- Copilot ---
   copilotVisible: boolean
   copilotMessages: CopilotMessage[]
@@ -82,6 +85,7 @@ interface TaskWorkbenchState {
   startStreaming: (messageId: string, streamId: string) => void
   appendToStreamingMessage: (chunk: string) => void
   finishStreaming: (insertable: boolean) => void
+  isDirty: () => boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +105,7 @@ const ADVANCED_OPEN_STORAGE_KEY = 'bde:workbench-advanced-open'
 const DRAFT_STORAGE_KEY = 'bde:workbench-draft'
 const DRAFT_SAVE_DEBOUNCE_MS = 500
 
-interface PersistedDraft {
+export interface PersistedDraft {
   title: string
   repo: string
   priority: number
@@ -210,6 +214,7 @@ type DefaultsShape = Pick<
   | 'specType'
   | 'crossRepoContract'
   | 'pendingGroupId'
+  | 'originalSnapshot'
   | 'copilotVisible'
   | 'copilotMessages'
   | 'copilotLoading'
@@ -240,6 +245,7 @@ function emptyDefaults(): DefaultsShape {
     specType: null,
     crossRepoContract: null,
     pendingGroupId: null,
+    originalSnapshot: null,
     copilotVisible: true,
     copilotMessages: (() => {
       const persisted = loadPersistedMessages()
@@ -302,7 +308,19 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
     set(emptyDefaults())
   },
 
-  loadTask: (task) =>
+  loadTask: (task) => {
+    const snapshot: PersistedDraft = {
+      title: task.title,
+      repo: task.repo,
+      priority: task.priority,
+      spec: task.spec ?? '',
+      dependsOn: task.depends_on ?? [],
+      playgroundEnabled: task.playground_enabled ?? false,
+      maxCostUsd: task.max_cost_usd ?? null,
+      model: task.model ?? '',
+      specType: (task.spec_type as SpecType) ?? null,
+      crossRepoContract: task.cross_repo_contract ?? null
+    }
     set({
       mode: 'edit',
       taskId: task.id,
@@ -317,12 +335,14 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       model: task.model ?? '',
       specType: (task.spec_type as SpecType) ?? null,
       crossRepoContract: task.cross_repo_contract ?? null,
+      originalSnapshot: snapshot,
       copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
       streamingMessageId: null,
       activeStreamId: null,
       semanticChecks: [],
       operationalChecks: []
-    }),
+    })
+  },
 
   toggleCopilot: () => set((s) => ({ copilotVisible: !s.copilotVisible })),
   toggleChecksExpanded: () => set((s) => ({ checksExpanded: !s.checksExpanded })),
@@ -367,7 +387,41 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
         activeStreamId: null,
         copilotLoading: false
       }
-    })
+    }),
+
+  isDirty: () => {
+    const state = useTaskWorkbenchStore.getState()
+    const { originalSnapshot } = state
+
+    // No original snapshot = pristine create mode
+    if (!originalSnapshot) return false
+
+    const current: PersistedDraft = {
+      title: state.title,
+      repo: state.repo,
+      priority: state.priority,
+      spec: state.spec,
+      dependsOn: state.dependsOn,
+      playgroundEnabled: state.playgroundEnabled,
+      maxCostUsd: state.maxCostUsd,
+      model: state.model,
+      crossRepoContract: state.crossRepoContract,
+      specType: state.specType
+    }
+
+    return (
+      current.title !== originalSnapshot.title ||
+      current.repo !== originalSnapshot.repo ||
+      current.priority !== originalSnapshot.priority ||
+      current.spec !== originalSnapshot.spec ||
+      current.playgroundEnabled !== originalSnapshot.playgroundEnabled ||
+      current.maxCostUsd !== originalSnapshot.maxCostUsd ||
+      current.model !== originalSnapshot.model ||
+      current.crossRepoContract !== originalSnapshot.crossRepoContract ||
+      current.specType !== originalSnapshot.specType ||
+      JSON.stringify(current.dependsOn) !== JSON.stringify(originalSnapshot.dependsOn)
+    )
+  }
 }))
 
 // Persist copilot messages to localStorage on change

@@ -3,6 +3,7 @@ import { PanelLeafNode, View, DropZone, usePanelLayoutStore } from '../../stores
 import { ErrorBoundary } from '../ui/ErrorBoundary'
 import { PanelDropOverlay } from './PanelDropOverlay'
 import { resolveView } from '../../lib/view-resolver'
+import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 
 // ---------------------------------------------------------------------------
 // Lazy view preloading map — trigger on hover in ActivityBar
@@ -52,8 +53,11 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
   const focusPanel = usePanelLayoutStore((s) => s.focusPanel)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
+  const workbenchIsDirty = useTaskWorkbenchStore((s) => s.isDirty())
 
   const isFocused = focusedPanelId === node.panelId
+  const activeTab = node.tabs[node.activeTab]
+  const showDirtyIndicator = activeTab?.viewKey === 'task-workbench' && workbenchIsDirty
 
   function handlePanelClick(): void {
     focusPanel(node.panelId)
@@ -99,6 +103,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
       {isFocused ? null : (
         <div className="panel-label-slim" onClick={() => focusPanel(node.panelId)}>
           {node.tabs[node.activeTab]?.label ?? 'Untitled'}
+          {showDirtyIndicator && <span className="panel-label-dirty-dot"> •</span>}
         </div>
       )}
       <div className="panel-leaf__content">

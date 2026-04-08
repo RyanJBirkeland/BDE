@@ -458,6 +458,12 @@
   color: var(--neon-text-muted);
 }
 
+.panel-label-dirty-dot {
+  color: var(--neon-purple);
+  font-size: 14px;
+  line-height: 1;
+}
+
 /* ── Model Badge ── */
 .sidebar-model-badge {
   padding: 3px 4px;
