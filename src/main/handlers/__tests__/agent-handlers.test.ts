@@ -215,7 +215,7 @@ describe('agent:steer handler', () => {
     const handler = captureHandler('agent:steer')
     const result = await handler(mockEvent, { agentId: 'adhoc-1', message: 'Do this' })
 
-    expect(mockHandle.send).toHaveBeenCalledWith('Do this')
+    expect(mockHandle.send).toHaveBeenCalledWith('Do this', undefined)
     expect(result).toEqual({ ok: true })
   })
 
