@@ -299,6 +299,35 @@ describe('updateTask', () => {
     )
   })
 
+  // F-t3-model-1: write amplification fix — no-op updates short-circuit
+  it('skips SQL update and audit row when patch fields all match current values', () => {
+    const created = createTask({ title: 'No-op test', repo: 'bde', priority: 5 })!
+    mockRecordTaskChanges.mockClear()
+
+    // Patch with values identical to the current task — should be a no-op
+    const result = updateTask(created.id, { title: 'No-op test', priority: 5 })
+
+    // Returns the task (not null), but recordTaskChanges is not called
+    expect(result).not.toBeNull()
+    expect(result!.id).toBe(created.id)
+    expect(mockRecordTaskChanges).not.toHaveBeenCalled()
+  })
+
+  it('records only the fields that actually changed when patch is partially redundant', () => {
+    const created = createTask({ title: 'Partial', repo: 'bde', priority: 1 })!
+    mockRecordTaskChanges.mockClear()
+
+    // title unchanged, priority changes
+    updateTask(created.id, { title: 'Partial', priority: 9 })
+
+    // recordTaskChanges should be called once with auditPatch containing only priority
+    expect(mockRecordTaskChanges).toHaveBeenCalledTimes(1)
+    const callArgs = mockRecordTaskChanges.mock.calls[0]
+    const auditPatch = callArgs[2] as Record<string, unknown>
+    expect(auditPatch).toEqual({ priority: 9 })
+    expect(auditPatch).not.toHaveProperty('title')
+  })
+
   it('serializes booleans as 0/1 for SQLite', () => {
     const created = createTask({ title: 'T', repo: 'bde' })!
     const updated = updateTask(created.id, { playground_enabled: true, needs_review: true })

@@ -342,12 +342,29 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
           }
         }
 
+        // F-t3-model-1: Filter unchanged fields at the caller level. Reduces
+        // write amplification on both sprint_tasks (no UPDATE) and task_changes
+        // (no audit row). Defense-in-depth — recordTaskChanges also skips
+        // unchanged values, but filtering here also avoids the SQL UPDATE.
+        const changedEntries = entries.filter(([key, value]) => {
+          const serializedNew = serializeField(key, value)
+          const oldRaw = (oldTask as unknown as Record<string, unknown>)[key]
+          const serializedOld = serializeField(key, oldRaw)
+          return serializedNew !== serializedOld
+        })
+
+        // No-op: nothing actually changed. Return the existing task without
+        // touching sprint_tasks or task_changes.
+        if (changedEntries.length === 0) {
+          return oldTask
+        }
+
         // Build SET clause with serialized values
         const setClauses: string[] = []
         const values: unknown[] = []
         const auditPatch: Record<string, unknown> = {}
 
-        for (const [key, value] of entries) {
+        for (const [key, value] of changedEntries) {
           // QA-18: Defense-in-depth regex assertion for SQL column names
           if (!/^[a-z_]+$/.test(key)) {
             throw new Error(`Invalid column name: ${key}`)
