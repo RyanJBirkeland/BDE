@@ -22,6 +22,8 @@ export interface AgentMeta {
   costUsd: number | null
   tokensIn: number | null
   tokensOut: number | null
+  cacheRead?: number | null
+  cacheCreate?: number | null
   sprintTaskId: string | null
   /**
    * Absolute path to the agent's git worktree.

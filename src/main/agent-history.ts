@@ -213,6 +213,8 @@ export async function importAgent(meta: Partial<AgentMeta>, content: string): Pr
     costUsd: meta.costUsd ?? null,
     tokensIn: meta.tokensIn ?? null,
     tokensOut: meta.tokensOut ?? null,
+    cacheRead: meta.cacheRead ?? null,
+    cacheCreate: meta.cacheCreate ?? null,
     sprintTaskId: meta.sprintTaskId ?? null,
     worktreePath: meta.worktreePath ?? null,
     branch: meta.branch ?? null

@@ -20,6 +20,8 @@ import { randomUUID } from 'node:crypto'
 import { basename, join } from 'node:path'
 import { homedir } from 'node:os'
 import { importAgent, updateAgentMeta } from './agent-history'
+import { updateAgentRunCost } from './data/agent-queries'
+import { getDb } from './db'
 import { buildAgentEnvWithAuth, getClaudeCliPath } from './env-utils'
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
@@ -222,6 +224,21 @@ export async function spawnAdhocAgent(args: {
       finishedAt: new Date().toISOString(),
       exitCode: 0
     }).catch(() => {})
+
+    try {
+      const totals = turnTracker.totals()
+      updateAgentRunCost(getDb(), meta.id, {
+        costUsd,
+        tokensIn: totals.tokensIn,
+        tokensOut: totals.tokensOut,
+        cacheRead: totals.cacheTokensRead,
+        cacheCreate: totals.cacheTokensCreated,
+        durationMs,
+        numTurns: totals.turnCount
+      })
+    } catch {
+      // Non-fatal — best-effort cost persistence
+    }
 
     adhocSessions.delete(meta.id)
     log.info(`[adhoc] ${meta.id} session completed after ${Math.round(durationMs / 1000)}s`)

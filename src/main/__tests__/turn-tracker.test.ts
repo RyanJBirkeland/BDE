@@ -42,21 +42,21 @@ describe('TurnTracker', () => {
 
   it('starts with zero totals', () => {
     const tracker = new TurnTracker('run-1', db)
-    expect(tracker.totals()).toEqual({ tokensIn: 0, tokensOut: 0 })
+    expect(tracker.totals()).toMatchObject({ tokensIn: 0, tokensOut: 0 })
   })
 
   it('accumulates tokens from msg.message.usage (real SDK format)', () => {
     const tracker = new TurnTracker('run-1', db)
     tracker.observe({ type: 'assistant', message: { usage: { input_tokens: 100, output_tokens: 50 }, content: [] } })
     tracker.observe({ type: 'assistant', message: { usage: { input_tokens: 200, output_tokens: 80 }, content: [] } })
-    expect(tracker.totals()).toEqual({ tokensIn: 300, tokensOut: 130 })
+    expect(tracker.totals()).toMatchObject({ tokensIn: 300, tokensOut: 130 })
   })
 
   it('falls back to msg.usage when msg.message.usage absent', () => {
     const tracker = new TurnTracker('run-1', db)
     tracker.observe({ type: 'assistant', usage: { input_tokens: 100, output_tokens: 50 } })
     tracker.observe({ type: 'assistant', usage: { input_tokens: 200, output_tokens: 80 } })
-    expect(tracker.totals()).toEqual({ tokensIn: 300, tokensOut: 130 })
+    expect(tracker.totals()).toMatchObject({ tokensIn: 300, tokensOut: 130 })
   })
 
   it('accumulates cache tokens from msg.message.usage', () => {
@@ -105,7 +105,7 @@ describe('TurnTracker', () => {
     const tracker = new TurnTracker('run-1', db)
     tracker.observe({ type: 'result', tokens_in: 500, tokens_out: 200 })
     tracker.observe({ type: 'system', subtype: 'init' })
-    expect(tracker.totals()).toEqual({ tokensIn: 0, tokensOut: 0 })
+    expect(tracker.totals()).toMatchObject({ tokensIn: 0, tokensOut: 0 })
   })
 
   it('ignores top-level tokens_in/tokens_out even on assistant messages', () => {
@@ -117,7 +117,7 @@ describe('TurnTracker', () => {
       tokens_out: 5
     })
     // Only message.usage counts — top-level tokens_in/out are ignored
-    expect(tracker.totals()).toEqual({ tokensIn: 100, tokensOut: 50 })
+    expect(tracker.totals()).toMatchObject({ tokensIn: 100, tokensOut: 50 })
   })
 
   it('writes one turn row per assistant message with cumulative totals', () => {
@@ -172,7 +172,7 @@ describe('TurnTracker', () => {
     tracker.observe({ type: 'system', subtype: 'init' })
     tracker.observe({ type: 'result', tokens_in: 50, tokens_out: 10 })
 
-    expect(tracker.totals()).toEqual({ tokensIn: 0, tokensOut: 0 })
+    expect(tracker.totals()).toMatchObject({ tokensIn: 0, tokensOut: 0 })
     const count = (
       db.prepare('SELECT COUNT(*) as c FROM agent_run_turns').get() as { c: number }
     ).c
@@ -187,6 +187,6 @@ describe('TurnTracker', () => {
       tracker.observe('string message')
       tracker.observe(42)
     }).not.toThrow()
-    expect(tracker.totals()).toEqual({ tokensIn: 0, tokensOut: 0 })
+    expect(tracker.totals()).toMatchObject({ tokensIn: 0, tokensOut: 0 })
   })
 })

@@ -186,6 +186,13 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
             </span>
           )}
           {costUsd != null && <span>${costUsd.toFixed(4)}</span>}
+          {agent.cacheRead != null && agent.cacheRead > 0 && (
+            <span title="Peak context window size (cache reads)">
+              ctx {agent.cacheRead >= 1_000_000
+                ? `${(agent.cacheRead / 1_000_000).toFixed(1)}M`
+                : `${Math.round(agent.cacheRead / 1_000)}k`}
+            </span>
+          )}
         </div>
 
         {/* Action buttons */}

@@ -35,6 +35,8 @@ export interface AgentRunRow {
   cost_usd: number | null
   tokens_in: number | null
   tokens_out: number | null
+  cache_read: number | null
+  cache_create: number | null
   sprint_task_id: string | null
   worktree_path: string | null
   branch: string | null
@@ -58,6 +60,8 @@ export function rowToMeta(row: AgentRunRow): AgentMeta {
     costUsd: row.cost_usd ?? null,
     tokensIn: row.tokens_in ?? null,
     tokensOut: row.tokens_out ?? null,
+    cacheRead: row.cache_read ?? null,
+    cacheCreate: row.cache_create ?? null,
     sprintTaskId: row.sprint_task_id ?? null,
     worktreePath: row.worktree_path ?? null,
     branch: row.branch ?? null

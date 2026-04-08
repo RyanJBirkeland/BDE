@@ -7,6 +7,8 @@ import { resolveSuccess, resolveFailure } from './completion'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getGhRepo } from '../paths'
 import { createAgentRecord, updateAgentMeta } from '../agent-history'
+import { updateAgentRunCost } from '../data/agent-queries'
+import { getDb } from '../db'
 import { randomUUID } from 'node:crypto'
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
@@ -375,6 +377,8 @@ export async function runAgent(
     costUsd: null,
     tokensIn: null,
     tokensOut: null,
+    cacheRead: null,
+    cacheCreate: null,
     sprintTaskId: task.id,
     worktreePath: worktree.worktreePath,
     branch: worktree.branch
@@ -512,6 +516,22 @@ export async function runAgent(
   }).catch((err) =>
     logger.warn(`[agent-manager] Failed to update agent record for ${agentRunId}: ${err}`)
   )
+
+  // Persist cost breakdown (cache tokens) — non-fatal if it fails
+  try {
+    const totals = turnTracker.totals()
+    updateAgentRunCost(getDb(), agentRunId, {
+      costUsd: agent.costUsd ?? 0,
+      tokensIn: totals.tokensIn,
+      tokensOut: totals.tokensOut,
+      cacheRead: totals.cacheTokensRead,
+      cacheCreate: totals.cacheTokensCreated,
+      durationMs,
+      numTurns: totals.turnCount
+    })
+  } catch (err) {
+    logger.warn(`[agent-manager] Failed to persist cost breakdown for ${agentRunId}: ${err}`)
+  }
 
   // Classify exit (default to exit code 1 if not available, assuming failure)
   const ffResult = classifyExit(agent.startedAt, exitedAt, exitCode ?? 1, task.fast_fail_count ?? 0)
