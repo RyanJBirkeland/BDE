@@ -126,3 +126,17 @@ This is **Option B** in the plan's Task 2.3 (conservative retention) **plus a pe
 ## Phase 6 regression task
 
 *To be pinned by Task 6.0 — a real done sprint task with mid-range tokens_in.*
+
+---
+
+## In-flight deferrals
+
+### Task 1.8 (F-t3-db-5) — Replace SELECT * with targeted column lists
+
+**Status:** Deferred from Phase 1 to a follow-up.
+
+**Reason:** The hot list query (`listTasksRecent`) returns `SprintTask[]` over the `sprint:list` IPC channel. Multiple renderer stores (`sprintTasks.ts`, `taskWorkbench.ts`, `taskGroups.ts`) read `.spec` and other fields from list results. Dropping those columns from the query without a type refactor would silently return `undefined` for those fields and the type contract would lie. The clean fix is to introduce a `SprintTaskListItem = Omit<SprintTask, 'spec' | 'review_diff_snapshot'>` type, update the IPC channel, update all consumer stores, and add type assertions in tests — that's M effort and needs UI verification, neither of which fit the autonomous session.
+
+**Rough impact:** snapshot has ~510 tasks with ~1.6 MB total `spec` data. The Dashboard and SprintPipeline poll `sprint:list` regularly, so the renderer is downloading ~1.6 MB per poll cycle just for list display. This is a real win when implemented properly.
+
+**Recommended follow-up:** dedicated PR that introduces `SprintTaskListItem`, narrows the IPC contract, and fixes the consumer stores. Expected to be ~1 day of focused work.
