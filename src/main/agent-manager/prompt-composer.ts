@@ -11,7 +11,7 @@ import { copilotPersonality } from '../agent-system/personality/copilot-personal
 import { synthesizerPersonality } from '../agent-system/personality/synthesizer-personality'
 import { adhocPersonality } from '../agent-system/personality/adhoc-personality'
 import type { AgentPersonality } from '../agent-system/personality/types'
-import { getAllMemory } from '../agent-system/memory'
+import { getAllMemory, isBdeRepo } from '../agent-system/memory'
 import { getUserMemory } from '../agent-system/memory/user-memory'
 import { getAllSkills } from '../agent-system/skills'
 
@@ -248,16 +248,20 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     prompt += userMem.content
   }
 
-  // Inject skills (interactive agents only)
-  if (agentType === 'assistant' || agentType === 'adhoc') {
+  // Inject skills (interactive BDE agents only — BDE-specific skills are irrelevant
+  // in other repos and would waste tokens).
+  const inBdeRepo = isBdeRepo(repoName)
+  if ((agentType === 'assistant' || agentType === 'adhoc') && inBdeRepo) {
     prompt += '\n\n## Available Skills\n'
     prompt += getAllSkills()
   }
 
-  // Plugin disable note
-  prompt += '\n\n## Note\n'
-  prompt += 'You have BDE-native skills and conventions loaded. '
-  prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
+  // Plugin disable note (only meaningful when BDE context is loaded)
+  if (inBdeRepo) {
+    prompt += '\n\n## Note\n'
+    prompt += 'You have BDE-native skills and conventions loaded. '
+    prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
+  }
 
   // Add conditional operational appendices
   if (branch) {
