@@ -8,7 +8,7 @@ import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { sanitizeTags } from '../../shared/sanitize-tags'
 import { isValidTransition } from '../../shared/task-transitions'
 import { getDb } from '../db'
-import { recordTaskChanges } from './task-changes'
+import { recordTaskChanges, recordTaskChangesBulk } from './task-changes'
 import type { Logger } from '../agent-manager/types'
 import { withRetry } from './sqlite-retry'
 
@@ -668,19 +668,20 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
       if (affectedIds.length > 0) {
         const completedAt = new Date().toISOString()
 
-        // Record audit trail for each affected task
-        for (const oldTask of affected) {
-          try {
-            recordTaskChanges(
-              oldTask.id as string,
+        // F-t3-db-4: Bulk audit trail (single prepared INSERT statement reused
+        // across all affected tasks instead of one prepared statement per call)
+        try {
+          recordTaskChangesBulk(
+            affected.map((oldTask) => ({
+              taskId: oldTask.id as string,
               oldTask,
-              { status: 'done', completed_at: completedAt },
-              'pr-poller',
-              db
-            )
-          } catch (err) {
-            logger.warn(`[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`)
-          }
+              newPatch: { status: 'done', completed_at: completedAt }
+            })),
+            'pr-poller',
+            db
+          )
+        } catch (err) {
+          logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
         }
 
         // Transition active tasks to done
@@ -703,15 +704,19 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
         )
         .all(prNumber) as Array<Record<string, unknown>>
 
-      // Record audit trail for pr_status changes
-      for (const oldTask of prStatusAffected) {
-        try {
-          recordTaskChanges(oldTask.id as string, oldTask, { pr_status: 'merged' }, 'pr-poller', db)
-        } catch (err) {
-          logger.warn(
-            `[sprint-queries] Failed to record pr_status change for task ${oldTask.id}: ${err}`
-          )
-        }
+      // F-t3-db-4: Bulk audit trail for pr_status changes
+      try {
+        recordTaskChangesBulk(
+          prStatusAffected.map((oldTask) => ({
+            taskId: oldTask.id as string,
+            oldTask,
+            newPatch: { pr_status: 'merged' }
+          })),
+          'pr-poller',
+          db
+        )
+      } catch (err) {
+        logger.warn(`[sprint-queries] Failed to record bulk pr_status changes: ${err}`)
       }
 
       // Set pr_status to merged for done tasks with open PRs
@@ -752,19 +757,19 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
       if (affectedIds.length > 0) {
         const completedAt = new Date().toISOString()
 
-        // Record audit trail for each affected task
-        for (const oldTask of affected) {
-          try {
-            recordTaskChanges(
-              oldTask.id as string,
+        // F-t3-db-4: Bulk audit trail
+        try {
+          recordTaskChangesBulk(
+            affected.map((oldTask) => ({
+              taskId: oldTask.id as string,
               oldTask,
-              { status: 'cancelled', completed_at: completedAt },
-              'pr-poller',
-              db
-            )
-          } catch (err) {
-            logger.warn(`[sprint-queries] Failed to record changes for task ${oldTask.id}: ${err}`)
-          }
+              newPatch: { status: 'cancelled', completed_at: completedAt }
+            })),
+            'pr-poller',
+            db
+          )
+        } catch (err) {
+          logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
         }
 
         // Transition active tasks to cancelled
@@ -787,15 +792,19 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
         )
         .all(prNumber) as Array<Record<string, unknown>>
 
-      // Record audit trail for pr_status changes
-      for (const oldTask of prStatusAffected) {
-        try {
-          recordTaskChanges(oldTask.id as string, oldTask, { pr_status: 'closed' }, 'pr-poller', db)
-        } catch (err) {
-          logger.warn(
-            `[sprint-queries] Failed to record pr_status change for task ${oldTask.id}: ${err}`
-          )
-        }
+      // F-t3-db-4: Bulk audit trail for pr_status changes
+      try {
+        recordTaskChangesBulk(
+          prStatusAffected.map((oldTask) => ({
+            taskId: oldTask.id as string,
+            oldTask,
+            newPatch: { pr_status: 'closed' }
+          })),
+          'pr-poller',
+          db
+        )
+      } catch (err) {
+        logger.warn(`[sprint-queries] Failed to record bulk pr_status changes: ${err}`)
       }
 
       // Set pr_status to closed for ALL tasks with this PR number that still show open

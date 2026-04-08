@@ -53,6 +53,37 @@ export function recordTaskChanges(
 }
 
 /**
+ * F-t3-db-4: Bulk variant for callers that record changes for many tasks
+ * with the same patch shape (e.g. PR poller marking N tasks done at once).
+ *
+ * Prepares the INSERT statement once and reuses it across all entries,
+ * eliminating per-iteration prepare overhead. Caller is responsible for
+ * the surrounding transaction.
+ */
+export function recordTaskChangesBulk(
+  entries: Array<{ taskId: string; oldTask: Record<string, unknown>; newPatch: Record<string, unknown> }>,
+  changedBy: string,
+  db: Database.Database
+): void {
+  if (entries.length === 0) return
+
+  const stmt = db.prepare(
+    'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)'
+  )
+
+  for (const { taskId, oldTask, newPatch } of entries) {
+    for (const [field, newValue] of Object.entries(newPatch)) {
+      const oldValue = oldTask[field]
+      const oldStr = oldValue != null ? JSON.stringify(oldValue) : null
+      const newStr = newValue != null ? JSON.stringify(newValue) : null
+      if (oldStr !== newStr) {
+        stmt.run(taskId, field, oldStr, newStr, changedBy)
+      }
+    }
+  }
+}
+
+/**
  * Get change history for a task, most recent first.
  */
 export function getTaskChanges(
