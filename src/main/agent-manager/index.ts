@@ -257,7 +257,12 @@ export class AgentManagerImpl implements AgentManager {
   readonly _agentPromises = new Set<Promise<void>>()
   readonly _depIndex: DependencyIndex
   readonly _metrics: MetricsCollector
-  private _lastTaskDeps = new Map<string, TaskDependency[] | null>()
+  // F-t1-sysprof-1/-4: Cache a stable fingerprint alongside the deps array so
+  // subsequent drain ticks can short-circuit the deep compare via hash equality.
+  private _lastTaskDeps = new Map<
+    string,
+    { deps: TaskDependency[] | null; hash: string }
+  >()
 
   // Circuit breaker state — pauses drain loop after consecutive spawn failures.
   _consecutiveSpawnFailures = 0
@@ -603,26 +608,22 @@ export class AgentManagerImpl implements AgentManager {
   // ---- drainLoop helpers ----
 
   /**
-   * Deep-compare two dependency arrays for equality.
+   * F-t1-sysprof-1: Compute a stable fingerprint of a dependency array.
+   * The fingerprint is sort-order-independent (sorted by id) so two equivalent
+   * arrays produce the same hash regardless of insertion order.
+   *
+   * Format: "id1:type1:cond1|id2:type2:cond2|..." with entries sorted by id.
+   * The pipe and colon separators are safe because TaskDependency.id is a
+   * task UUID and type/condition are enum strings without those characters.
    */
-  private _depsEqual(a: TaskDependency[] | null, b: TaskDependency[] | null): boolean {
-    if (a === b) return true
-    if (!a || !b) return false
-    if (a.length !== b.length) return false
-    // Sort by id for stable comparison
-    const aSorted = [...a].sort((x, y) => x.id.localeCompare(y.id))
-    const bSorted = [...b].sort((x, y) => x.id.localeCompare(y.id))
-    for (let i = 0; i < aSorted.length; i++) {
-      if (
-        aSorted[i].id !== bSorted[i].id ||
-        aSorted[i].type !== bSorted[i].type ||
-        aSorted[i].condition !== bSorted[i].condition
-      ) {
-        return false
-      }
-    }
-    return true
+  static _depsFingerprint(deps: TaskDependency[] | null): string {
+    if (!deps || deps.length === 0) return ''
+    return deps
+      .map((d) => `${d.id}:${d.type}:${d.condition ?? ''}`)
+      .sort()
+      .join('|')
   }
+
 
   // ---- drainLoop ----
 
@@ -657,13 +658,16 @@ export class AgentManagerImpl implements AgentManager {
         }
       }
 
-      // Update tasks with changed dependencies
+      // Update tasks with changed dependencies.
+      // F-t1-sysprof-1/-4: Compare cached fingerprints — avoids re-sorting the
+      // unchanged-deps case (the common path for most drain ticks).
       for (const task of allTasks) {
-        const oldDeps = this._lastTaskDeps.get(task.id) ?? null
+        const cached = this._lastTaskDeps.get(task.id)
         const newDeps = task.depends_on ?? null
-        if (!this._depsEqual(oldDeps, newDeps)) {
+        const newHash = AgentManagerImpl._depsFingerprint(newDeps)
+        if (!cached || cached.hash !== newHash) {
           this._depIndex.update(task.id, newDeps)
-          this._lastTaskDeps.set(task.id, newDeps)
+          this._lastTaskDeps.set(task.id, { deps: newDeps, hash: newHash })
         }
       }
 
@@ -806,7 +810,11 @@ export class AgentManagerImpl implements AgentManager {
       // Initialize _lastTaskDeps to avoid false positives on first drain
       this._lastTaskDeps.clear()
       for (const task of tasks) {
-        this._lastTaskDeps.set(task.id, task.depends_on ?? null)
+        const deps = task.depends_on ?? null
+        this._lastTaskDeps.set(task.id, {
+          deps,
+          hash: AgentManagerImpl._depsFingerprint(deps)
+        })
       }
       this.logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
     } catch (err) {
