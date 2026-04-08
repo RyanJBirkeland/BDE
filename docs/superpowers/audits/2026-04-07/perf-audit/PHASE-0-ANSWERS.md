@@ -33,11 +33,29 @@ Only 3 files reference `cost_events` in the entire codebase:
 ### Q5: Are pipeline `agent_events` ever read after task completion?
 *Affects: Phase 2 row F-t1-sre-1 / F-t3-model-2 (retention strategy)*
 
-**Method:**
+**Method:** `Grep FROM agent_events|from agent_events` then trace `getEventHistory`/`pruneOldEvents` callsites.
 
-**Findings:**
+**Findings — production read sites (3):**
 
-**Decision (retention strategy):**
+1. **`src/main/handlers/dashboard-handlers.ts:49`** — Dashboard activity feed reads agent_events JOINed to agent_runs and sprint_tasks. Post-completion read (Dashboard shows recent activity from completed agents).
+2. **`src/main/data/event-queries.ts:21`** — `getEventHistory(agentId)` SELECTs full payload list for one agent ordered by timestamp. Used by agent console replay.
+3. **`src/main/handlers/agent-handlers.ts:83-85`** — IPC handler `agent:getHistory` calls `getEventHistory`. Renderer-driven replay of historical agent runs.
+
+**Existing pruning infrastructure (already wired):**
+
+- `src/main/data/event-queries.ts:25-27` — `pruneOldEvents(db, retentionDays)` deletes events older than N days.
+- `src/main/index.ts:156, 162` — pruning runs at startup AND every 24 hours via `setInterval`.
+- `src/main/config.ts:7-9` — retention is configurable via `agent.eventRetentionDays` setting; **default is 30 days.**
+- `event-queries.ts:131, 135` — also has bulk-delete-by-agent-ids for when agents themselves are pruned.
+
+**Decision (retention strategy):** **Hybrid — conservative default + per-task tail trim.**
+
+Phase 2 Task 2.3 should:
+1. **Keep the existing 30-day global prune** (it works, leave it alone). Maybe lower the default to 14 days as a separate decision in Phase 0 Q3.
+2. **Add per-task tail trim on agent termination** — when an agent reaches `done`/`failed`/`cancelled`, immediately delete its agent_events older than 1 hour. Rationale: live-tail readers no longer need them after termination, and the Dashboard activity feed pulls from the most recent rows anyway (it doesn't need 30 days of old terminated agents). This is the audit's actual finding from `F-t1-sre-1` — per-task cleanup, not global.
+3. **Cap per-agent event count at 5,000** as a safety valve for runaway agents (the audit notes a current ~63 events/agent average; 5K is 80× the average).
+
+This is **Option B** in the plan's Task 2.3 (conservative retention) **plus a per-task termination trim**.
 
 ---
 
