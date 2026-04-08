@@ -278,11 +278,23 @@ async function nukeStaleState(
     /* best effort */
   }
 
-  // Delete the branch if it exists (no push — agent branches are throwaway)
+  // Delete the branch if it exists (no push — agent branches are throwaway).
+  // `git branch -D` can fail if git still considers the branch "in use" by a
+  // worktree whose directory was already removed (rmSync above) but whose
+  // .git/worktrees/<hash> entry hasn't been pruned yet.  Fall back to the
+  // lower-level `git update-ref -d` which bypasses the worktree-in-use check
+  // and deletes the ref directly.
   try {
     await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
   } catch {
-    /* branch doesn't exist — fine */
+    try {
+      await execFileAsync('git', ['update-ref', '-d', `refs/heads/${branch}`], {
+        cwd: repoPath,
+        env
+      })
+    } catch {
+      /* branch doesn't exist — fine */
+    }
   }
 }
 
