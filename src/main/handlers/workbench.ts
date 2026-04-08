@@ -37,7 +37,8 @@ export function buildChatPrompt(
     agentType: 'copilot',
     messages,
     formContext,
-    repoPath
+    repoPath,
+    repoName: formContext.repo
   })
 }
 

@@ -102,10 +102,12 @@ export async function spawnAdhocAgent(args: {
   // Build composed prompt with preamble. Pass the branch so the agent knows
   // which branch it owns — the prompt composer wraps this in the standard
   // branch appendix.
+  const repoName = basename(args.repoPath).toLowerCase()
   const prompt = buildAgentPrompt({
     agentType: args.assistant ? 'assistant' : 'adhoc',
     taskContent: args.task,
-    branch
+    branch,
+    repoName
   })
 
   // Shared options for all turns (v1 Options — has cwd + settingSources)

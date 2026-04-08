@@ -10,14 +10,13 @@ import { architectureRules } from './architecture-rules'
  * other repos, injecting them wastes tokens and can mislead the agent.
  *
  * Match is case-insensitive and accepts a few common forms ("bde",
- * "BDE", "ryan/bde", etc.). When `repoName` is null/undefined we default to
- * `true` to preserve the legacy behavior for callers that haven't been
- * updated yet.
+ * "BDE", "ryan/bde", etc.). When `repoName` is null/undefined/empty we
+ * default to `false` — unknown repo should not receive BDE-specific memory.
  */
 export function isBdeRepo(repoName?: string | null): boolean {
-  if (repoName == null) return true
+  if (repoName == null) return false
   const normalized = repoName.trim().toLowerCase()
-  if (!normalized) return true
+  if (!normalized) return false
   // Match exact "bde" or any path segment ending in "/bde"
   if (normalized === 'bde') return true
   if (normalized.endsWith('/bde')) return true

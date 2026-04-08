@@ -6,14 +6,14 @@ import { architectureRules } from '../architecture-rules'
 
 describe('Memory System', () => {
   it('should consolidate all memory modules', () => {
-    const memory = getAllMemory()
+    const memory = getAllMemory({ repoName: 'bde' })
     expect(memory).toContain('IPC Conventions')
     expect(memory).toContain('Testing Patterns')
     expect(memory).toContain('Architecture Rules')
   })
 
   it('should separate modules with markdown dividers', () => {
-    const memory = getAllMemory()
+    const memory = getAllMemory({ repoName: 'bde' })
     expect(memory).toContain('---')
   })
 
@@ -42,14 +42,12 @@ describe('Memory System', () => {
       expect(memory).toContain('Architecture Rules')
     })
 
-    it('returns full BDE memory when repoName is undefined (legacy callers)', () => {
-      const memory = getAllMemory()
-      expect(memory).toContain('IPC Conventions')
+    it('returns empty string when repoName is undefined (unknown repo)', () => {
+      expect(getAllMemory()).toBe('')
     })
 
-    it('returns full BDE memory when repoName is null', () => {
-      const memory = getAllMemory({ repoName: null })
-      expect(memory).toContain('IPC Conventions')
+    it('returns empty string when repoName is null (unknown repo)', () => {
+      expect(getAllMemory({ repoName: null })).toBe('')
     })
 
     it('returns empty string for non-BDE repos', () => {
@@ -79,10 +77,10 @@ describe('Memory System', () => {
       expect(isBdeRepo('owner/bde')).toBe(true)
     })
 
-    it('returns true for null/undefined/empty (legacy default)', () => {
-      expect(isBdeRepo(null)).toBe(true)
-      expect(isBdeRepo(undefined)).toBe(true)
-      expect(isBdeRepo('')).toBe(true)
+    it('returns false for null/undefined/empty (unknown repo)', () => {
+      expect(isBdeRepo(null)).toBe(false)
+      expect(isBdeRepo(undefined)).toBe(false)
+      expect(isBdeRepo('')).toBe(false)
     })
 
     it('returns false for unrelated repos', () => {
