@@ -216,11 +216,22 @@ export function listTasks(status?: string): SprintTask[] {
 export function listTasksRecent(): SprintTask[] {
   try {
     const db = getDb()
+    // F-t3-db-2: Rewrite OR-clause as UNION ALL of two index-able branches.
+    // The original `WHERE status NOT IN (...) OR completed_at >= ...` forced
+    // a full SCAN because OR across columns prevents single-index use. The
+    // UNION ALL form lets each branch use idx_sprint_tasks_status:
+    //   1) active set: status IN (5 active statuses)
+    //   2) recent terminal set: status IN (4 terminal) AND completed_at recent
     const rows = db
       .prepare(
-        `SELECT * FROM sprint_tasks
-         WHERE status NOT IN ('done','cancelled','failed','error')
-            OR completed_at >= datetime('now', '-7 days')
+        `SELECT * FROM (
+           SELECT * FROM sprint_tasks
+             WHERE status IN ('backlog','queued','blocked','active','review')
+           UNION ALL
+           SELECT * FROM sprint_tasks
+             WHERE status IN ('done','cancelled','failed','error')
+               AND completed_at >= datetime('now', '-7 days')
+         )
          ORDER BY priority ASC, created_at ASC`
       )
       .all() as Record<string, unknown>[]
