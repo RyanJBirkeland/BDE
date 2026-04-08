@@ -149,41 +149,5 @@ describe('agent_events CRUD', () => {
   })
 })
 
-describe('cost_events CRUD', () => {
-  beforeEach(() => {
-    runMigrations(db)
-  })
-
-  it('insert -> verify columns populated', () => {
-    db.prepare(
-      'INSERT INTO cost_events (id, source, session_key, model, total_tokens, cost_usd) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run('ce-001', 'bde-agent', 'sess-123', 'claude-sonnet-4-20250514', 5000, 0.015)
-
-    const row = db.prepare('SELECT * FROM cost_events WHERE id = ?').get('ce-001') as Record<
-      string,
-      unknown
-    >
-
-    expect(row.id).toBe('ce-001')
-    expect(row.source).toBe('bde-agent')
-    expect(row.session_key).toBe('sess-123')
-    expect(row.model).toBe('claude-sonnet-4-20250514')
-    expect(row.total_tokens).toBe(5000)
-    expect(row.cost_usd).toBe(0.015)
-    expect(row.recorded_at).toBeDefined()
-  })
-
-  it('auto-generates id when not provided', () => {
-    db.prepare('INSERT INTO cost_events (source, model, total_tokens) VALUES (?, ?, ?)').run(
-      'manual',
-      'gpt-4',
-      1000
-    )
-
-    const row = db.prepare('SELECT id FROM cost_events WHERE source = ?').get('manual') as {
-      id: string
-    }
-    expect(row.id).toBeTruthy()
-    expect(row.id.length).toBe(32) // hex(randomblob(16)) = 32 chars
-  })
-})
+// cost_events CRUD test removed: table dropped in migration v42
+// (F-t3-db-6 / F-t3-model-3 — dark write path, never populated in production)

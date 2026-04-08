@@ -957,6 +957,14 @@ export const migrations: Migration[] = [
         'CREATE INDEX IF NOT EXISTS idx_task_changes_task_changed ON task_changes(task_id, changed_at DESC)'
       ).run()
     }
+  },
+  {
+    version: 42,
+    description:
+      'F-t3-db-6 + F-t3-model-3: Drop unused cost_events table — dark write path, never populated in production after 31K agent events. Phase 0 Q2 confirmed no production writers exist; token/cost data lives in agent_runs columns.',
+    up: (db) => {
+      db.prepare('DROP TABLE IF EXISTS cost_events').run()
+    }
   }
 ]
 
