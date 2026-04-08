@@ -947,6 +947,16 @@ export const migrations: Migration[] = [
         'CREATE INDEX IF NOT EXISTS idx_sprint_tasks_status_claimed ON sprint_tasks(status, claimed_by)'
       ).run()
     }
+  },
+  {
+    version: 41,
+    description:
+      'F-t3-db-7: Composite index on task_changes(task_id, changed_at DESC) eliminates temp B-tree sort on history queries',
+    up: (db) => {
+      db.prepare(
+        'CREATE INDEX IF NOT EXISTS idx_task_changes_task_changed ON task_changes(task_id, changed_at DESC)'
+      ).run()
+    }
   }
 ]
 
